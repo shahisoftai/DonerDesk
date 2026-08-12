@@ -2,6 +2,26 @@
 
 Record of fixes applied to DonorDesk. Last updated: 2026-08-12.
 
+## Frontend UI/UX route and shell integration gaps
+
+**Status:** Fixed and verified locally on 2026-08-12; deployment not claimed.
+
+A post-implementation audit found that several feature components existed but were
+not consistently reachable through the rendered portal. The fix added the missing
+cross-project Reports, Evidence, and Compliance routes; exposed them in primary
+navigation; enriched shared project context; added project Team/Settings and
+indicator-detail destinations; introduced a dedicated export center; and corrected
+nested-tab matching. Dashboard `/evidence` navigation no longer targets a missing page.
+
+The top bar now provides a context-aware Create menu and a keyboard shortcut to the
+existing project search. Permission-filtered global search remains a backend dependency
+and is not claimed as implemented.
+
+Verification: web typecheck passed, all 23 frontend unit test files passed, optimized
+Next.js build passed, and `git diff --check` passed. See
+`imp/FRONTEND-UX-INTEGRATION-AUDIT.md` for the full finding-to-fix matrix and remaining
+dependencies.
+
 ## Production signup/login 500 at DonerDesk.online
 
 **Status:** Fixed and verified in production (release `20260812115010`, 2026-08-12).

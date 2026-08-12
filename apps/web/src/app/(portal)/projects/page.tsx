@@ -72,7 +72,7 @@ export default async function ProjectsList({
       <form method="get" action="/projects" className="mt-6 flex flex-wrap items-end gap-3">
         <label className="flex-1 min-w-[200px] text-xs font-medium text-slate-500 dark:text-slate-400">
           Search
-          <input name="q" defaultValue={filters.query} placeholder="Title, code, donor, country" className="input mt-1" />
+          <input name="q" defaultValue={filters.query} placeholder="Title, code, donor, country" className="input mt-1" autoFocus={raw("focus") === "search"} />
         </label>
         <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
           Status

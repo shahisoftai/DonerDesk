@@ -22,6 +22,7 @@
     "test": "node --test test/*.test.mjs",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
+    "db:seed:dummy": "tsx src/db/seed-dummy-projects.ts",
     "db:studio": "prisma studio",
     "audit:verify": "node dist/audit/verify-cli.js",
     "ai:eval": "node dist/ai/eval-cli.js"

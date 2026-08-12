@@ -199,6 +199,7 @@ export type ActivityDetail = z.infer<typeof ActivityDetailSchema>;
 
 export const EvidenceItemSchema = z.object({
   id: z.string(),
+  projectId: z.string().optional(),
   fileName: z.string(),
   title: z.string(),
   evidenceType: z.string(),

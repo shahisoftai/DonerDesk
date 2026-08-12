@@ -14,7 +14,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **Why build it? (Executive pitch)** | [`base/DonorDesk — One-Page Concept Note for Approval.md`](base/DonorDesk%20—%20One-Page%20Concept%20Note%20for%20Approval.md) |
 | **Full engineering blueprint** | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) |
 | **Frontend portal blueprint** | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) |
-| **Frontend portal status** | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) (last phase) |
+| **Frontend portal status** | [`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`](imp/FRONTEND-UX-INTEGRATION-AUDIT.md) (latest audit) and [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 | **Production issues & fixes** | [`Fixes.md`](Fixes.md) |
 | **What still needs doing** | [`pending.md`](pending.md) |
 | **Contabo host operations** | [`contabo-ops.md`](contabo-ops.md) |
@@ -38,6 +38,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) | **Main engineering blueprint** — 6-phase plan, SOLID, DDD, hexagonal, multi-tenancy (649 lines) |
 | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) | **Frontend portal blueprint** — layers, SOLID, design-system workstreams, feature phases 0–7 (1399 lines) |
 | [`imp/frontend-implementation.md`](imp/frontend-implementation.md) | Frontend source product specification |
+| [`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`](imp/FRONTEND-UX-INTEGRATION-AUDIT.md) | Post-Phase-7 route, shell, and UI/UX integration audit/fix report |
 | [`docs/architecture/decisions/0001-multi-tenancy.md`](docs/architecture/decisions/0001-multi-tenancy.md) | ADR: shared-schema + Postgres RLS |
 | [`docs/architecture/decisions/0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md) | ADR: LLM provider abstraction via strategy pattern |
 | [`docs/architecture/decisions/0003-fastify-over-nestjs.md`](docs/architecture/decisions/0003-fastify-over-nestjs.md) | ADR: Fastify over NestJS for Phase 1 |
@@ -68,6 +69,8 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
 > **Frontend deployment:** release `20260812181200` (commit `45a1c96`) deployed to `DonerDesk.online` on 2026-08-12. See `contabo-ops.md` §14 change log.
+>
+> **Later local changes:** the fixes in `imp/FRONTEND-UX-INTEGRATION-AUDIT.md` are not included in that production release unless a newer deployment is separately recorded.
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |
@@ -82,7 +85,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 ### 🐛 Issues & Tracking
 | File | Purpose |
 |------|---------|
-| [`Fixes.md`](Fixes.md) | **Production fixes applied** — signup/login 500 errors, RLS, OLS Origin header, advisory lock (69 lines) |
+| [`Fixes.md`](Fixes.md) | Applied fix log — frontend integration plus production signup/login, RLS, OLS Origin, and advisory-lock fixes |
 | [`pending.md`](pending.md) | **Outstanding items** — production hardening, async/AI features, observability (136 lines) |
 | [`features.md`](features.md) | Theme + portal feature tracking (light/dark theme; portal implementation summary) |
 | [`Features/INDEX.md`](Features/INDEX.md) | 17 MVP feature specs index with statuses |

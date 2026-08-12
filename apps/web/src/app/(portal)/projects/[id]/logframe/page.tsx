@@ -93,7 +93,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
               {data.indicators.map((i) => (
                 <tr key={i.id} className="trow">
                   <td className="px-3 py-2 font-mono">{i.code}</td>
-                  <td className="px-3 py-2">{i.name}</td>
+                  <td className="px-3 py-2"><Link className="font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${resolvedParams.id}/indicators/${i.id}`}>{i.name}</Link></td>
                   <td className="px-3 py-2">{i.type?.toLowerCase().replace("_", " ") ?? "—"}</td>
                   <td className="px-3 py-2">{i.baseline || "—"}</td>
                   <td className="px-3 py-2">{i.target}{i.unit ? ` ${i.unit}` : ""}</td>

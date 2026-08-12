@@ -8,10 +8,13 @@ export type TabItem = { label: string; href: string };
 
 export function Tabs({ items, label }: { items: TabItem[]; label: string }) {
   const pathname = usePathname();
+  const activeHref = items
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
   return (
     <nav aria-label={label} className="flex flex-wrap gap-1 border-b border-slate-200 pb-2 text-sm dark:border-white/10">
       {items.map((tab) => {
-        const active = pathname === tab.href;
+        const active = activeHref === tab.href;
         return (
           <Link
             key={tab.href}

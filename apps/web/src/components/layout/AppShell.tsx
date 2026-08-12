@@ -27,6 +27,18 @@ export function AppShell({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const searchLinkRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    function focusSearch(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchLinkRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", focusSearch);
+    return () => document.removeEventListener("keydown", focusSearch);
+  }, []);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -71,11 +83,15 @@ export function AppShell({
             </Link>
           </div>
           <div className="flex items-center gap-2">
-            {canCreate && (
-              <Link href="/projects/new" className="btn hidden px-3 text-xs sm:inline-flex">
-                + New project
-              </Link>
-            )}
+            <Link
+              ref={searchLinkRef}
+              href="/projects?focus=search"
+              aria-label="Search workspace"
+              className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 bg-white/60 px-3 text-xs text-slate-500 hover:border-brand-400 hover:text-brand-700 sm:flex dark:border-white/15 dark:bg-white/5 dark:text-slate-300"
+            >
+              <span aria-hidden="true">⌕</span> Search <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] dark:border-white/15">⌘K</kbd>
+            </Link>
+            {canCreate && <CreateMenu />}
             <ThemeToggle />
             <NotificationBell items={bellItems} />
             <UserMenu name={user?.name ?? ""} email={user?.email ?? ""} />
@@ -115,5 +131,17 @@ export function AppShell({
         </div>
       )}
     </div>
+  );
+}
+
+function CreateMenu() {
+  return (
+    <details className="group relative hidden sm:block">
+      <summary className="btn cursor-pointer list-none px-3 text-xs">+ Create</summary>
+      <div className="absolute right-0 top-12 z-50 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-slate-900">
+        <Link href="/projects/new" className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100 dark:hover:bg-white/5">New project</Link>
+        <Link href="/projects" className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">Choose a project to add a report, activity, or evidence</Link>
+      </div>
+    </details>
   );
 }

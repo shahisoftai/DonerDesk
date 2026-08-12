@@ -74,6 +74,11 @@ matching DonerDesk.online.
 **Status:** Implemented across Phases 0–7 (blueprint: `memorybank/imp/frontend-imp-plan.md`)
 and deployed to `DonerDesk.online` as release `20260812181200` (commit `45a1c96`) on 2026-08-12.
 
+**Post-deployment repository update:** A 2026-08-12 UI/UX integration audit added
+missing route and shell composition. These later changes are verified locally but
+are not claimed as part of release `20260812181200`. See
+`memorybank/imp/FRONTEND-UX-INTEGRATION-AUDIT.md`.
+
 ## What was delivered
 
 A dependable, accessible, role-aware portal built on a server-only gateway,
@@ -91,6 +96,17 @@ honestly, never presented as production.
 | 5 | Reporting & compliance | three-panel workspace, autosave with optimistic-concurrency conflict safety, compliance resolution + readiness | `PHASE5-FRONTEND-REPORT.md` |
 | 6 | Review, approval, export | comments thread, submit/approve lifecycle, pre-approval summary, export preflight/wizard/history | `PHASE6-FRONTEND-REPORT.md` |
 | 7 | Admin & hardening | team, settings (AI control), audit explorer with redaction; global search blocked on backend | `PHASE7-FRONTEND-REPORT.md` |
+
+### Post-Phase-7 UI/UX integration
+
+- Added cross-project Reports, Evidence, and Compliance queues and primary-nav entries.
+- Repaired the dashboard evidence destination.
+- Added complete shared project context, project Team/Settings destinations,
+  indicator detail, and a dedicated reporting-period Export Center.
+- Fixed nested project-tab selection and replaced the project-only top-bar action
+  with a context-aware Create menu.
+- Added a `Ctrl/Cmd+K` shortcut to project portfolio search. Permission-filtered
+  global search remains blocked and is not claimed.
 
 ## Verification (per clean local run)
 
@@ -110,4 +126,7 @@ honestly, never presented as production.
 - AI handlers (tagger/polisher/draft/checklist) and the export builder are
   stub-backed; the UI labels them accordingly.
 - Phase 4 (ACT/EVD) routes exist but no dedicated Phase 4 frontend report was written.
-
+- Cross-project Reports/Compliance currently compose accessible per-project API
+  responses; authoritative paginated organization read models remain pending for scale.
+- Complete project editing and indicator update history remain blocked on safe,
+  audited backend contracts.

@@ -30,7 +30,9 @@ export default async function PortalLayout({ children }: { children: ReactNode }
     navItems.push({ href: "/onboarding", label: "Setup" });
   }
   navItems.push({ href: "/projects", label: "Projects" });
-  navItems.push({ href: "/notifications", label: "Notifications" });
+  navItems.push({ href: "/reports", label: "Reports" });
+  navItems.push({ href: "/evidence", label: "Evidence" });
+  navItems.push({ href: "/compliance", label: "Compliance" });
   if (hasCapability(ctx, "team.manage") || hasCapability(ctx, "team.invite")) {
     navItems.push({ href: "/team", label: "Team" });
   }

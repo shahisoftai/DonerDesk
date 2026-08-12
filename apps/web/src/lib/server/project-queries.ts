@@ -14,6 +14,8 @@ export type ProjectDetail = {
   sector: string;
   status: string;
   reportingFrequency: string;
+  startDate: string;
+  endDate: string;
   daysRemaining: number;
 };
 
