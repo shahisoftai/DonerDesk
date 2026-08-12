@@ -1,516 +1,488 @@
-# Contabo Operations — DOs and DONTs
+# Contabo Operations — Shared Host and DonorDesk
 
-**Last verified:** 2026-07-31 — NC-AWL-IMP-2 (G9) certification passed all 8 gates (2026-07-30). hermes-tools 116 tools confirmed callable via chat (138bda6f). Accounting Capability (NC-ACCT-IMP-1) Phase 1 deployed 2026-07-30. 9 new Postgres tables, NestJS `AccountingModule`, Python `accounting-sidecar` (port 8091, systemd-managed). Sibling doc: [sidecar-deploy-procedure.md](sidecar-deploy-procedure.md).
-**Audience:** Anyone working on the Contabo box (`vmi2954830.contaboserver.net`, `109.123.248.253`).
-**Sibling docs:** [system-state.md](system-state.md) · [operations.md](operations.md) · [backend.md](backend.md) · [frontend-admin.md](frontend-admin.md) · [frontend-tenant.md](frontend-tenant.md) · [ai-gateway/ai-gateway-reference.md](ai-gateway/ai-gateway-reference.md) · [pending-tasks.md §0g](pending-tasks.md) · [sidecar-deploy-procedure.md](sidecar-deploy-procedure.md)
+**Last read-only verification:** 2026-08-12 09:15–09:17 CEST
+**Last deployment:** 2026-08-12 11:50 CEST (release `20260812115010`)
 
----
+**Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
-## 1. Present status (one-screen summary)
+**Purpose:** Live-host facts and safety rules for deploying DonorDesk without
+disrupting NeureCore, GFC, CyberPanel, mail, or other colocated applications.
 
-**Box:** Ubuntu 22.04 (kernel 6.8.0-124), CyberPanel + OpenLiteSpeed 2.4.4, 96 GB disk (52 GB used, 45 GB free), 11 GB RAM (4.2 used / 7.5 available), 2 GB swap (1.2 used). Uptime 18+ days, load avg ~0.55 — idle.
+This file is the host inventory. The executable DonorDesk design and release
+procedure live in [`../docs/CONTABO-LEAN-DEPLOYMENT.md`](../docs/CONTABO-LEAN-DEPLOYMENT.md).
 
-**4 PM2 processes** (all online):
+## 1. Verification scope and evidence policy
 
-| Process | ID | Port | What |
-|---|---|---|---|
-| `neurecore-backend` | 6 | 3003 | NestJS API — Projects Phases 1–7 + EIE + **Accounting Capability (NC-ACCT-IMP-1) deployed 2026-07-30** |
-| `neurecore-tenant` | 7 | 3001 | Next.js, `hq.neurecore.com` |
-| `neurecore-admin` | 5 | 3020 | Next.js, `cc.neurecore.com` |
-| `neurecore-cors-proxy` | 13 | 3004 | dev CORS sidecar → 3003 |
+The 2026-08-12 audit connected through `ssh contabo` and used read-only commands:
+`hostname`, `free`, `df`, `ss`, `systemctl`, `pm2 status/describe`, `docker ps`,
+`docker stats`, `pg_lsclusters`, read-only PostgreSQL queries, Redis unauthenticated
+probes, OLS config inspection/testing, UFW status, certificate listing, timers,
+cron listing, and filesystem metadata.
 
-**3 systemd sidecars** (all online, started by `systemctl enable --now`):
+No environment files, PM2 environment dumps, database rows, Redis credentials, or
+application secrets were read. No remote files or services were changed.
 
-| Service | Port | What |
-|---|---|---|
-| `hermes-sidecar` | 8080 | Hermes execution runtime (NousResearch agent + ACP) |
-| `hermes-events-bridge` | 8082 | Signed event webhook receiver |
-| `accounting-sidecar` | **8091** | **NEW** — numpy-financial + Beancount + Pandas accounting compute |
+Treat values as a timestamped observation, not a permanent guarantee. Re-run the
+preflight in Section 12 before assigning ports or deploying.
 
-> ⚠️ **Port 8090 is permanently occupied by CyberPanel (`lscpd`). Never use 8090 for a sidecar.**
-> Use 8081, 8083, 8084, 8091, 8092, 8093 etc. for capability sidecars.
+## 2. Live host summary
 
-> ⚠️ **Frontend deploy pending:** `neurecore-tenant` and `neurecore-admin` have NOT been rebuilt with the Projects code. All new routes (`/projects`, `/projects/new`, `/customers`, `/portal`, `/project-types`, `/question-packs`, `/customers-pool`) will 404 until the frontends are rebuilt and restarted.
-
-**3 public hostnames** (TLS via Let's Encrypt, all healthy):
-
-| Hostname | Upstream | Status |
-|---|---|---|
-| `brain.neurecore.com` | 127.0.0.1:3003 | 200 on `/api/v1/health` — **Projects backend live** |
-| `hq.neurecore.com` | 127.0.0.1:3001 | 200 on `/` — **rebuilt 2026-07-16** |
-| `cc.neurecore.com` | 127.0.0.1:3002 | 200 on `/admin` — **Projects code (rebuilt 2026-07-21 with FIX-PERF-001)** |
-
-**Other tenants** on the box (NOT neurecore): `app-frontend` (GUV, port 3001/3100), `gfcportal`, `shahisoft-nextjs`, `lifeosa-backend`, `ecoearthshop-backend` (cluster), `cookie-refresher`, `gfcportal`. Don't break these.
-
-**Database:** Contabo Local PostgreSQL 16 (`127.0.0.1:5432`, db `neurecore_prod`, user `neurecore_app`).
-
-> ⚠️ **PORT NOTE:** The repo's `backend/.env.production` template points to `127.0.0.1:5433` (which is the **`audit-test` Postgres instance** — only 5 users, used for testing). The actual production backend uses port **5432** (host-installed `postgres 16/main`). The live `.env` on Contabo already has the correct URL — do **NOT** copy the repo template without fixing the port.
-**Cache:** Redis on `127.0.0.1:6379` (host-installed). **Note:** Upstash (`lasting-gobbler-72608.upstash.io`) returns `ENOTFOUND` — non-fatal, backend still healthy. As of FIX-PERF-001 (2026-07-21), the JWT blacklist check is fronted by a 30s LRU cache so the Upstash round-trip happens at most once per JTI per minute per worker.
-
-**Postgres tuning:** `/etc/postgresql/16/main/conf.d/99-neurecore-tuning.conf` (applied 2026-07-21). `shared_buffers=2GB`, `work_mem=64MB`, `effective_cache_size=7GB`, `random_page_cost=1.1`, autovacuum aggressive, `log_min_duration_statement=1500`. Restart with `pg_ctlcluster 16 main restart` to apply changes after edits.
-
-**Observability:** Prometheus `:9090`, Alertmanager `:9093`, Grafana `:3200` (all containers under `/opt/neurecore/observability/`).
-
-**Most recent DR snapshot:** `/opt/neurecore/_archives/20260721-100414-pre-perf-fixes/` (pre-FIX-PERF-001 perf-fixes deploy).
-
----
-
-## 2. Access
-
-| Method | How |
+| Item | Verified value |
 |---|---|
-| SSH key | `ssh contabo` (uses `~/.ssh/id_ed25519`) |
-| SSH password fallback | `sudo bash scripts/connect_contabo.sh` (reads `/root/contabo`) |
-| CyberPanel UI | `https://109.123.248.253:7080` |
-| Portainer | not installed |
-| Web Terminal | not installed |
-
-You are `root` on Contabo. There's no need for `sudo`. If you can't `ssh contabo` from your user, fix `~/.ssh/config` first.
-
----
-
-## 3. ✅ DOs
-
-### 3.1 DO update the canonical files when you change anything
-
-| If you change… | Update on Contabo | Update in repo |
-|---|---|---|
-| Add/remove/rename a service | `/opt/neurecore/ecosystem.config.js` | `scripts/contabo/ecosystem.config.js` |
-| Change build/reload logic | `/opt/neurecore/rebuild.sh` | `rebuild.sh` (repo root) |
-| Add a CORS origin | `/opt/neurecore/cors-proxy.js` | — (server-only config) |
-| Add an OLS vhost | `/usr/local/lsws/conf/vhosts/<name>/vhost.conf` | document in [operations.md §3](operations.md) |
-| Change backend env | `/opt/neurecore/backend/backend/.env` | update [backend.md §7](backend.md) |
-| Change frontend env | `/opt/neurecore/frontend-*/.env.production` | update [frontend-tenant.md §8](frontend-tenant.md) / [frontend-admin.md §7](frontend-admin.md) |
-
-### 3.2 DO use the canonical commands
-
-```bash
-# Rebuild backend
-ssh contabo 'cd /opt/neurecore/backend/backend
-  export $(grep -v "^#" .env | grep -E "DATABASE_URL|DIRECT_URL" | xargs)
-  ./node_modules/.bin/prisma generate && ./node_modules/.bin/prisma migrate deploy
-  ./node_modules/.bin/nest build'
-ssh contabo 'pm2 startOrReload /opt/neurecore/ecosystem.config.js --only neurecore-backend'
-
-# Rebuild tenant
-ssh contabo 'cd /opt/neurecore/frontend-tenant && npm ci --omit=dev=false && ./node_modules/.bin/next build'
-ssh contabo 'pm2 startOrReload /opt/neurecore/ecosystem.config.js --only neurecore-tenant'
-
-# Rebuild admin
-ssh contabo 'cd /opt/neurecore/frontend-admin && npm ci --omit=dev=false && ./node_modules/.bin/next build'
-ssh contabo 'pm2 startOrReload /opt/neurecore/ecosystem.config.js --only neurecore-admin'
-
-# Local → Contabo (preferred for full deploys)
-cd /home/najeeb/Linux-Dev/neurecore-2026/neurecore && ./scripts/deploy.sh all
-
-# Take DR snapshot
-ssh contabo 'bash /opt/neurecore/rebuild.sh all'   # only if you're rebuilding anyway
-# Or just snapshot the dist + .next:
-ssh contabo 'SNAP=/opt/neurecore/_archives/$(date +%Y%m%d-%H%M%S); mkdir -p $SNAP
-  cd /opt/neurecore/backend/backend   && tar -czf $SNAP/backend-dist.tar.gz          dist/
-  cd /opt/neurecore/frontend-tenant  && tar -czf $SNAP/frontend-tenant-.next.tar.gz  .next/
-  cd /opt/neurecore/frontend-admin   && tar -czf $SNAP/frontend-admin-.next.tar.gz   .next/
-  cp /opt/neurecore/cors-proxy.js        $SNAP/cors-proxy.js
-  cp /opt/neurecore/ecosystem.config.js  $SNAP/ecosystem.config.js
-  cp /opt/neurecore/rebuild.sh           $SNAP/rebuild.sh'
-```
-
-### 3.3 DO snapshot before every deploy
-
-```bash
-ssh contabo 'mkdir -p /opt/neurecore/_archives/$(date +%Y%m%d-%H%M%S) && \
-  cd /opt/neurecore/backend/backend && \
-  tar -czf /opt/neurecore/_archives/$(date +%Y%m%d-%H%M%S)/backend-dist.tar.gz dist/'
-```
-
-The full DR recipe is in [disaster-recovery.md §2](disaster-recovery.md).
-
-### 3.3b Projects frontend deploy checklist (2026-07-09 — PENDING)
-
-Both frontends need rebuilding with the Projects code. Backend is already live.
-
-```bash
-# 1. Snapshot frontends BEFORE rebuilding
-ssh contabo 'SNAP=/opt/neurecore/_archives/$(date +%Y%m%d-%H%M%S)-pre-projects-fe
-mkdir -p $SNAP
-cd /opt/neurecore/frontend-tenant && tar -czf $SNAP/frontend-tenant-.next.tar.gz .next/
-cd /opt/neurecore/frontend-admin && tar -czf $SNAP/frontend-admin-.next.tar.gz .next/
-cp /opt/neurecore/ecosystem.config.js $SNAP/ecosystem.config.js'
-
-# 2. Deploy frontend-tenant (NEURECORE PROJECT WORKSPACE at /home/najeeb/Linux-Dev/neurecore-2026/neurecore/)
-cd /home/najeeb/Linux-Dev/neurecore-2026/neurecore
-./scripts/deploy.sh tenant   # rsync → pnpm install → next build → pm2 restart
-
-# 3. Deploy frontend-admin
-./scripts/deploy.sh admin    # rsync → pnpm install → next build → pm2 restart
-
-# 4. Verify health
-curl https://hq.neurecore.com/api/v1/health   # should still be 200 via OLS proxy
-curl https://brain.neurecore.com/api/v1/health  # backend health
-
-# 5. Browser smoke tests (new routes)
-# https://hq.neurecore.com/projects         → 7-column kanban (was 404)
-# https://hq.neurecore.com/projects/new     → creation wizard (was 404)
-# https://hq.neurecore.com/customers        → customer list (was 404)
-# https://hq.neurecore.com/portal/[id]     → client portal (was 404)
-# https://cc.neurecore.com/project-types    → admin pool (was 404)
-# https://cc.neurecore.com/question-packs   → question pack admin (was 404)
-# https://cc.neurecore.com/customers-pool   → cross-tenant (was 404)
-```
-
-### 3.4 DO check OLS config syntax before restart
-
-```bash
-ssh contabo '/usr/local/lsws/bin/litespeed -t'
-ssh contabo 'systemctl restart lsws'   # only if test passes
-```
-
-### 3.5 DO filter `git status` on backend (kept as defensive practice)
-
-```bash
-ssh contabo 'cd /opt/neurecore/backend/backend && git status --short -- src/ prisma/'
-# (Historical: bare `git status --short` once showed 1000+ paperclip noise.
-#  Now mitigated by `Temp/` in `.gitignore` — verified 0 paperclip entries
-#  on 2026-07-04 — but the filter habit is harmless.)
-```
-
-### 3.6 DO test CORS after editing cors-proxy.js
-
-```bash
-ssh contabo 'pm2 restart neurecore-cors-proxy'
-curl -s -i -X OPTIONS http://127.0.0.1:3004/api/v1/health \
-  -H "Origin: https://hq.neurecore.com" \
-  -H "Access-Control-Request-Method: GET" \
-  -H "Access-Control-Request-Headers: authorization" \
-  | grep -iE "^HTTP|access-control-allow"
-# expect: HTTP/1.1 204 No Content + Allow-Origin header
-```
-
-### 3.7 DO save PM2 dump after reload
-
-```bash
-ssh contabo 'pm2 startOrReload /opt/neurecore/ecosystem.config.js && pm2 save'
-# `pm2 save` ensures reboot-survival
-```
-
-### 3.8 DO use the correct Prisma binary directly
-
-```bash
-ssh contabo 'cd /opt/neurecore/backend/backend
-  ./node_modules/.bin/prisma generate
-  ./node_modules/.bin/prisma migrate deploy
-  ./node_modules/.bin/nest build'
-```
-
-### 3.8b DO set env flags in BOTH `.env` and `.env.production` (2026-07-28)
-
-NestJS `ConfigurationModule` loads `envFilePath: ['.env.production', '.env']` when `NODE_ENV=production`. **`.env.production` wins.** Always set runtime flags in BOTH files or your change silently has no effect.
-
-Confirmed root cause of "AI_GATEWAY_V2=true has no effect" on 2026-07-28: backend was reading `.env.production` which had `AI_GATEWAY_V2=false`. The `.env` edit alone wasn't enough.
-
-```bash
-ssh contabo '
-  cd /opt/neurecore/backend/backend
-  grep "^AI_GATEWAY_V2" .env .env.production
-  sed -i "s/^AI_GATEWAY_V2=false/AI_GATEWAY_V2=true/" .env .env.production
-'
-```
-
-### 3.8c DO remember that `model_providers` table is owned by `postgres` (2026-07-28)
-
-`./node_modules/.bin/prisma migrate deploy` runs as `neurecore_app` and will FAIL with `must be owner of table model_providers` on the AI gateway catalog tables. This applies to any table the original Phase 7 migration created with `postgres` as the owner.
-
-**Workaround for new migrations on these tables:**
-
-```bash
-# 1. Apply the migration as postgres (read password from .env)
-ssh contabo '
-  cd /opt/neurecore/backend/backend
-  PGPASSWORD=$(grep ^POSTGRES_SUPERUSER_PASSWORD .env | cut -d= -f2-)
-  psql -h 127.0.0.1 -U postgres -d neurecore_prod \
-    -v ON_ERROR_STOP=1 \
-    -f prisma/migrations/<migration_id>/migration.sql
-'
-
-# 2. Mark as applied in _prisma_migrations (also as postgres)
-ssh contabo '
-  cd /opt/neurecore/backend/backend
-  PGPASSWORD=$(grep ^POSTGRES_SUPERUSER_PASSWORD .env | cut -d= -f2-)
-  psql -h 127.0.0.1 -U postgres -d neurecore_prod <<SQL
-  UPDATE _prisma_migrations SET finished_at = now(), applied_steps_count = 1
-  WHERE migration_name = '"'"'<migration_id>'"'"';
-SQL
-'
-
-# 3. Regenerate Prisma client
-./node_modules/.bin/prisma generate
-```
-
-**Permanent fix (not done):** `GRANT ALL ON ALL TABLES IN SCHEMA public TO neurecore_app;` as postgres. Apply next time you have shell access.
-
-Tables confirmed owned by `postgres` (not `neurecore_app`) as of 2026-07-28: `chat_sessions`, `HermesMessage`, `tenant_model_overrides`, and ALL `model_*` AI gateway catalog tables. New migrations touching these tables will hit the same permission error.
-
-### 3.9 DO use relative `cd` inside ssh heredocs
-
-```bash
-ssh contabo 'cd /opt/neurecore/backend/backend && ./node_modules/.bin/nest build'
-# not: ssh contabo 'cd ... && ...'  (no, this is fine; the issue is `cd X && cd Y` chains)
-```
-
-### 3.10 DO record production fixes in fixes.md
-
-After any production issue (outage, data corruption, security incident, deploy rollback), add an entry to [fixes.md](fixes.md) the same day. Format defined there.
-
----
-
-## 4. ❌ DON'Ts
-
-### 4.1 DON'T create ad-hoc PM2 processes
-
-```bash
-# ❌ NEVER
-ssh contabo 'pm2 start npx --name neurecore-foo -- next start -p 3100'
-# ✅ DO THIS
-ssh contabo 'pm2 startOrReload /opt/neurecore/ecosystem.config.js'
-# (after adding the entry to ecosystem.config.js)
-```
-
-### 4.2 DON'T use `npx next start` in PM2 entries
-
-```bash
-# ❌ in ecosystem.config.js:
-script: 'npx'
-args: 'next start --hostname 127.0.0.1 --port 3020'
-
-# ✅ ALWAYS:
-script: './start.sh'
-interpreter: 'bash'
-# where start.sh is:
-#!/bin/bash
-cd /opt/neurecore/frontend-admin
-exec node node_modules/.bin/next start --hostname 127.0.0.1 --port 3020
-```
-
-Why: PM2's `interpreter: 'none'` for npx resolves `next` against the wrong PATH. The wrapper works.
-
-### 4.3 Use `pnpm@9.15.9` on Contabo
-
-**Updated 2026-07-23** (local workstation also fixed — corepack enabled, pnpm@9.15.9 activated via `corepack prepare pnpm@9.15.9 --activate`; PATH exported in `~/.bashrc`. Lockfile drift caveat added.)
-
-```bash
-# ✅ pnpm now works
-ssh contabo 'cd /opt/neurecore/backend/backend && pnpm install --no-frozen-lockfile && pnpm build'
-
-# ✅ equivalent npm flow (still safe)
-ssh contabo 'cd /opt/neurecore/backend/backend && npm ci --omit=dev=false && ./node_modules/.bin/nest build'
-```
-
-Installed globally via `npm install -g --force pnpm@9` (Node 20.20.2-compatible). Corepack-pnpm required Node 22.13+ which is not available on Contabo.
-
-**Lockfile drift caveat (2026-07-23):** `backend/package.json` includes `compression` + `lru-cache` (added 2026-07-21 per [FIX-PERF-001](fixes.md#fix-perf-001--contabo-latency-login-1-2s-lists-multi-second-chat-3-6s-2026-07-21)) but the lockfile doesn't capture them. The deploy script `scripts/deploy.sh` enforces `--frozen-lockfile` and will fail until the lockfile is regenerated. Manual workaround until `scripts/deploy.sh` is updated:
-
-```bash
-ssh contabo 'cd /opt/neurecore/backend/backend && pnpm install --no-frozen-lockfile 2>&1 | tail -3 && bash /opt/neurecore/rebuild.sh backend'
-```
-
-Same applies to `frontend-admin` lockfile. Tracked in [pending-tasks.md §B.2](pending-tasks.md#1-industry-release-hot-path-follow-ups-2026-07-23--kilo).
-
-### 4.4 DON'T `git reset --hard` on Contabo backend
-
-```bash
-# ❌
-ssh contabo 'cd /opt/neurecore/backend/backend && git reset --hard HEAD'
-
-# ✅
-ssh contabo 'cd /opt/neurecore/backend/backend && git stash push -u -m "SNAPSHOT-$(date +%Y%m%d)" -- src/ prisma/'
-```
-
-Why: preserves any uncommitted local edits. (Historical: also used to avoid wiping ~1682 paperclip noise entries — that issue is now resolved since `Temp/` is gitignored; verified 2026-07-04.)
-
-### 4.5 DON'T use raw `git stash`
-
-```bash
-# ❌
-ssh contabo 'cd /opt/neurecore/backend/backend && git stash'
-# (historical: used to pick up paperclip noise; now a non-issue, but the
-#  scoped form below is still best practice)
-
-# ✅
-ssh contabo 'cd /opt/neurecore/backend/backend && git stash push -u -m "..." -- src/ prisma/'
-```
-
-### 4.6 DON'T rsync `.env` to Contabo
-
-```bash
-# ❌ scripts/deploy.sh must NEVER include:
-rsync ... .env ...     # leaks dev DB URL, dev API keys
-
-# ✅ (already correct in deploy.sh)
-EXCLUDES="--exclude=.env --exclude=.env.local --exclude=.env.production"
-```
-
-### 4.7 DON'T add CORS to NestJS
-
-```bash
-# ❌ in backend/src/main.ts:
-app.enableCors({ origin: '*' })
-
-# ✅ CORS is handled by:
-#   1. OLS vhost (production)
-#   2. /opt/neurecore/cors-proxy.js (dev)
-```
-
-Why: NestJS CORS blocks dev browser preflights from non-allowlisted origins; the sidecar approach is more flexible.
-
-### 4.8 DON'T deploy without rebuilding
-
-```bash
-# ❌
-ssh contabo 'pm2 restart neurecore-backend'   # still running OLD compiled dist/
-
-# ✅
-ssh contabo 'cd /opt/neurecore/backend/backend && ./node_modules/.bin/nest build && pm2 restart neurecore-backend'
-```
-
-The PM2 restart only changes the running process; it does NOT recompile TypeScript.
-
-### 4.9 DON'T edit vhost.conf without `litespeed -t`
-
-```bash
-# ❌
-ssh contabo 'nano /usr/local/lsws/conf/vhosts/hq.neurecore.com/vhost.conf'
-ssh contabo 'systemctl restart lsws'   # if config is broken, OLS dies
-
-# ✅
-ssh contabo 'nano /usr/local/lsws/conf/vhosts/hq.neurecore.com/vhost.conf'
-ssh contabo '/usr/local/lsws/bin/litespeed -t'      # syntax check
-ssh contabo 'systemctl restart lsws'                # only after test passes
-```
-
-### 4.10 DON'T assume ports
-
-| Port | What | Don't assume |
-|---|---|---|
-| 3000 | `nghttpx` (LiteSpeed proxy) | this is the backend (it's not) |
-| 3001 | GUV `app-frontend` | this is tenant (it's not) |
-| 3002 | nothing | admin is here (it's not; admin is on 3020) |
-| 3003 | `neurecore-backend` | direct backend port |
-| 3004 | CORS proxy | direct backend port (it's a sidecar) |
-| 3005 | `neurecore-tenant` | direct tenant port |
-| 3010 | PM2 internal | a service |
-| 3011 | FREE (EAOS retired) | EAOS is here (it's not) |
-| 3020 | `neurecore-admin` | direct admin port |
-| 3021 | FREE (FTS retired) | FTS is here (it's not) |
-| 3100 | GUV Next.js | a service |
-| 7080 | CyberPanel | admin app |
-| 9090/9093/9094 | Prometheus/Alertmanager | backend ports |
-| 3200 | Grafana | backend port |
-
-### 4.11 DON'T commit `.env`, `node_modules`, `.next`, `dist`, `tsconfig.tsbuildinfo`
-
-These are in `.gitignore` but if you ever `git add -f`, you're on your own.
-
-### 4.12 DON'T break the other apps on the box
-
-`gfcportal`, `shahisoft-nextjs`, `lifeosa-backend`, `ecoearthshop-backend`, `cookie-refresher`, GUV's `app-frontend` are unrelated projects also using PM2. Don't:
-- Restart them by mistake
-- Touch their ports (3001, 3100, 3500)
-- Add them to `ecosystem.config.js`
-- Kill their processes to free RAM
-
-### 4.13 DON'T skip `pm2 save` after a reload
-
-Without `pm2 save`, the new process layout is not written to `/root/.pm2/dump.pm2`, so a reboot won't restore the right processes.
-
-### 4.14 DON'T bring back Vercel, FTS, or EAOS without product approval
-
-These were retired on purpose. Reversing the decision requires an explicit go-ahead recorded in [future-plans.md](future-plans.md) and a new architecture doc.
-
----
-
-## 4.11 Capability sidecars (systemd, NOT PM2)
-
-Capability sidecars are Python services that perform tenant-scoped compute
-behind an HMAC-authenticated HTTP boundary. They are NOT managed by PM2.
-
-**Currently running (verified 2026-07-30):**
-
-| Service | Port | Source | Unit file |
+| OS | Ubuntu 24.04, kernel `6.8.0-124-generic` |
+| CPU | 6 vCPUs |
+| RAM | 11 GiB total, 5.0 GiB used, 6.7 GiB available |
+| Swap | 2.0 GiB total, 585 MiB used |
+| Root disk | 96 GiB ext4, 66 GiB used, 31 GiB free (69%) |
+| Uptime/load | 57 days; load approximately 0.55/0.56/0.47 |
+| Node | `v20.20.2` |
+| Global pnpm | `9.15.9` |
+| Python | `3.12.3`; `python3.11` is not installed |
+| Docker | `29.5.2` |
+| Docker Compose | `v5.1.4` |
+| PM2 | `6.0.14`, root-owned daemon |
+| OpenLiteSpeed | OpenLiteSpeed `1.8.4` |
+| PostgreSQL | `16.14`, native cluster `16/main` |
+| DonorDesk installed | Yes — `/opt/donordesk` with systemd services `donordesk-api` and `donordesk-web` |
+
+Corrections to the superseded inventory:
+
+- the OS is 24.04, not 22.04;
+- OpenLiteSpeed reports 1.8.4, not 2.4.4;
+- seven PM2 processes are online, not four;
+- Python 3.11 cannot be used without installing it;
+- disk availability is 31 GiB, not 45 GiB;
+- the active tenant/frontend ports differ from several old notes.
+
+## 3. Existing workloads — do not disrupt
+
+### 3.1 PM2
+
+All observed PM2 processes run as `root` in the existing root PM2 daemon:
+
+| Process | Mode | Observed memory | Listener/path |
+|---|---|---:|---|
+| `cookie-refresher` | fork | 109 MiB | `/opt/gfc-platform/cookie-refresher` |
+| `gfcportal` | fork | 105 MiB | public `*:3011`; standalone Next.js |
+| `neurecore-admin` | fork | 157 MiB | `127.0.0.1:3020` |
+| `neurecore-backend` | fork | 269 MiB | public `*:3003`; 4,822 restarts observed |
+| `neurecore-cors-proxy` | fork | 45 MiB | public `*:3004` |
+| `neurecore-tenant` | fork | 163 MiB | `127.0.0.1:3001` |
+| `shahisoft-nextjs` | cluster | 140 MiB | PM2 internal `127.0.0.1:3010` |
+
+The high NeureCore backend restart count must be investigated before relying on
+aggregate host headroom. DonorDesk commands must always use `--only` and must
+never run `pm2 restart all`, `pm2 reload all`, or replace the existing PM2 dump.
+
+### 3.2 Native/systemd services
+
+Verified active services include:
+
+- `postgresql@16-main.service`
+- `redis-server.service`
+- `lshttpd.service` and `lsws-watchdog.service`
+- `nghttpx.service`
+- `docker.service`
+- `fail2ban.service`
+- `hermes-sidecar.service`
+- `hermes-events-bridge.service`
+- `accounting-sidecar.service`
+
+Existing capability sidecars:
+
+| Service | User | Bind | Working directory |
 |---|---|---|---|
-| `hermes-sidecar` | 8080 | `/opt/neurecore/infra/hermes-sidecar` | `/etc/systemd/system/hermes-sidecar.service` |
-| `hermes-events-bridge` | 8082 | `/opt/neurecore/infra/hermes-events-bridge` | `/etc/systemd/system/hermes-events-bridge.service` |
-| `accounting-sidecar` | 8091 | `/opt/neurecore/infra/accounting-sidecar` | `/etc/systemd/system/accounting-sidecar.service` |
+| `hermes-sidecar` | `hermes-sidecar` | `127.0.0.1:8080` | `/opt/neurecore/infra/hermes-sidecar` |
+| `hermes-events-bridge` | `hermes-sidecar` | `127.0.0.1:8082` | `/opt/neurecore/infra/hermes-events-bridge` |
+| `accounting-sidecar` | `hermes-sidecar` | `127.0.0.1:8091` | `/opt/neurecore/infra/accounting-sidecar` |
 
-**Pattern:** All run as user `hermes-sidecar` (uid 997). All bind to
-`127.0.0.1` only (no public exposure). All share the Python venv at
-`/opt/neurecore/infra/venv/`.
+Port 8090 is CyberPanel/lscpd and is publicly bound. Never use it. Port 8081 is a
+loopback Docker mapping for `gfc-backend`. DonorDesk may reserve 8092 only after
+rechecking it immediately before deployment.
 
-**See [sidecar-deploy-procedure.md](sidecar-deploy-procedure.md) for the
-full procedure** to add a new sidecar (synced from the accounting-sidecar
-deploy on 2026-07-30).
+### 3.3 Docker
 
-**Quick health check:**
-```bash
-ssh contabo 'systemctl is-active hermes-sidecar hermes-events-bridge accounting-sidecar; ss -tlnp | grep -E "(8080|8082|8091)"'
+Six containers were running:
+
+| Container | Image | Approx. memory | Exposure |
+|---|---|---:|---|
+| `neurecore-grafana` | `grafana/grafana:11.3.0` | 49 MiB | process listens `*:3200`; blocked by default UFW |
+| `neurecore-alertmanager` | `prom/alertmanager:v0.27.0` | 15 MiB | `*:9093`, `*:9094`; blocked by default UFW |
+| `neurecore-prometheus` | `prom/prometheus:v2.55.1` | 41 MiB | `*:9090`; blocked by default UFW |
+| `gfc-backend` | local image | 77 MiB | `127.0.0.1:8081 -> 8080` |
+| `gfc-postgres` | `postgres:16-alpine` | 61 MiB | internal Docker port only |
+| `gfc-redis` | `redis:7-alpine` | 5 MiB | `127.0.0.1:6380 -> 6379` |
+
+Docker consumes approximately 3.8 GiB of images, 310 MiB of volumes, and 1.2 GiB
+of currently reclaimable build cache. Do not prune globally without checking all
+projects. Existing observability volumes are persistent. There is no Tempo or Loki.
+
+The NeureCore observability definition is under `/opt/neurecore/observability/`.
+DonorDesk may add a Prometheus target and Grafana dashboard only after backing up
+and validating those shared configs. Do not replace the Compose project.
+
+## 4. Verified listener and port map
+
+The full `ss -lntup` output must be rechecked before deployment. Important ports:
+
+| Port | Verified owner/bind | DonorDesk decision |
+|---:|---|---|
+| 22 | SSH, public IPv4/IPv6 | Existing public service |
+| 25/465/587 | Postfix, public | Existing mail; do not change |
+| 80/443 | OpenLiteSpeed, public | Shared public ingress |
+| 631 | CUPS, public listener | Existing security review item |
+| 3000 | nghttpx, `127.0.0.1` | Occupied |
+| 3001 | NeureCore tenant, `127.0.0.1` | Occupied |
+| 3002 | DonorDesk web, `127.0.0.1` | **DEPLOYED** — DonorDesk Next.js standalone |
+| 3003 | NeureCore backend, public bind | Occupied; existing risk |
+| 3004 | NeureCore CORS proxy, public bind | Occupied; existing risk |
+| 3010 | PM2/internal, `127.0.0.1` | Occupied |
+| 3011 | GFC portal, public bind | Occupied |
+| 3020 | NeureCore admin, `127.0.0.1` | Occupied |
+| 3200 | Grafana, public bind | Occupied; UFW blocks by default |
+| 3306 | MariaDB, `127.0.0.1` | Occupied |
+| 4001 | DonorDesk API, `0.0.0.0` | **DEPLOYED** — Fastify server (note: binds all interfaces) |
+| 5432 | PostgreSQL, `0.0.0.0` and `[::]` | Occupied; use existing cluster |
+| 5555–5557 | Node processes, public bind | Occupied/unidentified; do not use |
+| 6379 | host Redis, loopback | Occupied; authentication required |
+| 6380 | GFC Redis mapping, loopback | Occupied |
+| 7080 | CyberPanel/OpenLiteSpeed, public TCP/UDP | Occupied |
+| 8080 | Hermes, loopback | Occupied |
+| 8081 | GFC backend, loopback | Occupied |
+| 8082 | Hermes events bridge, loopback | Occupied |
+| 8090 | lscpd/CyberPanel, public | Permanently occupied |
+| 8091 | accounting sidecar, loopback | Occupied |
+| 8092 | no listener observed | Candidate DonorDesk worker |
+| 9090 | Prometheus, public bind | Occupied; UFW blocks by default |
+| 9093/9094 | Alertmanager, public bind | Occupied; UFW blocks by default |
+| 9200/9300 | Elasticsearch, loopback | Occupied |
+
+“Public bind” and “internet reachable” are different. UFW currently denies
+unlisted inbound traffic, but a service bound to `0.0.0.0` remains exposed to
+allowed networks and becomes public if a firewall rule changes. DonorDesk must
+bind 3002, 4001, and 8092 explicitly to `127.0.0.1`.
+
+## 5. PostgreSQL facts and DonorDesk rules
+
+### 5.1 Live configuration
+
+The native cluster is PostgreSQL 16.14 at `/var/lib/postgresql/16/main`:
+
+```text
+listen_addresses=*
+port=5432
+max_connections=200
+shared_buffers=2 GiB
+work_mem=64 MiB
+effective_cache_size=7 GiB
+archive_mode=on
+wal_level=replica
+log_min_duration_statement=1500 ms
+ssl=on
 ```
 
-**Common failure mode: sidecar crashes after NestJS deploy.**
-If you `rsync` source for a sidecar that has an import error, the sidecar
-will hit `StartLimitBurst=5` and refuse to restart for 60 seconds. Fix:
-fix the code, `rsync`, then:
-```bash
-ssh contabo 'systemctl reset-failed <name>-sidecar && systemctl restart <name>-sidecar'
+Existing databases and observed sizes:
+
+| Database | Size |
+|---|---:|
+| `neurecore_prod` | 54 MiB |
+| `ecoearthshop` | 9 MiB |
+| `lifeosa` | 9 MiB |
+| `neurecore` | 8 MiB |
+| `postgres` | 8 MiB |
+| `donordesk` | ~0 MiB (freshly migrated) |
+
+### 5.2 Security findings
+
+- PostgreSQL listens on all IPv4 and IPv6 addresses.
+- UFW permits 5432 from loopback, one fixed public IP, and Vercel ranges.
+- `pg_hba.conf` has `host all all 127.0.0.1/32 trust`, meaning any local Unix
+  account can connect over IPv4 loopback as any PostgreSQL role without a password.
+- WAL archive mode copies WAL files to a directory on the same physical host.
+  This aids point-in-time recovery from logical mistakes but is not off-host DR.
+
+Do not broaden existing PostgreSQL access for DonorDesk. Prefer changing the
+general loopback `trust` rule to `scram-sha-256` in a separately reviewed host
+hardening window, because it can affect all current applications.
+
+### 5.3 DonorDesk database isolation
+
+Create separate roles:
+
+- `donordesk_migrator`: owns the DonorDesk database/schema and runs migrations;
+- `donordesk_app`: restricted runtime role, no `BYPASSRLS`;
+- optionally `donordesk_backup`: least-privilege backup role.
+
+Never use `postgres`, `neurecore_app`, or another project role at runtime. Create
+the DonorDesk database only after versioned Prisma migrations exist. Apply the
+checked-in RLS SQL as the migrator and verify isolation while connected as
+`donordesk_app`.
+
+## 6. Redis facts and DonorDesk rules
+
+Host Redis is bound to `127.0.0.1:6379` and `[::1]:6379`. It requires
+authentication; unauthenticated `PING`, `INFO`, and `CONFIG GET` correctly returned
+`NOAUTH`. This supersedes the old assumption that selecting database 1 was enough.
+
+Do not inspect or reuse NeureCore credentials. If DonorDesk later wires BullMQ:
+
+1. create a dedicated Redis ACL user with a strong password and `dd:` key pattern;
+2. grant only the command categories BullMQ needs;
+3. keep loopback binding;
+4. use a DonorDesk-specific prefix in addition to any logical database;
+5. test queue behavior and memory policy using authenticated commands;
+6. add the ACL/config to encrypted host configuration backup.
+
+Until BullMQ is selected by the application container, DonorDesk does not need
+Redis and should not receive Redis credentials.
+
+## 7. OpenLiteSpeed, domains, and TLS
+
+OpenLiteSpeed 1.8.4 and nghttpx are active. Twenty-one vhost files were observed.
+Existing NeureCore routing proves the usable pattern:
+
+- `brain.neurecore.com` -> `127.0.0.1:3003`;
+- `hq.neurecore.com`: `/api` -> 3003, `/socket.io` -> 3004, `/` -> 3001;
+- `cc.neurecore.com`: `/api` and `/socket.io` -> 3003, `/` -> 3020.
+
+`litespeed -t` did not return a clean result: it reported existing invalid PHP
+handler paths for unrelated `mail.globalfood.club` and `guvhq.shahisoft.store`
+vhosts. Do not claim the global configuration validates cleanly, and do not repair
+unrelated vhosts as part of DonorDesk deployment. Capture the baseline errors,
+add the DonorDesk vhost, rerun the test, and require no **new** errors.
+
+**DonorDesk deployment (2026-08-12):**
+- **Hostname:** `DonerDesk.online` (DNS: `109.123.248.253`)
+- **Vhost:** `/usr/local/lsws/conf/vhosts/donerdesk.online/vhost.conf`
+  - Routes: `/` → `127.0.0.1:3002`, `/api` → `127.0.0.1:4001`
+  - ExtProcessors: `donordesk_web` (3002), `donordesk_api` (4001)
+- **Certificate:** `/etc/letsencrypt/live/donerdesk.online/`
+  - Issued: 2026-08-12, Expires: 2026-11-10
+  - Key: `privkey.pem`, Cert: `fullchain.pem`
+- **OLC vhost SSL config:** keyFile and certFile point to above paths
+
+Several unrelated certificates are expired or near expiry. DonorDesk certificate
+renewal should be monitored via certbot cron.
+
+## 8. Firewall and SSH facts
+
+UFW is active with logging, default deny incoming, allow outgoing, deny routed.
+Fail2ban is active with six jails. Publicly allowed services include SSH, HTTP,
+HTTPS, mail protocols, 8090, 3001, and 8005. PostgreSQL and Redis also have
+project-specific source rules.
+
+Observed SSH daemon policy:
+
+```text
+PermitRootLogin yes
+PasswordAuthentication yes
+PubkeyAuthentication yes
+MaxAuthTries 6
 ```
 
----
+These are shared-host security risks, but changing them is outside a DonorDesk
+application deploy and could lock out administrators. Schedule a separate,
+tested hardening change with an open recovery session.
 
-## 5. Emergency contacts
+DonorDesk requires no new public firewall ports: only the existing 80/443 ingress
+is needed. Do not add UFW rules for 3002, 4001, or 8092.
 
-| Issue | Contact |
+## 9. Backup and recovery facts
+
+Observed backup signals:
+
+- PostgreSQL WAL archive mode is enabled, but the archive is local to the host.
+- CyberPanel incremental scheduler entries exist in root cron.
+- GFC has a nightly database backup script.
+- no NeureCore- or DonorDesk-specific PostgreSQL off-host backup timer/cron was
+  identified by the audit;
+- no DonorDesk data exists yet;
+- `/opt/neurecore` occupies approximately 7.1 GiB;
+- a prior NeureCore archive path documented elsewhere was not listed by the
+  targeted directory probe and must not be assumed recoverable without testing.
+
+Before DonorDesk production data is accepted, implement encrypted off-host backup
+for both the DonorDesk PostgreSQL database and `/opt/donordesk/shared/storage`.
+Record destination, retention, last success, checksum, and restore-test evidence.
+Local WAL/archive/release copies are not disaster recovery.
+
+**Current DonorDesk backup status:** No automated off-host backup configured yet.
+Implement before accepting production data.
+
+## 10. DonorDesk allocation
+
+**Status: DEPLOYED** (2026-08-12, release `20260812130000`)
+
+| Resource | Allocation |
 |---|---|
-| Server unreachable (physical/network) | Contabo support ticket |
-| TLS cert won't renew | Check `/var/log/letsencrypt/`; manual: `certbot renew --force-renewal` |
-| Backend code broken | Rollback via [disaster-recovery.md §3.1](disaster-recovery.md#31-restore-backend) |
-| Database corruption | Check PostgreSQL status; check [disaster-recovery.md §7](disaster-recovery.md#7-database-recovery) |
-| Disk full | [disaster-recovery.md §5](disaster-recovery.md#5-disk-full-recovery) |
+| Web | `127.0.0.1:3002` (DonorDesk Next.js standalone) |
+| API | `0.0.0.0:4001` (Fastify) — **NOTE: should bind loopback only** |
+| Worker | Not deployed yet |
+| Files | `/opt/donordesk/shared/storage` |
+| Releases | `/opt/donordesk/releases/20260812130000.staging` → `current` symlink |
+| Runtime user | `donordesk` system user (created) |
+| Database | `donordesk` (PostgreSQL 16.14) |
+| DB roles | `donordesk_migrator` (schema owner), `donordesk_app` (runtime) |
+| systemd services | `donordesk-api.service`, `donordesk-web.service` |
+| Secrets | `/opt/donordesk/shared/api.env` (mode 0600) |
 
----
+**Deployment notes:**
+- Artifact built with `pnpm deploy --legacy` off-host; uploaded as tarball
+- Prisma 5.22.0 globally installed on Contabo for `migrate deploy`
+- Prisma client generated inside deployment at `/opt/donordesk/current/api/node_modules/@prisma/client`
+- Migration `20260812000000_init` applied successfully
 
-## 6. Periodic maintenance checklist
+Because global pnpm is 9.15.9 while DonorDesk pins 10.34.5, do not change the
+global pnpm version: NeureCore depends on it. Build a self-contained artifact with
+pnpm 10.34.5 off-host, including production dependencies and Prisma engine/client.
+Production should not perform a workspace install.
 
-Weekly:
+**Outstanding issue:** API binds to `0.0.0.0:4001` in addition to `127.0.0.1:4001`.
+Per Section 4, it should bind loopback only. Fix before production hardening.
+
+## 11. DOs and DON'Ts
+
+### DO
+
+- Re-run Section 12 before every release.
+- Snapshot the exact OLS vhost/config files before editing them.
+- Run OLS validation and compare against recorded baseline errors.
+- Use process-specific PM2 operations or dedicated systemd units.
+- Bind DonorDesk services to `127.0.0.1` in application code/config.
+- Keep secrets under `/opt/donordesk/shared` with mode 0600.
+- Use immutable release directories and an atomic `current` symlink.
+- Use direct, artifact-bundled Prisma tooling for production migrations.
+- Test RLS as the restricted runtime role after every migration.
+- Back up PostgreSQL and uploaded files off-host before accepting production data.
+- Save the correct process supervisor state after a successful deploy.
+- Record every host change and the evidence used to verify it.
+
+### DON'T
+
+- Do not run `pm2 restart all`, `pm2 reload all`, or `pm2 delete all`.
+- Do not upgrade global Node, pnpm, Python, PostgreSQL, Docker, or OLS during the
+  DonorDesk deploy.
+- Do not use ports based on this file without checking `ss` again.
+- Do not expose application, database, Redis, worker, metrics, or orchestration
+  ports publicly.
+- Do not copy development `.env` files to Contabo.
+- Do not use `prisma db push --accept-data-loss` in production.
+- Do not use another project's database, Redis user, storage, PM2 config, vhost,
+  Compose project, Docker volume, or Unix account.
+- Do not globally prune Docker, logs, archives, or packages to make room.
+- Do not assume a running container proves an application feature is integrated.
+- Do not edit unrelated OLS errors, certificates, firewall rules, or shared
+  services in the same change window.
+
+## 12. Canonical read-only preflight
+
+Run immediately before assigning resources or deploying:
+
 ```bash
-# Disk usage
-ssh contabo 'df -h / | tail -1; du -sh /opt/neurecore/_archives/ /var/log/ /root/.pm2/logs/'
-
-# Log growth
-ssh contabo 'find /root/.pm2/logs -name "*.log" -mtime +7 -ls'
-
-# Cert expiry
-ssh contabo 'certbot certificates | grep -E "Domains|Expiry"'
+ssh contabo '
+  set -eu
+  date --iso-8601=seconds
+  . /etc/os-release; echo "$PRETTY_NAME"
+  uname -r
+  node --version
+  pnpm --version
+  python3 --version
+  free -h
+  df -h /
+  uptime
+  ss -lntup
+  pm2 status
+  systemctl is-active postgresql@16-main redis-server lshttpd nghttpx docker fail2ban
+  pg_lsclusters
+  docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Status}}"
+  ufw status
+  /usr/local/lsws/bin/litespeed -t 2>&1 | tail -20
+'
 ```
 
-Monthly:
+Then assert candidate ports explicitly:
+
 ```bash
-# Prune old archives (keep last 5)
-ssh contabo 'ls -dt /opt/neurecore/_archives/2* | tail -n +6 | xargs -r rm -rf'
-
-# Prune old logs
-ssh contabo 'find /root/.pm2/logs -name "*.log" -mtime +30 -delete'
-
-# apt updates (carefully)
-ssh contabo 'apt-get update && apt-get -y upgrade'
-
-# Reboot (announce first; PM2 should resurrect)
-ssh contabo 'reboot'
+ssh contabo '
+  for port in 3002 4001 8092; do
+    if ss -lntH "sport = :$port" | grep -q .; then
+      echo "BLOCKED: port $port is occupied" >&2
+      exit 1
+    fi
+  done
+  echo "Candidate DonorDesk ports are currently free"
+'
 ```
 
-Quarterly:
-- Verify Let's Encrypt renewal works (`certbot renew --dry-run`)
-- Audit OLS vhost list — any new hostnames? Any orphaned?
-- Review `/opt/neurecore/_archives/` size; adjust retention
-- Test DR restore on a non-critical path
+This is read-only. Database provisioning, account creation, firewall changes,
+vhost creation, certificate issuance, and process starts are separate controlled
+changes described in the deployment runbook.
 
----
+## 13. DonorDesk post-deploy verification
 
-**End of contabo-ops.md.**
+After an approved deployment:
+
+```bash
+ssh contabo '
+  ss -lntp | grep -E "127.0.0.1:(3002|4001|8092)"
+  curl -fsS http://127.0.0.1:3002/ >/dev/null
+  curl -fsS http://127.0.0.1:4001/health
+  curl -fsS http://127.0.0.1:4001/ready
+  systemctl --no-pager --full status donordesk-api donordesk-web
+  systemctl --no-pager --full status donordesk-workers 2>/dev/null || true
+  df -h /
+  free -h
+'
+```
+
+Also verify from outside the server:
+
+- TLS and certificate chain;
+- `/` and same-origin `/api` routing;
+- WebSocket upgrade;
+- authentication and tenant isolation;
+- upload/download and every export type;
+- external monitoring and alert delivery;
+- backup completion and a clean-machine restore.
+
+## 14. Change log
+
+- **2026-08-12 (fix deploy):** Fixed signup/login 500 errors at `DonerDesk.online`
+  (release `20260812115010`). Root causes and fixes:
+  - **Web server actions hit a wrong API URL.** `auth-actions.ts` and `api.ts`
+    now resolve a server-only `API_INTERNAL_URL` (default `http://127.0.0.1:4001`)
+    ahead of `NEXT_PUBLIC_API_URL`; web service drop-in sets
+    `API_INTERNAL_URL=http://127.0.0.1:4001`.
+  - **OLS duplicated the `Origin` header** on proxied requests, so Next.js server
+    actions parsed `req.headers['origin']` as `'https://donerdesk.online, https://donerdesk.online'`
+    and `new URL()` threw `ERR_INVALID_URL`. Added `apps/web/src/middleware.ts`
+    to dedupe a comma-joined `Origin` header on `/signup`, `/login`, `/logout`.
+  - **Audit append broke on the advisory lock.** `pg_advisory_xact_lock()`
+    returns `void`, which `prisma.$queryRaw` cannot deserialize. Cast the result:
+    `SELECT pg_advisory_xact_lock(...)::text AS lock` in
+    `packages/infrastructure/src/repositories/support.ts`.
+  - **RLS/privileges were never applied** after the initial migration. Ran the
+    RLS SQL (all 28 tenant tables) to grant `donordesk_app` DML and enable/force
+    RLS, and granted `BYPASSRLS` to `donordesk_migrator` so the auth/admin
+    connection (login/signup before a tenant is known) can still read globally.
+    Verified tenant isolation: `donordesk_app` sees only its own `app.current_tenant`
+    rows; runtime `donordesk_app` is NOT `BYPASSRLS`.
+  - End-to-end verified on production: signup → dashboard, login → dashboard,
+    `/v1/organization`, `/v1/projects`, tenant isolation; zero console errors.
+  - **Outstanding:** API binds `0.0.0.0:4001` instead of `127.0.0.1:4001`.
+
+- **2026-08-12 (deployment):** Deployed DonorDesk to production at `DonerDesk.online`.
+  - Created `donordesk` system user, `/opt/donordesk` directory structure
+  - Created `donordesk_migrator` and `donordesk_app` PostgreSQL roles and `donordesk` database
+  - Created OLS vhost `/usr/local/lsws/conf/vhosts/donerdesk.online/vhost.conf`
+  - Issued Let's Encrypt certificate for `DonerDesk.online` (expires 2026-11-10)
+  - Deployed release `20260812130000` via `pnpm deploy --legacy` + tarball upload
+  - Applied Prisma migration `20260812000000_init`
+  - Created systemd services `donordesk-api` and `donordesk-web`
+  - Both services running; TLS endpoint responding at `https://DonerDesk.online`
+  - **Outstanding:** API binds `0.0.0.0:4001` instead of `127.0.0.1:4001`
+
+- **2026-08-12:** Replaced the stale NeureCore-only snapshot with a read-only
+  live-host inventory and DonorDesk-specific coexistence rules. Corrected OS,
+  runtime, PM2, ports, PostgreSQL, Redis, OLS, firewall, TLS, Docker, and backup
+  assumptions. No remote state was modified.

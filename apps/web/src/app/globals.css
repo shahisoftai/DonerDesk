@@ -52,3 +52,8 @@ body {
 .tag-blue {
   @apply bg-brand-100 text-brand-800;
 }
+
+.glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
+}

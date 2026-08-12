@@ -147,7 +147,7 @@ export class PrismaAuditRepository implements IAuditRepository, IAuditLogger {
 
   private async append(input: { id: string; tenantId: string; actorId: string; eventType: string; entityType: string; entityId: string; projectId?: string; oldValue?: string; newValue?: string; ipAddress?: string; systemNote?: string }): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.tenantId}, 0))`;
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.tenantId}, 0))::text AS lock`;
       const head = await this.getChainHead(tx, input.tenantId);
       const prevHash = head.hash;
       const createdAt = new Date(Math.max(Date.now(), (head.createdAt?.getTime() ?? 0) + 1));

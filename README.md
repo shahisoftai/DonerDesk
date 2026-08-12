@@ -69,10 +69,10 @@ See `docs/architecture/decisions/` for ADRs and `memorybank/base/` for the full 
 
 - [x] **Phase 0** — Foundation; implemented and runtime-accepted (see `memorybank/imp/PHASE0-AUDIT.md`)
 - [x] **Phase 1** — MVP (Org + Project + Template + Logframe + Evidence + Activity + AI Draft + Checklist + Export)
-- [ ] **Phase 2** — Trust, Compliance, and Scale (Postgres+RLS, SOC2)
-- [ ] **Phase 3** — AI-Native Features
-- [ ] **Phase 4** — Integrations
-- [ ] **Phase 5** — Enterprise
+- [x] **Phase 2** — Trust, Compliance, and Scale (Postgres+RLS, SOC2)
+- [x] **Phase 3** — AI-Native Features
+- [x] **Phase 4** — Integrations
+- [x] **Phase 5** — Enterprise
 - [ ] **Phase 6** — Continuous Evolution
 
 ## License
