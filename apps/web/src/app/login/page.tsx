@@ -2,13 +2,19 @@
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { loginAction } from "@/lib/auth-actions";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function LoginPage() {
   const [state, formAction] = useFormState<{ error: string | null }, FormData>(loginAction, { error: null });
   return (
-    <main className="mx-auto mt-24 max-w-md px-6">
-      <h1 className="text-2xl font-bold">Log in</h1>
-      <p className="mt-1 text-sm text-slate-500">DonorDesk workspace</p>
+    <main className="mx-auto mt-24 max-w-md animate-fade-in px-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Log in</h1>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">DonorDesk workspace</p>
+        </div>
+        <ThemeToggle />
+      </div>
       <form action={formAction} className="card mt-6 space-y-4">
         {process.env.NEXT_PUBLIC_OIDC_ENABLED === "true" && (
           <a className="btn block w-full text-center" href="/api/auth/oidc/start">Sign in with organization SSO</a>
@@ -21,12 +27,12 @@ export default function LoginPage() {
           <label className="label" htmlFor="password">Password</label>
           <input id="password" name="password" className="input" type="password" defaultValue="password123" required />
         </div>
-        {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+        {state?.error && <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>}
         <SubmitButton />
-        <p className="text-xs text-slate-500">Demo: admin@example.org / password123</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Demo: admin@example.org / password123</p>
       </form>
       <p className="mt-4 text-sm">
-        New here? <Link className="text-brand-600 hover:underline" href="/signup">Create an organization</Link>
+        New here? <Link className="text-brand-600 hover:underline dark:text-brand-400" href="/signup">Create an organization</Link>
       </p>
     </main>
   );

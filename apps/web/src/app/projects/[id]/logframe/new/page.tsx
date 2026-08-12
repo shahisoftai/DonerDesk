@@ -33,7 +33,7 @@ export default function NewLogframeItemPage({ params }: { params: Promise<{ id: 
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-8">
+    <main className="mx-auto max-w-2xl animate-fade-in px-6 py-8">
       <h1 className="text-2xl font-bold">Add logframe item</h1>
       <form onSubmit={submit} className="card mt-6 space-y-4">
         <div>
@@ -54,7 +54,7 @@ export default function NewLogframeItemPage({ params }: { params: Promise<{ id: 
           <label className="label">Description</label>
           <textarea className="input" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex justify-end gap-3">
           <button type="button" className="btn-secondary" onClick={() => router.back()}>Cancel</button>
           <button className="btn" disabled={busy}>Save</button>

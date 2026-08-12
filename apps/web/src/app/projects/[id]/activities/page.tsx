@@ -14,21 +14,21 @@ export default async function ActivitiesPage({ params }: { params: Promise<{ id:
   const { items } = await api<{ items: Activity[] }>(`/v1/projects/${resolvedParams.id}/activities`, { token }).catch(() => ({ items: [] }));
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-8">
+    <main className="mx-auto max-w-5xl animate-fade-in px-6 py-8">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Activity updates</h1>
         <Link className="btn" href={`/projects/${resolvedParams.id}/activities/new`}>New activity</Link>
       </header>
       <div className="mt-6 space-y-3">
-        {items.length === 0 && <div className="card text-sm text-slate-500">No activity updates yet.</div>}
+        {items.length === 0 && <div className="card text-sm text-slate-600 dark:text-slate-300">No activity updates yet.</div>}
         {items.map((a) => (
-          <div key={a.id} className="card">
-            <div className="flex items-center justify-between">
+          <div key={a.id} className="card transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
+            <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="font-semibold">{a.activityTitle}</div>
-                <div className="text-xs text-slate-500">{a.activityDate.slice(0, 10)} · {a.location ?? "—"} · {a.participantsTotal ?? 0} participants</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">{a.activityDate.slice(0, 10)} · {a.location ?? "—"} · {a.participantsTotal ?? 0} participants</div>
               </div>
-              <span className={`tag ${a.status === "ACCEPTED" ? "tag-green" : a.status === "REJECTED" ? "tag-red" : "tag-amber"}`}>{a.status}</span>
+              <span className={`tag shrink-0 ${a.status === "ACCEPTED" ? "tag-green" : a.status === "REJECTED" ? "tag-red" : "tag-amber"}`}>{a.status}</span>
             </div>
           </div>
         ))}

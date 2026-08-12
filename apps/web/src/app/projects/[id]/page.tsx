@@ -29,11 +29,11 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
   if (!project) notFound();
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8">
+    <main className="mx-auto max-w-6xl animate-fade-in px-6 py-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{project.title}</h1>
-          <div className="text-sm text-slate-500">{project.donorName} · {project.country} · {project.sector.replace(/_/g, " ")}</div>
+          <div className="text-sm text-slate-600 dark:text-slate-400">{project.donorName} · {project.country} · {project.sector.replace(/_/g, " ")}</div>
         </div>
         <div className="flex gap-2">
           <span className={`tag ${project.status === "ACTIVE" ? "tag-green" : "tag-slate"}`}>{project.status}</span>
@@ -41,7 +41,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
         </div>
       </header>
 
-      <nav className="mt-6 flex flex-wrap gap-2 border-b border-slate-200 pb-2 text-sm">
+      <nav className="mt-6 flex flex-wrap gap-2 border-b border-slate-200 pb-2 text-sm dark:border-white/10">
         <Tab href={`/projects/${project.id}`} label="Overview" active />
         <Tab href={`/projects/${project.id}/templates`} label="Templates" />
         <Tab href={`/projects/${project.id}/logframe`} label="Logframe" />
@@ -60,27 +60,27 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
       <section className="mt-10 grid gap-6 lg:grid-cols-2">
         <div className="card">
           <h2 className="font-semibold">Donor templates</h2>
-          <p className="text-sm text-slate-500">Structured reporting templates for this project.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Structured reporting templates for this project.</p>
           <ul className="mt-3 space-y-2">
-            {templates.items.length === 0 && <li className="text-sm text-slate-500">No templates yet. <Link className="text-brand-600 hover:underline" href={`/projects/${project.id}/templates`}>Upload one</Link>.</li>}
+            {templates.items.length === 0 && <li className="text-sm text-slate-600 dark:text-slate-400">No templates yet. <Link className="text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${project.id}/templates`}>Upload one</Link>.</li>}
             {templates.items.map((t) => (
               <li key={t.id} className="flex items-center justify-between text-sm">
-                <span>{t.templateName} <span className="text-xs text-slate-500">· {t.reportType.toLowerCase().replace("_", " ")}</span></span>
-                <Link className="text-brand-600 hover:underline" href={`/projects/${project.id}/templates/${t.id}`}>Edit sections</Link>
+                <span>{t.templateName} <span className="text-xs text-slate-500 dark:text-slate-400">· {t.reportType.toLowerCase().replace("_", " ")}</span></span>
+                <Link className="text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${project.id}/templates/${t.id}`}>Edit sections</Link>
               </li>
             ))}
           </ul>
         </div>
         <div className="card">
           <h2 className="font-semibold">Logframe</h2>
-          <p className="text-sm text-slate-500">Hierarchical goals, outputs, and indicators.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Hierarchical goals, outputs, and indicators.</p>
           <ul className="mt-3 space-y-1 text-sm">
-            {logframe.items.length === 0 && <li className="text-slate-500">No logframe items yet.</li>}
+            {logframe.items.length === 0 && <li className="text-slate-600 dark:text-slate-400">No logframe items yet.</li>}
             {logframe.items.slice(0, 6).map((i) => (
               <li key={i.id}><span className="font-mono text-xs">{i.level}</span> — {i.title}</li>
             ))}
           </ul>
-          <Link className="mt-3 inline-block text-sm text-brand-600 hover:underline" href={`/projects/${project.id}/logframe`}>Manage logframe</Link>
+          <Link className="mt-3 inline-block text-sm text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${project.id}/logframe`}>Manage logframe</Link>
         </div>
       </section>
     </main>
@@ -89,15 +89,15 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
 
 function Tab({ href, label, active }: { href: string; label: string; active?: boolean }) {
   return (
-    <Link href={href} className={`rounded-md px-3 py-1.5 ${active ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-100"}`}>{label}</Link>
+    <Link href={href} className={`rounded-md px-3 py-1.5 ${active ? "bg-brand-500/10 font-semibold text-brand-700 dark:bg-brand-400/10 dark:text-brand-300" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5"}`}>{label}</Link>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="card">
-      <div className="text-xs uppercase text-slate-500">{label}</div>
-      <div className="mt-1 text-2xl font-bold">{value}</div>
+      <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="mt-1 bg-gradient-to-r from-brand-500 to-accent-400 bg-clip-text text-2xl font-extrabold text-transparent">{value}</div>
     </div>
   );
 }

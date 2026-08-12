@@ -57,9 +57,9 @@ export default function NewProjectPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
+    <main className="mx-auto max-w-3xl animate-fade-in px-6 py-8">
       <h1 className="text-2xl font-bold">New project</h1>
-      <p className="text-sm text-slate-500">Step 2 of the setup wizard — set up a donor-funded project workspace.</p>
+      <p className="text-sm text-slate-600 dark:text-slate-400">Step 2 of the setup wizard — set up a donor-funded project workspace.</p>
       <form onSubmit={onSubmit} className="card mt-6 grid gap-4 sm:grid-cols-2">
         <Field label="Project title"><input className="input" value={title} onChange={(e) => setTitle(e.target.value)} required /></Field>
         <Field label="Project code"><input className="input" value={projectCode} onChange={(e) => setProjectCode(e.target.value)} required /></Field>
@@ -79,7 +79,7 @@ export default function NewProjectPage() {
         <Field label="Budget (USD, optional)"><input className="input" type="number" value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} /></Field>
         <Field label="Start date"><input className="input" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required /></Field>
         <Field label="End date"><input className="input" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required /></Field>
-        {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-400 sm:col-span-2">{error}</p>}
         <div className="sm:col-span-2 flex justify-end gap-3">
           <button type="button" className="btn-secondary" onClick={() => router.back()}>Cancel</button>
           <button className="btn" disabled={busy}>{busy ? "Creating..." : "Create project"}</button>

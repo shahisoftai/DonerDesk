@@ -38,7 +38,7 @@ export default function NewReportingPeriodPage({ params }: { params: Promise<{ i
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-8">
+    <main className="mx-auto max-w-2xl animate-fade-in px-6 py-8">
       <h1 className="text-2xl font-bold">New reporting period</h1>
       <form onSubmit={submit} className="card mt-6 space-y-4">
         <div>
@@ -52,7 +52,7 @@ export default function NewReportingPeriodPage({ params }: { params: Promise<{ i
           <div><label className="label">End</label><input className="input" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required /></div>
           <div><label className="label">Donor deadline</label><input className="input" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} required /></div>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex justify-end gap-3">
           <button type="button" className="btn-secondary" onClick={() => router.back()}>Cancel</button>
           <button className="btn" disabled={busy}>Create period</button>

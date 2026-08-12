@@ -15,21 +15,21 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
   const data = await api<{ items: LogframeItem[]; indicators: Indicator[] }>(`/v1/projects/${resolvedParams.id}/logframe`, { token }).catch(() => ({ items: [], indicators: [] }));
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-8">
+    <main className="mx-auto max-w-5xl animate-fade-in px-6 py-8">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Logframe & indicators</h1>
+        <h1 className="text-2xl font-bold">Logframe &amp; indicators</h1>
         <Link className="btn" href={`/projects/${resolvedParams.id}/logframe/new`}>Add item</Link>
       </header>
 
       <section className="mt-8">
         <h2 className="font-semibold">Hierarchy</h2>
         <div className="mt-3 space-y-2">
-          {data.items.length === 0 && <div className="card text-sm text-slate-500">No logframe items yet.</div>}
+          {data.items.length === 0 && <div className="card text-sm text-slate-600 dark:text-slate-300">No logframe items yet.</div>}
           {data.items.map((i) => (
-            <div key={i.id} className="card flex items-center justify-between">
+            <div key={i.id} className="card flex items-center justify-between transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
               <div>
                 <span className="font-mono text-xs uppercase">{i.level}</span>{" "}
-                {i.code && <span className="font-mono text-xs text-slate-500">{i.code}</span>}{" "}
+                {i.code && <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{i.code}</span>}{" "}
                 <span className="font-semibold">{i.title}</span>
               </div>
             </div>
@@ -39,9 +39,9 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
 
       <section className="mt-10">
         <h2 className="font-semibold">Indicators</h2>
-        <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
+        <div className="table-shell mt-3">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="thead">
               <tr>
                 <th className="px-3 py-2 text-left">Code</th>
                 <th className="px-3 py-2 text-left">Indicator</th>
@@ -51,10 +51,10 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
             </thead>
             <tbody>
               {data.indicators.length === 0 && (
-                <tr><td colSpan={4} className="px-3 py-3 text-slate-500">No indicators yet.</td></tr>
+                <tr><td colSpan={4} className="px-3 py-3 text-slate-500 dark:text-slate-400">No indicators yet.</td></tr>
               )}
               {data.indicators.map((i) => (
-                <tr key={i.id} className="border-t border-slate-100">
+                <tr key={i.id} className="trow">
                   <td className="px-3 py-2 font-mono">{i.code}</td>
                   <td className="px-3 py-2">{i.name}</td>
                   <td className="px-3 py-2">{i.baseline}</td>

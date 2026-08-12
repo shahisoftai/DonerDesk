@@ -9,14 +9,14 @@ export default async function CompliancePage({ params }: { params: Promise<{ id:
   const token = await getSessionToken();
   if (!token) redirect("/login");
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
+    <main className="mx-auto max-w-3xl animate-fade-in px-6 py-8">
       <h1 className="text-2xl font-bold">Compliance</h1>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
         Compliance checklist items are shown per reporting period.
       </p>
-      <div className="mt-6 card">
+      <div className="card mt-6">
         <p className="text-sm">Open a reporting period from the Reports tab to view and resolve its checklist.</p>
-        <Link href={`/projects/${resolvedParams.id}/reports`} className="mt-3 btn-secondary inline-block">Go to Reports</Link>
+        <Link href={`/projects/${resolvedParams.id}/reports`} className="btn-secondary mt-3 inline-block">Go to Reports</Link>
       </div>
     </main>
   );

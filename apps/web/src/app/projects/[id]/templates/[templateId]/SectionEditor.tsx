@@ -71,7 +71,7 @@ export function SectionEditor({ projectId, templateId, initialSections }: { proj
       <div className="flex gap-3">
         <button className="btn-secondary" type="button" onClick={add}>Add section</button>
         <button className="btn" type="button" disabled={busy} onClick={save}>{busy ? "Saving..." : "Save template"}</button>
-        {saved && <span className="self-center text-sm text-green-700">Saved</span>}
+        {saved && <span className="self-center text-sm text-green-700 dark:text-green-400">Saved</span>}
       </div>
     </div>
   );

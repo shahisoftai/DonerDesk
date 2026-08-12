@@ -23,11 +23,11 @@ export default async function ReportWorkspacePage({ params }: { params: Promise<
   if (!readiness) return notFound();
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8">
+    <main className="mx-auto max-w-6xl animate-fade-in px-6 py-8">
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Report workspace</h1>
-          <p className="text-sm text-slate-500">Reporting period {resolvedParams.periodId.slice(0, 8)}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Reporting period {resolvedParams.periodId.slice(0, 8)}</p>
         </div>
         <Link className="btn-secondary" href={`/projects/${resolvedParams.id}/reports`}>Back</Link>
       </header>

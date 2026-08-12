@@ -41,9 +41,9 @@ export default function NewEvidencePage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
+    <main className="mx-auto max-w-3xl animate-fade-in px-6 py-8">
       <h1 className="text-2xl font-bold">Upload evidence</h1>
-      <p className="text-sm text-slate-500">AI will suggest tags and sensitivity warnings after upload.</p>
+      <p className="text-sm text-slate-600 dark:text-slate-400">AI will suggest tags and sensitivity warnings after upload.</p>
       <form onSubmit={submit} className="card mt-6 grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label className="label">Title</label>
@@ -73,7 +73,7 @@ export default function NewEvidencePage({ params }: { params: Promise<{ id: stri
           <label className="label">File</label>
           <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} required />
         </div>
-        {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-400 sm:col-span-2">{error}</p>}
         <div className="sm:col-span-2 flex justify-end gap-3">
           <button type="button" className="btn-secondary" onClick={() => router.back()}>Cancel</button>
           <button className="btn" disabled={busy}>{busy ? "Uploading..." : "Upload"}</button>

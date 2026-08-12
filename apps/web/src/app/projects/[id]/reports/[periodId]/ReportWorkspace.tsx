@@ -49,10 +49,14 @@ export function ReportWorkspace({ projectId, periodId, readiness, checklist, exp
 
   return (
     <div className="mt-6 grid gap-6 lg:grid-cols-3">
-      <section className="card lg:col-span-1">
+      <section className="card relative overflow-hidden lg:col-span-1">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br from-brand-500/15 to-accent-400/15 blur-2xl" />
         <h2 className="font-semibold">Readiness score</h2>
-        <div className="mt-3 text-5xl font-bold text-brand-700">{readiness.overall}%</div>
-        <div className="mt-3 space-y-1 text-sm">
+        <div className="mt-3 bg-gradient-to-r from-brand-500 to-accent-400 bg-clip-text text-5xl font-extrabold text-transparent">{readiness.overall}%</div>
+        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-white/10">
+          <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-accent-400" style={{ width: `${Math.min(100, Math.max(0, readiness.overall))}%` }} />
+        </div>
+        <div className="mt-4 space-y-1.5 text-sm">
           <Row label="Sections" v={readiness.sectionsScore} />
           <Row label="Indicators" v={readiness.indicatorsScore} />
           <Row label="Evidence" v={readiness.evidenceScore} />
@@ -60,21 +64,21 @@ export function ReportWorkspace({ projectId, periodId, readiness, checklist, exp
           <Row label="Approval" v={readiness.approvalScore} />
         </div>
         <button className="btn mt-4 w-full" disabled={busy === "draft"} onClick={generate}>{busy === "draft" ? "Generating..." : "Generate AI draft"}</button>
-        {draftMsg && <p className="mt-2 text-xs text-green-700">{draftMsg}</p>}
+        {draftMsg && <p className="mt-2 text-xs text-green-700 dark:text-green-400">{draftMsg}</p>}
         <button className="btn-secondary mt-3 w-full" disabled={busy === "detect"} onClick={detectMissing}>{busy === "detect" ? "Scanning..." : "Run compliance check"}</button>
       </section>
 
       <section className="card lg:col-span-1">
         <h2 className="font-semibold">Compliance checklist</h2>
-        {checklist.length === 0 && <p className="mt-2 text-sm text-slate-500">No checklist items yet.</p>}
+        {checklist.length === 0 && <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">No checklist items yet.</p>}
         <ul className="mt-3 space-y-2">
           {checklist.map((c) => (
-            <li key={c.id} className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <li key={c.id} className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-white/5">
               <div>
                 <div className="text-sm font-medium">{c.title}</div>
-                <div className="text-xs text-slate-500">{c.type.replace(/_/g, " ").toLowerCase()}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">{c.type.replace(/_/g, " ").toLowerCase()}</div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 <span className={`tag ${c.severity === "CRITICAL" ? "tag-red" : c.severity === "HIGH" ? "tag-amber" : "tag-slate"}`}>{c.severity}</span>
                 <span className={`tag ${c.status === "RESOLVED" ? "tag-green" : "tag-amber"}`}>{c.status}</span>
               </div>
@@ -91,16 +95,16 @@ export function ReportWorkspace({ projectId, periodId, readiness, checklist, exp
           ))}
         </div>
         <ul className="mt-4 space-y-1">
-          {exports.length === 0 && <li className="text-sm text-slate-500">No exports yet.</li>}
+          {exports.length === 0 && <li className="text-sm text-slate-500 dark:text-slate-400">No exports yet.</li>}
           {exports.map((e) => (
             <li key={e.id} className="flex items-center justify-between text-sm">
               <span>{e.exportType.replace(/_/g, " ").toLowerCase()}</span>
-              <a className="text-brand-600 hover:underline" href={e.fileUrl} target="_blank" rel="noreferrer">Download</a>
+              <a className="text-brand-600 hover:underline dark:text-brand-400" href={e.fileUrl} target="_blank" rel="noreferrer">Download</a>
             </li>
           ))}
         </ul>
       </section>
-      {error && <p className="text-sm text-red-600 lg:col-span-3">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400 lg:col-span-3">{error}</p>}
     </div>
   );
 }
@@ -108,7 +112,7 @@ export function ReportWorkspace({ projectId, periodId, readiness, checklist, exp
 function Row({ label, v }: { label: string; v: number }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-slate-500">{label}</span>
+      <span className="text-slate-500 dark:text-slate-400">{label}</span>
       <span className="font-mono">{v}%</span>
     </div>
   );

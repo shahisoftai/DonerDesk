@@ -33,9 +33,9 @@ export default function NewTemplatePage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
+    <main className="mx-auto max-w-3xl animate-fade-in px-6 py-8">
       <h1 className="text-2xl font-bold">Upload donor template</h1>
-      <p className="text-sm text-slate-500">Paste the donor instructions or upload a file. The AI extracts structured sections for review.</p>
+      <p className="text-sm text-slate-600 dark:text-slate-400">Paste the donor instructions or upload a file. The AI extracts structured sections for review.</p>
       <form onSubmit={onSubmit} className="card mt-6 space-y-4">
         <div>
           <label className="label">Template name</label>
@@ -57,7 +57,7 @@ export default function NewTemplatePage({ params }: { params: Promise<{ id: stri
           <label className="label">Template text (paste donor instructions)</label>
           <textarea className="input min-h-[200px]" value={extractedRawText} onChange={(e) => setExtractedRawText(e.target.value)} placeholder="Section 1. Executive Summary&#10;Section 2. Activities completed..." />
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex justify-end gap-3">
           <button type="button" className="btn-secondary" onClick={() => router.back()}>Cancel</button>
           <button className="btn" disabled={busy}>{busy ? "Extracting..." : "Upload & extract"}</button>

@@ -51,7 +51,7 @@ export default function NewActivityPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
+    <main className="mx-auto max-w-3xl animate-fade-in px-6 py-8">
       <h1 className="text-2xl font-bold">New activity update</h1>
       <form onSubmit={submit} className="card mt-6 grid gap-4 sm:grid-cols-2">
         <Field label="Activity title"><input className="input" value={activityTitle} onChange={(e) => setActivityTitle(e.target.value)} required /></Field>
@@ -65,7 +65,7 @@ export default function NewActivityPage({ params }: { params: Promise<{ id: stri
         <div className="sm:col-span-2"><label className="label">Challenges</label><textarea className="input" value={challenges} onChange={(e) => setChallenges(e.target.value)} /></div>
         <div className="sm:col-span-2"><label className="label">Lessons learned</label><textarea className="input" value={lessonsLearned} onChange={(e) => setLessonsLearned(e.target.value)} /></div>
         <div className="sm:col-span-2"><label className="label">Next steps</label><textarea className="input" value={nextSteps} onChange={(e) => setNextSteps(e.target.value)} /></div>
-        {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-400 sm:col-span-2">{error}</p>}
         <div className="sm:col-span-2 flex justify-end gap-3">
           <button type="button" className="btn-secondary" onClick={() => router.back()}>Cancel</button>
           <button className="btn" disabled={busy}>{busy ? "Saving..." : "Submit activity"}</button>

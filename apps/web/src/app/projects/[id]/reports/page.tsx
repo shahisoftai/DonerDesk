@@ -26,37 +26,37 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
   ).catch(() => ({ items: [] }));
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-8">
+    <main className="mx-auto max-w-4xl animate-fade-in px-6 py-8">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Reports</h1>
         <Link className="btn" href={`/projects/${resolvedParams.id}/reports/new`}>Create reporting period</Link>
       </header>
 
       {items.length === 0 ? (
-        <div className="mt-6 card text-sm text-slate-500">
+        <div className="card mt-6 text-sm text-slate-600 dark:text-slate-300">
           No reporting periods yet. Create one to start generating drafts and running compliance checks.
         </div>
       ) : (
         <div className="mt-6 space-y-3">
           {items.map((p) => (
-            <div key={p.id} className="card">
-              <div className="flex items-center justify-between">
+            <div key={p.id} className="card transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
+              <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="font-semibold">{REPORT_TYPE_LABEL[p.reportType] ?? p.reportType}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
                     Deadline: {new Date(p.deadline).toLocaleDateString()}
                     {p.daysUntilDeadline <= 7 && p.daysUntilDeadline >= 0 && (
-                      <span className="ml-2 text-amber-600 font-medium">· {p.daysUntilDeadline} day(s) left</span>
+                      <span className="ml-2 font-medium text-amber-600 dark:text-amber-400">· {p.daysUntilDeadline} day(s) left</span>
                     )}
                     {p.daysUntilDeadline < 0 && (
-                      <span className="ml-2 text-red-600 font-medium">· Overdue</span>
+                      <span className="ml-2 font-medium text-red-600 dark:text-red-400">· Overdue</span>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex shrink-0 items-center gap-3">
                   <div className="text-right">
-                    <div className="text-xs text-slate-500">Readiness</div>
-                    <div className={`font-semibold ${p.readinessScore >= 75 ? "text-green-600" : p.readinessScore >= 40 ? "text-amber-600" : "text-red-600"}`}>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Readiness</div>
+                    <div className={`font-semibold ${p.readinessScore >= 75 ? "text-green-700 dark:text-green-400" : p.readinessScore >= 40 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>
                       {p.readinessScore}%
                     </div>
                   </div>
@@ -67,15 +67,15 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="mt-3 flex gap-2">
                 {p.donorTemplateId && (
-                  <Link href={`/projects/${resolvedParams.id}/reports/${p.id}`} className="btn-secondary text-xs py-1">
+                  <Link href={`/projects/${resolvedParams.id}/reports/${p.id}`} className="btn-secondary py-1 text-xs">
                     View draft
                   </Link>
                 )}
-                <Link href={`/projects/${resolvedParams.id}/reports/${p.id}/compliance`} className="btn-secondary text-xs py-1">
+                <Link href={`/projects/${resolvedParams.id}/reports/${p.id}/compliance`} className="btn-secondary py-1 text-xs">
                   Compliance checklist
                 </Link>
                 {!p.donorTemplateId && (
-                  <Link href={`/projects/${resolvedParams.id}/templates`} className="btn-secondary text-xs py-1">
+                  <Link href={`/projects/${resolvedParams.id}/templates`} className="btn-secondary py-1 text-xs">
                     Attach template first
                   </Link>
                 )}

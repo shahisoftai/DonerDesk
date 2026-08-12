@@ -12,11 +12,11 @@ export default async function TeamPage() {
   if (!token) redirect("/login");
   const { items } = await api<{ items: User[] }>("/v1/users", { token }).catch(() => ({ items: [] }));
   return (
-    <main className="mx-auto max-w-4xl px-6 py-8">
+    <main className="mx-auto max-w-4xl animate-fade-in px-6 py-8">
       <h1 className="text-2xl font-bold">Team</h1>
-      <div className="mt-6 overflow-hidden rounded-xl border border-slate-200">
+      <div className="table-shell mt-6">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="thead">
             <tr>
               <th className="px-3 py-2 text-left">Name</th>
               <th className="px-3 py-2 text-left">Email</th>
@@ -25,9 +25,9 @@ export default async function TeamPage() {
             </tr>
           </thead>
           <tbody>
-            {items.length === 0 && <tr><td colSpan={4} className="px-3 py-4 text-slate-500">No team members yet.</td></tr>}
+            {items.length === 0 && <tr><td colSpan={4} className="px-3 py-4 text-slate-500 dark:text-slate-400">No team members yet.</td></tr>}
             {items.map((u) => (
-              <tr key={u.id} className="border-t border-slate-100">
+              <tr key={u.id} className="trow">
                 <td className="px-3 py-2 font-medium">{u.name}</td>
                 <td className="px-3 py-2">{u.email}</td>
                 <td className="px-3 py-2">{ROLE_LABEL[u.role as keyof typeof ROLE_LABEL] ?? u.role}</td>

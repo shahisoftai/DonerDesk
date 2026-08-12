@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-12 11:50 CEST (release `20260812115010`)
+**Last deployment:** 2026-08-12 13:39 CEST (release `20260812163749`)
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -446,6 +446,16 @@ Also verify from outside the server:
 - backup completion and a clean-machine restore.
 
 ## 14. Change log
+
+- **2026-08-12 (theme deployment):** Deployed global light/dark theming release
+  `20260812163749` to `DonerDesk.online`. Frontend-only change (no Prisma
+  migration). Web standalone rebuilt off-host with `NEXT_PUBLIC_API_URL=/api`
+  and packaged per the established layout; `api/` + `prisma/` copied unchanged
+  from the previous release. `current` symlink switched to
+  `releases/20260812163749`; `donordesk-web` restarted; `donordesk-api` not
+  touched. Verified loopback and public HTTPS 200s on `/`, `/login`, `/signup`;
+  theme script, toggle markup, and dark-variant CSS present in served HTML/CSS.
+  See `memorybank/features.md` for the full implementation note.
 
 - **2026-08-12 (fix deploy):** Fixed signup/login 500 errors at `DonerDesk.online`
   (release `20260812115010`). Root causes and fixes:
