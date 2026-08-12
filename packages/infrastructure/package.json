@@ -1,0 +1,57 @@
+{
+  "name": "@donordesk/infrastructure",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./db": {
+      "types": "./dist/db/index.d.ts",
+      "import": "./dist/db/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && prisma generate",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:studio": "prisma studio",
+    "audit:verify": "node dist/audit/verify-cli.js",
+    "ai:eval": "node dist/ai/eval-cli.js"
+  },
+  "dependencies": {
+    "@donordesk/application": "workspace:*",
+    "@donordesk/contracts": "workspace:*",
+    "@donordesk/domain": "workspace:*",
+    "@prisma/client": "5.22.0",
+    "archiver": "8.0.0",
+    "bcryptjs": "2.4.3",
+    "bullmq": "5.34.8",
+    "docx": "9.0.2",
+    "exceljs": "4.4.0",
+    "ioredis": "5.6.0",
+    "jose": "^6.2.8",
+    "jsonwebtoken": "9.0.2",
+    "mammoth": "1.8.0",
+    "pdf-parse": "1.1.1",
+    "pdfkit": "0.15.0",
+    "pino": "9.5.0"
+  },
+  "devDependencies": {
+    "@types/archiver": "6.0.3",
+    "@types/bcryptjs": "2.4.6",
+    "@types/jsonwebtoken": "9.0.7",
+    "@types/pdf-parse": "1.1.4",
+    "@types/pdfkit": "0.13.5",
+    "prisma": "5.22.0",
+    "tsx": "4.19.2",
+    "typescript": "5.6.3"
+  }
+}

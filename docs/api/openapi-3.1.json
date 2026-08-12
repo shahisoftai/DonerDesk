@@ -1,0 +1,804 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DonorDesk Public API",
+    "description": "REST API for DonorDesk humanitarian aid reporting platform. Provides programmatic access to projects, evidence, reports, and compliance data for partner integrations.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "DonorDesk Support",
+      "email": "api@donordesk.org"
+    },
+    "license": {
+      "name": "Proprietary",
+      "url": "https://donordesk.org/legal"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.donordesk.org/v1",
+      "description": "Production"
+    },
+    {
+      "url": "https://staging-api.donordesk.org/v1",
+      "description": "Staging"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    },
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/token": {
+      "post": {
+        "operationId": "createToken",
+        "summary": "Create access token",
+        "description": "Exchange credentials for a JWT access token",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/projects": {
+      "get": {
+        "operationId": "listProjects",
+        "summary": "List projects",
+        "description": "Returns all projects for the authenticated organization",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageSize"
+          },
+          {
+            "$ref": "#/components/parameters/PageToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of projects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProject",
+        "summary": "Create a project",
+        "description": "Creates a new project for the authenticated organization",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Project created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}": {
+      "get": {
+        "operationId": "getProject",
+        "summary": "Get a project",
+        "tags": ["Projects"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/evidence": {
+      "get": {
+        "operationId": "listEvidence",
+        "summary": "List evidence for a project",
+        "tags": ["Evidence"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          },
+          {
+            "$ref": "#/components/parameters/PageToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of evidence items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "uploadEvidence",
+        "summary": "Upload evidence",
+        "description": "Upload a new evidence file to a project",
+        "tags": ["Evidence"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evidence uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Evidence"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/reporting-periods": {
+      "get": {
+        "operationId": "listReportingPeriods",
+        "summary": "List reporting periods",
+        "tags": ["Reporting"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of reporting periods",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportingPeriodList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createReportingPeriod",
+        "summary": "Create a reporting period",
+        "tags": ["Reporting"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportingPeriodRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reporting period created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportingPeriod"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/reports/{periodId}": {
+      "get": {
+        "operationId": "getReport",
+        "summary": "Get a report",
+        "tags": ["Reporting"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "name": "periodId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/compliance": {
+      "get": {
+        "operationId": "getCompliance",
+        "summary": "Get compliance checklist",
+        "description": "Returns the compliance checklist for a reporting period",
+        "tags": ["Compliance"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Compliance checklist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplianceChecklist"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/exports": {
+      "post": {
+        "operationId": "createExport",
+        "summary": "Create an export",
+        "description": "Initiate an async export job",
+        "tags": ["Exports"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Export job accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportJob"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks": {
+      "get": {
+        "operationId": "listWebhooks",
+        "summary": "List webhooks",
+        "description": "List configured webhook endpoints for the organization",
+        "tags": ["Webhooks"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of webhooks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createWebhook",
+        "summary": "Create a webhook",
+        "description": "Register a new webhook endpoint",
+        "tags": ["Webhooks"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Webhook created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Webhook"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/{webhookId}": {
+      "delete": {
+        "operationId": "deleteWebhook",
+        "summary": "Delete a webhook",
+        "tags": ["Webhooks"],
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "webhookId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Webhook deleted"
+          }
+        }
+      }
+    },
+    "/field-data/kobotoolbox": {
+      "post": {
+        "operationId": "kobotoolboxWebhook",
+        "summary": "KoboToolbox webhook receiver",
+        "description": "Receives form submission webhooks from KoboToolbox",
+        "tags": ["Field Data"],
+        "security": [{ "ApiKeyAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KoboSubmission"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Submission accepted for processing"
+          }
+        }
+      }
+    },
+    "/field-data/odk": {
+      "post": {
+        "operationId": "odkWebhook",
+        "summary": "ODK Central webhook receiver",
+        "description": "Receives submission webhooks from ODK Central",
+        "tags": ["Field Data"],
+        "security": [{ "ApiKeyAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Submission accepted for processing"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT access token obtained from /auth/token"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key",
+        "description": "API key for webhook receivers and integrations"
+      }
+    },
+    "parameters": {
+      "ProjectId": {
+        "name": "projectId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" }
+      },
+      "PageSize": {
+        "name": "pageSize",
+        "in": "query",
+        "schema": { "type": "integer", "default": 20, "maximum": 100 }
+      },
+      "PageToken": {
+        "name": "pageToken",
+        "in": "query",
+        "schema": { "type": "string" }
+      }
+    },
+    "schemas": {
+      "TokenRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 8 }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "tokenType": { "type": "string", "enum": ["Bearer"] },
+          "expiresIn": { "type": "integer" }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "status": { "type": "string", "enum": ["PLANNING", "ACTIVE", "ON_HOLD", "COMPLETED", "CANCELLED"] },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "donorName": { "type": "string" },
+          "country": { "type": "string" },
+          "sectors": { "type": "array", "items": { "type": "string" } },
+          "readinessScore": { "type": "number" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProjectList": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Project" } },
+          "nextPageToken": { "type": "string" }
+        }
+      },
+      "CreateProjectRequest": {
+        "type": "object",
+        "required": ["name", "donorName", "country", "startDate"],
+        "properties": {
+          "name": { "type": "string" },
+          "donorName": { "type": "string" },
+          "country": { "type": "string" },
+          "sectors": { "type": "array", "items": { "type": "string" } },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" }
+        }
+      },
+      "Evidence": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "fileName": { "type": "string" },
+          "fileType": { "type": "string" },
+          "uploadedAt": { "type": "string", "format": "date-time" },
+          "status": { "type": "string", "enum": ["DRAFT", "SUBMITTED", "VERIFIED"] }
+        }
+      },
+      "EvidenceList": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Evidence" } },
+          "nextPageToken": { "type": "string" }
+        }
+      },
+      "EvidenceUploadRequest": {
+        "type": "object",
+        "required": ["file", "title"],
+        "properties": {
+          "file": { "type": "string", "format": "binary" },
+          "title": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "ReportingPeriod": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "projectId": { "type": "string" },
+          "status": { "type": "string", "enum": ["DRAFT", "IN_PROGRESS", "SUBMITTED", "APPROVED"] },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "dueDate": { "type": "string", "format": "date" },
+          "readinessScore": { "type": "number" }
+        }
+      },
+      "ReportingPeriodList": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/ReportingPeriod" } }
+        }
+      },
+      "CreateReportingPeriodRequest": {
+        "type": "object",
+        "required": ["startDate", "endDate", "dueDate"],
+        "properties": {
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "dueDate": { "type": "string", "format": "date" }
+        }
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "periodId": { "type": "string" },
+          "status": { "type": "string", "enum": ["DRAFT", "SUBMITTED", "APPROVED", "RETURNED"] },
+          "sections": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ReportSection" }
+          },
+          "readinessScore": { "type": "number" }
+        }
+      },
+      "ReportSection": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "status": { "type": "string", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED"] }
+        }
+      },
+      "ComplianceChecklist": {
+        "type": "object",
+        "properties": {
+          "periodId": { "type": "string" },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChecklistItem"
+            }
+          }
+        }
+      },
+      "ChecklistItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string", "enum": ["PENDING", "RESOLVED"] },
+          "resolvedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ExportJob": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string", "enum": ["PENDING", "PROCESSING", "COMPLETED", "FAILED"] },
+          "format": { "type": "string", "enum": ["PDF", "WORD", "EXCEL", "CSV"] },
+          "downloadUrl": { "type": "string" },
+          "expiresAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateExportRequest": {
+        "type": "object",
+        "required": ["format"],
+        "properties": {
+          "format": { "type": "string", "enum": ["PDF", "WORD", "EXCEL", "CSV"] },
+          "periodId": { "type": "string" }
+        }
+      },
+      "Webhook": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "events": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "active": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "WebhookList": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Webhook" } }
+        }
+      },
+      "CreateWebhookRequest": {
+        "type": "object",
+        "required": ["url", "events"],
+        "properties": {
+          "url": { "type": "string", "format": "uri" },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "report.submitted",
+                "report.approved",
+                "report.returned",
+                "evidence.uploaded",
+                "evidence.verified",
+                "deadline.approaching"
+              ]
+            }
+          }
+        }
+      },
+      "KoboSubmission": {
+        "type": "object",
+        "properties": {
+          "submission_id": { "type": "string" },
+          "form_id": { "type": "string" },
+          "submitted_at": { "type": "string", "format": "date-time" },
+          "data": { "type": "object", "additionalProperties": true }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Authentication required",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": { "type": "string" },
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": { "type": "string" },
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Authentication endpoints"
+    },
+    {
+      "name": "Projects",
+      "description": "Project management"
+    },
+    {
+      "name": "Evidence",
+      "description": "Evidence management"
+    },
+    {
+      "name": "Reporting",
+      "description": "Reporting periods and reports"
+    },
+    {
+      "name": "Compliance",
+      "description": "Compliance checklists"
+    },
+    {
+      "name": "Exports",
+      "description": "Report exports"
+    },
+    {
+      "name": "Webhooks",
+      "description": "Webhook configuration"
+    },
+    {
+      "name": "Field Data",
+      "description": "Field data integration endpoints"
+    }
+  ]
+}

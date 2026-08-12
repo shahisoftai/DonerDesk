@@ -1,0 +1,13 @@
+groups:
+  - name: donordesk
+    rules:
+      - alert: DonorDeskApiDown
+        expr: up{job="donordesk-api"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: "DonorDesk API is unavailable" }
+      - alert: DonorDeskHighErrorRate
+        expr: sum(rate(donordesk_http_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(donordesk_http_requests_total[5m])), 0.001) > 0.05
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "DonorDesk API 5xx rate exceeds 5%" }

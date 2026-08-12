@@ -1,0 +1,33 @@
+{
+  "name": "donordesk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DonorDesk — AI-assisted donor reporting and evidence management for NGOs",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter=./packages/* --filter=./apps/* build",
+    "dev": "pnpm -r --parallel --filter=./apps/* dev",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "db:migrate": "pnpm --filter @donordesk/infrastructure db:migrate",
+    "db:seed": "pnpm --filter @donordesk/infrastructure db:seed",
+    "db:studio": "pnpm --filter @donordesk/infrastructure db:studio"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "@types/node": "22.10.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "glob@>=10.2.0 <10.5.0": "10.5.0",
+      "postcss@<=8.5.17": "8.5.26",
+      "protobufjs@>=8.0.0 <8.4.1": "8.4.1",
+      "sharp@<0.35.0": "0.35.3",
+      "@opentelemetry/propagator-jaeger@<2.9.0": "2.9.0"
+    }
+  }
+}

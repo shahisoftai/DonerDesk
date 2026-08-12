@@ -1,0 +1,47 @@
+################################################################################
+# DonorDesk API Helm Chart
+# Supports BYOC deployment to customer AWS/GCP accounts
+################################################################################
+
+apiVersion: v2
+name: donordesk-api
+version: 1.0.0
+description: DonorDesk API Server Helm chart for Kubernetes deployment
+type: application
+
+keywords:
+  - donordesk
+  - humanitarian
+  - reporting
+
+maintainers:
+  - name: DonorDesk Team
+    email: engineering@donordesk.com
+
+################################################################################
+# Values Schema (for validation)
+################################################################################
+
+schema:
+  openapi: "3.0.0"
+  type: object
+  properties:
+    image:
+      type: object
+      properties:
+        repository: { type: string }
+        tag: { type: string }
+        pullPolicy: { type: string }
+    replicaCount: { type: integer, minimum: 1 }
+    resources:
+      type: object
+
+dependencies:
+  - name: postgresql
+    version: "14.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  - name: redis
+    version: "19.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled

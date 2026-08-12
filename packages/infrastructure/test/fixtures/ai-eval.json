@@ -1,0 +1,14 @@
+[
+  {
+    "name": "faithful activity summary",
+    "reference": "The project trained 25 community health workers in nutrition screening.",
+    "hypothesis": "The project trained 25 community health workers in nutrition screening.",
+    "threshold": 0.9
+  },
+  {
+    "name": "faithful indicator statement",
+    "reference": "Water access reached 80 percent of the target population.",
+    "hypothesis": "Water access reached 80 percent of the target population.",
+    "threshold": 0.9
+  }
+]

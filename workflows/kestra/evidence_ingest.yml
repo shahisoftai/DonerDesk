@@ -1,0 +1,46 @@
+# Kestra flow that re-routes evidence uploads through the workers service.
+#
+# Phase 1 architecture: Kestra is the recommended orchestrator for asynchronous jobs
+# (document parsing, embedding, OCR). This flow shows the contract for Phase 2+;
+# the TypeScript API currently invokes the same strategies inline.
+id: evidence_ingest
+namespace: donor_desk.phase1
+description: Parse uploaded evidence and ask the workers service to suggest tags.
+inputs:
+  - id: evidenceId
+    type: STRING
+  - id: fileKey
+    type: STRING
+tasks:
+  - id: fetch
+    type: io.kestra.plugin.core.http.Request
+    uri: "{{ secrets.donordesk_api }}/internal/evidence/{{ inputs.evidenceId }}"
+    headers:
+      X-Internal-Token: "{{ secrets.kestra_internal_token }}"
+  - id: parse
+    type: io.kestra.plugin.scripts.python.Script
+    script: |
+      import sys, json
+      from app.parsers import parse
+      body = json.loads("{{ outputs.fetch.body }}")
+      text = parse(body)
+      print(json.dumps({"text": text}))
+  - id: suggest
+    type: io.kestra.plugin.core.http.Request
+    uri: "{{ secrets.donordesk_workers }}/v1/suggest-tags"
+    method: POST
+    contentType: application/json
+    body: |
+      {
+        "file_name": "{{ inputs.fileKey }}",
+        "file_type": "application/octet-stream",
+        "extracted_text": "{{ outputs.parse.text }}"
+      }
+  - id: persist
+    type: io.kestra.plugin.core.http.Request
+    uri: "{{ secrets.donordesk_api }}/internal/evidence/{{ inputs.evidenceId }}/tags"
+    method: POST
+    headers:
+      X-Internal-Token: "{{ secrets.kestra_internal_token }}"
+      Content-Type: application/json
+    body: "{{ outputs.suggest.body }}"

@@ -1,0 +1,438 @@
+################################################################################
+# DonorDesk API Values
+################################################################################
+
+image:
+  repository: donordesk/api
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 3
+
+################################################################################
+# BYOC Configuration
+################################################################################
+
+byoc:
+  enabled: true
+  cloudProvider: "aws"  # aws | gcp | azure
+  customerAccountId: ""  # Customer's cloud account ID
+  clusterName: ""
+  namespace: "donordesk"
+
+################################################################################
+# Multi-region Configuration
+################################################################################
+
+multiRegion:
+  enabled: true
+  primaryRegion: "us-east-1"
+  dataResidency: "DEFAULT"  # EU | US | AFRICA | ASIA | DEFAULT
+  replicationFactor: 3
+
+################################################################################
+# Service Configuration
+################################################################################
+
+service:
+  type: ClusterIP
+  port: 8080
+  metricsPort: 9090
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+  hosts:
+    - host: api.donordesk.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api
+    - host: api.donordesk.eu
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api
+  tls:
+    - secretName: donordesk-tls
+      hosts:
+        - api.donordesk.com
+        - api.donordesk.eu
+
+################################################################################
+# Resource Configuration
+################################################################################
+
+resources:
+  limits:
+    cpu: "2000m"
+    memory: "2Gi"
+  requests:
+    cpu: "500m"
+    memory: "512Mi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+
+################################################################################
+# Database Configuration
+################################################################################
+
+postgresql:
+  enabled: true
+  auth:
+    database: "donordesk"
+    username: "donordesk"
+  architecture: "replication"  # replication | standalone
+  primary:
+    persistence:
+      size: 50Gi
+      storageClass: "gp3"
+  readReplicas:
+    replicaCount: 2
+    persistence:
+      size: 50Gi
+
+externalDatabase:
+  enabled: false
+  host: ""
+  port: 5432
+  database: ""
+  username: ""
+  existingSecret: ""
+
+################################################################################
+# Redis Configuration
+################################################################################
+
+redis:
+  enabled: true
+  architecture: "replication"
+  auth:
+    enabled: true
+    existingSecret: ""
+    password: ""
+  master:
+    persistence:
+      size: 10Gi
+      storageClass: "gp3"
+  replica:
+    persistence:
+      size: 10Gi
+    replicaCount: 2
+
+externalRedis:
+  enabled: false
+  host: ""
+  port: 6379
+  password: ""
+  existingSecret: ""
+
+################################################################################
+# Security & Network Policies
+################################################################################
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10000
+  runAsGroup: 10000
+  fsGroup: 10000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+networkPolicy:
+  enabled: true
+  allowExternal: false
+  podSelector:
+    matchLabels:
+      app: donordesk-api
+
+################################################################################
+# Service Account & RBAC
+################################################################################
+
+serviceAccount:
+  create: true
+  name: "donordesk-api"
+  annotations:
+    eks.amazonaws.com/role-arn: ""  # IRSA role ARN
+
+rbac:
+  create: true
+
+################################################################################
+# Pod Disruption Budget
+################################################################################
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+  maxUnavailable: ""
+
+################################################################################
+# Horizontal Pod Autoscaler V2
+################################################################################
+
+hpa:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  cpuUtilization: 70
+  memoryUtilization: 80
+
+################################################################################
+# Init Containers
+################################################################################
+
+initContainers:
+  migrations:
+    enabled: true
+    image: "donordesk/api:latest"
+    command: ["node", "dist/db/migrate.js"]
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+
+################################################################################
+# Sidecar Containers
+################################################################################
+
+sidecars: []
+#  - name: otel-collector
+#    image: otel/opentelemetry-collector:latest
+#    ports:
+#      - containerPort: 4317
+
+################################################################################
+# Liveness & Readiness Probes
+################################################################################
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
+
+################################################################################
+# Environment Variables
+################################################################################
+
+env:
+  - name: NODE_ENV
+    value: "production"
+  - name: PORT
+    value: "8080"
+  - name: LOG_LEVEL
+    value: "info"
+  - name: CACHE_TTL_SECONDS
+    value: "300"
+  - name: MAX_UPLOAD_SIZE_MB
+    value: "50"
+
+envFrom:
+  - configMapRef:
+      name: ""
+  - secretRef:
+      name: ""
+
+################################################################################
+# ConfigMaps
+################################################################################
+
+configMaps:
+  donordesk-api-config:
+    DATA_RESIDENCY_REGION: "DEFAULT"
+    ENABLE_OTEL: "true"
+    OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+    RATE_LIMIT_PER_MINUTE: "100"
+    CORS_ORIGINS: "https://app.donordesk.com,https://app.donordesk.eu"
+
+################################################################################
+# Secrets (reference to external secrets or create inline)
+################################################################################
+
+secrets:
+  create: false
+  existingSecret: "donordesk-api-secrets"
+  donordesk-api-secrets:
+    stringData:
+      DATABASE_URL: ""  # Set via external secrets operator in BYOC
+      REDIS_URL: ""
+      JWT_SECRET: ""
+      ENCRYPTION_KEY: ""
+      SENTRY_DSN: ""
+      OPENAI_API_KEY: ""
+
+################################################################################
+# Volume Mounts
+################################################################################
+
+extraVolumeMounts: []
+
+extraVolumes: []
+
+################################################################################
+# Persistence for cache/attachments
+################################################################################
+
+persistence:
+  enabled: true
+  storageClass: "gp3"
+  size: 20Gi
+  accessMode: ReadWriteOnce
+
+################################################################################
+# Monitoring
+################################################################################
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+  prometheusRule:
+    enabled: true
+    rules:
+      - alert: DonorDeskAPIHighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate on DonorDesk API"
+          description: "Error rate is {{ $value | humanizePercentage }}"
+      - alert: DonorDeskAPILatency
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+
+################################################################################
+# Pod Labels & Annotations
+################################################################################
+
+podLabels:
+  app: donordesk-api
+  tier: backend
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  prometheus.io/path: "/metrics"
+
+################################################################################
+# Priority Classes
+################################################################################
+
+priorityClassName: "donordesk-medium"
+
+priorityClasses:
+  donordesk-critical:
+    value: 1000000
+    description: "Critical priority for API servers"
+  donordesk-medium:
+    value: 100000
+    description: "Medium priority for standard pods"
+
+################################################################################
+# Pod Topology Spread Constraints
+################################################################################
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app: donordesk-api
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app: donordesk-api
+
+################################################################################
+# Termination Grace Period
+################################################################################
+
+terminationGracePeriodSeconds: 60
+
+################################################################################
+# Affinity Rules
+################################################################################
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: donordesk-api
+          topologyKey: topology.kubernetes.io/zone
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 50
+        preference:
+          matchExpressions:
+            - key: node.kubernetes.io/workload-type
+              operator: In
+              values: ["user-managed"]
+
+################################################################################
+# Tolerations (for dedicated node pools)
+################################################################################
+
+tolerations:
+  - key: "donordesk/api"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+  - key: "node.kubernetes.io/not-ready"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 60

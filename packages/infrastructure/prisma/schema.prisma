@@ -1,0 +1,668 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id            String   @id
+  tenantId      String   @unique
+  name          String
+  organizationType String
+  country       String
+  sectors       String   // JSON array
+  contactName   String
+  contactEmail  String
+  website       String?
+  defaultLanguage String  @default("en")
+  logoUrl       String?
+  mainOfficeLocation String?
+  donorTypesServed String?
+  dataResidency String   @default("DEFAULT") // EU | US | AFRICA | ASIA | DEFAULT
+  aiEnabled     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  users         User[]
+  projects      Project[]
+}
+
+model User {
+  id            String   @id
+  tenantId      String
+  email         String
+  name          String
+  passwordHash  String
+  role          String
+  status        String   @default("INVITED")
+  lastLoginAt   DateTime?
+  assignedProjectIds String @default("[]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  organization  Organization @relation(fields: [tenantId], references: [tenantId])
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+model Invitation {
+  id            String   @id
+  tenantId      String
+  email         String
+  role          String
+  invitedById   String
+  token         String   @unique
+  expiresAt     DateTime
+  acceptedAt    DateTime?
+  projectIds    String   @default("[]")
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+model Project {
+  id                    String   @id
+  tenantId              String
+  title                 String
+  projectCode           String
+  donorName             String
+  implementingOrganization String
+  partnerOrganization   String?
+  country               String
+  region                String?
+  district              String?
+  sector                String
+  startDate             DateTime
+  endDate               DateTime
+  budgetAmount          Float?
+  budgetCurrency        String?
+  reportingFrequency    String
+  description           String?
+  primaryContactName    String?
+  projectManagerId      String?
+  meOfficerId           String?
+  reportingOfficerId    String?
+  status                String   @default("DRAFT")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  organization    Organization  @relation(fields: [tenantId], references: [tenantId])
+  logframeItems   LogframeItem[]
+  indicators      Indicator[]
+  donorTemplates  DonorTemplate[]
+  reportingPeriods ReportingPeriod[]
+  activityUpdates ActivityUpdate[]
+  evidence        EvidenceFile[]
+  checklistItems  ChecklistItem[]
+  reportDrafts    ReportDraft[]
+  exportPackages  ExportPackage[]
+}
+
+model DonorTemplate {
+  id              String   @id
+  tenantId        String
+  projectId       String
+  templateName    String
+  donorName       String
+  reportType      String
+  language        String   @default("en")
+  requiredAnnexes String   @default("[]")
+  notes           String?
+  originalFileUrl String?
+  extractedRawText String?
+  sectionsJson    String   @default("[]")
+  version         Int      @default(1)
+  uploadedById    String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id])
+  @@index([tenantId])
+  @@index([projectId])
+}
+
+model LogframeItem {
+  id          String   @id
+  tenantId    String
+  projectId   String
+  parentId    String?
+  level       String
+  code        String?
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project    Project @relation(fields: [projectId], references: [id])
+  indicators Indicator[]
+  @@index([tenantId])
+  @@index([projectId])
+}
+
+model Indicator {
+  id                    String   @id
+  tenantId              String
+  projectId             String
+  logframeItemId        String
+  code                  String
+  name                  String
+  type                  String
+  baseline              String   @default("")
+  target                String   @default("")
+  unit                  String?
+  meansOfVerification   String?
+  dataSource            String?
+  frequency             String?
+  responsibleUserId     String?
+  disaggregationRequired Boolean @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  project      Project      @relation(fields: [projectId], references: [id])
+  logframeItem LogframeItem @relation(fields: [logframeItemId], references: [id])
+  updates      IndicatorUpdate[]
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([logframeItemId])
+}
+
+model IndicatorUpdate {
+  id                    String   @id
+  tenantId              String
+  indicatorId           String
+  reportingPeriodId     String
+  periodAchievement     String
+  cumulativeAchievement String
+  comments              String?
+  dataSource            String?
+  attachedEvidenceIds   String   @default("[]")
+  verificationStatus    String   @default("DRAFT")
+  verifiedById          String?
+  verifiedAt            DateTime?
+  createdById           String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  indicator Indicator @relation(fields: [indicatorId], references: [id])
+  @@index([tenantId])
+  @@index([reportingPeriodId])
+}
+
+model ReportingPeriod {
+  id                    String   @id
+  tenantId              String
+  projectId             String
+  donorTemplateId       String?
+  reportType            String
+  startDate             DateTime
+  endDate               DateTime
+  deadline              DateTime
+  internalReviewDeadline DateTime?
+  status                String   @default("NOT_STARTED")
+  readinessScore        Int      @default(0)
+  responsibleOfficerId  String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  project      Project        @relation(fields: [projectId], references: [id])
+  drafts       ReportDraft[]
+  checklistItems ChecklistItem[]
+  activityUpdates ActivityUpdate[]
+  evidenceItems   EvidenceFile[]
+  exports      ExportPackage[]
+
+  @@index([tenantId])
+  @@index([projectId])
+}
+
+model EvidenceFile {
+  id                  String   @id
+  tenantId            String
+  projectId           String
+  reportingPeriodId   String?
+  fileName            String
+  title               String
+  fileUrl             String
+  fileType            String
+  fileSize            Int
+  evidenceType        String
+  activityId          String?
+  indicatorId         String?
+  location            String?
+  activityDate        DateTime?
+  uploadedById        String
+  verificationStatus  String   @default("UPLOADED")
+  confidentialityLevel String  @default("INTERNAL")
+  notes               String?
+  aiSummary           String?
+  aiSuggestedTagsJson String   @default("[]")
+  sensitivityWarning  String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  project         Project?         @relation(fields: [projectId], references: [id])
+  reportingPeriod ReportingPeriod? @relation(fields: [reportingPeriodId], references: [id])
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([reportingPeriodId])
+  @@index([indicatorId])
+  @@index([evidenceType])
+}
+
+model ActivityUpdate {
+  id                    String   @id
+  tenantId              String
+  projectId             String
+  reportingPeriodId     String
+  activityTitle         String
+  activityDate          DateTime
+  location              String?
+  outputId              String?
+  indicatorId           String?
+  participantsTotal     Int?
+  participantsMale      Int?
+  participantsFemale    Int?
+  participantsChildren  Int?
+  participantsDisability Int?
+  participantsOther     String?
+  summary               String
+  achievements          String   @default("")
+  challenges            String   @default("")
+  lessonsLearned        String   @default("")
+  nextSteps             String   @default("")
+  attachedEvidenceIds   String   @default("[]")
+  status                String   @default("DRAFT")
+  submittedById         String
+  polishedNarrative     String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  project         Project         @relation(fields: [projectId], references: [id])
+  reportingPeriod ReportingPeriod @relation(fields: [reportingPeriodId], references: [id])
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([reportingPeriodId])
+}
+
+model ReportDraft {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  reportingPeriodId String
+  title             String
+  status            String   @default("DRAFT")
+  version           Int      @default(1)
+  generatedByAi     Boolean  @default(false)
+  createdById       String
+  approvedById      String?
+  approvedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  project         Project         @relation(fields: [projectId], references: [id])
+  reportingPeriod ReportingPeriod @relation(fields: [reportingPeriodId], references: [id])
+  sections        ReportSection[]
+  @@index([tenantId])
+  @@index([reportingPeriodId])
+}
+
+model ReportSection {
+  id                  String   @id
+  tenantId            String
+  reportDraftId       String
+  sectionTitle        String
+  sectionOrder        Int
+  content             String   @default("")
+  sourceReferencesJson String  @default("[]")
+  unsupportedClaims   String   @default("[]")
+  status              String   @default("NOT_STARTED")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  reportDraft ReportDraft @relation(fields: [reportDraftId], references: [id])
+  @@index([tenantId])
+  @@index([reportDraftId])
+}
+
+model ChecklistItem {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  reportingPeriodId String
+  type              String
+  title             String
+  description       String   @default("")
+  severity          String
+  relatedEntityType String?
+  relatedEntityId   String?
+  assignedToId      String?
+  dueDate           DateTime?
+  status            String   @default("OPEN")
+  resolutionNotes   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  project         Project         @relation(fields: [projectId], references: [id])
+  reportingPeriod ReportingPeriod @relation(fields: [reportingPeriodId], references: [id])
+  @@index([tenantId])
+  @@index([reportingPeriodId])
+}
+
+model ExportPackage {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  reportingPeriodId String
+  exportType        String
+  fileUrl           String
+  version           Int
+  exportedById      String
+  includedFiles     String   @default("[]")
+  createdAt         DateTime @default(now())
+
+  project         Project         @relation(fields: [projectId], references: [id])
+  reportingPeriod ReportingPeriod @relation(fields: [reportingPeriodId], references: [id])
+  @@index([tenantId])
+}
+
+model Comment {
+  id              String   @id
+  tenantId        String
+  entityType      String
+  entityId        String
+  commentText     String
+  authorId        String
+  mentionedUserId String?
+  status          String   @default("OPEN")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([entityType, entityId])
+}
+
+model Notification {
+  id                String   @id
+  tenantId          String
+  recipientId       String
+  type              String
+  title             String
+  message           String
+  relatedEntityType String?
+  relatedEntityId   String?
+  read              Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([recipientId])
+}
+
+model AuditEvent {
+  id          String   @id
+  tenantId    String
+  actorId     String
+  eventType   String
+  entityType  String
+  entityId    String
+  projectId   String?
+  oldValue    String?
+  newValue    String?
+  ipAddress   String?
+  systemNote  String?
+  prevHash    String   @default("")
+  hash        String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([tenantId, createdAt])
+}
+
+model LlmModel {
+  id          String   @id
+  name        String
+  provider    String   // openai | anthropic | bedrock | ollama
+  version     String
+  capabilities String  // JSON array: ["chat", "embedding", "vision"]
+  costPer1kTokens Float @default(0)
+  maxTokens   Int     @default(4096)
+  jurisdiction String  @default("US") // US | EU | AFRICA | ASIA
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  llmRuns     LlmRun[]
+  prompts     LlmPrompt[]
+
+  @@index([provider])
+  @@index([jurisdiction])
+}
+
+model LlmPrompt {
+  id          String   @id
+  name        String   // e.g., "evidence-tagger", "report-drafter"
+  version     Int      @default(1)
+  promptText  String   @db.Text
+  variables   String   // JSON array of variable names
+  modelId     String?
+  model       LlmModel? @relation(fields: [modelId], references: [id])
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  llmRuns     LlmRun[]
+  feedback    LlmFeedback[]
+
+  @@unique([name, version])
+  @@index([name])
+}
+
+model LlmRun {
+  id              String   @id
+  modelId         String
+  model           LlmModel @relation(fields: [modelId], references: [id])
+  promptId       String
+  prompt          LlmPrompt @relation(fields: [promptId], references: [id])
+  tenantId       String
+  inputTokens     Int      @default(0)
+  outputTokens    Int      @default(0)
+  totalTokens     Int      @default(0)
+  costUsd         Float    @default(0)
+  latencyMs       Int      @default(0)
+  status          String   @default("success") // success | error | timeout
+  errorMessage    String?
+  responseText    String?  @db.Text
+  promptVersion   Int
+  modelVersion    String
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([modelId])
+  @@index([promptId])
+  @@index([createdAt])
+}
+
+model LlmFeedback {
+  id          String   @id
+  promptId    String
+  prompt      LlmPrompt @relation(fields: [promptId], references: [id])
+  tenantId    String
+  runId       String?
+  taskType    String   // evidence_tagging | report_draft | activity_polish
+  entityType  String?  // evidence | report_section | activity_update
+  entityId    String?
+  accepted    Boolean
+  rating      Int?     // 1-5 optional rating
+  comment     String?
+  modelId     String?
+  promptVersion Int?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([taskType])
+  @@index([entityType, entityId])
+  @@index([accepted])
+}
+
+model EvidenceChunk {
+  id          String   @id
+  evidenceId  String
+  tenantId    String
+  chunkIndex  Int
+  text        String   @db.Text
+  tokenCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  embeddings  EvidenceEmbedding[]
+
+  @@index([evidenceId])
+  @@index([tenantId])
+}
+
+model EvidenceEmbedding {
+  id          String   @id
+  chunkId     String
+  chunk       EvidenceChunk @relation(fields: [chunkId], references: [id])
+  tenantId    String
+  modelId     String
+  provider    String
+  vector      String   // JSON array of floats (stored as string for pgvector compatibility)
+  dimensions  Int
+  createdAt   DateTime @default(now())
+
+  @@index([chunkId])
+  @@index([tenantId])
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// PHASE 5: Enterprise & Sector Intelligence
+////////////////////////////////////////////////////////////////////////////////
+
+model SectorTemplatePack {
+  id              String   @id
+  tenantId        String
+  organizationId  String
+  name            String
+  sector          String   // NUTRITION | FOOD_SECURITY | WASH | HEALTH | PROTECTION | EDUCATION | LIVELIHOODS | SHELTER | MULTI_SECTOR | OTHER
+  version         Int      @default(1)
+  description     String
+  donorName       String
+  reportType      String
+  language        String   @default("en")
+  status          String   @default("DRAFT") // DRAFT | PUBLISHED | DEPRECATED
+  indicatorTemplatesJson String @default("[]") // JSON array of IndicatorTemplate
+  logframeTemplatesJson String @default("[]") // JSON array of LogframeNodeTemplate
+  complianceTemplatesJson String @default("[]") // JSON array of ComplianceChecklistTemplate
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([organizationId])
+  @@index([sector])
+  @@index([status])
+}
+
+model ProjectRiskTrend {
+  id                    String   @id
+  tenantId              String
+  projectId             String
+  periodStart           DateTime
+  periodEnd             DateTime
+  riskScore             Int      @default(0)
+  riskLevel             String   @default("LOW") // LOW | MEDIUM | HIGH | CRITICAL
+  contributingFactorsJson String @default("[]") // JSON array of RiskFactor
+  missingEvidenceCount  Int      @default(0)
+  deadlineSlipsCount    Int      @default(0)
+  overdueChecklistItemsCount Int @default(0)
+  lastUpdated           DateTime @default(now())
+  createdAt             DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([riskLevel])
+  @@index([tenantId, riskLevel])
+}
+
+model OrganizationBranding {
+  id                    String   @id
+  tenantId              String
+  organizationId        String   @unique
+  enabled               Boolean  @default(true)
+  subdomain             String?
+  brandingConfigJson    String   @default("{}") // JSON: { logoUrl, faviconUrl, brandColorPrimary, brandColorSecondary, brandColorAccent, fontFamilyHeading, fontFamilyBody, emailSenderName, emailSenderAddress, customDomain, customDomainVerified, privacyPolicyUrl, termsOfServiceUrl }
+  dmarCStatus           String   @default("none") // pending | valid | invalid | none
+  dkimStatus            String   @default("pending")
+  spfStatus             String   @default("pending")
+  customSSLCert         Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model LessonPattern {
+  id                  String   @id
+  tenantId            String
+  sector              String   // NUTRITION | FOOD_SECURITY | WASH | HEALTH | PROTECTION | EDUCATION | LIVELIHOODS | SHELTER | MULTI_SECTOR | OTHER
+  donorName           String
+  patternType         String   // recurring_challenge | mitigation_success | best_practice | risk_signal
+  title               String
+  description         String
+  frequency           Int      @default(1)
+  projectsAffectedJson String @default("[]") // JSON array of project IDs
+  mitigationStrategiesJson String @default("[]") // JSON array of mitigation strategy descriptions
+  evidenceReferencesJson String @default("[]") // JSON array of evidence IDs
+  firstObserved       DateTime
+  lastObserved        DateTime
+  confidence          Int      @default(0) // 0-100
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([sector])
+  @@index([donorName])
+  @@index([patternType])
+  @@index([tenantId, sector, donorName])
+}
+
+model ABACFieldPolicy {
+  id                  String   @id
+  tenantId            String
+  organizationId      String
+  role                String   // Role to which policy applies
+  resourceType        String   // Project | ActivityUpdate | Indicator | EvidenceFile | etc.
+  fieldPoliciesJson   String   // JSON array of FieldPolicy { fieldPath, permission, conditions }
+  priority            Int      @default(0) // Higher priority wins when multiple policies match
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([tenantId, organizationId, role, resourceType])
+  @@index([tenantId])
+  @@index([resourceType])
+}
+
+model MultiRegionBookmark {
+  id                  String   @id
+  tenantId            String
+  region              String   // us-east-1 | eu-west-1 | af-south-1 | ap-southeast-1
+  entityType          String   // The type of entity being tracked
+  entityId            String
+  vectorClockJson     String   @default("[]") // JSON array of VectorClock { region, timestamp, counter }
+  lastSyncedAt        DateTime
+  syncStatus          String   @default("active") // active | syncing | error
+  errorMessage        String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([tenantId, region, entityType, entityId])
+  @@index([tenantId])
+  @@index([entityType, entityId])
+}

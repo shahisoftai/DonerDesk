@@ -1,0 +1,22 @@
+################################################################################
+# ConfigMap for DonorDesk API
+################################################################################
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "donordesk-api.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "donordesk-api.labels" . | nindent 4 }}
+data:
+  NODE_ENV: "production"
+  PORT: {{ quote .Values.service.port }}
+  LOG_LEVEL: "info"
+  CACHE_TTL_SECONDS: "300"
+  MAX_UPLOAD_SIZE_MB: "50"
+  DATA_RESIDENCY_REGION: {{ .Values.multiRegion.dataResidency | quote }}
+  ENABLE_OTEL: {{ index .Values.configMaps "donordesk-api-config" "ENABLE_OTEL" | default "true" | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ index .Values.configMaps "donordesk-api-config" "OTEL_EXPORTER_OTLP_ENDPOINT" | default "http://otel-collector:4317" | quote }}
+  RATE_LIMIT_PER_MINUTE: {{ index .Values.configMaps "donordesk-api-config" "RATE_LIMIT_PER_MINUTE" | default "100" | quote }}
+  CORS_ORIGINS: {{ index .Values.configMaps "donordesk-api-config" "CORS_ORIGINS" | default "https://app.donordesk.com" | quote }}

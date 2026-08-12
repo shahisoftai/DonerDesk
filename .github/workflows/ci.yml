@@ -1,0 +1,175 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.4-alpine
+        env:
+          POSTGRES_DB: donordesk
+          POSTGRES_USER: donordesk
+          POSTGRES_PASSWORD: donordesk-dev
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U donordesk -d donordesk"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://donordesk_app:donordesk-app-dev@localhost:5432/donordesk
+      DATABASE_ADMIN_URL: postgresql://donordesk:donordesk-dev@localhost:5432/donordesk
+      JWT_SECRET: ci-only-secret-at-least-32-characters
+      AUDIT_CHAIN_KEY: ci-only-audit-chain-key-at-least-32-characters
+      AUDIT_INTEGRATION_DATABASE_URL: postgresql://donordesk:donordesk-dev@localhost:5432/donordesk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.34.5 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pnpm install --frozen-lockfile
+      - run: PGPASSWORD=donordesk-dev psql -h localhost -U donordesk -d donordesk -c "CREATE ROLE donordesk_app LOGIN PASSWORD 'donordesk-app-dev' NOSUPERUSER NOCREATEDB NOCREATEROLE"
+      - run: python -m venv apps/workers/.venv
+      - run: apps/workers/.venv/bin/pip install -r apps/workers/requirements-dev.txt
+      - run: pnpm db:migrate
+      - run: pnpm db:seed
+      - run: pnpm -r build
+      - run: pnpm -r typecheck
+      - run: pnpm -r lint
+      - run: pnpm --filter @donordesk/web exec playwright install --with-deps chromium
+      - run: pnpm -r test
+      - run: pnpm --filter @donordesk/infrastructure ai:eval
+      - run: pnpm audit --prod --audit-level=high --registry=https://registry.npmjs.org
+
+  infrastructure-plan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false
+      - run: terraform validate
+      - run: terraform plan -refresh=false -input=false -lock=false -var='database_password=ci-plan-not-a-secret' -var='plan_only=true'
+        env:
+          AWS_ACCESS_KEY_ID: plan-only
+          AWS_SECRET_ACCESS_KEY: plan-only
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+
+  sast:
+    runs-on: ubuntu-latest
+    container: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - run: semgrep scan --config auto --error
+
+  filesystem-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@0.32.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
+  opa-policy-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/policies
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check OPA installation
+        run: |
+          if ! command -v opa &> /dev/null; then
+            curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
+            chmod +x opa
+            echo "$(pwd)/opa" >> $GITHUB_PATH
+          fi
+      - name: Validate Rego policies
+        run: |
+          for policy in $(find . -name "*.rego"); do
+            opa check "$policy" || exit 1
+          done
+
+  audit-chain-verification:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.4-alpine
+        env:
+          POSTGRES_DB: donordesk
+          POSTGRES_USER: donordesk
+          POSTGRES_PASSWORD: donordesk-dev
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U donordesk -d donordesk"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://donordesk:donordesk-dev@localhost:5432/donordesk
+      JWT_SECRET: ci-only-secret-at-least-32-characters
+      AUDIT_CHAIN_KEY: ci-only-audit-chain-key-at-least-32-characters
+      AUDIT_INTEGRATION_DATABASE_URL: postgresql://donordesk:donordesk-dev@localhost:5432/donordesk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.34.5 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm --filter @donordesk/infrastructure build
+      - run: pnpm --filter @donordesk/infrastructure test
+      - run: pnpm --filter @donordesk/api build
+      - run: pnpm --filter @donordesk/api test
+
+  sbom-generation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.34.5 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Generate SBOM
+        run: |
+          npx @cyclonedx/cyclonedx-npm --output-file sbom.json --output-format JSON
+          npx @cyclonedx/cyclonedx-npm --output-file sbom.xml --output-format XML
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+          retention-days: 30
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: [typescript, python]
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v3

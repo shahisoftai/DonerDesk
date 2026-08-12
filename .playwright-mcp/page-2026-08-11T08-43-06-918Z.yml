@@ -1,0 +1,20 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - heading "Log in" [level=1] [ref=e3]
+    - paragraph [ref=e4]: DonorDesk workspace
+    - generic [ref=e5]:
+      - link "Sign in with organization SSO" [ref=e6] [cursor=pointer]:
+        - /url: /api/auth/oidc/start
+      - generic [ref=e7]:
+        - generic [ref=e8]: Email
+        - textbox "Email" [ref=e9]: admin@example.org
+      - generic [ref=e10]:
+        - generic [ref=e11]: Password
+        - textbox "Password" [ref=e12]: password123
+      - button "Sign in" [ref=e13] [cursor=pointer]
+      - paragraph [ref=e14]: "Demo: admin@example.org / password123"
+    - paragraph [ref=e15]:
+      - text: New here?
+      - link "Create an organization" [ref=e16] [cursor=pointer]:
+        - /url: /signup
+  - alert [ref=e17]
