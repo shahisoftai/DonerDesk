@@ -447,6 +447,27 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-12 (compliance, evidence, indicators, reports export, settings, team):** Deployed release
+  `20260812220349` (commit `b11bff1`) to `DonerDesk.online`. New features:
+  - Add compliance page for project compliance tracking
+  - Add evidence page for evidence management
+  - Add indicators CRUD page with edit functionality
+  - Add reports export page with multiple format support (PDF, Excel, CSV)
+  - Add project settings page
+  - Add team management page
+  - Add standalone reports page
+  - Update AppShell with new navigation items
+  - Add Tabs component for indicator display
+  - Update project-queries with new data fetching functions
+  - Add seed-dummy-projects for development data
+  Built with pnpm 10.34.5, deployed via tarball upload. Fixed TypeScript
+  errors in seed-dummy-projects.ts (added non-null assertions for parentOutcome,
+  parentOutput, targetLogframeItem). Updated systemd service WorkingDirectory
+  paths to match new directory structure (API: `/opt/donordesk/current`,
+  Web: `/opt/donordesk/current/apps/web`). Both services restarted successfully.
+  Verified: loopback health/ready OK, public HTTPS 200 on `/`, `/login`,
+  `/signup`. Rollback: repoint `current` to `releases/20260812181200`.
+
 - **2026-08-12 (portal frontend + API use-cases):** Deployed release
   `20260812181200` (commit `45a1c96`) to `DonerDesk.online`. Portal-based web
   refactor (route group `(portal)`, shared components, features, server actions,

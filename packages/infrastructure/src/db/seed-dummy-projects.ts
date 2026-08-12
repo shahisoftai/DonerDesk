@@ -275,7 +275,7 @@ async function createDummyProjects() {
 
     const outputItems = [];
     for (const output of logframe.outputs) {
-      const parentOutcome = outcomeItems[logframe.outputs.indexOf(output) % outcomeItems.length];
+      const parentOutcome = outcomeItems[logframe.outputs.indexOf(output) % outcomeItems.length]!;
       const item = await prisma.logframeItem.create({
         data: {
           id: randomUUID(),
@@ -292,7 +292,7 @@ async function createDummyProjects() {
     }
 
     for (const activity of logframe.activities) {
-      const parentOutput = outputItems[logframe.activities.indexOf(activity) % outputItems.length];
+      const parentOutput = outputItems[logframe.activities.indexOf(activity) % outputItems.length]!;
       await prisma.logframeItem.create({
         data: {
           id: randomUUID(),
@@ -308,7 +308,7 @@ async function createDummyProjects() {
     console.log(`  Created logframe structure for ${project.projectCode}`);
 
     for (const ind of indicators) {
-      const targetLogframeItem = outputItems[0];
+      const targetLogframeItem = outputItems[0]!;
       await prisma.indicator.create({
         data: {
           id: randomUUID(),
