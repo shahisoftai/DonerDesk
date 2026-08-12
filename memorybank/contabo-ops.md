@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-12 13:39 CEST (release `20260812163749`)
+**Last deployment:** 2026-08-12 18:15 CEST (release `20260812181200`)
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -311,7 +311,7 @@ Implement before accepting production data.
 
 ## 10. DonorDesk allocation
 
-**Status: DEPLOYED** (2026-08-12, release `20260812130000`)
+**Status: DEPLOYED** (2026-08-12, release `20260812181200`)
 
 | Resource | Allocation |
 |---|---|
@@ -319,7 +319,7 @@ Implement before accepting production data.
 | API | `0.0.0.0:4001` (Fastify) — **NOTE: should bind loopback only** |
 | Worker | Not deployed yet |
 | Files | `/opt/donordesk/shared/storage` |
-| Releases | `/opt/donordesk/releases/20260812130000.staging` → `current` symlink |
+| Releases | `/opt/donordesk/releases/20260812181200` → `current` symlink |
 | Runtime user | `donordesk` system user (created) |
 | Database | `donordesk` (PostgreSQL 16.14) |
 | DB roles | `donordesk_migrator` (schema owner), `donordesk_app` (runtime) |
@@ -446,6 +446,25 @@ Also verify from outside the server:
 - backup completion and a clean-machine restore.
 
 ## 14. Change log
+
+- **2026-08-12 (portal frontend + API use-cases):** Deployed release
+  `20260812181200` (commit `45a1c96`) to `DonerDesk.online`. Portal-based web
+  refactor (route group `(portal)`, shared components, features, server actions,
+  `lib/server` + `lib/client` split) plus new API use-cases (get-activity,
+  get-evidence, get-export-preflight, get-report-draft + DTOs). No Prisma schema
+  change (only migration `20260812000000_init` remains; verified schema identical
+  to the hoisted client). API and web both rebuilt off-host with pnpm 10.34.5;
+  API via `pnpm deploy --legacy` (stripped `.env`/`dev.db`), web standalone with
+  `NEXT_PUBLIC_API_URL=/api` and `.next/static` copied into the standalone
+  layout. `current` symlink atomically switched to
+  `releases/20260812181200`; `donordesk-api` and `donordesk-web` restarted.
+  Smoke-tested staged API/web on temp ports (health/ready OK, DB ok), then
+  verified loopback + public HTTPS 200s on `/`, `/login`, `/signup`, `/dashboard`
+  (307 unauth redirect), all `/v1/*` routes registered, static chunks 200, no new
+  journald errors. All browser/server API traffic resolves server-side to
+  `http://127.0.0.1:4001` via `/v1/*` (the OLS `/api` proxy and
+  `NEXT_PUBLIC_API_URL=/api` are not used for live calls, so `/api/health` 404 is
+  expected). Rollback: repoint `current` to `releases/20260812163749`.
 
 - **2026-08-12 (theme deployment):** Deployed global light/dark theming release
   `20260812163749` to `DonerDesk.online`. Frontend-only change (no Prisma
