@@ -66,3 +66,48 @@ matching DonerDesk.online.
 - Verified: loopback 200 on `/`, `/login`, `/signup`; public HTTPS 200 on all
   pages; theme script + toggle aria-label served; dark-variant CSS present in
   production CSS chunks (`html.dark`, both theme tokens).
+
+---
+
+# Frontend Portal Implementation
+
+**Status:** Implemented across Phases 0–7 (blueprint: `memorybank/imp/frontend-imp-plan.md`)
+and deployed to `DonerDesk.online` as release `20260812181200` (commit `45a1c96`) on 2026-08-12.
+
+## What was delivered
+
+A dependable, accessible, role-aware portal built on a server-only gateway,
+`httpOnly` sessions, typed errors, and server-side capability gating. The UI only
+exposes what the backend actually supports; stub/unsupported behavior is labeled
+honestly, never presented as production.
+
+| Phase | Scope | Highlights | Report |
+|-------|-------|-----------|--------|
+| 0 | Baseline & safety | httpOnly fix, server gateway, discriminated errors, capability model, error boundaries | `PHASE0-REPORT.md` |
+| 1 | Design system + shell | semantic tokens/tones, UI + feedback + data + editor primitives, `(portal)` route group + `AppShell` + side nav | `PHASE1-REPORT.md` |
+| 2 | Auth, onboarding, setup | hardened auth, honest forgot-password, derived onboarding, guided project wizard, templates, logframe/indicators | `PHASE2-FRONTEND-REPORT.md` |
+| 3 | Home, My Work, portfolios | authoritative dashboard read model, work-item queue, project portfolio, notifications, project overview | `PHASE3-FRONTEND-REPORT.md` |
+| 4 | Field activity & evidence | activity capture + AI assistance, evidence search/upload/detail/verification (in code) | *(no dedicated report)* |
+| 5 | Reporting & compliance | three-panel workspace, autosave with optimistic-concurrency conflict safety, compliance resolution + readiness | `PHASE5-FRONTEND-REPORT.md` |
+| 6 | Review, approval, export | comments thread, submit/approve lifecycle, pre-approval summary, export preflight/wizard/history | `PHASE6-FRONTEND-REPORT.md` |
+| 7 | Admin & hardening | team, settings (AI control), audit explorer with redaction; global search blocked on backend | `PHASE7-FRONTEND-REPORT.md` |
+
+## Verification (per clean local run)
+
+- `pnpm -r typecheck` and `pnpm -r lint` pass (7 packages).
+- `pnpm --filter @donordesk/web build` passes; route table shows no regression.
+- Unit tests grew to **113 passing** across phases (tone, navigation, onboarding,
+  hierarchy, deadline bands, work-items, autosave reducer, compliance links,
+  pre-approval, downloads, team, audit redaction).
+- Playwright runnable subset (no live API/DB) passes each phase; full API+DB
+  E2E journeys were environment-blocked (no PostgreSQL/Keycloak available), not
+  code failures.
+
+## Honest limits (tracked in `pending.md`)
+
+- Backend dependencies remain: project-assignment ABAC, global search, claim-level
+  provenance, real AI providers/jobs, email delivery, report-reject endpoint.
+- AI handlers (tagger/polisher/draft/checklist) and the export builder are
+  stub-backed; the UI labels them accordingly.
+- Phase 4 (ACT/EVD) routes exist but no dedicated Phase 4 frontend report was written.
+

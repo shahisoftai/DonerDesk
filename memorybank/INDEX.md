@@ -13,6 +13,8 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **What is DonorDesk?** | [`base/DonorDesk — Initial Concept Document.md`](base/DonorDesk%20—%20Initial%20Concept%20Document.md) |
 | **Why build it? (Executive pitch)** | [`base/DonorDesk — One-Page Concept Note for Approval.md`](base/DonorDesk%20—%20One-Page%20Concept%20Note%20for%20Approval.md) |
 | **Full engineering blueprint** | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) |
+| **Frontend portal blueprint** | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) |
+| **Frontend portal status** | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) (last phase) |
 | **Production issues & fixes** | [`Fixes.md`](Fixes.md) |
 | **What still needs doing** | [`pending.md`](pending.md) |
 | **Contabo host operations** | [`contabo-ops.md`](contabo-ops.md) |
@@ -34,6 +36,8 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | File | Purpose |
 |------|---------|
 | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) | **Main engineering blueprint** — 6-phase plan, SOLID, DDD, hexagonal, multi-tenancy (649 lines) |
+| [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) | **Frontend portal blueprint** — layers, SOLID, design-system workstreams, feature phases 0–7 (1399 lines) |
+| [`imp/frontend-implementation.md`](imp/frontend-implementation.md) | Frontend source product specification |
 | [`docs/architecture/decisions/0001-multi-tenancy.md`](docs/architecture/decisions/0001-multi-tenancy.md) | ADR: shared-schema + Postgres RLS |
 | [`docs/architecture/decisions/0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md) | ADR: LLM provider abstraction via strategy pattern |
 | [`docs/architecture/decisions/0003-fastify-over-nestjs.md`](docs/architecture/decisions/0003-fastify-over-nestjs.md) | ADR: Fastify over NestJS for Phase 1 |
@@ -51,10 +55,24 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 4 — Integrations | ✅ Complete | [`imp/PHASE4-COMPLETION.md`](imp/PHASE4-COMPLETION.md) | [`imp/PHASE4-AUDIT.md`](imp/PHASE4-AUDIT.md) |
 | Phase 5 — Enterprise | ✅ Complete | [`imp/PHASE5-COMPLETION.md`](imp/PHASE5-COMPLETION.md) | [`imp/PHASE5-AUDIT.md`](imp/PHASE5-AUDIT.md) |
 
+### 🎨 Frontend Portal (per [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md))
+| Phase | Scope | Status | Report |
+|-------|-------|--------|--------|
+| Phase 0 | Baseline & safety (httpOnly, gateway, errors, capability) | ✅ Delivered | [`imp/PHASE0-REPORT.md`](imp/PHASE0-REPORT.md) |
+| Phase 1 | Design system + shell (DS, SHELL) | ✅ Delivered | [`imp/PHASE1-REPORT.md`](imp/PHASE1-REPORT.md) |
+| Phase 2 | Auth, onboarding, project setup (AUTH, PROJ-01, TPL, LOG) | ✅ Delivered | [`imp/PHASE2-FRONTEND-REPORT.md`](imp/PHASE2-FRONTEND-REPORT.md) |
+| Phase 3 | Home, My Work, portfolios (DASH, NTF-01, PROJ-02/03) | ✅ Delivered | [`imp/PHASE3-FRONTEND-REPORT.md`](imp/PHASE3-FRONTEND-REPORT.md) |
+| Phase 4 | Field activity & evidence (ACT, EVD) | ⚠️ In code; no dedicated report | — |
+| Phase 5 | Reporting & compliance (REP, CMP, jobs) | ✅ Delivered | [`imp/PHASE5-FRONTEND-REPORT.md`](imp/PHASE5-FRONTEND-REPORT.md) |
+| Phase 6 | Review, approval, export (REV, EXP) | ✅ Delivered | [`imp/PHASE6-FRONTEND-REPORT.md`](imp/PHASE6-FRONTEND-REPORT.md) |
+| Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
+
+> **Frontend deployment:** release `20260812181200` (commit `45a1c96`) deployed to `DonerDesk.online` on 2026-08-12. See `contabo-ops.md` §14 change log.
+
 ### 🛠️ Operations & Deployment
 | File | Purpose |
 |------|---------|
-| [`contabo-ops.md`](contabo-ops.md) | **Live-host inventory** — verified Contabo server state, ports, services, DOs/DON'Ts, preflight checks (488 lines) |
+| [`contabo-ops.md`](contabo-ops.md) | **Live-host inventory** — verified Contabo server state, ports, services, DOs/DON'Ts, preflight checks (517 lines) |
 | [`docs/CONTABO-LEAN-DEPLOYMENT.md`](docs/CONTABO-LEAN-DEPLOYMENT.md) | Step-by-step Contabo deployment runbook (732 lines) |
 | [`docs/runbooks/DISASTER-RECOVERY.md`](docs/runbooks/DISASTER-RECOVERY.md) | DR procedures |
 | [`docs/runbooks/BYOC-DEPLOYMENT.md`](docs/runbooks/BYOC-DEPLOYMENT.md) | Bring-your-own-cloud deployment |
@@ -65,8 +83,9 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | File | Purpose |
 |------|---------|
 | [`Fixes.md`](Fixes.md) | **Production fixes applied** — signup/login 500 errors, RLS, OLS Origin header, advisory lock (69 lines) |
-| [`pending.md`](pending.md) | **Outstanding items** — production hardening, async/AI features, observability (64 lines) |
-| [`features.md`](features.md) | Feature tracking (currently empty) |
+| [`pending.md`](pending.md) | **Outstanding items** — production hardening, async/AI features, observability (136 lines) |
+| [`features.md`](features.md) | Theme + portal feature tracking (light/dark theme; portal implementation summary) |
+| [`Features/INDEX.md`](Features/INDEX.md) | 17 MVP feature specs index with statuses |
 
 ---
 
@@ -100,6 +119,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | S3 storage | [`pending.md`](pending.md) |
 | Kestra flows | [`pending.md`](pending.md) |
 | SSH hardening | [`contabo-ops.md`](contabo-ops.md) §8, [`pending.md`](pending.md) |
+| Frontend portal | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md), [`features.md`](features.md) |
 
 ---
 
@@ -110,8 +130,11 @@ memorybank/
 ├── INDEX.md                          ← YOU ARE HERE
 ├── Fixes.md                          Production fixes applied
 ├── pending.md                        Outstanding items
-├── features.md                       Feature tracking
+├── features.md                       Feature tracking (theme + portal)
 ├── contabo-ops.md                   Live-host inventory & operations
+├── Features/
+│   └── INDEX.md                     17 MVP feature specs index
+│   └── 01..17-*.md                  Per-feature specs
 ├── base/
 │   ├── DonorDesk — Initial Concept Document.md
 │   ├── DonorDesk — One-Page Concept Note for Approval.md
@@ -119,19 +142,28 @@ memorybank/
 ├── imp/
 │   ├── DonorDesk — Phased Implementation Plan.md
 │   ├── MVP-features.md
+│   ├── frontend-imp-plan.md         Frontend portal blueprint
+│   ├── frontend-implementation.md   Frontend source spec
 │   ├── PHASE0-COMPLETION-REPORT.md
 │   ├── PHASE0-AUDIT.md
+│   ├── PHASE0-REPORT.md             Frontend Phase 0
 │   ├── PHASE1-COMPLETION.md
 │   ├── PHASE1-AUDIT.md
 │   ├── PHASE1-DEVIATIONS.md
+│   ├── PHASE1-REPORT.md             Frontend Phase 1
 │   ├── PHASE2-COMPLETION.md
 │   ├── PHASE2-AUDIT.md
+│   ├── PHASE2-FRONTEND-REPORT.md    Frontend Phase 2
 │   ├── PHASE3-COMPLETION.md
 │   ├── PHASE3-AUDIT.md
+│   ├── PHASE3-FRONTEND-REPORT.md    Frontend Phase 3
 │   ├── PHASE4-COMPLETION.md
 │   ├── PHASE4-AUDIT.md
 │   ├── PHASE5-COMPLETION.md
-│   └── PHASE5-AUDIT.md
+│   ├── PHASE5-AUDIT.md
+│   ├── PHASE5-FRONTEND-REPORT.md    Frontend Phase 5
+│   ├── PHASE6-FRONTEND-REPORT.md    Frontend Phase 6
+│   └── PHASE7-FRONTEND-REPORT.md    Frontend Phase 7
 └── docs/
     ├── CONTABO-LEAN-DEPLOYMENT.md
     ├── api/
@@ -159,5 +191,6 @@ memorybank/
 | [`pending.md`](pending.md) | Starting a session — check what needs doing |
 | [`contabo-ops.md`](contabo-ops.md) | Deploying or troubleshooting production |
 | [`Fixes.md`](Fixes.md) | Investigating signup/login/auth issues |
+| [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) | Frontend portal architecture and phase scope |
 | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) | Architecture questions, adding new features |
 | [`docs/CONTABO-LEAN-DEPLOYMENT.md`](docs/CONTABO-LEAN-DEPLOYMENT.md) | Deploying to Contabo |

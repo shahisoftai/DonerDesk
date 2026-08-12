@@ -2,6 +2,11 @@
 
 This directory contains detailed documentation for each of DonorDesk's 17 MVP features.
 
+> **Frontend status:** Portal UI for these features is implemented across Phases 0–7
+> of `../imp/frontend-imp-plan.md` (reports `../imp/PHASE*-FRONTEND-REPORT.md`).
+> Frontend routes live under `apps/web/src/app/(portal)/`. Backend/async statuses
+> below are unchanged by the frontend work — see `../pending.md` for remaining deps.
+
 ## Features
 
 | # | Feature | Status | Key Files |
@@ -20,9 +25,9 @@ This directory contains detailed documentation for each of DonorDesk's 17 MVP fe
 | 12 | [Missing Evidence and Compliance Checklist](./12-Missing-Evidence-And-Compliance-Checklist.md) | Partial (AI Stub) | `packages/domain/src/entities/ChecklistItem.ts` |
 | 13 | [Review and Approval Workflow](./13-Review-And-Approval-Workflow.md) | Implemented | `packages/domain/src/entities/Comment.ts` |
 | 14 | [Export Module](./14-Export-Module.md) | Implemented | `packages/infrastructure/src/export/` |
-| 15 | [Dashboard](./15-Dashboard.md) | Implemented | `apps/web/src/app/dashboard/page.tsx` |
+| 15 | [Dashboard](./15-Dashboard.md) | Implemented | `apps/web/src/app/(portal)/dashboard/page.tsx` |
 | 16 | [Audit Log](./16-Audit-Log.md) | Implemented | `packages/domain/src/entities/AuditLog.ts` |
-| 17 | [Basic Settings](./17-Basic-Settings.md) | Implemented | `apps/web/src/app/settings/` |
+| 17 | [Basic Settings](./17-Basic-Settings.md) | Implemented | `apps/web/src/app/(portal)/settings/` |
 
 ## Status Legend
 

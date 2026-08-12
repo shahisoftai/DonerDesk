@@ -2,6 +2,32 @@
 
 Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-12.
 
+## Frontend portal (implemented — release `20260812181200`)
+
+The portal frontend is implemented across Phases 0–7 of
+`memorybank/imp/frontend-imp-plan.md` (reports in `memorybank/imp/PHASE*-FRONTEND-REPORT.md`
+and `PHASE0-REPORT.md` / `PHASE1-REPORT.md`) and deployed to `DonerDesk.online`.
+Items below that are **backend/API dependencies** are the real remaining work; the
+UI deliberately does not claim stub/unsupported behavior as production.
+
+Done (portal):
+- Server-only gateway, httpOnly session, typed errors, capability gating, no silent zero fallbacks (Phase 0).
+- Design system + authenticated shell, route groups without URL changes (Phase 1).
+- Auth, onboarding, guided project creation, templates, logframe/indicators (Phase 2).
+- Home / My Work / portfolios / notifications / project overview (Phase 3).
+- Field activity & evidence (ACT/EVD) — routes exist in code but **no dedicated Phase 4 report was written**.
+- Reporting workspace with autosave conflict safety, compliance (Phase 5).
+- Review/approval/export preflight + wizard + history, comments (Phase 6).
+- Team, settings, audit explorer, hardening (Phase 7). Global search (NTF-02) remains blocked on backend.
+
+Remaining backend dependencies that unblock the next UI tier (tracked, not claimed):
+- **Project-assignment ABAC / cross-project isolation** (FE-B03) — backend must enforce non-admin project membership + integration tests before global lists are fully trusted.
+- **Global search (NTF-02)** — no permission-filtered search contract exists.
+- **Claim-level provenance / source-linking (REP-06)** — no backend claim/provenance contract; UI shows section-level references only.
+- **Real AI providers / job resources** — all AI handlers are stubs; UI labels them honestly.
+- **Email/notification delivery** — in-app only; no delivery claims.
+- **Report reject/request-changes endpoint** — backend `approve` route only accepts `APPROVE`; no separate reject transition surfaced.
+
 ## High priority — production hardening
 
 - [ ] **API bind to loopback only.** `donordesk-api` currently listens on
@@ -60,74 +86,102 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-12.
 
 ## Feature-specific pending work
 
+Items below are **backend/async** gaps. The portal UI for each feature is
+implemented (see the frontend phase reports) but only exposes what the backend
+actually supports; unsupported controls are omitted rather than simulated.
+
 ### Feature 01 — Authentication and Onboarding
 - [ ] Complete password reset flow with email delivery
 - [ ] Email verification on signup
 - [ ] Onboarding wizard progress persistence
+- **Frontend:** login/signup hardened, honest forgot-password guidance, derived
+  onboarding checklist (Phase 2). Reset/verification require backend + email delivery.
 
 ### Feature 05 — Donor Template Manager
 - [ ] Copy-paste text template input
 - [ ] DOCX parsing for template content extraction
 - [ ] PDF parsing for template content extraction
+- **Frontend:** list, upload ("review sections"), section editor with honest
+  extraction labeling (Phase 2). Parser/runtime for PDF/DOCX remains a backend dep.
 
 ### Feature 06 — Logframe and Indicator Manager
 - [ ] Excel/CSV logframe file import
 - [ ] AI logframe structuring from pasted text
 - [ ] Disaggregation tracking (Male/Female/Children/Disability)
 - [ ] Bulk indicator import from Excel
+- **Frontend:** results hierarchy tree, indicator creation + update + verify
+  wired to real routes (Phase 2). Import/AI/disaggregation remain backend.
 
 ### Feature 07 — Evidence Library
 - [ ] S3 storage backend implementation
 - [ ] Bulk file upload (zip import)
 - [ ] Video/audio file support
 - [ ] Evidence batch operations
+- **Frontend:** search/list, upload queue, detail + preview, verification
+  (Phase 4 in code, no dedicated report). S3/zip/media remain backend.
 
 ### Feature 08 — AI Evidence Tagging
 - [ ] Real confidence scoring from LLM
 - [ ] Real sensitivity detection
 - [ ] Low-confidence highlighting in UI
 - [ ] Batch tagging for multiple files
+- **Frontend:** tag review requires human confirmation; shows only real
+  confidence/sensitivity when supplied (stub backend, honestly labeled).
 
 ### Feature 09 — Activity Update Capture
 - [ ] Wire real LLM provider for AI polishing
 - [ ] Bulk activity update import
 - [ ] Recurring activity templates
 - [ ] Photo gallery view for activity evidence
+- **Frontend:** capture form, AI assistance with original-vs-suggestion, review
+  (Phase 4 in code). Real LLM/bulk/recurring remain backend.
 
 ### Feature 11 — AI Report Draft Generator
 - [ ] Actual source reference population from evidence
 - [ ] Unsupported claim warning UI
 - [ ] Executive summary auto-generation
 - [ ] Donor-specific tone adjustment
+- **Frontend:** generate/regenerate AI draft + manual blank fallback; section-level
+  source references only, accurately labeled (Phase 5). Claim provenance remains backend.
 
 ### Feature 12 — Missing Evidence and Compliance Checklist
 - [ ] Automated checklist generation on period start
 - [ ] Real-time checklist updates as evidence uploaded
 - [ ] Checklist item templates by donor type
 - [ ] Email notifications for critical items
+- **Frontend:** checklist view grouped by severity, resolution (start/resolve/accept
+  risk/N/A) with required note + confirmation, readiness explanation (Phase 5).
 
 ### Feature 13 — Review and Approval Workflow
 - [ ] Email notifications for mentions
 - [ ] Review deadline tracking
 - [ ] Automated reminders for pending reviews
 - [ ] External reviewer access (donor portal)
+- **Frontend:** comments thread, submit/approve lifecycle, pre-approval summary
+  (Phase 6). No reject endpoint exists; email/reminders remain backend.
 
 ### Feature 14 — Export Module
 - [ ] Enhanced formatting for donor-specific templates
 - [ ] Export progress tracking
 - [ ] Automated export on period close
 - [ ] Export to Google Drive/Dropbox
+- **Frontend:** preflight, guided wizard, history, protected download (Phase 6).
+  Export builder is stub-backed in non-production.
 
 ### Feature 15 — Dashboard
 - [ ] Customizable dashboard widgets
 - [ ] Comparative metrics (vs previous period)
 - [ ] Trend charts over time
+- **Frontend:** authoritative Home (My Work first, deadline bands, linked counts),
+  My Work queue, project portfolio (Phase 3). Widgets/charts remain roadmap.
 
 ### Feature 17 — Basic Settings
 - [ ] Email notification delivery (currently logs only)
 - [ ] Two-factor authentication
 - [ ] Session management UI
 - [ ] Data export (GDPR compliance)
+- **Frontend:** org profile + AI-enabled control, capability-gated (Phase 7).
+  Email/2FA/session-management/GDPR export remain backend.
 
 ## Notes
 - Signup/login 500 errors are fixed; see `memorybank/Fixes.md`.
