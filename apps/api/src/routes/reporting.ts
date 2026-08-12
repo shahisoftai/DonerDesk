@@ -27,13 +27,21 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.get("/v1/reporting-periods/:id/draft", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getReportDraft.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.put("/v1/report-sections/:id", async (req) => {
     const id = (req.params as { id: string }).id;
     const body = UpdateSectionSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.updateReportSection.handle(ctx, id, body);
     if (!r.ok) throw r.error;
-    return { ok: true };
+    return r.value;
   });
 
   app.post("/v1/report-sections/:id/approve", async (req) => {

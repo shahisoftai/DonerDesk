@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "playwright test"
+    "test": "playwright test",
+    "test:unit": "node --experimental-strip-types --test tests/unit/*.test.mts"
   },
   "dependencies": {
     "@donordesk/contracts": "workspace:*",

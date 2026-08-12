@@ -4,6 +4,7 @@
     "jsx": "preserve",
     "module": "esnext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "noEmit": true,
     "incremental": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],

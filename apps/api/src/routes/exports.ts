@@ -10,11 +10,29 @@ export async function registerExportRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.get("/v1/reporting-periods/:id/export-preflight", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getExportPreflight.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.get("/v1/projects/:id/exports", async (req) => {
     const id = (req.params as { id: string }).id;
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.exports.findByProject(id, req.tenant.tenantId);
     if (!r.ok) throw r.error;
-    return { items: r.value.map((e) => ({ id: e.id, exportType: e.exportType, fileUrl: e.fileUrl, createdAt: e.createdAt })) };
+    return {
+      items: r.value.map((e) => ({
+        id: e.id,
+        exportType: e.exportType,
+        fileUrl: e.fileUrl,
+        version: e.version,
+        exportedById: e.exportedById,
+        includedFiles: e.includedFiles,
+        createdAt: e.createdAt.toISOString(),
+      })),
+    };
   });
 }

@@ -25,13 +25,16 @@ import {
   AcceptEvidenceTagsHandler,
   VerifyEvidenceHandler,
   SearchEvidenceHandler,
+  GetEvidenceHandler,
   CreateActivityUpdateHandler,
   PolishActivityHandler,
   ReviewActivityHandler,
   ListActivitiesHandler,
+  GetActivityHandler,
   CreateReportingPeriodHandler,
   ListReportingPeriodsHandler,
   GenerateReportDraftHandler,
+  GetReportDraftHandler,
   UpdateReportSectionHandler,
   ApproveReportSectionHandler,
   SubmitReportForReviewHandler,
@@ -41,6 +44,7 @@ import {
   ListChecklistHandler,
   CalculateReadinessHandler,
   CreateExportHandler,
+  GetExportPreflightHandler,
   AddCommentHandler,
   ResolveCommentHandler,
   ListCommentsHandler,
@@ -158,13 +162,16 @@ export interface Container {
     acceptEvidenceTags: AcceptEvidenceTagsHandler;
     verifyEvidence: VerifyEvidenceHandler;
     searchEvidence: SearchEvidenceHandler;
+    getEvidence: GetEvidenceHandler;
     createActivityUpdate: CreateActivityUpdateHandler;
     polishActivity: PolishActivityHandler;
     reviewActivity: ReviewActivityHandler;
     listActivities: ListActivitiesHandler;
+    getActivity: GetActivityHandler;
     createReportingPeriod: CreateReportingPeriodHandler;
     listReportingPeriods: ListReportingPeriodsHandler;
     generateReportDraft: GenerateReportDraftHandler;
+    getReportDraft: GetReportDraftHandler;
     updateReportSection: UpdateReportSectionHandler;
     approveReportSection: ApproveReportSectionHandler;
     submitReportForReview: SubmitReportForReviewHandler;
@@ -174,6 +181,7 @@ export interface Container {
     listChecklist: ListChecklistHandler;
     calculateReadiness: CalculateReadinessHandler;
     createExport: CreateExportHandler;
+    getExportPreflight: GetExportPreflightHandler;
     addComment: AddCommentHandler;
     resolveComment: ResolveCommentHandler;
     listComments: ListCommentsHandler;
@@ -253,15 +261,18 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     acceptEvidenceTags: new AcceptEvidenceTagsHandler(evidence, audits),
     verifyEvidence: new VerifyEvidenceHandler(evidence, audits),
     searchEvidence: new SearchEvidenceHandler(evidence),
+    getEvidence: new GetEvidenceHandler(evidence),
     createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits),
     polishActivity: new PolishActivityHandler(activities, activityPolisher),
     reviewActivity: new ReviewActivityHandler(activities, audits),
     listActivities: new ListActivitiesHandler(activities),
+    getActivity: new GetActivityHandler(activities),
     createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, audits),
     listReportingPeriods: new ListReportingPeriodsHandler(periods),
     generateReportDraft: new GenerateReportDraftHandler(
       ids, periods, drafts, sections, projects, organizations, templates, logframe, indicators, indicatorUpdates, activities, evidence, reportDraftGenerator, audits,
     ),
+    getReportDraft: new GetReportDraftHandler(drafts, sections),
     updateReportSection: new UpdateReportSectionHandler(sections, audits),
     approveReportSection: new ApproveReportSectionHandler(sections, audits),
     submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),
@@ -275,6 +286,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createExport: new CreateExportHandler(
       ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, exportBuilder, storage, audits,
     ),
+    getExportPreflight: new GetExportPreflightHandler(periods, drafts, sections, indicatorUpdates, checklist, evidence),
     addComment: new AddCommentHandler(ids, comments, audits, notify),
     resolveComment: new ResolveCommentHandler(comments, audits),
     listComments: new ListCommentsHandler(comments),

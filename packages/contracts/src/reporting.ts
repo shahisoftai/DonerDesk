@@ -49,6 +49,11 @@ export const UpdateSectionSchema = z.object({
     )
     .default([]),
   unsupportedClaims: z.array(z.string()).default([]),
+  /**
+   * Optimistic concurrency token. When provided, the update is rejected with a
+   * conflict if the section changed on the server after this token was issued.
+   */
+  expectedVersion: z.string().optional(),
 });
 
 export const ReviewReportSchema = z.object({

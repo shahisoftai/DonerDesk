@@ -79,6 +79,12 @@
     -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black, transparent 85%);
   }
 
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
   ::selection {
     background: var(--ring);
     color: #fff;
@@ -98,6 +104,18 @@
 
   *::-webkit-scrollbar-track {
     background: transparent;
+  }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

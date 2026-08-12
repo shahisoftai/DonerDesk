@@ -3,13 +3,20 @@ import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { signupAction } from "@/lib/auth-actions";
 import { ThemeToggle } from "@/components/ThemeToggle";
-
-const ORG_TYPES = ["LOCAL_NGO", "NATIONAL_NGO", "INGO", "UN_IMPLEMENTING_PARTNER", "CONSULTING_FIRM", "GOVERNMENT_UNIT", "OTHER"];
-const SECTORS = ["NUTRITION", "FOOD_SECURITY", "WASH", "HEALTH", "PROTECTION", "EDUCATION", "LIVELIHOODS", "SHELTER", "MULTI_SECTOR", "OTHER"];
-const DATA_REGIONS = ["DEFAULT", "EU", "US", "AFRICA", "ASIA"];
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Button } from "@/components/ui/Button";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { ORG_TYPE_OPTIONS, ORG_TYPE_LABEL, SECTOR_OPTIONS, SECTOR_LABEL, DATA_RESIDENCY_OPTIONS, DATA_RESIDENCY_LABEL } from "@/lib/labels";
 
 export default function SignupPage() {
-  const [state, formAction] = useFormState<{ error: string | null }, FormData>(signupAction, { error: null });
+  const [state, formAction] = useFormState<{ error: string | null; fields?: Record<string, string[]> }, FormData>(
+    signupAction,
+    { error: null },
+  );
+  const fields = state?.fields ?? {};
+
   return (
     <main className="mx-auto mt-12 max-w-2xl animate-fade-in px-6">
       <div className="flex items-start justify-between gap-4">
@@ -21,55 +28,77 @@ export default function SignupPage() {
       </div>
       <form action={formAction} className="card mt-6 grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="label">Your name</label>
-          <input name="name" className="input" required />
+          <Field label="Your name" htmlFor="name" error={fields.name?.[0]}>
+            <Input id="name" name="name" autoComplete="name" invalid={Boolean(fields.name)} required />
+          </Field>
         </div>
         <div className="sm:col-span-2">
-          <label className="label">Data residency</label>
-          <select name="dataResidency" className="input" defaultValue="DEFAULT">
-            {DATA_REGIONS.map((region) => <option key={region} value={region}>{region === "DEFAULT" ? "Platform default" : region}</option>)}
-          </select>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Restricts where organization data may be written.</p>
+          <Field
+            label="Data residency"
+            htmlFor="dataResidency"
+            description="Restricts where organization data may be written."
+          >
+            <Select id="dataResidency" name="dataResidency" defaultValue="DEFAULT">
+              {DATA_RESIDENCY_OPTIONS.map((region) => (
+                <option key={region} value={region}>
+                  {DATA_RESIDENCY_LABEL[region]}
+                </option>
+              ))}
+            </Select>
+          </Field>
         </div>
         <label className="sm:col-span-2 flex items-start gap-2 text-sm">
           <input name="aiEnabled" type="checkbox" defaultChecked className="mt-1" />
           <span>Enable AI-assisted tagging and report drafting. This can be disabled without blocking manual reports.</span>
         </label>
-        <div>
-          <label className="label">Email</label>
-          <input name="email" className="input" type="email" required />
-        </div>
-        <div>
-          <label className="label">Password</label>
-          <input name="password" className="input" type="password" minLength={8} required />
-        </div>
+        <Field label="Email" htmlFor="email" error={fields.email?.[0]}>
+          <Input id="email" name="email" type="email" autoComplete="email" invalid={Boolean(fields.email)} required />
+        </Field>
+        <Field label="Password" htmlFor="password" error={fields.password?.[0]}>
+          <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} invalid={Boolean(fields.password)} required />
+        </Field>
         <div className="sm:col-span-2">
-          <label className="label">Organization name</label>
-          <input name="orgName" className="input" required />
+          <Field label="Organization name" htmlFor="orgName" error={fields.orgName?.[0]}>
+            <Input id="orgName" name="orgName" autoComplete="organization" invalid={Boolean(fields.orgName)} required />
+          </Field>
         </div>
-        <div>
-          <label className="label">Organization type</label>
-          <select name="orgType" className="input" defaultValue="LOCAL_NGO">
-            {ORG_TYPES.map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="label">Country</label>
-          <input name="country" className="input" required />
-        </div>
+        <Field label="Organization type" htmlFor="orgType">
+          <Select id="orgType" name="orgType" defaultValue="LOCAL_NGO">
+            {ORG_TYPE_OPTIONS.map((t) => (
+              <option key={t} value={t}>
+                {ORG_TYPE_LABEL[t]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Country" htmlFor="country" error={fields.country?.[0]}>
+          <Input id="country" name="country" autoComplete="country-name" invalid={Boolean(fields.country)} required />
+        </Field>
         <div className="sm:col-span-2">
-          <label className="label">Primary sector</label>
-          <select name="sector" className="input" defaultValue="NUTRITION">
-            {SECTORS.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-          </select>
+          <Field label="Primary sector" htmlFor="sector">
+            <Select id="sector" name="sector" defaultValue="NUTRITION">
+              {SECTOR_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {SECTOR_LABEL[s]}
+                </option>
+              ))}
+            </Select>
+          </Field>
         </div>
-        {state?.error && <p className="text-sm text-red-600 dark:text-red-400 sm:col-span-2">{state.error}</p>}
+        {state?.error && (
+          <div className="sm:col-span-2">
+            <InlineAlert tone="danger" title={state.error} />
+          </div>
+        )}
         <div className="sm:col-span-2 flex justify-end">
           <SubmitButton />
         </div>
       </form>
       <p className="mt-4 text-sm">
-        Already have an account? <Link className="text-brand-600 hover:underline dark:text-brand-400" href="/login">Log in</Link>
+        Already have an account?{" "}
+        <Link className="text-brand-600 hover:underline dark:text-brand-400" href="/login">
+          Log in
+        </Link>
       </p>
     </main>
   );
@@ -77,5 +106,9 @@ export default function SignupPage() {
 
 function SubmitButton() {
   const { pending } = useFormStatus();
-  return <button className="btn" disabled={pending}>{pending ? "Creating..." : "Create workspace"}</button>;
+  return (
+    <Button type="submit" pending={pending}>
+      {pending ? "Creating..." : "Create workspace"}
+    </Button>
+  );
 }

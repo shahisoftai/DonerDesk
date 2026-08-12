@@ -2,6 +2,7 @@ import type { Result } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IEvidenceRepository, EvidenceFilter } from "../../ports/evidence.js";
+import { toEvidenceDto } from "./dto.js";
 
 export class SearchEvidenceHandler {
   constructor(private readonly repo: IEvidenceRepository) {}
@@ -12,27 +13,7 @@ export class SearchEvidenceHandler {
     return {
       ok: true,
       value: {
-        items: r.value.items.map((e) => ({
-          id: e.id,
-          projectId: e.projectId,
-          reportingPeriodId: e.reportingPeriodId,
-          activityId: e.activityId,
-          indicatorId: e.indicatorId,
-          fileName: e.fileName,
-          title: e.title,
-          fileType: e.fileType,
-          fileSize: e.fileSize,
-          evidenceType: e.evidenceType,
-          location: e.location,
-          activityDate: e.activityDate?.toISOString(),
-          uploadedById: e.uploadedById,
-          verificationStatus: e.verificationStatus,
-          confidentialityLevel: e.confidentialityLevel,
-          notes: e.notes,
-          aiSummary: e.aiSummary,
-          aiSuggestedTags: e.aiSuggestedTags,
-          sensitivityWarning: e.sensitivityWarning,
-        })),
+        items: r.value.items.map((e) => toEvidenceDto(e)),
         total: r.value.total,
         page: r.value.page,
         pageSize: r.value.pageSize,

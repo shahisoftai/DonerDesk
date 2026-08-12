@@ -40,15 +40,18 @@ export * from "./use-cases/evidence/suggest-evidence-tags.js";
 export * from "./use-cases/evidence/accept-evidence-tags.js";
 export * from "./use-cases/evidence/verify-evidence.js";
 export * from "./use-cases/evidence/search-evidence.js";
+export * from "./use-cases/evidence/get-evidence.js";
 
 export * from "./use-cases/activities/create-activity-update.js";
 export * from "./use-cases/activities/polish-activity.js";
 export * from "./use-cases/activities/review-activity.js";
 export * from "./use-cases/activities/list-activities.js";
+export * from "./use-cases/activities/get-activity.js";
 
 export * from "./use-cases/reporting/create-reporting-period.js";
 export * from "./use-cases/reporting/list-reporting-periods.js";
 export * from "./use-cases/reporting/generate-report-draft.js";
+export * from "./use-cases/reporting/get-report-draft.js";
 export * from "./use-cases/reporting/update-report-section.js";
 export * from "./use-cases/reporting/approve-report-section.js";
 export * from "./use-cases/reporting/submit-report-for-review.js";
@@ -60,6 +63,7 @@ export * from "./use-cases/compliance/list-checklist.js";
 export * from "./use-cases/compliance/calculate-readiness.js";
 
 export * from "./use-cases/exports/create-export.js";
+export * from "./use-cases/exports/get-export-preflight.js";
 
 export * from "./use-cases/support/add-comment.js";
 export * from "./use-cases/support/resolve-comment.js";

@@ -58,7 +58,79 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-12.
 - [ ] **Investigate NeureCore backend restarts** (4,822 observed) before relying
   on aggregate host headroom.
 
+## Feature-specific pending work
+
+### Feature 01 — Authentication and Onboarding
+- [ ] Complete password reset flow with email delivery
+- [ ] Email verification on signup
+- [ ] Onboarding wizard progress persistence
+
+### Feature 05 — Donor Template Manager
+- [ ] Copy-paste text template input
+- [ ] DOCX parsing for template content extraction
+- [ ] PDF parsing for template content extraction
+
+### Feature 06 — Logframe and Indicator Manager
+- [ ] Excel/CSV logframe file import
+- [ ] AI logframe structuring from pasted text
+- [ ] Disaggregation tracking (Male/Female/Children/Disability)
+- [ ] Bulk indicator import from Excel
+
+### Feature 07 — Evidence Library
+- [ ] S3 storage backend implementation
+- [ ] Bulk file upload (zip import)
+- [ ] Video/audio file support
+- [ ] Evidence batch operations
+
+### Feature 08 — AI Evidence Tagging
+- [ ] Real confidence scoring from LLM
+- [ ] Real sensitivity detection
+- [ ] Low-confidence highlighting in UI
+- [ ] Batch tagging for multiple files
+
+### Feature 09 — Activity Update Capture
+- [ ] Wire real LLM provider for AI polishing
+- [ ] Bulk activity update import
+- [ ] Recurring activity templates
+- [ ] Photo gallery view for activity evidence
+
+### Feature 11 — AI Report Draft Generator
+- [ ] Actual source reference population from evidence
+- [ ] Unsupported claim warning UI
+- [ ] Executive summary auto-generation
+- [ ] Donor-specific tone adjustment
+
+### Feature 12 — Missing Evidence and Compliance Checklist
+- [ ] Automated checklist generation on period start
+- [ ] Real-time checklist updates as evidence uploaded
+- [ ] Checklist item templates by donor type
+- [ ] Email notifications for critical items
+
+### Feature 13 — Review and Approval Workflow
+- [ ] Email notifications for mentions
+- [ ] Review deadline tracking
+- [ ] Automated reminders for pending reviews
+- [ ] External reviewer access (donor portal)
+
+### Feature 14 — Export Module
+- [ ] Enhanced formatting for donor-specific templates
+- [ ] Export progress tracking
+- [ ] Automated export on period close
+- [ ] Export to Google Drive/Dropbox
+
+### Feature 15 — Dashboard
+- [ ] Customizable dashboard widgets
+- [ ] Comparative metrics (vs previous period)
+- [ ] Trend charts over time
+
+### Feature 17 — Basic Settings
+- [ ] Email notification delivery (currently logs only)
+- [ ] Two-factor authentication
+- [ ] Session management UI
+- [ ] Data export (GDPR compliance)
+
 ## Notes
 - Signup/login 500 errors are fixed; see `memorybank/Fixes.md`.
 - The `LlmModel` / `LlmPrompt` tables are global (no `tenantId`) and are
   intentionally not RLS-tenant-isolated.
+- All 17 MVP features documented in `memorybank/Features/`

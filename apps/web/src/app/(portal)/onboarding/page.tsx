@@ -1,0 +1,92 @@
+import Link from "next/link";
+import { requireSession } from "@/lib/server/auth-context";
+import { loadOnboarding } from "@/features/onboarding/application/onboarding-status";
+import { deriveOnboardingSteps, allComplete } from "@/features/onboarding/presentation/onboarding-steps";
+import { InlineError } from "@/components/feedback/PageState";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
+
+export const dynamic = "force-dynamic";
+
+export default async function OnboardingPage() {
+  const ctx = await requireSession();
+  const { snapshot } = await loadOnboarding(ctx.token);
+
+  if (!snapshot.ok) {
+    return (
+      <div className="animate-fade-in">
+        <h1 className="text-2xl font-bold">Set up your workspace</h1>
+        <div className="mt-6">
+          <InlineError title={snapshot.error.message} referenceId={snapshot.error.referenceId} />
+        </div>
+      </div>
+    );
+  }
+
+  const steps = deriveOnboardingSteps(snapshot.value);
+  const complete = allComplete(steps);
+
+  return (
+    <div className="animate-fade-in mx-auto max-w-2xl">
+      <h1 className="text-2xl font-bold">Set up your workspace</h1>
+      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+        Complete the setup so your team can start reporting. Progress is saved automatically as you finish each step.
+      </p>
+
+      {complete && (
+        <div className="mt-6">
+          <InlineAlert tone="success" title="Setup complete">
+            Your workspace is ready. You can add more projects, templates, or team members whenever you need.
+          </InlineAlert>
+        </div>
+      )}
+
+      <ol className="mt-6 space-y-3">
+        {steps.map((step) => (
+          <li key={step.key} className="card">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <StepIndicator status={step.status} label={step.label} />
+                <div>
+                  <div className="font-semibold">{step.label}</div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400">{step.description}</div>
+                  <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{step.summary}</div>
+                </div>
+              </div>
+              {step.status !== "complete" && step.href && (
+                <Link className="btn-secondary whitespace-nowrap text-xs" href={step.href}>
+                  {step.status === "current" ? "Start" : "Continue"}
+                </Link>
+              )}
+              {step.status === "complete" && (
+                <span className="shrink-0 text-sm font-medium text-success-600 dark:text-success-400">Done</span>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function StepIndicator({ status, label }: { status: string; label: string }) {
+  const base = "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold";
+  if (status === "complete") {
+    return (
+      <span className={`${base} bg-success-500 text-white`} aria-label={`${label}: complete`}>
+        ✓
+      </span>
+    );
+  }
+  if (status === "current") {
+    return (
+      <span className={`${base} bg-brand-500 text-white`} aria-label={`${label}: in progress`}>
+        <span aria-hidden="true" />
+      </span>
+    );
+  }
+  return (
+    <span className={`${base} border border-slate-300 text-slate-400 dark:border-white/15 dark:text-slate-500`} aria-label={`${label}: pending`}>
+      •
+    </span>
+  );
+}

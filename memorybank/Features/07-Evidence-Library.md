@@ -1,0 +1,124 @@
+# Feature 7: Evidence Library
+
+## Overview
+
+Central repository for uploading, classifying, tagging, and verifying all project evidence files.
+
+## Specification (from MVP-features.md)
+
+### Upload Evidence
+Supported formats: PDF, DOCX, XLSX, CSV, JPG, PNG, TXT
+(Future: Video, Audio, WhatsApp imports, Kobo/ODK sync)
+
+### Evidence Metadata
+Fields:
+- File name, Evidence title
+- Project, Reporting period
+- Activity, Output, Indicator
+- Location, Date of activity
+- Evidence type, Uploaded by
+- Upload date, Verification status
+- Confidentiality level, Notes
+
+### Evidence Types
+Attendance sheet, Photo, Distribution list, Training record, Field visit report, Monitoring report, Kobo/ODK export, Procurement document, Approval document, Beneficiary list, Meeting minutes, Case study, Financial document, Supplier document, Donor communication, Other
+
+### Confidentiality Levels
+Public, Internal, Sensitive, Highly sensitive
+
+### Verification Statuses
+Uploaded, AI tagged, Pending review, Verified, Needs correction, Rejected, Archived
+
+### Evidence Detail Page
+- File preview
+- Metadata display/edit
+- AI-suggested tags
+- Linked activity/indicators/donor requirements
+- Verification status
+- Reviewer comments
+- Upload history
+- Download button
+
+### Search and Filters
+By: Project, Reporting period, Activity, Indicator, Evidence type, Location, Uploaded by, Verification status, Confidentiality level, Date range
+
+Search: File name, Evidence title, Notes, Extracted text, Tags
+
+## Implementation Technical Details
+
+### Data Model
+
+**EvidenceFile Entity** (`packages/domain/src/entities/EvidenceFile.ts`):
+- `id: string`
+- `tenantId: string`
+- `organizationId: string`
+- `projectId: string`
+- `reportingPeriodId: string | null`
+- `fileName: string`
+- `title: string`
+- `fileUrl: string`
+- `fileType: string`
+- `fileSizeBytes: number`
+- `evidenceType: EvidenceType`
+- `activityId: string | null`
+- `outputId: string | null`
+- `indicatorId: string | null`
+- `location: string | null`
+- `activityDate: Date | null`
+- `uploadedById: string`
+- `verificationStatus: VerificationStatus`
+- `confidentialityLevel: ConfidentialityLevel`
+- `aiSummary: string | null`
+- `aiSuggestedTagsJson: Record<string, any> | null`
+- `sensitivityWarning: boolean`
+- `createdAt: Date`
+- `updatedAt: Date`
+
+### API Endpoints
+
+| Method | Endpoint | Handler |
+|--------|----------|---------|
+| GET | `/api/evidence` | `listEvidence` |
+| POST | `/api/evidence` | `uploadEvidence` |
+| GET | `/api/evidence/:id` | `getEvidence` |
+| PATCH | `/api/evidence/:id` | `updateEvidence` |
+| DELETE | `/api/evidence/:id` | `deleteEvidence` |
+| GET | `/api/evidence/:id/download` | `downloadEvidence` |
+| POST | `/api/evidence/:id/verify` | `verifyEvidence` |
+| GET | `/api/evidence/:id/history` | `getEvidenceHistory` |
+| GET | `/api/evidence/search` | `searchEvidence` |
+
+### Storage Backend
+- Current: `LocalStorage` (`packages/infrastructure/src/storage/LocalStorage.ts`)
+- Per `memorybank/pending.md`: S3 storage not yet implemented
+
+## Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| File Upload | Implemented | LocalStorage backend |
+| Metadata CRUD | Implemented | Full fields |
+| AI Tagging | Stub | Using InMemoryJobQueue |
+| Verification Workflow | Implemented | Full status flow |
+| Search | Implemented | Basic search functional |
+| Filters | Implemented | All filter options |
+| File Preview | Implemented | For supported formats |
+| Download | Implemented | Signed URLs |
+| Delete | Implemented | Soft delete |
+
+## Pending Enhancements
+
+- [ ] S3 storage backend implementation
+- [ ] Bulk file upload (zip import)
+- [ ] Evidence linking to multiple activities/indicators
+- [ ] Advanced search with extracted text
+- [ ] Video/audio file support
+- [ ] WhatsApp import
+- [ ] Kobo/ODK direct sync
+- [ ] Bulk metadata update
+- [ ] Evidence batch operations
+- [ ] File version history
+
+## Notes
+
+Evidence files respect confidentiality levels. The `sensitivityWarning` flag is set by AI tagging. Sensitive evidence should be excluded from export unless intentionally selected per privacy requirements.

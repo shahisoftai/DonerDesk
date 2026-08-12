@@ -2,58 +2,77 @@
 import { redirect } from "next/navigation";
 import { setSessionCookie, clearSessionCookie } from "@/lib/session-server";
 import { cookies } from "next/headers";
+import { safeRedirect } from "@/lib/shared/navigation";
+import { AuthService, AuthFormError, type SignupInput } from "@/features/auth/application/auth-service";
+import type { AuthFormState } from "@/features/auth/application/auth-schemas";
 
-const API_URL =
-  process.env.API_INTERNAL_URL ??
-  process.env.API_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://127.0.0.1:4001";
+const service = new AuthService();
 
-export async function loginAction(_prev: { error: string | null } | null, form: FormData): Promise<{ error: string | null }> {
-  const email = String(form.get("email") ?? "");
+export type LoginActionResult = AuthFormState;
+export type SignupActionResult = AuthFormState;
+
+export async function loginAction(
+  _prev: AuthFormState | null,
+  form: FormData,
+): Promise<AuthFormState> {
+  const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
-  const res = await fetch(`${API_URL}/v1/auth/login`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email, password }),
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { title?: string };
-    return { error: body.title ?? "Invalid credentials" };
+  const next = String(form.get("next") ?? "");
+  if (!email || !password) {
+    return { error: "Please enter your email and password.", fields: { email: ["Required"], password: ["Required"] } };
   }
-  const data = (await res.json()) as { token: string };
-  await setSessionCookie(data.token);
-  redirect("/dashboard");
+  try {
+    const { token } = await service.login(email, password);
+    await setSessionCookie(token);
+  } catch (err) {
+    if (err instanceof AuthFormError) return err.state;
+    return { error: "Unable to sign you in. Please try again." };
+  }
+  redirect(safeRedirect(next));
 }
 
-export async function signupAction(_prev: { error: string | null } | null, form: FormData): Promise<{ error: string | null }> {
-  const body = {
-    name: String(form.get("name") ?? ""),
-    email: String(form.get("email") ?? ""),
-    password: String(form.get("password") ?? ""),
+export async function signupAction(
+  _prev: AuthFormState | null,
+  form: FormData,
+): Promise<AuthFormState> {
+  const name = String(form.get("name") ?? "").trim();
+  const email = String(form.get("email") ?? "").trim();
+  const password = String(form.get("password") ?? "");
+  const orgName = String(form.get("orgName") ?? "").trim();
+  const country = String(form.get("country") ?? "").trim();
+
+  if (!name || !email || !password || !orgName || !country) {
+    const fields: Record<string, string[]> = {};
+    if (!name) fields.name = ["Required"];
+    if (!email) fields.email = ["Required"];
+    if (!password) fields.password = ["Required"];
+    if (!orgName) fields.orgName = ["Required"];
+    if (!country) fields.country = ["Required"];
+    return { error: "Please complete the highlighted fields.", fields };
+  }
+
+  const body: SignupInput = {
+    name,
+    email,
+    password,
     organization: {
-      name: String(form.get("orgName") ?? ""),
+      name: orgName,
       organizationType: String(form.get("orgType") ?? "LOCAL_NGO"),
-      country: String(form.get("country") ?? ""),
+      country,
       primarySector: String(form.get("sector") ?? "NUTRITION"),
       defaultLanguage: "en",
       dataResidency: String(form.get("dataResidency") ?? "DEFAULT"),
       aiEnabled: form.get("aiEnabled") === "on",
     },
   };
-  const res = await fetch(`${API_URL}/v1/auth/signup`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    const errBody = (await res.json().catch(() => ({}))) as { title?: string };
-    return { error: errBody.title ?? "Sign-up failed" };
+
+  try {
+    const { token } = await service.signup(body);
+    await setSessionCookie(token);
+  } catch (err) {
+    if (err instanceof AuthFormError) return err.state;
+    return { error: "We could not create your account. Please try again." };
   }
-  const data = (await res.json()) as { token: string };
-  await setSessionCookie(data.token);
   redirect("/dashboard");
 }
 
