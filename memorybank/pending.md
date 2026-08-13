@@ -17,8 +17,11 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-13T17:00+
 > pinned provisioning (`infra/kestra/`), two signed internal routes
 > (`/internal/evidence/:id/content`, `/internal/evidence/upload`), five flows
 > (`evidence_parse`, `period_cache`, `analytics_snapshot`, `gdrive_ingest`,
-> `sftp_ingest`), and a SuperAdmin **Kestra plugins** tab. GDrive/SFTP and JDBC
-> analytics remain **gated** on credentials/grants. See `imp/KESTRA-PLUGINS.md`.
+> `sftp_ingest`), and a SuperAdmin **Kestra plugins** tab. **Deployed (2026-08-13,
+> release `20260813190000`):** API + SuperAdmin are live. **Gated (not deployed):**
+> the five plugin-referencing flows and the plugin JARs — a `sync-flows.sh` run
+> hangs Kestra until the plugins are staged/verified against Kestra 1.3.30 and the
+> `donordesk` datasource is added. See `imp/KESTRA-PLUGINS.md`.
 
 ## Frontend portal (implemented — latest web release `20260812224500`)
 
@@ -113,12 +116,14 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
   signed internal upload route (`/internal/evidence/upload`), five flows
   (`evidence_parse` Tika, `period_cache` Redis, `analytics_snapshot` JDBC,
   `gdrive_ingest` + `sftp_ingest`), and a SuperAdmin **Kestra plugins** tab
-  (`/superadmin/kestra`). See `imp/KESTRA-PLUGINS.md`.
+  (`/superadmin/kestra`). **Deployed 2026-08-13** (API + SuperAdmin, release
+  `20260813190000`). See `imp/KESTRA-PLUGINS.md`.
 - [ ] **Verify the free Kestra plugins against the pinned core.** The plugin
   versions in `infra/kestra/plugins.manifest.tsv` are gated: confirm each JAR
-  loads under Kestra 1.3.30 and run `workflows/kestra/sync-flows.sh` so the five
-  new flows deploy, then smoke-execute `evidence_parse`, `period_cache`, and
-  `analytics_snapshot` in production.
+  loads under Kestra 1.3.30, add the `donordesk` datasource to the deployed
+  `kestra.application.yml`, and only then run `workflows/kestra/sync-flows.sh`
+  to deploy the five new flows (a premature run hangs Kestra — verified 2026-08-13).
+  Then smoke-execute `evidence_parse`, `period_cache`, and `analytics_snapshot`.
 - [ ] **Provision GDrive/SFTP connector credentials.** `gdrive_ingest` and
   `sftp_ingest` are staged but gated on `CONNECTOR` records in the SuperAdmin
   portal and matching Kestra secrets. Add the Google service account / SFTP

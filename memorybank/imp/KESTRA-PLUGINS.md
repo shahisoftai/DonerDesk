@@ -54,6 +54,20 @@ All new flows are picked up automatically by `workflows/kestra/sync-flows.sh`.
 - Worker tests — `28 passed`
 - All 12 flow YAMLs parse (`yaml.safe_load`)
 
+## Deployment (2026-08-13)
+- **Deployed to production** (release `20260813190000`, commit `ea3ac0d`): the API
+  (signed `/internal/evidence/:id/content` + `/internal/evidence/upload` +
+  `/superadmin/kestra`) and the SuperAdmin **Kestra plugins** tab. Verified live:
+  API health/ready OK, `/superadmin/kestra` → 401 unauthenticated, superadmin 200,
+  public HTTPS 200, all services active.
+- **Not deployed (gated):** the five plugin-referencing flows and the plugin JARs.
+  A `sync-flows.sh` run hung Kestra when creating `analytics_snapshot` (references
+  the not-yet-configured `donordesk` datasource and the unloaded JDBC plugin);
+  Kestra was restarted and recovered, and the original seven flows are intact.
+  Do **not** run `sync-flows.sh` until the pinned plugin JARs are staged/verified
+  against Kestra 1.3.30 and the `donordesk` datasource is added to the deployed
+  `kestra.application.yml`. The five new flow YAMLs remain committed but un-deployed.
+
 ## Honest status / gating
 - Tika, Redis, and JDBC-Postgres flows are wired to contracts that exist and can
   be exercised once the plugins are staged and `sync-flows.sh` is run.

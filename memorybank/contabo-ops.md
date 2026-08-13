@@ -311,10 +311,10 @@ Implement before accepting production data.
 
 ## 10. DonorDesk allocation
 
-**Status: DEPLOYED** (2026-08-13, release `20260813064828`). Latest code (Phases
-A–D: internal routes, workers refactor, job-queue adapters, outbox, idempotency,
-scheduled flows) deployed. Workers and Kestra are both enabled; Phase E runtime
-smoke verification passed.
+**Status: DEPLOYED** (2026-08-13, release `20260813190000`). API + SuperAdmin
+updated with the Kestra-plugin code (new signed internal routes + `/superadmin/kestra`
++ Kestra plugins tab). Workers and Kestra are both enabled; the five
+plugin-referencing flows and plugin JARs remain gated (see §14 log + `imp/KESTRA-PLUGINS.md`).
 
 | Resource | Allocation |
 |---|---|
@@ -323,7 +323,7 @@ smoke verification passed.
 | Worker | **ENABLED** `127.0.0.1:8092` (FastAPI `donordesk-workers.service`, venv at `/opt/donordesk/workers/.venv`, Python 3.12) |
 | Kestra | **ENABLED** `127.0.0.1:8093` (API/UI) + `127.0.0.1:8094` (management), Kestra 1.3.30 / Java 21 |
 | Files | `/opt/donordesk/shared/storage` |
-| Releases | `/opt/donordesk/releases/20260813064828` → `current` symlink |
+| Releases | `/opt/donordesk/releases/20260813190000` → `current` symlink |
 | Runtime user | `donordesk` system user; Kestra user `donordesk_kestra` (created) |
 | Database | `donordesk` (PostgreSQL 16.14); Kestra DB `donordesk_kestra` migrated through Flyway v1.57 |
 | DB roles | `donordesk_migrator` (schema owner), `donordesk_app` (runtime), `donordesk_kestra` (Kestra, created) |
@@ -345,8 +345,10 @@ Production should not perform a workspace install.
 
 **Outstanding issue:** **API loopback — RESOLVED 2026-08-13** (binds `127.0.0.1:4001`).
 `donordesk-workers` **enabled** on `127.0.0.1:8092`. `donordesk-kestra` is
-**enabled and verified** on loopback `8093`/`8094`; seven flows are deployed.
-Schedule the off-host backup (`scripts/backup.sh`) before accepting production data.
+**enabled and verified** on loopback `8093`/`8094`; seven flows are deployed (the
+five plugin-referencing flows remain **gated** — stage/verify plugin JARs and the
+`donordesk` datasource first). Schedule the off-host backup (`scripts/backup.sh`)
+before accepting production data.
 
 ## 11. DOs and DON'Ts
 
@@ -485,20 +487,30 @@ Also verify from outside the server:
   `KestraJobQueue` smoke created execution `1cbxfrqNrj7c3Iyoj05w4m`, which reached
   `SUCCESS`. Rollback release remains `20260813064828`.
 
-- **2026-08-13 (free Kestra plugins implemented — gated):** Provisioned the four
-  recommended free plugins (Apache-2.0) for the enabled Kestra on loopback
-  8093/8094: **Tika** (evidence text/OCR), **Redis**, **JDBC-Postgres** (read-only
-  analytics), and **Google Drive + SFTP** (inbound ingestion). Added
-  `infra/kestra/plugins.manifest.tsv` + `install-plugins.sh` (pinned JARs into the
-  `--plugins` dir), a gated `donordesk` read datasource in `kestra.application.yml`,
-  and a dev compose plugins mount. API added signed internal routes
-  `/internal/evidence/:id/content` (stream bytes for Tika) and
-  `/internal/evidence/upload` (Base64-JSON inbound ingestion). Five flows added:
-  `evidence_parse`, `period_cache`, `analytics_snapshot`, `gdrive_ingest`,
-  `sftp_ingest`. SuperAdmin gained a **Kestra plugins** tab (`/superadmin/kestra`).
-  **Gated:** plugin JAR versions must be verified against Kestra 1.3.30 before
-  `sync-flows.sh` deploys the flows; GDrive/SFTP and JDBC require credentials/grants.
-  Typecheck + build + worker tests pass. See `imp/KESTRA-PLUGINS.md`.
+- **2026-08-13 (Kestra plugins deployed — API + SuperAdmin; flows gated):**
+  Deployed release `20260813190000` to `DonerDesk.online` (commit `ea3ac0d`).
+  Built off-host with pnpm 10.34.5; created the release by copying `20260813174000`
+  and overlaying: `dist/routes/internal.js` + `superadmin.js` (new signed routes
+  `/internal/evidence/:id/content`, `/internal/evidence/upload`, and
+  `/superadmin/kestra`), the `@donordesk/contracts` dist (`InternalEvidenceUploadSchema`,
+  via the pnpm store symlink), and a rebuilt `superadmin/` standalone with the
+  **Kestra plugins** tab (relocated `.pnpm` store layout). Smoke-tested staged API
+  on `127.0.0.1:4009` (health/ready OK, `/internal/*` + `/superadmin/kestra` → 401)
+  and staged superadmin on `3013` (200) before switching `current` atomically and
+  restarting `donordesk-api` + `donordesk-superadmin` (web/workers unchanged).
+  Verified live: all five services active, API loopback `4001`, superadmin `3012`,
+  `/superadmin/kestra` 401, public HTTPS `/` + `/login` 200, no new journal errors.
+  **Gated (not deployed):** the five plugin-referencing flows (`evidence_parse`,
+  `period_cache`, `analytics_snapshot`, `gdrive_ingest`, `sftp_ingest`) and the
+  plugin JARs were NOT deployed. A `sync-flows.sh` run hung Kestra when creating
+  `analytics_snapshot` (references the not-yet-configured `donordesk` datasource
+  and unloaded JDBC plugin); Kestra was restarted and recovered, and the original
+  seven flows are intact. Per `imp/KESTRA-PLUGINS.md`, stage/verify the pinned
+  plugin JARs against Kestra 1.3.30 and add the `donordesk` datasource to the
+  deployed `kestra.application.yml` before deploying those flows. The 5 new flow
+  YAMLs remain committed in `workflows/kestra/`.
+  Rollback: `ln -sfn /opt/donordesk/releases/20260813174000 /opt/donordesk/current`
+  && `systemctl restart donordesk-api donordesk-superadmin`.
 
 - **2026-08-13 (workers enabled; Kestra staged but blocked):**
   - **Workers — ENABLED and verified.** Created venv
