@@ -593,11 +593,18 @@ option is a native systemd Kestra process (prepared as
 `infra/systemd/donordesk-kestra.service`); its JVM/resource impact must be
 load-tested before enabling.
 
-> **Current production state (2026-08-13):** Release `20260813064828` (Kestra-plan
-> Phases A–D + API loopback fix + idempotency migration `20260813000000_idempotency`
-> + RLS) is deployed and verified on `DonerDesk.online`. `donordesk-api` now binds
-> `127.0.0.1:4001`. `donordesk-workers` (8092) and `donordesk-kestra` (8093) are
-> prepared with systemd units but **not enabled**. See `contabo-ops.md` §10/§14.
+> **Current production state (2026-08-13):** Latest release `20260813190000`
+> (Kestra-plugin work: signed internal routes `/internal/evidence/:id/content` +
+> `/internal/evidence/upload`, `/superadmin/kestra`, SuperAdmin **Kestra plugins**
+> tab) is deployed and verified on `DonerDesk.online`. `donordesk-api` binds
+> `127.0.0.1:4001`. `donordesk-workers` (8092), `donordesk-kestra` (8093/8094),
+> and `donordesk-superadmin` (3012) are **enabled and active**. **Gated:** the five
+> plugin-referencing Kestra flows (`evidence_parse`, `period_cache`,
+> `analytics_snapshot`, `gdrive_ingest`, `sftp_ingest`) and their plugin JARs are
+> **not deployed** — stage/verify the pinned plugin JARs against Kestra 1.3.30 and
+> add the `donordesk` datasource to the deployed `kestra.application.yml` first
+> (a premature `sync-flows.sh` run hangs Kestra). See `contabo-ops.md` §10/§14 and
+> `imp/KESTRA-PLUGINS.md`.
 
 ## 16. Release sequence
 

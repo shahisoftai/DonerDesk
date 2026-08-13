@@ -25,8 +25,13 @@
 > `evidence_parse`), **Redis** (`period_cache`), **JDBC-Postgres**
 > (`analytics_snapshot`, read-only + RLS-scoped), and **GDrive/SFTP** inbound
 > ingestion (`gdrive_ingest`, `sftp_ingest`) via a new signed
-> `/internal/evidence/upload` route. GDrive/SFTP and JDBC analytics are **gated**
-> on credentials/grants. Details and verification in `imp/KESTRA-PLUGINS.md`.
+> `/internal/evidence/upload` route. **Deployed 2026-08-13 (release
+> `20260813190000`):** the API (signed routes + `/superadmin/kestra`) and the
+> SuperAdmin **Kestra plugins** tab are live. **Gated (not deployed):** the five
+> plugin-referencing flows and plugin JARs — stage/verify the pinned JARs against
+> Kestra 1.3.30 and add the `donordesk` datasource to the deployed
+> `kestra.application.yml` before running `sync-flows.sh` (a premature run hangs
+> Kestra). Details and verification in `imp/KESTRA-PLUGINS.md`.
 
 ---
 

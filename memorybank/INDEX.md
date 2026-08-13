@@ -73,12 +73,15 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 6 | Review, approval, export (REV, EXP) | ✅ Delivered | [`imp/PHASE6-FRONTEND-REPORT.md`](imp/PHASE6-FRONTEND-REPORT.md) |
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
-> **Deployment status (2026-08-13):** The latest full backend+frontend release
-> `20260813064828` (Kestra-plan Phases A–D) is deployed to `DonerDesk.online` —
-> internal routes, job-queue adapters, outbox event bus, idempotency, scheduled
-> flows, and the API loopback fix. See `contabo-ops.md` §10/§14 and
-> `imp/KESTRA-IMPLEMENTATION-PLAN.md`. Workers (`8092`) and Kestra (`8093`) are
-> prepared but not enabled (gated).
+> **Deployment status (2026-08-13):** Latest release `20260813190000` (commit
+> `ea3ac0d`) is live on `DonerDesk.online`. All five services (API `4001`, web
+> `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`) are **enabled
+> and active**. The Kestra-plugin code is deployed: signed internal routes
+> `/internal/evidence/:id/content` + `/internal/evidence/upload`, `/superadmin/kestra`,
+> and the SuperAdmin **Kestra plugins** tab. **Gated (not deployed):** the five
+> plugin-referencing flows and plugin JARs (stage/verify against Kestra 1.3.30 +
+> add the `donordesk` datasource first). See `contabo-ops.md` §10/§14 and
+> `imp/KESTRA-PLUGINS.md`.
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |

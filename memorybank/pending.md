@@ -71,6 +71,9 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
   incl. Kestra DB + storage) is **prepared**; execution + rotation + restore-test
   remain a gated operator step. Record destination, retention, last success,
   checksum, and restore-test evidence. Local WAL archive is not DR.
+- [ ] **`api.env` line-8 stray `O`.** `/opt/donordesk/shared/api.env` contains a
+  stray `O` on line 8 (harmless to systemd `EnvironmentFile` but breaks bash
+  `.` sourcing). Remove the line on the next operator change.
 - [ ] **Add the RLS step to the release procedure.** The RLS grants + policy were
   applied manually during the 2026-08-12 fix. Bake `infra/postgres/rls.sql`
   (applied to 21 tenant tables) into the deployment runbook so it runs on
