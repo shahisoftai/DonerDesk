@@ -96,13 +96,19 @@ Search: File name, Evidence title, Notes, Extracted text, Tags
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| File Upload | Implemented | LocalStorage backend |
+| File Upload | Implemented | LocalStorage backend; upload publishes an `EvidenceUploaded` event |
 | Metadata CRUD | Implemented | Full fields |
-| AI Tagging | Stub | Using InMemoryJobQueue |
+| AI Tagging | Orchestrated (heuristic) | Outbox → `evidence.suggest_tags` job; persist idempotency-keyed (release `20260813064828`); workers and Kestra enabled |
 | Verification Workflow | Implemented | Full status flow |
 | Search | Implemented | Basic search functional |
 | Filters | Implemented | All filter options |
 | File Preview | Implemented | For supported formats |
+
+> **Async ingest (2026-08-13):** `UploadEvidenceHandler` no longer blocks on
+> parsing/enqueueing — it publishes an `EvidenceUploaded` domain event. The
+> `OutboxEventBus` maps it to `evidence.suggest_tags` via `IJobQueue` (memory
+> default; Kestra/BullMQ selectable via `JOB_QUEUE`). Tag persistence is guarded by
+> the durable `IdempotencyRecord` store (migration `20260813000000_idempotency`).
 | Download | Implemented | Signed URLs |
 | Delete | Implemented | Soft delete |
 

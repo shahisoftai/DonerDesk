@@ -1,0 +1,21 @@
+# DonorDesk Kestra plugin manifest — free (Apache-2.0) plugins only.
+#
+# Columns: name<TAB>group<TAB>artifact<TAB>version<TAB>purpose
+# `name` must be a valid shell-ish slug (no spaces) used for the JAR filename.
+# The installer downloads each pinned artifact from Maven Central:
+#   https://repo1.maven.org/maven2/<group as path>/<artifact>/<version>/<artifact>-<version>.jar
+#
+# IMPORTANT (gated): these plugin versions must be verified against the pinned
+# Kestra core (1.3.30 on Contabo) before enabling flows that use them. Bump the
+# version column to the LTS that matches your Kestra release; never `latest`.
+#
+# The four free plugins implemented for DonorDesk are:
+#   1. Tika        — text/OCR extraction for evidence documents
+#   2. Redis       — caching / TTL key-value store (Contabo host Redis)
+#   3. JDBC-Postgres — read-only aggregation queries against the donordesk DB
+#   4. GDrive + SFTP — inbound evidence ingestion connectors
+io.kestra.plugin:tika	io.kestra.plugin	plugin-tika	0.21.0	Document text/OCR extraction
+io.kestra.plugin:redis	io.kestra.plugin	plugin-redis	0.22.0	Redis caching and TTL keys
+io.kestra.plugin:jdbc-postgres	io.kestra.plugin	plugin-jdbc-postgresql	0.23.0	Read-only JDBC queries
+io.kestra.plugin:gdrive	io.kestra.plugin	plugin-google	0.20.0	Google Drive inbound trigger
+io.kestra.plugin:sftp	io.kestra.plugin	plugin-fs-sftp	0.21.0	SFTP inbound trigger

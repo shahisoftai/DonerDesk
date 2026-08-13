@@ -1,0 +1,46 @@
+# DonorDesk Kestra orchestrator — native systemd unit (Phase E).
+#
+# Binds to host loopback only (port 8093; 8080 is occupied by the hermes-sidecar).
+# Runs as a dedicated non-root user with its own PostgreSQL role/database.
+# Do NOT expose the Kestra UI publicly (use an SSH/VPN tunnel).
+#
+# Deploy:
+#   1. run infra/kestra/setup-kestra-db.sh (creates donordesk_kestra role + db)
+#   2. stage the verified binary at /opt/donordesk/kestra/kestra-<version> and
+#      config at /opt/donordesk/kestra/.kestra/config.yml (loopback 8093, PostgreSQL)
+#   3. create /opt/donordesk/shared/kestra.env (0600, owner donordesk_kestra) with
+#      KESTRA_ADMIN_PASSWORD / KESTRA_DB_PASSWORD / JAVA_TOOL_OPTIONS="-Xms256m -Xmx1g"
+#   4. run: kestra-1.3.30 sys database migrate --config=.kestra/config.yml
+#   5. install this unit, then: systemctl daemon-reload && systemctl enable --now donordesk-kestra
+#   6. verify: curl -fsS http://127.0.0.1:8093/api/v1/configs
+[Unit]
+Description=DonorDesk Kestra orchestrator
+After=network.target postgresql@16-main.service
+Wants=postgresql@16-main.service
+
+[Service]
+Type=simple
+User=donordesk_kestra
+Group=donordesk_kestra
+WorkingDirectory=/opt/donordesk/kestra
+EnvironmentFile=/opt/donordesk/shared/kestra.env
+# Script tasks use the already-managed DonorDesk Python 3.12 virtualenv. This
+# provides the `python` executable expected by plugin-script-python without a
+# host-wide alias or runtime download.
+Environment="PATH=/opt/donordesk/workers/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+# The 1.3 CLI's standalone command supplies its own port default, so pass the
+# allocated port explicitly; Micronaut's `host` setting still enforces loopback.
+ExecStart=/usr/bin/java -jar /opt/donordesk/kestra/kestra-1.3.30 server standalone --config=/opt/donordesk/kestra/.kestra/config.yml --plugins=/opt/donordesk/kestra/plugins --port=8093 --worker-thread=8 --no-tutorials
+Restart=on-failure
+RestartSec=10
+KillMode=mixed
+TimeoutStopSec=150
+SuccessExitStatus=143
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

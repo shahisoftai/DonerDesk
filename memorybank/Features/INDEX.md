@@ -18,7 +18,7 @@ This directory contains detailed documentation for each of DonorDesk's 17 MVP fe
 | 05 | [Donor Template Manager](./05-Donor-Template-Manager.md) | Partial (AI Stub) | `packages/domain/src/entities/DonorTemplate.ts` |
 | 06 | [Logframe and Indicator Manager](./06-Logframe-And-Indicator-Manager.md) | Partial | `packages/domain/src/entities/LogframeItem.ts`, `packages/domain/src/entities/Indicator.ts` |
 | 07 | [Evidence Library](./07-Evidence-Library.md) | Implemented | `packages/domain/src/entities/EvidenceFile.ts` |
-| 08 | [AI Evidence Tagging](./08-AI-Evidence-Tagging.md) | Stub | `packages/infrastructure/src/ai/handlers/evidenceTagger.ts` |
+| 08 | [AI Evidence Tagging](./08-AI-Evidence-Tagging.md) | Orchestrated (heuristic tagger; real AI provider is a stub) | `packages/infrastructure/src/llm/evidence-tagger.ts`, `packages/contracts/src/strategies/heuristic-rules.json` |
 | 09 | [Activity Update Capture](./09-Activity-Update-Capture.md) | Implemented | `packages/domain/src/entities/ActivityUpdate.ts` |
 | 10 | [Reporting Period Manager](./10-Reporting-Period-Manager.md) | Implemented | `packages/domain/src/entities/ReportingPeriod.ts` |
 | 11 | [AI Report Draft Generator](./11-AI-Report-Draft-Generator.md) | Stub | `packages/infrastructure/src/ai/handlers/reportGenerator.ts` |
@@ -36,14 +36,24 @@ This directory contains detailed documentation for each of DonorDesk's 17 MVP fe
 - **Stub**: AI/business logic uses temporary stub implementations
 - **Not Implemented**: Not yet started
 
-## Common Pending Items (AI/Async)
+## Common Async / AI Status (2026-08-13)
 
-These items affect multiple features and are tracked in `memorybank/pending.md`:
+These items affect multiple features and are tracked in `memorybank/pending.md` and
+`memorybank/contabo-ops.md`:
 
-1. **BullMQ/Redis** - Job queue not wired (`InMemoryJobQueue` in use)
-2. **LLM Provider** - Real AI providers not wired (all AI features use stubs)
-3. **S3 Storage** - Object storage not implemented (`LocalStorage` only)
-4. **Email Delivery** - Notifications log only, not delivered
+1. **Job queue — WIRED.** `createJobQueue(logger)` supports `memory` (default) /
+   `redis` (BullMQ adapter over `PriorityJobQueue`) / `kestra` (Kestra flow trigger),
+   behind a single `IJobQueue` port, plus a `JobDispatcher` and an `OutboxEventBus`
+   mapping domain events → jobs. Writes are idempotency-keyed (`IdempotencyRecord`;
+   migration `20260813000000_idempotency` applied in production).
+2. **Kestra orchestration — Phases A–D implemented and DEPLOYED** (release
+   `20260813064828`). `donordesk-workers` (127.0.0.1:8092) and `donordesk-kestra`
+   (127.0.0.1:8093) are prepared with systemd units but **not enabled** (gated).
+3. **LLM Provider — still a stub.** All AI features use the deterministic
+   heuristic tagger/polisher; real providers are a `LLM_PROVIDER` swap point.
+4. **S3 Storage — not implemented** (`LocalStorage` only).
+5. **Email Delivery — logs only** (not delivered). Deadline reminders generate
+   in-app notifications.
 
 ## Feature Relationships
 

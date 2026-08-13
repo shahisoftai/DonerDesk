@@ -55,6 +55,10 @@ services:
       - kestra_data:/app/storage
       - kestra_db:/app/data
       - ../workflows/kestra:/app/flows:ro
+      # Free DonorDesk plugins (Tika, Redis, JDBC-Postgres, GDrive, SFTP) staged
+      # by infra/kestra/install-plugins.sh. Run that script first; then Kestra
+      # loads them from /app/plugins.
+      - ../infra/kestra/plugins:/app/plugins:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp:/tmp
 

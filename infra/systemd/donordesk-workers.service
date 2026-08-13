@@ -1,0 +1,33 @@
+# DonorDesk workers — native systemd unit (Phase E deployment artifact).
+#
+# Binds to host loopback only (port 8092 per memorybank/contabo-ops.md). The
+# INTERNAL_TOKEN is loaded from the EnvironmentFile (0600), kept outside the
+# release tree under /opt/donordesk/shared.
+#
+# Deploy steps (Phase E):
+#   1. Ensure the workers venv exists at /opt/donordesk/workers/.venv
+#      (created from apps/workers with python3.12 -m venv; python3.11 is not on Contabo).
+#   2. Create /opt/donordesk/shared/workers.env (mode 0600) with INTERNAL_TOKEN.
+#   3. Install this unit, then: systemctl daemon-reload && systemctl enable --now donordesk-workers
+#   4. Verify: systemctl status donordesk-workers and curl http://127.0.0.1:8092/ready
+[Unit]
+Description=DonorDesk workers (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+User=donordesk
+Group=donordesk
+WorkingDirectory=/opt/donordesk/workers
+EnvironmentFile=/opt/donordesk/shared/workers.env
+ExecStart=/opt/donordesk/workers/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8092
+Restart=on-failure
+RestartSec=3
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

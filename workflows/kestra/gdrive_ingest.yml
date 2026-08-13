@@ -1,0 +1,91 @@
+# Kestra flow: ingest evidence from a Google Drive folder (free GDrive plugin).
+#
+# On a new file in the configured folder, downloads it into Kestra storage and
+# uploads it into DonorDesk through the signed /internal/evidence/upload route.
+# The upload publishes an EvidenceUploaded event which the outbox maps to the
+# evidence.suggest_tags job, so the new file is parsed/tagged downstream.
+#
+# GATED: requires a Google service account configured in the SuperAdmin portal
+# (CONNECTOR provider "google-drive") and its JSON materialized in the Kestra
+# secret store as GDRIVE_SERVICE_ACCOUNT_JSON, plus GDRIVE_FOLDER_ID. Until those
+# credentials are provisioned and the connection is tested, this flow is staged
+# but not operational (do not mark it enabled in the portal).
+id: gdrive_ingest
+namespace: donor_desk.phase1
+description: Ingest evidence from a Google Drive folder into DonorDesk.
+inputs:
+  - id: tenantId
+    type: STRING
+  - id: projectId
+    type: STRING
+  - id: evidenceType
+    type: STRING
+    defaults: OTHER
+  - id: confidentialityLevel
+    type: STRING
+    defaults: INTERNAL
+tasks:
+  - id: ingest
+    type: io.kestra.plugin.google.drive.Trigger
+    folder: "{{ secret('GDRIVE_FOLDER_ID') }}"
+    serviceAccount: "{{ secret('GDRIVE_SERVICE_ACCOUNT_JSON') }}"
+
+  - id: upload
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    packageManager: PIP
+    inputFiles:
+      inbound: "{{ outputs.ingest.uri }}"
+    script: |
+      import base64
+      import hashlib
+      import hmac
+      import json
+      import os
+      import time
+      import urllib.request
+
+      token = "{{ secret('KESTRA_API_INTERNAL_TOKEN') }}"
+      hmac_secret = "{{ secret('KESTRA_HMAC_SECRET') }}"
+      api_url = "{{ secret('DONORDESK_API') }}"
+      tenant = "{{ inputs.tenantId }}"
+
+      file_name = "{{ outputs.ingest.name | default('inbound') }}"
+      path = os.path.join(os.environ.get("WORKDIR", "."), "inbound")
+      with open(path, "rb") as handle:
+          raw = handle.read()
+
+      body = json.dumps(
+          {
+              "projectId": "{{ inputs.projectId }}",
+              "title": file_name,
+              "fileName": file_name,
+              "fileType": "application/octet-stream",
+              "evidenceType": "{{ inputs.evidenceType }}",
+              "confidentialityLevel": "{{ inputs.confidentialityLevel }}",
+              "fileBase64": base64.b64encode(raw).decode(),
+          },
+          separators=(",", ":"),
+      )
+      method = "POST"
+      path_route = "/internal/evidence/upload"
+      timestamp = str(int(time.time()))
+      canonical = "\n".join([method, path_route, tenant, timestamp, body])
+      signature = base64.b64encode(
+          hmac.new(hmac_secret.encode(), canonical.encode(), hashlib.sha256).digest()
+      ).decode()
+      request = urllib.request.Request(
+          api_url + path_route,
+          data=body.encode(),
+          method=method,
+          headers={
+              "Content-Type": "application/json",
+              "x-internal-token": token,
+              "x-tenant-id": tenant,
+              "x-internal-timestamp": timestamp,
+              "x-internal-signature": signature,
+          },
+      )
+      with urllib.request.urlopen(request) as response:
+          print(response.read().decode())

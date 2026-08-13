@@ -1,0 +1,49 @@
+# Kestra flow: tenant-scoped read-only analytics snapshot via the JDBC-Postgres
+# plugin (free). Connects as the RLS-bound runtime role `donordesk_app` and sets
+# `app.current_tenant` on the connection so row-level security is enforced for
+# exactly the signed tenant — no cross-tenant read is possible.
+#
+# This flow is GATED: it requires the `donordesk` datasource / donordesk_app
+# password in the Kestra secret store, and it only ever runs read-only SELECTs.
+# Do not add writes here; use the signed /internal/* routes for mutations.
+id: analytics_snapshot
+namespace: donor_desk.phase1
+description: Compute a read-only evidence snapshot for a reporting period via JDBC.
+inputs:
+  - id: tenantId
+    type: STRING
+  - id: reportingPeriodId
+    type: STRING
+tasks:
+  - id: aggregate
+    type: io.kestra.plugin.jdbc.postgresql.Query
+    url: "jdbc:postgresql://127.0.0.1:5432/donordesk?options=-c%20app.current_tenant%3D{{ inputs.tenantId }}"
+    username: donordesk_app
+    password: "{{ secret('DONORDESK_APP_DB_PASSWORD') }}"
+    sql: |
+      SELECT "verificationStatus" AS status, count(*)::int AS n
+      FROM "EvidenceFile"
+      WHERE "reportingPeriodId" = '{{ inputs.reportingPeriodId }}'
+      GROUP BY "verificationStatus"
+      ORDER BY "verificationStatus"
+
+  - id: summarize
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    packageManager: PIP
+    env:
+      ROWS_JSON: "{{ outputs.aggregate.rows | json }}"
+    script: |
+      import json
+      import os
+
+      rows = json.loads(os.environ.get("ROWS_JSON", "[]"))
+      total = sum(int(r.get("n") or 0) for r in rows)
+      summary = {
+          "tenantId": "{{ inputs.tenantId }}",
+          "reportingPeriodId": "{{ inputs.reportingPeriodId }}",
+          "evidenceByStatus": rows,
+          "evidenceTotal": total,
+      }
+      print(json.dumps(summary, sort_keys=True))

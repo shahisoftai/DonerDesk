@@ -123,16 +123,18 @@ interface SourceReference {
 | POST | `/api/reports/:sections/:id/ai-donor-friendly` | `aiMakeDonorFriendly` |
 
 ### AI Report Generator Handler
-- Location: `packages/infrastructure/src/ai/handlers/reportGenerator.ts`
-- Currently stub implementation (per `memorybank/pending.md`)
-- Uses `InMemoryJobQueue`
+- Location: `packages/infrastructure/src/llm/report-draft-generator.ts` (stub/heuristic)
+- Orchestration (2026-08-13, deployed): the `report.draft_section` job and the
+  workers `/v1/draft-section` route exist; the job queue is wired
+  (memory/BullMQ/Kestra via `JOB_QUEUE`). Drafting content itself remains a stub
+  until a real LLM provider is configured (`LLM_PROVIDER` swap point).
 
 ## Status
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Report Draft CRUD | Implemented | Full lifecycle |
-| AI Generation | Stub | InMemoryJobQueue |
+| AI Generation | Stub | Heuristic draft; real LLM pending |
 | Section Editing | Implemented | Rich text |
 | Source References | Partial | Schema defined, population stub |
 | Unsupported Claims | Not implemented | Flag not shown |

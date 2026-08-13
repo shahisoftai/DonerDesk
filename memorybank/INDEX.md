@@ -1,6 +1,6 @@
 # DonorDesk MemoryBank Index
 
-**Last updated:** 2026-08-12
+**Last updated:** 2026-08-13
 
 Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to search within files.
 
@@ -18,6 +18,8 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **Production issues & fixes** | [`Fixes.md`](Fixes.md) |
 | **What still needs doing** | [`pending.md`](pending.md) |
 | **Contabo host operations** | [`contabo-ops.md`](contabo-ops.md) |
+| **SuperAdmin portal** | [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) |
+| **Kestra plugins** | [`imp/KESTRA-PLUGINS.md`](imp/KESTRA-PLUGINS.md) |
 | **Deploy to Contabo** | [`docs/CONTABO-LEAN-DEPLOYMENT.md`](docs/CONTABO-LEAN-DEPLOYMENT.md) |
 
 ---
@@ -42,6 +44,9 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | [`docs/architecture/decisions/0001-multi-tenancy.md`](docs/architecture/decisions/0001-multi-tenancy.md) | ADR: shared-schema + Postgres RLS |
 | [`docs/architecture/decisions/0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md) | ADR: LLM provider abstraction via strategy pattern |
 | [`docs/architecture/decisions/0003-fastify-over-nestjs.md`](docs/architecture/decisions/0003-fastify-over-nestjs.md) | ADR: Fastify over NestJS for Phase 1 |
+| [`docs/architecture/decisions/0004-async-job-orchestration.md`](docs/architecture/decisions/0004-async-job-orchestration.md) | ADR: async job ownership (memory/BullMQ/Kestra via `JOB_QUEUE`) |
+| [`imp/KESTRA-IMPLEMENTATION-PLAN.md`](imp/KESTRA-IMPLEMENTATION-PLAN.md) | Kestra orchestration implementation plan (Phases A–F) |
+| [`imp/KESTRA-PLUGINS.md`](imp/KESTRA-PLUGINS.md) | **Free Kestra plugins** (Tika, Redis, JDBC-Postgres, GDrive, SFTP) — implementation + gating |
 | [`docs/security/threat-model.md`](docs/security/threat-model.md) | Security threat model |
 | [`docs/api/openapi-3.1.json`](docs/api/openapi-3.1.json) | OpenAPI spec |
 
@@ -68,13 +73,17 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 6 | Review, approval, export (REV, EXP) | ✅ Delivered | [`imp/PHASE6-FRONTEND-REPORT.md`](imp/PHASE6-FRONTEND-REPORT.md) |
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
-> **Frontend deployment:** release `20260812181200` (commit `45a1c96`) deployed to `DonerDesk.online` on 2026-08-12. See `contabo-ops.md` §14 change log.
->
-> **Later local changes:** the fixes in `imp/FRONTEND-UX-INTEGRATION-AUDIT.md` are not included in that production release unless a newer deployment is separately recorded.
+> **Deployment status (2026-08-13):** The latest full backend+frontend release
+> `20260813064828` (Kestra-plan Phases A–D) is deployed to `DonerDesk.online` —
+> internal routes, job-queue adapters, outbox event bus, idempotency, scheduled
+> flows, and the API loopback fix. See `contabo-ops.md` §10/§14 and
+> `imp/KESTRA-IMPLEMENTATION-PLAN.md`. Workers (`8092`) and Kestra (`8093`) are
+> prepared but not enabled (gated).
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |
 |------|---------|
+| [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) | **SuperAdmin portal** — security boundary, capabilities, API, encrypted configuration, production topology, TLS, operations, rollback, and limitations |
 | [`contabo-ops.md`](contabo-ops.md) | **Live-host inventory** — verified Contabo server state, ports, services, DOs/DON'Ts, preflight checks (517 lines) |
 | [`docs/CONTABO-LEAN-DEPLOYMENT.md`](docs/CONTABO-LEAN-DEPLOYMENT.md) | Step-by-step Contabo deployment runbook (732 lines) |
 | [`docs/runbooks/DISASTER-RECOVERY.md`](docs/runbooks/DISASTER-RECOVERY.md) | DR procedures |
@@ -99,6 +108,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | 1 | Shared-schema PostgreSQL + RLS for multi-tenancy | [`0001-multi-tenancy.md`](docs/architecture/decisions/0001-multi-tenancy.md) |
 | 2 | LLM strategy pattern with provider abstraction | [`0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md) |
 | 3 | Fastify over NestJS for Phase 1 | [`0003-fastify-over-nestjs.md`](docs/architecture/decisions/0003-fastify-over-nestjs.md) |
+| 4 | Async job ownership (memory/BullMQ/Kestra) | [`0004-async-job-orchestration.md`](docs/architecture/decisions/0004-async-job-orchestration.md) |
 
 ---
 
@@ -112,6 +122,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | LLM / AI | [`0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md), [`pending.md`](pending.md) (BullMQ, real LLM) |
 | API bind (0.0.0.0 issue) | [`contabo-ops.md`](contabo-ops.md) §4, §10, [`pending.md`](pending.md) |
 | OpenLiteSpeed / Origin header | [`Fixes.md`](Fixes.md) §2, [`contabo-ops.md`](contabo-ops.md) §7 |
+| SuperAdmin / platform control plane | [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) |
 | PostgreSQL advisory lock | [`Fixes.md`](Fixes.md) §3 |
 | RLS / table privileges | [`Fixes.md`](Fixes.md) §4, [`contabo-ops.md`](contabo-ops.md) §5.3 |
 | Backup / DR | [`contabo-ops.md`](contabo-ops.md) §9, [`pending.md`](pending.md) |
@@ -121,6 +132,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | BullMQ / Redis | [`pending.md`](pending.md) |
 | S3 storage | [`pending.md`](pending.md) |
 | Kestra flows | [`pending.md`](pending.md) |
+| Kestra plugins (Tika/Redis/JDBC/GDrive/SFTP) | [`imp/KESTRA-PLUGINS.md`](imp/KESTRA-PLUGINS.md), [`pending.md`](pending.md) |
 | SSH hardening | [`contabo-ops.md`](contabo-ops.md) §8, [`pending.md`](pending.md) |
 | Frontend portal | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md), [`features.md`](features.md) |
 
@@ -131,6 +143,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 ```
 memorybank/
 ├── INDEX.md                          ← YOU ARE HERE
+├── SUPERADMIN-PORTAL.md              SuperAdmin portal canonical reference
 ├── Fixes.md                          Production fixes applied
 ├── pending.md                        Outstanding items
 ├── features.md                       Feature tracking (theme + portal)
@@ -147,6 +160,8 @@ memorybank/
 │   ├── MVP-features.md
 │   ├── frontend-imp-plan.md         Frontend portal blueprint
 │   ├── frontend-implementation.md   Frontend source spec
+│   ├── KESTRA-IMPLEMENTATION-PLAN.md  Kestra orchestration plan (Phases A–F)
+│   ├── KESTRA-PLUGINS.md              Free Kestra plugins implementation + gating
 │   ├── PHASE0-COMPLETION-REPORT.md
 │   ├── PHASE0-AUDIT.md
 │   ├── PHASE0-REPORT.md             Frontend Phase 0

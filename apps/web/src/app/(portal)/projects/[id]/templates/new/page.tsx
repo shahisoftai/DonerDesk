@@ -1,5 +1,5 @@
 "use client";
-import { use, useState } from "react";
+import { use, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createTemplateAction } from "@/lib/actions/templates";
 import { Field } from "@/components/ui/Field";
@@ -13,9 +13,23 @@ import { REPORT_TYPE_LABEL } from "@/lib/labels";
 const REPORT_TYPES = ["MONTHLY", "QUARTERLY", "ANNUAL", "FINAL", "ACTIVITY", "SITUATION", "CUSTOM"];
 const IS_STUB = process.env.NODE_ENV !== "production";
 
+async function parseTemplateFile(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch("/api/v1/templates/parse-file", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to parse file");
+  const data = await res.json();
+  return data.text as string;
+}
+
 export default function NewTemplatePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [templateName, setTemplateName] = useState("");
   const [donorName, setDonorName] = useState("");
   const [reportType, setReportType] = useState("MONTHLY");
@@ -23,6 +37,24 @@ export default function NewTemplatePage({ params }: { params: Promise<{ id: stri
   const [extractedRawText, setExtractedRawText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setParsing(true);
+    setError(null);
+    try {
+      const text = await parseTemplateFile(file);
+      setExtractedRawText((prev) => (prev ? prev + "\n\n" + text : text));
+      setFileName(file.name);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to parse file");
+    } finally {
+      setParsing(false);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,9 +105,39 @@ export default function NewTemplatePage({ params }: { params: Promise<{ id: stri
           </Field>
         </div>
         <Field
-          label="Template text (paste donor instructions)"
+          label="Template document"
+          htmlFor="templateFile"
+          description="Upload a DOCX or PDF file to extract text. You can also paste text directly below."
+        >
+          <div className="flex items-center gap-3">
+            <input
+              ref={fileInputRef}
+              id="templateFile"
+              type="file"
+              accept=".docx,.pdf"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => fileInputRef.current?.click()}
+              pending={parsing}
+              disabled={parsing}
+            >
+              {parsing ? "Parsing..." : "Upload DOCX/PDF"}
+            </Button>
+            {fileName && (
+              <span className="text-sm text-slate-500 dark:text-slate-400">
+                {fileName}
+              </span>
+            )}
+          </div>
+        </Field>
+        <Field
+          label="Template text"
           htmlFor="extractedRawText"
-          description="Supported in this version: pasted text. File upload parsing is not enabled yet."
+          description="Extracted from uploaded file or paste text directly. Edit before submitting."
         >
           <Textarea
             id="extractedRawText"

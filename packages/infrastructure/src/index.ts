@@ -11,4 +11,7 @@ export { PrismaAuditRepository } from "./repositories/support.js";
 export * from "./ai/index.js";
 export * from "./webhooks/index.js";
 export * from "./integrations/index.js";
+export * from "./jobs/index.js";
+export { OutboxEventBus, DEFAULT_EVENT_TO_JOB, type EventToJobMapping } from "./events/outbox-event-bus.js";
 export { createLLMProvider, withPiiFirewall } from "./llm/factory.js";
+export { PlatformControlPlane, PLATFORM_CATEGORIES, PLATFORM_PROVIDERS } from "./platform/control-plane.js";

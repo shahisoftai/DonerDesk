@@ -28,7 +28,7 @@ fi
 status=0
 for flow in "${flow_dir}"/*.yml; do
   name="$(basename "${flow}")"
-  code="$(curl -s -o /tmp/kestra-flow-response -w '%{http_code}' \
+  code="$(curl --max-time 30 -s -o /tmp/kestra-flow-response -w '%{http_code}' \
     -u "${KESTRA_USER}:${KESTRA_PASSWORD}" \
     -X POST "${KESTRA_URL}/api/v1/${KESTRA_TENANT}/flows" \
     -H 'Content-Type: application/x-yaml' \
@@ -37,7 +37,7 @@ for flow in "${flow_dir}"/*.yml; do
   if [ "${code}" = "409" ] || [ "${code}" = "422" ]; then
     namespace="$(sed -n 's/^namespace:[[:space:]]*//p' "${flow}" | head -1)"
     id="$(sed -n 's/^id:[[:space:]]*//p' "${flow}" | head -1)"
-    code="$(curl -s -o /tmp/kestra-flow-response -w '%{http_code}' \
+    code="$(curl --max-time 30 -s -o /tmp/kestra-flow-response -w '%{http_code}' \
       -u "${KESTRA_USER}:${KESTRA_PASSWORD}" \
       -X PUT "${KESTRA_URL}/api/v1/${KESTRA_TENANT}/flows/${namespace}/${id}" \
       -H 'Content-Type: application/x-yaml' \

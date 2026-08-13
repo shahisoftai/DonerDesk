@@ -1,0 +1,62 @@
+# DonorDesk Kestra configuration (Phase E; validated against Kestra 1.3.30).
+#
+# Repository is PostgreSQL with a dedicated role/database (never embedded H2 in
+# production), the server binds loopback only, and the JVM heap is capped in
+# kestra.env. Run core Flyway migrations before first start with:
+#   kestra-1.3.30 sys database migrate --config=/opt/donordesk/kestra/.kestra/config.yml
+kestra:
+  server:
+    basic-auth:
+      enabled: true
+      username: admin@donordesk.local
+      password: ${KESTRA_ADMIN_PASSWORD}
+  repository:
+    type: postgres
+  queue:
+    type: postgres
+  storage:
+    type: local
+    local:
+      base-path: /opt/donordesk/kestra/storage
+  tutorial-flows:
+    enabled: false
+
+  # Plugins are staged as JARs in the directory passed to the server via
+  # --plugins (infra/kestra/install-plugins.sh + donordesk-kestra.service).
+  # Implemented free plugins: Tika, Redis, JDBC-Postgres, Google Drive, SFTP.
+  # See infra/kestra/plugins.manifest.tsv for pinned versions (gated).
+
+# HTTP listener settings belong to Micronaut, not `kestra.server`. Keeping them
+# here is what guarantees that the orchestration UI/API is loopback-only.
+micronaut:
+  server:
+    host: 127.0.0.1
+    port: 8093
+
+# Kestra starts Micronaut management endpoints on a second listener. Port 8081
+# is occupied on the shared host, so keep management loopback-only on 8094.
+endpoints:
+  all:
+    host: 127.0.0.1
+    port: 8094
+
+# Kestra's PostgreSQL repository and Flyway runner both resolve this named
+# datasource. Calling it `default` lets the server connect but causes
+# `sys database migrate` to report success without creating the core schema.
+datasources:
+  postgres:
+    url: jdbc:postgresql://127.0.0.1:5432/donordesk_kestra
+    driverClassName: org.postgresql.Driver
+    username: donordesk_kestra
+    password: ${KESTRA_DB_PASSWORD}
+  # Read-only application datasource for the JDBC-Postgres plugin
+  # (analytics_snapshot flow). Uses the RLS-bound runtime role `donordesk_app`.
+  # Flows that query the application database MUST scope to a single tenant and
+  # pass `options=-c app.current_tenant=<tenant>` on the connection so row-level
+  # security is enforced. This is a GATED capability: enable only after the
+  # donordesk_app grants + RLS are verified and the flow is tenant-scoped.
+  donordesk:
+    url: jdbc:postgresql://127.0.0.1:5432/donordesk
+    driverClassName: org.postgresql.Driver
+    username: donordesk_app
+    password: ${DONORDESK_APP_DB_PASSWORD}

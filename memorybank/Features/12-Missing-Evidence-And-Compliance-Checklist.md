@@ -74,8 +74,11 @@ Open, In progress, Resolved, Accepted risk, Not applicable
 - `updatedAt: Date`
 
 ### AI Detector Handler
-- Location: `packages/infrastructure/src/ai/handlers/checklistDetector.ts`
-- Currently stub implementation (per `memorybank/pending.md`)
+- Location: `packages/infrastructure/src/llm/checklist-detector.ts`
+- Orchestration (2026-08-13, deployed): checklist generation is a real scheduled
+  entry point — `POST /internal/checklist/generate` → `GenerateChecklistHandler`
+  → `DetectMissingEvidenceHandler` (creates checklist items). The `checklist.generate`
+  job exists in the wired job queue (memory/BullMQ/Kestra via `JOB_QUEUE`).
 
 ### API Endpoints
 
@@ -99,7 +102,7 @@ Open, In progress, Resolved, Accepted risk, Not applicable
 | Checklist CRUD | Implemented | Full lifecycle |
 | Severity Levels | Implemented | Low/Medium/High/Critical |
 | Status Transitions | Implemented | All 5 statuses |
-| AI Detection | Stub | InMemoryJobQueue |
+| AI Detection | Implemented (rule-based) | `DetectMissingEvidenceHandler`; scheduled generate endpoint |
 | Assignment | Implemented | Assign to user |
 | Due Dates | Implemented | Optional tracking |
 | Resolution Notes | Implemented | For accepted risk |

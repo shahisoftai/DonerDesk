@@ -20,6 +20,7 @@ export type ProjectDeadline = {
   projectTitle: string;
   periodId: string;
   periodStatus: string;
+  readinessScore: number | null;
   deadline: string;
   daysUntilDeadline: number | null;
   band: DeadlineBand | null;
@@ -80,6 +81,7 @@ export const loadDashboard = cache(async (token: string): Promise<DashboardSnaps
       projectTitle: project.title,
       periodId: upcoming.id,
       periodStatus: upcoming.status,
+      readinessScore: upcoming.readinessScore ?? null,
       deadline: upcoming.deadline,
       daysUntilDeadline: upcoming.daysUntilDeadline,
       band: classifyBand(upcoming.daysUntilDeadline),

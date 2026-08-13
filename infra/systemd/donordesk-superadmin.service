@@ -1,0 +1,24 @@
+[Unit]
+Description=DonorDesk SuperAdmin control plane
+After=network.target donordesk-api.service
+Requires=donordesk-api.service
+
+[Service]
+Type=simple
+User=donordesk
+Group=donordesk
+WorkingDirectory=/opt/donordesk/current/superadmin/apps/superadmin
+Environment=NODE_ENV=production
+Environment=PORT=3012
+Environment=HOSTNAME=127.0.0.1
+Environment=SUPERADMIN_API_URL=http://127.0.0.1:4001
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

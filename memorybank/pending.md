@@ -1,8 +1,26 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-12.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-13T17:00+05:00.
 
-## Frontend portal (implemented — release `20260812181200`)
+> **Deployment (2026-08-13):** Kestra plan Phases A–D code is **deployed to
+> Contabo production** as release `20260813064828` (internal routes, workers
+> refactor, job-queue adapters, outbox, idempotency, scheduled flows; API now
+> binds loopback). Migration `20260813000000_idempotency` + RLS applied;
+> `INTERNAL_TOKEN`/`INTERNAL_HMAC_SECRET` configured. **`donordesk-workers` is
+> ENABLED** on `127.0.0.1:8092` (verified). **`donordesk-kestra` is ENABLED** on
+> loopback `8093`/`8094`; its PostgreSQL schema is migrated and seven flows are
+> deployed. Kestra→worker and signed Kestra→API smoke executions passed.
+> Production API release `20260813081200` now uses `JOB_QUEUE=kestra`; a direct
+> production adapter execution completed successfully.
+> Off-host backup (`scripts/backup.sh`) remains to be scheduled.
+> **Free Kestra plugins implemented (Tika, Redis, JDBC-Postgres, GDrive, SFTP):**
+> pinned provisioning (`infra/kestra/`), two signed internal routes
+> (`/internal/evidence/:id/content`, `/internal/evidence/upload`), five flows
+> (`evidence_parse`, `period_cache`, `analytics_snapshot`, `gdrive_ingest`,
+> `sftp_ingest`), and a SuperAdmin **Kestra plugins** tab. GDrive/SFTP and JDBC
+> analytics remain **gated** on credentials/grants. See `imp/KESTRA-PLUGINS.md`.
+
+## Frontend portal (implemented — latest web release `20260812224500`)
 
 The portal frontend is implemented across Phases 0–7 of
 `memorybank/imp/frontend-imp-plan.md` (reports in `memorybank/imp/PHASE*-FRONTEND-REPORT.md`
@@ -11,7 +29,9 @@ Items below that are **backend/API dependencies** are the real remaining work; t
 UI deliberately does not claim stub/unsupported behavior as production.
 
 Done (portal; includes the 2026-08-12 post-implementation integration audit in
-`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`; those latest changes are local until separately deployed):
+`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`; latest dashboard parity release is deployed).
+Plus 2026-08-13 wire-up: DOCX/PDF parsing for templates, Excel/CSV import for
+logframe items and indicators):
 - Server-only gateway, httpOnly session, typed errors, capability gating, no silent zero fallbacks (Phase 0).
 - Design system + authenticated shell, route groups without URL changes (Phase 1).
 - Auth, onboarding, guided project creation, templates, logframe/indicators (Phase 2).
@@ -21,6 +41,9 @@ Done (portal; includes the 2026-08-12 post-implementation integration audit in
 - Review/approval/export preflight + wizard + history, comments (Phase 6).
 - Team, settings, audit explorer, hardening (Phase 7).
 - Post-Phase-7 shell/route integration: cross-project Reports, Evidence, and Compliance queues; project context metadata; project Team/Settings destinations; indicator detail; and dedicated export center.
+- Dashboard parity release `20260812224500`: My Work preview, readiness snapshot,
+  deadline bands, evidence/compliance/activity queues, richer project cards,
+  notifications, setup/storage notices, and `/my-work` server-render safety fix.
 - `Ctrl/Cmd+K` focuses project portfolio search. This is deliberately **not** called global search; NTF-02 remains blocked on a permission-filtered backend contract.
 
 Remaining backend dependencies that unblock the next UI tier (tracked, not claimed):
@@ -36,49 +59,84 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
 
 ## High priority — production hardening
 
-- [ ] **API bind to loopback only.** `donordesk-api` currently listens on
-  `0.0.0.0:4001` instead of `127.0.0.1:4001`. Make the API respect `HOST`
-  (default loopback in production) and re-verify via `ss`.
-  - Repo evidence: API server hard-codes `0.0.0.0`; see `docs/CONTABO-LEAN-DEPLOYMENT.md` §4.
-- [ ] **Versioned migrations committed.** Generate, review, commit, and test the
-  Prisma migrations (currently `packages/infrastructure/prisma/migrations/` is
-  untracked). Use `prisma migrate deploy` only — never
-  `db push --accept-data-loss`.
-- [ ] **Off-host backups configured.** Implement encrypted off-host backup for the
-  `donordesk` PostgreSQL database and `/opt/donordesk/shared/storage` before
-  accepting production data. Record destination, retention, last success,
+- [x] **API bind to loopback only.** **DONE 2026-08-13 (release `20260813064828`).**
+  API now binds `127.0.0.1:4001`, verified via `ss`.
+- [x] **Versioned migrations committed.** Migrations ARE tracked at
+  `packages/infrastructure/prisma/migrations/20260812000000_init/migration.sql`.
+  The pending.md previously claimed they were untracked — corrected 2026-08-12.
+- [ ] **Off-host backups configured.** `scripts/backup.sh` (encrypted, off-host,
+  incl. Kestra DB + storage) is **prepared**; execution + rotation + restore-test
+  remain a gated operator step. Record destination, retention, last success,
   checksum, and restore-test evidence. Local WAL archive is not DR.
 - [ ] **Add the RLS step to the release procedure.** The RLS grants + policy were
   applied manually during the 2026-08-12 fix. Bake `infra/postgres/rls.sql`
-  (extended to all 28 tenant tables) into the deployment runbook so it runs on
+  (applied to 21 tenant tables) into the deployment runbook so it runs on
   every release, and keep `infra/postgres/rls.sql` in sync with the schema.
+  - Note: pending.md previously said "28 tables" but `infra/postgres/rls.sql`
+    lists 21 tables.
 - [ ] **Document `API_INTERNAL_URL` and the OLS `Origin` dedupe requirement** in
   the deployment doc so future releases build web with
   `API_INTERNAL_URL=http://127.0.0.1:4001` and keep `src/middleware.ts`.
 
 ## Medium priority — async / AI features (Stage B)
 
-- [ ] **Wire BullMQ / Redis.** `InMemoryJobQueue` is always selected. Create a
-  dedicated Redis ACL user (`dd:*`), wire and test the BullMQ factory, and set
+- [ ] **Wire BullMQ / Redis.** `InMemoryJobQueue` is always selected. BullMQ
+  adapter exists at `packages/infrastructure/src/security/priority-queue.ts` but
+  `container.ts:209` always instantiates `InMemoryJobQueue`. Create a dedicated
+  Redis ACL user (`dd:*`), wire and test the BullMQ factory, and set
   `JOB_QUEUE=redis` only after the adapter is runtime-wired and tested.
-- [ ] **Wire real LLM providers.** LLM handlers currently use stubs (evidence
-  tagger, activity polisher, report draft generator, checklist detector). Wire
-  provider-specific implementations and set `LLM_PROVIDER` only when ready.
-- [ ] **Implement S3 storage.** Only `LocalStorage` exists. Implement object
-  storage before claiming `STORAGE_BACKEND=s3`.
-- [ ] **Implement email/notification delivery.** Notifications currently log
-  only. Implement production email/in-app delivery before enabling.
-- [ ] **Integrate worker service.** FastAPI worker routes exist but have no
-  production caller. Authenticate and integrate, or omit the service.
-- [ ] **Kestra flow.** The checked-in flow references nonexistent internal
-  routes/modules. Replace with tested contracts, or omit.
+- [ ] **Wire real LLM providers.** LLM factory with OpenAI/Anthropic/Ollama
+  adapters exists at `packages/infrastructure/src/llm/factory.ts` but
+  `container.ts:232-236` always wires stub handlers. Wire provider-specific
+  implementations and set `LLM_PROVIDER` only when ready.
+- [ ] **Implement S3 storage.** Only `LocalStorage` exists at
+  `packages/infrastructure/src/storage/local-storage.ts`. No S3 adapter exists.
+- [ ] **Wire email/notification delivery.** Postmark adapter exists at
+  `packages/infrastructure/src/comms/email.ts` but `container.ts` wires
+  `LoggingNotificationAdapter` which only logs. Wire Postmark and set
+  `EMAIL_PROVIDER=postmark` only when ready.
+- [x] **Integrate worker service.** Workers refactored, token-authenticated
+  `/v1/*` routes, `/health`+`/ready`, loopback `127.0.0.1:8092`, and a systemd unit.
+  **ENABLED and verified in production** (2026-08-13; venv under
+  `/opt/donordesk/workers/.venv`).
+- [x] **Kestra flow.** The contracts/routes/modules exist (Phases A–D), and the
+  seven flow YAMLs are deployed. **Resolved:** the correct Kestra 1.3.30 core
+  migration command is `sys database migrate` with `datasources.postgres`; the
+  `kestra migrate` command is a group command (subcommands `default-tenant`,
+  `metadata`) that does not run core migrations, and `server standalone` does not
+  auto-migrate. Kestra 1.3.30 is now enabled with its dedicated PostgreSQL
+  database, Java 21, a 1 GiB heap cap, loopback listeners, and pinned Python
+  task plugin 1.3.1.
+- [x] **Free Kestra plugins (Tika, Redis, JDBC-Postgres, GDrive, SFTP).** Added
+  pinned provisioning (`infra/kestra/plugins.manifest.tsv` + `install-plugins.sh`),
+  a signed internal file-content route (`/internal/evidence/:id/content`), a
+  signed internal upload route (`/internal/evidence/upload`), five flows
+  (`evidence_parse` Tika, `period_cache` Redis, `analytics_snapshot` JDBC,
+  `gdrive_ingest` + `sftp_ingest`), and a SuperAdmin **Kestra plugins** tab
+  (`/superadmin/kestra`). See `imp/KESTRA-PLUGINS.md`.
+- [ ] **Verify the free Kestra plugins against the pinned core.** The plugin
+  versions in `infra/kestra/plugins.manifest.tsv` are gated: confirm each JAR
+  loads under Kestra 1.3.30 and run `workflows/kestra/sync-flows.sh` so the five
+  new flows deploy, then smoke-execute `evidence_parse`, `period_cache`, and
+  `analytics_snapshot` in production.
+- [ ] **Provision GDrive/SFTP connector credentials.** `gdrive_ingest` and
+  `sftp_ingest` are staged but gated on `CONNECTOR` records in the SuperAdmin
+  portal and matching Kestra secrets. Add the Google service account / SFTP
+  credentials, test the connection, then enable the triggers.
+- [ ] **Verify `donordesk_app` grants + RLS for the JDBC analytics flow.** The
+  `analytics_snapshot` flow is gated on the `donordesk` datasource, the
+  `DONORDESK_APP_DB_PASSWORD` Kestra secret, and read-only `SELECT` grants; it
+  must never be granted writes.
 
 ## Observability / operations
 
-- [ ] **OTel tracing.** OTel is disabled by default; set exact enable/endpoint
-  variables and test trace ingestion before adding Tempo.
-- [ ] **Loki/Alloy pipeline.** No pipeline or persistence exists. Implement fully
-  or omit Loki.
+- [ ] **OTel tracing.** OTel is implemented but disabled by default (`OTEL_ENABLED`
+  env var). Code at `apps/api/src/observability.ts:50-58` requires `OTEL_ENABLED=true`
+  plus `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`. Set exact enable/endpoint variables
+  and test trace ingestion before adding Tempo.
+- [ ] **Loki/Alloy pipeline.** Loki runs in dev (`infra/docker-compose.dev.yml`)
+  and is configured as a Grafana datasource, but no application logs are shipped
+  to Loki. Implement fully or omit.
 
 ## Lower priority / shared-host hardening (separate, reviewed changes)
 
@@ -104,26 +162,42 @@ actually supports; unsupported controls are omitted rather than simulated.
   onboarding checklist (Phase 2). Reset/verification require backend + email delivery.
 
 ### Feature 05 — Donor Template Manager
-- [ ] Copy-paste text template input
-- [ ] DOCX parsing for template content extraction
-- [ ] PDF parsing for template content extraction
-- **Frontend:** list, upload ("review sections"), section editor with honest
-  extraction labeling (Phase 2). Parser/runtime for PDF/DOCX remains a backend dep.
+- [x] Copy-paste text template input — working in UI at `/projects/[id]/templates/new`
+- [x] DOCX parsing for template content extraction — **WIRED**. `POST /v1/templates/parse-file`
+  uses `TolerantDocumentParser` with `mammoth`. Frontend has "Upload DOCX/PDF" button
+  that parses file and populates the textarea.
+- [x] PDF parsing for template content extraction — **WIRED**. Same endpoint handles PDF
+  via `pdf-parse`. Same UI as DOCX.
+- **Frontend:** text paste input works; file upload button parses DOCX/PDF and fills
+  the textarea for review. Parser wired via `apps/api/src/routes/templates.ts`.
 
 ### Feature 06 — Logframe and Indicator Manager
-- [ ] Excel/CSV logframe file import
-- [ ] AI logframe structuring from pasted text
-- [ ] Disaggregation tracking (Male/Female/Children/Disability)
-- [ ] Bulk indicator import from Excel
+- [x] Excel/CSV logframe file import — **WIRED**. `POST /v1/logframe/parse-file` uses
+  `TolerantDocumentParser`. Frontend has "Import logframe" button at
+  `/projects/[id]/logframe/import` that accepts XLSX/CSV/TXT files and shows extracted
+  text for review.
+- [ ] AI logframe structuring from pasted text — **NOT in UI**. Add logframe item
+  form is manual entry only; no AI structuring option.
+- [x] Disaggregation tracking (Male/Female/Children/Disability) — **IMPLEMENTED in UI**.
+  `NewActivityForm.tsx` has fields for `participantsMale`, `participantsFemale`,
+  `participantsChildren`, `participantsDisability`. Detail page displays these.
+- [x] Bulk indicator import from Excel — **WIRED**. `POST /v1/indicators/parse-file` uses
+  `TolerantDocumentParser`. Frontend has "Import indicators" button at
+  `/projects/[id]/logframe/indicators/import` that accepts XLSX/CSV/TXT and shows
+  extracted text for review.
 - **Frontend:** results hierarchy tree, linked indicator definition/detail,
   indicator creation + update + verify wired to real routes (Phase 2 plus the
-  post-implementation integration audit). Update history/import/AI/disaggregation remain backend.
+  post-implementation integration audit). Excel/CSV import wired for both logframe
+  items and indicators. AI structuring remains backend.
 
 ### Feature 07 — Evidence Library
 - [ ] S3 storage backend implementation
 - [ ] Bulk file upload (zip import)
 - [ ] Video/audio file support
 - [ ] Evidence batch operations
+- [x] **Inbound ingestion (GDrive/SFTP)** — signed `/internal/evidence/upload`
+  route + `gdrive_ingest`/`sftp_ingest` Kestra flows wired; **staged (gated)** on
+  connector credentials + live connection test. See `imp/KESTRA-PLUGINS.md`.
 - **Frontend:** project search/list, upload queue, detail + preview, verification,
   plus the organization evidence queue (Phase 4 in code plus the post-implementation
   integration audit). S3/zip/media remain backend.
@@ -133,6 +207,10 @@ actually supports; unsupported controls are omitted rather than simulated.
 - [ ] Real sensitivity detection
 - [ ] Low-confidence highlighting in UI
 - [ ] Batch tagging for multiple files
+- [x] **Real document text for tagging** — `evidence_parse` Kestra flow fetches
+  the actual file bytes (`/internal/evidence/:id/content`) and runs Apache Tika
+  text/OCR extraction before the worker suggests tags; **staged (gated)** on the
+  Tika plugin being loaded and the flow deployed. See `imp/KESTRA-PLUGINS.md`.
 - **Frontend:** tag review requires human confirmation; shows only real
   confidence/sensitivity when supplied (stub backend, honestly labeled).
 

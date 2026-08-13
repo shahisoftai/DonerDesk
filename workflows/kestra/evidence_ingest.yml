@@ -9,38 +9,79 @@ description: Parse uploaded evidence and ask the workers service to suggest tags
 inputs:
   - id: evidenceId
     type: STRING
-  - id: fileKey
+  - id: tenantId
     type: STRING
 tasks:
-  - id: fetch
-    type: io.kestra.plugin.core.http.Request
-    uri: "{{ secrets.donordesk_api }}/internal/evidence/{{ inputs.evidenceId }}"
-    headers:
-      X-Internal-Token: "{{ secrets.kestra_internal_token }}"
-  - id: parse
+  - id: ingest
     type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    packageManager: PIP
     script: |
-      import sys, json
-      from app.parsers import parse
-      body = json.loads("{{ outputs.fetch.body }}")
-      text = parse(body)
-      print(json.dumps({"text": text}))
-  - id: suggest
-    type: io.kestra.plugin.core.http.Request
-    uri: "{{ secrets.donordesk_workers }}/v1/suggest-tags"
-    method: POST
-    contentType: application/json
-    body: |
-      {
-        "file_name": "{{ inputs.fileKey }}",
-        "file_type": "application/octet-stream",
-        "extracted_text": "{{ outputs.parse.text }}"
-      }
-  - id: persist
-    type: io.kestra.plugin.core.http.Request
-    uri: "{{ secrets.donordesk_api }}/internal/evidence/{{ inputs.evidenceId }}/tags"
-    method: POST
-    headers:
-      X-Internal-Token: "{{ secrets.kestra_internal_token }}"
-      Content-Type: application/json
-    body: "{{ outputs.suggest.body }}"
+      import base64
+      import hashlib
+      import hmac
+      import json
+      import time
+      import urllib.request
+
+      api_token = "{{ secret('KESTRA_API_INTERNAL_TOKEN') }}"
+      workers_token = "{{ secret('KESTRA_WORKERS_INTERNAL_TOKEN') }}"
+      hmac_secret = "{{ secret('KESTRA_HMAC_SECRET') }}"
+      api_url = "{{ secret('DONORDESK_API') }}"
+      workers_url = "{{ secret('DONORDESK_WORKERS') }}"
+      tenant = "{{ inputs.tenantId }}"
+      evidence_id = "{{ inputs.evidenceId }}"
+
+      def signed_request(method, path, body=""):
+          timestamp = str(int(time.time()))
+          canonical = "\n".join([method, path, tenant, timestamp, body])
+          signature = base64.b64encode(
+              hmac.new(hmac_secret.encode(), canonical.encode(), hashlib.sha256).digest()
+          ).decode()
+          return urllib.request.Request(
+              api_url + path,
+              data=body.encode() if body else None,
+              method=method,
+              headers={
+                  "Content-Type": "application/json",
+                  "x-internal-token": api_token,
+                  "x-tenant-id": tenant,
+                  "x-internal-timestamp": timestamp,
+                  "x-internal-signature": signature,
+              },
+          )
+
+      metadata_path = f"/internal/evidence/{evidence_id}"
+      with urllib.request.urlopen(signed_request("GET", metadata_path)) as response:
+          evidence = json.loads(response.read())
+
+      # The worker performs deterministic tagging. Until an authenticated file
+      # streaming contract lands, use the evidence metadata/notes as its text
+      # input; the original upload remains safely inside DonorDesk storage.
+      worker_body = json.dumps(
+          {
+              "file_name": evidence["fileName"],
+              "file_type": evidence["fileType"],
+              "extracted_text": " ".join(
+                  filter(None, [evidence.get("title"), evidence.get("notes"), evidence.get("evidenceType")])
+              ),
+          },
+          separators=(",", ":"),
+      )
+      worker_request = urllib.request.Request(
+          workers_url + "/v1/suggest-tags",
+          data=worker_body.encode(),
+          method="POST",
+          headers={"Content-Type": "application/json", "x-internal-token": workers_token},
+      )
+      with urllib.request.urlopen(worker_request) as response:
+          suggestion = json.loads(response.read())
+
+      suggestion["idempotencyKey"] = hashlib.sha256(
+          f"{tenant}:evidence.suggest_tags:{evidence_id}:{worker_body}".encode()
+      ).hexdigest()
+      persist_body = json.dumps(suggestion, separators=(",", ":"))
+      persist_path = f"/internal/evidence/{evidence_id}/tags"
+      with urllib.request.urlopen(signed_request("POST", persist_path, persist_body)) as response:
+          print(response.read().decode())

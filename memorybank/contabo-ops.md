@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-12 18:15 CEST (release `20260812181200`)
+**Last deployment:** 2026-08-12 19:35 CEST (release `20260812224500`)
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -311,34 +311,42 @@ Implement before accepting production data.
 
 ## 10. DonorDesk allocation
 
-**Status: DEPLOYED** (2026-08-12, release `20260812181200`)
+**Status: DEPLOYED** (2026-08-13, release `20260813064828`). Latest code (Phases
+A–D: internal routes, workers refactor, job-queue adapters, outbox, idempotency,
+scheduled flows) deployed. Workers and Kestra are both enabled; Phase E runtime
+smoke verification passed.
 
 | Resource | Allocation |
 |---|---|
 | Web | `127.0.0.1:3002` (DonorDesk Next.js standalone) |
-| API | `0.0.0.0:4001` (Fastify) — **NOTE: should bind loopback only** |
-| Worker | Not deployed yet |
+| API | `127.0.0.1:4001` (Fastify) — **loopback-only confirmed** (was `0.0.0.0`) |
+| Worker | **ENABLED** `127.0.0.1:8092` (FastAPI `donordesk-workers.service`, venv at `/opt/donordesk/workers/.venv`, Python 3.12) |
+| Kestra | **ENABLED** `127.0.0.1:8093` (API/UI) + `127.0.0.1:8094` (management), Kestra 1.3.30 / Java 21 |
 | Files | `/opt/donordesk/shared/storage` |
-| Releases | `/opt/donordesk/releases/20260812181200` → `current` symlink |
-| Runtime user | `donordesk` system user (created) |
-| Database | `donordesk` (PostgreSQL 16.14) |
-| DB roles | `donordesk_migrator` (schema owner), `donordesk_app` (runtime) |
-| systemd services | `donordesk-api.service`, `donordesk-web.service` |
-| Secrets | `/opt/donordesk/shared/api.env` (mode 0600) |
+| Releases | `/opt/donordesk/releases/20260813064828` → `current` symlink |
+| Runtime user | `donordesk` system user; Kestra user `donordesk_kestra` (created) |
+| Database | `donordesk` (PostgreSQL 16.14); Kestra DB `donordesk_kestra` migrated through Flyway v1.57 |
+| DB roles | `donordesk_migrator` (schema owner), `donordesk_app` (runtime), `donordesk_kestra` (Kestra, created) |
+| systemd services | `donordesk-api.service`, `donordesk-web.service`, `donordesk-workers.service`, `donordesk-kestra.service` |
+| Secrets | `/opt/donordesk/shared/api.env`, `/opt/donordesk/shared/workers.env` (0600); Kestra `kestra.env` (0600) |
 
-**Deployment notes:**
-- Artifact built with `pnpm deploy --legacy` off-host; uploaded as tarball
-- Prisma 5.22.0 globally installed on Contabo for `migrate deploy`
-- Prisma client generated inside deployment at `/opt/donordesk/current/api/node_modules/@prisma/client`
-- Migration `20260812000000_init` applied successfully
+**Deployment notes (2026-08-13 release `20260813064828`):**
+- Built off-host with pnpm 10.34.5; `pnpm --filter @donordesk/api deploy --legacy` + web standalone (copied unchanged from previous release) + `prisma/` schema/migrations.
+- Applied migration `20260813000000_idempotency` (creates `IdempotencyRecord`) via `prisma migrate deploy` as `donordesk_migrator` (loopback trust).
+- Applied updated `infra/postgres/rls.sql` (23 tenant tables, now incl. `IdempotencyRecord`); RLS enabled+forced and `donordesk_app` grants verified.
+- Added `INTERNAL_TOKEN`/`INTERNAL_HMAC_SECRET` to `api.env` for the `/internal/*` routes.
+- Smoked staged API on `127.0.0.1:4009` (health/ready OK, DB ok); switched `current`; restarted `donordesk-api` (web unchanged, left running).
+- Verified: API binds `127.0.0.1:4001` (loopback fix live), `/health`+`/ready` OK, `/internal/*` returns 401 (auth active), public HTTPS `/` + `/login` 200.
 
 Because global pnpm is 9.15.9 while DonorDesk pins 10.34.5, do not change the
 global pnpm version: NeureCore depends on it. Build a self-contained artifact with
 pnpm 10.34.5 off-host, including production dependencies and Prisma engine/client.
 Production should not perform a workspace install.
 
-**Outstanding issue:** API binds to `0.0.0.0:4001` in addition to `127.0.0.1:4001`.
-Per Section 4, it should bind loopback only. Fix before production hardening.
+**Outstanding issue:** **API loopback — RESOLVED 2026-08-13** (binds `127.0.0.1:4001`).
+`donordesk-workers` **enabled** on `127.0.0.1:8092`. `donordesk-kestra` is
+**enabled and verified** on loopback `8093`/`8094`; seven flows are deployed.
+Schedule the off-host backup (`scripts/backup.sh`) before accepting production data.
 
 ## 11. DOs and DON'Ts
 
@@ -446,6 +454,161 @@ Also verify from outside the server:
 - backup completion and a clean-machine restore.
 
 ## 14. Change log
+
+- **2026-08-13 (SuperAdmin control plane staged):** Deployed immutable release
+  `20260813143000`, applied the additive platform control-plane tables, and enabled
+  `donordesk-superadmin.service` on loopback `127.0.0.1:3012`. The API exposes a
+  separate `/superadmin/*` identity boundary: tenant roles cannot authenticate,
+  credentials/configuration secrets are AES-256-GCM encrypted, login is lockout
+  protected, and TOTP MFA is mandatory. The sole initial account is
+  `mnpiracha@gmail.com`; its randomly generated one-time password is held at
+  `/root/donordesk-superadmin-initial.txt` (0600) and is not stored in source or
+  this document. Unauthenticated API verification returns 401. Public
+  `sa.donerdesk.online` routing/TLS awaits the separately approved shared
+  OpenLiteSpeed vhost change; the application remains loopback-only until then.
+
+- **2026-08-13 (Kestra enabled and integrated):** Resolved the schema blocker:
+  Kestra's core Flyway command is `sys database migrate`, and its datasource must
+  be named `datasources.postgres` (using `default` produced a misleading no-op
+  success). Applied 53 migrations through v1.57 and verified `service_instance`.
+  Corrected the Micronaut main/management listeners to loopback 8093/8094, loaded
+  pinned `plugin-script-python` 1.3.1, initialized strong Basic Auth, and enabled
+  `donordesk-kestra.service` with `-Xmx1g` and eight worker threads. Deployed seven
+  versioned flows. Separated API and worker internal tokens in the Kestra secret
+  environment (Kestra OSS secrets are Base64-encoded). Verified an end-to-end
+  Kestra→worker execution (`SUCCESS`) and a signed Kestra→API readiness execution
+  (`SUCCESS`), plus all four systemd services active and management health `UP`.
+  Created scoped immutable release `20260813081200` from the prior production
+  release, replacing only the compiled Kestra queue/outbox files. Set
+  `JOB_QUEUE=kestra` plus loopback URL and Basic Auth in `api.env`, switched the
+  `current` symlink atomically, and restarted only `donordesk-api`. The production
+  `KestraJobQueue` smoke created execution `1cbxfrqNrj7c3Iyoj05w4m`, which reached
+  `SUCCESS`. Rollback release remains `20260813064828`.
+
+- **2026-08-13 (free Kestra plugins implemented — gated):** Provisioned the four
+  recommended free plugins (Apache-2.0) for the enabled Kestra on loopback
+  8093/8094: **Tika** (evidence text/OCR), **Redis**, **JDBC-Postgres** (read-only
+  analytics), and **Google Drive + SFTP** (inbound ingestion). Added
+  `infra/kestra/plugins.manifest.tsv` + `install-plugins.sh` (pinned JARs into the
+  `--plugins` dir), a gated `donordesk` read datasource in `kestra.application.yml`,
+  and a dev compose plugins mount. API added signed internal routes
+  `/internal/evidence/:id/content` (stream bytes for Tika) and
+  `/internal/evidence/upload` (Base64-JSON inbound ingestion). Five flows added:
+  `evidence_parse`, `period_cache`, `analytics_snapshot`, `gdrive_ingest`,
+  `sftp_ingest`. SuperAdmin gained a **Kestra plugins** tab (`/superadmin/kestra`).
+  **Gated:** plugin JAR versions must be verified against Kestra 1.3.30 before
+  `sync-flows.sh` deploys the flows; GDrive/SFTP and JDBC require credentials/grants.
+  Typecheck + build + worker tests pass. See `imp/KESTRA-PLUGINS.md`.
+
+- **2026-08-13 (workers enabled; Kestra staged but blocked):**
+  - **Workers — ENABLED and verified.** Created venv
+    `/opt/donordesk/workers/.venv` (Python 3.12 — 3.11 is not on the host), installed
+    deps, created `/opt/donordesk/shared/workers.env` (INTERNAL_TOKEN, 0600), installed
+    `donordesk-workers.service` (loopback `127.0.0.1:8092`, `donordesk` user), enabled it.
+    Verified: `active`, `/health` + `/ready` OK, `/v1/*` → 401 without token, 200 with token.
+  - **Kestra — staged/configured but NOT enabled.** Installed `openjdk-21-jre-headless`
+    (Kestra 1.3.30 is compiled for Java 21; Java 17 was insufficient). Created role/db
+    `donordesk_kestra`. Staged `kestra-1.3.30` (SHA-256 verified) under
+    `/opt/donordesk/kestra/` with config at `.kestra/config.yml` (loopback `127.0.0.1:8093`,
+    PostgreSQL datasource `datasources.default`, JVM capped `-Xmx1g` via `kestra.env`).
+    The datasource connects to PostgreSQL. **BLOCKED:** `kestra migrate` in 1.3.30 is a
+    group command (subcommands `default-tenant`, `metadata` only) and does not run the core
+    schema migrations; `server standalone` does not auto-migrate, so it fails at
+    `relation "service_instance" does not exist`. The Kestra service is **not enabled**
+    (no unit installed, no process running) — bringing it up requires an operator to run the
+    pinned-version migration in a non-prod environment or obtain the correct 1.3.30 migrate
+    invocation. All stray load-test JVM processes were killed; host RAM restored.
+  - Host safety: only Java 17/21 JREs were installed (additive, not in the DON'T-upgrade
+    list); all existing services remained active throughout.
+
+- **2026-08-13 (deploy latest code — Kestra plan Phases A–E):** Deployed release
+  `20260813064828` to `DonerDesk.online`. Built off-host with pnpm 10.34.5
+  (`pnpm --filter @donordesk/api deploy --legacy`) + web standalone (unchanged,
+  copied from `20260812224500`) + `prisma/`. Steps executed on the host:
+  1. Staged under `/opt/donordesk/releases/20260813064828.staging`; verified the
+     new artifacts (`dist/routes/internal.js`, `dist/middleware/internal.js`,
+     `@donordesk/infrastructure/dist/jobs/`, `.../events/outbox-event-bus.js`).
+  2. `prisma migrate deploy` applied `20260813000000_idempotency`
+     (`IdempotencyRecord`) as `donordesk_migrator` (loopback trust); verified in
+     `_prisma_migrations`.
+  3. Applied updated `infra/postgres/rls.sql` (23 tenant tables incl.
+     `IdempotencyRecord`); RLS enabled+forced, `donordesk_app` DML grants verified.
+  4. Added `INTERNAL_TOKEN` + `INTERNAL_HMAC_SECRET` to `/opt/donordesk/shared/api.env`.
+  5. Smoked staged API on `127.0.0.1:4009` (health/ready OK, DB ok; `/v1/ping` 401).
+  6. Switched `current` → `20260813064828`; restarted `donordesk-api` (web
+     unchanged, left running).
+  Verified: API binds `127.0.0.1:4001` (loopback fix live — was `0.0.0.0`), web
+  `127.0.0.1:3002`, `/health`+`/ready` OK, `/internal/evidence/x` → 401 (auth
+  active), public HTTPS `/` and `/login` 200, no journal errors.
+  Rollback: `ln -sfn /opt/donordesk/releases/20260812224500 /opt/donordesk/current`
+  && `systemctl restart donordesk-api`.
+  Remaining gated: enable `donordesk-workers` (venv + systemd, 8092) and
+  `donordesk-kestra` (after JVM load-test, 8093); schedule `scripts/backup.sh`.
+
+- **2026-08-13 (Phase F verification — Kestra plan):** Full regression passed
+  locally: `pnpm -r typecheck` (0 errors), builds (contracts/application/
+  infrastructure/api), tests (contracts 9, application 8, infrastructure 27+1
+  skip, api 19, workers 28), `ruff`, `mypy`, `git diff --check`. Flow YAMLs
+  validated. Runtime-only checks (end-to-end Kestra flow execution,
+  interruption/retry, prod RLS isolation) are gated on the Phase E deploy.
+  **Contabo code comparison:** production is on release `20260812224500`; the
+  Phase A–D artifacts (`dist/routes/internal.js`, `dist/middleware/internal.js`,
+  workers `parsers.py`/`tagging.py`, `dist/jobs/`, `dist/events/outbox-event-bus.js`)
+  are all **MISSING** and workers/Kestra services are absent. **Contabo does NOT
+  yet have the latest code** — deployment is the gated Phase E step.
+
+- **2026-08-13 (Phase E preparation — Kestra orchestration):** Prepared the
+  repo-side deployment toolchain for Kestra + workers on Contabo; **no live
+  service was installed or enabled** (that remains a gated operator step).
+  Read-only preflight evidence (2026-08-13 08:19 CEST):
+  - OS Ubuntu 24.04.4, kernel 6.8.0-124-generic; RAM 6.4 GiB available;
+    root disk 25 GiB free (75% used); load ~0.76.
+  - **Port 8080 is OCCUPIED by the hermes-sidecar** (`uvicorn`, pid 23405,
+    `127.0.0.1:8080`). 8081/8082/8091 loopback and 8090 public are also
+    occupied. **8092 (worker) and 8093/8094 (candidates) are free.**
+  - Kestra's planned `127.0.0.1:8080` is therefore NOT available; the prepared
+    Kestra config binds **`127.0.0.1:8093`** (configurable via
+    `infra/kestra/kestra.application.yml`).
+  - API still binds `0.0.0.0:4001` (loopback fix prepared in code); web binds
+    `127.0.0.1:3002`.
+  - `donordesk-api` and `donordesk-web` active; `donordesk-workers` and
+    `donordesk-kestra` inactive (not installed).
+  Prepared artifacts: `apps/api/src/server.ts` loopback fix (`HOST`, default
+  `127.0.0.1`); `infra/systemd/donordesk-workers.service`,
+  `infra/systemd/donordesk-kestra.service`; `infra/kestra/` (pinned config +
+  `setup-kestra-db.sh` + `install-kestra.sh`); `scripts/preflight.sh`,
+  `scripts/verify.sh`, `scripts/backup.sh`, `scripts/deploy.sh`,
+  `scripts/rollback.sh`. All shell scripts pass `bash -n`.
+  Gated next steps: create `donordesk_kestra` role/db (`setup-kestra-db.sh`),
+  stage pinned Kestra + load-test JVM, enable `donordesk-kestra`, enable
+  `donordesk-workers`, deploy the next release (loopback API), schedule the
+  off-host backup (`backup.sh`).
+
+- **2026-08-12 (dashboard parity + My Work runtime fix):** Deployed web-only
+  release `20260812224500` to `DonerDesk.online`. Root cause of the missing
+  dashboard widgets was not browser cache or Contabo serving an old build: the
+  deployed dashboard route still rendered the thinner Phase 3 home screen and
+  never loaded the richer work/readiness/queue data. Fixes:
+  - Dashboard now renders My Work preview, readiness snapshot, deadline bands,
+    evidence review queue, compliance blockers, activity updates, richer recent
+    project cards, notifications, and setup/storage notices.
+  - Dashboard read model now carries reporting-period `readinessScore` into the
+    home screen rather than omitting it.
+  - Removed the redundant body-level `+ New project` action in favor of the
+    operational My Work action, while the shell Create menu remains available.
+  - Fixed a production runtime error on `/my-work`: the page was a Server
+    Component but passed an `onChange` handler to a `<select>`. Replaced the
+    project selector with server-rendered filter links.
+  - Frontend-only release; no database migration and no API restart. The release
+    copied the existing API forward and replaced only `/opt/donordesk/current/apps/web`.
+  Verified locally: `pnpm --filter @donordesk/web typecheck`, unit tests
+  (23 files), `pnpm --filter @donordesk/web build`, and `git diff --check`.
+  Verified production: `current` points to `/opt/donordesk/releases/20260812224500`,
+  `donordesk-web` active, `127.0.0.1:3002` listening, loopback `/dashboard` and
+  `/my-work` return authenticated redirects, public HTTPS `/dashboard` redirects
+  to `/login?next=%2Fdashboard`, `/login` returns 200, and the deployed server
+  bundle contains the new dashboard sections. Rollback: repoint `current` to
+  `releases/20260812220349` and restart `donordesk-web`.
 
 - **2026-08-12 (compliance, evidence, indicators, reports export, settings, team):** Deployed release
   `20260812220349` (commit `b11bff1`) to `DonerDesk.online`. New features:

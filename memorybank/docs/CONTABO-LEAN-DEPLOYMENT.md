@@ -566,31 +566,38 @@ bound 9090/3200 ports by default, but this is not a reason to publish new rules.
 Do not add Tempo or Loki in Stage A. They do not exist on the host today and the
 application log/trace pipelines are not production-complete.
 
-## 15. Optional Kestra design
+## 15. Kestra design
 
-Kestra is not needed to run the current synchronous core. The checked-in flow is
-an architectural example, not a deployable workflow: it references internal API
-routes and Python modules that do not exist.
+Kestra is not needed to run the current synchronous core, but its orchestration
+is now prepared (Phases A–D + E toolchain). The previously-missing contracts now
+exist: authenticated `/internal/*` evidence routes, the `app/parsers.py` module,
+workers with `/v1/*` routes + token auth, an outbox event bus mapping domain
+events to jobs, and durable idempotency for persist operations.
 
-Before Kestra:
+Deployment notes (see `infra/kestra/`, `infra/systemd/`, `scripts/`):
 
-- implement authenticated internal evidence fetch/persist routes;
-- decide whether BullMQ or Kestra owns each job class;
-- make jobs idempotent and retry-safe;
-- align the flow with actual `/v1/*` worker routes;
-- trigger it from the API/outbox;
-- test interruption, retry, duplicate delivery, and restart behavior;
-- include Kestra state in backup/restore.
+- use a pinned Kestra version (never `latest`), non-root execution, and its own
+  database/role (`donordesk_kestra`); do not use embedded H2 in production;
+- **port 8080 is occupied on Contabo by the hermes-sidecar**; the prepared Kestra
+  config binds loopback **`127.0.0.1:8093`** (configurable);
+- bind loopback and never expose the Kestra UI publicly (VPN/SSH tunnel or a
+  strongly protected admin hostname);
+- load-test the JVM/resource impact on the shared host before enabling;
+- include Kestra state (its PostgreSQL database) in backup/restore;
+- test interruption, retry, duplicate delivery, and restart behavior against the
+  pinned version.
 
-If retained, use a pinned Kestra version, non-root execution, and its own database
-or schema/role. Do not use embedded H2 as the production source of truth.
+Because the API and worker bind to host loopback, a bridge-network Kestra
+container cannot call them through `127.0.0.1`. The least surprising single-host
+option is a native systemd Kestra process (prepared as
+`infra/systemd/donordesk-kestra.service`); its JVM/resource impact must be
+load-tested before enabling.
 
-Because the API and worker correctly bind to host loopback, a bridge-network
-Kestra container cannot call them through `127.0.0.1`. The least surprising
-single-host option is a native systemd Kestra process, but its JVM/resource impact
-must be load-tested. Host-network Docker is possible but expands network access.
-Do not expose the Kestra UI publicly; use VPN/SSH tunnel or a strongly protected
-admin hostname.
+> **Current production state (2026-08-13):** Release `20260813064828` (Kestra-plan
+> Phases A–D + API loopback fix + idempotency migration `20260813000000_idempotency`
+> + RLS) is deployed and verified on `DonerDesk.online`. `donordesk-api` now binds
+> `127.0.0.1:4001`. `donordesk-workers` (8092) and `donordesk-kestra` (8093) are
+> prepared with systemd units but **not enabled**. See `contabo-ops.md` §10/§14.
 
 ## 16. Release sequence
 
@@ -636,6 +643,13 @@ compatible. A destructive migration requires an approved maintenance window and
 a tested database restore point. Switching compiled files cannot undo data loss.
 
 ## 18. Backup and disaster recovery
+
+> **Current status (2026-08-13):** `scripts/backup.sh` (encrypted off-host backup
+> of the `donordesk` + `donordesk_kestra` databases and `shared/storage`) is
+> **prepared but not scheduled**. Per `contabo-ops.md` §9, no DonorDesk production
+> data has been accepted yet; the off-host backup must be scheduled and restore-tested
+> **before** accepting production data. Kestra state (its database) must be included
+> once Kestra is enabled.
 
 Observed host WAL archives and CyberPanel schedules are not sufficient evidence
 of a recoverable DonorDesk backup. Before production:

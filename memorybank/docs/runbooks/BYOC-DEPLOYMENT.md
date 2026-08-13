@@ -1,5 +1,10 @@
 # DonorDesk BYOC (Bring Your Own Cloud) Deployment Guide
 
+> **Current production reality (2026-08-13):** DonorDesk is deployed on a single
+> **Contabo** host (PostgreSQL 16 + systemd), not yet in an AWS/GCP BYOC account.
+> This guide documents the future managed-cloud target. See `contabo-ops.md` and
+> `docs/CONTABO-LEAN-DEPLOYMENT.md` for the current single-host deployment.
+
 ## Overview
 
 DonorDesk supports BYOC deployment, allowing enterprise customers to run the platform in their own AWS or GCP account. This provides:

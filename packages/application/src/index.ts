@@ -38,6 +38,7 @@ export * from "./use-cases/logframe/list-indicators.js";
 export * from "./use-cases/evidence/upload-evidence.js";
 export * from "./use-cases/evidence/suggest-evidence-tags.js";
 export * from "./use-cases/evidence/accept-evidence-tags.js";
+export * from "./use-cases/evidence/persist-evidence-tags.js";
 export * from "./use-cases/evidence/verify-evidence.js";
 export * from "./use-cases/evidence/search-evidence.js";
 export * from "./use-cases/evidence/get-evidence.js";
@@ -61,9 +62,12 @@ export * from "./use-cases/compliance/detect-missing-evidence.js";
 export * from "./use-cases/compliance/resolve-checklist-item.js";
 export * from "./use-cases/compliance/list-checklist.js";
 export * from "./use-cases/compliance/calculate-readiness.js";
+export * from "./use-cases/compliance/recompute-readiness.js";
+export * from "./use-cases/compliance/generate-checklist.js";
 
 export * from "./use-cases/exports/create-export.js";
 export * from "./use-cases/exports/get-export-preflight.js";
+export * from "./use-cases/exports/run-export.js";
 
 export * from "./use-cases/support/add-comment.js";
 export * from "./use-cases/support/resolve-comment.js";
@@ -71,3 +75,4 @@ export * from "./use-cases/support/list-comments.js";
 export * from "./use-cases/support/list-notifications.js";
 export * from "./use-cases/support/mark-notification-read.js";
 export * from "./use-cases/support/list-audit-log.js";
+export * from "./use-cases/support/generate-deadline-reminders.js";

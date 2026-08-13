@@ -25,7 +25,8 @@
     "db:seed:dummy": "tsx src/db/seed-dummy-projects.ts",
     "db:studio": "prisma studio",
     "audit:verify": "node dist/audit/verify-cli.js",
-    "ai:eval": "node dist/ai/eval-cli.js"
+    "ai:eval": "node dist/ai/eval-cli.js",
+    "superadmin:bootstrap": "node dist/platform/bootstrap-cli.js"
   },
   "dependencies": {
     "@donordesk/application": "workspace:*",

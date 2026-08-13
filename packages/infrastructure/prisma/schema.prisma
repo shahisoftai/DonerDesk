@@ -30,6 +30,100 @@ model Organization {
   projects      Project[]
 }
 
+// Platform control-plane records. These are deliberately not tenant users and
+// are never accepted by tenant application authorization.
+model PlatformAdmin {
+  id                String   @id
+  email             String   @unique
+  name              String
+  passwordHash      String
+  status            String   @default("PENDING_ACTIVATION")
+  totpSecretEncrypted String?
+  recoveryCodesHash String   @default("[]")
+  failedLoginCount  Int      @default(0)
+  lockedUntil       DateTime?
+  lastLoginAt       DateTime?
+  passwordChangedAt DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model PlatformConfiguration {
+  id              String   @id
+  scopeType       String   @default("GLOBAL")
+  scopeId         String?
+  category        String
+  provider        String
+  displayName     String
+  enabled         Boolean  @default(false)
+  configurationJson String @default("{}")
+  secretCiphertext String?
+  secretIv        String?
+  secretTag       String?
+  secretVersion   Int      @default(1)
+  lastTestStatus  String?
+  lastTestMessage String?
+  lastTestedAt    DateTime?
+  createdById     String
+  updatedById     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([scopeType, scopeId, category, provider])
+  @@index([category, enabled])
+}
+
+model PlatformAuditEvent {
+  id          String   @id
+  actorId     String
+  action      String
+  entityType  String
+  entityId    String
+  oldValue    String?
+  newValue    String?
+  ipAddress   String?
+  userAgent   String?
+  prevHash    String   @default("")
+  hash        String
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}
+
+model BackupRun {
+  id              String   @id
+  configurationId String
+  status          String
+  destination     String
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  sizeBytes       BigInt?
+  checksum        String?
+  errorMessage    String?
+  restoreTestedAt DateTime?
+  restoreStatus   String?
+
+  @@index([startedAt])
+}
+
+model ConnectorRun {
+  id              String   @id
+  configurationId String
+  tenantId        String
+  connectorType   String
+  status          String
+  cursor          String?
+  recordsRead     Int      @default(0)
+  recordsCreated  Int      @default(0)
+  recordsSkipped  Int      @default(0)
+  errorMessage    String?
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+
+  @@index([tenantId, startedAt])
+}
+
 model User {
   id            String   @id
   tenantId      String
@@ -665,4 +759,17 @@ model MultiRegionBookmark {
   @@unique([tenantId, region, entityType, entityId])
   @@index([tenantId])
   @@index([entityType, entityId])
+}
+
+model IdempotencyRecord {
+  id         String   @id
+  tenantId   String
+  key        String
+  jobName    String
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@index([tenantId, jobName])
 }

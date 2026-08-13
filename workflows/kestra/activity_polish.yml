@@ -1,0 +1,15 @@
+id: activity_polish
+namespace: donor_desk.phase1
+description: Polish an activity narrative through the authenticated DonorDesk worker.
+inputs:
+  - id: payload
+    type: JSON
+tasks:
+  - id: polish
+    type: io.kestra.plugin.core.http.Request
+    uri: "{{ secret('DONORDESK_WORKERS') }}/v1/polish"
+    method: POST
+    contentType: application/json
+    headers:
+      X-Internal-Token: "{{ secret('KESTRA_WORKERS_INTERNAL_TOKEN') }}"
+    body: "{{ inputs.payload }}"

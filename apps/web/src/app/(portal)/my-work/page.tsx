@@ -87,19 +87,15 @@ export default async function MyWorkPage({
             </Link>
           ))}
         </label>
-        <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+        <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
           Project
-          <select
-            className="ml-2 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs dark:border-white/15 dark:bg-slate-900"
-            value={filters.projectId}
-            onChange={(e) => { window.location.href = qs({ projectId: e.target.value, page: 1 }); }}
-          >
-            <option value="all">All projects</option>
-            {projectIds.map((id) => (
-              <option key={id} value={id}>{load.projectLookup.get(id)}</option>
-            ))}
-          </select>
-        </label>
+          <Link href={qs({ projectId: "all", page: 1 })} className={`ml-2 rounded-lg border px-2 py-1 text-xs ${filters.projectId === "all" ? "border-brand-500 text-brand-700 dark:text-brand-300" : "border-slate-300 dark:border-white/15"}`}>All</Link>
+          {projectIds.slice(0, 6).map((id) => (
+            <Link key={id} href={qs({ projectId: id, page: 1 })} className={`ml-1 inline-block max-w-40 truncate rounded-lg border px-2 py-1 align-bottom text-xs ${filters.projectId === id ? "border-brand-500 text-brand-700 dark:text-brand-300" : "border-slate-300 dark:border-white/15"}`}>
+              {load.projectLookup.get(id)}
+            </Link>
+          ))}
+        </div>
         <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
           Due
           {(["all", "overdue", "today", "soon"] as const).map((d) => (

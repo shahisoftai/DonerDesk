@@ -1,10 +1,9 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, EvidenceFile } from "@donordesk/domain";
+import { DomainError, EvidenceFile, EvidenceUploaded } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IEvidenceRepository, IDocumentParser } from "../../ports/evidence.js";
+import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IStorage } from "../../ports/infrastructure.js";
-import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
-import type { IJobQueue } from "../../ports/infrastructure.js";
+import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { CreateEvidenceInput } from "@donordesk/contracts";
 
 export interface UploadEvidenceCommand extends CreateEvidenceInput {
@@ -17,8 +16,7 @@ export class UploadEvidenceHandler {
     private readonly ids: IIdGenerator,
     private readonly repo: IEvidenceRepository,
     private readonly storage: IStorage,
-    private readonly parser: IDocumentParser,
-    private readonly jobs: IJobQueue,
+    private readonly events: IEventBus,
     private readonly audit: IAuditLogger,
   ) {}
 
@@ -68,13 +66,9 @@ export class UploadEvidenceHandler {
       newValue: cmd.fileName,
     });
 
-    // Best-effort text extraction (off the request path could be improved by moving to a queue, but inline keeps Phase 1 simple).
-    try {
-      const parsed = await this.parser.parse({ buffer: cmd.buffer, fileType: cmd.fileType, fileName: cmd.fileName });
-      await this.jobs.enqueue("evidence.suggest_tags", { evidenceId: id, text: parsed.text });
-    } catch {
-      // swallow — evidence still uploaded; tagging can be retried.
-    }
+    // Trigger downstream work via a domain event. The outbox event bus maps
+    // this to the evidence.suggest_tags job; processing is off the request path.
+    await this.events.publish([new EvidenceUploaded(ctx.tenant.tenantId, id, cmd.projectId, ctx.tenant.userId)]);
 
     return { ok: true, value: { id, fileUrl: stored.url } };
   }

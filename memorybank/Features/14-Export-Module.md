@@ -109,6 +109,12 @@ type ExportType =
 | Evidence Checklist | Implemented | List with metadata |
 | Evidence Pack ZIP | Implemented | Folder structure |
 | Export History | Implemented | Full audit trail |
+
+> **Scheduled export (2026-08-13, deployed):** `export.run` is a real scheduled
+> entry point — `POST /internal/export/run` → `RunExportHandler` →
+> `CreateExportHandler` (delegates to the existing export builder). The Kestra
+> flow `export_on_close.yml` triggers it on period close (flow prepared; Kestra
+> not yet enabled).
 | Pre-export Warnings | Implemented | Critical item checks |
 | Permission Checks | Implemented | Role-based |
 

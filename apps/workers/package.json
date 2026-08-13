@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload",
-    "start": "uvicorn app.main:app --host 0.0.0.0 --port 5000",
+    "dev": "uvicorn app.main:app --host 127.0.0.1 --port ${PORT:-8092} --env-file=.env --reload",
+    "start": "uvicorn app.main:app --host 127.0.0.1 --port ${PORT:-8092} --env-file=.env",
     "test": ".venv/bin/python -m pytest -q",
     "lint": ".venv/bin/python -m ruff check app tests",
     "typecheck": ".venv/bin/python -m mypy app",

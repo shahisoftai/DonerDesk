@@ -26,6 +26,8 @@ import { registerAuditRoutes } from "./routes/audit.js";
 import { registerDashboardRoutes } from "./routes/dashboard.js";
 import { registerFileRoutes } from "./routes/files.js";
 import { registerHealthRoutes } from "./routes/health.js";
+import { registerInternalRoutes } from "./routes/internal.js";
+import { registerSuperAdminRoutes } from "./routes/superadmin.js";
 import { captureException, httpDuration, httpRequests, initializeObservability, shutdownObservability } from "./observability.js";
 import { registerCollaborationWebSocket } from "./websocket/register.js";
 
@@ -53,7 +55,27 @@ export async function buildServer(): Promise<FastifyInstance> {
     .filter(Boolean);
   await app.register(cors, { origin: allowedOrigins, credentials: true });
   await app.register(multipart, { limits: { fileSize: 100 * 1024 * 1024 } });
+
+  // Preserve the raw JSON body so the internal HMAC signature can bind to it.
+  app.addContentTypeParser("application/json", { parseAs: "string" }, (_req, body, done) => {
+    const raw = typeof body === "string" ? body : "";
+    (_req as FastifyRequest & { rawBody?: string }).rawBody = raw;
+    if (raw.trim() === "") {
+      done(null, {});
+      return;
+    }
+    try {
+      done(null, JSON.parse(raw));
+    } catch (err) {
+      const e = err as Error & { statusCode?: number };
+      e.statusCode = 400;
+      done(e, undefined);
+    }
+  });
+
   await registerCollaborationWebSocket(app);
+  await registerInternalRoutes(app);
+  await registerSuperAdminRoutes(app);
 
   app.addHook("onRequest", async (req) => {
     req.requestId = req.id;
@@ -150,7 +172,8 @@ declare module "fastify" {
 export async function start() {
   const app = await buildServer();
   const port = Number(process.env.PORT ?? 4000);
-  await app.listen({ port, host: "0.0.0.0" });
+  // Bind loopback by default (contabo-ops §4/§10); override with HOST if needed.
+  await app.listen({ port, host: process.env.HOST ?? "127.0.0.1" });
   const shutdown = async () => {
     await app.close();
     await shutdownObservability();

@@ -47,7 +47,10 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
     <div className="animate-fade-in">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Logframe &amp; indicators</h1>
-        <Link className="btn" href={`/projects/${resolvedParams.id}/logframe/new`}>Add logframe item</Link>
+        <div className="flex gap-2">
+          <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/logframe/new`}>Add logframe item</Link>
+          <ImportLogframeButton projectId={resolvedParams.id} />
+        </div>
       </header>
 
       <section className="mt-8">
@@ -70,9 +73,12 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
       <section className="mt-10">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Indicators</h2>
-          <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/logframe/new-indicator`}>
-            Add indicator
-          </Link>
+          <div className="flex gap-2">
+            <ImportIndicatorsButton projectId={resolvedParams.id} />
+            <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/logframe/new-indicator`}>
+              Add indicator
+            </Link>
+          </div>
         </div>
         <div className="table-shell mt-3">
           <table className="w-full text-sm">
@@ -104,6 +110,22 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
         </div>
       </section>
     </div>
+  );
+}
+
+function ImportLogframeButton({ projectId }: { projectId: string }) {
+  return (
+    <Link className="btn-secondary text-xs" href={`/projects/${projectId}/logframe/import`}>
+      Import logframe
+    </Link>
+  );
+}
+
+function ImportIndicatorsButton({ projectId }: { projectId: string }) {
+  return (
+    <Link className="btn-secondary text-xs" href={`/projects/${projectId}/logframe/indicators/import`}>
+      Import indicators
+    </Link>
   );
 }
 

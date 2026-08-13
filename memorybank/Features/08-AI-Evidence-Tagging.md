@@ -42,9 +42,18 @@ Warning message: "This file may contain sensitive personal data. Please verify a
 ## Implementation Technical Details
 
 ### AI Handler
-- Location: `packages/infrastructure/src/ai/handlers/evidenceTagger.ts`
-- Currently stub implementation (per `memorybank/pending.md`)
-- Uses `InMemoryJobQueue` instead of BullMQ/Redis
+- Location: `packages/infrastructure/src/llm/evidence-tagger.ts` (stub/heuristic)
+- Rules are the single source of truth in
+  `packages/contracts/src/strategies/heuristic-rules.json` (shared with the Python
+  workers via a generator → `apps/workers/app/_strategy_data.py`).
+- **Orchestration (2026-08-13, deployed):** uploading evidence publishes an
+  `EvidenceUploaded` domain event; the `OutboxEventBus` maps it to the
+  `evidence.suggest_tags` job (`IJobQueue`). Tag persistence
+  (`POST /internal/evidence/:id/tags`) is idempotency-keyed
+  (`IdempotencyRecord`, migration `20260813000000_idempotency`). The workers
+  service (`apps/workers`, `/v1/suggest-tags`) and Kestra are prepared but **not
+  enabled** on Contabo (gated). Real AI providers remain a stub (`LLM_PROVIDER`
+  swap point).
 
 ### Suggested Tags Schema
 

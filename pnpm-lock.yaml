@@ -80,6 +80,34 @@ importers:
         specifier: 5.6.3
         version: 5.6.3
 
+  apps/superadmin:
+    dependencies:
+      next:
+        specifier: 15.5.21
+        version: 15.5.21(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@22.10.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+      zod:
+        specifier: 3.23.8
+        version: 3.23.8
+    devDependencies:
+      '@types/node':
+        specifier: 22.10.2
+        version: 22.10.2
+      '@types/react':
+        specifier: 18.3.12
+        version: 18.3.12
+      '@types/react-dom':
+        specifier: 18.3.1
+        version: 18.3.1
+      typescript:
+        specifier: 5.6.3
+        version: 5.6.3
+
   apps/web:
     dependencies:
       '@donordesk/contracts':
@@ -183,12 +211,18 @@ importers:
       bcryptjs:
         specifier: 2.4.3
         version: 2.4.3
+      bullmq:
+        specifier: 5.34.8
+        version: 5.34.8
       docx:
         specifier: 9.0.2
         version: 9.0.2
       exceljs:
         specifier: 4.4.0
         version: 4.4.0
+      ioredis:
+        specifier: 5.6.0
+        version: 5.6.0
       jose:
         specifier: ^6.2.8
         version: 6.2.8
@@ -232,13 +266,6 @@ importers:
       typescript:
         specifier: 5.6.3
         version: 5.6.3
-    optionalDependencies:
-      bullmq:
-        specifier: 5.34.8
-        version: 5.34.8
-      ioredis:
-        specifier: 5.6.0
-        version: 5.6.0
 
 packages:
 
@@ -3619,8 +3646,7 @@ snapshots:
   '@img/sharp-win32-x64@0.35.3':
     optional: true
 
-  '@ioredis/commands@1.11.0':
-    optional: true
+  '@ioredis/commands@1.11.0': {}
 
   '@isaacs/cliui@8.0.2':
     dependencies:
@@ -5060,7 +5086,6 @@ snapshots:
       uuid: 9.0.1
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   call-bind-apply-helpers@1.0.2:
     dependencies:
@@ -5113,8 +5138,7 @@ snapshots:
 
   clsx@2.1.1: {}
 
-  cluster-key-slot@1.1.2:
-    optional: true
+  cluster-key-slot@1.1.2: {}
 
   color-convert@2.0.1:
     dependencies:
@@ -5160,7 +5184,6 @@ snapshots:
   cron-parser@4.9.0:
     dependencies:
       luxon: 3.7.2
-    optional: true
 
   cross-spawn@7.0.6:
     dependencies:
@@ -5219,8 +5242,7 @@ snapshots:
       has-property-descriptors: 1.0.2
       object-keys: 1.1.1
 
-  denque@2.1.0:
-    optional: true
+  denque@2.1.0: {}
 
   dequal@2.0.3: {}
 
@@ -5632,7 +5654,6 @@ snapshots:
       standard-as-callback: 2.1.0
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   ipaddr.js@2.5.0: {}
 
@@ -5823,8 +5844,7 @@ snapshots:
 
   lodash.includes@4.3.0: {}
 
-  lodash.isarguments@3.1.0:
-    optional: true
+  lodash.isarguments@3.1.0: {}
 
   lodash.isboolean@3.0.3: {}
 
@@ -5864,8 +5884,7 @@ snapshots:
 
   lru-cache@10.4.3: {}
 
-  luxon@3.7.2:
-    optional: true
+  luxon@3.7.2: {}
 
   magic-string@0.30.21:
     dependencies:
@@ -5944,7 +5963,6 @@ snapshots:
   msgpackr@1.12.1:
     optionalDependencies:
       msgpackr-extract: 3.0.4
-    optional: true
 
   mz@2.7.0:
     dependencies:
@@ -5982,8 +6000,7 @@ snapshots:
       - '@types/node'
       - babel-plugin-macros
 
-  node-abort-controller@3.1.1:
-    optional: true
+  node-abort-controller@3.1.1: {}
 
   node-domexception@1.0.0: {}
 
@@ -6286,13 +6303,11 @@ snapshots:
 
   real-require@1.0.0: {}
 
-  redis-errors@1.2.0:
-    optional: true
+  redis-errors@1.2.0: {}
 
   redis-parser@3.0.0:
     dependencies:
       redis-errors: 1.2.0
-    optional: true
 
   regexp.prototype.flags@1.5.4:
     dependencies:
@@ -6477,8 +6492,7 @@ snapshots:
 
   sprintf-js@1.0.3: {}
 
-  standard-as-callback@2.1.0:
-    optional: true
+  standard-as-callback@2.1.0: {}
 
   stop-iteration-iterator@1.1.0:
     dependencies:
@@ -6687,8 +6701,7 @@ snapshots:
 
   uuid@8.3.2: {}
 
-  uuid@9.0.1:
-    optional: true
+  uuid@9.0.1: {}
 
   web-streams-polyfill@3.3.3: {}
 

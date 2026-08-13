@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-12  
 **Scope:** Post-Phase-7 audit of the implemented portal against `frontend-imp-plan.md` and `frontend-implementation.md`  
-**Status:** Integration gaps fixed locally; production deployment is not claimed by this report.
+**Status:** Integration gaps fixed and deployed; dashboard parity follow-up deployed as web release `20260812224500`.
 
 ## 1. Audit outcome
 
@@ -22,6 +22,8 @@ Fixed findings:
 | UX-08 | Export functionality was embedded but lacked the specified dedicated route. | Added `/projects/[id]/reports/[periodId]/export`, preflight warnings, export history, and a workspace link. |
 | UX-09 | Nested project routes could leave the wrong tab selected when prefix matching. | Changed tab resolution to select the longest matching route. |
 | UX-10 | The top bar had a permanently dominant project-only create action and no search affordance. | Added a context-aware Create menu and a `Ctrl/Cmd+K` shortcut that focuses the existing project search entry point. This is not represented as permission-filtered global search. |
+| UX-11 | Production `/dashboard` still showed the thin Phase 3 home screen instead of the designed operational dashboard. | Reworked `/dashboard` to load My Work, readiness, deadline bands, verification/compliance/activity queues, richer project cards, notifications, and setup/storage notices. |
+| UX-12 | Production `/my-work` could throw because a Server Component passed an `onChange` handler to a `<select>`. | Replaced the project selector with server-rendered filter links. |
 
 ## 2. Files and route coverage
 
@@ -45,6 +47,10 @@ Completed after the fixes:
 - `pnpm --filter @donordesk/web test:unit` — 23 test files pass, 0 fail.
 - `pnpm --filter @donordesk/web build` — optimized Next.js production build passes.
 - `git diff --check` — pass.
+- Production release `20260812224500` verified on Contabo: `current` symlink
+  points to the new release, `donordesk-web` is active on `127.0.0.1:3002`,
+  public HTTPS `/dashboard` redirects unauthenticated users to login, `/login`
+  returns 200, and the deployed server bundle contains the new dashboard sections.
 
 Browser E2E was not claimed because this audit did not run against a live API/database/identity stack.
 
@@ -59,4 +65,8 @@ Browser E2E was not claimed because this audit did not run against a live API/da
 
 ## 5. Release note
 
-These changes are repository-local until a separately verified deployment is recorded. Existing production release identifiers in older reports must not be interpreted as including this audit.
+The route/shell integration was deployed in release `20260812220349`. The
+dashboard parity and `/my-work` runtime fix were deployed as web-only release
+`20260812224500` on 2026-08-12. Existing production release identifiers older
+than `20260812224500` must not be interpreted as containing the redesigned
+dashboard home.

@@ -18,12 +18,36 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.post("/v1/logframe/parse-file", async (req) => {
+    const data = await req.file();
+    if (!data) throw new Error("file required");
+    const buffer = await data.toBuffer();
+    const result = await req.container.parser.parse({
+      buffer,
+      fileName: data.filename ?? "upload",
+      fileType: data.mimetype ?? "application/octet-stream",
+    });
+    return { text: result.text, metadata: result.metadata };
+  });
+
   app.post("/v1/indicators", async (req) => {
     const body = CreateIndicatorSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.createIndicator.handle(ctx, body);
     if (!r.ok) throw r.error;
     return r.value;
+  });
+
+  app.post("/v1/indicators/parse-file", async (req) => {
+    const data = await req.file();
+    if (!data) throw new Error("file required");
+    const buffer = await data.toBuffer();
+    const result = await req.container.parser.parse({
+      buffer,
+      fileName: data.filename ?? "upload",
+      fileType: data.mimetype ?? "application/octet-stream",
+    });
+    return { text: result.text, metadata: result.metadata };
   });
 
   app.post("/v1/indicator-updates", async (req) => {

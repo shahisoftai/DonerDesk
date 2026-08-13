@@ -50,6 +50,22 @@ pnpm dev
 
 Default seed login: `admin@example.org` / `password123`.
 
+## Production (Contabo) services
+
+Native systemd services (loopback only — no public ports):
+
+| Service | Listener | Unit |
+|---|---|---|
+| Web (Next.js standalone) | `127.0.0.1:3002` | `donordesk-web` |
+| API (Fastify) | `127.0.0.1:4001` | `donordesk-api` |
+| Workers (FastAPI) | `127.0.0.1:8092` | `donordesk-workers` |
+| Kestra (orchestrator) | `127.0.0.1:8093` | `donordesk-kestra` |
+
+Runbook scripts (gated): `scripts/preflight.sh`, `scripts/verify.sh`,
+`scripts/deploy.sh`, `scripts/rollback.sh`, `scripts/backup.sh`.
+See `infra/systemd/`, `infra/kestra/`, `memorybank/contabo-ops.md`, and
+`memorybank/docs/CONTABO-LEAN-DEPLOYMENT.md`.
+
 On Linux hosts running `ufw`, allow Prometheus to scrape the host-run API:
 
 ```bash

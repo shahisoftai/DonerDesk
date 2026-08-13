@@ -1,0 +1,82 @@
+# Kestra flow: cache a readiness snapshot in Redis (free plugin) with a TTL.
+#
+# Demonstrates the io.kestra.plugin.redis plugin for cheap, tenant-scoped caching
+# and rate-limit-friendly dedup. On a cache miss it recomputes readiness through
+# the API and writes the snapshot under a TTL; on a hit it just logs the cached
+# value and skips the expensive recompute.
+#
+# Secrets: KESTRA_REDIS_URL (e.g. redis://:password@127.0.0.1:6379/0), plus the
+# standard KESTRA_API_INTERNAL_TOKEN / KESTRA_HMAC_SECRET / DONORDESK_API.
+id: period_cache
+namespace: donor_desk.phase1
+description: Cache a readiness snapshot for a reporting period in Redis with a TTL.
+inputs:
+  - id: tenantId
+    type: STRING
+  - id: reportingPeriodId
+    type: STRING
+  - id: ttlSeconds
+    type: INT
+    defaults: 3600
+tasks:
+  - id: read_cache
+    type: io.kestra.plugin.redis.RedisGet
+    url: "{{ secret('KESTRA_REDIS_URL') }}"
+    key: "donordesk:readiness:{{ inputs.tenantId }}:{{ inputs.reportingPeriodId }}"
+    errorOnMissing: false
+
+  - id: compute_readiness
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    packageManager: PIP
+    when: "{{ outputs.read_cache.value == null }}"
+    script: |
+      import base64
+      import hashlib
+      import hmac
+      import json
+      import time
+      import urllib.request
+
+      token = "{{ secret('KESTRA_API_INTERNAL_TOKEN') }}"
+      hmac_secret = "{{ secret('KESTRA_HMAC_SECRET') }}"
+      api_url = "{{ secret('DONORDESK_API') }}"
+      tenant = "{{ inputs.tenantId }}"
+      period = "{{ inputs.reportingPeriodId }}"
+      method = "POST"
+      path = "/internal/readiness/recompute"
+      body = json.dumps({"reportingPeriodId": period}, separators=(",", ":"))
+      timestamp = str(int(time.time()))
+      canonical = "\n".join([method, path, tenant, timestamp, body])
+      signature = base64.b64encode(
+          hmac.new(hmac_secret.encode(), canonical.encode(), hashlib.sha256).digest()
+      ).decode()
+      request = urllib.request.Request(
+          api_url + path,
+          data=body.encode(),
+          method=method,
+          headers={
+              "Content-Type": "application/json",
+              "x-internal-token": token,
+              "x-tenant-id": tenant,
+              "x-internal-timestamp": timestamp,
+              "x-internal-signature": signature,
+          },
+      )
+      with urllib.request.urlopen(request) as response:
+          payload = response.read().decode()
+      print('::{"outputs":{"value":%s}}::' % json.dumps(payload))
+
+  - id: write_cache
+    type: io.kestra.plugin.redis.RedisSet
+    url: "{{ secret('KESTRA_REDIS_URL') }}"
+    key: "donordesk:readiness:{{ inputs.tenantId }}:{{ inputs.reportingPeriodId }}"
+    value: "{{ outputs.compute_readiness.value }}"
+    ttl: "{{ inputs.ttlSeconds }}"
+    when: "{{ outputs.read_cache.value == null }}"
+
+  - id: cache_hit
+    type: io.kestra.plugin.core.log.Log
+    message: "Cache hit for readiness:{{ inputs.tenantId }}:{{ inputs.reportingPeriodId }} = {{ outputs.read_cache.value }}"
+    when: "{{ outputs.read_cache.value != null }}"

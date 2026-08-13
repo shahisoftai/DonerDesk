@@ -8,6 +8,14 @@
 
 ---
 
+> **Current production reality (2026-08-13):** DonorDesk is deployed on **Contabo**
+> (single host) with **PostgreSQL 16** (native cluster, database `donordesk`) and
+> **local filesystem** storage (`/opt/donordesk/shared/storage`) — not Aurora/S3.
+> Off-host backup is **prepared** (`scripts/backup.sh`, encrypted, incl.
+> `donordesk_kestra` DB) but **not yet scheduled**; no production data has been
+> accepted yet. See `contabo-ops.md` §9/§14. The AWS/Aurora runbook below is the
+> future managed-cloud target, not the current deployment.
+
 ## 1. Recovery Objectives
 
 | Metric | Target | Notes |

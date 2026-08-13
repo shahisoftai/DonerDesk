@@ -1,0 +1,61 @@
+# Kestra flow: nightly readiness recompute for a reporting period.
+#
+# Calls the API's signed /internal/readiness/recompute route. The signature is
+# computed in the same task as the request so the body bytes always match what
+# the API verifies (METHOD\nPATH\nTENANT\nTIMESTAMP\nBODY, base64 HMAC-SHA256).
+#
+# Secrets (kestra_internal_token, kestra_hmac_secret, donordesk_api) must be set
+# in the Kestra secret store before deployment (validated in Phase E against the
+# pinned Kestra version).
+id: readiness_recompute
+namespace: donor_desk.phase1
+description: Recompute readiness for a reporting period (scheduled nightly).
+inputs:
+  - id: tenantId
+    type: STRING
+  - id: reportingPeriodId
+    type: STRING
+tasks:
+  - id: recompute
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    packageManager: PIP
+    script: |
+      import base64
+      import hashlib
+      import hmac
+      import json
+      import time
+      import urllib.request
+
+      token = "{{ secret('KESTRA_API_INTERNAL_TOKEN') }}"
+      hmac_secret = "{{ secret('KESTRA_HMAC_SECRET') }}"
+      api_url = "{{ secret('DONORDESK_API') }}"
+
+      tenant = "{{ inputs.tenantId }}"
+      period = "{{ inputs.reportingPeriodId }}"
+      method = "POST"
+      path = "/internal/readiness/recompute"
+      body = json.dumps({"reportingPeriodId": period}, separators=(",", ":"))
+      timestamp = str(int(time.time()))
+
+      canonical = "\n".join([method, path, tenant, timestamp, body])
+      signature = base64.b64encode(
+        hmac.new(hmac_secret.encode(), canonical.encode(), hashlib.sha256).digest()
+      ).decode()
+
+      request = urllib.request.Request(
+        api_url + path,
+        data=body.encode(),
+        method=method,
+        headers={
+          "Content-Type": "application/json",
+          "x-internal-token": token,
+          "x-tenant-id": tenant,
+          "x-internal-timestamp": timestamp,
+          "x-internal-signature": signature,
+        },
+      )
+      with urllib.request.urlopen(request) as response:
+        print(response.read().decode())

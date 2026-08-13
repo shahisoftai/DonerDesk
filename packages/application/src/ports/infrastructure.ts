@@ -1,4 +1,6 @@
 import type { TenantId } from "@donordesk/domain";
+import type { Result } from "@donordesk/domain";
+import type { DomainError } from "@donordesk/domain";
 
 export interface StoragePutInput {
   key: string;
@@ -52,4 +54,19 @@ export interface IPiiRedactor {
 
 export interface IJobQueue {
   enqueue(name: string, payload: Record<string, unknown>): Promise<void>;
+}
+
+/**
+ * Durable idempotency guard. Callers acquire a key before a write; a duplicate
+ * key is rejected so retried / duplicate deliveries do not double-apply.
+ */
+export interface IdempotencyAcquireInput {
+  key: string;
+  tenantId: string;
+  jobName: string;
+  entityId: string;
+}
+
+export interface IIdempotencyStore {
+  acquire(input: IdempotencyAcquireInput): Promise<Result<{ acquired: boolean }, DomainError>>;
 }

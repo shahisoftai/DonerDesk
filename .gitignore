@@ -8,3 +8,10 @@ dist/
 .next/
 *.tsbuildinfo
 .playwright-mcp/
+__pycache__/
+*.pyc
+.venv/
+test-results/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/

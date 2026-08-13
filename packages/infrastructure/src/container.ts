@@ -23,6 +23,7 @@ import {
   UploadEvidenceHandler,
   SuggestEvidenceTagsHandler,
   AcceptEvidenceTagsHandler,
+  PersistEvidenceTagsHandler,
   VerifyEvidenceHandler,
   SearchEvidenceHandler,
   GetEvidenceHandler,
@@ -43,8 +44,12 @@ import {
   ResolveChecklistItemHandler,
   ListChecklistHandler,
   CalculateReadinessHandler,
+  RecomputeReadinessHandler,
+  GenerateChecklistHandler,
   CreateExportHandler,
   GetExportPreflightHandler,
+  RunExportHandler,
+  GenerateDeadlineRemindersHandler,
   AddCommentHandler,
   ResolveCommentHandler,
   ListCommentsHandler,
@@ -55,6 +60,7 @@ import {
   type SystemClock,
   SystemClock as SystemClockImpl,
 } from "@donordesk/application";
+import type { IJobQueue } from "@donordesk/application";
 
 import {
   PrismaOrganizationRepository,
@@ -69,6 +75,7 @@ import {
   PrismaIndicatorUpdateRepository,
 } from "./repositories/logframe.js";
 import { PrismaEvidenceRepository } from "./repositories/evidence.js";
+import { PrismaIdempotencyRepository } from "./repositories/idempotency.js";
 import { PrismaActivityUpdateRepository } from "./repositories/activities.js";
 import {
   PrismaReportingPeriodRepository,
@@ -95,10 +102,10 @@ import { StubChecklistDetector } from "./llm/checklist-detector.js";
 import { DefaultExportBuilder } from "./exports/builder.js";
 import { createLogger } from "./observability/logger.js";
 import {
-  LoggingEventBus,
   LoggingNotificationAdapter,
-  InMemoryJobQueue,
 } from "./support.js";
+import { OutboxEventBus, DEFAULT_EVENT_TO_JOB } from "./events/outbox-event-bus.js";
+import { createJobQueue } from "./jobs/index.js";
 
 export interface Container {
   prisma: PrismaClient;
@@ -108,9 +115,9 @@ export interface Container {
   logger: ReturnType<typeof createLogger>;
   ids: UuidIdGenerator;
   clock: SystemClock;
-  events: LoggingEventBus;
+  events: OutboxEventBus;
   notify: LoggingNotificationAdapter;
-  jobQueue: InMemoryJobQueue;
+  jobQueue: IJobQueue;
   evidenceTagger: StubEvidenceTagger;
   activityPolisher: StubActivityPolisher;
   templateExtraction: StubTemplateExtractionService;
@@ -127,6 +134,7 @@ export interface Container {
   indicators: PrismaIndicatorRepository;
   indicatorUpdates: PrismaIndicatorUpdateRepository;
   evidence: PrismaEvidenceRepository;
+  idempotency: PrismaIdempotencyRepository;
   activities: PrismaActivityUpdateRepository;
   periods: PrismaReportingPeriodRepository;
   drafts: PrismaReportDraftRepository;
@@ -160,6 +168,7 @@ export interface Container {
     uploadEvidence: UploadEvidenceHandler;
     suggestEvidenceTags: SuggestEvidenceTagsHandler;
     acceptEvidenceTags: AcceptEvidenceTagsHandler;
+    persistEvidenceTags: PersistEvidenceTagsHandler;
     verifyEvidence: VerifyEvidenceHandler;
     searchEvidence: SearchEvidenceHandler;
     getEvidence: GetEvidenceHandler;
@@ -180,8 +189,12 @@ export interface Container {
     resolveChecklistItem: ResolveChecklistItemHandler;
     listChecklist: ListChecklistHandler;
     calculateReadiness: CalculateReadinessHandler;
+    recomputeReadiness: RecomputeReadinessHandler;
+    generateChecklist: GenerateChecklistHandler;
     createExport: CreateExportHandler;
     getExportPreflight: GetExportPreflightHandler;
+    runExport: RunExportHandler;
+    generateDeadlineReminders: GenerateDeadlineRemindersHandler;
     addComment: AddCommentHandler;
     resolveComment: ResolveCommentHandler;
     listComments: ListCommentsHandler;
@@ -204,11 +217,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const parser = new TolerantDocumentParser();
   const ids = new UuidIdGenerator();
   const clock = new SystemClockImpl();
-  const events = new LoggingEventBus(logger);
+  const jobQueue = createJobQueue(logger);
+  const events = new OutboxEventBus(logger, jobQueue, DEFAULT_EVENT_TO_JOB);
   const notify = new LoggingNotificationAdapter(logger);
-  const jobQueue = new InMemoryJobQueue(async (name, payload) => {
-    logger.info("job.dequeued", { name, payload });
-  });
 
   const organizations = new PrismaOrganizationRepository(prisma);
   const users = new PrismaUserRepository(prisma);
@@ -219,6 +230,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const indicators = new PrismaIndicatorRepository(prisma);
   const indicatorUpdates = new PrismaIndicatorUpdateRepository(prisma);
   const evidence = new PrismaEvidenceRepository(prisma);
+  const idempotency = new PrismaIdempotencyRepository(prisma);
   const activities = new PrismaActivityUpdateRepository(prisma);
   const periods = new PrismaReportingPeriodRepository(prisma);
   const drafts = new PrismaReportDraftRepository(prisma);
@@ -236,7 +248,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const checklistDetector = new StubChecklistDetector();
   const exportBuilder = new DefaultExportBuilder();
 
-  const handlers = {
+  const calculateReadinessHandler = new CalculateReadinessHandler(drafts, sections, indicators, indicatorUpdates, evidence, checklist);
+  const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, templates, indicatorUpdates, sections, activities, evidence, audits);
+  const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, exportBuilder, storage, audits);
+
+  const handlers: Container["handlers"] = {
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits),
     login: new LoginHandler(users, auth, audits),
     inviteUser: new InviteUserHandler(ids, users, invitations, audits, notify),
@@ -256,9 +272,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     verifyIndicatorUpdate: new VerifyIndicatorUpdateHandler(indicatorUpdates, audits),
     listLogframe: new ListLogframeHandler(logframe, indicators),
     listIndicators: new ListIndicatorsHandler(indicators),
-    uploadEvidence: new UploadEvidenceHandler(ids, evidence, storage, parser, jobQueue, audits),
+    uploadEvidence: new UploadEvidenceHandler(ids, evidence, storage, events, audits),
     suggestEvidenceTags: new SuggestEvidenceTagsHandler(evidence, evidenceTagger),
     acceptEvidenceTags: new AcceptEvidenceTagsHandler(evidence, audits),
+    persistEvidenceTags: new PersistEvidenceTagsHandler(evidence, audits, idempotency),
     verifyEvidence: new VerifyEvidenceHandler(evidence, audits),
     searchEvidence: new SearchEvidenceHandler(evidence),
     getEvidence: new GetEvidenceHandler(evidence),
@@ -277,16 +294,16 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     approveReportSection: new ApproveReportSectionHandler(sections, audits),
     submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),
     approveReport: new ApproveReportHandler(drafts, periods, audits),
-    detectMissingEvidence: new DetectMissingEvidenceHandler(
-      ids, checklist, checklistDetector, periods, templates, indicatorUpdates, sections, activities, evidence, audits,
-    ),
+    detectMissingEvidence: detectMissingEvidenceHandler,
     resolveChecklistItem: new ResolveChecklistItemHandler(checklist, audits),
     listChecklist: new ListChecklistHandler(checklist),
-    calculateReadiness: new CalculateReadinessHandler(drafts, sections, indicators, indicatorUpdates, evidence, checklist),
-    createExport: new CreateExportHandler(
-      ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, exportBuilder, storage, audits,
-    ),
+    calculateReadiness: calculateReadinessHandler,
+    recomputeReadiness: new RecomputeReadinessHandler(calculateReadinessHandler),
+    generateChecklist: new GenerateChecklistHandler(detectMissingEvidenceHandler),
+    createExport: createExportHandler,
+    runExport: new RunExportHandler(createExportHandler),
     getExportPreflight: new GetExportPreflightHandler(periods, drafts, sections, indicatorUpdates, checklist, evidence),
+    generateDeadlineReminders: new GenerateDeadlineRemindersHandler(ids, drafts, sections, notifications, notify),
     addComment: new AddCommentHandler(ids, comments, audits, notify),
     resolveComment: new ResolveCommentHandler(comments, audits),
     listComments: new ListCommentsHandler(comments),
@@ -298,7 +315,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   return {
     prisma, auth, storage, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, reportDraftGenerator, checklistDetector, exportBuilder,
-    organizations, users, invitations, projects, templates, logframe, indicators, indicatorUpdates, evidence, activities,
+    organizations, users, invitations, projects, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
     periods, drafts, sections, checklist, exports, comments, notifications, audits,
     handlers,
   };

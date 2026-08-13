@@ -1,0 +1,67 @@
+# Kestra flow: automated export on period close.
+#
+# Calls the signed /internal/export/run route. Signature scheme matches the API
+# (base64 HMAC-SHA256 over METHOD\nPATH\nTENANT\nTIMESTAMP\nBODY).
+id: export_on_close
+namespace: donor_desk.phase1
+description: Build and store the export for a closed reporting period.
+inputs:
+  - id: tenantId
+    type: STRING
+  - id: projectId
+    type: STRING
+  - id: reportingPeriodId
+    type: STRING
+  - id: exportType
+    type: STRING
+    defaults: NARRATIVE_REPORT
+tasks:
+  - id: run
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    packageManager: PIP
+    script: |
+      import base64
+      import hashlib
+      import hmac
+      import json
+      import time
+      import urllib.request
+
+      token = "{{ secret('KESTRA_API_INTERNAL_TOKEN') }}"
+      hmac_secret = "{{ secret('KESTRA_HMAC_SECRET') }}"
+      api_url = "{{ secret('DONORDESK_API') }}"
+
+      tenant = "{{ inputs.tenantId }}"
+      method = "POST"
+      path = "/internal/export/run"
+      body = json.dumps(
+        {
+          "projectId": "{{ inputs.projectId }}",
+          "reportingPeriodId": "{{ inputs.reportingPeriodId }}",
+          "exportType": "{{ inputs.exportType }}",
+        },
+        separators=(",", ":"),
+      )
+      timestamp = str(int(time.time()))
+
+      canonical = "\n".join([method, path, tenant, timestamp, body])
+      signature = base64.b64encode(
+        hmac.new(hmac_secret.encode(), canonical.encode(), hashlib.sha256).digest()
+      ).decode()
+
+      request = urllib.request.Request(
+        api_url + path,
+        data=body.encode(),
+        method=method,
+        headers={
+          "Content-Type": "application/json",
+          "x-internal-token": token,
+          "x-tenant-id": tenant,
+          "x-internal-timestamp": timestamp,
+          "x-internal-signature": signature,
+        },
+      )
+      with urllib.request.urlopen(request) as response:
+        print(response.read().decode())

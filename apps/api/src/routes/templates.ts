@@ -18,6 +18,18 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.post("/v1/templates/parse-file", async (req) => {
+    const data = await req.file();
+    if (!data) throw new Error("file required");
+    const buffer = await data.toBuffer();
+    const result = await req.container.parser.parse({
+      buffer,
+      fileName: data.filename ?? "upload",
+      fileType: data.mimetype ?? "application/octet-stream",
+    });
+    return { text: result.text, metadata: result.metadata };
+  });
+
   app.put("/v1/templates/:id/sections", async (req) => {
     const id = (req.params as { id: string }).id;
     const body = UpdateTemplateSectionsSchema.parse(req.body);

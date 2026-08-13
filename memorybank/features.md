@@ -74,9 +74,9 @@ matching DonerDesk.online.
 **Status:** Implemented across Phases 0–7 (blueprint: `memorybank/imp/frontend-imp-plan.md`)
 and deployed to `DonerDesk.online` as release `20260812181200` (commit `45a1c96`) on 2026-08-12.
 
-**Post-deployment repository update:** A 2026-08-12 UI/UX integration audit added
-missing route and shell composition. These later changes are verified locally but
-are not claimed as part of release `20260812181200`. See
+**Post-deployment updates:** A 2026-08-12 UI/UX integration audit added missing
+route and shell composition, then dashboard parity follow-up release
+`20260812224500` deployed the designed operational dashboard home. See
 `memorybank/imp/FRONTEND-UX-INTEGRATION-AUDIT.md`.
 
 ## What was delivered
@@ -101,6 +101,11 @@ honestly, never presented as production.
 
 - Added cross-project Reports, Evidence, and Compliance queues and primary-nav entries.
 - Repaired the dashboard evidence destination.
+- Reworked the dashboard home to show My Work, readiness, deadline bands,
+  evidence/compliance/activity queues, richer project cards, notifications, and
+  setup/storage notices.
+- Fixed `/my-work` server rendering by removing a client-only `onChange` handler
+  from the Server Component page.
 - Added complete shared project context, project Team/Settings destinations,
   indicator detail, and a dedicated reporting-period Export Center.
 - Fixed nested project-tab selection and replaced the project-only top-bar action
