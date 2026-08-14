@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-14 08:46 CEST (release `20260814120000`)
+**Last deployment:** 2026-08-14 17:41 CEST (release `20260814154500`)
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -311,10 +311,10 @@ Implement before accepting production data.
 
 ## 10. DonorDesk allocation
 
-**Status: DEPLOYED** (2026-08-14, release `20260814120000`). Deployed via the
-new **self-contained `pnpm deploy` release** (API + web + prisma + superadmin in
-one immutable release dir; no server-side installs, no shared-node_modules
-fallback, no per-file overlay). Google Drive evidence storage + Google Sign-In
+**Status: DEPLOYED** (2026-08-14, release `20260814154500`). Deployed via the
+checksummed incremental immutable-release path (API + web + prisma, with
+SuperAdmin preserved from the preceding release; no server-side installs or
+shared-node_modules fallback). Google Drive evidence storage + Google Sign-In
 code is live; the Google OAuth client credentials are still pending
 (login-page button is env-gated). Workers and Kestra are both enabled; the five
 plugin-referencing flows and plugin JARs remain gated (see §14 log + `imp/KESTRA-PLUGINS.md`).
@@ -326,7 +326,7 @@ plugin-referencing flows and plugin JARs remain gated (see §14 log + `imp/KESTR
 | Worker | **ENABLED** `127.0.0.1:8092` (FastAPI `donordesk-workers.service`, venv at `/opt/donordesk/workers/.venv`, Python 3.12) |
 | Kestra | **ENABLED** `127.0.0.1:8093` (API/UI) + `127.0.0.1:8094` (management), Kestra 1.3.30 / Java 21 |
 | Files | `/opt/donordesk/shared/storage` |
-| Releases | `/opt/donordesk/releases/20260814120000` → `current` symlink |
+| Releases | `/opt/donordesk/releases/20260814154500` → `current` symlink |
 | Runtime user | `donordesk` system user; Kestra user `donordesk_kestra` (created) |
 | Database | `donordesk` (PostgreSQL 16.14); Kestra DB `donordesk_kestra` migrated through Flyway v1.57 |
 | DB roles | `donordesk_migrator` (schema owner), `donordesk_app` (runtime), `donordesk_kestra` (Kestra, created) |
@@ -459,6 +459,21 @@ Also verify from outside the server:
 - backup completion and a clean-machine restore.
 
 ## 14. Change log
+
+- **2026-08-14 (checksummed incremental deployment pilot):** Deployed hardened
+  release `20260814154500` with `scripts/deploy-incremental.sh`. The workflow
+  hard-links the preceding immutable release, transfers content deltas with
+  checksummed rsync, atomically switches `current`, restarts only the selected
+  DonorDesk services, waits up to 30 seconds for health, and automatically
+  restores the preceding symlink on verification failure. The initial pilot
+  exposed and fixed two packaging defects before finalizing the guide: pnpm's
+  deploy target must initially be empty, and the Prisma runtime symlink must be
+  relative rather than anchored to `/tmp`. Packaging now removes local `.env`
+  files, `dev.db`, sources/tests, Next build cache, and TypeScript build metadata.
+  Measured results: full build 151.5 s; cached artifact assembly 23.9 s; hardened
+  artifact 811 MB logical; deployment 86.2 s; steady-state checksummed comparison
+  17.5 s with zero transferred files. API and web are healthy on loopback and
+  through public HTTPS. See `docs/CONTABO-FAST-DEPLOYMENT.md`.
 
 - **2026-08-14 (self-contained `pnpm deploy` release — NEW deploy method):**
   Deployed release `20260814120000` to `DonerDesk.online` using the simplified

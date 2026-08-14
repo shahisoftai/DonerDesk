@@ -401,6 +401,14 @@ output: "standalone"
 
 ### 11.1 Deploy method (validated 2026-08-14, release `20260814120000`)
 
+For frequent deployments, the preferred procedure is now the checksummed
+incremental immutable-release workflow in
+[`CONTABO-FAST-DEPLOYMENT.md`](CONTABO-FAST-DEPLOYMENT.md), validated with
+production release `20260814154500`. It preserves this section's self-contained
+artifact and atomic rollback properties while avoiding full tarball uploads and
+unnecessary service restarts. Keep the procedure below as the bootstrap/fallback
+path.
+
 The release is a **single self-contained directory** built entirely off-host with
 `pnpm deploy --legacy`, bundled as one tarball, uploaded once, extracted into an
 immutable release dir, and switched with one symlink + restart. There is no

@@ -8,7 +8,9 @@
 # installs and no shared-node_modules fallback.
 #
 # Usage: RELEASE_ID=20260814120000 scripts/package-release.sh
-# Output: /tmp/dd-release-<RELEASE_ID>.tar.gz
+# Output: /tmp/dd-release-<RELEASE_ID>/ and, by default, a matching tarball.
+# Set SKIP_BUILD=1 when a trusted CI step already built the workspace.
+# Set CREATE_TARBALL=0 when deploying the directory with deploy-incremental.sh.
 set -euo pipefail
 
 RELEASE_ID="${RELEASE_ID:?RELEASE_ID required (e.g. 20260814120000)}"
@@ -16,18 +18,34 @@ OUT="${OUT:-/tmp/dd-release-${RELEASE_ID}}"
 TARBALL="${TARBALL:-${OUT}.tar.gz}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PRISMA_STORE="node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0"
+SKIP_BUILD="${SKIP_BUILD:-0}"
+CREATE_TARBALL="${CREATE_TARBALL:-1}"
 
-echo "==> Building all workspace packages (typecheck + build)"
-pnpm -r build
+if [[ "${SKIP_BUILD}" != "1" ]]; then
+  echo "==> Building all workspace packages"
+  pnpm -r build
+fi
 
 echo "==> Assembling self-contained release at ${OUT}"
 rm -rf "${OUT}"
-mkdir -p "${OUT}/apps"
 
 pnpm --filter @donordesk/api deploy --legacy "${OUT}"
+mkdir -p "${OUT}/apps"
 pnpm --filter @donordesk/web deploy --legacy "${OUT}/apps/web"
 
 cp -r "${ROOT}/packages/infrastructure/prisma" "${OUT}/prisma"
+
+echo "==> Removing development-only and secret-bearing files"
+rm -rf \
+  "${OUT}/src" \
+  "${OUT}/test" \
+  "${OUT}/apps/web/src" \
+  "${OUT}/apps/web/tests" \
+  "${OUT}/apps/web/.next/cache"
+find "${OUT}" -type f \( \
+  -name '.env' -o -name '.env.*' -o -name 'dev.db' -o \
+  -name '*.tsbuildinfo' \
+\) -delete
 
 echo "==> Preserving the systemd server.js contract"
 cp "${OUT}/apps/web/.next/standalone/apps/web/server.js" "${OUT}/apps/web/server.js"
@@ -38,8 +56,10 @@ DST="${OUT}/${PRISMA_STORE}/node_modules/.prisma"
 mkdir -p "${DST}"
 cp -r "${SRC}/client" "${DST}/"
 mkdir -p "${OUT}/node_modules/@donordesk/infrastructure/node_modules/@prisma"
-ln -sfn "${OUT}/${PRISMA_STORE}/node_modules/@prisma/client" \
-  "${OUT}/node_modules/@donordesk/infrastructure/node_modules/@prisma/client"
+PRISMA_LINK_DIR="${OUT}/node_modules/@donordesk/infrastructure/node_modules/@prisma"
+PRISMA_LINK_TARGET="$(realpath --relative-to="${PRISMA_LINK_DIR}" \
+  "${OUT}/${PRISMA_STORE}/node_modules/@prisma/client")"
+ln -sfn "${PRISMA_LINK_TARGET}" "${PRISMA_LINK_DIR}/client"
 
 echo "==> Local smoke tests"
 (
@@ -70,8 +90,21 @@ echo "==> Local smoke tests"
   kill "${WEB_PID}" 2>/dev/null || true
 )
 
-echo "==> Creating tarball ${TARBALL}"
-tar -czf "${TARBALL}" -C "${OUT}" .
+cat >"${OUT}/release.json" <<EOF
+{"releaseId":"${RELEASE_ID}","commit":"$(git -C "${ROOT}" rev-parse HEAD)","builtAt":"$(date -u +%FT%TZ)"}
+EOF
 
-echo "Done: ${TARBALL}"
-echo "Next: scp ${TARBALL} contabo:/opt/donordesk/ && RELEASE_ID=${RELEASE_ID} TARBALL=${TARBALL} scripts/deploy.sh"
+if find "${OUT}" -type f \( -name '.env' -o -name '.env.*' -o -name 'dev.db' \) \
+  -print -quit | grep -q .; then
+  echo "ERROR: release contains an environment file or development database" >&2
+  exit 1
+fi
+
+if [[ "${CREATE_TARBALL}" == "1" ]]; then
+  echo "==> Creating tarball ${TARBALL}"
+  tar -czf "${TARBALL}" -C "${OUT}" .
+  echo "Done: ${TARBALL}"
+else
+  echo "Done: ${OUT}"
+  echo "Next: RELEASE_ID=${RELEASE_ID} RELEASE_DIR=${OUT} scripts/deploy-incremental.sh"
+fi
