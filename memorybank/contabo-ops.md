@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-12 19:35 CEST (release `20260812224500`)
+**Last deployment:** 2026-08-14 08:46 CEST (release `20260814120000`)
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -311,9 +311,12 @@ Implement before accepting production data.
 
 ## 10. DonorDesk allocation
 
-**Status: DEPLOYED** (2026-08-13, release `20260813190000`). API + SuperAdmin
-updated with the Kestra-plugin code (new signed internal routes + `/superadmin/kestra`
-+ Kestra plugins tab). Workers and Kestra are both enabled; the five
+**Status: DEPLOYED** (2026-08-14, release `20260814120000`). Deployed via the
+new **self-contained `pnpm deploy` release** (API + web + prisma + superadmin in
+one immutable release dir; no server-side installs, no shared-node_modules
+fallback, no per-file overlay). Google Drive evidence storage + Google Sign-In
+code is live; the Google OAuth client credentials are still pending
+(login-page button is env-gated). Workers and Kestra are both enabled; the five
 plugin-referencing flows and plugin JARs remain gated (see §14 log + `imp/KESTRA-PLUGINS.md`).
 
 | Resource | Allocation |
@@ -323,7 +326,7 @@ plugin-referencing flows and plugin JARs remain gated (see §14 log + `imp/KESTR
 | Worker | **ENABLED** `127.0.0.1:8092` (FastAPI `donordesk-workers.service`, venv at `/opt/donordesk/workers/.venv`, Python 3.12) |
 | Kestra | **ENABLED** `127.0.0.1:8093` (API/UI) + `127.0.0.1:8094` (management), Kestra 1.3.30 / Java 21 |
 | Files | `/opt/donordesk/shared/storage` |
-| Releases | `/opt/donordesk/releases/20260813190000` → `current` symlink |
+| Releases | `/opt/donordesk/releases/20260814120000` → `current` symlink |
 | Runtime user | `donordesk` system user; Kestra user `donordesk_kestra` (created) |
 | Database | `donordesk` (PostgreSQL 16.14); Kestra DB `donordesk_kestra` migrated through Flyway v1.57 |
 | DB roles | `donordesk_migrator` (schema owner), `donordesk_app` (runtime), `donordesk_kestra` (Kestra, created) |
@@ -456,6 +459,54 @@ Also verify from outside the server:
 - backup completion and a clean-machine restore.
 
 ## 14. Change log
+
+- **2026-08-14 (self-contained `pnpm deploy` release — NEW deploy method):**
+  Deployed release `20260814120000` to `DonerDesk.online` using the simplified
+  self-contained release procedure. This supersedes the manual overlay method:
+  the release is built entirely off-host with `pnpm --filter @donordesk/api
+  deploy --legacy` + `pnpm --filter @donordesk/web deploy --legacy` into one
+  directory, bundled as a single tarball, uploaded once, extracted into an
+  immutable release dir, and switched with one symlink + restart. Steps executed:
+  1. `pnpm -r build` (all 9 workspace packages typecheck + build green).
+  2. `pnpm --filter @donordesk/api deploy --legacy /tmp/dd-release` (API dist +
+     prod deps incl. `@donordesk/*` workspace packages, self-contained).
+  3. `pnpm --filter @donordesk/web deploy --legacy /tmp/dd-release/apps/web`
+     (Next.js standalone `.next` incl. static + prod deps, self-contained;
+     verified `next` resolves inside the deploy's `.pnpm` store — no host
+     installs, no shared-`node_modules` fallback).
+  4. Copied `packages/infrastructure/prisma/` into the release; copied
+     `.next/standalone/apps/web/server.js` up to `apps/web/server.js` so the
+     systemd `WorkingDirectory`+`node server.js` contract is preserved.
+  5. **Prisma runtime fix:** `pnpm deploy` does not carry the *generated*
+     Prisma client (`.prisma/client` with the query engine binary) or the
+     `@donordesk/infrastructure → @prisma/client` dependency symlink. Copied
+     `.prisma/client` from the workspace store into the deploy's
+     `.pnpm/@prisma+client@5.22.0.../node_modules/.prisma/client/` and symlinked
+     `node_modules/@donordesk/infrastructure/node_modules/@prisma/client` →
+     the deploy's own `.pnpm/@prisma+client@.../node_modules/@prisma/client`.
+  6. Staged superadmin (unchanged) by copying it directly on the host from
+     `20260813190000`; uploaded the ~245 MB tarball (API+web+prisma), extracted
+     into `releases/20260814120000`.
+  7. Migrations: fixed the stale `20260814000000_superadmin_control_plane`
+     record (`finished_at` was NULL from the earlier failed run) by marking it
+     applied in `_prisma_migrations`; `prisma migrate deploy` then reported
+     "No pending migrations".
+  8. Smoked staged API on `127.0.0.1:4009` (health/ready OK with the shared
+     `api.env`; DB ok) and staged web on `127.0.0.1:3009` (login 200, CSS 200).
+  9. Switched `current` → `20260814120000`; restarted `donordesk-api`,
+     `donordesk-web`, `donordesk-superadmin`.
+  Verified live: API loopback `4001` (`/health`+`/ready` OK), web loopback
+  `3002` (200, CSS 200), superadmin `3012` (200), public HTTPS `/`, `/login`
+  and CSS all 200, `/v1/auth/google` route live (400 on empty body = route
+  registered), google auth web routes present. `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED`
+  remains false at build → the login button is off until the Google OAuth
+  client is provisioned and the web is rebuilt with it. No changes to the
+  shared `api.env`; secrets stay under `/opt/donordesk/shared/` (0600).
+  Rollback: `ln -sfn /opt/donordesk/releases/20260813190000 /opt/donordesk/current`
+  && `systemctl restart donordesk-api donordesk-web donordesk-superadmin`.
+  **Previous releases relied on a stale shared `/opt/donordesk/node_modules`
+  (npm-installed prisma from the 2026-08-12 install) — the new method removes
+  that dependency entirely.**
 
 - **2026-08-13 (SuperAdmin control plane staged):** Deployed immutable release
   `20260813143000`, applied the additive platform control-plane tables, and enabled

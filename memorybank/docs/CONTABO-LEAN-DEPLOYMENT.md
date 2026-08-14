@@ -399,14 +399,59 @@ The build implementation must add:
 output: "standalone"
 ```
 
-For the monorepo, validate `outputFileTracingRoot`. Copy `.next/static` and any
-`public` directory into the generated standalone layout. Start the resulting
-`server.js` locally from the exact packaged path.
+### 11.1 Deploy method (validated 2026-08-14, release `20260814120000`)
 
-Use pnpm's deploy capability or another reproducible packaging step to create an
-API directory containing production `node_modules`, compiled workspace packages,
-the generated Prisma client/engine, schema, and migrations. The artifact must not
-depend on `workspace:*` resolution on Contabo.
+The release is a **single self-contained directory** built entirely off-host with
+`pnpm deploy --legacy`, bundled as one tarball, uploaded once, extracted into an
+immutable release dir, and switched with one symlink + restart. There is no
+per-file overlay, no server-side install, and no reliance on the stale shared
+`/opt/donordesk/node_modules`.
+
+```bash
+# 1. Build everything (typecheck + build)
+pnpm -r build
+
+# 2. Assemble the self-contained release dir
+rm -rf /tmp/dd-release && mkdir -p /tmp/dd-release/apps
+pnpm --filter @donordesk/api deploy --legacy /tmp/dd-release          # API: dist + prod node_modules + @donordesk/*
+pnpm --filter @donordesk/web deploy --legacy /tmp/dd-release/apps/web # web: Next.js standalone (.next incl. static) + prod node_modules
+cp -r packages/infrastructure/prisma /tmp/dd-release/prisma           # migrations + schema
+
+# 3. Preserve the systemd server.js contract (WorkingDirectory + node server.js)
+cp /tmp/dd-release/apps/web/.next/standalone/apps/web/server.js /tmp/dd-release/apps/web/server.js
+
+# 4. Prisma runtime fix — pnpm deploy does NOT carry the generated client or
+#    the infra -> @prisma/client dependency symlink. Copy the generated client
+#    (query engine binary included) and re-create the symlink inside the deploy:
+SRC=node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/.prisma
+cp -r "$SRC/client" /tmp/dd-release/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/.prisma/
+mkdir -p /tmp/dd-release/node_modules/@donordesk/infrastructure/node_modules/@prisma
+ln -s /tmp/dd-release/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client \
+      /tmp/dd-release/node_modules/@donordesk/infrastructure/node_modules/@prisma/client
+
+# 5. (unchanged services only) stage superadmin directly on the host:
+#    cp -r /opt/donordesk/releases/<previous>/superadmin /opt/donordesk/releases/<new>/
+
+# 6. One tarball, one upload, one switch
+tar -czf dd-release.tar.gz -C /tmp/dd-release .
+scp dd-release.tar.gz contabo:/opt/donordesk/
+ssh contabo 'mkdir /opt/donordesk/releases/20260814120000 &&
+  tar -xzf dd-release.tar.gz -C /opt/donordesk/releases/20260814120000 &&
+  ln -sfn /opt/donordesk/releases/20260814120000 /opt/donordesk/current &&
+  systemctl restart donordesk-api donordesk-web donordesk-superadmin'
+```
+
+Local acceptance test (before upload): start the API from the deploy dir with the
+shared `api.env` (`/health` + `/ready` ok) and start the web on a temp port
+(`/login` 200 and its `/_next/static/css/*.css` 200). The web's `next` resolves
+inside the deploy's own `.pnpm` store — no host installs, no shared node_modules.
+
+Migrations note: if `prisma migrate deploy` reports a "relation already exists"
+for `20260814000000_superadmin_control_plane` (tables created manually in an
+earlier release while the `_prisma_migrations` row has `finished_at` NULL), mark
+it applied: `UPDATE _prisma_migrations SET finished_at = now(), applied_steps_count
+= 1 WHERE migration_name='20260814000000_superadmin_control_plane' AND finished_at
+IS NULL;` then re-run.
 
 Artifact acceptance test in a clean temporary directory:
 
@@ -614,20 +659,18 @@ Every release uses a new directory and an atomic symlink switch:
 1. Run the live-host preflight from `contabo-ops.md`.
 2. Confirm ports 3002/4001/8092 and disk/RAM margins.
 3. Confirm the latest off-host backup and restore-test status.
-4. Upload to `/opt/donordesk/releases/<id>.staging`.
+4. Upload the single self-contained tarball (see §11.1) to `/opt/donordesk/releases/<id>.tar.gz`.
 5. Verify artifact checksum and ownership.
-6. Extract without touching `current`.
+6. Extract into `/opt/donordesk/releases/<id>` without touching `current`.
 7. Run migrations with root-only migrator credentials.
 8. Apply RLS and run isolation tests as `donordesk_app`.
-9. Start staged API/web on temporary loopback ports with temporary units or direct
-   supervised commands; run smoke tests.
-10. Rename staging to `/opt/donordesk/releases/<id>`.
-11. Atomically switch `current`.
-12. `systemctl restart donordesk-api donordesk-web`.
-13. Restart worker only if installed and changed.
-14. Run local and public acceptance tests.
-15. Check journald, PostgreSQL, memory, swap, and disk.
-16. Record release ID, migration, checksum, tests, and backup evidence.
+9. Start staged API/web on temporary loopback ports with the shared `api.env`; run smoke tests.
+10. Atomically switch `current`.
+11. `systemctl restart donordesk-api donordesk-web donordesk-superadmin`.
+12. Restart worker only if installed and changed.
+13. Run local and public acceptance tests.
+14. Check journald, PostgreSQL, memory, swap, and disk.
+15. Record release ID, migration, checksum, tests, and backup evidence.
 
 The first deployment has a short maintenance window. True zero-downtime requires
 two application instances behind OLS and verified stateless/WebSocket/job behavior;
