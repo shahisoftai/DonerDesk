@@ -126,9 +126,9 @@ type ExportType =
 - [ ] Automated export on period close
 - [ ] Custom export templates
 - [ ] Partial evidence pack (selected items only)
-- [ ] Export to Google Drive/Dropbox
+- [ ] Export to Google Drive / Dropbox destination
 - [ ] Public download links with expiry
-- [ ] S3 storage for exported files
+- [ ] Export artifacts to R2 / object storage (currently LOCAL) — see `../gdrive.md`
 
 ## Notes
 

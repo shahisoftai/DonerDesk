@@ -51,8 +51,12 @@ These items affect multiple features and are tracked in `memorybank/pending.md` 
    (127.0.0.1:8093) are prepared with systemd units but **not enabled** (gated).
 3. **LLM Provider — still a stub.** All AI features use the deterministic
    heuristic tagger/polisher; real providers are a `LLM_PROVIDER` swap point.
-4. **S3 Storage — not implemented** (`LocalStorage` only).
-5. **Email Delivery — logs only** (not delivered). Deadline reminders generate
+4. **Evidence storage — Google Drive (link-first) implemented; R2 tier present.**
+   Per-tenant `storageProvider` (`GOOGLE_DRIVE`/`R2`/`LOCAL`) via
+   `EvidenceStorageResolver`. See `../gdrive.md`. R2 env wiring remains.
+5. **Google Sign-In on the login page — implemented** (env-gated
+   `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED`); existing accounts only. See `gdrive.md` §9.
+6. **Email Delivery — logs only** (not delivered). Deadline reminders generate
    in-app notifications.
 
 ## Feature Relationships

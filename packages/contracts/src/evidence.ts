@@ -31,13 +31,18 @@ export const EvidenceVerificationStatusSchema = z.enum([
   "ARCHIVED",
 ]);
 
+export const StorageProviderSchema = z.enum(["LOCAL", "GOOGLE_DRIVE", "R2"]);
+
 export const CreateEvidenceSchema = z.object({
   projectId: z.string().min(1),
   title: z.string().min(1).max(300),
   fileName: z.string().min(1).max(300),
-  fileUrl: z.string().min(1),
+  fileUrl: z.string().optional(),
   fileType: z.string().min(1).max(100),
   fileSize: z.number().int().nonnegative().max(100 * 1024 * 1024),
+  storageProvider: StorageProviderSchema.default("LOCAL"),
+  driveFileId: z.string().optional(),
+  driveWebLink: z.string().optional(),
   evidenceType: EvidenceTypeSchema,
   reportingPeriodId: z.string().optional(),
   activityId: z.string().optional(),

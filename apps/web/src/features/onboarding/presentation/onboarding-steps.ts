@@ -22,6 +22,13 @@ const STEPS: Array<{
   optional: boolean;
 }> = [
   {
+    key: "storage",
+    label: "Connect Google Drive",
+    description: "Store evidence in your own Google Drive.",
+    href: "/onboarding/storage",
+    optional: false,
+  },
+  {
     key: "organization",
     label: "Organization profile",
     description: "Confirm your organization details.",
@@ -81,6 +88,7 @@ export function deriveOnboardingSteps(snapshot: OnboardingSnapshot): OnboardingS
   setHref("evidence", snapshot.firstProjectId ? `/projects/${snapshot.firstProjectId}/evidence/new` : projectHref);
 
   const isComplete: Record<StepKey, boolean> = {
+    storage: snapshot.storageProvider === "GOOGLE_DRIVE",
     organization: snapshot.hasOrg,
     "first-project": snapshot.projectCount > 0,
     template: snapshot.templateCount > 0,
@@ -90,6 +98,7 @@ export function deriveOnboardingSteps(snapshot: OnboardingSnapshot): OnboardingS
   };
 
   const summary: Record<StepKey, string> = {
+    storage: snapshot.storageProvider === "GOOGLE_DRIVE" ? "Google Drive connected" : "Not connected",
     organization: snapshot.hasOrg ? snapshot.orgName : "Not set",
     "first-project": snapshot.projectCount > 0 ? `${snapshot.projectCount} project${snapshot.projectCount === 1 ? "" : "s"}` : "No projects yet",
     template: snapshot.templateCount > 0 ? `${snapshot.templateCount} template${snapshot.templateCount === 1 ? "" : "s"}` : "No templates",

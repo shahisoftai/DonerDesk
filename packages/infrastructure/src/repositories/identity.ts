@@ -47,6 +47,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           donorTypesServed: org.donorTypesServed,
           dataResidency: org.dataResidency,
           aiEnabled: org.aiEnabled,
+          storageProvider: org.storageProvider,
         } as Parameters<typeof this.prisma.organization.create>[0]["data"],
       });
       return ok(org);
@@ -73,6 +74,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           donorTypesServed: org.donorTypesServed,
           dataResidency: org.dataResidency,
           aiEnabled: org.aiEnabled,
+          storageProvider: org.storageProvider,
         } as Parameters<typeof this.prisma.organization.update>[0]["data"],
       });
       return ok(org);
@@ -109,6 +111,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     donorTypesServed: string | null;
     dataResidency: string;
     aiEnabled?: boolean;
+    storageProvider?: string;
     createdAt: Date;
   }): Organization {
     return Organization.rehydrate({
@@ -129,6 +132,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
         donorTypesServed: row.donorTypesServed ?? undefined,
         dataResidency: row.dataResidency as import("@donordesk/domain").DataResidency,
         aiEnabled: row.aiEnabled ?? true,
+        storageProvider: (row.storageProvider as import("@donordesk/domain").StorageProvider) ?? "LOCAL",
       },
     });
   }

@@ -13,7 +13,7 @@ import {
   CONFIDENTIALITY_LABEL,
 } from "@/lib/labels";
 import { formatDate, formatFileSize } from "@/lib/shared/dates";
-import { protectedFileDownloadHref } from "@/lib/shared/downloads";
+import { protectedFileDownloadHref, isByteStoredEvidence } from "@/lib/shared/downloads";
 import { EvidenceTagReview } from "@/features/evidence/presentation/EvidenceTagReview";
 import { EvidenceVerificationPanel } from "@/features/evidence/presentation/EvidenceVerificationPanel";
 import { CommentsThread } from "@/features/comments/presentation/CommentsThread";
@@ -46,9 +46,12 @@ export default async function EvidenceDetailPage({
   const canVerify = hasCapability(ctx, "evidence.verify");
   const demoMode = process.env.NODE_ENV !== "production";
 
-  // fileUrl is a protected API path like /v1/files/{tenantId/evidence/id.ext}.
-  const hasProtectedDownload = evidence.fileUrl.startsWith("/v1/files/");
+  // fileUrl is a protected API path like /v1/files/{tenantId/evidence/id.ext} for
+  // byte-stored evidence, or a Google Drive web link for Drive-backed evidence.
+  const hasProtectedDownload = isByteStoredEvidence(evidence.storageProvider, evidence.fileUrl);
   const downloadHref = protectedFileDownloadHref(evidence.fileUrl, evidence.fileName);
+  const driveBacked = evidence.storageProvider === "GOOGLE_DRIVE";
+  const driveLink = evidence.driveWebLink || evidence.fileUrl;
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -105,6 +108,11 @@ export default async function EvidenceDetailPage({
         {hasProtectedDownload && (
           <a className="btn mt-4" href={downloadHref}>
             Download file
+          </a>
+        )}
+        {driveBacked && (
+          <a className="btn mt-4" href={driveLink} target="_blank" rel="noopener noreferrer">
+            Open in Google Drive
           </a>
         )}
       </section>

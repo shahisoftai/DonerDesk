@@ -23,6 +23,7 @@ model Organization {
   donorTypesServed String?
   dataResidency String   @default("DEFAULT") // EU | US | AFRICA | ASIA | DEFAULT
   aiEnabled     Boolean  @default(true)
+  storageProvider String @default("LOCAL") // LOCAL | GOOGLE_DRIVE | R2
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -322,6 +323,10 @@ model EvidenceFile {
   fileUrl             String
   fileType            String
   fileSize            Int
+  storageProvider     String   @default("LOCAL") // LOCAL | GOOGLE_DRIVE | R2
+  driveFileId         String?
+  driveWebLink        String?
+  storageKey          String?
   evidenceType        String
   activityId          String?
   indicatorId         String?

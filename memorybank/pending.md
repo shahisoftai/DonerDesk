@@ -13,15 +13,24 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-13T17:00+
 > Production API release `20260813081200` now uses `JOB_QUEUE=kestra`; a direct
 > production adapter execution completed successfully.
 > Off-host backup (`scripts/backup.sh`) remains to be scheduled.
-> **Free Kestra plugins implemented (Tika, Redis, JDBC-Postgres, GDrive, SFTP):**
-> pinned provisioning (`infra/kestra/`), two signed internal routes
+> **Free Kestra plugins (Tika, Redis, JDBC-Postgres, GDrive, SFTP):** pinned
+> provisioning (`infra/kestra/`), signed internal routes
 > (`/internal/evidence/:id/content`, `/internal/evidence/upload`), five flows
 > (`evidence_parse`, `period_cache`, `analytics_snapshot`, `gdrive_ingest`,
-> `sftp_ingest`), and a SuperAdmin **Kestra plugins** tab. **Deployed (2026-08-13,
-> release `20260813190000`):** API + SuperAdmin are live. **Gated (not deployed):**
-> the five plugin-referencing flows and the plugin JARs — a `sync-flows.sh` run
-> hangs Kestra until the plugins are staged/verified against Kestra 1.3.30 and the
-> `donordesk` datasource is added. See `imp/KESTRA-PLUGINS.md`.
+> `sftp_ingest`), and a SuperAdmin **Kestra plugins** tab. Kestra itself is
+> **OPERATIONAL** on Contabo (7 core flows deployed, `period_cache` running via
+> Redis). The five plugin JARs are staged but GATED: plugin flows are NOT yet
+> deployed — see `imp/KESTRA-PLUGINS.md` for activation steps. GDrive and SFTP
+> are also gated on SuperAdmin `CONNECTOR` credentials + Kestra secrets.
+> **Google Drive primary storage (2026-08-13):** the link-first storage setup is
+> **implemented** (Phases A–E) — see `gdrive.md`. Evidence can be stored in the
+> tenant's own Google Drive (reference-only), Cloudflare R2 (paid), or LOCAL.
+> R2 env wiring and per-tenant token store wiring remain to be completed.
+> **Google Sign-In (2026-08-14):** login-page Google Sign-In is **implemented** —
+> `POST /v1/auth/google` (id_token verified via jose) + web
+> `/api/auth/google/start|callback` + login-page button (env-gated
+> `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED`). Existing accounts only; auto-provisioning
+> (sign-up with Google) is a follow-up. See `gdrive.md` §9.
 
 ## Frontend portal (implemented — latest web release `20260812224500`)
 
@@ -95,8 +104,21 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
   adapters exists at `packages/infrastructure/src/llm/factory.ts` but
   `container.ts:232-236` always wires stub handlers. Wire provider-specific
   implementations and set `LLM_PROVIDER` only when ready.
-- [ ] **Implement S3 storage.** Only `LocalStorage` exists at
-  `packages/infrastructure/src/storage/local-storage.ts`. No S3 adapter exists.
+- [x] **Google Drive primary storage (link-first) + R2 tier.** Implemented across
+  Phases A–E: per-tenant `storageProvider` (`GOOGLE_DRIVE` / `R2` / `LOCAL`),
+  `IEvidenceStorage` + `EvidenceStorageResolver`, `GoogleDriveEvidenceStorage`
+  (reference-only, no byte copy), `R2EvidenceStorage` (S3-compatible, SigV4),
+  onboarding OAuth connect step, `POST /v1/evidence/link-drive`, read-time
+  resolution, and a reference-only Kestra `gdrive_ingest.yml`. See
+  `memorybank/gdrive.md`.
+- [ ] **Wire R2 config via env for production.** `R2EvidenceStorage` exists; the
+  resolver passes `undefined` R2 config (placeholder). Add `R2_ACCOUNT_ID`,
+  `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` env and instantiate it.
+- [ ] **Wire the Drive token store to the encrypted credential store at runtime.**
+  `GoogleDriveEvidenceStorage` currently reads OAuth tokens from env
+  (`EnvGoogleDriveTokenStore`); the `PrismaGoogleDriveCredentialStore` persists the
+  tenant refresh token encrypted. Point the resolver's token store at the
+  credential store so per-tenant tokens are used.
 - [ ] **Wire email/notification delivery.** Postmark adapter exists at
   `packages/infrastructure/src/comms/email.ts` but `container.ts` wires
   `LoggingNotificationAdapter` which only logs. Wire Postmark and set
@@ -113,28 +135,26 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
   auto-migrate. Kestra 1.3.30 is now enabled with its dedicated PostgreSQL
   database, Java 21, a 1 GiB heap cap, loopback listeners, and pinned Python
   task plugin 1.3.1.
-- [x] **Free Kestra plugins (Tika, Redis, JDBC-Postgres, GDrive, SFTP).** Added
-  pinned provisioning (`infra/kestra/plugins.manifest.tsv` + `install-plugins.sh`),
-  a signed internal file-content route (`/internal/evidence/:id/content`), a
-  signed internal upload route (`/internal/evidence/upload`), five flows
-  (`evidence_parse` Tika, `period_cache` Redis, `analytics_snapshot` JDBC,
-  `gdrive_ingest` + `sftp_ingest`), and a SuperAdmin **Kestra plugins** tab
-  (`/superadmin/kestra`). **Deployed 2026-08-13** (API + SuperAdmin, release
-  `20260813190000`). See `imp/KESTRA-PLUGINS.md`.
-- [ ] **Verify the free Kestra plugins against the pinned core.** The plugin
-  versions in `infra/kestra/plugins.manifest.tsv` are gated: confirm each JAR
-  loads under Kestra 1.3.30, add the `donordesk` datasource to the deployed
-  `kestra.application.yml`, and only then run `workflows/kestra/sync-flows.sh`
-  to deploy the five new flows (a premature run hangs Kestra — verified 2026-08-13).
-  Then smoke-execute `evidence_parse`, `period_cache`, and `analytics_snapshot`.
+- [x] **Free Kestra plugins (Tika, Redis, JDBC-Postgres, GDrive, SFTP).** Pinned
+  provisioning (`infra/kestra/plugins.manifest.tsv` + `install-plugins.sh`),
+  signed internal routes (`/internal/evidence/:id/content`, `/internal/evidence/upload`),
+  five flow YAMLs (`evidence_parse`, `period_cache`, `analytics_snapshot`,
+  `gdrive_ingest`, `sftp_ingest`), and a SuperAdmin **Kestra plugins** tab
+  (`/superadmin/kestra`). Kestra core + 7 flows are operational on Contabo.
+  **Plugin flows are GATED** — JARs staged but not deployed until verified.
+  See `imp/KESTRA-PLUGINS.md`.
+- [ ] **Deploy plugin flows.** Confirm each JAR loads under Kestra 1.3.30, add the
+  `donordesk` datasource to the deployed `kestra.application.yml`, then run
+  `workflows/kestra/sync-flows.sh`. A premature run hung Kestra (verified 2026-08-13).
+  Smoke-execute `evidence_parse`, `period_cache`, and `analytics_snapshot` after.
 - [ ] **Provision GDrive/SFTP connector credentials.** `gdrive_ingest` and
-  `sftp_ingest` are staged but gated on `CONNECTOR` records in the SuperAdmin
-  portal and matching Kestra secrets. Add the Google service account / SFTP
-  credentials, test the connection, then enable the triggers.
+  `sftp_ingest` are wired but gated on SuperAdmin `CONNECTOR` records + Kestra
+  secrets (`GDRIVE_SERVICE_ACCOUNT_JSON` + `GDRIVE_FOLDER_ID` or SFTP key/host/user).
+  Add credentials, test the connection, then enable the trigger.
 - [ ] **Verify `donordesk_app` grants + RLS for the JDBC analytics flow.** The
   `analytics_snapshot` flow is gated on the `donordesk` datasource, the
-  `DONORDESK_APP_DB_PASSWORD` Kestra secret, and read-only `SELECT` grants; it
-  must never be granted writes.
+  `DONORDESK_APP_DB_PASSWORD` Kestra secret, and read-only `SELECT` grants;
+  it must never be granted writes.
 
 ## Observability / operations
 
@@ -163,6 +183,11 @@ implemented (see the frontend phase reports) but only exposes what the backend
 actually supports; unsupported controls are omitted rather than simulated.
 
 ### Feature 01 — Authentication and Onboarding
+- [x] **Google Sign-In on login page** — `POST /v1/auth/google` + web
+  `/api/auth/google/start|callback` + login button (env-gated). Existing
+  accounts only, matches by email. See `gdrive.md` §9.
+- [ ] Sign-up with Google (auto-provisioning) — needs a `googleSubject` column +
+  org creation flow
 - [ ] Complete password reset flow with email delivery
 - [ ] Email verification on signup
 - [ ] Onboarding wizard progress persistence
@@ -199,16 +224,21 @@ actually supports; unsupported controls are omitted rather than simulated.
   items and indicators. AI structuring remains backend.
 
 ### Feature 07 — Evidence Library
-- [ ] S3 storage backend implementation
+- [x] **Google Drive primary storage (link-first)** — `storageProvider=GOOGLE_DRIVE`;
+  `POST /v1/evidence/link-drive` links Drive files without a byte copy. See `gdrive.md`.
+- [ ] R2 storage wired via env for production (adapter exists, config placeholder)
+- [ ] Google OCR tagging by `driveFileId` (currently byte-based Tika for LOCAL/R2)
 - [ ] Bulk file upload (zip import)
 - [ ] Video/audio file support
 - [ ] Evidence batch operations
 - [x] **Inbound ingestion (GDrive/SFTP)** — signed `/internal/evidence/upload`
-  route + `gdrive_ingest`/`sftp_ingest` Kestra flows wired; **staged (gated)** on
-  connector credentials + live connection test. See `imp/KESTRA-PLUGINS.md`.
+  route + `gdrive_ingest`/`sftp_ingest` Kestra flows wired and deployed; `gdrive_ingest`
+  is now **reference-only** (sends `driveFileId`, no base64 copy). Gated on
+  SuperAdmin `CONNECTOR` credentials + Kestra secrets. See `imp/KESTRA-PLUGINS.md`.
 - **Frontend:** project search/list, upload queue, detail + preview, verification,
   plus the organization evidence queue (Phase 4 in code plus the post-implementation
-  integration audit). S3/zip/media remain backend.
+  integration audit). Drive evidence opens via Google Drive web link. R2/zip/media
+  remain backend.
 
 ### Feature 08 — AI Evidence Tagging
 - [ ] Real confidence scoring from LLM
@@ -258,7 +288,7 @@ actually supports; unsupported controls are omitted rather than simulated.
 - [ ] Enhanced formatting for donor-specific templates
 - [ ] Export progress tracking
 - [ ] Automated export on period close
-- [ ] Export to Google Drive/Dropbox
+- [ ] Export to Google Drive / Dropbox destination
 - **Frontend:** preflight, guided wizard, history, protected download, and a
   dedicated period export center route (Phase 6 plus the post-implementation audit).
   Export builder is stub-backed in non-production.

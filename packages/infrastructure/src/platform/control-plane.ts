@@ -9,7 +9,7 @@ export const PLATFORM_PROVIDERS = {
   EMAIL: ["brevo", "postmark", "resend", "ses", "smtp"],
   OBJECT_STORAGE: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"],
   BACKUP: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"],
-  CONNECTOR: ["kobotoolbox", "odk-central", "google-drive", "sharepoint", "s3-drop-folder"],
+  CONNECTOR: ["kobotoolbox", "odk-central", "google-drive", "google-drive-oauth", "sharepoint", "s3-drop-folder"],
 } as const;
 
 export type PlatformSession = { sub: string; email: string; role: "SUPER_ADMIN"; purpose: "session" | "mfa" };

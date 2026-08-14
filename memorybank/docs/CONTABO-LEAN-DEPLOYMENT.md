@@ -128,8 +128,9 @@ production artifact.
 | Web is not standalone | `output: "standalone"` absent | enable and verify monorepo tracing/static files |
 | Browser API defaults to localhost | public API URL defaults to `localhost:4000` | use same-origin `/api` or production HTTPS URL |
 | Redis jobs not wired | `InMemoryJobQueue` always selected | wire and test BullMQ factory |
+| Evidence storage default is LOCAL | `EvidenceStorageResolver` falls back to LOCAL | connect Google Drive (link-first) or wire R2 per tenant; see `gdrive.md` |
+| R2 config not env-wired | `R2EvidenceStorage` exists, resolver passes placeholder config | add R2 env (account/key/bucket) and instantiate it |
 | LLM handlers remain stubs | LLM factory is not selected by handlers | wire provider-specific implementations |
-| S3 is not implemented | only `LocalStorage` exists | implement before claiming S3 switch |
 | Notifications log only | logging adapter selected | implement email/notification delivery |
 | Kestra flow is invalid | nonexistent internal routes/module references | replace with tested contracts |
 | Worker is disconnected | routes exist, no production caller | authenticate and integrate or omit service |

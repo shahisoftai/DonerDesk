@@ -15,10 +15,17 @@ export default function LoginPage() {
     { error: null },
   );
   const [next, setNext] = useState("");
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const value = new URLSearchParams(window.location.search).get("next");
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get("next");
     setNext(value && value.startsWith("/") && !value.startsWith("//") ? value : "");
+    if (params.get("error") === "google_failed") {
+      setOauthError("Google Sign-In failed. Please try again or use your email and password.");
+    } else if (params.get("error") === "invalid_callback") {
+      setOauthError("The sign-in link expired. Please try signing in again.");
+    }
   }, []);
 
   const fields = state?.fields ?? {};
@@ -33,10 +40,18 @@ export default function LoginPage() {
         <ThemeToggle />
       </div>
       <form action={formAction} className="card mt-6 space-y-4">
+        {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && (
+          <a className="btn block w-full text-center" href="/api/auth/google/start">
+            Sign in with Google
+          </a>
+        )}
         {process.env.NEXT_PUBLIC_OIDC_ENABLED === "true" && (
           <a className="btn block w-full text-center" href="/api/auth/oidc/start">
             Sign in with organization SSO
           </a>
+        )}
+        {oauthError && (
+          <InlineAlert tone="danger" title={oauthError} />
         )}
         <input type="hidden" name="next" value={next} />
         <Field label="Email" htmlFor="email" error={fields.email?.[0]}>

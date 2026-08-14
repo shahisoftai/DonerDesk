@@ -175,12 +175,17 @@ completeness; see Section 12.
 - Amazon SES
 - SMTP-compatible provider
 
-### Object storage
+### Object storage (evidence storage tier — see `gdrive.md`)
 
 - Cloudflare R2
 - Backblaze B2
 - Amazon S3
 - S3-compatible provider
+
+Note: DonorDesk's primary evidence storage is **Google Drive (link-first)**; the
+object storage providers above are the optional paid tier (e.g. R2) and DR mirror.
+The per-tenant strategy is set via `Organization.storageProvider`
+(`GOOGLE_DRIVE` / `R2` / `LOCAL`). See `memorybank/gdrive.md`.
 
 ### Off-host backup destinations
 
@@ -193,7 +198,8 @@ completeness; see Section 12.
 
 - KoboToolbox
 - ODK Central
-- Google Drive
+- Google Drive (service account — Kestra folder trigger)
+- Google Drive OAuth (tenant Drive-link storage, onboarding)
 - Microsoft SharePoint
 - S3 drop-folder
 

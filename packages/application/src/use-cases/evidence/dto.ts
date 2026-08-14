@@ -11,6 +11,9 @@ export interface EvidenceDto {
   fileUrl: string;
   fileType: string;
   fileSize: number;
+  storageProvider: string;
+  driveFileId?: string;
+  driveWebLink?: string;
   evidenceType: string;
   location?: string;
   activityDate?: string;
@@ -35,6 +38,9 @@ export function toEvidenceDto(e: EvidenceFile): EvidenceDto {
     fileUrl: e.fileUrl,
     fileType: e.fileType,
     fileSize: e.fileSize,
+    storageProvider: e.storageProvider,
+    driveFileId: e.driveFileId,
+    driveWebLink: e.driveWebLink,
     evidenceType: e.evidenceType,
     location: e.location,
     activityDate: e.activityDate?.toISOString(),

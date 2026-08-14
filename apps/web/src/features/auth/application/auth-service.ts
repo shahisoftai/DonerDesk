@@ -20,6 +20,16 @@ export class AuthService {
     return await this.parseAuthResponse(response, GENERIC_LOGIN_ERROR);
   }
 
+  async googleSignIn(code: string): Promise<{ token: string }> {
+    const response = await fetch(`${this.baseUrl}/v1/auth/google`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code }),
+      cache: "no-store",
+    });
+    return await this.parseAuthResponse(response, GENERIC_LOGIN_ERROR);
+  }
+
   async signup(input: SignupInput): Promise<{ token: string }> {
     const response = await fetch(`${this.baseUrl}/v1/auth/signup`, {
       method: "POST",

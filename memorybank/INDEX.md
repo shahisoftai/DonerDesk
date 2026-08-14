@@ -47,6 +47,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | [`docs/architecture/decisions/0004-async-job-orchestration.md`](docs/architecture/decisions/0004-async-job-orchestration.md) | ADR: async job ownership (memory/BullMQ/Kestra via `JOB_QUEUE`) |
 | [`imp/KESTRA-IMPLEMENTATION-PLAN.md`](imp/KESTRA-IMPLEMENTATION-PLAN.md) | Kestra orchestration implementation plan (Phases A–F) |
 | [`imp/KESTRA-PLUGINS.md`](imp/KESTRA-PLUGINS.md) | **Free Kestra plugins** (Tika, Redis, JDBC-Postgres, GDrive, SFTP) — implementation + gating |
+| [`gdrive.md`](gdrive.md) | **Google Drive primary storage (link-first) + R2 optional tier** — status, architecture, implementation (Phases A–E), **+ login-page Google Sign-In (§9)** |
 | [`docs/security/threat-model.md`](docs/security/threat-model.md) | Security threat model |
 | [`docs/api/openapi-3.1.json`](docs/api/openapi-3.1.json) | OpenAPI spec |
 
@@ -55,7 +56,6 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 |-------|--------|-------------------|-------|
 | Phase 0 — Foundation | ✅ Complete | [`imp/PHASE0-COMPLETION-REPORT.md`](imp/PHASE0-COMPLETION-REPORT.md) | [`imp/PHASE0-AUDIT.md`](imp/PHASE0-AUDIT.md) |
 | Phase 1 — MVP Core | ✅ Complete | [`imp/PHASE1-COMPLETION.md`](imp/PHASE1-COMPLETION.md) | [`imp/PHASE1-AUDIT.md`](imp/PHASE1-AUDIT.md) |
-| Phase 1 Deviations | ⚠️ See doc | [`imp/PHASE1-DEVIATIONS.md`](imp/PHASE1-DEVIATIONS.md) | — |
 | Phase 2 — Trust & Scale | ✅ Complete | [`imp/PHASE2-COMPLETION.md`](imp/PHASE2-COMPLETION.md) | [`imp/PHASE2-AUDIT.md`](imp/PHASE2-AUDIT.md) |
 | Phase 3 — AI-Native | ✅ Complete | [`imp/PHASE3-COMPLETION.md`](imp/PHASE3-COMPLETION.md) | [`imp/PHASE3-AUDIT.md`](imp/PHASE3-AUDIT.md) |
 | Phase 4 — Integrations | ✅ Complete | [`imp/PHASE4-COMPLETION.md`](imp/PHASE4-COMPLETION.md) | [`imp/PHASE4-AUDIT.md`](imp/PHASE4-AUDIT.md) |
@@ -133,7 +133,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | DonorDesk deployment ports | [`contabo-ops.md`](contabo-ops.md) §4 (table), §10 |
 | Versioned migrations | [`pending.md`](pending.md) |
 | BullMQ / Redis | [`pending.md`](pending.md) |
-| S3 storage | [`pending.md`](pending.md) |
+| Evidence storage (Google Drive / R2 / LOCAL) | [`gdrive.md`](gdrive.md), [`pending.md`](pending.md) |
 | Kestra flows | [`pending.md`](pending.md) |
 | Kestra plugins (Tika/Redis/JDBC/GDrive/SFTP) | [`imp/KESTRA-PLUGINS.md`](imp/KESTRA-PLUGINS.md), [`pending.md`](pending.md) |
 | SSH hardening | [`contabo-ops.md`](contabo-ops.md) §8, [`pending.md`](pending.md) |
@@ -170,7 +170,6 @@ memorybank/
 │   ├── PHASE0-REPORT.md             Frontend Phase 0
 │   ├── PHASE1-COMPLETION.md
 │   ├── PHASE1-AUDIT.md
-│   ├── PHASE1-DEVIATIONS.md
 │   ├── PHASE1-REPORT.md             Frontend Phase 1
 │   ├── PHASE2-COMPLETION.md
 │   ├── PHASE2-AUDIT.md

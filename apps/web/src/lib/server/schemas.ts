@@ -37,6 +37,7 @@ export const OrganizationSchema = z.object({
   id: z.string().optional(),
   name: z.string().default(""),
   aiEnabled: z.boolean().optional(),
+  storageProvider: z.string().default("LOCAL"),
 });
 
 export const OrganizationProfileSchema = z.object({
@@ -228,6 +229,8 @@ export const EvidenceDetailSchema = z.object({
   fileUrl: z.string(),
   fileType: z.string(),
   fileSize: z.number(),
+  storageProvider: z.string().default("LOCAL"),
+  driveWebLink: z.string().optional(),
   evidenceType: z.string(),
   location: z.string().optional(),
   activityDate: z.string().optional(),

@@ -8,6 +8,7 @@ import {
   type ConfidentialityLevel,
   type EvidenceVerificationStatus,
   type SuggestedTag,
+  type StorageProvider,
 } from "@donordesk/domain";
 import type { IEvidenceRepository, EvidenceFilter, EvidenceListResult } from "@donordesk/application";
 
@@ -30,6 +31,10 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         fileUrl: e.fileUrl,
         fileType: e.fileType,
         fileSize: e.fileSize,
+        storageProvider: e.storageProvider,
+        driveFileId: e.driveFileId,
+        driveWebLink: e.driveWebLink,
+        storageKey: e.storageKey,
         evidenceType: e.evidenceType,
         activityId: e.activityId,
         indicatorId: e.indicatorId,
@@ -132,6 +137,10 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
     fileUrl: string;
     fileType: string;
     fileSize: number;
+    storageProvider: string;
+    driveFileId: string | null;
+    driveWebLink: string | null;
+    storageKey: string | null;
     evidenceType: string;
     activityId: string | null;
     indicatorId: string | null;
@@ -157,6 +166,10 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         fileUrl: row.fileUrl,
         fileType: row.fileType,
         fileSize: row.fileSize,
+        storageProvider: (row.storageProvider as StorageProvider) ?? "LOCAL",
+        driveFileId: row.driveFileId ?? undefined,
+        driveWebLink: row.driveWebLink ?? undefined,
+        storageKey: row.storageKey ?? undefined,
         evidenceType: row.evidenceType as EvidenceType,
         reportingPeriodId: row.reportingPeriodId ?? undefined,
         activityId: row.activityId ?? undefined,

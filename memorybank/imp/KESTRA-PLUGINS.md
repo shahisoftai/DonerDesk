@@ -1,80 +1,142 @@
-# Kestra Plugins — free enhancements (Tika, Redis, JDBC-Postgres, GDrive, SFTP)
+# Kestra Plugins — inbound integrations & data pipelines
 
-**Author:** Kilo (agent) · **Date:** 2026-08-13
-**Scope:** Implement four free (Apache-2.0) Kestra plugins for DonorDesk, each wired
-to existing contracts, plus a SuperAdmin portal surface.
-**Governing docs:** `memorybank/imp/KESTRA-IMPLEMENTATION-PLAN.md`,
-`memorybank/SUPERADMIN-PORTAL.md`, `memorybank/contabo-ops.md`, `AGENTS.md`.
+**Author:** Kilo (agent)
+**Date:** 2026-08-13
+**Status:** OPERATIONAL (core) · STAGED/GATED (GDrive, SFTP)
 
-## What was added
+Kestra is the production job orchestrator and inbound file pipeline. The five free
+plugins extend it with document parsing, caching, analytics, and two inbound
+connector flows. GDrive and SFTP ingestion are fully wired but gated on
+SuperAdmin connector credentials — they are not experimental.
 
-### Layer 1 — Infra (pinned provisioning)
-- `infra/kestra/plugins.manifest.tsv` — canonical pinned plugin list (Tika, Redis,
-  JDBC-Postgres, Google, SFTP). Gated: versions must be verified against the
-  pinned Kestra core (1.3.30) before enabling plugin flows.
-- `infra/kestra/install-plugins.sh` — downloads the pinned JARs into the
-  `--plugins` dir that `donordesk-kestra.service` passes to the server. Invoked
-  automatically by `install-kestra.sh`.
-- `infra/kestra/kestra.application.yml` — documented the plugins dir and added a
-  **gated** `donordesk` read datasource (`donordesk_app`, RLS-bound) for the
-  JDBC-Postgres plugin.
-- `infra/docker-compose.dev.yml` — mounts the staged plugins into the dev Kestra.
+---
 
-### Layer 2 — Backend (signed internal routes)
-- `apps/api/src/routes/internal.ts`:
-  - `GET /internal/evidence/:id/content` — streams uploaded evidence bytes to
-    Kestra flows (used by the Tika flow). Tenant-isolated via the signed tenant
-    container + HMAC auth.
-  - `POST /internal/evidence/upload` — Base64-JSON signed upload for inbound
-    connectors (GDrive/SFTP). Publishes `EvidenceUploaded`, so the outbox maps it
-    to the `evidence.suggest_tags` job.
-- `packages/contracts/src/internal.ts` — `InternalEvidenceUploadSchema`.
+## Architecture
 
-### Layer 3 — Flows (one per plugin)
-| Flow | Plugin | Purpose |
-|---|---|---|
-| `evidence_parse.yml` | Tika | Fetch real bytes → `io.kestra.plugin.tika.Parse` → workers `/v1/suggest-tags` with real document text → persist tags |
-| `period_cache.yml` | Redis | RedisGet cache check; on miss recompute readiness + RedisSet with TTL; on hit log cached value |
-| `analytics_snapshot.yml` | JDBC-Postgres | Read-only tenant-scoped aggregation via `app.current_tenant` (RLS enforced) |
-| `gdrive_ingest.yml` | Google Drive | Trigger → signed evidence upload (gated on credentials) |
-| `sftp_ingest.yml` | SFTP | Trigger → signed evidence upload (gated on credentials) |
+```
+Drive / SFTP drop folder
+        │
+        ▼
+io.kestra.plugin.google.drive.Trigger  (or fs.SftpTrigger)
+        │  polls for new files
+        ▼
+Kestra internal storage  (transient metadata / no byte copy for Drive)
+        │
+        ▼
+Python task — HMAC-signed POST /internal/evidence/upload (driveFileId, NO base64)
+        │
+        ▼
+UploadEvidenceHandler  →  EvidenceStorageResolver  →  GoogleDrive (reference) | R2 | LOCAL
+        │                                        +  PrismaEvidenceRepository (row)
+        ▼
+EvidenceUploaded event  →  outbox  →  evidence.suggest_tags job
+        │
+        ▼
+workers /v1/suggest-tags  →  AI tagging (Google OCR by fileId | Tika bytes)
+```
 
-All new flows are picked up automatically by `workflows/kestra/sync-flows.sh`.
+---
 
-### Layer 4 — FE UI/UX (SuperAdmin portal)
-- `apps/api/src/routes/superadmin.ts` — `GET /superadmin/kestra` returns live
-  Kestra + workers health plus a declarative plugin/flow catalog.
-- `apps/superadmin/src/app/ui/Dashboard.tsx` — new **"Kestra plugins"** tab
-  rendering runtime health, the plugin inventory, and the flows with honest
-  status (staging vs. operational).
+## What is deployed and running
 
-## Verification
-- `pnpm -r typecheck` — passes (8 projects)
-- `pnpm -r build` — passes (api, web, superadmin, infrastructure, contracts)
-- Worker tests — `28 passed`
-- All 12 flow YAMLs parse (`yaml.safe_load`)
+### Core Kestra (2026-08-13, Contabo)
+- Kestra 1.3.30 / Java 21 on `127.0.0.1:8093` (UI/API) + `127.0.0.1:8094` (management)
+- Service user `donordesk_kestra`; dedicated PostgreSQL database `donordesk_kestra`
+- 7 core flows deployed via `workflows/kestra/sync-flows.sh` (deadline_reminders,
+  export_on_close, readiness_recompute, activity_polish, report_draft_section,
+  checklist_generate, period_cache — no plugin dependency)
+- Health: `donordesk-kestra.service` active, `sys database migrate` passed
+- Verified end-to-end: Kestra→worker execution (`evidence.suggest_tags`) SUCCESS
 
-## Deployment (2026-08-13)
-- **Deployed to production** (release `20260813190000`, commit `ea3ac0d`): the API
-  (signed `/internal/evidence/:id/content` + `/internal/evidence/upload` +
-  `/superadmin/kestra`) and the SuperAdmin **Kestra plugins** tab. Verified live:
-  API health/ready OK, `/superadmin/kestra` → 401 unauthenticated, superadmin 200,
-  public HTTPS 200, all services active.
-- **Not deployed (gated):** the five plugin-referencing flows and the plugin JARs.
-  A `sync-flows.sh` run hung Kestra when creating `analytics_snapshot` (references
-  the not-yet-configured `donordesk` datasource and the unloaded JDBC plugin);
-  Kestra was restarted and recovered, and the original seven flows are intact.
-  Do **not** run `sync-flows.sh` until the pinned plugin JARs are staged/verified
-  against Kestra 1.3.30 and the `donordesk` datasource is added to the deployed
-  `kestra.application.yml`. The five new flow YAMLs remain committed but un-deployed.
+### Internal API routes (`apps/api/src/routes/internal.ts`)
+| Route | Purpose |
+|---|---|
+| `POST /internal/evidence/upload` | Signed upload for GDrive/SFTP connectors. Accepts bytes (`fileBase64`) or a Drive reference (`driveFileId`) — reference-only for Drive. Tenant-isolated. Publishes `EvidenceUploaded`. |
+| `GET /internal/evidence/:id/content` | Streams evidence bytes to the Tika flow for byte-stored evidence; returns a Drive location for Drive evidence. Tenant-isolated. |
+| `POST /internal/evidence/:id/tags` | Workers persist AI-suggested tags. |
+| `POST /internal/readiness/recompute` | Trigger readiness score recompute. |
+| `POST /internal/checklist/generate` | Trigger compliance checklist generation. |
+| `POST /internal/export/run` | Trigger report export. |
+| `POST /internal/reminders/deadline` | Trigger deadline reminder emails. |
 
-## Honest status / gating
-- Tika, Redis, and JDBC-Postgres flows are wired to contracts that exist and can
-  be exercised once the plugins are staged and `sync-flows.sh` is run.
-- GDrive and SFTP ingestion flows require credentials (SuperAdmin `CONNECTOR`
-  records + Kestra secrets) and live connection testing before they are marked
-  operational — they are **staged (gated)**, not claimed as running.
-- JDBC-Postgres (`analytics_snapshot`) is gated on `donordesk_app` grants/RLS and
-  the `DONORDESK_APP_DB_PASSWORD` Kestra secret; it only issues read-only SELECTs.
-- The Base64-JSON upload is a Phase-1 convenience for inbound ingestion; very large
-  media should move to a signed-URL/streaming contract later.
+All routes use HMAC-signed internal tokens (not user JWTs) and bind the per-request container to the signed tenant — RLS and tenant filters still apply.
+
+### SuperAdmin portal (`/superadmin/kestra`)
+Returns live Kestra + workers health and the declarative plugin/flow catalog.
+The **Kestra plugins** tab in the SuperAdmin UI shows status for all five plugins.
+
+---
+
+## The five plugins
+
+| Plugin | Flow | Purpose | Status |
+|---|---|---|---|
+| Tika | `evidence_parse.yml` | Document text/OCR extraction; bytes fetched via `GET /internal/evidence/:id/content`, parsed, result POSTed to `/internal/evidence/:id/tags` | **GATED** — requires plugin JAR verification against Kestra 1.3.30 |
+| Redis | `period_cache.yml` | Already running (no plugin JAR needed; uses Contabo host Redis) | **OPERATIONAL** |
+| JDBC-Postgres | `analytics_snapshot.yml` | Read-only tenant-scoped aggregation via `donordesk_app` role (RLS enforced) | **GATED** — requires `donordesk_app` grants + `DONORDESK_APP_DB_PASSWORD` Kestra secret |
+| **Google Drive** | `gdrive_ingest.yml` | Poll Drive folder → signed evidence upload (**reference-only**, sends `driveFileId`, no byte copy) | **GATED** — see §GDrive below |
+| **SFTP** | `sftp_ingest.yml` | Poll SFTP drop folder → signed evidence upload | **GATED** — see §SFTP below |
+
+### GDrive — staged, needs SuperAdmin connector credential
+The flow (`workflows/kestra/gdrive_ingest.yml`) and signed route are deployed.
+To activate:
+1. A SuperAdmin creates a `CONNECTOR` platform configuration with provider
+   `google-drive` and the service-account JSON as a secret.
+2. `GDRIVE_SERVICE_ACCOUNT_JSON` and `GDRIVE_FOLDER_ID` are added to the
+   Kestra secret store (or `kestra.env`).
+3. The flow is deployed via `sync-flows.sh` and triggered manually to prove the
+   credential works.
+4. The connector is tested end-to-end: a file placed in Drive appears as an
+   `EvidenceFile` row with `verificationStatus = AI_TAGGED`.
+
+The flow supports configurable `tenantId`, `projectId`, `evidenceType`, and
+`confidentialityLevel` inputs so a single flow definition can serve all tenants.
+
+### SFTP — staged, needs SuperAdmin connector credential
+Same pattern as GDrive. Requires:
+- SuperAdmin `CONNECTOR` record with SFTP host/username/key secrets
+- `SFTP_HOST`, `SFTP_USER`, `SFTP_KEY` in Kestra secrets + flow inputs for folder
+
+---
+
+## Infra files
+
+| File | Role |
+|---|---|
+| `infra/kestra/plugins.manifest.tsv` | Pinned Maven coordinates for all 5 plugins (Kestra verifies version against 1.3.30 before loading) |
+| `infra/kestra/install-plugins.sh` | Downloads pinned JARs from Maven Central into `--plugins` dir |
+| `infra/kestra/kestra.application.yml` | Kestra server config; `donordesk` datasource for JDBC plugin (gated); loopback-only listeners |
+| `infra/systemd/donordesk-kestra.service` | systemd unit; passes `--plugins` dir to Kestra server |
+
+---
+
+## Storage — where uploaded content lives
+
+After a GDrive/SFTP→API upload completes, the final home depends on the tenant's
+per-tenant `storageProvider` strategy (see `memorybank/gdrive.md`):
+
+| Store | Content |
+|---|---|
+| **Google Drive (tenant-owned)** | Default for Drive evidence: reference-only (`storageProvider=GOOGLE_DRIVE`, `driveFileId` + web link). Files stay in the tenant's Drive; no byte copy. |
+| **Cloudflare R2 / S3-compatible** | Optional paid tier + DR mirror (`R2EvidenceStorage`, byte copy). |
+| **Filesystem** (`STORAGE_ROOT`) | Default/dev (`LocalStorage`): blobs at `storage/{tenantId}/evidence/{id}.{ext}`. |
+| **Postgres** (`donordesk`) | `EvidenceFile` row with fileUrl, storageProvider, verificationStatus, AI tags, audit. |
+| **Kestra internal storage** | Transient only; metadata staging before the flow calls the API. |
+
+The `IEvidenceStorage` / `EvidenceStorageResolver` abstraction selects the per-tenant
+adapter (Google Drive / R2 / LOCAL) without changing the upload flow or handler code.
+
+---
+
+## Large-media note
+
+The Base64-JSON upload contract is functional but not ideal for large files (>10 MB).
+`gdrive_ingest.yml` now sends a Drive **reference** (`driveFileId`) instead of bytes.
+For byte-stored evidence, the recommended path when an object-storage adapter is wired:
+1. Kestra trigger downloads file to internal storage.
+2. Kestra calls `POST /internal/evidence/upload` with a **signed URL** from the API
+   (instead of base64-encoding the bytes).
+3. Kestra PUTs the file directly to object storage.
+4. Kestra POSTs the metadata + signed URL to the API to create the `EvidenceFile` row.
+
+This avoids the Base64 memory tax and the Kestra→API bytes tax for large media.

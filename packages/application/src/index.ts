@@ -17,6 +17,8 @@ export * from "./use-cases/identity/login.js";
 export * from "./use-cases/identity/invite-user.js";
 export * from "./use-cases/identity/change-role.js";
 export * from "./use-cases/identity/update-organization.js";
+export * from "./use-cases/identity/connect-google-drive.js";
+export * from "./use-cases/identity/google-sign-in.js";
 export * from "./use-cases/identity/list-users.js";
 
 export * from "./use-cases/projects/create-project.js";
@@ -36,6 +38,7 @@ export * from "./use-cases/logframe/list-logframe.js";
 export * from "./use-cases/logframe/list-indicators.js";
 
 export * from "./use-cases/evidence/upload-evidence.js";
+export * from "./use-cases/evidence/link-google-drive-evidence.js";
 export * from "./use-cases/evidence/suggest-evidence-tags.js";
 export * from "./use-cases/evidence/accept-evidence-tags.js";
 export * from "./use-cases/evidence/persist-evidence-tags.js";

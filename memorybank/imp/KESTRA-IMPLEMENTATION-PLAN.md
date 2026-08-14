@@ -2,7 +2,7 @@
 
 **Author:** Kilo (agent audit) · **Date:** 2026-08-13
 **Scope:** Make Kestra a real, deployable, SOLID-compliant orchestrator for DonorDesk's async/scheduled work, then deploy it safely on the Contabo shared host.
-**Governing constraints:** `memorybank/contabo-ops.md` (host facts/rules), `memorybank/docs/CONTABO-LEAN-DEPLOYMENT.md` §15 (Kestra design), `memorybank/imp/PHASE1-DEVIATIONS.md`, `AGENTS.md`.
+**Governing constraints:** `memorybank/contabo-ops.md` (host facts/rules, incl. Kestra design §15 state), `AGENTS.md`.
 
 > **Honesty statement (read first).** Kestra is now deployed and connected to
 > DonorDesk's API and workers. Where a feature is genuinely blocked by a different
@@ -211,7 +211,7 @@ Test each (local + staging + prod):
 - ✅ Async queue durable/retried (Kestra or BullMQ adapter selectable; `InMemory` fallback default).
 - ⏳ Items **still open & honest**: real LLM providers, S3, email delivery, inbound file-watcher connectors (Phase 4). Kestra will orchestrate them when their backend adapters land, but this plan does **not** fake them.
 
-**Update these docs when done:** `memorybank/pending.md`, `memorybank/contabo-ops.md` (§10 allocation + §14 log), `memorybank/docs/CONTABO-LEAN-DEPLOYMENT.md` §15, `README.md` (ports), `memorybank/imp/PHASE1-DEVIATIONS.md` (queue row), ADR on async job ownership.
+**Update these docs when done:** `memorybank/pending.md`, `memorybank/contabo-ops.md` (§10 allocation + §14 log + Kestra design), `README.md` (ports), ADR on async job ownership.
 
 ---
 

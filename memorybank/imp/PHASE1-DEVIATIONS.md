@@ -9,7 +9,7 @@ production target lives behind an interface.
 | Database | PostgreSQL 16 via Prisma | Managed PostgreSQL 16 | Connection-string and deployment change only. |
 | Multi-tenancy isolation | Repository tenant filters plus PostgreSQL RLS | Same, with managed connection pooling | Deployment/configuration change only. |
 | Auth | JWT (HS256) issued by API; bcrypt password hashes | OIDC via Keycloak/Auth0 | Implement `OIDCAuthProvider` against the `IAuthProvider` port; no caller changes. |
-| Object storage | Local filesystem (`./storage/`) | S3 + SSE-KMS | Implement `S3StorageAdapter` against `IStorage`; controllers don't change. |
+| Object storage | Local filesystem (`./storage/`) | Google Drive (link-first) or R2/S3 + SSE-KMS | Implemented via `IEvidenceStorage` + `EvidenceStorageResolver` (per-tenant `storageProvider`); see `gdrive.md`. |
 | Queue / jobs | In-process memory queue (default) | Kestra (or BullMQ) via `JOB_QUEUE` | Selectable in `createJobQueue`: `memory` (default) → runs handlers in-process; `redis` → BullMQ adapter; `kestra` → Kestra flow trigger. Use-cases only call `IJobQueue.enqueue`. Production recommends `JOB_QUEUE=kestra` with `memory` as rollback. |
 | LLM provider | Deterministic stub (rule-based fallback) | OpenAI / Anthropic / Bedrock via strategy | Set `LLM_PROVIDER=openai` + env keys; no code change. |
 | Observability | Structured pino logs + request ID | OTel → Tempo/Prometheus/Loki | Add `@opentelemetry/sdk-node` boot; same span API. |
@@ -23,3 +23,10 @@ Kestra adapter above — Apache Tika (document/OCR parsing), Redis (caching),
 JDBC-Postgres (read-only analytics), and Google Drive + SFTP (inbound ingestion).
 See `imp/KESTRA-PLUGINS.md`. GDrive/SFTP and the JDBC analytics flow are gated on
 credentials/grants and are staged, not yet operational.
+
+**Google Sign-In (2026-08-14):** the login page offers **Sign in with Google**
+(env-gated `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED`), implemented via
+`POST /v1/auth/google` (code exchange + Google id_token verification via jose)
+and web `/api/auth/google/start|callback` routes. Reuses the Drive OAuth client
+with a separate redirect URI. Existing accounts only; sign-up with Google is a
+follow-up. See `gdrive.md` §9.

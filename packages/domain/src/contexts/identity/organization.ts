@@ -1,6 +1,7 @@
 import { Entity } from "../../core/entity.js";
 import { DomainError } from "../../core/domain-error.js";
 import { TenantId } from "../../value-objects/tenant-id.js";
+import type { StorageProvider } from "../evidence/evidence-file.js";
 import type { OrganizationType, Sector, LanguageCode } from "./role.js";
 
 export type DataResidency = "EU" | "US" | "AFRICA" | "ASIA" | "DEFAULT";
@@ -21,6 +22,7 @@ export interface OrganizationProps {
   donorTypesServed?: string;
   dataResidency: DataResidency;
   aiEnabled: boolean;
+  storageProvider: StorageProvider;
 }
 
 export class Organization extends Entity<string> {
@@ -73,6 +75,7 @@ export class Organization extends Entity<string> {
   get donorTypesServed(): string | undefined { return this.props.donorTypesServed; }
   get dataResidency(): DataResidency { return this.props.dataResidency; }
   get aiEnabled(): boolean { return this.props.aiEnabled; }
+  get storageProvider(): StorageProvider { return this.props.storageProvider; }
 
   updateProfile(patch: Partial<OrganizationProps>): void {
     this.props = { ...this.props, ...patch };

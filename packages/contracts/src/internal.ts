@@ -30,7 +30,10 @@ export const InternalEvidenceResponseSchema = z.object({
   fileName: z.string().min(1),
   title: z.string().min(1),
   fileUrl: z.string().min(1),
-  storageKey: z.string().min(1),
+  storageKey: z.string().min(1).optional(),
+  storageProvider: z.string().default("LOCAL"),
+  driveFileId: z.string().optional(),
+  driveWebLink: z.string().optional(),
   fileType: z.string().min(1),
   fileSize: z.number().int().nonnegative(),
   evidenceType: z.string().min(1),
@@ -77,7 +80,9 @@ export const InternalEvidenceUploadSchema = z.object({
   activityDate: z.string().datetime().optional(),
   confidentialityLevel: z.string().default("INTERNAL"),
   notes: z.string().max(2000).optional(),
-  fileBase64: z.string().min(1),
+  fileBase64: z.string().min(1).optional(),
+  driveFileId: z.string().min(1).optional(),
+  driveWebLink: z.string().optional(),
 });
 export type InternalEvidenceUpload = z.infer<typeof InternalEvidenceUploadSchema>;
 

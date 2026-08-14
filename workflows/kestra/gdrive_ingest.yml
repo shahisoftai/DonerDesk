@@ -1,9 +1,11 @@
-# Kestra flow: ingest evidence from a Google Drive folder (free GDrive plugin).
+# Kestra flow: ingest evidence from a Google Drive folder (reference-only).
 #
-# On a new file in the configured folder, downloads it into Kestra storage and
-# uploads it into DonorDesk through the signed /internal/evidence/upload route.
-# The upload publishes an EvidenceUploaded event which the outbox maps to the
-# evidence.suggest_tags job, so the new file is parsed/tagged downstream.
+# On a new file in the configured folder, this flow REFERENCENCES the file by its
+# Drive id (it does NOT download or copy the bytes into DonorDesk). It calls the
+# signed /internal/evidence/upload route with driveFileId + metadata; the file
+# stays in the tenant's Google Drive. The upload publishes an EvidenceUploaded
+# event which the outbox maps to the evidence.suggest_tags job for downstream
+# tagging (Google OCR by file ID).
 #
 # GATED: requires a Google service account configured in the SuperAdmin portal
 # (CONNECTOR provider "google-drive") and its JSON materialized in the Kestra
@@ -12,7 +14,7 @@
 # but not operational (do not mark it enabled in the portal).
 id: gdrive_ingest
 namespace: donor_desk.phase1
-description: Ingest evidence from a Google Drive folder into DonorDesk.
+description: Ingest evidence from a Google Drive folder into DonorDesk (reference-only).
 inputs:
   - id: tenantId
     type: STRING
@@ -30,19 +32,16 @@ tasks:
     folder: "{{ secret('GDRIVE_FOLDER_ID') }}"
     serviceAccount: "{{ secret('GDRIVE_SERVICE_ACCOUNT_JSON') }}"
 
-  - id: upload
+  - id: reference
     type: io.kestra.plugin.scripts.python.Script
     taskRunner:
       type: io.kestra.plugin.core.runner.Process
     packageManager: PIP
-    inputFiles:
-      inbound: "{{ outputs.ingest.uri }}"
     script: |
       import base64
       import hashlib
       import hmac
       import json
-      import os
       import time
       import urllib.request
 
@@ -50,12 +49,11 @@ tasks:
       hmac_secret = "{{ secret('KESTRA_HMAC_SECRET') }}"
       api_url = "{{ secret('DONORDESK_API') }}"
       tenant = "{{ inputs.tenantId }}"
-
+      file_id = "{{ outputs.ingest.fileId | default(outputs.ingest.id | default('')) }}"
       file_name = "{{ outputs.ingest.name | default('inbound') }}"
-      path = os.path.join(os.environ.get("WORKDIR", "."), "inbound")
-      with open(path, "rb") as handle:
-          raw = handle.read()
 
+      # Reference-only: send the Drive file id, never the bytes. The file stays
+      # in the tenant's Drive; DonorDesk grants read access and records the link.
       body = json.dumps(
           {
               "projectId": "{{ inputs.projectId }}",
@@ -64,7 +62,7 @@ tasks:
               "fileType": "application/octet-stream",
               "evidenceType": "{{ inputs.evidenceType }}",
               "confidentialityLevel": "{{ inputs.confidentialityLevel }}",
-              "fileBase64": base64.b64encode(raw).decode(),
+              "driveFileId": file_id,
           },
           separators=(",", ":"),
       )

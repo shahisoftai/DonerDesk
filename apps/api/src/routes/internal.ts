@@ -40,6 +40,9 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         fileType: string;
         fileSize: number;
         evidenceType: string;
+        storageProvider?: string;
+        driveFileId?: string;
+        driveWebLink?: string;
         location?: string;
         activityDate?: string;
         uploadedById: string;
@@ -50,7 +53,7 @@ export async function registerInternalRoutes(app: FastifyInstance) {
       };
       const storageKey = dto.fileUrl.startsWith("/v1/files/")
         ? decodeURIComponent(dto.fileUrl.slice("/v1/files/".length))
-        : dto.fileUrl;
+        : undefined;
       return InternalEvidenceResponseSchema.parse({
         id: dto.id,
         projectId: dto.projectId,
@@ -61,6 +64,9 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         title: dto.title,
         fileUrl: dto.fileUrl,
         storageKey,
+        storageProvider: dto.storageProvider ?? "LOCAL",
+        driveFileId: dto.driveFileId,
+        driveWebLink: dto.driveWebLink,
         fileType: dto.fileType,
         fileSize: dto.fileSize,
         evidenceType: dto.evidenceType,
@@ -79,16 +85,22 @@ export async function registerInternalRoutes(app: FastifyInstance) {
     // document text/OCR extraction. It is tenant-isolated: the per-request
     // container is bound to the signed tenant, and `storageKey` is derived from
     // the evidence record, so a caller can only read files it could already
-    // resolve via GET /internal/evidence/:id.
+    // resolve via GET /internal/evidence/:id. Byte-stored evidence is streamed;
+    // Drive-backed evidence has no local bytes and returns its resolved link.
     instance.get("/internal/evidence/:id/content", async (req, reply) => {
       const id = (req.params as { id: string }).id;
       const ctx = { tenant: req.tenant, requestId: req.id };
       const r = await req.container.handlers.getEvidence.handle(ctx, id);
       if (!r.ok) throw r.error;
-      const dto = r.value as { fileUrl: string; fileType: string; fileName: string };
+      const dto = r.value as { fileUrl: string; fileType: string; fileName: string; storageProvider?: string; driveFileId?: string; driveWebLink?: string };
       const storageKey = dto.fileUrl.startsWith("/v1/files/")
         ? decodeURIComponent(dto.fileUrl.slice("/v1/files/".length))
-        : dto.fileUrl;
+        : undefined;
+      if (!storageKey) {
+        // Google Drive evidence: return the resolved link as JSON so the flow
+        // can fetch via the Drive API by file ID instead of streaming bytes.
+        return reply.header("x-file-location", encodeURIComponent(dto.fileUrl)).send({ driveFileId: dto.driveFileId, fileUrl: dto.fileUrl });
+      }
       const buffer = await req.container.storage.read(storageKey);
       return reply
         .type(dto.fileType || "application/octet-stream")
@@ -119,7 +131,7 @@ export async function registerInternalRoutes(app: FastifyInstance) {
     // job (Kestra) for downstream tagging/parsing.
     instance.post("/internal/evidence/upload", async (req) => {
       const body = InternalEvidenceUploadSchema.parse(req.body);
-      const buffer = Buffer.from(body.fileBase64, "base64");
+      const buffer = body.fileBase64 ? Buffer.from(body.fileBase64, "base64") : undefined;
       const ctx = { tenant: req.tenant, requestId: req.id };
       const r = await req.container.handlers.uploadEvidence.handle(ctx, {
         projectId: body.projectId,
@@ -127,7 +139,7 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         fileName: body.fileName,
         fileUrl: "",
         fileType: body.fileType,
-        fileSize: buffer.length,
+        fileSize: buffer?.length ?? 0,
         evidenceType: body.evidenceType as never,
         reportingPeriodId: body.reportingPeriodId || undefined,
         activityId: body.activityId || undefined,
@@ -138,6 +150,8 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         notes: body.notes || undefined,
         buffer,
         originalFileName: body.fileName,
+        driveFileId: body.driveFileId,
+        driveWebLink: body.driveWebLink,
       });
       if (!r.ok) throw r.error;
       return r.value;

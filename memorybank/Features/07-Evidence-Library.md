@@ -88,21 +88,24 @@ Search: File name, Evidence title, Notes, Extracted text, Tags
 | GET | `/api/evidence/:id/history` | `getEvidenceHistory` |
 | GET | `/api/evidence/search` | `searchEvidence` |
 
-### Storage Backend
-- Current: `LocalStorage` (`packages/infrastructure/src/storage/LocalStorage.ts`)
-- Per `memorybank/pending.md`: S3 storage not yet implemented
+### Storage Backend (per-tenant strategy)
+- Primary: **Google Drive (link-first)** — files stay in the tenant's own Drive; DonorDesk stores a reference (`storageProvider=GOOGLE_DRIVE`, `driveFileId`, `driveWebLink`), no byte copy.
+- Optional paid tier: **Cloudflare R2 / S3-compatible** (`R2EvidenceStorage`, byte copy).
+- Default/dev: **`LocalStorage`** (`packages/infrastructure/src/storage/local-storage.ts`), selected via `EvidenceStorageResolver` from `Organization.storageProvider`.
+- See `memorybank/gdrive.md` for the full implementation (Phases A–E).
 
 ## Status
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| File Upload | Implemented | LocalStorage backend; upload publishes an `EvidenceUploaded` event |
+| File Upload | Implemented | Byte upload → LOCAL/R2; upload publishes an `EvidenceUploaded` event |
+| Drive-link | Implemented | `POST /v1/evidence/link-drive` — reference-only, no byte copy (`storageProvider=GOOGLE_DRIVE`) |
 | Metadata CRUD | Implemented | Full fields |
 | AI Tagging | Orchestrated (heuristic) | Outbox → `evidence.suggest_tags` job; persist idempotency-keyed (release `20260813064828`); workers and Kestra enabled |
 | Verification Workflow | Implemented | Full status flow |
 | Search | Implemented | Basic search functional |
 | Filters | Implemented | All filter options |
-| File Preview | Implemented | For supported formats |
+| File Preview | Implemented | For supported formats; Drive evidence opens via Google Drive web link |
 
 > **Async ingest (2026-08-13):** `UploadEvidenceHandler` no longer blocks on
 > parsing/enqueueing — it publishes an `EvidenceUploaded` domain event. The
@@ -114,7 +117,8 @@ Search: File name, Evidence title, Notes, Extracted text, Tags
 
 ## Pending Enhancements
 
-- [ ] S3 storage backend implementation
+- [ ] R2 storage wired via env for production (adapter exists, config is a placeholder)
+- [ ] Google OCR tagging by `driveFileId` (currently uses byte-based Tika for LOCAL/R2)
 - [ ] Bulk file upload (zip import)
 - [ ] Evidence linking to multiple activities/indicators
 - [ ] Advanced search with extracted text

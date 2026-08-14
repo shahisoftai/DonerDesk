@@ -11,7 +11,7 @@ const providerGroups = {
   email: { category: "EMAIL", providers: ["brevo", "postmark", "resend", "ses", "smtp"] },
   storage: { category: "OBJECT_STORAGE", providers: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"] },
   backups: { category: "BACKUP", providers: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"] },
-  connectors: { category: "CONNECTOR", providers: ["kobotoolbox", "odk-central", "google-drive", "sharepoint", "s3-drop-folder"] },
+  connectors: { category: "CONNECTOR", providers: ["kobotoolbox", "odk-central", "google-drive", "google-drive-oauth", "sharepoint", "s3-drop-folder"] },
 } as const;
 
 const fields: Record<string, { config: string[]; secrets: string[] }> = {
@@ -31,6 +31,7 @@ const fields: Record<string, { config: string[]; secrets: string[] }> = {
   kobotoolbox: { config: ["baseUrl", "assetUid", "tenantId", "schedule"], secrets: ["apiToken"] },
   "odk-central": { config: ["baseUrl", "projectId", "formId", "tenantId", "schedule"], secrets: ["username", "password"] },
   "google-drive": { config: ["folderId", "tenantId", "schedule"], secrets: ["serviceAccountJson"] },
+  "google-drive-oauth": { config: ["redirectUri"], secrets: ["clientId", "clientSecret"] },
   sharepoint: { config: ["tenantId", "siteUrl", "driveId", "folderPath", "schedule"], secrets: ["clientId", "clientSecret"] },
   "s3-drop-folder": { config: ["bucket", "region", "endpoint", "prefix", "tenantId", "schedule"], secrets: ["accessKeyId", "secretAccessKey"] },
 };
@@ -124,6 +125,14 @@ function Kestra({ data }: { data: AnyRow }) {
       <div className="panel-title"><div><h2>Flows</h2><p>Status reflects staging; production execution must still be verified</p></div></div>
       <div className="table-wrap"><table><thead><tr><th>Flow</th><th>Plugin</th><th>Deployment status</th></tr></thead><tbody>{flows.map((f: AnyRow) => <tr key={f.id}><td><code>{f.id}</code></td><td>{pretty(f.plugin)}</td><td><Badge ok={!f.gated}>{f.gated ? "Staged (gated)" : "Deployed by sync-flows.sh"}</Badge></td></tr>)}</tbody></table></div>
     </section>
+    <section className="panel resource">
+      <div className="panel-title"><div><h2>Google Cloud provisioning</h2><p>Credentials needed for Drive-link storage and Google OCR</p></div></div>
+      <div className="table-wrap"><table><thead><tr><th>Credential</th><th>Used for</th><th>Status</th></tr></thead><tbody>
+        <tr><td><strong>OAuth client</strong><small>google-drive-oauth</small></td><td>Tenant Drive connect (onboarding), read + share scopes</td><td><Badge ok={data.oauthConfigured}>{data.oauthConfigured ? "Configured" : "Add in Inbound connectors"}</Badge></td></tr>
+        <tr><td><strong>Service account</strong><small>google-drive</small></td><td>Kestra Drive folder trigger + read access grant</td><td><Badge ok={data.serviceAccountConfigured}>{data.serviceAccountConfigured ? "Configured" : "Add in Inbound connectors"}</Badge></td></tr>
+        <tr><td><strong>Google OCR</strong><small>Document AI / Vision</small></td><td>AI tagging by file ID (no byte copy)</td><td><Badge ok={data.ocrConfigured}>{data.ocrConfigured ? "Configured" : "Requires GCP project"}</Badge></td></tr>
+      </tbody></table></div>
+    </section>
   </div>;
 }
 
@@ -161,5 +170,5 @@ function safeJson(value: any, fallback: any) { try { return typeof value === "st
 function configurationPayload(row: AnyRow, patch: AnyRow) { return { id: row.id, scopeType: row.scopeType, scopeId: row.scopeId || "GLOBAL", category: row.category, provider: row.provider, displayName: row.displayName, enabled: row.enabled, configuration: safeJson(row.configurationJson, {}), ...patch }; }
 function pretty(value: string) { return String(value || "").replace(/[._-]/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\b\w/g, x => x.toUpperCase()); }
 function date(value: any) { return value ? new Date(value).toLocaleString() : "Never"; }
-function providerIcon(provider: string) { return ({ openai: "◎", anthropic: "A", deepseek: "D", minimax: "M", brevo: "B", postmark: "P", resend: "R", smtp: "✉", "cloudflare-r2": "☁", "backblaze-b2": "B2", "aws-s3": "S3", kobotoolbox: "K", "odk-central": "O", "google-drive": "G", sharepoint: "S" } as AnyRow)[provider] || "◆"; }
+function providerIcon(provider: string) { return ({ openai: "◎", anthropic: "A", deepseek: "D", minimax: "M", brevo: "B", postmark: "P", resend: "R", smtp: "✉", "cloudflare-r2": "☁", "backblaze-b2": "B2", "aws-s3": "S3",   kobotoolbox: "K", "odk-central": "O", "google-drive": "G", "google-drive-oauth": "GO", sharepoint: "S" } as AnyRow)[provider] || "◆"; }
 function placeholder(name: string) { return ({ model: "Provider model name", baseUrl: "Optional custom API URL", senderEmail: "notifications@example.org", endpoint: "https://...", bucket: "Bucket name", region: "Region", prefix: "donordesk/", port: "587", schedule: "0 */6 * * *", tenantId: "Destination tenant" } as AnyRow)[name] || ""; }

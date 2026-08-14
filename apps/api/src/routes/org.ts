@@ -23,6 +23,7 @@ export async function registerOrgRoutes(app: FastifyInstance) {
       donorTypesServed: o.donorTypesServed,
       dataResidency: o.dataResidency,
       aiEnabled: o.aiEnabled,
+      storageProvider: o.storageProvider,
     };
   });
 

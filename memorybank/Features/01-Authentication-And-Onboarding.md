@@ -94,6 +94,7 @@ Steps:
 |-----------|--------|-------|
 | Sign Up | Implemented | Basic implementation complete |
 | Login | Implemented | Fixed 2026-08-12 (see memorybank/Fixes.md) |
+| Google Sign-In | Implemented | Login page button (env-gated); existing accounts by email. See `gdrive.md` §9. Auto-provisioning (sign-up with Google) pending |
 | Password Reset | Not implemented | Stub only |
 | Onboarding Wizard | Partial | Basic wizard flow exists |
 | Session Management | Implemented | JWT-based |
@@ -106,7 +107,8 @@ Steps:
 - [ ] Multi-language support in onboarding
 - [ ] Organization type/sector dropdown options from database
 - [ ] Onboarding wizard progress persistence
-- [ ] SSO integration (Phase 5)
+- [ ] Sign-up with Google (auto-provisioning) — needs `googleSubject` column + org creation flow
+- [ ] Full SSO integration (OIDC start/callback exists; additional providers per Phase 5)
 
 ## Notes
 

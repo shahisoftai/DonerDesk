@@ -48,6 +48,7 @@ export class SignUpHandler {
         defaultLanguage: cmd.organization.defaultLanguage ?? "en",
         dataResidency: cmd.organization.dataResidency ?? "DEFAULT",
         aiEnabled: cmd.organization.aiEnabled ?? true,
+        storageProvider: "LOCAL",
       },
     });
 

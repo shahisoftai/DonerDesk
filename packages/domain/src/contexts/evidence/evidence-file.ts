@@ -61,6 +61,10 @@ export const EVIDENCE_VERIFICATION_STATUSES: EvidenceVerificationStatus[] = [
   "ARCHIVED",
 ];
 
+export type StorageProvider = "LOCAL" | "GOOGLE_DRIVE" | "R2";
+
+export const STORAGE_PROVIDERS: StorageProvider[] = ["LOCAL", "GOOGLE_DRIVE", "R2"];
+
 export interface SuggestedTag {
   field: "evidenceType" | "activityId" | "indicatorId" | "reportingPeriodId" | "location";
   value: string;
@@ -75,6 +79,10 @@ export interface EvidenceFileProps {
   fileType: string;
   fileSize: number;
   evidenceType: EvidenceType;
+  storageProvider: StorageProvider;
+  driveFileId?: string;
+  driveWebLink?: string;
+  storageKey?: string;
   reportingPeriodId?: string;
   activityId?: string;
   indicatorId?: string;
@@ -110,6 +118,10 @@ export class EvidenceFile extends Entity<string> {
     fileType: string;
     fileSize: number;
     evidenceType: EvidenceType;
+    storageProvider?: StorageProvider;
+    driveFileId?: string;
+    driveWebLink?: string;
+    storageKey?: string;
     reportingPeriodId?: string;
     activityId?: string;
     indicatorId?: string;
@@ -123,6 +135,7 @@ export class EvidenceFile extends Entity<string> {
     if (!input.title) throw DomainError.validation("Title required");
     if (!input.fileUrl) throw DomainError.validation("File URL required");
     const confidentialityLevel: ConfidentialityLevel = input.confidentialityLevel ?? "INTERNAL";
+    const storageProvider: StorageProvider = input.storageProvider ?? "LOCAL";
     return new EvidenceFile(input.id, input.tenantId, input.projectId, {
       fileName: input.fileName,
       title: input.title,
@@ -130,6 +143,10 @@ export class EvidenceFile extends Entity<string> {
       fileType: input.fileType,
       fileSize: input.fileSize,
       evidenceType: input.evidenceType,
+      storageProvider,
+      driveFileId: input.driveFileId,
+      driveWebLink: input.driveWebLink,
+      storageKey: input.storageKey,
       reportingPeriodId: input.reportingPeriodId,
       activityId: input.activityId,
       indicatorId: input.indicatorId,
@@ -158,6 +175,10 @@ export class EvidenceFile extends Entity<string> {
   get fileUrl(): string { return this.props.fileUrl; }
   get fileType(): string { return this.props.fileType; }
   get fileSize(): number { return this.props.fileSize; }
+  get storageProvider(): StorageProvider { return this.props.storageProvider; }
+  get driveFileId(): string | undefined { return this.props.driveFileId; }
+  get driveWebLink(): string | undefined { return this.props.driveWebLink; }
+  get storageKey(): string | undefined { return this.props.storageKey; }
   get evidenceType(): EvidenceType { return this.props.evidenceType; }
   get reportingPeriodId(): string | undefined { return this.props.reportingPeriodId; }
   get activityId(): string | undefined { return this.props.activityId; }
@@ -172,7 +193,7 @@ export class EvidenceFile extends Entity<string> {
   get aiSuggestedTags(): SuggestedTag[] { return [...this.props.aiSuggestedTags]; }
   get sensitivityWarning(): string | undefined { return this.props.sensitivityWarning; }
 
-  updateMetadata(patch: Partial<Omit<EvidenceFileProps, "fileUrl" | "uploadedById" | "aiSuggestedTags">>): void {
+  updateMetadata(patch: Partial<Omit<EvidenceFileProps, "fileUrl" | "uploadedById" | "aiSuggestedTags" | "storageProvider" | "driveFileId" | "driveWebLink" | "storageKey">>): void {
     this.props = { ...this.props, ...patch };
     this.touch();
   }

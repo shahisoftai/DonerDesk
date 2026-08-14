@@ -29,5 +29,8 @@ Agent guidance for coding on DonorDesk.
 - Every LLM response records `model` + `promptVersion` (ready for `llm_runs` table).
 
 ## Phase 1 deviations
-See `docs/PHASE1-DEVIATIONS.md` for the full list. Summary: SQLite + file storage
-+ stub LLM in dev, with each swap point being an interface.
+Each swap point is an interface with a production target behind it. Current
+state: PostgreSQL via Prisma, JWT auth, local file storage (dev default) with
+Google Drive link-first primary / R2 optional via per-tenant
+`Organization.storageProvider`, Kestra-or-BullMQ via `JOB_QUEUE` (memory
+in-process default), stub LLM (dev default), pino logs, console email.

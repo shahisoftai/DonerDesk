@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { StorageProviderSchema } from "./evidence.js";
 
 export const RoleSchema = z.enum([
   "ADMIN",
@@ -62,6 +63,21 @@ export const LoginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof LoginSchema>;
 
+export const GoogleSignInSchema = z.object({
+  code: z.string().min(1),
+});
+export type GoogleSignInInput = z.infer<typeof GoogleSignInSchema>;
+
+export const GoogleSignInResponseSchema = z.object({
+  token: z.string().min(1),
+  userId: z.string(),
+  tenantId: z.string(),
+  role: RoleSchema,
+  name: z.string(),
+  email: z.string().email(),
+});
+export type GoogleSignInResponse = z.infer<typeof GoogleSignInResponseSchema>;
+
 export const InviteUserSchema = z.object({
   email: EmailSchema,
   role: RoleSchema,
@@ -88,5 +104,6 @@ export const OrganizationProfileSchema = z.object({
   donorTypesServed: z.string().optional(),
   dataResidency: DataResidencySchema,
   aiEnabled: z.boolean(),
+  storageProvider: StorageProviderSchema.default("LOCAL"),
 });
 export type OrganizationProfileInput = z.infer<typeof OrganizationProfileSchema>;

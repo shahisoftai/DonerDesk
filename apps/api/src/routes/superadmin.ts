@@ -69,7 +69,17 @@ export async function registerSuperAdminRoutes(app: FastifyInstance) {
         { id: "sftp", name: "SFTP", category: "Ingestion", purpose: "Inbound evidence ingestion from an SFTP drop folder", flow: "sftp_ingest", free: true },
       ];
       const flows = plugins.map(p => ({ id: p.flow, plugin: p.id, gated: p.id === "gdrive" || p.id === "sftp" }));
-      return { kestra, workers, plugins, flows };
+      const configs = await service().listConfigurations() as unknown as Array<{ category: string; provider: string; enabled: boolean }>;
+      const hasConnector = (provider: string) => configs.some(c => c.category === "CONNECTOR" && c.provider === provider && c.enabled);
+      return {
+        kestra,
+        workers,
+        plugins,
+        flows,
+        oauthConfigured: hasConnector("google-drive-oauth"),
+        serviceAccountConfigured: hasConnector("google-drive"),
+        ocrConfigured: Boolean(process.env.GOOGLE_DRIVE_CLIENT_ID && process.env.GOOGLE_DRIVE_CLIENT_SECRET),
+      };
     });
   });
 }

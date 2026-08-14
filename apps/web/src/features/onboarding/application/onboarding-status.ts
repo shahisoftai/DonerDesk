@@ -15,6 +15,7 @@ import type { AppError } from "@/lib/shared/app-error";
 export type OnboardingSnapshot = {
   orgName: string;
   hasOrg: boolean;
+  storageProvider: string;
   projectCount: number;
   firstProjectId: string | null;
   templateCount: number;
@@ -63,6 +64,7 @@ export const loadOnboarding = cache(async (token: string): Promise<OnboardingLoa
   const snapshot: OnboardingSnapshot = {
     orgName,
     hasOrg: orgResult.ok && orgName.length > 0,
+    storageProvider: orgResult.ok ? (orgResult.value.storageProvider ?? "LOCAL") : "LOCAL",
     projectCount: projectsResult.ok ? projects.length : 0,
     firstProjectId,
     templateCount: templatesResult?.ok ? templatesResult.value.items.length : 0,

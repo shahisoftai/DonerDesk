@@ -6,6 +6,9 @@ import {
   InviteUserHandler,
   ChangeRoleHandler,
   UpdateOrganizationHandler,
+  ConnectGoogleDriveHandler,
+  GoogleSignInHandler,
+  LinkGoogleDriveEvidenceHandler,
   ListUsersHandler,
   CreateProjectHandler,
   UpdateProjectHandler,
@@ -92,7 +95,12 @@ import {
 
 import { JwtAuthProvider } from "./auth/jwt.js";
 import { OidcAuthProvider } from "./auth/oidc.js";
+import { GoogleSignInConnector } from "./auth/google-sign-in.js";
 import { LocalStorage } from "./storage/local-storage.js";
+import { EvidenceStorageResolver } from "./storage/router.js";
+import { PrismaGoogleDriveTokenStore } from "./storage/prisma-google-drive-token-store.js";
+import { GoogleDriveOAuthConnector } from "./storage/google-drive-oauth.js";
+import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credentials.js";
 import { TolerantDocumentParser } from "./parsers/document-parser.js";
 import { StubTemplateExtractionService } from "./llm/template-extraction.js";
 import { StubEvidenceTagger } from "./llm/evidence-tagger.js";
@@ -111,6 +119,9 @@ export interface Container {
   prisma: PrismaClient;
   auth: JwtAuthProvider | OidcAuthProvider;
   storage: LocalStorage;
+  evidenceStorage: EvidenceStorageResolver;
+  googleDriveOAuth: GoogleDriveOAuthConnector;
+  googleDriveCredentials: PrismaGoogleDriveCredentialStore;
   parser: TolerantDocumentParser;
   logger: ReturnType<typeof createLogger>;
   ids: UuidIdGenerator;
@@ -148,6 +159,7 @@ export interface Container {
   handlers: {
     signUp: SignUpHandler;
     login: LoginHandler;
+    googleSignIn: GoogleSignInHandler;
     inviteUser: InviteUserHandler;
     changeRole: ChangeRoleHandler;
     updateOrganization: UpdateOrganizationHandler;
@@ -201,6 +213,8 @@ export interface Container {
     listNotifications: ListNotificationsHandler;
     markNotificationRead: MarkNotificationReadHandler;
     listAuditLog: ListAuditLogHandler;
+    connectGoogleDrive: ConnectGoogleDriveHandler;
+    linkGoogleDriveEvidence: LinkGoogleDriveEvidenceHandler;
   };
 }
 
@@ -213,13 +227,33 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   });
   const logger = createLogger();
   const auth = process.env.AUTH_PROVIDER === "oidc" ? new OidcAuthProvider() : new JwtAuthProvider();
+  const googleSignIn = new GoogleSignInConnector();
   const storage = new LocalStorage();
+  const googleDriveCredentials = new PrismaGoogleDriveCredentialStore(
+    prisma,
+    process.env.PLATFORM_MASTER_KEY ? Buffer.from(process.env.PLATFORM_MASTER_KEY, "base64") : Buffer.alloc(0),
+  );
+  const googleDriveTokens = new PrismaGoogleDriveTokenStore(googleDriveCredentials);
+  const evidenceStorage = new EvidenceStorageResolver(
+    storage,
+    async (tenantId) => {
+      const org = await prisma.organization.findUnique({
+        where: { tenantId: tenantId.toString() },
+        select: { storageProvider: true },
+      });
+      return (org?.storageProvider as import("@donordesk/domain").StorageProvider | undefined) ?? "LOCAL";
+    },
+    googleDriveTokens,
+    undefined, // R2 config: wired via env in production; see memorybank/gdrive.md
+  );
   const parser = new TolerantDocumentParser();
   const ids = new UuidIdGenerator();
   const clock = new SystemClockImpl();
   const jobQueue = createJobQueue(logger);
   const events = new OutboxEventBus(logger, jobQueue, DEFAULT_EVENT_TO_JOB);
   const notify = new LoggingNotificationAdapter(logger);
+
+  const googleDriveOAuth = new GoogleDriveOAuthConnector();
 
   const organizations = new PrismaOrganizationRepository(prisma);
   const users = new PrismaUserRepository(prisma);
@@ -255,9 +289,17 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const handlers: Container["handlers"] = {
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits),
     login: new LoginHandler(users, auth, audits),
+    googleSignIn: new GoogleSignInHandler(googleSignIn, users, auth, audits),
     inviteUser: new InviteUserHandler(ids, users, invitations, audits, notify),
     changeRole: new ChangeRoleHandler(users, audits),
     updateOrganization: new UpdateOrganizationHandler(organizations, audits),
+    connectGoogleDrive: new ConnectGoogleDriveHandler(
+      googleDriveOAuth,
+      organizations,
+      async (tenantId, refreshToken) => googleDriveCredentials.save(tenantId, refreshToken),
+      audits,
+    ),
+    linkGoogleDriveEvidence: new LinkGoogleDriveEvidenceHandler(ids, evidence, evidenceStorage, events, audits),
     listUsers: new ListUsersHandler(users),
     createProject: new CreateProjectHandler(ids, projects, audits),
     updateProject: new UpdateProjectHandler(projects, audits),
@@ -272,7 +314,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     verifyIndicatorUpdate: new VerifyIndicatorUpdateHandler(indicatorUpdates, audits),
     listLogframe: new ListLogframeHandler(logframe, indicators),
     listIndicators: new ListIndicatorsHandler(indicators),
-    uploadEvidence: new UploadEvidenceHandler(ids, evidence, storage, events, audits),
+    uploadEvidence: new UploadEvidenceHandler(ids, evidence, evidenceStorage, events, audits),
     suggestEvidenceTags: new SuggestEvidenceTagsHandler(evidence, evidenceTagger),
     acceptEvidenceTags: new AcceptEvidenceTagsHandler(evidence, audits),
     persistEvidenceTags: new PersistEvidenceTagsHandler(evidence, audits, idempotency),
@@ -313,7 +355,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   };
 
   return {
-    prisma, auth, storage, parser, logger, ids, clock, events, notify, jobQueue,
+    prisma, auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, reportDraftGenerator, checklistDetector, exportBuilder,
     organizations, users, invitations, projects, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
     periods, drafts, sections, checklist, exports, comments, notifications, audits,
