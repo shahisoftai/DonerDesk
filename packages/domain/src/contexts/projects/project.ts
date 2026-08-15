@@ -37,6 +37,7 @@ export interface ProjectProps {
   meOfficerId?: string;
   reportingOfficerId?: string;
   status: ProjectStatus;
+  workspaceRootId?: string;
 }
 
 export class Project extends Entity<string> {
@@ -57,6 +58,7 @@ export class Project extends Entity<string> {
       endDate: Date;
       budgetAmount?: number;
       budgetCurrency?: string;
+      workspaceRootId?: string;
     };
   }): Project {
     Project.validate(input.props);
@@ -82,6 +84,7 @@ export class Project extends Entity<string> {
       meOfficerId: input.props.meOfficerId,
       reportingOfficerId: input.props.reportingOfficerId,
       status: "DRAFT",
+      workspaceRootId: input.props.workspaceRootId,
     });
   }
 
@@ -130,9 +133,11 @@ export class Project extends Entity<string> {
   get meOfficerId(): string | undefined { return this.props.meOfficerId; }
   get reportingOfficerId(): string | undefined { return this.props.reportingOfficerId; }
   get status(): ProjectStatus { return this.props.status; }
+  get workspaceRootId(): string | undefined { return this.props.workspaceRootId; }
 
   activate(): void {
     if (this.props.status === "ARCHIVED") throw DomainError.invalidTransition("Cannot activate archived project");
+    if (this.props.status === "COMPLETED") throw DomainError.invalidTransition("Cannot activate a completed project");
     this.props.status = "ACTIVE";
     this.touch();
   }
@@ -154,6 +159,17 @@ export class Project extends Entity<string> {
     this.touch();
   }
 
+  restore(): void {
+    if (this.props.status !== "ARCHIVED") throw DomainError.invalidTransition("Only archived projects can be restored");
+    this.props.status = "DRAFT";
+    this.touch();
+  }
+
+  setWorkspaceRoot(rootId: string): void {
+    this.props.workspaceRootId = rootId;
+    this.touch();
+  }
+
   assignStaff(input: {
     projectManagerId?: string;
     meOfficerId?: string;
@@ -165,8 +181,14 @@ export class Project extends Entity<string> {
     this.touch();
   }
 
-  updateDetails(patch: Partial<Omit<ProjectProps, "duration" | "budget" | "status">>): void {
-    this.props = { ...this.props, ...patch };
+  updateDetails(patch: Partial<Omit<ProjectProps, "status">>): void {
+    if (patch.duration) this.props.duration = DateRange.create(patch.duration.start, patch.duration.end);
+    if (patch.budget !== undefined) this.props.budget = patch.budget;
+    this.props = {
+      ...this.props,
+      ...patch,
+      duration: patch.duration ? DateRange.create(patch.duration.start, patch.duration.end) : this.props.duration,
+    };
     this.touch();
   }
 

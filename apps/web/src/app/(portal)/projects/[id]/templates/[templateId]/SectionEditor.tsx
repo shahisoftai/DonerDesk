@@ -5,7 +5,7 @@ import { useActionState } from "@/lib/client/action-state";
 import { SECTION_INPUT_TYPE_OPTIONS, SECTION_INPUT_TYPE_LABEL } from "@/lib/labels";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 
-type Section = { id?: string; title: string; description: string; inputType: string; required: boolean; evidenceNeeded: string };
+type Section = { id?: string; title: string; description: string; inputType: string; required: boolean; evidenceNeeded: string; reviewStatus?: "DRAFT" | "REVIEWED"; minWords?: number; maxWords?: number };
 
 export function SectionEditor({ projectId, templateId, initialSections }: { projectId: string; templateId: string; initialSections: Section[] }) {
   const [sections, setSections] = useState<Section[]>(initialSections ?? []);
@@ -17,7 +17,7 @@ export function SectionEditor({ projectId, templateId, initialSections }: { proj
     setSaved(false);
   }
   function add() {
-    setSections((s) => [...s, { id: crypto.randomUUID(), title: "New section", description: "", inputType: "NARRATIVE", required: true, evidenceNeeded: "" }]);
+    setSections((s) => [...s, { id: crypto.randomUUID(), title: "New section", description: "", inputType: "NARRATIVE", required: true, evidenceNeeded: "", reviewStatus: "DRAFT" }]);
     setSaved(false);
   }
   function remove(i: number) {
@@ -35,6 +35,9 @@ export function SectionEditor({ projectId, templateId, initialSections }: { proj
           inputType: s.inputType as "NARRATIVE" | "TABLE" | "ANNEX" | "INDICATOR_TABLE" | "COMPLIANCE",
           required: s.required,
           evidenceNeeded: s.evidenceNeeded,
+          reviewStatus: s.reviewStatus ?? "DRAFT",
+          minWords: s.minWords,
+          maxWords: s.maxWords,
         })),
       ),
     );

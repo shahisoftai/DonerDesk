@@ -22,6 +22,14 @@ export const DEFAULT_EVENT_TO_JOB: EventToJobMapping[] = [
       tenantId: (event as EvidenceUploaded).tenantId.toString(),
     }),
   },
+  {
+    eventName: "project.workspace.provision_requested",
+    jobName: "project.workspace.provision",
+    buildPayload: (event) => ({
+      projectId: (event as unknown as { projectId: string }).projectId,
+      tenantId: (event as unknown as { tenantId: import("@donordesk/domain").TenantId }).tenantId.toString(),
+    }),
+  },
 ];
 
 /**

@@ -61,6 +61,13 @@ import {
   ListAuditLogHandler,
   RecordLegalConsentHandler,
   GetLegalConsentHandler,
+  GetProjectSetupHandler,
+  AcknowledgeProjectSetupHandler,
+  RetryProjectWorkspaceHandler,
+  RepairProjectWorkspaceHandler,
+  GetReportingProfileHandler,
+  UpsertReportingProfileHandler,
+  ProjectReadinessService,
   UuidIdGenerator,
   type SystemClock,
   SystemClock as SystemClockImpl,
@@ -73,6 +80,10 @@ import {
   PrismaInvitationRepository,
 } from "./repositories/identity.js";
 import { PrismaProjectRepository } from "./repositories/projects.js";
+import {
+  PrismaProjectSetupRepository,
+  PrismaReportingProfileRepository,
+} from "./repositories/setup.js";
 import { PrismaDonorTemplateRepository } from "./repositories/templates.js";
 import {
   PrismaLogframeRepository,
@@ -100,6 +111,7 @@ import { OidcAuthProvider } from "./auth/oidc.js";
 import { GoogleSignInConnector } from "./auth/google-sign-in.js";
 import { LocalStorage } from "./storage/local-storage.js";
 import { EvidenceStorageResolver } from "./storage/router.js";
+import { ProjectWorkspaceServiceResolver, PrismaWorkspaceNameProvider } from "./storage/workspace-router.js";
 import { PrismaGoogleDriveTokenStore } from "./storage/prisma-google-drive-token-store.js";
 import { GoogleDriveOAuthConnector } from "./storage/google-drive-oauth.js";
 import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credentials.js";
@@ -142,6 +154,10 @@ export interface Container {
   users: PrismaUserRepository;
   invitations: PrismaInvitationRepository;
   projects: PrismaProjectRepository;
+  projectSetup: PrismaProjectSetupRepository;
+  reportingProfiles: PrismaReportingProfileRepository;
+  readiness: ProjectReadinessService;
+  projectWorkspace: ProjectWorkspaceServiceResolver;
   templates: PrismaDonorTemplateRepository;
   logframe: PrismaLogframeRepository;
   indicators: PrismaIndicatorRepository;
@@ -170,6 +186,12 @@ export interface Container {
     updateProject: UpdateProjectHandler;
     listProjects: ListProjectsHandler;
     getProject: GetProjectHandler;
+    getProjectSetup: GetProjectSetupHandler;
+    acknowledgeProjectSetup: AcknowledgeProjectSetupHandler;
+    retryProjectWorkspace: RetryProjectWorkspaceHandler;
+    repairProjectWorkspace: RepairProjectWorkspaceHandler;
+    getReportingProfile: GetReportingProfileHandler;
+    upsertReportingProfile: UpsertReportingProfileHandler;
     uploadTemplate: UploadTemplateHandler;
     updateTemplateSections: UpdateTemplateSectionsHandler;
     listTemplates: ListTemplatesHandler;
@@ -255,6 +277,37 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const clock = new SystemClockImpl();
   const jobQueue = createJobQueue(logger);
   const events = new OutboxEventBus(logger, jobQueue, DEFAULT_EVENT_TO_JOB);
+  const jobRegistrar = jobQueue as unknown as { register?: (n: string, h: (payload: Record<string, unknown>) => Promise<void>) => void };
+  if (jobRegistrar?.register) {
+    jobRegistrar.register(
+      "project.workspace.provision",
+      async (payload) => {
+        const tenantId = String(payload.tenantId);
+        const projectId = String(payload.projectId);
+        const tenant = { toString: () => tenantId } as import("@donordesk/domain").TenantId;
+        try {
+          const setup = await projectSetup.findByProject(projectId, tenant);
+          if (setup.ok && setup.value && setup.value.workspaceProvisionStatus === "PENDING") {
+            const result = await projectWorkspace.ensureProjectWorkspace(tenant, projectId);
+            if (result.ok) {
+              setup.value.markReady();
+              await projectSetup.update(setup.value);
+              const project = await projects.findById(projectId, tenant);
+              if (project.ok && project.value) {
+                project.value.setWorkspaceRoot(result.value.rootId);
+                await projects.update(project.value);
+              }
+            } else {
+              setup.value.markFailed(result.error.message);
+              await projectSetup.update(setup.value);
+            }
+          }
+        } catch (error) {
+          logger.error("workspace.provision_job_failed", { projectId, error: String(error) });
+        }
+      },
+    );
+  }
   const notify = new LoggingNotificationAdapter(logger);
 
   const googleDriveOAuth = new GoogleDriveOAuthConnector();
@@ -263,6 +316,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const users = new PrismaUserRepository(prisma);
   const invitations = new PrismaInvitationRepository(prisma);
   const projects = new PrismaProjectRepository(prisma);
+  const projectSetup = new PrismaProjectSetupRepository(prisma);
+  const reportingProfiles = new PrismaReportingProfileRepository(prisma);
   const templates = new PrismaDonorTemplateRepository(prisma);
   const logframe = new PrismaLogframeRepository(prisma);
   const indicators = new PrismaIndicatorRepository(prisma);
@@ -278,6 +333,47 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const comments = new PrismaCommentRepository(prisma);
   const notifications = new PrismaNotificationRepository(prisma);
   const audits = new PrismaAuditRepository(prisma);
+
+  const readiness = new ProjectReadinessService(
+    projects,
+    projectSetup,
+    reportingProfiles,
+    templates,
+    indicators,
+    users,
+    {
+      resolve: async (tenantId) => {
+        const org = await prisma.organization.findUnique({
+          where: { tenantId: tenantId.toString() },
+          select: { storageProvider: true },
+        });
+        return { ok: true, value: { provider: org?.storageProvider ?? "LOCAL" } };
+      },
+    },
+  );
+
+  const workspaceNameProvider = new PrismaWorkspaceNameProvider(
+    async (id, tenantId) => {
+      const row = await prisma.project.findFirst({ where: { id, tenantId: tenantId.toString() }, select: { title: true, projectCode: true } });
+      return row ? { title: row.title, projectCode: row.projectCode } : null;
+    },
+    async (tenantId) => {
+      const row = await prisma.organization.findUnique({ where: { tenantId: tenantId.toString() }, select: { name: true } });
+      return row ? { name: row.name } : null;
+    },
+  );
+  const projectWorkspace = new ProjectWorkspaceServiceResolver(
+    workspaceNameProvider,
+    async (tenantId) => {
+      const org = await prisma.organization.findUnique({
+        where: { tenantId: tenantId.toString() },
+        select: { storageProvider: true },
+      });
+      return (org?.storageProvider as import("@donordesk/domain").StorageProvider | undefined) ?? "LOCAL";
+    },
+    LocalStorage.resolveRoot(),
+    googleDriveTokens,
+  );
 
   const evidenceTagger = new StubEvidenceTagger();
   const activityPolisher = new StubActivityPolisher();
@@ -305,10 +401,16 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     ),
     linkGoogleDriveEvidence: new LinkGoogleDriveEvidenceHandler(ids, evidence, evidenceStorage, events, audits),
     listUsers: new ListUsersHandler(users),
-    createProject: new CreateProjectHandler(ids, projects, audits),
-    updateProject: new UpdateProjectHandler(projects, audits),
+    createProject: new CreateProjectHandler(ids, projects, projectSetup, projectWorkspace, events, audits),
+    updateProject: new UpdateProjectHandler(projects, periods, audits),
     listProjects: new ListProjectsHandler(projects),
     getProject: new GetProjectHandler(projects),
+    getProjectSetup: new GetProjectSetupHandler(readiness),
+    acknowledgeProjectSetup: new AcknowledgeProjectSetupHandler(projectSetup, readiness, audits),
+    retryProjectWorkspace: new RetryProjectWorkspaceHandler(projectWorkspace, projects, projectSetup, events, audits),
+    repairProjectWorkspace: new RepairProjectWorkspaceHandler(projectWorkspace, projects, projectSetup, audits),
+    getReportingProfile: new GetReportingProfileHandler(reportingProfiles),
+    upsertReportingProfile: new UpsertReportingProfileHandler(ids, reportingProfiles, templates, audits),
     uploadTemplate: new UploadTemplateHandler(ids, templates, templateExtraction, audits),
     updateTemplateSections: new UpdateTemplateSectionsHandler(templates, audits),
     listTemplates: new ListTemplatesHandler(templates),
@@ -330,7 +432,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     reviewActivity: new ReviewActivityHandler(activities, audits),
     listActivities: new ListActivitiesHandler(activities),
     getActivity: new GetActivityHandler(activities),
-    createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, audits),
+    createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits),
     listReportingPeriods: new ListReportingPeriodsHandler(periods),
     generateReportDraft: new GenerateReportDraftHandler(
       ids, periods, drafts, sections, projects, organizations, templates, logframe, indicators, indicatorUpdates, activities, evidence, reportDraftGenerator, audits,
@@ -363,7 +465,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   return {
     prisma, auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, reportDraftGenerator, checklistDetector, exportBuilder,
-    organizations, users, invitations, projects, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
+    organizations, users, invitations, projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
     periods, drafts, sections, checklist, exports, comments, notifications, audits,
     handlers,
   };

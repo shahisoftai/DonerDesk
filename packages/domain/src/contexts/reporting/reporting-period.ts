@@ -13,6 +13,8 @@ export interface ReportingPeriodProps {
   status: ReportStatus;
   readinessScore: number;
   responsibleOfficerId?: string;
+  reportingProfileSnapshotJson: string;
+  templateSnapshotJson: string;
 }
 
 export class ReportingPeriod extends Entity<string> {
@@ -37,6 +39,8 @@ export class ReportingPeriod extends Entity<string> {
     deadline: Date;
     internalReviewDeadline?: Date;
     responsibleOfficerId?: string;
+    reportingProfileSnapshotJson?: string;
+    templateSnapshotJson?: string;
   }): ReportingPeriod {
     if (!input.deadline || isNaN(input.deadline.getTime())) throw DomainError.validation("Deadline required");
     return new ReportingPeriod(input.id, input.tenantId, input.projectId, {
@@ -48,6 +52,8 @@ export class ReportingPeriod extends Entity<string> {
       status: ReportStatus.NOT_STARTED(),
       readinessScore: 0,
       responsibleOfficerId: input.responsibleOfficerId,
+      reportingProfileSnapshotJson: input.reportingProfileSnapshotJson ?? "{}",
+      templateSnapshotJson: input.templateSnapshotJson ?? "{}",
     });
   }
 
@@ -69,6 +75,8 @@ export class ReportingPeriod extends Entity<string> {
   get status(): ReportStatus { return this.props.status; }
   get readinessScore(): number { return this.props.readinessScore; }
   get responsibleOfficerId(): string | undefined { return this.props.responsibleOfficerId; }
+  get reportingProfileSnapshotJson(): string { return this.props.reportingProfileSnapshotJson; }
+  get templateSnapshotJson(): string { return this.props.templateSnapshotJson; }
 
   daysUntilDeadline(): number {
     const ms = this.props.deadline.getTime() - Date.now();
@@ -91,6 +99,13 @@ export class ReportingPeriod extends Entity<string> {
 
   setDonorTemplate(id: string): void {
     this.props.donorTemplateId = id;
+    this.touch();
+  }
+
+  /** Immutable effective snapshots are resolved once at creation. */
+  setSnapshots(reportingProfileSnapshotJson: string, templateSnapshotJson: string): void {
+    this.props.reportingProfileSnapshotJson = reportingProfileSnapshotJson;
+    this.props.templateSnapshotJson = templateSnapshotJson;
     this.touch();
   }
 }

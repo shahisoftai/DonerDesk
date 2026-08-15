@@ -30,6 +30,7 @@ export const ProjectDetailSchema = z.object({
   startDate: z.string(),
   endDate: z.string(),
   daysRemaining: z.number(),
+  workspaceRootId: z.string().optional(),
 });
 export type ProjectDetail = z.infer<typeof ProjectDetailSchema>;
 
@@ -395,3 +396,86 @@ export const CommentItemSchema = z.object({
 });
 
 export const CommentsResponseSchema = z.object({ items: z.array(CommentItemSchema) });
+
+// Feature 18: project setup checklist read model.
+export const SetupBlockerSchema = z.object({
+  code: z.string(),
+  label: z.string(),
+  href: z.string().optional(),
+  retryable: z.boolean().optional(),
+});
+
+export const ProjectReadinessSchema = z.object({
+  ready: z.boolean(),
+  status: z.enum(["NOT_STARTED", "IN_PROGRESS", "READY", "ACTION_REQUIRED"]),
+  blockers: z.array(SetupBlockerSchema),
+  nextAction: SetupBlockerSchema.optional(),
+});
+
+export type ProjectReadiness = z.infer<typeof ProjectReadinessSchema>;
+
+export const ProjectReadinessSnapshotSchema = z.object({
+  workspace: z.object({
+    provisionStatus: z.string(),
+    provisionError: z.string().optional(),
+    deepLink: z.string().optional(),
+    rootId: z.string().optional(),
+  }),
+  profile: z.object({
+    exists: z.boolean(),
+    version: z.number().optional(),
+    defaultTemplateId: z.string().optional(),
+    language: z.string().optional(),
+    tone: z.string().optional(),
+  }),
+  template: z.object({
+    exists: z.boolean(),
+    id: z.string().optional(),
+    name: z.string().optional(),
+    reviewedRequiredSectionCount: z.number(),
+  }),
+  indicators: z.object({
+    total: z.number(),
+    reportable: z.number(),
+    incomplete: z.number(),
+  }),
+  team: z.object({
+    assigned: z.boolean(),
+    memberCount: z.number(),
+  }),
+  acknowledgedAt: z.string().optional(),
+  acknowledgedById: z.string().optional(),
+});
+
+export type ProjectReadinessSnapshot = z.infer<typeof ProjectReadinessSnapshotSchema>;
+
+export const ProjectSetupResponseSchema = z.object({
+  readiness: ProjectReadinessSchema,
+  snapshot: ProjectReadinessSnapshotSchema,
+  provisionStatus: z.string(),
+  acknowledged: z.boolean(),
+});
+export type ProjectSetupResponse = z.infer<typeof ProjectSetupResponseSchema>;
+
+export const ReportingProfileSchema = z.object({
+  id: z.string(),
+  tenantId: z.string(),
+  projectId: z.string(),
+  defaultTemplateId: z.string().optional(),
+  language: z.string(),
+  tone: z.string(),
+  writingStyle: z.string().nullable().optional(),
+  audienceNotes: z.string().nullable().optional(),
+  formattingRules: z.array(z.string()).default([]),
+  specialRequirements: z.array(z.string()).default([]),
+  sectionOverrides: z.record(z.object({ min: z.number().optional(), max: z.number().optional() })).default({}),
+  deadlineOffsetDays: z.number().nullable().optional(),
+  autoPeriodCreation: z.boolean().default(false),
+  version: z.number(),
+  createdAt: z.string(),
+});
+export type ReportingProfile = z.infer<typeof ReportingProfileSchema>;
+
+export const ReportingProfileResponseSchema = z.object({
+  profile: ReportingProfileSchema.nullable(),
+});

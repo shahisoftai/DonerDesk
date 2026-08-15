@@ -12,15 +12,34 @@ export const ReportTypeSchema = z.enum([
 
 export const SectionInputTypeSchema = z.enum(["NARRATIVE", "TABLE", "ANNEX", "INDICATOR_TABLE", "COMPLIANCE"]);
 
-export const TemplateSectionSchema = z.object({
-  id: z.string().optional(),
-  title: z.string().min(1),
-  description: z.string().default(""),
-  inputType: SectionInputTypeSchema,
-  required: z.boolean().default(true),
-  evidenceNeeded: z.string().default(""),
-  relatedLogframeElement: z.string().optional(),
-});
+export const SectionReviewStatusSchema = z.enum(["DRAFT", "REVIEWED"]);
+
+const wordLimits = (v: { minWords?: number; maxWords?: number }, ctx: z.RefinementCtx): void => {
+  if (v.minWords !== undefined && v.minWords < 0) {
+    ctx.addIssue({ code: "custom", path: ["minWords"], message: "minWords must be nonnegative" });
+  }
+  if (v.maxWords !== undefined && v.maxWords <= 0) {
+    ctx.addIssue({ code: "custom", path: ["maxWords"], message: "maxWords must be positive" });
+  }
+  if (v.minWords !== undefined && v.maxWords !== undefined && v.minWords > v.maxWords) {
+    ctx.addIssue({ code: "custom", path: ["maxWords"], message: "maxWords must be at least minWords" });
+  }
+};
+
+export const TemplateSectionSchema = z
+  .object({
+    id: z.string().optional(),
+    title: z.string().min(1),
+    description: z.string().default(""),
+    inputType: SectionInputTypeSchema,
+    required: z.boolean().default(true),
+    evidenceNeeded: z.string().default(""),
+    relatedLogframeElement: z.string().optional(),
+    reviewStatus: SectionReviewStatusSchema.default("DRAFT"),
+    minWords: z.number().int().optional(),
+    maxWords: z.number().int().optional(),
+  })
+  .superRefine(wordLimits);
 export type TemplateSectionInput = z.infer<typeof TemplateSectionSchema>;
 
 export const CreateDonorTemplateSchema = z.object({

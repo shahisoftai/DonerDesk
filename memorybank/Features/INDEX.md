@@ -28,7 +28,7 @@ This directory contains detailed documentation for each of DonorDesk's 18 MVP fe
 | 15 | [Dashboard](./15-Dashboard.md) | Implemented | `apps/web/src/app/(portal)/dashboard/page.tsx` |
 | 16 | [Audit Log](./16-Audit-Log.md) | Implemented | `packages/domain/src/entities/AuditLog.ts` |
 | 17 | [Basic Settings](./17-Basic-Settings.md) | Implemented | `apps/web/src/app/(portal)/settings/` |
-| 18 | [Project Creation Wizard](./18-Project-Creation-Wizard.md) | Planned | `packages/infrastructure/src/storage/project-drive-folders.ts`, `packages/application/src/use-cases/projects/` |
+| 18 | [Project Creation Wizard](./18-Project-Creation-Wizard.md) | Implemented (release `20260815054218`) | `packages/application/src/readiness/project-readiness-service.ts`, `packages/infrastructure/src/storage/project-workspace.ts`, `packages/infrastructure/src/storage/workspace-router.ts`, `apps/api/src/routes/project-setup.ts` |
 
 ## Status Legend
 

@@ -6,19 +6,24 @@ import type { OnboardingSnapshot } from "../../src/features/onboarding/applicati
 const empty: OnboardingSnapshot = {
   orgName: "",
   hasOrg: false,
+  orgProfileComplete: false,
+  storageProvider: "LOCAL",
   projectCount: 0,
   firstProjectId: null,
   templateCount: 0,
   logframeItemCount: 0,
   teamCount: 0,
   evidenceCount: 0,
+  legalConsent: { accepted: false, termsVersion: "", privacyVersion: "" },
 };
 
-test("empty snapshot marks first-project as current and later required steps pending", () => {
+test("empty snapshot marks storage as current and later required steps pending", () => {
   const steps = deriveOnboardingSteps(empty);
+  // Connect Google Drive is the first required step, so it is "current".
+  const storage = steps.find((s) => s.key === "storage");
+  assert.equal(storage?.status, "current");
   const firstProject = steps.find((s) => s.key === "first-project");
-  assert.equal(firstProject?.status, "current");
-  assert.equal(steps.find((s) => s.key === "organization")?.status, "pending");
+  assert.equal(firstProject?.status, "pending");
   assert.equal(allComplete(steps), false);
 });
 
@@ -26,12 +31,15 @@ test("completed snapshot marks every step complete", () => {
   const snapshot: OnboardingSnapshot = {
     orgName: "TestOrg",
     hasOrg: true,
+    orgProfileComplete: true,
+    storageProvider: "GOOGLE_DRIVE",
     projectCount: 1,
     firstProjectId: "p1",
     templateCount: 1,
     logframeItemCount: 2,
     teamCount: 3,
     evidenceCount: 5,
+    legalConsent: { accepted: true, termsVersion: "2026-08-01", privacyVersion: "2026-08-01" },
   };
   const steps = deriveOnboardingSteps(snapshot);
   for (const step of steps) {
@@ -68,12 +76,15 @@ test("a fully skipped optional setup reports complete", () => {
   const steps = deriveOnboardingSteps({
     orgName: "X",
     hasOrg: true,
+    orgProfileComplete: true,
+    storageProvider: "LOCAL",
     projectCount: 1,
     firstProjectId: "p1",
     templateCount: 0,
     logframeItemCount: 1,
     teamCount: 0,
     evidenceCount: 0,
+    legalConsent: { accepted: true, termsVersion: "2026-08-01", privacyVersion: "2026-08-01" },
   });
   const requiredDone = steps.filter((s) => s.status === "complete").length >= 2;
   assert.equal(requiredDone, true);

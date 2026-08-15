@@ -20,6 +20,8 @@ export const ROLES: readonly Role[] = [
 export type Capability =
   | "project.create"
   | "project.edit"
+  | "project.setup"
+  | "project.archive"
   | "org.manage"
   | "team.invite"
   | "team.manage"
@@ -44,6 +46,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   ADMIN: [
     "project.create",
     "project.edit",
+    "project.setup",
+    "project.archive",
     "org.manage",
     "team.invite",
     "team.manage",
@@ -67,6 +71,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   PROJECT_MANAGER: [
     "project.create",
     "project.edit",
+    "project.setup",
     "template.create",
     "template.edit",
     "logframe.edit",

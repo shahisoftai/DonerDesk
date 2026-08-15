@@ -20,3 +20,17 @@ export class ProjectStatusChanged extends DomainEvent {
     super();
   }
 }
+
+export class ProjectWorkspaceProvisionRequested extends DomainEvent {
+  readonly eventName = "project.workspace.provision_requested";
+  constructor(public readonly tenantId: TenantId, public readonly projectId: string) {
+    super();
+  }
+}
+
+export class ProjectWorkspaceProvisioned extends DomainEvent {
+  readonly eventName = "project.workspace.provisioned";
+  constructor(public readonly tenantId: TenantId, public readonly projectId: string, public readonly rootId: string) {
+    super();
+  }
+}

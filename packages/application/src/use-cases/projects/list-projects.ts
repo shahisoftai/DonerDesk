@@ -23,6 +23,7 @@ export class ListProjectsHandler {
         startDate: p.duration.start.toISOString(),
         endDate: p.duration.end.toISOString(),
         daysRemaining: p.daysRemaining(),
+        workspaceRootId: p.workspaceRootId,
       })),
     };
   }

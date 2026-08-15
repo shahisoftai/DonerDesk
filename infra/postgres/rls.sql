@@ -4,7 +4,8 @@ DO $$
 DECLARE table_name text;
 BEGIN
   FOREACH table_name IN ARRAY ARRAY[
-    'Organization','User','Invitation','Project','DonorTemplate','LogframeItem',
+    'Organization','User','Invitation','Project','ProjectSetup','ReportingProfile',
+    'DonorTemplate','LogframeItem',
     'Indicator','IndicatorUpdate','ReportingPeriod','EvidenceFile','ActivityUpdate',
     'ReportDraft','ReportSection','ChecklistItem','ExportPackage','Comment',
     'Notification','AuditEvent','LlmRun','LlmFeedback','EvidenceChunk','EvidenceEmbedding',

@@ -11,6 +11,7 @@ export * from "./ports/reporting.js";
 export * from "./ports/compliance.js";
 export * from "./ports/exports.js";
 export * from "./ports/support.js";
+export * from "./ports/setup.js";
 
 export * from "./use-cases/identity/sign-up.js";
 export * from "./use-cases/identity/login.js";
@@ -25,6 +26,13 @@ export * from "./use-cases/projects/create-project.js";
 export * from "./use-cases/projects/update-project.js";
 export * from "./use-cases/projects/list-projects.js";
 export * from "./use-cases/projects/get-project.js";
+
+export * from "./readiness/project-readiness-service.js";
+
+export * from "./use-cases/setup/get-project-setup.js";
+export * from "./use-cases/setup/acknowledge-project-setup.js";
+export * from "./use-cases/setup/project-workspace-actions.js";
+export * from "./use-cases/setup/reporting-profile-handlers.js";
 
 export * from "./use-cases/templates/upload-template.js";
 export * from "./use-cases/templates/update-template-sections.js";

@@ -13,6 +13,7 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerOrgRoutes } from "./routes/org.js";
 import { registerUserRoutes } from "./routes/users.js";
 import { registerProjectRoutes } from "./routes/projects.js";
+import { registerProjectSetupRoutes } from "./routes/project-setup.js";
 import { registerTemplateRoutes } from "./routes/templates.js";
 import { registerLogframeRoutes } from "./routes/logframe.js";
 import { registerEvidenceRoutes } from "./routes/evidence.js";
@@ -144,6 +145,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerOrgRoutes(instance);
     await registerUserRoutes(instance);
     await registerProjectRoutes(instance);
+    await registerProjectSetupRoutes(instance);
     await registerTemplateRoutes(instance);
     await registerLogframeRoutes(instance);
     await registerEvidenceRoutes(instance);

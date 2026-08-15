@@ -1,7 +1,10 @@
 # Feature 18: Project Creation Wizard (bootstrap → reporting-ready)
 
 **Author:** Kilo (agent) · **Date:** 2026-08-15
-**Status:** PLANNED — approved in concept; revised implementation specification.
+**Status:** IMPLEMENTED — backend (domain/contracts/application/infrastructure/API),
+frontend (setup checklist + profile form + redirect), migration
+`20260815000000_project_bootstrap`, RLS, and tests complete; **deployed to Contabo
+production as release `20260815054218`** (2026-08-15).
 
 ## 1. Overview
 
@@ -509,7 +512,45 @@ cached booleans; controlled rollout for existing projects; explicit active templ
 snapshots; defaults and precise blockers to reduce setup friction. Use repository baselines for
 test counts rather than brittle numeric targets.
 
-## 16. Acceptance summary
+## 16. Implementation record (2026-08-15)
+
+**Deployed to Contabo production as release `20260815054218`** (API + web + prisma).
+
+Backend:
+- Domain: `ProjectSetup`, `ReportingProfile` entities; `Project` lifecycle
+  (editable dates/budget, `restore()`), `TemplateSection` stable IDs + review
+  status + word limits, `ReportingPeriod` immutable snapshots.
+- Contracts: `reporting-profile.ts` (tone, word-count overrides, optimistic
+  version), `templates.ts` review/min/max words, `projects.ts` ISO-4217 currency.
+- Application: `ProjectReadinessService` (derived, provider-aware rollout),
+  `GetProjectSetupHandler`, `AcknowledgeProjectSetupHandler`,
+  `RetryProjectWorkspaceHandler`, `RepairProjectWorkspaceHandler`,
+  `Get/UpsertReportingProfileHandler`, authoritative `CreateReportingPeriodHandler`
+  gate (ownership, readiness, date bounds, overlap, snapshots).
+- Infrastructure: `LocalProjectWorkspaceService`, `GoogleDriveProjectWorkspaceService`
+  (+ `GoogleDriveWorkspaceDrive` with stable appProperties + 409 reconcile),
+  `ProjectWorkspaceServiceResolver`, `PrismaWorkspaceNameProvider`, setup/profile
+  repositories, `project.workspace.provision` job, outbox mapping, container wiring.
+- API: `/v1/projects/:id/setup`, `/setup/acknowledge`, `/workspace/retry|repair`,
+  `/reporting-profile` GET/PUT + authorization rules.
+- Migration `20260815000000_project_bootstrap` (dedup project codes per tenant,
+  `Project.workspaceRootId`, `Organization.driveRootFolderId`, `ProjectSetup`,
+  `ReportingProfile`, period snapshot columns); RLS extended to 24 tables.
+
+Frontend:
+- Wizard redirects to `/projects/[id]/setup`; resumable setup checklist
+  (blockers, per-item status, retry/repair/acknowledge, indicator entry note);
+  reporting profile form + "Use defaults"; `project.setup`/`project.archive`
+  capabilities; server actions + schemas.
+
+Tests: domain 23, application 35, infrastructure 40, API 19, web unit 113 —
+all green at build time. Playwright e2e requires a browser binary not present
+in this build environment (environmental, not a code failure).
+
+Rollout notes: `rls.sql` covers 24 tenant tables (added `ProjectSetup`,
+`ReportingProfile`); migrator connects over loopback trust as `donordesk_migrator`.
+
+## 17. Acceptance summary
 
 Feature 18 is complete when creation remains lightweight and independent of Drive availability;
 the user lands on a resumable permission-aware checklist; readiness is live, tenant-qualified,

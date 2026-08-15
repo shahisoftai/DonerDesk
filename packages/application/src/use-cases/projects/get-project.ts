@@ -35,6 +35,7 @@ export class GetProjectHandler {
         projectManagerId: p.projectManagerId,
         meOfficerId: p.meOfficerId,
         reportingOfficerId: p.reportingOfficerId,
+        workspaceRootId: p.workspaceRootId,
       },
     };
   }

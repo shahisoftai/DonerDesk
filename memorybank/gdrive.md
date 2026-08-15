@@ -22,6 +22,19 @@ account.
 > and the web `/api/auth/google/start|callback` routes. Env-gated behind
 > `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true`. Shares the Google Cloud OAuth client
 > with the Drive onboarding flow. See §9 "Google Sign-In".
+>
+> **2026-08-15 — Project workspace folder provisioning (added, Feature 18):**
+> `GoogleDriveProjectWorkspaceService` + `GoogleDriveWorkspaceDrive` create the
+> tenant "DonorDesk" root and a per-project folder tree (`01-Donor-Templates`,
+> `02-Logframe`, `03-Data-Files`, `04-Evidence-Reports`, `05-Evidence-Images`,
+> `06-Financial`, `07-Submitted-Reports`) using stable Drive `appProperties`
+> identities (idempotent, retryable, repairable; 409-reconcile on races).
+> `LocalProjectWorkspaceService` mirrors the tree under the storage root for
+> LOCAL/R2 tenants (provisioning marked `NOT_REQUIRED`). Project folders are
+> reference-only and the service account is granted read access to the tree.
+> Drive folder creation is live in release `20260815054218` but remains
+> **credential-gated**: it requires the tenant OAuth client + `GOOGLE_DRIVE_SHARE_EMAIL`
+> (tenant provisioning, see §8). See `Features/18-Project-Creation-Wizard.md`.
 
 ---
 

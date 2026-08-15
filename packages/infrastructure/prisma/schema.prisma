@@ -24,6 +24,7 @@ model Organization {
   dataResidency String   @default("DEFAULT") // EU | US | AFRICA | ASIA | DEFAULT
   aiEnabled     Boolean  @default(true)
   storageProvider String @default("LOCAL") // LOCAL | GOOGLE_DRIVE | R2
+  driveRootFolderId String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -181,10 +182,13 @@ model Project {
   meOfficerId           String?
   reportingOfficerId    String?
   status                String   @default("DRAFT")
+  workspaceRootId       String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
   organization    Organization  @relation(fields: [tenantId], references: [tenantId])
+  setup           ProjectSetup?
+  reportingProfile ReportingProfile?
   logframeItems   LogframeItem[]
   indicators      Indicator[]
   donorTemplates  DonorTemplate[]
@@ -194,6 +198,51 @@ model Project {
   checklistItems  ChecklistItem[]
   reportDrafts    ReportDraft[]
   exportPackages  ExportPackage[]
+
+  @@unique([tenantId, projectCode])
+  @@index([tenantId, id])
+}
+
+model ProjectSetup {
+  id                       String   @id
+  tenantId                 String
+  projectId                String   @unique
+  workspaceProvisionStatus String   @default("PENDING")
+  workspaceProvisionError  String?
+  provisionAttemptCount    Int      @default(0)
+  lastProvisionAttemptAt   DateTime?
+  acknowledgedAt           DateTime?
+  acknowledgedById         String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  project                  Project  @relation(fields: [projectId], references: [id])
+
+  @@index([tenantId, projectId])
+  @@index([workspaceProvisionStatus])
+}
+
+model ReportingProfile {
+  id                       String   @id
+  tenantId                 String
+  projectId                String   @unique
+  defaultTemplateId        String?
+  language                 String   @default("en")
+  tone                     String   @default("FORMAL")
+  writingStyle             String?
+  audienceNotes            String?
+  formattingRulesJson      String   @default("[]")
+  specialRequirementsJson  String   @default("[]")
+  sectionOverridesJson     String   @default("{}")
+  deadlineOffsetDays       Int?
+  autoPeriodCreation       Boolean  @default(false)
+  version                  Int      @default(1)
+  createdById              String
+  updatedById              String
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  project                  Project  @relation(fields: [projectId], references: [id])
+
+  @@index([tenantId, projectId])
 }
 
 model DonorTemplate {
@@ -299,6 +348,8 @@ model ReportingPeriod {
   status                String   @default("NOT_STARTED")
   readinessScore        Int      @default(0)
   responsibleOfficerId  String?
+  reportingProfileSnapshotJson String @default("{}")
+  templateSnapshotJson         String @default("{}")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

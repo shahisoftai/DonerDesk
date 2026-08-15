@@ -83,7 +83,7 @@ export default function GuidedProjectWizard() {
         description: data.reporting.description || undefined,
       }),
     );
-    if (result) router.push(`/projects/${result.id}`);
+    if (result) router.push(`/projects/${result.id}/setup`);
   }
 
   const fieldError = (key: string) => (errors[key] ? errors[key][0] : undefined);

@@ -151,3 +151,40 @@ export interface IdempotencyAcquireInput {
 export interface IIdempotencyStore {
   acquire(input: IdempotencyAcquireInput): Promise<Result<{ acquired: boolean }, DomainError>>;
 }
+
+/** A resolved external workspace reference (Drive folder id or local path root). */
+export interface WorkspaceReference {
+  provider: "GOOGLE_DRIVE" | "LOCAL" | "R2";
+  rootId: string;
+  /** Presentation deep-link when the provider supports one (Drive folder url). */
+  deepLink?: string;
+  /** Applies when the workspace is a folder tree; lists the provisioned subfolders. */
+  subfolders?: Array<{ role: string; id: string }>;
+}
+
+/**
+ * Provisions and verifies a tenant-scoped project workspace (folder tree) in the
+ * configured storage provider. Implementations are idempotent and repairable.
+ */
+export interface IProjectWorkspaceService {
+  /** Ensure the tenant "DonorDesk" root folder exists; returns its Drive id. */
+  ensureTenantRoot(tenantId: TenantId): Promise<Result<WorkspaceReference, DomainError>>;
+  /** Ensure THIS project's folder tree exists under the tenant root. */
+  ensureProjectWorkspace(tenantId: TenantId, projectId: string): Promise<Result<WorkspaceReference, DomainError>>;
+  /** Verify the tenant can still access a previously provisioned root. */
+  verifyAccess(tenantId: TenantId, rootId: string): Promise<Result<void, DomainError>>;
+  /** Verify/repair the project tree; returns the (possibly repaired) reference. */
+  repairProjectWorkspace(tenantId: TenantId, projectId: string): Promise<Result<WorkspaceReference, DomainError>>;
+}
+
+export interface ProjectWorkspaceProviderConfig {
+  provider: "GOOGLE_DRIVE" | "LOCAL" | "R2";
+}
+
+/**
+ * Resolves the workspace strategy for a tenant so provisioning can decide
+ * whether a Drive tree is required or explicitly not required (LOCAL/R2).
+ */
+export interface IProjectWorkspaceProviderResolver {
+  resolve(tenantId: TenantId): Promise<Result<ProjectWorkspaceProviderConfig, DomainError>>;
+}

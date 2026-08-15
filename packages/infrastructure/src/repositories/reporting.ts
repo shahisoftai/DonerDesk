@@ -40,6 +40,8 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         status: p.status.toString(),
         readinessScore: p.readinessScore,
         responsibleOfficerId: p.responsibleOfficerId,
+        reportingProfileSnapshotJson: p.reportingProfileSnapshotJson,
+        templateSnapshotJson: p.templateSnapshotJson,
       },
     });
     return ok(p);
@@ -78,6 +80,8 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
     status: string;
     readinessScore: number;
     responsibleOfficerId: string | null;
+    reportingProfileSnapshotJson: string;
+    templateSnapshotJson: string;
     createdAt: Date;
   }): ReportingPeriod {
     return ReportingPeriod.rehydrate({
@@ -94,6 +98,8 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         status: ReportStatus.create(row.status as Parameters<typeof ReportStatus.create>[0]),
         readinessScore: row.readinessScore,
         responsibleOfficerId: row.responsibleOfficerId ?? undefined,
+        reportingProfileSnapshotJson: row.reportingProfileSnapshotJson,
+        templateSnapshotJson: row.templateSnapshotJson,
       },
     });
   }

@@ -1,6 +1,17 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-13T17:00+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-15T10:50+05:00.
+
+> **Deployment (2026-08-15):** Feature 18 — Project Creation Wizard — is
+> **deployed to Contabo production as release `20260815054218`** (API + web +
+> prisma). Migration `20260815000000_project_bootstrap` applied as
+> `donordesk_migrator` (new `ProjectSetup`/`ReportingProfile` tables,
+> `Project.workspaceRootId`, `Organization.driveRootFolderId`, unique
+> `(tenantId, projectCode)` with legacy dedup, reporting-period snapshot
+> columns). RLS extended to 24 tenant tables. Verified: API/web/workers/Kestra
+> healthy, new `/v1/projects/:id/setup` + `/reporting-profile` +
+> `/workspace/retry|repair` routes registered (auth-gated), no journal errors.
+> See `Features/18-Project-Creation-Wizard.md` §16.
 
 > **Deployment (2026-08-13):** Kestra plan Phases A–D code is **deployed to
 > Contabo production** as release `20260813064828` (internal routes, workers
@@ -59,11 +70,11 @@ logframe items and indicators):
 - `Ctrl/Cmd+K` focuses project portfolio search. This is deliberately **not** called global search; NTF-02 remains blocked on a permission-filtered backend contract.
 
 Remaining backend dependencies that unblock the next UI tier (tracked, not claimed):
-- **Project-assignment ABAC / cross-project isolation** (FE-B03) — backend must enforce non-admin project membership + integration tests before global lists are fully trusted.
+- **Project-assignment ABAC / cross-project isolation** (FE-B03) — backend must enforce non-admin project membership + integration tests before global lists are fully trusted. Feature 18 added `project.setup`/`project.archive` capabilities and scoped the setup/profile routes; full per-project membership ABAC remains a named dependency (Feature 18 §5.4).
 - **Global search (NTF-02)** — no permission-filtered search contract exists.
 - **Authoritative global queue read models** — current Reports and Compliance queues are composed server-side from accessible project APIs. Add organization-level paginated contracts before large-scale production use.
 - **Indicator detail/history read model** — definition data is available through the project logframe, but period update history and disaggregation are not exposed safely.
-- **Complete project settings update contract** — the route exists, but editing remains unavailable rather than simulating unaudited writes.
+- **Complete project settings update contract** — **DONE 2026-08-15 (release `20260815054218`)**. `UpdateProjectHandler` now supports editable dates/budget (ISO-4217 currency) with period-overlap protection (Feature 18 §5.2 / §5.11).
 - **Claim-level provenance / source-linking (REP-06)** — no backend claim/provenance contract; UI shows section-level references only.
 - **Real AI providers / job resources** — all AI handlers are stubs; UI labels them honestly.
 - **Email/notification delivery** — in-app only; no delivery claims.
@@ -307,6 +318,39 @@ actually supports; unsupported controls are omitted rather than simulated.
 - [ ] Data export (GDPR compliance)
 - **Frontend:** org profile + AI-enabled control, capability-gated (Phase 7).
   Email/2FA/session-management/GDPR export remain backend.
+
+## Feature 18 — Project Creation Wizard (implemented 2026-08-15)
+
+**Deployed:** release `20260815054218`; migration `20260815000000_project_bootstrap`;
+RLS on 24 tables. See `Features/18-Project-Creation-Wizard.md`.
+
+Implemented:
+- Derived readiness (`ProjectReadinessService`) with machine-readable blockers;
+  authoritative reporting-period gate (ownership, readiness, date bounds, overlap,
+  immutable template/profile snapshots); Local + Google Drive project workspace
+  provisioning (idempotent, retryable, repairable, stable appProperties identities);
+  per-project reporting profile (tone, language, formatting rules, word-count
+  overrides, deadline offset, auto-period flag); setup checklist + profile form UI;
+  wizard redirect to `/projects/[id]/setup`; editable dates/budget; lifecycle
+  (DRAFT→ACTIVE, archive/restore, completion); `project.setup`/`project.archive`
+  capabilities.
+
+Remaining follow-ups (tracked here, not claimed):
+- [ ] **Indicator-update submit / request-correction / reject routes** — domain
+  supports them; API only exposes create + verify (Feature 18 §8).
+- [ ] **Indicator-update history read model** — `GET /v1/indicators/:id/updates`
+  (Feature 18 §8); UI indicator page still shows the "not exposed" note.
+- [ ] **Automatic recurring reporting periods** — `autoPeriodCreation` flag stored
+  on the profile; scheduling job not yet implemented (Feature 18 §5.5).
+- [ ] **Deadline-reminder wiring to the reporting profile** — `deadlineOffsetDays`
+  stored; `generate-deadline-reminders` not yet profile-aware (Feature 18 §5.5).
+- [ ] **Per-project membership ABAC** — `ProjectMember` entity is roleless with no
+  repo wired; `list-projects` remains tenant-wide (Feature 18 §5.4, FE-B03).
+- [ ] **Google Drive project folders need real OAuth client credentials** — code is
+  live but tenant provisioning requires the Google Cloud project + service account
+  (pending.md "Wire the Drive token store"); Local/R2 tenants are NOT_REQUIRED.
+- [ ] **Project copy/duplicate, donor/partner entities, deletion/retention** —
+  deferred per Feature 18 §5.6/§5.7/§5.9.
 
 ## Notes
 - Signup/login 500 errors are fixed; see `memorybank/Fixes.md`.
