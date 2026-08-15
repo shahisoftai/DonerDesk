@@ -1,6 +1,6 @@
 "use server";
 
-import { OrganizationProfileSchema } from "@donordesk/contracts";
+import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -20,6 +20,25 @@ export async function updateOrganizationAction(input: unknown): Promise<UpdateOr
     };
   }
   const result = await gatewayRequest("/v1/organization", OkResponseSchema, context.token, {
+    method: "PUT",
+    body: parsed.data,
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+export type UpdateOrganizationReportingDefaultsResult = Result<undefined, AppError>;
+
+export async function updateOrganizationReportingDefaultsAction(input: unknown): Promise<UpdateOrganizationReportingDefaultsResult> {
+  const context = await requireSession();
+  const parsed = UpdateOrganizationReportingDefaultsSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  const result = await gatewayRequest("/v1/organization/reporting-defaults", OkResponseSchema, context.token, {
     method: "PUT",
     body: parsed.data,
   });

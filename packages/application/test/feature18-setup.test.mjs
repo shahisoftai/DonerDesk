@@ -300,3 +300,66 @@ test("readiness: legacy Drive project without setup row stays PENDING", async ()
   const r = await service.compute("p1", tenantId);
   assert.ok(r.value.blockers.some((b) => b.code === "WORKSPACE_PENDING"));
 });
+
+test("create-project seeds the reporting profile from org defaults", async () => {
+  const { CreateProjectHandler } = await import("../dist/index.js");
+  const ctx = { tenant: { tenantId, userId: "user-1", role: "ADMIN" }, requestId: "r-1" };
+  const org = {
+    defaultLanguage: "en",
+    reportingDefaults: { tone: "CONCISE", formattingRules: ["use headings"], deadlineOffsetDays: 14, autoPeriodCreation: true },
+  };
+  let createdProfile;
+  const projects = {
+    create: async (p) => ({ ok: true, value: p }),
+    update: async (p) => ({ ok: true, value: p }),
+    findById: async () => ({ ok: true, value: null }),
+  };
+  const setup = {
+    create: async (s) => ({ ok: true, value: s }),
+    update: async (s) => ({ ok: true, value: s }),
+  };
+  const profiles = { create: async (p) => { createdProfile = p; return { ok: true, value: p }; } };
+  const organizations = { findByTenant: async () => ({ ok: true, value: org }) };
+  const providerResolver = { resolve: async () => ({ ok: true, value: { provider: "LOCAL" } }) };
+  const events = { publish: async () => ({ ok: true }) };
+  const audit = { record: async () => {} };
+  const ids = { generate: () => crypto.randomUUID() };
+
+  const handler = new CreateProjectHandler(ids, projects, setup, profiles, organizations, providerResolver, events, audit);
+  const r = await handler.handle(ctx, {
+    title: "Clean Water", projectCode: "CW-02", donorName: "UNICEF", implementingOrganization: "NGO",
+    country: "Somalia", sector: "WASH",
+    startDate: new Date("2026-01-01").toISOString(), endDate: new Date("2026-12-31").toISOString(),
+    reportingFrequency: "QUARTERLY",
+  });
+  assert.equal(r.ok, true);
+  assert.ok(createdProfile, "reporting profile should be seeded");
+  assert.equal(createdProfile.tone, "CONCISE");
+  assert.deepEqual(createdProfile.formattingRules, ["use headings"]);
+  assert.equal(createdProfile.deadlineOffsetDays, 14);
+  assert.equal(createdProfile.autoPeriodCreation, true);
+  assert.equal(createdProfile.language, "en");
+});
+
+test("create-project without org defaults still succeeds (no profile seeded)", async () => {
+  const { CreateProjectHandler } = await import("../dist/index.js");
+  const ctx = { tenant: { tenantId, userId: "user-1", role: "ADMIN" }, requestId: "r-1" };
+  let createdProfile = null;
+  const projects = { create: async (p) => ({ ok: true, value: p }), update: async (p) => ({ ok: true, value: p }) };
+  const setup = { create: async (s) => ({ ok: true, value: s }), update: async (s) => ({ ok: true, value: s }) };
+  const profiles = { create: async (p) => { createdProfile = p; return { ok: true, value: p }; } };
+  const organizations = { findByTenant: async () => ({ ok: true, value: null }) };
+  const providerResolver = { resolve: async () => ({ ok: true, value: { provider: "LOCAL" } }) };
+  const events = { publish: async () => ({ ok: true }) };
+  const audit = { record: async () => {} };
+  const ids = { generate: () => crypto.randomUUID() };
+  const handler = new CreateProjectHandler(ids, projects, setup, profiles, organizations, providerResolver, events, audit);
+  const r = await handler.handle(ctx, {
+    title: "WASH", projectCode: "W-02", donorName: "D", implementingOrganization: "I",
+    country: "KE", sector: "HEALTH",
+    startDate: new Date("2026-01-01").toISOString(), endDate: new Date("2026-12-31").toISOString(),
+    reportingFrequency: "MONTHLY",
+  });
+  assert.equal(r.ok, true);
+  assert.equal(createdProfile, null);
+});

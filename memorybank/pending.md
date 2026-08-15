@@ -1,6 +1,6 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-15T10:50+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-15T16:20+05:00.
 
 > **Deployment (2026-08-15):** Feature 18 — Project Creation Wizard — is
 > **deployed to Contabo production as release `20260815054218`** (API + web +
@@ -197,6 +197,15 @@ actually supports; unsupported controls are omitted rather than simulated.
 - [x] **Google Sign-In on login page** — `POST /v1/auth/google` + web
   `/api/auth/google/start|callback` + login button (env-gated). Existing
   accounts only, matches by email. See `gdrive.md` §9.
+- [x] **Onboarding wizard is account-wide only (2026-08-15)** — removed the
+  project-specific steps (Create a project, Add a donor template, Add a
+  logframe, Upload evidence) from the account onboarding. They live in the
+  per-project setup checklist (Feature 18). Added an account-wide **Default
+  reporting profile** step (`/onboarding/reporting-defaults`) that seeds every
+  new project's `ReportingProfile` from `Organization.reportingDefaults`
+  (tone, language, formatting rules, deadline offset, auto-period). Route
+  `PUT /v1/organization/reporting-defaults`; migration
+  `20260815060000_onboarding_reporting_defaults`.
 - [ ] Sign-up with Google (auto-provisioning) — needs a `googleSubject` column +
   org creation flow
 - [ ] Complete password reset flow with email delivery
@@ -336,6 +345,13 @@ Implemented:
   capabilities.
 
 Remaining follow-ups (tracked here, not claimed):
+- [x] **Account-wide reporting defaults** — implemented 2026-08-15: new projects
+  are seeded with a `ReportingProfile` from `Organization.reportingDefaults`
+  (default tone, language, formatting rules, deadline offset, auto-period
+  creation). Configured at `/onboarding/reporting-defaults`.
+- [ ] **Account-wide notification preferences** (deadline reminder recipients /
+  lead time), **timezone**, and **default currency** onboarding steps —
+  anticipated, deferred.
 - [ ] **Indicator-update submit / request-correction / reject routes** — domain
   supports them; API only exposes create + verify (Feature 18 §8).
 - [ ] **Indicator-update history read model** — `GET /v1/indicators/:id/updates`

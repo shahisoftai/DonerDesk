@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-15 12:42 PKT (release `20260815054218`, Feature 18 Project Creation Wizard: setup/readiness/workspace provisioning/reporting profile + migration `20260815000000_project_bootstrap` + RLS on 24 tables)
+**Last deployment:** 2026-08-15 14:05 PKT (release `20260815063021`, account-wide Onboarding restructure: removed project steps, added Default reporting profile + migration `20260815060000_onboarding_reporting_defaults`)
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -311,19 +311,22 @@ Implement before accepting production data.
 
 ## 10. DonorDesk allocation
 
-**Status: DEPLOYED** (2026-08-15, release `20260815054218`). Deployed via the
+**Status: DEPLOYED** (2026-08-15, release `20260815063021`). Deployed via the
 checksummed incremental immutable-release path (API + web + prisma, with
 SuperAdmin preserved from the preceding release; no server-side installs or
-shared-node_modules fallback). This release ships **Feature 18 — Project
-Creation Wizard**: per-project setup readiness/blockers, authoritative
-reporting-period gate with immutable template/profile snapshots, Google Drive
-+ Local project workspace provisioning (idempotent/retryable/repairable),
-per-project reporting profile, editable dates/budget, lifecycle transitions,
-and the setup-checklist UI. Migration `20260815000000_project_bootstrap`
-applied; RLS extended to 24 tenant tables. Google OAuth client credentials are
-still pending (login-page button + Drive folder provisioning are env/credential
-gated). Workers and Kestra are both enabled; the five plugin-referencing flows
-and plugin JARs remain gated (see §14 log + `imp/KESTRA-PLUGINS.md`).
+shared-node_modules fallback). This release ships the **account-wide Onboarding
+restructure**: the account wizard is now account-scope only (Connect Google
+Drive, Organization profile, Default reporting profile, Invite your team,
+Accept ToS); project-specific steps (Create a project, Add a donor template,
+Add a logframe, Upload evidence) were removed and live in the per-project
+setup checklist (Feature 18, release `20260815054218`). Added an account-wide
+**Default reporting profile** step that seeds every new project's
+`ReportingProfile` from `Organization.reportingDefaults` (migration
+`20260815060000_onboarding_reporting_defaults`). Google OAuth client
+credentials are still pending (login-page button + Drive folder provisioning
+are env/credential gated). Workers and Kestra are both enabled; the five
+plugin-referencing flows and plugin JARs remain gated (see §14 log +
+`imp/KESTRA-PLUGINS.md`).
 
 | Resource | Allocation |
 |---|---|
@@ -332,7 +335,7 @@ and plugin JARs remain gated (see §14 log + `imp/KESTRA-PLUGINS.md`).
 | Worker | **ENABLED** `127.0.0.1:8092` (FastAPI `donordesk-workers.service`, venv at `/opt/donordesk/workers/.venv`, Python 3.12) |
 | Kestra | **ENABLED** `127.0.0.1:8093` (API/UI) + `127.0.0.1:8094` (management), Kestra 1.3.30 / Java 21 |
 | Files | `/opt/donordesk/shared/storage` |
-| Releases | `/opt/donordesk/releases/20260815054218` → `current` symlink |
+| Releases | `/opt/donordesk/releases/20260815063021` → `current` symlink |
 | Runtime user | `donordesk` system user; Kestra user `donordesk_kestra` (created) |
 | Database | `donordesk` (PostgreSQL 16.14); Kestra DB `donordesk_kestra` migrated through Flyway v1.57 |
 | DB roles | `donordesk_migrator` (schema owner), `donordesk_app` (runtime), `donordesk_kestra` (Kestra, created) |
@@ -465,6 +468,25 @@ Also verify from outside the server:
 - backup completion and a clean-machine restore.
 
 ## 14. Change log
+
+- **2026-08-15 (Account-wide Onboarding restructure — release `20260815063021`):**
+  Deployed API + web + prisma via the incremental immutable-release path.
+  1. **Removed project-specific steps from the account Onboarding wizard** —
+     "Create a project", "Add a donor template", "Add a logframe", "Upload
+     evidence" are no longer account steps. They remain in the per-project
+     setup checklist (`/projects/[id]/setup`, Feature 18).
+  2. **Added an account-wide "Default reporting profile" step**
+     (`/onboarding/reporting-defaults`): default tone, report language,
+     formatting rules, deadline offset, auto-period creation. Stored on
+     `Organization.reportingDefaults` (JSON); applied by `CreateProjectHandler`
+     to seed every new project's `ReportingProfile`.
+  3. **Migration `20260815060000_onboarding_reporting_defaults`** applied as
+     `donordesk_migrator` (`Organization.reportingDefaults` TEXT DEFAULT '{}').
+     Existing RLS policy on `Organization` covers the new column (no table
+     change). Verified: API health/ready, web 200, new route
+     `PUT /v1/organization/reporting-defaults` registered (401 unauthenticated),
+     public HTTPS `/login` 200, `/onboarding` redirects to login, no journal
+     errors.
 
 - **2026-08-15 (Feature 18 Project Creation Wizard — release `20260815054218`):**
   Deployed API + web + prisma via the incremental immutable-release path.

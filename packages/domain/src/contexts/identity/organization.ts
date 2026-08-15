@@ -8,6 +8,14 @@ export type DataResidency = "EU" | "US" | "AFRICA" | "ASIA" | "DEFAULT";
 
 export const DATA_RESIDENCY_OPTIONS: DataResidency[] = ["EU", "US", "AFRICA", "ASIA", "DEFAULT"];
 
+/** Account-wide default reporting profile applied to every new project. */
+export interface OrganizationReportingDefaults {
+  tone: "FORMAL" | "CONCISE" | "NARRATIVE" | "TECHNICAL";
+  formattingRules: string[];
+  deadlineOffsetDays?: number;
+  autoPeriodCreation: boolean;
+}
+
 export interface OrganizationProps {
   name: string;
   organizationType: OrganizationType;
@@ -23,6 +31,7 @@ export interface OrganizationProps {
   dataResidency: DataResidency;
   aiEnabled: boolean;
   storageProvider: StorageProvider;
+  reportingDefaults: OrganizationReportingDefaults;
 }
 
 export class Organization extends Entity<string> {
@@ -48,6 +57,10 @@ export class Organization extends Entity<string> {
   }): Organization {
     Organization.validateProps(input.props);
     return new Organization(input.id, input.tenantId, input.props, input.createdAt);
+  }
+
+  static defaultReportingDefaults(): OrganizationReportingDefaults {
+    return { tone: "FORMAL", formattingRules: [], autoPeriodCreation: false };
   }
 
   private static validateProps(p: OrganizationProps): void {
@@ -76,6 +89,23 @@ export class Organization extends Entity<string> {
   get dataResidency(): DataResidency { return this.props.dataResidency; }
   get aiEnabled(): boolean { return this.props.aiEnabled; }
   get storageProvider(): StorageProvider { return this.props.storageProvider; }
+  get reportingDefaults(): OrganizationReportingDefaults {
+    return {
+      tone: this.props.reportingDefaults.tone,
+      formattingRules: [...this.props.reportingDefaults.formattingRules],
+      deadlineOffsetDays: this.props.reportingDefaults.deadlineOffsetDays,
+      autoPeriodCreation: this.props.reportingDefaults.autoPeriodCreation,
+    };
+  }
+
+  updateReportingDefaults(patch: Partial<OrganizationReportingDefaults>): void {
+    this.props.reportingDefaults = {
+      ...this.props.reportingDefaults,
+      ...patch,
+      formattingRules: patch.formattingRules ? [...patch.formattingRules] : this.props.reportingDefaults.formattingRules,
+    };
+    this.touch();
+  }
 
   updateProfile(patch: Partial<OrganizationProps>): void {
     this.props = { ...this.props, ...patch };

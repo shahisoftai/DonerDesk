@@ -36,7 +36,8 @@ export default async function OnboardingPage() {
       {complete && (
         <div className="mt-6">
           <InlineAlert tone="success" title="Setup complete">
-            Your workspace is ready. You can add more projects, templates, or team members whenever you need.
+            Your workspace is ready. Project-specific setup (logframe, templates, indicators, evidence) is
+            handled per project from each project&apos;s setup checklist.
           </InlineAlert>
         </div>
       )}

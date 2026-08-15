@@ -135,6 +135,7 @@ export class GoogleSignInHandler {
         dataResidency: "DEFAULT",
         aiEnabled: true,
         storageProvider: "LOCAL",
+        reportingDefaults: Organization.defaultReportingDefaults(),
       },
     });
     const orgResult = await this.orgs.create(org);

@@ -25,6 +25,7 @@ model Organization {
   aiEnabled     Boolean  @default(true)
   storageProvider String @default("LOCAL") // LOCAL | GOOGLE_DRIVE | R2
   driveRootFolderId String?
+  reportingDefaults String @default("{}") // JSON: OrganizationReportingDefaults
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

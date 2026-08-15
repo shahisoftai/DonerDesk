@@ -96,7 +96,7 @@ Steps:
 | Login | Implemented | Fixed 2026-08-12 (see memorybank/Fixes.md) |
 | Google Sign-In | Implemented | Login page button (env-gated); existing accounts by email. See `gdrive.md` §9. Auto-provisioning (sign-up with Google) pending |
 | Password Reset | Not implemented | Stub only |
-| Onboarding Wizard | Partial | Basic wizard flow exists |
+| Onboarding Wizard | Implemented | Account-wide steps only (2026-08-15): Connect Google Drive, Organization profile, Default reporting profile, Invite your team, Accept ToS. Project-specific setup (logframe, donor template, indicators, evidence) moved to the per-project setup checklist (`/projects/[id]/setup`, Feature 18) |
 | Session Management | Implemented | JWT-based |
 | User Status Management | Implemented | Invited/Active/Suspended/Removed states |
 
@@ -107,6 +107,8 @@ Steps:
 - [ ] Multi-language support in onboarding
 - [ ] Organization type/sector dropdown options from database
 - [ ] Onboarding wizard progress persistence
+- [ ] Account-wide notification preferences step (deadline reminder recipients/lead time) — anticipated, deferred
+- [ ] Account-wide timezone + default currency step — anticipated, deferred
 - [ ] Sign-up with Google (auto-provisioning) — needs `googleSubject` column + org creation flow
 - [ ] Full SSO integration (OIDC start/callback exists; additional providers per Phase 5)
 

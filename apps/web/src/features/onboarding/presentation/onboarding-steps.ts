@@ -12,6 +12,11 @@ export type OnboardingStep = {
   optional?: boolean;
 };
 
+/**
+ * Account-level onboarding steps. Project-specific setup (logframe, donor
+ * template, indicators, evidence) is intentionally NOT here — it lives in the
+ * per-project setup checklist at `/projects/[id]/setup` (Feature 18).
+ */
 const STEPS: Array<{
   key: string;
   label: string;
@@ -36,24 +41,10 @@ const STEPS: Array<{
     optional: true,
   },
   {
-    key: "first-project",
-    label: "Create a project",
-    description: "Set up a donor-funded project workspace.",
-    href: "/projects/new",
-    optional: false,
-  },
-  {
-    key: "template",
-    label: "Add a donor template",
-    description: "Upload the donor's reporting template.",
-    href: null,
-    optional: true,
-  },
-  {
-    key: "logframe",
-    label: "Add a logframe",
-    description: "Define goals, outputs, and indicators.",
-    href: null,
+    key: "reporting-defaults",
+    label: "Default reporting profile",
+    description: "Set the default tone, language, and rules applied to every new project.",
+    href: "/onboarding/reporting-defaults",
     optional: true,
   },
   {
@@ -61,13 +52,6 @@ const STEPS: Array<{
     label: "Invite your team",
     description: "Add teammates with the right roles.",
     href: "/onboarding/team",
-    optional: true,
-  },
-  {
-    key: "evidence",
-    label: "Upload evidence",
-    description: "Attach supporting documents and photos.",
-    href: null,
     optional: true,
   },
   {
@@ -82,37 +66,23 @@ const STEPS: Array<{
 export type StepKey = (typeof STEPS)[number]["key"];
 
 export function deriveOnboardingSteps(snapshot: OnboardingSnapshot): OnboardingStep[] {
-  const projectHref = snapshot.firstProjectId ? `/projects/${snapshot.firstProjectId}` : "/projects/new";
   const steps = STEPS.map((step) => ({ ...step }));
-
-  const setHref = (key: StepKey, href: string) => {
-    const s = steps.find((x) => x.key === key);
-    if (s) s.href = href;
-  };
-
-  setHref("template", snapshot.firstProjectId ? `/projects/${snapshot.firstProjectId}/templates/new` : projectHref);
-  setHref("logframe", snapshot.firstProjectId ? `/projects/${snapshot.firstProjectId}/logframe` : projectHref);
-  setHref("evidence", snapshot.firstProjectId ? `/projects/${snapshot.firstProjectId}/evidence/new` : projectHref);
 
   const isComplete: Record<StepKey, boolean> = {
     storage: snapshot.storageProvider === "GOOGLE_DRIVE",
     organization: snapshot.orgProfileComplete,
-    "first-project": snapshot.projectCount > 0,
-    template: snapshot.templateCount > 0,
-    logframe: snapshot.logframeItemCount > 0,
+    "reporting-defaults": snapshot.reportingDefaultsComplete,
     team: snapshot.teamCount > 1,
-    evidence: snapshot.evidenceCount > 0,
     "legal-consent": snapshot.legalConsent.accepted,
   };
 
   const summary: Record<StepKey, string> = {
     storage: snapshot.storageProvider === "GOOGLE_DRIVE" ? "Google Drive connected" : "Not connected",
     organization: snapshot.orgProfileComplete ? snapshot.orgName : "Profile not filled in",
-    "first-project": snapshot.projectCount > 0 ? `${snapshot.projectCount} project${snapshot.projectCount === 1 ? "" : "s"}` : "No projects yet",
-    template: snapshot.templateCount > 0 ? `${snapshot.templateCount} template${snapshot.templateCount === 1 ? "" : "s"}` : "No templates",
-    logframe: snapshot.logframeItemCount > 0 ? `${snapshot.logframeItemCount} logframe item${snapshot.logframeItemCount === 1 ? "" : "s"}` : "No logframe",
+    "reporting-defaults": snapshot.reportingDefaultsComplete
+      ? `${snapshot.defaultReportingTone ?? "FORMAL"} · every new project`
+      : "Defaults not set",
     team: snapshot.teamCount > 1 ? `${snapshot.teamCount} members` : "No teammates yet",
-    evidence: snapshot.evidenceCount > 0 ? `${snapshot.evidenceCount} file${snapshot.evidenceCount === 1 ? "" : "s"}` : "No evidence",
     "legal-consent": snapshot.legalConsent.accepted ? `Accepted (${snapshot.legalConsent.termsVersion})` : "Not accepted",
   };
 

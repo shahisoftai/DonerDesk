@@ -1,8 +1,9 @@
 import type { Result, DomainError } from "@donordesk/domain";
-import { Project, ProjectSetup, ProjectWorkspaceProvisionRequested } from "@donordesk/domain";
+import { Project, ProjectSetup, ReportingProfile, ProjectWorkspaceProvisionRequested } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IProjectRepository } from "../../ports/projects.js";
-import type { IProjectSetupRepository } from "../../ports/setup.js";
+import type { IProjectSetupRepository, IReportingProfileRepository } from "../../ports/setup.js";
+import type { IOrganizationRepository } from "../../ports/identity.js";
 import type { IProjectWorkspaceProviderResolver } from "../../ports/infrastructure.js";
 import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { CreateProjectInput } from "@donordesk/contracts";
@@ -12,6 +13,8 @@ export class CreateProjectHandler {
     private readonly ids: IIdGenerator,
     private readonly projects: IProjectRepository,
     private readonly setup: IProjectSetupRepository,
+    private readonly profiles: IReportingProfileRepository,
+    private readonly organizations: IOrganizationRepository,
     private readonly providerResolver: IProjectWorkspaceProviderResolver,
     private readonly events: IEventBus,
     private readonly audit: IAuditLogger,
@@ -65,6 +68,25 @@ export class CreateProjectHandler {
 
     if (provisionStatus === "PENDING") {
       await this.events.publish([new ProjectWorkspaceProvisionRequested(ctx.tenant.tenantId, id)]);
+    }
+
+    // Seed the project's reporting profile from the account-wide defaults so
+    // new projects inherit the org's tone/language/rules (Onboarding step).
+    const orgResult = await this.organizations.findByTenant(ctx.tenant.tenantId);
+    if (orgResult.ok && orgResult.value) {
+      const org = orgResult.value;
+      const profile = ReportingProfile.create({
+        id: this.ids.generate(),
+        tenantId: ctx.tenant.tenantId.toString(),
+        projectId: id,
+        language: org.defaultLanguage,
+        tone: org.reportingDefaults.tone,
+        formattingRules: org.reportingDefaults.formattingRules,
+        deadlineOffsetDays: org.reportingDefaults.deadlineOffsetDays,
+        autoPeriodCreation: org.reportingDefaults.autoPeriodCreation,
+        createdById: ctx.tenant.userId,
+      });
+      await this.profiles.create(profile);
     }
 
     await this.audit.record({

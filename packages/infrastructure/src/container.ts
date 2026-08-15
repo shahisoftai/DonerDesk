@@ -6,6 +6,7 @@ import {
   InviteUserHandler,
   ChangeRoleHandler,
   UpdateOrganizationHandler,
+  UpdateOrganizationReportingDefaultsHandler,
   ConnectGoogleDriveHandler,
   GoogleSignInHandler,
   LinkGoogleDriveEvidenceHandler,
@@ -181,6 +182,7 @@ export interface Container {
     inviteUser: InviteUserHandler;
     changeRole: ChangeRoleHandler;
     updateOrganization: UpdateOrganizationHandler;
+    updateOrganizationReportingDefaults: UpdateOrganizationReportingDefaultsHandler;
     listUsers: ListUsersHandler;
     createProject: CreateProjectHandler;
     updateProject: UpdateProjectHandler;
@@ -393,6 +395,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     inviteUser: new InviteUserHandler(ids, users, invitations, audits, notify),
     changeRole: new ChangeRoleHandler(users, audits),
     updateOrganization: new UpdateOrganizationHandler(organizations, audits),
+    updateOrganizationReportingDefaults: new UpdateOrganizationReportingDefaultsHandler(organizations, audits),
     connectGoogleDrive: new ConnectGoogleDriveHandler(
       googleDriveOAuth,
       organizations,
@@ -401,7 +404,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     ),
     linkGoogleDriveEvidence: new LinkGoogleDriveEvidenceHandler(ids, evidence, evidenceStorage, events, audits),
     listUsers: new ListUsersHandler(users),
-    createProject: new CreateProjectHandler(ids, projects, projectSetup, projectWorkspace, events, audits),
+    createProject: new CreateProjectHandler(ids, projects, projectSetup, reportingProfiles, organizations, projectWorkspace, events, audits),
     updateProject: new UpdateProjectHandler(projects, periods, audits),
     listProjects: new ListProjectsHandler(projects),
     getProject: new GetProjectHandler(projects),

@@ -49,6 +49,7 @@ export class SignUpHandler {
         dataResidency: cmd.organization.dataResidency ?? "DEFAULT",
         aiEnabled: cmd.organization.aiEnabled ?? true,
         storageProvider: "LOCAL",
+        reportingDefaults: Organization.defaultReportingDefaults(),
       },
     });
 

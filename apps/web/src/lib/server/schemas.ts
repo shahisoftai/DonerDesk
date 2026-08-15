@@ -41,6 +41,16 @@ export const OrganizationSchema = z.object({
   storageProvider: z.string().default("LOCAL"),
 });
 
+export const OrganizationReportingDefaultsSchema = z
+  .object({
+    tone: z.enum(["FORMAL", "CONCISE", "NARRATIVE", "TECHNICAL"]).default("FORMAL"),
+    formattingRules: z.array(z.string()).default([]),
+    deadlineOffsetDays: z.number().optional(),
+    autoPeriodCreation: z.boolean().default(false),
+  })
+  .partial();
+export type OrganizationReportingDefaults = z.infer<typeof OrganizationReportingDefaultsSchema>;
+
 export const OrganizationProfileSchema = z.object({
   id: z.string().optional(),
   name: z.string(),
@@ -57,6 +67,7 @@ export const OrganizationProfileSchema = z.object({
   dataResidency: z.string(),
   aiEnabled: z.boolean().optional(),
   storageProvider: z.string().optional(),
+  reportingDefaults: OrganizationReportingDefaultsSchema.optional(),
 });
 export type OrganizationProfile = z.infer<typeof OrganizationProfileSchema>;
 

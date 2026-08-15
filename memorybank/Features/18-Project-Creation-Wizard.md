@@ -550,6 +550,12 @@ in this build environment (environmental, not a code failure).
 Rollout notes: `rls.sql` covers 24 tenant tables (added `ProjectSetup`,
 `ReportingProfile`); migrator connects over loopback trust as `donordesk_migrator`.
 
+**2026-08-15 (follow-up, release `20260815063021`):** new projects are seeded
+with a `ReportingProfile` from `Organization.reportingDefaults` (account-wide
+Default reporting profile onboarding step; migration
+`20260815060000_onboarding_reporting_defaults`). See
+`Features/01-Authentication-And-Onboarding.md`.
+
 ## 17. Acceptance summary
 
 Feature 18 is complete when creation remains lightweight and independent of Drive availability;

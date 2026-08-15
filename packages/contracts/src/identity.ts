@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProfileToneSchema } from "./reporting-profile.js";
 import { StorageProviderSchema } from "./evidence.js";
 
 export const RoleSchema = z.enum([
@@ -90,6 +91,22 @@ export const ChangeRoleSchema = z.object({
   userId: z.string().min(1),
   role: RoleSchema,
 });
+
+export const OrganizationReportingDefaultsSchema = z
+  .object({
+    tone: ProfileToneSchema.default("FORMAL"),
+    formattingRules: z.array(z.string().max(200)).max(50).default([]),
+    deadlineOffsetDays: z.number().int().min(0).max(365).optional(),
+    autoPeriodCreation: z.boolean().default(false),
+  })
+  .partial();
+
+export const UpdateOrganizationReportingDefaultsSchema = z.object({
+  reportingDefaults: OrganizationReportingDefaultsSchema,
+  /** Account-wide report language; also updates Organization.defaultLanguage. */
+  language: LanguageCodeSchema.optional(),
+});
+export type UpdateOrganizationReportingDefaultsInput = z.infer<typeof UpdateOrganizationReportingDefaultsSchema>;
 
 export const OrganizationProfileSchema = z.object({
   name: z.string().min(2),
