@@ -75,6 +75,7 @@ export const GoogleSignInResponseSchema = z.object({
   role: RoleSchema,
   name: z.string(),
   email: z.string().email(),
+  provisioned: z.boolean().default(false),
 });
 export type GoogleSignInResponse = z.infer<typeof GoogleSignInResponseSchema>;
 

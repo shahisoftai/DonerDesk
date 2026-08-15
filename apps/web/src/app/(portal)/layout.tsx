@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { requireSession, hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { OrganizationSchema, NotificationsResponseSchema } from "@/lib/server/schemas";
+import { OrganizationSchema, NotificationsResponseSchema, LegalConsentSchema } from "@/lib/server/schemas";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { AppShell } from "@/components/layout/AppShell";
 import { ToastProvider } from "@/components/feedback/Toast";
@@ -11,10 +13,23 @@ export const dynamic = "force-dynamic";
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const ctx = await requireSession();
 
-  const [orgResult, notificationsResult] = await Promise.all([
+  const [orgResult, notificationsResult, consentResult] = await Promise.all([
     gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
     gatewayRequest("/v1/notifications", NotificationsResponseSchema, ctx.token),
+    gatewayRequest("/v1/legal/consent", LegalConsentSchema, ctx.token),
   ]);
+
+  // Terms-of-Reference consent gate: until the user accepts the Terms of
+  // Service and Privacy Policy during onboarding, only the onboarding flow
+  // and logout are reachable.
+  if (consentResult.ok && !consentResult.value.accepted) {
+    const header = await headers();
+    const pathname = header.get("x-pathname") ?? "";
+    const allowed = pathname.startsWith("/onboarding") || pathname.startsWith("/logout");
+    if (!allowed) {
+      redirect("/onboarding");
+    }
+  }
 
   const orgName = orgResult.ok ? (orgResult.value.name ?? "") : "";
   const identity = decodeSessionPayload(ctx.token);

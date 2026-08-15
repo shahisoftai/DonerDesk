@@ -6,7 +6,9 @@ export async function setSessionCookie(token: string) {
   (await cookies()).set(COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    // Lax so sessions established through OAuth redirect chains survive the
+    // cross-site top-level navigation back to the app.
+    sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
   });

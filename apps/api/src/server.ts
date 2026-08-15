@@ -24,6 +24,7 @@ import { registerExportRoutes } from "./routes/exports.js";
 import { registerCommentRoutes } from "./routes/comments.js";
 import { registerNotificationRoutes } from "./routes/notifications.js";
 import { registerAuditRoutes } from "./routes/audit.js";
+import { registerLegalRoutes } from "./routes/legal.js";
 import { registerDashboardRoutes } from "./routes/dashboard.js";
 import { registerFileRoutes } from "./routes/files.js";
 import { registerHealthRoutes } from "./routes/health.js";
@@ -154,6 +155,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerCommentRoutes(instance);
     await registerNotificationRoutes(instance);
     await registerAuditRoutes(instance);
+    await registerLegalRoutes(instance);
     await registerDashboardRoutes(instance);
     await registerFileRoutes(instance);
   });

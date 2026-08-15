@@ -156,9 +156,14 @@ export class PrismaAuditRepository implements IAuditRepository, IAuditLogger {
     });
   }
 
-  async listByTenant(tenantId: TenantId, options?: { projectId?: string; limit?: number; offset?: number }): Promise<Result<Array<{ id: string; actorId: string; eventType: string; entityType: string; entityId: string; projectId?: string; oldValue?: string; newValue?: string; ipAddress?: string; systemNote?: string; prevHash: string; hash: string; createdAt: Date }>, DomainError>> {
+  async listByTenant(tenantId: TenantId, options?: { projectId?: string; limit?: number; offset?: number; eventType?: string; actorId?: string }): Promise<Result<Array<{ id: string; actorId: string; eventType: string; entityType: string; entityId: string; projectId?: string; oldValue?: string; newValue?: string; ipAddress?: string; systemNote?: string; prevHash: string; hash: string; createdAt: Date }>, DomainError>> {
     const rows = await this.prisma.auditEvent.findMany({
-      where: { tenantId: tenantId.toString(), ...(options?.projectId ? { projectId: options.projectId } : {}) },
+      where: {
+        tenantId: tenantId.toString(),
+        ...(options?.projectId ? { projectId: options.projectId } : {}),
+        ...(options?.eventType ? { eventType: options.eventType } : {}),
+        ...(options?.actorId ? { actorId: options.actorId } : {}),
+      },
       orderBy: { createdAt: "desc" },
       take: options?.limit ?? 100,
       skip: options?.offset ?? 0,

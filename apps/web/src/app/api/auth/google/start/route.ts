@@ -22,7 +22,9 @@ export async function GET() {
   response.cookies.set("dd_google_state", state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    // Lax so the cookie is sent on the cross-site top-level redirect back from
+    // Google (Strict would withhold it and break the state check).
+    sameSite: "lax",
     path: "/",
     maxAge: 600,
   });

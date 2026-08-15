@@ -26,7 +26,8 @@ export async function getGoogleDriveAuthUrlAction(): Promise<GoogleDriveAuthUrlR
   (await cookies()).set("dd_gdrive_state", result.value.state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    // Lax so the cookie survives the cross-site top-level redirect back from Google.
+    sameSite: "lax",
     path: "/",
     maxAge: 600,
   });

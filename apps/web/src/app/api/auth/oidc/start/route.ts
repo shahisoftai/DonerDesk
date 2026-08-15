@@ -21,7 +21,7 @@ export async function GET() {
     code_challenge_method: "S256",
   }).toString();
   const response = NextResponse.redirect(authorize);
-  const options = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict" as const, path: "/", maxAge: 600 };
+  const options = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/", maxAge: 600 };
   response.cookies.set("dd_oidc_state", state, options);
   response.cookies.set("dd_oidc_verifier", verifier, options);
   return response;

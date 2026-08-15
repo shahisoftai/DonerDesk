@@ -405,6 +405,8 @@ export default function HomePage() {
           <div className="flex gap-6 text-sm text-slate-400">
             <Link href="/login" className="transition hover:text-white">Log in</Link>
             <Link href="/signup" className="transition hover:text-white">Get started</Link>
+            <Link href="/privacy" className="transition hover:text-white">Privacy</Link>
+            <Link href="/terms" className="transition hover:text-white">Terms</Link>
           </div>
         </div>
       </footer>

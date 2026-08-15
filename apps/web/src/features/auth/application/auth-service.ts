@@ -20,14 +20,14 @@ export class AuthService {
     return await this.parseAuthResponse(response, GENERIC_LOGIN_ERROR);
   }
 
-  async googleSignIn(code: string): Promise<{ token: string }> {
+  async googleSignIn(code: string): Promise<{ token: string; provisioned: boolean }> {
     const response = await fetch(`${this.baseUrl}/v1/auth/google`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ code }),
       cache: "no-store",
     });
-    return await this.parseAuthResponse(response, GENERIC_LOGIN_ERROR);
+    return await this.parseGoogleResponse(response);
   }
 
   async signup(input: SignupInput): Promise<{ token: string }> {
@@ -41,6 +41,16 @@ export class AuthService {
   }
 
   private async parseAuthResponse(response: Response, genericMessage: string): Promise<{ token: string }> {
+    const data = await this.parseResponseData(response, genericMessage);
+    return { token: data.token };
+  }
+
+  private async parseGoogleResponse(response: Response): Promise<{ token: string; provisioned: boolean }> {
+    const data = await this.parseResponseData(response, GENERIC_LOGIN_ERROR);
+    return { token: data.token, provisioned: data.provisioned === true };
+  }
+
+  private async parseResponseData(response: Response, genericMessage: string): Promise<{ token: string; provisioned?: boolean }> {
     if (!response.ok) {
       const message = await this.safeProblemTitle(response);
       if (response.status === 422 || response.status === 400) {
@@ -58,7 +68,7 @@ export class AuthService {
     if (!parsed.success) {
       throw new AuthFormError({ error: genericMessage });
     }
-    return { token: parsed.data.token };
+    return { token: parsed.data.token, provisioned: parsed.data.provisioned };
   }
 
   private async safeProblemTitle(response: Response): Promise<string | null> {

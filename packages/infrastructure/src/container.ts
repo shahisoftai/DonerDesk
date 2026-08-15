@@ -59,6 +59,8 @@ import {
   ListNotificationsHandler,
   MarkNotificationReadHandler,
   ListAuditLogHandler,
+  RecordLegalConsentHandler,
+  GetLegalConsentHandler,
   UuidIdGenerator,
   type SystemClock,
   SystemClock as SystemClockImpl,
@@ -213,6 +215,8 @@ export interface Container {
     listNotifications: ListNotificationsHandler;
     markNotificationRead: MarkNotificationReadHandler;
     listAuditLog: ListAuditLogHandler;
+    recordLegalConsent: RecordLegalConsentHandler;
+    getLegalConsent: GetLegalConsentHandler;
     connectGoogleDrive: ConnectGoogleDriveHandler;
     linkGoogleDriveEvidence: LinkGoogleDriveEvidenceHandler;
   };
@@ -289,7 +293,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const handlers: Container["handlers"] = {
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits),
     login: new LoginHandler(users, auth, audits),
-    googleSignIn: new GoogleSignInHandler(googleSignIn, users, auth, audits),
+    googleSignIn: new GoogleSignInHandler(googleSignIn, users, organizations, auth, ids, audits),
     inviteUser: new InviteUserHandler(ids, users, invitations, audits, notify),
     changeRole: new ChangeRoleHandler(users, audits),
     updateOrganization: new UpdateOrganizationHandler(organizations, audits),
@@ -352,6 +356,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listNotifications: new ListNotificationsHandler(notifications),
     markNotificationRead: new MarkNotificationReadHandler(notifications, audits),
     listAuditLog: new ListAuditLogHandler(audits),
+    recordLegalConsent: new RecordLegalConsentHandler(audits),
+    getLegalConsent: new GetLegalConsentHandler(audits),
   };
 
   return {

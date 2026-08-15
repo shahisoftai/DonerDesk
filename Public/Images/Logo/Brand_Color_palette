@@ -1,0 +1,49 @@
+1. Brand Color Palette Sheet
+This palette balances the credibility required for non-profit compliance with modern, AI-driven digital aesthetics.
+Primary Palette (Core Brand)
+Color Name
+Hex Code
+RGB
+Role / Usage
+Donor Blue
+#0052CC
+rgb(0, 82, 204)
+Primary brand color, headers, primary buttons, structural elements.
+Teal Trust
+#00C4B4
+rgb(0, 196, 180)
+Accent color, key highlights, progress indicators, active states.
+Deep Navy
+#0F172A
+rgb(15, 23, 42)
+Primary text, heavy typography (Donor mark), dark mode backgrounds.
+
+Secondary & Functional Palette
+Color Name
+Hex Code
+RGB
+Role / Usage
+Spark Cyan
+#38BDF8
+rgb(56, 189, 248)
+Gradient midpoint, AI features, secondary highlights, icons.
+Muted Slate
+#64748B
+rgb(100, 116, 139)
+Subtitle text (Desk mark), borders, inactive icons, metadata.
+Canvas White
+#FFFFFF
+rgb(255, 255, 255)
+Primary canvas, card backgrounds, high-contrast light mode text.
+Soft Surface
+#F8FAFC
+rgb(248, 250, 252)
+Background fills, table row striping, section dividers.
+
+2. Favicon & App Icon Concept
+When scaling down to tiny resolutions (e.g., $16\times16\text{px}$ or $32\times32\text{px}$ in browser tabs), complex circuit lines and small stars become unreadable. The favicon uses a simplified mark that retains brand identity while maximizing legibility.
+Design Breakdown
+Icon Structure: A single continuous, high-contrast "Interlocking Infinity Node" curve without internal circuit lines.
+Key Accent: The upward-pointing arrow is bolded and slightly enlarged to remain sharp at $16\text{px}$.
+Background: Clean rounded rectangle (Squircle) using Deep Navy (#0F172A) to ensure high visibility across light and dark browser themes.
+

@@ -60,7 +60,7 @@ export interface IAuditRepository {
     prevHash?: string;
     hash?: string;
   }): Promise<Result<void>>;
-  listByTenant(tenantId: TenantId, options?: { projectId?: string; limit?: number; offset?: number }): Promise<Result<Array<{
+  listByTenant(tenantId: TenantId, options?: { projectId?: string; limit?: number; offset?: number; eventType?: string; actorId?: string }): Promise<Result<Array<{
     id: string;
     actorId: string;
     eventType: string;

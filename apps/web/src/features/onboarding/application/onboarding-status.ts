@@ -7,7 +7,9 @@ import {
   LogframeResponseSchema,
   TeamResponseSchema,
   EvidenceResponseSchema,
-  OrganizationSchema,
+  OrganizationProfileSchema,
+  LegalConsentSchema,
+  type LegalConsent,
 } from "@/lib/server/schemas";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
@@ -15,6 +17,7 @@ import type { AppError } from "@/lib/shared/app-error";
 export type OnboardingSnapshot = {
   orgName: string;
   hasOrg: boolean;
+  orgProfileComplete: boolean;
   storageProvider: string;
   projectCount: number;
   firstProjectId: string | null;
@@ -22,6 +25,7 @@ export type OnboardingSnapshot = {
   logframeItemCount: number;
   teamCount: number;
   evidenceCount: number;
+  legalConsent: LegalConsent;
 };
 
 export type OnboardingLoad = {
@@ -29,10 +33,11 @@ export type OnboardingLoad = {
 };
 
 export const loadOnboarding = cache(async (token: string): Promise<OnboardingLoad> => {
-  const [orgResult, projectsResult, teamResult] = await Promise.all([
-    gatewayRequest("/v1/organization", OrganizationSchema, token),
+  const [orgResult, projectsResult, teamResult, consentResult] = await Promise.all([
+    gatewayRequest("/v1/organization", OrganizationProfileSchema, token),
     gatewayRequest("/v1/projects", ProjectsResponseSchema, token),
     gatewayRequest("/v1/users", TeamResponseSchema, token),
+    gatewayRequest("/v1/legal/consent", LegalConsentSchema, token),
   ]);
 
   const projects = projectsResult.ok ? projectsResult.value.items : [];
@@ -59,18 +64,27 @@ export const loadOnboarding = cache(async (token: string): Promise<OnboardingLoa
     };
   }
 
-  const orgName = orgResult.ok ? (orgResult.value.name ?? "") : "";
+  const org = orgResult.ok ? orgResult.value : null;
+  const orgName = org?.name ?? "";
+  const hasOrg = orgResult.ok && orgName.length > 0;
+  // Google auto-provisioning creates the org with placeholder defaults; the
+  // profile counts as completed only once the user has filled it in properly.
+  const orgProfileComplete = hasOrg && Boolean(org?.country) && org?.country !== "UNKNOWN";
 
   const snapshot: OnboardingSnapshot = {
     orgName,
-    hasOrg: orgResult.ok && orgName.length > 0,
-    storageProvider: orgResult.ok ? (orgResult.value.storageProvider ?? "LOCAL") : "LOCAL",
+    hasOrg,
+    orgProfileComplete,
+    storageProvider: orgResult.ok ? (org?.storageProvider ?? "LOCAL") : "LOCAL",
     projectCount: projectsResult.ok ? projects.length : 0,
     firstProjectId,
     templateCount: templatesResult?.ok ? templatesResult.value.items.length : 0,
     logframeItemCount: logframeResult?.ok ? logframeResult.value.items.length : 0,
     teamCount: teamResult.ok ? teamResult.value.items.length : 0,
     evidenceCount: evidenceResult?.ok ? evidenceResult.value.items.length : 0,
+    legalConsent: consentResult.ok
+      ? consentResult.value
+      : { accepted: false, termsVersion: "", privacyVersion: "" },
   };
 
   return { snapshot: { ok: true, value: snapshot } };

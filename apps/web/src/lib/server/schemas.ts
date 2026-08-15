@@ -55,8 +55,19 @@ export const OrganizationProfileSchema = z.object({
   donorTypesServed: z.string().optional(),
   dataResidency: z.string(),
   aiEnabled: z.boolean().optional(),
+  storageProvider: z.string().optional(),
 });
 export type OrganizationProfile = z.infer<typeof OrganizationProfileSchema>;
+
+export const LegalConsentSchema = z.object({
+  accepted: z.boolean(),
+  termsVersion: z.string(),
+  privacyVersion: z.string(),
+  acceptedAt: z.string().optional(),
+  actorId: z.string().optional(),
+  source: z.string().optional(),
+});
+export type LegalConsent = z.infer<typeof LegalConsentSchema>;
 
 export const AuditLogSchema = z.object({
   id: z.string(),

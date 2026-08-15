@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-14 17:41 CEST (release `20260814154500`)
+**Last deployment:** 2026-08-14 23:40 PKT (release `20260814184043`, onboarding step fixes + ToR consent gate)
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -459,6 +459,143 @@ Also verify from outside the server:
 - backup completion and a clean-machine restore.
 
 ## 14. Change log
+
+- **2026-08-14 (Drive connect 500 on /onboarding/storage — middleware fix):**
+  Deployed web-only release `20260814174448`. Clicking "Connect Google Drive"
+  on `/onboarding/storage` returned 500: the OLS proxy duplicates the `Origin`
+  header (`https://donerdesk.online, https://donerdesk.online`) and the Next.js
+  server action threw `ERR_INVALID_URL`. The existing `apps/web/src/middleware.ts`
+  Origin-dedupe matcher did not include `/onboarding/*`. Added
+  `/onboarding/:path*` to the matcher; verified the deployed
+  `middleware-manifest.json` lists it. No new journal errors after deploy.
+
+- **2026-08-14 (Google Sign-In auto-provisioning — new accounts):** Deployed
+  release `20260814173419` (API + web). Google Sign-In previously failed for any
+  email without an existing DonorDesk account ("Google Sign-In failed"). Added
+  auto-provisioning to `GoogleSignInHandler` (`packages/application/src/use-cases/
+  identity/google-sign-in.ts`): unknown emails now get a new tenant (org created
+  with the Google profile's name + defaults) and an ACTIVE ADMIN user with a
+  random unusable password hash, and the response carries `provisioned: true`.
+  Contracts: `GoogleSignInResponseSchema` gained `provisioned` (default false).
+  Container wires `ids` + `organizations` into the handler. Web
+  `AuthService.googleSignIn` surfaces `provisioned`, and the Google callback
+  redirects new users to `/onboarding` (existing users continue to `/dashboard`).
+  Tests: application suite updated + passing (16/16); full workspace build green;
+  API tests 19/19. Verified live: `/v1/auth/google` route 400 (registered),
+  deployed handler contains `provisioned` (7 hits), web callback bundle contains
+  the `/onboarding` redirect. Behavior: new gmail → onboarding flow → dashboard;
+  existing user → their dashboard.
+
+- **2026-08-14 (Google Sign-In session-cookie SameSite fix):** Deployed web-only
+  release `20260814170528`. After successful Google sign-in, the app redirected
+  back to `/login?next=%2Fdashboard`: the `dd_session` cookie was set with
+  `SameSite=strict`, and browsers (Firefox) withhold Strict cookies set during
+  the cross-site OAuth redirect chain when the follow-up `/dashboard` request is
+  made. Changed `dd_session` to `SameSite=lax` in the Google + OIDC callback
+  routes and in `lib/session-server.ts` (used by email/password login).
+  Verified the deployed server bundle now contains `sameSite:"lax"` for
+  `dd_session` and `dd_google_state`.
+
+- **2026-08-14 (Google Sign-In state-cookie SameSite fix):** Deployed web-only
+  release `20260814165333`. Users consistently got "The sign-in link expired"
+  (`?error=invalid_callback`) because the OAuth state cookies were set with
+  `SameSite=strict`, which browsers withhold on the cross-site top-level redirect
+  back from `accounts.google.com` → the callback's `dd_google_state` check failed.
+  Changed all OAuth state cookies to `SameSite=lax` (the standard for OAuth
+  state, sent on top-level cross-site navigations): `dd_google_state`
+  (`api/auth/google/start`), `dd_gdrive_state` (`lib/actions/drive.ts`), and
+  `dd_oidc_state`/`dd_oidc_verifier` (`api/auth/oidc/start`). Verified live:
+  `Set-Cookie: ... SameSite=lax`. Also hardened the packager's API smoke check
+  (retry loop instead of a fixed 3 s sleep) and freed local `/tmp` release
+  dirs that caused an `ENOSPC` packaging failure.
+
+- **2026-08-14 (Google Sign-In redirect-origin fix):** Deployed web-only release
+  `20260814164540` (incremental). Post-OAuth redirects in the web callback routes
+  were built from `request.url`, which Next.js derives from the internal host
+  (`127.0.0.1:3002`), so browsers were redirected to `https://localhost:3002/...`
+  after sign-in. Changed `apps/web/src/app/api/auth/{google,drive}/callback/route.ts`
+  (and the OIDC callback for consistency) to redirect using `APP_URL`
+  (`https://DonerDesk.online`) instead. Verified publicly: callback redirects now
+  target `https://donerdesk.online/...`; login page still shows the Google button.
+
+- **2026-08-14 (Google Sign-In + Drive OAuth credentials live on production):**
+  Deployed release `20260814163637` to `DonerDesk.online` via
+  `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api donordesk-web`,
+  incremental transfer 3.4 MB). Google Sign-In is now **enabled end-to-end**:
+  - Added Google OAuth vars to `/opt/donordesk/shared/api.env`
+    (`GOOGLE_DRIVE_CLIENT_ID`/`_SECRET`, `GOOGLE_DRIVE_REDIRECT_URI`,
+    `GOOGLE_AUTH_REDIRECT_URI` → `https://DonerDesk.online/...`; `AUTH_PROVIDER=jwt`
+    deduplicated; backup `api.env.bak-*` kept). `PLATFORM_MASTER_KEY` already present.
+  - Added web systemd drop-in `/etc/systemd/system/donordesk-web.service.d/google.conf`
+    (`GOOGLE_DRIVE_CLIENT_ID`, `APP_URL=https://DonerDesk.online`) so the
+    `/api/auth/google/start` route builds the consent URL with the public host.
+  - Rebuilt the web off-host with `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true` (login
+    button statically inlined; OIDC button compiled out via
+    `NEXT_PUBLIC_OIDC_ENABLED=false`).
+  - **OLS fix:** added a more-specific `context /api/auth` → `donordesk_web`
+    (3002) to `/usr/local/lsws/conf/vhosts/donerdesk.online/vhost.conf` (backed
+    up to `/root/donerdesk-vhost.conf.bak-*`). Previously all `/api/*` went to
+    the Fastify API (4001), so the Next.js Google/OIDC auth routes 404'd publicly.
+    Validated with `litespeed -t` (no new errors vs baseline), graceful
+    `lswsctrl restart`. Verified other colocated vhosts (hq/cc.neurecore.com)
+    still 200; `brain.neurecore.com` 404 is pre-existing.
+  - Verified: loopback API `/health`+`/ready` OK; `POST /v1/auth/google` returns
+    400 (route live); public `/login` shows "Sign in with Google"; public
+    `/api/auth/google/start` → 307 to `accounts.google.com`; browser click
+    reached the Google consent page with `redirect_uri=https://DonerDesk.online/
+    api/auth/google/callback` accepted (OAuth client registered). Sign-in still
+    matches existing users by email only (auto-provisioning pending).
+  - Rollback: `scripts/rollback.sh RELEASE_ID=20260814154500` + restore the
+    `api.env.bak-*`/vhost `.bak-*` files if needed.
+
+- **2026-08-14 (Legal pages published + onboarding Terms-of-Reference consent):**
+  Deployed release `20260814181859` (API + web, incremental transfer ~4.1 MB).
+  Added public `/privacy` and `/terms` pages (global Privacy Policy with GDPR/UK
+  GDPR + CCPA layered provisions, cookies, security-incident and vulnerability-
+  disclosure clauses; global Terms of Service with onboarding-consent clause,
+  child-exploitation prohibition, backups/beta disclaimers, DMCA takedown notice,
+  and neutral governing-law/dispute clause). Marketing-page footer links both.
+  Added a final onboarding step: a Terms-of-Reference consent card
+  (checkmark + accept) that calls the new authenticated `POST /v1/legal/consent`
+  endpoint; consent is recorded in the immutable audit chain
+  (`legal.consent.recorded`, versions `2026-08-14`, actor/tenant/ip/timestamp)
+  and read back via `GET /v1/legal/consent` so the onboarding step persists as
+  complete. Wired `RecordLegalConsentHandler`/`GetLegalConsentHandler` in the
+  container, extended `listByTenant` audit filters with `eventType`/`actorId`,
+  and added 4 application unit tests (application suite 20/20; API tests 19/19;
+  full workspace typecheck/lint/build green). Verified live: `/privacy` and
+  `/terms` 200 with new sections; created a throwaway test workspace
+  (`consent.test.0814@example.org` / org `Consent Test Org`) and confirmed the
+  onboarding consent checkbox records an audit row visible in `/audit`.
+  Test workspace remains in the production DB pending operator cleanup.
+  Rollback: `scripts/rollback.sh RELEASE_ID=20260814180332`.
+
+- **2026-08-14 (Onboarding step correctness + ToR consent gate):** Deployed
+  release `20260814184043` (web-only content, incremental transfer ~3.9 MB).
+  - Google Sign-In auto-provisioning previously created an org (`country
+    UNKNOWN`/`organizationType OTHER`) and a lone ADMIN user, so the onboarding
+    "Organization profile" and "Invite your team" steps wrongly showed "Done".
+    `onboarding-status.ts` now fetches the full org profile and marks
+    "Organization profile" complete only when `country` is filled in and not
+    `UNKNOWN`; "Invite your team" is complete only when `teamCount > 1`.
+  - Moved the profile and team forms into the onboarding flow:
+    `/onboarding/profile` (reuses `SettingsPanel`) and `/onboarding/team`
+    (reuses `TeamPanel`), so setup can be completed without `/settings` or
+    `/team`. Completed onboarding steps now show a "Done" badge plus an
+    "Edit" button linking back to the relevant form.
+  - Added a ToR/Privacy consent gate in the portal layout
+    (`(portal)/layout.tsx`): until `GET /v1/legal/consent` reports acceptance,
+    every portal page other than `/onboarding*` and `/logout` redirects to
+    `/onboarding`; the gate fails open if the consent endpoint errors.
+  - Verified live: new user `gate.test.0814@example.org` (org `Gate Test Org`)
+    shows "Invite your team → No teammates yet (pending)" and an Edit button on
+    completed steps; `/dashboard`, `/settings`, and `/projects` all redirect to
+    `/onboarding` until consent is accepted, then become reachable. Google-
+    provisioned org state (country `UNKNOWN` → profile pending) verified by
+    logic; real Google OAuth not exercised in this check. Two throwaway test
+    workspaces (`consent.test.0814@example.org`, `gate.test.0814@example.org`)
+    remain in the production DB pending operator cleanup.
+  - Rollback: `scripts/rollback.sh RELEASE_ID=20260814183621`.
 
 - **2026-08-14 (checksummed incremental deployment pilot):** Deployed hardened
   release `20260814154500` with `scripts/deploy-incremental.sh`. The workflow

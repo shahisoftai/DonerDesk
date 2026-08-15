@@ -51,6 +51,8 @@ const RULES: ReadonlyArray<{
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/exports$/, permission: "report.export" },
   { method: "POST", route: /^\/v1\/comments(?:\/[^/]+\/resolve)?$/, permission: "comment.create" },
   { method: "GET", route: /^\/v1\/audit-log$/, permission: "audit.view" },
+  { method: "GET", route: /^\/v1\/legal\/consent$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/legal\/consent$/, permission: "project.view" },
 ];
 
 export async function authorizationMiddleware(req: FastifyRequest, _reply: FastifyReply) {

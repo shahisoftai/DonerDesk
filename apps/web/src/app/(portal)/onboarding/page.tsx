@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { loadOnboarding } from "@/features/onboarding/application/onboarding-status";
 import { deriveOnboardingSteps, allComplete } from "@/features/onboarding/presentation/onboarding-steps";
+import { LegalConsentCard } from "@/features/onboarding/presentation/LegalConsentCard";
 import { InlineError } from "@/components/feedback/PageState";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 
@@ -57,13 +58,25 @@ export default async function OnboardingPage() {
                   {step.status === "current" ? "Start" : "Continue"}
                 </Link>
               )}
-              {step.status === "complete" && (
+              {step.status === "complete" && step.href && (
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-sm font-medium text-success-600 dark:text-success-400">Done</span>
+                  <Link className="btn-secondary whitespace-nowrap text-xs" href={step.href}>
+                    Edit
+                  </Link>
+                </div>
+              )}
+              {step.status === "complete" && !step.href && (
                 <span className="shrink-0 text-sm font-medium text-success-600 dark:text-success-400">Done</span>
               )}
             </div>
           </li>
         ))}
       </ol>
+
+      <div className="mt-8">
+        <LegalConsentCard initial={snapshot.value.legalConsent} />
+      </div>
     </div>
   );
 }

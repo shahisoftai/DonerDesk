@@ -32,7 +32,7 @@ const STEPS: Array<{
     key: "organization",
     label: "Organization profile",
     description: "Confirm your organization details.",
-    href: "/settings",
+    href: "/onboarding/profile",
     optional: true,
   },
   {
@@ -60,7 +60,7 @@ const STEPS: Array<{
     key: "team",
     label: "Invite your team",
     description: "Add teammates with the right roles.",
-    href: "/team",
+    href: "/onboarding/team",
     optional: true,
   },
   {
@@ -69,6 +69,13 @@ const STEPS: Array<{
     description: "Attach supporting documents and photos.",
     href: null,
     optional: true,
+  },
+  {
+    key: "legal-consent",
+    label: "Accept Terms of Service",
+    description: "Review and accept the DonorDesk Terms of Service and Privacy Policy.",
+    href: "/onboarding#legal-consent",
+    optional: false,
   },
 ] as const;
 
@@ -89,22 +96,24 @@ export function deriveOnboardingSteps(snapshot: OnboardingSnapshot): OnboardingS
 
   const isComplete: Record<StepKey, boolean> = {
     storage: snapshot.storageProvider === "GOOGLE_DRIVE",
-    organization: snapshot.hasOrg,
+    organization: snapshot.orgProfileComplete,
     "first-project": snapshot.projectCount > 0,
     template: snapshot.templateCount > 0,
     logframe: snapshot.logframeItemCount > 0,
-    team: snapshot.teamCount > 0,
+    team: snapshot.teamCount > 1,
     evidence: snapshot.evidenceCount > 0,
+    "legal-consent": snapshot.legalConsent.accepted,
   };
 
   const summary: Record<StepKey, string> = {
     storage: snapshot.storageProvider === "GOOGLE_DRIVE" ? "Google Drive connected" : "Not connected",
-    organization: snapshot.hasOrg ? snapshot.orgName : "Not set",
+    organization: snapshot.orgProfileComplete ? snapshot.orgName : "Profile not filled in",
     "first-project": snapshot.projectCount > 0 ? `${snapshot.projectCount} project${snapshot.projectCount === 1 ? "" : "s"}` : "No projects yet",
     template: snapshot.templateCount > 0 ? `${snapshot.templateCount} template${snapshot.templateCount === 1 ? "" : "s"}` : "No templates",
     logframe: snapshot.logframeItemCount > 0 ? `${snapshot.logframeItemCount} logframe item${snapshot.logframeItemCount === 1 ? "" : "s"}` : "No logframe",
-    team: snapshot.teamCount > 0 ? `${snapshot.teamCount} member${snapshot.teamCount === 1 ? "" : "s"}` : "No team members",
+    team: snapshot.teamCount > 1 ? `${snapshot.teamCount} members` : "No teammates yet",
     evidence: snapshot.evidenceCount > 0 ? `${snapshot.evidenceCount} file${snapshot.evidenceCount === 1 ? "" : "s"}` : "No evidence",
+    "legal-consent": snapshot.legalConsent.accepted ? `Accepted (${snapshot.legalConsent.termsVersion})` : "Not accepted",
   };
 
   let currentMarked = false;

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const AuthResponseSchema = z.object({
   token: z.string().min(1),
+  provisioned: z.boolean().optional(),
 });
 
 export const SessionInfoSchema = z.object({

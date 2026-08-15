@@ -78,4 +78,6 @@ export * from "./use-cases/support/list-comments.js";
 export * from "./use-cases/support/list-notifications.js";
 export * from "./use-cases/support/mark-notification-read.js";
 export * from "./use-cases/support/list-audit-log.js";
+export * from "./use-cases/support/record-legal-consent.js";
+export * from "./use-cases/support/get-legal-consent.js";
 export * from "./use-cases/support/generate-deadline-reminders.js";

@@ -65,10 +65,15 @@ echo "==> Local smoke tests"
 (
   cd "${OUT}"
   DATABASE_URL="postgresql://x:x@127.0.0.1:5432/nonexistent" \
-    HOST=127.0.0.1 PORT=4099 timeout 6 node dist/server.js \
+    HOST=127.0.0.1 PORT=4099 timeout 12 node dist/server.js \
     >/tmp/dd-pkg-api.log 2>&1 &
   API_PID=$!
-  sleep 3
+  for attempt in 1 2 3 4 5 6; do
+    if curl -fsS http://127.0.0.1:4099/health >/dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
   if ! curl -fsS http://127.0.0.1:4099/health >/dev/null 2>&1; then
     echo "ERROR: API failed to start — see /tmp/dd-pkg-api.log" >&2
     kill "${API_PID}" 2>/dev/null || true

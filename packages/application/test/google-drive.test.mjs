@@ -111,6 +111,7 @@ function makeUsers(overrides = {}) {
 }
 
 const signAuth = { hashPassword: async () => "h", verifyPassword: async () => false, sign: async (p) => `token.${p.sub}.${p.tid}`, verify: async () => null };
+const sequenceIds = (() => { let n = 0; return { generate: () => `id-${++n}` }; })();
 
 test("google sign-in exchanges code, finds user by email, and signs a session token", async () => {
   const google = { exchangeCode: async () => ({ email: "ada@example.org", name: "Ada", googleSubject: "g-1" }) };
@@ -120,26 +121,50 @@ test("google sign-in exchanges code, finds user by email, and signs a session to
     update: async (u) => { assert.ok(u); return { ok: true, value: u }; },
   };
   const auditEvents = [];
-  const handler = new GoogleSignInHandler(google, users, signAuth, { record: async (e) => { auditEvents.push(e); return { ok: true, value: undefined }; } });
+  const handler = new GoogleSignInHandler(google, users, {}, signAuth, sequenceIds, { record: async (e) => { auditEvents.push(e); return { ok: true, value: undefined }; } });
   const result = await handler.handle({ code: "code-1" });
   assert.equal(result.ok, true);
   assert.equal(result.value.token, "token.u-1.tenant-a");
   assert.equal(result.value.email, "ada@example.org");
+  assert.equal(result.value.provisioned, false);
   assert.equal(auditEvents[0].eventType, "identity.user.login");
   assert.equal(auditEvents[0].newValue, "google");
 });
 
-test("google sign-in rejects when no account matches the email", async () => {
-  const google = { exchangeCode: async () => ({ email: "nobody@example.org", name: "Nobody", googleSubject: "g-2" }) };
-  const users = { findByEmailGlobal: async () => ({ ok: true, value: null }), update: async () => ({ ok: true, value: null }) };
-  const handler = new GoogleSignInHandler(google, users, signAuth, { record: async () => ({ ok: true, value: undefined }) });
+test("google sign-in auto-provisions an organization and user for a new email", async () => {
+  const google = { exchangeCode: async () => ({ email: "newuser@gmail.com", name: "New User", googleSubject: "g-2" }) };
+  const createdOrgs = [];
+  const createdUsers = [];
+  const orgs = {
+    create: async (org) => { createdOrgs.push(org); return { ok: true, value: org }; },
+  };
+  const users = {
+    findByEmailGlobal: async () => ({ ok: true, value: null }),
+    create: async (u) => { createdUsers.push(u); return { ok: true, value: u }; },
+    update: async (u) => ({ ok: true, value: u }),
+  };
+  const auditEvents = [];
+  const handler = new GoogleSignInHandler(google, users, orgs, signAuth, sequenceIds, { record: async (e) => { auditEvents.push(e); return { ok: true, value: undefined }; } });
   const result = await handler.handle({ code: "code-2" });
-  assert.equal(result.ok, false);
+  assert.equal(result.ok, true);
+  assert.equal(result.value.provisioned, true);
+  assert.equal(result.value.role, "ADMIN");
+  assert.equal(result.value.email, "newuser@gmail.com");
+  assert.equal(createdOrgs.length, 1);
+  assert.equal(createdOrgs[0].name, "New User's Organization");
+  assert.equal(createdOrgs[0].storageProvider, "LOCAL");
+  assert.equal(createdUsers.length, 1);
+  assert.equal(createdUsers[0].role, "ADMIN");
+  assert.equal(createdUsers[0].status, "ACTIVE");
+  const types = auditEvents.map((e) => e.eventType);
+  assert.ok(types.includes("identity.organization.created"));
+  assert.ok(types.includes("identity.user.created"));
+  assert.ok(types.includes("identity.user.login"));
 });
 
 test("google sign-in rejects when google verification fails", async () => {
   const google = { exchangeCode: async () => { throw new Error("Google ID token verification failed"); } };
-  const handler = new GoogleSignInHandler(google, { findByEmailGlobal: async () => ({ ok: true, value: null }) }, signAuth, { record: async () => ({ ok: true, value: undefined }) });
+  const handler = new GoogleSignInHandler(google, { findByEmailGlobal: async () => ({ ok: true, value: null }) }, {}, signAuth, sequenceIds, { record: async () => ({ ok: true, value: undefined }) });
   const result = await handler.handle({ code: "bad" });
   assert.equal(result.ok, false);
 });
