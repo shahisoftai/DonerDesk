@@ -40,6 +40,7 @@ export async function signupAction(
   const password = String(form.get("password") ?? "");
   const orgName = String(form.get("orgName") ?? "").trim();
   const country = String(form.get("country") ?? "").trim();
+  const requestedPlan = normalizeRequestedPlan(form.get("plan"));
 
   if (!name || !email || !password || !orgName || !country) {
     const fields: Record<string, string[]> = {};
@@ -55,6 +56,7 @@ export async function signupAction(
     name,
     email,
     password,
+    requestedPlan,
     organization: {
       name: orgName,
       organizationType: String(form.get("orgType") ?? "LOCAL_NGO"),
@@ -74,6 +76,14 @@ export async function signupAction(
     return { error: "We could not create your account. Please try again." };
   }
   redirect("/dashboard");
+}
+
+/** Only allowlist values survive; anything else becomes STARTER. */
+function normalizeRequestedPlan(value: FormDataEntryValue | null): "STARTER" | "TEAM" | "GROWTH" | undefined {
+  const raw = String(value ?? "").toUpperCase();
+  if (raw === "TEAM") return "TEAM";
+  if (raw === "GROWTH") return "GROWTH";
+  return "STARTER";
 }
 
 export async function logoutAction() {

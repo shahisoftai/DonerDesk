@@ -16,6 +16,9 @@ import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IOrganizationRepository } from "../../ports/identity.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
+import type { ILlmUsageRepository, IUsageCounterRepository } from "../../ports/billing.js";
+import type { EntitlementService } from "../../services/entitlement-service.js";
+import { monthStartUtc, USAGE_METRIC_AI_CREDITS } from "../billing/_usage.js";
 
 export class GenerateReportDraftHandler {
   constructor(
@@ -33,6 +36,9 @@ export class GenerateReportDraftHandler {
     private readonly evidence: IEvidenceRepository,
     private readonly generator: IReportDraftGenerator,
     private readonly audit: IAuditLogger,
+    private readonly entitlements: EntitlementService,
+    private readonly usage: IUsageCounterRepository,
+    private readonly llmRuns: ILlmUsageRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<{ draftId: string; sectionIds: string[] }, DomainError>> {
@@ -128,6 +134,34 @@ export class GenerateReportDraftHandler {
     const savedDraft = await this.drafts.create(draft);
     if (!savedDraft.ok) return savedDraft;
 
+    // AI credit enforcement: reserve one draft credit atomically before
+    // generation. Failed generations release the credit; a successful
+    // persisted draft consumes it. Manual reports never touch credits.
+    let creditReserved = false;
+    if (aiEnabled) {
+      const entitlementResult = await this.entitlements.resolve({ tenantId: ctx.tenant.tenantId.toString() });
+      if (!entitlementResult.ok) return entitlementResult;
+      const limit = entitlementResult.value.limits.monthlyAiDraftCredits;
+      if (limit !== null) {
+        const now = new Date();
+        const counter = await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(now), 1n);
+        if (!counter.ok) return counter;
+        if (counter.value.used > limit) {
+          await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(now), -1n);
+          return {
+            ok: false,
+            error: DomainError.aiCreditsExhausted("AI draft credits exhausted for the current billing month.", {
+              resource: "AI_CREDITS",
+              limit: String(limit),
+              usage: String(counter.value.used),
+              upgradePath: "/settings/billing",
+            }),
+          };
+        }
+        creditReserved = true;
+      }
+    }
+
     const generationInput = {
       reportingPeriodId,
       projectName: project.title,
@@ -148,9 +182,21 @@ export class GenerateReportDraftHandler {
       evidenceByIndicator,
       checklistSummary,
     };
-    const generated = aiEnabled
-      ? await this.generator.generateDraft(generationInput)
-      : this.buildManualSections(generationInput.templateSections);
+    const startedAt = Date.now();
+    let generated;
+    let generationFailed = false;
+    try {
+      generated = aiEnabled
+        ? await this.generator.generateDraft(generationInput)
+        : this.buildManualSections(generationInput.templateSections);
+    } catch (error) {
+      generationFailed = true;
+      if (creditReserved) {
+        await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+      }
+      await this.recordLlmRun(ctx, reportingPeriodId, aiEnabled, "error", 0, 0, 0, 0, Date.now() - startedAt);
+      return { ok: false, error: DomainError.invariant("Report draft generation failed") };
+    }
 
     const sectionIds: string[] = [];
     for (let i = 0; i < generated.length; i++) {
@@ -169,8 +215,20 @@ export class GenerateReportDraftHandler {
         status: "DRAFTED",
       });
       const savedSection = await this.sections.create(section);
-      if (!savedSection.ok) return savedSection;
+      if (!savedSection.ok) {
+        if (creditReserved) {
+          await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+        }
+        return savedSection;
+      }
     }
+
+    // Record the LLM run (cost is tracked even when generation is stubbed).
+    // A successful run is the persisted draft; the credit stays consumed.
+    if (aiEnabled && !generationFailed) {
+      await this.recordLlmRun(ctx, reportingPeriodId, true, "success", 0, 0, 0, 0, Date.now() - startedAt);
+    }
+    creditReserved = false; // consumed by success
 
     period.transitionTo(period.status);
     period.setDonorTemplate(period.donorTemplateId ?? "");
@@ -187,6 +245,38 @@ export class GenerateReportDraftHandler {
     });
 
     return { ok: true, value: { draftId, sectionIds } };
+  }
+
+  private async recordLlmRun(
+    ctx: AuthenticatedContext,
+    reportingPeriodId: string,
+    generatedByAi: boolean,
+    status: string,
+    inputTokens: number,
+    outputTokens: number,
+    totalTokens: number,
+    costUsd: number,
+    latencyMs: number,
+  ): Promise<void> {
+    if (!generatedByAi) return;
+    await this.llmRuns.recordRun({
+      id: this.ids.generate(),
+      tenantId: ctx.tenant.tenantId.toString(),
+      operationType: "REPORT_DRAFT",
+      resourceId: reportingPeriodId,
+      modelId: "stub",
+      promptId: "report-drafter",
+      inputTokens,
+      outputTokens,
+      totalTokens,
+      costUsd,
+      latencyMs,
+      status,
+      promptVersion: 1,
+      modelVersion: "stub",
+      billableUnits: status === "success" ? 1 : 0,
+      requestId: `${reportingPeriodId}:${Date.now()}`,
+    });
   }
 
   private buildManualSections(templateSections: Array<{ id: string; title: string }>): Array<{

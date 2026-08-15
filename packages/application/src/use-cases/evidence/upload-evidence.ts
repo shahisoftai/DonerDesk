@@ -5,6 +5,10 @@ import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IEvidenceStorageResolver } from "../../ports/infrastructure.js";
 import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { CreateEvidenceInput } from "@donordesk/contracts";
+import type { IUsageCounterRepository } from "../../ports/billing.js";
+import type { EntitlementService } from "../../services/entitlement-service.js";
+import { entitlementLimitError } from "../../services/entitlement-service.js";
+import { monthStartUtc, USAGE_METRIC_STORAGE } from "../billing/_usage.js";
 
 export interface UploadEvidenceCommand extends Omit<CreateEvidenceInput, "storageProvider"> {
   buffer?: Buffer;
@@ -21,11 +25,35 @@ export class UploadEvidenceHandler {
     private readonly storageResolver: IEvidenceStorageResolver,
     private readonly events: IEventBus,
     private readonly audit: IAuditLogger,
+    private readonly usage: IUsageCounterRepository,
+    private readonly entitlements: EntitlementService,
   ) {}
 
   async handle(ctx: AuthenticatedContext, cmd: UploadEvidenceCommand): Promise<Result<{ id: string; fileUrl: string }, DomainError>> {
     const id = this.ids.generate();
     const tenantId = ctx.tenant.tenantId.toString();
+    const now = new Date();
+
+    // Managed storage reservation. Google Drive link-first evidence never
+    // consumes DonorDesk-managed quota (fileSize 0 / drive link present).
+    const managedBytes = cmd.driveWebLink || cmd.driveFileId ? 0n : BigInt(cmd.fileSize ?? 0);
+    if (managedBytes > 0n) {
+      const entitlementResult = await this.entitlements.resolve({ tenantId, now });
+      if (!entitlementResult.ok) return entitlementResult;
+      const limit = entitlementResult.value.limits.maxManagedStorageBytes;
+      if (limit !== null) {
+        const counter = await this.usage.get(tenantId, USAGE_METRIC_STORAGE, monthStartUtc(now));
+        if (!counter.ok) return counter;
+        if (counter.value.totalCommitted() + managedBytes > limit) {
+          return {
+            ok: false,
+            error: entitlementLimitError("STORAGE", limit, counter.value.totalCommitted() + managedBytes),
+          };
+        }
+      }
+      const reserved = await this.usage.add(tenantId, USAGE_METRIC_STORAGE, monthStartUtc(now), managedBytes);
+      if (!reserved.ok) return reserved;
+    }
 
     const storage = await this.storageResolver.resolve(ctx.tenant.tenantId);
     const location = await storage.save({
@@ -38,7 +66,10 @@ export class UploadEvidenceHandler {
       driveFileId: cmd.driveFileId,
       driveWebLink: cmd.driveWebLink,
     });
-    if (!location.ok) return location;
+    if (!location.ok) {
+      if (managedBytes > 0n) await this.release(ctx, managedBytes);
+      return location;
+    }
 
     const ev = EvidenceFile.create({
       id,
@@ -67,6 +98,7 @@ export class UploadEvidenceHandler {
     const saved = await this.repo.create(ev);
     if (!saved.ok) {
       await storage.remove(location.value);
+      if (managedBytes > 0n) await this.release(ctx, managedBytes);
       return saved;
     }
 
@@ -80,10 +112,19 @@ export class UploadEvidenceHandler {
       newValue: cmd.fileName,
     });
 
-    // Trigger downstream work via a domain event. The outbox event bus maps
-    // this to the evidence.suggest_tags job; processing is off the request path.
     await this.events.publish([new EvidenceUploaded(ctx.tenant.tenantId, id, cmd.projectId, ctx.tenant.userId)]);
 
     return { ok: true, value: { id, fileUrl: location.value.fileUrl } };
+  }
+
+  private async release(ctx: AuthenticatedContext, bytes: bigint): Promise<void> {
+    const counter = await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_STORAGE, monthStartUtc(new Date()), -bytes);
+    if (!counter.ok) {
+      // Reserved counter rows are reconciled by the scheduled job; a failure
+      // here must not mask the original error.
+      return;
+    }
+    // Reserved units were incremented, so the negative delta releases them.
+    void counter;
   }
 }

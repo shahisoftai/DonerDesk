@@ -40,7 +40,8 @@ export type Capability =
   | "checklist.manage"
   | "export.create"
   | "audit.view"
-  | "settings.view";
+  | "settings.view"
+  | "billing.manage";
 
 const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   ADMIN: [
@@ -67,6 +68,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "export.create",
     "audit.view",
     "settings.view",
+    "billing.manage",
   ],
   PROJECT_MANAGER: [
     "project.create",

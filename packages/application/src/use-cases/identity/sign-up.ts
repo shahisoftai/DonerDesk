@@ -1,8 +1,10 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, Organization, User, Email, TenantId, UserId, DataResidency } from "@donordesk/domain";
+import { DomainError } from "@donordesk/domain";
 import type { IOrganizationRepository, IUserRepository, IAuthProvider } from "../../ports/identity.js";
 import type { IIdGenerator } from "../../ports/core.js";
-import type { IAuditLogger, IEventBus } from "../../ports/core.js";
+import type { IAuditLogger } from "../../ports/core.js";
+import { ProvisionTenantHandler } from "./provision-tenant.js";
+import type { IClock } from "../../ports/core.js";
 
 export interface SignUpCommand {
   name: string;
@@ -14,9 +16,11 @@ export interface SignUpCommand {
     country: string;
     primarySector: import("@donordesk/domain").Sector;
     defaultLanguage?: import("@donordesk/domain").LanguageCode;
-    dataResidency?: DataResidency;
+    dataResidency?: import("@donordesk/domain").DataResidency;
     aiEnabled?: boolean;
   };
+  /** Requested plan from signup (?plan=). Validated; invalid becomes STARTER. */
+  requestedPlan?: string;
 }
 
 export class SignUpHandler {
@@ -25,62 +29,37 @@ export class SignUpHandler {
     private readonly orgs: IOrganizationRepository,
     private readonly users: IUserRepository,
     private readonly auth: IAuthProvider,
-    private readonly events: IEventBus,
+    private readonly events: { publish(_events: unknown[]): Promise<void> },
     private readonly audit: IAuditLogger,
+    private readonly provisioner: ProvisionTenantHandler,
   ) {}
 
-  async handle(cmd: SignUpCommand): Promise<Result<{ userId: string; tenantId: string; token: string }, DomainError>> {
-    const tenantIdStr = this.ids.generate();
-    const tenantId = TenantId.create(tenantIdStr);
-    const orgId = this.ids.generate();
-    const userId = this.ids.generate();
-
-    const org = Organization.create({
-      id: orgId,
-      tenantId,
-      props: {
+  async handle(cmd: SignUpCommand): Promise<Result<{ userId: string; tenantId: string; token: string; plan: string }, DomainError>> {
+    const passwordHash = await this.auth.hashPassword(cmd.password);
+    const provisioned = await this.provisioner.handle({
+      name: cmd.name,
+      email: cmd.email,
+      passwordHash,
+      verifiedEmail: cmd.email,
+      requestedPlan: cmd.requestedPlan,
+      organization: {
         name: cmd.organization.name,
         organizationType: cmd.organization.organizationType,
         country: cmd.organization.country,
-        sectors: [cmd.organization.primarySector],
-        contactName: cmd.name,
-        contactEmail: cmd.email,
+        primarySector: cmd.organization.primarySector,
         defaultLanguage: cmd.organization.defaultLanguage ?? "en",
         dataResidency: cmd.organization.dataResidency ?? "DEFAULT",
         aiEnabled: cmd.organization.aiEnabled ?? true,
         storageProvider: "LOCAL",
-        reportingDefaults: Organization.defaultReportingDefaults(),
       },
     });
+    if (!provisioned.ok) return provisioned;
 
-    const orgResult = await this.orgs.create(org);
-    if (!orgResult.ok) return orgResult;
-
-    const passwordHash = await this.auth.hashPassword(cmd.password);
-    const user = User.create({
-      id: UserId.create(userId),
-      tenantId,
-      email: Email.create(cmd.email),
-      name: cmd.name,
-      passwordHash,
-      role: "ADMIN",
-    });
-    user.activate();
-    const userResult = await this.users.create(user);
-    if (!userResult.ok) return userResult;
-
-    await this.audit.record({
-      tenantId,
-      actorId: userId,
-      eventType: "identity.user.created",
-      entityType: "user",
-      entityId: userId,
-    });
-
+    const value = provisioned.value;
     const token = await this.auth.sign(
       {
-        sub: userId,
-        tid: tenantIdStr,
+        sub: value.userId,
+        tid: value.tenantId,
         role: "ADMIN",
         name: cmd.name,
         email: cmd.email,
@@ -88,6 +67,9 @@ export class SignUpHandler {
       60 * 60 * 24 * 7,
     );
 
-    return { ok: true, value: { userId, tenantId: tenantIdStr, token } };
+    return {
+      ok: true,
+      value: { userId: value.userId, tenantId: value.tenantId, token, plan: value.plan },
+    };
   }
 }

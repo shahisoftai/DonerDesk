@@ -12,6 +12,8 @@ export * from "./ports/compliance.js";
 export * from "./ports/exports.js";
 export * from "./ports/support.js";
 export * from "./ports/setup.js";
+export * from "./ports/billing.js";
+export * from "./services/entitlement-service.js";
 
 export * from "./use-cases/identity/sign-up.js";
 export * from "./use-cases/identity/login.js";
@@ -22,6 +24,7 @@ export * from "./use-cases/identity/update-organization-reporting-defaults.js";
 export * from "./use-cases/identity/connect-google-drive.js";
 export * from "./use-cases/identity/google-sign-in.js";
 export * from "./use-cases/identity/list-users.js";
+export * from "./use-cases/identity/provision-tenant.js";
 
 export * from "./use-cases/projects/create-project.js";
 export * from "./use-cases/projects/update-project.js";
@@ -90,3 +93,10 @@ export * from "./use-cases/support/list-audit-log.js";
 export * from "./use-cases/support/record-legal-consent.js";
 export * from "./use-cases/support/get-legal-consent.js";
 export * from "./use-cases/support/generate-deadline-reminders.js";
+
+export * from "./use-cases/billing/create-checkout.js";
+export * from "./use-cases/billing/create-customer-portal.js";
+export * from "./use-cases/billing/get-billing-summary.js";
+export * from "./use-cases/billing/process-billing-webhook.js";
+export * from "./use-cases/billing/expire-local-trials.js";
+export * from "./use-cases/billing/_usage.js";

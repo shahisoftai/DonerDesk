@@ -1,6 +1,6 @@
 # DonorDesk Features Index
 
-This directory contains detailed documentation for each of DonorDesk's 18 MVP features.
+This directory contains detailed documentation for each of DonorDesk's 19 MVP features.
 
 > **Frontend status:** Portal UI for these features is implemented across Phases 0–7
 > of `../imp/frontend-imp-plan.md` (reports `../imp/PHASE*-FRONTEND-REPORT.md`).
@@ -29,6 +29,7 @@ This directory contains detailed documentation for each of DonorDesk's 18 MVP fe
 | 16 | [Audit Log](./16-Audit-Log.md) | Implemented | `packages/domain/src/entities/AuditLog.ts` |
 | 17 | [Basic Settings](./17-Basic-Settings.md) | Implemented | `apps/web/src/app/(portal)/settings/` |
 | 18 | [Project Creation Wizard](./18-Project-Creation-Wizard.md) | Implemented (release `20260815054218`) | `packages/application/src/readiness/project-readiness-service.ts`, `packages/infrastructure/src/storage/project-workspace.ts`, `packages/infrastructure/src/storage/workspace-router.ts`, `apps/api/src/routes/project-setup.ts` |
+| 19 | [Tiers and Payments](./19-Tiers-And-Payments.md) | Implemented (Phase 1–3 core; Creem adapter behind `BILLING_PROVIDER=creem`) | `packages/domain/src/contexts/billing/`, `packages/application/src/ports/billing.ts`, `packages/application/src/services/entitlement-service.ts`, `packages/application/src/use-cases/billing/`, `packages/infrastructure/src/billing/`, `packages/infrastructure/src/repositories/billing.ts`, `apps/api/src/routes/billing.ts`, `apps/api/src/routes/webhooks.ts` |
 
 ## Status Legend
 

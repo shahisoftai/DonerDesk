@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ConnectGoogleDriveHandler, LinkGoogleDriveEvidenceHandler, GoogleSignInHandler } from "../dist/index.js";
+import { ConnectGoogleDriveHandler, LinkGoogleDriveEvidenceHandler, GoogleSignInHandler, ProvisionTenantHandler } from "../dist/index.js";
 import { TenantId } from "@donordesk/domain";
 
 const tenant = { tenantId: TenantId.create("tenant-a"), userId: "u-1", role: "ADMIN" };
@@ -113,6 +113,31 @@ function makeUsers(overrides = {}) {
 const signAuth = { hashPassword: async () => "h", verifyPassword: async () => false, sign: async (p) => `token.${p.sub}.${p.tid}`, verify: async () => null };
 const sequenceIds = (() => { let n = 0; return { generate: () => `id-${++n}` }; })();
 
+/**
+ * Builds a real ProvisionTenantHandler wired to the test's fake org/user
+ * repositories so the Google provisioning path is exercised end to end.
+ */
+function makeProvisioner({ orgs, users, auditEvents }) {
+  const grants = { create: async (g) => ({ ok: true, value: g }) };
+  const trials = {
+    existsByEmailFingerprint: async () => ({ ok: true, value: false }),
+    create: async () => ({ ok: true, value: { id: "trial-1" } }),
+  };
+  const events = { publish: async () => ({ ok: true }) };
+  const clock = { now: () => new Date("2026-01-15T00:00:00Z") };
+  return new ProvisionTenantHandler(
+    sequenceIds,
+    orgs,
+    users,
+    grants,
+    trials,
+    signAuth,
+    events,
+    { record: async (e) => { auditEvents.push(e); return { ok: true, value: undefined }; } },
+    clock,
+  );
+}
+
 test("google sign-in exchanges code, finds user by email, and signs a session token", async () => {
   const google = { exchangeCode: async () => ({ email: "ada@example.org", name: "Ada", googleSubject: "g-1" }) };
   const user = makeUsers();
@@ -121,7 +146,8 @@ test("google sign-in exchanges code, finds user by email, and signs a session to
     update: async (u) => { assert.ok(u); return { ok: true, value: u }; },
   };
   const auditEvents = [];
-  const handler = new GoogleSignInHandler(google, users, {}, signAuth, sequenceIds, { record: async (e) => { auditEvents.push(e); return { ok: true, value: undefined }; } });
+  const provisioner = makeProvisioner({ orgs: {}, users: {}, auditEvents });
+  const handler = new GoogleSignInHandler(google, users, {}, signAuth, sequenceIds, { record: async (e) => { auditEvents.push(e); return { ok: true, value: undefined }; } }, provisioner);
   const result = await handler.handle({ code: "code-1" });
   assert.equal(result.ok, true);
   assert.equal(result.value.token, "token.u-1.tenant-a");
@@ -144,7 +170,8 @@ test("google sign-in auto-provisions an organization and user for a new email", 
     update: async (u) => ({ ok: true, value: u }),
   };
   const auditEvents = [];
-  const handler = new GoogleSignInHandler(google, users, orgs, signAuth, sequenceIds, { record: async (e) => { auditEvents.push(e); return { ok: true, value: undefined }; } });
+  const provisioner = makeProvisioner({ orgs, users, auditEvents });
+  const handler = new GoogleSignInHandler(google, users, orgs, signAuth, sequenceIds, { record: async (e) => { auditEvents.push(e); return { ok: true, value: undefined }; } }, provisioner);
   const result = await handler.handle({ code: "code-2" });
   assert.equal(result.ok, true);
   assert.equal(result.value.provisioned, true);
@@ -164,7 +191,9 @@ test("google sign-in auto-provisions an organization and user for a new email", 
 
 test("google sign-in rejects when google verification fails", async () => {
   const google = { exchangeCode: async () => { throw new Error("Google ID token verification failed"); } };
-  const handler = new GoogleSignInHandler(google, { findByEmailGlobal: async () => ({ ok: true, value: null }) }, {}, signAuth, sequenceIds, { record: async () => ({ ok: true, value: undefined }) });
+  const auditEvents = [];
+  const provisioner = makeProvisioner({ orgs: {}, users: {}, auditEvents });
+  const handler = new GoogleSignInHandler(google, { findByEmailGlobal: async () => ({ ok: true, value: null }) }, {}, signAuth, sequenceIds, { record: async () => ({ ok: true, value: undefined }) }, provisioner);
   const result = await handler.handle({ code: "bad" });
   assert.equal(result.ok, false);
 });

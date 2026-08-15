@@ -21,6 +21,15 @@ export * from "./security/index.js";
 export * from "./audit/chain.js";
 export { PrismaAuditRepository } from "./repositories/support.js";
 export { PrismaProjectSetupRepository, PrismaReportingProfileRepository } from "./repositories/setup.js";
+export {
+  PrismaBillingSubscriptionRepository,
+  PrismaEntitlementGrantRepository,
+  PrismaUsageCounterRepository,
+  PrismaBillingEventInboxRepository,
+  PrismaTrialIdentityRepository,
+  PrismaLlmUsageRepository,
+} from "./repositories/billing.js";
+export { createBillingProvider, CreemBillingProvider, StubBillingProvider } from "./billing/index.js";
 export * from "./ai/index.js";
 export * from "./webhooks/index.js";
 export * from "./integrations/index.js";

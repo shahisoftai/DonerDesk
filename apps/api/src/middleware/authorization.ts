@@ -8,6 +8,8 @@ const RULES: ReadonlyArray<{
 }> = [
   { method: "GET", route: /^\/v1\/organization$/, permission: "project.view" },
   { method: "PUT", route: /^\/v1\/organization$/, permission: "org.manage" },
+  { method: "GET", route: /^\/v1\/billing\/summary$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/billing\/(checkout|portal)$/, permission: "billing.manage" },
   { method: "PUT", route: /^\/v1\/organization\/reporting-defaults$/, permission: "org.manage" },
   { method: "POST", route: /^\/v1\/drive\/auth-url$/, permission: "org.manage" },
   { method: "POST", route: /^\/v1\/drive\/callback$/, permission: "org.manage" },

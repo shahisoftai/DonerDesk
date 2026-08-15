@@ -9,7 +9,8 @@ BEGIN
     'Indicator','IndicatorUpdate','ReportingPeriod','EvidenceFile','ActivityUpdate',
     'ReportDraft','ReportSection','ChecklistItem','ExportPackage','Comment',
     'Notification','AuditEvent','LlmRun','LlmFeedback','EvidenceChunk','EvidenceEmbedding',
-    'IdempotencyRecord'
+    'IdempotencyRecord',
+    'BillingSubscription','EntitlementGrant','UsageCounter','TrialIdentity'
   ] LOOP
     EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO donordesk_app', table_name);
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', table_name);

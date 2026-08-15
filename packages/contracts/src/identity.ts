@@ -46,6 +46,7 @@ export const SignUpSchema = z.object({
   name: z.string().min(2).max(120),
   email: EmailSchema,
   password: z.string().min(8).max(200),
+  requestedPlan: z.enum(["STARTER", "TEAM", "GROWTH"]).optional(),
   organization: z.object({
     name: z.string().min(2).max(200),
     organizationType: OrganizationTypeSchema,
@@ -66,6 +67,7 @@ export type LoginInput = z.infer<typeof LoginSchema>;
 
 export const GoogleSignInSchema = z.object({
   code: z.string().min(1),
+  requestedPlan: z.enum(["STARTER", "TEAM", "GROWTH"]).optional(),
 });
 export type GoogleSignInInput = z.infer<typeof GoogleSignInSchema>;
 

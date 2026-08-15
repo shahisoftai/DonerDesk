@@ -27,5 +27,4 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const result = await app.container.handlers.googleSignIn.handle(body);
     if (!result.ok) throw result.error;
     return result.value;
-  });
-}
+  });}

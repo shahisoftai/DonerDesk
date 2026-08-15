@@ -31,6 +31,8 @@ import { registerFileRoutes } from "./routes/files.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerInternalRoutes } from "./routes/internal.js";
 import { registerSuperAdminRoutes } from "./routes/superadmin.js";
+import { registerWebhookRoutes } from "./routes/webhooks.js";
+import { registerBillingRoutes } from "./routes/billing.js";
 import { captureException, httpDuration, httpRequests, initializeObservability, shutdownObservability } from "./observability.js";
 import { registerCollaborationWebSocket } from "./websocket/register.js";
 
@@ -79,6 +81,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerCollaborationWebSocket(app);
   await registerInternalRoutes(app);
   await registerSuperAdminRoutes(app);
+  await registerWebhookRoutes(app);
 
   app.addHook("onRequest", async (req) => {
     req.requestId = req.id;
@@ -103,14 +106,7 @@ export async function buildServer(): Promise<FastifyInstance> {
       });
     }
     if (error instanceof DomainError) {
-      const status =
-        error.code === "NOT_FOUND"
-          ? 404
-          : error.code === "FORBIDDEN"
-          ? 403
-          : error.code === "CONFLICT"
-          ? 409
-          : 400;
+      const status = errorToHttpStatus(error.code);
       return reply.status(status).send({
         type: `https://donordesk/problems/${error.code.toLowerCase()}`,
         title: error.message,
@@ -160,6 +156,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerLegalRoutes(instance);
     await registerDashboardRoutes(instance);
     await registerFileRoutes(instance);
+    await registerBillingRoutes(instance);
   });
 
   return app;
@@ -168,6 +165,30 @@ export async function buildServer(): Promise<FastifyInstance> {
 export type AppContext = {
   container: ReturnType<typeof createContainer>;
 };
+
+/**
+ * Maps DomainError codes to HTTP statuses. Project/seat/storage capacity → 409,
+ * replenishing AI credits → 429, feature entitlements → 403, provider
+ * unavailability → 503. We deliberately do not use HTTP 402.
+ */
+function errorToHttpStatus(code: string): number {
+  switch (code) {
+    case "NOT_FOUND":
+      return 404;
+    case "FORBIDDEN":
+    case "POLICY_DENIED":
+      return 403;
+    case "CONFLICT":
+    case "PLAN_LIMIT_REACHED":
+      return 409;
+    case "AI_CREDITS_EXHAUSTED":
+      return 429;
+    case "BILLING_PROVIDER_UNAVAILABLE":
+      return 503;
+    default:
+      return 400;
+  }
+}
 
 declare module "fastify" {
   interface FastifyInstance {

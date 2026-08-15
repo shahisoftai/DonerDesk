@@ -72,6 +72,13 @@ import {
   UuidIdGenerator,
   type SystemClock,
   SystemClock as SystemClockImpl,
+  ProvisionTenantHandler,
+  EntitlementService,
+  CreateCheckoutHandler,
+  CreateCustomerPortalHandler,
+  GetBillingSummaryHandler,
+  ProcessBillingWebhookHandler,
+  ExpireLocalTrialsHandler,
 } from "@donordesk/application";
 import type { IJobQueue } from "@donordesk/application";
 
@@ -85,6 +92,14 @@ import {
   PrismaProjectSetupRepository,
   PrismaReportingProfileRepository,
 } from "./repositories/setup.js";
+import {
+  PrismaBillingSubscriptionRepository,
+  PrismaEntitlementGrantRepository,
+  PrismaUsageCounterRepository,
+  PrismaBillingEventInboxRepository,
+  PrismaTrialIdentityRepository,
+  PrismaLlmUsageRepository,
+} from "./repositories/billing.js";
 import { PrismaDonorTemplateRepository } from "./repositories/templates.js";
 import {
   PrismaLogframeRepository,
@@ -129,6 +144,7 @@ import {
 } from "./support.js";
 import { OutboxEventBus, DEFAULT_EVENT_TO_JOB } from "./events/outbox-event-bus.js";
 import { createJobQueue } from "./jobs/index.js";
+import { createBillingProvider } from "./billing/index.js";
 
 export interface Container {
   prisma: PrismaClient;
@@ -154,6 +170,13 @@ export interface Container {
   organizations: PrismaOrganizationRepository;
   users: PrismaUserRepository;
   invitations: PrismaInvitationRepository;
+  billingSubscriptions: PrismaBillingSubscriptionRepository;
+  entitlementGrants: PrismaEntitlementGrantRepository;
+  usageCounters: PrismaUsageCounterRepository;
+  billingInbox: PrismaBillingEventInboxRepository;
+  trialIdentities: PrismaTrialIdentityRepository;
+  llmUsage: PrismaLlmUsageRepository;
+  billingProvider: ReturnType<typeof createBillingProvider>;
   projects: PrismaProjectRepository;
   projectSetup: PrismaProjectSetupRepository;
   reportingProfiles: PrismaReportingProfileRepository;
@@ -243,6 +266,11 @@ export interface Container {
     getLegalConsent: GetLegalConsentHandler;
     connectGoogleDrive: ConnectGoogleDriveHandler;
     linkGoogleDriveEvidence: LinkGoogleDriveEvidenceHandler;
+    createCheckout: CreateCheckoutHandler;
+    createCustomerPortal: CreateCustomerPortalHandler;
+    getBillingSummary: GetBillingSummaryHandler;
+    processBillingWebhook: ProcessBillingWebhookHandler;
+    expireLocalTrials: ExpireLocalTrialsHandler;
   };
 }
 
@@ -336,6 +364,16 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const notifications = new PrismaNotificationRepository(prisma);
   const audits = new PrismaAuditRepository(prisma);
 
+  const billingSubscriptions = new PrismaBillingSubscriptionRepository(prisma);
+  const entitlementGrants = new PrismaEntitlementGrantRepository(prisma);
+  const usageCounters = new PrismaUsageCounterRepository(prisma);
+  const billingInbox = new PrismaBillingEventInboxRepository(prisma);
+  const trialIdentities = new PrismaTrialIdentityRepository(prisma);
+  const llmUsage = new PrismaLlmUsageRepository(prisma);
+  const billingProvider = createBillingProvider();
+  const entitlements = new EntitlementService(entitlementGrants, billingSubscriptions, usageCounters, projects, users);
+  const provisionTenant = new ProvisionTenantHandler(ids, organizations, users, entitlementGrants, trialIdentities, auth, events, audits, clock);
+
   const readiness = new ProjectReadinessService(
     projects,
     projectSetup,
@@ -389,10 +427,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, exportBuilder, storage, audits);
 
   const handlers: Container["handlers"] = {
-    signUp: new SignUpHandler(ids, organizations, users, auth, events, audits),
+    signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
     login: new LoginHandler(users, auth, audits),
-    googleSignIn: new GoogleSignInHandler(googleSignIn, users, organizations, auth, ids, audits),
-    inviteUser: new InviteUserHandler(ids, users, invitations, audits, notify),
+    googleSignIn: new GoogleSignInHandler(googleSignIn, users, organizations, auth, ids, audits, provisionTenant),
+    inviteUser: new InviteUserHandler(ids, users, invitations, audits, notify, entitlements),
     changeRole: new ChangeRoleHandler(users, audits),
     updateOrganization: new UpdateOrganizationHandler(organizations, audits),
     updateOrganizationReportingDefaults: new UpdateOrganizationReportingDefaultsHandler(organizations, audits),
@@ -404,7 +442,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     ),
     linkGoogleDriveEvidence: new LinkGoogleDriveEvidenceHandler(ids, evidence, evidenceStorage, events, audits),
     listUsers: new ListUsersHandler(users),
-    createProject: new CreateProjectHandler(ids, projects, projectSetup, reportingProfiles, organizations, projectWorkspace, events, audits),
+    createProject: new CreateProjectHandler(ids, projects, projectSetup, reportingProfiles, organizations, projectWorkspace, events, audits, entitlements),
     updateProject: new UpdateProjectHandler(projects, periods, audits),
     listProjects: new ListProjectsHandler(projects),
     getProject: new GetProjectHandler(projects),
@@ -423,7 +461,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     verifyIndicatorUpdate: new VerifyIndicatorUpdateHandler(indicatorUpdates, audits),
     listLogframe: new ListLogframeHandler(logframe, indicators),
     listIndicators: new ListIndicatorsHandler(indicators),
-    uploadEvidence: new UploadEvidenceHandler(ids, evidence, evidenceStorage, events, audits),
+    uploadEvidence: new UploadEvidenceHandler(ids, evidence, evidenceStorage, events, audits, usageCounters, entitlements),
     suggestEvidenceTags: new SuggestEvidenceTagsHandler(evidence, evidenceTagger),
     acceptEvidenceTags: new AcceptEvidenceTagsHandler(evidence, audits),
     persistEvidenceTags: new PersistEvidenceTagsHandler(evidence, audits, idempotency),
@@ -438,7 +476,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits),
     listReportingPeriods: new ListReportingPeriodsHandler(periods),
     generateReportDraft: new GenerateReportDraftHandler(
-      ids, periods, drafts, sections, projects, organizations, templates, logframe, indicators, indicatorUpdates, activities, evidence, reportDraftGenerator, audits,
+      ids, periods, drafts, sections, projects, organizations, templates, logframe, indicators, indicatorUpdates, activities, evidence, reportDraftGenerator, audits, entitlements, usageCounters, llmUsage,
     ),
     getReportDraft: new GetReportDraftHandler(drafts, sections),
     updateReportSection: new UpdateReportSectionHandler(sections, audits),
@@ -463,6 +501,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listAuditLog: new ListAuditLogHandler(audits),
     recordLegalConsent: new RecordLegalConsentHandler(audits),
     getLegalConsent: new GetLegalConsentHandler(audits),
+    createCheckout: new CreateCheckoutHandler(billingProvider, organizations, billingSubscriptions, ids, audits),
+    createCustomerPortal: new CreateCustomerPortalHandler(billingProvider, billingSubscriptions, audits),
+    getBillingSummary: new GetBillingSummaryHandler(entitlements),
+    processBillingWebhook: new ProcessBillingWebhookHandler(billingProvider, billingSubscriptions, entitlementGrants, billingInbox, ids, audits, clock),
+    expireLocalTrials: new ExpireLocalTrialsHandler(entitlementGrants, audits, clock),
   };
 
   return {
@@ -470,6 +513,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     evidenceTagger, activityPolisher, templateExtraction, reportDraftGenerator, checklistDetector, exportBuilder,
     organizations, users, invitations, projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
     periods, drafts, sections, checklist, exports, comments, notifications, audits,
+    billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, billingProvider,
     handlers,
   };
 }

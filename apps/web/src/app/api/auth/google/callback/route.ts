@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
   let token: string;
   let provisioned = false;
   try {
-    ({ token, provisioned } = await new AuthService().googleSignIn(code));
+    const requestedPlan = parsePlanFromState(state);
+    ({ token, provisioned } = await new AuthService().googleSignIn(code, requestedPlan));
   } catch {
     return NextResponse.redirect(new URL("/login?error=google_failed", appUrl));
   }
@@ -32,6 +33,16 @@ export async function GET(request: NextRequest) {
   });
   response.cookies.delete("dd_google_state");
   return response;
+}
+
+/** Extract the validated plan suffix from the OAuth state (starts with ":plan"). */
+function parsePlanFromState(state: string): "STARTER" | "TEAM" | "GROWTH" | undefined {
+  const parts = state.split(":");
+  const plan = parts[parts.length - 1]?.toUpperCase();
+  if (plan === "TEAM") return "TEAM";
+  if (plan === "GROWTH") return "GROWTH";
+  if (plan === "STARTER") return "STARTER";
+  return undefined;
 }
 
 /** Public origin used for post-OAuth redirects (never the internal host). */

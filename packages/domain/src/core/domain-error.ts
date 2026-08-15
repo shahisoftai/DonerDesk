@@ -5,7 +5,11 @@ export type DomainErrorCode =
   | "FORBIDDEN"
   | "INVARIANT_VIOLATION"
   | "INVALID_STATE_TRANSITION"
-  | "POLICY_DENIED";
+  | "POLICY_DENIED"
+  | "PLAN_LIMIT_REACHED"
+  | "AI_CREDITS_EXHAUSTED"
+  | "BILLING_STATE_INVALID"
+  | "BILLING_PROVIDER_UNAVAILABLE";
 
 export class DomainError extends Error {
   public readonly code: DomainErrorCode;
@@ -48,5 +52,21 @@ export class DomainError extends Error {
 
   static policyDenied(message: string, details?: Record<string, unknown>): DomainError {
     return new DomainError("POLICY_DENIED", message, details);
+  }
+
+  static planLimitReached(message: string, details?: Record<string, unknown>): DomainError {
+    return new DomainError("PLAN_LIMIT_REACHED", message, details);
+  }
+
+  static aiCreditsExhausted(message: string, details?: Record<string, unknown>): DomainError {
+    return new DomainError("AI_CREDITS_EXHAUSTED", message, details);
+  }
+
+  static billingStateInvalid(message: string, details?: Record<string, unknown>): DomainError {
+    return new DomainError("BILLING_STATE_INVALID", message, details);
+  }
+
+  static billingProviderUnavailable(message: string, details?: Record<string, unknown>): DomainError {
+    return new DomainError("BILLING_PROVIDER_UNAVAILABLE", message, details);
   }
 }

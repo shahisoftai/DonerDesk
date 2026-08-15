@@ -469,6 +469,33 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-15 (Tiers, Entitlements, and Payments — release `20260815082750`):**
+  Deployed API + web + prisma via the incremental immutable-release path
+  (`scripts/deploy-incremental.sh`, 11.4 MB transferred).
+  1. **Migration `20260815070000_billing_entitlements`** applied as
+     `donordesk_migrator` (loopback trust): created `BillingSubscription`,
+     `EntitlementGrant`, `BillingEventInbox`, `UsageCounter`, `TrialIdentity`,
+     and extended `LlmRun` with usage-ledger columns (`operationType`,
+     `resourceId`, `billableUnits`, `requestId`).
+  2. **RLS extended to 28 tenant tables** (added `BillingSubscription`,
+     `EntitlementGrant`, `UsageCounter`, `TrialIdentity`; `BillingEventInbox`
+     intentionally left non-tenant because it is the public webhook inbox whose
+     tenant is resolved after signature verification). `infra/postgres/rls.sql`
+     applied as `donordesk_migrator`; `tenant_isolation` policies verified on the
+     new tables.
+  3. Restarted `donordesk-api` + `donordesk-web`; verified loopback bindings
+     (3002/4001), `/health` + `/ready`, new routes
+     `/v1/billing/summary`, `/v1/billing/checkout`, `/v1/billing/portal`,
+     `/v1/webhooks/creem` (all auth/signature-gated 401), public HTTPS `/` +
+     `/login` 200, landing `#pricing` section + signup `?plan=` selector present,
+     no new journal errors.
+  Scope: Feature 19 — plan catalog (Starter/Team/Growth/Enterprise), central
+  tenant provisioning with one-time 14-day trials, authoritative project/seat/
+  storage/AI-credit enforcement, `BillingProvider` port with stub default +
+  Creem adapter (env-gated `BILLING_PROVIDER=creem`), webhook inbox +
+  subscription sync, checkout/customer-portal routes, landing pricing, signup
+  plan carry-through (local + Google OAuth state), `/settings/billing` page.
+
 - **2026-08-15 (Account-wide Onboarding restructure — release `20260815063021`):**
   Deployed API + web + prisma via the incremental immutable-release path.
   1. **Removed project-specific steps from the account Onboarding wizard** —

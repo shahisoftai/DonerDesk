@@ -89,6 +89,77 @@ const SECURITY = [
   },
 ];
 
+const PLANS = [
+  {
+    code: "STARTER",
+    name: "Starter",
+    monthly: "$0",
+    annual: "$0",
+    tagline: "For small teams getting started with donor reporting.",
+    cta: { label: "Start free", href: "/signup" },
+    highlight: false,
+    features: [
+      "1 active project",
+      "1 seat (owner)",
+      "1 GB managed storage",
+      "5 successful AI report drafts / month",
+      "Core reporting, logframe & exports",
+      "Community support",
+    ],
+  },
+  {
+    code: "TEAM",
+    name: "Team",
+    monthly: "$59",
+    annual: "$590",
+    tagline: "For growing programmes with multiple projects.",
+    cta: { label: "Start 14-day trial", href: "/signup?plan=team" },
+    highlight: true,
+    features: [
+      "5 active projects",
+      "5 seats",
+      "25 GB managed storage",
+      "100 successful AI report drafts / month",
+      "Google Drive link-first storage",
+      "Email support",
+    ],
+  },
+  {
+    code: "GROWTH",
+    name: "Growth",
+    monthly: "$149",
+    annual: "$1,490",
+    tagline: "For larger teams with heavy reporting volume.",
+    cta: { label: "Start 14-day trial", href: "/signup?plan=growth" },
+    highlight: false,
+    features: [
+      "20 active projects",
+      "15 seats",
+      "100 GB managed storage",
+      "500 successful AI report drafts / month",
+      "R2-managed uploads within quota",
+      "Priority email support",
+    ],
+  },
+  {
+    code: "ENTERPRISE",
+    name: "Enterprise",
+    monthly: "Custom",
+    annual: "Annual contract",
+    tagline: "For federations, INGOs and multi-country programmes.",
+    cta: { label: "Contact us", href: "mailto:sales@donerdesk.online" },
+    highlight: false,
+    features: [
+      "Unlimited projects & seats",
+      "Contractual storage",
+      "SSO / SCIM",
+      "Custom data residency",
+      "SLA & dedicated support",
+      "Nonprofit discounts available",
+    ],
+  },
+];
+
 const STATS = [
   { value: "7+", label: "Programme modules" },
   { value: "4", label: "Export formats" },
@@ -113,6 +184,7 @@ export default function HomePage() {
           <div className="hidden items-center gap-8 text-sm font-medium text-slate-300 md:flex">
             <a href="#features" className="transition hover:text-white">Features</a>
             <a href="#how-it-works" className="transition hover:text-white">How it works</a>
+            <a href="#pricing" className="transition hover:text-white">Pricing</a>
             <a href="#security" className="transition hover:text-white">Security</a>
           </div>
           <div className="flex items-center gap-3">
@@ -299,6 +371,71 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="px-6 py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-sm font-bold uppercase tracking-widest text-brand-300">Pricing</p>
+            <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+              Start free. Upgrade when you grow.
+            </h2>
+            <p className="mt-4 text-lg text-slate-300">
+              Every plan includes core donor reporting. Tax is calculated at
+              checkout where applicable. Annual billing gives two months free.
+            </p>
+          </div>
+          <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {PLANS.map((plan) => (
+              <div
+                key={plan.code}
+                className={`glass relative flex flex-col rounded-2xl border p-7 transition duration-300 ${
+                  plan.highlight
+                    ? "border-brand-400/50 bg-gradient-to-b from-brand-500/10 to-transparent shadow-xl shadow-brand-500/10"
+                    : "border-white/10 bg-white/[0.03] hover:border-brand-400/30"
+                }`}
+              >
+                {plan.highlight && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 px-3 py-1 text-xs font-bold text-white shadow-lg">
+                    Most popular
+                  </span>
+                )}
+                <h3 className="text-xl font-bold text-white">{plan.name}</h3>
+                <p className="mt-1 text-sm text-slate-400">{plan.tagline}</p>
+                <div className="mt-5 flex items-baseline gap-2">
+                  <span className="text-3xl font-extrabold text-white">{plan.monthly}</span>
+                  {plan.code !== "ENTERPRISE" && <span className="text-sm text-slate-400">/ month</span>}
+                </div>
+                {plan.code !== "ENTERPRISE" && (
+                  <p className="mt-1 text-xs text-slate-400">or {plan.annual} / year (2 months free)</p>
+                )}
+                <ul className="mt-6 flex-1 space-y-2.5 text-sm text-slate-300">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2">
+                      <span className="mt-0.5 text-brand-400">✓</span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={plan.cta.href}
+                  className={`mt-7 inline-flex w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition ${
+                    plan.highlight
+                      ? "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-lg shadow-brand-500/30 hover:from-brand-400 hover:to-brand-500"
+                      : "border border-white/15 bg-white/5 text-white hover:bg-white/10"
+                  }`}
+                >
+                  {plan.cta.label}
+                </Link>
+              </div>
+            ))}
+          </div>
+          <p className="mt-8 text-center text-sm text-slate-400">
+            Team and Growth plans include a 14-day trial with Growth entitlements — no card required. Qualified
+            small NGOs can apply for a 40% nonprofit discount.
+          </p>
         </div>
       </section>
 

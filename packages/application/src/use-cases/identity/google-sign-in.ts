@@ -3,7 +3,6 @@ import type { Result } from "@donordesk/domain";
 import {
   DomainError,
   Email,
-  Organization,
   TenantId,
   User,
   UserId,
@@ -11,9 +10,12 @@ import {
 import type { IUserRepository, IOrganizationRepository, IAuthProvider } from "../../ports/identity.js";
 import type { IAuditLogger, IIdGenerator } from "../../ports/core.js";
 import type { IGoogleSignInConnector } from "../../ports/infrastructure.js";
+import { ProvisionTenantHandler } from "./provision-tenant.js";
 
 export interface GoogleSignInCommand {
   code: string;
+  /** Requested plan carried through signed OAuth state. */
+  requestedPlan?: string;
 }
 
 export interface GoogleSignInResult {
@@ -46,6 +48,7 @@ export class GoogleSignInHandler {
     private readonly auth: IAuthProvider,
     private readonly ids: IIdGenerator,
     private readonly audit: IAuditLogger,
+    private readonly provisioner: ProvisionTenantHandler,
   ) {}
 
   async handle(cmd: GoogleSignInCommand): Promise<Result<GoogleSignInResult, DomainError>> {
@@ -108,83 +111,50 @@ export class GoogleSignInHandler {
       };
     }
 
-    return this.provision(email, profile);
+    return this.provision(email, profile, cmd.requestedPlan);
   }
 
   private async provision(
     email: Email,
     profile: { email: string; name: string; googleSubject: string },
+    requestedPlan?: string,
   ): Promise<Result<GoogleSignInResult, DomainError>> {
-    const tenantIdStr = this.ids.generate();
-    const tenantId = TenantId.create(tenantIdStr);
-    const orgId = this.ids.generate();
-    const userId = this.ids.generate();
     const displayName = (profile.name && profile.name.trim().length > 0 ? profile.name.trim() : email.toString());
+    const passwordHash = randomBytes(32).toString("hex");
 
-    const org = Organization.create({
-      id: orgId,
-      tenantId,
-      props: {
+    const provisioned = await this.provisioner.handle({
+      name: displayName,
+      email: email.toString(),
+      passwordHash,
+      verifiedEmail: email.toString(),
+      requestedPlan,
+      organization: {
         name: `${displayName}'s Organization`,
         organizationType: "OTHER",
         country: "UNKNOWN",
-        sectors: ["OTHER"],
-        contactName: displayName,
-        contactEmail: email.toString(),
+        primarySector: "OTHER",
         defaultLanguage: "en",
         dataResidency: "DEFAULT",
         aiEnabled: true,
         storageProvider: "LOCAL",
-        reportingDefaults: Organization.defaultReportingDefaults(),
       },
     });
-    const orgResult = await this.orgs.create(org);
-    if (!orgResult.ok) return orgResult;
+    if (!provisioned.ok) return provisioned;
 
-    // No password for Google-provisioned users; store an unusable random hash
-    // so the field is never empty and password login cannot be used.
-    const passwordHash = randomBytes(32).toString("hex");
-    const user = User.create({
-      id: UserId.create(userId),
-      tenantId,
-      email,
-      name: displayName,
-      passwordHash,
-      role: "ADMIN",
-    });
-    user.activate();
-    const userResult = await this.users.create(user);
-    if (!userResult.ok) return userResult;
-
+    const value = provisioned.value;
     await this.audit.record({
-      tenantId,
-      actorId: userId,
-      eventType: "identity.organization.created",
-      entityType: "organization",
-      entityId: orgId,
-      newValue: "google-provisioned",
-    });
-    await this.audit.record({
-      tenantId,
-      actorId: userId,
-      eventType: "identity.user.created",
-      entityType: "user",
-      entityId: userId,
-      newValue: "google-provisioned",
-    });
-    await this.audit.record({
-      tenantId,
-      actorId: userId,
+      tenantId: TenantId.create(value.tenantId),
+      actorId: value.userId,
       eventType: "identity.user.login",
       entityType: "user",
-      entityId: userId,
+      entityId: value.userId,
       newValue: "google",
     });
 
     const token = await this.auth.sign(
       {
-        sub: userId,
-        tid: tenantIdStr,
+        sub: value.userId,
+        tid: value.tenantId,
         role: "ADMIN",
         name: displayName,
         email: email.toString(),
@@ -195,8 +165,8 @@ export class GoogleSignInHandler {
     return {
       ok: true,
       value: {
-        userId,
-        tenantId: tenantIdStr,
+        userId: value.userId,
+        tenantId: value.tenantId,
         token,
         role: "ADMIN",
         name: displayName,

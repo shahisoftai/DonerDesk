@@ -6,6 +6,35 @@ import { ProjectReadinessService, CreateReportingPeriodHandler, UpsertReportingP
 const tenantId = TenantId.create("tenant-a");
 const ctx = { tenant: { tenantId, userId: "user-1", role: "ADMIN" }, requestId: "r-1" };
 
+/** Unrestricted entitlement stub (Enterprise-like) for non-billing tests. */
+function unrestrictedEntitlements() {
+  return {
+    resolve: async () => ({
+      ok: true,
+      value: {
+        planCode: "ENTERPRISE",
+        source: "MANUAL",
+        catalogVersion: 1,
+        limits: {
+          maxActiveProjects: null,
+          maxSeats: null,
+          maxManagedStorageBytes: null,
+          monthlyAiDraftCredits: null,
+        },
+        effectiveFrom: new Date(),
+        overLimit: [],
+        isTrial: false,
+      },
+    }),
+    usageSnapshot: async () => ({
+      ok: true,
+      value: { activeProjects: 0, seats: 0, managedStorageBytes: 0n, aiDraftCreditsUsed: 0, aiDraftCreditsReserved: 0 },
+    }),
+    toSummary: async () => ({ ok: true, value: {} }),
+    resolveWithUsage: async () => ({ ok: true, value: null }),
+  };
+}
+
 function makeProject(id = "p1") {
   return Project.create({
     id,
@@ -325,7 +354,7 @@ test("create-project seeds the reporting profile from org defaults", async () =>
   const audit = { record: async () => {} };
   const ids = { generate: () => crypto.randomUUID() };
 
-  const handler = new CreateProjectHandler(ids, projects, setup, profiles, organizations, providerResolver, events, audit);
+  const handler = new CreateProjectHandler(ids, projects, setup, profiles, organizations, providerResolver, events, audit, unrestrictedEntitlements());
   const r = await handler.handle(ctx, {
     title: "Clean Water", projectCode: "CW-02", donorName: "UNICEF", implementingOrganization: "NGO",
     country: "Somalia", sector: "WASH",
@@ -353,7 +382,7 @@ test("create-project without org defaults still succeeds (no profile seeded)", a
   const events = { publish: async () => ({ ok: true }) };
   const audit = { record: async () => {} };
   const ids = { generate: () => crypto.randomUUID() };
-  const handler = new CreateProjectHandler(ids, projects, setup, profiles, organizations, providerResolver, events, audit);
+  const handler = new CreateProjectHandler(ids, projects, setup, profiles, organizations, providerResolver, events, audit, unrestrictedEntitlements());
   const r = await handler.handle(ctx, {
     title: "WASH", projectCode: "W-02", donorName: "D", implementingOrganization: "I",
     country: "KE", sector: "HEALTH",

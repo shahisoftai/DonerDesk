@@ -1,14 +1,20 @@
 import { randomBytes } from "node:crypto";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 const OAUTH_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 
-export async function GET() {
+const VALID_PLANS = new Set(["starter", "team", "growth"]);
+
+export async function GET(request: NextRequest) {
   const clientId = required("GOOGLE_DRIVE_CLIENT_ID");
   const redirectUri = `${required("APP_URL").replace(/\/$/, "")}/api/auth/google/callback`;
-  const state = randomBytes(24).toString("base64url");
+  const requestedPlan = request.nextUrl.searchParams.get("plan")?.toLowerCase() ?? "";
+  // The plan is carried through the signed OAuth state (never an entitlement by
+  // itself; the server validates it and only trial-considers it).
+  const planPart = VALID_PLANS.has(requestedPlan) ? `:${requestedPlan}` : "";
+  const state = `${randomBytes(24).toString("base64url")}${planPart}`;
   const authorize = new URL(OAUTH_AUTH_URL);
   authorize.search = new URLSearchParams({
     client_id: clientId,

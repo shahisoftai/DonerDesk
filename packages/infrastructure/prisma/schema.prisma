@@ -633,9 +633,16 @@ model LlmRun {
   responseText    String?  @db.Text
   promptVersion   Int
   modelVersion    String
+  operationType   String?  // REPORT_DRAFT | EVIDENCE_TAG | ACTIVITY_POLISH
+  resourceId      String?  // report draft / evidence / activity id
+  billableUnits   Int      @default(0)
+  requestId       String?  // caller idempotency key
   createdAt       DateTime @default(now())
 
   @@index([tenantId])
+  @@index([tenantId, operationType, createdAt])
+  @@index([resourceId])
+  @@index([requestId])
   @@index([modelId])
   @@index([promptId])
   @@index([createdAt])
@@ -829,4 +836,107 @@ model IdempotencyRecord {
   @@unique([tenantId, key])
   @@index([tenantId])
   @@index([tenantId, jobName])
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// FEATURE 19: Tiers, entitlements, and payments
+////////////////////////////////////////////////////////////////////////////////
+
+model BillingSubscription {
+  id                     String   @id
+  tenantId               String
+  provider               String   @default("CREEM")
+  providerCustomerId     String
+  providerSubscriptionId String
+  providerProductId      String
+  planCode               String
+  catalogVersion         Int      @default(1)
+  status                 String   @default("ACTIVE") // ACTIVE | TRIALING | PAST_DUE | UNPAID | CANCELLED | EXPIRED | PAUSED
+  currency               String   @default("USD")
+  unitAmountMinor        Int      @default(0)
+  billingInterval        String   @default("MONTH") // MONTH | YEAR
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  trialStart             DateTime?
+  trialEnd               DateTime?
+  cancelAtPeriodEnd      Boolean  @default(false)
+  canceledAt             DateTime?
+  graceEndsAt            DateTime?
+  providerUpdatedAt      DateTime?
+  lastSyncedAt           DateTime?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@unique([provider, providerSubscriptionId])
+  @@index([tenantId, status])
+  @@index([tenantId, providerCustomerId])
+  @@index([providerSubscriptionId])
+}
+
+model EntitlementGrant {
+  id                     String   @id
+  tenantId               String
+  planCode               String
+  source                 String   // DEFAULT | TRIAL | CREEM_SUBSCRIPTION | ENTERPRISE_CONTRACT | GRANDFATHERED | MANUAL
+  effectiveFrom          DateTime
+  effectiveUntil         DateTime?
+  billingSubscriptionId  String?
+  overrideLimitsJson     String?  // JSON PlanLimitsJson (enterprise/grandfather)
+  reason                 String?
+  createdById            String?
+  createdAt              DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([tenantId, source])
+  @@index([tenantId, effectiveFrom, effectiveUntil])
+  @@index([billingSubscriptionId])
+}
+
+model BillingEventInbox {
+  id                String   @id
+  provider          String   @default("CREEM")
+  providerEventId   String
+  eventType         String
+  providerCreatedAt DateTime?
+  tenantId          String?
+  payloadChecksum   String
+  status            String   @default("RECEIVED") // RECEIVED | PROCESSING | PROCESSED | FAILED | IGNORED
+  attemptCount      Int      @default(0)
+  lastError         String?
+  processedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([provider, providerEventId])
+  @@index([status])
+  @@index([tenantId])
+  @@index([createdAt])
+}
+
+model UsageCounter {
+  id          String   @id
+  tenantId    String
+  metric      String   // MANAGED_STORAGE_BYTES | AI_DRAFT_CREDITS
+  periodStart DateTime
+  used        BigInt   @default(0)
+  reserved    BigInt   @default(0)
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@unique([tenantId, metric, periodStart])
+  @@index([tenantId, metric])
+}
+
+model TrialIdentity {
+  id                String   @id
+  tenantId          String
+  emailFingerprint  String
+  domainFingerprint String
+  trialStartedAt    DateTime
+  trialEndedAt      DateTime?
+  createdAt         DateTime @default(now())
+
+  @@unique([emailFingerprint])
+  @@index([domainFingerprint])
+  @@index([tenantId])
 }

@@ -4,6 +4,8 @@ import type { AuthenticatedContext } from "../../context.js";
 import type { IInvitationRepository, IUserRepository } from "../../ports/identity.js";
 import type { IIdGenerator } from "../../ports/core.js";
 import type { IAuditLogger, INotificationPort } from "../../ports/core.js";
+import type { EntitlementService } from "../../services/entitlement-service.js";
+import { entitlementLimitError } from "../../services/entitlement-service.js";
 
 export interface InviteUserCommand {
   email: string;
@@ -18,6 +20,7 @@ export class InviteUserHandler {
     private readonly invitations: IInvitationRepository,
     private readonly audit: IAuditLogger,
     private readonly notify: INotificationPort,
+    private readonly entitlements: EntitlementService,
   ) {}
 
   async handle(ctx: AuthenticatedContext, cmd: InviteUserCommand): Promise<Result<{ invitationId: string; token: string }, DomainError>> {
@@ -28,6 +31,24 @@ export class InviteUserHandler {
     if (existing.ok && existing.value) {
       return { ok: false, error: DomainError.conflict("User already exists") };
     }
+
+    // Seat capacity: an invitation reserves a seat. A live, unexpired
+    // invitation for the same email is reused rather than consuming another.
+    const entitlementResult = await this.entitlements.resolve({ tenantId: tenantId.toString() });
+    if (!entitlementResult.ok) return entitlementResult;
+    const entitlement = entitlementResult.value;
+    const limit = entitlement.limits.maxSeats;
+    if (limit !== null) {
+      const usageResult = await this.entitlements.usageSnapshot({ tenantId: tenantId.toString() });
+      if (!usageResult.ok) return usageResult;
+      if (usageResult.value.seats >= limit) {
+        return {
+          ok: false,
+          error: entitlementLimitError("SEATS", limit, usageResult.value.seats),
+        };
+      }
+    }
+
     const id = this.ids.generate();
     const token = this.ids.generate();
     const inv = Invitation.create({

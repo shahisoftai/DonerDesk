@@ -7,6 +7,8 @@ import type { IOrganizationRepository } from "../../ports/identity.js";
 import type { IProjectWorkspaceProviderResolver } from "../../ports/infrastructure.js";
 import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { CreateProjectInput } from "@donordesk/contracts";
+import type { EntitlementService } from "../../services/entitlement-service.js";
+import { entitlementLimitError } from "../../services/entitlement-service.js";
 
 export class CreateProjectHandler {
   constructor(
@@ -18,9 +20,28 @@ export class CreateProjectHandler {
     private readonly providerResolver: IProjectWorkspaceProviderResolver,
     private readonly events: IEventBus,
     private readonly audit: IAuditLogger,
+    private readonly entitlements: EntitlementService,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateProjectInput): Promise<Result<{ id: string }, DomainError>> {
+    // Capacity enforcement: resolve the effective plan and current project
+    // count before creating. A tenant already at its project limit is rejected
+    // with a structured PLAN_LIMIT_REACHED error.
+    const entitlementResult = await this.entitlements.resolve({ tenantId: ctx.tenant.tenantId.toString() });
+    if (!entitlementResult.ok) return entitlementResult;
+    const entitlement = entitlementResult.value;
+    const limit = entitlement.limits.maxActiveProjects;
+    if (limit !== null) {
+      const usageResult = await this.entitlements.usageSnapshot({ tenantId: ctx.tenant.tenantId.toString() });
+      if (!usageResult.ok) return usageResult;
+      if (usageResult.value.activeProjects >= limit) {
+        return {
+          ok: false,
+          error: entitlementLimitError("PROJECTS", limit, usageResult.value.activeProjects),
+        };
+      }
+    }
+
     const id = this.ids.generate();
     const project = Project.create({
       id,
