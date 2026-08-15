@@ -1,6 +1,6 @@
 # DonorDesk Features Index
 
-This directory contains detailed documentation for each of DonorDesk's 17 MVP features.
+This directory contains detailed documentation for each of DonorDesk's 18 MVP features.
 
 > **Frontend status:** Portal UI for these features is implemented across Phases 0–7
 > of `../imp/frontend-imp-plan.md` (reports `../imp/PHASE*-FRONTEND-REPORT.md`).
@@ -28,6 +28,7 @@ This directory contains detailed documentation for each of DonorDesk's 17 MVP fe
 | 15 | [Dashboard](./15-Dashboard.md) | Implemented | `apps/web/src/app/(portal)/dashboard/page.tsx` |
 | 16 | [Audit Log](./16-Audit-Log.md) | Implemented | `packages/domain/src/entities/AuditLog.ts` |
 | 17 | [Basic Settings](./17-Basic-Settings.md) | Implemented | `apps/web/src/app/(portal)/settings/` |
+| 18 | [Project Creation Wizard](./18-Project-Creation-Wizard.md) | Planned | `packages/infrastructure/src/storage/project-drive-folders.ts`, `packages/application/src/use-cases/projects/` |
 
 ## Status Legend
 

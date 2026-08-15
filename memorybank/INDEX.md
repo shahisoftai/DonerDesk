@@ -100,7 +100,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | [`Fixes.md`](Fixes.md) | Applied fix log — frontend integration plus production signup/login, RLS, OLS Origin, and advisory-lock fixes |
 | [`pending.md`](pending.md) | **Outstanding items** — production hardening, async/AI features, observability (136 lines) |
 | [`features.md`](features.md) | Theme + portal feature tracking (light/dark theme; portal implementation summary) |
-| [`Features/INDEX.md`](Features/INDEX.md) | 17 MVP feature specs index with statuses |
+| [`Features/INDEX.md`](Features/INDEX.md) | 18 MVP feature specs index with statuses |
 
 ---
 
@@ -152,7 +152,8 @@ memorybank/
 ├── features.md                       Feature tracking (theme + portal)
 ├── contabo-ops.md                   Live-host inventory & operations
 ├── Features/
-│   └── INDEX.md                     17 MVP feature specs index
+│   ├── INDEX.md                     18 MVP feature specs index
+│   ├── 18-Project-Creation-Wizard.md  Project bootstrap wizard + Drive folders + setup gates
 │   └── 01..17-*.md                  Per-feature specs
 ├── base/
 │   ├── DonorDesk — Initial Concept Document.md
