@@ -1,168 +1,382 @@
 # Feature 18: Project Creation Wizard (bootstrap → reporting-ready)
 
 **Author:** Kilo (agent) · **Date:** 2026-08-15
-**Status:** PLANNED — approved for implementation; Phase A (Drive folder scaffolding) is the first build block.
-
----
+**Status:** PLANNED — approved in concept; revised implementation specification.
 
 ## 1. Overview
 
-Turn project creation into a **guided bootstrap**: the user fills the required fields
-to create a Project, DonorDesk **auto-provisions a per-project Google Drive folder tree**
-inside a tenant-level "DonorDesk" parent folder (in the tenant's own Drive), and the
-Project then moves through a **Setup phase**. Logframe, indicators, donor template, and
-donor-report special instructions are **optional at creation time** and completed at the
-user's discretion — but the **reporting engine (reporting periods, indicator updates
-against a period, drafts, exports) is hard-gated until Setup is complete**.
+Project creation remains a lightweight three-step flow. After the Project database record is
+created, the user is redirected to a resumable Setup checklist. For Google Drive tenants,
+DonorDesk asynchronously provisions a tenant root and per-project folder tree; external storage
+failure never rolls back Project creation.
 
-Every Project runs on its own settings: Google Drive folder, donor template, logframe,
-indicator set, indicator entry, deadlines, reporting frequency, language, and writing
-instructions. Projects report based on their own profile.
+Logframe, indicators, donor template, reporting profile, and team assignment are optional at
+creation and may be completed across sessions. Reporting readiness is derived from current
+project data. Creating a reporting period is hard-gated until the project is ready, while
+evidence, activity capture, logframe/indicator editing, template setup, profile editing, and
+team assignment remain available.
 
-This feature extends `Features/04-Project-Setup.md` and builds directly on the Drive
-link-first architecture in `memorybank/gdrive.md`.
+This extends `Features/04-Project-Setup.md` and `memorybank/gdrive.md`.
 
----
+## 2. Requirements and scope
 
-## 2. Product requirements
-
-| # | Requirement | Status today (2026-08-15) |
+| # | Requirement | Current state |
 |---|---|---|
-| R1 | Required fields to create a Project (title, code, donor, implementer, country, sector, dates, frequency) | ✅ Exists (`CreateProjectSchema` + `Project.validate()`) |
-| R2 | Auto-create a **DonorDesk parent folder** in the tenant's Drive at onboarding | ❌ Missing |
-| R3 | Auto-create a **per-project folder + subfolders** (Templates, Logframe, Data, Evidence-Reports, Evidence-Images, Financial, Submitted-Reports) | ❌ Missing |
-| R4 | Logframe optional at creation | ✅ Already optional |
-| R5 | Donor template optional at creation | ✅ Already optional |
-| R6 | **Donor-report special instructions** (structure, word count, language, tone) optional at creation | ❌ Missing (new contract) |
-| R7 | **Hard gate:** system must not start (no reporting period) until Drive folder + logframe + template + instructions are complete | ❌ Missing |
-| R8 | Many projects, each with own settings, reported per its own profile | ⚠️ Partial (per-project FK chain exists; per-project setup profile does not) |
-| R9 | Indicator data-entry system tied to reporting periods | ⚠️ Partial (create + verify routes only; no submit/reject/history read model) |
+| R1 | Keep core creation fields and existing three wizard steps | ✅ Exists |
+| R2 | Redirect post-create to a resumable Setup checklist | ❌ Missing |
+| R3 | For Drive tenants, ensure tenant DonorDesk root and per-project tree | ❌ Missing |
+| R4 | Provision asynchronously, tenant-scoped, idempotently, with retry/repair | ❌ Missing |
+| R5 | Add one authoritative per-project reporting profile | ❌ Missing |
+| R6 | Derive readiness with machine-readable blockers and next actions | ❌ Missing |
+| R7 | Gate reporting-period creation authoritatively | ❌ Missing |
+| R8 | Snapshot effective template/profile instructions for each period | ❌ Missing |
+| R9 | Roll out safely for legacy projects and non-Drive providers | ❌ Missing |
+| R10 | Define post-create lifecycle: DRAFT→ACTIVE, archive/restore, completion, end-of-life | ❌ Missing |
+| R11 | Post-create editability of dates/budget (fix `UpdateProjectHandler` dead branch) | ⚠️ Broken |
+| R12 | Project-scoped access control (membership + `project.setup`/`project.archive`) | ❌ Missing |
+| R13 | Single scheduling source of truth + deadline-reminder wiring | ❌ Missing |
+| R14 | Indicator data-entry sequencing made explicit to users | ⚠️ Implied, unstated |
 
----
+Out of scope: indicator-update lifecycle/history, automatic recurring periods, real LLM/OCR,
+project duplication, donor portals, and cross-project reporting. Track these separately.
+Also anticipated but deferred: canonical donor/partner entities (§5.6), project copy/duplicate
+(§5.7), and project deletion/retention (§5.9).
 
-## 3. Current-state gaps (verified in code, 2026-08-15)
+## 3. Verified gaps
 
-1. **No Drive folder creation anywhere.** `GoogleDriveEvidenceStorage`
-   (`packages/infrastructure/src/storage/google-drive.ts`) only does `getFile()` +
-   `grantReadAccess()` (file-level, reader role). No `files.create` for folders, no
-   `driveFolderId` on `Project`, no `driveRootFolderId` on `Organization`.
-2. **Per-tenant token wiring is present but untested with real tenants.**
-   `PrismaGoogleDriveTokenStore` (`storage/prisma-google-drive-token-store.ts`) reads the
-   encrypted `PrismaGoogleDriveCredentialStore` and is already wired into
-   `EvidenceStorageResolver` (`container.ts:240-252`). `EnvGoogleDriveTokenStore` fallback
-   and R2 config remain env-gated. Folder creation depends on this working for real
-   tenants — which needs a Google Cloud project + service account (see §12).
-3. **No project setup state machine.** `Project.status` is a static enum
-   (`DRAFT|ACTIVE|PAUSED|COMPLETED|ARCHIVED`); `CreateReportingPeriodHandler`
-   (`packages/application/src/use-cases/reporting/create-reporting-period.ts`) performs
-   **no setup check**.
-4. **No reporting-instructions contract.** `CreateDonorTemplateSchema` has `notes` +
-   `TemplateSection.description` only — no per-section word counts, no tone/language/voice.
-5. **Indicator update lifecycle is incomplete at the API.** Domain supports
-   `submit/verify/requestCorrection/reject` (`packages/domain/src/contexts/logframe/indicator-update.ts`)
-   but only `create` + `verify` routes exist (`apps/api/src/routes/logframe.ts:53-67`).
-6. **No indicator-update history read model.** Indicator detail page
-   (`apps/web/src/app/(portal)/projects/[id]/indicators/[indicatorId]/page.tsx`) explicitly
-   states the API does not expose it.
+1. `GoogleDriveEvidenceStorage` reads metadata and grants file access but creates no folders.
+2. `CreateProjectHandler` saves and audits but emits no folder-provisioning event.
+3. The current `OutboxEventBus` is an event-to-queue adapter, not a durable transactional outbox.
+4. `CreateReportingPeriodHandler` does not load the Project, validate tenant/template ownership,
+   check setup, validate project date bounds, or detect overlapping periods.
+5. Template section IDs are optional and there is no active/default-template concept.
+6. No reporting profile or immutable effective-instructions snapshot exists.
+7. The web wizard redirects to `/projects/[id]`, not `/projects/[id]/setup`.
+8. Project codes are not uniquely constrained per tenant.
+9. `UpdateProjectHandler` has a dead `startDate`/`endDate` branch
+   (`update-project.ts:35-37`) and `Project.updateDetails` excludes `duration`/`budget`; dates
+   and budget are un-editable after creation and the settings page reports editing is unavailable.
+10. `ProjectMember` is a roleless stub with no repository wired in `container.ts`; there is no
+    per-project membership boundary.
+11. `list-projects` returns every tenant project with no role or assignment filter — a `VIEWER`
+    can enumerate all projects (cross-project isolation gap, frontend plan FE-B03).
+12. No `project.setup`/`project.archive` capability exists in `capabilities.ts`; role
+    capabilities are global, not project-scoped.
+13. Scheduling source of truth is unresolved: `Project.reportingFrequency` vs
+    `ReportingProfile.autoPeriodCreation` vs `DonorTemplate.reportType`; deadline reminders are
+    not wired to the profile.
+14. `donorName` and `implementingOrganization` are free-text, not canonical entities.
+15. Indicator baseline/target are stored as strings; the "required baseline/target" readiness
+    rule has no defined "present and well-formed" check; achievement entry is impossible until
+    a gated period exists.
+16. No `DELETE /v1/projects/:id` route and no idempotency-key support on period creation.
 
----
+## 4. Design decisions
 
-## 4. Target data model
+### 4.1 Derived readiness
 
-**Migration:** `20260815000000_project_bootstrap` (naming follows the existing
-`YYYYMMDDHHMMSS_name` convention in `packages/infrastructure/prisma/migrations/`).
+Do not persist template/logframe/indicator/profile/team readiness booleans. They become stale
+when source data changes. Persist only operational provisioning state and optional user
+acknowledgement; compute readiness on setup reads and immediately before gated mutations.
+
+### 4.2 Acknowledgement is not a gate
+
+Readiness is automatic when hard requirements pass. “Finish setup” records optional
+acknowledgement for UX/audit. If required data is later removed or invalidated, status becomes
+`ACTION_REQUIRED` even if the project was previously ready.
+
+### 4.3 One reporting-instruction source
+
+`ReportingProfile` is the current source of project writing behavior. Donor-imposed word limits
+live on stable, versioned template sections. A reporting period stores the resolved effective
+template/profile snapshot so later edits do not alter existing reports.
+
+### 4.4 Provider-specific workspace readiness
+
+- `GOOGLE_DRIVE`: provisioning is required.
+- `LOCAL`/`R2`: provisioning is `NOT_REQUIRED`; do not create unused folder trees or label them
+  “Drive ready.”
+
+## 5. Project lifecycle and management
+
+The wizard is the creation path, but Feature 18 must also define how a project is managed after
+creation. These items share the readiness state and workspace introduced here, so they are specified
+together rather than split into a separate feature.
+
+### 5.1 Lifecycle reconciliation
+
+`Project.status` (`DRAFT|ACTIVE|PAUSED|COMPLETED|ARCHIVED`) is a business lifecycle; the setup
+status derived in §8 (`NOT_STARTED|IN_PROGRESS|READY|ACTION_REQUIRED`) is a provisioning lifecycle.
+They are distinct and are not merged.
+
+- Creation always yields `status = DRAFT` (unchanged today).
+- A project may become `ACTIVE` only when readiness is `READY` and setup is acknowledged.
+  Activation is manual, permission-gated, and audited (`project.activated`) — never automatic.
+- `PAUSED` does not alter readiness; it suppresses period creation and reminders while preserving
+  setup state.
+- `COMPLETED` and `ARCHIVED` suppress further period creation regardless of readiness.
+
+### 5.2 Post-create editability (must-fix)
+
+`UpdateProjectHandler` contains a dead branch for `startDate`/`endDate`
+(`packages/application/src/use-cases/projects/update-project.ts:35-37`) and `Project.updateDetails`
+excludes `duration` and `budget` (`project.ts:168`), so the dates and budget captured by the wizard
+can never be corrected. Fix this before claiming the wizard owns those fields:
+
+- Allow updating `startDate`/`endDate` (validate `endDate >= startDate`), `budgetAmount`, and
+  `budgetCurrency` (ISO-4217).
+- Reject date edits that would invalidate existing reporting periods (overlap/containment check).
+- Audit old vs new values (existing `oldValue`/`newValue` convention).
+
+### 5.3 Archive, completion, and end-of-life
+
+- **Archive** (soft, reversible): `status = ARCHIVED`; suppress period creation and reminders; leave
+  the Drive tree in place and do not revoke service-account access (restore stays cheap). Gated by a
+  new `project.archive` capability.
+- **Completion**: on `COMPLETED`, disable `autoPeriodCreation`; do not delete or rename the workspace
+  folder.
+- **Reconciliation**: the §10 reconciliation job must tolerate archived/completed projects and must
+  not attempt repair on them.
+
+### 5.4 Project-scoped access control
+
+- Add `project.setup` and `project.archive` capabilities to
+  `apps/web/src/lib/shared/capabilities.ts` and gate the §11 `/setup`, `/setup/acknowledge`,
+  workspace retry/repair, and profile routes on them.
+- Introduce a project-membership port. The existing `ProjectMember` entity is a roleless stub with
+  no repository wired in `container.ts`. Scope `list-projects` and `getProject` to membership/role so
+  a `VIEWER` cannot enumerate or read unrelated projects (cross-project isolation, frontend plan
+  FE-B03). Treat this as a named dependency of Feature 18, not a silent follow-up.
+- Staff assignment (`projectManagerId`/`meOfficerId`/`reportingOfficerId`) remains a soft readiness
+  signal; membership ABAC is the authoritative access boundary.
+
+### 5.5 Reporting-scheduling source of truth
+
+Reconcile three overlapping fields:
+
+- `Project.reportingFrequency` — advisory human cadence (kept).
+- `ReportingProfile.autoPeriodCreation` + `deadlineOffsetDays` — authoritative scheduling knobs.
+- `DonorTemplate.reportType` — template classification only, not scheduling.
+
+Rule: `Project.reportingFrequency` is advisory; period scheduling is driven by the profile. Wire
+`generate-deadline-reminders` to `deadlineOffsetDays` and a per-project recipient preference. State
+this rule in the §7 profile contract and feature-flag it per §13.
+
+### 5.6 Donor / partner entities (anticipated, deferred)
+
+`donorName` and `implementingOrganization` are free-text strings. For the multi-project model a
+canonical donor/partner directory (contact, per-donor template and tone defaults) is anticipated.
+Defer the entity work, but do not add logic that assumes `donorName` is unique or canonical.
+
+### 5.7 Project copy / duplicate (anticipated, deferred)
+
+"Create a project from an existing one" (clone logframe, template, profile, and Drive tree) is the
+most common recurring-grant pattern. Reserve as an explicit follow-up; the stable workspace-identity
+model in §10 is a prerequisite.
+
+### 5.8 Indicator data-entry sequencing
+
+Indicator *definitions* are editable during setup, but indicator *achievement values* require a
+`reportingPeriodId`, and periods are hard-gated on readiness (§9). Therefore no achievement data
+entry is possible until setup is complete. The §12 setup UI must state this so users are not
+surprised. Baseline/target are stored as strings today; the readiness rule "required baseline/target/
+unit/frequency" must define a "present and well-formed" check for string values.
+
+### 5.9 Deletion and retention (deferred, named)
+
+There is no `DELETE /v1/projects/:id` route. Deletion and data retention (including Drive tree
+teardown and evidence retention) are deferred but must be designed before GA; do not introduce
+ad-hoc hard-delete paths.
+
+## 6. Target data model
+
+Use the next available migration timestamp at implementation time.
 
 ```prisma
-// ---- schema.prisma additions ----
+model Organization {
+  // existing fields
+  driveRootFolderId String?
+}
 
 model Project {
-  // ...existing fields...
-  driveFolderId             String?   // root of THIS project's Drive tree
-  reportingLanguage         String    @default("en")
-  reportingInstructionsJson String    @default("{}")   // runtime snapshot of instructions
+  // existing fields
+  workspaceRootId  String?
+  setup            ProjectSetup?
+  reportingProfile ReportingProfile?
 
-  setup         ProjectSetup?
-  instructions  ReportingInstruction?
+  @@unique([tenantId, projectCode])
+  @@index([tenantId, id])
 }
 
 model ProjectSetup {
-  id                 String   @id
-  tenantId           String
-  projectId          String   @unique
-  driveFolderReady   Boolean  @default(false)
-  donorTemplateReady Boolean  @default(false)
-  logframeReady      Boolean  @default(false)
-  instructionsReady  Boolean  @default(false)
-  teamReady          Boolean  @default(false)
-  markedComplete     Boolean  @default(false)   // user-confirmed "setup done"
-  completedAt        DateTime?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                       String   @id
+  tenantId                 String
+  projectId                String   @unique
+  workspaceProvisionStatus String   @default("PENDING")
+  workspaceProvisionError  String?
+  provisionAttemptCount    Int      @default(0)
+  lastProvisionAttemptAt   DateTime?
+  acknowledgedAt           DateTime?
+  acknowledgedById         String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  project                  Project  @relation(fields: [projectId], references: [id])
 
-  @@index([tenantId])
+  @@index([tenantId, projectId])
+  @@index([workspaceProvisionStatus])
 }
 
-model ReportingInstruction {
-  id                        String   @id
-  tenantId                  String
-  projectId                 String   @unique
-  language                  String
-  tone                      String   // "FORMAL" | "CONCISE" | "NARRATIVE" | "TECHNICAL"
-  writingStyle              String?
-  audienceNotes             String?
-  formattingRulesJson       String   @default("[]")
-  specialRequirementsJson   String   @default("[]")
-  wordCountsJson            String   @default("{}")   // { "sectionId": { "min": 200, "max": 400 } }
-  createdById               String
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+model ReportingProfile {
+  id                       String   @id
+  tenantId                 String
+  projectId                String   @unique
+  defaultTemplateId        String?
+  language                 String   @default("en")
+  tone                     String   @default("FORMAL")
+  writingStyle             String?
+  audienceNotes            String?
+  formattingRulesJson      String   @default("[]")
+  specialRequirementsJson  String   @default("[]")
+  sectionOverridesJson     String   @default("{}")
+  deadlineOffsetDays       Int?
+  autoPeriodCreation       Boolean  @default(false)
+  version                  Int      @default(1)
+  createdById              String
+  updatedById              String
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  project                  Project  @relation(fields: [projectId], references: [id])
 
-  @@index([tenantId])
+  @@index([tenantId, projectId])
 }
 
-model Organization {
-  // ...existing fields...
-  driveRootFolderId String?   // the tenant's "DonorDesk" root folder in Drive
+model ReportingPeriod {
+  // existing fields
+  reportingProfileSnapshotJson String @default("{}")
+  templateSnapshotJson         String @default("{}")
 }
 ```
 
-> **Design note:** `ReportingInstruction` is intentionally a **separate entity from
-> DonorTemplate**. A template defines *what* to report; instructions define *how* to write
-> it. `wordCountsJson` keys reference `TemplateSection.id`s, so per-section word limits
-> live in one place without changing `TemplateSectionSchema`.
+Provision status: `NOT_REQUIRED | PENDING | IN_PROGRESS | READY | FAILED`. Add all required
+Prisma reverse relations and tenant-qualified repository operations. Add tenant/project code
+uniqueness only after resolving legacy duplicates.
 
----
+### Template sections
 
-## 5. New subsystem: `ProjectDriveFolderService` (infrastructure)
+Persisted sections must have stable server-generated IDs. Add `reviewStatus` (`DRAFT|REVIEWED`),
+optional `minWords`, and optional `maxWords`; validate nonnegative values and `minWords <=
+maxWords`. Existing sections receive stable IDs during backfill. Template limits are donor
+defaults; explicit profile overrides take precedence in the immutable snapshot.
 
-**File:** `packages/infrastructure/src/storage/project-drive-folders.ts`
-**Port:** `packages/application/src/ports/infrastructure.ts` — `IProjectDriveFolderService`
+## 7. Reporting profile contract
+
+Create `packages/contracts/src/reporting-profile.ts` with:
 
 ```typescript
-export interface IProjectDriveFolderService {
-  /** Ensure the tenant "DonorDesk" root folder exists; returns its Drive id. */
-  ensureRootFolder(tenantId: string): Promise<Result<string, DomainError>>;
-  /** Ensure THIS project's tree exists; returns the project root folder id. */
-  ensureProjectFolder(projectId: string): Promise<Result<string, DomainError>>;
-  /** Grant the DonorDesk service account reader access to a folder tree. */
-  grantTreeReadAccess(folderId: string): Promise<Result<void, DomainError>>;
+const ToneSchema = z.enum(["FORMAL", "CONCISE", "NARRATIVE", "TECHNICAL"]);
+
+const WordCountOverrideSchema = z.object({
+  min: z.number().int().nonnegative().optional(),
+  max: z.number().int().positive().optional(),
+}).superRefine((v, ctx) => {
+  if (v.min !== undefined && v.max !== undefined && v.min > v.max)
+    ctx.addIssue({ code: "custom", path: ["max"], message: "max must be at least min" });
+});
+
+export const UpsertReportingProfileSchema = z.object({
+  defaultTemplateId: z.string().min(1).optional(),
+  language: z.string().min(2).max(10).default("en"),
+  tone: ToneSchema.default("FORMAL"),
+  writingStyle: z.string().max(1000).optional(),
+  audienceNotes: z.string().max(1000).optional(),
+  formattingRules: z.array(z.string().max(200)).max(50).default([]),
+  specialRequirements: z.array(z.string().max(200)).max(50).default([]),
+  sectionOverrides: z.record(WordCountOverrideSchema).default({}),
+  deadlineOffsetDays: z.number().int().min(0).max(365).optional(),
+  expectedVersion: z.number().int().positive().optional(),
+});
+```
+
+The default template and override section IDs must belong to the same tenant/project.
+`expectedVersion` provides optimistic concurrency. “Use defaults” creates a valid profile from
+organization language, formal tone, and a selected template.
+
+## 8. Derived readiness policy
+
+Add an application-layer `IProjectReadinessService` returning:
+
+```typescript
+type ProjectSetupStatus = "NOT_STARTED" | "IN_PROGRESS" | "READY" | "ACTION_REQUIRED";
+type SetupBlocker = { code: string; label: string; href?: string; retryable?: boolean };
+type ProjectReadiness = {
+  ready: boolean;
+  status: ProjectSetupStatus;
+  blockers: SetupBlocker[];
+  nextAction?: SetupBlocker;
+};
+```
+
+Hard requirements:
+
+1. Drive workspace is `READY`; Local/R2 is `NOT_REQUIRED`.
+2. The profile selects a same-tenant/project template with at least one `REVIEWED`, required
+   section, stable IDs, and valid constraints.
+3. At least one reportable indicator exists, belongs to a valid logframe item, and has required
+   baseline, target, unit, and frequency according to indicator type. Do not require all four
+   logframe levels.
+4. A valid profile exists and its template/override references remain valid.
+
+Team assignment is a soft recommendation, not a gate. Suggested blockers:
+
+```text
+WORKSPACE_PENDING
+WORKSPACE_ACCESS_REVOKED
+WORKSPACE_PROVISION_FAILED
+REPORTING_PROFILE_MISSING
+DEFAULT_TEMPLATE_MISSING
+TEMPLATE_HAS_NO_REVIEWED_REQUIRED_SECTIONS
+TEMPLATE_SECTION_IDS_INVALID
+NO_REPORTABLE_INDICATORS
+INDICATOR_CONFIGURATION_INCOMPLETE
+SECTION_OVERRIDE_INVALID
+```
+
+`NOT_STARTED` means no hard work is complete; `IN_PROGRESS` means partially complete and never
+ready; `READY` means all hard requirements pass; `ACTION_REQUIRED` means a previously
+ready/acknowledged project regressed or storage access failed.
+
+## 9. Authoritative reporting-period gate
+
+Before creating a period, `CreateReportingPeriodHandler` must:
+
+1. Load Project by input ID and authenticated tenant; cross-tenant IDs return `NOT_FOUND`.
+2. Compute readiness and return `PROJECT_SETUP_INCOMPLETE` with structured blockers.
+3. Resolve the submitted/default template and validate same project/tenant ownership.
+4. Validate dates against project bounds and reject disallowed overlaps/duplicates.
+5. Resolve and persist immutable template/profile snapshots.
+6. Save and audit using the established transaction/audit convention.
+
+Downstream draft/export/checklist handlers still validate their direct invariants and tenant
+ownership; they must not assume a period remains valid merely because it once passed setup.
+
+## 10. Drive workspace provisioning
+
+Add a tenant-scoped port:
+
+```typescript
+interface IProjectWorkspaceService {
+  ensureTenantRoot(tenantId: TenantId): Promise<Result<WorkspaceReference, DomainError>>;
+  ensureProjectWorkspace(tenantId: TenantId, projectId: string): Promise<Result<WorkspaceReference, DomainError>>;
+  verifyAccess(tenantId: TenantId, rootId: string): Promise<Result<void, DomainError>>;
+  repairProjectWorkspace(tenantId: TenantId, projectId: string): Promise<Result<WorkspaceReference, DomainError>>;
 }
 ```
 
-**Behavior:**
-- **Lazy + idempotent, never eager.** No Drive call inside the create-project DB
-  transaction. Folder setup is scheduled via `OutboxEventBus` (job `project.drive.setup`)
-  and additionally ensured on-demand from the evidence upload/link handlers and a manual
-  "Create folder now" button.
-- **Idempotency by lookup:** `files.list` with
-  `q = name='X' and '<parentId>' in parents and mimeType='application/vnd.google-apps.folder'`
-  → reuse existing; else `files.create`. Same `409`-tolerant pattern as the existing
-  `grantReadAccess` (`google-drive.ts:105-120`).
-- **Folder tree** (project root named `{Project title} ({Project code})`):
+Reuse `PrismaGoogleDriveTokenStore`. Folder tree:
 
-```
-DonorDesk/                                ← tenant root (Organization.driveRootFolderId)
-└── {Title} ({Code})/                     ← Project.driveFolderId
+```text
+DonorDesk/
+└── {Project title} ({Project code})/
     ├── 01-Donor-Templates/
     ├── 02-Logframe/
     ├── 03-Data-Files/
@@ -172,233 +386,135 @@ DonorDesk/                                ← tenant root (Organization.driveRoo
     └── 07-Submitted-Reports/
 ```
 
-- **StorageProvider matrix:** `GOOGLE_DRIVE` → real Drive scaffold; `LOCAL`/`R2` → no-op
-  (a local scaffold at `STORAGE_ROOT/projects/{id}/...`; `driveFolderReady` set true).
-- **Reuse `PrismaGoogleDriveTokenStore`** (already wired in `container.ts:240`) — do **not**
-  add another token path. Leave `GoogleDriveEvidenceStorage` untouched.
-- **Read-time resolution:** `GET /v1/projects/:id` returns `driveFolderId` so the UI can
-  deep-link to the project's Drive folder.
+Names are presentation only. Set Drive `appProperties` with tenant ID, project ID, and stable
+folder role (`PROJECT_ROOT`, `DONOR_TEMPLATES`, etc.). Lookup includes app properties, parent,
+folder MIME type, and `trashed = false`, with escaped query values. Concurrent duplicate
+candidates produce a repairable conflict. A project rename may rename its existing folder but
+must never create a new identity.
 
----
+Project creation commits before Drive calls. Prefer a durable transactional outbox intent; the
+current `OutboxEventBus` alone is not durable. Regardless of queue mode, add bounded retry and a
+reconciliation job for `PENDING`/`FAILED` projects and periodic verification of `READY` roots.
+Expose Retry, Test access, and Repair actions using the same idempotent service. Model OAuth
+revocation, deleted/moved folders, account replacement, Shared Drive constraints, and permission
+failures explicitly. Validate OAuth scopes against all required operations before live rollout.
 
-## 6. Project setup state machine (application layer)
+## 11. API and read model
 
-**New domain entity:** `packages/domain/src/contexts/projects/project-setup.ts`
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/v1/projects/:id/setup` | Derived checklist, blockers, next action |
+| POST | `/v1/projects/:id/setup/acknowledge` | Optional acknowledgement |
+| POST | `/v1/projects/:id/workspace/retry` | Idempotent provisioning retry |
+| POST | `/v1/projects/:id/workspace/repair` | Verify/repair structure |
+| GET | `/v1/projects/:id/reporting-profile` | Current profile/version |
+| PUT | `/v1/projects/:id/reporting-profile` | Versioned upsert |
+| POST | `/v1/reporting-periods` | Authoritative gate and snapshots |
 
-```
-ProjectSetupStatus = "NOT_STARTED" | "SETUP_IN_PROGRESS" | "READY"
-```
+Extend project overview using the same readiness service, not a second formula. Return status,
+ready, blockers, nextAction, provider-specific storage status/deep link/error, active-template
+and reviewed-section counts, reportable/incomplete indicator counts, profile version, soft team
+status, and acknowledgement time.
 
-Derived (never stored directly; `ProjectSetup` booleans are the source of truth):
-- `driveFolderReady` ← folder service ok (or LOCAL scaffold ok)
-- `donorTemplateReady` ← `DonorTemplate.count(projectId) > 0`
-- `logframeReady` ← `LogframeItem.count(projectId) >= 4` (one per level:
-  Goal/Outcome/Output/Activity) **and** `Indicator.count(projectId) > 0`
-- `instructionsReady` ← `ReportingInstruction` exists (or defaults generated at template
-  upload)
-- `teamReady` ← assigned staff (`projectManagerId`/`meOfficerId`/`reportingOfficerId` or
-  `ProjectMember`) ≥ 1 — soft
-- `markedComplete` ← user explicitly checks "Setup complete"
+All mutations are authorization-checked and audited. Suggested events:
+`project.workspace.provisioned`, `project.workspace.provision_failed`,
+`project.workspace.repaired`, `project.setup.acknowledged`,
+`project.reporting_profile.created|updated`, and `reporting.period.created`. Do not audit GET-time
+readiness recomputation.
 
-**Hard gate (the "system will not start" rule) — one change in one handler:**
+## 12. Frontend behavior
 
-```typescript
-// CreateReportingPeriodHandler.handle()
-const setup = await this.setup.getForProject(input.projectId);
-if (!setup?.isReportingReady()) {
-  return {
-    ok: false,
-    error: new DomainError(
-      "PROJECT_SETUP_INCOMPLETE",
-      "Project setup incomplete: donor template, logframe, and reporting instructions " +
-      "are required before creating a reporting period.",
-    ),
-  };
-}
-```
+1. Keep three wizard steps; align step validation with `CreateProjectSchema`, including dates and
+   budget/currency cross-field errors.
+2. Redirect successful creation to `/projects/[id]/setup`.
+3. Build a resumable, multi-user checklist; show blocker count and concrete actions, not an
+   arbitrary percentage.
+4. Link to template review, logframe/indicators, reporting profile, and team.
+5. Provide “Use defaults” for the profile and Open/Test/Retry/Repair Drive actions according to
+   state and capability.
+6. Disable period creation in UI when incomplete, but keep the server authoritative and render
+   blockers returned after concurrent changes.
+7. Hide mutations from unauthorized viewers; handle unsaved changes and optimistic conflicts.
 
-`isReportingReady()` = `driveFolderReady && donorTemplateReady && logframeReady && instructionsReady`.
+## 13. Migration and rollout
 
-**Soft gates (explicitly allowed during Setup):** evidence upload/link, activity capture,
-logframe/indicator CRUD, template upload, team invite.
-**Blocks:** `POST /v1/reporting-periods`, `POST /v1/indicator-updates` (requires a period),
-draft generation, exports, checklist generation, deadline reminders.
+1. Add nullable/defaulted data without enabling the gate globally.
+2. Backfill stable IDs for existing template sections.
+3. Create default profiles only where an unambiguous template exists; flag others.
+4. Mark Local/R2 workspace provisioning `NOT_REQUIRED`.
+5. Queue Drive provisioning for existing Drive projects.
+6. Grandfather existing periods/drafts/exports; never interrupt existing work.
+7. Enable new-period gating tenant-by-tenant after a migration window or feature flag.
+8. Detect and resolve duplicate project codes before adding tenant uniqueness.
+9. Track provisioning outcomes, blocker distribution, setup time, and gate rejections.
+10. Provide a rollback switch for the gate without dropping migrated data.
 
-**New read model — extend `GET /v1/projects/:id/overview`:**
+## 14. Phased implementation
 
-```typescript
-setup: {
-  status: "NOT_STARTED" | "SETUP_IN_PROGRESS" | "READY";
-  driveFolder: { ready: boolean; folderId: string | null; deepLink?: string };
-  donorTemplate: { ready: boolean };
-  logframe: { ready: boolean; itemCount: number; indicatorCount: number };
-  instructions: { ready: boolean };
-  team: { ready: boolean; memberCount: number };
-  markedComplete: boolean;
-}
-```
+### Phase A — Policy, contracts, safe schema
 
-**Audit events:** `project.setup.updated`, `project.setup.marked_complete`, `project.folder.created`.
+- Finalize readiness/blocker policy, legacy behavior, schema, stable section IDs, word limits,
+  profiles, snapshots, and duplicate-code audit.
+- Gate: migration/contract tests plus backfill and rollback documentation.
 
----
+### Phase B — Readiness and authoritative gate
 
-## 7. Reporting instructions contract
+- Implement tenant-qualified readiness, setup read model, acknowledgement, period ownership,
+  date/overlap checks, blockers, and immutable snapshots.
+- Gate: cross-tenant, every-blocker, regression, legacy, overlap, and snapshot tests.
 
-**File:** `packages/contracts/src/reporting-instructions.ts`
+### Phase C — Drive provisioning and recovery
 
-```typescript
-import { z } from "zod";
+- Implement stable app-property identities, durable intent/reconciliation, retry, access test,
+  repair, rename, and explicit failure states.
+- Gate: concurrent idempotency, partial repair, duplicate, revoked OAuth, and deleted/moved
+  folder tests; live provisioned-tenant validation before release.
 
-export const ToneSchema = z.enum(["FORMAL", "CONCISE", "NARRATIVE", "TECHNICAL"]);
+### Phase D — Profile and generator integration
 
-export const ReportingInstructionsSchema = z.object({
-  projectId: z.string().min(1),
-  language: z.string().min(2).max(10).default("en"),
-  tone: ToneSchema.default("FORMAL"),
-  writingStyle: z.string().max(1000).optional(),
-  audienceNotes: z.string().max(1000).optional(),
-  formattingRules: z.array(z.string().max(200)).default([]),
-  specialRequirements: z.array(z.string().max(200)).default([]),
-  wordCounts: z
-    .record(z.object({ min: z.number().int().min(0), max: z.number().int().positive() }))
-    .default({}),
-});
-export type ReportingInstructionsInput = z.infer<typeof ReportingInstructionsSchema>;
-```
+- Add profile handlers, defaults, optimistic concurrency, effective snapshot resolution, draft
+  context, and structured word-count warnings from the stub generator.
+- Gate: version conflict, ownership, override, and snapshot immutability tests.
 
-**Extension to templates** (`packages/contracts/src/templates.ts`): add `minWords` /
-`maxWords` (optional nonnegative ints) to `TemplateSectionSchema` so per-section limits can
-be authored at template setup; `ReportingInstruction.wordCountsJson` is the runtime source.
+### Phase E — Setup UI
 
-**Draft generator wiring** (`packages/infrastructure/src/llm/report-draft-generator.ts` and
-`GenerateReportDraftHandler` at `container.ts:335`): pass instructions as prompt context.
-`StubReportDraftGenerator` should **validate word counts** and emit warning metadata when a
-section is out of range, so behavior is testable without a real LLM.
+- Add redirect, checklist, profile form, Drive actions, capability/accessibility handling, and
+  authoritative gate-error rendering.
+- Gate: Playwright create → resume → configure → ready → period, failure/retry, and regression.
 
----
+### Phase F — Lifecycle, editability, and access control
 
-## 8. API surface changes
+- Reconcile setup status with Project status; implement permission-gated DRAFT→ACTIVE activation.
+- Fix `UpdateProjectHandler` so dates/budget are editable and audited (post-create editability).
+- Add `project.setup`/`project.archive` capabilities; scope list/get to project membership.
+- Implement archive/restore with Drive workspace semantics and completion/end-of-life behavior.
+- Gate: lifecycle transition, editability/overlap, cross-project isolation, and archive/Drive tests.
 
-| Method | Route | Handler | Notes |
-|---|---|---|---|
-| GET | `/v1/projects/:id/setup` | `GetProjectSetupHandler` | new |
-| PATCH | `/v1/projects/:id/setup` | `UpdateProjectSetupHandler` | set `markedComplete`, re-derive status |
-| POST | `/v1/projects/:id/drive-folder` | `EnsureProjectFolderHandler` | manual "create folder now" (idempotent) |
-| PUT | `/v1/projects/:id/instructions` | `UpsertReportingInstructionsHandler` | new |
-| GET | `/v1/projects/:id/instructions` | `GetReportingInstructionsHandler` | new |
-| POST | `/v1/reporting-periods` | `CreateReportingPeriodHandler` | **+ setup gate** |
-| POST | `/v1/indicator-updates` | `CreateIndicatorUpdateHandler` | unchanged (period FK already required) |
-| POST | `/v1/indicator-updates/:id/submit` | `SubmitIndicatorUpdateHandler` | new (domain `submit()` exists) |
-| POST | `/v1/indicator-updates/:id/request-correction` | `RequestIndicatorCorrectionHandler` | new (domain `requestCorrection()` exists) |
-| GET | `/v1/indicators/:id/updates` | `ListIndicatorUpdatesHandler` | new history read model |
+Follow-ups: indicator update workflow/history, automatic recurring periods, deadline-reminder
+wiring, donor/partner entities (§5.6), project copy/duplicate (§5.7), and deletion/retention (§5.9).
 
-All mutations write `audit_events` per existing convention.
+## 15. Testing and risks
 
----
+- Domain/contracts: readiness transitions, stable IDs, word constraints, profile invariants.
+- Application/API: tenant isolation, blockers, ownership, dates/overlap, rollout, audit/error shape.
+- Infrastructure: mocked Drive operations, concurrent retry, partial repair, OAuth/access failure,
+  reconciliation.
+- Web: resumability, navigation, defaults, retry/repair, conflicts, accessibility.
+- Migration: duplicates, section backfill, provider status, legacy-period continuity, rollback.
+- Lifecycle: activation policy, archive/completion behavior, dates/budget editability, membership
+  scoping, scheduling source-of-truth, deletion/retention boundaries.
 
-## 9. Frontend changes (`apps/web`)
+Key mitigations: stable Drive identities plus reconciliation; derived indexed queries rather than
+cached booleans; controlled rollout for existing projects; explicit active template and immutable
+snapshots; defaults and precise blockers to reduce setup friction. Use repository baselines for
+test counts rather than brittle numeric targets.
 
-1. **Wizard stays 3 steps** (`apps/web/src/features/projects/validation/project-wizard.ts`
-   unchanged) — required fields only. No scope creep on the wizard itself.
-2. **Post-create transition:** after `createProjectAction`, redirect to
-   `/projects/[id]/setup` (new route) — a **checklist, not a wizard** (logframe/template
-   work is multi-session and iterative).
-3. **`/projects/[id]/setup` page:** mirrors the `onboarding-steps.ts` pattern — per-item
-   status chips (Drive folder, template, logframe+indicators, instructions, team),
-   deep-links to existing `/logframe`, `/templates/new`, `/team`, and a new `/instructions`
-   form; "Mark setup complete" disabled until hard-gate items are green.
-4. **Instructions form** (`/projects/[id]/instructions`): structured fields (language,
-   tone select, style/audience text, formatting rules list, per-section word counts driven
-   by template sections when present).
-5. **Project overview** (`app/(portal)/projects/[id]/page.tsx` +
-   `features/projects/application/project-overview-read-model.ts`): render the `setup`
-   block; replace the static "setup checklist if no period exists" hint with live status.
-6. **Drive deep-link:** "Open in Drive" from project header when `driveFolderId` present.
-7. **Indicator history:** new panel on
-   `app/(portal)/projects/[id]/indicators/[indicatorId]/page.tsx` consuming
-   `GET /v1/indicators/:id/updates` (replaces the "not exposed" message at line 21).
+## 16. Acceptance summary
 
----
-
-## 10. Phased build order with gates
-
-### Phase A — Drive folder scaffolding (foundation)
-- [ ] Migration `20260815000000_project_bootstrap` (Project/Organization/ProjectSetup/ReportingInstruction)
-- [ ] `ProjectDriveFolderService` (ensureRoot / ensureProject / grantTreeReadAccess) + `IProjectDriveFolderService` port
-- [ ] Domain `ProjectSetup` entity + `PrismaProjectSetupRepository`
-- [ ] Wire into `container.ts`; `OutboxEventBus` job `project.drive.setup` (idempotent)
-- [ ] `POST /v1/projects/:id/drive-folder`; `GET /v1/projects/:id` returns `driveFolderId` + deep link
-- **Gate A:** unit tests against mocked Drive API (files.list/create, 409 tolerance);
-  `pnpm -r typecheck` + `pnpm -r build` green.
-
-### Phase B — Setup state machine + hard gate
-- [ ] `GetProjectSetupHandler` / `UpdateProjectSetupHandler`
-- [ ] `setup` block in `GET /v1/projects/:id/overview`
-- [ ] **`CreateReportingPeriodHandler` hard gate** (`PROJECT_SETUP_INCOMPLETE`)
-- [ ] Audit events `project.setup.*`
-- **Gate B:** application tests — period creation blocked pre-setup, allowed post-setup;
-  soft paths (evidence, logframe CRUD) still work during setup.
-
-### Phase C — Reporting instructions
-- [ ] `ReportingInstructionsSchema` + `Upsert/GetReportingInstructionsHandler`
-- [ ] `minWords`/`maxWords` on `TemplateSectionSchema`; template upload populates defaults
-- [ ] Draft generator consumes instructions; stub validates word counts
-- **Gate C:** contract tests + generator tests with per-section word counts.
-
-### Phase D — Frontend
-- [ ] `/projects/[id]/setup` checklist page + server actions
-- [ ] `/projects/[id]/instructions` form
-- [ ] Overview setup block UI + Drive deep-link
-- [ ] Wizard redirect + post-create UX
-- **Gate D:** Playwright flows — create project → setup checklist → complete
-  logframe+template+instructions → mark complete → create period. Maintain 45+ unit / 6+
-  Playwright parity.
-
-### Phase E — Indicator update lifecycle + history
-- [ ] `submit` / `request-correction` routes (domain already supports both)
-- [ ] `GET /v1/indicators/:id/updates` history read model
-- [ ] Indicator detail history UI
-- **Gate E:** full verification workflow e2e (DRAFT → SUBMITTED → VERIFIED /
-  NEEDS_CORRECTION → REJECTED).
-
-### Phase F — Per-project reporting profile + auto-periods
-- [ ] Project-level reporting profile: `reportingFrequency`, `language`, `instructions`,
-      `deadlineOffsetDays`, `autoPeriodCreation`
-- [ ] Auto-create next period on current-period close (respects hard gate)
-- [ ] Deadline reminders read the profile
-- **Gate F:** schedule test with a `QUARTERLY` project auto-generating periods.
-
----
-
-## 11. Testing strategy
-
-- **Domain:** pure unit tests for `ProjectSetup.isReportingReady()` transitions;
-  `ReportingInstruction` invariants (wordCount min ≤ max).
-- **Application:** handler tests with in-memory repos (existing pattern
-  `packages/application/test/*.mjs`).
-- **Infrastructure:** `ProjectDriveFolderService` against a mocked `fetch` (files.list/create
-  responses, 409 idempotency); extend `packages/infrastructure/test/storage.test.mjs`.
-- **Contracts:** Zod schema tests for instructions + template word counts.
-- **Web:** extend the existing Playwright suite; accessibility tree for the setup checklist.
-
----
-
-## 12. Risks & dependencies
-
-| Risk | Mitigation |
-|---|---|
-| **No real Google tenant yet** — Drive folder code can't be e2e-verified until a Google Cloud project + service account + tenant provisioning exist (`gdrive.md` §8, `pending.md`) | Build against the Drive REST shape; mock `fetch` in tests; keep the LOCAL scaffold path as the testable default |
-| **Hard gate could annoy early teams** | Soft gates everywhere except period creation; clear setup checklist + "mark complete" confirmation |
-| **Token store still partially env-based** (`EnvGoogleDriveTokenStore` fallback, R2 placeholder) | Phase A uses the already-wired `PrismaGoogleDriveTokenStore`; R2 env wiring stays a tracked item in `pending.md` |
-| **Drive API rate limits on `files.list` idempotency lookups** | Cache `driveFolderId` on Project/Organization rows; only query Drive when the id is absent |
-| **Logframe import is text-only today** | Keep manual CRUD as the setup path; do not block setup on import quality |
-
----
-
-## 13. Follow-ups (out of scope, tracked in `pending.md`)
-
-- Real LLM provider for draft generation (instructions become more valuable once real)
-- R2 env wiring for production (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`)
-- Auto-provisioning "sign up with Google" (`googleSubject` column + org creation flow)
-- Cross-project ABAC / project membership enforcement (FE-B03) — relevant to `teamReady`
-- Donor portal / external reviewer access
+Feature 18 is complete when creation remains lightweight and independent of Drive availability;
+the user lands on a resumable permission-aware checklist; readiness is live, tenant-qualified,
+and actionable; Drive provisioning is stable-ID based, retryable, and repairable; Local/R2 avoids
+fake Drive readiness; period creation validates readiness, ownership, dates, overlap, and stores
+immutable snapshots; and existing work survives a controlled, reversible rollout; and project lifecycle (activation,
+archive, completion), post-create editability, and project-scoped access control are defined and
+enforced.
