@@ -1,12 +1,12 @@
 import type { Result, DomainError, TenantId } from "@donordesk/domain";
-import { ReportingPeriod, DateRange, DomainError as DE } from "@donordesk/domain";
+import { ReportingPeriod, DateRange, DomainError as DE, ReportingPeriodCreated } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IProjectSetupRepository, IReportingProfileRepository } from "../../ports/setup.js";
 import type { IProjectReadinessService } from "../../ports/projects.js";
-import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
+import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { CreateReportingPeriodInput } from "@donordesk/contracts";
 
 /**
@@ -25,6 +25,7 @@ export class CreateReportingPeriodHandler {
     private readonly profiles: IReportingProfileRepository,
     private readonly readiness: IProjectReadinessService,
     private readonly audit: IAuditLogger,
+    private readonly events: IEventBus,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateReportingPeriodInput): Promise<Result<{ id: string }, DomainError>> {
@@ -152,6 +153,7 @@ export class CreateReportingPeriodHandler {
       projectId: input.projectId,
       newValue: JSON.stringify({ reportType: input.reportType, startDate: input.startDate, endDate: input.endDate, templateId: templateId ?? null }),
     });
+    await this.events.publish([new ReportingPeriodCreated(tenantId, id, input.projectId)]);
     return { ok: true, value: { id } };
   }
 }

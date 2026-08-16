@@ -3,6 +3,7 @@ export * from "./ports/core.js";
 export * from "./ports/infrastructure.js";
 export * from "./ports/identity.js";
 export * from "./ports/projects.js";
+export * from "./ports/project-members.js";
 export * from "./ports/templates.js";
 export * from "./ports/logframe.js";
 export * from "./ports/evidence.js";
@@ -30,6 +31,10 @@ export * from "./use-cases/projects/create-project.js";
 export * from "./use-cases/projects/update-project.js";
 export * from "./use-cases/projects/list-projects.js";
 export * from "./use-cases/projects/get-project.js";
+export * from "./use-cases/project-members/assign-project-member.js";
+export * from "./use-cases/project-members/update-project-member.js";
+export * from "./use-cases/project-members/remove-project-member.js";
+export * from "./use-cases/project-members/list-project-members.js";
 
 export * from "./readiness/project-readiness-service.js";
 
@@ -73,12 +78,14 @@ export * from "./use-cases/reporting/list-reporting-periods.js";
 export * from "./use-cases/reporting/generate-report-draft.js";
 export * from "./use-cases/reporting/get-report-draft.js";
 export * from "./use-cases/reporting/update-report-section.js";
+export * from "./use-cases/reporting/rewrite-report-section.js";
 export * from "./use-cases/reporting/approve-report-section.js";
 export * from "./use-cases/reporting/submit-report-for-review.js";
 export * from "./use-cases/reporting/approve-report.js";
 
 export * from "./use-cases/compliance/detect-missing-evidence.js";
 export * from "./use-cases/compliance/resolve-checklist-item.js";
+export * from "./use-cases/compliance/bulk-resolve-checklist.js";
 export * from "./use-cases/compliance/list-checklist.js";
 export * from "./use-cases/compliance/calculate-readiness.js";
 export * from "./use-cases/compliance/recompute-readiness.js";

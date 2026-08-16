@@ -56,11 +56,10 @@ Also anticipated but deferred: canonical donor/partner entities (§5.6), project
 6. No reporting profile or immutable effective-instructions snapshot exists.
 7. The web wizard redirects to `/projects/[id]`, not `/projects/[id]/setup`.
 8. Project codes are not uniquely constrained per tenant.
-9. `UpdateProjectHandler` has a dead `startDate`/`endDate` branch
-   (`update-project.ts:35-37`) and `Project.updateDetails` excludes `duration`/`budget`; dates
-   and budget are un-editable after creation and the settings page reports editing is unavailable.
-10. `ProjectMember` is a roleless stub with no repository wired in `container.ts`; there is no
-    per-project membership boundary.
+9. `UpdateProjectHandler` supports the full project contract (dates, budget, status, staff); the
+   project Settings tab now renders a full editor (`ProjectSettingsForm`) with archive/complete actions.
+10. `ProjectMember` is fully implemented (role + status) with a repository, API routes, audit, and
+    a project Team tab UI; per-project assignments are enforced and tenant-scoped.
 11. `list-projects` returns every tenant project with no role or assignment filter — a `VIEWER`
     can enumerate all projects (cross-project isolation gap, frontend plan FE-B03).
 12. No `project.setup`/`project.archive` capability exists in `capabilities.ts`; role

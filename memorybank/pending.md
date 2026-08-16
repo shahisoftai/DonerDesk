@@ -370,8 +370,10 @@ Remaining follow-ups (tracked here, not claimed):
   on the profile; scheduling job not yet implemented (Feature 18 §5.5).
 - [ ] **Deadline-reminder wiring to the reporting profile** — `deadlineOffsetDays`
   stored; `generate-deadline-reminders` not yet profile-aware (Feature 18 §5.5).
-- [ ] **Per-project membership ABAC** — `ProjectMember` entity is roleless with no
-  repo wired; `list-projects` remains tenant-wide (Feature 18 §5.4, FE-B03).
+- [ ] **Per-project membership ABAC enforcement** — `ProjectMember` is fully
+  implemented (role + status, repo, API, Team UI, audit; 2026-08-16) but
+  `list-projects` is still tenant-wide, not filtered by membership (Feature 18
+  §5.4, FE-B03).
 - [ ] **Google Drive project folders need real OAuth client credentials** — code is
   live but tenant provisioning requires the Google Cloud project + service account
   (pending.md "Wire the Drive token store"); Local/R2 tenants are NOT_REQUIRED.

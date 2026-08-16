@@ -160,6 +160,23 @@ model Invitation {
   @@index([tenantId])
 }
 
+model ProjectMember {
+  id            String   @id
+  tenantId      String
+  projectId     String
+  userId        String
+  role          String
+  status        String   @default("ACTIVE")
+  assignedById  String
+  assignedAt    DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, projectId, userId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, userId])
+}
+
 model Project {
   id                    String   @id
   tenantId              String

@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ChecklistItem } from "@donordesk/domain";
+import { DomainError, ChecklistItem, checklistTemplateForReportType, type Severity } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IChecklistRepository, IChecklistDetector } from "../../ports/compliance.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -71,8 +71,35 @@ export class DetectMissingEvidenceHandler {
       sectionStatuses,
     });
 
+    // Baseline items configured for the report type are part of every period's
+    // compliance checklist (config-driven; see checklist-template.ts).
+    const baseline = checklistTemplateForReportType(period.reportType).items.map((t) => ({
+      type: t.type,
+      title: t.title,
+      description: t.description,
+      severity: t.severity as Severity,
+      relatedEntityType: undefined as string | undefined,
+      relatedEntityId: undefined as string | undefined,
+    }));
+    const combined = [...baseline, ...suggestions];
+
+    // Dedupe: never create a second OPEN/IN_PROGRESS item for the same
+    // (type, relatedEntityId) concern already tracked in this period.
+    const existingResult = await this.checklist.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    if (!existingResult.ok) return existingResult;
+    const existingActiveKeys = new Set(
+      existingResult.value
+        .filter((i) => i.status === "OPEN" || i.status === "IN_PROGRESS")
+        .map((i) => `${i.type}:${i.relatedEntityId ?? ""}`),
+    );
+    const seenKeys = new Set<string>();
+
     let created = 0;
-    for (const s of suggestions) {
+    for (const s of combined) {
+      const key = `${s.type}:${s.relatedEntityId ?? ""}`;
+      if (existingActiveKeys.has(key)) continue;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
       const id = this.ids.generate();
       const item = ChecklistItem.create({
         id,

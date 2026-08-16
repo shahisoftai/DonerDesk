@@ -15,6 +15,10 @@ import {
   UpdateProjectHandler,
   ListProjectsHandler,
   GetProjectHandler,
+  AssignProjectMemberHandler,
+  UpdateProjectMemberHandler,
+  RemoveProjectMemberHandler,
+  ListProjectMembersHandler,
   UploadTemplateHandler,
   UpdateTemplateSectionsHandler,
   ListTemplatesHandler,
@@ -49,10 +53,12 @@ import {
   ApproveReportHandler,
   DetectMissingEvidenceHandler,
   ResolveChecklistItemHandler,
+  BulkResolveChecklistHandler,
   ListChecklistHandler,
   CalculateReadinessHandler,
   RecomputeReadinessHandler,
   GenerateChecklistHandler,
+  RewriteReportSectionHandler,
   CreateExportHandler,
   GetExportPreflightHandler,
   RunExportHandler,
@@ -91,6 +97,7 @@ import {
   PrismaInvitationRepository,
 } from "./repositories/identity.js";
 import { PrismaProjectRepository } from "./repositories/projects.js";
+import { PrismaProjectMemberRepository } from "./repositories/project-members.js";
 import {
   PrismaProjectSetupRepository,
   PrismaReportingProfileRepository,
@@ -182,6 +189,7 @@ export interface Container {
   llmUsage: PrismaLlmUsageRepository;
   billingProvider: ReturnType<typeof createBillingProvider>;
   projects: PrismaProjectRepository;
+  projectMembers: PrismaProjectMemberRepository;
   projectSetup: PrismaProjectSetupRepository;
   reportingProfiles: PrismaReportingProfileRepository;
   readiness: ProjectReadinessService;
@@ -215,6 +223,10 @@ export interface Container {
     updateProject: UpdateProjectHandler;
     listProjects: ListProjectsHandler;
     getProject: GetProjectHandler;
+    assignProjectMember: AssignProjectMemberHandler;
+    updateProjectMember: UpdateProjectMemberHandler;
+    removeProjectMember: RemoveProjectMemberHandler;
+    listProjectMembers: ListProjectMembersHandler;
     getProjectSetup: GetProjectSetupHandler;
     acknowledgeProjectSetup: AcknowledgeProjectSetupHandler;
     retryProjectWorkspace: RetryProjectWorkspaceHandler;
@@ -255,10 +267,12 @@ export interface Container {
     approveReport: ApproveReportHandler;
     detectMissingEvidence: DetectMissingEvidenceHandler;
     resolveChecklistItem: ResolveChecklistItemHandler;
+    bulkResolveChecklist: BulkResolveChecklistHandler;
     listChecklist: ListChecklistHandler;
     calculateReadiness: CalculateReadinessHandler;
     recomputeReadiness: RecomputeReadinessHandler;
     generateChecklist: GenerateChecklistHandler;
+    rewriteReportSection: RewriteReportSectionHandler;
     createExport: CreateExportHandler;
     getExportPreflight: GetExportPreflightHandler;
     runExport: RunExportHandler;
@@ -354,6 +368,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const users = new PrismaUserRepository(prisma);
   const invitations = new PrismaInvitationRepository(prisma);
   const projects = new PrismaProjectRepository(prisma);
+  const projectMembers = new PrismaProjectMemberRepository(prisma);
   const projectSetup = new PrismaProjectSetupRepository(prisma);
   const reportingProfiles = new PrismaReportingProfileRepository(prisma);
   const templates = new PrismaDonorTemplateRepository(prisma);
@@ -432,6 +447,27 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
 
   const calculateReadinessHandler = new CalculateReadinessHandler(drafts, sections, indicators, indicatorUpdates, evidence, checklist);
   const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, templates, indicatorUpdates, sections, activities, evidence, audits);
+
+  if (jobRegistrar?.register) {
+    jobRegistrar.register(
+      "checklist.generate",
+      async (payload) => {
+        const tenantId = String(payload.tenantId);
+        const reportingPeriodId = String(payload.reportingPeriodId);
+        const tenant = { toString: () => tenantId } as import("@donordesk/domain").TenantId;
+        const systemCtx = {
+          tenant: { tenantId: tenant, userId: "system", role: "ADMIN" as const },
+          requestId: "system",
+        } as import("@donordesk/application").AuthenticatedContext;
+        try {
+          await detectMissingEvidenceHandler.handle(systemCtx, reportingPeriodId);
+        } catch (error) {
+          logger.error("checklist.generate_failed", { reportingPeriodId, error: String(error) });
+        }
+      },
+    );
+  }
+
   const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, exportBuilder, storage, audits);
 
   const handlers: Container["handlers"] = {
@@ -454,6 +490,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     updateProject: new UpdateProjectHandler(projects, periods, audits),
     listProjects: new ListProjectsHandler(projects),
     getProject: new GetProjectHandler(projects),
+    assignProjectMember: new AssignProjectMemberHandler(ids, projectMembers, projects, users, audits, notify),
+    updateProjectMember: new UpdateProjectMemberHandler(projectMembers, audits),
+    removeProjectMember: new RemoveProjectMemberHandler(projectMembers, audits),
+    listProjectMembers: new ListProjectMembersHandler(projectMembers),
     getProjectSetup: new GetProjectSetupHandler(readiness),
     acknowledgeProjectSetup: new AcknowledgeProjectSetupHandler(projectSetup, readiness, audits),
     retryProjectWorkspace: new RetryProjectWorkspaceHandler(projectWorkspace, projects, projectSetup, events, audits),
@@ -484,18 +524,20 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     reviewActivity: new ReviewActivityHandler(activities, audits),
     listActivities: new ListActivitiesHandler(activities),
     getActivity: new GetActivityHandler(activities),
-    createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits),
+    createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events),
     listReportingPeriods: new ListReportingPeriodsHandler(periods),
     generateReportDraft: new GenerateReportDraftHandler(
       ids, periods, drafts, sections, projects, organizations, templates, logframe, indicators, indicatorUpdates, activities, evidence, reportDraftGenerator, audits, entitlements, usageCounters, llmUsage,
     ),
     getReportDraft: new GetReportDraftHandler(drafts, sections),
     updateReportSection: new UpdateReportSectionHandler(sections, audits),
+    rewriteReportSection: new RewriteReportSectionHandler(sections, reportDraftGenerator, audits),
     approveReportSection: new ApproveReportSectionHandler(sections, audits),
     submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),
     approveReport: new ApproveReportHandler(drafts, periods, audits),
     detectMissingEvidence: detectMissingEvidenceHandler,
     resolveChecklistItem: new ResolveChecklistItemHandler(checklist, audits),
+    bulkResolveChecklist: new BulkResolveChecklistHandler(checklist, audits),
     listChecklist: new ListChecklistHandler(checklist),
     calculateReadiness: calculateReadinessHandler,
     recomputeReadiness: new RecomputeReadinessHandler(calculateReadinessHandler),
@@ -522,8 +564,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   return {
     prisma, auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, reportDraftGenerator, checklistDetector, exportBuilder,
-    organizations, users, invitations, projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
-    periods, drafts, sections, checklist, exports, comments, notifications, audits,
+    organizations, users, invitations,     projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
+    periods, drafts, sections, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, billingProvider,
     handlers,
   };

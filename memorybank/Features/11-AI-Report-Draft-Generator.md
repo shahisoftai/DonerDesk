@@ -136,10 +136,10 @@ interface SourceReference {
 | Report Draft CRUD | Implemented | Full lifecycle |
 | AI Generation | Stub | Heuristic draft; real LLM pending |
 | Section Editing | Implemented | Rich text |
-| Source References | Partial | Schema defined, population stub |
-| Unsupported Claims | Not implemented | Flag not shown |
-| AI Rewrite/Shorten | Stub | Pending LLM |
-| Donor-friendly Mode | Not implemented | UI placeholder only |
+| Source References | Implemented | Populated from activities/indicators/evidence in the stub generator |
+| Unsupported Claims | Implemented | Flagged per section and surfaced in compliance |
+| AI Rewrite/Shorten | Implemented (heuristic) | `rewriteSection` on the generator port + UI (2026-08-16); real LLM pending |
+| Donor-friendly Mode | Implemented (heuristic) | Audience-aware rewrite in the section editor (2026-08-16) |
 | Section Status | Implemented | All 5 statuses |
 | Version Tracking | Implemented | Version number |
 

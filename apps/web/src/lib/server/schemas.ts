@@ -23,16 +23,38 @@ export const ProjectDetailSchema = z.object({
   projectCode: z.string(),
   donorName: z.string(),
   implementingOrganization: z.string().optional(),
+  partnerOrganization: z.string().optional(),
   country: z.string(),
+  region: z.string().optional(),
+  district: z.string().optional(),
   sector: z.string(),
   status: z.string(),
   reportingFrequency: z.string(),
   startDate: z.string(),
   endDate: z.string(),
   daysRemaining: z.number(),
+  budget: z.object({ amount: z.number().optional(), currency: z.string().optional() }).optional(),
+  description: z.string().optional(),
+  primaryContactName: z.string().optional(),
+  projectManagerId: z.string().optional(),
+  meOfficerId: z.string().optional(),
+  reportingOfficerId: z.string().optional(),
   workspaceRootId: z.string().optional(),
 });
 export type ProjectDetail = z.infer<typeof ProjectDetailSchema>;
+
+export const ProjectMemberSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  userId: z.string(),
+  role: z.string(),
+  status: z.string(),
+  assignedById: z.string(),
+  assignedAt: z.string(),
+});
+export type ProjectMember = z.infer<typeof ProjectMemberSchema>;
+
+export const ProjectMembersResponseSchema = z.object({ items: z.array(ProjectMemberSchema) });
 
 export const OrganizationSchema = z.object({
   id: z.string().optional(),

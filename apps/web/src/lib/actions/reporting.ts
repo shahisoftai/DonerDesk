@@ -12,6 +12,7 @@ import {
   IdResponseSchema,
   OkResponseSchema,
   UpdateSectionResponseSchema,
+  RewriteSectionResponseSchema,
 } from "./_schemas";
 
 export type CreateReportingPeriodResult = Result<{ id: string }, AppError>;
@@ -115,4 +116,17 @@ export async function approveReportSectionAction(sectionId: string): Promise<App
   });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
+}
+
+export type RewriteSectionResult = Result<{ version: string; content: string }, AppError>;
+
+export async function rewriteReportSectionAction(
+  sectionId: string,
+  input: { mode?: "REWRITE" | "SHORTEN"; audience?: "DONOR" | "INTERNAL" | "GENERAL"; instructions?: string },
+): Promise<RewriteSectionResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-sections/${sectionId}/rewrite`, RewriteSectionResponseSchema, context.token, {
+    method: "POST",
+    body: input,
+  });
 }

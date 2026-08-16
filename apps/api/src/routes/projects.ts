@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateProjectSchema, UpdateProjectSchema } from "@donordesk/contracts";
+import { CreateProjectSchema, UpdateProjectSchema, AssignProjectMemberSchema, UpdateProjectMemberSchema } from "@donordesk/contracts";
 
 export async function registerProjectRoutes(app: FastifyInstance) {
   app.get("/v1/projects", async (req) => {
@@ -30,6 +30,40 @@ export async function registerProjectRoutes(app: FastifyInstance) {
     const body = UpdateProjectSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.updateProject.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.get("/v1/projects/:id/members", async (req) => {
+    const projectId = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.listProjectMembers.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return { items: r.value.map((m) => ({ id: m.id, projectId: m.projectId, userId: m.userId, role: m.role, status: m.status, assignedById: m.assignedById, assignedAt: m.assignedAt.toISOString() })) };
+  });
+
+  app.post("/v1/projects/:id/members", async (req) => {
+    const projectId = (req.params as { id: string }).id;
+    const body = AssignProjectMemberSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.assignProjectMember.handle(ctx, projectId, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.patch("/v1/project-members/:id", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = UpdateProjectMemberSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.updateProjectMember.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.delete("/v1/project-members/:id", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.removeProjectMember.handle(ctx, id);
     if (!r.ok) throw r.error;
     return { ok: true };
   });

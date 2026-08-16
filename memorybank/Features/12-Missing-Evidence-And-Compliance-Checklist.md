@@ -102,18 +102,18 @@ Open, In progress, Resolved, Accepted risk, Not applicable
 | Checklist CRUD | Implemented | Full lifecycle |
 | Severity Levels | Implemented | Low/Medium/High/Critical |
 | Status Transitions | Implemented | All 5 statuses |
-| AI Detection | Implemented (rule-based) | `DetectMissingEvidenceHandler`; scheduled generate endpoint |
+| AI Detection | Implemented (rule-based) | `DetectMissingEvidenceHandler`; dedupe by (type, entity) |
 | Assignment | Implemented | Assign to user |
 | Due Dates | Implemented | Optional tracking |
 | Resolution Notes | Implemented | For accepted risk |
+| Automated Generation | Implemented | On period start via `reporting.period.created` → `checklist.generate` job (2026-08-16) |
+| Checklist Templates | Implemented | Config-driven baseline items per report type (2026-08-16) |
+| Bulk Operations | Implemented | `POST /checklist/bulk-resolve` + UI (2026-08-16) |
 
 ## Pending Enhancements
 
 - [ ] Wire real LLM provider for detection
-- [ ] Automated checklist generation on period start
-- [ ] Real-time checklist updates as evidence uploaded
-- [ ] Checklist item templates by donor type
-- [ ] Bulk resolve/accept-risk operations
+- [ ] Real-time checklist updates as evidence uploaded (event-driven re-check)
 - [ ] Checklist email notifications
 - [ ] Dashboard widget for critical items
 - [ ] Checklist analytics/trends

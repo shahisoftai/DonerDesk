@@ -109,11 +109,11 @@ interface ExtractedTemplateSection {
 |-----------|--------|-------|
 | File Upload | Implemented | LocalStorage backend |
 | Template Metadata | Implemented | Full CRUD |
-| AI Extraction | Stub | Using `InMemoryJobQueue` stub |
+| AI Extraction | Implemented (heuristic) | Multi-pass heading detection + canonical fallback (2026-08-16); real LLM provider pending |
 | Section Editor | Implemented | Human review workflow |
 | Template Versioning | Implemented | Version number tracked |
-| File Format Support | Partial | DOCX/PDF/TXT via parsers |
-| Copy-paste Input | Not implemented | Manual text input |
+| File Format Support | Implemented | DOCX/PDF/TXT/XLSX/CSV via parsers |
+| Copy-paste Input | Implemented | Manual text input wired |
 
 ## Pending Enhancements
 

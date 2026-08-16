@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, ReviewReportSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, ReviewReportSchema, RewriteSectionSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -48,6 +48,15 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const body = UpdateSectionSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.updateReportSection.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-sections/:id/rewrite", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = RewriteSectionSchema.parse(req.body ?? {});
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.rewriteReportSection.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return r.value;
   });

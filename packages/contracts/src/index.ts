@@ -1,5 +1,6 @@
 export * from "./identity.js";
 export * from "./projects.js";
+export * from "./project-members.js";
 export * from "./templates.js";
 export * from "./logframe.js";
 export * from "./evidence.js";

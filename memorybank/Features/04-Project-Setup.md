@@ -123,8 +123,8 @@ interface ProjectDashboard {
 | Project Status | Implemented | Draft/Active/Paused/Completed/Archived |
 | Project Overview | Implemented | Dashboard with all metrics |
 | Tab Navigation | Implemented | All tabs functional |
-| Team Assignments | Implemented | PM, M&E, Grants focal points |
-| Project Settings | Implemented | Basic settings page |
+| Team Assignments | Implemented | Per-project roles via ProjectMember (2026-08-16) |
+| Project Settings | Implemented | Full editor for identity, dates, budget, status (2026-08-16) |
 | Project Archive | Not implemented | Soft delete only |
 
 ## Pending Enhancements

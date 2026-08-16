@@ -1,6 +1,17 @@
 import { DomainEvent } from "../../core/domain-event.js";
 import { TenantId } from "../../value-objects/tenant-id.js";
 
+export class ReportingPeriodCreated extends DomainEvent {
+  readonly eventName = "reporting.period.created";
+  constructor(
+    public readonly tenantId: TenantId,
+    public readonly reportingPeriodId: string,
+    public readonly projectId: string,
+  ) {
+    super();
+  }
+}
+
 export class DraftGenerated extends DomainEvent {
   readonly eventName = "report.draft.generated";
   constructor(

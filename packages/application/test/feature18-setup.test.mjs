@@ -181,6 +181,7 @@ test("reporting-period gate: blocked when not ready (POLICY_DENIED)", async () =
     { generate: () => "period-1" },
     periods, repos.projects, repos.templates, repos.setup, repos.profiles, readiness,
     { record: async () => {} },
+    { publish: async () => {} },
   );
   const r = await handler.handle(ctx, {
     projectId: "p1", reportType: "QUARTERLY",
@@ -212,9 +213,10 @@ test("reporting-period gate: ready project creates a period with snapshots", asy
   const handler = new CreateReportingPeriodHandler(
     { generate: () => "period-1" }, periods, repos.projects, repos.templates, repos.setup, repos.profiles, readiness,
     { record: async () => {} },
+    { publish: async () => {} },
   );
   const r = await handler.handle(ctx, {
-    projectId: "p1", donorTemplateId: "t1", reportType: "QUARTERLY",
+    projectId: "p1", reportType: "QUARTERLY",
     startDate: new Date("2026-04-01").toISOString(), endDate: new Date("2026-06-30").toISOString(),
     deadline: new Date("2026-07-15").toISOString(),
   });
@@ -241,6 +243,7 @@ test("reporting-period gate: overlap rejected", async () => {
   const handler = new CreateReportingPeriodHandler(
     { generate: () => "p" }, periods, repos.projects, repos.templates, repos.setup, repos.profiles, readiness,
     { record: async () => {} },
+    { publish: async () => {} },
   );
   const r = await handler.handle(ctx, {
     projectId: "p1", reportType: "QUARTERLY",
@@ -260,6 +263,7 @@ test("reporting-period gate: completed project rejected", async () => {
   const handler = new CreateReportingPeriodHandler(
     { generate: () => "p" }, periods, repos.projects, repos.templates, repos.setup, repos.profiles, readiness,
     { record: async () => {} },
+    { publish: async () => {} },
   );
   const r = await handler.handle(ctx, {
     projectId: "p1", reportType: "QUARTERLY",

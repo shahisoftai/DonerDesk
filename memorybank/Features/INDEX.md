@@ -18,15 +18,15 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 | 01 | [Authentication and Onboarding](./01-Authentication-And-Onboarding.md) | Implemented | `packages/domain/src/entities/User.ts` |
 | 02 | [Organization Workspace](./02-Organization-Workspace.md) | Implemented | `packages/domain/src/entities/Organization.ts` |
 | 03 | [User and Role Management](./03-User-And-Role-Management.md) | Implemented | `packages/domain/src/entities/User.ts`, `packages/application/src/permissions/` |
-| 04 | [Project Setup](./04-Project-Setup.md) | Implemented | `packages/domain/src/entities/Project.ts` |
-| 05 | [Donor Template Manager](./05-Donor-Template-Manager.md) | Partial (AI Stub) | `packages/domain/src/entities/DonorTemplate.ts` |
+| 04 | [Project Setup](./04-Project-Setup.md) | Implemented (per-project Team + full Settings editor 2026-08-16) | `packages/domain/src/entities/Project.ts` |
+| 05 | [Donor Template Manager](./05-Donor-Template-Manager.md) | Implemented (AI extraction heuristic; real LLM pending) | `packages/domain/src/entities/DonorTemplate.ts` |
 | 06 | [Logframe and Indicator Manager](./06-Logframe-And-Indicator-Manager.md) | Implemented (data entry 2026-08-16) | `packages/domain/src/contexts/logframe/`, `packages/application/src/use-cases/logframe/`, `packages/application/src/ports/logframe.ts`, `apps/api/src/routes/logframe.ts`, `apps/api/src/routes/reporting.ts`, `apps/web/src/features/reporting/presentation/IndicatorEntryGrid.tsx`, `apps/web/src/app/(portal)/projects/[id]/reports/[periodId]/indicators/page.tsx` |
 | 07 | [Evidence Library](./07-Evidence-Library.md) | Implemented | `packages/domain/src/entities/EvidenceFile.ts` |
 | 08 | [AI Evidence Tagging](./08-AI-Evidence-Tagging.md) | Orchestrated (heuristic tagger; real AI provider is a stub) | `packages/infrastructure/src/llm/evidence-tagger.ts`, `packages/contracts/src/strategies/heuristic-rules.json` |
 | 09 | [Activity Update Capture](./09-Activity-Update-Capture.md) | Implemented | `packages/domain/src/entities/ActivityUpdate.ts` |
 | 10 | [Reporting Period Manager](./10-Reporting-Period-Manager.md) | Implemented | `packages/domain/src/entities/ReportingPeriod.ts` |
-| 11 | [AI Report Draft Generator](./11-AI-Report-Draft-Generator.md) | Stub | `packages/infrastructure/src/ai/handlers/reportGenerator.ts` |
-| 12 | [Missing Evidence and Compliance Checklist](./12-Missing-Evidence-And-Compliance-Checklist.md) | Partial (AI Stub) | `packages/domain/src/entities/ChecklistItem.ts` |
+| 11 | [AI Report Draft Generator](./11-AI-Report-Draft-Generator.md) | Implemented (heuristic; rewrite/shorten/donor-friendly added 2026-08-16) | `packages/infrastructure/src/ai/handlers/reportGenerator.ts` |
+| 12 | [Missing Evidence and Compliance Checklist](./12-Missing-Evidence-And-Compliance-Checklist.md) | Implemented (auto-generation, templates, bulk ops 2026-08-16) | `packages/domain/src/entities/ChecklistItem.ts` |
 | 13 | [Review and Approval Workflow](./13-Review-And-Approval-Workflow.md) | Implemented | `packages/domain/src/entities/Comment.ts` |
 | 14 | [Export Module](./14-Export-Module.md) | Implemented | `packages/infrastructure/src/export/` |
 | 15 | [Dashboard](./15-Dashboard.md) | Implemented | `apps/web/src/app/(portal)/dashboard/page.tsx` |

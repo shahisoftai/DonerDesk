@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useReducer, useRef } from "react";
-import { updateReportSectionAction } from "@/lib/actions/reporting";
+import { useEffect, useReducer, useRef, useState } from "react";
+import { updateReportSectionAction, rewriteReportSectionAction } from "@/lib/actions/reporting";
 import { AutosaveStatus } from "@/components/editor/AutosaveStatus";
 import { UnsavedChangesGuard } from "@/components/editor/UnsavedChangesGuard";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
+import { Select } from "@/components/ui/Select";
+import { Field } from "@/components/ui/Field";
 import {
   autosaveReducer,
   createAutosaveState,
@@ -37,6 +39,31 @@ export function SectionEditor({
   const latestTextRef = useRef(initialContent);
   const versionRef = useRef(initialVersion);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [rewriteOpen, setRewriteOpen] = useState(false);
+  const [rewriteMode, setRewriteMode] = useState<"REWRITE" | "SHORTEN">("REWRITE");
+  const [rewriteAudience, setRewriteAudience] = useState<"DONOR" | "INTERNAL" | "GENERAL">("DONOR");
+  const [rewriting, setRewriting] = useState(false);
+  const [rewriteError, setRewriteError] = useState<string | null>(null);
+
+  async function runRewrite() {
+    if (rewriting) return;
+    setRewriting(true);
+    setRewriteError(null);
+    const result = await rewriteReportSectionAction(sectionId, {
+      mode: rewriteMode,
+      audience: rewriteAudience,
+    });
+    setRewriting(false);
+    if (!result.ok) {
+      setRewriteError(result.error.message);
+      return;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    versionRef.current = result.value.version;
+    dispatch({ type: "input", text: result.value.content });
+    dispatch({ type: "save-success", version: result.value.version });
+    setRewriteOpen(false);
+  }
 
   useEffect(() => {
     latestTextRef.current = state.text;
@@ -100,8 +127,47 @@ export function SectionEditor({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</h2>
-        <AutosaveStatus state={displayState} />
+        <div className="flex items-center gap-2">
+          {!readOnly && state.text.trim() && (
+            <Button size="sm" variant="secondary" onClick={() => setRewriteOpen((v) => !v)}>
+              {rewriteOpen ? "Close AI rewrite" : "AI rewrite"}
+            </Button>
+          )}
+          <AutosaveStatus state={displayState} />
+        </div>
       </div>
+
+      {rewriteOpen && !readOnly && (
+        <div className="rounded-lg border border-brand-500/30 bg-brand-500/5 p-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Mode" htmlFor="rewrite-mode">
+              <Select id="rewrite-mode" value={rewriteMode} onChange={(e) => setRewriteMode(e.target.value as "REWRITE" | "SHORTEN")}>
+                <option value="REWRITE">Rewrite for clarity</option>
+                <option value="SHORTEN">Shorten</option>
+              </Select>
+            </Field>
+            <Field label="Audience" htmlFor="rewrite-audience">
+              <Select id="rewrite-audience" value={rewriteAudience} onChange={(e) => setRewriteAudience(e.target.value as "DONOR" | "INTERNAL" | "GENERAL")}>
+                <option value="DONOR">Donor-friendly</option>
+                <option value="INTERNAL">Internal</option>
+                <option value="GENERAL">General</option>
+              </Select>
+            </Field>
+          </div>
+          {rewriteError && (
+            <p role="alert" className="mt-2 text-sm font-medium text-danger-700 dark:text-danger-400">{rewriteError}</p>
+          )}
+          <div className="mt-3 flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setRewriteOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={runRewrite} pending={rewriting}>
+              {rewriting ? "Rewriting…" : "Apply rewrite"}
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            AI rewriting preserves your facts and source references; it never invents new claims.
+          </p>
+        </div>
+      )}
 
       {state.status === "conflict" && (
         <div role="alert" className="rounded-lg border border-warning-500/30 bg-warning-500/5 p-3">

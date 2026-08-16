@@ -24,7 +24,11 @@ export const GeneratedDraftResponseSchema = z.object({
 
 export const DetectMissingResponseSchema = z.object({ created: z.number().int().nonnegative() });
 
+export const BulkResolveResponseSchema = z.object({ resolved: z.number().int().nonnegative(), skipped: z.number().int().nonnegative() });
+
 export const UpdateSectionResponseSchema = z.object({ version: z.string() });
+
+export const RewriteSectionResponseSchema = z.object({ version: z.string(), content: z.string() });
 
 export const InviteUserResponseSchema = z.object({
   invitationId: z.string(),

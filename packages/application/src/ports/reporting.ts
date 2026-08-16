@@ -43,4 +43,21 @@ export interface IReportDraftGenerator {
     sourceReferences: SourceReference[];
     unsupportedClaims: string[];
   }>>;
+
+  /**
+   * Rewrites or shortens an existing section while preserving its facts and
+   * source references. `mode` selects the transformation; `audience` adapts
+   * tone for the reader. Implementations must never invent claims.
+   */
+  rewriteSection(input: {
+    sectionTitle: string;
+    content: string;
+    mode: "REWRITE" | "SHORTEN";
+    audience: "DONOR" | "INTERNAL" | "GENERAL";
+    instructions?: string;
+    sourceReferences: SourceReference[];
+  }): Promise<{
+    content: string;
+    unsupportedClaims: string[];
+  }>;
 }

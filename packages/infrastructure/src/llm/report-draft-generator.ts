@@ -136,6 +136,74 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     return sections;
   }
 
+  async rewriteSection(input: {
+    sectionTitle: string;
+    content: string;
+    mode: "REWRITE" | "SHORTEN";
+    audience: "DONOR" | "INTERNAL" | "GENERAL";
+    instructions?: string;
+    sourceReferences: SourceReference[];
+  }): ReturnType<IReportDraftGenerator["rewriteSection"]> {
+    const source = (input.content ?? "").trim();
+    if (!source) {
+      return { content: "", unsupportedClaims: ["Section is empty; nothing to rewrite"] };
+    }
+
+    const needsVerification = source.includes("[Needs verification]") || source.includes("[Needs source verification]");
+    const unsupported: string[] = needsVerification ? ["Review claims flagged for source verification"] : [];
+
+    if (input.mode === "SHORTEN") {
+      return {
+        content: this.shorten(source, input.audience),
+        unsupportedClaims: unsupported,
+      };
+    }
+
+    return {
+      content: this.rewrite(source, input.audience, input.instructions),
+      unsupportedClaims: unsupported,
+    };
+  }
+
+  private shorten(content: string, audience: "DONOR" | "INTERNAL" | "GENERAL"): string {
+    // Heuristic compression: drop non-informative filler, keep the first
+    // sentence of each paragraph and every factual line (bullets / tables).
+    const paragraphs = content.split(/\n{2,}/);
+    const out: string[] = [];
+    for (const p of paragraphs) {
+      const trimmed = p.trim();
+      if (!trimmed) continue;
+      if (trimmed.startsWith("|") || trimmed.startsWith("-") || trimmed.startsWith("1.")) {
+        out.push(trimmed);
+        continue;
+      }
+      const sentences = trimmed.split(/(?<=[.!?])\s+/);
+      if (sentences.length <= 1) {
+        out.push(trimmed);
+        continue;
+      }
+      out.push(sentences.slice(0, 2).join(" "));
+    }
+    const joined = out.join("\n\n");
+    if (audience === "DONOR" && !joined.endsWith(".")) return `${joined}.`;
+    return joined;
+  }
+
+  private rewrite(content: string, audience: "DONOR" | "INTERNAL" | "GENERAL", instructions?: string): string {
+    let text = content.replace(/\[Needs verification\]/g, "").replace(/\[Needs source verification\]/g, "").trim();
+    if (audience === "DONOR") {
+      text = text.replace(/\bgot\b/g, "received").replace(/\bwanna\b/g, "intend to");
+      text = text.replace(/(^|[.!?]\s+)([a-z])/g, (_m, pre, ch) => `${pre}${(ch as string).toUpperCase()}`);
+    }
+    if (audience === "INTERNAL") {
+      text = text.replace(/^\*\*/g, "").replace(/\*\*$/g, "");
+    }
+    if (instructions && instructions.trim()) {
+      text = `${text}\n\n[Editor note: ${instructions.trim()}]`;
+    }
+    return text;
+  }
+
   private fallbackSections() {
     return [
       { id: "fb-exec", title: "Executive Summary", description: "", inputType: "NARRATIVE", required: true, evidenceNeeded: "" },

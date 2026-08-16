@@ -22,6 +22,7 @@ from .parsers import parse
 from .polishing import PolishRequest, polish
 from .security import require_internal_token
 from .tagging import SuggestTagsRequest, suggest_tags
+from .compliance import DetectChecklistRequest, RewriteSectionRequest, detect_checklist, rewrite_section
 
 app = FastAPI(title="DonorDesk Workers", version="0.2.0")
 
@@ -57,6 +58,16 @@ def polish_route(req: PolishRequest) -> dict[str, Any]:
 @v1.post("/draft-section")
 def draft_section_route(req: DraftSectionRequest) -> dict[str, Any]:
     return draft_section(req)
+
+
+@v1.post("/detect-checklist")
+def detect_checklist_route(req: DetectChecklistRequest) -> dict[str, Any]:
+    return detect_checklist(req)
+
+
+@v1.post("/rewrite-section")
+def rewrite_section_route(req: RewriteSectionRequest) -> dict[str, Any]:
+    return rewrite_section(req)
 
 
 app.include_router(v1)

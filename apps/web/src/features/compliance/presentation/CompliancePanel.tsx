@@ -16,6 +16,7 @@ import {
 import { formatDate } from "@/lib/shared/dates";
 import { complianceFixLink } from "@/lib/shared/compliance-links";
 import { ChecklistResolution } from "./ChecklistResolution";
+import { BulkChecklistResolution } from "./BulkChecklistResolution";
 
 type Period = { id: string; label: string };
 type ChecklistItem = {
@@ -62,6 +63,12 @@ export function CompliancePanel({
   const canResolve = can(capabilities, "checklist.resolve") || can(capabilities, "checklist.manage");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [severityFilter, setSeverityFilter] = useState<string>("");
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const openItems = checklist.filter(
+    (c) => c.status !== "RESOLVED" && c.status !== "ACCEPTED_RISK" && c.status !== "NOT_APPLICABLE",
+  );
 
   const filtered = useMemo(
     () =>
@@ -81,7 +88,23 @@ export function CompliancePanel({
   const resolved = filtered.filter((c) => c.status === "RESOLVED" || c.status === "ACCEPTED_RISK" || c.status === "NOT_APPLICABLE");
 
   function changePeriod(id: string) {
+    setSelectedIds(new Set());
+    setBulkMode(false);
     router.push(`/projects/${projectId}/compliance?period=${id}`);
+  }
+
+  function toggleBulkMode() {
+    setBulkMode((v) => !v);
+    setSelectedIds(new Set());
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
   return (
@@ -113,7 +136,34 @@ export function CompliancePanel({
             ))}
           </Select>
         </div>
+        {canResolve && openItems.length > 1 && (
+          <div className="flex items-end">
+            <button
+              type="button"
+              className={bulkMode ? "btn" : "btn-secondary"}
+              onClick={toggleBulkMode}
+            >
+              {bulkMode ? "Exit bulk" : "Bulk actions"}
+            </button>
+          </div>
+        )}
       </div>
+
+      {bulkMode && selectedIds.size > 0 && canResolve && (
+        <div className="mt-4">
+          <BulkChecklistResolution
+            periodId={periodId}
+            itemIds={Array.from(selectedIds)}
+            onDone={() => setSelectedIds(new Set())}
+          />
+        </div>
+      )}
+
+      {bulkMode && selectedIds.size === 0 && (
+        <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
+          Select items below to apply an action to all of them at once.
+        </p>
+      )}
 
       {filtered.length === 0 && (
         <div className="card text-sm text-slate-600 dark:text-slate-300">No checklist items match.</div>
@@ -133,6 +183,9 @@ export function CompliancePanel({
                 periodId={periodId}
                 item={item}
                 canResolve={canResolve}
+                bulkMode={bulkMode}
+                selected={selectedIds.has(item.id)}
+                onToggle={toggleSelected}
               />
             ))}
           </div>
@@ -168,12 +221,18 @@ function ChecklistCard({
   item,
   canResolve,
   resolved = false,
+  bulkMode = false,
+  selected = false,
+  onToggle,
 }: {
   projectId: string;
   periodId: string;
   item: ChecklistItem;
   canResolve: boolean;
   resolved?: boolean;
+  bulkMode?: boolean;
+  selected?: boolean;
+  onToggle?: (id: string) => void;
 }) {
   const fix = complianceFixLink({
     projectId,
@@ -186,6 +245,17 @@ function ChecklistCard({
   return (
     <div className="card">
       <div className="flex flex-wrap items-start justify-between gap-3">
+        {bulkMode && !resolved && canResolve && (
+          <div className="pt-1">
+            <input
+              type="checkbox"
+              aria-label={`Select ${item.title}`}
+              checked={selected}
+              onChange={() => onToggle?.(item.id)}
+              className="h-4 w-4 accent-brand-600"
+            />
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-slate-800 dark:text-slate-100">{item.title}</span>

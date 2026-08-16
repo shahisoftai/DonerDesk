@@ -1,5 +1,5 @@
 import type { IEventBus, IJobQueue, ILogger } from "@donordesk/application";
-import { DomainEvent, EvidenceUploaded } from "@donordesk/domain";
+import { DomainEvent, EvidenceUploaded, ReportingPeriodCreated } from "@donordesk/domain";
 
 /**
  * Maps a domain event type to the async job it should trigger (OCP: add a row
@@ -28,6 +28,15 @@ export const DEFAULT_EVENT_TO_JOB: EventToJobMapping[] = [
     buildPayload: (event) => ({
       projectId: (event as unknown as { projectId: string }).projectId,
       tenantId: (event as unknown as { tenantId: import("@donordesk/domain").TenantId }).tenantId.toString(),
+    }),
+  },
+  {
+    eventName: "reporting.period.created",
+    jobName: "checklist.generate",
+    buildPayload: (event) => ({
+      reportingPeriodId: (event as ReportingPeriodCreated).reportingPeriodId,
+      projectId: (event as ReportingPeriodCreated).projectId,
+      tenantId: (event as ReportingPeriodCreated).tenantId.toString(),
     }),
   },
 ];
