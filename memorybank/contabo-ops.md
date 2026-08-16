@@ -476,6 +476,38 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-16 (Spreadsheet-style indicator data entry — release `20260816083703`,
+  commit `d659c4f`):** Deployed API + web + prisma via
+  `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api donordesk-web`,
+  incremental transfer 10 MB).
+  1. **Migration `20260816090000_indicator_update_unique`** applied as
+     `donordesk_migrator` (via `DATABASE_ADMIN_URL`): dedupes existing
+     `IndicatorUpdate` rows (keeps earliest per `tenantId, indicatorId,
+     reportingPeriodId`) and adds the unique index
+     `IndicatorUpdate_tenantId_indicatorId_reportingPeriodId_key` (verified in
+     `pg_indexes`).
+  2. **New API routes** (all auth-gated 401 unauthenticated): `GET /v1/reporting-periods/:id/indicators`
+     (logframe indicators merged with their updates for the period, `project.view`),
+     `POST /v1/indicator-updates/bulk` (one-call grid upsert, `indicator.update`),
+     `POST /v1/indicator-updates/parse-sheet` (Google Sheets preview via the
+     tenant's Drive OAuth connection — new `spreadsheets.readonly` scope — mapped
+     by indicator code, `indicator.update`). Single `POST /v1/indicator-updates`
+     now upserts too (no duplicate rows) via the shared `upsertIndicatorUpdate`
+     helper; verified rows are locked against edits; closed periods reject writes.
+  3. **New UI:** `/projects/[id]/reports/[periodId]/indicators` spreadsheet-style
+     entry grid (grouped by logframe level, editable cells, dirty tracking,
+     Save all, per-row Submit & verify, status badges) with a Google Sheets
+     import panel (preview → apply to grid). Linked from the reports list, the
+     report workspace header, and the project setup page.
+  4. Verified live: loopback `4001`/`3002` healthy, `/health`+`/ready` OK, new
+     routes registered (401), public HTTPS `/` + `/login` 200, entry page
+     auth-gated 307, no new journal errors, deployed bundle contains the new
+     routes and the entry-grid client refs. Application test suite 53/53
+     (6 new indicator-entry tests); full workspace typecheck/lint/build green.
+     Rollback: `RELEASE_ID=20260816074220 scripts/rollback.sh` or
+     `ln -sfn /opt/donordesk/releases/20260816074220 /opt/donordesk/current &&
+     systemctl restart donordesk-api donordesk-web`.
+
 - **2026-08-16 (Google OAuth verification signals — release `20260816070838`
   web-only):** Added homepage signals for Google's OAuth consent-screen
   verification: JSON-LD `@graph` (`Organization` + `WebApplication`) naming
