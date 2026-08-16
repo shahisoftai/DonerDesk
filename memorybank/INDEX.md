@@ -74,7 +74,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
 > **Deployment status (2026-08-13):** Latest release `20260813190000` (commit
-> `ea3ac0d`) is live on `DonerDesk.online`. All five services (API `4001`, web
+> `ea3ac0d`) is live on `donordesk.online`. All five services (API `4001`, web
 > `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`) are **enabled
 > and active**. The Kestra-plugin code is deployed: signed internal routes
 > `/internal/evidence/:id/content` + `/internal/evidence/upload`, `/superadmin/kestra`,

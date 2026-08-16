@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/components/ui/cn";
 import { SkipLink } from "./SkipLink";
 import { SideNav } from "./SideNav";
@@ -73,9 +74,13 @@ export function AppShell({
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
             </button>
             <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-700 text-lg font-black text-white shadow-lg shadow-brand-500/30">
-                D
-              </span>
+              <Image
+                src="/brand/donordesk-logo.png"
+                alt="DonorDesk"
+                width={1653}
+                height={589}
+                className="h-9 w-auto shrink-0 object-contain"
+              />
               <span className="min-w-0">
                 <span className="block truncate text-sm font-bold">{orgName || "DonorDesk"}</span>
                 <span className="block truncate text-xs text-slate-500 dark:text-slate-400">Donor reporting workspace</span>

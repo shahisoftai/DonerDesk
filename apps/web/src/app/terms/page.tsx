@@ -5,7 +5,7 @@ import { LegalLayout } from "@/components/legal/LegalLayout";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "The DonorDesk Terms of Service govern the use of the donerdesk.online platform by organizations and their teams, including acceptable use, content ownership, AI-assisted features, liability, and dispute resolution.",
+    "The DonorDesk Terms of Service govern the use of the donordesk.online platform by organizations and their teams, including acceptable use, content ownership, AI-assisted features, liability, and dispute resolution.",
 };
 
 const TOC = [
@@ -49,7 +49,7 @@ export default function TermsPage() {
           creates a workspace on the Service (“<B>you</B>”, “<B>your</B>”, or “
           <B>Customer</B>”). They govern your access to and use of the DonorDesk
           platform and related services available at{" "}
-          <B>https://donerdesk.online</B> (the “<B>Service</B>”).
+          <B>https://donordesk.online</B> (the “<B>Service</B>”).
         </P>
         <P>
           By creating an account, accessing the Service, or clicking to accept
@@ -97,7 +97,7 @@ export default function TermsPage() {
           You are responsible for safeguarding your account credentials and for
           all activity that occurs under your account. You must keep your
           passwords confidential and notify us promptly at{" "}
-          <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>{" "}
+          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>{" "}
           if you suspect unauthorized access to your account.
         </P>
         <P>
@@ -233,7 +233,7 @@ export default function TermsPage() {
           <A href="/privacy">Privacy Policy</A>. Where required by applicable law,
           you may enter into our data processing addendum, which is available on
           request from{" "}
-          <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>.
+          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>.
         </P>
         <P>
           You are responsible for the lawfulness of Your Data and for obtaining
@@ -417,7 +417,7 @@ export default function TermsPage() {
         </P>
         <P>
           Send notices to{" "}
-          <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>.
+          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>.
           We will review valid notices and take reasonable steps to remove or
           disable access to infringing material. If you believe material you
           uploaded was removed by mistake, you may submit a counter-notification
@@ -505,7 +505,7 @@ export default function TermsPage() {
           <Li>
             <B>Notices.</B> Notices under these Terms will be sent to the email
             address associated with your account, or to{" "}
-            <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>{" "}
+            <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>{" "}
             for notices to us.
           </Li>
         </Ul>
@@ -519,10 +519,10 @@ export default function TermsPage() {
           <p className="font-semibold text-white">DonorDesk.Online — Legal</p>
           <p className="mt-1 text-slate-300">
             Email:{" "}
-            <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>
+            <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>
           </p>
           <p className="mt-1 text-slate-300">
-            Service: <span className="text-brand-300">https://donerdesk.online</span>
+            Service: <span className="text-brand-300">https://donordesk.online</span>
           </p>
         </div>
       </Section>

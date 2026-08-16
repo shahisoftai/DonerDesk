@@ -44,7 +44,7 @@ export default function PrivacyPage() {
           organizations, humanitarian programmes, and their teams turn field
           evidence, activity records, and logframe data into audit-ready donor
           reports. We operate the website and service at{" "}
-          <B>https://donerdesk.online</B> (the “<B>Service</B>”).
+          <B>https://donordesk.online</B> (the “<B>Service</B>”).
         </P>
         <P>
           This Privacy Policy explains what personal information we process, why
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
         </P>
         <P>
           For any privacy question or request, contact our privacy team at{" "}
-          <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>.
+          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>.
         </P>
       </Section>
 
@@ -211,7 +211,7 @@ export default function PrivacyPage() {
           Where the GDPR or other applicable law requires a{" "}
           <B>data processing agreement</B> or equivalent safeguards, we make
           available a data processing addendum. Contact{" "}
-          <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>{" "}
+          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>{" "}
           to request a copy.
         </P>
       </Section>
@@ -283,7 +283,7 @@ export default function PrivacyPage() {
           We do not sell, rent, or trade personal information, and we do not share
           workspace content with advertisers. A current list of our service
           providers and sub-processors is available on request from{" "}
-          <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>.
+          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>.
         </P>
       </Section>
 
@@ -299,7 +299,7 @@ export default function PrivacyPage() {
         <P>
           If you would like to know more about the safeguards we apply to
           international transfers, or to obtain a copy where available, contact{" "}
-          <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>.
+          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>.
         </P>
       </Section>
 
@@ -391,7 +391,7 @@ export default function PrivacyPage() {
         </Ul>
         <P>
           To exercise any of these rights, email{" "}
-          <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>.
+          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>.
           We will respond within the time period required by applicable law
           (typically 30 days, with extensions permitted by law) and may ask you to
           verify your identity or your authority to make the request.
@@ -421,7 +421,7 @@ export default function PrivacyPage() {
           personal information (subject to lawful exceptions), and correct
           inaccurate information. You may also exercise these rights through an
           authorized agent. Contact{" "}
-          <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>{" "}
+          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>{" "}
           to make a request. We will not discriminate against you for exercising
           your privacy rights.
         </P>
@@ -440,7 +440,7 @@ export default function PrivacyPage() {
         <P>
           If you believe we have unintentionally collected personal information
           from a child, contact{" "}
-          <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>{" "}
+          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>{" "}
           and we will take reasonable steps to delete it.
         </P>
       </Section>
@@ -496,7 +496,7 @@ export default function PrivacyPage() {
           We welcome responsible disclosure of security vulnerabilities in the
           Service. If you discover a potential vulnerability, please report it
           privately to{" "}
-          <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>{" "}
+          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>{" "}
           with sufficient detail to allow us to reproduce and assess it. Please
           do not test in a way that degrades the Service or accesses other users'
           data. We will respond to valid reports and will not pursue legal action
@@ -526,10 +526,10 @@ export default function PrivacyPage() {
           <p className="font-semibold text-white">DonorDesk.Online — Privacy Team</p>
           <p className="mt-1 text-slate-300">
             Email:{" "}
-            <A href="mailto:legal@donerdesk.online">legal@donerdesk.online</A>
+            <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>
           </p>
           <p className="mt-1 text-slate-300">
-            Service: <span className="text-brand-300">https://donerdesk.online</span>
+            Service: <span className="text-brand-300">https://donordesk.online</span>
           </p>
         </div>
         <P>

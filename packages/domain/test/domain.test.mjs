@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { DateRange, DomainError, EvidenceFile, Permissions, TenantId, EvidenceEmbedding, LlmPrompt, LlmRun } from "../dist/index.js";
+import { DateRange, DomainError, EvidenceFile, Permissions, TenantId, EvidenceEmbedding, LlmPrompt, LlmRun, Organization } from "../dist/index.js";
 
 test("tenant identifiers reject empty and short values", () => {
   assert.throws(() => TenantId.create("x"), (error) => error instanceof DomainError && error.code === "VALIDATION_FAILED");
@@ -56,4 +56,31 @@ test("evidence defaults to internal and follows verification behavior", () => {
   assert.equal(evidence.verificationStatus, "UPLOADED");
   evidence.verify();
   assert.equal(evidence.verificationStatus, "VERIFIED");
+});
+
+test("legacy organization rows with partial reportingDefaults rehydrate safely", () => {
+  const org = Organization.rehydrate({
+    id: "o-1",
+    tenantId: TenantId.create("tenant-a"),
+    createdAt: new Date("2026-01-01T00:00:00Z"),
+    props: {
+      name: "Legacy Org",
+      organizationType: "LOCAL_NGO",
+      country: "PK",
+      sectors: ["EDUCATION"],
+      contactName: "A",
+      contactEmail: "a@example.org",
+      defaultLanguage: "en",
+      dataResidency: "DEFAULT",
+      aiEnabled: true,
+      storageProvider: "LOCAL",
+      reportingDefaults: {},
+    },
+  });
+  assert.deepEqual(org.reportingDefaults, {
+    tone: "FORMAL",
+    formattingRules: [],
+    autoPeriodCreation: false,
+    deadlineOffsetDays: undefined,
+  });
 });

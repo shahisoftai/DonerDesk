@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const FEATURES = [
   {
@@ -147,7 +148,7 @@ const PLANS = [
     monthly: "Custom",
     annual: "Annual contract",
     tagline: "For federations, INGOs and multi-country programmes.",
-    cta: { label: "Contact us", href: "mailto:sales@donerdesk.online" },
+    cta: { label: "Contact us", href: "mailto:sales@donordesk.online" },
     highlight: false,
     features: [
       "Unlimited projects & seats",
@@ -173,13 +174,14 @@ export default function HomePage() {
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <a href="/" className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-700 text-lg font-black text-white shadow-lg shadow-brand-500/30">
-              D
-            </span>
-            <span className="text-xl font-bold tracking-tight text-white">
-              DonorDesk
-            </span>
+          <a href="/" className="flex items-center">
+            <Image
+              src="/brand/donordesk-logo.png"
+              alt="DonorDesk"
+              width={1653}
+              height={589}
+              className="h-9 w-auto object-contain"
+            />
           </a>
           <div className="hidden items-center gap-8 text-sm font-medium text-slate-300 md:flex">
             <a href="#features" className="transition hover:text-white">Features</a>
@@ -215,20 +217,25 @@ export default function HomePage() {
           className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]"
         />
         <div className="mx-auto max-w-5xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand-400/30 bg-brand-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-brand-300">
-            <span className="h-2 w-2 rounded-full bg-brand-400 shadow-[0_0_12px_rgba(12,141,230,0.9)]" />
-            AI-assisted donor reporting for NGOs
-          </span>
-          <h1 className="mt-6 text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl md:text-7xl">
-            From scattered field evidence to{" "}
+          <Image
+            src="/brand/donordesk-logo.png"
+            alt="DonorDesk"
+            width={1653}
+            height={589}
+            className="mx-auto h-40 w-auto object-contain sm:h-48 md:h-56"
+            priority
+          />
+          <h1 className="mt-8 text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl md:text-7xl">
+            DonorDesk — from scattered field evidence to{" "}
             <span className="bg-gradient-to-r from-brand-300 via-brand-400 to-cyan-300 bg-clip-text text-transparent">
               donor-ready reports
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-300 sm:text-xl">
-            DonorDesk turns messy field evidence, activity notes, and logframe
-            data into audit-ready donor reports — with source-linked AI drafting,
-            a live compliance checklist, and exports that stand up to any review.
+            DonorDesk is the AI-assisted donor reporting platform for NGOs. It
+            turns messy field evidence, activity notes, and logframe data into
+            audit-ready donor reports — with source-linked AI drafting, a live
+            compliance checklist, and exports that stand up to any review.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
@@ -530,14 +537,17 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t border-white/10 px-6 py-12">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-brand-400 to-brand-700 text-sm font-black text-white">
-              D
-            </span>
-            <span className="font-bold text-white">DonorDesk</span>
+          <div className="flex items-center">
+            <Image
+              src="/brand/donordesk-logo.png"
+              alt="DonorDesk"
+              width={1653}
+              height={589}
+              className="h-10 w-auto object-contain"
+            />
           </div>
           <p className="text-sm text-slate-400">
-            © {new Date().getFullYear()} DonorDesk.Online. Proprietary. All rights reserved.
+            © {new Date().getFullYear()} DonorDesk. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm text-slate-400">
             <Link href="/login" className="transition hover:text-white">Log in</Link>

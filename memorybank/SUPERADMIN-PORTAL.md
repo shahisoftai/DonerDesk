@@ -1,6 +1,6 @@
 # DonorDesk SuperAdmin Portal
 
-**Portal:** `https://sa.donerdesk.online`  
+**Portal:** `https://sa.donordesk.online`  
 **Classification:** privileged platform control plane  
 **Production status:** deployed and reachable  
 **Last verified:** 2026-08-13  
@@ -21,7 +21,7 @@ from the tenant portal and its identity model.
 - The only provisioned platform identity is `mnpiracha@gmail.com`.
 - Tenant roles (`ADMIN`, project roles, compliance roles, viewers, and all other
   tenant users) are not SuperAdmins and cannot use their tenant credentials at
-  `sa.donerdesk.online`.
+  `sa.donordesk.online`.
 - The portal is reachable over public HTTPS. Privacy is enforced by credentials,
   authorization, secure sessions, and a separate API boundary;
   no IP or CIDR allow-list is required by the current product decision.
@@ -36,7 +36,7 @@ tenant administrator from escalating into the global control plane.
 
 | Component | Production endpoint | Exposure | Service |
 |---|---|---|---|
-| OpenLiteSpeed vhost | `sa.donerdesk.online:443` | Public HTTPS | `lshttpd.service` |
+| OpenLiteSpeed vhost | `sa.donordesk.online:443` | Public HTTPS | `lshttpd.service` |
 | SuperAdmin Next.js app | `127.0.0.1:3012` | Loopback only | `donordesk-superadmin.service` |
 | DonorDesk API | `127.0.0.1:4001/superadmin/*` | Loopback; reached by the Next.js proxy | `donordesk-api.service` |
 | PostgreSQL | local PostgreSQL 16 | Host local | existing PostgreSQL service |
@@ -66,7 +66,7 @@ proxied by Next.js, which reads the session from an HTTP-only cookie.
 | SuperAdmin app | `/opt/donordesk/current/superadmin` |
 | API environment | `/opt/donordesk/shared/api.env` |
 | systemd unit | `/etc/systemd/system/donordesk-superadmin.service` |
-| OpenLiteSpeed vhost | `/usr/local/lsws/conf/vhosts/sa.donerdesk.online/vhost.conf` |
+| OpenLiteSpeed vhost | `/usr/local/lsws/conf/vhosts/sa.donordesk.online/vhost.conf` |
 | OpenLiteSpeed rollback copy | `/usr/local/lsws/conf/httpd_config.conf.pre-superadmin-20260813` |
 | Initial credential handoff | `/root/donordesk-superadmin-initial.txt` (mode `0600`) |
 
@@ -281,11 +281,11 @@ plaintext configuration secrets are replaced by audit-safe markers.
 ## 9. TLS and OpenLiteSpeed
 
 - Certificate authority: Let's Encrypt
-- Certificate name/SAN: `sa.donerdesk.online`
-- Certificate path: `/etc/letsencrypt/live/sa.donerdesk.online/`
-- Verified expiry: 2026-11-11 08:41:27 UTC
+- Certificate name/SAN: `sa.donordesk.online`
+- Certificate path: `/etc/letsencrypt/live/sa.donordesk.online/`
+- Verified expiry: 2026-11-13 08:20:30 UTC (reissued 2026-08-15 for `sa.donordesk.online`)
 - Renewal: Certbot scheduled renewal
-- HTTP and HTTPS listeners map `sa.donerdesk.online` to its dedicated vhost
+- HTTP and HTTPS listeners map `sa.donordesk.online` to its dedicated vhost
 - The vhost proxies only to `127.0.0.1:3012`
 - ACME challenge files use the shared webroot at
   `/usr/local/lsws/Example/html/.well-known/acme-challenge`
@@ -320,9 +320,9 @@ Expected result for the last command without a token: `401`.
 ### Public checks
 
 ```bash
-curl -fsSI https://sa.donerdesk.online/
-openssl s_client -connect sa.donerdesk.online:443 \
-  -servername sa.donerdesk.online </dev/null 2>/dev/null \
+curl -fsSI https://sa.donordesk.online/
+openssl s_client -connect sa.donordesk.online:443 \
+  -servername sa.donordesk.online </dev/null 2>/dev/null \
   | openssl x509 -noout -subject -issuer -dates -ext subjectAltName
 ```
 
@@ -335,8 +335,8 @@ systemctl restart lshttpd
 ```
 
 Use `lshttpd.service` on this host; `lsws.service` is not the active unit name.
-After any shared-ingress restart, verify both `sa.donerdesk.online` and the main
-`donerdesk.online` portal.
+After any shared-ingress restart, verify both `sa.donordesk.online` and the main
+`donordesk.online` portal.
 
 ---
 
@@ -353,7 +353,7 @@ Important source paths:
 - `packages/infrastructure/src/platform/control-plane.ts`
 - `packages/infrastructure/src/platform/bootstrap-cli.ts`
 - `infra/systemd/donordesk-superadmin.service`
-- `infra/openlitespeed/sa.donerdesk.online.vhost.conf`
+- `infra/openlitespeed/sa.donordesk.online.vhost.conf`
 
 Rollback of application code follows the normal immutable-release procedure:
 
@@ -419,7 +419,7 @@ SuperAdmin email/password now creates the secure HTTP-only session directly.
 | Public portal | HTTP 200 over HTTPS |
 | Unauthenticated `/superadmin/overview` | HTTP 401 |
 | Platform account | `mnpiracha@gmail.com`, `ACTIVE`, zero failed attempts |
-| Certificate SAN | `DNS:sa.donerdesk.online` |
+| Certificate SAN | `DNS:sa.donordesk.online` |
 | Certificate expiry | 2026-11-11 08:41:27 UTC |
 | Initial handoff file mode | `0600` |
 | OpenLiteSpeed | active |

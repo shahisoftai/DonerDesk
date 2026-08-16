@@ -1,6 +1,6 @@
 # DonorDesk — Global Light/Dark Theming Implementation
 
-**Status:** Deployed to production (DonerDesk.online), release `20260812163749`
+**Status:** Deployed to production (donordesk.online), release `20260812163749`
 **Date:** 2026-08-12
 
 ## 1. Overview

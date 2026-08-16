@@ -650,7 +650,7 @@ load-tested before enabling.
 > **Current production state (2026-08-13):** Latest release `20260813190000`
 > (Kestra-plugin work: signed internal routes `/internal/evidence/:id/content` +
 > `/internal/evidence/upload`, `/superadmin/kestra`, SuperAdmin **Kestra plugins**
-> tab) is deployed and verified on `DonerDesk.online`. `donordesk-api` binds
+> tab) is deployed and verified on `donordesk.online`. `donordesk-api` binds
 > `127.0.0.1:4001`. `donordesk-workers` (8092), `donordesk-kestra` (8093/8094),
 > and `donordesk-superadmin` (3012) are **enabled and active**. **Gated:** the five
 > plugin-referencing Kestra flows (`evidence_parse`, `period_cache`,

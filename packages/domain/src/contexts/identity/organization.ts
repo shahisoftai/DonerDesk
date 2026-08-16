@@ -16,6 +16,18 @@ export interface OrganizationReportingDefaults {
   autoPeriodCreation: boolean;
 }
 
+/** Fills missing keys so legacy/partial persisted JSON can never poison the getter. */
+export function normalizeReportingDefaults(
+  input?: Partial<OrganizationReportingDefaults> | null,
+): OrganizationReportingDefaults {
+  return {
+    tone: input?.tone ?? "FORMAL",
+    formattingRules: Array.isArray(input?.formattingRules) ? [...input.formattingRules] : [],
+    autoPeriodCreation: input?.autoPeriodCreation ?? false,
+    deadlineOffsetDays: input?.deadlineOffsetDays,
+  };
+}
+
 export interface OrganizationProps {
   name: string;
   organizationType: OrganizationType;
@@ -42,6 +54,7 @@ export class Organization extends Entity<string> {
     createdAt?: Date,
   ) {
     super(id, createdAt);
+    this.props = { ...this.props, reportingDefaults: normalizeReportingDefaults(this.props.reportingDefaults) };
   }
 
   static create(input: { id: string; tenantId: TenantId; props: OrganizationProps }): Organization {

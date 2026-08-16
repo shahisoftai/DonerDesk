@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 export type TocItem = { id: string; title: string };
@@ -20,13 +21,14 @@ export function LegalLayout({
     <main className="min-h-screen overflow-x-hidden bg-slate-950 text-slate-100">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-700 text-lg font-black text-white shadow-lg shadow-brand-500/30">
-              D
-            </span>
-            <span className="text-xl font-bold tracking-tight text-white">
-              DonorDesk
-            </span>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/brand/donordesk-logo.png"
+              alt="DonorDesk"
+              width={1653}
+              height={589}
+              className="h-9 w-auto object-contain"
+            />
           </Link>
           <Link
             href="/"
@@ -46,7 +48,7 @@ export function LegalLayout({
         </h1>
         <p className="mt-3 text-sm text-slate-400">
           Effective date: <span className="font-semibold text-slate-300">{updated}</span> · Applies to the Service at{" "}
-          <span className="text-brand-300">donerdesk.online</span>
+          <span className="text-brand-300">donordesk.online</span>
         </p>
 
         <nav
@@ -78,7 +80,14 @@ export function LegalLayout({
 
       <footer className="border-t border-white/10 px-6 py-10">
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-4 text-sm text-slate-400 sm:flex-row">
-          <p>© {new Date().getFullYear()} DonorDesk.Online. Proprietary. All rights reserved.</p>
+          <Image
+            src="/brand/donordesk-logo.png"
+            alt="DonorDesk"
+            width={1653}
+            height={589}
+            className="h-9 w-auto object-contain"
+          />
+          <p>© {new Date().getFullYear()} DonorDesk. All rights reserved.</p>
           <div className="flex gap-6">
             <Link href="/privacy" className="transition hover:text-white">Privacy Policy</Link>
             <Link href="/terms" className="transition hover:text-white">Terms of Service</Link>

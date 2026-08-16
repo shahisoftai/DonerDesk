@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-15 14:05 PKT (release `20260815063021`, account-wide Onboarding restructure: removed project steps, added Default reporting profile + migration `20260815060000_onboarding_reporting_defaults`)
+**Last deployment:** 2026-08-15 (domain swap to `donordesk.online`, release `20260815092056` web-only; OLS vhosts + LE certs + env swap)
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -251,15 +251,22 @@ vhosts. Do not claim the global configuration validates cleanly, and do not repa
 unrelated vhosts as part of DonorDesk deployment. Capture the baseline errors,
 add the DonorDesk vhost, rerun the test, and require no **new** errors.
 
-**DonorDesk deployment (2026-08-12):**
-- **Hostname:** `DonerDesk.online` (DNS: `109.123.248.253`)
-- **Vhost:** `/usr/local/lsws/conf/vhosts/donerdesk.online/vhost.conf`
-  - Routes: `/` → `127.0.0.1:3002`, `/api` → `127.0.0.1:4001`
+**DonorDesk deployment (2026-08-12; domain swapped to `donordesk.online` on 2026-08-15):**
+- **Hostname:** `donordesk.online` (+ alias `www.donordesk.online`) (DNS: `109.123.248.253`).
+  The previously misconfigured `donerdesk.online` now serves a **301 redirect** to
+  `donordesk.online` (old cert valid until 2026-11-10; no renewal config — retire
+  the old vhost/map/cert once the transition is done).
+- **Vhost:** `/usr/local/lsws/conf/vhosts/donordesk.online/vhost.conf`
+  - Routes: `/` → `127.0.0.1:3002`, `/api` → `127.0.0.1:4001`, `/api/auth` → `127.0.0.1:3002`
   - ExtProcessors: `donordesk_web` (3002), `donordesk_api` (4001)
-- **Certificate:** `/etc/letsencrypt/live/donerdesk.online/`
-  - Issued: 2026-08-12, Expires: 2026-11-10
+- **Certificate:** `/etc/letsencrypt/live/donordesk.online/`
+  - Issued: 2026-08-15, Expires: 2026-11-13
+  - SANs: `donordesk.online`, `www.donordesk.online`
   - Key: `privkey.pem`, Cert: `fullchain.pem`
 - **OLC vhost SSL config:** keyFile and certFile point to above paths
+- **SuperAdmin subdomain:** `sa.donordesk.online` → `127.0.0.1:3012` (vhost
+  `/usr/local/lsws/conf/vhosts/sa.donordesk.online/vhost.conf`; cert
+  `/etc/letsencrypt/live/sa.donordesk.online/` issued 2026-08-15, expires 2026-11-13)
 
 Several unrelated certificates are expired or near expiry. DonorDesk certificate
 renewal should be monitored via certbot cron.
@@ -468,6 +475,93 @@ Also verify from outside the server:
 - backup completion and a clean-machine restore.
 
 ## 14. Change log
+
+- **2026-08-16 (Google OAuth verification signals — release `20260816070838`
+  web-only):** Added homepage signals for Google's OAuth consent-screen
+  verification: JSON-LD `@graph` (`Organization` + `WebApplication`) naming
+  "DonorDesk" with a purpose description and logo URL, `<meta name="application-name"
+  content="DonorDesk">`, and the H1 now starts with "DonorDesk — from scattered
+  field evidence to donor-ready reports". Verified live: `application-name` meta,
+  one JSON-LD block, H1 contains the name; `/`, `/login`, `/privacy`, `/terms` 200.
+
+- **2026-08-16 (final brand assets — release `20260816065354` web-only):** Switched
+  logo to `Public/Images/Logo/logo2.png` (1653x589, RGBA with transparency — no
+  more `mix-blend-multiply` needed) and favicon to `favicon2.png`. Regenerated
+  `apps/web/public/brand/donordesk-logo.png`, `app/icon.png` (512) +
+  `favicon.ico` (32), and the `apps/superadmin` copies. Homepage hero logo
+  doubled to `h-40`/`sm:h-48`/`md:h-56`; nav (`h-9`), footer (`h-10`), legal
+  layout, and portal AppShell updated to the new 1653x589 source. Verified live:
+  `/brand/donordesk-logo.png`, `/icon.png`, `/favicon.ico` 200; homepage/login/
+  privacy/terms 200.
+
+- **2026-08-15 (brand refresh — release `20260815142910` web-only):** Replaced the
+  earlier JPEG-based mark with the final brand assets: `Public/Images/Logo/logo.png`
+  (wide logo incl. wordmark + tagline) and `favicon.png`. Assets deployed:
+  `apps/web/public/brand/donordesk-logo.png` (display), `app/icon.png` (512) +
+  `favicon.ico` (32) from `favicon.png`; also copied into `apps/superadmin` (repo
+  only). Landing page: removed the "AI-assisted donor reporting for NGOs" hero badge
+  and placed a larger logo above the H1; nav and footer now show the wide logo alone
+  (text "DonorDesk" removed — it is part of the logo); footer logo enlarged (h-10).
+  Legal layout nav/footer and portal AppShell use the wide logo with `mix-blend-multiply`
+  so the white canvas blends into dark/light headers. Verified live: `/brand/donordesk-logo.png`,
+  `/icon.png`, `/favicon.ico` 200 with correct types; homepage/legal/login 200.
+
+- **2026-08-15 (brand logo + favicon — release `20260815135837` web-only):** Used
+  `Public/Images/Logo/DonorDesk_logo.jpeg` (1408x768) as the app logo and favicon.
+  Added `apps/web/public/brand/donordesk-logo.jpeg` (original) and a 512px
+  center-square crop `donordesk-logo-square.png`; replaced the gradient "D" brand
+  marks with the image (landing nav/footer, legal layout, portal AppShell) via
+  `next/image`. Favicon: `app/icon.png` + `favicon.ico` (replaces `icon.svg`);
+  also added to `apps/superadmin` (repo only, not yet in a superadmin release).
+  Verified live: `/icon.png`, `/favicon.ico`, `/brand/donordesk-logo-square.png`
+  all 200 with correct content types; HTML references the image; `/login` 200,
+  `/dashboard` auth-gated 307. Cleaned up stale `/tmp/dd-release-*` dirs that had
+  caused an earlier `ERR_PNPM_ENOSPC` during packaging.
+
+- **2026-08-15 (domain swap `donerdesk.online` → `donordesk.online`):** Reconfigured
+  the shared host and web app to the correct domain (one-letter E→O swap); no DB or
+  release re-deploy of the app code was required.
+  1. **DNS verified:** `donordesk.online`, `www.donordesk.online` → `109.123.248.253`.
+  2. **OLS vhosts created:** `/usr/local/lsws/conf/vhosts/donordesk.online/vhost.conf`
+     (routes `/`→3002, `/api`→4001, `/api/auth`→3002; alias `www.donordesk.online`)
+     and `/usr/local/lsws/conf/vhosts/sa.donordesk.online/vhost.conf` (`/`→3012).
+     Added `map` entries to all three listeners (Default/HTTP, SSL, SSL IPv6) and
+     the `virtualHost` declarations. `litespeed -t` showed no new errors beyond the
+     pre-existing unrelated vhost errors and the same UID/GID warning class as the
+     original vhosts.
+  3. **Let's Encrypt issued** via webroot (`/usr/local/lsws/Example/html`):
+     `donordesk.online` (+ SAN `www.donordesk.online`, expires 2026-11-13) and
+     `sa.donordesk.online` (expires 2026-11-13); renewal configs created (unlike
+     the old empty donerdesk renewal conf). `vhssl` blocks point at the new certs.
+  4. **Env swap on host:** `CORS_ORIGINS`, `GOOGLE_DRIVE_REDIRECT_URI`,
+     `GOOGLE_AUTH_REDIRECT_URI` in `/opt/donordesk/shared/api.env` and
+     `APP_URL=https://donordesk.online` in
+     `/etc/systemd/system/donordesk-web.service.d/google.conf`; `daemon-reload` +
+     restart of `donordesk-api`/`donordesk-web`. Google Cloud Console redirect
+     URIs are an operator follow-up (the `/api/auth/google/start` consent URL now
+     advertises `redirect_uri=https://donordesk.online/api/auth/google/callback`).
+  5. **Web-only release `20260815092056` deployed** (incremental) with the updated
+     strings: `metadataBase`/`og:url` `https://donordesk.online`, privacy/terms
+     pages, landing `sales@donordesk.online`, legal footer brand. Verified:
+     `/`, `/login`, `/privacy`, `/terms` 200 on `https://donordesk.online`; no
+     `donerdesk.online` strings remain in served pages; Google sign-in button still
+     present; `/api/auth/google/start` 307 with new-domain `redirect_uri`.
+  6. **Old domain retired to 301:** `donerdesk.online` (+`www`) → `donordesk.online`
+     and `sa.donerdesk.online` → `sa.donordesk.online` via per-vhost rewrite
+     `RewriteRule ^(.*)$ https://donordesk.online$1 [R=301,L]`. Old LE certs
+     (expire 2026-11-10) keep the redirects working for now; the old renewal conf
+     is empty so it will **not** auto-renew — fully retire old vhost/maps/certs and
+     drop old DNS when the transition is done.
+  7. **Rollback/backup:** pre-change config snapshots in
+     `/root/donordesk-domain-swap-20260815111751/` (httpd_config.conf, both old
+     vhost dirs, api.env, google.conf). Rollback = restore those files, remove new
+     vhosts/maps, `certbot delete --cert-name donordesk.online` (and
+     `sa.donordesk.online`), redeploy previous web release, restore envs.
+  8. **Google Cloud Console (operator):** add
+     `https://donordesk.online/api/auth/google/callback` and
+     `https://donordesk.online/api/auth/drive/callback` as authorized redirect URIs
+     in the existing OAuth client (and remove/keep the old `DonerDesk.online` URIs
+     as desired).
 
 - **2026-08-15 (Tiers, Entitlements, and Payments — release `20260815082750`):**
   Deployed API + web + prisma via the incremental immutable-release path
