@@ -91,6 +91,9 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
                       <Link href={`/projects/${resolvedParams.id}/reports/${p.id}`} className="btn-secondary py-1 text-xs">
                         Open workspace
                       </Link>
+                      <Link href={`/projects/${resolvedParams.id}/reports/${p.id}/indicators`} className="btn-secondary py-1 text-xs">
+                        Enter indicator data
+                      </Link>
                       {!p.donorTemplateId && (
                         <Link href={`/projects/${resolvedParams.id}/templates`} className="btn-secondary py-1 text-xs">
                           Attach template

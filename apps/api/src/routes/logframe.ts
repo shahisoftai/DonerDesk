@@ -1,5 +1,11 @@
 import type { FastifyInstance } from "fastify";
-import { CreateLogframeItemSchema, CreateIndicatorSchema, CreateIndicatorUpdateSchema } from "@donordesk/contracts";
+import {
+  CreateLogframeItemSchema,
+  CreateIndicatorSchema,
+  CreateIndicatorUpdateSchema,
+  BulkUpsertIndicatorUpdatesSchema,
+  ParseIndicatorSheetSchema,
+} from "@donordesk/contracts";
 
 export async function registerLogframeRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/logframe", async (req) => {
@@ -54,6 +60,22 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const body = CreateIndicatorUpdateSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.createIndicatorUpdate.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/indicator-updates/bulk", async (req) => {
+    const body = BulkUpsertIndicatorUpdatesSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.bulkUpsertIndicatorUpdates.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/indicator-updates/parse-sheet", async (req) => {
+    const body = ParseIndicatorSheetSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.parseIndicatorSheet.handle(ctx, body);
     if (!r.ok) throw r.error;
     return r.value;
   });

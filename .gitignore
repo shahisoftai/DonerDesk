@@ -16,3 +16,4 @@ test-results/
 .mypy_cache/
 *.egg-info/
 storage/
+!packages/infrastructure/src/storage/

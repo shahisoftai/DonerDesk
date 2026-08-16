@@ -234,6 +234,14 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
     const rows = await this.prisma.indicatorUpdate.findMany({ where: { indicatorId, tenantId: tenantId.toString() }, orderBy: { createdAt: "asc" } });
     return ok(rows.map((r) => this.toDomain(r)));
   }
+  async findByIndicatorAndPeriod(indicatorId: string, reportingPeriodId: string, tenantId: TenantId): Promise<Result<IndicatorUpdate | null, DomainError>> {
+    const row = await this.prisma.indicatorUpdate.findFirst({
+      where: { indicatorId, reportingPeriodId, tenantId: tenantId.toString() },
+      orderBy: { createdAt: "asc" },
+    });
+    if (!row) return ok(null);
+    return ok(this.toDomain(row));
+  }
   private toDomain(row: {
     id: string;
     tenantId: string;

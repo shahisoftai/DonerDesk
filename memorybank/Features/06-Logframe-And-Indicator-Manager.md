@@ -127,18 +127,38 @@ M&E Officer can update:
 | Indicator CRUD | Implemented | Full lifecycle |
 | Indicator Updates | Implemented | Period-based tracking |
 | Verification Workflow | Implemented | Draft/Submitted/Verified/Rejected |
+| Spreadsheet Data Entry | Implemented | Per-period grid + bulk upsert + unique (indicator, period) |
+| Google Sheets Import | Implemented | Read-only scope + preview → apply to grid |
 | Disaggregation | Not implemented | Fields defined but not tracked |
+
+## Data entry (2026-08-16)
+
+- **Grid:** `/projects/[id]/reports/[periodId]/indicators` renders every logframe
+  indicator grouped by level, with editable period/cumulative achievement,
+  comments, and data source. Values save as drafts via
+  `POST /v1/indicator-updates/bulk` (one call per sheet); verified rows are locked.
+- **One update per indicator+period:** new unique index
+  `(tenantId, indicatorId, reportingPeriodId)`; `POST /v1/indicator-updates`
+  (single) and the bulk endpoint both upsert (create DRAFT or edit an existing
+  non-verified draft) via the shared `upsertIndicatorUpdate` helper.
+- **Google Sheets import:** `POST /v1/indicator-updates/parse-sheet` reads a sheet
+  through the tenant's Drive OAuth connection (new `spreadsheets.readonly`
+  scope), maps rows by indicator code, returns a preview with warnings, and the
+  UI applies matched rows to the grid before saving.
+- **Read model:** `GET /v1/reporting-periods/:id/indicators` merges logframe
+  indicators with their existing updates for the period (project.view).
 
 ## Pending Enhancements
 
-- [ ] Excel/CSV logframe file import
+- [ ] Excel/CSV logframe file import (structured)
 - [ ] AI logframe structuring from pasted text
 - [ ] Disaggregation tracking (Male/Female/Children/Disability)
 - [ ] Indicator baseline/target visualization
 - [ ] Cross-period indicator calculations
 - [ ] Indicator comparison across periods
 - [ ] Means of verification linking to evidence
-- [ ] Bulk indicator import from Excel
+- [ ] Indicator-update history read model per indicator (`GET /v1/indicators/:id/updates`)
+- [ ] Request-correction / reject routes for indicator updates
 
 ## Notes
 

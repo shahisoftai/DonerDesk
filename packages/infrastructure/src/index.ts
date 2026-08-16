@@ -7,6 +7,8 @@ export { EvidenceStorageResolver } from "./storage/router.js";
 export { GoogleDriveEvidenceStorage } from "./storage/google-drive.js";
 export { EnvGoogleDriveTokenStore } from "./storage/google-drive-tokens.js";
 export { GoogleDriveOAuthConnector } from "./storage/google-drive-oauth.js";
+export { GoogleSheetsReader } from "./storage/google-sheets-reader.js";
+export { refreshGoogleAccessToken, parseSpreadsheetId } from "./storage/google-oauth.js";
 export { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credentials.js";
 export { PrismaGoogleDriveTokenStore } from "./storage/prisma-google-drive-token-store.js";
 export { LocalProjectWorkspaceService, GoogleDriveProjectWorkspaceService, PROJECT_WORKSPACE_FOLDERS } from "./storage/project-workspace.js";

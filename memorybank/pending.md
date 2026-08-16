@@ -242,6 +242,14 @@ actually supports; unsupported controls are omitted rather than simulated.
   indicator creation + update + verify wired to real routes (Phase 2 plus the
   post-implementation integration audit). Excel/CSV import wired for both logframe
   items and indicators. AI structuring remains backend.
+- [x] **Spreadsheet-style indicator data entry** — **WIRED**. Per-reporting-period
+  grid at `/projects/[id]/reports/[periodId]/indicators` (linked from the reports
+  list, report workspace, and setup page). Rows come from the project logframe;
+  bulk upsert is one call per sheet (`POST /v1/indicator-updates/bulk`), one
+  `IndicatorUpdate` per (indicator, period) enforced by a new unique constraint,
+  verified rows are locked, and Google Sheets import (`POST /v1/indicator-updates/
+  parse-sheet`) previews a mapped sheet before applying it to the grid. See
+  `Features/06-Logframe-And-Indicator-Manager.md`.
 
 ### Feature 07 — Evidence Library
 - [x] **Google Drive primary storage (link-first)** — `storageProvider=GOOGLE_DRIVE`;
@@ -355,7 +363,9 @@ Remaining follow-ups (tracked here, not claimed):
 - [ ] **Indicator-update submit / request-correction / reject routes** — domain
   supports them; API only exposes create + verify (Feature 18 §8).
 - [ ] **Indicator-update history read model** — `GET /v1/indicators/:id/updates`
-  (Feature 18 §8); UI indicator page still shows the "not exposed" note.
+  (Feature 18 §8); UI indicator page still shows the "not exposed" note. The
+  per-period grid (`GET /v1/reporting-periods/:id/indicators`) now covers the
+  primary data-entry read path.
 - [ ] **Automatic recurring reporting periods** — `autoPeriodCreation` flag stored
   on the profile; scheduling job not yet implemented (Feature 18 §5.5).
 - [ ] **Deadline-reminder wiring to the reporting profile** — `deadlineOffsetDays`

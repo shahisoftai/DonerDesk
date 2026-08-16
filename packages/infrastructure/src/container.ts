@@ -21,6 +21,9 @@ import {
   CreateLogframeItemHandler,
   CreateIndicatorHandler,
   CreateIndicatorUpdateHandler,
+  BulkUpsertIndicatorUpdatesHandler,
+  ListPeriodIndicatorsHandler,
+  ParseIndicatorSheetHandler,
   VerifyIndicatorUpdateHandler,
   ListLogframeHandler,
   ListIndicatorsHandler,
@@ -130,6 +133,7 @@ import { EvidenceStorageResolver } from "./storage/router.js";
 import { ProjectWorkspaceServiceResolver, PrismaWorkspaceNameProvider } from "./storage/workspace-router.js";
 import { PrismaGoogleDriveTokenStore } from "./storage/prisma-google-drive-token-store.js";
 import { GoogleDriveOAuthConnector } from "./storage/google-drive-oauth.js";
+import { GoogleSheetsReader } from "./storage/google-sheets-reader.js";
 import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credentials.js";
 import { TolerantDocumentParser } from "./parsers/document-parser.js";
 import { StubTemplateExtractionService } from "./llm/template-extraction.js";
@@ -223,6 +227,9 @@ export interface Container {
     createLogframeItem: CreateLogframeItemHandler;
     createIndicator: CreateIndicatorHandler;
     createIndicatorUpdate: CreateIndicatorUpdateHandler;
+    bulkUpsertIndicatorUpdates: BulkUpsertIndicatorUpdatesHandler;
+    listPeriodIndicators: ListPeriodIndicatorsHandler;
+    parseIndicatorSheet: ParseIndicatorSheetHandler;
     verifyIndicatorUpdate: VerifyIndicatorUpdateHandler;
     listLogframe: ListLogframeHandler;
     listIndicators: ListIndicatorsHandler;
@@ -290,6 +297,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     process.env.PLATFORM_MASTER_KEY ? Buffer.from(process.env.PLATFORM_MASTER_KEY, "base64") : Buffer.alloc(0),
   );
   const googleDriveTokens = new PrismaGoogleDriveTokenStore(googleDriveCredentials);
+  const sheetReader = new GoogleSheetsReader(googleDriveTokens);
   const evidenceStorage = new EvidenceStorageResolver(
     storage,
     async (tenantId) => {
@@ -458,6 +466,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createLogframeItem: new CreateLogframeItemHandler(ids, logframe, audits),
     createIndicator: new CreateIndicatorHandler(ids, indicators, audits),
     createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits),
+    bulkUpsertIndicatorUpdates: new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits),
+    listPeriodIndicators: new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates),
+    parseIndicatorSheet: new ParseIndicatorSheetHandler(periods, indicators, sheetReader),
     verifyIndicatorUpdate: new VerifyIndicatorUpdateHandler(indicatorUpdates, audits),
     listLogframe: new ListLogframeHandler(logframe, indicators),
     listIndicators: new ListIndicatorsHandler(indicators),

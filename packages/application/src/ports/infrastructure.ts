@@ -101,6 +101,15 @@ export interface IGoogleSignInConnector {
   exchangeCode(code: string): Promise<{ email: string; name: string; googleSubject: string }>;
 }
 
+/**
+ * Reads cell values from a Google Sheets spreadsheet (server-side, using the
+ * tenant's Drive OAuth connection). Implementations parse the URL/spreadsheet id,
+ * refresh the access token, and return the sheet as a raw header + rows grid.
+ */
+export interface ISheetReader {
+  readSheet(input: { tenantId: string; sheetUrl: string }): Promise<Result<{ headers: string[]; rows: string[][] }, DomainError>>;
+}
+
 export interface ILLMMessage {
   role: "system" | "user" | "assistant";
   content: string;

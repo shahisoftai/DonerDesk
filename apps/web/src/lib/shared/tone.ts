@@ -98,8 +98,7 @@ export function severityTone(severity: string | undefined): Tone {
   }
 }
 
-export function verificationStatusTone(status: string | undefined): Tone {
-  switch (status) {
+export function verificationStatusTone(status: string | undefined): Tone {  switch (status) {
     case "VERIFIED":
       return "success";
     case "REJECTED":
@@ -146,6 +145,23 @@ export function checklistStatusTone(status: string | undefined): Tone {
       return "danger";
     case "IN_PROGRESS":
       return "warning";
+    default:
+      return "neutral";
+  }
+}
+
+export function indicatorVerificationTone(status: string | undefined): Tone {
+  switch (status) {
+    case "VERIFIED":
+      return "success";
+    case "REJECTED":
+      return "danger";
+    case "NEEDS_CORRECTION":
+      return "danger";
+    case "SUBMITTED":
+      return "info";
+    case "DRAFT":
+      return "neutral";
     default:
       return "neutral";
   }

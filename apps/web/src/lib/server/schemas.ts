@@ -182,6 +182,64 @@ export const LogframeResponseSchema = z.object({
   indicators: z.array(IndicatorItemSchema),
 });
 
+export const PeriodIndicatorUpdateSchema = z.object({
+  id: z.string(),
+  periodAchievement: z.string(),
+  cumulativeAchievement: z.string(),
+  comments: z.string().optional(),
+  dataSource: z.string().optional(),
+  verificationStatus: z.string(),
+  verifiedAt: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const PeriodIndicatorRowSchema = z.object({
+  id: z.string(),
+  logframeItemId: z.string(),
+  code: z.string(),
+  name: z.string(),
+  type: z.string(),
+  baseline: z.string(),
+  target: z.string(),
+  unit: z.string().optional(),
+  dataSource: z.string().optional(),
+  frequency: z.string().optional(),
+  disaggregationRequired: z.boolean(),
+  logframeLevel: z.string().nullable(),
+  logframeCode: z.string().nullable(),
+  logframeTitle: z.string().nullable(),
+  update: PeriodIndicatorUpdateSchema.nullable(),
+});
+export type PeriodIndicatorRow = z.infer<typeof PeriodIndicatorRowSchema>;
+
+export const PeriodIndicatorsResponseSchema = z.object({
+  periodId: z.string(),
+  projectId: z.string(),
+  indicators: z.array(PeriodIndicatorRowSchema),
+});
+
+export const ParsedIndicatorRowSchema = z.object({
+  indicatorId: z.string().nullable(),
+  code: z.string(),
+  name: z.string().nullable(),
+  periodAchievement: z.string(),
+  cumulativeAchievement: z.string(),
+  comments: z.string(),
+  dataSource: z.string(),
+  matched: z.boolean(),
+});
+
+export const ParseIndicatorSheetResponseSchema = z.object({
+  rows: z.array(ParsedIndicatorRowSchema),
+  warnings: z.array(z.string()),
+});
+
+export const BulkUpsertResponseSchema = z.object({
+  saved: z.number(),
+  skipped: z.number(),
+});
+
 export const ActivityItemSchema = z.object({
   id: z.string(),
   activityTitle: z.string(),

@@ -63,6 +63,11 @@ export default async function ProjectSetupPage({ params }: { params: Promise<{ i
               Indicator values are recorded against reporting periods. You can define indicators now, but you&apos;ll enter their
               values once a reporting period is open.
             </p>
+            <p className="mt-2">
+              <Link className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${id}/reports`}>
+                Open reporting periods to enter indicator data
+              </Link>
+            </p>
           </section>
         </aside>
       </div>

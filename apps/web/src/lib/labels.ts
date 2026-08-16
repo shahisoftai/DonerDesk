@@ -230,6 +230,14 @@ export const ACTIVITY_STATUS_LABEL: Record<string, string> = {
   REJECTED: "Rejected",
 };
 
+export const INDICATOR_VERIFICATION_LABEL: Record<string, string> = {
+  DRAFT: "Draft",
+  SUBMITTED: "Submitted",
+  VERIFIED: "Verified",
+  NEEDS_CORRECTION: "Needs correction",
+  REJECTED: "Rejected",
+};
+
 export const TAG_FIELD_LABEL: Record<string, string> = {
   evidenceType: "Evidence type",
   activityId: "Activity",
@@ -315,6 +323,8 @@ export const CAPABILITY_LABEL: Record<string, string> = {
   "template.create": "Create donor templates",
   "template.edit": "Edit donor templates",
   "logframe.edit": "Edit logframes and indicators",
+  "indicator.update": "Record indicator data",
+  "indicator.verify": "Verify indicator data",
   "activity.create": "Submit activity updates",
   "activity.review": "Review activity updates",
   "evidence.upload": "Upload evidence",

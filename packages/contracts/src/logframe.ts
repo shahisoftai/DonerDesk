@@ -41,3 +41,27 @@ export const CreateIndicatorUpdateSchema = z.object({
   attachedEvidenceIds: z.array(z.string()).default([]),
 });
 export type CreateIndicatorUpdateInput = z.infer<typeof CreateIndicatorUpdateSchema>;
+
+/** One row of the spreadsheet-style indicator data entry grid. */
+export const UpsertIndicatorUpdateSchema = z.object({
+  indicatorId: z.string().min(1),
+  periodAchievement: z.string().default(""),
+  cumulativeAchievement: z.string().default(""),
+  comments: z.string().max(2000).optional(),
+  dataSource: z.string().max(500).optional(),
+});
+export type UpsertIndicatorUpdateInput = z.infer<typeof UpsertIndicatorUpdateSchema>;
+
+/** Bulk save of an entire data-entry grid against one reporting period. */
+export const BulkUpsertIndicatorUpdatesSchema = z.object({
+  reportingPeriodId: z.string().min(1),
+  updates: z.array(UpsertIndicatorUpdateSchema).max(500).default([]),
+});
+export type BulkUpsertIndicatorUpdatesInput = z.infer<typeof BulkUpsertIndicatorUpdatesSchema>;
+
+/** Resolve a Google Sheets spreadsheet into structured indicator rows. */
+export const ParseIndicatorSheetSchema = z.object({
+  reportingPeriodId: z.string().min(1),
+  sheetUrl: z.string().min(1),
+});
+export type ParseIndicatorSheetInput = z.infer<typeof ParseIndicatorSheetSchema>;

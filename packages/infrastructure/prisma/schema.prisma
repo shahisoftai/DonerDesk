@@ -332,6 +332,7 @@ model IndicatorUpdate {
   updatedAt             DateTime @updatedAt
 
   indicator Indicator @relation(fields: [indicatorId], references: [id])
+  @@unique([tenantId, indicatorId, reportingPeriodId])
   @@index([tenantId])
   @@index([reportingPeriodId])
 }

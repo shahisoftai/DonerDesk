@@ -43,6 +43,7 @@ export default async function ReportWorkspacePage({ params }: { params: Promise<
           <p className="text-sm text-slate-600 dark:text-slate-400">Reporting period {resolvedParams.periodId.slice(0, 8)}</p>
         </div>
         <div className="flex gap-2">
+          <Link className="btn-secondary" href={`/projects/${resolvedParams.id}/reports/${resolvedParams.periodId}/indicators`}>Enter indicator data</Link>
           <Link className="btn-secondary" href={`/projects/${resolvedParams.id}/reports/${resolvedParams.periodId}/export`}>Export center</Link>
           <Link className="btn-secondary" href={`/projects/${resolvedParams.id}/reports`}>Back</Link>
         </div>
