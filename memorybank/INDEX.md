@@ -1,6 +1,6 @@
 # DonorDesk MemoryBank Index
 
-**Last updated:** 2026-08-13
+**Last updated:** 2026-08-16
 
 Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to search within files.
 
@@ -73,15 +73,17 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 6 | Review, approval, export (REV, EXP) | ✅ Delivered | [`imp/PHASE6-FRONTEND-REPORT.md`](imp/PHASE6-FRONTEND-REPORT.md) |
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
-> **Deployment status (2026-08-13):** Latest release `20260813190000` (commit
-> `ea3ac0d`) is live on `donordesk.online`. All five services (API `4001`, web
+> **Deployment status (2026-08-16):** Latest release `20260816083703` (commit
+> `d659c4f`) is live on `donordesk.online`. All five services (API `4001`, web
 > `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`) are **enabled
-> and active**. The Kestra-plugin code is deployed: signed internal routes
-> `/internal/evidence/:id/content` + `/internal/evidence/upload`, `/superadmin/kestra`,
-> and the SuperAdmin **Kestra plugins** tab. **Gated (not deployed):** the five
-> plugin-referencing flows and plugin JARs (stage/verify against Kestra 1.3.30 +
-> add the `donordesk` datasource first). See `contabo-ops.md` §10/§14 and
-> `imp/KESTRA-PLUGINS.md`.
+> and active**. Latest release ships **spreadsheet-style indicator data entry**
+> per reporting period: `GET /v1/reporting-periods/:id/indicators`,
+> `POST /v1/indicator-updates/bulk`, `POST /v1/indicator-updates/parse-sheet`
+> (Google Sheets), a unique (indicator, period) constraint, and the entry grid
+> at `/projects/[id]/reports/[periodId]/indicators` (Feature 06). **Gated (not
+> deployed):** the five plugin-referencing Kestra flows and plugin JARs
+> (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource first).
+> See `contabo-ops.md` §10/§14 and `imp/KESTRA-PLUGINS.md`.
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |
@@ -134,6 +136,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Versioned migrations | [`pending.md`](pending.md) |
 | BullMQ / Redis | [`pending.md`](pending.md) |
 | Evidence storage (Google Drive / R2 / LOCAL) | [`gdrive.md`](gdrive.md), [`pending.md`](pending.md) |
+| Indicator data entry (per period) | [`Features/06-Logframe-And-Indicator-Manager.md`](Features/06-Logframe-And-Indicator-Manager.md), [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-Period-Manager.md), [`contabo-ops.md`](contabo-ops.md) §14 |
 | Kestra flows | [`pending.md`](pending.md) |
 | Kestra plugins (Tika/Redis/JDBC/GDrive/SFTP) | [`imp/KESTRA-PLUGINS.md`](imp/KESTRA-PLUGINS.md), [`pending.md`](pending.md) |
 | SSH hardening | [`contabo-ops.md`](contabo-ops.md) §8, [`pending.md`](pending.md) |

@@ -698,6 +698,13 @@ Backend dependency: parser/runtime support for PDF/DOCX and copy-paste remains p
 
 Backend dependency: detail/update history and disaggregation contracts may need extension.
 
+> **Implemented (2026-08-16):** the per-reporting-period spreadsheet grid at
+> `/projects/[id]/reports/[periodId]/indicators` (achievement, cumulative,
+> comments, data source, per-row Submit & verify, status badges) plus Google
+> Sheets import. Per-indicator history read model and disaggregation entry are
+> still pending — see `../../pending.md` and
+> `../Features/06-Logframe-And-Indicator-Manager.md`.
+
 ### ACT — Activity updates
 
 #### ACT-01 Mobile-first capture

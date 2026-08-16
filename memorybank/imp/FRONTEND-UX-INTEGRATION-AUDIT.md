@@ -59,7 +59,11 @@ Browser E2E was not claimed because this audit did not run against a live API/da
 - NTF-02 permission-filtered global search remains blocked on a backend search contract. The current shortcut focuses project portfolio search only.
 - FE-B03 project-assignment ABAC remains a backend release dependency before cross-project queues can be considered production-trusted for non-admin roles.
 - Complete project settings editing needs a registered update contract and audit semantics.
-- Indicator update/history/disaggregation needs a tenant/project-scoped detail and history read model.
+- Indicator update/history/disaggregation needs a tenant/project-scoped detail and history read model
+  (`GET /v1/indicators/:id/updates`). The per-period **data entry** gap is closed (2026-08-16): the
+  spreadsheet grid at `/projects/[id]/reports/[periodId]/indicators` reads
+  `GET /v1/reporting-periods/:id/indicators` and saves via `POST /v1/indicator-updates/bulk`
+  (see `../Features/06-Logframe-And-Indicator-Manager.md`).
 - Global queue performance should eventually use authoritative organization-level read models instead of server composition across projects.
 - Real AI, provenance, email delivery, object storage, and background job limitations remain as recorded in `pending.md`.
 

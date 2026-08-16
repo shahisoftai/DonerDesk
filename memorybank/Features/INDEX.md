@@ -6,6 +6,10 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 > of `../imp/frontend-imp-plan.md` (reports `../imp/PHASE*-FRONTEND-REPORT.md`).
 > Frontend routes live under `apps/web/src/app/(portal)/`. Backend/async statuses
 > below are unchanged by the frontend work — see `../pending.md` for remaining deps.
+>
+> **2026-08-16:** Feature 06 indicator data entry is fully implemented — per-reporting-period
+> spreadsheet grid, bulk upsert, unique (indicator, period), per-row verify, and Google
+> Sheets import. See `06-Logframe-And-Indicator-Manager.md` and `pending.md`.
 
 ## Features
 
@@ -16,7 +20,7 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 | 03 | [User and Role Management](./03-User-And-Role-Management.md) | Implemented | `packages/domain/src/entities/User.ts`, `packages/application/src/permissions/` |
 | 04 | [Project Setup](./04-Project-Setup.md) | Implemented | `packages/domain/src/entities/Project.ts` |
 | 05 | [Donor Template Manager](./05-Donor-Template-Manager.md) | Partial (AI Stub) | `packages/domain/src/entities/DonorTemplate.ts` |
-| 06 | [Logframe and Indicator Manager](./06-Logframe-And-Indicator-Manager.md) | Partial | `packages/domain/src/entities/LogframeItem.ts`, `packages/domain/src/entities/Indicator.ts` |
+| 06 | [Logframe and Indicator Manager](./06-Logframe-And-Indicator-Manager.md) | Implemented (data entry 2026-08-16) | `packages/domain/src/contexts/logframe/`, `packages/application/src/use-cases/logframe/`, `packages/application/src/ports/logframe.ts`, `apps/api/src/routes/logframe.ts`, `apps/api/src/routes/reporting.ts`, `apps/web/src/features/reporting/presentation/IndicatorEntryGrid.tsx`, `apps/web/src/app/(portal)/projects/[id]/reports/[periodId]/indicators/page.tsx` |
 | 07 | [Evidence Library](./07-Evidence-Library.md) | Implemented | `packages/domain/src/entities/EvidenceFile.ts` |
 | 08 | [AI Evidence Tagging](./08-AI-Evidence-Tagging.md) | Orchestrated (heuristic tagger; real AI provider is a stub) | `packages/infrastructure/src/llm/evidence-tagger.ts`, `packages/contracts/src/strategies/heuristic-rules.json` |
 | 09 | [Activity Update Capture](./09-Activity-Update-Capture.md) | Implemented | `packages/domain/src/entities/ActivityUpdate.ts` |

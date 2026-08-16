@@ -175,7 +175,9 @@ EvidenceUploaded event → outbox → evidence.suggest_tags
    - New `/onboarding/storage` page: **Google OAuth connect** button (primary) + **"Use DonorDesk R2 (paid)"** (secondary).
 
 9. **OAuth flow** — new signed routes in `apps/api/src/routes/`:
-   - `POST /v1/onboarding/drive/auth-url` → Google consent URL (Drive read + share scopes, minimal).
+   - `POST /v1/onboarding/drive/auth-url` → Google consent URL (Drive read + share scopes, minimal;
+     **2026-08-16** added `https://www.googleapis.com/auth/spreadsheets.readonly` for the indicator
+     data-entry Google Sheets import — existing tenants must re-consent to use it).
    - `POST /v1/onboarding/drive/callback` → exchange code for tokens, encrypt refresh token via
      `PiiVault`, create a TENANT-scoped `CONNECTOR` config (`google-drive-oauth`) via
      `PlatformControlPlane.upsertConfiguration`, set org `storageProvider=GOOGLE_DRIVE`.
@@ -234,7 +236,7 @@ EvidenceUploaded event → outbox → evidence.suggest_tags
 
 | Question | Decision |
 |---|---|
-| OAuth scopes / consent wording | Minimal — Drive file read + share only. Consent wording confirmed OK. |
+| OAuth scopes / consent wording | Minimal — Drive file read + share only. Consent wording confirmed OK. **2026-08-16:** added `spreadsheets.readonly` for indicator data-entry Sheets import (Feature 06). |
 | "Copy to R2 (materialize)" — automatic or manual | **AUTOMATIC** — DR mirror to R2 for all Drive-backed evidence. |
 | OCR provider (Document AI vs Vision vs Vertex) | **Google OCR** (Document AI / Vision by file ID). |
 | Google Cloud credential provisioning | **Yes — new SuperAdmin left tab "Kestra"** for all Kestra-related plugin management. |

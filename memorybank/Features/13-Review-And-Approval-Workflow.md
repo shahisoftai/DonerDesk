@@ -98,10 +98,21 @@ interface ApprovalRecord {
 | Comment Resolution | Implemented | Open/Resolved |
 | User Mentions | Implemented | Notification trigger |
 | Report Review Flow | Implemented | Request/Approve/Reject |
-| Indicator Verification | Implemented | M&E role |
+| Indicator Verification | Implemented | M&E role; per-row Submit & verify in the data-entry grid (2026-08-16) |
 | Evidence Verification | Implemented | Compliance role |
 | Approval History | Implemented | Audit trail |
 | Final Approval | Implemented | PM role |
+
+## Indicator verification (2026-08-16)
+
+Indicator updates move DRAFT → SUBMITTED → VERIFIED via `submit()` + `verify()`
+on the `IndicatorUpdate` aggregate (`POST /v1/indicator-updates/:id/verify`,
+permission `indicator.verify`). The per-period entry grid
+(`/projects/[id]/reports/[periodId]/indicators`) offers a per-row **Submit &
+verify** action, shows status badges (Draft/Submitted/Verified/Needs correction/
+Rejected), and locks verified rows against edits in both the UI and the bulk
+upsert handler. `NEEDS_CORRECTION`/`REJECTED` transitions are still domain-only
+(no dedicated API routes yet — see `pending.md`).
 
 ## Pending Enhancements
 

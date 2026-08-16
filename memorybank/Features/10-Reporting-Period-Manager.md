@@ -88,6 +88,23 @@ interface ReportingPeriodDashboard {
 }
 ```
 
+### Indicator Data Entry (2026-08-16)
+
+Indicator values are recorded **per reporting period**. A spreadsheet-style entry
+grid lives at `/projects/[id]/reports/[periodId]/indicators` (linked from the
+reports list, the report workspace header, and the project setup page):
+
+- Rows are the project's logframe indicators grouped by level
+  (Goal/Outcome/Output/Activity), loaded via `GET /v1/reporting-periods/:id/indicators`
+  which merges each indicator with its existing update for the period.
+- The grid saves drafts in one call via `POST /v1/indicator-updates/bulk`;
+  a unique `(tenantId, indicatorId, reportingPeriodId)` constraint guarantees
+  one update per indicator+period.
+- Each row can be submitted and verified in place; verified rows are locked
+  against edits, and a closed period rejects further writes.
+- Google Sheets values can be imported via `POST /v1/indicator-updates/parse-sheet`
+  (rows mapped by indicator code, previewed, then applied to the grid).
+
 ## Status
 
 | Component | Status | Notes |
@@ -111,4 +128,4 @@ interface ReportingPeriodDashboard {
 
 ## Notes
 
-The reporting period is the central context for report generation. All evidence, activity updates, and indicator updates are associated with a reporting period.
+The reporting period is the central context for report generation. All evidence, activity updates, and indicator updates are associated with a reporting period. Indicator data entry (2026-08-16) is a per-period spreadsheet grid — see "Indicator Data Entry" above.

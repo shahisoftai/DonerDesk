@@ -133,5 +133,11 @@ honestly, never presented as production.
 - Phase 4 (ACT/EVD) routes exist but no dedicated Phase 4 frontend report was written.
 - Cross-project Reports/Compliance currently compose accessible per-project API
   responses; authoritative paginated organization read models remain pending for scale.
-- Complete project editing and indicator update history remain blocked on safe,
-  audited backend contracts.
+- Complete project editing and the per-indicator *update history* read model
+  (`GET /v1/indicators/:id/updates`) remain blocked on safe, audited backend
+  contracts. Per-reporting-period indicator **data entry** is done (2026-08-16):
+  spreadsheet grid at `/projects/[id]/reports/[periodId]/indicators`, bulk
+  upsert (`POST /v1/indicator-updates/bulk`), unique (indicator, period),
+  per-row submit/verify, and Google Sheets import
+  (`POST /v1/indicator-updates/parse-sheet`). See
+  `Features/06-Logframe-And-Indicator-Manager.md`.

@@ -38,7 +38,7 @@ This extends `Features/04-Project-Setup.md` and `memorybank/gdrive.md`.
 | R11 | Post-create editability of dates/budget (fix `UpdateProjectHandler` dead branch) | ⚠️ Broken |
 | R12 | Project-scoped access control (membership + `project.setup`/`project.archive`) | ❌ Missing |
 | R13 | Single scheduling source of truth + deadline-reminder wiring | ❌ Missing |
-| R14 | Indicator data-entry sequencing made explicit to users | ⚠️ Implied, unstated |
+| R14 | Indicator data-entry sequencing made explicit to users | ✅ Implemented (2026-08-16) — setup sidebar links to reporting periods; per-period entry grid at `/projects/[id]/reports/[periodId]/indicators` |
 
 Out of scope: indicator-update lifecycle/history, automatic recurring periods, real LLM/OCR,
 project duplication, donor portals, and cross-project reporting. Track these separately.
@@ -181,9 +181,12 @@ model in §10 is a prerequisite.
 
 Indicator *definitions* are editable during setup, but indicator *achievement values* require a
 `reportingPeriodId`, and periods are hard-gated on readiness (§9). Therefore no achievement data
-entry is possible until setup is complete. The §12 setup UI must state this so users are not
-surprised. Baseline/target are stored as strings today; the readiness rule "required baseline/target/
-unit/frequency" must define a "present and well-formed" check for string values.
+entry is possible until setup is complete. The §12 setup UI states this and the setup sidebar
+now links to the reporting periods list, whose period cards link to the per-period entry grid
+(`/projects/[id]/reports/[periodId]/indicators`, shipped 2026-08-16 — see
+`06-Logframe-And-Indicator-Manager.md`). Baseline/target are stored as strings today; the
+readiness rule "required baseline/target/unit/frequency" must define a "present and well-formed"
+check for string values.
 
 ### 5.9 Deletion and retention (deferred, named)
 
