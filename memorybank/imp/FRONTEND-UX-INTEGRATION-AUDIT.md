@@ -17,7 +17,7 @@ Fixed findings:
 | UX-03 | No cross-project report pipeline existed. | Added `/reports`, composed from accessible projects and reporting-period APIs, ordered by deadline. Partial failures remain visible. |
 | UX-04 | No cross-project compliance queue existed. | Added `/compliance`, aggregating accessible open checklist items and ordering them by severity. Partial failures remain visible. |
 | UX-05 | Project context showed only the title. | Added code, donor, country, sector, status, duration, and reporting frequency to the shared project header. |
-| UX-06 | Project Team and Settings tabs from the route map were absent. | Added honest project-scoped destinations. Team links to the supported organization assignment workflow; project editing is explicitly unavailable until its complete audited update contract exists. |
+| UX-06 | Project Team and Settings tabs from the route map were absent. | Resolved end-to-end (2026-08-16, release `20260816094257`): the Team tab renders real per-project assignments (assign/change-role/remove, audit + notification) and Settings is a full audited editor (identity/dates/budget/status + archive/complete). |
 | UX-07 | Indicator rows had no detail destination. | Added links and `/projects/[id]/indicators/[indicatorId]` with definition, measurement, and verification information. History is not fabricated because no safe history read model exists. |
 | UX-08 | Export functionality was embedded but lacked the specified dedicated route. | Added `/projects/[id]/reports/[periodId]/export`, preflight warnings, export history, and a workspace link. |
 | UX-09 | Nested project routes could leave the wrong tab selected when prefix matching. | Changed tab resolution to select the longest matching route. |

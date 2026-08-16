@@ -73,14 +73,14 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 6 | Review, approval, export (REV, EXP) | ✅ Delivered | [`imp/PHASE6-FRONTEND-REPORT.md`](imp/PHASE6-FRONTEND-REPORT.md) |
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
-> **Deployment status (2026-08-16):** Latest release `20260816083703` (commit
-> `d659c4f`) is live on `donordesk.online`. All five services (API `4001`, web
+> **Deployment status (2026-08-16):** Latest release `20260816094257` (commit
+> `14fd2eb`) is live on `donordesk.online`. All five services (API `4001`, web
 > `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`) are **enabled
-> and active**. Latest release ships **spreadsheet-style indicator data entry**
-> per reporting period: `GET /v1/reporting-periods/:id/indicators`,
-> `POST /v1/indicator-updates/bulk`, `POST /v1/indicator-updates/parse-sheet`
-> (Google Sheets), a unique (indicator, period) constraint, and the entry grid
-> at `/projects/[id]/reports/[periodId]/indicators` (Feature 06). **Gated (not
+> and active**. Latest release ships **per-project Team + Settings**, **compliance
+> auto-generation** (`reporting.period.created` → `checklist.generate`), **bulk
+> checklist operations**, **report-section AI rewrite** (rewrite/shorten +
+> donor/internal/general audience), and **improved template extraction**; migration
+> `20260816140000_project_members` + RLS (29 tables) applied. **Gated (not
 > deployed):** the five plugin-referencing Kestra flows and plugin JARs
 > (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource first).
 > See `contabo-ops.md` §10/§14 and `imp/KESTRA-PLUGINS.md`.

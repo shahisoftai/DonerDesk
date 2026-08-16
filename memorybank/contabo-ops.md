@@ -476,6 +476,43 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-16 (Project Team & Settings, compliance auto-generation, report rewrite,
+  template extraction — release `20260816094257`, commit `14fd2eb`):** Deployed API + web
+  + prisma via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api donordesk-web`,
+  incremental transfer ~5.4 MB). Workers code updated in place (`app/compliance.py` +
+  `app/main.py` copied to `/opt/donordesk/workers/app/`, backups `.bak-20260816`,
+  service restarted, loopback 8092 health OK, `/v1/detect-checklist` 401 without token
+  and 200 with token).
+  1. **Migration `20260816140000_project_members`** applied as `donordesk_migrator`
+     (loopback trust): creates `ProjectMember` (tenant-scoped, role/status/assignedBy/
+     assignedAt) with unique `(tenantId, projectId, userId)` + two indexes. All 9
+     migrations now applied.
+  2. **RLS extended to 29 tenant tables** (added `ProjectMember`):
+     `infra/postgres/rls.sql` applied as `donordesk_migrator`; `tenant_isolation`
+     policy enabled+forced verified on `ProjectMember`. RLS tested as restricted
+     `donordesk_app` with a temporary row (INSERT/select OK in-tenant, cross-tenant
+     count 0; test row deleted).
+  3. **New API routes** (all auth-gated 401 unauthenticated): `GET /v1/projects/:id/members`
+     + `POST /v1/projects/:id/members` (assign, `users.manage`), `PATCH`/`DELETE
+     /v1/project-members/:id` (role change / removal), `POST /v1/reporting-periods/:id/checklist/bulk-resolve`
+     (`checklist.manage`), `POST /v1/report-sections/:id/rewrite` (`report.edit`).
+  4. **Compliance auto-generation:** `ReportingPeriodCreated` event → outbox →
+     canonical `checklist.generate` job (Kestra flow `checklist_generate` already
+     deployed; memory handler registered for dev). Detection dedupes by (type, entity)
+     so re-runs never duplicate active items; report-type baseline checklist
+     templates added (config-driven).
+  5. **Web UI:** project Team tab (assign/change-role/remove, audit + notification),
+     project Settings full editor (identity/dates/budget/status + archive/complete
+     danger zone), Compliance bulk actions, report section "AI rewrite" (rewrite/
+     shorten × donor/internal/general audience).
+  6. Verified live: all services active, loopback `4001`/`3002` healthy, `/health`+`/ready`
+     OK (database ok), web `/login` 200, all six new routes 401 unauthenticated,
+     deployed bundles contain the new handlers, no new journal errors. Public HTTPS
+     `/` + `/login` 200. Rollback:
+     `RELEASE_ID=20260816083703 scripts/rollback.sh` or
+     `ln -sfn /opt/donordesk/releases/20260816083703 /opt/donordesk/current &&
+     systemctl restart donordesk-api donordesk-web`.
+
 - **2026-08-16 (Spreadsheet-style indicator data entry — release `20260816083703`,
   commit `d659c4f`):** Deployed API + web + prisma via
   `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api donordesk-web`,
