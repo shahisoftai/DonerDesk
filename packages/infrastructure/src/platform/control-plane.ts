@@ -202,7 +202,22 @@ export class PlatformControlPlane {
 
     const id = randomUUID();
     const now = new Date();
-    await this.execute(`INSERT INTO "EntitlementGrant" ("id","tenantId","planCode","source","effectiveFrom","overrideLimitsJson","reason","createdById","createdAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())`, id, tenantId, "STARTER", "MANUAL", now, JSON.stringify(override), input.reason ?? `ai-credits-${input.mode.toLowerCase()}`, actor.sub);
+    // Use the typed client (not raw SQL) so the Date is serialized as UTC —
+    // raw parameters are bound in the session timezone (CEST on this host),
+    // which would store a 2h-skewed timestamp and make the grant appear
+    // future-dated to the effective-date filter.
+    await this.prisma.entitlementGrant.create({
+      data: {
+        id,
+        tenantId,
+        planCode: "STARTER",
+        source: "MANUAL",
+        effectiveFrom: now,
+        overrideLimitsJson: JSON.stringify(override),
+        reason: input.reason ?? `ai-credits-${input.mode.toLowerCase()}`,
+        createdById: actor.sub,
+      },
+    });
     await this.audit(actor, "billing.credits.adjusted", "Tenant", tenantId, { previous: current }, { mode: input.mode, value: input.value, next }, meta);
     return { tenantId, previous: current, next };
   }
