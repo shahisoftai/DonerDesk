@@ -245,6 +245,7 @@ export function ReportWorkspace({
           {selected ? (
             <div className="card">
               <SectionEditor
+                key={selected.id}
                 sectionId={selected.id}
                 title={selected.sectionTitle}
                 initialContent={selected.content ?? ""}
