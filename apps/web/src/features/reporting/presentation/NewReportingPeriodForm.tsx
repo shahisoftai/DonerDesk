@@ -11,7 +11,6 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { FormSummary } from "@/components/ui/FormSummary";
-import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { REPORT_TYPE_LABEL, REPORT_TYPE_OPTIONS } from "@/lib/labels";
 import type { ProjectReadiness } from "@/lib/server/schemas";
 
