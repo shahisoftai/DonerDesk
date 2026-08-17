@@ -104,6 +104,17 @@ export interface LlmGeneratorModelInfo {
   promptVersion: number;
 }
 
+export interface GeneratedDraftResult {
+  sections: GeneratedSection[];
+  /**
+   * True when the provider failed (timeout, HTTP error, unparseable response)
+   * and the generator silently fell back to the deterministic stub. Callers
+   * must NOT meter or bill a real AI run when this is true — the draft was not
+   * produced by the LLM.
+   */
+  usedFallback: boolean;
+}
+
 export interface IReportDraftGenerator {
   /**
    * Identifies the model powering this generator. Used for accurate run
@@ -115,9 +126,11 @@ export interface IReportDraftGenerator {
    * Drafts sections from a report plan and verified findings. The LLM (or
    * stub) is strictly a narrator: it receives findings the deterministic
    * analyst already computed and must never recompute or invent numbers. The
-   * output carries structured claims that are verified downstream.
+   * output carries structured claims that are verified downstream. The result
+   * reports whether the configured provider actually produced the content or
+   * a stub fallback was used.
    */
-  generateDraft(input: GenerateReportDraftInput): Promise<GeneratedSection[]>;
+  generateDraft(input: GenerateReportDraftInput): Promise<GeneratedDraftResult>;
 
   /**
    * Rewrites or shortens an existing section while preserving its facts and
@@ -187,6 +200,12 @@ export interface IReportPlanRepository {
   update(p: ReportPlan): Promise<Result<ReportPlan>>;
   findById(id: string, tenantId: TenantId): Promise<Result<ReportPlan | null>>;
   findByReportingPeriod(reportingPeriodId: string, tenantId: TenantId): Promise<Result<ReportPlan[]>>;
+  /**
+   * Creates the plan with the next free version for the reporting period,
+   * retrying on concurrent version collisions. Prefer this over manual
+   * max()+1 + create when concurrent regenerations are possible.
+   */
+  createNextVersion?(p: ReportPlan): Promise<Result<ReportPlan>>;
 }
 
 export interface IReportClaimRepository {

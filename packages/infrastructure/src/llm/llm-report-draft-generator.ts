@@ -1,6 +1,7 @@
 import type {
   IReportDraftGenerator,
   GenerateReportDraftInput,
+  GeneratedDraftResult,
   GeneratedSection,
   ReportClaimDraft,
   ILLMProvider,
@@ -226,14 +227,16 @@ function parseSourceReferences(value: unknown): SourceReference[] {
 function parseRewrite(raw: string): string | null {
   let json = raw.trim();
   const fenceMatch = json.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-  if (fenceMatch) json = fenceMatch[1]!;
+  if (fenceMatch) json = fenceMatch[1]!.trim();
   try {
     const parsed = JSON.parse(json) as { content?: unknown };
     if (typeof parsed.content === "string") return parsed.content;
-    return null;
   } catch {
-    return null;
+    // Not strict JSON — MiniMax sometimes narrates directly. Accept the text
+    // as the rewrite result so the user's edit is not silently dropped.
   }
+  if (json.length > 0 && !json.startsWith("{")) return json;
+  return null;
 }
 
 export class LlmReportDraftGenerator implements IReportDraftGenerator {
@@ -253,7 +256,7 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
 
   async generateDraft(
     input: GenerateReportDraftInput,
-  ): Promise<GeneratedSection[]> {
+  ): Promise<GeneratedDraftResult> {
     try {
       const systemPrompt = buildSystemPrompt();
       const userPrompt = buildNarratorUserPrompt(input);
@@ -262,7 +265,7 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
         systemPrompt,
         userPrompt,
         jsonMode: true,
-        maxTokens: 8192,
+        maxTokens: 4096,
         temperature: 0.3,
       });
 
@@ -270,7 +273,8 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
         this.logger?.warn("LLM report draft: provider returned empty content; falling back to stub", {
           model: this.model.modelId,
         });
-        return this.fallback.generateDraft(input);
+        const sections = await this.fallback.generateDraft(input);
+        return { sections: sections.sections, usedFallback: true };
       }
 
       const sections = parseSections(result.text);
@@ -279,15 +283,17 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
           model: this.model.modelId,
           snippet: result.text.slice(0, 200),
         });
-        return this.fallback.generateDraft(input);
+        const fallback = await this.fallback.generateDraft(input);
+        return { sections: fallback.sections, usedFallback: true };
       }
-      return sections;
+      return { sections, usedFallback: false };
     } catch (error) {
       this.logger?.warn("LLM report draft failed; falling back to stub", {
         model: this.model.modelId,
         error: error instanceof Error ? error.message : String(error),
       });
-      return this.fallback.generateDraft(input);
+      const fallback = await this.fallback.generateDraft(input);
+      return { sections: fallback.sections, usedFallback: true };
     }
   }
 

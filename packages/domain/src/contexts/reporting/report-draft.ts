@@ -67,6 +67,17 @@ export class ReportDraft extends Entity<string> {
   get approvedById(): string | undefined { return this.props.approvedById; }
   get approvedAt(): Date | undefined { return this.props.approvedAt; }
 
+  /**
+   * Corrects the AI-origin flag after generation. Set false when the provider
+   * failed and the generator fell back to the stub, so the UI and billing
+   * never present stub output as an AI-assisted draft.
+   */
+  setGeneratedByAi(value: boolean): void {
+    if (this.props.generatedByAi === value) return;
+    this.props.generatedByAi = value;
+    this.touch();
+  }
+
   rename(title: string): void {
     if (!title) throw DomainError.validation("Title required");
     if (this.props.status === "APPROVED" || this.props.status === "SUBMITTED") {

@@ -119,13 +119,6 @@ export class GenerateReportDraftHandler {
     });
     if (!planResult.ok) return planResult;
     const plan = planResult.value;
-    const existingPlansResult = await this.reportPlans.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
-    if (!existingPlansResult.ok) return existingPlansResult;
-    // ReportPlan is unique on (tenantId, reportingPeriodId, version); every
-    // regeneration creates the next version instead of colliding on v1.
-    plan.version = existingPlansResult.value.length === 0
-      ? 1
-      : Math.max(...existingPlansResult.value.map((p) => p.version)) + 1;
 
     const findingsResult = await this.analytics.computeFindings({
       reportingPeriodId,
@@ -245,9 +238,10 @@ export class GenerateReportDraftHandler {
 
     const startedAt = Date.now();
     let generated;
+    let usedFallback = true;
     let generationFailed = false;
     try {
-      generated = aiEnabled
+      const result = aiEnabled
         ? await generator.generateDraft({
             reportPlan: plan,
             verifiedFindings,
@@ -255,7 +249,9 @@ export class GenerateReportDraftHandler {
             reportingProfileSnapshot,
             generationRunId: run.id,
           })
-        : this.buildManualSections(plan.sections);
+        : { sections: this.buildManualSections(plan.sections), usedFallback: true };
+      generated = result.sections;
+      usedFallback = result.usedFallback;
     } catch (error) {
       generationFailed = true;
       if (creditReserved) {
@@ -263,6 +259,16 @@ export class GenerateReportDraftHandler {
       }
       await this.recordLlmRun(ctx, reportingPeriodId, chargeAiCredits, "error", 0, 0, 0, 0, Date.now() - startedAt, generator.model.modelId, generator.model.modelVersion, generator.model.promptVersion);
       return { ok: false, error: DomainError.invariant("Report draft generation failed") };
+    }
+
+    // A real AI draft is one the configured provider actually produced. When
+    // the provider failed and the generator fell back to the stub, the draft
+    // is not AI-generated: it must not be metered, must not be billed, and the
+    // reserved credit must be released.
+    const realAiGenerated = chargeAiCredits && !usedFallback;
+    if (creditReserved && !realAiGenerated) {
+      await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+      creditReserved = false;
     }
 
     const sectionIds: string[] = [];
@@ -342,7 +348,12 @@ export class GenerateReportDraftHandler {
       }
     }
 
-    const savedPlan = await this.reportPlans.create(plan);
+    // ReportPlan is unique on (tenantId, reportingPeriodId, version);
+    // createNextVersion allocates the next free version atomically, so
+    // concurrent regenerations cannot collide on the same version.
+    const savedPlan = this.reportPlans.createNextVersion
+      ? await this.reportPlans.createNextVersion(plan)
+      : await this.reportPlans.create(plan);
     if (!savedPlan.ok) {
       if (creditReserved) {
         await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
@@ -350,8 +361,18 @@ export class GenerateReportDraftHandler {
       return savedPlan;
     }
 
+    // Record the run and correct the draft's AI flag. A stub fallback is a
+    // failed AI attempt: it is recorded as an error run (never billed) and the
+    // draft is marked as not AI-generated so no credit is consumed.
     if (chargeAiCredits && !generationFailed) {
-      await this.recordLlmRun(ctx, reportingPeriodId, true, "success", 0, 0, 0, 0, Date.now() - startedAt, generator.model.modelId, generator.model.modelVersion, generator.model.promptVersion);
+      if (realAiGenerated) {
+        await this.recordLlmRun(ctx, reportingPeriodId, true, "success", 0, 0, 0, 0, Date.now() - startedAt, generator.model.modelId, generator.model.modelVersion, generator.model.promptVersion);
+      } else {
+        await this.recordLlmRun(ctx, reportingPeriodId, true, "error", 0, 0, 0, 0, Date.now() - startedAt, generator.model.modelId, generator.model.modelVersion, generator.model.promptVersion);
+        draft.setGeneratedByAi(false);
+        const correctedDraft = await this.drafts.update(draft);
+        if (!correctedDraft.ok) return correctedDraft;
+      }
     }
     creditReserved = false;
 
@@ -366,7 +387,7 @@ export class GenerateReportDraftHandler {
       entityType: "report_draft",
       entityId: draftId,
       projectId: period.projectId,
-      newValue: `sections=${sectionIds.length};claims=${claimCount};generatedByAi=${chargeAiCredits};run=${run.id}`,
+      newValue: `sections=${sectionIds.length};claims=${claimCount};generatedByAi=${realAiGenerated};fallback=${usedFallback};run=${run.id}`,
     });
 
     return { ok: true, value: { draftId, sectionIds, claimCount, planId: plan.id, generationRunId: run.id } };

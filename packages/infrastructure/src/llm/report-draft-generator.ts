@@ -45,7 +45,7 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
       }
     }
 
-    return sections;
+    return { sections, usedFallback: true };
   }
 
   async rewriteSection(input: {

@@ -42,6 +42,43 @@ export class PrismaReportPlanRepository implements IReportPlanRepository {
     return ok(p);
   }
 
+  /**
+   * Atomically allocates the next plan version and creates the plan. Handles
+   * concurrent regenerations: when another request wins the version slot
+   * (P2002 on the (tenantId, reportingPeriodId, version) unique key), the
+   * version is re-read and the insert retried. Up to 10 attempts.
+   */
+  async createNextVersion(p: ReportPlan): Promise<Result<ReportPlan, DomainError>> {
+    let plan = p;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        const max = await this.prisma.reportPlan.aggregate({
+          where: { tenantId: plan.tenantId, reportingPeriodId: plan.reportingPeriodId },
+          _max: { version: true },
+        });
+        const nextVersion = (max._max.version ?? 0) + 1;
+        await this.prisma.reportPlan.create({
+          data: {
+            id: plan.id,
+            tenantId: plan.tenantId,
+            projectId: plan.projectId,
+            reportingPeriodId: plan.reportingPeriodId,
+            version: nextVersion,
+            sectionsJson: JSON.stringify(plan.sections),
+            styleJson: JSON.stringify(plan.style),
+            generatedBy: plan.generatedBy,
+          },
+        });
+        return ok({ ...plan, version: nextVersion });
+      } catch (error) {
+        const e = error as { code?: string };
+        if (e?.code === "P2002") continue;
+        return { ok: false, error: new DomainError("CONFLICT", String(error)) };
+      }
+    }
+    return { ok: false, error: new DomainError("CONFLICT", "Could not allocate a unique report plan version") };
+  }
+
   async update(p: ReportPlan): Promise<Result<ReportPlan, DomainError>> {
     await this.prisma.reportPlan.update({
       where: { id: p.id },
