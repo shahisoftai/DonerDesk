@@ -476,6 +476,25 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (parse-file gateway fix — release `20260817044418` web-only):**
+  Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`).
+  Root cause: the three template/logframe/indicator import pages posted uploaded
+  documents to the browser-facing same-origin `/api/v1/*/parse-file`, which the
+  production OLS `/api` context proxies **with the `/api` prefix intact** to the
+  Fastify API (routes are `/v1/*`, not `/api/v1/*`) → Fastify 404 → "Failed to
+  parse file". Same issue existed in dev (no Next.js route for `/api/v1/*`).
+  Fixed by routing parsing through the existing server-side gateway: new
+  `apps/web/src/lib/actions/parse.ts` `parseFileAction(kind, file)` calls
+  `127.0.0.1:4001/v1/<kind>/parse-file` (multipart, Bearer token) exactly like
+  every working server action; the three pages now use it. No API/host change
+  required (the `/v1/templates|logframe|indicators/parse-file` routes already
+  exist on the API). Verified: deployed bundle contains `parseFileAction`
+  (server-reference-manifest + chunk 9379), old client fetch removed, web
+  `/login` 200.
+  Rollback: `RELEASE_ID=20260817041505 scripts/rollback.sh` (or
+  `ln -sfn /opt/donordesk/releases/20260817041505 /opt/donordesk/current &&
+  systemctl restart donordesk-web`).
+
 - **2026-08-17 (Feature 20 Report Intelligence Engine core — release `20260817041505`):**
   Deployed API + web + prisma via `scripts/deploy-incremental.sh`
   (SERVICES=`donordesk-api donordesk-web`, incremental transfer ~5.5 MB).

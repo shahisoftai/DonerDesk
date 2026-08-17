@@ -14,7 +14,7 @@ const CANONICAL: Array<{ title: string; description: string; inputType: "NARRATI
   { title: "Annex List", description: "List of attached supporting documents.", inputType: "ANNEX", required: true, evidenceNeeded: "All verified evidence", reviewStatus: "REVIEWED" },
 ];
 
-const HEADING_RE = /^(?:\d+\.?\s*|\(\d+\)\s*|\b(?:section|chapter|part|annex)\b[\s\d]*|[IVX]+\.?\s*)/i;
+const HEADING_RE = /^(?:\d+\.?\s*|\(\d+\)\s*|\b(?:section|chapter|part|annex)\b[\s\d]*|[IVX]+[.)]?\s+)/i;
 const UPPER_TITLE_RE = /^[A-Z][A-Z\s&\-/]{4,}$/;
 
 function inferInputType(title: string): TemplateSection["inputType"] {
@@ -49,9 +49,18 @@ export class StubTemplateExtractionService implements ITemplateExtractionService
         sawTable = true;
         continue;
       }
-      if ((hasNumbering || upper) && !/\s+\d{2,}$/.test(trimmed) && !trimmed.includes(".") && !/^(table|figure|note|source)\b/i.test(trimmed)) {
-        const cleaned = trimmed.replace(/^(?:\d+\.?\s*|\(\d+\)\s*|[IVX]+\.?\s*|\b(?:section|chapter|part|annex)\b[\s\d]*:?\s*)/i, "").replace(/:$/g, "").trim();
-        if (cleaned && cleaned.length >= 3 && !detected.includes(cleaned)) detected.push(cleaned);
+      if ((hasNumbering || upper) && !/\s+\d{2,}$/.test(trimmed)) {
+        // Strip the numbering/roman prefix, then reject anything that still
+        // reads like a sentence (contains a period). This accepts both
+        // "1. Executive Summary" and "EXECUTIVE SUMMARY" headings while
+        // skipping prose.
+        const cleaned = trimmed
+          .replace(/^(?:\d+\.?\s*|\(\d+\)\s*|[IVX]+[.)]?\s+|\b(?:section|chapter|part|annex)\b[\s\d]*:?\s*)/i, "")
+          .replace(/:$/g, "")
+          .trim();
+        if (cleaned && !cleaned.includes(".") && cleaned.length >= 3 && !detected.includes(cleaned) && !/^(table|figure|note|source)\b/i.test(cleaned)) {
+          detected.push(cleaned);
+        }
       }
     }
 

@@ -2,6 +2,7 @@
 import { use, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createTemplateAction } from "@/lib/actions/templates";
+import { parseFileAction } from "@/lib/actions/parse";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -14,16 +15,9 @@ const REPORT_TYPES = ["MONTHLY", "QUARTERLY", "ANNUAL", "FINAL", "ACTIVITY", "SI
 const IS_STUB = process.env.NODE_ENV !== "production";
 
 async function parseTemplateFile(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append("file", file);
-  const res = await fetch("/api/v1/templates/parse-file", {
-    method: "POST",
-    body: formData,
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Failed to parse file");
-  const data = await res.json();
-  return data.text as string;
+  const r = await parseFileAction("templates", file);
+  if (!r.ok) throw new Error(r.error.message);
+  return r.value.text;
 }
 
 export default function NewTemplatePage({ params }: { params: Promise<{ id: string }> }) {

@@ -1,22 +1,16 @@
 "use client";
 import { use, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { parseFileAction } from "@/lib/actions/parse";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 
 async function parseLogframeFile(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append("file", file);
-  const res = await fetch("/api/v1/logframe/parse-file", {
-    method: "POST",
-    body: formData,
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Failed to parse file");
-  const data = await res.json();
-  return data.text as string;
+  const r = await parseFileAction("logframe", file);
+  if (!r.ok) throw new Error(r.error.message);
+  return r.value.text;
 }
 
 export default function ImportLogframePage({ params }: { params: Promise<{ id: string }> }) {
