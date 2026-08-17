@@ -32,6 +32,7 @@ const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/templates\/parse-file$/, permission: "template.manage" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/templates$/, permission: "project.view" },
   { method: "PUT", route: /^\/v1\/templates\/[^/]+\/sections$/, permission: "template.manage" },
+  { method: "DELETE", route: /^\/v1\/templates\/[^/]+$/, permission: "template.manage" },
   { method: "POST", route: /^\/v1\/logframe-items$/, permission: "logframe.manage" },
   { method: "POST", route: /^\/v1\/logframe\/parse-file$/, permission: "logframe.manage" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/logframe$/, permission: "project.view" },

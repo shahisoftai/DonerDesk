@@ -476,6 +476,19 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (delete donor template — release `20260817051940`):**
+  Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
+  donordesk-web`). Added `DELETE /v1/templates/:id` (`template.manage` capability):
+  `DeleteTemplateHandler` (tenant-scoped delete + `template.deleted` audit),
+  `IDonorTemplateRepository.delete`, Prisma `deleteMany`, authorization rule, web
+  `deleteTemplateAction`, and a red "Delete template" danger-zone button at the
+  bottom of the template review page (confirm dialog → back to the template
+  list). Verified live: `/health`+`/ready` OK, web 200, DELETE route registered
+  (401 unauthenticated), deployed bundles contain the route and the button.
+  Rollback: `RELEASE_ID=20260817050512 scripts/rollback.sh` or
+  `ln -sfn /opt/donordesk/releases/20260817050512 /opt/donordesk/current &&
+  systemctl restart donordesk-api donordesk-web`.
+
 - **2026-08-17 (template section extraction + review UI — release `20260817050512`):**
   Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
   donordesk-web`). Fixed the template "review sections" screen: the API release

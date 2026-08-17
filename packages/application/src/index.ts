@@ -47,6 +47,7 @@ export * from "./use-cases/setup/reporting-profile-handlers.js";
 
 export * from "./use-cases/templates/upload-template.js";
 export * from "./use-cases/templates/update-template-sections.js";
+export * from "./use-cases/templates/delete-template.js";
 export * from "./use-cases/templates/list-templates.js";
 
 export * from "./use-cases/logframe/create-logframe-item.js";

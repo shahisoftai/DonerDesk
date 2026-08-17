@@ -6,6 +6,7 @@ export interface IDonorTemplateRepository {
   update(t: DonorTemplate): Promise<Result<DonorTemplate>>;
   findById(id: string, tenantId: TenantId): Promise<Result<DonorTemplate | null>>;
   findByProject(projectId: string, tenantId: TenantId): Promise<Result<DonorTemplate[]>>;
+  delete(id: string, tenantId: TenantId): Promise<Result<void>>;
 }
 
 export interface ITemplateExtractionService {

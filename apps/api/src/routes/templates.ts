@@ -38,4 +38,12 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
     if (!r.ok) throw r.error;
     return { ok: true };
   });
+
+  app.delete("/v1/templates/:id", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.deleteTemplate.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
 }

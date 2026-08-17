@@ -21,6 +21,7 @@ import {
   ListProjectMembersHandler,
   UploadTemplateHandler,
   UpdateTemplateSectionsHandler,
+  DeleteTemplateHandler,
   ListTemplatesHandler,
   CreateLogframeItemHandler,
   CreateIndicatorHandler,
@@ -251,6 +252,7 @@ export interface Container {
     upsertReportingProfile: UpsertReportingProfileHandler;
     uploadTemplate: UploadTemplateHandler;
     updateTemplateSections: UpdateTemplateSectionsHandler;
+    deleteTemplate: DeleteTemplateHandler;
     listTemplates: ListTemplatesHandler;
     createLogframeItem: CreateLogframeItemHandler;
     createIndicator: CreateIndicatorHandler;
@@ -529,6 +531,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     upsertReportingProfile: new UpsertReportingProfileHandler(ids, reportingProfiles, templates, audits),
     uploadTemplate: new UploadTemplateHandler(ids, templates, templateExtraction, audits),
     updateTemplateSections: new UpdateTemplateSectionsHandler(templates, audits),
+    deleteTemplate: new DeleteTemplateHandler(templates, audits),
     listTemplates: new ListTemplatesHandler(templates),
     createLogframeItem: new CreateLogframeItemHandler(ids, logframe, audits),
     createIndicator: new CreateIndicatorHandler(ids, indicators, audits),

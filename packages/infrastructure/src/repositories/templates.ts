@@ -71,6 +71,16 @@ export class PrismaDonorTemplateRepository implements IDonorTemplateRepository {
     return ok(rows.map((r) => this.toDomain(r)));
   }
 
+  async delete(id: string, tenantId: TenantId): Promise<Result<void, DomainError>> {
+    const deleted = await this.prisma.donorTemplate.deleteMany({
+      where: { id, tenantId: tenantId.toString() },
+    });
+    if (deleted.count === 0) {
+      return { ok: false, error: DomainError.notFound("DonorTemplate", id) };
+    }
+    return ok(undefined);
+  }
+
   private toDomain(row: {
     id: string;
     tenantId: string;

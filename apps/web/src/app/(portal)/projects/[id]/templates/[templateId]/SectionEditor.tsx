@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { updateTemplateSectionsAction } from "@/lib/actions/templates";
+import { useRouter } from "next/navigation";
+import { deleteTemplateAction, updateTemplateSectionsAction } from "@/lib/actions/templates";
 import { useActionState } from "@/lib/client/action-state";
 import { SECTION_INPUT_TYPE_OPTIONS, SECTION_INPUT_TYPE_LABEL } from "@/lib/labels";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
@@ -52,6 +53,17 @@ export function SectionEditor({ projectId, templateId, initialSections }: { proj
   const [sections, setSections] = useState<Section[]>(initialSections ?? []);
   const { busy, error, run } = useActionState();
   const [saved, setSaved] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const router = useRouter();
+
+  async function handleDelete() {
+    if (!window.confirm("Delete this donor template? Reporting periods that use it will be affected.")) return;
+    setDeleting(true);
+    const result = await run(() => deleteTemplateAction(templateId));
+    setDeleting(false);
+    if (result === undefined) return;
+    router.push(`/projects/${projectId}/templates`);
+  }
 
   function update(i: number, patch: Partial<Section>) {
     setSections((s) => s.map((sec, idx) => (idx === i ? { ...sec, ...patch } : sec)));
@@ -175,6 +187,21 @@ export function SectionEditor({ projectId, templateId, initialSections }: { proj
         {saved && <span className="self-center text-sm text-green-700 dark:text-green-400">Saved</span>}
       </div>
       {error && <InlineAlert tone="danger" title={error} />}
+
+      <div className="mt-8 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
+        <h3 className="text-sm font-semibold text-red-800 dark:text-red-200">Danger zone</h3>
+        <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+          Deleting this template removes it from the project. Reporting periods and reporting profiles that reference it will flag setup blockers until a new template is selected.
+        </p>
+        <button
+          className="mt-3 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          type="button"
+          disabled={deleting}
+          onClick={handleDelete}
+        >
+          {deleting ? "Deleting..." : "Delete template"}
+        </button>
+      </div>
     </div>
   );
 }

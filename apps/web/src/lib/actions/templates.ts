@@ -47,3 +47,14 @@ export async function updateTemplateSectionsAction(
   if (!result.ok) return result;
   return { ok: true, value: undefined };
 }
+
+export type DeleteTemplateResult = Result<undefined, AppError>;
+
+export async function deleteTemplateAction(templateId: string): Promise<DeleteTemplateResult> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/templates/${templateId}`, OkResponseSchema, context.token, {
+    method: "DELETE",
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
