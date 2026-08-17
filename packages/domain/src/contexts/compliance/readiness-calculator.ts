@@ -7,7 +7,8 @@ export interface ReadinessInput {
   attachedEvidenceCount: number;
   totalChecklistItems: number;
   resolvedOrAcceptedItems: number;
-  approvalCompleted: boolean;
+  /** 0–100 progress through the report approval workflow (0 = not started, 50 = under review, 100 = approved). */
+  approvalProgress: number;
 }
 
 export interface ReadinessBreakdown {
@@ -34,7 +35,7 @@ export function calculateReadiness(input: ReadinessInput): ReadinessBreakdown {
     input.requiredEvidenceCount === 0 ? 100 : Math.min(100, (input.attachedEvidenceCount / input.requiredEvidenceCount) * 100);
   const checklistScore =
     input.totalChecklistItems === 0 ? 100 : (input.resolvedOrAcceptedItems / input.totalChecklistItems) * 100;
-  const approvalScore = input.approvalCompleted ? 100 : 0;
+  const approvalScore = Math.max(0, Math.min(100, input.approvalProgress));
 
   const overall = Math.round(
     sectionsScore * READINESS_WEIGHTS.sections +

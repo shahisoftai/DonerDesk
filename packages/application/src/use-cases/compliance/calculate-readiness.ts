@@ -5,17 +5,24 @@ import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IIndicatorRepository } from "../../ports/logframe.js";
-import type { IReportDraftRepository, IReportSectionRepository } from "../../ports/reporting.js";
+import type { IDonorTemplateRepository } from "../../ports/templates.js";
+import type {
+  IReportingPeriodRepository,
+  IReportDraftRepository,
+  IReportSectionRepository,
+} from "../../ports/reporting.js";
 import { calculateReadiness, type ReadinessBreakdown } from "@donordesk/domain";
 
 export class CalculateReadinessHandler {
   constructor(
+    private readonly periods: IReportingPeriodRepository,
     private readonly drafts: IReportDraftRepository,
     private readonly sections: IReportSectionRepository,
     private readonly indicators: IIndicatorRepository,
     private readonly updates: IIndicatorUpdateRepository,
     private readonly evidence: IEvidenceRepository,
     private readonly checklist: IChecklistRepository,
+    private readonly templates: IDonorTemplateRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<ReadinessBreakdown & { reportingPeriodId: string }, DomainError>> {
@@ -26,11 +33,10 @@ export class CalculateReadinessHandler {
     let approvedSections = 0;
     let totalIndicators = 0;
     let verifiedIndicators = 0;
-    let requiredEvidenceCount = 0;
     let attachedEvidenceCount = 0;
     let totalChecklistItems = 0;
     let resolvedOrAcceptedItems = 0;
-    let approvalCompleted = false;
+    let approvalProgress = 0;
 
     if (draft) {
       const s = await this.sections.findByReportDraft(draft.id, ctx.tenant.tenantId);
@@ -38,8 +44,11 @@ export class CalculateReadinessHandler {
         totalSections = s.value.length;
         approvedSections = s.value.filter((sec) => sec.status === "APPROVED").length;
       }
+      if (draft.status === "UNDER_REVIEW") {
+        approvalProgress = 50;
+      }
       if (draft.status === "APPROVED" || draft.status === "EXPORTED" || draft.status === "SUBMITTED") {
-        approvalCompleted = true;
+        approvalProgress = 100;
       }
     }
 
@@ -60,7 +69,18 @@ export class CalculateReadinessHandler {
       ).length;
     }
 
-    requiredEvidenceCount = Math.max(1, Math.round(totalChecklistItems * 1.5));
+    // Evidence requirement is driven by the donor template's required annexes
+    // (authoritative), falling back to a baseline of one so the score stays
+    // meaningful before a template is attached.
+    let requiredEvidenceCount = 1;
+    const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
+    const period = periodResult.ok ? periodResult.value : null;
+    if (period?.donorTemplateId) {
+      const templateResult = await this.templates.findById(period.donorTemplateId, ctx.tenant.tenantId);
+      if (templateResult.ok && templateResult.value) {
+        requiredEvidenceCount = Math.max(1, templateResult.value.requiredAnnexes.length);
+      }
+    }
 
     const breakdown = calculateReadiness({
       totalSections,
@@ -71,7 +91,7 @@ export class CalculateReadinessHandler {
       attachedEvidenceCount,
       totalChecklistItems,
       resolvedOrAcceptedItems,
-      approvalCompleted,
+      approvalProgress,
     });
 
     return { ok: true, value: { ...breakdown, reportingPeriodId } };

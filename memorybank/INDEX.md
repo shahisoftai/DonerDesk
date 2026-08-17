@@ -138,6 +138,8 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | LLM / AI | [`0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md), [`pending.md`](pending.md) (BullMQ) |
 | AI credits / quotas | [`Features/19-Tiers-And-Payments.md`](Features/19-Tiers-And-Payments.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md) §14–15 |
 | Report charts | [`Features/20-report-gen.md`](Features/20-report-gen.md) §15, [`Features/11-AI-Report-Draft-Generator.md`](Features/11-AI-Report-Draft-Generator.md) |
+| Readiness percentages (evidence/approval/overall) | [`Fixes.md`](Fixes.md) (readiness fix log), [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-Period-Manager.md) |
+| Settings nav (Setup/Settings/Audit tabs) | [`Fixes.md`](Fixes.md) (readiness fix log), [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) |
 | Evidence extracted text / report data completeness | [`Features/07-Evidence-Library.md`](Features/07-Evidence-Library.md), [`Features/08-AI-Evidence-Tagging.md`](Features/08-AI-Evidence-Tagging.md), [`Features/11-AI-Report-Draft-Generator.md`](Features/11-AI-Report-Draft-Generator.md), [`Fixes.md`](Fixes.md) |
 | SuperAdmin billing & credits | [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) §5/§7, [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md) §15 |
 | API bind (0.0.0.0 issue) | [`contabo-ops.md`](contabo-ops.md) §4, §10, [`pending.md`](pending.md) |

@@ -90,6 +90,48 @@ export default async function Dashboard() {
         />
       </section>
 
+      <section className="mt-8">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-bold">Deadline overview</h2>
+          <Link href="/reports" className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400">Open reports →</Link>
+        </div>
+        {!snapshot.deadlineData.ok && (
+          <div className="mt-3"><InlineError title={snapshot.deadlineData.error?.message ?? "Deadlines unavailable"} referenceId={snapshot.deadlineData.error?.referenceId} /></div>
+        )}
+        {snapshot.deadlineData.ok && deadlines.length === 0 && (
+          <div className="mt-3"><EmptyState>No reporting deadlines yet.</EmptyState></div>
+        )}
+        {snapshot.deadlineData.ok && deadlines.length > 0 && (
+          <div className="mt-3 grid gap-3 lg:grid-cols-4">
+            {(["overdue", "today", "soon", "later"] as const).map((band) => (
+              <div key={band} className="rounded-lg border border-slate-200/70 bg-white/70 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold">{BAND_LABEL[band]}</h3>
+                  <Badge tone={bandTone(band)}>{deadlines.filter((d) => d.band === band).length}</Badge>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {deadlines.filter((d) => d.band === band).slice(0, 4).map((d) => (
+                    <Link key={`${d.projectId}-${d.periodId}`} href={`/projects/${d.projectId}/reports/${d.periodId}`} className="block rounded-md border border-slate-200/70 px-3 py-2 text-sm transition hover:border-brand-400/40 dark:border-white/10 dark:hover:border-brand-400/30">
+                      <div className="truncate font-semibold">{d.projectTitle}</div>
+                      <div className="mt-1 flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        <span>{new Date(d.deadline).toLocaleDateString()}</span>
+                        <span>{d.readinessScore === null ? "readiness n/a" : `${d.readinessScore}% ready`}</span>
+                      </div>
+                    </Link>
+                  ))}
+                  {deadlines.filter((d) => d.band === band).length === 0 && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">None</p>
+                  )}
+                  {deadlines.filter((d) => d.band === band).length > 4 && (
+                    <Link href={`/reports?band=${band}`} className="text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400">View more</Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       <section className="mt-8 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         <div>
           <div className="flex items-center justify-between gap-3">
@@ -137,48 +179,6 @@ export default async function Dashboard() {
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="mt-8">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-bold">Deadline overview</h2>
-          <Link href="/reports" className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400">Open reports →</Link>
-        </div>
-        {!snapshot.deadlineData.ok && (
-          <div className="mt-3"><InlineError title={snapshot.deadlineData.error?.message ?? "Deadlines unavailable"} referenceId={snapshot.deadlineData.error?.referenceId} /></div>
-        )}
-        {snapshot.deadlineData.ok && deadlines.length === 0 && (
-          <div className="mt-3"><EmptyState>No reporting deadlines yet.</EmptyState></div>
-        )}
-        {snapshot.deadlineData.ok && deadlines.length > 0 && (
-          <div className="mt-3 grid gap-3 lg:grid-cols-4">
-            {(["overdue", "today", "soon", "later"] as const).map((band) => (
-              <div key={band} className="rounded-lg border border-slate-200/70 bg-white/70 p-3 dark:border-white/10 dark:bg-white/[0.03]">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold">{BAND_LABEL[band]}</h3>
-                  <Badge tone={bandTone(band)}>{deadlines.filter((d) => d.band === band).length}</Badge>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {deadlines.filter((d) => d.band === band).slice(0, 4).map((d) => (
-                    <Link key={`${d.projectId}-${d.periodId}`} href={`/projects/${d.projectId}/reports/${d.periodId}`} className="block rounded-md border border-slate-200/70 px-3 py-2 text-sm transition hover:border-brand-400/40 dark:border-white/10 dark:hover:border-brand-400/30">
-                      <div className="truncate font-semibold">{d.projectTitle}</div>
-                      <div className="mt-1 flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
-                        <span>{new Date(d.deadline).toLocaleDateString()}</span>
-                        <span>{d.readinessScore === null ? "readiness n/a" : `${d.readinessScore}% ready`}</span>
-                      </div>
-                    </Link>
-                  ))}
-                  {deadlines.filter((d) => d.band === band).length === 0 && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400">None</p>
-                  )}
-                  {deadlines.filter((d) => d.band === band).length > 4 && (
-                    <Link href={`/reports?band=${band}`} className="text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400">View more</Link>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       <section className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -252,7 +252,7 @@ export default async function Dashboard() {
           <div>
             <h2 className="text-lg font-bold">Setup and storage</h2>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <Link href="/setup" className="rounded-lg border border-slate-200/70 bg-white/70 p-4 transition hover:border-brand-400/40 dark:border-white/10 dark:bg-white/[0.03]">
+              <Link href="/settings/setup" className="rounded-lg border border-slate-200/70 bg-white/70 p-4 transition hover:border-brand-400/40 dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="text-sm font-semibold">Workspace setup</div>
                 <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">Templates, organization profile, and defaults</div>
               </Link>

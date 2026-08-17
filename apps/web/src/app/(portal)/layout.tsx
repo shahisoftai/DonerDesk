@@ -41,9 +41,6 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   }));
 
   const navItems: Array<{ href: string; label: string }> = [{ href: "/dashboard", label: "Home" }, { href: "/my-work", label: "My Work" }];
-  if (hasCapability(ctx, "project.create")) {
-    navItems.push({ href: "/onboarding", label: "Setup" });
-  }
   navItems.push({ href: "/projects", label: "Projects" });
   navItems.push({ href: "/reports", label: "Reports" });
   navItems.push({ href: "/evidence", label: "Evidence" });
@@ -51,10 +48,12 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   if (hasCapability(ctx, "team.manage") || hasCapability(ctx, "team.invite")) {
     navItems.push({ href: "/team", label: "Team" });
   }
-  if (hasCapability(ctx, "audit.view")) {
-    navItems.push({ href: "/audit", label: "Audit log" });
-  }
-  if (hasCapability(ctx, "settings.view") || hasCapability(ctx, "org.manage")) {
+  if (
+    hasCapability(ctx, "project.create") ||
+    hasCapability(ctx, "audit.view") ||
+    hasCapability(ctx, "settings.view") ||
+    hasCapability(ctx, "org.manage")
+  ) {
     navItems.push({ href: "/settings", label: "Settings" });
   }
 

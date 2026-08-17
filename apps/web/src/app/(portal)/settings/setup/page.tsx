@@ -5,7 +5,7 @@ import { InlineError } from "@/components/feedback/PageState";
 
 export const dynamic = "force-dynamic";
 
-export default async function OnboardingPage() {
+export default async function SettingsSetupPage() {
   const ctx = await requireSession();
   const { snapshot } = await loadOnboarding(ctx.token);
 

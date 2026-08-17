@@ -2,6 +2,60 @@
 
 Record of fixes applied to DonorDesk. Last updated: 2026-08-17.
 
+## Readiness percentages wrong (evidence/approval) + Home/dashboard readiness snapshot + consolidated Settings nav (2026-08-17)
+
+**Status:** Fixed; `pnpm -r typecheck` and `pnpm -r build` green, 112/113 web unit tests pass (the one failure, `upload-queue.test.mts`, pre-exists on the base branch). Not yet deployed.
+
+### 1. Reporting-period readiness list returned a stale stored score (always 0)
+
+`ReportingPeriod.readinessScore` was initialized to `0` at creation and
+`setReadinessScore` was never called anywhere, so every list that read the stored
+value reported 0%: the project **Reports** tab, the cross-project **Reports**
+page, the Home **Readiness snapshot**, the **Deadline overview** "X% ready", and
+the recent-project readiness. Fix: `ListReportingPeriodsHandler` now computes
+readiness **live** per period by delegating to `CalculateReadinessHandler`
+(injected at container wiring), so lists always reflect current sections,
+indicators, evidence, checklist, and approval state.
+
+### 2. Evidence "required" count was a fabricated heuristic
+
+`CalculateReadinessHandler` set `requiredEvidenceCount = max(1,
+round(checklistItems × 1.5))`, so the **Evidence attached** percentage swung
+with unrelated checklist size (and hit 100% with a single file when the checklist
+was empty). Fix: the required count is now derived from the donor template's
+`requiredAnnexes` (authoritative), falling back to a baseline of 1 before a
+template is attached. The handler now loads the period + template repos.
+
+### 3. Approval score was binary until final approval
+
+`approvalScore` was `100` only when the whole draft was
+APPROVED/EXPORTED/SUBMITTED and `0` otherwise — a report sitting **Under review**
+showed 0% approval. Fix: `readiness-calculator.ts` now accepts `approvalProgress`
+(0–100): no draft = 0, `UNDER_REVIEW` = 50, APPROVED/EXPORTED/SUBMITTED = 100.
+
+### 4. Home page: Deadline overview placement
+
+**Deadline overview** section moved to render directly under the four top Count
+cards (was below My Work / Readiness snapshot).
+
+### 5. Left navigation: Setup, Settings, and Audit log consolidated into one item
+
+The three separate left-nav entries (`Setup` → `/onboarding`, `Audit log` →
+`/audit`, `Settings` → `/settings`) are now a single **Settings** item
+(`/settings`, shown when the user has any of `project.create`, `audit.view`,
+`settings.view`, `org.manage`). The `/settings` route group gained a layout that
+renders tabs: **Setup** (`/settings/setup`), **Settings** (`/settings`), **Audit
+log** (`/settings/audit`). The setup overview was extracted into a shared
+`SetupOverview` component (reused by `/onboarding`, which remains the consent-gate
+entry), and the audit log content into `AuditLogPageContent` (reused by `/audit`).
+The dashboard "Workspace setup" card link was repaired from the nonexistent
+`/setup` to `/settings/setup`.
+
+Verification: `pnpm -r typecheck` + `pnpm -r build` pass across
+domain/application/infrastructure/api/web; domain (74) and application (64)
+tests pass. Playwright e2e not run (no browser binaries / local Postgres server
+in this environment).
+
 ## AI report generation ignored evidence content and activity/indicator narratives (2026-08-17)
 
 **Status:** Fixed; typecheck + build + tests green (74 infra tests pass, 32 workers tests pass). Not yet deployed to Contabo.

@@ -2,6 +2,6 @@ import { AuditLogPageContent } from "@/features/audit/presentation/AuditLogPageC
 
 export const dynamic = "force-dynamic";
 
-export default function AuditPage() {
+export default function SettingsAuditPage() {
   return <AuditLogPageContent />;
 }

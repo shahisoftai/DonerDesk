@@ -516,7 +516,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const evidencePackageBuilder = new EvidencePackageBuilder(evidence);
   const claimVerifier = new DeterministicClaimVerifier();
 
-  const calculateReadinessHandler = new CalculateReadinessHandler(drafts, sections, indicators, indicatorUpdates, evidence, checklist);
+  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, checklist, templates);
   const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits);
 
   if (jobRegistrar?.register) {
@@ -602,7 +602,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listActivities: new ListActivitiesHandler(activities),
     getActivity: new GetActivityHandler(activities),
     createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events),
-    listReportingPeriods: new ListReportingPeriodsHandler(periods),
+    listReportingPeriods: new ListReportingPeriodsHandler(periods, calculateReadinessHandler),
     generateReportDraft: new GenerateReportDraftHandler(
       ids, periods, drafts, sections, projects, organizations, templates, indicatorUpdates, activities,
       reportPlanner, indicatorAnalytics, evidencePackageBuilder, claimVerifier, generationRuns, reportPlans, reportClaims,
