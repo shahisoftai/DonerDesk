@@ -34,7 +34,10 @@ export class ProvisionTenantWorkspacesHandler {
       const setupResult = await this.setup.ensureForProject(project.id, ctx.tenant.tenantId);
       if (!setupResult.ok) return setupResult;
       const setup = setupResult.value;
-      if (setup.isWorkspaceReady()) continue;
+      // Skip only projects already provisioned. Projects created under a
+      // previous (e.g. LOCAL) provider carry NOT_REQUIRED and must be
+      // provisioned now that the tenant is on Google Drive.
+      if (setup.workspaceProvisionStatus === "READY") continue;
 
       const workspaceResult = await this.workspace.ensureProjectWorkspace(ctx.tenant.tenantId, project.id);
       if (!workspaceResult.ok) {

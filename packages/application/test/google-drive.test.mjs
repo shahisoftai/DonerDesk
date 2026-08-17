@@ -124,7 +124,11 @@ test("list workspace files groups folders by role with labels", async () => {
 
 test("provision tenant workspaces ensures the root and marks projects ready", async () => {
   const projectsRepo = {
-    listByTenant: async () => ({ ok: true, value: [{ id: "p-1", setWorkspaceRoot: () => {} }, { id: "p-2", setWorkspaceRoot: () => {} }] }),
+    listByTenant: async () => ({ ok: true, value: [
+      { id: "p-1", setWorkspaceRoot: () => {} },
+      { id: "p-2", setWorkspaceRoot: () => {} },
+      { id: "p-3", setWorkspaceRoot: () => {} },
+    ] }),
     update: async (p) => ({ ok: true, value: p }),
   };
   const workspace = {
@@ -133,8 +137,10 @@ test("provision tenant workspaces ensures the root and marks projects ready", as
   };
   const made = [];
   const setups = new Map([
-    ["p-1", { workspaceProvisionStatus: "PENDING", markReady() { this.workspaceProvisionStatus = "READY"; }, markFailed() {}, isWorkspaceReady() { return this.workspaceProvisionStatus === "READY"; } }],
-    ["p-2", { workspaceProvisionStatus: "FAILED", markReady() { this.workspaceProvisionStatus = "READY"; }, markFailed() {}, isWorkspaceReady() { return this.workspaceProvisionStatus === "READY"; } }],
+    ["p-1", { workspaceProvisionStatus: "PENDING", markReady() { this.workspaceProvisionStatus = "READY"; }, markFailed() {} }],
+    ["p-2", { workspaceProvisionStatus: "FAILED", markReady() { this.workspaceProvisionStatus = "READY"; }, markFailed() {} }],
+    // Created under a LOCAL provider, then the tenant connected Drive — must be provisioned too.
+    ["p-3", { workspaceProvisionStatus: "NOT_REQUIRED", markReady() { this.workspaceProvisionStatus = "READY"; }, markFailed() {} }],
   ]);
   const setup = {
     ensureForProject: async (projectId) => ({ ok: true, value: setups.get(projectId) }),
@@ -145,9 +151,10 @@ test("provision tenant workspaces ensures the root and marks projects ready", as
   const handler = new ProvisionTenantWorkspacesHandler(workspace, projectsRepo, setup, events, audit);
   const result = await handler.handle(ctx);
   assert.equal(result.ok, true);
-  assert.equal(result.value.provisioned, 2);
+  assert.equal(result.value.provisioned, 3);
   assert.equal(setups.get("p-1").workspaceProvisionStatus, "READY");
-  assert.ok(made.includes("events:2"));
+  assert.equal(setups.get("p-3").workspaceProvisionStatus, "READY");
+  assert.ok(made.includes("events:3"));
 });
 
 function makeUsers(overrides = {}) {

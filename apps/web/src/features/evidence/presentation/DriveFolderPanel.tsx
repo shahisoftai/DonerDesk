@@ -43,18 +43,19 @@ export function DriveFolderPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [linked, setLinked] = useState<Set<string>>(new Set());
+  const folderKey = folderRoles.join(",");
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const result = await listWorkspaceFilesAction(projectId, folderRoles);
+    const result = await listWorkspaceFilesAction(projectId, folderKey.split(","));
     if (!result.ok) {
       setError(result.error.message);
     } else {
       setFolders(result.value);
     }
     setLoading(false);
-  }, [projectId, folderRoles]);
+  }, [projectId, folderKey]);
 
   useEffect(() => {
     void load();

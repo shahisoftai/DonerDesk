@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { EvidenceResponseSchema } from "@/lib/server/schemas";
+import { EvidenceResponseSchema, OrganizationSchema } from "@/lib/server/schemas";
 import {
   parseEvidenceFilters,
   serializeEvidenceFilters,
@@ -35,18 +35,22 @@ export default async function EvidencePage({
   const filters = parseEvidenceFilters(entries);
 
   const ctx = await requireSession();
-  const result = await gatewayRequest(`/v1/evidence/search`, EvidenceResponseSchema, ctx.token, {
-    method: "POST",
-    body: {
-      projectId: resolvedParams.id,
-      query: filters.query,
-      verificationStatus: filters.verificationStatus,
-      confidentialityLevel: filters.confidentialityLevel,
-      evidenceType: filters.evidenceType,
-      page: filters.page ?? 1,
-      pageSize: PAGE_SIZE,
-    },
-  });
+  const [result, orgResult] = await Promise.all([
+    gatewayRequest(`/v1/evidence/search`, EvidenceResponseSchema, ctx.token, {
+      method: "POST",
+      body: {
+        projectId: resolvedParams.id,
+        query: filters.query,
+        verificationStatus: filters.verificationStatus,
+        confidentialityLevel: filters.confidentialityLevel,
+        evidenceType: filters.evidenceType,
+        page: filters.page ?? 1,
+        pageSize: PAGE_SIZE,
+      },
+    }),
+    gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
+  ]);
+  const driveConnected = orgResult.ok && orgResult.value.storageProvider === "GOOGLE_DRIVE";
 
   const baseUrl = `/projects/${resolvedParams.id}/evidence`;
 
@@ -137,14 +141,16 @@ export default async function EvidencePage({
         </>
       )}
 
-      <div className="mt-6">
-        <DriveFolderPanel
-          projectId={resolvedParams.id}
-          folderRoles={["04-Evidence-Reports", "05-Evidence-Images"]}
-          title="Google Drive evidence folder"
-          linkAsEvidence
-        />
-      </div>
+      {driveConnected && (
+        <div className="mt-6">
+          <DriveFolderPanel
+            projectId={resolvedParams.id}
+            folderRoles={["04-Evidence-Reports", "05-Evidence-Images"]}
+            title="Google Drive evidence folder"
+            linkAsEvidence
+          />
+        </div>
+      )}
     </div>
   );
 }

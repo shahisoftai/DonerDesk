@@ -79,35 +79,6 @@ test("google drive managed upload requires a project workspace", async () => {
   delete process.env.GOOGLE_DRIVE_CLIENT_SECRET;
 });
 
-test("local evidence storage writes into the project workspace evidence folder", async () => {
-  const backend = new LocalStorage();
-  const calls = [];
-  const workspace = {
-    async ensureProjectWorkspace(tenantId, projectId) {
-      calls.push([tenantId.toString(), projectId]);
-      return { ok: true, value: { provider: "LOCAL", rootId: `/tmp/dd-root/${projectId}`, subfolders: [
-        { role: "04-Evidence-Reports", id: `/tmp/dd-root/${projectId}/04-Evidence-Reports` },
-        { role: "05-Evidence-Images", id: `/tmp/dd-root/${projectId}/05-Evidence-Images` },
-      ] } };
-    },
-  };
-  // Point the storage root at a temp dir so the relative-key math is valid.
-  process.env.STORAGE_ROOT = "/tmp/dd-root";
-  const local = new LocalEvidenceStorage(backend, workspace, "/tmp/dd-root");
-  const saved = await local.save({
-    tenantId: "tenant-a", projectId: "p1", evidenceId: "e1", fileName: "photo.jpg", fileType: "image/jpeg", fileSize: 42, buffer: Buffer.from("x".repeat(42)),
-  });
-  assert.equal(saved.ok, true);
-  assert.ok(saved.value.storageKey.includes("p1/05-Evidence-Images/e1.jpg"));
-  const doc = await local.save({
-    tenantId: "tenant-a", projectId: "p1", evidenceId: "e2", fileName: "rpt.pdf", fileType: "application/pdf", fileSize: 10, buffer: Buffer.from("report"),
-  });
-  assert.equal(doc.ok, true);
-  assert.ok(doc.value.storageKey.includes("p1/04-Evidence-Reports/e2.pdf"));
-  assert.equal(calls.length, 2);
-  delete process.env.STORAGE_ROOT;
-});
-
 test("drive workspace lists non-folder files from a folder", async () => {
   process.env.GOOGLE_DRIVE_CLIENT_ID = "client-1";
   process.env.GOOGLE_DRIVE_CLIENT_SECRET = "secret-1";

@@ -1,5 +1,5 @@
 import { mkdir, readdir, stat } from "node:fs/promises";
-import { resolve, join, sep, relative } from "node:path";
+import { resolve, join } from "node:path";
 import type { IProjectWorkspaceService, WorkspaceReference, DriveFileEntry } from "@donordesk/application";
 import { DomainError } from "@donordesk/domain";
 import type { TenantId, StorageProvider, Result } from "@donordesk/domain";
@@ -98,16 +98,13 @@ export class LocalProjectWorkspaceService implements IProjectWorkspaceService {
       const files: DriveFileEntry[] = [];
       for (const entry of entries) {
         if (!entry.isFile()) continue;
-        const full = join(folder.id, entry.name);
-        const meta = await stat(full);
-        const key = relative(resolve(this.storageRoot), full).split(sep).join("/");
+        const meta = await stat(join(folder.id, entry.name));
         files.push({
           id: `${role}/${entry.name}`,
           name: entry.name,
           mimeType: mimeFor(entry.name),
           size: meta.size,
           modifiedTime: meta.mtime.toISOString(),
-          webViewLink: `/v1/files/${encodeURIComponent(key)}`,
         });
       }
       files.sort((a, b) => (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? ""));

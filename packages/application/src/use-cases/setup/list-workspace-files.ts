@@ -47,6 +47,11 @@ export class ListWorkspaceFilesHandler {
     const workspaceResult = await this.workspace.ensureProjectWorkspace(ctx.tenant.tenantId, projectId);
     if (!workspaceResult.ok) return workspaceResult;
 
+    const deepLink =
+      workspaceResult.value.provider === "GOOGLE_DRIVE"
+        ? `https://drive.google.com/drive/folders/${encodeURIComponent(workspaceResult.value.rootId)}`
+        : workspaceResult.value.deepLink;
+
     const folders: WorkspaceFolderFiles[] = [];
     for (const role of [...new Set(roles)]) {
       const listResult = await this.workspace.listProjectFolderFiles(ctx.tenant.tenantId, projectId, role);
@@ -54,6 +59,6 @@ export class ListWorkspaceFilesHandler {
       folders.push({ role, label: WORKSPACE_FOLDER_LABELS[role] ?? role, files: listResult.value });
     }
 
-    return { ok: true, value: { folders, deepLink: workspaceResult.value.deepLink } };
+    return { ok: true, value: { folders, deepLink } };
   }
 }

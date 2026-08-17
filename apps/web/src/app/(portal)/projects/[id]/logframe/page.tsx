@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { LogframeResponseSchema } from "@/lib/server/schemas";
+import { LogframeResponseSchema, OrganizationSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { LOGFRAME_LEVEL_LABEL } from "@/lib/labels";
@@ -18,7 +18,11 @@ const LEVEL_ORDER = ["GOAL", "OUTCOME", "OUTPUT", "ACTIVITY"];
 export default async function LogframePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const ctx = await requireSession();
-  const result = await gatewayRequest(`/v1/projects/${resolvedParams.id}/logframe`, LogframeResponseSchema, ctx.token);
+  const [result, orgResult] = await Promise.all([
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/logframe`, LogframeResponseSchema, ctx.token),
+    gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
+  ]);
+  const driveConnected = orgResult.ok && orgResult.value.storageProvider === "GOOGLE_DRIVE";
   if (!result.ok) {
     return (
       <div className="animate-fade-in">
@@ -111,13 +115,15 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
         </div>
       </section>
 
-      <div className="mt-6">
-        <DriveFolderPanel
-          projectId={resolvedParams.id}
-          folderRoles={["02-Logframe", "03-Data-Files"]}
-          title="Logframe &amp; data files in Google Drive"
-        />
-      </div>
+      {driveConnected && (
+        <div className="mt-6">
+          <DriveFolderPanel
+            projectId={resolvedParams.id}
+            folderRoles={["02-Logframe", "03-Data-Files"]}
+            title="Logframe &amp; data files in Google Drive"
+          />
+        </div>
+      )}
     </div>
   );
 }

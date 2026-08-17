@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { TemplatesResponseSchema } from "@/lib/server/schemas";
+import { TemplatesResponseSchema, OrganizationSchema } from "@/lib/server/schemas";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import { InlineError } from "@/components/feedback/PageState";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
@@ -14,7 +14,11 @@ const IS_STUB = process.env.NODE_ENV !== "production";
 export default async function TemplatesPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const ctx = await requireSession();
-  const result = await gatewayRequest(`/v1/projects/${resolvedParams.id}/templates`, TemplatesResponseSchema, ctx.token);
+  const [result, orgResult] = await Promise.all([
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/templates`, TemplatesResponseSchema, ctx.token),
+    gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
+  ]);
+  const driveConnected = orgResult.ok && orgResult.value.storageProvider === "GOOGLE_DRIVE";
   if (!result.ok) {
     return (
       <div className="animate-fade-in">
@@ -65,13 +69,15 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
         ))}
       </div>
 
-      <div className="mt-6">
-        <DriveFolderPanel
-          projectId={resolvedParams.id}
-          folderRoles={["01-Donor-Templates"]}
-          title="Donor templates in Google Drive"
-        />
-      </div>
+      {driveConnected && (
+        <div className="mt-6">
+          <DriveFolderPanel
+            projectId={resolvedParams.id}
+            folderRoles={["01-Donor-Templates"]}
+            title="Donor templates in Google Drive"
+          />
+        </div>
+      )}
     </div>
   );
 }

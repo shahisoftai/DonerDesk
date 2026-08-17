@@ -210,13 +210,13 @@ export function EvidenceUploadQueue({
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {queued > 0 && `${queued} waiting · `}
             {uploading > 0 && `${uploading} uploading · `}
-            {success > 0 && `${success} ${driveMode ? "linked" : "uploaded"} · `}
+            {success > 0 && `${success} completed · `}
             {errors > 0 && `${errors} failed`}
           </p>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => router.back()}>Cancel</Button>
             <Button onClick={uploadAll} pending={uploading > 0} disabled={queued === 0}>
-              {driveMode ? "Link" : "Upload"} {queued > 0 ? `${queued} file${queued > 1 ? "s" : ""}` : "files"}
+              {driveMode ? "Save" : "Upload"} {queued > 0 ? `${queued} file${queued > 1 ? "s" : ""}` : "files"}
             </Button>
           </div>
         </div>

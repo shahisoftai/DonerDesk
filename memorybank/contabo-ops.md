@@ -476,6 +476,38 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (review fixes for two-way Drive — release `20260817072121` API + web):**
+  Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
+  donordesk-web`). Post-implementation review fixes:
+  1. **LOCAL evidence download regression:** the workspace-folder routing I added
+     to `LocalEvidenceStorage` wrote bytes under `workspaces/<org>/<project>/…`,
+     which the `/v1/files/:key` tenant-isolation guard (key must start with
+     `tenantId/`) rejects → LOCAL evidence downloads 404. Reverted
+     `LocalEvidenceStorage` to the flat `tenantId/evidence/<id>.<ext>` layout;
+     `EvidenceStorageResolver` no longer passes the workspace to the LOCAL adapter.
+     The workspace folder tree remains a scaffold for LOCAL/R2, while Drive holds
+     the real tree.
+  2. **Connect-time provisioning gap:** `ProvisionTenantWorkspacesHandler` skipped
+     `NOT_REQUIRED` projects, so projects created under LOCAL before a tenant
+     connected Drive never got their Drive folders. Now skips only `READY` and
+     provisions `NOT_REQUIRED`/`PENDING`/`FAILED`/`IN_PROGRESS` too.
+  3. **Deep-link never shown:** project workspace refs carry no `deepLink`;
+     `ListWorkspaceFilesHandler` now builds `https://drive.google.com/drive/folders/<rootId>`
+     for GOOGLE_DRIVE.
+  4. **Drive panel shown to non-Drive tenants:** evidence/templates/logframe pages
+     now fetch `/v1/organization` and render `DriveFolderPanel` only when
+     `storageProvider === "GOOGLE_DRIVE"`.
+  5. **Effect-dependency stability + wording:** `DriveFolderPanel` depends on a
+     joined `folderKey` string (no array-identity refetch loop); upload queue
+     summary/button wording made provider-neutral ("completed"/"Save").
+  Tests: app 58/58 (provision test now asserts NOT_REQUIRED → READY), infra
+  62/62 + 1 skipped (removed the invalid LOCAL workspace-folder test). Verified
+  live: api/web 200, current `20260817072121`, deployed bundles contain the
+  reverted LOCAL key and the NOT_REQUIRED provisioning fix. Rollback:
+  `RELEASE_ID=20260817065618 scripts/rollback.sh` or `ln -sfn
+  /opt/donordesk/releases/20260817065618 /opt/donordesk/current && systemctl
+  restart donordesk-api donordesk-web`.
+
 - **2026-08-17 (two-way Google Drive: folder listing + connect provisioning — release `20260817065618` API + web):**
   Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
   donordesk-web`). Drive is now fully two-way:
