@@ -601,3 +601,37 @@ Feature 20 is complete only when:
 - No second cost meter — `LlmRun`/usage ledger is the only meter.
 - No parallel export path — `IExportBuilder` gains a type.
 - No BullMQ in the report lifecycle unless a separate low-latency case emerges.
+
+## 15. Report charts (IMPLEMENTED 2026-08-17)
+
+Users can attach a chart to any indicator-named report section and switch its
+type (BAR / LINE / PIE / AREA / RADAR / GAUGE) before finalising the report.
+
+Design decisions:
+
+- **One engine, two render targets.** `buildChartOption` (pure, in
+  `packages/domain/src/contexts/reporting/chart-config.ts`) produces an
+  ECharts option object. The interactive `ReportChartPanel` (web client)
+  renders it live; the export path (`chart-png-renderer.ts`) runs the same
+  function through ECharts SSR (`renderer: "svg", ssr: true`) and rasterises
+  to PNG with `sharp`. The exported image is therefore pixel-identical to
+  what the user approved.
+- **Shared data, no new queries.** Chart series come from the existing
+  period-indicators endpoint (baseline / target / periodAchievement / status).
+  `resolveChartData` is a pure, decimal-safe transform.
+- **Persistence.** `ReportSection.chartConfigJson` (migration
+  `20260817183000_report_charts`), updated via
+  `PATCH /v1/report-sections/:id/chart` with optimistic concurrency.
+- **Performance.** ECharts is `import()`-ed lazily so the initial route chunk
+  never includes it; the SSR renderer is content-hash cached in memory
+  (`renderChartPngCached`), so re-exports of an unchanged finalized report are
+  instant.
+- **Client-bundle hygiene.** The web client imports
+  `@donordesk/domain/contexts/reporting/chart-config.js` (subpath export),
+  never the domain index — the index pulls `domain-event.ts` which imports
+  `node:crypto` and would break the webpack client build.
+
+Scope notes: chart rendering intentionally avoids headless browsers
+(no Puppeteer); SVG -> PNG via sharp keeps the export path dependency-light.
+Status-distribution and indicator-comparison bindings ship; per-indicator
+disaggregation (M/F/children) is future work (Feature 06 pending).

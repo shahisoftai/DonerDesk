@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./contexts/reporting/chart-config.js": {
+      "types": "./dist/contexts/reporting/chart-config.d.ts",
+      "import": "./dist/contexts/reporting/chart-config.js"
     }
   },
   "scripts": {

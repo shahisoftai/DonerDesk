@@ -18,7 +18,7 @@ import {
 import { SECTION_STATUS_LABEL, REPORT_DRAFT_STATUS_LABEL } from "@/lib/labels";
 import { SectionEditor } from "./SectionEditor";
 import { ReportChartPanel } from "./ReportChartPanel";
-import type { ChartConfig } from "@donordesk/domain";
+import type { ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import { ReviewAndApproval } from "@/features/review/presentation/ReviewAndApproval";
 import { ExportsPanel, type ExportHistoryItem } from "@/features/exports/presentation/ExportsPanel";
 import { CommentsThread } from "@/features/comments/presentation/CommentsThread";

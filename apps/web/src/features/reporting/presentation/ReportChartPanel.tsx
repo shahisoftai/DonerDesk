@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type * as echarts from "echarts";
-import { buildChartOption, type ChartConfig } from "@donordesk/domain";
+import { buildChartOption, type ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import { updateReportSectionChartAction } from "@/lib/actions/reporting";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";

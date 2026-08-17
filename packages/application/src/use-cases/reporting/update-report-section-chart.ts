@@ -1,5 +1,6 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, createChartConfig } from "@donordesk/domain";
+import { DomainError } from "@donordesk/domain";
+import { createChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportSectionRepository } from "../../ports/reporting.js";
 import type { IAuditLogger } from "../../ports/core.js";
