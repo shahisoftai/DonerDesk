@@ -12,6 +12,14 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 > Sheets import. **2026-08-17:** logframe Excel/CSV/TXT import now auto-parses into
 > structured `LogframeItem` records (parent resolution + code dedup). See
 > `06-Logframe-And-Indicator-Manager.md` and `pending.md`.
+> **2026-08-17 (AI + charts + SuperAdmin billing):** real LLM report drafting is
+> LIVE via the SuperAdmin-configured MiniMax provider (STARTER/TEAM/GROWTH/
+> ENTERPRISE AI-credit quotas enforced; stub-fallback never billed), user-selectable
+> report charts (BAR/LINE/PIE/AREA/RADAR/GAUGE per section, exported identically to
+> DOCX/PDF via ECharts SSR→PNG), and the SuperAdmin **Billing & credits** section
+> (per-tenant allowance Set/Increase/Reduce + reset month usage). See
+> `11-AI-Report-Draft-Generator.md`, `14-Export-Module.md`, `19-Tiers-And-Payments.md`,
+> `20-report-gen.md` §15, `../imp/LLM-PROVIDER-WIRING.md`, and `../SUPERADMIN-PORTAL.md`.
 
 ## Features
 
@@ -27,15 +35,15 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 | 08 | [AI Evidence Tagging](./08-AI-Evidence-Tagging.md) | Orchestrated (heuristic tagger; real AI provider is a stub) | `packages/infrastructure/src/llm/evidence-tagger.ts`, `packages/contracts/src/strategies/heuristic-rules.json` |
 | 09 | [Activity Update Capture](./09-Activity-Update-Capture.md) | Implemented | `packages/domain/src/entities/ActivityUpdate.ts` |
 | 10 | [Reporting Period Manager](./10-Reporting-Period-Manager.md) | Implemented | `packages/domain/src/entities/ReportingPeriod.ts` |
-| 11 | [AI Report Draft Generator](./11-AI-Report-Draft-Generator.md) | Implemented (heuristic; rewrite/shorten/donor-friendly added 2026-08-16) | `packages/infrastructure/src/ai/handlers/reportGenerator.ts` |
+| 11 | [AI Report Draft Generator](./11-AI-Report-Draft-Generator.md) | Implemented (real LLM via SuperAdmin MiniMax config 2026-08-17; heuristic fallback) | `packages/infrastructure/src/llm/llm-report-draft-generator.ts`, `packages/infrastructure/src/llm/factory.ts`, `packages/infrastructure/src/llm/llm-config-resolver.ts` |
 | 12 | [Missing Evidence and Compliance Checklist](./12-Missing-Evidence-And-Compliance-Checklist.md) | Implemented (auto-generation, templates, bulk ops 2026-08-16) | `packages/domain/src/entities/ChecklistItem.ts` |
 | 13 | [Review and Approval Workflow](./13-Review-And-Approval-Workflow.md) | Implemented | `packages/domain/src/entities/Comment.ts` |
-| 14 | [Export Module](./14-Export-Module.md) | Implemented | `packages/infrastructure/src/export/` |
+| 14 | [Export Module](./14-Export-Module.md) | Implemented (report charts embedded in DOCX/PDF 2026-08-17) | `packages/infrastructure/src/export/`, `packages/infrastructure/src/exports/chart-png-renderer.ts` |
 | 15 | [Dashboard](./15-Dashboard.md) | Implemented | `apps/web/src/app/(portal)/dashboard/page.tsx` |
 | 16 | [Audit Log](./16-Audit-Log.md) | Implemented | `packages/domain/src/entities/AuditLog.ts` |
 | 17 | [Basic Settings](./17-Basic-Settings.md) | Implemented | `apps/web/src/app/(portal)/settings/` |
 | 18 | [Project Creation Wizard](./18-Project-Creation-Wizard.md) | Implemented (release `20260815054218`) | `packages/application/src/readiness/project-readiness-service.ts`, `packages/infrastructure/src/storage/project-workspace.ts`, `packages/infrastructure/src/storage/workspace-router.ts`, `apps/api/src/routes/project-setup.ts` |
-| 19 | [Tiers and Payments](./19-Tiers-And-Payments.md) | Implemented (Phase 1–3 core; Creem adapter behind `BILLING_PROVIDER=creem`) | `packages/domain/src/contexts/billing/`, `packages/application/src/ports/billing.ts`, `packages/application/src/services/entitlement-service.ts`, `packages/application/src/use-cases/billing/`, `packages/infrastructure/src/billing/`, `packages/infrastructure/src/repositories/billing.ts`, `apps/api/src/routes/billing.ts`, `apps/api/src/routes/webhooks.ts` |
+| 19 | [Tiers and Payments](./19-Tiers-And-Payments.md) | Implemented (AI-credit quotas enforced + SuperAdmin credit management 2026-08-17) | `packages/domain/src/contexts/billing/`, `packages/application/src/ports/billing.ts`, `packages/application/src/services/entitlement-service.ts`, `packages/application/src/use-cases/billing/`, `packages/infrastructure/src/billing/`, `packages/infrastructure/src/repositories/billing.ts`, `apps/api/src/routes/billing.ts`, `apps/api/src/routes/webhooks.ts`, `apps/api/src/routes/superadmin.ts` |
 
 ## Status Legend
 

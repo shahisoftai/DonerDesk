@@ -1,9 +1,35 @@
 # Feature 19: Tiers, Entitlements, and Creem Payments — Implementation Plan
 
-**Updated:** 2026-08-15  
-**Status:** READY FOR IMPLEMENTATION — no production billing code exists yet  
+**Updated:** 2026-08-17  
+**Status:** IMPLEMENTED (core) — entitlements, AI-credit quotas, usage counters,
+and SuperAdmin credit management are live; Creem billing adapter behind
+`BILLING_PROVIDER=creem` (stub in development/tests)  
 **Payment provider:** Creem (production Merchant of Record), stub (development/tests)  
 **Pricing decision:** Starter $0, Team $59/month, Growth $149/month, Enterprise custom
+
+> **2026-08-17 implementation notes.** The domain/application/infrastructure
+> described below were built out (2026-08-13…08-16) and are now enforced in
+> production for AI report drafts:
+> - `EntitlementService` resolves the effective grant (precedence `MANUAL >
+>   ENTERPRISE_CONTRACT > GRANDFATHERED > CREEM_SUBSCRIPTION > TRIAL > DEFAULT`)
+>   and exposes `limits.monthlyAiDraftCredits` (`plan.ts`: STARTER 5, TEAM 100,
+>   GROWTH 500, ENTERPRISE `null`/unlimited).
+> - `GenerateReportDraftHandler` meters real AI drafts only: a successful
+>   non-stub generation consumes exactly one credit; a stub fallback releases the
+>   reserved credit, records an error run, and never bills (see
+>   `../imp/LLM-PROVIDER-WIRING.md` §14). The counter self-heals against the
+>   `LlmRun` ledger (`countAiReportDrafts`) before enforcement.
+> - **SuperAdmin Billing & credits** (2026-08-17): `GET /superadmin/billing`
+>   (per-tenant plan/allowance/usage/override/subscription), `POST
+>   /superadmin/tenants/:id/credits {mode: SET|INCREASE|DECREASE, value}` (writes
+>   a MANUAL `EntitlementGrant` with a full PlanLimits override — takes effect
+>   immediately), `POST /superadmin/tenants/:id/credits/reset` (zeroes the current
+>   UTC-month counter). All audit-trailed. See `../SUPERADMIN-PORTAL.md` §5/§7.
+> - Timezone note: MANUAL grants must be written via the typed Prisma client (raw
+>   SQL binds dates in the host's CEST session timezone → 2h future-dated grants).
+> - Remaining: live Creem checkout/subscription + webhook-created grants in
+>   production (stub provider is used; `process-billing-webhook.ts` implements the
+>   grant side), and Enterprise custom contract provisioning.
 
 ## 1. Objective
 

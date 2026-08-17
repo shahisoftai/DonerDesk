@@ -117,35 +117,47 @@ interface SourceReference {
 | DELETE | `/api/reports/:id` | `deleteReportDraft` |
 | GET | `/api/reports/:id/sections` | `getReportSections` |
 | PATCH | `/api/reports/:sections/:id` | `updateReportSection` |
+| PATCH | `/api/report-sections/:id/chart` | `updateReportSectionChart` |
 | POST | `/api/reports/:sections/:id/regenerate` | `regenerateSection` |
 | POST | `/api/reports/:sections/:id/ai-rewrite` | `aiRewriteSection` |
 | POST | `/api/reports/:sections/:id/ai-shorten` | `aiShortenSection` |
 | POST | `/api/reports/:sections/:id/ai-donor-friendly` | `aiMakeDonorFriendly` |
 
 ### AI Report Generator Handler
-- Location: `packages/infrastructure/src/llm/report-draft-generator.ts` (stub/heuristic)
+- Location: `packages/infrastructure/src/llm/llm-report-draft-generator.ts` (real
+  LLM via configured provider) with `packages/infrastructure/src/llm/report-draft-generator.ts`
+  as the deterministic stub/heuristic fallback.
 - Orchestration (2026-08-13, deployed): the `report.draft_section` job and the
   workers `/v1/draft-section` route exist; the job queue is wired
-  (memory/BullMQ/Kestra via `JOB_QUEUE`). Drafting content itself remains a stub
-  until a real LLM provider is configured (`LLM_PROVIDER` swap point).
+  (memory/BullMQ/Kestra via `JOB_QUEUE`).
+- **Real LLM wiring (2026-08-17, deployed):** the generator resolves the tenant's
+  provider from SuperAdmin `PlatformConfiguration` (category `LLM`, enabled,
+  TENANT>GLOBAL precedence) via `PlatformLlmConfigResolver` + `SecretCipher`
+  (AES-256-GCM); deepseek + minimax adapters are registered in the OCP
+  `factory.ts`. On provider failure/empty/unparseable response the generator
+  reports `usedFallback=true` and returns the stub — the handler then **releases
+  the reserved AI credit, records an error run, and marks the draft
+  `generatedByAi=false`** (stub-fallback is never billed). `maxTokens=4096`
+  (verified MiniMax completes the full prompt in ~38s). See
+  `../imp/LLM-PROVIDER-WIRING.md` §13–14.
 
 ## Status
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Report Draft CRUD | Implemented | Full lifecycle |
-| AI Generation | Stub | Heuristic draft; real LLM pending |
+| AI Generation | Implemented | Real LLM via SuperAdmin MiniMax/DeepSeek config; stub fallback free + never billed (2026-08-17) |
 | Section Editing | Implemented | Rich text |
-| Source References | Implemented | Populated from activities/indicators/evidence in the stub generator |
+| Source References | Implemented | Populated from activities/indicators/evidence |
 | Unsupported Claims | Implemented | Flagged per section and surfaced in compliance |
-| AI Rewrite/Shorten | Implemented (heuristic) | `rewriteSection` on the generator port + UI (2026-08-16); real LLM pending |
+| AI Rewrite/Shorten | Implemented | Real LLM rewrite via configured provider; tolerates plain-text output (2026-08-17) |
 | Donor-friendly Mode | Implemented (heuristic) | Audience-aware rewrite in the section editor (2026-08-16) |
 | Section Status | Implemented | All 5 statuses |
 | Version Tracking | Implemented | Version number |
 
 ## Pending Enhancements
 
-- [ ] Wire real LLM provider for generation
+- [x] Wire real LLM provider for generation (2026-08-17 — SuperAdmin MiniMax/DeepSeek)
 - [ ] Actual source reference population from evidence
 - [ ] Unsupported claim warning UI
 - [ ] AI regenerate individual sections
@@ -158,6 +170,8 @@ interface SourceReference {
 
 ## Notes
 
-Per `memorybank/pending.md`, BullMQ/Redis and LLM provider wiring are pending. Report sections must be editable before export.
+Per `memorybank/pending.md`, BullMQ/Redis are pending; the real LLM provider is
+now wired via SuperAdmin config (2026-08-17) with per-tier AI-credit quotas and a
+free, never-billed stub fallback. Report sections must be editable before export.
 
 The readiness score calculation includes approval score (10% weight).

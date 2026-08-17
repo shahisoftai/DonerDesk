@@ -106,6 +106,18 @@ The same data must be presented differently according to the signed-in user's re
 
 No chart, component, icon, form, or global-state library is currently installed. Build the initial system with the existing stack. Introduce a dependency only when it removes substantial accessibility or maintenance risk, and record the decision.
 
+> **Recorded decision (2026-08-17):** ECharts 6.1.0 was added to `apps/web` for
+> **user-selectable report charts** (BAR/LINE/PIE/AREA/RADAR/GAUGE per indicator
+> section). The user explicitly required non-generic, interactive, type-switchable
+> charts before finalising reports, which the standing "no chart library" rule
+> cannot meet at reasonable cost. ECharts was chosen because **one config schema
+> serves both targets** — the interactive client renderer and the server-side
+> SSR→PNG export renderer (`echarts.init(null, null, { renderer:"svg", ssr:true })`
+> + `sharp`) — so the finalized chart is pixel-identical to what the user approved.
+> Performance: the library is `import()`-ed lazily (splits into its own chunk, zero
+> chart code in the initial route bundle); chart series are memoised; export PNGs
+> are content-hash cached. See `../Features/20-report-gen.md` §15.
+
 ### 4.2 Existing request pattern
 
 - Server Components call `api<T>()` from `src/lib/api.ts` using the server session token.

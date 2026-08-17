@@ -113,10 +113,21 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
   `container.ts:209` always instantiates `InMemoryJobQueue`. Create a dedicated
   Redis ACL user (`dd:*`), wire and test the BullMQ factory, and set
   `JOB_QUEUE=redis` only after the adapter is runtime-wired and tested.
-- [ ] **Wire real LLM providers.** LLM factory with OpenAI/Anthropic/Ollama
-  adapters exists at `packages/infrastructure/src/llm/factory.ts` but
-  `container.ts:232-236` always wires stub handlers. Wire provider-specific
-  implementations and set `LLM_PROVIDER` only when ready.
+- [x] **Wire real LLM providers.** LLM factory with OpenAI/Anthropic/DeepSeek/
+  MiniMax/Ollama adapters exists at `packages/infrastructure/src/llm/factory.ts`.
+  **Implemented + deployed 2026-08-17:** SuperAdmin `PlatformConfiguration`
+  (category `LLM`) resolves the tenant's provider at runtime
+  (`PlatformLlmConfigResolver` + AES-256-GCM `SecretCipher`, TENANT>GLOBAL
+  precedence); `LlmReportDraftGenerator` narrates via the configured provider
+  with a deterministic stub fallback that is **never billed** (`usedFallback`
+  semantics; the reserved AI credit is released and the run recorded as error).
+  AI-credit quotas (STARTER 5 / TEAM 100 / GROWTH 500 / ENTERPRISE unlimited)
+  are enforced per UTC month; SuperAdmin can set/increase/reduce the allowance
+  or reset the month counter (see `../SUPERADMIN-PORTAL.md` and
+  `imp/LLM-PROVIDER-WIRING.md` §14–15). Still pending: per-call provider
+  rotation when multiple enabled configs exist, and real OpenAI/Anthropic
+  runtime testing (MiniMax verified live; `LLM_PROVIDER`/Ollama paths remain
+  unexercised in production).
 - [x] **Google Drive primary storage (link-first) + R2 tier.** Implemented across
   Phases A–E: per-tenant `storageProvider` (`GOOGLE_DRIVE` / `R2` / `LOCAL`),
   `IEvidenceStorage` + `EvidenceStorageResolver`, `GoogleDriveEvidenceStorage`
@@ -297,6 +308,8 @@ actually supports; unsupported controls are omitted rather than simulated.
   (Phase 4 in code). Real LLM/bulk/recurring remain backend.
 
 ### Feature 11 — AI Report Draft Generator
+- [x] Real LLM drafting (2026-08-17 — SuperAdmin MiniMax/DeepSeek config, live in production)
+- [x] AI-credit metering — stub fallback never billed (2026-08-17)
 - [ ] Actual source reference population from evidence
 - [ ] Unsupported claim warning UI
 - [ ] Executive summary auto-generation
@@ -321,6 +334,7 @@ actually supports; unsupported controls are omitted rather than simulated.
   (Phase 6). No reject endpoint exists; email/reminders remain backend.
 
 ### Feature 14 — Export Module
+- [x] Report charts embedded in DOCX/PDF exports (2026-08-17 — ECharts SSR→sharp PNG, `chart-png-renderer.ts`)
 - [ ] Enhanced formatting for donor-specific templates
 - [ ] Export progress tracking
 - [ ] Automated export on period close
@@ -332,7 +346,7 @@ actually supports; unsupported controls are omitted rather than simulated.
 ### Feature 15 — Dashboard
 - [ ] Customizable dashboard widgets
 - [ ] Comparative metrics (vs previous period)
-- [ ] Trend charts over time
+- [x] Report section charts (2026-08-17 — per-section BAR/LINE/PIE/AREA/RADAR/GAUGE in the report workspace; dashboard trend charts remain roadmap)
 - **Frontend:** authoritative Home (My Work first, deadline bands, linked counts),
   My Work queue, project portfolio (Phase 3). Widgets/charts remain roadmap.
 

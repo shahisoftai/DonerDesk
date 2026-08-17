@@ -127,9 +127,15 @@ honestly, never presented as production.
 ## Honest limits (tracked in `pending.md`)
 
 - Backend dependencies remain: project-assignment ABAC, global search, claim-level
-  provenance, real AI providers/jobs, email delivery, report-reject endpoint.
-- AI handlers (tagger/polisher/draft/checklist) and the export builder are
-  stub-backed; the UI labels them accordingly.
+  provenance, email delivery, report-reject endpoint.
+- **AI draft generation is now real (2026-08-17):** the report draft handler runs
+  the SuperAdmin-configured LLM (MiniMax verified live; DeepSeek adapter present)
+  with per-tier AI-credit quotas and a free, never-billed stub fallback. The
+  evidence tagger/polisher/checklist handlers remain heuristic-stub backed, and
+  the export builder embeds charts but remains otherwise deterministic
+  (see `imp/LLM-PROVIDER-WIRING.md`, `Features/19-Tiers-And-Payments.md`).
+- Report sections support user-selectable charts (2026-08-17); dashboard-level
+  trend widgets remain roadmap.
 - Phase 4 (ACT/EVD) routes exist but no dedicated Phase 4 frontend report was written.
 - Cross-project Reports/Compliance currently compose accessible per-project API
   responses; authoritative paginated organization read models remain pending for scale.

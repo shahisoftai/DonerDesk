@@ -73,18 +73,20 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 6 | Review, approval, export (REV, EXP) | ✅ Delivered | [`imp/PHASE6-FRONTEND-REPORT.md`](imp/PHASE6-FRONTEND-REPORT.md) |
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
-> **Deployment status (2026-08-17):** Latest release `20260817082655` (commit
-> `ec243c4`) is live on `donordesk.online`. All five services (API `4001`, web
+> **Deployment status (2026-08-17):** Latest release `20260817180500` (commit
+> `be8ef33`) is live on `donordesk.online`. All five services (API `4001`, web
 > `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`) are **enabled
-> and active**. Latest release ships **logframe import auto-parses into structured
-> records** — `parseLogframeText` (domain parser, tabular + line-based, fuzzy
-> headers, level inference) + `ImportLogframeHandler` (application, parent
-> resolution, code deduplication) + `POST /v1/logframe/import` + updated
-> `DriveFolderPanel` with created-items summary + "View logframe" link.
-> Migration `20260816140000_project_members` + RLS (29 tables) applied.
-> **Gated (not deployed):** the five plugin-referencing Kestra flows and plugin
-> JARs (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource first).
-> See `contabo-ops.md` §10/§14 and `imp/KESTRA-PLUGINS.md`.
+> and active**. Today's releases ship: **real LLM report drafting** via the
+> SuperAdmin-configured MiniMax provider with per-tier AI-credit quotas
+> (STARTER 5 / TEAM 100 / GROWTH 500 / ENTERPRISE unlimited; stub fallback is
+> free and never billed), **user-selectable report charts**
+> (BAR/LINE/PIE/AREA/RADAR/GAUGE per indicator section, exported identically to
+> DOCX/PDF via ECharts SSR→sharp PNG), the **SuperAdmin Billing & credits**
+> section (per-tenant allowance Set/Increase/Reduce + reset month usage), plus
+> credit/timeout/section-switching fixes. Migration `20260817183000_report_charts`
+> applied. **Gated (not deployed):** the five plugin-referencing Kestra flows and
+> plugin JARs (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource
+> first). See `contabo-ops.md` §14 and `imp/KESTRA-PLUGINS.md`.
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |
@@ -125,7 +127,10 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Topic | Locations |
 |-------|-----------|
 | Multi-tenancy / RLS | [`0001-multi-tenancy.md`](docs/architecture/decisions/0001-multi-tenancy.md), [`contabo-ops.md`](contabo-ops.md) §5.3, [`pending.md`](pending.md) |
-| LLM / AI | [`0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md), [`pending.md`](pending.md) (BullMQ, real LLM) |
+| LLM / AI | [`0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md), [`pending.md`](pending.md) (BullMQ) |
+| AI credits / quotas | [`Features/19-Tiers-And-Payments.md`](Features/19-Tiers-And-Payments.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md) §14–15 |
+| Report charts | [`Features/20-report-gen.md`](Features/20-report-gen.md) §15, [`Features/11-AI-Report-Draft-Generator.md`](Features/11-AI-Report-Draft-Generator.md) |
+| SuperAdmin billing & credits | [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) §5/§7, [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md) §15 |
 | API bind (0.0.0.0 issue) | [`contabo-ops.md`](contabo-ops.md) §4, §10, [`pending.md`](pending.md) |
 | OpenLiteSpeed / Origin header | [`Fixes.md`](Fixes.md) §2, [`contabo-ops.md`](contabo-ops.md) §7 |
 | SuperAdmin / platform control plane | [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) |

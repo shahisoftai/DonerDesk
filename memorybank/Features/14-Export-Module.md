@@ -96,19 +96,27 @@ type ExportType =
 | GET | `/api/projects/:id/export-history` | `getExportHistory` |
 
 ### Export Builder
-- Location: `packages/infrastructure/src/export/`
+- Location: `packages/infrastructure/src/exports/builder.ts` (Word/Pdf/Excel/Zip)
+  plus `packages/infrastructure/src/exports/chart-png-renderer.ts`.
 - WordBuilder, PdfBuilder, ExcelBuilder, ZipBuilder
 
 ## Status
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Word Export | Implemented | Basic implementation |
-| PDF Export | Implemented | Basic implementation |
+| Word Export | Implemented | Includes user-approved report charts as embedded PNGs (2026-08-17) |
+| PDF Export | Implemented | Includes user-approved report charts as embedded images (2026-08-17) |
 | Excel Indicators | Implemented | Table format |
 | Evidence Checklist | Implemented | List with metadata |
 | Evidence Pack ZIP | Implemented | Folder structure |
 | Export History | Implemented | Full audit trail |
+
+> **Report charts in exports (2026-08-17, deployed):** sections with a saved
+> `chartConfigJson` render their chart into DOCX (`docx.ImageRun`) and PDF
+> (`doc.image`) as PNGs produced by the shared `buildChartOption` → ECharts SSR →
+> sharp pipeline (`chart-png-renderer.ts`, content-hash cached). The exported
+> image is identical to what the user finalized in the workspace. See
+> `20-report-gen.md` §15.
 
 > **Scheduled export (2026-08-13, deployed):** `export.run` is a real scheduled
 > entry point — `POST /internal/export/run` → `RunExportHandler` →

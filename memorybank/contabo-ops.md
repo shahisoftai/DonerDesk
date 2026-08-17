@@ -476,6 +476,65 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (SuperAdmin Billing & credits — release `20260817180500` API + web, superadmin rebuilt):**
+  Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
+  donordesk-web`), then rebuilt and redeployed the SuperAdmin standalone app
+  (port 3012; `pnpm --filter @donordesk/superadmin deploy` + `.next` + `next start`
+  via the existing systemd unit). Added a **Billing & credits** portal section:
+  `GET /superadmin/billing` lists every tenant with its effective plan (resolved
+  with the same MANUAL > ENTERPRISE_CONTRACT > GRANDFATHERED > CREEM_SUBSCRIPTION >
+  TRIAL > DEFAULT precedence the app uses), AI-credit allowance, current-month
+  used/reserved, override flag, and active subscription; `POST
+  /superadmin/tenants/:id/credits {mode: SET|INCREASE|DECREASE, value}` writes an
+  append-only MANUAL `EntitlementGrant` with a full PlanLimits override (only the
+  AI-credit bucket changes); `POST /superadmin/tenants/:id/credits/reset` zeroes
+  the current UTC-month `AI_DRAFT_CREDITS` UsageCounter. All mutations are
+  audit-trailed. **Timezone gotcha (fixed):** MANUAL grants must be written via
+  the typed Prisma client, not raw SQL with JS Date params — the host DB session
+  timezone (Europe/Berlin) would store CEST wall time and the effective-date
+  filter would read a 2h future-dated grant as inactive. Verified live (direct
+  control-plane calls): INCREASE +7 resolves to MANUAL/override immediately,
+  reset zeroes the counter; test grants cleaned up. API routes return 401 when
+  unauthenticated (registered). Tests: infra 74/75, app 64/64, domain 74/74.
+  Rollback: previous release + `systemctl restart donordesk-api donordesk-web
+  donordesk-superadmin`.
+
+- **2026-08-17 (report charts + timeout + credit fixes — releases `20260817164700`,
+  `20260817171900`, `20260817180500`):** Deployed API + web via
+  `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api donordesk-web`).
+  1. **User-selectable report charts (release `20260817164700`):** `ReportSection.chartConfigJson`
+     (migration `20260817183000_report_charts`, applied as `donordesk_migrator`),
+     `ChartConfig` domain model + zod contract, shared pure `buildChartOption`
+     in domain, interactive `ReportChartPanel` (lazy-loaded ECharts 6.1.0, tab-bar
+     type picker BAR/LINE/PIE/AREA/RADAR/GAUGE + data-binding selector),
+     `PATCH /v1/report-sections/:id/chart` (optimistic concurrency), and export
+     embedding via ECharts SSR → SVG → sharp PNG (`chart-png-renderer.ts`,
+     content-hash cached) into DOCX (`ImageRun`) + PDF (`doc.image`). Client-bundle
+     hygiene: web imports `@donordesk/domain/contexts/reporting/chart-config.js`
+     subpath (domain index pulls `node:crypto` via `domain-event.ts` and would
+     break the webpack client build).
+  2. **Timeout fix (release `20260817153600`):** web gateway default 15s →
+     180s for generate-draft; MiniMax adapter default 60s → 120s; OLS
+     donordesk vhost `initTimeout` 60 → 180 (web + api ext processors),
+     validated and reloaded on the host.
+  3. **Credits burned on stub fallback (release `20260817171900`):** MiniMax
+     timed out on the 8192-token prompt and the generator silently fell back to
+     stub content while the handler recorded `status=success` + billable → five
+     consumed credits for stub output, locking the tenant out. `generateDraft`
+     now returns `{ sections, usedFallback }`; stub-fallback drafts release the
+     reserved credit, record an error run (never billed), and correct
+     `generatedByAi=false`. `maxTokens` 8192 → 4096 (verified MiniMax completes
+     the full prompt in ~38s); `ReportPlan` version allocation moved to
+     `createNextVersion` (P2002 retry loop). **Production data corrected:** the 5
+     mislabeled runs re-marked `error`/`billableUnits=0` and the
+     `AI_DRAFT_CREDITS` counter reset to 0.
+  4. **SectionEditor key fix (release `20260817155400`):** clicking a different
+     section kept the first section's content because `SectionEditor` was not
+     remounted (`key={selected.id}` added) — the stale text would even have been
+     saved to the wrong section.
+  Verified live each release: api/web 200, deployed bundles contain the new
+  handlers/routes/chunks, `/ready` OK. Rollback: previous release + restart.
+
 - **2026-08-17 (logframe import auto-parses into structured records — release `20260817082655` API + web):**
   Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
   donordesk-web`). The further step after Drive import: logframe files (from

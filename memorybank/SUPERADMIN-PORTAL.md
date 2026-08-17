@@ -147,6 +147,7 @@ The current application presents these navigation areas:
 | Overview | Counts for tenants, users, configurations, recent backups, and connector runs | Available |
 | Tenants | Global tenant inventory with user/project counts | Create, edit and guarded delete UI/API available |
 | Users | Cross-tenant user inventory | Create, edit, suspend, role change, password reset and delete UI/API available |
+| **Billing & credits** | Per-tenant plan, AI-credit allowance, current-month usage, subscription | **Available (2026-08-17):** set/increase/reduce the monthly AI-draft allowance (writes a MANUAL `EntitlementGrant` override) and reset the current UTC-month usage counter |
 | Providers | Encrypted global or tenant-scoped provider management | Provider-specific create/edit/rotate, enable/disable, test and delete UI/API available |
 | Audit | Most recent 250 platform audit events | Available |
 | System | API/database plus Kestra and worker health | Available |
@@ -248,6 +249,9 @@ be verified independently before declaring an entered provider operational.
 | `GET` | `/superadmin/audit` | Recent platform audit events |
 | `GET` | `/superadmin/system` | API, database, workers, and Kestra health |
 | `GET` | `/superadmin/kestra` | Live Kestra/worker health + free plugin and flow catalog (declarative) |
+| `GET` | `/superadmin/billing` | Per-tenant effective plan, AI-credit allowance, current-month used/reserved, override flag, subscription (2026-08-17) |
+| `POST` | `/superadmin/tenants/:id/credits` | Set / increase / reduce `monthlyAiDraftCredits` via a MANUAL `EntitlementGrant` override — `{mode: "SET"|"INCREASE"|"DECREASE", value: int, reason?}` (2026-08-17) |
+| `POST` | `/superadmin/tenants/:id/credits/reset` | Zero the current UTC-month `AI_DRAFT_CREDITS` usage counter (2026-08-17) |
 
 All authenticated endpoints require a token with role `SUPER_ADMIN`, purpose
 `session`, correct issuer/audience, and a valid signature. Direct unauthenticated

@@ -1,6 +1,31 @@
 # Fixes
 
-Record of fixes applied to DonorDesk. Last updated: 2026-08-13.
+Record of fixes applied to DonorDesk. Last updated: 2026-08-17.
+
+## AI credit burn on stub fallback + timeout + section-switch (release `20260817171900`)
+
+**Status:** Deployed and verified on Contabo production 2026-08-17.
+
+1. **Credits consumed for stub output.** MiniMax timed out on the oversized
+   8192-token report prompt; `LlmReportDraftGenerator` silently returned stub
+   sections while `GenerateReportDraftHandler` recorded `status=success` +
+   `billableUnits=1` + `modelId=minimax`. Five timeouts = five consumed credits
+   → STARTER quota locked with "AI draft credits exhausted" while drafts held
+   only stub text. Fix: `generateDraft` now returns `{ sections, usedFallback }`;
+   a stub-fallback draft releases the reserved credit, records an error run
+   (never billed), and marks the draft `generatedByAi=false`. `maxTokens` reduced
+   to 4096 (verified MiniMax completes the full prompt in ~38s). Mislabeled prod
+   runs re-marked `error`/`billableUnits=0`; the `AI_DRAFT_CREDITS` counter was
+   reset to 0. See `imp/LLM-PROVIDER-WIRING.md` §14.
+2. **P2002 on concurrent regeneration.** ReportPlan version allocation moved to
+   `createNextVersion` (P2002 retry loop) so two regenerations cannot collide on
+   the same `(tenantId, reportingPeriodId, version)`.
+3. **Timeout surfaces.** Web gateway default 15s → 180s for generate-draft;
+   MiniMax adapter 60s → 120s; OLS vhost `initTimeout` 60 → 180 (validated and
+   reloaded). See `contabo-ops.md` §14.
+4. **Section switch showed stale content.** `SectionEditor` was not remounted on
+   section change (`key={selected.id}` added) — clicking a section kept the first
+   section's text and could have saved it to the wrong section.
 
 ## Deploy latest code + backend hardening (release `20260813064828`)
 
