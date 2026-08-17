@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-15 (domain swap to `donordesk.online`, release `20260815092056` web-only; OLS vhosts + LE certs + env swap)
+**Last deployment:** 2026-08-17 (release `20260817174622`, commit `8a849ec` — readiness percentage fixes, consolidated Settings nav tabs, Home deadline-overview placement; API + web, no migrations)
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 

@@ -4,7 +4,7 @@ Record of fixes applied to DonorDesk. Last updated: 2026-08-17.
 
 ## Readiness percentages wrong (evidence/approval) + Home/dashboard readiness snapshot + consolidated Settings nav (2026-08-17)
 
-**Status:** Fixed; `pnpm -r typecheck` and `pnpm -r build` green, 112/113 web unit tests pass (the one failure, `upload-queue.test.mts`, pre-exists on the base branch). Not yet deployed.
+**Status:** Deployed and verified on Contabo production 2026-08-17 (release `20260817174622`, commit `8a849ec`). Preflight clean, incremental deploy (API + web), `verify.sh` green (API `/health` + `/ready` 200, web 200, workers 200, Kestra configs 200), public HTTPS checks green (`/`, `/login` 200; `/dashboard`, `/settings` 200 behind auth).
 
 ### 1. Reporting-period readiness list returned a stale stored score (always 0)
 
