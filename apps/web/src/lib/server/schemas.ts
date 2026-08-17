@@ -152,6 +152,8 @@ export const TemplateSectionSchema = z.object({
   inputType: z.string(),
   required: z.boolean().default(true),
   evidenceNeeded: z.string().default(""),
+  minWords: z.number().int().optional(),
+  maxWords: z.number().int().optional(),
 });
 
 export const TemplateListItemSchema = z.object({

@@ -476,6 +476,32 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (template section extraction + review UI — release `20260817050512`):**
+  Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
+  donordesk-web`). Fixed the template "review sections" screen: the API release
+  `20260817041505` still ran the old section-extraction heuristic (Roman-numeral
+  prefix matched table cells like "Item"/"Indicator", numbered headings with a
+  trailing dot were skipped, and guidance detail was dropped), so uploaded
+  templates surfaced garbage sections.
+  1. **Rich section extraction** (`StubTemplateExtractionService`): parses each
+     heading's guidance block into description, `minWords`/`maxWords`,
+     `evidenceNeeded`, and a better `inputType` (explicit "provide a
+     narrative/table/indicator table/..." wins; title heuristics otherwise);
+     optional markers and table-cell lines are handled; long guidance lines are
+     kept. Demo templates regenerated with realistic per-section instructions
+     (evidence, data tables with baseline/target/actuals, disaggregation,
+     charts/photos). 5 new extraction tests (infra suite 59/59 + 1 skipped DB).
+  2. **Review UI** (`SectionEditor`): each section now shows type/required/word
+     limit badges, editable min/max word inputs, the parsed instructions, a
+     "What this section requires" summary (word limit, data table,
+     disaggregation, charts/photos, evidence), and evidence field. Template
+     response schema includes `minWords`/`maxWords`.
+  3. Verified live: loopback `/health`+`/ready` OK, web 200, deployed API bundle
+     contains the new extraction (`minWords`), deployed web chunk contains the
+     new review UI. Rollback: `RELEASE_ID=20260817044418 scripts/rollback.sh` or
+     `ln -sfn /opt/donordesk/releases/20260817044418 /opt/donordesk/current &&
+     systemctl restart donordesk-api donordesk-web`.
+
 - **2026-08-17 (parse-file gateway fix — release `20260817044418` web-only):**
   Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`).
   Root cause: the three template/logframe/indicator import pages posted uploaded

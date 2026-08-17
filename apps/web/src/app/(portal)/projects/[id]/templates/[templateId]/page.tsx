@@ -28,6 +28,8 @@ export default async function TemplateEditor({ params }: { params: Promise<{ id:
           inputType: s.inputType,
           required: s.required ?? true,
           evidenceNeeded: s.evidenceNeeded ?? "",
+          minWords: s.minWords,
+          maxWords: s.maxWords,
         }))}
       />
     </div>

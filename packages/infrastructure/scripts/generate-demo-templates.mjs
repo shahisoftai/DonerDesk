@@ -135,7 +135,24 @@ function guidanceFor(section) {
           .map((n, i) => (i === 0 ? `min ${n} words` : `max ${n} words`))
           .join(", ")})`
       : "";
-  return `Instructions: provide a ${type}${limit}. ${section.description}`;
+  let text = `Instructions: provide a ${type}${limit}. ${section.description}`;
+  if (!section.required) {
+    text += " This section is optional.";
+  }
+  if (section.evidenceNeeded) {
+    text += ` Evidence needed: ${section.evidenceNeeded}.`;
+  }
+  if (section.inputType === "INDICATOR_TABLE") {
+    text += " Include a data table with baseline, target, and actuals; disaggregate results by sex, age, and disability where applicable.";
+  } else if (section.inputType === "TABLE") {
+    text += " Provide the data in a table and disaggregate by sex and age where applicable.";
+  } else if (section.inputType === "COMPLIANCE") {
+    text += " Report any safeguarding or protection incidents and confirm PSEA measures.";
+  }
+  if (/success|communication|visibility|achievement/.test(section.title.toLowerCase())) {
+    text += " Include charts and captioned photographs as required.";
+  }
+  return text;
 }
 
 function placeholderFor(section) {
@@ -146,7 +163,7 @@ function placeholderFor(section) {
     return "Table: Item | Detail | Quantity | Evidence";
   }
   if (section.inputType === "ANNEX") {
-    return "List the attached annexes below.";
+    return "[List the attached annexes below.]";
   }
   return "[Write section content here. Claims must be supported by verified evidence.]";
 }
