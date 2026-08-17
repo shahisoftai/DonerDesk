@@ -381,6 +381,20 @@ export class PrismaLlmUsageRepository implements ILlmUsageRepository {
     return ok(count);
   }
 
+  async countAiReportDrafts(tenantId: string, monthStart: Date): Promise<Result<number, DomainError>> {
+    const monthEnd = new Date(monthStart.getTime() + 31 * 24 * 60 * 60 * 1000);
+    const count = await this.prisma.llmRun.count({
+      where: {
+        tenantId,
+        operationType: "REPORT_DRAFT",
+        status: "success",
+        modelId: { not: "stub" },
+        createdAt: { gte: monthStart, lt: monthEnd },
+      },
+    });
+    return ok(count);
+  }
+
   async recordRun(input: {
     id: string;
     tenantId: string;
@@ -400,6 +414,20 @@ export class PrismaLlmUsageRepository implements ILlmUsageRepository {
     requestId?: string;
   }): Promise<Result<{ id: string }, DomainError>> {
     try {
+      // LlmRun.modelId is a foreign key to LlmModel. Ensure the model row
+      // exists so ledger inserts actually record (previously these silently
+      // failed the FK check, leaving the AI usage ledger empty).
+      await this.prisma.llmModel.upsert({
+        where: { id: input.modelId },
+        create: {
+          id: input.modelId,
+          name: input.modelId,
+          provider: input.modelId,
+          version: input.modelVersion,
+          capabilities: JSON.stringify(["chat"]),
+        },
+        update: {},
+      });
       await this.prisma.llmRun.create({
         data: {
           id: input.id,

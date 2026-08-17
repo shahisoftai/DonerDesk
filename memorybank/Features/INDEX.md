@@ -9,7 +9,9 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 >
 > **2026-08-16:** Feature 06 indicator data entry is fully implemented — per-reporting-period
 > spreadsheet grid, bulk upsert, unique (indicator, period), per-row verify, and Google
-> Sheets import. See `06-Logframe-And-Indicator-Manager.md` and `pending.md`.
+> Sheets import. **2026-08-17:** logframe Excel/CSV/TXT import now auto-parses into
+> structured `LogframeItem` records (parent resolution + code dedup). See
+> `06-Logframe-And-Indicator-Manager.md` and `pending.md`.
 
 ## Features
 

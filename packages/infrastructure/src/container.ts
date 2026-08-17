@@ -98,7 +98,7 @@ import {
   ProcessBillingWebhookHandler,
   ExpireLocalTrialsHandler,
 } from "@donordesk/application";
-import type { IJobQueue } from "@donordesk/application";
+import type { IJobQueue, IReportDraftGenerator } from "@donordesk/application";
 
 import {
   PrismaOrganizationRepository,
@@ -163,6 +163,9 @@ import { StubTemplateExtractionService } from "./llm/template-extraction.js";
 import { StubEvidenceTagger } from "./llm/evidence-tagger.js";
 import { StubActivityPolisher } from "./llm/activity-polisher.js";
 import { StubReportDraftGenerator } from "./llm/report-draft-generator.js";
+import { createLLMProvider } from "./llm/factory.js";
+import { PlatformLlmConfigResolver } from "./llm/llm-config-resolver.js";
+import { LlmReportDraftGenerator } from "./llm/llm-report-draft-generator.js";
 import { DeterministicClaimVerifier } from "./llm/claim-verifier.js";
 import { EvidencePackageBuilder } from "./ai/evidence-package-builder.js";
 import { StubChecklistDetector } from "./llm/checklist-detector.js";
@@ -193,7 +196,6 @@ export interface Container {
   evidenceTagger: StubEvidenceTagger;
   activityPolisher: StubActivityPolisher;
   templateExtraction: StubTemplateExtractionService;
-  reportDraftGenerator: StubReportDraftGenerator;
   checklistDetector: StubChecklistDetector;
   exportBuilder: DefaultExportBuilder;
   // Repositories
@@ -476,7 +478,34 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const evidenceTagger = new StubEvidenceTagger();
   const activityPolisher = new StubActivityPolisher();
   const templateExtraction = new StubTemplateExtractionService();
-  const reportDraftGenerator = new StubReportDraftGenerator();
+  const masterKey = process.env.PLATFORM_MASTER_KEY
+    ? Buffer.from(process.env.PLATFORM_MASTER_KEY, "base64")
+    : Buffer.alloc(32);
+  const llmConfigResolver = new PlatformLlmConfigResolver(prisma, masterKey);
+
+  const generatorCache = new Map<string, IReportDraftGenerator>();
+  const generatorPromises = new Map<string, Promise<IReportDraftGenerator>>();
+  const getReportDraftGenerator = (
+    tenantId?: string,
+  ): Promise<IReportDraftGenerator> => {
+    const key = tenantId ?? "default";
+    const cached = generatorCache.get(key);
+    if (cached) return Promise.resolve(cached);
+    const existing = generatorPromises.get(key);
+    if (existing) return existing;
+    const promise = (async () => {
+      const resolved = await llmConfigResolver.resolve({ tenantId });
+      if (resolved.ok && resolved.value) {
+        const provider = createLLMProvider(resolved.value);
+        generatorCache.set(key, new LlmReportDraftGenerator(provider));
+      } else {
+        generatorCache.set(key, new StubReportDraftGenerator());
+      }
+      return generatorCache.get(key)!;
+    })();
+    generatorPromises.set(key, promise);
+    return promise;
+  };
   const checklistDetector = new StubChecklistDetector();
   const exportBuilder = new DefaultExportBuilder();
 
@@ -575,11 +604,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     generateReportDraft: new GenerateReportDraftHandler(
       ids, periods, drafts, sections, projects, organizations, templates, indicatorUpdates, activities,
       reportPlanner, indicatorAnalytics, evidencePackageBuilder, claimVerifier, generationRuns, reportPlans, reportClaims,
-      reportDraftGenerator, audits, entitlements, usageCounters, llmUsage,
+      getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage,
     ),
     getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportPlans),
     updateReportSection: new UpdateReportSectionHandler(sections, audits),
-    rewriteReportSection: new RewriteReportSectionHandler(sections, reportDraftGenerator, audits),
+    rewriteReportSection: new RewriteReportSectionHandler(sections, getReportDraftGenerator, audits),
     approveReportSection: new ApproveReportSectionHandler(sections, reportClaims, audits),
     submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),
     approveReport: new ApproveReportHandler(drafts, periods, checklist, reportClaims, audits),
@@ -613,7 +642,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
 
   return {
     prisma, auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
-    evidenceTagger, activityPolisher, templateExtraction, reportDraftGenerator, checklistDetector, exportBuilder,
+    evidenceTagger, activityPolisher, templateExtraction, checklistDetector, exportBuilder,
     organizations, users, invitations,     projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
     periods, drafts, sections, reportPlans, reportClaims, generationRuns, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, billingProvider,

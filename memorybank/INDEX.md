@@ -1,6 +1,6 @@
 # DonorDesk MemoryBank Index
 
-**Last updated:** 2026-08-16
+**Last updated:** 2026-08-17
 
 Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to search within files.
 
@@ -73,16 +73,17 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 6 | Review, approval, export (REV, EXP) | ✅ Delivered | [`imp/PHASE6-FRONTEND-REPORT.md`](imp/PHASE6-FRONTEND-REPORT.md) |
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
-> **Deployment status (2026-08-16):** Latest release `20260816094257` (commit
-> `14fd2eb`) is live on `donordesk.online`. All five services (API `4001`, web
+> **Deployment status (2026-08-17):** Latest release `20260817082655` (commit
+> `ec243c4`) is live on `donordesk.online`. All five services (API `4001`, web
 > `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`) are **enabled
-> and active**. Latest release ships **per-project Team + Settings**, **compliance
-> auto-generation** (`reporting.period.created` → `checklist.generate`), **bulk
-> checklist operations**, **report-section AI rewrite** (rewrite/shorten +
-> donor/internal/general audience), and **improved template extraction**; migration
-> `20260816140000_project_members` + RLS (29 tables) applied. **Gated (not
-> deployed):** the five plugin-referencing Kestra flows and plugin JARs
-> (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource first).
+> and active**. Latest release ships **logframe import auto-parses into structured
+> records** — `parseLogframeText` (domain parser, tabular + line-based, fuzzy
+> headers, level inference) + `ImportLogframeHandler` (application, parent
+> resolution, code deduplication) + `POST /v1/logframe/import` + updated
+> `DriveFolderPanel` with created-items summary + "View logframe" link.
+> Migration `20260816140000_project_members` + RLS (29 tables) applied.
+> **Gated (not deployed):** the five plugin-referencing Kestra flows and plugin
+> JARs (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource first).
 > See `contabo-ops.md` §10/§14 and `imp/KESTRA-PLUGINS.md`.
 
 ### 🛠️ Operations & Deployment

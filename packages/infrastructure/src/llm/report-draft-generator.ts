@@ -9,6 +9,8 @@ import type { SourceReference, VerifiedFinding } from "@donordesk/domain";
  * contract.
  */
 export class StubReportDraftGenerator implements IReportDraftGenerator {
+  readonly model = { modelId: "stub", modelVersion: "stub-v1", promptVersion: 1 } as const;
+
   async generateDraft(input: Parameters<IReportDraftGenerator["generateDraft"]>[0]): ReturnType<IReportDraftGenerator["generateDraft"]> {
     const sections: GeneratedSection[] = [];
     const planSections = input.reportPlan.sections;

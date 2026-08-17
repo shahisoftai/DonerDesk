@@ -72,7 +72,7 @@ export class GenerateReportDraftHandler {
     private readonly generationRuns: IGenerationRunRepository,
     private readonly reportPlans: IReportPlanRepository,
     private readonly reportClaims: IReportClaimRepository,
-    private readonly generator: IReportDraftGenerator,
+    private readonly getGenerator: (tenantId?: string) => Promise<IReportDraftGenerator>,
     private readonly audit: IAuditLogger,
     private readonly entitlements: EntitlementService,
     private readonly usage: IUsageCounterRepository,
@@ -93,6 +93,12 @@ export class GenerateReportDraftHandler {
     if (!organizationResult.ok) return organizationResult;
     if (!organizationResult.value) return { ok: false, error: DomainError.notFound("Organization", ctx.tenant.tenantId.toString()) };
     const aiEnabled = organizationResult.value.aiEnabled;
+
+    const generator = await this.getGenerator(ctx.tenant.tenantId.toString());
+    // Only a real (non-stub) provider counts as AI for credit metering. Stub
+    // heuristic generation and manual reports are never metered.
+    const aiProviderAvailable = generator.model.modelId !== "stub";
+    const chargeAiCredits = aiEnabled && aiProviderAvailable;
 
     const template = period.donorTemplateId
       ? await this.templates.findById(period.donorTemplateId, ctx.tenant.tenantId)
@@ -135,26 +141,53 @@ export class GenerateReportDraftHandler {
     if (!evidencePackagesResult.ok) return evidencePackagesResult;
     const evidencePackages = evidencePackagesResult.value;
 
-    // AI credit enforcement: reserve one draft credit atomically before
-    // generation. Failed generations release the credit; a successful
-    // persisted draft consumes it. Manual reports never touch credits.
+    // AI credit enforcement: one customer credit = one successfully persisted
+    // real (non-stub) AI draft. Stub heuristic generation and manual reports
+    // are never metered. The counter is reconciled against the AI usage ledger
+    // before enforcement so a previously polluted counter (e.g. from the era
+    // when stub generation was metered) cannot lock tenants out. A failed
+    // generation releases the reserved credit; a successful persisted draft
+    // consumes it.
     let creditReserved = false;
-    if (aiEnabled) {
+    if (chargeAiCredits) {
       const entitlementResult = await this.entitlements.resolve({ tenantId: ctx.tenant.tenantId.toString() });
       if (!entitlementResult.ok) return entitlementResult;
       const limit = entitlementResult.value.limits.monthlyAiDraftCredits;
       if (limit !== null) {
         const now = new Date();
-        const counter = await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(now), 1n);
+        const monthStart = monthStartUtc(now);
+        // Ledger is the source of truth: real AI drafts persisted this month.
+        const aiRunsResult = await this.llmRuns.countAiReportDrafts(ctx.tenant.tenantId.toString(), monthStart);
+        if (!aiRunsResult.ok) return aiRunsResult;
+        const realAiUsed = aiRunsResult.value;
+        // Self-heal a polluted counter so it never exceeds real AI usage.
+        const counter = await this.usage.get(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStart);
         if (!counter.ok) return counter;
-        if (counter.value.used > limit) {
-          await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(now), -1n);
+        if (Number(counter.value.used) > realAiUsed) {
+          const healed = await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStart, BigInt(realAiUsed) - counter.value.used);
+          if (!healed.ok) return healed;
+        }
+        if (realAiUsed >= limit) {
           return {
             ok: false,
             error: DomainError.aiCreditsExhausted("AI draft credits exhausted for the current billing month.", {
               resource: "AI_CREDITS",
               limit: String(limit),
-              usage: String(counter.value.used),
+              usage: String(realAiUsed),
+              upgradePath: "/settings/billing",
+            }),
+          };
+        }
+        const reserved = await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStart, 1n);
+        if (!reserved.ok) return reserved;
+        if (reserved.value.used > limit) {
+          await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStart, -1n);
+          return {
+            ok: false,
+            error: DomainError.aiCreditsExhausted("AI draft credits exhausted for the current billing month.", {
+              resource: "AI_CREDITS",
+              limit: String(limit),
+              usage: String(reserved.value.used),
               upgradePath: "/settings/billing",
             }),
           };
@@ -170,7 +203,7 @@ export class GenerateReportDraftHandler {
       projectId: period.projectId,
       reportingPeriodId,
       title: `${project.title} — ${period.reportType.toLowerCase()} report`,
-      generatedByAi: aiEnabled,
+      generatedByAi: chargeAiCredits,
       createdById: ctx.tenant.userId,
     });
     const savedDraft = await this.drafts.create(draft);
@@ -193,9 +226,9 @@ export class GenerateReportDraftHandler {
       indicatorUpdateIds: updatesResult.value.map((u) => u.id),
       evidenceIds,
       verifiedFindings,
-      modelId: aiEnabled ? "stub" : "none",
-      promptVersion: 1,
-      generationParams: { generatedByAi: String(aiEnabled), reportType: period.reportType },
+      modelId: chargeAiCredits ? generator.model.modelId : "none",
+      promptVersion: chargeAiCredits ? generator.model.promptVersion : 1,
+      generationParams: { generatedByAi: String(chargeAiCredits), reportType: period.reportType },
     });
     const savedRun = await this.generationRuns.create(run);
     if (!savedRun.ok) {
@@ -208,7 +241,7 @@ export class GenerateReportDraftHandler {
     let generationFailed = false;
     try {
       generated = aiEnabled
-        ? await this.generator.generateDraft({
+        ? await generator.generateDraft({
             reportPlan: plan,
             verifiedFindings,
             evidencePackages,
@@ -221,7 +254,7 @@ export class GenerateReportDraftHandler {
       if (creditReserved) {
         await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
       }
-      await this.recordLlmRun(ctx, reportingPeriodId, aiEnabled, "error", 0, 0, 0, 0, Date.now() - startedAt);
+      await this.recordLlmRun(ctx, reportingPeriodId, chargeAiCredits, "error", 0, 0, 0, 0, Date.now() - startedAt, generator.model.modelId, generator.model.modelVersion, generator.model.promptVersion);
       return { ok: false, error: DomainError.invariant("Report draft generation failed") };
     }
 
@@ -310,8 +343,8 @@ export class GenerateReportDraftHandler {
       return savedPlan;
     }
 
-    if (aiEnabled && !generationFailed) {
-      await this.recordLlmRun(ctx, reportingPeriodId, true, "success", 0, 0, 0, 0, Date.now() - startedAt);
+    if (chargeAiCredits && !generationFailed) {
+      await this.recordLlmRun(ctx, reportingPeriodId, true, "success", 0, 0, 0, 0, Date.now() - startedAt, generator.model.modelId, generator.model.modelVersion, generator.model.promptVersion);
     }
     creditReserved = false;
 
@@ -326,7 +359,7 @@ export class GenerateReportDraftHandler {
       entityType: "report_draft",
       entityId: draftId,
       projectId: period.projectId,
-      newValue: `sections=${sectionIds.length};claims=${claimCount};generatedByAi=${aiEnabled};run=${run.id}`,
+      newValue: `sections=${sectionIds.length};claims=${claimCount};generatedByAi=${chargeAiCredits};run=${run.id}`,
     });
 
     return { ok: true, value: { draftId, sectionIds, claimCount, planId: plan.id, generationRunId: run.id } };
@@ -342,6 +375,9 @@ export class GenerateReportDraftHandler {
     totalTokens: number,
     costUsd: number,
     latencyMs: number,
+    modelId: string,
+    modelVersion: string,
+    promptVersion: number,
   ): Promise<void> {
     if (!generatedByAi) return;
     await this.llmRuns.recordRun({
@@ -349,7 +385,7 @@ export class GenerateReportDraftHandler {
       tenantId: ctx.tenant.tenantId.toString(),
       operationType: "REPORT_DRAFT",
       resourceId: reportingPeriodId,
-      modelId: "stub",
+      modelId,
       promptId: "report-drafter",
       inputTokens,
       outputTokens,
@@ -357,8 +393,8 @@ export class GenerateReportDraftHandler {
       costUsd,
       latencyMs,
       status,
-      promptVersion: 1,
-      modelVersion: "stub",
+      promptVersion,
+      modelVersion,
       billableUnits: status === "success" ? 1 : 0,
       requestId: `${reportingPeriodId}:${Date.now()}`,
     });

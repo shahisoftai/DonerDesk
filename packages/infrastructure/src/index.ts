@@ -37,5 +37,7 @@ export * from "./webhooks/index.js";
 export * from "./integrations/index.js";
 export * from "./jobs/index.js";
 export { OutboxEventBus, DEFAULT_EVENT_TO_JOB, type EventToJobMapping } from "./events/outbox-event-bus.js";
-export { createLLMProvider, withPiiFirewall } from "./llm/factory.js";
+export { createLLMProvider, withPiiFirewall, registerLLMProvider, type LLMProviderConfig, type LLMProviderName } from "./llm/factory.js";
 export { PlatformControlPlane, PLATFORM_CATEGORIES, PLATFORM_PROVIDERS } from "./platform/control-plane.js";
+export { PlatformLlmConfigResolver } from "./llm/llm-config-resolver.js";
+export { SecretCipher } from "./security/secret-cipher.js";

@@ -1,6 +1,6 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-15T16:20+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-17T13:35+05:00.
 
 > **Deployment (2026-08-15):** Feature 18 — Project Creation Wizard — is
 > **deployed to Contabo production as release `20260815054218`** (API + web +
@@ -43,18 +43,20 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-15T16:20+
 > `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED`). Existing accounts only; auto-provisioning
 > (sign-up with Google) is a follow-up. See `gdrive.md` §9.
 
-## Frontend portal (implemented — latest web release `20260812224500`)
+## Frontend portal (implemented — latest web release `20260817082655`)
 
 The portal frontend is implemented across Phases 0–7 of
 `memorybank/imp/frontend-imp-plan.md` (reports in `memorybank/imp/PHASE*-FRONTEND-REPORT.md`
-and `PHASE0-REPORT.md` / `PHASE1-REPORT.md`) and deployed to `DonerDesk.online`.
+and `PHASE0-REPORT.md` / `PHASE1-REPORT.md`) and deployed to `DonorDesk.online`.
 Items below that are **backend/API dependencies** are the real remaining work; the
 UI deliberately does not claim stub/unsupported behavior as production.
 
 Done (portal; includes the 2026-08-12 post-implementation integration audit in
 `imp/FRONTEND-UX-INTEGRATION-AUDIT.md`; latest dashboard parity release is deployed).
 Plus 2026-08-13 wire-up: DOCX/PDF parsing for templates, Excel/CSV import for
-logframe items and indicators):
+indicators. **2026-08-17:** logframe Excel/CSV/TXT import now **auto-parses into
+structured `LogframeItem` records** with parent resolution + code deduplication
+(vs. the prior text-preview UX):
 - Server-only gateway, httpOnly session, typed errors, capability gating, no silent zero fallbacks (Phase 0).
 - Design system + authenticated shell, route groups without URL changes (Phase 1).
 - Auth, onboarding, guided project creation, templates, logframe/indicators (Phase 2).
@@ -225,10 +227,16 @@ actually supports; unsupported controls are omitted rather than simulated.
   the textarea for review. Parser wired via `apps/api/src/routes/templates.ts`.
 
 ### Feature 06 — Logframe and Indicator Manager
-- [x] Excel/CSV logframe file import — **WIRED**. `POST /v1/logframe/parse-file` uses
-  `TolerantDocumentParser`. Frontend has "Import logframe" button at
-  `/projects/[id]/logframe/import` that accepts XLSX/CSV/TXT files and shows extracted
-  text for review.
+- [x] Excel/CSV logframe file import — **STRUCTURED**. `POST /v1/logframe/import`
+  (`ImportLogframeTextSchema`) runs `ImportLogframeHandler` which calls
+  `parseLogframeText` (domain parser: tabular CSV/TSV with fuzzy Level/Code/Title/
+  Description header detection + line-based text with GOAL/OUTCOME/OUTPUT/ACTIVITY
+  keywords, dotted/lettered codes, indentation, em-dash split) then creates actual
+  `LogframeItem` records with parent resolution by level rank and code deduplication.
+  Frontend: `importLogframeTextAction` + "Create logframe items" button at
+  `/projects/[id]/logframe/import` → created/skipped count, warnings, item list,
+  "View logframe" link. Drive import (`POST /v1/projects/:id/drive/import-logframe`)
+  routes through the same handler.
 - [ ] AI logframe structuring from pasted text — **NOT in UI**. Add logframe item
   form is manual entry only; no AI structuring option.
 - [x] Disaggregation tracking (Male/Female/Children/Disability) — **IMPLEMENTED in UI**.

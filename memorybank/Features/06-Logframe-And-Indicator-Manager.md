@@ -122,7 +122,7 @@ M&E Officer can update:
 |-----------|--------|-------|
 | Logframe Hierarchy | Implemented | Goal/Outcome/Output/Activity |
 | Manual Creation | Implemented | Full CRUD |
-| File Upload | Partial | Excel/CSV import stub |
+| File Upload | Implemented | Structured logframe record creation from XLSX/CSV/TXT |
 | AI Logframe Structuring | Stub | Pending LLM provider |
 | Indicator CRUD | Implemented | Full lifecycle |
 | Indicator Updates | Implemented | Period-based tracking |
@@ -150,7 +150,9 @@ M&E Officer can update:
 
 ## Pending Enhancements
 
-- [ ] Excel/CSV logframe file import (structured)
+- [x] Excel/CSV logframe file import (structured) — **IMPLEMENTED 2026-08-17**.
+  `parseLogframeText` domain parser + `ImportLogframeHandler` + `POST /v1/logframe/import`;
+  Drive `import-logframe` routes through the same handler.
 - [ ] AI logframe structuring from pasted text
 - [ ] Disaggregation tracking (Male/Female/Children/Disability)
 - [ ] Indicator baseline/target visualization

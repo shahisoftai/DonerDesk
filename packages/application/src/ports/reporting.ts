@@ -98,7 +98,19 @@ export interface GeneratedSection {
   sourceReferences: SourceReference[];
 }
 
+export interface LlmGeneratorModelInfo {
+  modelId: string;
+  modelVersion: string;
+  promptVersion: number;
+}
+
 export interface IReportDraftGenerator {
+  /**
+   * Identifies the model powering this generator. Used for accurate run
+   * snapshots and billing records. The stub always returns stub values.
+   */
+  readonly model: LlmGeneratorModelInfo;
+
   /**
    * Drafts sections from a report plan and verified findings. The LLM (or
    * stub) is strictly a narrator: it receives findings the deterministic

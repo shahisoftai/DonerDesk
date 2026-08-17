@@ -1,8 +1,7 @@
 import type { Result } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IReportSectionRepository } from "../../ports/reporting.js";
-import type { IReportDraftGenerator } from "../../ports/reporting.js";
+import type { IReportSectionRepository, IReportDraftGenerator } from "../../ports/reporting.js";
 import type { IAuditLogger } from "../../ports/core.js";
 import type { RewriteSectionInput } from "@donordesk/contracts";
 
@@ -14,7 +13,7 @@ import type { RewriteSectionInput } from "@donordesk/contracts";
 export class RewriteReportSectionHandler {
   constructor(
     private readonly sections: IReportSectionRepository,
-    private readonly generator: IReportDraftGenerator,
+    private readonly getGenerator: (tenantId?: string) => Promise<IReportDraftGenerator>,
     private readonly audit: IAuditLogger,
   ) {}
 
@@ -24,7 +23,8 @@ export class RewriteReportSectionHandler {
     if (!r.value) return { ok: false, error: DomainError.notFound("ReportSection", sectionId) };
     const sec = r.value;
 
-    const result = await this.generator.rewriteSection({
+    const generator = await this.getGenerator(ctx.tenant.tenantId.toString());
+    const result = await generator.rewriteSection({
       sectionTitle: sec.sectionTitle,
       content: sec.content,
       mode: input.mode,
