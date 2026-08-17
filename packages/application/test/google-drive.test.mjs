@@ -167,8 +167,9 @@ test("import drive file template creates a donor template with extracted section
       return { ok: true, value: { id: "tpl-1", sections: [{}], summary: "" } };
     },
   };
+  const importLogframe = { handle: async () => ({ ok: true, value: { created: 0, skipped: 0, warnings: [], items: [] } }) };
   const audit = { record: async () => ({ ok: true, value: undefined }) };
-  const handler = new ImportDriveFileHandler(reader, parser, uploadTemplate, audit);
+  const handler = new ImportDriveFileHandler(reader, parser, uploadTemplate, importLogframe, audit);
   const result = await handler.handle(ctx, "p-1", { driveFileId: "f1", kind: "template" });
   assert.equal(result.ok, true);
   assert.equal(result.value.kind, "template");
@@ -179,16 +180,25 @@ test("import drive file template creates a donor template with extracted section
   assert.equal(captured.extractedRawText, "Section 1. Executive Summary");
 });
 
-test("import drive file logframe returns parsed text for review", async () => {
+test("import drive file logframe auto-creates structured logframe records", async () => {
   const reader = { read: async () => ({ ok: true, value: { bytes: Buffer.from("x"), mimeType: "text/csv", name: "logframe.csv" } }) };
-  const parser = { parse: async () => ({ text: "GOAL\tGoal 1" }) };
+  const parser = { parse: async () => ({ text: "Level\tCode\tTitle\nGOAL\tG1\tGoal 1" }) };
   const uploadTemplate = { handle: async () => ({ ok: true, value: { id: "x", sections: [], summary: "" } }) };
+  const importLogframe = {
+    handle: async (_ctx, input) => {
+      assert.equal(input.projectId, "p-1");
+      assert.equal(input.sourceName, "logframe.csv");
+      assert.ok(input.text.includes("GOAL"));
+      return { ok: true, value: { created: 1, skipped: 0, warnings: [], items: [{ id: "lf-1", level: "GOAL", code: "G1", title: "Goal 1" }] } };
+    },
+  };
   const audit = { record: async () => ({ ok: true, value: undefined }) };
-  const handler = new ImportDriveFileHandler(reader, parser, uploadTemplate, audit);
+  const handler = new ImportDriveFileHandler(reader, parser, uploadTemplate, importLogframe, audit);
   const result = await handler.handle(ctx, "p-1", { driveFileId: "f2", kind: "logframe" });
   assert.equal(result.ok, true);
   assert.equal(result.value.kind, "logframe");
-  assert.equal(result.value.text, "GOAL\tGoal 1");
+  assert.equal(result.value.created, 1);
+  assert.equal(result.value.items[0].title, "Goal 1");
   assert.equal(result.value.name, "logframe.csv");
 });
 

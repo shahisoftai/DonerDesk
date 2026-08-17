@@ -79,12 +79,27 @@ account.
 > `POST /v1/projects/:id/drive/import-logframe` (`logframe.manage`) run
 > `ImportDriveFileHandler`: templates are parsed and persisted as a new donor
 > template with auto-extracted reviewed sections (reusing `UploadTemplateHandler`);
-> logframe/data files are parsed to text for review in the UI. The
-> `DriveFolderPanel` now shows per-file "Import template" (inline donor/report-type
-> form → creates the template and opens its editor) and "Import" (shows parsed
-> text inline) actions. Tests: app 60 (incl. ImportDriveFileHandler), infra
-> 63 + 1 skipped (incl. GoogleDriveFileReader raw/native). Live in release
-> `20260817074810` (API + web).
+> logframe files are parsed and **auto-created as real logframe records**; data
+> files are parsed to text for review in the UI. The `DriveFolderPanel` now shows
+> per-file "Import template" (inline donor/report-type form → creates the template
+> and opens its editor), "Import" for logframe (parses → creates records, shows a
+> created-items summary + warnings + "View logframe" link), and "Import" for data
+> (shows parsed text inline). Tests: app 64 (incl. ImportDriveFileHandler +
+> ImportLogframeHandler), infra 63 + 1 skipped (incl. GoogleDriveFileReader
+> raw/native). Live in release `20260817082655` (API + web).
+>
+> > **2026-08-17 — Logframe auto-parse into structured records (further step):**
+> > `packages/domain/src/contexts/logframe/logframe-parser.ts` exposes a pure
+> > `parseLogframeText` that handles tabular CSV/TSV (fuzzy Level/Code/Title/
+> > Description column detection, dotted/lettered codes → level inference) and
+> > line-based text (GOAL/OUTCOME/OUTPUT/ACTIVITY keywords, dotted codes,
+> > indentation depth, em-dash title→description). `ImportLogframeHandler`
+> > (application) creates `LogframeItem` records with parent resolution by level
+> > rank and skips codes already in the project; `POST /v1/logframe/import`
+> > (`logframe.manage`) covers local Excel/CSV/TXT uploads (web
+> > `logframe/import` page "Create logframe items" button), while the Drive
+> > `import-logframe` route routes through the same handler. Deprecated the old
+> > "copy text to the manual form" UX.
 
 ---
 

@@ -574,9 +574,35 @@ export const WorkspaceFilesResponseSchema = z.object({
 });
 export type WorkspaceFilesResponse = z.infer<typeof WorkspaceFilesResponseSchema>;
 
+export const ImportedLogframeItemSchema = z.object({
+  id: z.string(),
+  level: z.string(),
+  code: z.string().optional(),
+  title: z.string(),
+  description: z.string().optional(),
+  parentId: z.string().optional(),
+});
+export type ImportedLogframeItem = z.infer<typeof ImportedLogframeItemSchema>;
+
+export const ImportLogframeResponseSchema = z.object({
+  created: z.number(),
+  skipped: z.number(),
+  warnings: z.array(z.string()),
+  items: z.array(ImportedLogframeItemSchema),
+});
+export type ImportLogframeResponse = z.infer<typeof ImportLogframeResponseSchema>;
+
 export const DriveImportResponseSchema = z.union([
   z.object({ kind: z.literal("template"), id: z.string(), templateName: z.string() }),
-  z.object({ kind: z.enum(["logframe", "data"]), text: z.string(), name: z.string() }),
+  z.object({ kind: z.literal("data"), text: z.string(), name: z.string() }),
+  z.object({
+    kind: z.literal("logframe"),
+    name: z.string(),
+    created: z.number(),
+    skipped: z.number(),
+    warnings: z.array(z.string()),
+    items: z.array(ImportedLogframeItemSchema),
+  }),
 ]);
 export type DriveImportResponse = z.infer<typeof DriveImportResponseSchema>;
 

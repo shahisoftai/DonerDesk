@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   CreateLogframeItemSchema,
+  ImportLogframeTextSchema,
   CreateIndicatorSchema,
   CreateIndicatorUpdateSchema,
   BulkUpsertIndicatorUpdatesSchema,
@@ -20,6 +21,14 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const body = CreateLogframeItemSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.createLogframeItem.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/logframe/import", async (req) => {
+    const body = ImportLogframeTextSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.importLogframe.handle(ctx, body);
     if (!r.ok) throw r.error;
     return r.value;
   });

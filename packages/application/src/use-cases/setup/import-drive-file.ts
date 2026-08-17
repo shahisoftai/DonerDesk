@@ -5,12 +5,21 @@ import type { IDriveFileContentReader } from "../../ports/infrastructure.js";
 import type { IDocumentParser } from "../../ports/evidence.js";
 import type { IAuditLogger } from "../../ports/core.js";
 import type { UploadTemplateHandler } from "../templates/upload-template.js";
+import type { ImportLogframeHandler, ImportedLogframeItem } from "../logframe/import-logframe.js";
 
 export type DriveImportKind = "template" | "logframe" | "data";
 
 export type DriveImportResult =
   | { kind: "template"; id: string; templateName: string }
-  | { kind: "logframe" | "data"; text: string; name: string };
+  | { kind: "data"; text: string; name: string }
+  | {
+      kind: "logframe";
+      name: string;
+      created: number;
+      skipped: number;
+      warnings: string[];
+      items: ImportedLogframeItem[];
+    };
 
 const REPORT_TYPES: ReadonlySet<string> = new Set([
   "MONTHLY", "QUARTERLY", "ANNUAL", "FINAL", "ACTIVITY", "SITUATION", "CUSTOM",
@@ -19,14 +28,16 @@ const REPORT_TYPES: ReadonlySet<string> = new Set([
 /**
  * Reads a file already stored in the tenant's Google Drive and imports it into
  * the app: donor templates are parsed into reviewed sections and persisted as a
- * new template; logframe/data files are parsed to text for review in the UI
- * (mirroring the existing file-import UX, which does not auto-create items).
+ * new template; logframe files are auto-parsed into structured logframe records
+ * (Level / Code / Title / Description); data files are parsed to text for
+ * review in the UI.
  */
 export class ImportDriveFileHandler {
   constructor(
     private readonly reader: IDriveFileContentReader,
     private readonly parser: IDocumentParser,
     private readonly uploadTemplate: UploadTemplateHandler,
+    private readonly importLogframe: ImportLogframeHandler,
     private readonly audit: IAuditLogger,
   ) {}
 
@@ -81,6 +92,40 @@ export class ImportDriveFileHandler {
       return { ok: true, value: { kind: "template", id: created.value.id, templateName } };
     }
 
+    if (input.kind === "logframe") {
+      const imported = await this.importLogframe.handle(ctx, {
+        projectId,
+        text: parsed.text,
+        sourceName: read.value.name,
+      });
+      if (!imported.ok) return imported;
+      await this.audit.record({
+        tenantId: ctx.tenant.tenantId,
+        actorId: ctx.tenant.userId,
+        eventType: "drive.imported",
+        entityType: "logframe",
+        entityId: input.driveFileId,
+        projectId,
+        newValue: JSON.stringify({
+          driveFileId: input.driveFileId,
+          name: read.value.name,
+          created: imported.value.created,
+          skipped: imported.value.skipped,
+        }),
+      });
+      return {
+        ok: true,
+        value: {
+          kind: "logframe",
+          name: read.value.name,
+          created: imported.value.created,
+          skipped: imported.value.skipped,
+          warnings: imported.value.warnings,
+          items: imported.value.items,
+        },
+      };
+    }
+
     await this.audit.record({
       tenantId: ctx.tenant.tenantId,
       actorId: ctx.tenant.userId,
@@ -90,6 +135,6 @@ export class ImportDriveFileHandler {
       projectId,
       newValue: read.value.name,
     });
-    return { ok: true, value: { kind: input.kind, text: parsed.text, name: read.value.name } };
+    return { ok: true, value: { kind: "data", text: parsed.text, name: read.value.name } };
   }
 }

@@ -476,6 +476,33 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (logframe import auto-parses into structured records — release `20260817082655` API + web):**
+  Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
+  donordesk-web`). The further step after Drive import: logframe files (from
+  Google Drive or a local Excel/CSV/TXT upload) are now auto-parsed into
+  **actual logframe records** instead of just showing parsed text. Added a pure
+  domain parser `parseLogframeText` (packages/domain, `logframe-parser.ts`)
+  handling tabular CSV/TSV with Level/Code/Title/Description headers (column
+  detection by fuzzy header names, dotted/lettered code → level inference) and
+  line-based text (explicit GOAL/OUTCOME/OUTPUT/ACTIVITY keywords, dotted codes,
+  indentation depth, em-dash title→description split); `ImportLogframeHandler`
+  (application) resolves parents by level rank and skips codes already in the
+  project; contract `ImportLogframeTextSchema`; route
+  `POST /v1/logframe/import` (logframe.manage); container wires
+  `handlers.importLogframe` and passes it into `ImportDriveFileHandler`, so
+  Drive `import-logframe` now returns `{created, skipped, warnings, items}`
+  while `data` files keep the text preview. Web: `importLogframeTextAction`,
+  `ImportLogframeResponseSchema`, the local `logframe/import` page gains a
+  "Create logframe items" button with a created-items summary + warnings, and
+  `DriveFolderPanel` shows the created count + item list + "View logframe" link.
+  Tests: domain 70/70 (logframe-parser), app 64/64 (ImportLogframeHandler +
+  updated ImportDriveFileHandler), infra 63/63 + 1 skipped. Verified live:
+  api/web 200, current `20260817082655`, deployed bundles contain
+  `ImportLogframeHandler` + `importLogframe` container wiring + "Create logframe
+  items" client chunk. Rollback: `RELEASE_ID=20260817074810 scripts/rollback.sh`
+  or `ln -sfn /opt/donordesk/releases/20260817074810 /opt/donordesk/current &&
+  systemctl restart donordesk-api donordesk-web`.
+
 - **2026-08-17 (read/import Drive files into the app — release `20260817074810` API + web):**
   Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
   donordesk-web`). Closing the two-way loop: files already in the tenant's Google

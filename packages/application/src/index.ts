@@ -54,6 +54,7 @@ export * from "./use-cases/templates/delete-template.js";
 export * from "./use-cases/templates/list-templates.js";
 
 export * from "./use-cases/logframe/create-logframe-item.js";
+export * from "./use-cases/logframe/import-logframe.js";
 export * from "./use-cases/logframe/create-indicator.js";
 export * from "./use-cases/logframe/create-indicator-update.js";
 export * from "./use-cases/logframe/upsert-indicator-update.js";

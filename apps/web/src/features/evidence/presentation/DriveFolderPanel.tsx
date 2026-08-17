@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { REPORT_TYPE_LABEL, REPORT_TYPE_OPTIONS } from "@/lib/labels";
-import type { WorkspaceFile, WorkspaceFilesResponse } from "@/lib/server/schemas";
+import type { WorkspaceFile, WorkspaceFilesResponse, ImportedLogframeItem } from "@/lib/server/schemas";
 
 function formatBytes(size?: number): string {
   if (size === undefined) return "";
@@ -39,6 +39,17 @@ function baseName(name: string): string {
   return name.replace(/\.[^.]+$/, "").trim();
 }
 
+type ImportPreview =
+  | { fileId: string; name: string; text: string }
+  | {
+      fileId: string;
+      name: string;
+      created: number;
+      skipped: number;
+      warnings: string[];
+      items: ImportedLogframeItem[];
+    };
+
 /**
  * Lists the current files in the project's storage folders (Google Drive or the
  * local workspace mirror) and lets the user link evidence or import
@@ -65,7 +76,7 @@ export function DriveFolderPanel({
 
   const [importing, setImporting] = useState<WorkspaceFile | null>(null);
   const [templateForm, setTemplateForm] = useState({ templateName: "", donorName: "", reportType: "CUSTOM" });
-  const [preview, setPreview] = useState<{ fileId: string; name: string; text: string } | null>(null);
+  const [preview, setPreview] = useState<ImportPreview | null>(null);
 
   const folderKey = folderRoles.join(",");
 
@@ -126,8 +137,11 @@ export function DriveFolderPanel({
       setError(result.error.message);
       return;
     }
-    if (result.value.kind !== "template") {
-      setPreview({ fileId: file.id, name: result.value.name, text: result.value.text });
+    const value = result.value;
+    if (value.kind === "logframe") {
+      setPreview({ fileId: file.id, name: value.name, created: value.created, skipped: value.skipped, warnings: value.warnings, items: value.items });
+    } else if (value.kind === "data") {
+      setPreview({ fileId: file.id, name: value.name, text: value.text });
     }
   }
 
@@ -277,10 +291,49 @@ export function DriveFolderPanel({
 
                           {filePreview && (
                             <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
-                              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{filePreview.name}</p>
-                              <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-xs text-slate-700 dark:text-slate-300">
-                                {filePreview.text}
-                              </pre>
+                              {"text" in filePreview ? (
+                                <>
+                                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{filePreview.name}</p>
+                                  <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-xs text-slate-700 dark:text-slate-300">
+                                    {filePreview.text}
+                                  </pre>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                        Imported {filePreview.created} item{filePreview.created === 1 ? "" : "s"}
+                                        {filePreview.skipped > 0 ? ` · ${filePreview.skipped} skipped (already exists)` : ""}
+                                      </p>
+                                      <p className="text-xs text-slate-500 dark:text-slate-400">{filePreview.name}</p>
+                                    </div>
+                                    <Button size="sm" onClick={() => router.push(`/projects/${projectId}/logframe`)}>
+                                      View logframe
+                                    </Button>
+                                  </div>
+                                  {filePreview.warnings.length > 0 && (
+                                    <ul className="mt-2 space-y-1">
+                                      {filePreview.warnings.map((w, idx) => (
+                                        <li key={idx} className="text-xs text-amber-600 dark:text-amber-400">{w}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                  {filePreview.items.length > 0 && (
+                                    <ul className="mt-2 divide-y divide-slate-200/70 dark:divide-white/10">
+                                      {filePreview.items.map((item) => (
+                                        <li key={item.id} className="flex items-center gap-2 py-1 text-sm">
+                                          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                                            {item.level}
+                                          </span>
+                                          {item.code && <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{item.code}</span>}
+                                          <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </>
+                              )}
                             </div>
                           )}
                         </li>

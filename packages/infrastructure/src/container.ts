@@ -24,6 +24,7 @@ import {
   DeleteTemplateHandler,
   ListTemplatesHandler,
   CreateLogframeItemHandler,
+  ImportLogframeHandler,
   CreateIndicatorHandler,
   CreateIndicatorUpdateHandler,
   BulkUpsertIndicatorUpdatesHandler,
@@ -263,6 +264,7 @@ export interface Container {
     deleteTemplate: DeleteTemplateHandler;
     listTemplates: ListTemplatesHandler;
     createLogframeItem: CreateLogframeItemHandler;
+    importLogframe: ImportLogframeHandler;
     createIndicator: CreateIndicatorHandler;
     createIndicatorUpdate: CreateIndicatorUpdateHandler;
     bulkUpsertIndicatorUpdates: BulkUpsertIndicatorUpdatesHandler;
@@ -539,7 +541,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     repairProjectWorkspace: new RepairProjectWorkspaceHandler(projectWorkspace, projects, projectSetup, audits),
     listWorkspaceFiles: new ListWorkspaceFilesHandler(projectWorkspace, projects),
     provisionTenantWorkspaces: new ProvisionTenantWorkspacesHandler(projectWorkspace, projects, projectSetup, events, audits),
-    importDriveFile: new ImportDriveFileHandler(driveFileReader, parser, uploadTemplateHandler, audits),
+    importDriveFile: new ImportDriveFileHandler(driveFileReader, parser, uploadTemplateHandler, new ImportLogframeHandler(ids, logframe, audits), audits),
     getReportingProfile: new GetReportingProfileHandler(reportingProfiles),
     upsertReportingProfile: new UpsertReportingProfileHandler(ids, reportingProfiles, templates, audits),
     uploadTemplate: uploadTemplateHandler,
@@ -547,6 +549,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     deleteTemplate: new DeleteTemplateHandler(templates, audits),
     listTemplates: new ListTemplatesHandler(templates),
     createLogframeItem: new CreateLogframeItemHandler(ids, logframe, audits),
+    importLogframe: new ImportLogframeHandler(ids, logframe, audits),
     createIndicator: new CreateIndicatorHandler(ids, indicators, audits),
     createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits),
     bulkUpsertIndicatorUpdates: new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits),
