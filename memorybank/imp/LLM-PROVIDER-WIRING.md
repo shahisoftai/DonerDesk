@@ -241,9 +241,37 @@ const reportDraftGenerator = new LlmReportDraftGenerator(
 
 ## 12. Definition of done
 
-- [ ] SuperAdmin LLM config (GLOBAL/TENANT, enabled) is consumed at runtime
-- [ ] DeepSeek + MiniMax adapters live, registered, unit-tested
-- [ ] Report drafting narrates via the configured provider with stub fallback
-- [ ] Generation runs and `llm_runs` record the real model/prompt version
-- [ ] `pnpm -r typecheck`, `pnpm -r build`, `pnpm -r test`, `pnpm -r lint` all pass
-- [ ] `memorybank/pending.md` updated; no regressions in features 06/08/09/11/12/13/14/20
+- [x] SuperAdmin LLM config (GLOBAL/TENANT, enabled) is consumed at runtime
+- [x] DeepSeek + MiniMax adapters live, registered, unit-tested
+- [x] Report drafting narrates via the configured provider with stub fallback
+- [x] Generation runs and `llm_runs` record the real model/prompt version
+- [x] `pnpm -r typecheck`, `pnpm -r build`, `pnpm -r test`, `pnpm -r lint` all pass
+- [x] `memorybank/pending.md` updated; no regressions in features 06/08/09/11/12/13/14/20
+
+## 13. Production incidents found in live verification (2026-08-17)
+
+Live regeneration produced **stub text with no AI narrative** because of four
+stacked production issues, all now fixed:
+
+1. **Malformed stored MiniMax config** (`baseUrl: "https://minimax.io-v1"`
+   — DNS fails — and `model: "Minimax-2.7"` — MiniMax returns `base_resp=2013`
+   with empty content). Correct values: `https://api.minimax.io/v1` +
+   `MiniMax-Text-01`. Every LLM call threw → silent stub fallback.
+   - `llm-config-resolver.ts` now validates `baseUrl` defensively (valid
+     scheme + plausible TLD) and drops malformed values back to defaults.
+   - `control-plane.ts testProvider` now tests the **stored** `baseUrl` (with
+     per-provider path) instead of always the default URL, so a broken
+     endpoint surfaces in SuperAdmin instead of passing a false "verified".
+2. **`parseSections` discarded claims/sourceReferences** (always `[]`) and
+   accepted empty content. Now it preserves both with type validation and
+   rejects sections without non-empty title/content. Covered by
+   `test/llm-report-draft-generator.test.mjs` (5 tests).
+3. **Silent LLM failures**: `LlmReportDraftGenerator` now logs provider
+   errors / empty responses / parse failures before falling back to the
+   stub (logger injected from container).
+4. **`llm_runs` ledger broken by missing grants + FK**: `LlmModel` and
+   `LlmPrompt` have no `tenantId` (global reference tables) and were absent
+   from `infra/postgres/rls.sql` → `recordRun` upsert/insert failed
+   `permission denied`. Added plain DML grants to `rls.sql` and applied on
+   prod. `recordRun` also now upserts the `LlmPrompt` row ("report-drafter")
+   so the `LlmRun.promptId` FK succeeds.

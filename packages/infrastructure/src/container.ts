@@ -497,7 +497,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       const resolved = await llmConfigResolver.resolve({ tenantId });
       if (resolved.ok && resolved.value) {
         const provider = createLLMProvider(resolved.value);
-        generatorCache.set(key, new LlmReportDraftGenerator(provider));
+        generatorCache.set(key, new LlmReportDraftGenerator(provider, undefined, logger));
       } else {
         generatorCache.set(key, new StubReportDraftGenerator());
       }

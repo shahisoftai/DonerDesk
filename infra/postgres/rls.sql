@@ -26,3 +26,8 @@ END $$;
 
 GRANT USAGE ON SCHEMA public TO donordesk_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO donordesk_app;
+
+-- Global reference tables (no tenantId column, not tenant-isolated): the
+-- runtime role needs DML to upsert model/prompt rows referenced by LlmRun.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "LlmModel" TO donordesk_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "LlmPrompt" TO donordesk_app;

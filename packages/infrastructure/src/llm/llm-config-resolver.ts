@@ -79,12 +79,30 @@ export class PlatformLlmConfigResolver {
       return { ok: true, value: null };
     }
 
+    // Defensively reject malformed base URLs (e.g. "https://minimax.io-v1")
+    // so a bad stored value falls back to the provider's default instead of
+    // silently failing every LLM call.
+    let baseUrl = typeof config.baseUrl === "string" && config.baseUrl.trim() ? config.baseUrl.trim() : undefined;
+    if (baseUrl) {
+      try {
+        const parsed = new URL(baseUrl);
+        const host = parsed.hostname;
+        const lastLabel = host.split(".").pop() ?? "";
+        const validTld = /^[a-z]{2,}$/i.test(lastLabel);
+        if ((parsed.protocol !== "https:" && parsed.protocol !== "http:") || host.length < 3 || !validTld) {
+          throw new Error("unsupported protocol or malformed host");
+        }
+      } catch {
+        baseUrl = undefined;
+      }
+    }
+
     return {
       ok: true,
       value: {
         provider,
-        model: typeof config.model === "string" ? config.model : undefined,
-        baseUrl: typeof config.baseUrl === "string" ? config.baseUrl : undefined,
+        model: typeof config.model === "string" && config.model.trim() ? config.model.trim() : undefined,
+        baseUrl,
         timeoutMs: typeof config.timeoutMs === "number" ? config.timeoutMs : undefined,
         groupId: typeof config.groupId === "string" ? config.groupId : undefined,
         apiKey,

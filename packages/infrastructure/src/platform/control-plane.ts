@@ -180,7 +180,12 @@ async function testProvider(category: string, provider: string, config: Record<s
   let url = "", headers: Record<string, string> = {};
   if (category === "LLM") {
     const defaults: Record<string, string> = { openai: "https://api.openai.com/v1/models", anthropic: "https://api.anthropic.com/v1/models", deepseek: "https://api.deepseek.com/models", minimax: "https://api.minimax.io/v1/models" };
-    url = String(config.testUrl || defaults[provider] || ""); const key = secrets.apiKey;
+    // Test the configured base URL (not just the default) so a malformed or
+    // unreachable baseUrl is caught here instead of failing at runtime.
+    const paths: Record<string, string> = { openai: "/models", anthropic: "/v1/models", deepseek: "/models", minimax: "/v1/models" };
+    const baseUrl = typeof config.baseUrl === "string" && config.baseUrl.trim() ? config.baseUrl.trim().replace(/\/+$/, "") : "";
+    url = String(config.testUrl || (baseUrl ? `${baseUrl}${paths[provider] ?? ""}` : defaults[provider] || ""));
+    const key = secrets.apiKey;
     if (!key) throw new Error("API key is required");
     headers = provider === "anthropic" ? { "x-api-key": key, "anthropic-version": "2023-06-01" } : { authorization: `Bearer ${key}` };
   } else if (category === "EMAIL" && provider === "brevo") { url = "https://api.brevo.com/v3/account"; headers = { "api-key": secrets.apiKey || "" }; }

@@ -428,6 +428,20 @@ export class PrismaLlmUsageRepository implements ILlmUsageRepository {
         },
         update: {},
       });
+      // LlmRun.promptId is a foreign key to LlmPrompt. Ensure the prompt row
+      // exists too, otherwise the ledger insert fails the FK check.
+      await this.prisma.llmPrompt.upsert({
+        where: { id: input.promptId },
+        create: {
+          id: input.promptId,
+          name: input.promptId,
+          version: input.promptVersion,
+          promptText: "",
+          variables: "[]",
+          isActive: true,
+        },
+        update: { version: input.promptVersion },
+      });
       await this.prisma.llmRun.create({
         data: {
           id: input.id,

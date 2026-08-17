@@ -5,8 +5,9 @@ import type {
   ReportClaimDraft,
   ILLMProvider,
   LlmGeneratorModelInfo,
+  ILogger,
 } from "@donordesk/application";
-import type { SourceReference } from "@donordesk/domain";
+import type { SourceReference, ClaimType } from "@donordesk/domain";
 import { StubReportDraftGenerator } from "./report-draft-generator.js";
 
 interface LlmRewriteSectionInput {
@@ -17,6 +18,9 @@ interface LlmRewriteSectionInput {
   instructions?: string;
   sourceReferences: SourceReference[];
 }
+
+const CLAIM_TYPES = new Set<ClaimType>(["NUMERIC", "FACTUAL", "CAUSAL", "QUALITATIVE"]);
+const REFERENCE_TYPES = new Set<SourceReference["type"]>(["evidence", "activity", "indicator", "template"]);
 
 function buildSystemPrompt(): string {
   return [
@@ -138,28 +142,85 @@ function buildRewriteUserPrompt(input: LlmRewriteSectionInput): string {
     .join("\n");
 }
 
-function parseSections(raw: string): GeneratedSection[] | null {
+export function parseSections(raw: string): GeneratedSection[] | null {
   let json = raw.trim();
   const fenceMatch = json.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
   if (fenceMatch) json = fenceMatch[1]!;
   try {
     const parsed = JSON.parse(json) as {
-      sections?: unknown[];
+      sections?: unknown;
     };
-    if (!Array.isArray(parsed.sections)) return null;
-    return parsed.sections.map((s, i) => {
-      const sec = s as Record<string, unknown>;
-      return {
-        sectionId: typeof sec.sectionId === "string" ? sec.sectionId : `section-${i}`,
-        title: String(sec.title ?? `Section ${i + 1}`),
-        content: typeof sec.content === "string" ? sec.content : "",
-        claims: [] as ReportClaimDraft[],
-        sourceReferences: [] as SourceReference[],
-      };
-    });
+    if (!Array.isArray(parsed.sections) || parsed.sections.length === 0) return null;
+
+    const sections: GeneratedSection[] = [];
+    for (let i = 0; i < parsed.sections.length; i++) {
+      const sec = parsed.sections[i] as Record<string, unknown> | null;
+      if (!sec || typeof sec !== "object") return null;
+      const title = typeof sec.title === "string" ? sec.title.trim() : "";
+      const content = typeof sec.content === "string" ? sec.content.trim() : "";
+      if (!title || !content) return null;
+      sections.push({
+        sectionId: typeof sec.sectionId === "string" && sec.sectionId ? sec.sectionId : `section-${i}`,
+        title,
+        content,
+        claims: parseClaims(sec.claims),
+        sourceReferences: parseSourceReferences(sec.sourceReferences),
+      });
+    }
+    return sections.length > 0 ? sections : null;
   } catch {
     return null;
   }
+}
+
+function parseClaims(value: unknown): ReportClaimDraft[] {
+  if (!Array.isArray(value)) return [];
+  const claims: ReportClaimDraft[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const c = item as Record<string, unknown>;
+    const text = typeof c.text === "string" ? c.text.trim() : "";
+    if (!text) continue;
+    const type = typeof c.type === "string" && CLAIM_TYPES.has(c.type as ClaimType)
+      ? (c.type as ClaimType)
+      : "FACTUAL";
+    const proposedSources: ReportClaimDraft["proposedSources"] = [];
+    if (Array.isArray(c.proposedSources)) {
+      for (const s of c.proposedSources) {
+        if (!s || typeof s !== "object") continue;
+        const src = s as Record<string, unknown>;
+        if (typeof src.evidenceId === "string" && typeof src.chunkId === "string") {
+          proposedSources.push({
+            evidenceId: src.evidenceId,
+            chunkId: src.chunkId,
+            sourceText: typeof src.sourceText === "string" ? src.sourceText : "",
+          });
+        }
+      }
+    }
+    claims.push({ text, type, proposedSources });
+  }
+  return claims;
+}
+
+function parseSourceReferences(value: unknown): SourceReference[] {
+  if (!Array.isArray(value)) return [];
+  const refs: SourceReference[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const r = item as Record<string, unknown>;
+    const id = typeof r.id === "string" ? r.id : "";
+    if (!id) continue;
+    const type = typeof r.type === "string" && REFERENCE_TYPES.has(r.type as SourceReference["type"])
+      ? (r.type as SourceReference["type"])
+      : "indicator";
+    refs.push({
+      type,
+      id,
+      label: typeof r.label === "string" ? r.label : undefined,
+    });
+  }
+  return refs;
 }
 
 function parseRewrite(raw: string): string | null {
@@ -181,6 +242,7 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
   constructor(
     private readonly provider: ILLMProvider,
     private readonly fallback: IReportDraftGenerator = new StubReportDraftGenerator(),
+    private readonly logger?: ILogger,
   ) {
     this.model = {
       modelId: provider.name,
@@ -204,12 +266,27 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
         temperature: 0.3,
       });
 
+      if (!result.text || !result.text.trim()) {
+        this.logger?.warn("LLM report draft: provider returned empty content; falling back to stub", {
+          model: this.model.modelId,
+        });
+        return this.fallback.generateDraft(input);
+      }
+
       const sections = parseSections(result.text);
       if (!sections || sections.length === 0) {
+        this.logger?.warn("LLM report draft: response failed structural validation; falling back to stub", {
+          model: this.model.modelId,
+          snippet: result.text.slice(0, 200),
+        });
         return this.fallback.generateDraft(input);
       }
       return sections;
-    } catch {
+    } catch (error) {
+      this.logger?.warn("LLM report draft failed; falling back to stub", {
+        model: this.model.modelId,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return this.fallback.generateDraft(input);
     }
   }
@@ -224,12 +301,27 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
         temperature: input.mode === "SHORTEN" ? 0.1 : 0.3,
       });
 
+      if (!result.text || !result.text.trim()) {
+        this.logger?.warn("LLM section rewrite: provider returned empty content; falling back to stub", {
+          model: this.model.modelId,
+        });
+        return this.fallback.rewriteSection(input);
+      }
+
       const content = parseRewrite(result.text);
       if (!content) {
+        this.logger?.warn("LLM section rewrite: response failed to parse; falling back to stub", {
+          model: this.model.modelId,
+          snippet: result.text.slice(0, 200),
+        });
         return this.fallback.rewriteSection(input);
       }
       return { content, unsupportedClaims: [] };
-    } catch {
+    } catch (error) {
+      this.logger?.warn("LLM section rewrite failed; falling back to stub", {
+        model: this.model.modelId,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return this.fallback.rewriteSection(input);
     }
   }
