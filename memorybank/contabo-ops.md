@@ -476,6 +476,23 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (new reporting period setup checklist — release `20260817054906` web-only):**
+  Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`).
+  The "New reporting period" page previously surfaced only the generic
+  "Project setup is not complete; reporting periods are unavailable until the
+  project is ready" error without explaining what was missing. The page now
+  fetches `GET /v1/projects/:id/setup` readiness alongside templates and, when
+  the project is not ready, renders a "Project setup is not complete" card
+  listing every blocker (code + label) with a "Fix" link routed to the
+  project-scoped page (`/reporting-profile` → `/projects/:id/setup/profile`,
+  other hrefs prefixed with `/projects/:id`). The form also blocks submission
+  until the blockers are resolved. Verified: web 200 loopback, current symlink
+  `20260817054906`, deployed page chunk contains the checklist and the
+  `/setup/profile` mapping. Rollback: `RELEASE_ID=20260817052925
+  scripts/rollback.sh` or `ln -sfn
+  /opt/donordesk/releases/20260817052925 /opt/donordesk/current && systemctl
+  restart donordesk-web`.
+
 - **2026-08-17 (per-section "Add a section" — release `20260817052925` web-only):**
   Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`).
   The template review editor now shows an "Add a section" button next to each

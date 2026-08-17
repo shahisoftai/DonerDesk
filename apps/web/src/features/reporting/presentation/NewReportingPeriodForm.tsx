@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createReportingPeriodAction } from "@/lib/actions/reporting";
 import { useActionState } from "@/lib/client/action-state";
@@ -10,14 +11,48 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { FormSummary } from "@/components/ui/FormSummary";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { REPORT_TYPE_LABEL, REPORT_TYPE_OPTIONS } from "@/lib/labels";
+import type { ProjectReadiness } from "@/lib/server/schemas";
+
+function fixHref(projectId: string, href: string): string {
+  if (href === "/reporting-profile") return `/projects/${projectId}/setup/profile`;
+  if (href.startsWith("/")) return `/projects/${projectId}${href}`;
+  return href;
+}
+
+function MissingSetupItems({ projectId, readiness }: { projectId: string; readiness: ProjectReadiness }) {
+  return (
+    <div className="card mt-6 max-w-2xl border-danger-500/40 bg-danger-50/40 dark:border-danger-500/25 dark:bg-danger-500/[0.06]">
+      <h2 className="font-semibold text-danger-800 dark:text-danger-300">Project setup is not complete</h2>
+      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+        Reporting periods cannot be created until the following items are complete:
+      </p>
+      <ul className="mt-3 space-y-2">
+        {readiness.blockers.map((b) => (
+          <li key={b.code} className="flex items-start justify-between gap-3 text-sm">
+            <div className="min-w-0">
+              <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{b.code}</span>
+              <p className="text-slate-800 dark:text-slate-200">{b.label}</p>
+            </div>
+            {b.href && (
+              <Link className="btn-secondary shrink-0 text-sm" href={fixHref(projectId, b.href)}>Fix</Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export function NewReportingPeriodForm({
   projectId,
   templates,
+  readiness,
 }: {
   projectId: string;
   templates: Array<{ id: string; templateName: string }>;
+  readiness: ProjectReadiness | null;
 }) {
   const router = useRouter();
   const actionState = useActionState();
@@ -32,8 +67,14 @@ export function NewReportingPeriodForm({
   const fields = actionState.fields ?? localErrors;
   const errorCount = Object.keys(fields).reduce((sum, key) => sum + (fields[key]?.length ?? 0), 0);
 
+  const notReady = readiness !== null && !readiness.ready;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (notReady) {
+      setLocalErrors({ form: [readiness!.blockers[0]?.label ?? "Project setup is not complete."] });
+      return;
+    }
     const dateErrors = validateReportDates({
       startDate,
       endDate,
@@ -63,7 +104,9 @@ export function NewReportingPeriodForm({
   }
 
   return (
-    <form onSubmit={submit} className="card mt-6 max-w-2xl space-y-4" noValidate>
+    <div>
+      {notReady && readiness && <MissingSetupItems projectId={projectId} readiness={readiness} />}
+      <form onSubmit={submit} className="card mt-6 max-w-2xl space-y-4" noValidate>
       <FormSummary errors={fields} count={errorCount} />
 
       <Field label="Report type" htmlFor="reportType" error={fields.reportType?.[0]}>
@@ -124,6 +167,7 @@ export function NewReportingPeriodForm({
         <Button type="button" variant="secondary" onClick={() => router.back()}>Cancel</Button>
         <Button type="submit" pending={actionState.busy}>Create period</Button>
       </div>
-    </form>
+      </form>
+    </div>
   );
 }
