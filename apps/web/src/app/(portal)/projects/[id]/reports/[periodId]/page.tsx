@@ -8,6 +8,7 @@ import {
   ReportDraftResponseSchema,
   ExportsResponseSchema,
   ExportPreflightSchema,
+  PeriodIndicatorsResponseSchema,
 } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
 import { ReportWorkspace } from "@/features/reporting/presentation/ReportWorkspace";
@@ -18,12 +19,13 @@ export default async function ReportWorkspacePage({ params }: { params: Promise<
   const resolvedParams = await params;
   const ctx = await requireSession();
 
-  const [readinessResult, checklistResult, draftResult, exportsResult, preflightResult] = await Promise.all([
+  const [readinessResult, checklistResult, draftResult, exportsResult, preflightResult, indicatorsResult] = await Promise.all([
     gatewayRequest(`/v1/reporting-periods/${resolvedParams.periodId}/readiness`, ReadinessSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${resolvedParams.periodId}/checklist`, ChecklistResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${resolvedParams.periodId}/draft`, ReportDraftResponseSchema, ctx.token),
     gatewayRequest(`/v1/projects/${resolvedParams.id}/exports`, ExportsResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${resolvedParams.periodId}/export-preflight`, ExportPreflightSchema, ctx.token),
+    gatewayRequest(`/v1/reporting-periods/${resolvedParams.periodId}/indicators`, PeriodIndicatorsResponseSchema, ctx.token),
   ]);
 
   if (!readinessResult.ok) {
@@ -58,6 +60,7 @@ export default async function ReportWorkspacePage({ params }: { params: Promise<
         periodId={resolvedParams.periodId}
         draft={draftResult.ok ? draftResult.value.draft : null}
         sections={draftResult.ok ? draftResult.value.sections ?? [] : []}
+        indicators={indicatorsResult.ok ? indicatorsResult.value.indicators : []}
         readiness={readinessResult.value}
         checklist={checklistResult.ok ? checklistResult.value.items : []}
         exports={exportsResult.ok ? exportsResult.value.items : []}

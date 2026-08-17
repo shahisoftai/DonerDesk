@@ -85,6 +85,7 @@ export * from "./use-cases/reporting/list-reporting-periods.js";
 export * from "./use-cases/reporting/generate-report-draft.js";
 export * from "./use-cases/reporting/get-report-draft.js";
 export * from "./use-cases/reporting/update-report-section.js";
+export * from "./use-cases/reporting/update-report-section-chart.js";
 export * from "./use-cases/reporting/rewrite-report-section.js";
 export * from "./use-cases/reporting/approve-report-section.js";
 export * from "./use-cases/reporting/submit-report-for-review.js";

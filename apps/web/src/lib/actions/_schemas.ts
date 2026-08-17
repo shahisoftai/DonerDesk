@@ -28,6 +28,17 @@ export const BulkResolveResponseSchema = z.object({ resolved: z.number().int().n
 
 export const UpdateSectionResponseSchema = z.object({ version: z.string() });
 
+export const UpdateSectionChartResponseSchema = z.object({
+  version: z.string(),
+  chartConfig: z
+    .object({
+      type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
+      dataBinding: z.enum(["INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),
+      options: z.record(z.string(), z.unknown()).optional(),
+    })
+    .nullable(),
+});
+
 export const RewriteSectionResponseSchema = z.object({ version: z.string(), content: z.string() });
 
 export const InviteUserResponseSchema = z.object({

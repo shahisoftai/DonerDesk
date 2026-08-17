@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ExportPackage } from "@donordesk/domain";
+import { DomainError, ExportPackage, type ChartConfig } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IExportRepository, IExportBuilder } from "../../ports/exports.js";
 import type { IStorage } from "../../ports/infrastructure.js";
@@ -44,12 +44,13 @@ export class CreateExportHandler {
     const draft = drafts.value[0];
 
     let sectionsArr: Array<{ title: string; content: string; status: string }> = [];
+    let sectionChartConfigs: Array<{ title: string; chartConfig: ChartConfig | null }> = [];
     if (draft) {
       const s = await this.sections.findByReportDraft(draft.id, ctx.tenant.tenantId);
       if (s.ok) {
-        sectionsArr = s.value
-          .sort((a, b) => a.sectionOrder - b.sectionOrder)
-          .map((sec) => ({ title: sec.sectionTitle, content: sec.content, status: sec.status }));
+        const sorted = [...s.value].sort((a, b) => a.sectionOrder - b.sectionOrder);
+        sectionsArr = sorted.map((sec) => ({ title: sec.sectionTitle, content: sec.content, status: sec.status }));
+        sectionChartConfigs = sorted.map((sec) => ({ title: sec.sectionTitle, chartConfig: sec.chartConfig }));
       }
     }
 
@@ -70,6 +71,14 @@ export class CreateExportHandler {
         });
       }
     }
+
+    const charts = sectionChartConfigs
+      .filter((c): c is { title: string; chartConfig: ChartConfig } => c.chartConfig !== null)
+      .map((c) => ({
+        sectionTitle: c.title,
+        config: c.chartConfig,
+        indicators: indicatorRows,
+      }));
 
     const acts = await this.activities.findByReportingPeriod(input.reportingPeriodId, ctx.tenant.tenantId);
     const activityRows: Array<{ title: string; date: string; location?: string; participants: number }> = [];
@@ -122,6 +131,7 @@ export class CreateExportHandler {
       reportTitle: draft?.title ?? `${project.value.title} report`,
       sections: sectionsArr,
       indicators: indicatorRows,
+      charts,
       activities: activityRows,
       checklist: checklistRows,
       evidenceItems: evidenceRows,

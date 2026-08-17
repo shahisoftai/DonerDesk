@@ -379,6 +379,13 @@ export const ReportingPeriodItemSchema = z.object({
 
 export const ReportingPeriodsResponseSchema = z.object({ items: z.array(ReportingPeriodItemSchema) });
 
+export const ChartConfigSchema = z.object({
+  type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
+  dataBinding: z.enum(["INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),
+  options: z.record(z.string(), z.unknown()).optional(),
+});
+export type ChartConfig = z.infer<typeof ChartConfigSchema>;
+
 export const ReportSectionSchema = z.object({
   id: z.string(),
   sectionTitle: z.string(),
@@ -389,6 +396,7 @@ export const ReportSectionSchema = z.object({
     .optional(),
   unsupportedClaims: z.array(z.string()).optional(),
   status: z.string(),
+  chartConfig: ChartConfigSchema.nullable().optional(),
   updatedAt: z.string(),
 });
 export type ReportSection = z.infer<typeof ReportSectionSchema>;

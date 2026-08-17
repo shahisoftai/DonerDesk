@@ -1,5 +1,5 @@
 import type { Result, TenantId } from "@donordesk/domain";
-import type { ExportPackage } from "@donordesk/domain";
+import type { ExportPackage, ChartConfig } from "@donordesk/domain";
 
 export interface IExportRepository {
   create(e: ExportPackage): Promise<Result<ExportPackage>>;
@@ -13,6 +13,21 @@ export interface ExportArtifacts {
   fileName: string;
 }
 
+export interface ExportChartInput {
+  /** Section title this chart belongs to (used as its caption). */
+  sectionTitle: string;
+  config: ChartConfig;
+  indicators: Array<{
+    code: string;
+    name: string;
+    baseline: string;
+    target: string;
+    unit?: string;
+    achievement: string;
+    status: string;
+  }>;
+}
+
 export interface IExportBuilder {
   build(input: {
     exportType: "WORD" | "PDF" | "EXCEL_INDICATORS" | "EVIDENCE_CHECKLIST" | "EVIDENCE_PACK_ZIP" | "DONOR_TEMPLATE";
@@ -21,6 +36,7 @@ export interface IExportBuilder {
     reportTitle: string;
     sections: Array<{ title: string; content: string; status: string }>;
     indicators: Array<{ code: string; name: string; baseline: string; target: string; achievement: string; unit?: string; status: string }>;
+    charts?: ExportChartInput[];
     activities: Array<{ title: string; date: string; location?: string; participants: number }>;
     checklist: Array<{ title: string; severity: string; status: string; resolutionNotes?: string }>;
     evidenceItems: Array<{

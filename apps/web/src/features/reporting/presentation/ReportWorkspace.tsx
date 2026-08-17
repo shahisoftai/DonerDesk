@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { generateDraftAction, detectMissingAction, submitReportForReviewAction, approveReportSectionAction } from "@/lib/actions/reporting";
@@ -17,6 +17,8 @@ import {
 } from "@/lib/shared/tone";
 import { SECTION_STATUS_LABEL, REPORT_DRAFT_STATUS_LABEL } from "@/lib/labels";
 import { SectionEditor } from "./SectionEditor";
+import { ReportChartPanel } from "./ReportChartPanel";
+import type { ChartConfig } from "@donordesk/domain";
 import { ReviewAndApproval } from "@/features/review/presentation/ReviewAndApproval";
 import { ExportsPanel, type ExportHistoryItem } from "@/features/exports/presentation/ExportsPanel";
 import { CommentsThread } from "@/features/comments/presentation/CommentsThread";
@@ -44,6 +46,7 @@ type ReportSection = {
   sourceReferences?: Array<{ type: string; id: string; label?: string }>;
   unsupportedClaims?: string[];
   status: string;
+  chartConfig?: ChartConfig | null;
   updatedAt: string;
 };
 type ReportDraft = {
@@ -54,6 +57,29 @@ type ReportDraft = {
   generatedByAi?: boolean;
 };
 
+type ChartIndicator = {
+  code: string;
+  name: string;
+  baseline: string;
+  target: string;
+  unit?: string;
+  achievement: string;
+  status: string;
+};
+
+type RawIndicatorRow = {
+  id: string;
+  code: string;
+  name: string;
+  baseline: string;
+  target: string;
+  unit?: string;
+  update: {
+    periodAchievement: string;
+    verificationStatus: string;
+  } | null;
+};
+
 type Panel = "sections" | "editor" | "context";
 
 export function ReportWorkspace({
@@ -61,6 +87,7 @@ export function ReportWorkspace({
   periodId,
   draft,
   sections,
+  indicators,
   readiness,
   checklist,
   exports,
@@ -72,6 +99,7 @@ export function ReportWorkspace({
   periodId: string;
   draft: ReportDraft | null;
   sections: ReportSection[];
+  indicators: RawIndicatorRow[];
   readiness: Readiness;
   checklist: ChecklistItem[];
   exports: ExportHistoryItem[];
@@ -111,6 +139,22 @@ export function ReportWorkspace({
   const selected = sections.find((s) => s.id === selectedId) ?? null;
   const openChecklist = checklist.filter((c) => c.status !== "RESOLVED" && c.status !== "ACCEPTED_RISK" && c.status !== "NOT_APPLICABLE");
   const aiEnabledLabel = draft ? (draft.generatedByAi ? "AI-assisted draft" : "Manually created draft") : null;
+
+  // Flat chart-ready indicator rows; a single memoised map is shared by every
+  // section's chart panel.
+  const chartIndicators = useMemo<ChartIndicator[]>(
+    () =>
+      indicators.map((i) => ({
+        code: i.code,
+        name: i.name,
+        baseline: i.baseline,
+        target: i.target,
+        unit: i.unit,
+        achievement: i.update?.periodAchievement ?? "0",
+        status: i.update?.verificationStatus ?? "DRAFT",
+      })),
+    [indicators],
+  );
 
   async function generate() {
     setBusyAction("draft");
@@ -253,6 +297,19 @@ export function ReportWorkspace({
                 readOnly={!canEdit}
                 onReload={() => router.refresh()}
               />
+              {selected.sectionTitle.toLowerCase().includes("indicator") && (
+                <div className="mt-4 border-t border-slate-200 pt-3 dark:border-white/10">
+                  <ReportChartPanel
+                    key={`chart-${selected.id}`}
+                    sectionId={selected.id}
+                    initialConfig={selected.chartConfig ?? null}
+                    expectedVersion={selected.updatedAt}
+                    indicators={chartIndicators}
+                    readOnly={!canEdit}
+                    onReload={() => router.refresh()}
+                  />
+                </div>
+              )}
               {selected.sourceReferences && selected.sourceReferences.length > 0 && (
                 <div className="mt-4 border-t border-slate-200 pt-3 dark:border-white/10">
                   <SourceReferenceList sources={selected.sourceReferences} />

@@ -1,8 +1,9 @@
-import type { IExportBuilder, ExportArtifacts } from "@donordesk/application";
-import { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType, TextRun } from "docx";
+import type { IExportBuilder, ExportArtifacts, ExportChartInput } from "@donordesk/application";
+import { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType, TextRun, ImageRun } from "docx";
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
+import { renderChartPngCached, chartHasData } from "./chart-png-renderer.js";
 
 function escapeCsv(value: string): string {
   if (value == null) return "";
@@ -43,8 +44,25 @@ export class DefaultExportBuilder implements IExportBuilder {
           children: textRuns(s.title),
         }),
     );
+    const chartImages = new Map<string, { png: Buffer; caption: string }>();
+    if (input.charts && input.charts.length > 0) {
+      for (const c of input.charts) {
+        if (!chartHasData(c.indicators, c.config)) continue;
+        try {
+          const png = await renderChartPngCached({ config: c.config, indicators: c.indicators, width: 720, height: 420 });
+          chartImages.set(c.sectionTitle, { png, caption: c.sectionTitle });
+        } catch {
+          // Chart rendering must never break an export; skip the image.
+        }
+      }
+    }
     for (const s of input.sections) {
       sections.push(new Paragraph({ children: textRuns(s.content) }));
+      const chart = chartImages.get(s.title);
+      if (chart) {
+        sections.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "png", data: chart.png, transformation: { width: 540, height: 315 } })] }));
+        sections.push(new Paragraph({ alignment: AlignmentType.CENTER, children: textRuns(chart.caption) }));
+      }
     }
     const indicatorTable = new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
@@ -107,9 +125,31 @@ export class DefaultExportBuilder implements IExportBuilder {
     doc.fontSize(12).text(`Project: ${input.projectName}`);
     doc.text(`Reporting period: ${input.reportingPeriodLabel}`);
     doc.moveDown();
+    const chartImages = new Map<string, Buffer>();
+    if (input.charts && input.charts.length > 0) {
+      for (const c of input.charts) {
+        if (!chartHasData(c.indicators, c.config)) continue;
+        try {
+          const png = await renderChartPngCached({ config: c.config, indicators: c.indicators, width: 720, height: 420 });
+          chartImages.set(c.sectionTitle, png);
+        } catch {
+          // Chart rendering must never break an export; skip the image.
+        }
+      }
+    }
     for (const s of input.sections) {
       doc.fontSize(14).text(s.title);
       doc.fontSize(11).text(s.content);
+      const chart = chartImages.get(s.title);
+      if (chart) {
+        doc.moveDown();
+        try {
+          doc.image(chart, { fit: [480, 280], align: "center" });
+        } catch {
+          // Unsupported image stream; skip.
+        }
+        doc.moveDown();
+      }
       doc.moveDown();
     }
     doc.fontSize(14).text("Indicator Progress");

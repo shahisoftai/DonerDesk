@@ -49,6 +49,7 @@ export class GetReportDraftHandler {
           sourceReferences: s.sourceReferences,
           unsupportedClaims: s.unsupportedClaims,
           status: s.status,
+          chartConfig: s.chartConfig,
           updatedAt: s.updatedAt.toISOString(),
         })),
         claims: claimsResult.value.map((c) => ({

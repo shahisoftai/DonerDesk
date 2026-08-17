@@ -50,6 +50,7 @@ import {
   GenerateReportDraftHandler,
   GetReportDraftHandler,
   UpdateReportSectionHandler,
+  UpdateReportSectionChartHandler,
   ApproveReportSectionHandler,
   SubmitReportForReviewHandler,
   ApproveReportHandler,
@@ -292,6 +293,7 @@ export interface Container {
     generateReportDraft: GenerateReportDraftHandler;
     getReportDraft: GetReportDraftHandler;
     updateReportSection: UpdateReportSectionHandler;
+    updateReportSectionChart: UpdateReportSectionChartHandler;
     approveReportSection: ApproveReportSectionHandler;
     submitReportForReview: SubmitReportForReviewHandler;
     approveReport: ApproveReportHandler;
@@ -608,6 +610,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     ),
     getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportPlans),
     updateReportSection: new UpdateReportSectionHandler(sections, audits),
+    updateReportSectionChart: new UpdateReportSectionChartHandler(sections, audits),
     rewriteReportSection: new RewriteReportSectionHandler(sections, getReportDraftGenerator, audits),
     approveReportSection: new ApproveReportSectionHandler(sections, reportClaims, audits),
     submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),

@@ -8,4 +8,5 @@ export * from "./report-claim.js";
 export * from "./generation-run.js";
 export * from "./gate-rules.js";
 export * from "./indicator-calculator.js";
+export * from "./chart-config.js";
 export * from "./events.js";

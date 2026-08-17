@@ -74,3 +74,15 @@ export const GenerateReportRunSchema = z.object({
   draftId: z.string().min(1),
 });
 
+export const ChartConfigSchema = z.object({
+  type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
+  dataBinding: z.enum(["INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),
+  options: z.record(z.string(), z.unknown()).optional(),
+});
+export type ChartConfigInput = z.infer<typeof ChartConfigSchema>;
+
+export const UpdateSectionChartSchema = z.object({
+  chartConfig: ChartConfigSchema.nullable(),
+  expectedVersion: z.string().optional(),
+});
+

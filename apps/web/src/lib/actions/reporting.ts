@@ -12,6 +12,7 @@ import {
   IdResponseSchema,
   OkResponseSchema,
   UpdateSectionResponseSchema,
+  UpdateSectionChartResponseSchema,
   RewriteSectionResponseSchema,
 } from "./_schemas";
 
@@ -84,6 +85,26 @@ export async function updateReportSectionAction(
   return gatewayRequest(`/v1/report-sections/${sectionId}`, UpdateSectionResponseSchema, context.token, {
     method: "PUT",
     body: parsed.data,
+  });
+}
+
+export type ChartConfigInput = {
+  type: "BAR" | "LINE" | "PIE" | "AREA" | "RADAR" | "GAUGE";
+  dataBinding: "INDICATOR_COMPARISON" | "INDICATOR_ACHIEVEMENT" | "STATUS_DISTRIBUTION";
+  options?: Record<string, unknown>;
+};
+
+export type UpdateSectionChartResult = Result<{ version: string; chartConfig: ChartConfigInput | null }, AppError>;
+
+export async function updateReportSectionChartAction(
+  sectionId: string,
+  chartConfig: ChartConfigInput | null,
+  expectedVersion?: string,
+): Promise<UpdateSectionChartResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-sections/${sectionId}/chart`, UpdateSectionChartResponseSchema, context.token, {
+    method: "PATCH",
+    body: { chartConfig, expectedVersion },
   });
 }
 

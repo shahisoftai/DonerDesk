@@ -7,6 +7,7 @@ import {
   DomainError,
   DateRange,
   ReportStatus,
+  parseChartConfig,
   type Result,
   type ReportType,
   type ReportDraftStatus,
@@ -215,6 +216,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         sourceReferencesJson: JSON.stringify(s.sourceReferences),
         unsupportedClaims: JSON.stringify(s.unsupportedClaims),
         status: s.status,
+        chartConfigJson: s.chartConfig ? JSON.stringify(s.chartConfig) : null,
       },
     });
     return ok(s);
@@ -229,6 +231,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         sourceReferencesJson: JSON.stringify(s.sourceReferences),
         unsupportedClaims: JSON.stringify(s.unsupportedClaims),
         status: s.status,
+        chartConfigJson: s.chartConfig ? JSON.stringify(s.chartConfig) : null,
       },
     });
     return ok(s);
@@ -256,6 +259,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
     sourceReferencesJson: string;
     unsupportedClaims: string;
     status: string;
+    chartConfigJson: string | null;
     createdAt: Date;
   }): ReportSection {
     return ReportSection.rehydrate({
@@ -270,6 +274,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         sourceReferences: JSON.parse(row.sourceReferencesJson) as SourceReference[],
         unsupportedClaims: JSON.parse(row.unsupportedClaims),
         status: row.status as SectionStatus,
+        chartConfig: parseChartConfig(row.chartConfigJson),
       },
     });
   }

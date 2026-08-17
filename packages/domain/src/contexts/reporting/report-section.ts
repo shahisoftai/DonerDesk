@@ -1,5 +1,6 @@
 import { Entity } from "../../core/entity.js";
 import { DomainError } from "../../core/domain-error.js";
+import type { ChartConfig } from "./chart-config.js";
 
 export type SectionStatus = "NOT_STARTED" | "DRAFTED" | "NEEDS_EVIDENCE" | "NEEDS_REVIEW" | "APPROVED";
 
@@ -21,6 +22,7 @@ export interface ReportSectionProps {
   sourceReferences: SourceReference[];
   unsupportedClaims: string[];
   status: SectionStatus;
+  chartConfig?: ChartConfig | null;
 }
 
 export class ReportSection extends Entity<string> {
@@ -44,6 +46,7 @@ export class ReportSection extends Entity<string> {
     sourceReferences?: SourceReference[];
     unsupportedClaims?: string[];
     status?: SectionStatus;
+    chartConfig?: ChartConfig | null;
   }): ReportSection {
     if (!input.sectionTitle) throw DomainError.validation("Section title required");
     return new ReportSection(input.id, input.tenantId, input.reportDraftId, {
@@ -53,6 +56,7 @@ export class ReportSection extends Entity<string> {
       sourceReferences: input.sourceReferences ?? [],
       unsupportedClaims: input.unsupportedClaims ?? [],
       status: input.status ?? "NOT_STARTED",
+      chartConfig: input.chartConfig ?? null,
     });
   }
 
@@ -72,6 +76,7 @@ export class ReportSection extends Entity<string> {
   get sourceReferences(): SourceReference[] { return [...this.props.sourceReferences]; }
   get unsupportedClaims(): string[] { return [...this.props.unsupportedClaims]; }
   get status(): SectionStatus { return this.props.status; }
+  get chartConfig(): ChartConfig | null { return this.props.chartConfig ?? null; }
 
   setContent(content: string, sourceRefs: SourceReference[], unsupported: string[]): void {
     this.props.content = content;
@@ -80,6 +85,11 @@ export class ReportSection extends Entity<string> {
     if (this.props.status === "NOT_STARTED" || this.props.status === "NEEDS_EVIDENCE") {
       this.props.status = "DRAFTED";
     }
+    this.touch();
+  }
+
+  setChartConfig(config: ChartConfig | null): void {
+    this.props.chartConfig = config;
     this.touch();
   }
 
