@@ -37,7 +37,7 @@ export function createMiniMaxAdapter(config: MiniMaxAdapterConfig): ILLMProvider
           max_tokens: input.maxTokens ?? 2048,
           temperature: input.temperature ?? 0.3,
         }),
-        signal: AbortSignal.timeout(config.timeoutMs ?? 60000),
+        signal: AbortSignal.timeout(config.timeoutMs ?? 120000),
       });
 
       if (!response.ok) {

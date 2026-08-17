@@ -39,6 +39,9 @@ export async function generateDraftAction(periodId: string): Promise<GenerateDra
   return gatewayRequest(`/v1/reporting-periods/${periodId}/generate-draft`, GeneratedDraftResponseSchema, context.token, {
     method: "POST",
     body: {},
+    // LLM providers (MiniMax measured at 46-54s) need well beyond the 15s
+    // default gateway timeout to draft a full report.
+    timeoutMs: 180_000,
   });
 }
 

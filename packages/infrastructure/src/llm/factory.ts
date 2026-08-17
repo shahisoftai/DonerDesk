@@ -313,7 +313,9 @@ function createMiniMaxAdapter(config: { apiKey: string; model?: string; baseUrl?
           max_tokens: input.maxTokens ?? 2048,
           temperature: input.temperature ?? 0.3,
         }),
-        signal: AbortSignal.timeout(config.timeoutMs ?? 60000),
+        // MiniMax is slow (measured 46-54s for a full report draft); keep a
+        // generous default so the call completes instead of aborting.
+        signal: AbortSignal.timeout(config.timeoutMs ?? 120000),
       });
 
       if (!response.ok) {
