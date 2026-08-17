@@ -275,3 +275,38 @@ stacked production issues, all now fixed:
    `permission denied`. Added plain DML grants to `rls.sql` and applied on
    prod. `recordRun` also now upserts the `LlmPrompt` row ("report-drafter")
    so the `LlmRun.promptId` FK succeeds.
+
+## 14. Production incident 2: credits burned on stub fallback (2026-08-17)
+
+**Symptom:** "AI draft credits exhausted for the current billing month" after
+the tenant's STARTER quota (5) was hit, while every draft contained only stub
+text.
+
+**Root cause:** MiniMax timed out on the full report prompt (maxTokens=8192
+forced an oversized generation; real call exceeded the 120s adapter timeout).
+`LlmReportDraftGenerator` caught the failure and silently returned stub
+sections, but `GenerateReportDraftHandler` recorded the run as
+`status="success"` + `billableUnits=1` + `modelId=minimax`. Five timeouts =
+five consumed credits, all for stub content.
+
+**Fixes (commit `4145408`):**
+- `IReportDraftGenerator.generateDraft` now returns `{ sections, usedFallback }`.
+  Stub generator always reports `usedFallback=true`; the LLM generator reports
+  the actual per-call outcome.
+- Handler: a stub-fallback draft is NOT AI-generated — the reserved credit is
+  released, the run is recorded as `status="error"` (never billed), the
+  draft's `generatedByAi` is corrected to false, and the audit event includes
+  `fallback=true`.
+- `maxTokens` 8192 → 4096 for report drafting. Verified live: MiniMax
+  completes the realistic full prompt in ~38s (previously timed out at >120s).
+- Rewrite parsing tolerates plain-text output from MiniMax (it sometimes
+  narrates without the JSON wrapper).
+- `ReportPlan` version allocation moved to `createNextVersion` — a P2002
+  retry loop — so concurrent regenerations cannot collide on the same version
+  (previously raised Prisma unique-violation as an unhandled 500).
+
+**Production data correction:** the 5 mislabeled success runs (timestamps
+13:30–14:38 exactly match the timeout events) were re-marked `error` with
+`billableUnits=0`; the `AI_DRAFT_CREDITS` counter was reset to 0. The tenant
+can now regenerate up to its real monthly quota, and each generation that
+actually completes will consume exactly one credit.
