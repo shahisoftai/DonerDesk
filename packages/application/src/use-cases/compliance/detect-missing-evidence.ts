@@ -5,12 +5,13 @@ import type { IChecklistRepository, IChecklistDetector } from "../../ports/compl
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type {
   IReportingPeriodRepository,
+  IReportDraftRepository,
+  IReportSectionRepository,
 } from "../../ports/reporting.js";
-import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
-import type { IReportSectionRepository } from "../../ports/reporting.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
+import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 
 export class DetectMissingEvidenceHandler {
   constructor(
@@ -18,6 +19,7 @@ export class DetectMissingEvidenceHandler {
     private readonly checklist: IChecklistRepository,
     private readonly detector: IChecklistDetector,
     private readonly periods: IReportingPeriodRepository,
+    private readonly drafts: IReportDraftRepository,
     private readonly templates: IDonorTemplateRepository,
     private readonly indicatorUpdates: IIndicatorUpdateRepository,
     private readonly sections: IReportSectionRepository,
@@ -46,12 +48,19 @@ export class DetectMissingEvidenceHandler {
     if (!ev.ok) return ev;
     const evidenceCount = ev.value.total;
 
-    const sectionsResult = await this.sections.findByReportDraft(reportingPeriodId, ctx.tenant.tenantId);
-    const sectionStatuses = (sectionsResult.ok ? sectionsResult.value : []).map((s) => ({
-      sectionId: s.id,
-      status: s.status,
-      hasUnsupportedClaims: s.unsupportedClaims.length > 0,
-    }));
+    const draftsResult = await this.drafts.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    let sectionStatuses: Array<{ sectionId: string; status: string; hasUnsupportedClaims: boolean }> = [];
+    const firstDraft = draftsResult.ok ? draftsResult.value[0] : undefined;
+    if (firstDraft) {
+      const sectionsResult = await this.sections.findByReportDraft(firstDraft.id, ctx.tenant.tenantId);
+      sectionStatuses = sectionsResult.ok
+        ? sectionsResult.value.map((s) => ({
+            sectionId: s.id,
+            status: s.status,
+            hasUnsupportedClaims: s.unsupportedClaims.length > 0,
+          }))
+        : [];
+    }
 
     const activitiesResult = await this.activities.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     const activitiesCount = activitiesResult.ok ? activitiesResult.value.length : 0;

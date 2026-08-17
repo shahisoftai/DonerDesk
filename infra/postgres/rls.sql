@@ -8,6 +8,7 @@ BEGIN
     'DonorTemplate','LogframeItem',
     'Indicator','IndicatorUpdate','ReportingPeriod','EvidenceFile','ActivityUpdate',
     'ReportDraft','ReportSection','ChecklistItem','ExportPackage','Comment',
+    'ReportPlan','ReportClaim','ReportGenerationRun','DonorTemplateMapping',
     'Notification','AuditEvent','LlmRun','LlmFeedback','EvidenceChunk','EvidenceEmbedding',
     'IdempotencyRecord',
     'BillingSubscription','EntitlementGrant','UsageCounter','TrialIdentity'

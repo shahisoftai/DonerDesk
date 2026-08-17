@@ -51,6 +51,8 @@ import {
   ApproveReportSectionHandler,
   SubmitReportForReviewHandler,
   ApproveReportHandler,
+  RejectReportHandler,
+  ResolveReportClaimHandler,
   DetectMissingEvidenceHandler,
   ResolveChecklistItemHandler,
   BulkResolveChecklistHandler,
@@ -59,6 +61,8 @@ import {
   RecomputeReadinessHandler,
   GenerateChecklistHandler,
   RewriteReportSectionHandler,
+  IndicatorAnalyticsService,
+  InferredReportPlanner,
   CreateExportHandler,
   GetExportPreflightHandler,
   RunExportHandler,
@@ -124,6 +128,12 @@ import {
   PrismaReportDraftRepository,
   PrismaReportSectionRepository,
 } from "./repositories/reporting.js";
+import {
+  PrismaReportPlanRepository,
+  PrismaReportClaimRepository,
+  PrismaReportGenerationRunRepository,
+  PrismaDonorTemplateMappingRepository,
+} from "./repositories/report-intelligence.js";
 import { PrismaChecklistRepository } from "./repositories/checklist.js";
 import { PrismaExportRepository } from "./repositories/exports.js";
 import {
@@ -147,6 +157,8 @@ import { StubTemplateExtractionService } from "./llm/template-extraction.js";
 import { StubEvidenceTagger } from "./llm/evidence-tagger.js";
 import { StubActivityPolisher } from "./llm/activity-polisher.js";
 import { StubReportDraftGenerator } from "./llm/report-draft-generator.js";
+import { DeterministicClaimVerifier } from "./llm/claim-verifier.js";
+import { EvidencePackageBuilder } from "./ai/evidence-package-builder.js";
 import { StubChecklistDetector } from "./llm/checklist-detector.js";
 import { DefaultExportBuilder } from "./exports/builder.js";
 import { createLogger } from "./observability/logger.js";
@@ -204,6 +216,10 @@ export interface Container {
   periods: PrismaReportingPeriodRepository;
   drafts: PrismaReportDraftRepository;
   sections: PrismaReportSectionRepository;
+  reportPlans: PrismaReportPlanRepository;
+  reportClaims: PrismaReportClaimRepository;
+  generationRuns: PrismaReportGenerationRunRepository;
+  donorTemplateMappings: PrismaDonorTemplateMappingRepository;
   checklist: PrismaChecklistRepository;
   exports: PrismaExportRepository;
   comments: PrismaCommentRepository;
@@ -265,6 +281,8 @@ export interface Container {
     approveReportSection: ApproveReportSectionHandler;
     submitReportForReview: SubmitReportForReviewHandler;
     approveReport: ApproveReportHandler;
+    rejectReport: RejectReportHandler;
+    resolveReportClaim: ResolveReportClaimHandler;
     detectMissingEvidence: DetectMissingEvidenceHandler;
     resolveChecklistItem: ResolveChecklistItemHandler;
     bulkResolveChecklist: BulkResolveChecklistHandler;
@@ -381,6 +399,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const periods = new PrismaReportingPeriodRepository(prisma);
   const drafts = new PrismaReportDraftRepository(prisma);
   const sections = new PrismaReportSectionRepository(prisma);
+  const reportPlans = new PrismaReportPlanRepository(prisma);
+  const reportClaims = new PrismaReportClaimRepository(prisma);
+  const generationRuns = new PrismaReportGenerationRunRepository(prisma);
+  const donorTemplateMappings = new PrismaDonorTemplateMappingRepository(prisma);
   const checklist = new PrismaChecklistRepository(prisma);
   const exports = new PrismaExportRepository(prisma);
   const comments = new PrismaCommentRepository(prisma);
@@ -445,8 +467,13 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const checklistDetector = new StubChecklistDetector();
   const exportBuilder = new DefaultExportBuilder();
 
+  const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates);
+  const reportPlanner = new InferredReportPlanner(ids);
+  const evidencePackageBuilder = new EvidencePackageBuilder(evidence);
+  const claimVerifier = new DeterministicClaimVerifier();
+
   const calculateReadinessHandler = new CalculateReadinessHandler(drafts, sections, indicators, indicatorUpdates, evidence, checklist);
-  const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, templates, indicatorUpdates, sections, activities, evidence, audits);
+  const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits);
 
   if (jobRegistrar?.register) {
     jobRegistrar.register(
@@ -527,14 +554,18 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events),
     listReportingPeriods: new ListReportingPeriodsHandler(periods),
     generateReportDraft: new GenerateReportDraftHandler(
-      ids, periods, drafts, sections, projects, organizations, templates, logframe, indicators, indicatorUpdates, activities, evidence, reportDraftGenerator, audits, entitlements, usageCounters, llmUsage,
+      ids, periods, drafts, sections, projects, organizations, templates, indicatorUpdates, activities,
+      reportPlanner, indicatorAnalytics, evidencePackageBuilder, claimVerifier, generationRuns, reportPlans, reportClaims,
+      reportDraftGenerator, audits, entitlements, usageCounters, llmUsage,
     ),
-    getReportDraft: new GetReportDraftHandler(drafts, sections),
+    getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportPlans),
     updateReportSection: new UpdateReportSectionHandler(sections, audits),
     rewriteReportSection: new RewriteReportSectionHandler(sections, reportDraftGenerator, audits),
-    approveReportSection: new ApproveReportSectionHandler(sections, audits),
+    approveReportSection: new ApproveReportSectionHandler(sections, reportClaims, audits),
     submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),
-    approveReport: new ApproveReportHandler(drafts, periods, audits),
+    approveReport: new ApproveReportHandler(drafts, periods, checklist, reportClaims, audits),
+    rejectReport: new RejectReportHandler(drafts, audits),
+    resolveReportClaim: new ResolveReportClaimHandler(reportClaims, audits),
     detectMissingEvidence: detectMissingEvidenceHandler,
     resolveChecklistItem: new ResolveChecklistItemHandler(checklist, audits),
     bulkResolveChecklist: new BulkResolveChecklistHandler(checklist, audits),
@@ -565,7 +596,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     prisma, auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, reportDraftGenerator, checklistDetector, exportBuilder,
     organizations, users, invitations,     projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
-    periods, drafts, sections, checklist, exports, comments, notifications, audits, projectMembers,
+    periods, drafts, sections, reportPlans, reportClaims, generationRuns, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, billingProvider,
     handlers,
   };

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, ReviewReportSchema, RewriteSectionSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -81,10 +81,28 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const id = (req.params as { id: string }).id;
     const body = ReviewReportSchema.parse(req.body ?? {});
     if (body.decision !== "APPROVE") {
-      return { ok: false, message: "Use /comments for revisions" };
+      return { ok: false, message: "Use /reject for revisions" };
     }
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.approveReport.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.post("/v1/report-drafts/:id/reject", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = RejectReportSchema.parse(req.body ?? {});
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.rejectReport.handle(ctx, id, body.notes);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.post("/v1/report-claims/:id/resolve", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = ResolveReportClaimSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.resolveReportClaim.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return { ok: true };
   });

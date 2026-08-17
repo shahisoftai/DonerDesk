@@ -310,9 +310,10 @@ export const EXPORT_TYPE_LABEL: Record<string, string> = {
   EXCEL_INDICATORS: "Indicator spreadsheet",
   EVIDENCE_CHECKLIST: "Evidence checklist",
   EVIDENCE_PACK_ZIP: "Evidence package (ZIP)",
+  DONOR_TEMPLATE: "Donor template",
 };
 
-export const EXPORT_TYPE_OPTIONS: readonly string[] = ["WORD", "PDF", "EXCEL_INDICATORS", "EVIDENCE_CHECKLIST", "EVIDENCE_PACK_ZIP"];
+export const EXPORT_TYPE_OPTIONS: readonly string[] = ["WORD", "PDF", "EXCEL_INDICATORS", "EVIDENCE_CHECKLIST", "EVIDENCE_PACK_ZIP", "DONOR_TEMPLATE"];
 
 export const CAPABILITY_LABEL: Record<string, string> = {
   "project.create": "Create projects",
@@ -333,6 +334,8 @@ export const CAPABILITY_LABEL: Record<string, string> = {
   "reporting.edit": "Edit report sections",
   "report.generate": "Generate report drafts",
   "report.approve": "Approve reports",
+  "report.resolve-claim": "Accept report claims with limitations",
+  "report.override-confidentiality": "Override confidentiality blocks",
   "checklist.resolve": "Resolve compliance items",
   "checklist.manage": "Manage compliance",
   "export.create": "Create exports",

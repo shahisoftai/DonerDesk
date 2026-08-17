@@ -9,7 +9,11 @@ export type DomainErrorCode =
   | "PLAN_LIMIT_REACHED"
   | "AI_CREDITS_EXHAUSTED"
   | "BILLING_STATE_INVALID"
-  | "BILLING_PROVIDER_UNAVAILABLE";
+  | "BILLING_PROVIDER_UNAVAILABLE"
+  | "REPORT_GATE_BLOCKED"
+  | "REPORT_CLAIM_VERIFICATION_FAILED"
+  | "REPORT_SEMANTICS_UNRESOLVED"
+  | "REPORT_TEMPLATE_MAPPING_MISSING";
 
 export class DomainError extends Error {
   public readonly code: DomainErrorCode;
@@ -68,5 +72,21 @@ export class DomainError extends Error {
 
   static billingProviderUnavailable(message: string, details?: Record<string, unknown>): DomainError {
     return new DomainError("BILLING_PROVIDER_UNAVAILABLE", message, details);
+  }
+
+  static reportGateBlocked(message: string, details?: Record<string, unknown>): DomainError {
+    return new DomainError("REPORT_GATE_BLOCKED", message, details);
+  }
+
+  static reportClaimVerificationFailed(message: string, details?: Record<string, unknown>): DomainError {
+    return new DomainError("REPORT_CLAIM_VERIFICATION_FAILED", message, details);
+  }
+
+  static reportSemanticsUnresolved(message: string, details?: Record<string, unknown>): DomainError {
+    return new DomainError("REPORT_SEMANTICS_UNRESOLVED", message, details);
+  }
+
+  static reportTemplateMappingMissing(message: string, details?: Record<string, unknown>): DomainError {
+    return new DomainError("REPORT_TEMPLATE_MAPPING_MISSING", message, details);
   }
 }

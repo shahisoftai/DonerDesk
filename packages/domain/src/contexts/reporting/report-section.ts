@@ -9,6 +9,9 @@ export interface SourceReference {
   type: "evidence" | "activity" | "indicator" | "template";
   id: string;
   label?: string;
+  /** Claim-level provenance links, populated by the structured generator. */
+  claimId?: string;
+  chunkId?: string;
 }
 
 export interface ReportSectionProps {

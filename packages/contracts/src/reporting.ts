@@ -60,3 +60,17 @@ export const ReviewReportSchema = z.object({
   decision: z.enum(["APPROVE", "RETURN"]),
   notes: z.string().max(2000).optional(),
 });
+
+export const RejectReportSchema = z.object({
+  notes: z.string().max(2000).optional(),
+});
+
+export const ResolveReportClaimSchema = z.object({
+  resolution: z.enum(["ACCEPTED_WITH_LIMITATION", "EXCLUDED"]),
+  notes: z.string().max(2000).optional(),
+});
+
+export const GenerateReportRunSchema = z.object({
+  draftId: z.string().min(1),
+});
+

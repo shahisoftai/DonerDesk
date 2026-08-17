@@ -102,6 +102,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         frequency: i.frequency,
         responsibleUserId: i.responsibleUserId,
         disaggregationRequired: i.disaggregationRequired,
+        semanticsJson: i.semanticsJson,
       },
     });
     return ok(i);
@@ -121,6 +122,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         frequency: i.frequency,
         responsibleUserId: i.responsibleUserId,
         disaggregationRequired: i.disaggregationRequired,
+        semanticsJson: i.semanticsJson,
       },
     });
     return ok(i);
@@ -158,6 +160,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     frequency: string | null;
     responsibleUserId: string | null;
     disaggregationRequired: boolean;
+    semanticsJson: string | null;
     createdAt: Date;
   }): Indicator {
     return Indicator.rehydrate({
@@ -178,6 +181,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         frequency: row.frequency ?? undefined,
         responsibleUserId: row.responsibleUserId ?? undefined,
         disaggregationRequired: row.disaggregationRequired,
+        semanticsJson: row.semanticsJson ?? undefined,
       },
     });
   }

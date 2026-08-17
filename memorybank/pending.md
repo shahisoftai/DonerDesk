@@ -75,10 +75,10 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
 - **Authoritative global queue read models** — current Reports and Compliance queues are composed server-side from accessible project APIs. Add organization-level paginated contracts before large-scale production use.
 - **Indicator detail/history read model** — definition data is available through the project logframe, but period update history and disaggregation are not exposed safely.
 - **Complete project settings update contract** — **DONE 2026-08-15 (release `20260815054218`)**. `UpdateProjectHandler` now supports editable dates/budget (ISO-4217 currency) with period-overlap protection (Feature 18 §5.2 / §5.11).
-- **Claim-level provenance / source-linking (REP-06)** — no backend claim/provenance contract; UI shows section-level references only.
+- **Claim-level provenance / source-linking (REP-06)** — **DONE 2026-08-16 (Feature 20 core)**. Structured `ReportClaim`/`ClaimSource` contract with evidence hash + chunker version snapshots, deterministic tiered claim verification, approval gates, reject/request-changes transition, and report plan / generation-run persistence landed in domain, application, infrastructure, and API.
 - **Real AI providers / job resources** — all AI handlers are stubs; UI labels them honestly.
 - **Email/notification delivery** — in-app only; no delivery claims.
-- **Report reject/request-changes endpoint** — backend `approve` route only accepts `APPROVE`; no separate reject transition surfaced.
+- **Report reject/request-changes endpoint** — **DONE 2026-08-16 (Feature 20 core)**. `POST /v1/report-drafts/:id/reject` returns drafts to DRAFT with an audit trail.
 
 ## High priority — production hardening
 

@@ -216,6 +216,8 @@ model Project {
   checklistItems  ChecklistItem[]
   reportDrafts    ReportDraft[]
   exportPackages  ExportPackage[]
+  reportPlans     ReportPlan[]
+  generationRuns  ReportGenerationRun[]
 
   @@unique([tenantId, projectCode])
   @@index([tenantId, id])
@@ -320,6 +322,7 @@ model Indicator {
   frequency             String?
   responsibleUserId     String?
   disaggregationRequired Boolean @default(false)
+  semanticsJson         String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -359,6 +362,8 @@ model ReportingPeriod {
   tenantId              String
   projectId             String
   donorTemplateId       String?
+  donorTemplateVersion  Int?
+  donorTemplateMappingId String?
   reportType            String
   startDate             DateTime
   endDate               DateTime
@@ -378,6 +383,8 @@ model ReportingPeriod {
   activityUpdates ActivityUpdate[]
   evidenceItems   EvidenceFile[]
   exports      ExportPackage[]
+  reportPlans  ReportPlan[]
+  generationRuns ReportGenerationRun[]
 
   @@index([tenantId])
   @@index([projectId])
@@ -476,6 +483,8 @@ model ReportDraft {
   project         Project         @relation(fields: [projectId], references: [id])
   reportingPeriod ReportingPeriod @relation(fields: [reportingPeriodId], references: [id])
   sections        ReportSection[]
+  claims          ReportClaim[]
+  generationRuns  ReportGenerationRun[]
   @@index([tenantId])
   @@index([reportingPeriodId])
 }
@@ -494,8 +503,87 @@ model ReportSection {
   updatedAt           DateTime @updatedAt
 
   reportDraft ReportDraft @relation(fields: [reportDraftId], references: [id])
+  claims      ReportClaim[]
   @@index([tenantId])
   @@index([reportDraftId])
+}
+
+// Feature 20: Report Intelligence Engine — plan, claims, runs, mappings.
+model ReportPlan {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  reportingPeriodId String
+  version           Int      @default(1)
+  sectionsJson      String   @default("[]")
+  styleJson         String   @default("{}")
+  generatedBy       String   @default("INFERRED")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  project         Project         @relation(fields: [projectId], references: [id])
+  reportingPeriod ReportingPeriod @relation(fields: [reportingPeriodId], references: [id])
+
+  @@unique([tenantId, reportingPeriodId, version])
+  @@index([tenantId])
+  @@index([reportingPeriodId])
+}
+
+model ReportClaim {
+  id                  String   @id
+  tenantId            String
+  projectId           String
+  reportDraftId       String
+  sectionId           String
+  text                String   @db.Text
+  type                String
+  sourcesJson         String   @default("[]")
+  verificationResult  String   @default("FAILED")
+  verificationDetail  String   @default("")
+  resolutionNotes     String?
+  resolvedById        String?
+  resolvedAt          DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  reportDraft ReportDraft @relation(fields: [reportDraftId], references: [id])
+  section     ReportSection @relation(fields: [sectionId], references: [id])
+  @@index([tenantId])
+  @@index([reportDraftId])
+  @@index([sectionId])
+}
+
+model ReportGenerationRun {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  reportingPeriodId String
+  draftId           String
+  snapshotJson      String   @db.Text
+  createdAt         DateTime @default(now())
+
+  project         Project         @relation(fields: [projectId], references: [id])
+  reportingPeriod ReportingPeriod @relation(fields: [reportingPeriodId], references: [id])
+  reportDraft     ReportDraft     @relation(fields: [draftId], references: [id])
+  @@index([tenantId])
+  @@index([reportingPeriodId])
+  @@index([draftId])
+}
+
+model DonorTemplateMapping {
+  id            String   @id
+  tenantId      String
+  templateId    String
+  version       Int      @default(1)
+  regionsJson   String   @default("[]")
+  approvedById  String?
+  approvedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, templateId, version])
+  @@index([tenantId])
+  @@index([templateId])
 }
 
 model ChecklistItem {

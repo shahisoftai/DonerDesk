@@ -1,5 +1,6 @@
 import { Entity } from "../../core/entity.js";
 import { DomainError } from "../../core/domain-error.js";
+import type { IndicatorSemantics } from "./indicator-semantics.js";
 
 export type IndicatorType = "NUMBER" | "PERCENTAGE" | "YES_NO" | "TEXT" | "RATIO" | "CURRENCY" | "CUSTOM";
 
@@ -18,6 +19,8 @@ export interface IndicatorProps {
   frequency?: string;
   responsibleUserId?: string;
   disaggregationRequired: boolean;
+  /** Serialized IndicatorSemantics; absent for legacy rows (conservative defaults apply). */
+  semanticsJson?: string;
 }
 
 export class Indicator extends Entity<string> {
@@ -89,6 +92,16 @@ export class Indicator extends Entity<string> {
   get frequency(): string | undefined { return this.props.frequency; }
   get responsibleUserId(): string | undefined { return this.props.responsibleUserId; }
   get disaggregationRequired(): boolean { return this.props.disaggregationRequired; }
+  get semanticsJson(): string | undefined { return this.props.semanticsJson; }
+
+  get semantics(): IndicatorSemantics | undefined {
+    if (!this.props.semanticsJson) return undefined;
+    try {
+      return JSON.parse(this.props.semanticsJson) as IndicatorSemantics;
+    } catch {
+      return undefined;
+    }
+  }
 
   update(patch: Partial<IndicatorProps>): void {
     this.props = { ...this.props, ...patch };

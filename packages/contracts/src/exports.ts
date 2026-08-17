@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ExportTypeSchema = z.enum(["WORD", "PDF", "EXCEL_INDICATORS", "EVIDENCE_CHECKLIST", "EVIDENCE_PACK_ZIP"]);
+export const ExportTypeSchema = z.enum(["WORD", "PDF", "EXCEL_INDICATORS", "EVIDENCE_CHECKLIST", "EVIDENCE_PACK_ZIP", "DONOR_TEMPLATE"]);
 
 export const CreateExportSchema = z.object({
   projectId: z.string().min(1),

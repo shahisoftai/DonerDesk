@@ -1,7 +1,7 @@
 import { Entity } from "../../core/entity.js";
 import { DomainError } from "../../core/domain-error.js";
 
-export type ExportType = "WORD" | "PDF" | "EXCEL_INDICATORS" | "EVIDENCE_CHECKLIST" | "EVIDENCE_PACK_ZIP";
+export type ExportType = "WORD" | "PDF" | "EXCEL_INDICATORS" | "EVIDENCE_CHECKLIST" | "EVIDENCE_PACK_ZIP" | "DONOR_TEMPLATE";
 
 export const EXPORT_TYPES: ExportType[] = [
   "WORD",
@@ -9,6 +9,7 @@ export const EXPORT_TYPES: ExportType[] = [
   "EXCEL_INDICATORS",
   "EVIDENCE_CHECKLIST",
   "EVIDENCE_PACK_ZIP",
+  "DONOR_TEMPLATE",
 ];
 
 export interface ExportPackageProps {

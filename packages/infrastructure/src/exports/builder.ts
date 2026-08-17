@@ -28,6 +28,8 @@ export class DefaultExportBuilder implements IExportBuilder {
         return this.buildChecklist(input);
       case "EVIDENCE_PACK_ZIP":
         return this.buildZip(input);
+      case "DONOR_TEMPLATE":
+        return this.buildDonorTemplate(input);
       default:
         throw new Error(`Unsupported export type: ${input.exportType}`);
     }
@@ -165,6 +167,48 @@ export class DefaultExportBuilder implements IExportBuilder {
       fileBuffer: Buffer.from(buffer as ArrayBuffer),
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       fileName: `${slug(input.projectName)}-indicators.xlsx`,
+    };
+  }
+
+  private async buildDonorTemplate(input: Parameters<IExportBuilder["build"]>[0]): Promise<ExportArtifacts> {
+    // The donor template itself is rendered by the Python workers (docxtpl).
+    // This TypeScript-side builder emits a placeholder-aware DOCX so the
+    // export pipeline and preflight continue to function without the worker.
+    const sections = input.sections.map(
+      (s) =>
+        new Paragraph({
+          heading: HeadingLevel.HEADING_2,
+          children: textRuns(s.title),
+        }),
+    );
+    for (const s of input.sections) {
+      sections.push(new Paragraph({ children: textRuns(s.content) }));
+    }
+    const doc = new Document({
+      creator: "DonorDesk",
+      title: input.reportTitle,
+      sections: [
+        {
+          properties: {},
+          children: [
+            new Paragraph({
+              heading: HeadingLevel.TITLE,
+              alignment: AlignmentType.CENTER,
+              children: textRuns(input.reportTitle),
+            }),
+            new Paragraph({ children: textRuns(`Project: ${input.projectName}`) }),
+            new Paragraph({ children: textRuns(`Reporting period: ${input.reportingPeriodLabel}`) }),
+            new Paragraph({ children: textRuns("") }),
+            ...sections,
+          ],
+        },
+      ],
+    });
+    const buffer = await Packer.toBuffer(doc);
+    return {
+      fileBuffer: buffer,
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      fileName: `${slug(input.projectName)}-${slug(input.reportingPeriodLabel)}-donor-template.docx`,
     };
   }
 

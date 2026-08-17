@@ -82,6 +82,19 @@ export class ReportDraft extends Entity<string> {
     this.touch();
   }
 
+  /**
+   * Rejects the report and returns it to DRAFT so block outcomes are
+   * actionable. The rejection reason is recorded through the handler's audit
+   * event; the draft itself only changes state (no schema change).
+   */
+  reject(): void {
+    if (this.props.status !== "UNDER_REVIEW") throw DomainError.invalidTransition("Only reports under review can be rejected");
+    this.props.status = "DRAFT";
+    this.props.approvedById = undefined;
+    this.props.approvedAt = undefined;
+    this.touch();
+  }
+
   approve(by: string): void {
     if (this.props.status !== "UNDER_REVIEW") throw DomainError.invalidTransition("Only reports under review can be approved");
     this.props.status = "APPROVED";

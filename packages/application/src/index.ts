@@ -15,6 +15,8 @@ export * from "./ports/support.js";
 export * from "./ports/setup.js";
 export * from "./ports/billing.js";
 export * from "./services/entitlement-service.js";
+export * from "./services/indicator-analytics-service.js";
+export * from "./services/report-planner.js";
 
 export * from "./use-cases/identity/sign-up.js";
 export * from "./use-cases/identity/login.js";
@@ -82,6 +84,8 @@ export * from "./use-cases/reporting/rewrite-report-section.js";
 export * from "./use-cases/reporting/approve-report-section.js";
 export * from "./use-cases/reporting/submit-report-for-review.js";
 export * from "./use-cases/reporting/approve-report.js";
+export * from "./use-cases/reporting/reject-report.js";
+export * from "./use-cases/reporting/resolve-report-claim.js";
 
 export * from "./use-cases/compliance/detect-missing-evidence.js";
 export * from "./use-cases/compliance/resolve-checklist-item.js";

@@ -15,6 +15,10 @@ export interface ReportingPeriodProps {
   responsibleOfficerId?: string;
   reportingProfileSnapshotJson: string;
   templateSnapshotJson: string;
+  /** Locked donor template version at period creation; feeds the generation snapshot. */
+  donorTemplateVersion?: number;
+  /** Locked donor template mapping id at period creation. */
+  donorTemplateMappingId?: string;
 }
 
 export class ReportingPeriod extends Entity<string> {
@@ -41,6 +45,8 @@ export class ReportingPeriod extends Entity<string> {
     responsibleOfficerId?: string;
     reportingProfileSnapshotJson?: string;
     templateSnapshotJson?: string;
+    donorTemplateVersion?: number;
+    donorTemplateMappingId?: string;
   }): ReportingPeriod {
     if (!input.deadline || isNaN(input.deadline.getTime())) throw DomainError.validation("Deadline required");
     return new ReportingPeriod(input.id, input.tenantId, input.projectId, {
@@ -54,6 +60,8 @@ export class ReportingPeriod extends Entity<string> {
       responsibleOfficerId: input.responsibleOfficerId,
       reportingProfileSnapshotJson: input.reportingProfileSnapshotJson ?? "{}",
       templateSnapshotJson: input.templateSnapshotJson ?? "{}",
+      donorTemplateVersion: input.donorTemplateVersion,
+      donorTemplateMappingId: input.donorTemplateMappingId,
     });
   }
 
@@ -77,6 +85,8 @@ export class ReportingPeriod extends Entity<string> {
   get responsibleOfficerId(): string | undefined { return this.props.responsibleOfficerId; }
   get reportingProfileSnapshotJson(): string { return this.props.reportingProfileSnapshotJson; }
   get templateSnapshotJson(): string { return this.props.templateSnapshotJson; }
+  get donorTemplateVersion(): number | undefined { return this.props.donorTemplateVersion; }
+  get donorTemplateMappingId(): string | undefined { return this.props.donorTemplateMappingId; }
 
   daysUntilDeadline(): number {
     const ms = this.props.deadline.getTime() - Date.now();
@@ -106,6 +116,15 @@ export class ReportingPeriod extends Entity<string> {
   setSnapshots(reportingProfileSnapshotJson: string, templateSnapshotJson: string): void {
     this.props.reportingProfileSnapshotJson = reportingProfileSnapshotJson;
     this.props.templateSnapshotJson = templateSnapshotJson;
+    this.touch();
+  }
+
+  /** Locks an approved donor template version + mapping onto the period. */
+  lockDonorTemplateMapping(version: number, mappingId: string): void {
+    if (!Number.isInteger(version) || version < 1) throw DomainError.validation("Donor template version must be a positive integer");
+    if (!mappingId) throw DomainError.validation("Donor template mapping id required");
+    this.props.donorTemplateVersion = version;
+    this.props.donorTemplateMappingId = mappingId;
     this.touch();
   }
 }

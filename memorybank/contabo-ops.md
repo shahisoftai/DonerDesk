@@ -476,6 +476,35 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (Feature 20 Report Intelligence Engine core — release `20260817041505`):**
+  Deployed API + web + prisma via `scripts/deploy-incremental.sh`
+  (SERVICES=`donordesk-api donordesk-web`, incremental transfer ~5.5 MB).
+  1. **Migration `20260816223000_report_intelligence`** applied as `donordesk_migrator`
+     (via `DATABASE_ADMIN_URL`, `/usr/bin/prisma migrate deploy`): adds `Indicator.semanticsJson`,
+     `ReportingPeriod.donorTemplateVersion`/`donorTemplateMappingId`, and the
+     `ReportPlan` / `ReportClaim` / `ReportGenerationRun` / `DonorTemplateMapping`
+     tables (with unique keys and indexes). All 10 migrations now applied.
+  2. **RLS extended to 33 tenant tables** (added `ReportPlan`, `ReportClaim`,
+     `ReportGenerationRun`, `DonorTemplateMapping`): `infra/postgres/rls.sql`
+     applied as `donordesk_migrator`; `tenant_isolation` policy enabled+forced
+     verified on all four new tables and DML grants confirmed for `donordesk_app`.
+  3. **Feature 20 core:** decimal-safe deterministic indicator analyst
+     (`IndicatorAnalyticsService` + domain calculator), indicator semantics
+     inference with descriptive-only fallback, immutable `ReportGenerationRun`
+     snapshot, structured claim provenance with evidence-hash/chunker-version
+     snapshots, tiered deterministic claim verifier, approval gates on
+     `ApproveReportHandler`/`ApproveReportSectionHandler`, reject transition
+     (`POST /v1/report-drafts/:id/reject`), permission-controlled claim
+     resolution (`POST /v1/report-claims/:id/resolve`), `DONOR_TEMPLATE` export
+     type, and report-plan/claim/run/mapping persistence.
+  4. Verified live: services active, loopback `4001` `/health`+`/ready` OK
+     (database ok), web `/login` 200, both new routes registered (401
+     unauthenticated), public HTTPS `/login` 200, no new journal errors.
+     Rollback:
+     `RELEASE_ID=20260816094257 scripts/rollback.sh` or
+     `ln -sfn /opt/donordesk/releases/20260816094257 /opt/donordesk/current &&
+     systemctl restart donordesk-api donordesk-web`.
+
 - **2026-08-16 (Project Team & Settings, compliance auto-generation, report rewrite,
   template extraction — release `20260816094257`, commit `14fd2eb`):** Deployed API + web
   + prisma via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api donordesk-web`,

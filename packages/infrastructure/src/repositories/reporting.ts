@@ -32,6 +32,8 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         tenantId: p.tenantIdValue,
         projectId: p.projectId,
         donorTemplateId: p.donorTemplateId,
+        donorTemplateVersion: p.donorTemplateVersion,
+        donorTemplateMappingId: p.donorTemplateMappingId,
         reportType: p.reportType,
         startDate: p.duration.start,
         endDate: p.duration.end,
@@ -51,6 +53,8 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
       where: { id: p.id },
       data: {
         donorTemplateId: p.donorTemplateId,
+        donorTemplateVersion: p.donorTemplateVersion,
+        donorTemplateMappingId: p.donorTemplateMappingId,
         status: p.status.toString(),
         readinessScore: p.readinessScore,
         responsibleOfficerId: p.responsibleOfficerId,
@@ -67,11 +71,26 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
     const rows = await this.prisma.reportingPeriod.findMany({ where: { projectId, tenantId: tenantId.toString() }, orderBy: { startDate: "desc" } });
     return ok(rows.map((r) => this.toDomain(r)));
   }
+  async findPreviousPeriods(projectId: string, beforeReportingPeriodId: string, tenantId: TenantId, limit = 4): Promise<Result<ReportingPeriod[], DomainError>> {
+    const current = await this.prisma.reportingPeriod.findFirst({
+      where: { id: beforeReportingPeriodId, projectId, tenantId: tenantId.toString() },
+      select: { startDate: true },
+    });
+    if (!current) return ok([]);
+    const rows = await this.prisma.reportingPeriod.findMany({
+      where: { projectId, tenantId: tenantId.toString(), startDate: { lt: current.startDate } },
+      orderBy: { startDate: "desc" },
+      take: Math.max(1, Math.min(20, limit)),
+    });
+    return ok(rows.map((r) => this.toDomain(r)));
+  }
   private toDomain(row: {
     id: string;
     tenantId: string;
     projectId: string;
     donorTemplateId: string | null;
+    donorTemplateVersion: number | null;
+    donorTemplateMappingId: string | null;
     reportType: string;
     startDate: Date;
     endDate: Date;
@@ -91,6 +110,8 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
       createdAt: row.createdAt,
       props: {
         donorTemplateId: row.donorTemplateId ?? undefined,
+        donorTemplateVersion: row.donorTemplateVersion ?? undefined,
+        donorTemplateMappingId: row.donorTemplateMappingId ?? undefined,
         reportType: row.reportType as ReportType,
         duration: DateRange.create(row.startDate, row.endDate),
         deadline: row.deadline,

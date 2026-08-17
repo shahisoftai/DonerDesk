@@ -15,7 +15,7 @@ export interface ExportArtifacts {
 
 export interface IExportBuilder {
   build(input: {
-    exportType: "WORD" | "PDF" | "EXCEL_INDICATORS" | "EVIDENCE_CHECKLIST" | "EVIDENCE_PACK_ZIP";
+    exportType: "WORD" | "PDF" | "EXCEL_INDICATORS" | "EVIDENCE_CHECKLIST" | "EVIDENCE_PACK_ZIP" | "DONOR_TEMPLATE";
     projectName: string;
     reportingPeriodLabel: string;
     reportTitle: string;
