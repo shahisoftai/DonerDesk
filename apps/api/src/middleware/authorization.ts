@@ -14,6 +14,8 @@ const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/drive\/auth-url$/, permission: "org.manage" },
   { method: "POST", route: /^\/v1\/drive\/callback$/, permission: "org.manage" },
   { method: "POST", route: /^\/v1\/evidence\/link-drive$/, permission: "evidence.upload" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/drive\/import-template$/, permission: "template.manage" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/drive\/import-logframe$/, permission: "logframe.manage" },
   { method: "GET", route: /^\/v1\/users$/, permission: "users.manage" },
   { method: "POST", route: /^\/v1\/users\/(invite|role)$/, permission: "users.manage" },
   { method: "POST", route: /^\/v1\/projects$/, permission: "project.create" },

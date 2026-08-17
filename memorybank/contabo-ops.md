@@ -476,6 +476,26 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (read/import Drive files into the app — release `20260817074810` API + web):**
+  Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
+  donordesk-web`). Closing the two-way loop: files already in the tenant's Google
+  Drive can now be imported into the app. Added `IDriveFileContentReader` port +
+  `GoogleDriveFileReader` (raw `alt=media` download; native Google Docs →
+  `text/plain`, Sheets → `text/csv` export), `ImportDriveFileHandler`, routes
+  `POST /v1/projects/:id/drive/import-template` (template.manage) and
+  `POST /v1/projects/:id/drive/import-logframe` (logframe.manage), contract
+  `DriveImportSchema`, and container wiring (`driveFileReader` +
+  `handlers.importDriveFile`; hoisted `uploadTemplateHandler` for reuse).
+  Web: `importDriveFileAction` + `DriveFolderPanel` gains per-file "Import
+  template" (inline donor/report-type form → creates template, opens editor) and
+  "Import" (parses logframe/data to an inline text preview). Tests: app 60/60
+  (ImportDriveFileHandler template + logframe), infra 63/63 + 1 skipped
+  (GoogleDriveFileReader raw + native export). Verified live: api/web 200,
+  current `20260817074810`, deployed bundles contain the import handler/reader,
+  route, and UI. Rollback: `RELEASE_ID=20260817072121 scripts/rollback.sh` or
+  `ln -sfn /opt/donordesk/releases/20260817072121 /opt/donordesk/current &&
+  systemctl restart donordesk-api donordesk-web`.
+
 - **2026-08-17 (review fixes for two-way Drive — release `20260817072121` API + web):**
   Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
   donordesk-web`). Post-implementation review fixes:

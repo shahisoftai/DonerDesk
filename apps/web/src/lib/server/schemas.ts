@@ -574,6 +574,12 @@ export const WorkspaceFilesResponseSchema = z.object({
 });
 export type WorkspaceFilesResponse = z.infer<typeof WorkspaceFilesResponseSchema>;
 
+export const DriveImportResponseSchema = z.union([
+  z.object({ kind: z.literal("template"), id: z.string(), templateName: z.string() }),
+  z.object({ kind: z.enum(["logframe", "data"]), text: z.string(), name: z.string() }),
+]);
+export type DriveImportResponse = z.infer<typeof DriveImportResponseSchema>;
+
 export const ReportingProfileSchema = z.object({
   id: z.string(),
   tenantId: z.string(),

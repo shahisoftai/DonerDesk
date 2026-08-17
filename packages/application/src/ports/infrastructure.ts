@@ -204,6 +204,23 @@ export interface ProjectWorkspaceProviderConfig {
   provider: "GOOGLE_DRIVE" | "LOCAL" | "R2";
 }
 
+/** Downloaded content of a Google Drive file, ready for parsing. */
+export interface DriveFileContent {
+  bytes: Buffer;
+  /** Effective parse mime type (native Docs/Sheets are exported to a parseable format). */
+  mimeType: string;
+  name: string;
+}
+
+/**
+ * Downloads Google Drive file content by id using the tenant's OAuth
+ * credentials. Native Google Docs/Sheets are exported to a text/plain or CSV
+ * representation so they can be parsed.
+ */
+export interface IDriveFileContentReader {
+  read(tenantId: TenantId, fileId: string): Promise<Result<DriveFileContent, DomainError>>;
+}
+
 /**
  * Resolves the workspace strategy for a tenant so provisioning can decide
  * whether a Drive tree is required or explicitly not required (LOCAL/R2).

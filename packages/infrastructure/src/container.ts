@@ -82,6 +82,7 @@ import {
   RepairProjectWorkspaceHandler,
   ListWorkspaceFilesHandler,
   ProvisionTenantWorkspacesHandler,
+  ImportDriveFileHandler,
   GetReportingProfileHandler,
   UpsertReportingProfileHandler,
   ProjectReadinessService,
@@ -153,6 +154,7 @@ import { EvidenceStorageResolver } from "./storage/router.js";
 import { ProjectWorkspaceServiceResolver, PrismaWorkspaceNameProvider } from "./storage/workspace-router.js";
 import { PrismaGoogleDriveTokenStore } from "./storage/prisma-google-drive-token-store.js";
 import { GoogleDriveOAuthConnector } from "./storage/google-drive-oauth.js";
+import { GoogleDriveFileReader } from "./storage/google-drive.js";
 import { GoogleSheetsReader } from "./storage/google-sheets-reader.js";
 import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credentials.js";
 import { TolerantDocumentParser } from "./parsers/document-parser.js";
@@ -179,6 +181,7 @@ export interface Container {
   evidenceStorage: EvidenceStorageResolver;
   googleDriveOAuth: GoogleDriveOAuthConnector;
   googleDriveCredentials: PrismaGoogleDriveCredentialStore;
+  driveFileReader: GoogleDriveFileReader;
   parser: TolerantDocumentParser;
   logger: ReturnType<typeof createLogger>;
   ids: UuidIdGenerator;
@@ -252,6 +255,7 @@ export interface Container {
     repairProjectWorkspace: RepairProjectWorkspaceHandler;
     listWorkspaceFiles: ListWorkspaceFilesHandler;
     provisionTenantWorkspaces: ProvisionTenantWorkspacesHandler;
+    importDriveFile: ImportDriveFileHandler;
     getReportingProfile: GetReportingProfileHandler;
     upsertReportingProfile: UpsertReportingProfileHandler;
     uploadTemplate: UploadTemplateHandler;
@@ -335,6 +339,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     process.env.PLATFORM_MASTER_KEY ? Buffer.from(process.env.PLATFORM_MASTER_KEY, "base64") : Buffer.alloc(0),
   );
   const googleDriveTokens = new PrismaGoogleDriveTokenStore(googleDriveCredentials);
+  const driveFileReader = new GoogleDriveFileReader(googleDriveTokens);
   const sheetReader = new GoogleSheetsReader(googleDriveTokens);
   const workspaceNameProvider = new PrismaWorkspaceNameProvider(
     async (id, tenantId) => {
@@ -502,6 +507,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   }
 
   const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, exportBuilder, storage, audits);
+  const uploadTemplateHandler = new UploadTemplateHandler(ids, templates, templateExtraction, audits);
 
   const handlers: Container["handlers"] = {
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
@@ -533,9 +539,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     repairProjectWorkspace: new RepairProjectWorkspaceHandler(projectWorkspace, projects, projectSetup, audits),
     listWorkspaceFiles: new ListWorkspaceFilesHandler(projectWorkspace, projects),
     provisionTenantWorkspaces: new ProvisionTenantWorkspacesHandler(projectWorkspace, projects, projectSetup, events, audits),
+    importDriveFile: new ImportDriveFileHandler(driveFileReader, parser, uploadTemplateHandler, audits),
     getReportingProfile: new GetReportingProfileHandler(reportingProfiles),
     upsertReportingProfile: new UpsertReportingProfileHandler(ids, reportingProfiles, templates, audits),
-    uploadTemplate: new UploadTemplateHandler(ids, templates, templateExtraction, audits),
+    uploadTemplate: uploadTemplateHandler,
     updateTemplateSections: new UpdateTemplateSectionsHandler(templates, audits),
     deleteTemplate: new DeleteTemplateHandler(templates, audits),
     listTemplates: new ListTemplatesHandler(templates),
@@ -602,7 +609,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   };
 
   return {
-    prisma, auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, parser, logger, ids, clock, events, notify, jobQueue,
+    prisma, auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, reportDraftGenerator, checklistDetector, exportBuilder,
     organizations, users, invitations,     projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
     periods, drafts, sections, reportPlans, reportClaims, generationRuns, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,

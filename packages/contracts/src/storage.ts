@@ -41,3 +41,14 @@ export const LinkEvidenceSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 export type LinkEvidenceInput = z.infer<typeof LinkEvidenceSchema>;
+
+/** Import a file already stored in the tenant's Google Drive into the app. */
+export const DriveImportSchema = z.object({
+  driveFileId: z.string().min(1),
+  kind: z.enum(["template", "logframe", "data"]),
+  templateName: z.string().max(200).optional(),
+  donorName: z.string().max(200).optional(),
+  reportType: z.string().max(50).optional(),
+  language: z.string().min(2).max(10).optional(),
+});
+export type DriveImportInput = z.infer<typeof DriveImportSchema>;

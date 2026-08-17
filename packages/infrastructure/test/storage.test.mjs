@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { LocalStorage, PiiVault, withTenantSession, EvidenceChunker, PiiFirewall, ProvenanceTracker, EvaluationHarness, withPiiFirewall, createLLMProvider, CompliantModelRouter, LocalEvidenceStorage, EvidenceStorageResolver, EnvGoogleDriveTokenStore, GoogleDriveEvidenceStorage, R2EvidenceStorage, GoogleDriveOAuthConnector, PrismaGoogleDriveCredentialStore, buildMultipartUpload, GoogleDriveWorkspaceDrive } from "../dist/index.js";
+import { LocalStorage, PiiVault, withTenantSession, EvidenceChunker, PiiFirewall, ProvenanceTracker, EvaluationHarness, withPiiFirewall, createLLMProvider, CompliantModelRouter, LocalEvidenceStorage, EvidenceStorageResolver, EnvGoogleDriveTokenStore, GoogleDriveEvidenceStorage, R2EvidenceStorage, GoogleDriveOAuthConnector, PrismaGoogleDriveCredentialStore, buildMultipartUpload, GoogleDriveWorkspaceDrive, GoogleDriveFileReader } from "../dist/index.js";
 import { LlmModel } from "@donordesk/domain";
 
 test("local storage rejects keys escaping its configured root", async () => {
@@ -111,6 +111,55 @@ test("drive workspace lists non-folder files from a folder", async () => {
     assert.equal(result.value[0].name, "report.pdf");
     assert.equal(result.value[0].size, 1024);
     assert.equal(result.value[0].webViewLink.includes("f-1"), true);
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.GOOGLE_DRIVE_CLIENT_ID;
+    delete process.env.GOOGLE_DRIVE_CLIENT_SECRET;
+    delete process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
+  }
+});
+
+test("drive file reader downloads raw bytes and exports native docs", async () => {
+  process.env.GOOGLE_DRIVE_CLIENT_ID = "client-1";
+  process.env.GOOGLE_DRIVE_CLIENT_SECRET = "secret-1";
+  process.env.GOOGLE_DRIVE_REFRESH_TOKEN = "rt-1";
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes("oauth2.googleapis.com/token")) {
+      return { ok: true, json: async () => ({ access_token: "at-1" }) };
+    }
+    if (u.includes("/files/raw-file")) {
+      if (u.includes("?fields=")) {
+        return { ok: true, json: async () => ({ name: "report.pdf", mimeType: "application/pdf" }) };
+      }
+      if (u.includes("alt=media")) {
+        return { ok: true, arrayBuffer: async () => Buffer.from("PDF-BYTES") };
+      }
+    }
+    if (u.includes("/files/native-doc")) {
+      if (u.includes("?fields=")) {
+        return { ok: true, json: async () => ({ name: "instructions", mimeType: "application/vnd.google-apps.document" }) };
+      }
+      if (u.includes("/export?mimeType=text%2Fplain")) {
+        return { ok: true, arrayBuffer: async () => Buffer.from("SECTION 1") };
+      }
+    }
+    throw new Error(`unexpected fetch ${u}`);
+  };
+  try {
+    const reader = new GoogleDriveFileReader(new EnvGoogleDriveTokenStore({ tenantId: "tenant-a" }));
+    const raw = await reader.read({ toString: () => "tenant-a" }, "raw-file");
+    assert.equal(raw.ok, true);
+    assert.equal(raw.value.mimeType, "application/pdf");
+    assert.equal(raw.value.name, "report.pdf");
+    assert.equal(raw.value.bytes.toString(), "PDF-BYTES");
+
+    const doc = await reader.read({ toString: () => "tenant-a" }, "native-doc");
+    assert.equal(doc.ok, true);
+    assert.equal(doc.value.mimeType, "text/plain");
+    assert.equal(doc.value.name, "instructions.txt");
+    assert.equal(doc.value.bytes.toString(), "SECTION 1");
   } finally {
     globalThis.fetch = originalFetch;
     delete process.env.GOOGLE_DRIVE_CLIENT_ID;

@@ -4,7 +4,7 @@ export { prisma } from "./db/prisma.js";
 export { LocalStorage } from "./storage/local-storage.js";
 export { LocalEvidenceStorage } from "./storage/local-evidence.js";
 export { EvidenceStorageResolver } from "./storage/router.js";
-export { GoogleDriveEvidenceStorage, buildMultipartUpload } from "./storage/google-drive.js";
+export { GoogleDriveEvidenceStorage, GoogleDriveFileReader, buildMultipartUpload } from "./storage/google-drive.js";
 export { EnvGoogleDriveTokenStore } from "./storage/google-drive-tokens.js";
 export { GoogleDriveOAuthConnector } from "./storage/google-drive-oauth.js";
 export { GoogleSheetsReader } from "./storage/google-sheets-reader.js";

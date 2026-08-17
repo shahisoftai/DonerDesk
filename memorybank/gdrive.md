@@ -71,6 +71,21 @@ account.
 > ListWorkspaceFiles + ProvisionTenantWorkspaces), infra 63 + 1 skipped (incl.
 > Drive folder file listing). Live in release `20260817065618` (API + web).
 
+> **2026-08-17 — Read/import Drive files into the app (added):**
+> Drive is now fully two-way for content. `GoogleDriveFileReader` downloads file
+> bytes by id via the tenant OAuth (native Google Docs → `text/plain`, native
+> Sheets → `text/csv`, everything else raw `alt=media`). New routes
+> `POST /v1/projects/:id/drive/import-template` (`template.manage`) and
+> `POST /v1/projects/:id/drive/import-logframe` (`logframe.manage`) run
+> `ImportDriveFileHandler`: templates are parsed and persisted as a new donor
+> template with auto-extracted reviewed sections (reusing `UploadTemplateHandler`);
+> logframe/data files are parsed to text for review in the UI. The
+> `DriveFolderPanel` now shows per-file "Import template" (inline donor/report-type
+> form → creates the template and opens its editor) and "Import" (shows parsed
+> text inline) actions. Tests: app 60 (incl. ImportDriveFileHandler), infra
+> 63 + 1 skipped (incl. GoogleDriveFileReader raw/native). Live in release
+> `20260817074810` (API + web).
+
 ---
 
 ## 1. Product decision (NGO mindset)

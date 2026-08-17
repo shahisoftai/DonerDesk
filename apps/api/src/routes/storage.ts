@@ -4,6 +4,7 @@ import {
   GoogleDriveAuthUrlResponseSchema,
   GoogleDriveCallbackResponseSchema,
   LinkEvidenceSchema,
+  DriveImportSchema,
 } from "@donordesk/contracts";
 
 /**
@@ -44,6 +45,30 @@ export async function registerStorageRoutes(app: FastifyInstance) {
     const folders = raw.split(",").map((f) => f.trim()).filter(Boolean);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.listWorkspaceFiles.handle(ctx, projectId, folders.length > 0 ? folders : ["04-Evidence-Reports", "05-Evidence-Images"]);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // Import a template file already in the tenant's Google Drive: download,
+  // parse, extract sections, and create a donor template.
+  app.post("/v1/projects/:projectId/drive/import-template", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const body = DriveImportSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.importDriveFile.handle(ctx, projectId, { ...body, kind: "template" });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // Import a logframe/data file already in Drive: download + parse to text for review.
+  app.post("/v1/projects/:projectId/drive/import-logframe", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const body = DriveImportSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.importDriveFile.handle(ctx, projectId, {
+      ...body,
+      kind: body.kind === "data" ? "data" : "logframe",
+    });
     if (!r.ok) throw r.error;
     return r.value;
   });

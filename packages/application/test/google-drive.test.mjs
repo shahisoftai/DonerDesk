@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ConnectGoogleDriveHandler, LinkGoogleDriveEvidenceHandler, GoogleSignInHandler, ProvisionTenantHandler, ListWorkspaceFilesHandler, ProvisionTenantWorkspacesHandler } from "../dist/index.js";
+import { ConnectGoogleDriveHandler, LinkGoogleDriveEvidenceHandler, GoogleSignInHandler, ProvisionTenantHandler, ListWorkspaceFilesHandler, ProvisionTenantWorkspacesHandler, ImportDriveFileHandler } from "../dist/index.js";
 import { TenantId } from "@donordesk/domain";
 
 const tenant = { tenantId: TenantId.create("tenant-a"), userId: "u-1", role: "ADMIN" };
@@ -155,6 +155,41 @@ test("provision tenant workspaces ensures the root and marks projects ready", as
   assert.equal(setups.get("p-1").workspaceProvisionStatus, "READY");
   assert.equal(setups.get("p-3").workspaceProvisionStatus, "READY");
   assert.ok(made.includes("events:3"));
+});
+
+test("import drive file template creates a donor template with extracted sections", async () => {
+  const reader = { read: async () => ({ ok: true, value: { bytes: Buffer.from("doc"), mimeType: "application/pdf", name: "echo-quarterly.docx" } }) };
+  const parser = { parse: async () => ({ text: "Section 1. Executive Summary" }) };
+  let captured = null;
+  const uploadTemplate = {
+    handle: async (_ctx, input) => {
+      captured = input;
+      return { ok: true, value: { id: "tpl-1", sections: [{}], summary: "" } };
+    },
+  };
+  const audit = { record: async () => ({ ok: true, value: undefined }) };
+  const handler = new ImportDriveFileHandler(reader, parser, uploadTemplate, audit);
+  const result = await handler.handle(ctx, "p-1", { driveFileId: "f1", kind: "template" });
+  assert.equal(result.ok, true);
+  assert.equal(result.value.kind, "template");
+  assert.equal(result.value.id, "tpl-1");
+  assert.equal(captured.templateName, "echo-quarterly");
+  assert.equal(captured.donorName, "Google Drive");
+  assert.equal(captured.reportType, "CUSTOM");
+  assert.equal(captured.extractedRawText, "Section 1. Executive Summary");
+});
+
+test("import drive file logframe returns parsed text for review", async () => {
+  const reader = { read: async () => ({ ok: true, value: { bytes: Buffer.from("x"), mimeType: "text/csv", name: "logframe.csv" } }) };
+  const parser = { parse: async () => ({ text: "GOAL\tGoal 1" }) };
+  const uploadTemplate = { handle: async () => ({ ok: true, value: { id: "x", sections: [], summary: "" } }) };
+  const audit = { record: async () => ({ ok: true, value: undefined }) };
+  const handler = new ImportDriveFileHandler(reader, parser, uploadTemplate, audit);
+  const result = await handler.handle(ctx, "p-1", { driveFileId: "f2", kind: "logframe" });
+  assert.equal(result.ok, true);
+  assert.equal(result.value.kind, "logframe");
+  assert.equal(result.value.text, "GOAL\tGoal 1");
+  assert.equal(result.value.name, "logframe.csv");
 });
 
 function makeUsers(overrides = {}) {

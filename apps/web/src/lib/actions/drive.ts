@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { LinkEvidenceSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { WorkspaceFilesResponseSchema } from "@/lib/server/schemas";
+import { WorkspaceFilesResponseSchema, DriveImportResponseSchema } from "@/lib/server/schemas";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
@@ -82,4 +82,28 @@ export async function listWorkspaceFilesAction(
     WorkspaceFilesResponseSchema,
     context.token,
   );
+}
+
+export type ImportDriveFileResult = Result<import("@/lib/server/schemas").DriveImportResponse, AppError>;
+
+/** Imports a file already stored in Google Drive into the app. */
+export async function importDriveFileAction(
+  projectId: string,
+  input: {
+    driveFileId: string;
+    kind: "template" | "logframe" | "data";
+    templateName?: string;
+    donorName?: string;
+    reportType?: string;
+  },
+): Promise<ImportDriveFileResult> {
+  const context = await requireSession();
+  const endpoint =
+    input.kind === "template"
+      ? `/v1/projects/${projectId}/drive/import-template`
+      : `/v1/projects/${projectId}/drive/import-logframe`;
+  return gatewayRequest(endpoint, DriveImportResponseSchema, context.token, {
+    method: "POST",
+    body: input,
+  });
 }

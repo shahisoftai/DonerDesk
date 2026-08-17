@@ -1,9 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { listWorkspaceFilesAction, linkDriveEvidenceAction } from "@/lib/actions/drive";
+import { useRouter } from "next/navigation";
+import { listWorkspaceFilesAction, linkDriveEvidenceAction, importDriveFileAction } from "@/lib/actions/drive";
 import { Button } from "@/components/ui/Button";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { REPORT_TYPE_LABEL, REPORT_TYPE_OPTIONS } from "@/lib/labels";
 import type { WorkspaceFile, WorkspaceFilesResponse } from "@/lib/server/schemas";
 
 function formatBytes(size?: number): string {
@@ -23,10 +28,22 @@ function fileLabel(file: WorkspaceFile): string {
   return type || "file";
 }
 
+function importKindForRole(role: string): "template" | "logframe" | "data" | null {
+  if (role === "01-Donor-Templates") return "template";
+  if (role === "02-Logframe") return "logframe";
+  if (role === "03-Data-Files") return "data";
+  return null;
+}
+
+function baseName(name: string): string {
+  return name.replace(/\.[^.]+$/, "").trim();
+}
+
 /**
  * Lists the current files in the project's storage folders (Google Drive or the
- * local workspace mirror). Re-reads on mount (so every page load after login
- * picks up files added directly in Drive) and on the explicit "Refresh" button.
+ * local workspace mirror) and lets the user link evidence or import
+ * template/logframe/data content into the app. Re-reads on mount (after login)
+ * and on the explicit "Refresh" button.
  */
 export function DriveFolderPanel({
   projectId,
@@ -39,10 +56,17 @@ export function DriveFolderPanel({
   title?: string;
   linkAsEvidence?: boolean;
 }) {
+  const router = useRouter();
   const [folders, setFolders] = useState<WorkspaceFilesResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [linked, setLinked] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const [importing, setImporting] = useState<WorkspaceFile | null>(null);
+  const [templateForm, setTemplateForm] = useState({ templateName: "", donorName: "", reportType: "CUSTOM" });
+  const [preview, setPreview] = useState<{ fileId: string; name: string; text: string } | null>(null);
+
   const folderKey = folderRoles.join(",");
 
   const load = useCallback(async () => {
@@ -62,6 +86,8 @@ export function DriveFolderPanel({
   }, [load]);
 
   async function link(file: WorkspaceFile) {
+    setBusy(`link:${file.id}`);
+    setError(null);
     const result = await linkDriveEvidenceAction({
       projectId,
       title: file.name,
@@ -72,12 +98,58 @@ export function DriveFolderPanel({
       evidenceType: "OTHER",
       confidentialityLevel: "INTERNAL",
     });
+    setBusy(null);
     if (!result.ok) {
       setError(result.error.message);
       return;
     }
-    setError(null);
     setLinked((prev) => new Set(prev).add(file.id));
+  }
+
+  function startImport(file: WorkspaceFile, kind: "template" | "logframe" | "data") {
+    setError(null);
+    setPreview(null);
+    if (kind === "template") {
+      setImporting(file);
+      setTemplateForm({ templateName: baseName(file.name) || file.name, donorName: "", reportType: "CUSTOM" });
+      return;
+    }
+    void importContent(file, kind);
+  }
+
+  async function importContent(file: WorkspaceFile, kind: "logframe" | "data") {
+    setBusy(`import:${file.id}`);
+    setError(null);
+    const result = await importDriveFileAction(projectId, { driveFileId: file.id, kind });
+    setBusy(null);
+    if (!result.ok) {
+      setError(result.error.message);
+      return;
+    }
+    if (result.value.kind !== "template") {
+      setPreview({ fileId: file.id, name: result.value.name, text: result.value.text });
+    }
+  }
+
+  async function submitTemplateImport() {
+    if (!importing) return;
+    setBusy(`import:${importing.id}`);
+    setError(null);
+    const result = await importDriveFileAction(projectId, {
+      driveFileId: importing.id,
+      kind: "template",
+      templateName: templateForm.templateName || importing.name,
+      donorName: templateForm.donorName || undefined,
+      reportType: templateForm.reportType,
+    });
+    setBusy(null);
+    if (!result.ok) {
+      setError(result.error.message);
+      return;
+    }
+    if (result.value.kind === "template") {
+      router.push(`/projects/${projectId}/templates/${result.value.id}`);
+    }
   }
 
   return (
@@ -107,51 +179,118 @@ export function DriveFolderPanel({
               Open project folder in Google Drive
             </a>
           )}
-          {folders.folders.map((group) => (
-            <div key={group.role}>
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {group.label} <span className="font-normal text-slate-400">({group.files.length})</span>
-              </h3>
-              {group.files.length === 0 ? (
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">No files yet.</p>
-              ) : (
-                <ul className="mt-2 divide-y divide-slate-200/70 dark:divide-white/10">
-                  {group.files.map((file) => {
-                    const isLinked = linked.has(file.id);
-                    return (
-                      <li key={file.id} className="flex flex-wrap items-center gap-3 py-2 text-sm">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-slate-800 dark:text-slate-200">{file.name}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {fileLabel(file)}
-                            {file.size !== undefined ? ` · ${formatBytes(file.size)}` : ""}
-                            {file.modifiedTime ? ` · ${formatDate(file.modifiedTime)}` : ""}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          {linkAsEvidence && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              disabled={isLinked}
-                              onClick={() => void link(file)}
-                            >
-                              {isLinked ? "Linked" : "Link as evidence"}
-                            </Button>
+          {folders.folders.map((group) => {
+            const kind = importKindForRole(group.role);
+            return (
+              <div key={group.role}>
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  {group.label} <span className="font-normal text-slate-400">({group.files.length})</span>
+                </h3>
+                {group.files.length === 0 ? (
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">No files yet.</p>
+                ) : (
+                  <ul className="mt-2 divide-y divide-slate-200/70 dark:divide-white/10">
+                    {group.files.map((file) => {
+                      const isLinked = linked.has(file.id);
+                      const isImportingTemplate = importing?.id === file.id && kind === "template";
+                      const filePreview = preview && preview.fileId === file.id ? preview : null;
+                      return (
+                        <li key={file.id} className="py-2 text-sm">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-slate-800 dark:text-slate-200">{file.name}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {fileLabel(file)}
+                                {file.size !== undefined ? ` · ${formatBytes(file.size)}` : ""}
+                                {file.modifiedTime ? ` · ${formatDate(file.modifiedTime)}` : ""}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                              {kind && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  pending={busy === `import:${file.id}`}
+                                  disabled={busy !== null && busy !== `import:${file.id}`}
+                                  onClick={() => startImport(file, kind)}
+                                >
+                                  {kind === "template" ? "Import template" : "Import"}
+                                </Button>
+                              )}
+                              {linkAsEvidence && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  disabled={isLinked || busy !== null}
+                                  pending={busy === `link:${file.id}`}
+                                  onClick={() => void link(file)}
+                                >
+                                  {isLinked ? "Linked" : "Link as evidence"}
+                                </Button>
+                              )}
+                              {file.webViewLink && (
+                                <a className="btn-secondary text-sm" href={file.webViewLink} target="_blank" rel="noopener noreferrer">
+                                  Open
+                                </a>
+                              )}
+                            </div>
+                          </div>
+
+                          {isImportingTemplate && (
+                            <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <Field label="Template name" htmlFor="tplName">
+                                  <Input
+                                    id="tplName"
+                                    value={templateForm.templateName}
+                                    onChange={(e) => setTemplateForm((f) => ({ ...f, templateName: e.target.value }))}
+                                  />
+                                </Field>
+                                <Field label="Donor name" htmlFor="tplDonor">
+                                  <Input
+                                    id="tplDonor"
+                                    value={templateForm.donorName}
+                                    onChange={(e) => setTemplateForm((f) => ({ ...f, donorName: e.target.value }))}
+                                    placeholder="e.g. ECHO, USAID"
+                                  />
+                                </Field>
+                                <Field label="Report type" htmlFor="tplType">
+                                  <Select
+                                    id="tplType"
+                                    value={templateForm.reportType}
+                                    onChange={(e) => setTemplateForm((f) => ({ ...f, reportType: e.target.value }))}
+                                  >
+                                    {REPORT_TYPE_OPTIONS.map((t) => (
+                                      <option key={t} value={t}>{REPORT_TYPE_LABEL[t] ?? t}</option>
+                                    ))}
+                                  </Select>
+                                </Field>
+                              </div>
+                              <div className="mt-3 flex justify-end gap-2">
+                                <Button size="sm" variant="ghost" onClick={() => setImporting(null)}>Cancel</Button>
+                                <Button size="sm" pending={busy === `import:${file.id}`} onClick={() => void submitTemplateImport()}>
+                                  Create template
+                                </Button>
+                              </div>
+                            </div>
                           )}
-                          {file.webViewLink && (
-                            <a className="btn-secondary text-sm" href={file.webViewLink} target="_blank" rel="noopener noreferrer">
-                              Open
-                            </a>
+
+                          {filePreview && (
+                            <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
+                              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{filePreview.name}</p>
+                              <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-xs text-slate-700 dark:text-slate-300">
+                                {filePreview.text}
+                              </pre>
+                            </div>
                           )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          ))}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </section>
