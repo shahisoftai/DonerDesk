@@ -2,6 +2,38 @@
 
 Record of fixes applied to DonorDesk. Last updated: 2026-08-17.
 
+## Production 500 on project Evidence / Reports / Compliance tabs — unapplied `evidence_extracted_text` migration (2026-08-17)
+
+**Status:** Fixed and verified in production 2026-08-17.
+
+The project Evidence, Reports, and Compliance tabs returned "Internal Server
+Error" / "This information could not be loaded. Please try again" after release
+`20260817174622` went live.
+
+**Root cause:** The release bundled code that references
+`EvidenceFile.extractedText` (from the earlier committed-but-never-deployed
+`feat(reporting): reflect evidence…` work), but migration
+`20260817200000_evidence_extracted_text` had **not** been applied to the
+production database. Every path that touched the evidence table or computed
+readiness (which searches evidence) threw `PrismaClientKnownRequestError`
+`P2022` — `The column EvidenceFile.extractedText does not exist`:
+
+- **Evidence tab** → `POST /v1/evidence/search` → `PrismaEvidenceRepository.search`
+- **Compliance tab** → `/v1/reporting-periods/:id/readiness` → readiness evidence search
+- **Reports tab** → `/v1/projects/:id/reporting-periods` → live readiness → readiness evidence search
+
+**Fix:** Ran the bundled `prisma migrate deploy` as `donordesk_migrator`
+(`DATABASE_ADMIN_URL`) from `/opt/donordesk/current`, applying
+`20260817200000_evidence_extracted_text` (adds nullable `EvidenceFile.extractedText`
+TEXT). Verified the column exists, RLS remains enforced on `EvidenceFile`
+(`t/t`), and zero API 500s since the fix.
+
+**Process note:** the fast-deploy path deliberately does not run migrations;
+the deploy runbook requires running `prisma migrate deploy` before activation.
+This release introduced an unapplied migration (carried in from an unreleased
+commit) and it was missed — check `prisma/migrations` for unapplied entries
+before every release.
+
 ## Readiness percentages wrong (evidence/approval) + Home/dashboard readiness snapshot + consolidated Settings nav (2026-08-17)
 
 **Status:** Deployed and verified on Contabo production 2026-08-17 (release `20260817174622`, commit `8a849ec`). Preflight clean, incremental deploy (API + web), `verify.sh` green (API `/health` + `/ready` 200, web 200, workers 200, Kestra configs 200), public HTTPS checks green (`/`, `/login` 200; `/dashboard`, `/settings` 200 behind auth).

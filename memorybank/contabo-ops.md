@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-17 (release `20260817174622`, commit `8a849ec` — readiness percentage fixes, consolidated Settings nav tabs, Home deadline-overview placement; API + web, no migrations)
+**Last deployment:** 2026-08-17 (release `20260817174622`, commit `8a849ec` — readiness percentage fixes, consolidated Settings nav tabs, Home deadline-overview placement; API + web). Post-deploy applied migration `20260817200000_evidence_extracted_text` as `donordesk_migrator` (adds `EvidenceFile.extractedText`), fixing the project Evidence/Reports/Compliance tab 500s (P2022: column missing).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
