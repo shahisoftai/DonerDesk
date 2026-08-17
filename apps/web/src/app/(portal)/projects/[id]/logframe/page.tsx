@@ -6,6 +6,7 @@ import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { LOGFRAME_LEVEL_LABEL } from "@/lib/labels";
 import { buildHierarchy, walkHierarchy, type HierarchyNode } from "@/lib/shared/hierarchy";
+import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
 import type { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -109,6 +110,14 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
           </table>
         </div>
       </section>
+
+      <div className="mt-6">
+        <DriveFolderPanel
+          projectId={resolvedParams.id}
+          folderRoles={["02-Logframe", "03-Data-Files"]}
+          title="Logframe &amp; data files in Google Drive"
+        />
+      </div>
     </div>
   );
 }

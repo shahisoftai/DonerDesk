@@ -56,6 +56,21 @@ account.
 > folder routing added to `storage.test.mjs` (62/62 + 1 skipped DB). Live in
 > release `20260817063832` (API + web).
 
+> **2026-08-17 — Two-way Drive: folder listing + connect-time provisioning (added):**
+> Drive is now fully two-way. On Drive connect (`POST /v1/drive/callback`) the
+> tenant root ("DonorDesk") and every existing project's folder tree are
+> provisioned immediately via `ProvisionTenantWorkspacesHandler` (idempotent,
+> best-effort). `GET /v1/projects/:id/workspace/files?folders=…` lists the
+> current files in any workspace folder role (Drive API `files.list` for
+> GOOGLE_DRIVE; `readdir` for the local mirror) — every page load re-reads the
+> storage, so files added directly in Drive appear after login, and a "Refresh"
+> button on the evidence / templates / logframe pages re-lists on demand.
+> `DriveFolderPanel` (web) shows the folders with file name/type/size/date, an
+> "Open" link, and for the evidence folders a "Link as evidence" button that
+> records the file via `/v1/evidence/link-drive`. Tests: app 58 (incl.
+> ListWorkspaceFiles + ProvisionTenantWorkspaces), infra 63 + 1 skipped (incl.
+> Drive folder file listing). Live in release `20260817065618` (API + web).
+
 ---
 
 ## 1. Product decision (NGO mindset)

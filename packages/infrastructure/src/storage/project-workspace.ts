@@ -1,6 +1,6 @@
-import { mkdir } from "node:fs/promises";
-import { resolve, join, sep } from "node:path";
-import type { IProjectWorkspaceService, WorkspaceReference } from "@donordesk/application";
+import { mkdir, readdir, stat } from "node:fs/promises";
+import { resolve, join, sep, relative } from "node:path";
+import type { IProjectWorkspaceService, WorkspaceReference, DriveFileEntry } from "@donordesk/application";
 import { DomainError } from "@donordesk/domain";
 import type { TenantId, StorageProvider, Result } from "@donordesk/domain";
 
@@ -10,6 +10,25 @@ function ok<T>(value: T): Result<T, DomainError> {
 
 function fail(message: string): Result<never, DomainError> {
   return { ok: false, error: new DomainError("INVARIANT_VIOLATION", message) };
+}
+
+const EXT_MIME: Record<string, string> = {
+  pdf: "application/pdf",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xls: "application/vnd.ms-excel",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  csv: "text/csv",
+  txt: "text/plain",
+};
+
+function mimeFor(name: string): string {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  return EXT_MIME[ext] ?? "application/octet-stream";
 }
 
 /** Stable folder roles under a project workspace root. */
@@ -69,6 +88,35 @@ export class LocalProjectWorkspaceService implements IProjectWorkspaceService {
     return this.ensureProjectWorkspace(tenantId, projectId);
   }
 
+  async listProjectFolderFiles(tenantId: TenantId, projectId: string, role: string): Promise<Result<DriveFileEntry[], DomainError>> {
+    const workspace = await this.ensureProjectWorkspace(tenantId, projectId);
+    if (!workspace.ok) return workspace;
+    const folder = workspace.value.subfolders?.find((f) => f.role === role);
+    if (!folder) return ok([]);
+    try {
+      const entries = await readdir(folder.id, { withFileTypes: true });
+      const files: DriveFileEntry[] = [];
+      for (const entry of entries) {
+        if (!entry.isFile()) continue;
+        const full = join(folder.id, entry.name);
+        const meta = await stat(full);
+        const key = relative(resolve(this.storageRoot), full).split(sep).join("/");
+        files.push({
+          id: `${role}/${entry.name}`,
+          name: entry.name,
+          mimeType: mimeFor(entry.name),
+          size: meta.size,
+          modifiedTime: meta.mtime.toISOString(),
+          webViewLink: `/v1/files/${encodeURIComponent(key)}`,
+        });
+      }
+      files.sort((a, b) => (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? ""));
+      return ok(files);
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : "Local workspace file list failed");
+    }
+  }
+
   private safe(label: string): string {
     return label.replace(/[^a-z0-9._-]+/gi, "-").slice(0, 100) || "untitled";
   }
@@ -92,6 +140,7 @@ export class GoogleDriveProjectWorkspaceService implements IProjectWorkspaceServ
         projectId: string;
       }): Promise<Result<{ id: string }, DomainError>>;
       verifyAccess(rootId: string): Promise<Result<void, DomainError>>;
+      listFiles(tenantId: string, folderId: string): Promise<Result<DriveFileEntry[], DomainError>>;
     },
   ) {}
 
@@ -135,6 +184,14 @@ export class GoogleDriveProjectWorkspaceService implements IProjectWorkspaceServ
 
   async repairProjectWorkspace(tenantId: TenantId, projectId: string): Promise<Result<WorkspaceReference, DomainError>> {
     return this.ensureProjectWorkspace(tenantId, projectId);
+  }
+
+  async listProjectFolderFiles(tenantId: TenantId, projectId: string, role: string): Promise<Result<DriveFileEntry[], DomainError>> {
+    const workspace = await this.ensureProjectWorkspace(tenantId, projectId);
+    if (!workspace.ok) return workspace;
+    const folder = workspace.value.subfolders?.find((f) => f.role === role);
+    if (!folder) return ok([]);
+    return this.drive.listFiles(tenantId.toString(), folder.id);
   }
 }
 

@@ -71,6 +71,12 @@ export class ProjectWorkspaceServiceResolver implements IProjectWorkspaceService
     if (!provider.ok) return provider;
     return this.pick(provider.value.provider).repairProjectWorkspace(tenantId, projectId);
   }
+
+  async listProjectFolderFiles(tenantId: TenantId, projectId: string, role: string) {
+    const provider = await this.resolve(tenantId);
+    if (!provider.ok) return provider;
+    return this.pick(provider.value.provider).listProjectFolderFiles(tenantId, projectId, role);
+  }
 }
 
 /**

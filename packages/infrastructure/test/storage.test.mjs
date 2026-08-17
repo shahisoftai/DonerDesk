@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { LocalStorage, PiiVault, withTenantSession, EvidenceChunker, PiiFirewall, ProvenanceTracker, EvaluationHarness, withPiiFirewall, createLLMProvider, CompliantModelRouter, LocalEvidenceStorage, EvidenceStorageResolver, EnvGoogleDriveTokenStore, GoogleDriveEvidenceStorage, R2EvidenceStorage, GoogleDriveOAuthConnector, PrismaGoogleDriveCredentialStore, buildMultipartUpload } from "../dist/index.js";
+import { LocalStorage, PiiVault, withTenantSession, EvidenceChunker, PiiFirewall, ProvenanceTracker, EvaluationHarness, withPiiFirewall, createLLMProvider, CompliantModelRouter, LocalEvidenceStorage, EvidenceStorageResolver, EnvGoogleDriveTokenStore, GoogleDriveEvidenceStorage, R2EvidenceStorage, GoogleDriveOAuthConnector, PrismaGoogleDriveCredentialStore, buildMultipartUpload, GoogleDriveWorkspaceDrive } from "../dist/index.js";
 import { LlmModel } from "@donordesk/domain";
 
 test("local storage rejects keys escaping its configured root", async () => {
@@ -106,6 +106,46 @@ test("local evidence storage writes into the project workspace evidence folder",
   assert.ok(doc.value.storageKey.includes("p1/04-Evidence-Reports/e2.pdf"));
   assert.equal(calls.length, 2);
   delete process.env.STORAGE_ROOT;
+});
+
+test("drive workspace lists non-folder files from a folder", async () => {
+  process.env.GOOGLE_DRIVE_CLIENT_ID = "client-1";
+  process.env.GOOGLE_DRIVE_CLIENT_SECRET = "secret-1";
+  process.env.GOOGLE_DRIVE_REFRESH_TOKEN = "rt-1";
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes("oauth2.googleapis.com/token")) {
+      return { ok: true, json: async () => ({ access_token: "at-1" }) };
+    }
+    if (u.includes("/files?q=")) {
+      return {
+        ok: true,
+        json: async () => ({
+          files: [
+            { id: "f-1", name: "report.pdf", mimeType: "application/pdf", size: "1024", modifiedTime: "2026-08-17T00:00:00.000Z", webViewLink: "https://drive.google.com/file/d/f-1/view" },
+            { id: "f-2", name: "Nested Folder", mimeType: "application/vnd.google-apps.folder", size: undefined, webViewLink: undefined },
+          ],
+        }),
+      };
+    }
+    throw new Error(`unexpected fetch ${u}`);
+  };
+  try {
+    const drive = new GoogleDriveWorkspaceDrive(new EnvGoogleDriveTokenStore({ tenantId: "tenant-a" }));
+    const result = await drive.listFiles("tenant-a", "folder-1");
+    assert.equal(result.ok, true);
+    assert.equal(result.value.length, 1);
+    assert.equal(result.value[0].id, "f-1");
+    assert.equal(result.value[0].name, "report.pdf");
+    assert.equal(result.value[0].size, 1024);
+    assert.equal(result.value[0].webViewLink.includes("f-1"), true);
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.GOOGLE_DRIVE_CLIENT_ID;
+    delete process.env.GOOGLE_DRIVE_CLIENT_SECRET;
+    delete process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
+  }
 });
 
 test("r2 evidence storage requires bytes and builds public URLs without network", async () => {

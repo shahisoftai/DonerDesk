@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { LinkEvidenceSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
+import { WorkspaceFilesResponseSchema } from "@/lib/server/schemas";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
@@ -65,4 +66,20 @@ export async function linkDriveEvidenceAction(input: unknown): Promise<LinkDrive
   });
   if (!result.ok) return result;
   return { ok: true, value: result.value };
+}
+
+export type ListWorkspaceFilesResult = Result<import("@/lib/server/schemas").WorkspaceFilesResponse, AppError>;
+
+/** Re-reads the current files in the project's workspace folders (Drive/local). */
+export async function listWorkspaceFilesAction(
+  projectId: string,
+  folders: string[],
+): Promise<ListWorkspaceFilesResult> {
+  const context = await requireSession();
+  const folderParam = encodeURIComponent(folders.join(","));
+  return gatewayRequest(
+    `/v1/projects/${projectId}/workspace/files?folders=${folderParam}`,
+    WorkspaceFilesResponseSchema,
+    context.token,
+  );
 }

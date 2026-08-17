@@ -173,6 +173,16 @@ export interface WorkspaceReference {
   subfolders?: Array<{ role: string; id: string }>;
 }
 
+/** A file listed from a project workspace folder (Google Drive or local mirror). */
+export interface DriveFileEntry {
+  id: string;
+  name: string;
+  mimeType: string;
+  size?: number;
+  modifiedTime?: string;
+  webViewLink?: string;
+}
+
 /**
  * Provisions and verifies a tenant-scoped project workspace (folder tree) in the
  * configured storage provider. Implementations are idempotent and repairable.
@@ -186,6 +196,8 @@ export interface IProjectWorkspaceService {
   verifyAccess(tenantId: TenantId, rootId: string): Promise<Result<void, DomainError>>;
   /** Verify/repair the project tree; returns the (possibly repaired) reference. */
   repairProjectWorkspace(tenantId: TenantId, projectId: string): Promise<Result<WorkspaceReference, DomainError>>;
+  /** List files currently in one project workspace folder role (idempotent; provisions if missing). */
+  listProjectFolderFiles(tenantId: TenantId, projectId: string, role: string): Promise<Result<DriveFileEntry[], DomainError>>;
 }
 
 export interface ProjectWorkspaceProviderConfig {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ConnectGoogleDriveHandler, LinkGoogleDriveEvidenceHandler, GoogleSignInHandler, ProvisionTenantHandler } from "../dist/index.js";
+import { ConnectGoogleDriveHandler, LinkGoogleDriveEvidenceHandler, GoogleSignInHandler, ProvisionTenantHandler, ListWorkspaceFilesHandler, ProvisionTenantWorkspacesHandler } from "../dist/index.js";
 import { TenantId } from "@donordesk/domain";
 
 const tenant = { tenantId: TenantId.create("tenant-a"), userId: "u-1", role: "ADMIN" };
@@ -94,6 +94,60 @@ test("link google drive evidence rejects when tenant storage is not GOOGLE_DRIVE
     driveFileId: "abc", evidenceType: "PHOTO",
   });
   assert.equal(result.ok, false);
+});
+
+test("list workspace files groups folders by role with labels", async () => {
+  const projects = {
+    findById: async (id) => ({ ok: true, value: { id, status: "ACTIVE" } }),
+  };
+  const workspace = {
+    async ensureProjectWorkspace() {
+      return { ok: true, value: { provider: "GOOGLE_DRIVE", rootId: "root-1", deepLink: "https://drive.google.com/drive/folders/root-1", subfolders: [] } };
+    },
+    async listProjectFolderFiles(_t, _p, role) {
+      if (role === "04-Evidence-Reports") {
+        return { ok: true, value: [{ id: "f-1", name: "report.pdf", mimeType: "application/pdf", size: 100 }] };
+      }
+      return { ok: true, value: [] };
+    },
+  };
+  const handler = new ListWorkspaceFilesHandler(workspace, projects);
+  const result = await handler.handle(ctx, "p-1", ["04-Evidence-Reports", "05-Evidence-Images"]);
+  assert.equal(result.ok, true);
+  assert.equal(result.value.folders.length, 2);
+  assert.equal(result.value.folders[0].role, "04-Evidence-Reports");
+  assert.equal(result.value.folders[0].label, "Evidence reports");
+  assert.equal(result.value.folders[0].files.length, 1);
+  assert.equal(result.value.folders[1].files.length, 0);
+  assert.equal(result.value.deepLink, "https://drive.google.com/drive/folders/root-1");
+});
+
+test("provision tenant workspaces ensures the root and marks projects ready", async () => {
+  const projectsRepo = {
+    listByTenant: async () => ({ ok: true, value: [{ id: "p-1", setWorkspaceRoot: () => {} }, { id: "p-2", setWorkspaceRoot: () => {} }] }),
+    update: async (p) => ({ ok: true, value: p }),
+  };
+  const workspace = {
+    ensureTenantRoot: async () => ({ ok: true, value: { provider: "GOOGLE_DRIVE", rootId: "root-1" } }),
+    ensureProjectWorkspace: async (_t, projectId) => ({ ok: true, value: { provider: "GOOGLE_DRIVE", rootId: `root-${projectId}`, subfolders: [] } }),
+  };
+  const made = [];
+  const setups = new Map([
+    ["p-1", { workspaceProvisionStatus: "PENDING", markReady() { this.workspaceProvisionStatus = "READY"; }, markFailed() {}, isWorkspaceReady() { return this.workspaceProvisionStatus === "READY"; } }],
+    ["p-2", { workspaceProvisionStatus: "FAILED", markReady() { this.workspaceProvisionStatus = "READY"; }, markFailed() {}, isWorkspaceReady() { return this.workspaceProvisionStatus === "READY"; } }],
+  ]);
+  const setup = {
+    ensureForProject: async (projectId) => ({ ok: true, value: setups.get(projectId) }),
+    update: async (s) => { made.push(s.workspaceProvisionStatus); return { ok: true, value: s }; },
+  };
+  const events = { publish: async (list) => { made.push(`events:${list.length}`); return { ok: true, value: undefined }; } };
+  const audit = { record: async () => ({ ok: true, value: undefined }) };
+  const handler = new ProvisionTenantWorkspacesHandler(workspace, projectsRepo, setup, events, audit);
+  const result = await handler.handle(ctx);
+  assert.equal(result.ok, true);
+  assert.equal(result.value.provisioned, 2);
+  assert.equal(setups.get("p-1").workspaceProvisionStatus, "READY");
+  assert.ok(made.includes("events:2"));
 });
 
 function makeUsers(overrides = {}) {

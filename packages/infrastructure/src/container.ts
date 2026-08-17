@@ -80,6 +80,8 @@ import {
   AcknowledgeProjectSetupHandler,
   RetryProjectWorkspaceHandler,
   RepairProjectWorkspaceHandler,
+  ListWorkspaceFilesHandler,
+  ProvisionTenantWorkspacesHandler,
   GetReportingProfileHandler,
   UpsertReportingProfileHandler,
   ProjectReadinessService,
@@ -248,6 +250,8 @@ export interface Container {
     acknowledgeProjectSetup: AcknowledgeProjectSetupHandler;
     retryProjectWorkspace: RetryProjectWorkspaceHandler;
     repairProjectWorkspace: RepairProjectWorkspaceHandler;
+    listWorkspaceFiles: ListWorkspaceFilesHandler;
+    provisionTenantWorkspaces: ProvisionTenantWorkspacesHandler;
     getReportingProfile: GetReportingProfileHandler;
     upsertReportingProfile: UpsertReportingProfileHandler;
     uploadTemplate: UploadTemplateHandler;
@@ -527,6 +531,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     acknowledgeProjectSetup: new AcknowledgeProjectSetupHandler(projectSetup, readiness, audits),
     retryProjectWorkspace: new RetryProjectWorkspaceHandler(projectWorkspace, projects, projectSetup, events, audits),
     repairProjectWorkspace: new RepairProjectWorkspaceHandler(projectWorkspace, projects, projectSetup, audits),
+    listWorkspaceFiles: new ListWorkspaceFilesHandler(projectWorkspace, projects),
+    provisionTenantWorkspaces: new ProvisionTenantWorkspacesHandler(projectWorkspace, projects, projectSetup, events, audits),
     getReportingProfile: new GetReportingProfileHandler(reportingProfiles),
     upsertReportingProfile: new UpsertReportingProfileHandler(ids, reportingProfiles, templates, audits),
     uploadTemplate: new UploadTemplateHandler(ids, templates, templateExtraction, audits),

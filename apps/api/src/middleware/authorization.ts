@@ -18,6 +18,7 @@ const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/users\/(invite|role)$/, permission: "users.manage" },
   { method: "POST", route: /^\/v1\/projects$/, permission: "project.create" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/setup$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/workspace\/files$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/setup\/acknowledge$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/workspace\/(retry|repair)$/, permission: "project.edit" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/reporting-profile$/, permission: "project.view" },

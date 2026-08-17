@@ -5,6 +5,7 @@ import { TemplatesResponseSchema } from "@/lib/server/schemas";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import { InlineError } from "@/components/feedback/PageState";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,14 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
             <span className="text-sm text-brand-600 hover:underline dark:text-brand-400">Edit</span>
           </Link>
         ))}
+      </div>
+
+      <div className="mt-6">
+        <DriveFolderPanel
+          projectId={resolvedParams.id}
+          folderRoles={["01-Donor-Templates"]}
+          title="Donor templates in Google Drive"
+        />
       </div>
     </div>
   );

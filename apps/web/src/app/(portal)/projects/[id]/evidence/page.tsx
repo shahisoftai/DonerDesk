@@ -13,6 +13,7 @@ import { Pagination } from "@/components/data/Pagination";
 import { verificationStatusTone, confidentialityTone } from "@/lib/shared/tone";
 import { EVIDENCE_TYPE_LABEL, EVIDENCE_VERIFICATION_LABEL, CONFIDENTIALITY_LABEL } from "@/lib/labels";
 import { EvidenceFilterBar } from "@/features/evidence/presentation/EvidenceFilterBar";
+import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +136,15 @@ export default async function EvidencePage({
           )}
         </>
       )}
+
+      <div className="mt-6">
+        <DriveFolderPanel
+          projectId={resolvedParams.id}
+          folderRoles={["04-Evidence-Reports", "05-Evidence-Images"]}
+          title="Google Drive evidence folder"
+          linkAsEvidence
+        />
+      </div>
     </div>
   );
 }

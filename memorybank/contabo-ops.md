@@ -476,6 +476,33 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (two-way Google Drive: folder listing + connect provisioning — release `20260817065618` API + web):**
+  Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
+  donordesk-web`). Drive is now fully two-way:
+  1. **Connect-time provisioning:** `POST /v1/drive/callback` now calls
+     `ProvisionTenantWorkspacesHandler` after a successful connect — creates the
+     tenant "DonorDesk" root and every existing project's folder tree
+     (idempotent; per-project failures recorded, connect still succeeds).
+  2. **File listing:** `GET /v1/projects/:id/workspace/files?folders=…`
+     (`ListWorkspaceFilesHandler` + `IProjectWorkspaceService.listProjectFolderFiles`)
+     lists current files per workspace folder role — Drive API `files.list` for
+     GOOGLE_DRIVE (folder files only, name/mime/size/modified/webViewLink) and
+     `readdir` for the local mirror. Ensures the workspace first, so a fresh
+     connection or unprovisioned project reconciles on demand.
+  3. **Web:** `DriveFolderPanel` on the evidence ("Google Drive evidence folder",
+     with per-file "Link as evidence" via `/v1/evidence/link-drive`), templates
+     ("Donor templates in Google Drive"), and logframe ("Logframe & data files in
+     Google Drive") pages. Each page load re-reads the storage (after-login
+     recheck) and a "Refresh" button re-lists on demand. Pages are
+     `force-dynamic`.
+  Tests: app 58/58 (new ListWorkspaceFiles + ProvisionTenantWorkspaces), infra
+  63/63 + 1 skipped (new Drive folder file listing). Verified live: api/web 200,
+  current symlink `20260817065618`, deployed infra bundle has
+  `listProjectFolderFiles`, deployed web chunk has the DriveFolderPanel. Rollback:
+  `RELEASE_ID=20260817063832 scripts/rollback.sh` or `ln -sfn
+  /opt/donordesk/releases/20260817063832 /opt/donordesk/current && systemctl
+  restart donordesk-api donordesk-web`.
+
 - **2026-08-17 (managed Google Drive evidence storage — release `20260817063832` API + web):**
   Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
   donordesk-web`). Uploaded evidence is now **saved into the tenant's Google

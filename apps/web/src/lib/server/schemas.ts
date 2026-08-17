@@ -551,6 +551,29 @@ export const ProjectSetupResponseSchema = z.object({
 });
 export type ProjectSetupResponse = z.infer<typeof ProjectSetupResponseSchema>;
 
+// Project workspace (Google Drive / local mirror) file listing.
+export const WorkspaceFileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  mimeType: z.string(),
+  size: z.number().optional(),
+  modifiedTime: z.string().optional(),
+  webViewLink: z.string().optional(),
+});
+export type WorkspaceFile = z.infer<typeof WorkspaceFileSchema>;
+
+export const WorkspaceFolderSchema = z.object({
+  role: z.string(),
+  label: z.string(),
+  files: z.array(WorkspaceFileSchema),
+});
+
+export const WorkspaceFilesResponseSchema = z.object({
+  folders: z.array(WorkspaceFolderSchema),
+  deepLink: z.string().optional(),
+});
+export type WorkspaceFilesResponse = z.infer<typeof WorkspaceFilesResponseSchema>;
+
 export const ReportingProfileSchema = z.object({
   id: z.string(),
   tenantId: z.string(),

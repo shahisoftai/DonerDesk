@@ -1,5 +1,6 @@
 import { DomainError } from "@donordesk/domain";
 import type { TenantId, Result } from "@donordesk/domain";
+import type { DriveFileEntry } from "@donordesk/application";
 import type { GoogleDriveStorageConfig, GoogleDriveAccessTokenStore } from "./google-drive.js";
 
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
@@ -81,6 +82,38 @@ export class GoogleDriveWorkspaceDrive {
       return ok(undefined);
     } catch (error) {
       return fail(error instanceof Error ? error.message : "Google Drive access verification failed");
+    }
+  }
+
+  /** Lists non-folder files inside a Drive folder (idempotent, no network on config miss). */
+  async listFiles(tenantId: string, folderId: string): Promise<Result<DriveFileEntry[], DomainError>> {
+    const config = await this.tokens.getAccessToken(tenantId);
+    if (!config) return fail("Google Drive is not connected for this tenant");
+    try {
+      const accessToken = await this.refreshAccessToken(config);
+      const q = encodeURIComponent(`'${this.escape(folderId)}' in parents and trashed=false`);
+      const response = await fetch(
+        `${DRIVE_API}/files?q=${q}&fields=files(id,name,mimeType,size,modifiedTime,webViewLink)&pageSize=200&supportsAllDrives=true&includeItemsFromAllDrives=true&orderBy=modifiedTime desc`,
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      );
+      if (!response.ok) throw new Error(`Google Drive file list failed (${response.status})`);
+      const data = (await response.json()) as {
+        files?: Array<{ id: string; name: string; mimeType: string; size?: string; modifiedTime?: string; webViewLink?: string }>;
+      };
+      return ok(
+        (data.files ?? [])
+          .filter((f) => f.mimeType !== FOLDER_MIME)
+          .map((f) => ({
+            id: f.id,
+            name: f.name,
+            mimeType: f.mimeType,
+            size: f.size !== undefined ? Number(f.size) : undefined,
+            modifiedTime: f.modifiedTime,
+            webViewLink: f.webViewLink,
+          })),
+      );
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : "Google Drive file list failed");
     }
   }
 

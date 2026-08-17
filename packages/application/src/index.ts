@@ -43,6 +43,8 @@ export * from "./readiness/project-readiness-service.js";
 export * from "./use-cases/setup/get-project-setup.js";
 export * from "./use-cases/setup/acknowledge-project-setup.js";
 export * from "./use-cases/setup/project-workspace-actions.js";
+export * from "./use-cases/setup/list-workspace-files.js";
+export * from "./use-cases/setup/provision-workspaces.js";
 export * from "./use-cases/setup/reporting-profile-handlers.js";
 
 export * from "./use-cases/templates/upload-template.js";
