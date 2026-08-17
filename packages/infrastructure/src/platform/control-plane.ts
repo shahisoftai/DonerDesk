@@ -2,6 +2,14 @@ import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import type { PrismaClient } from "@prisma/client";
+import {
+  PLAN_CATALOG,
+  resolvePlanLimits,
+  planLimitsToJson,
+  isPlanCode,
+  type PlanLimitsJson,
+  type PlanCode,
+} from "@donordesk/domain";
 
 export const PLATFORM_CATEGORIES = ["LLM", "EMAIL", "OBJECT_STORAGE", "BACKUP", "CONNECTOR"] as const;
 export const PLATFORM_PROVIDERS = {
@@ -15,6 +23,7 @@ export const PLATFORM_PROVIDERS = {
 export type PlatformSession = { sub: string; email: string; role: "SUPER_ADMIN"; purpose: "session" | "mfa" };
 type AdminRow = { id: string; email: string; name: string; passwordHash: string; status: string; totpSecretEncrypted: string | null; recoveryCodesHash: string; failedLoginCount: number; lockedUntil: Date | null };
 type ConfigurationRow = Record<string, unknown> & { id: string; secretCiphertext: string | null; secretIv: string | null; secretTag: string | null; secretVersion: number };
+type BillingGrantRow = { id: string; tenantId: string; planCode: string; source: string; effectiveFrom: Date; effectiveUntil: Date | null; overrideLimitsJson: string | null; createdAt: Date };
 
 export class PlatformControlPlane {
   private readonly masterKey: Buffer;
@@ -108,6 +117,129 @@ export class PlatformControlPlane {
   }
   listTenants() { return this.prisma.organization.findMany({ include: { _count: { select: { users: true, projects: true } } }, orderBy: { createdAt: "desc" } }); }
   listUsers() { return this.prisma.user.findMany({ select: { id: true, tenantId: true, email: true, name: true, role: true, status: true, lastLoginAt: true, createdAt: true }, orderBy: { createdAt: "desc" } }); }
+
+  /**
+   * Billing & credits overview for the SuperAdmin portal: one row per tenant
+   * with the effective plan (resolved via the same precedence rules the app
+   * uses), the AI-credit limit and current-month usage, and the active
+   * subscription when present. Pure read; uses the public domain calculators
+   * so the portal never disagrees with tenant-facing billing.
+   */
+  async listBilling() {
+    const organizations = await this.prisma.organization.findMany({ orderBy: { createdAt: "desc" } });
+    const grants = await this.query<{ id: string; tenantId: string; planCode: string; source: string; effectiveFrom: Date; effectiveUntil: Date | null; overrideLimitsJson: string | null; createdAt: Date }>(`SELECT * FROM "EntitlementGrant"`);
+    const subscriptions = await this.query<{ id: string; tenantId: string; planCode: string; status: string; currentPeriodEnd: Date | null; billingInterval: string; unitAmountMinor: number }>(`SELECT * FROM "BillingSubscription"`);
+    const aiCounters = await this.query<{ tenantId: string; used: bigint; reserved: bigint; periodStart: Date }>(`SELECT "tenantId","used","reserved","periodStart" FROM "UsageCounter" WHERE metric='AI_DRAFT_CREDITS'`);
+
+    const now = new Date();
+    const subByTenant = new Map(subscriptions.map((s) => [s.tenantId, s]));
+    const counterByTenant = new Map(aiCounters.map((c) => [c.tenantId, c]));
+
+    return organizations.map((org) => {
+      const tenantGrants = grants.filter((g) => g.tenantId === org.tenantId && g.effectiveFrom.getTime() <= now.getTime() && (!g.effectiveUntil || g.effectiveUntil.getTime() > now.getTime()));
+      const precedence: Record<string, number> = { MANUAL: 0, ENTERPRISE_CONTRACT: 1, GRANDFATHERED: 2, CREEM_SUBSCRIPTION: 3, TRIAL: 4, DEFAULT: 5 };
+      const selected = [...tenantGrants].sort((a, b) => (precedence[a.source] ?? 9) - (precedence[b.source] ?? 9))[0];
+
+      let planCode: PlanCode = "STARTER";
+      let source = "DEFAULT";
+      let overrideLimits: PlanLimitsJson | undefined;
+      if (selected) {
+        planCode = (isPlanCode(selected.planCode) ? selected.planCode : "STARTER") as PlanCode;
+        source = selected.source;
+        if (selected.overrideLimitsJson) {
+          try { overrideLimits = JSON.parse(selected.overrideLimitsJson) as PlanLimitsJson; } catch { /* keep undefined */ }
+        }
+      }
+
+      const limits = overrideLimits ?? planLimitsToJson(resolvePlanLimits(planCode));
+      const counter = counterByTenant.get(org.tenantId);
+      const subscription = subByTenant.get(org.tenantId);
+
+      return {
+        tenantId: org.tenantId,
+        organizationId: org.id,
+        name: org.name,
+        aiEnabled: org.aiEnabled,
+        planCode,
+        source,
+        planName: PLAN_CATALOG[planCode]?.name ?? planCode,
+        monthlyAiDraftCredits: limits.monthlyAiDraftCredits,
+        aiCreditsUsed: Number(counter?.used ?? 0n),
+        aiCreditsReserved: Number(counter?.reserved ?? 0n),
+        overrideApplied: Boolean(overrideLimits),
+        subscription: subscription ? { status: subscription.status, planCode: subscription.planCode, interval: subscription.billingInterval, unitAmountMinor: subscription.unitAmountMinor, currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() ?? null } : null,
+      };
+    });
+  }
+
+  /**
+   * Adjusts a tenant's monthly AI-draft credit allowance by writing a MANUAL
+   * entitlement grant with a full PlanLimits override (the highest-precedence
+   * source). `mode`:
+   *   - "SET"     -> allowance becomes `value` exactly
+   *   - "INCREASE"-> allowance is current allowance + `value`
+   *   - "DECREASE"-> allowance is current allowance - `value` (floored at 0)
+   * Writing a new grant is append-only: previous grants remain for audit and
+   * rollback, and the new MANUAL grant takes effect immediately.
+   */
+  async adjustCredits(actor: PlatformSession, tenantId: string, input: { mode: "SET" | "INCREASE" | "DECREASE"; value: number; reason?: string }, meta?: { ip?: string; userAgent?: string }) {
+    const org = await this.prisma.organization.findFirst({ where: { tenantId } });
+    if (!org) throw new Error("Tenant not found");
+    if (!Number.isInteger(input.value) || input.value < 0) throw new Error("Credit value must be a non-negative integer");
+
+    const current = await this.resolveCurrentAiCreditLimit(tenantId);
+    const next = input.mode === "SET" ? input.value : input.mode === "INCREASE" ? current + input.value : Math.max(0, current - input.value);
+
+    // Reuse the same limits the tenant currently has, only overriding the AI
+    // credit bucket; keeps projects/seats/storage untouched.
+    const base = await this.currentPlanLimits(tenantId);
+    const override: PlanLimitsJson = {
+      maxActiveProjects: base.maxActiveProjects,
+      maxSeats: base.maxSeats,
+      maxManagedStorageBytes: base.maxManagedStorageBytes,
+      monthlyAiDraftCredits: next,
+    };
+
+    const id = randomUUID();
+    const now = new Date();
+    await this.execute(`INSERT INTO "EntitlementGrant" ("id","tenantId","planCode","source","effectiveFrom","overrideLimitsJson","reason","createdById","createdAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())`, id, tenantId, "STARTER", "MANUAL", now, JSON.stringify(override), input.reason ?? `ai-credits-${input.mode.toLowerCase()}`, actor.sub);
+    await this.audit(actor, "billing.credits.adjusted", "Tenant", tenantId, { previous: current }, { mode: input.mode, value: input.value, next }, meta);
+    return { tenantId, previous: current, next };
+  }
+
+  /** Resets the current UTC month's AI-credit usage counter to zero. */
+  async resetCreditsCounter(actor: PlatformSession, tenantId: string, meta?: { ip?: string; userAgent?: string }) {
+    const org = await this.prisma.organization.findFirst({ where: { tenantId } });
+    if (!org) throw new Error("Tenant not found");
+    const now = new Date();
+    const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    await this.execute(`UPDATE "UsageCounter" SET "used"=0,"reserved"=0,"updatedAt"=NOW() WHERE "tenantId"=$1 AND metric='AI_DRAFT_CREDITS' AND "periodStart"=$2`, tenantId, periodStart);
+    await this.audit(actor, "billing.credits.counter_reset", "Tenant", tenantId, { periodStart: periodStart.toISOString() }, null, meta);
+    return { tenantId, periodStart: periodStart.toISOString(), used: 0, reserved: 0 };
+  }
+
+  private async resolveCurrentAiCreditLimit(tenantId: string): Promise<number> {
+    const plan = await this.currentPlanLimits(tenantId);
+    return plan.monthlyAiDraftCredits ?? 0;
+  }
+
+  private async currentPlanLimits(tenantId: string): Promise<PlanLimitsJson> {
+    const now = new Date();
+    const grants = await this.query<BillingGrantRow>(`SELECT * FROM "EntitlementGrant" WHERE "tenantId"=$1`, tenantId);
+    const effective = grants.filter((g) => g.effectiveFrom.getTime() <= now.getTime() && (!g.effectiveUntil || g.effectiveUntil.getTime() > now.getTime()));
+    const precedence: Record<string, number> = { MANUAL: 0, ENTERPRISE_CONTRACT: 1, GRANDFATHERED: 2, CREEM_SUBSCRIPTION: 3, TRIAL: 4, DEFAULT: 5 };
+    const selected = [...effective].sort((a, b) => (precedence[a.source] ?? 9) - (precedence[b.source] ?? 9))[0];
+    const planCode = (isPlanCode(selected?.planCode ?? "") ? selected?.planCode : "STARTER") as PlanCode;
+    const base = planLimitsToJson(resolvePlanLimits(planCode));
+    if (selected?.overrideLimitsJson) {
+      try {
+        const parsed = JSON.parse(selected.overrideLimitsJson) as PlanLimitsJson;
+        if (typeof parsed.monthlyAiDraftCredits === "number") return { ...base, monthlyAiDraftCredits: parsed.monthlyAiDraftCredits };
+      } catch { /* ignore malformed override */ }
+    }
+    return base;
+  }
+
   async createTenant(actor: PlatformSession, data: { name: string; tenantId: string; organizationType: string; country: string; sectors: string[]; contactName: string; contactEmail: string; website?: string; defaultLanguage: string; dataResidency: string; aiEnabled: boolean }, meta?: { ip?: string; userAgent?: string }) {
     const created = await this.prisma.organization.create({ data: { id: randomUUID(), ...data, tenantId: data.tenantId.toLowerCase(), sectors: JSON.stringify(data.sectors), website: data.website || null } });
     await this.audit(actor, "tenant.created", "Organization", created.id, null, created, meta); return created;

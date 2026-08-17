@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type Tab = "overview" | "tenants" | "users" | "ai" | "email" | "storage" | "backups" | "connectors" | "kestra" | "audit" | "system";
+type Tab = "overview" | "tenants" | "users" | "billing" | "ai" | "email" | "storage" | "backups" | "connectors" | "kestra" | "audit" | "system";
 type AnyRow = Record<string, any>;
 
 const roles = ["ADMIN", "PROJECT_MANAGER", "ME_OFFICER", "GRANTS_OFFICER", "FIELD_OFFICER", "COMPLIANCE_OFFICER", "VIEWER"];
@@ -66,6 +66,7 @@ export function Dashboard() {
 
   const navigation: Array<[Tab, string, string]> = [
     ["overview", "Overview", "⌂"], ["tenants", "Tenants", "▦"], ["users", "Users", "♙"],
+    ["billing", "Billing & credits", "¤"],
     ["ai", "AI & LLM", "✦"], ["email", "Email", "✉"], ["storage", "Object storage", "▤"],
     ["backups", "Off-host backups", "↥"], ["connectors", "Inbound connectors", "⇄"],
     ["kestra", "Kestra plugins", "⚙"], ["audit", "Audit trail", "◷"], ["system", "System health", "●"],
@@ -82,6 +83,7 @@ export function Dashboard() {
       {notice && <div className={`toast ${notice.type}`}>{notice.text}</div>}
       {tab === "overview" && <Overview data={data} onNavigate={changeTab} />}
       {tab === "tenants" && <Tenants rows={Array.isArray(data) ? data : []} onAdd={() => setModal({ kind: "tenant" })} onEdit={(row: AnyRow) => setModal({ kind: "tenant", row })} onDelete={(row: AnyRow) => action(() => api(`tenants/${row.id}`, { method: "DELETE", body: JSON.stringify({ confirmation: prompt(`Type ${row.name} to permanently delete this empty tenant`) || "" }) }), "Tenant deleted")} />}
+      {tab === "billing" && <Billing rows={Array.isArray(data) ? data : []} onSetCredits={(row: AnyRow) => { const value = prompt(`Set monthly AI draft credits for ${row.name} (current: ${row.monthlyAiDraftCredits})`, String(row.monthlyAiDraftCredits)); if (value !== null && value.trim() !== "") { const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0) void action(() => api(`tenants/${row.tenantId}/credits`, { method: "POST", body: JSON.stringify({ mode: "SET", value: parsed, reason: "superadmin" }) }), "Credits updated"); else flash("error", "Credit value must be a non-negative integer"); } }} onAdjustCredits={(row: AnyRow, mode: "INCREASE" | "DECREASE") => { const value = prompt(mode === "INCREASE" ? `Increase AI draft credits for ${row.name} by:` : `Reduce AI draft credits for ${row.name} by:`); if (value !== null && value.trim() !== "") { const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0) void action(() => api(`tenants/${row.tenantId}/credits`, { method: "POST", body: JSON.stringify({ mode, value: parsed, reason: "superadmin" }) }), "Credits updated"); else flash("error", "Credit value must be a non-negative integer"); } }} onResetCounter={(row: AnyRow) => confirm(`Reset the current month's AI credit usage for ${row.name}? This does not change the allowance.`) && void action(() => api(`tenants/${row.tenantId}/credits/reset`, { method: "POST" }), "Usage counter reset")} />}
       {tab === "users" && <Users rows={Array.isArray(data) ? data : []} tenants={tenants} onAdd={() => setModal({ kind: "user" })} onEdit={(row: AnyRow) => setModal({ kind: "user", row })} onReset={(row: AnyRow) => { const password = prompt(`Enter a new password (minimum 12 characters) for ${row.email}`); if (password) void action(() => api(`users/${row.id}`, { method: "PATCH", body: JSON.stringify({ password }) }), "Password reset successfully"); }} onDelete={(row: AnyRow) => confirm(`Delete ${row.email}? This cannot be undone.`) && void action(() => api(`users/${row.id}`, { method: "DELETE" }), "User deleted")} />}
       {(tab in providerGroups) && <Providers tab={tab as keyof typeof providerGroups} rows={(Array.isArray(data) ? data : []).filter((x: AnyRow) => x.category === providerGroups[tab as keyof typeof providerGroups].category)} onAdd={() => setModal({ kind: "provider" })} onEdit={(row: AnyRow) => setModal({ kind: "provider", row })} onTest={(row: AnyRow) => action(() => api(`configurations/${row.id}/test`, { method: "POST" }), "Connection test completed")} onToggle={(row: AnyRow) => action(() => api("configurations", { method: "PUT", body: JSON.stringify(configurationPayload(row, { enabled: !row.enabled })) }), row.enabled ? "Provider disabled" : "Provider enabled")} onDelete={(row: AnyRow) => confirm(`Delete ${row.displayName}? Encrypted credentials will also be removed.`) && void action(() => api(`configurations/${row.id}`, { method: "DELETE" }), "Configuration deleted")} />}
       {tab === "audit" && <Audit rows={Array.isArray(data) ? data : []} />}
@@ -102,6 +104,33 @@ function Overview({ data, onNavigate }: { data: any; onNavigate: (tab: Tab) => v
 function Tenants({ rows, onAdd, onEdit, onDelete }: any) { return <Resource title="Tenant organizations" description="Create and manage every organization using DonorDesk." add="Add tenant" onAdd={onAdd}><table><thead><tr><th>Organization</th><th>Tenant ID</th><th>Country</th><th>Contact</th><th>Users</th><th>Projects</th><th>AI</th><th /></tr></thead><tbody>{rows.map((r: AnyRow) => <tr key={r.id}><td><strong>{r.name}</strong><small>{r.organizationType}</small></td><td><code>{r.tenantId}</code></td><td>{r.country}</td><td>{r.contactEmail}</td><td>{r._count?.users ?? 0}</td><td>{r._count?.projects ?? 0}</td><td><Badge ok={r.aiEnabled}>{r.aiEnabled ? "Enabled" : "Disabled"}</Badge></td><td><Actions edit={() => onEdit(r)} remove={() => onDelete(r)} /></td></tr>)}</tbody></table></Resource>; }
 
 function Users({ rows, tenants, onAdd, onEdit, onReset, onDelete }: any) { const names = Object.fromEntries(tenants.map((x: AnyRow) => [x.tenantId, x.name])); return <Resource title="Users and access" description="Control identities, tenant membership, roles, status and credentials." add="Create user" onAdd={onAdd}><table><thead><tr><th>User</th><th>Tenant</th><th>Role</th><th>Status</th><th>Last login</th><th /></tr></thead><tbody>{rows.map((r: AnyRow) => <tr key={r.id}><td><strong>{r.name}</strong><small>{r.email}</small></td><td>{names[r.tenantId] || r.tenantId}</td><td>{pretty(r.role)}</td><td><Badge ok={r.status === "ACTIVE"}>{pretty(r.status)}</Badge></td><td>{date(r.lastLoginAt)}</td><td><div className="row-actions"><button onClick={() => onReset(r)}>Reset password</button><Actions edit={() => onEdit(r)} remove={() => onDelete(r)} /></div></td></tr>)}</tbody></table></Resource>; }
+
+function Billing({ rows, onSetCredits, onAdjustCredits, onResetCounter }: any) {
+  return <Resource title="Billing & AI credits" description="Per-tenant plan, monthly AI-draft allowance and current usage. Manual grants take effect immediately.">
+    <table>
+      <thead><tr><th>Organization</th><th>Plan</th><th>Source</th><th>AI credits / month</th><th>Used this month</th><th>Remaining</th><th>Subscription</th><th /></tr></thead>
+      <tbody>{rows.map((r: AnyRow) => {
+        const remaining = r.monthlyAiDraftCredits == null ? null : Number(r.monthlyAiDraftCredits) - Number(r.aiCreditsUsed);
+        return <tr key={r.tenantId}>
+          <td><strong>{r.name}</strong><small><code>{r.tenantId}</code>{r.overrideApplied ? " · manual override" : ""}</small></td>
+          <td><Badge ok>{r.planName}</Badge></td>
+          <td>{pretty(r.source)}</td>
+          <td>{r.monthlyAiDraftCredits == null ? "Unlimited" : r.monthlyAiDraftCredits}</td>
+          <td>{Number(r.aiCreditsUsed)}{Number(r.aiCreditsReserved) > 0 ? ` (+${r.aiCreditsReserved} reserved)` : ""}</td>
+          <td>{remaining == null ? "—" : remaining}</td>
+          <td>{r.subscription ? <span><Badge ok={r.subscription.status === "ACTIVE"}>{pretty(r.subscription.status)}</Badge><small>{pretty(r.subscription.planCode)} · {pretty(r.subscription.interval)}</small></span> : <span className="muted">None</span>}</td>
+          <td><div className="row-actions">
+            <button onClick={() => onSetCredits(r)}>Set allowance</button>
+            <button onClick={() => onAdjustCredits(r, "INCREASE")}>+ Increase</button>
+            <button onClick={() => onAdjustCredits(r, "DECREASE")}>− Reduce</button>
+            <button className="danger-link" onClick={() => onResetCounter(r)}>Reset month usage</button>
+          </div></td>
+        </tr>;
+      })}</tbody>
+    </table>
+    <p className="help-note">Adjusting the allowance writes a MANUAL entitlement grant (highest precedence); resetting month usage zeroes the current UTC-month counter. Both actions are recorded in the audit trail.</p>
+  </Resource>;
+}
 
 function Providers({ tab, rows, onAdd, onEdit, onTest, onToggle, onDelete }: any) { const allMeta: Record<string, string[]> = { ai: ["AI and language models", "Configure models used for drafting, tagging and analysis.", "Add LLM provider"], email: ["Transactional email", "Control outbound invitations, alerts and notifications.", "Add email provider"], storage: ["Object storage", "Manage evidence and export storage destinations.", "Add storage"], backups: ["Encrypted off-host backups", "Configure independent disaster-recovery destinations.", "Add backup target"], connectors: ["Inbound data connectors", "Ingest evidence and field data from external systems.", "Add connector"] }; const meta = allMeta[String(tab)]!; return <Resource title={meta[0]} description={meta[1]} add={meta[2]} onAdd={onAdd}><div className="provider-grid">{rows.length === 0 && <Empty text="No provider configured yet." />}{rows.map((r: AnyRow) => <article className="provider-card" key={r.id}><div className="provider-head"><span className="provider-icon">{providerIcon(r.provider)}</span><div><h3>{r.displayName}</h3><p>{pretty(r.provider)} · {r.scopeType === "TENANT" ? `Tenant ${r.scopeId}` : "All tenants"}</p></div><Badge ok={r.enabled}>{r.enabled ? "Active" : "Disabled"}</Badge></div><div className="provider-meta"><span>Credentials <strong>{r.secretConfigured ? "✓ Encrypted" : "Not set"}</strong></span><span>Last test <strong>{r.lastTestStatus || "Never"}</strong></span><span>Updated <strong>{date(r.updatedAt)}</strong></span></div>{r.lastTestMessage && <p className={`test-result ${r.lastTestStatus === "SUCCESS" ? "pass" : "fail"}`}>{r.lastTestMessage}</p>}<div className="card-actions"><button onClick={() => onTest(r)}>Test connection</button><button onClick={() => onToggle(r)}>{r.enabled ? "Disable" : "Enable"}</button><button onClick={() => onEdit(r)}>Edit / rotate keys</button><button className="danger-link" onClick={() => onDelete(r)}>Delete</button></div></article>)}</div></Resource>; }
 

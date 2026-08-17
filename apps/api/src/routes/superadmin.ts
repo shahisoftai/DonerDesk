@@ -9,6 +9,7 @@ const UserUpdate = z.object({ name: z.string().min(1).optional(), status: z.enum
 const UserCreate = z.object({ tenantId: z.string().min(1), email: z.string().email(), name: z.string().min(1), role: z.enum(["ADMIN", "PROJECT_MANAGER", "ME_OFFICER", "GRANTS_OFFICER", "FIELD_OFFICER", "COMPLIANCE_OFFICER", "VIEWER"]), status: z.enum(["INVITED", "ACTIVE", "SUSPENDED"]).default("ACTIVE"), password: z.string().min(12) });
 const TenantCreate = z.object({ name: z.string().min(2), tenantId: z.string().regex(/^[a-z0-9][a-z0-9-]{2,62}$/), organizationType: z.string().min(2), country: z.string().min(2), sectors: z.array(z.string()).default([]), contactName: z.string().min(2), contactEmail: z.string().email(), website: z.string().url().optional().or(z.literal("")), defaultLanguage: z.string().min(2).default("en"), dataResidency: z.enum(["DEFAULT", "EU", "US", "AFRICA", "ASIA"]), aiEnabled: z.boolean() });
 const TenantUpdate = TenantCreate.omit({ tenantId: true }).partial();
+const CreditsAdjust = z.object({ mode: z.enum(["SET", "INCREASE", "DECREASE"]), value: z.number().int().min(0), reason: z.string().max(200).optional() });
 
 export async function registerSuperAdminRoutes(app: FastifyInstance) {
   let platform: PlatformControlPlane | undefined;
@@ -33,6 +34,9 @@ export async function registerSuperAdminRoutes(app: FastifyInstance) {
     const actor = (req: FastifyRequest) => (req as FastifyRequest & { superAdmin: ReturnType<PlatformControlPlane["verifySession"]> }).superAdmin;
     const meta = (req: FastifyRequest) => ({ ip: req.ip, userAgent: req.headers["user-agent"] });
     secured.get("/superadmin/overview", () => service().overview());
+    secured.get("/superadmin/billing", () => service().listBilling());
+    secured.post("/superadmin/tenants/:id/credits", req => service().adjustCredits(actor(req), (req.params as { id: string }).id, CreditsAdjust.parse(req.body), meta(req)));
+    secured.post("/superadmin/tenants/:id/credits/reset", req => service().resetCreditsCounter(actor(req), (req.params as { id: string }).id, meta(req)));
     secured.get("/superadmin/tenants", () => service().listTenants());
     secured.post("/superadmin/tenants", req => service().createTenant(actor(req), TenantCreate.parse(req.body), meta(req)));
     secured.patch("/superadmin/tenants/:id", req => service().updateTenant(actor(req), (req.params as { id: string }).id, TenantUpdate.parse(req.body), meta(req)));
