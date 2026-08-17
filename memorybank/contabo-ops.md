@@ -476,6 +476,16 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (per-section "Add a section" — release `20260817052925` web-only):**
+  Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`).
+  The template review editor now shows an "Add a section" button next to each
+  section's "Remove section" button; it inserts a new blank section immediately
+  below the current one (the bottom "Add section" button still appends at the
+  end). Verified: web 200, deployed chunk contains the new button. Rollback:
+  `RELEASE_ID=20260817051940 scripts/rollback.sh` or
+  `ln -sfn /opt/donordesk/releases/20260817051940 /opt/donordesk/current &&
+  systemctl restart donordesk-web`.
+
 - **2026-08-17 (delete donor template — release `20260817051940`):**
   Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
   donordesk-web`). Added `DELETE /v1/templates/:id` (`template.manage` capability):

@@ -69,8 +69,13 @@ export function SectionEditor({ projectId, templateId, initialSections }: { proj
     setSections((s) => s.map((sec, idx) => (idx === i ? { ...sec, ...patch } : sec)));
     setSaved(false);
   }
-  function add() {
-    setSections((s) => [...s, { id: crypto.randomUUID(), title: "New section", description: "", inputType: "NARRATIVE", required: true, evidenceNeeded: "", reviewStatus: "DRAFT" }]);
+  function add(afterIndex?: number) {
+    const newSection: Section = { id: crypto.randomUUID(), title: "New section", description: "", inputType: "NARRATIVE", required: true, evidenceNeeded: "", reviewStatus: "DRAFT" };
+    setSections((s) => {
+      if (afterIndex === undefined) return [...s, newSection];
+      const insertAt = Math.min(afterIndex + 1, s.length);
+      return [...s.slice(0, insertAt), newSection, ...s.slice(insertAt)];
+    });
     setSaved(false);
   }
   function remove(i: number) {
@@ -174,7 +179,8 @@ export function SectionEditor({ projectId, templateId, initialSections }: { proj
               </div>
             )}
 
-            <div className="mt-3 flex justify-end">
+            <div className="mt-3 flex justify-end gap-2">
+              <button className="btn-secondary" type="button" onClick={() => add(i)}>Add a section</button>
               <button className="btn-danger" type="button" onClick={() => remove(i)}>Remove section</button>
             </div>
           </div>
@@ -182,7 +188,7 @@ export function SectionEditor({ projectId, templateId, initialSections }: { proj
       })}
 
       <div className="flex gap-3">
-        <button className="btn-secondary" type="button" onClick={add}>Add section</button>
+        <button className="btn-secondary" type="button" onClick={() => add()}>Add section</button>
         <button className="btn" type="button" disabled={busy} onClick={save}>{busy ? "Saving..." : "Save template"}</button>
         {saved && <span className="self-center text-sm text-green-700 dark:text-green-400">Saved</span>}
       </div>
