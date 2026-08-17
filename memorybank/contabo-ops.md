@@ -476,6 +476,25 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (fix: Google Drive evidence upload — release `20260817061808` web-only):**
+  Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`).
+  Bug: the demo tenant's `Organization.storageProvider` is `GOOGLE_DRIVE`
+  (link-first), but the evidence upload page only offered a file dropzone that
+  POSTs bytes to `/v1/evidence/upload`, so every upload failed with "Google
+  Drive evidence requires a drive file id". Fix: the evidence/new page now
+  fetches the tenant's storage provider from `/v1/organization` and, for
+  `GOOGLE_DRIVE` tenants, shows a "Google Drive link" input (share link or file
+  ID) that queues link items and posts them to the existing
+  `/v1/evidence/link-drive` handler via `linkDriveEvidenceAction` (reference-only,
+  no byte copy). Added `driveFileIdFromLink` (parses `/file/d/<id>`, `?id=`,
+  bare IDs) and `fileTypeForName` to `upload-queue.ts`; the queue reducer now
+  supports file and drive-link items. LOCAL/R2 tenants keep the file dropzone
+  unchanged. Verified: web 200 loopback, current symlink `20260817061808`,
+  deployed evidence/new chunk contains the Google Drive link UI. Rollback:
+  `RELEASE_ID=20260817060540 scripts/rollback.sh` or `ln -sfn
+  /opt/donordesk/releases/20260817060540 /opt/donordesk/current && systemctl
+  restart donordesk-web`.
+
 - **2026-08-17 (fix: template section review status lost on save — release `20260817060540` web-only):**
   Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`).
   Bug: templates parsed from DOCX were created with `reviewStatus: "REVIEWED"`,

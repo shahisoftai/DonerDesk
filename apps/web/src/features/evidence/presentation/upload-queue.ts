@@ -2,15 +2,18 @@ export type UploadItemState = "queued" | "uploading" | "success" | "error" | "ca
 
 export interface UploadItem {
   key: string;
-  file: File;
   title: string;
   state: UploadItemState;
   error?: string;
   uploadedId?: string;
+  file?: File;
+  /** Google Drive link-first evidence: the Drive file id, no byte copy. */
+  driveFileId?: string;
+  driveWebLink?: string;
 }
 
 export type UploadAction =
-  | { type: "add"; files: Array<{ file: File; title: string }> }
+  | { type: "add"; items: Array<{ file?: File; driveFileId?: string; driveWebLink?: string; title: string }> }
   | { type: "set-title"; key: string; title: string }
   | { type: "start"; key: string }
   | { type: "success"; key: string; id: string }
@@ -23,16 +26,60 @@ export function titleFromFile(file: File): string {
   return name || file.name;
 }
 
+/**
+ * Extracts a Google Drive file id from a share link or returns the input when
+ * it already looks like a bare file id. Handles /file/d/<id>/view, ?id=<id>,
+ * and /open?id=<id> forms. Returns null for anything unrecognized.
+ */
+export function driveFileIdFromLink(input: string): string | null {
+  const value = input.trim();
+  if (!value) return null;
+  if (/^[A-Za-z0-9_-]{20,}$/.test(value)) return value;
+  const fileD = value.match(/\/file\/d\/([A-Za-z0-9_-]+)/);
+  if (fileD && fileD[1]) return fileD[1];
+  const query = value.match(/[?&]id=([A-Za-z0-9_-]+)/);
+  if (query && query[1]) return query[1];
+  return null;
+}
+
+const EXT_MIME: Record<string, string> = {
+  pdf: "application/pdf",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xls: "application/vnd.ms-excel",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  csv: "text/csv",
+  txt: "text/plain",
+};
+
+export function fileTypeForName(name: string): string {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  return EXT_MIME[ext] ?? "application/octet-stream";
+}
+
 export function uploadReducer(items: UploadItem[], action: UploadAction): UploadItem[] {
   switch (action.type) {
     case "add": {
       const existingKeys = new Set(items.map((i) => i.key));
       const additions: UploadItem[] = [];
-      for (const f of action.files) {
-        const key = `${f.file.name}:${f.file.size}:${f.file.lastModified}`;
+      for (const item of action.items) {
+        const key = item.file
+          ? `${item.file.name}:${item.file.size}:${item.file.lastModified}`
+          : `drive:${item.driveFileId}`;
         if (existingKeys.has(key)) continue;
         existingKeys.add(key);
-        additions.push({ key, file: f.file, title: f.title, state: "queued" });
+        additions.push({
+          key,
+          file: item.file,
+          driveFileId: item.driveFileId,
+          driveWebLink: item.driveWebLink,
+          title: item.title,
+          state: "queued",
+        });
       }
       return [...items, ...additions];
     }
