@@ -49,6 +49,15 @@ type ReportSection = {
   chartConfig?: ChartConfig | null;
   updatedAt: string;
 };
+type ReportClaim = {
+  id: string;
+  sectionId: string;
+  text: string;
+  type: string;
+  sources?: Array<{ evidenceId: string; chunkId: string; sourceText: string }>;
+  verificationResult: string;
+  verificationDetail: string;
+};
 type ReportDraft = {
   id: string;
   title: string;
@@ -87,6 +96,7 @@ export function ReportWorkspace({
   periodId,
   draft,
   sections,
+  claims,
   indicators,
   readiness,
   checklist,
@@ -99,6 +109,7 @@ export function ReportWorkspace({
   periodId: string;
   draft: ReportDraft | null;
   sections: ReportSection[];
+  claims: ReportClaim[];
   indicators: RawIndicatorRow[];
   readiness: Readiness;
   checklist: ChecklistItem[];
@@ -313,9 +324,37 @@ export function ReportWorkspace({
               {selected.sourceReferences && selected.sourceReferences.length > 0 && (
                 <div className="mt-4 border-t border-slate-200 pt-3 dark:border-white/10">
                   <SourceReferenceList sources={selected.sourceReferences} />
-                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                    These are section-level references. Paragraph-level provenance is not available yet.
-                  </p>
+                </div>
+              )}
+              {claims.filter((c) => c.sectionId === selected.id).length > 0 && (
+                <div className="mt-4 border-t border-slate-200 pt-3 dark:border-white/10">
+                  <p className="mb-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Statement-level sources</p>
+                  <ul className="space-y-2">
+                    {claims
+                      .filter((c) => c.sectionId === selected.id)
+                      .map((c) => (
+                        <li key={c.id} className="rounded-md border border-slate-200 bg-slate-50 p-2 text-sm dark:border-white/10 dark:bg-white/5">
+                          <p className="text-slate-700 dark:text-slate-200">{c.text}</p>
+                          {c.sources && c.sources.length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                              {c.sources.map((s) => (
+                                <span
+                                  key={`${c.id}-${s.evidenceId}-${s.chunkId}`}
+                                  title={s.sourceText?.slice(0, 200)}
+                                  className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] text-slate-500 dark:border-white/15 dark:bg-white/10 dark:text-slate-400"
+                                >
+                                  <span className="uppercase opacity-70">evidence</span>
+                                  {s.evidenceId.slice(0, 8)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
+                            Verification: {c.verificationResult} — {c.verificationDetail}
+                          </p>
+                        </li>
+                      ))}
+                  </ul>
                 </div>
               )}
               {canApproveSection && selected.status !== "APPROVED" && (

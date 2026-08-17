@@ -49,6 +49,8 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         verificationStatus: string;
         confidentialityLevel: string;
         notes?: string;
+        aiSummary?: string;
+        extractedText?: string;
         aiSuggestedTags: unknown[];
       };
       const storageKey = dto.fileUrl.startsWith("/v1/files/")
@@ -76,6 +78,8 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         verificationStatus: dto.verificationStatus,
         confidentialityLevel: dto.confidentialityLevel,
         notes: dto.notes,
+        aiSummary: dto.aiSummary,
+        extractedText: dto.extractedText,
         aiSuggestedTags: dto.aiSuggestedTags,
       });
     });
@@ -117,6 +121,7 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         tags: body.tags,
         sensitivityWarning: body.sensitivityWarning,
         model: body.model,
+        extractedText: body.extractedText,
         idempotencyKey: body.idempotencyKey,
       });
       if (!r.ok) throw r.error;

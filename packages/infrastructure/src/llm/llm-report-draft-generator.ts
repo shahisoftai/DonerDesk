@@ -43,7 +43,7 @@ function buildSystemPrompt(): string {
     `          "proposedSources": [{ "evidenceId": "string", "chunkId": "string", "sourceText": "string" }]`,
     `        }`,
     `      ]`,
-    `      "sourceReferences": [{ "type": "indicator|evidence|activity_update", "id": "string", "label": "string" }]`,
+    `      "sourceReferences": [{ "type": "indicator|evidence|activity", "id": "string", "label": "string" }]`,
     `    }`,
     `  ]`,
     `}`,
@@ -83,7 +83,39 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
     input.evidencePackages.map((p) => ({
       evidenceId: p.evidenceId,
       title: p.title,
-      chunks: p.chunks.map((c) => ({ chunkId: c.chunkId, text: c.text.slice(0, 300) })),
+      chunks: p.chunks.slice(0, 3).map((c) => ({ chunkId: c.chunkId, text: c.text.slice(0, 600) })),
+    })),
+    null,
+  );
+
+  const activitiesJson = JSON.stringify(
+    input.activities.map((a) => ({
+      activityId: a.activityId,
+      activityTitle: a.activityTitle,
+      activityDate: a.activityDate.toISOString().slice(0, 10),
+      location: a.location ?? null,
+      participantsTotal: a.participantsTotal ?? null,
+      summary: a.summary,
+      achievements: a.achievements,
+      challenges: a.challenges,
+      lessonsLearned: a.lessonsLearned,
+      nextSteps: a.nextSteps,
+      attachedEvidenceIds: a.attachedEvidenceIds,
+      status: a.status,
+    })),
+    null,
+  );
+
+  const indicatorUpdatesJson = JSON.stringify(
+    input.indicatorUpdates.map((u) => ({
+      indicatorId: u.indicatorId,
+      indicatorCode: u.indicatorCode,
+      periodAchievement: u.periodAchievement,
+      cumulativeAchievement: u.cumulativeAchievement,
+      comments: u.comments ?? null,
+      dataSource: u.dataSource ?? null,
+      attachedEvidenceIds: u.attachedEvidenceIds,
+      verificationStatus: u.verificationStatus,
     })),
     null,
   );
@@ -102,12 +134,23 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
     `# Verified Findings`,
     findingsJson,
     ``,
+    `# Indicator Updates`,
+    indicatorUpdatesJson,
+    ``,
+    `# Activity Records`,
+    activitiesJson,
+    ``,
     `# Evidence Packages`,
     evidenceJson,
     ``,
     `# Instructions`,
     `Draft all sections. For each section, produce narrative content and structured claims.`,
+    `Narrative MUST draw on the activity records and indicator updates provided, and MUST cite evidence:`,
+    `- Use activity titles, dates, locations and participant counts from the Activity Records.`,
+    `- Use recorded achievements, challenges, lessons learned and next steps verbatim from activity updates.`,
+    `- Use indicator comments and data sources from the Indicator Updates as context.`,
     `Claims must reference evidence by evidenceId and chunkId from the evidence packages above.`,
+    `Every section MUST list its source references: indicators, evidence files, and activities actually used.`,
     `Quality flags on findings (e.g. LOW_COVERAGE, NEEDS_REVIEW) should be noted as caveats in the narrative.`,
     `Return only JSON conforming to the schema. No preamble, no commentary.`,
   ].join("\n");

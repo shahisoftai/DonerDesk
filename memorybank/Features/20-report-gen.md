@@ -635,3 +635,44 @@ Scope notes: chart rendering intentionally avoids headless browsers
 (no Puppeteer); SVG -> PNG via sharp keeps the export path dependency-light.
 Status-distribution and indicator-comparison bindings ship; per-indicator
 disaggregation (M/F/children) is future work (Feature 06 pending).
+
+## 16. Report data completeness — evidence/activity/indicator context (IMPLEMENTED 2026-08-17)
+
+Deep audit finding: generated drafts effectively ignored saved Evidence and
+Activities. Evidence packages carried only `aiSummary`/`title` (stub summaries,
+never document content), and activity narratives never reached the narrator.
+Fixed end-to-end (see `../Fixes.md` for the full finding list):
+
+1. **Evidence: real document text persisted + cited.**
+   - `EvidenceFile.extractedText` column (migration
+     `20260817200000_evidence_extracted_text`), mapped in the Prisma repo + DTO.
+   - `POST /internal/evidence/:id/tags` accepts `extractedText`
+     (`PersistTagsBodySchema`); `PersistEvidenceTagsHandler` stores it via
+     `EvidenceFile.setExtractedText`.
+   - Kestra `evidence_parse.yml` sends the Tika-extracted text in the persist body.
+   - `EvidencePackageBuilder` chunks `extractedText || aiSummary || title`, so the
+     narrator sees the actual document content; claims carry
+     `proposedSources` (evidenceId/chunkId/sourceText) and claim verification
+     passes on real coverage.
+2. **Activities: full narrative in the generation input.**
+   - `GenerateReportDraftInput.activities: ActivityGenerationContext[]`
+     (summary, achievements, challenges, lessonsLearned, nextSteps, participants,
+     location, linked evidence, status) built by `GenerateReportDraftHandler`.
+   - Stub narrates activity records, achievements, challenges, and lessons
+     verbatim with `activity` source references; the LLM prompt gains
+     `# Activity Records`.
+3. **Indicators: update detail in the generation input.**
+   - `GenerateReportDraftInput.indicatorUpdates: IndicatorUpdateGenerationContext[]`
+     (period/cumulative achievements, comments, dataSource, linked evidence).
+   - Indicator sections surface M&E comments/dataSource; the LLM prompt gains
+     `# Indicator Updates`.
+4. **Citations render.** The report workspace shows statement-level sources
+   (claims with evidence chips + verification status) replacing the
+   "paragraph-level provenance not available yet" note. `ReportClaim.sources`
+   already carried the hashed chunk provenance from Phase 1.
+5. **Reproducibility.** `ReportGenerationRun` snapshots now include `activityIds`.
+
+Verification: `pnpm -r typecheck` and `pnpm -r build` pass; 74 infrastructure
+tests + 32 workers tests pass. Requires migration
+`20260817200000_evidence_extracted_text` on deploy; existing evidence rows get
+`extractedText` when the `evidence_parse` flow re-runs for them.

@@ -84,9 +84,17 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 > DOCX/PDF via ECharts SSR→sharp PNG), the **SuperAdmin Billing & credits**
 > section (per-tenant allowance Set/Increase/Reduce + reset month usage), plus
 > credit/timeout/section-switching fixes. Migration `20260817183000_report_charts`
-> applied. **Gated (not deployed):** the five plugin-referencing Kestra flows and
-> plugin JARs (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource
-> first). See `contabo-ops.md` §14 and `imp/KESTRA-PLUGINS.md`.
+> applied. **2026-08-17 (report data completeness — not yet deployed):** AI report
+> generation now fully consumes saved project data — evidence document text is
+> persisted (`EvidenceFile.extractedText`, migration
+> `20260817200000_evidence_extracted_text`) and cited via evidence packages, and
+> activity narratives + indicator-update comments/dataSource feed the narrator;
+> statement-level sources render in the report workspace. See
+> `Features/11-AI-Report-Draft-Generator.md`, `Features/07-Evidence-Library.md`,
+> `Features/08-AI-Evidence-Tagging.md`, and `Fixes.md`. **Gated (not deployed):**
+> the five plugin-referencing Kestra flows and plugin JARs (stage/verify against
+> Kestra 1.3.30 + add the `donordesk` datasource first). See `contabo-ops.md` §14
+> and `imp/KESTRA-PLUGINS.md`.
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |
@@ -130,6 +138,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | LLM / AI | [`0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md), [`pending.md`](pending.md) (BullMQ) |
 | AI credits / quotas | [`Features/19-Tiers-And-Payments.md`](Features/19-Tiers-And-Payments.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md) §14–15 |
 | Report charts | [`Features/20-report-gen.md`](Features/20-report-gen.md) §15, [`Features/11-AI-Report-Draft-Generator.md`](Features/11-AI-Report-Draft-Generator.md) |
+| Evidence extracted text / report data completeness | [`Features/07-Evidence-Library.md`](Features/07-Evidence-Library.md), [`Features/08-AI-Evidence-Tagging.md`](Features/08-AI-Evidence-Tagging.md), [`Features/11-AI-Report-Draft-Generator.md`](Features/11-AI-Report-Draft-Generator.md), [`Fixes.md`](Fixes.md) |
 | SuperAdmin billing & credits | [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) §5/§7, [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md) §15 |
 | API bind (0.0.0.0 issue) | [`contabo-ops.md`](contabo-ops.md) §4, §10, [`pending.md`](pending.md) |
 | OpenLiteSpeed / Origin header | [`Fixes.md`](Fixes.md) §2, [`contabo-ops.md`](contabo-ops.md) §7 |

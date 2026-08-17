@@ -414,6 +414,7 @@ model EvidenceFile {
   confidentialityLevel String  @default("INTERNAL")
   notes               String?
   aiSummary           String?
+  extractedText       String?   @db.Text
   aiSuggestedTagsJson String   @default("[]")
   sensitivityWarning  String?
   createdAt           DateTime @default(now())

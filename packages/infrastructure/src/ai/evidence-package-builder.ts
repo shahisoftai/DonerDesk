@@ -8,9 +8,9 @@ const CHUNKER_VERSION = "evidence-chunker-v1";
 
 /**
  * Builds generation-ready evidence packages. The source text consumed at
- * generation time (AI summary when available, otherwise title) is chunked and
- * hashed so the exact bytes are snapshotted; later evidence edits cannot
- * silently alter an approved report.
+ * generation time (raw extracted document text when available, otherwise AI
+ * summary, otherwise title) is chunked and hashed so the exact bytes are
+ * snapshotted; later evidence edits cannot silently alter an approved report.
  */
 export class EvidencePackageBuilder implements IEvidencePackageBuilder {
   private readonly chunker: EvidenceChunker;
@@ -26,7 +26,7 @@ export class EvidencePackageBuilder implements IEvidencePackageBuilder {
       if (!r.ok) return r;
       if (!r.value) continue;
       const e = r.value;
-      const sourceText = e.aiSummary || e.title || "";
+      const sourceText = e.extractedText || e.aiSummary || e.title || "";
 
       const hash = createHash("sha256")
         .update(JSON.stringify({

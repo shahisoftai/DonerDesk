@@ -69,6 +69,11 @@ Search: File name, Evidence title, Notes, Extracted text, Tags
 - `verificationStatus: VerificationStatus`
 - `confidentialityLevel: ConfidentialityLevel`
 - `aiSummary: string | null`
+- `extractedText: string | null` — raw document text extracted by Tika (2026-08-17);
+  persisted by the Kestra `evidence_parse` flow via `POST /internal/evidence/:id/tags`
+  and consumed by `EvidencePackageBuilder` so AI report generation can cite the
+  real document content (fallback `aiSummary` → `title`). Migration
+  `20260817200000_evidence_extracted_text`.
 - `aiSuggestedTagsJson: Record<string, any> | null`
 - `sensitivityWarning: boolean`
 - `createdAt: Date`
@@ -102,6 +107,7 @@ Search: File name, Evidence title, Notes, Extracted text, Tags
 | Drive-link | Implemented | `POST /v1/evidence/link-drive` — reference-only, no byte copy (`storageProvider=GOOGLE_DRIVE`) |
 | Metadata CRUD | Implemented | Full fields |
 | AI Tagging | Orchestrated (heuristic) | Outbox → `evidence.suggest_tags` job; persist idempotency-keyed (release `20260813064828`); workers and Kestra enabled |
+| Extracted text | Implemented (2026-08-17) | Tika text persisted as `EvidenceFile.extractedText` by the `evidence_parse` Kestra flow; used for report-generation evidence packages |
 | Verification Workflow | Implemented | Full status flow |
 | Search | Implemented | Basic search functional |
 | Filters | Implemented | All filter options |
@@ -117,6 +123,7 @@ Search: File name, Evidence title, Notes, Extracted text, Tags
 
 ## Pending Enhancements
 
+- [x] Real document text persisted for search/reporting (2026-08-17 — `EvidenceFile.extractedText` via Tika `evidence_parse` flow)
 - [ ] R2 storage wired via env for production (adapter exists, config is a placeholder)
 - [ ] Google OCR tagging by `driveFileId` (currently uses byte-based Tika for LOCAL/R2)
 - [ ] Bulk file upload (zip import)

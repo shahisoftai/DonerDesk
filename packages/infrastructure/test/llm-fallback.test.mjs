@@ -19,6 +19,8 @@ const input = {
     { indicatorId: "ind-1", indicatorCode: "IND-1", value: "10", unit: "sessions", calculationMethod: "SUM", reportingPeriodId: "r1", sourceRecordIds: [], qualityFlags: [], computedAt: new Date() },
   ],
   evidencePackages: [],
+  activities: [],
+  indicatorUpdates: [],
   reportingProfileSnapshot: { tone: "FORMAL", language: "en", rules: [] },
   generationRunId: "run-1",
 };

@@ -579,7 +579,9 @@
           "fileName": { "type": "string" },
           "fileType": { "type": "string" },
           "uploadedAt": { "type": "string", "format": "date-time" },
-          "status": { "type": "string", "enum": ["DRAFT", "SUBMITTED", "VERIFIED"] }
+          "status": { "type": "string", "enum": ["DRAFT", "SUBMITTED", "VERIFIED"] },
+          "aiSummary": { "type": "string" },
+          "extractedText": { "type": "string", "description": "Raw document text extracted by the Tika evidence_parse flow; consumed by AI report generation (2026-08-17)" }
         }
       },
       "EvidenceList": {

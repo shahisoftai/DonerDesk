@@ -140,6 +140,24 @@ interface SourceReference {
   `generatedByAi=false`** (stub-fallback is never billed). `maxTokens=4096`
   (verified MiniMax completes the full prompt in ~38s). See
   `../imp/LLM-PROVIDER-WIRING.md` §13–14.
+- **Evidence/activity/indicator context (2026-08-17):** the generation input now
+  carries the project's full record set so reports reflect saved data:
+  - `EvidencePackage.extractedText` — the raw document text extracted by Tika is
+    persisted on `EvidenceFile.extractedText` (migration
+    `20260817200000_evidence_extracted_text`) and chunked into evidence packages
+    (falling back to `aiSummary`/`title`). Kestra `evidence_parse.yml` sends the
+    extracted text through `POST /internal/evidence/:id/tags`.
+  - `GenerateReportDraftInput.activities` — full activity narrative
+    (`summary`, `achievements`, `challenges`, `lessonsLearned`, `nextSteps`,
+    participants, location, linked evidence) snapshotted per period.
+  - `GenerateReportDraftInput.indicatorUpdates` — raw achievement strings,
+    `comments`, `dataSource`, linked evidence per indicator.
+  - The stub narrates activity records/achievements/challenges/lessons verbatim and
+    attaches evidence chunks to claims; the LLM prompt includes
+    `# Activity Records`, `# Indicator Updates`, and expanded `# Evidence Packages`
+    (first 3 chunks, 600 chars each) and mandates per-section `sourceReferences`.
+  - The report workspace renders statement-level sources (claim evidence chips +
+    verification status); `ReportGenerationRun` snapshots `activityIds`.
 
 ## Status
 
@@ -148,7 +166,7 @@ interface SourceReference {
 | Report Draft CRUD | Implemented | Full lifecycle |
 | AI Generation | Implemented | Real LLM via SuperAdmin MiniMax/DeepSeek config; stub fallback free + never billed (2026-08-17) |
 | Section Editing | Implemented | Rich text |
-| Source References | Implemented | Populated from activities/indicators/evidence |
+| Source References | Implemented | Populated from activities/indicators/evidence; statement-level sources rendered in the workspace (2026-08-17) |
 | Unsupported Claims | Implemented | Flagged per section and surfaced in compliance |
 | AI Rewrite/Shorten | Implemented | Real LLM rewrite via configured provider; tolerates plain-text output (2026-08-17) |
 | Donor-friendly Mode | Implemented (heuristic) | Audience-aware rewrite in the section editor (2026-08-16) |
@@ -158,7 +176,8 @@ interface SourceReference {
 ## Pending Enhancements
 
 - [x] Wire real LLM provider for generation (2026-08-17 — SuperAdmin MiniMax/DeepSeek)
-- [ ] Actual source reference population from evidence
+- [x] Actual source reference population from evidence (2026-08-17 — extracted text
+  persisted + cited; activity/indicator narrative context in the generation input)
 - [ ] Unsupported claim warning UI
 - [ ] AI regenerate individual sections
 - [ ] AI tone adjustment (donor-specific)
@@ -175,3 +194,10 @@ now wired via SuperAdmin config (2026-08-17) with per-tier AI-credit quotas and 
 free, never-billed stub fallback. Report sections must be editable before export.
 
 The readiness score calculation includes approval score (10% weight).
+
+As of 2026-08-17 the generator consumes the project's saved Indicators (verified
+findings + update comments/dataSource), Evidence (real extracted document text,
+chunked and cited), and Activities (full narrative) — previously evidence was only
+titles/stub summaries and activities were only evidence-ID sources. See
+`../Fixes.md` ("AI report generation ignored evidence content and
+activity/indicator narratives").

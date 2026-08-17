@@ -43,6 +43,8 @@ export const InternalEvidenceResponseSchema = z.object({
   verificationStatus: z.string().min(1),
   confidentialityLevel: z.string().min(1),
   notes: z.string().optional(),
+  aiSummary: z.string().optional(),
+  extractedText: z.string().optional(),
   aiSuggestedTags: z.array(SuggestedTagSchema).default([]),
 });
 export type InternalEvidenceResponse = z.infer<typeof InternalEvidenceResponseSchema>;
@@ -56,6 +58,7 @@ export const PersistTagsBodySchema = z.object({
   tags: z.array(SuggestedTagSchema).default([]),
   sensitivityWarning: z.string().optional(),
   model: z.string().optional(),
+  extractedText: z.string().optional(),
   idempotencyKey: z.string().min(1).optional(),
 });
 export type PersistTagsBody = z.infer<typeof PersistTagsBodySchema>;

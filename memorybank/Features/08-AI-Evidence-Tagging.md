@@ -54,6 +54,12 @@ Warning message: "This file may contain sensitive personal data. Please verify a
   service (`apps/workers`, `/v1/suggest-tags`) and Kestra are prepared but **not
   enabled** on Contabo (gated). Real AI providers remain a stub (`LLM_PROVIDER`
   swap point).
+- **Extracted-text persistence (2026-08-17):** `POST /internal/evidence/:id/tags`
+  accepts `extractedText` and the Kestra `evidence_parse` flow sends the Tika
+  document text with the tag payload. The text is stored as
+  `EvidenceFile.extractedText` (migration `20260817200000_evidence_extracted_text`)
+  and consumed by `EvidencePackageBuilder` for AI report generation (real content
+  is chunked + cited instead of titles/stub summaries).
 
 ### Suggested Tags Schema
 
@@ -107,6 +113,7 @@ AI tag acceptance/rejection logged to `audit_events` per architecture rules.
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Tagging Handler | Stub | Using InMemoryJobQueue |
+| Extracted text persistence | Implemented (2026-08-17) | `EvidenceFile.extractedText` via Tika `evidence_parse` flow; feeds report generation |
 | Confidence Scores | Stub | Static values in stub |
 | Human Approval | Implemented | Accept/edit/reject workflow |
 | Sensitivity Warnings | Stub | Basic flag only |

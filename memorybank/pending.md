@@ -77,7 +77,7 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
 - **Authoritative global queue read models** — current Reports and Compliance queues are composed server-side from accessible project APIs. Add organization-level paginated contracts before large-scale production use.
 - **Indicator detail/history read model** — definition data is available through the project logframe, but period update history and disaggregation are not exposed safely.
 - **Complete project settings update contract** — **DONE 2026-08-15 (release `20260815054218`)**. `UpdateProjectHandler` now supports editable dates/budget (ISO-4217 currency) with period-overlap protection (Feature 18 §5.2 / §5.11).
-- **Claim-level provenance / source-linking (REP-06)** — **DONE 2026-08-16 (Feature 20 core)**. Structured `ReportClaim`/`ClaimSource` contract with evidence hash + chunker version snapshots, deterministic tiered claim verification, approval gates, reject/request-changes transition, and report plan / generation-run persistence landed in domain, application, infrastructure, and API.
+- **Claim-level provenance / source-linking (REP-06)** — **DONE 2026-08-16 (Feature 20 core)**. Structured `ReportClaim`/`ClaimSource` contract with evidence hash + chunker version snapshots, deterministic tiered claim verification, approval gates, reject/request-changes transition, and report plan / generation-run persistence landed in domain, application, infrastructure, and API. **Extended 2026-08-17:** evidence packages now carry the real extracted document text (`EvidenceFile.extractedText`, Tika-persisted), and the generation input includes activity + indicator-update narrative so claims are sourced from actual project records, not titles/stub summaries.
 - **Real AI providers / job resources** — all AI handlers are stubs; UI labels them honestly.
 - **Email/notification delivery** — in-app only; no delivery claims.
 - **Report reject/request-changes endpoint** — **DONE 2026-08-16 (Feature 20 core)**. `POST /v1/report-drafts/:id/reject` returns drafts to DRAFT with an audit trail.
@@ -310,12 +310,15 @@ actually supports; unsupported controls are omitted rather than simulated.
 ### Feature 11 — AI Report Draft Generator
 - [x] Real LLM drafting (2026-08-17 — SuperAdmin MiniMax/DeepSeek config, live in production)
 - [x] AI-credit metering — stub fallback never billed (2026-08-17)
-- [ ] Actual source reference population from evidence
+- [x] Actual source reference population from evidence (2026-08-17 — real document
+  text persisted as `EvidenceFile.extractedText` via the Tika `evidence_parse` flow
+  and cited through `EvidencePackageBuilder`; activity + indicator-update narrative
+  context now feeds the generator; statement-level sources render in the workspace)
 - [ ] Unsupported claim warning UI
 - [ ] Executive summary auto-generation
 - [ ] Donor-specific tone adjustment
 - **Frontend:** generate/regenerate AI draft + manual blank fallback; section-level
-  source references only, accurately labeled (Phase 5). Claim provenance remains backend.
+  and statement-level source references, accurately labeled (Phase 5 + 2026-08-17).
 
 ### Feature 12 — Missing Evidence and Compliance Checklist
 - [ ] Automated checklist generation on period start

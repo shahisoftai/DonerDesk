@@ -3,10 +3,10 @@ import type { SourceReference, VerifiedFinding } from "@donordesk/domain";
 
 /**
  * Heuristic, deterministic draft generator (no LLM). Narrates verified
- * findings and evidence packages only: it never computes indicator values and
- * never invents numbers. Emits structured claims that are verified
- * downstream. The LLM-backed generator is a later swap point with the same
- * contract.
+ * findings, activity records, and evidence packages only: it never computes
+ * indicator values and never invents numbers. Emits structured claims that are
+ * verified downstream. The LLM-backed generator is a later swap point with the
+ * same contract.
  */
 export class StubReportDraftGenerator implements IReportDraftGenerator {
   readonly model = { modelId: "stub", modelVersion: "stub-v1", promptVersion: 1 } as const;
@@ -14,7 +14,6 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
   async generateDraft(input: Parameters<IReportDraftGenerator["generateDraft"]>[0]): ReturnType<IReportDraftGenerator["generateDraft"]> {
     const sections: GeneratedSection[] = [];
     const planSections = input.reportPlan.sections;
-    const findings = input.verifiedFindings;
 
     for (const planSection of planSections) {
       const titleLower = planSection.title.toLowerCase();
@@ -22,6 +21,8 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
         sections.push(this.executiveSummary(input, planSection.title));
       } else if (titleLower.includes("indicator")) {
         sections.push(this.indicatorProgress(input, planSection.title));
+      } else if (titleLower.includes("activity")) {
+        sections.push(this.activityNarrative(input, planSection.title));
       } else if (titleLower.includes("achievement")) {
         sections.push(this.achievements(input, planSection.title));
       } else if (titleLower.includes("challenge")) {
@@ -35,12 +36,8 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
           sectionId: planSection.templateSectionId,
           title: planSection.title,
           content: this.descriptiveNarrative(input, planSection.title),
-          claims: findings.slice(0, 3).map((f) => this.numericClaim(f)),
-          sourceReferences: findings.slice(0, 3).map((f) => ({
-            type: "indicator" as const,
-            id: f.indicatorId,
-            label: `${f.indicatorCode}`,
-          })),
+          claims: findingsClaims(input),
+          sourceReferences: findingsRefs(input),
         });
       }
     }
@@ -77,11 +74,22 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     };
   }
 
-  private numericClaim(finding: VerifiedFinding): ReportClaimDraft {
+  private numericClaim(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], finding: VerifiedFinding): ReportClaimDraft {
+    const update = input.indicatorUpdates.find((u) => u.indicatorId === finding.indicatorId);
+    const evidenceIds = update?.attachedEvidenceIds ?? [];
+    const sources = evidenceIds
+      .map((evidenceId) => {
+        const pkg = input.evidencePackages.find((p) => p.evidenceId === evidenceId);
+        const chunk = pkg?.chunks[0];
+        return pkg && chunk
+          ? { evidenceId: pkg.evidenceId, chunkId: chunk.chunkId, sourceText: chunk.text }
+          : undefined;
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== undefined);
     return {
       text: `${finding.indicatorCode}: ${finding.value}${finding.unit ? ` ${finding.unit}` : ""} reported for the period`,
       type: "NUMERIC",
-      proposedSources: [],
+      proposedSources: sources,
     };
   }
 
@@ -105,41 +113,102 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     }));
   }
 
+  private activityRefs(input: Parameters<IReportDraftGenerator["generateDraft"]>[0]): SourceReference[] {
+    return input.activities.map((a) => ({
+      type: "activity" as const,
+      id: a.activityId,
+      label: a.activityTitle,
+    }));
+  }
+
   private executiveSummary(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], title: string): GeneratedSection {
     const findings = input.verifiedFindings;
-    const claims = findings.map((f) => this.numericClaim(f));
+    const claims = findings.map((f) => this.numericClaim(input, f));
     const lines = [
       `This report summarises implementation progress during the reporting period.`,
-      `${findings.length} indicator finding(s) and ${input.evidencePackages.length} evidence file(s) support the claims below.`,
+      `${findings.length} indicator finding(s), ${input.activities.length} activity record(s), and ${input.evidencePackages.length} evidence file(s) support the claims below.`,
     ];
     for (const f of findings.slice(0, 5)) {
-      lines.push(this.describeFinding(f));
+      lines.push(this.describeFinding(input, f));
+    }
+    for (const a of input.activities.slice(0, 3)) {
+      lines.push(`- Activity: ${a.activityTitle} (${a.activityDate.toISOString().slice(0, 10)})${a.participantsTotal ? `, ${a.participantsTotal} participant(s)` : ""}.`);
     }
     return {
       sectionId: "exec-summary",
       title,
       content: lines.join("\n\n"),
       claims,
-      sourceReferences: findings.slice(0, 5).map((f) => ({ type: "indicator", id: f.indicatorId, label: f.indicatorCode })),
+      sourceReferences: [
+        ...findings.slice(0, 5).map((f) => ({ type: "indicator" as const, id: f.indicatorId, label: f.indicatorCode })),
+        ...this.activityRefs(input).slice(0, 3),
+      ],
     };
   }
 
   private indicatorProgress(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], title: string): GeneratedSection {
     const findings = input.verifiedFindings;
     const rows = findings.map((f) => {
+      const update = input.indicatorUpdates.find((u) => u.indicatorId === f.indicatorId);
       const flags = f.qualityFlags.length > 0 ? ` (flags: ${f.qualityFlags.join(", ")})` : "";
-      return `| ${f.indicatorCode} | ${f.value}${f.unit ? ` ${f.unit}` : ""} | ${f.calculationMethod} |${flags} |`;
+      const source = update?.dataSource ? `; source: ${update.dataSource}` : "";
+      return `| ${f.indicatorCode} | ${f.value}${f.unit ? ` ${f.unit}` : ""} | ${f.calculationMethod} |${flags}${source} |`;
     });
-    const claims = findings.map((f) => this.numericClaim(f));
+    const claims = findings.map((f) => this.numericClaim(input, f));
     const content = findings.length === 0
       ? "No verified indicator findings are available for this period."
       : ["| Indicator | Value | Method |", "| --- | --- | --- |", ...rows].join("\n");
+    const notes = input.indicatorUpdates
+      .filter((u) => u.comments)
+      .map((u) => `- ${u.indicatorCode}: ${u.comments}`);
+    const notesText = notes.length > 0 ? `\n\nNotes recorded by M&E:\n${notes.join("\n")}` : "";
     return {
       sectionId: "indicator-progress",
       title,
+      content: `${content}${notesText}`,
+      claims,
+      sourceReferences: [
+        ...findings.map((f) => ({ type: "indicator" as const, id: f.indicatorId, label: f.indicatorCode })),
+        ...this.evidenceRefs(input),
+      ],
+    };
+  }
+
+  private activityNarrative(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], title: string): GeneratedSection {
+    const claims: ReportClaimDraft[] = [];
+    const refs: SourceReference[] = [];
+    const lines: string[] = [];
+    for (const a of input.activities) {
+      const summary = a.summary.trim() || a.activityTitle;
+      lines.push(`- ${a.activityTitle} (${a.activityDate.toISOString().slice(0, 10)})${a.location ? `, ${a.location}` : ""}`);
+      lines.push(`  ${summary}`);
+      refs.push({ type: "activity", id: a.activityId, label: a.activityTitle });
+      const evidenceIds = a.attachedEvidenceIds;
+      const sources = evidenceIds
+        .map((evidenceId) => {
+          const pkg = input.evidencePackages.find((p) => p.evidenceId === evidenceId);
+          const chunk = pkg?.chunks[0];
+          return pkg && chunk
+            ? { evidenceId: pkg.evidenceId, chunkId: chunk.chunkId, sourceText: chunk.text }
+            : undefined;
+        })
+        .filter((s): s is NonNullable<typeof s> => s !== undefined);
+      claims.push({
+        text: `Activity "${a.activityTitle}" was implemented${a.participantsTotal ? ` with ${a.participantsTotal} participant(s)` : ""}.`,
+        type: "QUALITATIVE",
+        proposedSources: sources,
+      });
+      if (evidenceIds.length > 0) {
+        lines.push(`  Evidence: ${evidenceIds.map((id) => input.evidencePackages.find((p) => p.evidenceId === id)?.title ?? id).join(", ")}`);
+      }
+    }
+    const content = lines.length === 0 ? "No activity records available for this period." : lines.join("\n");
+    return {
+      sectionId: "activities",
+      title,
       content,
       claims,
-      sourceReferences: findings.map((f) => ({ type: "indicator", id: f.indicatorId, label: f.indicatorCode })),
+      sourceReferences: refs,
     };
   }
 
@@ -147,7 +216,19 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     const claims: ReportClaimDraft[] = [];
     const refs: SourceReference[] = [];
     const lines: string[] = [];
-    input.evidencePackages.slice(0, 10).forEach((p, index) => {
+
+    const activityAchievements = input.activities
+      .filter((a) => a.achievements.trim())
+      .slice(0, 10);
+    for (const a of activityAchievements) {
+      lines.push(`- ${a.activityTitle}: ${a.achievements}`);
+      refs.push({ type: "activity", id: a.activityId, label: a.activityTitle });
+    }
+
+    const evidenceUsed = input.evidencePackages
+      .filter((p) => p.chunks.length > 0)
+      .slice(0, 10);
+    for (const p of evidenceUsed) {
       const chunk = p.chunks[0];
       lines.push(`- ${p.title}`);
       refs.push({ type: "evidence", id: p.evidenceId, label: p.title });
@@ -156,10 +237,11 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
         type: "QUALITATIVE",
         proposedSources: chunk ? [{ evidenceId: p.evidenceId, chunkId: chunk.chunkId, sourceText: chunk.text }] : [],
       });
-      if (index === 0 && chunk) {
+      if (chunk) {
         lines.push(`  ${chunk.text.slice(0, 200)}`);
       }
-    });
+    }
+
     const content = lines.length === 0 ? "No documented achievements available for this period." : lines.join("\n");
     return {
       sectionId: "achievements",
@@ -171,22 +253,72 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
   }
 
   private challenges(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], title: string): GeneratedSection {
+    const lines: string[] = [];
+    const refs: SourceReference[] = [];
+    const claims: ReportClaimDraft[] = [];
+    for (const a of input.activities) {
+      if (!a.challenges.trim()) continue;
+      lines.push(`- ${a.activityTitle}: ${a.challenges}`);
+      refs.push({ type: "activity", id: a.activityId, label: a.activityTitle });
+      const sources = a.attachedEvidenceIds
+        .map((evidenceId) => {
+          const pkg = input.evidencePackages.find((p) => p.evidenceId === evidenceId);
+          const chunk = pkg?.chunks[0];
+          return pkg && chunk
+            ? { evidenceId: pkg.evidenceId, chunkId: chunk.chunkId, sourceText: chunk.text }
+            : undefined;
+        })
+        .filter((s): s is NonNullable<typeof s> => s !== undefined);
+      claims.push({
+        text: `Challenge recorded for "${a.activityTitle}": ${a.challenges}`,
+        type: "QUALITATIVE",
+        proposedSources: sources,
+      });
+    }
+    const content = lines.length === 0
+      ? "No challenges were recorded in activity updates for this period."
+      : lines.join("\n");
     return {
       sectionId: "challenges",
       title,
-      content: "Challenges were flagged through the compliance checklist and activity updates; none are claimed here without verified sources.",
-      claims: [],
-      sourceReferences: [],
+      content,
+      claims,
+      sourceReferences: refs,
     };
   }
 
   private lessons(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], title: string): GeneratedSection {
+    const lines: string[] = [];
+    const refs: SourceReference[] = [];
+    const claims: ReportClaimDraft[] = [];
+    for (const a of input.activities) {
+      if (!a.lessonsLearned.trim()) continue;
+      lines.push(`- ${a.activityTitle}: ${a.lessonsLearned}`);
+      refs.push({ type: "activity", id: a.activityId, label: a.activityTitle });
+      const sources = a.attachedEvidenceIds
+        .map((evidenceId) => {
+          const pkg = input.evidencePackages.find((p) => p.evidenceId === evidenceId);
+          const chunk = pkg?.chunks[0];
+          return pkg && chunk
+            ? { evidenceId: pkg.evidenceId, chunkId: chunk.chunkId, sourceText: chunk.text }
+            : undefined;
+        })
+        .filter((s): s is NonNullable<typeof s> => s !== undefined);
+      claims.push({
+        text: `Lesson recorded for "${a.activityTitle}": ${a.lessonsLearned}`,
+        type: "QUALITATIVE",
+        proposedSources: sources,
+      });
+    }
+    const content = lines.length === 0
+      ? "No lessons learned were recorded in activity updates for this period."
+      : lines.join("\n");
     return {
       sectionId: "lessons",
       title,
-      content: "Lessons learned are recorded per activity update and reviewed before inclusion in the final report.",
-      claims: [],
-      sourceReferences: [],
+      content,
+      claims,
+      sourceReferences: refs,
     };
   }
 
@@ -206,16 +338,18 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
   private descriptiveNarrative(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], title: string): string {
     const findings = input.verifiedFindings;
     if (findings.length === 0) {
-      return `[Drafted from verified findings, report plan, and evidence. No findings available this period.]`;
+      const activityLines = input.activities.slice(0, 5).map((a) => `- ${a.activityTitle}: ${a.summary || a.achievements}`);
+      const body = activityLines.length > 0 ? activityLines.join("\n") : `[Drafted from verified findings, report plan, and evidence. No findings available this period.]`;
+      return `Activity records for the period:\n${body}`;
     }
-    return findings.slice(0, 5).map((f) => this.describeFinding(f)).join("\n\n");
+    return findings.slice(0, 5).map((f) => this.describeFinding(input, f)).join("\n\n");
   }
 
-  private describeFinding(finding: VerifiedFinding): string {
-    // Descriptive-only narrative: the stub cannot see indicator semantics, so
-    // it never attaches evaluative wording. Claims are verified downstream.
+  private describeFinding(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], finding: VerifiedFinding): string {
     const flags = finding.qualityFlags.length > 0 ? ` (${finding.qualityFlags.join(", ")})` : "";
-    return `${finding.indicatorCode}: ${finding.value}${finding.unit ? ` ${finding.unit}` : ""} recorded via ${finding.calculationMethod}${flags}.`;
+    const update = input.indicatorUpdates.find((u) => u.indicatorId === finding.indicatorId);
+    const source = update?.dataSource ? ` Source: ${update.dataSource}.` : "";
+    return `${finding.indicatorCode}: ${finding.value}${finding.unit ? ` ${finding.unit}` : ""} recorded via ${finding.calculationMethod}${flags}.${source}`;
   }
 
   private shorten(content: string, audience: "DONOR" | "INTERNAL" | "GENERAL"): string {
@@ -254,4 +388,20 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     }
     return text;
   }
+}
+
+function findingsClaims(input: Parameters<IReportDraftGenerator["generateDraft"]>[0]): ReportClaimDraft[] {
+  return input.verifiedFindings.slice(0, 3).map((f) => ({
+    text: `${f.indicatorCode}: ${f.value}${f.unit ? ` ${f.unit}` : ""} reported for the period`,
+    type: "NUMERIC" as const,
+    proposedSources: [],
+  }));
+}
+
+function findingsRefs(input: Parameters<IReportDraftGenerator["generateDraft"]>[0]): SourceReference[] {
+  return input.verifiedFindings.slice(0, 3).map((f) => ({
+    type: "indicator" as const,
+    id: f.indicatorId,
+    label: f.indicatorCode,
+  }));
 }

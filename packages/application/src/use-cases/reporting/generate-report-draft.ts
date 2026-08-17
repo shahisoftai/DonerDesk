@@ -141,6 +141,39 @@ export class GenerateReportDraftHandler {
     if (!evidencePackagesResult.ok) return evidencePackagesResult;
     const evidencePackages = evidencePackagesResult.value;
 
+    // Narrative context: activity records and indicator updates are snapshotted
+    // into the generation input so the narrator can cite them directly, not
+    // just harvest their attached evidence IDs.
+    const indicatorCodeById = new Map(verifiedFindings.map((f) => [f.indicatorId, f.indicatorCode]));
+    const indicatorUpdates = updatesResult.value.map((u) => ({
+      indicatorId: u.indicatorId,
+      indicatorCode: indicatorCodeById.get(u.indicatorId) ?? u.indicatorId,
+      periodAchievement: u.periodAchievement,
+      cumulativeAchievement: u.cumulativeAchievement,
+      comments: u.comments,
+      dataSource: u.dataSource,
+      attachedEvidenceIds: u.attachedEvidenceIds,
+      verificationStatus: u.verificationStatus,
+    }));
+    const activities = activitiesResult.value.map((a) => ({
+      activityId: a.id,
+      activityTitle: a.activityTitle,
+      activityDate: a.activityDate,
+      location: a.location,
+      participantsTotal: a.participantsTotal,
+      participantsMale: a.participantsMale,
+      participantsFemale: a.participantsFemale,
+      participantsChildren: a.participantsChildren,
+      participantsDisability: a.participantsDisability,
+      summary: a.summary,
+      achievements: a.achievements,
+      challenges: a.challenges,
+      lessonsLearned: a.lessonsLearned,
+      nextSteps: a.nextSteps,
+      attachedEvidenceIds: a.attachedEvidenceIds,
+      status: a.status,
+    }));
+
     // AI credit enforcement: one customer credit = one successfully persisted
     // real (non-stub) AI draft. Stub heuristic generation and manual reports
     // are never metered. The counter is reconciled against the AI usage ledger
@@ -224,6 +257,7 @@ export class GenerateReportDraftHandler {
       mappingVersion: period.donorTemplateVersion,
       plannerVersion: 1,
       indicatorUpdateIds: updatesResult.value.map((u) => u.id),
+      activityIds: activitiesResult.value.map((a) => a.id),
       evidenceIds,
       verifiedFindings,
       modelId: chargeAiCredits ? generator.model.modelId : "none",
@@ -246,6 +280,8 @@ export class GenerateReportDraftHandler {
             reportPlan: plan,
             verifiedFindings,
             evidencePackages,
+            activities,
+            indicatorUpdates,
             reportingProfileSnapshot,
             generationRunId: run.id,
           })

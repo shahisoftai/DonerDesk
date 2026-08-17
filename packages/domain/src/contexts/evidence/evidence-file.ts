@@ -93,6 +93,7 @@ export interface EvidenceFileProps {
   confidentialityLevel: ConfidentialityLevel;
   notes?: string;
   aiSummary?: string;
+  extractedText?: string;
   aiSuggestedTags: SuggestedTag[];
   sensitivityWarning?: string;
 }
@@ -190,6 +191,7 @@ export class EvidenceFile extends Entity<string> {
   get confidentialityLevel(): ConfidentialityLevel { return this.props.confidentialityLevel; }
   get notes(): string | undefined { return this.props.notes; }
   get aiSummary(): string | undefined { return this.props.aiSummary; }
+  get extractedText(): string | undefined { return this.props.extractedText; }
   get aiSuggestedTags(): SuggestedTag[] { return [...this.props.aiSuggestedTags]; }
   get sensitivityWarning(): string | undefined { return this.props.sensitivityWarning; }
 
@@ -209,6 +211,11 @@ export class EvidenceFile extends Entity<string> {
     this.props.aiSuggestedTags = tags;
     this.props.sensitivityWarning = sensitivity;
     this.props.verificationStatus = "AI_TAGGED";
+    this.touch();
+  }
+
+  setExtractedText(text: string): void {
+    this.props.extractedText = text;
     this.touch();
   }
 

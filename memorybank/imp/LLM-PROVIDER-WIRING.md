@@ -141,17 +141,23 @@ overridable via SuperAdmin config, which is the production path.
 
 - **Prompt builder** (pure, inside `llm-report-draft-generator.ts`):
   - System prompt: strict narrator instructions — only narrate the provided
-    `verifiedFindings` and `evidencePackages`; never compute, aggregate, or
-    invent numbers; report `qualityFlags` verbatim; return JSON.
+    data; never compute, aggregate, or invent numbers; report `qualityFlags`
+    verbatim; return JSON.
   - User prompt: serialised `ReportPlan` sections, `VerifiedFinding[]`,
-    `EvidencePackage[]` (id/title/chunks), `ReportingProfileSnapshot`
-    (tone/language/rules), and the section titles to draft.
+    `EvidencePackage[]` (id/title/chunks — first 3 chunks, 600 chars each),
+    `ActivityGenerationContext[]` (full narrative: summary, achievements,
+    challenges, lessonsLearned, nextSteps, participants, location, linked
+    evidence), `IndicatorUpdateGenerationContext[]` (period/cumulative
+    achievements, comments, dataSource, linked evidence),
+    `ReportingProfileSnapshot` (tone/language/rules), and the section titles to
+    draft. The narrative MUST draw on the activity records and indicator
+    updates, and every section MUST list its source references.
   - Output schema:
     ```json
     { "sections": [ { "title": "...", "content": "...",
         "claims": [ { "text": "...", "type": "NUMERIC|FACTUAL|CAUSAL|QUALITATIVE",
             "proposedSources": [ { "evidenceId": "...", "chunkId": "...", "sourceText": "..." } ] } ],
-        "sourceReferences": [ { "type": "indicator|evidence|...", "id": "...", "label": "..." } ] } ] }
+        "sourceReferences": [ { "type": "indicator|evidence|activity", "id": "...", "label": "..." } ] } ] }
     ```
 - **Parse + validate**: structural validation of every field; any invalid shape,
   parse error, provider error, or timeout → delegate to `StubReportDraftGenerator`.
@@ -161,6 +167,17 @@ overridable via SuperAdmin config, which is the production path.
   `model = { modelId: provider.name, modelVersion: provider.model, promptVersion: Number(provider.promptVersion) }`; expose as `readonly model`.
 - Because downstream `DeterministicClaimVerifier` re-verifies every claim, an
   LLM hallucination cannot reach approval (gate policy in Feature 20 §2.4).
+
+> **2026-08-17 (data completeness):** the generation input was extended from
+> findings+evidence to the full period record set — evidence packages now carry
+> the real extracted document text (`EvidenceFile.extractedText`, Tika-persisted
+> via the `evidence_parse` Kestra flow through `POST /internal/evidence/:id/tags`),
+> plus `ActivityGenerationContext[]` and `IndicatorUpdateGenerationContext[]`.
+> The stub generator narrates activity records/achievements/challenges/lessons
+> verbatim and attaches evidence chunks to claims; the LLM prompt includes
+> `# Activity Records` and `# Indicator Updates` sections and mandates per-section
+> `sourceReferences`. See `../Features/11-AI-Report-Draft-Generator.md` and
+> `../Fixes.md`.
 
 ## 8. Container wiring (container.ts, synchronous)
 

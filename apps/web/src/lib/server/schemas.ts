@@ -413,9 +413,31 @@ export const ReportDraftSchema = z.object({
 });
 export type ReportDraft = z.infer<typeof ReportDraftSchema>;
 
+export const ReportClaimSourceSchema = z.object({
+  evidenceId: z.string(),
+  chunkId: z.string(),
+  sourceText: z.string(),
+  evidenceHash: z.string().optional(),
+  evidenceUpdatedAt: z.string().optional(),
+  chunkerVersion: z.string().optional(),
+});
+
+export const ReportClaimSchema = z.object({
+  id: z.string(),
+  sectionId: z.string(),
+  text: z.string(),
+  type: z.string(),
+  sources: z.array(ReportClaimSourceSchema).optional(),
+  verificationResult: z.string(),
+  verificationDetail: z.string(),
+  resolutionNotes: z.string().nullable().optional(),
+});
+export type ReportClaim = z.infer<typeof ReportClaimSchema>;
+
 export const ReportDraftResponseSchema = z.object({
   draft: ReportDraftSchema.nullable(),
   sections: z.array(ReportSectionSchema).optional(),
+  claims: z.array(ReportClaimSchema).optional(),
 });
 
 export const UpdateSectionResponseSchema = z.object({ version: z.string() });

@@ -28,9 +28,44 @@ def draft_section(req: DraftSectionRequest) -> dict[str, Any]:
             f"During the reporting period, {len(req.activities)} activities were completed."
         )
         refs: list[dict[str, str]] = []
-        if req.activities:
-            first = req.activities[0]
-            refs.append({"type": "activity", "id": str(first.get("id", "")), "label": str(first.get("title", ""))})
+        for activity in req.activities[:3]:
+            refs.append({"type": "activity", "id": str(activity.get("id", "")), "label": str(activity.get("title", ""))})
+        return {"title": req.section_title, "content": content, "source_references": refs, "unsupported_claims": []}
+    if "activity" in title:
+        lines: list[str] = []
+        refs = []
+        for activity in req.activities:
+            summary = str(activity.get("summary") or activity.get("title") or "")
+            lines.append(f"- {activity.get('title', '')}: {summary}")
+            refs.append({"type": "activity", "id": str(activity.get("id", "")), "label": str(activity.get("title", ""))})
+        content = "\n".join(lines) if lines else "No activity records available for this period."
+        return {"title": req.section_title, "content": content, "source_references": refs, "unsupported_claims": []}
+    if "achievement" in title:
+        lines = []
+        refs = []
+        for activity in req.activities:
+            if activity.get("achievements"):
+                lines.append(f"- {activity.get('title', '')}: {activity.get('achievements')}")
+                refs.append({"type": "activity", "id": str(activity.get("id", "")), "label": str(activity.get("title", ""))})
+        content = "\n".join(lines) if lines else "No documented achievements available for this period."
+        return {"title": req.section_title, "content": content, "source_references": refs, "unsupported_claims": []}
+    if "challenge" in title:
+        lines = []
+        refs = []
+        for activity in req.activities:
+            if activity.get("challenges"):
+                lines.append(f"- {activity.get('title', '')}: {activity.get('challenges')}")
+                refs.append({"type": "activity", "id": str(activity.get("id", "")), "label": str(activity.get("title", ""))})
+        content = "\n".join(lines) if lines else "No challenges were recorded in activity updates for this period."
+        return {"title": req.section_title, "content": content, "source_references": refs, "unsupported_claims": []}
+    if "lesson" in title:
+        lines = []
+        refs = []
+        for activity in req.activities:
+            if activity.get("lessonsLearned"):
+                lines.append(f"- {activity.get('title', '')}: {activity.get('lessonsLearned')}")
+                refs.append({"type": "activity", "id": str(activity.get("id", "")), "label": str(activity.get("title", ""))})
+        content = "\n".join(lines) if lines else "No lessons learned were recorded in activity updates for this period."
         return {"title": req.section_title, "content": content, "source_references": refs, "unsupported_claims": []}
     if "indicator progress" in title:
         rows = [

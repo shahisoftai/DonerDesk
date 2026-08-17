@@ -2,6 +2,53 @@
 
 Record of fixes applied to DonorDesk. Last updated: 2026-08-17.
 
+## AI report generation ignored evidence content and activity/indicator narratives (2026-08-17)
+
+**Status:** Fixed; typecheck + build + tests green (74 infra tests pass, 32 workers tests pass). Not yet deployed to Contabo.
+
+Deep audit of the AI report draft pipeline found that generated reports effectively
+ignored the project's saved Evidence and Activities:
+
+1. **Real evidence document text never reached the generator.**
+   `EvidencePackageBuilder` fed the generator `aiSummary || title`, but `aiSummary`
+   was only a stub classification sentence — not document content. The Kestra
+   `evidence_parse` flow extracted real text via Tika but **discarded it** after
+   tagging; the `EvidenceChunk` table existed but nothing ever wrote to it.
+   Fix: `EvidenceFile.extractedText` column added (migration
+   `20260817200000_evidence_extracted_text`), persisted by `POST
+   /internal/evidence/:id/tags` (`PersistEvidenceTagsInput.extractedText` +
+   `PersistTagsBodySchema.extractedText`), and the Kestra `evidence_parse.yml` flow
+   now sends the Tika-extracted text in the persist body. `EvidencePackageBuilder`
+   now chunks `extractedText || aiSummary || title`, so real document content reaches
+   the LLM/stub.
+2. **Activity narratives never reached the generator.** The handler harvested only
+   `attachedEvidenceIds`; `summary`, `achievements`, `challenges`, `lessonsLearned`,
+   `nextSteps` were never passed to the narrator (stub challenges/lessons sections
+   were hardcoded placeholders).
+   Fix: `GenerateReportDraftInput` now carries `activities` (full narrative +
+   participants + linked evidence) and `indicatorUpdates` (raw achievements,
+   `comments`, `dataSource`, linked evidence). `GenerateReportDraftHandler` builds
+   both from the period's repos. Stub generator narrates activity records,
+   achievements, challenges, and lessons verbatim with `activity` source references;
+   LLM prompt gains `# Activity Records` and `# Indicator Updates` sections.
+3. **No evidence citations in generated sections.** Stub numeric claims carried
+   `proposedSources: []`; the LLM prompt truncated evidence chunks to 300 chars and
+   didn't require citations.
+   Fix: stub claims now attach evidence chunks from each indicator/activity's linked
+   evidence; the LLM prompt raises chunk slices to 600 chars (first 3 chunks) and
+   mandates `sourceReferences` per section. The report workspace now renders
+   statement-level sources (claims with evidence chips + verification status)
+   instead of the "paragraph-level provenance not available yet" note.
+4. **Indicator update comments/dataSource were omitted.** Now passed through the
+   generation input and surfaced in the indicator section notes.
+5. `ReportGenerationRun` snapshot now records `activityIds` for reproducibility.
+6. Python workers `drafting.py` mirror updated to narrate activity
+   achievements/challenges/lessons (tests pass).
+
+Migration `20260817200000_evidence_extracted_text` must be applied on deploy.
+Existing evidence rows have no `extractedText` until the Kestra parse flow re-runs
+for them (or the file is re-uploaded).
+
 ## AI credit burn on stub fallback + timeout + section-switch (release `20260817171900`)
 
 **Status:** Deployed and verified on Contabo production 2026-08-17.

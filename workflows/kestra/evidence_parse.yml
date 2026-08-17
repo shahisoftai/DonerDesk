@@ -137,6 +137,7 @@ tasks:
       suggestion["idempotencyKey"] = hashlib.sha256(
           f"{tenant}:evidence.suggest_tags:{evidence_id}:{worker_body}".encode()
       ).hexdigest()
+      suggestion["extractedText"] = extracted_text
       persist_body = json.dumps(suggestion, separators=(",", ":"))
       persist_path = f"/internal/evidence/{evidence_id}/tags"
       with urllib.request.urlopen(signed_request("POST", persist_path, persist_body)) as response:

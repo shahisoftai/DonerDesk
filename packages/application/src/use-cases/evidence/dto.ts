@@ -22,6 +22,7 @@ export interface EvidenceDto {
   confidentialityLevel: string;
   notes?: string;
   aiSummary?: string;
+  extractedText?: string;
   aiSuggestedTags: unknown[];
   sensitivityWarning?: string;
 }
@@ -49,6 +50,7 @@ export function toEvidenceDto(e: EvidenceFile): EvidenceDto {
     confidentialityLevel: e.confidentialityLevel,
     notes: e.notes,
     aiSummary: e.aiSummary,
+    extractedText: e.extractedText,
     aiSuggestedTags: e.aiSuggestedTags,
     sensitivityWarning: e.sensitivityWarning,
   };

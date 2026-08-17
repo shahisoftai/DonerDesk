@@ -76,10 +76,55 @@ export interface ReportingProfileSnapshot {
   sectionOverrides: Record<string, WordCountOverride>;
 }
 
+/**
+ * Serializable snapshot of an activity update consumed at generation time.
+ * Carries the narrative fields (summary, achievements, challenges, lessons,
+ * next steps) plus participant counts and linked evidence so the narrator can
+ * weave the activity record into the report instead of only collecting its
+ * evidence IDs.
+ */
+export interface ActivityGenerationContext {
+  activityId: string;
+  activityTitle: string;
+  activityDate: Date;
+  location?: string;
+  participantsTotal?: number;
+  participantsMale?: number;
+  participantsFemale?: number;
+  participantsChildren?: number;
+  participantsDisability?: number;
+  summary: string;
+  achievements: string;
+  challenges: string;
+  lessonsLearned: string;
+  nextSteps: string;
+  attachedEvidenceIds: string[];
+  status: string;
+}
+
+/**
+ * Serializable snapshot of an indicator update consumed at generation time.
+ * Carries the raw achievement strings, comments, data source and linked
+ * evidence so the narrator can describe what was recorded without recomputing
+ * the deterministic finding.
+ */
+export interface IndicatorUpdateGenerationContext {
+  indicatorId: string;
+  indicatorCode: string;
+  periodAchievement: string;
+  cumulativeAchievement: string;
+  comments?: string;
+  dataSource?: string;
+  attachedEvidenceIds: string[];
+  verificationStatus: string;
+}
+
 export interface GenerateReportDraftInput {
   reportPlan: ReportPlan;
   verifiedFindings: VerifiedFinding[];
   evidencePackages: EvidencePackage[];
+  activities: ActivityGenerationContext[];
+  indicatorUpdates: IndicatorUpdateGenerationContext[];
   reportingProfileSnapshot: ReportingProfileSnapshot;
   generationRunId: string;
 }

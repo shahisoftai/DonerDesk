@@ -18,6 +18,7 @@ export interface GenerationRunSnapshot {
   mappingVersion?: number;
   plannerVersion: number;
   indicatorUpdateIds: string[];
+  activityIds: string[];
   evidenceIds: string[];
   verifiedFindings: VerifiedFinding[];
   modelId: string;

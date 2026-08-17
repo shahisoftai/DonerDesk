@@ -45,6 +45,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         confidentialityLevel: e.confidentialityLevel,
         notes: e.notes,
         aiSummary: e.aiSummary,
+        extractedText: e.extractedText,
         aiSuggestedTagsJson: JSON.stringify(e.aiSuggestedTags),
         sensitivityWarning: e.sensitivityWarning,
       },
@@ -151,6 +152,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
     confidentialityLevel: string;
     notes: string | null;
     aiSummary: string | null;
+    extractedText: string | null;
     aiSuggestedTagsJson: string;
     sensitivityWarning: string | null;
     createdAt: Date;
@@ -181,6 +183,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         confidentialityLevel: row.confidentialityLevel as ConfidentialityLevel,
         notes: row.notes ?? undefined,
         aiSummary: row.aiSummary ?? undefined,
+        extractedText: row.extractedText ?? undefined,
         aiSuggestedTags: JSON.parse(row.aiSuggestedTagsJson) as SuggestedTag[],
         sensitivityWarning: row.sensitivityWarning ?? undefined,
       },

@@ -126,13 +126,17 @@ honestly, never presented as production.
 
 ## Honest limits (tracked in `pending.md`)
 
-- Backend dependencies remain: project-assignment ABAC, global search, claim-level
-  provenance, email delivery, report-reject endpoint.
+- Backend dependencies remain: project-assignment ABAC, global search, email
+  delivery, report-reject endpoint.
 - **AI draft generation is now real (2026-08-17):** the report draft handler runs
   the SuperAdmin-configured LLM (MiniMax verified live; DeepSeek adapter present)
-  with per-tier AI-credit quotas and a free, never-billed stub fallback. The
-  evidence tagger/polisher/checklist handlers remain heuristic-stub backed, and
-  the export builder embeds charts but remains otherwise deterministic
+  with per-tier AI-credit quotas and a free, never-billed stub fallback. **2026-08-17
+  (data completeness):** generated reports now cite the project's real records —
+  evidence `extractedText` (Tika-persisted) is chunked into evidence packages, and
+  activity narratives + indicator-update comments/dataSource feed the narrator;
+  statement-level sources render in the report workspace. The evidence
+  tagger/polisher/checklist handlers remain heuristic-stub backed, and the export
+  builder embeds charts but remains otherwise deterministic
   (see `imp/LLM-PROVIDER-WIRING.md`, `Features/19-Tiers-And-Payments.md`).
 - Report sections support user-selectable charts (2026-08-17); dashboard-level
   trend widgets remain roadmap.

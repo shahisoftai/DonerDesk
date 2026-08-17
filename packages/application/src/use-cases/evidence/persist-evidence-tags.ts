@@ -10,6 +10,7 @@ export interface PersistEvidenceTagsInput {
   tags: SuggestedTag[];
   sensitivityWarning?: string;
   model?: string;
+  extractedText?: string;
   idempotencyKey?: string;
 }
 
@@ -54,6 +55,9 @@ export class PersistEvidenceTagsHandler {
 
     const ev = r.value;
     ev.setAiSuggestions(input.summary, input.tags, input.sensitivityWarning);
+    if (input.extractedText) {
+      ev.setExtractedText(input.extractedText);
+    }
 
     const saved = await this.repo.update(ev);
     if (!saved.ok) return saved;
