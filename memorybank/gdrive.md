@@ -36,6 +36,26 @@ account.
 > **credential-gated**: it requires the tenant OAuth client + `GOOGLE_DRIVE_SHARE_EMAIL`
 > (tenant provisioning, see §8). See `Features/18-Project-Creation-Wizard.md`.
 
+> **2026-08-17 — Managed Drive byte uploads into the project workspace (added):**
+> Evidence uploaded through the app is now **saved into the tenant's own Google
+> Drive** in the provisioned project folder tree
+> (`DonorDesk/<project>/04-Evidence-Reports` or `05-Evidence-Images` by file
+> type) instead of requiring a pre-existing Drive link. `GoogleDriveEvidenceStorage`
+> gained a managed path: `save()` resolves the project workspace (idempotent),
+> uploads the buffer via Drive multipart (`uploadType=multipart`, metadata +
+> media) with `appProperties {tenantId, projectId, role: EVIDENCE_FILE}`, grants
+> the service account read access, and records `driveFileId` + `webViewLink`.
+> Reference-only linking (`driveFileId` present) is unchanged. `SaveEvidenceInput`
+> gained `projectId`; both evidence handlers pass it; the upload handler skips
+> DonorDesk-managed quota for GOOGLE_DRIVE tenants (bytes live in the tenant's
+> Drive). `LocalEvidenceStorage` mirrors the same layout when a project workspace
+> is available (writes under `storageRoot/workspaces/<tenant>/<project>/...`).
+> The web upload page shows the file dropzone for all providers (GOOGLE_DRIVE
+> files land in the Drive tree) with "link an existing Drive file" as a secondary
+> option. Tests: `buildMultipartUpload` + managed-upload guard + LOCAL workspace
+> folder routing added to `storage.test.mjs` (62/62 + 1 skipped DB). Live in
+> release `20260817063832` (API + web).
+
 ---
 
 ## 1. Product decision (NGO mindset)

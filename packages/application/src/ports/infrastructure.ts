@@ -38,11 +38,13 @@ export interface EvidenceLocation {
 
 export interface SaveEvidenceInput {
   tenantId: string;
+  /** Required for managed (byte-backed) uploads that live in a project workspace folder. */
+  projectId?: string;
   evidenceId: string;
   fileName: string;
   fileType: string;
   fileSize: number;
-  /** Present for byte-backed uploads (LOCAL / R2). */
+  /** Present for byte-backed uploads (LOCAL / R2 / Drive-managed upload). */
   buffer?: Buffer;
   /** Present for Google Drive reference uploads (no bytes copied). */
   driveFileId?: string;

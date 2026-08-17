@@ -135,12 +135,20 @@ export function EvidenceUploadQueue({
         </Field>
       </div>
 
-      {driveMode ? (
+      <FileDropzone
+        onFiles={addFiles}
+        multiple
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.csv,.txt"
+        label={driveMode ? "Drop files here or click to browse — saved to your project's Google Drive folder" : "Drop files here or click to browse"}
+        hint={driveMode ? "You can select multiple files. Each is uploaded into your project's Evidence folder in Google Drive." : "You can select multiple files. Each is uploaded separately."}
+      />
+
+      {driveMode && (
         <Field
-          label="Google Drive link"
+          label="Or link an existing Google Drive file"
           htmlFor="driveLink"
           error={driveLinkError ?? undefined}
-          hint="Paste a Google Drive share link (e.g. https://drive.google.com/file/d/.../view) or a file ID. Files are linked, not uploaded; DonorDesk records a read-only reference."
+          hint="Paste a Google Drive share link (e.g. https://drive.google.com/file/d/.../view) or a file ID to reference a file that is already in your Drive."
         >
           <div className="flex gap-2">
             <Input
@@ -157,14 +165,6 @@ export function EvidenceUploadQueue({
             </Button>
           </div>
         </Field>
-      ) : (
-        <FileDropzone
-          onFiles={addFiles}
-          multiple
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.csv,.txt"
-          label="Drop files here or click to browse"
-          hint="You can select multiple files. Each is uploaded separately."
-        />
       )}
 
       {items.length > 0 && (

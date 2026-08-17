@@ -332,6 +332,28 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   );
   const googleDriveTokens = new PrismaGoogleDriveTokenStore(googleDriveCredentials);
   const sheetReader = new GoogleSheetsReader(googleDriveTokens);
+  const workspaceNameProvider = new PrismaWorkspaceNameProvider(
+    async (id, tenantId) => {
+      const row = await prisma.project.findFirst({ where: { id, tenantId: tenantId.toString() }, select: { title: true, projectCode: true } });
+      return row ? { title: row.title, projectCode: row.projectCode } : null;
+    },
+    async (tenantId) => {
+      const row = await prisma.organization.findUnique({ where: { tenantId: tenantId.toString() }, select: { name: true } });
+      return row ? { name: row.name } : null;
+    },
+  );
+  const projectWorkspace = new ProjectWorkspaceServiceResolver(
+    workspaceNameProvider,
+    async (tenantId) => {
+      const org = await prisma.organization.findUnique({
+        where: { tenantId: tenantId.toString() },
+        select: { storageProvider: true },
+      });
+      return (org?.storageProvider as import("@donordesk/domain").StorageProvider | undefined) ?? "LOCAL";
+    },
+    LocalStorage.resolveRoot(),
+    googleDriveTokens,
+  );
   const evidenceStorage = new EvidenceStorageResolver(
     storage,
     async (tenantId) => {
@@ -343,6 +365,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     },
     googleDriveTokens,
     undefined, // R2 config: wired via env in production; see memorybank/gdrive.md
+    projectWorkspace,
   );
   const parser = new TolerantDocumentParser();
   const ids = new UuidIdGenerator();
@@ -437,29 +460,6 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
         return { ok: true, value: { provider: org?.storageProvider ?? "LOCAL" } };
       },
     },
-  );
-
-  const workspaceNameProvider = new PrismaWorkspaceNameProvider(
-    async (id, tenantId) => {
-      const row = await prisma.project.findFirst({ where: { id, tenantId: tenantId.toString() }, select: { title: true, projectCode: true } });
-      return row ? { title: row.title, projectCode: row.projectCode } : null;
-    },
-    async (tenantId) => {
-      const row = await prisma.organization.findUnique({ where: { tenantId: tenantId.toString() }, select: { name: true } });
-      return row ? { name: row.name } : null;
-    },
-  );
-  const projectWorkspace = new ProjectWorkspaceServiceResolver(
-    workspaceNameProvider,
-    async (tenantId) => {
-      const org = await prisma.organization.findUnique({
-        where: { tenantId: tenantId.toString() },
-        select: { storageProvider: true },
-      });
-      return (org?.storageProvider as import("@donordesk/domain").StorageProvider | undefined) ?? "LOCAL";
-    },
-    LocalStorage.resolveRoot(),
-    googleDriveTokens,
   );
 
   const evidenceTagger = new StubEvidenceTagger();

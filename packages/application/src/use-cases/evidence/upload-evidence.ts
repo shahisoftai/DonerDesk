@@ -33,10 +33,15 @@ export class UploadEvidenceHandler {
     const id = this.ids.generate();
     const tenantId = ctx.tenant.tenantId.toString();
     const now = new Date();
+    const storage = await this.storageResolver.resolve(ctx.tenant.tenantId);
 
-    // Managed storage reservation. Google Drive link-first evidence never
-    // consumes DonorDesk-managed quota (fileSize 0 / drive link present).
-    const managedBytes = cmd.driveWebLink || cmd.driveFileId ? 0n : BigInt(cmd.fileSize ?? 0);
+    // Managed storage reservation. Bytes that live in DonorDesk-managed storage
+    // (LOCAL / R2) consume quota; Google Drive evidence — whether link-first or
+    // uploaded into the tenant's own Drive folders — never does.
+    const managedBytes =
+      storage.provider === "GOOGLE_DRIVE" || cmd.driveWebLink || cmd.driveFileId
+        ? 0n
+        : BigInt(cmd.fileSize ?? 0);
     if (managedBytes > 0n) {
       const entitlementResult = await this.entitlements.resolve({ tenantId, now });
       if (!entitlementResult.ok) return entitlementResult;
@@ -55,9 +60,9 @@ export class UploadEvidenceHandler {
       if (!reserved.ok) return reserved;
     }
 
-    const storage = await this.storageResolver.resolve(ctx.tenant.tenantId);
     const location = await storage.save({
       tenantId,
+      projectId: cmd.projectId,
       evidenceId: id,
       fileName: cmd.fileName,
       fileType: cmd.fileType,

@@ -476,6 +476,27 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (managed Google Drive evidence storage — release `20260817063832` API + web):**
+  Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
+  donordesk-web`). Uploaded evidence is now **saved into the tenant's Google
+  Drive** in the provisioned project folder tree
+  (`DonorDesk/<project>/04-Evidence-Reports` or `05-Evidence-Images`), instead
+  of the link-first-only behavior that rejected byte uploads. Changes:
+  `SaveEvidenceInput` gained `projectId`; `GoogleDriveEvidenceStorage.save()`
+  branches (driveFileId → reference-only link, buffer → resolve project workspace
+  + multipart upload with appProperties, grant service-account read access);
+  `LocalEvidenceStorage` writes into the project workspace Evidence folder when a
+  workspace is available; `UploadEvidenceHandler` skips DonorDesk-managed quota
+  for GOOGLE_DRIVE tenants; container wires `projectWorkspace` into
+  `EvidenceStorageResolver`; web evidence/new shows the file dropzone for all
+  providers with "link an existing Google Drive file" as a secondary option.
+  Tests: 62 infra (incl. new multipart/managed/workspace-folder tests) + 56 app,
+  1 DB skipped. Verified live: api/web 200, current symlink `20260817063832`,
+  deployed infra bundle contains the managed-upload path, web chunk has the new
+  dropzone copy. Rollback: `RELEASE_ID=20260817061808 scripts/rollback.sh` or
+  `ln -sfn /opt/donordesk/releases/20260817061808 /opt/donordesk/current &&
+  systemctl restart donordesk-api donordesk-web`.
+
 - **2026-08-17 (fix: Google Drive evidence upload — release `20260817061808` web-only):**
   Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`).
   Bug: the demo tenant's `Organization.storageProvider` is `GOOGLE_DRIVE`

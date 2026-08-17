@@ -27,6 +27,7 @@ export class LinkGoogleDriveEvidenceHandler {
     const storage = await this.storageResolver.resolve(ctx.tenant.tenantId);
     const location = await storage.save({
       tenantId,
+      projectId: cmd.projectId,
       evidenceId: id,
       fileName: cmd.fileName,
       fileType: cmd.fileType,

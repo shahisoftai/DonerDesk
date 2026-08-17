@@ -17,7 +17,7 @@ export default async function NewEvidencePage({ params }: { params: Promise<{ id
       <h1 className="text-2xl font-bold">Upload evidence</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         {driveMode
-          ? "Add one or more Google Drive links. Each file is linked separately; AI tagging runs after linking where enabled."
+          ? "Add one or more files — each is saved into your project's Google Drive folder. You can also link a file that is already in your Drive."
           : "Add one or more files. Each file is uploaded separately; AI tagging runs after upload where enabled."}
       </p>
       <EvidenceUploadQueue projectId={resolvedParams.id} storageProvider={storageProvider} />
