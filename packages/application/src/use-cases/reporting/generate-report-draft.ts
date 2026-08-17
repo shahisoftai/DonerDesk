@@ -119,6 +119,13 @@ export class GenerateReportDraftHandler {
     });
     if (!planResult.ok) return planResult;
     const plan = planResult.value;
+    const existingPlansResult = await this.reportPlans.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    if (!existingPlansResult.ok) return existingPlansResult;
+    // ReportPlan is unique on (tenantId, reportingPeriodId, version); every
+    // regeneration creates the next version instead of colliding on v1.
+    plan.version = existingPlansResult.value.length === 0
+      ? 1
+      : Math.max(...existingPlansResult.value.map((p) => p.version)) + 1;
 
     const findingsResult = await this.analytics.computeFindings({
       reportingPeriodId,
