@@ -476,6 +476,25 @@ Also verify from outside the server:
 
 ## 14. Change log
 
+- **2026-08-17 (fix: template section review status lost on save — release `20260817060540` web-only):**
+  Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`).
+  Bug: templates parsed from DOCX were created with `reviewStatus: "REVIEWED"`,
+  but the web response schema (`TemplateSectionSchema` in `apps/web/src/lib/
+  server/schemas.ts`) omitted `reviewStatus`, so the template editor loaded
+  sections without it and `SectionEditor.save()` sent
+  `reviewStatus: s.reviewStatus ?? "DRAFT"` — every "Save template" reset all
+  sections to DRAFT, keeping the readiness blocker
+  `TEMPLATE_HAS_NO_REVIEWED_REQUIRED_SECTIONS` on the new-reporting-period page.
+  Fix: added `reviewStatus` to the web schema, pass it through `initialSections`,
+  and added an explicit "Reviewed" checkbox + status badge per section in the
+  editor so the review action is recorded. Users must re-tick Reviewed on
+  required sections after this deploy (their stored sections are currently
+  DRAFT). Verified: web 200 loopback, current symlink `20260817060540`, deployed
+  template-editor chunk contains the Reviewed toggle. Rollback:
+  `RELEASE_ID=20260817054906 scripts/rollback.sh` or `ln -sfn
+  /opt/donordesk/releases/20260817054906 /opt/donordesk/current && systemctl
+  restart donordesk-web`.
+
 - **2026-08-17 (new reporting period setup checklist — release `20260817054906` web-only):**
   Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`).
   The "New reporting period" page previously surfaced only the generic

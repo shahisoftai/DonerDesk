@@ -115,6 +115,9 @@ export function SectionEditor({ projectId, templateId, initialSections }: { proj
               <span className={`rounded px-2 py-0.5 text-xs font-medium ${s.required ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
                 {s.required ? "Required" : "Optional"}
               </span>
+              <span className={`rounded px-2 py-0.5 text-xs font-medium ${s.reviewStatus === "REVIEWED" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
+                {s.reviewStatus === "REVIEWED" ? "Reviewed" : "Draft"}
+              </span>
               {wordLimitLabel(s) && (
                 <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200">
                   {wordLimitLabel(s)}
@@ -138,6 +141,14 @@ export function SectionEditor({ projectId, templateId, initialSections }: { proj
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={s.required} onChange={(e) => update(i, { required: e.target.checked })} />
                   Required
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={s.reviewStatus === "REVIEWED"}
+                    onChange={(e) => update(i, { reviewStatus: e.target.checked ? "REVIEWED" : "DRAFT" })}
+                  />
+                  Reviewed
                 </label>
                 <div className="ml-auto flex items-center gap-2">
                   <label className="text-xs text-slate-500 dark:text-slate-400">min</label>

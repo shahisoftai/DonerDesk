@@ -17,7 +17,7 @@ export default async function TemplateEditor({ params }: { params: Promise<{ id:
   return (
     <div className="animate-fade-in">
       <h1 className="text-2xl font-bold">{tpl.templateName}</h1>
-      <p className="text-sm text-slate-600 dark:text-slate-400">Review and confirm the sections that will shape reports for this donor. These are your own confirmed sections, not source-verified extractions.</p>
+      <p className="text-sm text-slate-600 dark:text-slate-400">Review and confirm the sections that will shape reports for this donor. These are your own confirmed sections, not source-verified extractions. Mark the required sections as reviewed and save to unlock reporting periods.</p>
       <SectionEditor
         projectId={resolvedParams.id}
         templateId={tpl.id}
@@ -28,6 +28,7 @@ export default async function TemplateEditor({ params }: { params: Promise<{ id:
           inputType: s.inputType,
           required: s.required ?? true,
           evidenceNeeded: s.evidenceNeeded ?? "",
+          reviewStatus: s.reviewStatus ?? "DRAFT",
           minWords: s.minWords,
           maxWords: s.maxWords,
         }))}
