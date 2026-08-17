@@ -310,3 +310,24 @@ five consumed credits, all for stub content.
 `billableUnits=0`; the `AI_DRAFT_CREDITS` counter was reset to 0. The tenant
 can now regenerate up to its real monthly quota, and each generation that
 actually completes will consume exactly one credit.
+
+## 15. SuperAdmin Billing & credits (IMPLEMENTED 2026-08-17)
+
+- `GET /superadmin/billing` — one row per tenant: effective plan (resolved
+  with the same MANUAL > ENTERPRISE_CONTRACT > GRANDFATHERED >
+  CREEM_SUBSCRIPTION > TRIAL > DEFAULT precedence the app uses), AI-credit
+  allowance, current-month used/reserved, override flag, subscription.
+- `POST /superadmin/tenants/:id/credits {mode: SET|INCREASE|DECREASE, value}`
+  — writes an append-only MANUAL `EntitlementGrant` with a full PlanLimits
+  override (only the AI-credit bucket changes). Takes effect immediately
+  (highest precedence). Audit-trailed.
+- `POST /superadmin/tenants/:id/credits/reset` — zeroes the current UTC-month
+  `AI_DRAFT_CREDITS` UsageCounter. Audit-trailed.
+- Dashboard "Billing & credits" tab with Set / Increase / Reduce / Reset
+  actions per tenant.
+- Timezone note: MANUAL grants must be written via the typed Prisma client,
+  not raw SQL with JS Date params — the host DB session timezone
+  (Europe/Berlin) would store CEST wall time and the effective-date filter
+  would read a 2h future-dated grant as inactive. Verified live: INCREASE +7
+  resolves to MANUAL/override immediately, reset zeroes the counter, and test
+  grants were cleaned up afterwards.
