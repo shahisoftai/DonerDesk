@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-18 (release `20260818053116`, Creem billing reconciliation + checkout thanks page; API + web).
+**Last deployment:** 2026-08-18 (release `20260818061120`, Continue checkout flow + trial removal; API + web).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,27 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+- **2026-08-18 (Continue checkout flow + trial removal — release
+  `20260818061120`, API + web):** Deployed via the checksummed incremental
+  immutable-release path with `SERVICES=donordesk-api donordesk-web` (4.56 MB
+  transferred; previous compatible release `20260818053116`). Pricing page
+  Team/Growth tiers now show **Continue** buttons that route through signup
+  (basic onboarding) to the hosted Creem checkout; new `/checkout` route creates
+  the checkout session server-side and redirects to Creem (used after
+  paid-plan signup for local + Google paths and from pricing). `signupAction`
+  redirects TEAM/GROWTH signups to `/checkout`; Starter stays on `/dashboard`.
+  The `/thanks` page now guides setup with quick links (workspace setup,
+  projects, team, billing). Removed all 14-day trial references: no trial grant
+  at provisioning (everyone starts on the free Starter tier), no trial copy on
+  pricing/signup/billing panels, catalog `trialDays` nulled for Team/Growth,
+  `isPlanForTrial` always false. Full workspace typecheck, unit/integration/
+  Playwright tests, and build passed; release-package smoke tests passed;
+  preflight confirmed ports/services. Verified: `current` symlink
+  `20260818061120`, API `/health`+`/ready` OK, public `/` shows Continue (no
+  14-day text), `/thanks` 200, `/checkout` 307 (session redirect), signup plan
+  options show no trial text, services active. Rollback:
+  `RELEASE_ID=20260818053116 scripts/rollback.sh`.
 
 - **2026-08-18 (Creem billing Phase 4 reconciliation + checkout thanks page —
   release `20260818053116`, API + web):** Deployed via the checksummed
