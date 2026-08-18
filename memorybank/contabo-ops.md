@@ -59,23 +59,24 @@ Corrections to the superseded inventory:
 
 ## 3. Existing workloads — do not disrupt
 
+> **2026-08-18:** all NeureCore workloads below were retired (see §29 top entry —
+> archive at `/root/neurecore-retirement-20260818-190257/`). Remaining colocated
+> workloads are GFC (PM2 + Docker), Shahisoft (PM2), CyberPanel, mail, and
+> DonorDesk (systemd).
+
 ### 3.1 PM2
 
 All observed PM2 processes run as `root` in the existing root PM2 daemon:
 
 | Process | Mode | Observed memory | Listener/path |
-|---|---|---:|---|
+|---|---:|---|
 | `cookie-refresher` | fork | 109 MiB | `/opt/gfc-platform/cookie-refresher` |
 | `gfcportal` | fork | 105 MiB | public `*:3011`; standalone Next.js |
-| `neurecore-admin` | fork | 157 MiB | `127.0.0.1:3020` |
-| `neurecore-backend` | fork | 269 MiB | public `*:3003`; 4,822 restarts observed |
-| `neurecore-cors-proxy` | fork | 45 MiB | public `*:3004` |
-| `neurecore-tenant` | fork | 163 MiB | `127.0.0.1:3001` |
 | `shahisoft-nextjs` | cluster | 140 MiB | PM2 internal `127.0.0.1:3010` |
 
-The high NeureCore backend restart count must be investigated before relying on
-aggregate host headroom. DonorDesk commands must always use `--only` and must
-never run `pm2 restart all`, `pm2 reload all`, or replace the existing PM2 dump.
+(Former `neurecore-*` PM2 apps were retired 2026-08-18 — see §29 top entry.)
+DonorDesk commands must always use `--only` and must never run `pm2 restart all`,
+`pm2 reload all`, or replace the existing PM2 dump.
 
 ### 3.2 Native/systemd services
 
@@ -87,17 +88,10 @@ Verified active services include:
 - `nghttpx.service`
 - `docker.service`
 - `fail2ban.service`
-- `hermes-sidecar.service`
-- `hermes-events-bridge.service`
-- `accounting-sidecar.service`
 
-Existing capability sidecars:
-
-| Service | User | Bind | Working directory |
-|---|---|---|---|
-| `hermes-sidecar` | `hermes-sidecar` | `127.0.0.1:8080` | `/opt/neurecore/infra/hermes-sidecar` |
-| `hermes-events-bridge` | `hermes-sidecar` | `127.0.0.1:8082` | `/opt/neurecore/infra/hermes-events-bridge` |
-| `accounting-sidecar` | `hermes-sidecar` | `127.0.0.1:8091` | `/opt/neurecore/infra/accounting-sidecar` |
+(Former NeureCore units `hermes-sidecar`, `hermes-events-bridge`,
+`accounting-sidecar`, and `neurecore.service` were retired 2026-08-18 — see §29
+top entry.)
 
 Port 8090 is CyberPanel/lscpd and is publicly bound. Never use it. Port 8081 is a
 loopback Docker mapping for `gfc-backend`. DonorDesk may reserve 8092 only after
@@ -105,24 +99,19 @@ rechecking it immediately before deployment.
 
 ### 3.3 Docker
 
-Six containers were running:
+Three GFC containers were running (NeureCore `observability` project containers,
+images, and volumes were removed 2026-08-18 — see §29 top entry):
 
 | Container | Image | Approx. memory | Exposure |
-|---|---|---:|---|
-| `neurecore-grafana` | `grafana/grafana:11.3.0` | 49 MiB | process listens `*:3200`; blocked by default UFW |
-| `neurecore-alertmanager` | `prom/alertmanager:v0.27.0` | 15 MiB | `*:9093`, `*:9094`; blocked by default UFW |
-| `neurecore-prometheus` | `prom/prometheus:v2.55.1` | 41 MiB | `*:9090`; blocked by default UFW |
+|---|---:|---|
 | `gfc-backend` | local image | 77 MiB | `127.0.0.1:8081 -> 8080` |
 | `gfc-postgres` | `postgres:16-alpine` | 61 MiB | internal Docker port only |
 | `gfc-redis` | `redis:7-alpine` | 5 MiB | `127.0.0.1:6380 -> 6379` |
 
-Docker consumes approximately 3.8 GiB of images, 310 MiB of volumes, and 1.2 GiB
-of currently reclaimable build cache. Do not prune globally without checking all
-projects. Existing observability volumes are persistent. There is no Tempo or Loki.
-
-The NeureCore observability definition is under `/opt/neurecore/observability/`.
-DonorDesk may add a Prometheus target and Grafana dashboard only after backing up
-and validating those shared configs. Do not replace the Compose project.
+Docker consumes approximately 2.5 GiB of images and 295 MiB of volumes (GFC only)
+plus reclaimable build cache. Do not prune globally without checking all
+projects. There is no Tempo or Loki. The former NeureCore Prometheus/Grafana/
+Alertmanager stack was removed; DonorDesk has no monitoring dependency on it.
 
 ## 4. Verified listener and port map
 
@@ -135,29 +124,29 @@ The full `ss -lntup` output must be rechecked before deployment. Important ports
 | 80/443 | OpenLiteSpeed, public | Shared public ingress |
 | 631 | CUPS, public listener | Existing security review item |
 | 3000 | nghttpx, `127.0.0.1` | Occupied |
-| 3001 | NeureCore tenant, `127.0.0.1` | Occupied |
+| 3001 | NeureCore tenant (freed 2026-08-18) | **FREE** — reusable after recheck |
 | 3002 | DonorDesk web, `127.0.0.1` | **DEPLOYED** — DonorDesk Next.js standalone |
-| 3003 | NeureCore backend, public bind | Occupied; existing risk |
-| 3004 | NeureCore CORS proxy, public bind | Occupied; existing risk |
+| 3003 | NeureCore backend (freed 2026-08-18) | **FREE** — reusable after recheck |
+| 3004 | NeureCore CORS proxy (freed 2026-08-18) | **FREE** — reusable after recheck |
 | 3010 | PM2/internal, `127.0.0.1` | Occupied |
 | 3011 | GFC portal, public bind | Occupied |
-| 3020 | NeureCore admin, `127.0.0.1` | Occupied |
-| 3200 | Grafana, public bind | Occupied; UFW blocks by default |
+| 3020 | NeureCore admin (freed 2026-08-18) | **FREE** — reusable after recheck |
+| 3200 | Grafana (freed 2026-08-18) | **FREE** — reusable after recheck |
 | 3306 | MariaDB, `127.0.0.1` | Occupied |
 | 4001 | DonorDesk API, `0.0.0.0` | **DEPLOYED** — Fastify server (note: binds all interfaces) |
 | 5432 | PostgreSQL, `0.0.0.0` and `[::]` | Occupied; use existing cluster |
-| 5555–5557 | Node processes, public bind | Occupied/unidentified; do not use |
+| 5555–5557 | NeureCore `prisma studio` (freed 2026-08-18) | **FREE** — were public-bind; reusable after recheck |
 | 6379 | host Redis, loopback | Occupied; authentication required |
 | 6380 | GFC Redis mapping, loopback | Occupied |
 | 7080 | CyberPanel/OpenLiteSpeed, public TCP/UDP | Occupied |
-| 8080 | Hermes, loopback | Occupied |
+| 8080 | Hermes sidecar (freed 2026-08-18) | **FREE** — reusable after recheck |
 | 8081 | GFC backend, loopback | Occupied |
-| 8082 | Hermes events bridge, loopback | Occupied |
+| 8082 | Hermes events bridge (freed 2026-08-18) | **FREE** — reusable after recheck |
 | 8090 | lscpd/CyberPanel, public | Permanently occupied |
-| 8091 | accounting sidecar, loopback | Occupied |
+| 8091 | accounting sidecar (freed 2026-08-18) | **FREE** — reusable after recheck |
 | 8092 | no listener observed | Candidate DonorDesk worker |
-| 9090 | Prometheus, public bind | Occupied; UFW blocks by default |
-| 9093/9094 | Alertmanager, public bind | Occupied; UFW blocks by default |
+| 9090 | Prometheus (freed 2026-08-18) | **FREE** — reusable after recheck |
+| 9093/9094 | Alertmanager (freed 2026-08-18) | **FREE** — reusable after recheck |
 | 9200/9300 | Elasticsearch, loopback | Occupied |
 
 “Public bind” and “internet reachable” are different. UFW currently denies
@@ -903,6 +892,41 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-18 — NeureCore fully retired from this host.** All NeureCore assets
+> were removed cleanly and safely (operator-approved): 4 PM2 apps
+> (`neurecore-backend/cors-proxy/admin/tenant`) deleted + `pm2 save`; 3 rogue
+> `prisma studio` processes (public `:5555-5557`) killed; systemd units
+> `hermes-sidecar`, `hermes-events-bridge`, `accounting-sidecar`,
+> `neurecore.service` disabled, stopped, and removed; Docker project
+> `observability` (prometheus/alertmanager/grafana containers, images, and the 3
+> `observability_*` volumes) removed; PostgreSQL DBs `neurecore_prod` + `neurecore`
+> and roles `neurecore_app` + `neurecore` dropped; `pg_hba.conf` pruned of all
+> `neurecore_prod` / `182.184.202.48` / Vercel `76.76.x` rules (reloaded);
+> UFW Vercel/182.184.202.48 `5432` + Vercel `6379` rules removed; OLS vhosts
+> `neurecore.com`, `mail.neurecore.com`, `brain/hq/cc.neurecore.com` + their
+> listener maps removed from `httpd_config.conf` (validated: only the known
+> pre-existing lsphp73/lsphp80 baseline errors remain; no new errors) with
+> `lswsctrl restart`; LE certs (neurecore.com/www/mail/brain/cc/hq incl.
+> self-signed) via `certbot delete` + manual removal, acme.sh cert dirs removed,
+> orphan LSAPI socket cleaned; users `neure8308` + `hermes-sidecar` and their
+> groups removed; `/opt/neurecore` (7.1G), `/home/neurecore.com`,
+> `/var/lib/neurecore`, logs, backups, and `/tmp/neurecore-*` deleted.
+> **Pre-change archive:** `/root/neurecore-retirement-20260818-190257/`
+> (filesystem tar SHA-256 `e1cbd3b9d63e3c48a7c39cc7ccd6c98ae0aee53d482ea818370f340472ba5820`,
+> DB dumps, certs, configs, `SHA256SUMS`) — **operator must copy this off-host**
+> before it is considered durable DR. Verified post-removal: all 5 DonorDesk
+> services active, `/health`+`/ready` OK, web/superadmin/workers 200, Kestra 307,
+> GFC containers healthy + portal 200, PM2 (gfcportal/cookie-refresher/
+> shahisoft-nextjs) online, no NeureCore listeners or files remain, `df` 22G free.
+> Unchanged by design: host Redis (shared; NeureCore keys were not attributable
+> without its credentials — no flush), UFW `3001` (# gfcportal) + `8005` rules
+> (labels ambiguous), global pnpm/Node, Docker build cache, all GFC/CyberPanel/
+> mail assets. Rollback: restore from the retirement archive + snapshot
+> `/root/httpd_config.conf.bak-neurecore-removal-20260818-191717` + restore the
+> pre-deletion PM2 dump from the archive (`.../configs/pm2-dump.pm2`) to
+> `/root/.pm2/dump.pm2`, then `pm2 resurrect` (starts only the NeureCore apps;
+> already-running GFC/Shahisoft apps are left untouched).
 
 - **2026-08-18 (Support Center + 100+ docs + Report Writing Skills — release
   `20260818150143`, web-only):** Deployed via checksummed incremental immutable-release
