@@ -1,6 +1,23 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T19:57+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T20:25+05:00.
+
+> **Deployment (2026-08-18):** **Wiki-style Support Center pages** — release
+> `20260818152118` (web). Added full wiki-style support category pages:
+> - `/support/getting-started` — 23 articles from basic-information
+> - `/support/how-to` — 42 articles from how-to folder
+> - `/support/troubleshooting` — 17 articles
+> - `/support/advanced-features` — 16 articles
+> - `/support/account-billing` — 2 articles
+> - `/support/security-privacy` — 3 articles (new category added to support hub)
+> - Individual article pages: `/support/getting-started/[article]`, `/support/how-to/[article]`, etc.
+> - Components: `WikiLayout.tsx`, `CategoryNav.tsx` (client, active route highlighting),
+>   `wikiCategories.tsx` (full category + article definitions), `wikiUtils.ts` (server-side
+>   markdown loading from memorybank docs)
+> - Added `react-markdown`, `remark-gfm`, `rehype-highlight` deps
+> - Each article renders full markdown with styled prose (accent-colored per category)
+> - Typecheck green; 42 MB incremental transfer (includes .next build)
+> - Deployed and verified: all 8 category/index routes + article pages return 200.
 
 > **Deployment (2026-08-18):** **Support Center with 100+ docs + Report Writing Skills** —
 > release `20260818150143` (web-only). New `/support` page with hero, search bar, 6
