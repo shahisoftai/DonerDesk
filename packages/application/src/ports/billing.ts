@@ -36,6 +36,8 @@ export interface ProviderBillingEvent {
   providerCreatedAt?: Date;
   subscription?: ProviderSubscription;
   customerId?: string;
+  /** Opaque provider metadata (e.g. the tenant reference recorded at checkout). */
+  metadata?: Record<string, unknown>;
 }
 
 export interface CreateCheckoutArgs {
@@ -83,6 +85,18 @@ export interface IBillingSubscriptionRepository {
   findByProviderSubscriptionId(providerSubscriptionId: string): Promise<Result<BillingSubscription | null>>;
   /** The single access-granting subscription for a tenant, if any. */
   findAccessGrantingByTenant(tenantId: string): Promise<Result<BillingSubscription | null>>;
+  /**
+   * Subscriptions that need provider re-sync: non-terminal (ACTIVE / TRIALING /
+   * PAST_DUE / UNPAID) and either never synced or last synced before
+   * `staleBefore`. Used by scheduled reconciliation so a missed webhook
+   * converges even when the provider never retries.
+   */
+  listReconcileCandidates(staleBefore: Date, limit?: number): Promise<Result<BillingSubscription[]>>;
+}
+
+export interface UsageCounterEntry {
+  tenantId: string;
+  counter: UsageCounter;
 }
 
 export interface IUsageCounterRepository {
@@ -90,6 +104,14 @@ export interface IUsageCounterRepository {
   get(tenantId: string, metric: UsageMetric, periodStart: Date): Promise<Result<UsageCounter>>;
   /** Atomic in-place increment (returns the updated counter). */
   add(tenantId: string, metric: UsageMetric, periodStart: Date, delta: bigint): Promise<Result<UsageCounter>>;
+  /**
+   * Absolute-correct the `used` value for a tenant/metric/period (reconciliation).
+   * Only ever reduces the committed total; never grows it above the authoritative
+   * count.
+   */
+  setUsed(tenantId: string, metric: UsageMetric, periodStart: Date, used: bigint): Promise<Result<UsageCounter>>;
+  /** All counters for a metric in a period (platform-scoped reconciliation). */
+  listByMetric(metric: UsageMetric, periodStart: Date): Promise<Result<UsageCounterEntry[]>>;
 }
 
 export interface IBillingEventInboxRepository {
@@ -105,6 +127,8 @@ export interface IBillingEventInboxRepository {
   markProcessing(id: string, attempt: number): Promise<Result<void>>;
   markProcessed(id: string): Promise<Result<void>>;
   markFailed(id: string, error: string): Promise<Result<void>>;
+  /** Events stuck in PROCESSING beyond `olderThan` (worker crashed mid-claim). */
+  listStaleProcessing(olderThan: Date, limit?: number): Promise<Result<Array<{ id: string; providerEventId: string; tenantId: string | null; attemptCount: number }>>>;
 }
 
 export interface ITrialIdentityRepository {

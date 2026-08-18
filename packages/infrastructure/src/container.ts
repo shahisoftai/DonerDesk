@@ -98,6 +98,11 @@ import {
   GetBillingSummaryHandler,
   ProcessBillingWebhookHandler,
   ExpireLocalTrialsHandler,
+  ReconcileBillingSubscriptionsHandler,
+  ReconcileManagedStorageUsageHandler,
+  ReleaseStaleUsageReservationsHandler,
+  RetryBillingInboxHandler,
+  BillingSubscriptionSynchronizer,
 } from "@donordesk/application";
 import type { IJobQueue, IReportDraftGenerator } from "@donordesk/application";
 
@@ -328,6 +333,10 @@ export interface Container {
     getBillingSummary: GetBillingSummaryHandler;
     processBillingWebhook: ProcessBillingWebhookHandler;
     expireLocalTrials: ExpireLocalTrialsHandler;
+    reconcileBillingSubscriptions: ReconcileBillingSubscriptionsHandler;
+    reconcileManagedStorageUsage: ReconcileManagedStorageUsageHandler;
+    releaseStaleUsageReservations: ReleaseStaleUsageReservationsHandler;
+    retryBillingInbox: RetryBillingInboxHandler;
   };
 }
 
@@ -460,6 +469,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const planCatalog = new PrismaPlanCatalogRepository(prisma);
   const billingProvider = createBillingProvider();
   const entitlements = new EntitlementService(entitlementGrants, billingSubscriptions, usageCounters, projects, users, planCatalog);
+  const billingSubscriptionSynchronizer = new BillingSubscriptionSynchronizer(billingProvider, billingSubscriptions, entitlementGrants, ids, audits, clock);
   const provisionTenant = new ProvisionTenantHandler(ids, organizations, users, entitlementGrants, trialIdentities, auth, events, audits, clock);
 
   const readiness = new ProjectReadinessService(
@@ -642,8 +652,12 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createCheckout: new CreateCheckoutHandler(billingProvider, organizations, billingSubscriptions, ids, audits),
     createCustomerPortal: new CreateCustomerPortalHandler(billingProvider, billingSubscriptions, audits),
     getBillingSummary: new GetBillingSummaryHandler(entitlements),
-    processBillingWebhook: new ProcessBillingWebhookHandler(billingProvider, billingSubscriptions, entitlementGrants, billingInbox, ids, audits, clock),
+    processBillingWebhook: new ProcessBillingWebhookHandler(billingProvider, billingSubscriptions, billingInbox, billingSubscriptionSynchronizer),
     expireLocalTrials: new ExpireLocalTrialsHandler(entitlementGrants, audits, clock),
+    reconcileBillingSubscriptions: new ReconcileBillingSubscriptionsHandler(billingProvider, billingSubscriptions, billingSubscriptionSynchronizer, clock, audits),
+    reconcileManagedStorageUsage: new ReconcileManagedStorageUsageHandler(usageCounters, evidence, clock, audits),
+    releaseStaleUsageReservations: new ReleaseStaleUsageReservationsHandler(usageCounters, llmUsage, clock, audits),
+    retryBillingInbox: new RetryBillingInboxHandler(billingProvider, billingSubscriptions, billingInbox, billingSubscriptionSynchronizer, clock, audits),
   };
 
   return {

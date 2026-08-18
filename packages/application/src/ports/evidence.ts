@@ -33,6 +33,8 @@ export interface IEvidenceRepository {
   countByPeriod(reportingPeriodId: string, tenantId: TenantId): Promise<Result<number>>;
   countVerifiedByPeriod(reportingPeriodId: string, tenantId: TenantId): Promise<Result<number>>;
   delete(id: string, tenantId: TenantId): Promise<Result<void>>;
+  /** Sum of managed (non-Google-Drive) evidence bytes for a tenant. */
+  sumManagedStorageBytes(tenantId: TenantId): Promise<Result<bigint>>;
 }
 
 export interface IEvidenceTagger {

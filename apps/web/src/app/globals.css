@@ -204,6 +204,74 @@
   opacity: 1;
 }
 
+.proof-card {
+  --proof-rgb: 56, 189, 248;
+  position: relative;
+  min-height: 19rem;
+  overflow: hidden;
+  border: 1px solid rgba(var(--proof-rgb), 0.24);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  background:
+    linear-gradient(145deg, rgba(var(--proof-rgb), 0.14), rgba(15, 23, 42, 0.72) 46%, rgba(2, 6, 23, 0.96));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 50px rgba(2,6,23,0.3);
+  transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease;
+}
+
+.proof-card:hover {
+  transform: translateY(-7px) perspective(700px) rotateX(1deg);
+  border-color: rgba(var(--proof-rgb), 0.58);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 24px 70px rgba(var(--proof-rgb), 0.16);
+}
+
+.proof-blue { --proof-rgb: 59, 130, 246; }
+.proof-cyan { --proof-rgb: 34, 211, 238; }
+.proof-violet { --proof-rgb: 167, 139, 250; }
+.proof-emerald { --proof-rgb: 52, 211, 153; }
+
+.proof-spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.42;
+  background: radial-gradient(260px circle at var(--pointer-x) var(--pointer-y), rgba(var(--proof-rgb), 0.30), transparent 68%);
+  transition: opacity 200ms ease;
+}
+
+.proof-card:hover .proof-spotlight { opacity: 0.8; }
+
+.proof-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 1px solid rgba(var(--proof-rgb), 0.36);
+  border-radius: 0.8rem;
+  color: rgb(var(--proof-rgb));
+  background: rgba(var(--proof-rgb), 0.12);
+  box-shadow: 0 0 24px rgba(var(--proof-rgb), 0.16);
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.proof-eyebrow {
+  color: rgba(226, 232, 240, 0.72);
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.proof-signal {
+  margin-top: 2rem;
+  color: rgb(var(--proof-rgb));
+  font-size: clamp(1.65rem, 2.2vw, 2.25rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-shadow: 0 0 28px rgba(var(--proof-rgb), 0.28);
+}
+
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition hover:from-brand-400 hover:to-brand-500 hover:shadow-brand-500/40 disabled:cursor-not-allowed disabled:opacity-60;

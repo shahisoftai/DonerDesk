@@ -8,6 +8,7 @@ import {
   CreateCheckoutHandler,
   GetBillingSummaryHandler,
   ProcessBillingWebhookHandler,
+  BillingSubscriptionSynchronizer,
   EntitlementService,
 } from "../dist/index.js";
 
@@ -328,20 +329,31 @@ test("webhook processor ignores events without a subscription (checkout.complete
     createCustomerPortal: async () => ({ ok: true, value: { url: "u" } }),
     getSubscription: async () => ({ ok: true, value: undefined }),
   };
-  const handler = new ProcessBillingWebhookHandler(
-    provider,
-    { findByProviderSubscriptionId: async () => ({ ok: true, value: null }), create: async (s) => ({ ok: true, value: s }), update: async (s) => ({ ok: true, value: s }), findAccessGrantingByTenant: async () => ({ ok: true, value: null }) },
-    { listByTenant: async () => ({ ok: true, value: [] }), create: async (g) => ({ ok: true, value: g }), listEffectiveByTenant: async () => ({ ok: true, value: [] }), listExpiredTrialGrants: async () => ({ ok: true, value: [] }) },
-    {
-      create: async () => ({ ok: true, value: { id: "inbox-1" } }),
-      markProcessing: async () => ({ ok: true, value: undefined }),
-      markProcessed: async () => ({ ok: true, value: undefined }),
-      markFailed: async () => ({ ok: true, value: undefined }),
-    },
-    fakeIds("evt"),
-    fakeAudit(),
-    fakeClock(),
-  );
+  const subscriptions = {
+    findByProviderSubscriptionId: async () => ({ ok: true, value: null }),
+    create: async (s) => ({ ok: true, value: s }),
+    update: async (s) => ({ ok: true, value: s }),
+    findAccessGrantingByTenant: async () => ({ ok: true, value: null }),
+    listReconcileCandidates: async () => ({ ok: true, value: [] }),
+  };
+  const grants = {
+    listByTenant: async () => ({ ok: true, value: [] }),
+    create: async (g) => ({ ok: true, value: g }),
+    listEffectiveByTenant: async () => ({ ok: true, value: [] }),
+    listExpiredTrialGrants: async () => ({ ok: true, value: [] }),
+  };
+  const inbox = {
+    create: async () => ({ ok: true, value: { id: "inbox-1" } }),
+    markProcessing: async () => ({ ok: true, value: undefined }),
+    markProcessed: async () => ({ ok: true, value: undefined }),
+    markFailed: async () => ({ ok: true, value: undefined }),
+    listStaleProcessing: async () => ({ ok: true, value: [] }),
+  };
+  const ids = fakeIds("evt");
+  const audit = fakeAudit();
+  const clock = fakeClock();
+  const synchronizer = new BillingSubscriptionSynchronizer(provider, subscriptions, grants, ids, audit, clock);
+  const handler = new ProcessBillingWebhookHandler(provider, subscriptions, inbox, synchronizer);
   const result = await handler.handle({ provider: "CREEM", rawBody: Buffer.from("{}"), signature: "sig" });
   assert.equal(result.ok, true);
   assert.equal(result.value.handled, true);

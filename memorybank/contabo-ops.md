@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-18 (release `20260818034420`, uncommitted home-page copy — public homepage + SEO metadata refresh; web-only).
+**Last deployment:** 2026-08-18 (release `20260818041110`, interactive homepage product-proof strip; web-only).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,41 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+- **2026-08-18 (interactive homepage product-proof strip — release
+  `20260818041110`, web-only):** Replaced the low-contrast numeric statistics
+  band with four user-relevant capability cards: source-linked drafting, live
+  readiness, human approval, and PDF/DOCX/XLSX/ZIP delivery. Added explanatory
+  section copy, per-card high-contrast blue/cyan/violet/emerald treatments,
+  cursor-following spotlights, hover lift/depth, and touch/reduced-motion-safe
+  behavior. Web typecheck, production build, release-package API/web smoke tests,
+  and same-day host preflight passed. Deployed via the checksummed incremental
+  immutable web-only path (4.62 MB transferred; previous compatible release
+  `20260818040118`). Verified: current symlink `20260818041110`, public and
+  loopback homepage contain the new product-proof copy, API readiness database
+  check OK, all DonorDesk services active, and no new web journal warnings.
+  Rollback: `RELEASE_ID=20260818040118 scripts/rollback.sh` or atomically repoint
+  `current` to `/opt/donordesk/releases/20260818040118` and restart
+  `donordesk-web`.
+
+- **2026-08-18 (homepage technology treatment + cookie consent — release
+  `20260818040118`, web-only):** Deployed through the checksummed incremental
+  immutable-release path with `SERVICES=donordesk-web` (4.55 MB transferred;
+  previous compatible release `20260818034420`). Added live-system hero cues,
+  ambient and scan-line motion with reduced-motion support, deeper glass/card
+  treatments, a reinforced sticky header, and a footer-logo home link. Added an
+  accessible cookie-preference banner with Accept all / Essential only choices,
+  privacy-policy link, `SameSite=Lax`, HTTPS `Secure`, and a 15-day expiry.
+  Full workspace typecheck and build passed; release-package API/web smoke tests
+  passed. Preflight: all required services active, 19 GB disk available, known
+  OpenLiteSpeed warnings unchanged, and no recent web journal warnings. The
+  documented off-host backup gap remains (no files under
+  `/opt/donordesk/backups`); no data or migrations changed. Verified after
+  activation: current symlink `20260818040118`, public HTTPS homepage 200 with
+  new content, cookie bundle present, API `/health` and `/ready` database check
+  OK, all DonorDesk services active, and no new web journal warnings. Rollback:
+  `RELEASE_ID=20260818034420 scripts/rollback.sh` or atomically repoint `current`
+  to `/opt/donordesk/releases/20260818034420` and restart `donordesk-web`.
 
 - **2026-08-18 (public homepage + SEO refresh — release `20260818034420`, web-only):**
   Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`,

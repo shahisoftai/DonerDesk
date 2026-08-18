@@ -24,7 +24,7 @@ test("dashboard home renders with My Work and notification links", async ({ page
 test("projects portfolio renders a search form and table header", async ({ page }) => {
   await page.goto("/projects");
   await expect(page.getByRole("heading", { name: "Projects" })).toBeVisible();
-  await expect(page.getByLabel("Search")).toBeVisible();
+  await expect(page.getByPlaceholder("Title, code, donor, country")).toBeVisible();
   await expect(page.getByLabel("Status")).toBeVisible();
   await expect(page.getByLabel("Sort")).toBeVisible();
 });

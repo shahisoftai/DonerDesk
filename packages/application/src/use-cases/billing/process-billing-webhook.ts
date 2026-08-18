@@ -1,19 +1,12 @@
 import { createHash } from "node:crypto";
 import type { Result } from "@donordesk/domain";
-import {
-  DomainError,
-  BillingSubscription,
-  EntitlementGrant,
-  isPlanCode,
-  type BillingSubscriptionStatus,
-} from "@donordesk/domain";
-import type { BillingProvider, ProviderBillingEvent, ProviderSubscription } from "../../ports/billing.js";
+import { DomainError } from "@donordesk/domain";
+import type { BillingProvider, ProviderBillingEvent } from "../../ports/billing.js";
 import type {
   IBillingSubscriptionRepository,
-  IEntitlementGrantRepository,
   IBillingEventInboxRepository,
 } from "../../ports/billing.js";
-import type { IIdGenerator, IAuditLogger, IClock } from "../../ports/core.js";
+import { BillingSubscriptionSynchronizer } from "../../services/billing-subscription-synchronizer.js";
 
 export interface ProcessBillingWebhookCommand {
   provider: string;
@@ -34,23 +27,21 @@ export interface ProcessBillingWebhookResult {
  * 1. Verify and parse the raw body against the provider signature.
  * 2. Insert a durable inbox row keyed by the globally unique provider event id
  *    (dedupe: a duplicate returns 200 with no effects).
- * 3. Resolve the tenant from trusted request metadata; where the event is
- *    stale/incomplete, re-fetch the current subscription from the provider.
+ * 3. Resolve the tenant from trusted request metadata (recorded at checkout);
+ *    where absent, fall back to the locally persisted subscription mapping.
  * 4. Transactionally sync the subscription, change entitlement grants, audit,
  *    and mark the inbox row processed.
  *
  * The application owns entitlement changes; the adapter only maps provider
- * objects/events (SRP/DIP).
+ * objects/events (SRP/DIP), and provider state is applied through the shared
+ * BillingSubscriptionSynchronizer (DRY).
  */
 export class ProcessBillingWebhookHandler {
   constructor(
     private readonly billing: BillingProvider,
     private readonly subscriptions: IBillingSubscriptionRepository,
-    private readonly grants: IEntitlementGrantRepository,
     private readonly inbox: IBillingEventInboxRepository,
-    private readonly ids: IIdGenerator,
-    private readonly audit: IAuditLogger,
-    private readonly clock: IClock,
+    private readonly synchronizer: BillingSubscriptionSynchronizer,
   ) {}
 
   async handle(cmd: ProcessBillingWebhookCommand): Promise<Result<ProcessBillingWebhookResult, DomainError>> {
@@ -59,14 +50,16 @@ export class ProcessBillingWebhookHandler {
     const event = verified.value;
 
     const checksum = sha256(cmd.rawBody);
-    const inboxId = this.ids.generate();
+    const inboxId = crypto.randomUUID();
     const inserted = await this.inbox.create({
       id: inboxId,
       provider: cmd.provider,
       providerEventId: event.eventId,
       eventType: event.eventType,
       providerCreatedAt: event.providerCreatedAt,
-      tenantId: event.subscription ? await this.resolveTenantFromSubscription(event.subscription.providerSubscriptionId) : undefined,
+      tenantId: event.subscription
+        ? await this.resolveTenant(event)
+        : undefined,
       payloadChecksum: checksum,
     });
     if (!inserted.ok) {
@@ -106,153 +99,31 @@ export class ProcessBillingWebhookHandler {
       }
     }
 
-    const tenantId = await this.resolveTenantFromSubscription(effective.providerSubscriptionId);
+    const tenantId = await this.resolveTenant(event, effective.providerSubscriptionId);
     if (!tenantId) {
       return { ok: false, error: DomainError.billingStateInvalid("Webhook references an unknown customer/subscription.") };
     }
 
-    const now = this.clock.now();
-    const existing = await this.subscriptions.findByProviderSubscriptionId(effective.providerSubscriptionId);
-
-    let subscription: BillingSubscription;
-    if (existing.ok && existing.value) {
-      subscription = existing.value;
-      subscription.syncFromProvider({
-        status: effective.status,
-        planCode: effective.planCode,
-        catalogVersion: 1,
-        providerProductId: effective.providerProductId,
-        currency: effective.currency,
-        unitAmountMinor: effective.unitAmountMinor,
-        billingInterval: effective.billingInterval,
-        currentPeriodStart: effective.currentPeriodStart,
-        currentPeriodEnd: effective.currentPeriodEnd,
-        trialStart: effective.trialStart,
-        trialEnd: effective.trialEnd,
-        cancelAtPeriodEnd: effective.cancelAtPeriodEnd,
-        graceEndsAt: effective.graceEndsAt,
-        providerUpdatedAt: effective.providerUpdatedAt,
-        now,
-      });
-      const updated = await this.subscriptions.update(subscription);
-      if (!updated.ok) return updated;
-    } else {
-      subscription = BillingSubscription.create({
-        id: this.ids.generate(),
-        props: {
-          tenantId,
-          provider: "CREEM",
-          providerCustomerId: effective.providerCustomerId ?? "unknown",
-          providerSubscriptionId: effective.providerSubscriptionId,
-          providerProductId: effective.providerProductId,
-          planCode: effective.planCode,
-          catalogVersion: 1,
-          status: effective.status,
-          currency: effective.currency,
-          unitAmountMinor: effective.unitAmountMinor,
-          billingInterval: effective.billingInterval,
-          currentPeriodStart: effective.currentPeriodStart,
-          currentPeriodEnd: effective.currentPeriodEnd,
-          trialStart: effective.trialStart,
-          trialEnd: effective.trialEnd,
-          cancelAtPeriodEnd: effective.cancelAtPeriodEnd,
-          graceEndsAt: effective.graceEndsAt,
-          providerUpdatedAt: effective.providerUpdatedAt,
-          lastSyncedAt: now,
-        },
-      });
-      const created = await this.subscriptions.create(subscription);
-      if (!created.ok) return created;
-    }
-
-    await this.syncEntitlementGrant(tenantId, subscription, now);
-
-    await this.audit.record({
-      tenantId: TenantIdSafe(tenantId),
-      actorId: "system",
-      eventType: "billing.subscription.synced",
-      entityType: "billing_subscription",
-      entityId: subscription.id,
-      newValue: JSON.stringify({
-        providerEvent: event.eventType,
-        status: effective.status,
-        plan: effective.planCode,
-      }),
-    });
-
+    const synced = await this.synchronizer.sync(effective, event.eventType, tenantId);
+    if (!synced.ok) return synced;
     return { ok: true, value: undefined };
   }
 
-  private async syncEntitlementGrant(
-    tenantId: string,
-    subscription: BillingSubscription,
-    now: Date,
-  ): Promise<Result<void, DomainError>> {
-    const activeGrantStatuses: BillingSubscriptionStatus[] = ["ACTIVE", "TRIALING", "PAST_DUE"];
-    const grantsAccess = activeGrantStatuses.includes(subscription.status);
-
-    const existingGrants = await this.grants.listByTenant(tenantId);
-    if (!existingGrants.ok) return existingGrants;
-    const linked = existingGrants.value.filter((g) => g.billingSubscriptionId === subscription.id);
-
-    if (grantsAccess) {
-      if (linked.length === 0) {
-        const grant = EntitlementGrant.create({
-          id: this.ids.generate(),
-          props: {
-            tenantId,
-            planCode: subscription.planCode,
-            source: "CREEM_SUBSCRIPTION",
-            effectiveFrom: subscription.currentPeriodStart ?? now,
-            effectiveUntil: subscription.currentPeriodEnd,
-            billingSubscriptionId: subscription.id,
-            createdById: "system",
-            reason: "subscription-sync",
-          },
-        });
-        const created = await this.grants.create(grant);
-        if (!created.ok) return created;
-      }
-      return { ok: true, value: undefined };
+  /**
+   * Tenant resolution precedence: trusted checkout metadata first (opaque
+   * tenant reference recorded server-side at checkout creation), then the
+   * locally persisted subscription mapping.
+   */
+  private async resolveTenant(event: ProviderBillingEvent, providerSubscriptionId?: string): Promise<string | undefined> {
+    const metaTenant = event.metadata?.tenant_id;
+    if (typeof metaTenant === "string" && /^[A-Za-z0-9_-]{3,128}$/.test(metaTenant)) return metaTenant;
+    const subscriptionId = providerSubscriptionId ?? event.subscription?.providerSubscriptionId;
+    if (subscriptionId) {
+      const existing = await this.subscriptions.findByProviderSubscriptionId(subscriptionId);
+      if (existing.ok && existing.value) return existing.value.tenantId;
     }
-
-    // Subscription stopped granting access (cancelled/expired): end the linked
-    // grant at the confirmed access end so the fallback (Starter) becomes
-    // effective. EntitlementGrant is immutable; end-of-life is modeled by a
-    // time-bounded grant whose effectiveUntil already reflects it.
-    for (const grant of linked) {
-      if (grant.effectiveUntil === undefined) {
-        // Terminate immediately: the subscription no longer grants access.
-        const terminated = EntitlementGrant.create({
-          id: this.ids.generate(),
-          props: {
-            tenantId,
-            planCode: grant.planCode,
-            source: "CREEM_SUBSCRIPTION",
-            effectiveFrom: now,
-            effectiveUntil: now,
-            billingSubscriptionId: subscription.id,
-            createdById: "system",
-            reason: "subscription-end",
-          },
-        });
-        const created = await this.grants.create(terminated);
-        if (!created.ok) return created;
-      }
-    }
-    return { ok: true, value: undefined };
-  }
-
-  /** Tenant is resolved from the provider metadata recorded at checkout. */
-  private async resolveTenantFromSubscription(providerSubscriptionId: string): Promise<string | undefined> {
-    const existing = await this.subscriptions.findByProviderSubscriptionId(providerSubscriptionId);
-    if (existing.ok && existing.value) return existing.value.tenantId;
     return undefined;
   }
-}
-
-function TenantIdSafe(tenantId: string): import("@donordesk/domain").TenantId {
-  return { toString: () => tenantId } as import("@donordesk/domain").TenantId;
 }
 
 function sha256(input: Buffer): string {
@@ -260,9 +131,8 @@ function sha256(input: Buffer): string {
 }
 
 export function assertPlanCode(code: string): Result<"TEAM" | "GROWTH", DomainError> {
-  if (!isPlanCode(code)) return { ok: false, error: DomainError.billingStateInvalid(`Unknown plan: ${code}`) };
-  if (code === "ENTERPRISE" || code === "STARTER") {
-    return { ok: false, error: DomainError.billingStateInvalid(`Plan ${code} is not sold via checkout.`) };
+  if (code !== "TEAM" && code !== "GROWTH") {
+    return { ok: false, error: DomainError.billingStateInvalid(`Unknown plan: ${code}`) };
   }
-  return { ok: true, value: code as "TEAM" | "GROWTH" };
+  return { ok: true, value: code };
 }

@@ -128,6 +128,18 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
     return ok(undefined);
   }
 
+  async sumManagedStorageBytes(tenantId: TenantId): Promise<Result<bigint, DomainError>> {
+    const rows = await this.prisma.evidenceFile.findMany({
+      where: {
+        tenantId: tenantId.toString(),
+        storageProvider: { not: "GOOGLE_DRIVE" },
+      },
+      select: { fileSize: true },
+    });
+    const total = rows.reduce((sum, r) => sum + BigInt(r.fileSize), 0n);
+    return ok(total);
+  }
+
   private toDomain(row: {
     id: string;
     tenantId: string;

@@ -7,7 +7,7 @@ import type { IBillingSubscriptionRepository } from "../../ports/billing.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { CreateCheckoutInput } from "@donordesk/contracts";
 
-const SUCCESS_PATH = "/settings/billing";
+const SUCCESS_PATH = "/thanks";
 
 /**
  * Server-side checkout intent. The browser never supplies a product id, a

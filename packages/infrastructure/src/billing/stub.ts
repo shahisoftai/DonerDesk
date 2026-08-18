@@ -104,6 +104,7 @@ export class StubBillingProvider implements BillingProvider {
         };
       }
 
+      const metadata = extractMetadata(object);
       return {
         ok: true,
         value: {
@@ -112,6 +113,7 @@ export class StubBillingProvider implements BillingProvider {
           providerCreatedAt: toDate(payload.created_at),
           subscription,
           customerId: String((object.customer as { id?: string } | undefined)?.id ?? undefined),
+          metadata: metadata ?? undefined,
         },
       };
     } catch (error) {
@@ -123,5 +125,14 @@ export class StubBillingProvider implements BillingProvider {
 function toDate(value: unknown): Date | undefined {
   if (typeof value === "number") return new Date(value);
   if (typeof value === "string" && !Number.isNaN(Date.parse(value))) return new Date(value);
+  return undefined;
+}
+
+function extractMetadata(object: Record<string, unknown>): Record<string, unknown> | undefined {
+  const metadata = object.metadata;
+  if (metadata && typeof metadata === "object") {
+    const entries = Object.entries(metadata).filter(([, v]) => typeof v === "string" || typeof v === "number" || typeof v === "boolean");
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+  }
   return undefined;
 }

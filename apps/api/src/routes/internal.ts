@@ -193,5 +193,38 @@ export async function registerInternalRoutes(app: FastifyInstance) {
       if (!r.ok) throw r.error;
       return r.value;
     });
+
+    // Billing reconciliation entry points for scheduled Kestra flows. These are
+    // tenant-scoped (the per-request container is bound to the signed tenant)
+    // and idempotent: replay converges rather than double-applies.
+    instance.post("/internal/billing/expire-trials", async (req) => {
+      const r = await req.container.handlers.expireLocalTrials.handle();
+      if (!r.ok) throw r.error;
+      return r.value;
+    });
+
+    instance.post("/internal/billing/reconcile-subscriptions", async (req) => {
+      const r = await req.container.handlers.reconcileBillingSubscriptions.handle();
+      if (!r.ok) throw r.error;
+      return r.value;
+    });
+
+    instance.post("/internal/billing/reconcile-storage", async (req) => {
+      const r = await req.container.handlers.reconcileManagedStorageUsage.handle();
+      if (!r.ok) throw r.error;
+      return r.value;
+    });
+
+    instance.post("/internal/billing/release-stale-reservations", async (req) => {
+      const r = await req.container.handlers.releaseStaleUsageReservations.handle();
+      if (!r.ok) throw r.error;
+      return r.value;
+    });
+
+    instance.post("/internal/billing/retry-inbox", async (req) => {
+      const r = await req.container.handlers.retryBillingInbox.handle();
+      if (!r.ok) throw r.error;
+      return r.value;
+    });
   });
 }

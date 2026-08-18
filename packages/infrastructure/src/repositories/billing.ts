@@ -116,6 +116,18 @@ export class PrismaBillingSubscriptionRepository implements IBillingSubscription
     return ok(this.toDomain(row));
   }
 
+  async listReconcileCandidates(staleBefore: Date, limit = 500): Promise<Result<BillingSubscription[], DomainError>> {
+    const rows = await this.prisma.billingSubscription.findMany({
+      where: {
+        status: { in: ["ACTIVE", "TRIALING", "PAST_DUE", "UNPAID"] },
+        OR: [{ lastSyncedAt: null }, { lastSyncedAt: { lt: staleBefore } }],
+      },
+      orderBy: { lastSyncedAt: "asc" },
+      take: limit,
+    });
+    return ok(rows.map((r) => this.toDomain(r)));
+  }
+
   private toDomain(row: {
     id: string;
     tenantId: string;
@@ -329,6 +341,28 @@ export class PrismaUsageCounterRepository implements IUsageCounterRepository {
     return ok(this.toDomain(updated));
   }
 
+  async setUsed(tenantId: string, metric: UsageMetric, periodStart: Date, used: bigint): Promise<Result<UsageCounter, DomainError>> {
+    if (used < 0n) return err(new DomainError("VALIDATION_FAILED", "Used value must be non-negative"));
+    // Reconciliation only ever reduces: clamp to the current committed value so
+    // a concurrent legitimate increment is never overwritten upward.
+    const current = await this.prisma.usageCounter.findUnique({
+      where: { tenantId_metric_periodStart: { tenantId, metric, periodStart } },
+      select: { used: true },
+    });
+    const target = current === null || used < current.used ? used : current.used;
+    const updated = await this.prisma.usageCounter.upsert({
+      where: { tenantId_metric_periodStart: { tenantId, metric, periodStart } },
+      create: { id: randomId(), tenantId, metric, periodStart, used: target },
+      update: { used: { set: target } },
+    });
+    return ok(this.toDomain(updated));
+  }
+
+  async listByMetric(metric: UsageMetric, periodStart: Date): Promise<Result<import("@donordesk/application").UsageCounterEntry[], DomainError>> {
+    const rows = await this.prisma.usageCounter.findMany({ where: { metric, periodStart } });
+    return ok(rows.map((r) => ({ tenantId: r.tenantId, counter: this.toDomain(r) })));
+  }
+
   private toDomain(row: {
     id: string;
     tenantId: string;
@@ -389,6 +423,16 @@ export class PrismaBillingEventInboxRepository implements IBillingEventInboxRepo
   async markFailed(id: string, error: string): Promise<Result<void, DomainError>> {
     await this.prisma.billingEventInbox.update({ where: { id }, data: { status: "FAILED", lastError: error.slice(0, 2000) } });
     return ok(undefined);
+  }
+
+  async listStaleProcessing(olderThan: Date, limit = 100): Promise<Result<Array<{ id: string; providerEventId: string; tenantId: string | null; attemptCount: number }>, DomainError>> {
+    const rows = await this.prisma.billingEventInbox.findMany({
+      where: { status: "PROCESSING", updatedAt: { lt: olderThan } },
+      orderBy: { updatedAt: "asc" },
+      take: limit,
+      select: { id: true, providerEventId: true, tenantId: true, attemptCount: true },
+    });
+    return ok(rows.map((r) => ({ id: r.id, providerEventId: r.providerEventId, tenantId: r.tenantId, attemptCount: r.attemptCount })));
   }
 }
 

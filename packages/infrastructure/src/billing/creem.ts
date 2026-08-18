@@ -153,6 +153,7 @@ export class CreemBillingProvider implements BillingProvider {
       const createdAt = typeof createdRaw === "number" ? new Date(createdRaw) : typeof createdRaw === "string" ? new Date(createdRaw) : undefined;
       const object = (payload.object ?? {}) as Record<string, unknown>;
       const subscription = mapSubscriptionObject(object);
+      const metadata = extractMetadata(object);
 
       return {
         ok: true,
@@ -162,6 +163,7 @@ export class CreemBillingProvider implements BillingProvider {
           providerCreatedAt: createdAt,
           subscription: subscription ?? undefined,
           customerId: extractCustomerId(object),
+          metadata: metadata ?? undefined,
         },
       };
     } catch (error) {
@@ -183,6 +185,15 @@ function extractCustomerId(object: Record<string, unknown>): string | undefined 
     return (customer as { id: string }).id;
   }
   if (typeof object.customer === "string") return object.customer;
+  return undefined;
+}
+
+function extractMetadata(object: Record<string, unknown>): Record<string, unknown> | undefined {
+  const metadata = object.metadata;
+  if (metadata && typeof metadata === "object") {
+    const entries = Object.entries(metadata).filter(([, v]) => typeof v === "string" || typeof v === "number" || typeof v === "boolean");
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+  }
   return undefined;
 }
 

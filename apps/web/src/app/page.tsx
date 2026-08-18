@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
+import { ProductProofStrip } from "@/components/landing/ProductProofStrip";
 
 const FEATURES = [
   {
@@ -197,13 +198,6 @@ const PLANS = [
   },
 ];
 
-const STATS = [
-  { value: "7+", label: "Programme modules" },
-  { value: "4", label: "Export formats" },
-  { value: "6", label: "Programme sectors" },
-  { value: "1", label: "Traceable reporting workspace" },
-];
-
 export default function HomePage() {
   return (
     <main className="landing-tech min-h-screen overflow-x-hidden bg-slate-950 text-slate-100">
@@ -379,19 +373,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Stats band */}
-      <section className="border-y border-white/10 bg-white/[0.02] py-14">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-6 text-center md:grid-cols-4">
-          {STATS.map((s) => (
-            <div key={s.label}>
-              <p className="text-4xl font-extrabold text-transparent [background:linear-gradient(to_right,#36a8f6,#22d3ee)] bg-clip-text">
-                {s.value}
-              </p>
-              <p className="mt-1 text-sm text-slate-400">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <ProductProofStrip />
 
       {/* Features */}
       <section id="features" className="px-6 py-24">
