@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-18 (release `20260818061120`, Continue checkout flow + trial removal; API + web).
+**Last deployment:** 2026-08-18 (release `20260818074405`, professional AI report generation; API + web).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,30 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+- **2026-08-18 (Professional AI report generation — release `20260818074405`,
+  API + web):** Deployed via the checksummed incremental immutable-release path
+  with `SERVICES=donordesk-api donordesk-web` (~5.6 MB transferred; previous
+  compatible release `20260818061120`). Enriched the report-generation pipeline
+  so AI drafts read as professional donor deliverables: `VerifiedFinding` now
+  carries indicator name, type, baseline, target, resolved semantics,
+  previous-period `comparisonValue` (previously computed but dropped by
+  `computeIndicator`), and a deterministic `performanceEvaluation`
+  (POSITIVE/NEGATIVE/NEUTRAL gated by direction semantics). The narrator prompt
+  gains project/period/donor-template context blocks, per-section guidance
+  (input type, mandatory questions, evidence needs, word limits), indicator
+  names + target/period-over-period narration, evidence metadata, participant
+  disaggregation, explicit quality-flag caveat language, and a worked example;
+  evidence chunks raised 3×600 → 8×800 chars. `maxTokens` deliberately stays
+  4096 (per the MiniMax timeout constraint recorded in §29 below). Also fixed
+  a flaky phase4-security test (tampered token's last hex char could already be
+  "0"). Full gate green: typecheck, 241 unit tests (0 failures), build,
+  package smoke tests. Verified live: `current` symlink `20260818074405`, API
+  `/health`+`/ready` OK, web `/login` 200, deployed dist contains the enriched
+  prompt + `buildReportContext` handler, no journal errors since restart.
+  Rollback: `RELEASE_ID=20260818061120 scripts/rollback.sh` or `ln -sfn
+  /opt/donordesk/releases/20260818061120 /opt/donordesk/current && systemctl
+  restart donordesk-api donordesk-web` (previous release).
 
 - **2026-08-18 (Continue checkout flow + trial removal — release
   `20260818061120`, API + web):** Deployed via the checksummed incremental
