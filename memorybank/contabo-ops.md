@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-18 (release `20260818041110`, interactive homepage product-proof strip; web-only).
+**Last deployment:** 2026-08-18 (release `20260818053116`, Creem billing reconciliation + checkout thanks page; API + web).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,31 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+- **2026-08-18 (Creem billing Phase 4 reconciliation + checkout thanks page —
+  release `20260818053116`, API + web):** Deployed via the checksummed
+  incremental immutable-release path with `SERVICES=donordesk-api donordesk-web`
+  (8.9 MB transferred; previous compatible release `20260818041110`). Ships
+  Feature 19 Phase 4 reconciliation handlers (`reconcile-billing-subscriptions`,
+  `reconcile-managed-storage`, `release-stale-usage-reservations`,
+  `retry-billing-inbox`) exposed as `/internal/billing/*` routes for Kestra; a
+  shared `BillingSubscriptionSynchronizer` used by the webhook processor and
+  reconciliation; webhook tenant resolution from checkout metadata with local
+  mapping fallback; metadata parsing in the Creem/stub adapters; and the public
+  `/thanks` checkout return page with Creem redirect-signature verification
+  (`verifyCreemRedirectSignature`). Checkout `SUCCESS_PATH` now points to
+  `/thanks`. Server `api.env` gained the Creem TEST-mode billing block
+  (`BILLING_PROVIDER=creem`, `CREEM_TEST_MODE=true`, test product IDs,
+  `BILLING_SUCCESS_BASE_URL=https://donordesk.online`). Full workspace typecheck,
+  unit/integration/Playwright tests (web 12/12), and build passed; release-package
+  API/web smoke tests passed; same-day preflight confirmed free candidate ports
+  and active services. Verified: `current` symlink `20260818053116`, API
+  `/health`+`/ready` OK, public HTTPS `/`, `/login`, and `/thanks` 200, internal
+  billing routes 401 (auth active), superadmin 200, Kestra 307, no new API
+  journal errors, all DonorDesk services active. Rollback:
+  `RELEASE_ID=20260818041110 scripts/rollback.sh` or atomically repoint `current`
+  to `/opt/donordesk/releases/20260818041110` and restart `donordesk-api`
+  `donordesk-web`.
 
 - **2026-08-18 (interactive homepage product-proof strip — release
   `20260818041110`, web-only):** Replaced the low-contrast numeric statistics
