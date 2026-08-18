@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-17 (release `20260817174622`, commit `8a849ec` — readiness percentage fixes, consolidated Settings nav tabs, Home deadline-overview placement; API + web). Post-deploy applied migration `20260817200000_evidence_extracted_text` as `donordesk_migrator` (adds `EvidenceFile.extractedText`), fixing the project Evidence/Reports/Compliance tab 500s (P2022: column missing).
+**Last deployment:** 2026-08-18 (release `20260818031100`, commit `989745c` — comprehensive SuperAdmin Tier management: global tier catalog editor via `PlanCatalogOverride`, per-tenant tier change/limits/reset; API + web + superadmin). Applied migration `20260817210000_plan_catalog_override` as `donordesk_migrator` and extended `infra/postgres/rls.sql` (global grant for `PlanCatalogOverride` to `donordesk_app`) before switching the release.
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -475,6 +475,55 @@ Also verify from outside the server:
 - backup completion and a clean-machine restore.
 
 ## 14. Change log
+
+- **2026-08-18 (comprehensive SuperAdmin Tier management — release `20260818031100`,
+  commit `989745c`, API + web + superadmin):**
+  Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
+  donordesk-web`), then rebuilt and redeployed the SuperAdmin standalone app
+  (port 3012; `pnpm --filter @donordesk/superadmin build` → `.next/standalone`
+  server.js + `.next` + `node_modules` + `package.json` rsynced to
+  `/opt/donordesk/current/superadmin/`, `systemctl restart donordesk-superadmin`).
+  1. **Migration `20260817210000_plan_catalog_override`** applied as
+     `donordesk_migrator` (via `DATABASE_ADMIN_URL`, `/usr/bin/prisma migrate
+     deploy`) BEFORE switching the release so new code never queries a missing
+     table: creates `PlanCatalogOverride` (PK `planCode`, name/prices/trialDays/
+     enabled/limitsJson) for global tier feature allocation.
+  2. **RLS extended:** `infra/postgres/rls.sql` now grants
+     `SELECT, INSERT, UPDATE, DELETE ON TABLE "PlanCatalogOverride" TO
+     donordesk_app` (global reference table, NOT in the tenant-isolation array —
+     no `tenantId` column). Applied as `donordesk_migrator`; verified via
+     `pg_class` ACL `donordesk_app=arwd`.
+  3. **New SuperAdmin portal area "Tier management"** (`sa.donordesk.online`):
+     global tier catalog editor (limits/prices/trial days/enabled per plan, with
+     tenant counts) + per-tenant tier assignment (change tier via MANUAL grant,
+     per-tenant feature-allocation override, reset tier changes). New API routes:
+     `GET /superadmin/tiers`, `PUT /superadmin/tiers/:planCode`, `POST
+     /superadmin/tiers/:planCode/reset`, `GET/POST /superadmin/tenants/:id/tier`,
+     `PUT /superadmin/tenants/:id/tier/limits`, `POST
+     /superadmin/tenants/:id/tier/reset`. All audit-trailed; audit payloads are
+     JSON-safe (storage limits serialized via `planCatalogOverrideToJson`, fixing
+     a BigInt `JSON.stringify` crash).
+  4. **Entitlement correctness fixes:** newest MANUAL grant wins (tie-break on
+     `createdAt`); portal reads (`billingRow`/`currentPlanLimits`) mirror the
+     domain's subscription status/grace effectiveness; `changeTenantTier` merges
+     partial limits against the target plan (not the old one) and rejects
+     disabled tiers; `resetTenantTier` closes only `tier-change-to-*` grants via
+     the typed client (UTC-safe dates), preserving credit/limits overrides;
+     `updateTier` preserves stored `null` (unlimited/custom) buckets on partial
+     edits.
+  5. **Verified live:** all three services active; API `/health`+`/ready` OK
+     (database ok); web `/login` 200; superadmin 3012 HTTP 200; new
+     `/superadmin/tiers` + `/superadmin/tenants` return 401 unauthenticated;
+     deployed bundles contain `listTiers`/`changeTenantTier` (API dist) and
+     "Tier management" (superadmin chunk); direct control-plane read smoke test
+     (`listTiers`/`listBilling`/`getTenantTier` against `DATABASE_ADMIN_URL`)
+     returns 5 tenants on STARTER with correct limits/usage; write smoke test
+     (`updateTier` TEAM trialDays 15 → reset to 14; `setTenantLimits` on a test
+     tenant → `resetTenantTier` leaves feature allocation intact by design) and
+     all smoke-test grants/audit rows deleted afterwards; no new journal errors.
+  Rollback: `ln -sfn /opt/donordesk/releases/20260817174622
+  /opt/donordesk/current && systemctl restart donordesk-api donordesk-web
+  donordesk-superadmin` (previous release).
 
 - **2026-08-17 (SuperAdmin Billing & credits — release `20260817180500` API + web, superadmin rebuilt):**
   Deployed API + web via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-api
