@@ -1,6 +1,15 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T21:00+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T21:43+05:00.
+
+> **Deployment (2026-08-18):** **Report Writing Skills full course** — release
+> `20260818162955` (web). Created 16 comprehensive donor-reporting lessons across 3 modules:
+> - Foundation: Report Writing Fundamentals, Indicators & Evidence, Writing Clearly for Donors, Structuring Your Narrative
+> - Donor-Specific: UNHCR, DG ECHO, USAID, Global Fund, GCF, FCDO/Bilateral, EU Grants, Gates Foundation
+> - Tools & Templates: Pre-Report Checklist, Donor Comparison Table, Evidence Inventory Guide, Glossary
+> All markdown source at `memorybank/docs/support/report-writing-skills/`. Wiki route at
+> `apps/web/src/app/support/report-writing-skills/`. Added to wikiCategories, support index, and
+> CategoryNav. Build green, all 16 routes verified 200 on donordesk.online.
 
 > **Deployment (2026-08-18):** **Wiki support routes — FILE_MAP path fix** — release
 > `20260818155600`. Fixed FILE_MAP path mappings where docs use two naming conventions:

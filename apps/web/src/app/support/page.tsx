@@ -115,7 +115,7 @@ const REPORT_SKILL_SUBCATS = [
   {
     label: "Foundation",
     items: ["Report Writing Fundamentals", "Indicators & Evidence", "Writing Clearly for Donors"],
-    href: "/support/report-writing-skills/fundamentals",
+    href: "/support/report-writing-skills/report-writing-fundamentals",
     accent: "bg-amber-500/15 border-amber-400/30",
   },
   {
@@ -127,7 +127,7 @@ const REPORT_SKILL_SUBCATS = [
       "Global Health & Education Funds",
       "Climate & Environmental Funds",
     ],
-    href: "/support/report-writing-skills/donor-specific",
+    href: "/support/report-writing-skills/unhcr-reporting",
     accent: "bg-orange-500/15 border-orange-400/30",
   },
   {
@@ -138,7 +138,7 @@ const REPORT_SKILL_SUBCATS = [
       "Evidence Inventory Template",
       "Report Writing Glossary",
     ],
-    href: "/support/report-writing-skills/tools",
+    href: "/support/report-writing-skills/pre-report-checklist",
     accent: "bg-yellow-500/15 border-yellow-400/30",
   },
 ];

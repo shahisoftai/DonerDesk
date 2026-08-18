@@ -31,6 +31,12 @@ const BillingIcon = () => (
   </svg>
 );
 
+const ReportWritingIcon = () => (
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+  </svg>
+);
+
 export const WIKI_CATEGORIES: WikiCategory[] = [
   {
     name: "Getting Started",
@@ -185,6 +191,31 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
       { title: "Security Best Practices", description: "How to keep your DonorDesk account secure.", href: "/support/security-privacy/security-best-practices" },
       { title: "Data Handling", description: "How DonorDesk collects, stores, and uses your data.", href: "/support/security-privacy/data-handling" },
       { title: "GDPR Compliance", description: "Your rights under GDPR and how DonorDesk complies.", href: "/support/security-privacy/gdpr-compliance" },
+    ],
+  },
+  {
+    name: "Report Writing Skills",
+    slug: "report-writing-skills",
+    icon: <ReportWritingIcon />,
+    description: "Master the art of writing clear, credible, and compelling donor reports.",
+    accentColor: "blue",
+    articles: [
+      { title: "Report Writing Fundamentals", description: "The anatomy of a strong donor report — structure, style, and what makes reports succeed.", href: "/support/report-writing-skills/report-writing-fundamentals" },
+      { title: "Indicators & Evidence", description: "Transform raw indicator data into credible, evidence-backed narratives.", href: "/support/report-writing-skills/indicators-evidence" },
+      { title: "Writing Clearly for Donors", description: "Style, tone, and structure for professional donor communications.", href: "/support/report-writing-skills/writing-clearly" },
+      { title: "Structuring Your Narrative", description: "Build compelling analytical narratives with the CAO framework.", href: "/support/report-writing-skills/narrative-structure" },
+      { title: "UNHCR Reporting", description: "Requirements, themes, and format for UNHCR-funded programmes.", href: "/support/report-writing-skills/unhcr-reporting" },
+      { title: "DG ECHO Reporting", description: "RBM approach, logframe alignment, and DG ECHO's humanitarian principles.", href: "/support/report-writing-skills/dg-echo" },
+      { title: "USAID Reporting", description: "ADS, MEL, QPR format, and USAID's cross-cutting requirements.", href: "/support/report-writing-skills/usaid-reporting" },
+      { title: "Global Fund Reporting", description: "PUDR, dual track financing, and Global Fund's results framework.", href: "/support/report-writing-skills/global-fund" },
+      { title: "GCF Reporting", description: "RMF, ESS compliance, and the Green Climate Fund's requirements.", href: "/support/report-writing-skills/gcf-reporting" },
+      { title: "FCDO and Bilateral Donors", description: "Logframes, VfM analysis, and bilateral donor best practices.", href: "/support/report-writing-skills/fcdo-bilateral" },
+      { title: "EU Grants Reporting", description: "NDICI, the 12 mandatory indicators, and EU financial rules.", href: "/support/report-writing-skills/eu-grants" },
+      { title: "Gates Foundation Reporting", description: "Private foundation dynamics, milestones, and outcome storytelling.", href: "/support/report-writing-skills/gates-foundation" },
+      { title: "Pre-Report Checklist", description: "Use before every submission to catch errors and ensure completeness.", href: "/support/report-writing-skills/pre-report-checklist" },
+      { title: "Donor Comparison Table", description: "Quick-reference guide comparing all major donor frameworks.", href: "/support/report-writing-skills/donor-comparison" },
+      { title: "Evidence Inventory Guide", description: "How to organise, assess, and maintain evidence throughout the project.", href: "/support/report-writing-skills/evidence-inventory" },
+      { title: "Report Writing Glossary", description: "Definitions of all key terms used in donor reporting.", href: "/support/report-writing-skills/glossary" },
     ],
   },
 ];
