@@ -3,6 +3,12 @@
 **Updated:** 2026-08-18
 **Status:** IMPLEMENTED — core (Phases 0–1 + foundation of 2–4) landed 2026-08-16: domain primitives, decimal-safe indicator analyst, semantics inference, generation-run snapshot, structured claim provenance with evidence-hash snapshots, deterministic tiered claim verifier, approval gates, reject/request-changes transition, report-plan/claim/run/mapping persistence, `DONOR_TEMPLATE` export type, API routes, RLS coverage, and tests. LLM-backed planner/writer/verifier and docxtpl rendering in Python workers remain behind the documented swap points. **2026-08-18:** the analyst/narrator contract was enriched for professional donor reports (indicator metadata + target/baseline, previous-period `comparisonValue`, deterministic `performanceEvaluation`, project/period/template context, per-section guidance) — see §17.
 
+> **Next-stage plan:** [`../imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](../imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md)
+> is the canonical phased plan for revision-bound assurance, complete assertion
+> coverage, structured verification, award-specific requirement precedence,
+> submission snapshots, and donor-native rendering. It extends the implemented
+> Feature 20 architecture and must not be implemented as a parallel report stack.
+
 ## 1. Objective
 
 DonorDesk does **not** need a new report-writing engine. It needs completion and wiring of its existing reporting architecture so the system performs the work automatically, surfaces only material exceptions, and asks for human judgment once — at the decision boundary.
