@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ActivityDetailSchema } from "@/lib/server/schemas";
+import { ActivityDetailSchema, EvidenceResponseSchema } from "@/lib/server/schemas";
 import { hasCapability } from "@/lib/server/auth-context";
 import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
@@ -11,6 +11,7 @@ import { ACTIVITY_STATUS_LABEL } from "@/lib/labels";
 import { formatDate } from "@/lib/shared/dates";
 import { ActivityPolishPanel } from "@/features/activities/presentation/ActivityPolishPanel";
 import { ActivityReviewPanel } from "@/features/activities/presentation/ActivityReviewPanel";
+import { ActivityEvidencePanel } from "@/features/activities/presentation/ActivityEvidencePanel";
 
 export const dynamic = "force-dynamic";
 
@@ -34,8 +35,21 @@ export default async function ActivityDetailPage({
   const activity = result.value;
   const attachedEvidenceIds = activity.attachedEvidenceIds ?? [];
 
+  const evidenceResult = await gatewayRequest("/v1/evidence/search", EvidenceResponseSchema, ctx.token, {
+    method: "POST",
+    body: { projectId: resolvedParams.id, pageSize: 100 },
+  });
+  const availableEvidence = evidenceResult.ok
+    ? evidenceResult.value.items.map((e: { id: string; title: string }) => ({
+        id: e.id,
+        label: e.title,
+        checked: attachedEvidenceIds.includes(e.id),
+      }))
+    : [];
+
   const canReview = hasCapability(ctx, "activity.review") && activity.status === "SUBMITTED";
   const canPolish = hasCapability(ctx, "activity.create");
+  const canManageEvidence = hasCapability(ctx, "activity.create");
   const demoMode = process.env.NODE_ENV !== "production";
 
   return (
@@ -83,7 +97,16 @@ export default async function ActivityDetailPage({
         </section>
       )}
 
-      {attachedEvidenceIds.length > 0 && (
+      {canManageEvidence && availableEvidence.length > 0 && (
+        <ActivityEvidencePanel
+          activityId={activity.id}
+          projectId={activity.projectId}
+          attachedEvidenceIds={attachedEvidenceIds}
+          availableEvidence={availableEvidence}
+        />
+      )}
+
+      {!canManageEvidence && attachedEvidenceIds.length > 0 && (
         <section className="card" aria-label="Attached evidence">
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Attached evidence</h2>
           <ul className="mt-2 space-y-1 text-sm">

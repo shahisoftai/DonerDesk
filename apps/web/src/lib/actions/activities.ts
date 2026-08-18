@@ -1,6 +1,6 @@
 "use server";
 
-import { CreateActivityUpdateSchema, ReviewActivitySchema } from "@donordesk/contracts";
+import { CreateActivityUpdateSchema, ReviewActivitySchema, UpdateActivitySchema, AttachEvidenceSchema, DetachEvidenceSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -51,6 +51,69 @@ export async function reviewActivityAction(input: {
     };
   }
   const result = await gatewayRequest("/v1/activities/review", OkResponseSchema, context.token, {
+    method: "POST",
+    body: parsed.data,
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+export type UpdateActivityResult = Result<unknown, AppError>;
+
+export async function updateActivityAction(input: unknown): Promise<UpdateActivityResult> {
+  const context = await requireSession();
+  const parsed = UpdateActivitySchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  return gatewayRequest(`/v1/activities/${parsed.data.activityId}`, OkResponseSchema, context.token, {
+    method: "PATCH",
+    body: parsed.data,
+  });
+}
+
+export type AttachEvidenceResult = Result<undefined, AppError>;
+
+export async function attachEvidenceAction(input: {
+  evidenceId: string;
+  activityId?: string;
+  indicatorId?: string;
+}): Promise<AttachEvidenceResult> {
+  const context = await requireSession();
+  const parsed = AttachEvidenceSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  const result = await gatewayRequest("/v1/activities/attach-evidence", OkResponseSchema, context.token, {
+    method: "POST",
+    body: parsed.data,
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+export type DetachEvidenceResult = Result<undefined, AppError>;
+
+export async function detachEvidenceAction(input: {
+  evidenceId: string;
+  activityId?: string;
+  indicatorId?: string;
+}): Promise<DetachEvidenceResult> {
+  const context = await requireSession();
+  const parsed = DetachEvidenceSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  const result = await gatewayRequest("/v1/activities/detach-evidence", OkResponseSchema, context.token, {
     method: "POST",
     body: parsed.data,
   });

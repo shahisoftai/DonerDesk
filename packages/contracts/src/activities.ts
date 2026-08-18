@@ -32,3 +32,36 @@ export const ReviewActivitySchema = z.object({
   decision: z.enum(["ACCEPT", "REVISE", "REJECT"]),
   notes: z.string().max(2000).optional(),
 });
+
+export const PatchActivitySchema = z.object({
+  summary: z.string().min(1).max(10000).optional(),
+  achievements: z.string().max(5000).optional(),
+  challenges: z.string().max(5000).optional(),
+  lessonsLearned: z.string().max(5000).optional(),
+  nextSteps: z.string().max(5000).optional(),
+  location: z.string().max(200).optional(),
+  indicatorId: z.string().optional(),
+  outputId: z.string().optional(),
+});
+
+export const UpdateActivitySchema = z.object({
+  activityId: z.string().min(1),
+  patch: PatchActivitySchema.optional(),
+  attachEvidenceIds: z.array(z.string()).optional(),
+  detachEvidenceIds: z.array(z.string()).optional(),
+});
+export type UpdateActivityInput = z.infer<typeof UpdateActivitySchema>;
+
+export const AttachEvidenceSchema = z.object({
+  evidenceId: z.string().min(1),
+  activityId: z.string().min(1).optional(),
+  indicatorId: z.string().min(1).optional(),
+});
+export type AttachEvidenceInput = z.infer<typeof AttachEvidenceSchema>;
+
+export const DetachEvidenceSchema = z.object({
+  evidenceId: z.string().min(1),
+  activityId: z.string().min(1).optional(),
+  indicatorId: z.string().min(1).optional(),
+});
+export type DetachEvidenceInput = z.infer<typeof DetachEvidenceSchema>;

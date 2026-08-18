@@ -79,6 +79,9 @@ export * from "./use-cases/activities/polish-activity.js";
 export * from "./use-cases/activities/review-activity.js";
 export * from "./use-cases/activities/list-activities.js";
 export * from "./use-cases/activities/get-activity.js";
+export * from "./use-cases/activities/update-activity.js";
+export * from "./use-cases/activities/attach-evidence.js";
+export * from "./use-cases/activities/detach-evidence.js";
 
 export * from "./use-cases/reporting/create-reporting-period.js";
 export * from "./use-cases/reporting/list-reporting-periods.js";

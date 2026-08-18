@@ -45,6 +45,9 @@ import {
   ReviewActivityHandler,
   ListActivitiesHandler,
   GetActivityHandler,
+  UpdateActivityHandler,
+  AttachEvidenceHandler,
+  DetachEvidenceHandler,
   CreateReportingPeriodHandler,
   ListReportingPeriodsHandler,
   GenerateReportDraftHandler,
@@ -295,6 +298,9 @@ export interface Container {
     reviewActivity: ReviewActivityHandler;
     listActivities: ListActivitiesHandler;
     getActivity: GetActivityHandler;
+    updateActivity: UpdateActivityHandler;
+    attachEvidence: AttachEvidenceHandler;
+    detachEvidence: DetachEvidenceHandler;
     createReportingPeriod: CreateReportingPeriodHandler;
     listReportingPeriods: ListReportingPeriodsHandler;
     generateReportDraft: GenerateReportDraftHandler;
@@ -614,6 +620,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     reviewActivity: new ReviewActivityHandler(activities, audits),
     listActivities: new ListActivitiesHandler(activities),
     getActivity: new GetActivityHandler(activities),
+    updateActivity: new UpdateActivityHandler(activities, evidence, audits),
+    attachEvidence: new AttachEvidenceHandler(evidence, activities, indicatorUpdates, audits),
+    detachEvidence: new DetachEvidenceHandler(evidence, activities, indicatorUpdates, audits),
     createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events),
     listReportingPeriods: new ListReportingPeriodsHandler(periods, calculateReadinessHandler),
     generateReportDraft: new GenerateReportDraftHandler(
