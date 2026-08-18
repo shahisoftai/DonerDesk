@@ -134,7 +134,14 @@ honestly, never presented as production.
   (data completeness):** generated reports now cite the project's real records —
   evidence `extractedText` (Tika-persisted) is chunked into evidence packages, and
   activity narratives + indicator-update comments/dataSource feed the narrator;
-  statement-level sources render in the report workspace. The evidence
+  statement-level sources render in the report workspace. **2026-08-18
+  (professional report generation, release `20260818074405`):** verified findings
+  carry indicator name/type/baseline/target, the previous-period `comparisonValue`,
+  and a deterministic `performanceEvaluation`; the narrator prompt gains
+  project/reporting-period/donor-template context blocks, per-section guidance,
+  indicator target + period-on-period narration, evidence metadata, participant
+  disaggregation, quality-flag caveat language, and a worked example (evidence
+  chunks 8×800; `maxTokens` stays 4096 for the MiniMax timeout constraint). The evidence
   tagger/polisher/checklist handlers remain heuristic-stub backed, and the export
   builder embeds charts but remains otherwise deterministic
   (see `imp/LLM-PROVIDER-WIRING.md`, `Features/19-Tiers-And-Payments.md`).

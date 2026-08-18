@@ -27,6 +27,17 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 > `11-AI-Report-Draft-Generator.md`, `07-Evidence-Library.md`,
 > `14-Export-Module.md`, `19-Tiers-And-Payments.md`, `20-report-gen.md` §15,
 > `../imp/LLM-PROVIDER-WIRING.md`, `../Fixes.md`, and `../SUPERADMIN-PORTAL.md`.
+> **2026-08-18 (professional report generation, release `20260818074405`):**
+> verified findings now carry indicator names/types/baselines/targets, the
+> previous-period `comparisonValue` (was computed but dropped), and a
+> deterministic `performanceEvaluation`; the narrator prompt gains project/
+> reporting-period/donor-template context blocks, per-section guidance
+> (input type, mandatory questions, evidence needs, word limits), indicator
+> target + period-on-period narration, evidence metadata, participant
+> disaggregation, explicit quality-flag caveat language, and a worked example;
+> evidence chunks raised 3×600 → 8×800 chars (`maxTokens` stays 4096 for the
+> MiniMax timeout constraint). See `11-AI-Report-Draft-Generator.md`,
+> `20-report-gen.md` §16–17, `../Fixes.md`, and `../contabo-ops.md` §29.
 
 ## Features
 
@@ -42,7 +53,7 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 | 08 | [AI Evidence Tagging](./08-AI-Evidence-Tagging.md) | Orchestrated (heuristic tagger; real AI provider is a stub) | `packages/infrastructure/src/llm/evidence-tagger.ts`, `packages/contracts/src/strategies/heuristic-rules.json` |
 | 09 | [Activity Update Capture](./09-Activity-Update-Capture.md) | Implemented | `packages/domain/src/entities/ActivityUpdate.ts` |
 | 10 | [Reporting Period Manager](./10-Reporting-Period-Manager.md) | Implemented | `packages/domain/src/entities/ReportingPeriod.ts` |
-| 11 | [AI Report Draft Generator](./11-AI-Report-Draft-Generator.md) | Implemented (real LLM via SuperAdmin MiniMax config; full evidence/activity/indicator context 2026-08-17) | `packages/infrastructure/src/llm/llm-report-draft-generator.ts`, `packages/infrastructure/src/llm/report-draft-generator.ts`, `packages/infrastructure/src/llm/factory.ts`, `packages/infrastructure/src/llm/llm-config-resolver.ts`, `packages/infrastructure/src/ai/evidence-package-builder.ts`, `packages/application/src/use-cases/reporting/generate-report-draft.ts` |
+| 11 | [AI Report Draft Generator](./11-AI-Report-Draft-Generator.md) | Implemented (real LLM via SuperAdmin MiniMax config; full evidence/activity/indicator context 2026-08-17; professional context — indicator metadata/targets, project/period/template, performance gating 2026-08-18) | `packages/infrastructure/src/llm/llm-report-draft-generator.ts`, `packages/infrastructure/src/llm/report-draft-generator.ts`, `packages/infrastructure/src/llm/factory.ts`, `packages/infrastructure/src/llm/llm-config-resolver.ts`, `packages/infrastructure/src/ai/evidence-package-builder.ts`, `packages/application/src/use-cases/reporting/generate-report-draft.ts`, `packages/domain/src/contexts/reporting/verified-finding.ts`, `packages/domain/src/contexts/reporting/indicator-calculator.ts` |
 | 12 | [Missing Evidence and Compliance Checklist](./12-Missing-Evidence-And-Compliance-Checklist.md) | Implemented (auto-generation, templates, bulk ops 2026-08-16) | `packages/domain/src/entities/ChecklistItem.ts` |
 | 13 | [Review and Approval Workflow](./13-Review-And-Approval-Workflow.md) | Implemented | `packages/domain/src/entities/Comment.ts` |
 | 14 | [Export Module](./14-Export-Module.md) | Implemented (report charts embedded in DOCX/PDF 2026-08-17) | `packages/infrastructure/src/export/`, `packages/infrastructure/src/exports/chart-png-renderer.ts` |

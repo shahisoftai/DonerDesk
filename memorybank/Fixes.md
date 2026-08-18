@@ -2,6 +2,45 @@
 
 Record of fixes applied to DonorDesk. Last updated: 2026-08-18.
 
+## AI report generation could not narrate period-over-period change — previous-period value was computed then dropped (2026-08-18)
+
+**Status:** Fixed in release `20260818074405` (deployed, API + web).
+
+**Root cause:** `IndicatorAnalyticsService.computeFindings` computed the
+previous-period finding and passed its value to `computeIndicator` as
+`comparisonPeriodFindingValue`, but `computeIndicator` only stored
+`comparisonPeriodId` in the resulting `VerifiedFinding` — the numeric value was
+silently discarded. The narrator therefore had no way to write "increased from
+500 to 850 since the previous period," and AI drafts could only report the
+current value in isolation.
+
+**Fix:** `computeIndicator` now emits `comparisonValue:
+input.comparisonPeriodFindingValue` into every `VerifiedFinding`. The narrator
+prompt instructs period-on-period narration when a `comparisonValue` is present
+(e.g. "up from 500 in the previous period"), and the stub generator renders the
+previous-period value in its indicator tables and summaries. As part of the same
+release, `VerifiedFinding` also gained optional `indicatorName`, `indicatorType`,
+`baseline`, `target`, resolved `semantics`, and a deterministic
+`performanceEvaluation` (POSITIVE/NEGATIVE/NEUTRAL gated by `evaluatePerformance`)
+so reports can describe progress against targets with evaluative wording only
+where semantics permit. See `Features/20-report-gen.md` §17 and
+`Features/11-AI-Report-Draft-Generator.md`.
+
+## Flaky phase4-security test — tampered donor-portal token could equal the original (2026-08-18)
+
+**Status:** Fixed (test-only, included in release `20260818074405`).
+
+**Root cause:** the "donor portal tokens are tenant-bound and tamper evident"
+test replaced the token's **last character** with `"0"` and asserted the result
+was invalid. The token ends in the last hex character of the 64-char HMAC-SHA256
+signature, which is `"0"` roughly 1/16 of the time — then the "tampered" token
+was byte-identical to the original and the assertion intermittently failed
+(`true !== false`), breaking the release gate.
+
+**Fix:** the test now flips the signature's **first** hex character deterministically
+(`0`↔`1`), guaranteeing a different signature, so the HMAC mismatch check always
+exercises what it intends. Ran 5/5 clean after the fix.
+
 ## Creem webhook could not resolve the tenant for a brand-new subscription (2026-08-18)
 
 **Status:** Fixed in release `20260818053116` (deployed).

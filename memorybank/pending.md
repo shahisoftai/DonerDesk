@@ -1,6 +1,21 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T11:15+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T13:05+05:00.
+
+> **Deployment (2026-08-18):** **Professional AI report generation** shipped in
+> release `20260818074405` (API + web). Verified findings now carry indicator
+> name/type/baseline/target, the previous-period `comparisonValue` (previously
+> computed then dropped), and a deterministic `performanceEvaluation`
+> (POSITIVE/NEGATIVE/NEUTRAL gated by semantics). The narrator prompt gains
+> project/reporting-period/donor-template context blocks, per-section guidance
+> (input type, mandatory questions, evidence needs, word limits), indicator
+> target + period-on-period narration, evidence metadata, participant
+> disaggregation, quality-flag caveat language, and a worked example; evidence
+> chunks raised 3×600 → 8×800 chars (`maxTokens` stays 4096 for the MiniMax
+> timeout constraint). Also fixed a flaky `phase4-security` token-tamper test.
+> Full gate green (241 tests, 0 failures); deployed and verified live. See
+> `Features/20-report-gen.md` §17, `Features/11-AI-Report-Draft-Generator.md`,
+> `Fixes.md`, and `contabo-ops.md` §29.
 
 > **Deployment (2026-08-18):** **Feature 19 — Creem billing is live in test
 > mode.** Release `20260818053116` shipped Phase 4 reconciliation (all five
@@ -329,6 +344,14 @@ actually supports; unsupported controls are omitted rather than simulated.
   text persisted as `EvidenceFile.extractedText` via the Tika `evidence_parse` flow
   and cited through `EvidencePackageBuilder`; activity + indicator-update narrative
   context now feeds the generator; statement-level sources render in the workspace)
+- [x] **Previous-period comparison text (2026-08-18)** — `VerifiedFinding.comparisonValue`
+  is emitted by `computeIndicator` (was computed then dropped) and the narrator
+  describes period-on-period change; indicator names/types/baselines/targets,
+  deterministic `performanceEvaluation` gating, project/period/donor-template
+  context blocks, per-section guidance (input type, mandatory questions, evidence
+  needs, word limits), evidence metadata, participant disaggregation, and a
+  worked example also shipped (release `20260818074405`). See
+  `Features/20-report-gen.md` §17.
 - [ ] Unsupported claim warning UI
 - [ ] Executive summary auto-generation
 - [ ] Donor-specific tone adjustment

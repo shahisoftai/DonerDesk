@@ -155,18 +155,44 @@ interface SourceReference {
   - The stub narrates activity records/achievements/challenges/lessons verbatim and
     attaches evidence chunks to claims; the LLM prompt includes
     `# Activity Records`, `# Indicator Updates`, and expanded `# Evidence Packages`
-    (first 3 chunks, 600 chars each) and mandates per-section `sourceReferences`.
+    (first 8 chunks, 800 chars each) and mandates per-section `sourceReferences`.
   - The report workspace renders statement-level sources (claim evidence chips +
     verification status); `ReportGenerationRun` snapshots `activityIds`.
+- **Professional report context (2026-08-18, deployed `20260818074405`):** the
+  narrator now receives the context a professional donor report needs:
+  - `VerifiedFinding` enrichment — each finding carries `indicatorName`,
+    `indicatorType`, `baseline`, `target`, the resolved `semantics`, the
+    previous-period `comparisonValue` (previously computed by the analyst but
+    dropped by `computeIndicator`), and a deterministic `performanceEvaluation`
+    (`POSITIVE`/`NEGATIVE`/`NEUTRAL`, gated by `evaluatePerformance` so evaluative
+    wording is only ever produced from resolved semantics + a baseline/target).
+  - `GenerateReportDraftInput.reportContext` — an optional snapshot of the
+    **project** (title, code, donor, implementing/partner organizations, country,
+    region, district, sector, duration, budget, description, reporting frequency),
+    the **reporting period** (report type, dates, deadlines, readiness score,
+    days until deadline), and the **donor template** (name/version, donor,
+    language, required annexes, notes) — built by `GenerateReportDraftHandler`.
+  - Prompt additions: `# Project Context` / `# Reporting Period` / `# Donor
+    Template` blocks, per-section guidance (input type, mandatory questions,
+    evidence needs, word limits, related logframe element), formatting rules,
+    indicator names + target progress + period-on-period narration, evidence
+    metadata (`evidenceType`, `verificationStatus`, `confidentialityLevel`),
+    participant disaggregation (male/female/children/disability), explicit
+    quality-flag caveat language per flag, performance-evaluation gating rules,
+    and a worked example section in the system prompt.
+  - `maxTokens` deliberately stays **4096** (the §29 contabo-ops record documents
+    that 8192 caused MiniMax timeouts and burned credits via stub fallback).
+  - The stub generator narrates indicator names, targets, previous-period
+    comparisons, and performance hints in its tables and summaries.
 
 ## Status
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Report Draft CRUD | Implemented | Full lifecycle |
-| AI Generation | Implemented | Real LLM via SuperAdmin MiniMax/DeepSeek config; stub fallback free + never billed (2026-08-17) |
+| AI Generation | Implemented | Real LLM via SuperAdmin MiniMax/DeepSeek config; stub fallback free + never billed (2026-08-17); professional context enrichment (indicator metadata/targets, project/period/template context, period-over-period narration, performance gating) 2026-08-18 |
 | Section Editing | Implemented | Rich text |
-| Source References | Implemented | Populated from activities/indicators/evidence; statement-level sources rendered in the workspace (2026-08-17) |
+| Source References | Implemented | Populated from activities/indicators/evidence; statement-level sources rendered in the workspace (2026-08-17); indicator labels include human-readable names (2026-08-18) |
 | Unsupported Claims | Implemented | Flagged per section and surfaced in compliance |
 | AI Rewrite/Shorten | Implemented | Real LLM rewrite via configured provider; tolerates plain-text output (2026-08-17) |
 | Donor-friendly Mode | Implemented (heuristic) | Audience-aware rewrite in the section editor (2026-08-16) |
@@ -178,10 +204,11 @@ interface SourceReference {
 - [x] Wire real LLM provider for generation (2026-08-17 — SuperAdmin MiniMax/DeepSeek)
 - [x] Actual source reference population from evidence (2026-08-17 — extracted text
   persisted + cited; activity/indicator narrative context in the generation input)
+- [x] Previous period comparison text (2026-08-18 — `VerifiedFinding.comparisonValue`
+  is no longer dropped and the narrator describes period-on-period change)
 - [ ] Unsupported claim warning UI
 - [ ] AI regenerate individual sections
 - [ ] AI tone adjustment (donor-specific)
-- [ ] Previous period comparison text
 - [ ] Indicator table auto-insertion
 - [ ] Executive summary auto-generation
 - [ ] Risk and mitigation section suggestions

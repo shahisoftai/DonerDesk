@@ -73,10 +73,17 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 6 | Review, approval, export (REV, EXP) | ✅ Delivered | [`imp/PHASE6-FRONTEND-REPORT.md`](imp/PHASE6-FRONTEND-REPORT.md) |
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
- > **Deployment status (2026-08-18):** Latest release `20260818061120` (commit
- > `6315a2c`) is live on `donordesk.online`. All five services (API `4001`, web
+ > **Deployment status (2026-08-18):** Latest release `20260818074405` (commit
+ > `6bc6443`, **professional AI report generation**) is live on `donordesk.online`.
+ > All five services (API `4001`, web
  > `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`) are **enabled
- > and active**. **Feature 19 — Creem billing is live in test mode**: Phase 4
+ > and active**. **Professional report generation (2026-08-18):** verified
+ > findings carry indicator name/type/baseline/target, the previous-period
+ > `comparisonValue`, and a deterministic `performanceEvaluation`; the narrator
+ > prompt gains project/reporting-period/donor-template context blocks,
+ > per-section guidance, indicator target + period-on-period narration, evidence
+ > metadata, participant disaggregation, quality-flag caveat language, and a
+ > worked example. **Feature 19 — Creem billing is live in test mode**: Phase 4
  > reconciliation handlers + shared `BillingSubscriptionSynchronizer` +
  > `/internal/billing/*` Kestra routes, webhook tenant resolution from checkout
  > metadata, and the `/thanks` checkout return page (release `20260818053116`);
@@ -92,7 +99,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
  > section (per-tenant allowance Set/Increase/Reduce + reset month usage), plus
  > credit/timeout/section-switching fixes. Migrations applied through
  > `20260817210000_plan_catalog_override`. See `Features/19-Tiers-And-Payments.md`,
- > `Fixes.md`, and `contabo-ops.md` §29. **Gated (not deployed):** the five
+ > `Features/20-report-gen.md` §15–17, `Fixes.md`, and `contabo-ops.md` §29. **Gated (not deployed):** the five
  > plugin-referencing Kestra flows and plugin JARs (stage/verify against
  > Kestra 1.3.30 + add the `donordesk` datasource first). See `contabo-ops.md` §28
  > and `imp/KESTRA-PLUGINS.md`.

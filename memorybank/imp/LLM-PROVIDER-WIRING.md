@@ -144,14 +144,18 @@ overridable via SuperAdmin config, which is the production path.
     data; never compute, aggregate, or invent numbers; report `qualityFlags`
     verbatim; return JSON.
   - User prompt: serialised `ReportPlan` sections, `VerifiedFinding[]`,
-    `EvidencePackage[]` (id/title/chunks — first 3 chunks, 600 chars each),
+    `EvidencePackage[]` (id/title/chunks — first 8 chunks, 800 chars each),
     `ActivityGenerationContext[]` (full narrative: summary, achievements,
-    challenges, lessonsLearned, nextSteps, participants, location, linked
+    challenges, lessonsLearned, nextSteps, participants — including
+    male/female/children/disability disaggregation — location, linked
     evidence), `IndicatorUpdateGenerationContext[]` (period/cumulative
     achievements, comments, dataSource, linked evidence),
-    `ReportingProfileSnapshot` (tone/language/rules), and the section titles to
-    draft. The narrative MUST draw on the activity records and indicator
-    updates, and every section MUST list its source references.
+    `ReportingProfileSnapshot` (tone/language/rules), the section titles to
+    draft, an optional `ReportGenerationContext` (project / reporting period /
+    donor template), and per-section guidance (input type, mandatory questions,
+    evidence needs, word limits). The narrative MUST draw on the activity records
+    and indicator updates, describe indicators by name and against target, and
+    every section MUST list its source references.
   - Output schema:
     ```json
     { "sections": [ { "title": "...", "content": "...",
@@ -178,6 +182,21 @@ overridable via SuperAdmin config, which is the production path.
 > `# Activity Records` and `# Indicator Updates` sections and mandates per-section
 > `sourceReferences`. See `../Features/11-AI-Report-Draft-Generator.md` and
 > `../Fixes.md`.
+>
+> **2026-08-18 (professional context):** `VerifiedFinding` now carries
+> `indicatorName`, `indicatorType`, `baseline`, `target`, resolved `semantics`,
+> the previous-period `comparisonValue` (was computed then dropped), and a
+> deterministic `performanceEvaluation` (POSITIVE/NEGATIVE/NEUTRAL gated by
+> `evaluatePerformance`). The prompt adds `# Project Context` / `# Reporting
+> Period` / `# Donor Template` blocks, formatting rules, per-section guidance
+> (input type, mandatory questions, evidence needs, word limits, related logframe
+> element), indicator-name + target + period-on-period narration instructions,
+> evidence metadata (type/verification/confidentiality), participant
+> disaggregation, quality-flag caveat language, performance-evaluation gating
+> rules, and a worked example in the system prompt. Evidence chunks raised to 8 ×
+> 800 chars; `maxTokens` stays **4096** (see the timeout record in
+> `../contabo-ops.md` §29). Deployed `20260818074405`. See
+> `../Features/20-report-gen.md` §17.
 
 ## 8. Container wiring (container.ts, synchronous)
 

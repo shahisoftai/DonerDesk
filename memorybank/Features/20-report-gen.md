@@ -1,7 +1,7 @@
 # Feature 20: Report Intelligence Engine — Implementation Plan
 
-**Updated:** 2026-08-16
-**Status:** IMPLEMENTED — core (Phases 0–1 + foundation of 2–4) landed 2026-08-16: domain primitives, decimal-safe indicator analyst, semantics inference, generation-run snapshot, structured claim provenance with evidence-hash snapshots, deterministic tiered claim verifier, approval gates, reject/request-changes transition, report-plan/claim/run/mapping persistence, `DONOR_TEMPLATE` export type, API routes, RLS coverage, and tests. LLM-backed planner/writer/verifier and docxtpl rendering in Python workers remain behind the documented swap points.
+**Updated:** 2026-08-18
+**Status:** IMPLEMENTED — core (Phases 0–1 + foundation of 2–4) landed 2026-08-16: domain primitives, decimal-safe indicator analyst, semantics inference, generation-run snapshot, structured claim provenance with evidence-hash snapshots, deterministic tiered claim verifier, approval gates, reject/request-changes transition, report-plan/claim/run/mapping persistence, `DONOR_TEMPLATE` export type, API routes, RLS coverage, and tests. LLM-backed planner/writer/verifier and docxtpl rendering in Python workers remain behind the documented swap points. **2026-08-18:** the analyst/narrator contract was enriched for professional donor reports (indicator metadata + target/baseline, previous-period `comparisonValue`, deterministic `performanceEvaluation`, project/period/template context, per-section guidance) — see §17.
 
 ## 1. Objective
 
@@ -242,6 +242,17 @@ export interface VerifiedFinding {
   computedAt: Date;
 }
 ```
+
+> **Implementation note (2026-08-18):** the live `VerifiedFinding` extends the
+> spec above with **optional** enrichment snapshots so narrators can describe
+> progress and change without recomputing anything: `indicatorName`,
+> `indicatorType`, `baseline`, `target`, `semantics` (resolved
+> `IndicatorSemantics`), `comparisonValue` (previous-period value), and
+> `performanceEvaluation` (`PerformanceEvaluation` — POSITIVE/NEGATIVE/NEUTRAL
+> produced deterministically by `evaluatePerformance`). All enrichment fields are
+> optional for backward compatibility with persisted generation-run snapshots and
+> are always populated by the live analyst. `PerformanceEvaluation` lives in
+> `verified-finding.ts` and is re-exported from `indicator-calculator.ts`.
 
 All arithmetic uses decimal-safe math (integer minor-unit scaling or a decimal library) — **never raw JavaScript floating point**.
 
@@ -676,3 +687,60 @@ Verification: `pnpm -r typecheck` and `pnpm -r build` pass; 74 infrastructure
 tests + 32 workers tests pass. Requires migration
 `20260817200000_evidence_extracted_text` on deploy; existing evidence rows get
 `extractedText` when the `evidence_parse` flow re-runs for them.
+
+## 17. Professional report context — indicator metadata, project/period/template, performance gating (IMPLEMENTED 2026-08-18)
+
+Deep review of the AI report pipeline found the narrator received thin findings
+(code + value only), no project/donor context, no targets/baselines, and no
+previous-period values — so drafts could not describe "IND-001 (Beneficiaries
+trained) reached 85% of its 1,000 target, up from 500 last period." Fixed
+end-to-end (release `20260818074405`, API + web; see `../Fixes.md`):
+
+1. **Indicator metadata reaches the finding.**
+   - `VerifiedFinding` gains optional `indicatorName`, `indicatorType`,
+     `baseline`, `target`, and `semantics`; `computeIndicator` emits them from
+     the `Indicator` definition.
+   - **Bug fix:** the analyst computed the previous-period value
+     (`comparisonPeriodFindingValue`) but `computeIndicator` only stored
+     `comparisonPeriodId` — the value was silently dropped. It is now emitted as
+     `comparisonValue`, so narrators can state "up from X in the previous period".
+2. **Deterministic performance gating.**
+   - `computeIndicator` now calls `evaluatePerformance` (pure, direction-aware)
+     and emits `performanceEvaluation` (`POSITIVE`/`NEGATIVE`/`NEUTRAL`). The
+     narrator is allowed evaluative wording only when the finding permits it;
+     `NEUTRAL`/unresolved always stays descriptive — preserving the
+     "0 evaluative statements from unresolved semantics" invariant from §2.6.
+3. **Project/period/template context.**
+   - `GenerateReportDraftInput` gains optional `reportContext`
+     (`ReportGenerationContext`: project identity/geography/sector/duration/
+     budget/description/reporting frequency; reporting period type/dates/
+     deadlines/readiness; donor template name/version/language/required annexes/
+     notes). `GenerateReportDraftHandler.buildReportContext` threads the real
+     domain entities; legacy callers without the field degrade gracefully.
+4. **Prompt engineering.**
+   - `# Project Context`, `# Reporting Period`, and `# Donor Template` blocks;
+     formatting rules surfaced from the profile.
+   - Per-section guidance: input type (NARRATIVE/TABLE/ANNEX/INDICATOR_TABLE/
+     COMPLIANCE), mandatory questions, evidence needs, word limits, related
+     logframe element — so INDICATOR_TABLE sections are tables, ANNEX sections
+     list files, COMPLIANCE sections state compliance status.
+   - Evidence packages carry `evidenceType`, `verificationStatus`,
+     `confidentialityLevel` and are truncated at **8 chunks × 800 chars** (was
+     3 × 600).
+   - Activity records carry participant disaggregation
+     (male/female/children/disability).
+   - Quality flags map to explicit caveat language (LOW_COVERAGE → "based on
+     partial records"; NEEDS_REVIEW → "requires verification"; etc.).
+   - System prompt gains a worked example section.
+5. **Stub parity.** The stub narrator now shows indicator names, targets,
+   previous-period values, and performance hints in summaries and tables.
+6. **No timeout regression.** `maxTokens` stays **4096** (see §29 change log in
+   `../contabo-ops.md`: 8192 caused MiniMax timeouts that burned credits via stub
+   fallback). The larger prompt fits the 120 s MiniMax adapter + 180 s web-gateway
+   budgets already in production.
+
+Verification: full release gate green (`pnpm -r typecheck`, `pnpm -r build`,
+241 tests across contracts/domain/application/infrastructure/api with 0
+failures); release-package smoke tests passed; deployed `20260818074405` and
+verified live — deployed dist contains the enriched prompt + `buildReportContext`
+handler, `/health` + `/ready` OK, web `/login` 200, no journal errors.
