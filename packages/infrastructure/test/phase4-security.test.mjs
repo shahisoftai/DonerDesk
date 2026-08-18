@@ -38,5 +38,8 @@ test("donor portal tokens are tenant-bound and tamper evident", () => {
   });
   assert.equal(service.verifySignedUrl(signed.token, "tenant-a").valid, true);
   assert.equal(service.verifySignedUrl(signed.token, "tenant-b").valid, false);
-  assert.equal(service.verifySignedUrl(`${signed.token.slice(0, -1)}0`, "tenant-a").valid, false);
+  const sig = signed.token.slice(-64);
+  const flippedSig = (sig[0] === "0" ? "1" : "0") + sig.slice(1);
+  const tampered = `${signed.token.slice(0, -64)}${flippedSig}`;
+  assert.equal(service.verifySignedUrl(tampered, "tenant-a").valid, false);
 });

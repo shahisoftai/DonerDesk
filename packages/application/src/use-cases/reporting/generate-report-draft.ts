@@ -14,6 +14,7 @@ import type {
   IReportClaimRepository,
   IEvidencePackageBuilder,
   ReportingProfileSnapshot,
+  ReportGenerationContext,
 } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
@@ -284,6 +285,7 @@ export class GenerateReportDraftHandler {
             indicatorUpdates,
             reportingProfileSnapshot,
             generationRunId: run.id,
+            reportContext: this.buildReportContext(project, period, template?.ok && template.value ? template.value : undefined),
           })
         : { sections: this.buildManualSections(plan.sections), usedFallback: true };
       generated = result.sections;
@@ -462,6 +464,53 @@ export class GenerateReportDraftHandler {
       billableUnits: status === "success" ? 1 : 0,
       requestId: `${reportingPeriodId}:${Date.now()}`,
     });
+  }
+
+  private buildReportContext(
+    project: { title: string; projectCode: string; donorName: string; implementingOrganization: string; partnerOrganization?: string; country: string; region?: string; district?: string; sector: string; duration: { start: Date; end: Date }; budget?: { amount: number; currency: string } | null; reportingFrequency: string; description?: string },
+    period: { reportType: string; duration: { start: Date; end: Date }; deadline: Date; internalReviewDeadline?: Date; readinessScore: number; daysUntilDeadline(): number },
+    template?: { templateName: string; donorName: string; language: string; requiredAnnexes: string[]; notes?: string; version: number } | undefined,
+  ): ReportGenerationContext {
+    const startDate = project.duration.start.toISOString();
+    const endDate = project.duration.end.toISOString();
+    return {
+      project: {
+        title: project.title,
+        projectCode: project.projectCode,
+        donorName: project.donorName,
+        implementingOrganization: project.implementingOrganization,
+        partnerOrganization: project.partnerOrganization,
+        country: project.country,
+        region: project.region,
+        district: project.district,
+        sector: project.sector,
+        startDate,
+        endDate,
+        description: project.description,
+        budgetAmount: project.budget?.amount,
+        budgetCurrency: project.budget?.currency,
+        reportingFrequency: project.reportingFrequency,
+      },
+      period: {
+        reportType: period.reportType,
+        startDate: period.duration.start.toISOString(),
+        endDate: period.duration.end.toISOString(),
+        deadline: period.deadline.toISOString(),
+        internalReviewDeadline: period.internalReviewDeadline?.toISOString(),
+        readinessScore: period.readinessScore,
+        daysUntilDeadline: period.daysUntilDeadline(),
+      },
+      template: template
+        ? {
+            templateName: template.templateName,
+            donorName: template.donorName,
+            language: template.language,
+            requiredAnnexes: template.requiredAnnexes,
+            notes: template.notes,
+            version: template.version,
+          }
+        : undefined,
+    };
   }
 
   private buildManualSections(planSections: Array<{ templateSectionId: string; title: string }>): Array<{

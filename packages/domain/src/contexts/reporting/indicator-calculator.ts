@@ -1,6 +1,6 @@
 import type { IndicatorType } from "../logframe/indicator.js";
 import type { IndicatorSemantics } from "../logframe/indicator-semantics.js";
-import type { FindingQualityFlag, VerifiedFinding } from "./verified-finding.js";
+import type { FindingQualityFlag, PerformanceEvaluation, VerifiedFinding } from "./verified-finding.js";
 import { buildCalculationMethod } from "./verified-finding.js";
 
 // ---------------------------------------------------------------------------
@@ -120,6 +120,8 @@ export interface IndicatorCalculationInput {
   unit?: string;
   baseline?: string;
   target?: string;
+  /** Human-readable indicator name, carried through to the finding for narration. */
+  indicatorName?: string;
   semantics: IndicatorSemantics;
   disaggregationRequired: boolean;
   updates: IndicatorUpdateRecord[];
@@ -247,12 +249,26 @@ export function computeIndicator(input: IndicatorCalculationInput): VerifiedFind
     ? verified.map((u) => u.id)
     : input.updates.map((u) => u.id);
 
+  const performanceEvaluation = evaluatePerformance({
+    value: computed,
+    baseline: input.baseline,
+    target: input.target,
+    semantics: input.semantics,
+  });
+
   return {
     indicatorId: input.indicatorId,
     indicatorCode: input.indicatorCode,
+    indicatorName: input.indicatorName,
+    indicatorType: input.indicatorType,
+    baseline: input.baseline,
+    target: input.target,
     value: computed,
     unit: input.unit,
     calculationMethod: buildCalculationMethod(input.semantics.aggregation, input.semantics.direction, input.semantics.reportingBasis),
+    semantics: input.semantics,
+    comparisonValue: input.comparisonPeriodFindingValue,
+    performanceEvaluation,
     reportingPeriodId: "",
     comparisonPeriodId: input.comparisonPeriodId,
     sourceRecordIds,
@@ -265,10 +281,7 @@ export function computeIndicator(input: IndicatorCalculationInput): VerifiedFind
 // Direction-aware narrative gating
 // ---------------------------------------------------------------------------
 
-export type PerformanceEvaluation =
-  | { type: "NEUTRAL"; detail: string }
-  | { type: "POSITIVE"; detail: string }
-  | { type: "NEGATIVE"; detail: string };
+export type { PerformanceEvaluation } from "./verified-finding.js";
 
 /**
  * Evaluates whether an evaluative statement may be produced for a finding.

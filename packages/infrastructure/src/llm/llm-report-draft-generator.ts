@@ -29,6 +29,7 @@ function buildSystemPrompt(): string {
     "You MUST only describe data that appears verbatim in the provided verified findings or evidence.",
     "You MUST NOT compute, aggregate, extrapolate, or infer any numbers not present in the input.",
     "You MUST NOT use evaluative language (positive/negative) for indicators with unresolved semantics.",
+    "You may only use evaluative wording (favourable/unfavourable) when the finding's performanceEvaluation permits it.",
     "Output STRICT JSON matching the schema below. No markdown fences, no extra text.",
     "JSON schema:",
     `{`,
@@ -47,6 +48,26 @@ function buildSystemPrompt(): string {
     `    }`,
     `  ]`,
     `}`,
+    ``,
+    `Worked example (a narrator would produce this section for an executive summary):`,
+    `{`,
+    `  "sections": [`,
+    `    {`,
+    `      "title": "Executive Summary",`,
+    `      "content": "During the reporting period the project delivered 30 training sessions reaching 850 beneficiaries. IND-001 (Beneficiaries trained) reached 85% of its target of 1,000, up from 500 in the previous period. No significant challenges were recorded.",`,
+    `      "claims": [`,
+    `        { "text": "850 beneficiaries were trained during the period", "type": "NUMERIC", "proposedSources": [{ "evidenceId": "ev-1", "chunkId": "ev-1:0", "sourceText": "Attendance register" }] }`,
+    `      ],`,
+    `      "sourceReferences": [`,
+    `        { "type": "indicator", "id": "ind-1", "label": "IND-001" },`,
+    `        { "type": "activity", "id": "act-1", "label": "Training session" },`,
+    `        { "type": "evidence", "id": "ev-1", "label": "Attendance register" }`,
+    `      ]`,
+    `    }`,
+    `  ]`,
+    `}`,
+    ``,
+    `Note: the example narrative is illustrative; only write what the provided verified findings, indicator updates, and evidence actually support.`,
   ].join("\n");
 }
 
@@ -65,13 +86,79 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
     .map((s) => `- ${s.title}`)
     .join("\n");
 
+  const ctx = input.reportContext;
+
+  const projectBlock = ctx?.project
+    ? [
+        `# Project Context`,
+        `- Project: ${ctx.project.title} (${ctx.project.projectCode})`,
+        `- Donor: ${ctx.project.donorName}`,
+        `- Implementing Organization: ${ctx.project.implementingOrganization}`,
+        ctx.project.partnerOrganization ? `- Partner Organization: ${ctx.project.partnerOrganization}` : null,
+        `- Country: ${ctx.project.country}`,
+        [ctx.project.region, ctx.project.district].filter(Boolean).join(", ")
+          ? `- Location: ${[ctx.project.region, ctx.project.district].filter(Boolean).join(", ")}`
+          : null,
+        `- Sector: ${ctx.project.sector}`,
+        `- Project Duration: ${ctx.project.startDate} to ${ctx.project.endDate}`,
+        ctx.project.description ? `- Project Description: ${ctx.project.description}` : null,
+        ctx.project.budgetAmount !== undefined && ctx.project.budgetAmount !== null
+          ? `- Budget: ${ctx.project.budgetAmount} ${ctx.project.budgetCurrency ?? "USD"}`
+          : null,
+        `- Reporting Frequency: ${ctx.project.reportingFrequency}`,
+        ``,
+      ]
+    : [];
+
+  const periodBlock = ctx?.period
+    ? [
+        `# Reporting Period`,
+        `- Report Type: ${ctx.period.reportType}`,
+        `- Period: ${ctx.period.startDate} to ${ctx.period.endDate}`,
+        ctx.period.deadline ? `- Submission Deadline: ${ctx.period.deadline}` : null,
+        ctx.period.internalReviewDeadline ? `- Internal Review Deadline: ${ctx.period.internalReviewDeadline}` : null,
+        ctx.period.readinessScore !== undefined && ctx.period.readinessScore !== null
+          ? `- Readiness Score: ${ctx.period.readinessScore}/100`
+          : null,
+        ``,
+      ]
+    : [];
+
+  const templateBlock = ctx?.template
+    ? [
+        `# Donor Template`,
+        `- Template: ${ctx.template.templateName} (v${ctx.template.version})`,
+        `- Donor: ${ctx.template.donorName}`,
+        `- Template Language: ${ctx.template.language}`,
+        ctx.template.requiredAnnexes.length > 0
+          ? `- Required Annexes: ${ctx.template.requiredAnnexes.join(", ")}`
+          : null,
+        ctx.template.notes ? `- Template Notes: ${ctx.template.notes}` : null,
+        ``,
+      ]
+    : [];
+
   const findingsJson = JSON.stringify(
     input.verifiedFindings.map((f) => ({
       indicatorId: f.indicatorId,
       indicatorCode: f.indicatorCode,
+      indicatorName: f.indicatorName ?? null,
+      indicatorType: f.indicatorType ?? null,
+      baseline: f.baseline ?? null,
+      target: f.target ?? null,
       value: f.value,
       unit: f.unit ?? null,
       calculationMethod: f.calculationMethod,
+      semantics: f.semantics
+        ? {
+            aggregation: f.semantics.aggregation,
+            direction: f.semantics.direction,
+            reportingBasis: f.semantics.reportingBasis,
+            status: f.semantics.status,
+          }
+        : null,
+      comparisonValue: f.comparisonValue ?? null,
+      performanceEvaluation: f.performanceEvaluation ?? null,
       qualityFlags: f.qualityFlags,
       reportingPeriodId: f.reportingPeriodId,
       comparisonPeriodId: f.comparisonPeriodId ?? null,
@@ -83,7 +170,10 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
     input.evidencePackages.map((p) => ({
       evidenceId: p.evidenceId,
       title: p.title,
-      chunks: p.chunks.slice(0, 3).map((c) => ({ chunkId: c.chunkId, text: c.text.slice(0, 600) })),
+      evidenceType: p.evidenceType,
+      verificationStatus: p.verificationStatus,
+      confidentialityLevel: p.confidentialityLevel,
+      chunks: p.chunks.slice(0, 8).map((c) => ({ chunkId: c.chunkId, text: c.text.slice(0, 800) })),
     })),
     null,
   );
@@ -95,6 +185,10 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
       activityDate: a.activityDate.toISOString().slice(0, 10),
       location: a.location ?? null,
       participantsTotal: a.participantsTotal ?? null,
+      participantsMale: a.participantsMale ?? null,
+      participantsFemale: a.participantsFemale ?? null,
+      participantsChildren: a.participantsChildren ?? null,
+      participantsDisability: a.participantsDisability ?? null,
       summary: a.summary,
       achievements: a.achievements,
       challenges: a.challenges,
@@ -120,6 +214,27 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
     null,
   );
 
+  const sectionGuidance = input.reportPlan.sections
+    .map((s) => {
+      const parts: string[] = [`Input type: ${s.inputType ?? "NARRATIVE"}`];
+      if (s.wordLimit?.min !== undefined) parts.push(`min ${s.wordLimit.min} words`);
+      if (s.wordLimit?.max !== undefined) parts.push(`max ${s.wordLimit.max} words`);
+      const lines = [`- ${s.title} (${parts.join(", ")})`];
+      if (s.mandatoryQuestions && s.mandatoryQuestions.length > 0) {
+        lines.push(`  Mandatory questions: ${s.mandatoryQuestions.join("; ")}`);
+      }
+      if (s.evidenceNeeds && s.evidenceNeeds.length > 0) {
+        lines.push(`  Evidence needs: ${s.evidenceNeeds.join("; ")}`);
+      }
+      if (s.relatedLogframeElement) {
+        lines.push(`  Related logframe element: ${s.relatedLogframeElement}`);
+      }
+      return lines.join("\n");
+    })
+    .join("\n");
+
+  const formattingRules = (profile.formattingRules ?? []).filter(Boolean);
+
   return [
     `# Report Drafting Request`,
     `# Required sections: ${input.reportPlan.sections.length}`,
@@ -127,6 +242,13 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
     ``,
     `# Tone: ${toneInstruction}`,
     `# Language: ${profile.language}`,
+    ...(formattingRules.length > 0 ? [``, `# Formatting Rules`, ...formattingRules.map((r) => `- ${r}`)] : []),
+    ``,
+    ...projectBlock,
+    ...periodBlock,
+    ...templateBlock,
+    `# Section Guidance`,
+    sectionGuidance,
     ``,
     `# Report Plan`,
     JSON.stringify(input.reportPlan, null, 2),
@@ -145,13 +267,27 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
     ``,
     `# Instructions`,
     `Draft all sections. For each section, produce narrative content and structured claims.`,
+    `Use the Project Context, Reporting Period, and Donor Template blocks to frame the report correctly.`,
     `Narrative MUST draw on the activity records and indicator updates provided, and MUST cite evidence:`,
-    `- Use activity titles, dates, locations and participant counts from the Activity Records.`,
+    `- Use activity titles, dates, locations and participant counts (including disaggregation) from the Activity Records.`,
     `- Use recorded achievements, challenges, lessons learned and next steps verbatim from activity updates.`,
     `- Use indicator comments and data sources from the Indicator Updates as context.`,
+    `- Describe each indicator by its name and code. When a target exists, describe progress against the target using only the target and value provided.`,
+    `- When a comparisonValue exists, describe the period-on-period change using only the values provided (e.g. "up from 500 in the previous period").`,
     `Claims must reference evidence by evidenceId and chunkId from the evidence packages above.`,
     `Every section MUST list its source references: indicators, evidence files, and activities actually used.`,
-    `Quality flags on findings (e.g. LOW_COVERAGE, NEEDS_REVIEW) should be noted as caveats in the narrative.`,
+    `Honour the per-section input type: INDICATOR_TABLE sections must be tables, ANNEX sections must list annexed files, COMPLIANCE sections must state compliance status against the template requirements.`,
+    `Performance evaluation guidance (from verified findings):`,
+    `- When performanceEvaluation.type is POSITIVE, you may describe the outcome favourably while remaining factual.`,
+    `- When performanceEvaluation.type is NEGATIVE, you may describe the outcome as below expectation while remaining factual.`,
+    `- When performanceEvaluation.type is NEUTRAL or absent, use strictly descriptive language with no positive or negative judgement.`,
+    `Quality flags on findings should be noted as caveats in the narrative:`,
+    `- LOW_COVERAGE: use qualifying language such as "based on partial records" or "preliminary data".`,
+    `- MISSING_DENOMINATOR: note that the denominator could not be established.`,
+    `- MISSING_DISAGGREGATION: note that disaggregated data was not recorded.`,
+    `- STALE: note that the underlying records predate the reporting period.`,
+    `- UNIT_MISMATCH: note inconsistent units across source records.`,
+    `- NEEDS_REVIEW: flag the item as requiring verification before finalization.`,
     `Return only JSON conforming to the schema. No preamble, no commentary.`,
   ].join("\n");
 }

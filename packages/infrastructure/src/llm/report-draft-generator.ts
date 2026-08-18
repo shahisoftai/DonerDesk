@@ -86,8 +86,9 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
           : undefined;
       })
       .filter((s): s is NonNullable<typeof s> => s !== undefined);
+    const label = finding.indicatorName ? `${finding.indicatorCode} (${finding.indicatorName})` : finding.indicatorCode;
     return {
-      text: `${finding.indicatorCode}: ${finding.value}${finding.unit ? ` ${finding.unit}` : ""} reported for the period`,
+      text: `${label}: ${finding.value}${finding.unit ? ` ${finding.unit}` : ""} reported for the period`,
       type: "NUMERIC",
       proposedSources: sources,
     };
@@ -140,7 +141,7 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
       content: lines.join("\n\n"),
       claims,
       sourceReferences: [
-        ...findings.slice(0, 5).map((f) => ({ type: "indicator" as const, id: f.indicatorId, label: f.indicatorCode })),
+        ...findings.slice(0, 5).map((f) => ({ type: "indicator" as const, id: f.indicatorId, label: f.indicatorName ? `${f.indicatorCode} (${f.indicatorName})` : f.indicatorCode })),
         ...this.activityRefs(input).slice(0, 3),
       ],
     };
@@ -152,12 +153,15 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
       const update = input.indicatorUpdates.find((u) => u.indicatorId === f.indicatorId);
       const flags = f.qualityFlags.length > 0 ? ` (flags: ${f.qualityFlags.join(", ")})` : "";
       const source = update?.dataSource ? `; source: ${update.dataSource}` : "";
-      return `| ${f.indicatorCode} | ${f.value}${f.unit ? ` ${f.unit}` : ""} | ${f.calculationMethod} |${flags}${source} |`;
+      const name = f.indicatorName ? ` (${f.indicatorName})` : "";
+      const target = f.target ? ` / target ${f.target}${f.unit ? ` ${f.unit}` : ""}` : "";
+      const previous = f.comparisonValue !== undefined ? `; previous period: ${f.comparisonValue}${f.unit ? ` ${f.unit}` : ""}` : "";
+      return `| ${f.indicatorCode}${name} | ${f.value}${f.unit ? ` ${f.unit}` : ""} | ${target || "no target"}${previous} | ${f.calculationMethod} |${flags}${source} |`;
     });
     const claims = findings.map((f) => this.numericClaim(input, f));
     const content = findings.length === 0
       ? "No verified indicator findings are available for this period."
-      : ["| Indicator | Value | Method |", "| --- | --- | --- |", ...rows].join("\n");
+      : ["| Indicator | Value | Target / Previous | Method |", "| --- | --- | --- | --- |", ...rows].join("\n");
     const notes = input.indicatorUpdates
       .filter((u) => u.comments)
       .map((u) => `- ${u.indicatorCode}: ${u.comments}`);
@@ -168,7 +172,7 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
       content: `${content}${notesText}`,
       claims,
       sourceReferences: [
-        ...findings.map((f) => ({ type: "indicator" as const, id: f.indicatorId, label: f.indicatorCode })),
+        ...findings.map((f) => ({ type: "indicator" as const, id: f.indicatorId, label: f.indicatorName ? `${f.indicatorCode} (${f.indicatorName})` : f.indicatorCode })),
         ...this.evidenceRefs(input),
       ],
     };
@@ -349,7 +353,15 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     const flags = finding.qualityFlags.length > 0 ? ` (${finding.qualityFlags.join(", ")})` : "";
     const update = input.indicatorUpdates.find((u) => u.indicatorId === finding.indicatorId);
     const source = update?.dataSource ? ` Source: ${update.dataSource}.` : "";
-    return `${finding.indicatorCode}: ${finding.value}${finding.unit ? ` ${finding.unit}` : ""} recorded via ${finding.calculationMethod}${flags}.${source}`;
+    const label = finding.indicatorName ? `${finding.indicatorCode} (${finding.indicatorName})` : finding.indicatorCode;
+    const target = finding.target ? ` against a target of ${finding.target}${finding.unit ? ` ${finding.unit}` : ""}` : "";
+    const previous = finding.comparisonValue !== undefined
+      ? `, compared to ${finding.comparisonValue}${finding.unit ? ` ${finding.unit}` : ""} in the previous period`
+      : "";
+    const perf = finding.performanceEvaluation && finding.performanceEvaluation.type !== "NEUTRAL"
+      ? ` Performance: ${finding.performanceEvaluation.type.toLowerCase()} (${finding.performanceEvaluation.detail}).`
+      : "";
+    return `${label}: ${finding.value}${finding.unit ? ` ${finding.unit}` : ""} recorded via ${finding.calculationMethod}${target}${previous}${perf}${flags}.${source}`;
   }
 
   private shorten(content: string, audience: "DONOR" | "INTERNAL" | "GENERAL"): string {
@@ -392,7 +404,7 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
 
 function findingsClaims(input: Parameters<IReportDraftGenerator["generateDraft"]>[0]): ReportClaimDraft[] {
   return input.verifiedFindings.slice(0, 3).map((f) => ({
-    text: `${f.indicatorCode}: ${f.value}${f.unit ? ` ${f.unit}` : ""} reported for the period`,
+    text: `${f.indicatorName ? `${f.indicatorCode} (${f.indicatorName})` : f.indicatorCode}: ${f.value}${f.unit ? ` ${f.unit}` : ""} reported for the period`,
     type: "NUMERIC" as const,
     proposedSources: [],
   }));
@@ -402,6 +414,6 @@ function findingsRefs(input: Parameters<IReportDraftGenerator["generateDraft"]>[
   return input.verifiedFindings.slice(0, 3).map((f) => ({
     type: "indicator" as const,
     id: f.indicatorId,
-    label: f.indicatorCode,
+    label: f.indicatorName ? `${f.indicatorCode} (${f.indicatorName})` : f.indicatorCode,
   }));
 }

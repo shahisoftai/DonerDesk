@@ -59,6 +59,7 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
         const prevFinding = computeIndicator({
           indicatorId: ind.id,
           indicatorCode: ind.code,
+          indicatorName: ind.name,
           indicatorType: ind.type,
           unit: ind.unit,
           baseline: ind.baseline,
@@ -92,6 +93,7 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
       const finding = computeIndicator({
         indicatorId: ind.id,
         indicatorCode: ind.code,
+        indicatorName: ind.name,
         indicatorType: ind.type,
         unit: ind.unit,
         baseline: ind.baseline,

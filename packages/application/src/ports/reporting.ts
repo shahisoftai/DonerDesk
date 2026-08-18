@@ -119,6 +119,71 @@ export interface IndicatorUpdateGenerationContext {
   verificationStatus: string;
 }
 
+/**
+ * Serializable snapshot of the project consumed at generation time. Carries
+ * identity, geographic, sector, duration, budget, and description context so
+ * the narrator can open a report with a proper project header and tailor
+ * language to the donor and implementing organization.
+ */
+export interface ProjectGenerationContext {
+  title: string;
+  projectCode: string;
+  donorName: string;
+  implementingOrganization: string;
+  partnerOrganization?: string;
+  country: string;
+  region?: string;
+  district?: string;
+  sector: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+  budgetAmount?: number;
+  budgetCurrency?: string;
+  reportingFrequency: string;
+}
+
+/**
+ * Serializable snapshot of the reporting period consumed at generation time.
+ * Carries the report type, period dates, deadlines, and readiness score so
+ * the narrator can scope the report and surface compliance context.
+ */
+export interface PeriodGenerationContext {
+  reportType: string;
+  startDate: string;
+  endDate: string;
+  deadline?: string;
+  internalReviewDeadline?: string;
+  readinessScore?: number;
+  daysUntilDeadline?: number;
+}
+
+/**
+ * Serializable snapshot of the locked donor template consumed at generation
+ * time. Carries the donor identity, language, required annexes, and notes so
+ * the narrator can align the report with donor expectations.
+ */
+export interface TemplateGenerationContext {
+  templateName: string;
+  donorName: string;
+  language: string;
+  requiredAnnexes: string[];
+  notes?: string;
+  version: number;
+}
+
+/**
+ * Aggregate report-level context passed to the narrator: the project the
+ * report belongs to, the reporting period it covers, and the donor template
+ * it must satisfy. Built by the application handler from the domain entities;
+ * consumed by infrastructure narrators.
+ */
+export interface ReportGenerationContext {
+  project: ProjectGenerationContext;
+  period: PeriodGenerationContext;
+  template?: TemplateGenerationContext;
+}
+
 export interface GenerateReportDraftInput {
   reportPlan: ReportPlan;
   verifiedFindings: VerifiedFinding[];
@@ -127,6 +192,8 @@ export interface GenerateReportDraftInput {
   indicatorUpdates: IndicatorUpdateGenerationContext[];
   reportingProfileSnapshot: ReportingProfileSnapshot;
   generationRunId: string;
+  /** Optional report/project/period/template context. Absent for legacy callers. */
+  reportContext?: ReportGenerationContext;
 }
 
 export interface ReportClaimDraft {
