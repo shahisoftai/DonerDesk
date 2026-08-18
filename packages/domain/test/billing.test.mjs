@@ -27,9 +27,10 @@ test("plan catalog defines the four commercial plans", () => {
   assert.equal(PLAN_CATALOG.GROWTH.monthlyPriceUsd, 149);
   assert.equal(PLAN_CATALOG.ENTERPRISE.maxActiveProjects, null);
 
-  // Team/Growth are trial-eligible; Starter/Enterprise are not.
-  assert.equal(isPlanForTrial("TEAM"), true);
-  assert.equal(isPlanForTrial("GROWTH"), true);
+  // No plan is trial-eligible anymore: the free Starter tier is the free offer,
+  // and paid tiers (Team/Growth) are unlocked by a paid subscription.
+  assert.equal(isPlanForTrial("TEAM"), false);
+  assert.equal(isPlanForTrial("GROWTH"), false);
   assert.equal(isPlanForTrial("STARTER"), false);
   assert.equal(isPlanForTrial("ENTERPRISE"), false);
 });

@@ -14,8 +14,8 @@ type RequestedPlan = "starter" | "team" | "growth";
 
 const PLAN_OPTIONS: { value: RequestedPlan; label: string; description: string }[] = [
   { value: "starter", label: "Starter — Free", description: "1 project, 1 seat, 1 GB storage, 5 AI drafts/month" },
-  { value: "team", label: "Team — $59/mo · 14-day free trial", description: "5 projects, 5 seats, 25 GB, 100 AI drafts/month" },
-  { value: "growth", label: "Growth — $149/mo · 14-day free trial", description: "20 projects, 15 seats, 100 GB, 500 AI drafts/month" },
+  { value: "team", label: "Team — $59/mo", description: "5 projects, 5 seats, 25 GB, 100 AI drafts/month" },
+  { value: "growth", label: "Growth — $149/mo", description: "20 projects, 15 seats, 100 GB, 500 AI drafts/month" },
 ];
 
 export default function SignupForm({ initialPlan }: { initialPlan: RequestedPlan }) {

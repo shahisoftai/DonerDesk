@@ -9,13 +9,10 @@ import {
   DataResidency,
   EntitlementGrant,
   isPlanCode,
-  resolvePlan,
-  isPlanForTrial,
 } from "@donordesk/domain";
 import type { IOrganizationRepository, IUserRepository, IAuthProvider } from "../../ports/identity.js";
 import type { IIdGenerator, IAuditLogger, IClock } from "../../ports/core.js";
-import type { IEntitlementGrantRepository, ITrialIdentityRepository } from "../../ports/billing.js";
-import { emailFingerprint, domainFingerprint } from "../billing/_usage.js";
+import type { IEntitlementGrantRepository } from "../../ports/billing.js";
 
 export interface ProvisionTenantCommand {
   name: string;
@@ -33,7 +30,7 @@ export interface ProvisionTenantCommand {
   };
   /** Requested plan (STARTER/TEAM/GROWTH). Enterprise cannot self-select. */
   requestedPlan?: string;
-  /** Verified signup identity — required before a trial is granted. */
+  /** Verified signup identity; recorded for audit. */
   verifiedEmail?: string;
   /** Audit actor; defaults to the created owner. */
   actorId?: string;
@@ -47,16 +44,14 @@ export interface ProvisionTenantResult {
   trialGranted: boolean;
 }
 
-const TRIAL_DAYS_DEFAULT = 14;
-
 /**
  * Central tenant provisioning used by every signup path (local, Google,
  * OIDC/SCIM, administrative creation). Atomically creates the organization,
- * owner, base entitlement grant, optional one-time trial, and audit trail.
+ * owner, the permanent free STARTER grant, and the audit trail.
  *
- * `?plan=` only requests trial consideration; it is never an entitlement by
- * itself. Unknown/absent plans fall back to STARTER. No second trial is
- * created for an existing organization/email fingerprint.
+ * Every new workspace starts on the free STARTER tier; paid tiers (TEAM/GROWTH)
+ * are unlocked by a paid Creem subscription after signup. `?plan=` is only an
+ * intent hint for the checkout flow and never an entitlement by itself.
  */
 export class ProvisionTenantHandler {
   constructor(
@@ -64,7 +59,6 @@ export class ProvisionTenantHandler {
     private readonly orgs: IOrganizationRepository,
     private readonly users: IUserRepository,
     private readonly grants: IEntitlementGrantRepository,
-    private readonly trials: ITrialIdentityRepository,
     private readonly auth: IAuthProvider,
     private readonly events: { publish(_events: unknown[]): Promise<void> },
     private readonly audit: IAuditLogger,
@@ -76,16 +70,6 @@ export class ProvisionTenantHandler {
     const requestedPlan = cmd.requestedPlan ?? "STARTER";
     if (!isPlanCode(requestedPlan) || requestedPlan === "ENTERPRISE") {
       return { ok: false, error: DomainError.validation("Enterprise cannot self-select during signup.") };
-    }
-
-    const trialAllowed = isPlanForTrial(requestedPlan as "TEAM" | "GROWTH") && Boolean(cmd.verifiedEmail);
-
-    // Abuse resistance: one trial per verified identity/domain.
-    let trialGranted = false;
-    if (trialAllowed && cmd.verifiedEmail) {
-      const exists = await this.trials.existsByEmailFingerprint(emailFingerprint(cmd.verifiedEmail));
-      if (!exists.ok) return exists;
-      trialGranted = !exists.value;
     }
 
     const tenantIdStr = this.ids.generate();
@@ -125,7 +109,7 @@ export class ProvisionTenantHandler {
     const userResult = await this.users.create(user);
     if (!userResult.ok) return userResult;
 
-    // Base default grant (STARTER) is permanent.
+    // Base default grant (STARTER) is permanent and free.
     const baseGrant = EntitlementGrant.create({
       id: this.ids.generate(),
       props: {
@@ -139,38 +123,6 @@ export class ProvisionTenantHandler {
     });
     const baseGrantResult = await this.grants.create(baseGrant);
     if (!baseGrantResult.ok) return baseGrantResult;
-
-    // Optional one-time trial grant (valid window only; lazily enforced).
-    let trialEndsAt: Date | undefined;
-    if (trialGranted && cmd.verifiedEmail) {
-      const planDef = resolvePlan(requestedPlan as "TEAM" | "GROWTH");
-      const days = planDef.trialDays ?? TRIAL_DAYS_DEFAULT;
-      trialEndsAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-      const trialGrant = EntitlementGrant.create({
-        id: this.ids.generate(),
-        props: {
-          tenantId: tenantIdStr,
-          planCode: requestedPlan as "TEAM" | "GROWTH",
-          source: "TRIAL",
-          effectiveFrom: now,
-          effectiveUntil: trialEndsAt,
-          createdById: userId,
-          reason: "signup-trial",
-        },
-      });
-      const trialGrantResult = await this.grants.create(trialGrant);
-      if (!trialGrantResult.ok) return trialGrantResult;
-
-      const trialRecord = await this.trials.create({
-        id: this.ids.generate(),
-        tenantId: tenantIdStr,
-        emailFingerprint: emailFingerprint(cmd.verifiedEmail),
-        domainFingerprint: domainFingerprint(cmd.verifiedEmail),
-        trialStartedAt: now,
-        trialEndedAt: trialEndsAt,
-      });
-      if (!trialRecord.ok) return trialRecord;
-    }
 
     const actorId = cmd.actorId ?? userId;
     await this.audit.record({
@@ -188,16 +140,6 @@ export class ProvisionTenantHandler {
       entityType: "user",
       entityId: userId,
     });
-    if (trialGranted) {
-      await this.audit.record({
-        tenantId,
-        actorId,
-        eventType: "billing.trial.granted",
-        entityType: "organization",
-        entityId: orgId,
-        newValue: JSON.stringify({ plan: requestedPlan, endsAt: trialEndsAt?.toISOString() }),
-      });
-    }
 
     return {
       ok: true,
@@ -205,8 +147,8 @@ export class ProvisionTenantHandler {
         tenantId: tenantIdStr,
         orgId,
         userId,
-        plan: trialGranted ? (requestedPlan as "TEAM" | "GROWTH") : "STARTER",
-        trialGranted,
+        plan: "STARTER",
+        trialGranted: false,
       },
     };
   }

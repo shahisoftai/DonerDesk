@@ -22,6 +22,7 @@ export const config = {
     "/forgot-password",
     "/logout",
     "/thanks",
+    "/checkout",
     "/onboarding/:path*",
     "/dashboard/:path*",
     "/projects/:path*",

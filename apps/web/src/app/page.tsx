@@ -151,7 +151,7 @@ const PLANS = [
     monthly: "$59",
     annual: "$590",
     tagline: "For growing teams reporting across several grants or projects.",
-    cta: { label: "Start 14-day trial", href: "/signup?plan=team" },
+    cta: { label: "Continue", href: "/signup?plan=team" },
     highlight: true,
     features: [
       "5 active projects",
@@ -168,7 +168,7 @@ const PLANS = [
     monthly: "$149",
     annual: "$1,490",
     tagline: "For organizations with multiple funders and substantial reporting volume.",
-    cta: { label: "Start 14-day trial", href: "/signup?plan=growth" },
+    cta: { label: "Continue", href: "/signup?plan=growth" },
     highlight: false,
     features: [
       "20 active projects",
@@ -467,8 +467,8 @@ export default function HomePage() {
               Start free. Upgrade when you grow.
             </h2>
             <p className="mt-4 text-lg text-slate-300">
-              Every plan includes core donor reporting. Tax is calculated at
-              checkout where applicable. Annual billing gives two months free.
+              Every plan includes core donor reporting. Start on the free Starter
+              plan and upgrade any time — payment is handled securely at checkout.
             </p>
           </div>
           <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -517,7 +517,8 @@ export default function HomePage() {
             ))}
           </div>
           <p className="mt-8 text-center text-sm text-slate-400">
-            Team and Growth plans include a 14-day trial with Growth entitlements — no card required. Special pricing is available for qualifying nonprofits, research institutions, and public-interest programmes.
+            Tax is calculated at checkout where applicable. Annual billing gives two months free.
+            Special pricing is available for qualifying nonprofits, research institutions, and public-interest programmes.
           </p>
         </div>
       </section>

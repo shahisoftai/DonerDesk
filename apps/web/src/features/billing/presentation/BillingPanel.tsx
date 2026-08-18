@@ -67,8 +67,6 @@ export function BillingPanel({ summary, canManage }: { summary: BillingPanelSumm
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"checkout" | "portal" | null>(null);
 
-  const isTrial = summary.isTrial;
-  const trialEndsAt = summary.trialEndsAt ? new Date(summary.trialEndsAt) : null;
   const overLimit = summary.overLimit.length > 0;
 
   async function startCheckout(plan: "TEAM" | "GROWTH") {
@@ -97,17 +95,6 @@ export function BillingPanel({ summary, canManage }: { summary: BillingPanelSumm
 
   return (
     <div className="mt-6 space-y-6">
-      {isTrial && trialEndsAt && (
-        <div className="rounded-xl border border-brand-300/40 bg-brand-50 p-4 text-sm dark:border-brand-500/40 dark:bg-brand-500/10">
-          <p className="font-semibold text-brand-700 dark:text-brand-300">
-            You are on a {summary.plan} trial until {trialEndsAt.toLocaleDateString()}.
-          </p>
-          <p className="mt-1 text-brand-700/80 dark:text-brand-300/80">
-            No card was charged. When the trial ends you continue on the free Starter plan with all your data intact.
-          </p>
-        </div>
-      )}
-
       {overLimit && (
         <InlineAlert
           tone="warning"

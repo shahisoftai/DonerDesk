@@ -223,18 +223,13 @@ test("invite-user enforces the Starter seat limit", async () => {
   assert.equal(result.error.details?.resource, "SEATS");
 });
 
-test("provision-tenant grants a one-time trial for verified email", async () => {
+test("provision-tenant always starts on the free STARTER tier", async () => {
   const grants = [];
-  const trials = new Set();
   const handler = new ProvisionTenantHandler(
     fakeIds(),
     { create: async (o) => ({ ok: true, value: o }) },
     { create: async (u) => { u.activate(); return { ok: true, value: u }; } },
     { create: async (g) => { grants.push(g); return { ok: true, value: g }; } },
-    {
-      existsByEmailFingerprint: async () => ({ ok: true, value: trials.has("fp") }),
-      create: async () => { trials.add("fp"); return { ok: true, value: { id: "t" } }; },
-    },
     { hashPassword: async (p) => `hash:${p}` },
     { publish: async () => undefined },
     fakeAudit(),
@@ -249,36 +244,13 @@ test("provision-tenant grants a one-time trial for verified email", async () => 
     organization: { name: "NGO", organizationType: "LOCAL_NGO", country: "US", primarySector: "HEALTH" },
   });
   assert.equal(result.ok, true);
-  assert.equal(result.value.trialGranted, true);
-  assert.equal(result.value.plan, "TEAM");
-  const trialGrant = grants.find((g) => g.props.source === "TRIAL");
-  assert.ok(trialGrant);
-  assert.equal(trialGrant.props.planCode, "TEAM");
-});
-
-test("provision-tenant does not grant a second trial for the same identity", async () => {
-  const handler = new ProvisionTenantHandler(
-    fakeIds(),
-    { create: async (o) => ({ ok: true, value: o }) },
-    { create: async (u) => { u.activate(); return { ok: true, value: u }; } },
-    { create: async (g) => ({ ok: true, value: g }) },
-    { existsByEmailFingerprint: async () => ({ ok: true, value: true }), create: async () => ({ ok: true, value: { id: "t" } }) },
-    { hashPassword: async (p) => `hash:${p}` },
-    { publish: async () => undefined },
-    fakeAudit(),
-    fakeClock(),
-  );
-  const result = await handler.handle({
-    name: "Alice",
-    email: "alice@ngo.org",
-    passwordHash: "hash",
-    verifiedEmail: "alice@ngo.org",
-    requestedPlan: "TEAM",
-    organization: { name: "NGO", organizationType: "LOCAL_NGO", country: "US", primarySector: "HEALTH" },
-  });
-  assert.equal(result.ok, true);
+  // Requested plans never grant free paid access: the base STARTER grant is the
+  // only entitlement until a paid subscription is created.
   assert.equal(result.value.trialGranted, false);
   assert.equal(result.value.plan, "STARTER");
+  assert.equal(grants.length, 1);
+  assert.equal(grants[0].props.planCode, "STARTER");
+  assert.equal(grants[0].props.source, "DEFAULT");
 });
 
 test("billing summary reflects current plan and usage", async () => {

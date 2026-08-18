@@ -49,7 +49,7 @@ export const PLAN_CATALOG: Readonly<Record<PlanCode, PlanDefinition>> = {
     name: "Team",
     monthlyPriceUsd: 59,
     annualPriceUsd: 590,
-    trialDays: 14,
+    trialDays: null,
     maxActiveProjects: 5,
     maxSeats: 5,
     maxManagedStorageBytes: 25n * GB,
@@ -60,7 +60,7 @@ export const PLAN_CATALOG: Readonly<Record<PlanCode, PlanDefinition>> = {
     name: "Growth",
     monthlyPriceUsd: 149,
     annualPriceUsd: 1490,
-    trialDays: 14,
+    trialDays: null,
     maxActiveProjects: 20,
     maxSeats: 15,
     maxManagedStorageBytes: 100n * GB,
@@ -127,8 +127,8 @@ export function planLimitsFromJson(json: PlanLimitsJson): PlanLimits {
   };
 }
 
-export function isPlanForTrial(code: PlanCode): boolean {
-  return code === "TEAM" || code === "GROWTH";
+export function isPlanForTrial(_code: PlanCode): boolean {
+  return false;
 }
 
 /**

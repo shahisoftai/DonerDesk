@@ -470,7 +470,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const billingProvider = createBillingProvider();
   const entitlements = new EntitlementService(entitlementGrants, billingSubscriptions, usageCounters, projects, users, planCatalog);
   const billingSubscriptionSynchronizer = new BillingSubscriptionSynchronizer(billingProvider, billingSubscriptions, entitlementGrants, ids, audits, clock);
-  const provisionTenant = new ProvisionTenantHandler(ids, organizations, users, entitlementGrants, trialIdentities, auth, events, audits, clock);
+  const provisionTenant = new ProvisionTenantHandler(ids, organizations, users, entitlementGrants, auth, events, audits, clock);
 
   const readiness = new ProjectReadinessService(
     projects,

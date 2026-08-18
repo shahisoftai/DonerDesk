@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const redirectUri = `${required("APP_URL").replace(/\/$/, "")}/api/auth/google/callback`;
   const requestedPlan = request.nextUrl.searchParams.get("plan")?.toLowerCase() ?? "";
   // The plan is carried through the signed OAuth state (never an entitlement by
-  // itself; the server validates it and only trial-considers it).
+  // itself; the server validates it and routes paid signups to checkout).
   const planPart = VALID_PLANS.has(requestedPlan) ? `:${requestedPlan}` : "";
   const state = `${randomBytes(24).toString("base64url")}${planPart}`;
   const authorize = new URL(OAUTH_AUTH_URL);

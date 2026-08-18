@@ -75,6 +75,9 @@ export async function signupAction(
     if (err instanceof AuthFormError) return err.state;
     return { error: "We could not create your account. Please try again." };
   }
+  if (requestedPlan === "TEAM" || requestedPlan === "GROWTH") {
+    redirect(`/checkout?plan=${requestedPlan.toLowerCase()}`);
+  }
   redirect("/dashboard");
 }
 

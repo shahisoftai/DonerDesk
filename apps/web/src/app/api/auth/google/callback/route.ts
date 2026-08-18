@@ -14,14 +14,22 @@ export async function GET(request: NextRequest) {
 
   let token: string;
   let provisioned = false;
+  let requestedPlan: "STARTER" | "TEAM" | "GROWTH" | undefined;
   try {
-    const requestedPlan = parsePlanFromState(state);
+    requestedPlan = parsePlanFromState(state);
     ({ token, provisioned } = await new AuthService().googleSignIn(code, requestedPlan));
   } catch {
     return NextResponse.redirect(new URL("/login?error=google_failed", appUrl));
   }
 
-  const response = NextResponse.redirect(new URL(provisioned ? "/onboarding" : "/dashboard", appUrl));
+  // Paid-plan signups continue to the hosted checkout after provisioning; the
+  // workspace is created on the free Starter tier until payment completes.
+  const destination = provisioned
+    ? requestedPlan === "TEAM" || requestedPlan === "GROWTH"
+      ? `/checkout?plan=${requestedPlan.toLowerCase()}`
+      : "/onboarding"
+    : "/dashboard";
+  const response = NextResponse.redirect(new URL(destination, appUrl));
   response.cookies.set("dd_session", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

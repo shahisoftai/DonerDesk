@@ -225,10 +225,6 @@ const sequenceIds = (() => { let n = 0; return { generate: () => `id-${++n}` }; 
  */
 function makeProvisioner({ orgs, users, auditEvents }) {
   const grants = { create: async (g) => ({ ok: true, value: g }) };
-  const trials = {
-    existsByEmailFingerprint: async () => ({ ok: true, value: false }),
-    create: async () => ({ ok: true, value: { id: "trial-1" } }),
-  };
   const events = { publish: async () => ({ ok: true }) };
   const clock = { now: () => new Date("2026-01-15T00:00:00Z") };
   return new ProvisionTenantHandler(
@@ -236,7 +232,6 @@ function makeProvisioner({ orgs, users, auditEvents }) {
     orgs,
     users,
     grants,
-    trials,
     signAuth,
     events,
     { record: async (e) => { auditEvents.push(e); return { ok: true, value: undefined }; } },
