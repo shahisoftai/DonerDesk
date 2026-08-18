@@ -1,6 +1,17 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T20:25+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T21:00+05:00.
+
+> **Deployment (2026-08-18):** **Wiki support routes — FILE_MAP path fix** — release
+> `20260818155600`. Fixed FILE_MAP path mappings where docs use two naming conventions:
+> subfolder (`basic-information/<slug>.md`) vs root (`basic-information-<slug>.md`).
+> Restored 18 previously-404ing getting-started articles (indicators-and-targets,
+> report-sections/statuses/readiness, reporting-workflow, donor-templates, evidence-verification,
+> logframe-hierarchy, storage-file-management). Restored 4 how-to articles
+> (set-up-new-organisation, use-the-audit-trail, use-comments-feedback, onboard-team-member,
+> prepare-for-donor-visit). Removed 6 orphaned wiki nav entries with no backing docs
+> (email-delivery, payment-issues, webhooks, automation-rules, custom-integrations, analytics).
+> Full route audit: **101 routes, 0 failures**. Typecheck green.
 
 > **Deployment (2026-08-18):** **Wiki-style Support Center pages** — release
 > `20260818152118` (web). Added full wiki-style support category pages:
