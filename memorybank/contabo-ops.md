@@ -904,6 +904,22 @@ backup/restore.
 
 ## 29. Change log
 
+- **2026-08-18 (Support Center + 100+ docs + Report Writing Skills — release
+  `20260818150143`, web-only):** Deployed via checksummed incremental immutable-release
+  path with `SERVICES=donordesk-api donordesk-web` (5.3 MB transferred; previous
+  compatible release `20260818074405`). New public `/support` page:
+  hero with search bar, 6 category cards (Getting Started/How-To/Donor Reporting
+  Skills/Troubleshooting/Advanced Features/Account & Billing), featured Report Writing
+  Skills section with 3 sub-cards (Foundation/Donor-Specific/Tools & Templates) + donor
+  name badges, Popular & Recent guides lists, and support options panel. Homepage nav
+  gains "Support" link (brand teal); homepage footer replaced with 4-column layout
+  (Brand/Support/Report Writing Skills/Legal) with `support@donordesk.online` contact
+  throughout. `memorybank/docs/support/` now has 104 markdown docs across 8 categories;
+  all `legal@donordesk.online` references replaced with `support@donordesk.online`.
+  Typecheck + build green. Verified: `current` symlink `20260818150143`, public `/`,
+  `/support`, `/login` all 200, API `/health`+`/ready` OK, both services active,
+  no new journal errors. Rollback: `RELEASE_ID=20260818074405 scripts/rollback.sh`.
+
 - **2026-08-18 (Professional AI report generation — release `20260818074405`,
   API + web):** Deployed via the checksummed incremental immutable-release path
   with `SERVICES=donordesk-api donordesk-web` (~5.6 MB transferred; previous

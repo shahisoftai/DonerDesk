@@ -1,6 +1,19 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T13:05+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T19:57+05:00.
+
+> **Deployment (2026-08-18):** **Support Center with 100+ docs + Report Writing Skills** —
+> release `20260818150143` (web-only). New `/support` page with hero, search bar, 6
+> category cards, featured Report Writing Skills section (Foundation/Donor-Specific/Tools
+> + donor name badges), Popular & Recent guides, and support options. Homepage nav
+> gains "Support" link (teal brand color); homepage footer replaced with 4-column
+> layout (Brand/Support Center/Report Writing Skills/Legal). `memorybank/docs/support/`
+> now contains **104 markdown docs** across 8 categories (basic-information, how-to,
+> troubleshooting, advanced-features, reference, account-billing, security-privacy,
+> donor-reporting-guidelines). All `legal@donordesk.online` references replaced with
+> `support@donordesk.online`. Typecheck + build green; 5.3 MB incremental transfer.
+> Deployed and verified: public `/`, `/support`, `/login` all 200; API `/health`+`/ready`
+> OK; services active.
 
 > **Deployment (2026-08-18):** **Professional AI report generation** shipped in
 > release `20260818074405` (API + web). Verified findings now carry indicator
