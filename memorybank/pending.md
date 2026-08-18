@@ -17,20 +17,29 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T13:05+
 > `Features/20-report-gen.md` §17, `Features/11-AI-Report-Draft-Generator.md`,
 > `Fixes.md`, and `contabo-ops.md` §29.
 
-> **Deployment (2026-08-18):** **Feature 19 — Creem billing is live in test
-> mode.** Release `20260818053116` shipped Phase 4 reconciliation (all five
-> handlers + `/internal/billing/*` routes), the shared
+> **Deployment (2026-08-18):** **Feature 19 — Creem billing is live in
+> production (real mode).** Release `20260818053116` shipped Phase 4
+> reconciliation (all five handlers + `/internal/billing/*` routes), the shared
 > `BillingSubscriptionSynchronizer`, webhook tenant resolution from checkout
 > metadata, and the `/thanks` checkout return page with redirect-signature
 > verification. Release `20260818061120` shipped the Continue checkout flow
 > (pricing **Continue** buttons → `/checkout` → Creem) and removed all 14-day
 > trial references (provisioning no longer grants trials; catalog `trialDays`
-> nulled; every workspace starts on free STARTER). `BILLING_PROVIDER=creem` +
-> `CREEM_TEST_MODE=true` + four test product IDs + `CREEM_API_KEY` +
-> `CREEM_WEBHOOK_SECRET` + `BILLING_SUCCESS_BASE_URL=https://donordesk.online`
-> are in the server `api.env`. To go live: swap to production products/keys and
-> set `CREEM_TEST_MODE=false`. See `Features/19-Tiers-And-Payments.md` and the
-> `contabo-ops.md` §29 change log.
+> nulled; every workspace starts on free STARTER). **2026-08-18 live switch:**
+> server `api.env` now runs `BILLING_PROVIDER=creem` + `CREEM_TEST_MODE=false`
+> with the production API key `creem_5aLG9DmlM7Uy6j4f7Iu7OF`, live webhook
+> secret `whsec_2qlLyneTPFBJP94Y3GIit7`, and four live product IDs
+> (`prod_4Rrpmx10tERDoDIPIMc7PS` Team monthly, `prod_56irLwhE9AbS0yQLJTLrDE`
+> Team annual, `prod_6DXr5Ppqdkv5Xd86c5OdKi` Growth monthly,
+> `prod_7jys5N5qQ3tAORihO9X2rF` Growth annual);
+> `BILLING_SUCCESS_BASE_URL=https://donordesk.online`. **OLS vhost gained a
+> `/v1` proxy context** so the public webhook
+> `https://donordesk.online/v1/webhooks/creem` reaches the Fastify API (the
+> `/api` context keeps its prefix, so `/api/v1/*` 404s; `api.donordesk.online`
+> has no DNS record). Signed end-to-end webhook verified live (401 unsigned,
+> 200 handled signed, inbox rows PROCESSED, cleaned up). Creem dashboard
+> webhook must use `https://donordesk.online/v1/webhooks/creem` — NOT
+> `https://api.donordesk.online/...`.
 
 > **Deployment (2026-08-15):** Feature 18 — Project Creation Wizard — is
 > **deployed to Contabo production as release `20260815054218`** (API + web +
@@ -467,9 +476,17 @@ Implemented:
   grants, no trial copy, `trialDays` nulled, `isPlanForTrial` false.
 
 Remaining (tracked here, not claimed):
-- [ ] **Go live on Creem production** — swap the four test product IDs for live
-  products, set live `CREEM_API_KEY`/`CREEM_WEBHOOK_SECRET`, and set
-  `CREEM_TEST_MODE=false` on the server `api.env`. Merchant approval,
+- [ ] **Fix live product prices on creem.io** — live products are priced
+  $59.99/$590.99/$149.99 (Growth Yearly is correct at $1,490) but the catalog
+  (`PLAN_CATALOG` in `packages/domain/src/contexts/billing/plan.ts`) and the
+  pricing UI advertise $59/$590/$149/$1,490. Align creem.io prices to 5900 /
+  59000 / 14900 / 149000 cents so charged amounts match what customers see.
+- [ ] **Verify Creem webhook URL + secret on the dashboard** — the webhook
+  registered on creem.io now uses the live secret `whsec_2qlLyneTPFBJP94Y3GIit7`
+  and Endpoint URL `https://donordesk.online/v1/webhooks/creem` (verified
+  end-to-end 2026-08-18: signed webhook → 200 handled, wrong secret → 401;
+  `api.donordesk.online` subdomain has no DNS record; the `/v1` OLS context was
+  added 2026-08-18 so the main-domain path is live). Merch approval,
   payout/countries, portal UX verification, and Terms/DPA wording are Phase 0
   follow-ups.
 - [ ] **Wire Kestra schedules for reconciliation** — the `/internal/billing/*`
