@@ -1,6 +1,6 @@
 # DonorDesk MemoryBank Index
 
-**Last updated:** 2026-08-17
+**Last updated:** 2026-08-18
 
 Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to search within files.
 
@@ -73,28 +73,29 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 6 | Review, approval, export (REV, EXP) | ✅ Delivered | [`imp/PHASE6-FRONTEND-REPORT.md`](imp/PHASE6-FRONTEND-REPORT.md) |
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
-> **Deployment status (2026-08-17):** Latest release `20260817180500` (commit
-> `be8ef33`) is live on `donordesk.online`. All five services (API `4001`, web
-> `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`) are **enabled
-> and active**. Today's releases ship: **real LLM report drafting** via the
-> SuperAdmin-configured MiniMax provider with per-tier AI-credit quotas
-> (STARTER 5 / TEAM 100 / GROWTH 500 / ENTERPRISE unlimited; stub fallback is
-> free and never billed), **user-selectable report charts**
-> (BAR/LINE/PIE/AREA/RADAR/GAUGE per indicator section, exported identically to
-> DOCX/PDF via ECharts SSR→sharp PNG), the **SuperAdmin Billing & credits**
-> section (per-tenant allowance Set/Increase/Reduce + reset month usage), plus
-> credit/timeout/section-switching fixes. Migration `20260817183000_report_charts`
-> applied. **2026-08-17 (report data completeness — not yet deployed):** AI report
-> generation now fully consumes saved project data — evidence document text is
-> persisted (`EvidenceFile.extractedText`, migration
-> `20260817200000_evidence_extracted_text`) and cited via evidence packages, and
-> activity narratives + indicator-update comments/dataSource feed the narrator;
-> statement-level sources render in the report workspace. See
-> `Features/11-AI-Report-Draft-Generator.md`, `Features/07-Evidence-Library.md`,
-> `Features/08-AI-Evidence-Tagging.md`, and `Fixes.md`. **Gated (not deployed):**
-> the five plugin-referencing Kestra flows and plugin JARs (stage/verify against
-> Kestra 1.3.30 + add the `donordesk` datasource first). See `contabo-ops.md` §28
-> and `imp/KESTRA-PLUGINS.md`.
+ > **Deployment status (2026-08-18):** Latest release `20260818061120` (commit
+ > `6315a2c`) is live on `donordesk.online`. All five services (API `4001`, web
+ > `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`) are **enabled
+ > and active**. **Feature 19 — Creem billing is live in test mode**: Phase 4
+ > reconciliation handlers + shared `BillingSubscriptionSynchronizer` +
+ > `/internal/billing/*` Kestra routes, webhook tenant resolution from checkout
+ > metadata, and the `/thanks` checkout return page (release `20260818053116`);
+ > then the **Continue checkout flow** — pricing Continue buttons → signup →
+ > `/checkout` → Creem — with **all 14-day trial references removed** (every
+ > workspace starts on free STARTER; release `20260818061120`). Earlier today's
+ > releases shipped: **real LLM report drafting** via the
+ > SuperAdmin-configured MiniMax provider with per-tier AI-credit quotas
+ > (STARTER 5 / TEAM 100 / GROWTH 500 / ENTERPRISE unlimited; stub fallback is
+ > free and never billed), **user-selectable report charts**
+ > (BAR/LINE/PIE/AREA/RADAR/GAUGE per indicator section, exported identically to
+ > DOCX/PDF via ECharts SSR→sharp PNG), the **SuperAdmin Billing & credits**
+ > section (per-tenant allowance Set/Increase/Reduce + reset month usage), plus
+ > credit/timeout/section-switching fixes. Migrations applied through
+ > `20260817210000_plan_catalog_override`. See `Features/19-Tiers-And-Payments.md`,
+ > `Fixes.md`, and `contabo-ops.md` §29. **Gated (not deployed):** the five
+ > plugin-referencing Kestra flows and plugin JARs (stage/verify against
+ > Kestra 1.3.30 + add the `donordesk` datasource first). See `contabo-ops.md` §28
+ > and `imp/KESTRA-PLUGINS.md`.
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |

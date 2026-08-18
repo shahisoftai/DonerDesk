@@ -1,6 +1,63 @@
 # Fixes
 
-Record of fixes applied to DonorDesk. Last updated: 2026-08-17.
+Record of fixes applied to DonorDesk. Last updated: 2026-08-18.
+
+## Creem webhook could not resolve the tenant for a brand-new subscription (2026-08-18)
+
+**Status:** Fixed in release `20260818053116` (deployed).
+
+**Root cause:** the webhook processor resolved the tenant only by looking up an
+existing local `BillingSubscription` row for `providerSubscriptionId`. For the
+*first* event of a brand-new subscription (e.g. `subscription.paid` right after
+checkout), no local row exists yet, so the processor returned "Webhook
+references an unknown customer/subscription." and the new grant was never
+created.
+
+**Fix:** `ProcessBillingWebhookHandler.resolveTenant` now resolves the tenant
+from the trusted checkout `metadata.tenant_id` first (recorded server-side at
+checkout creation), falling back to the local subscription mapping. Both the
+Creem and stub adapters now parse `object.metadata` into
+`ProviderBillingEvent.metadata` (string/number/boolean values only).
+
+## Latent subscription-end grant failed domain validation (effectiveFrom == effectiveUntil) (2026-08-18)
+
+**Status:** Fixed in release `20260818053116` (deployed).
+
+**Root cause:** `BillingSubscriptionSynchronizer` terminated an open grant when a
+subscription stopped granting access (cancelled/expired) by creating a new
+`EntitlementGrant` with `effectiveFrom: now, effectiveUntil: now`. The domain
+requires `effectiveUntil` strictly after `effectiveFrom`, so this threw a
+validation error on that path.
+
+**Fix:** the termination window is now `[now - 1ms, now]` — it keeps the domain
+invariant while remaining immediately expired for `isEffectiveAt`.
+
+## Playwright "projects portfolio renders a search form and table header" strict-mode failure (2026-08-18)
+
+**Status:** Fixed (test-only, included in release `20260818061120`).
+
+**Root cause:** the `/projects` page has both a "Search workspace" link
+(`aria-label="Search workspace"`) and the search input (placeholder "Title,
+code, donor, country"), so `getByLabel("Search")` resolved to two elements and
+Playwright strict mode failed the test.
+
+**Fix:** the test now targets `getByPlaceholder("Title, code, donor, country")`.
+
+## 14-day trial references removed product-wide (2026-08-18)
+
+**Status:** Shipped in release `20260818061120` (deployed).
+
+Per product decision ("we already have free Starter tier"), the 14-day trial
+offer was removed across the stack:
+
+- `ProvisionTenantHandler` no longer grants trials — every new workspace starts
+  on the free STARTER tier (`trialGranted: false`, single `DEFAULT` grant).
+- Catalog `trialDays` nulled for Team/Growth; `isPlanForTrial` always `false`.
+- Pricing page, signup plan options, and the billing settings panel no longer
+  mention trials (the billing-panel trial banner was removed).
+- `TrialIdentity` table/repository and `ExpireLocalTrialsHandler` remain dormant
+  for any legacy trial grants.
+
 
 ## Production 500 on project Evidence / Reports / Compliance tabs — unapplied `evidence_extracted_text` migration (2026-08-17)
 

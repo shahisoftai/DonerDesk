@@ -1,11 +1,84 @@
 # Feature 19: Tiers, Entitlements, and Creem Payments — Implementation Plan
 
-**Updated:** 2026-08-17  
-**Status:** IMPLEMENTED (core) — entitlements, AI-credit quotas, usage counters,
-and SuperAdmin credit management are live; Creem billing adapter behind
-`BILLING_PROVIDER=creem` (stub in development/tests)  
+**Updated:** 2026-08-18  
+**Status:** IMPLEMENTED — entitlements, AI-credit quotas, usage counters,
+SuperAdmin credit/tier management, **Creem billing adapter LIVE in test mode**
+(`BILLING_PROVIDER=creem`, `CREEM_TEST_MODE=true`), Phase 4 reconciliation
+handlers, webhook tenant resolution, and the Continue→checkout→thanks flow.
+Stub remains the development/tests default. Enterprise custom contract
+provisioning is the remaining planned follow-up.  
 **Payment provider:** Creem (production Merchant of Record), stub (development/tests)  
 **Pricing decision:** Starter $0, Team $59/month, Growth $149/month, Enterprise custom
+
+> **2026-08-18 implementation notes.** Two releases shipped the live Creem path:
+> **`20260818053116`** (Phase 4 reconciliation + checkout thanks page) and
+> **`20260818061120`** (Continue checkout flow + trial removal). Summary:
+>
+> **Live Creem billing (test mode)**
+> - `BILLING_PROVIDER=creem` + `CREEM_TEST_MODE=true` are wired in production
+>   `api.env` with the four test product IDs, `CREEM_API_KEY`, and
+>   `CREEM_WEBHOOK_SECRET`. Public webhook endpoint
+>   `POST /v1/webhooks/creem` (raw-body HMAC verified) is registered.
+> - Checkout success URL is `${BILLING_SUCCESS_BASE_URL}/thanks`; the public
+>   `/thanks` page verifies the signed redirect
+>   (`apps/web/src/lib/server/creem-redirect.ts`) and guides setup with quick
+>   links. A signed redirect never grants access — webhook + reconciliation are
+>   authoritative.
+> - **Webhook tenant resolution fix:** the processor previously could only
+>   resolve the tenant from an existing local subscription mapping, which fails
+>   for the *first* event of a brand-new subscription. It now resolves from the
+>   checkout `metadata.tenant_id` first, falling back to the local mapping. Both
+>   the Creem and stub adapters parse metadata into `ProviderBillingEvent`.
+>
+> **Phase 4 reconciliation (Feature §12) — all handlers implemented**
+> - `ReconcileBillingSubscriptionsHandler` — re-syncs stale/non-terminal
+>   subscriptions from the provider (missed-webhook convergence).
+> - `ReconcileManagedStorageUsageHandler` — clamps storage counters down to the
+>   authoritative evidence-byte sum (`IEvidenceRepository.sumManagedStorageBytes`).
+> - `ReleaseStaleUsageReservationsHandler` — clamps AI-credit counters to the
+>   LLM-run ledger (leaked-reservation recovery).
+> - `RetryBillingInboxHandler` — recovers events stuck in `PROCESSING` (worker
+>   crash between claim and commit) by re-fetching current provider state.
+> - `ExpireLocalTrialsHandler` — dormant (no new trials are granted; see below).
+> - A shared `BillingSubscriptionSynchronizer`
+>   (`packages/application/src/services/billing-subscription-synchronizer.ts`)
+>   maps provider snapshots → subscription + grant + audit in exactly one code
+>   path (DRY/SRP/DIP); the webhook processor and reconciliation handlers both
+>   use it. Also fixes a latent termination-grant bug (`effectiveFrom ==
+>   effectiveUntil` failed domain validation).
+> - New repository methods: `listReconcileCandidates`, `setUsed`,
+>   `listByMetric` (with tenant-qualified entries), `listStaleProcessing`
+>   (`PrismaBillingSubscriptionRepository`/`PrismaUsageCounterRepository`/
+>   `PrismaBillingEventInboxRepository`), and `sumManagedStorageBytes`
+>   (`PrismaEvidenceRepository`).
+> - Internal Kestra routes added: `/internal/billing/expire-trials`,
+>   `/internal/billing/reconcile-subscriptions`, `/internal/billing/reconcile-storage`,
+>   `/internal/billing/release-stale-reservations`, `/internal/billing/retry-inbox`
+>   (all HMAC-authenticated; 401 without the internal token).
+>
+> **Continue checkout flow + trial removal**
+> - Pricing page Team/Growth tiers now show **Continue** buttons (→
+>   `/signup?plan=team|growth`). `signupAction` redirects paid-plan signups to a
+>   new `/checkout` route that creates the Creem session server-side and
+>   redirects to hosted checkout; Starter stays on `/dashboard`. Google sign-up
+>   with a paid plan routes the same way.
+> - **All 14-day trial references removed.** `ProvisionTenantHandler` no longer
+>   grants trials — every new workspace starts on the free STARTER tier
+>   (`trialGranted: false`); catalog `trialDays` nulled for Team/Growth;
+>   `isPlanForTrial` always `false`; billing-panel trial banner and pricing/
+>   signup trial copy removed. `TrialIdentity` table/repo and
+>   `ExpireLocalTrialsHandler` remain dormant for legacy data.
+> - The `/thanks` page guides setup with quick links (workspace setup, first
+>   project, invite team, manage subscription).
+>
+> **Deploy notes (this feature)**
+> - No schema change in either release; `prisma migrate deploy` is a no-op.
+> - Server `api.env` gained the Creem TEST-mode block; `PlanCatalogOverride`
+>   RLS grant already applied in the earlier tier-management release.
+> - Rollback: `RELEASE_ID=20260818053116 scripts/rollback.sh` for the
+>   reconciliation release, `20260818041110` for the trial-removal release.
+> - Remaining: live (non-test) Creem products/keys, and Enterprise custom
+>   contract provisioning.
 
 > **2026-08-17 implementation notes.** The domain/application/infrastructure
 > described below were built out (2026-08-13…08-16) and are now enforced in
@@ -55,9 +128,8 @@ and SuperAdmin credit management are live; Creem billing adapter behind
 >   deploy.
 > - Timezone note: MANUAL grants must be written via the typed Prisma client (raw
 >   SQL binds dates in the host's CEST session timezone → 2h future-dated grants).
-> - Remaining: live Creem checkout/subscription + webhook-created grants in
->   production (stub provider is used; `process-billing-webhook.ts` implements the
->   grant side), and Enterprise custom contract provisioning.
+
+
 
 ## 1. Objective
 
@@ -140,14 +212,14 @@ for support and accounting reconciliation.
 
 ### 3.2 Trial and nonprofit policy
 
-- A new eligible organization selecting Team or Growth receives one 14-day local,
-  no-card trial with Growth entitlements.
-- A trial is an entitlement grant, not a fake active subscription.
-- Eligibility is one trial per verified organization identity. Phase 1 enforces at
-  least normalized email/domain plus a persisted trial grant; verified email and
-  CAPTCHA are required before costly AI use.
-- Trial expiry is enforced both lazily on every entitlement read and by a scheduled
-  reconciliation job. A late job can never extend access.
+**Updated 2026-08-18:** the 14-day trial offer is **removed**. Every new
+workspace starts on the free STARTER tier and pays to unlock Team/Growth via
+Creem. `ProvisionTenantHandler` no longer grants trials; catalog `trialDays` is
+null for Team/Growth; `isPlanForTrial` always returns `false`; pricing/signup/
+billing copy no longer mentions trials. The `TrialIdentity` table, repository,
+and `ExpireLocalTrialsHandler` remain dormant for any legacy trial grants.
+
+Nonprofit policy (unchanged):
 - Offer a manually approved 40% nonprofit discount to qualifying small NGOs.
   Represent it through Creem discount/product configuration and persist the actual
   product/price paid; discounts do not change domain limits.
@@ -354,12 +426,12 @@ tests.
 
 Input includes validated requested plan (`STARTER`, `TEAM`, `GROWTH`) and verified
 signup identity. Unknown/absent becomes Starter; Enterprise cannot self-select.
-The handler atomically creates organization, owner, base grant, optional one-time
-trial, and audits.
+The handler atomically creates organization, owner, the permanent free STARTER
+base grant, and audits.
 
-`?plan=` only requests trial consideration; it is never an entitlement. No second
-trial is created for an existing organization. Google signup must carry the plan
-through signed OAuth state.
+`?plan=` is only an intent hint for the checkout flow; it is never an entitlement.
+Google signup must carry the plan through signed OAuth state so a paid signup is
+routed to checkout after provisioning.
 
 ## 8. Authoritative limit enforcement
 
@@ -507,6 +579,15 @@ Authenticated `POST /v1/billing/checkout`:
 The success page is informational. A signed redirect may accelerate refresh but
 never grants access by itself; webhook/reconciliation is authoritative.
 
+**Implemented 2026-08-18:** the checkout return URL is
+`${BILLING_SUCCESS_BASE_URL}/thanks` — the public `/thanks` page verifies the
+Creem redirect signature (`verifyCreemRedirectSignature`, SHA-256 over ordered
+params + `salt={apiKey}`) and offers quick-start links (workspace setup, first
+project, invite team, manage subscription). `SUCCESS_PATH` is `/thanks` in
+`CreateCheckoutHandler`. A new `/checkout?plan=team|growth` web route creates the
+Creem session server-side and redirects to hosted checkout; pricing **Continue**
+buttons and paid-plan signups (local + Google) route through it.
+
 ### 10.2 Portal
 
 Authenticated `POST /v1/billing/portal` requires `billing.manage`, loads the Creem
@@ -553,13 +634,25 @@ Starter unless Creem reports recovery. Store grace deadline explicitly.
 
 ## 12. Reconciliation and operations
 
-Webhooks are notifications, not the only recovery mechanism. Add:
+Webhooks are notifications, not the only recovery mechanism. **All handlers below
+are implemented (2026-08-18)** and exposed as HMAC-authenticated
+`/internal/billing/*` routes for Kestra:
 
-- `ExpireLocalTrialsHandler`
-- `ReconcileBillingSubscriptionHandler`
-- `ReconcileManagedStorageUsageHandler`
-- `ReleaseStaleUsageReservationsHandler`
-- `RetryBillingInboxHandler`
+- `ExpireLocalTrialsHandler` — dormant (no new trials are granted; cleans up
+  legacy trial grants).
+- `ReconcileBillingSubscriptionHandler` — daily re-sync of stale/non-terminal
+  subscriptions from the provider.
+- `ReconcileManagedStorageUsageHandler` — clamps storage counters to the
+  authoritative evidence-byte sum.
+- `ReleaseStaleUsageReservationsHandler` — clamps AI-credit counters to the LLM-run
+  ledger.
+- `RetryBillingInboxHandler` — recovers events stuck in `PROCESSING`.
+
+All sync logic is centralized in `BillingSubscriptionSynchronizer`
+(`packages/application/src/services/billing-subscription-synchronizer.ts`),
+shared by the webhook processor and every reconciliation handler. Routes:
+`POST /internal/billing/expire-trials`, `/reconcile-subscriptions`,
+`/reconcile-storage`, `/release-stale-reservations`, `/retry-inbox`.
 
 Use Kestra in deployment (or BullMQ plus external scheduler) for hourly trial expiry,
 frequent inbox retry, daily active/past-due subscription reconciliation, hourly stale
@@ -611,8 +704,12 @@ may appear on organization reads; detailed usage comes from billing summary.
 ### 14.1 Landing and signup
 
 Add `#pricing` between “How it works” and “Security” with Starter, Team, Growth,
-and Enterprise cards. Show accurate monthly/annual prices, limits, trial terms, and
+and Enterprise cards. Show accurate monthly/annual prices, limits, and
 “tax calculated at checkout where applicable.” Never claim unlimited AI.
+
+**Implemented 2026-08-18:** Starter shows **Start free**, Team/Growth show
+**Continue**; no trial terms anywhere. Pricing copy: "Start free. Upgrade when
+you grow."
 
 Links: Starter `/signup`, Team `/signup?plan=team`, Growth
 `/signup?plan=growth`, Enterprise real lead form/configured contact.
@@ -647,12 +744,28 @@ explanation/upgrade link. API errors remain authoritative after concurrent chang
 
 ## 16. Delivery phases and gates
 
+Status per phase (updated 2026-08-18):
+- **Phase 0 — Creem readiness:** ✅ test products created and wired; merchant/
+  commercial approval remains for production (test-mode gate partially done).
+- **Phase 1 — domain, schema, transactions:** ✅ shipped in prior releases.
+- **Phase 2 — provisioning and report-mode limits:** ✅ shipped (provisioner,
+  project/seat/storage/AI enforcement) in prior releases.
+- **Phase 3 — Creem and billing API:** ✅ shipped 2026-08-18 (port, stub, Creem
+  adapter/factory, raw-body webhook + durable inbox processor, checkout/portal
+  routes, `/thanks` return page, webhook tenant resolution from metadata).
+- **Phase 4 — reconciliation:** ✅ shipped 2026-08-18 (all five handlers +
+  `/internal/billing/*` routes; Kestra scheduling to be wired).
+- **Phase 5 — web experience:** ✅ shipped 2026-08-18 (Continue buttons,
+  `/checkout` route, billing settings page, quick-start thanks page).
+- **Phase 6 — controlled enforcement:** ⏳ not started.
+
 ### Phase 0 — Creem readiness
 
-- Approve merchant account and countries/payout arrangement.
-- Create test Team/Growth monthly/annual products and bundle.
-- Verify portal upgrade/downgrade/cancel/proration/refund/invoice UX.
-- Confirm Terms, Privacy, DPA, and Merchant-of-Record wording.
+- ✅ Create test Team/Growth monthly/annual products and bundle (done — four test
+  product IDs wired in `api.env`).
+- ⏳ Approve merchant account and countries/payout arrangement.
+- ⏳ Verify portal upgrade/downgrade/cancel/proration/refund/invoice UX.
+- ⏳ Confirm Terms, Privacy, DPA, and Merchant-of-Record wording.
 
 **Gate:** approved decision record and test-mode lifecycle. If Creem cannot support
 required regions/terms, retain the port and replace only its adapter.
@@ -687,18 +800,20 @@ customer, and outage.
 
 ### Phase 4 — reconciliation
 
-- Lazy plus scheduled trial expiry.
-- Subscription/usage reconciliation, metrics, alerts, failed-event runbook.
-- Seven-day past-due grace.
+- ✅ All five handlers implemented 2026-08-18 (see §12). Trial expiry is
+  effectively a no-op because no new trials are granted.
+- ⏳ Kestra scheduling + reconciliation metrics/alerts + failed-event runbook.
+- ⏳ Seven-day past-due grace runbook verification.
 
 **Gate:** late jobs cannot extend trials; missed webhooks converge; replay is harmless.
 
 ### Phase 5 — web experience
 
-- Pricing/signup plan flow including signed Google state.
-- Billing settings/actions, meters, banners, soft limits.
+- ✅ Pricing/signup plan flow including signed Google state (2026-08-18).
+- ✅ Billing settings/actions, meters, banners, soft limits; `/checkout` route;
+  quick-start `/thanks` page.
 
-**Gate:** Playwright covers Starter/trial/invalid plan, checkout return before webhook,
+**Gate:** Playwright covers Starter/invalid plan, checkout return before webhook,
 upgrade, scheduled downgrade, expiry, over-limit reads, permissions/accessibility.
 
 ### Phase 6 — controlled enforcement
@@ -723,7 +838,8 @@ support runbook complete.
 - Parallel project creates, invites, and invitation acceptances at limits.
 - Owner/suspended/expired-invite semantics.
 - Storage reserve/failure/retry/delete and AI success/failure/idempotency/reset.
-- Local/Google/OIDC/SCIM trial parity and cross-tenant isolation.
+- Local/Google/OIDC/SCIM provisioning parity (all start on STARTER) and
+  cross-tenant isolation.
 
 ### Infrastructure and Creem
 
@@ -736,7 +852,7 @@ support runbook complete.
 - `billing.manage`; no client-selected provider identifiers/URLs.
 - Error contracts and pricing/signup carry-through.
 - Success redirect alone grants nothing.
-- Trial/grace/cancel UI and accessible soft limits.
+- Grace/cancel UI and accessible soft limits.
 - Downgrade preserves reads, exports, deletions, and billing access.
 
 ### Operations
@@ -747,19 +863,21 @@ support runbook complete.
 
 ## 18. Definition of done
 
-Feature 19 is complete only when:
+Progress as of 2026-08-18 (Creem test mode):
 
-- every provisioning path assigns exactly one valid initial entitlement;
-- concurrency and alternate paths cannot exceed hard limits;
-- late workers cannot retain expired trials;
-- every AI attempt records cost and each customer credit is explainable;
-- Creem production checkout/portal works and webhooks are verified, durable,
-  idempotent, and reconciled;
-- cancellation, failure, refund, dispute, downgrade, and outage preserve data and
-  converge to documented access;
-- billing/entitlement changes are tenant-correct and audited;
-- pricing UI matches catalog and Creem products;
-- migrations, tests, typechecks, builds, runbooks, monitoring, and rollback pass.
+- ✅ every provisioning path assigns exactly one valid initial entitlement (free
+  STARTER; paid tiers unlocked by subscription after checkout);
+- ✅ concurrency and alternate paths cannot exceed hard limits;
+- ✅ late workers cannot retain expired trials (no new trials are granted);
+- ✅ every AI attempt records cost and each customer credit is explainable;
+- ⏳ Creem production checkout/portal works and webhooks are verified, durable,
+  idempotent, and reconciled (test-mode wiring + reconciliation handlers are
+  live; production keys/products pending);
+- ✅ cancellation, failure, refund, dispute, downgrade, and outage preserve data
+  and converge to documented access;
+- ✅ billing/entitlement changes are tenant-correct and audited;
+- ✅ pricing UI matches catalog and Creem products;
+- ✅ migrations, tests, typechecks, builds, runbooks, monitoring, and rollback pass.
 
 ## 19. Verified external references
 

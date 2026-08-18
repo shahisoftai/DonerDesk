@@ -138,6 +138,17 @@ honestly, never presented as production.
   tagger/polisher/checklist handlers remain heuristic-stub backed, and the export
   builder embeds charts but remains otherwise deterministic
   (see `imp/LLM-PROVIDER-WIRING.md`, `Features/19-Tiers-And-Payments.md`).
+- **Creem billing live in test mode (2026-08-18, Feature 19):** `BILLING_PROVIDER=creem`
+  + `CREEM_TEST_MODE=true` with four test product IDs are wired in production.
+  Phase 4 reconciliation handlers (`reconcile-billing-subscriptions`,
+  `reconcile-managed-storage`, `release-stale-usage-reservations`,
+  `retry-billing-inbox`) + a shared `BillingSubscriptionSynchronizer` are
+  deployed as `/internal/billing/*` Kestra routes; the webhook resolves tenants
+  from checkout metadata. Pricing **Continue** buttons route Team/Growth signups
+  through a new `/checkout` route to the hosted Creem checkout, and the `/thanks`
+  page (with redirect-signature verification) guides setup. **All 14-day trial
+  references were removed** — every workspace starts on free STARTER and pays to
+  upgrade. See `Features/19-Tiers-And-Payments.md`.
 - Report sections support user-selectable charts (2026-08-17); dashboard-level
   trend widgets remain roadmap.
 - Phase 4 (ACT/EVD) routes exist but no dedicated Phase 4 frontend report was written.

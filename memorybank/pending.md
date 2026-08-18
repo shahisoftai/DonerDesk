@@ -1,6 +1,21 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-17T13:35+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T11:15+05:00.
+
+> **Deployment (2026-08-18):** **Feature 19 — Creem billing is live in test
+> mode.** Release `20260818053116` shipped Phase 4 reconciliation (all five
+> handlers + `/internal/billing/*` routes), the shared
+> `BillingSubscriptionSynchronizer`, webhook tenant resolution from checkout
+> metadata, and the `/thanks` checkout return page with redirect-signature
+> verification. Release `20260818061120` shipped the Continue checkout flow
+> (pricing **Continue** buttons → `/checkout` → Creem) and removed all 14-day
+> trial references (provisioning no longer grants trials; catalog `trialDays`
+> nulled; every workspace starts on free STARTER). `BILLING_PROVIDER=creem` +
+> `CREEM_TEST_MODE=true` + four test product IDs + `CREEM_API_KEY` +
+> `CREEM_WEBHOOK_SECRET` + `BILLING_SUCCESS_BASE_URL=https://donordesk.online`
+> are in the server `api.env`. To go live: swap to production products/keys and
+> set `CREEM_TEST_MODE=false`. See `Features/19-Tiers-And-Payments.md` and the
+> `contabo-ops.md` §29 change log.
 
 > **Deployment (2026-08-15):** Feature 18 — Project Creation Wizard — is
 > **deployed to Contabo production as release `20260815054218`** (API + web +
@@ -364,9 +379,7 @@ actually supports; unsupported controls are omitted rather than simulated.
 ## Feature 18 — Project Creation Wizard (implemented 2026-08-15)
 
 **Deployed:** release `20260815054218`; migration `20260815000000_project_bootstrap`;
-RLS on 24 tables. See `Features/18-Project-Creation-Wizard.md`.
-
-Implemented:
+RLS on 24 tables. See `Features/18-Project-Creation-Wizard.md`.Implemented:
 - Derived readiness (`ProjectReadinessService`) with machine-readable blockers;
   authoritative reporting-period gate (ownership, readiness, date bounds, overlap,
   immutable template/profile snapshots); Local + Google Drive project workspace
@@ -404,6 +417,47 @@ Remaining follow-ups (tracked here, not claimed):
   (pending.md "Wire the Drive token store"); Local/R2 tenants are NOT_REQUIRED.
 - [ ] **Project copy/duplicate, donor/partner entities, deletion/retention** —
   deferred per Feature 18 §5.6/§5.7/§5.9.
+
+## Feature 19 — Tiers and Payments (Creem live in test mode 2026-08-18)
+
+**Deployed:** releases `20260818053116` (Phase 4 reconciliation + thanks page) and
+`20260818061120` (Continue checkout flow + trial removal). See
+`Features/19-Tiers-And-Payments.md`.
+
+Implemented:
+- Entitlements, AI-credit quotas, usage counters, SuperAdmin credit + tier
+  management (2026-08-17).
+- Creem billing adapter live in **test mode** (`BILLING_PROVIDER=creem`,
+  `CREEM_TEST_MODE=true`) with four test product IDs, API key, webhook secret,
+  and `POST /v1/webhooks/creem` raw-body HMAC verification.
+- Phase 4 reconciliation: `ReconcileBillingSubscriptionsHandler`,
+  `ReconcileManagedStorageUsageHandler`, `ReleaseStaleUsageReservationsHandler`,
+  `RetryBillingInboxHandler` (+ dormant `ExpireLocalTrialsHandler`), all exposed
+  as `/internal/billing/*` Kestra routes; shared `BillingSubscriptionSynchronizer`.
+- Webhook tenant resolution from checkout `metadata.tenant_id` with local-mapping
+  fallback (both Creem and stub adapters parse metadata).
+- Checkout return page `/thanks` with redirect-signature verification and quick
+  setup links; `/checkout` route creates the Creem session server-side.
+- Pricing **Continue** buttons (Team/Growth) → signup → `/checkout` → Creem;
+  Google paid signups route the same way.
+- **14-day trials removed** — every workspace starts on free STARTER; no trial
+  grants, no trial copy, `trialDays` nulled, `isPlanForTrial` false.
+
+Remaining (tracked here, not claimed):
+- [ ] **Go live on Creem production** — swap the four test product IDs for live
+  products, set live `CREEM_API_KEY`/`CREEM_WEBHOOK_SECRET`, and set
+  `CREEM_TEST_MODE=false` on the server `api.env`. Merchant approval,
+  payout/countries, portal UX verification, and Terms/DPA wording are Phase 0
+  follow-ups.
+- [ ] **Wire Kestra schedules for reconciliation** — the `/internal/billing/*`
+  handlers are deployed but the Kestra flows that trigger them hourly/daily are
+  not yet created.
+- [ ] **Enterprise custom contract provisioning** — not yet implemented.
+- [ ] **Reconciliation metrics/alerts + failed-event runbook** — Phase 4
+  remaining item.
+- [ ] **Seven-day past-due grace runbook verification** — Phase 4 remaining item.
+- [ ] **Controlled enforcement (Phase 6)** — report-mode comparison, cohort
+  enablement, conversion/margin monitoring — not started.
 
 ## Notes
 - Signup/login 500 errors are fixed; see `memorybank/Fixes.md`.
