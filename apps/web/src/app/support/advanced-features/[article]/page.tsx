@@ -9,10 +9,6 @@ import { loadArticle } from "@/components/support/wikiUtils";
 const FILE_MAP: Record<string, string> = {
   "using-the-api": "advanced-features-using-the-api.md",
   "data-import-export": "advanced-features-data-import-export.md",
-  "webhooks": "advanced-features-webhooks.md",
-  "automation-rules": "advanced-features-automation-rules.md",
-  "custom-integrations": "advanced-features-custom-integrations.md",
-  "analytics": "advanced-features-analytics.md",
   "multiple-donors": "advanced-features-multiple-donors.md",
   "ai-settings": "advanced-features-ai-settings.md",
   "compliance-automation": "advanced-features-compliance-automation.md",

@@ -12,8 +12,6 @@ const FILE_MAP: Record<string, string> = {
   "billing-issues": "troubleshooting-billing-issues.md",
   "browser-performance": "troubleshooting-browser-performance.md",
   "data-recovery": "troubleshooting-data-recovery.md",
-  "email-delivery": "troubleshooting-email-delivery.md",
-  "payment-issues": "troubleshooting-payment-issues.md",
   "project-setup": "troubleshooting-project-setup.md",
   "logframe-issues": "troubleshooting-logframe-issues.md",
   "indicator-data": "troubleshooting-indicator-data.md",
