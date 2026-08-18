@@ -63,8 +63,9 @@ Native systemd services (loopback only — no public ports):
 
 Runbook scripts (gated): `scripts/preflight.sh`, `scripts/verify.sh`,
 `scripts/deploy.sh`, `scripts/rollback.sh`, `scripts/backup.sh`.
-See `infra/systemd/`, `infra/kestra/`, `memorybank/contabo-ops.md`, and
-`memorybank/docs/CONTABO-LEAN-DEPLOYMENT.md`.
+See `infra/systemd/`, `infra/kestra/`, and `memorybank/contabo-ops.md` (the
+single source of truth for the Contabo host, deployment design, and release
+procedure).
 
 On Linux hosts running `ufw`, allow Prometheus to scrape the host-run API:
 

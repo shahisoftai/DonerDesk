@@ -237,7 +237,7 @@ Four stacked root causes were found and fixed.
 - **Where:** `apps/web/src/lib/auth-actions.ts`, `apps/web/src/lib/api.ts`
 - **Problem:** The deployed build baked in `NEXT_PUBLIC_API_URL=http://localhost:4000`,
   so server actions `fetch()`ed a nonexistent local API on the production box.
-  (Deployment blocker listed in `docs/CONTABO-LEAN-DEPLOYMENT.md` §4.)
+  (Deployment blocker listed in `contabo-ops.md` §19 release gate.)
 - **Fix:** Resolve a server-only `API_INTERNAL_URL` first, falling back to
   `API_URL` → `NEXT_PUBLIC_API_URL` → `http://127.0.0.1:4001`. A web systemd
   drop-in (`/etc/systemd/system/donordesk-web.service.d/api-url.conf`) sets

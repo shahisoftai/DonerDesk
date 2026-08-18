@@ -1,15 +1,18 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-18 (release `20260818031100`, commit `989745c` — comprehensive SuperAdmin Tier management: global tier catalog editor via `PlanCatalogOverride`, per-tenant tier change/limits/reset; API + web + superadmin). Applied migration `20260817210000_plan_catalog_override` as `donordesk_migrator` and extended `infra/postgres/rls.sql` (global grant for `PlanCatalogOverride` to `donordesk_app`) before switching the release.
+**Last deployment:** 2026-08-18 (release `20260818034420`, uncommitted home-page copy — public homepage + SEO metadata refresh; web-only).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
-**Purpose:** Live-host facts and safety rules for deploying DonorDesk without
-disrupting NeureCore, GFC, CyberPanel, mail, or other colocated applications.
+**Purpose:** Single source of truth for live-host facts, safety rules, and the
+executable DonorDesk deployment design + release procedure for the Contabo host —
+without disrupting NeureCore, GFC, CyberPanel, mail, or other colocated
+applications.
 
-This file is the host inventory. The executable DonorDesk design and release
-procedure live in [`../docs/CONTABO-LEAN-DEPLOYMENT.md`](../docs/CONTABO-LEAN-DEPLOYMENT.md).
+This file consolidates the former `docs/CONTABO-LEAN-DEPLOYMENT.md` and
+`docs/CONTABO-FAST-DEPLOYMENT.md` (both deleted 2026-08-18). Host inventory,
+deployment design, release procedure, rollback, and the change log live here.
 
 ## 1. Verification scope and evidence policy
 
@@ -332,7 +335,7 @@ setup checklist (Feature 18, release `20260815054218`). Added an account-wide
 `20260815060000_onboarding_reporting_defaults`). Google OAuth client
 credentials are still pending (login-page button + Drive folder provisioning
 are env/credential gated). Workers and Kestra are both enabled; the five
-plugin-referencing flows and plugin JARs remain gated (see §14 log +
+plugin-referencing flows and plugin JARs remain gated (see §29 log +
 `imp/KESTRA-PLUGINS.md`).
 
 | Resource | Allocation |
@@ -474,7 +477,451 @@ Also verify from outside the server:
 - external monitoring and alert delivery;
 - backup completion and a clean-machine restore.
 
-## 14. Change log
+## 14. Deployment model and architecture
+
+DonorDesk runs as native systemd services on the shared host, **not** inside the
+existing root-owned PM2 daemon. Rationale: the host already runs seven PM2
+applications for other projects and the root PM2 dump is a shared blast radius;
+systemd gives clean Unix-user, filesystem-hardening, journald, dependency, and
+restart boundaries.
+
+**Stage A — reliable core (live today):**
+
+```text
+Internet
+   |
+   | HTTPS :443
+   v
+OpenLiteSpeed 1.8.4 + nghttpx
+   |-- /            -> 127.0.0.1:3002  DonorDesk Next.js (donordesk-web)
+   |-- /api/*       -> 127.0.0.1:4001  DonorDesk Fastify (donordesk-api)
+   |-- /api/auth/*  -> 127.0.0.1:3002  Next.js auth routes
+   `-- WebSocket upgrade -> 127.0.0.1:4001
+
+Native/systemd DonorDesk services
+   |-- donordesk-web         127.0.0.1:3002
+   |-- donordesk-api         127.0.0.1:4001
+   |-- donordesk-workers     127.0.0.1:8092
+   |-- donordesk-superadmin  127.0.0.1:3012
+   `-- donordesk-kestra      127.0.0.1:8093 (UI/API) / 8094 (management)
+
+Shared native infrastructure
+   |-- PostgreSQL 16.14   host :5432, dedicated DB and roles
+   |-- Prometheus 2.55.1  existing host-network container
+   `-- Grafana 11.3.0     existing host-network container
+```
+
+**Stage B — durable async/AI (partially enabled):** Redis ACL user + BullMQ
+(not yet wired; in-memory/kestra queue in use), Kestra (enabled), real LLM
+adapters (stub default), production notifications (console default), object
+storage (per-tenant Drive/R2 optional). Starting a container does not activate
+a feature: the runtime dependency container must select the adapter and a
+production-path test must prove it.
+
+Releases are **immutable directories** under `/opt/donordesk/releases/<id>`
+with an atomic `/opt/donordesk/current` symlink switch; never edit a file in a
+completed release in place.
+
+## 15. Filesystem and Unix identity
+
+```text
+/opt/donordesk/
+├── current -> releases/<release-id>
+├── releases/
+│   └── <release-id>/
+│       ├── dist/                 API server.js + compiled routes
+│       ├── node_modules/         self-contained prod deps (@donordesk/*)
+│       ├── apps/web/             Next.js standalone (server.js + .next)
+│       ├── superadmin/           SuperAdmin standalone (preserved between releases)
+│       ├── prisma/               schema + migrations
+│       ├── release.json          {"releaseId","commit","builtAt"}
+│       └── (workers app code updated in place, not per-release)
+├── shared/
+│   ├── api.env                   (root-owned, group-readable, 0600)
+│   ├── workers.env               (0600)
+│   ├── kestra.env                (0600)
+│   ├── storage/                  uploaded evidence
+│   └── backups-status/
+└── kestra/                       pinned kestra-1.3.30 + .kestra/config.yml + plugins
+```
+
+Release files are root/deploy-owned and read-only to the `donordesk` service
+user; only `shared/storage` and required runtime directories are writable.
+Migrator credentials are stored separately (root-only) and never exposed to the
+API service. `scripts/package-release.sh` assembles the self-contained directory
+off-host (API `pnpm deploy --legacy` + web standalone + prisma + generated
+Prisma client + release.json) and removes `.env`, `.env.*`, `dev.db`,
+`*.tsbuildinfo`, sources, tests, and Next.js build caches before deploy.
+
+## 16. Production environments
+
+`/opt/donordesk/shared/api.env` (root-owned, group-readable by DonorDesk, 0600):
+
+```bash
+NODE_ENV=production
+HOST=127.0.0.1
+PORT=4001
+DATABASE_URL=postgresql://donordesk_app:<secret>@127.0.0.1:5432/donordesk
+AUTH_PROVIDER=jwt
+JWT_SECRET=<64-or-more-random-characters>
+AUDIT_CHAIN_KEY=<independent-32-or-more-character-secret>
+STORAGE_ROOT=/opt/donordesk/shared/storage
+CORS_ORIGINS=https://donordesk.online
+LOG_LEVEL=info
+INTERNAL_TOKEN=<internal-route token>
+INTERNAL_HMAC_SECRET=<internal HMAC secret>
+PLATFORM_MASTER_KEY=<platform key>
+GOOGLE_DRIVE_CLIENT_ID=<id>
+GOOGLE_DRIVE_CLIENT_SECRET=<secret>
+GOOGLE_DRIVE_REDIRECT_URI=https://donordesk.online/api/auth/drive/callback
+GOOGLE_AUTH_REDIRECT_URI=https://donordesk.online/api/auth/google/callback
+JOB_QUEUE=kestra
+KESTRA_URL=http://127.0.0.1:8093
+KESTRA_BASIC_AUTH=<basic-auth>
+BILLING_PROVIDER=<stub|creem>
+```
+
+Rules:
+
+- Do **not** put `DATABASE_ADMIN_URL`, Redis admin credentials, backup keys, or
+  unrelated project secrets in `api.env`.
+- The web build uses same-origin `/api`; server-side actions call
+  `API_INTERNAL_URL` (default `http://127.0.0.1:4001`) set in the web unit drop-in.
+  `NEXT_PUBLIC_*` values are public and build-time embedded — they are not secrets.
+- `workers.env` (0600) holds the worker `INTERNAL_TOKEN`; `kestra.env` (0600)
+  holds Kestra secrets (Kestra OSS secrets are Base64-encoded).
+- Unsupported values (`STORAGE_BACKEND=s3` without wiring, `JOB_QUEUE=redis`
+  without BullMQ, a real `LLM_PROVIDER` without the adapter) must not be set.
+
+## 17. Systemd services
+
+All units are installed under `/etc/systemd/system/` and, where they exist, have
+checked-in source under `infra/systemd/`. Key contracts (verified live 2026-08-18):
+
+- **donordesk-api** — `User=donordesk`, `WorkingDirectory=/opt/donordesk/current`,
+  `EnvironmentFile=/opt/donordesk/shared/api.env`,
+  `ExecStart=/usr/bin/node dist/server.js`, `Restart=on-failure`, `RestartSec=5`,
+  `ProtectSystem=strict`, `ReadWritePaths=/opt/donordesk/shared/storage`.
+- **donordesk-web** — `User=donordesk`,
+  `WorkingDirectory=/opt/donordesk/current/apps/web`,
+  `Environment=NODE_ENV=production HOSTNAME=127.0.0.1 PORT=3002`,
+  `ExecStart=/usr/bin/node server.js`. Drop-in
+  `/etc/systemd/system/donordesk-web.service.d/google.conf` adds
+  `API_INTERNAL_URL=http://127.0.0.1:4001`, `GOOGLE_DRIVE_CLIENT_ID`,
+  `APP_URL=https://donordesk.online`.
+- **donordesk-workers** — `User=donordesk`,
+  `WorkingDirectory=/opt/donordesk/workers`,
+  `EnvironmentFile=/opt/donordesk/shared/workers.env`,
+  `ExecStart=/opt/donordesk/workers/.venv/bin/uvicorn app.main:app --host
+  127.0.0.1 --port 8092` (FastAPI; Python 3.12 venv lives at
+  `/opt/donordesk/workers/.venv`).
+- **donordesk-superadmin** — `User=donordesk`,
+  `WorkingDirectory=/opt/donordesk/current/superadmin`,
+  `Environment=PORT=3012 HOSTNAME=127.0.0.1
+  SUPERADMIN_API_URL=http://127.0.0.1:4001`,
+  `ExecStart=/usr/bin/node server.js`, `Requires=donordesk-api.service`.
+- **donordesk-kestra** — `User=donordesk_kestra`,
+  `WorkingDirectory=/opt/donordesk/kestra`,
+  `EnvironmentFile=/opt/donordesk/shared/kestra.env`,
+  `ExecStart=/usr/bin/java -jar /opt/donordesk/kestra/kestra-1.3.30 server
+  standalone --config=/opt/donordesk/kestra/.kestra/config.yml
+  --plugins=/opt/donordesk/kestra/plugins --port=8093 --worker-thread=8
+  --no-tutorials`, JVM capped `-Xmx1g` via `kestra.env`.
+
+Do not upgrade the global Node, pnpm, Python, PostgreSQL, Docker, or OLS
+versions during a DonorDesk deploy (NeureCore depends on global pnpm 9.15.9;
+DonorDesk builds with pnpm 10.34.5 off-host).
+
+## 18. Database migrations and RLS
+
+Use expand/migrate/contract so the preceding app release stays compatible; a
+destructive migration requires an approved maintenance window and a tested
+restore point. Never use `prisma db push` or `--accept-data-loss` in production.
+
+```bash
+# As root/operator with migrator credentials (root-only, never in api.env):
+set -a; . <migrator-env>; set +a
+DATABASE_URL="$DATABASE_ADMIN_URL" \
+  /opt/donordesk/releases/<release-id>/node_modules/.bin/prisma \
+  migrate deploy \
+  --schema /opt/donordesk/releases/<release-id>/prisma/schema.prisma
+
+# Then apply the checked-in RLS SQL and test isolation as donordesk_app:
+psql "$DATABASE_ADMIN_URL" --set ON_ERROR_STOP=1 \
+  --file /opt/donordesk/releases/<release-id>/prisma/rls.sql
+```
+
+Apply migrations **before** switching `current` so new code never queries a
+missing table. After every migration, verify `tenant_isolation` is
+enabled+forced on new tenant tables and `donordesk_app` has DML grants; run
+isolation smoke tests as `donordesk_app` (cross-tenant reads/writes must fail).
+
+Known migration gotcha: if `prisma migrate deploy` reports "relation already
+exists" because a `_prisma_migrations` row has `finished_at` NULL, mark it
+applied first:
+
+```sql
+UPDATE _prisma_migrations SET finished_at = now(), applied_steps_count = 1
+WHERE migration_name='<name>' AND finished_at IS NULL;
+```
+
+## 19. Mandatory release gate
+
+**Code and artifact**
+
+- [ ] Clean `pnpm -r typecheck`, `pnpm -r test`, `pnpm -r build` pass.
+- [ ] Real versioned Prisma migrations exist and pass empty-DB + upgrade tests.
+- [ ] No `db push --accept-data-loss` in any production path.
+- [ ] API respects `HOST=127.0.0.1`; web is `output: "standalone"`.
+- [ ] Artifact contains no `.env`, secrets, dev DB, uploads, sources, or caches.
+- [ ] Artifact starts without a production `pnpm install` (own `.pnpm` store).
+- [ ] Artifact records commit, timestamp, and release.json.
+
+**Database and tenancy**
+
+- [ ] Separate `donordesk_migrator` (schema owner) and `donordesk_app`
+      (restricted runtime, no `BYPASSRLS`) roles exist.
+- [ ] RLS is forced on every tenant table; tenant tests run over the same
+      TCP/runtime path as production.
+- [ ] Missing tenant context denies access; cross-tenant read/write fails.
+- [ ] Every API mutation creates the required audit record.
+
+**Operations**
+
+- [ ] Same-day port + capacity preflight passes (§12).
+- [ ] No new OLS validation error is introduced.
+- [ ] Off-host backup + restore test status confirmed (§23).
+- [ ] Rollback to the preceding immutable release is exercised.
+
+## 20. Release sequence
+
+1. Run the live-host preflight (§12).
+2. Confirm ports 3002/4001/8092 and disk/RAM margins.
+3. Confirm the latest off-host backup and restore-test status.
+4. Run the release gate (§19) and assemble the release (§21).
+5. Upload/extract the release directory (or transfer deltas) without touching `current`.
+6. Run migrations with root-only migrator credentials (§18).
+7. Apply RLS and run isolation tests as `donordesk_app`.
+8. Smoke the staged API/web on temporary loopback ports with the shared `api.env`.
+9. Atomically switch `current`.
+10. Restart only affected services (`donordesk-api`, `donordesk-web`,
+    `donordesk-superadmin`; worker/Kestra only if changed).
+11. Run local and public acceptance tests (§13, §24).
+12. Check journald, PostgreSQL, memory, swap, and disk.
+13. Record release ID, commit, migration, checksum, tests, and backup evidence (§26).
+
+## 21. Release paths
+
+### 21.1 Preferred — checksummed incremental immutable release
+
+Build off-host, hard-link the current release into a staging directory, and use
+checksummed `rsync` to replace only changed files. Then atomically switch
+`current`, restart only affected services, and run bounded health checks. A
+failed verification automatically restores the previous symlink and restarts the
+same services. Never edit a file in a completed release in place.
+
+```bash
+release_id="$(date -u +%Y%m%d%H%M%S)"
+
+# Required release gate. CI may run these once and retain the build outputs.
+pnpm -r typecheck
+pnpm -r test
+pnpm -r build
+
+# SKIP_BUILD is allowed only because the gate above produced this artifact.
+RELEASE_ID="$release_id" CREATE_TARBALL=0 SKIP_BUILD=1 \
+  scripts/package-release.sh
+
+# Select only services affected by the change.
+RELEASE_ID="$release_id" \
+RELEASE_DIR="/tmp/dd-release-$release_id" \
+SERVICES="donordesk-api donordesk-web" \
+  scripts/deploy-incremental.sh
+```
+
+Allowed `SERVICES` values are `donordesk-api`, `donordesk-web`, and
+`donordesk-superadmin`. The packager updates API/web and intentionally preserves
+the existing `superadmin/` tree; use the full release path when SuperAdmin
+itself changes until it is added to the fast packager.
+
+Measured pilot (2026-08-14): full build 151.5 s; cached artifact assembly
+23.9 s; hardened artifact 811 MB logical; incremental deploy 86.2 s;
+no-change checksummed comparison 17.5 s with zero files transferred; API startup
+~9 s. Routine cached deployments normally finish in about one minute after the
+artifact exists.
+
+### 21.2 Fallback — full self-contained tarball
+
+The bootstrap/fallback path uses a single tarball (see §11.1 of the former LEAN
+doc, now `scripts/package-release.sh` with `CREATE_TARBALL=1`): upload once,
+extract into an immutable release dir, switch with one symlink + restart. This
+is what `scripts/deploy.sh` (`RELEASE_ID` + `TARBALL` env vars) performs for the
+atomic-switch core; it does **not** run migrations/RLS — those are separate
+operator steps (§18) run before the switch.
+
+## 22. Rollback
+
+The fast deployment script rolls back automatically when its local health checks
+fail. Manual rollback:
+
+```bash
+RELEASE_ID=<known-good-release> scripts/rollback.sh
+# or, directly:
+ln -sfn /opt/donordesk/releases/<known-good> /opt/donordesk/current
+systemctl restart donordesk-api donordesk-web donordesk-superadmin
+```
+
+Procedure:
+
+1. Verify the previous release is compatible with the current database schema.
+2. Atomically repoint `current` to the explicit previous release ID.
+3. Restart only the affected DonorDesk services.
+4. Run the same public acceptance checks.
+5. Preserve failed-release logs and artifact for diagnosis.
+
+**Application rollback does not undo database changes** — that is why production
+migrations must remain compatible with the preceding release. Never run
+`pm2 restart all`; DonorDesk systemd operations must not touch existing PM2
+applications.
+
+## 23. Backup and disaster recovery
+
+> **Current status (2026-08-18):** no automated off-host DonorDesk backup is
+> scheduled yet. `scripts/backup.sh` (encrypted off-host backup of the
+> `donordesk` + `donordesk_kestra` databases and `shared/storage`) is prepared
+> but not scheduled. Must be scheduled and restore-tested **before** accepting
+> production data.
+
+Targets:
+
+- nightly encrypted logical backup of the DonorDesk database;
+- WAL/base-backup strategy if the approved RPO requires it;
+- daily encrypted incremental backup of `shared/storage`;
+- off-host destination with separate credentials;
+- checksum and backup-age monitoring;
+- monthly automated database-and-files restore;
+- quarterly clean-host recovery exercise.
+
+Approve explicit objectives (example):
+
+```text
+RPO: 15 minutes
+RTO: 4 hours
+Retention: 14 daily, 8 weekly, 12 monthly
+```
+
+Back up the database and evidence storage as one consistency set. Include
+release metadata, RLS/migrations, vhosts, units, and a secret inventory (protect
+actual secret values). Local WAL archives and CyberPanel schedules are not
+off-host DR.
+
+## 24. Acceptance test
+
+Health-only checks are insufficient. Through the final TLS hostname:
+
+1. create two organizations and users with different roles;
+2. prove cross-tenant reads and writes are denied;
+3. create/update a project;
+4. upload and parse representative TXT, PDF, DOCX, and XLSX evidence;
+5. download the exact original and verify checksum;
+6. create logframe items, indicators, and updates;
+7. create/review activity updates;
+8. create a reporting period and checklist;
+9. generate/edit/review/approve a report;
+10. generate and inspect PDF, DOCX, XLSX, and ZIP outputs actually supported;
+11. exercise comments, notifications, audit log, and audit-chain verification;
+12. connect/reconnect WebSocket through OLS;
+13. verify authorization for each role and project assignment;
+14. verify Prometheus scrape and alert delivery;
+15. restore the created database and files into a clean test environment.
+
+Where the implementation intentionally uses a stub, label the result as
+stub-assisted rather than real AI/email/queue behavior.
+
+## 25. Security and coexistence sign-off
+
+- [ ] Only 80/443 were used for new public access.
+- [ ] API/web/worker listen only on IPv4 loopback.
+- [ ] DonorDesk runs as its own Unix user(s).
+- [ ] Runtime cannot read migrator or other-project secrets.
+- [ ] No root PM2 process/dump was changed.
+- [ ] No global runtime/package version was changed.
+- [ ] No unrelated Docker container, volume, vhost, certificate, or firewall rule
+      was modified.
+- [ ] JWT/audit/database/backup/internal secrets are independent.
+- [ ] Logs contain no tokens, passwords, uploaded bodies, or beneficiary PII.
+- [ ] Upload/auth/export/AI routes have appropriate limits and timeouts.
+
+The shared host has broader risks outside DonorDesk (root/password SSH enabled,
+PostgreSQL trusts IPv4 loopback, multiple existing processes bind publicly, OLS
+validation has baseline errors, some unrelated certificates are expired/near
+expiry). Record these as separate host-hardening work; do not combine with
+deployments unless explicitly approved and rollback-tested.
+
+## 26. Production record
+
+Complete for every release:
+
+```text
+Host preflight timestamp:
+Hostname and certificate:
+Release ID / Git commit:
+Artifact SHA-256:
+Node/pnpm build versions:
+Migration IDs:
+RLS test result:
+Stage A acceptance result:
+Stage B capabilities enabled:
+Latest off-host backup:
+Latest restore test:
+Previous compatible release:
+Prometheus/Grafana verification:
+Resource usage after deploy:
+OLS baseline/new validation comparison:
+Operator / approver / date:
+```
+
+## 27. Shared Prometheus and Grafana
+
+The existing Prometheus/Alertmanager/Grafana containers use host networking, so
+Prometheus can scrape `127.0.0.1:4001/metrics` directly (no
+`host.docker.internal`). Integration rules: back up
+`/opt/neurecore/observability/prometheus/prometheus.yml` and alerts; add only
+namespaced DonorDesk scrape jobs/alert rules; validate inside the pinned image;
+reload only Prometheus; import a namespaced dashboard without replacing shared
+datasources; verify all existing targets remain healthy. Keep `/metrics` out of
+the public OLS vhost. Do not add Tempo or Loki in Stage A.
+
+## 28. Kestra design notes
+
+Kestra runs as a native systemd process (not a bridge-network container, which
+cannot reach host loopback `127.0.0.1`). Bind loopback only; never expose the
+UI publicly. Use a pinned version (1.3.30, Java 21), non-root execution
+(`donordesk_kestra`), its own database/role, and the `datasources.postgres`
+name. Deploy flows versioned; the five plugin-referencing flows and plugin JARs
+remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
+backup/restore.
+
+## 29. Change log
+
+- **2026-08-18 (public homepage + SEO refresh — release `20260818034420`, web-only):**
+  Deployed web-only via `scripts/deploy-incremental.sh` (SERVICES=`donordesk-web`,
+  ~4.5 MB transferred). Reworked the landing page copy to be grant/funder-agnostic:
+  rewrote hero/feature/step copy ("grant and donor reporting"), expanded the
+  How-it-works flow to six steps (project → logframe → indicators → compliance →
+  delivery & evidence → ready-to-review reports), added a "Who it's for" audience
+  grid (humanitarian/development, research & public health, government-funded,
+  education & skills, climate & social impact), refreshed pricing taglines,
+  removed the testimonial section, and updated the final CTA + trust/security
+  wording. Updated `layout.tsx` metadata/title/description, OpenGraph/Twitter
+  cards, and JSON-LD `Organization`/`WebApplication` descriptions. Gate passed
+  (`pnpm -r typecheck` + `pnpm -r build` green). Verified live: public HTTPS
+  homepage 200 and contains "Make every reporting period easier than the last";
+  API `/health`+`/ready` OK (database ok); web loopback 200; both services
+  active; current symlink `20260818034420`; no new web journal errors. Rollback:
+  `RELEASE_ID=20260818031100 scripts/rollback.sh` or `ln -sfn
+  /opt/donordesk/releases/20260818031100 /opt/donordesk/current && systemctl
+  restart donordesk-web`.
 
 - **2026-08-18 (comprehensive SuperAdmin Tier management — release `20260818031100`,
   commit `989745c`, API + web + superadmin):**
@@ -1243,7 +1690,8 @@ Also verify from outside the server:
   Measured results: full build 151.5 s; cached artifact assembly 23.9 s; hardened
   artifact 811 MB logical; deployment 86.2 s; steady-state checksummed comparison
   17.5 s with zero transferred files. API and web are healthy on loopback and
-  through public HTTPS. See `docs/CONTABO-FAST-DEPLOYMENT.md`.
+  through public HTTPS. See §21.1 (preferred release path) for the current
+  incremental-deployment procedure.
 
 - **2026-08-14 (self-contained `pnpm deploy` release — NEW deploy method):**
   Deployed release `20260814120000` to `DonerDesk.online` using the simplified

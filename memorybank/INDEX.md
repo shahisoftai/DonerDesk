@@ -20,7 +20,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **Contabo host operations** | [`contabo-ops.md`](contabo-ops.md) |
 | **SuperAdmin portal** | [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) |
 | **Kestra plugins** | [`imp/KESTRA-PLUGINS.md`](imp/KESTRA-PLUGINS.md) |
-| **Deploy to Contabo** | [`docs/CONTABO-LEAN-DEPLOYMENT.md`](docs/CONTABO-LEAN-DEPLOYMENT.md) |
+| **Deploy to Contabo** | [`contabo-ops.md`](contabo-ops.md) (sections 14–29: model, environments, services, migrations, release paths, rollback) |
 
 ---
 
@@ -93,15 +93,14 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 > `Features/11-AI-Report-Draft-Generator.md`, `Features/07-Evidence-Library.md`,
 > `Features/08-AI-Evidence-Tagging.md`, and `Fixes.md`. **Gated (not deployed):**
 > the five plugin-referencing Kestra flows and plugin JARs (stage/verify against
-> Kestra 1.3.30 + add the `donordesk` datasource first). See `contabo-ops.md` §14
+> Kestra 1.3.30 + add the `donordesk` datasource first). See `contabo-ops.md` §28
 > and `imp/KESTRA-PLUGINS.md`.
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |
 |------|---------|
 | [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) | **SuperAdmin portal** — security boundary, capabilities, API, encrypted configuration, production topology, TLS, operations, rollback, and limitations |
-| [`contabo-ops.md`](contabo-ops.md) | **Live-host inventory** — verified Contabo server state, ports, services, DOs/DON'Ts, preflight checks (517 lines) |
-| [`docs/CONTABO-LEAN-DEPLOYMENT.md`](docs/CONTABO-LEAN-DEPLOYMENT.md) | Step-by-step Contabo deployment runbook (732 lines) |
+| [`contabo-ops.md`](contabo-ops.md) | **Live-host inventory + deployment runbook** — verified Contabo server state, ports, services, DOs/DON'Ts, preflight, systemd units, migrations/RLS, release paths, rollback, backup, acceptance, security sign-off, production record, change log (single source of truth; former `docs/CONTABO-LEAN-DEPLOYMENT.md` + `docs/CONTABO-FAST-DEPLOYMENT.md` merged in) |
 | [`docs/runbooks/DISASTER-RECOVERY.md`](docs/runbooks/DISASTER-RECOVERY.md) | DR procedures |
 | [`docs/runbooks/BYOC-DEPLOYMENT.md`](docs/runbooks/BYOC-DEPLOYMENT.md) | Bring-your-own-cloud deployment |
 | [`docs/runbooks/alerts.md`](docs/runbooks/alerts.md) | Alert definitions |
@@ -206,7 +205,6 @@ memorybank/
 │   ├── PHASE6-FRONTEND-REPORT.md    Frontend Phase 6
 │   └── PHASE7-FRONTEND-REPORT.md    Frontend Phase 7
 └── docs/
-    ├── CONTABO-LEAN-DEPLOYMENT.md
     ├── api/
     │   └── openapi-3.1.json
     ├── architecture/
@@ -234,4 +232,4 @@ memorybank/
 | [`Fixes.md`](Fixes.md) | Investigating signup/login/auth issues |
 | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) | Frontend portal architecture and phase scope |
 | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) | Architecture questions, adding new features |
-| [`docs/CONTABO-LEAN-DEPLOYMENT.md`](docs/CONTABO-LEAN-DEPLOYMENT.md) | Deploying to Contabo |
+| [`contabo-ops.md`](contabo-ops.md) | Deploying to Contabo (host inventory + release procedure) |

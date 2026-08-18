@@ -2,8 +2,8 @@
 
 > **Current production reality (2026-08-13):** DonorDesk is deployed on a single
 > **Contabo** host (PostgreSQL 16 + systemd), not yet in an AWS/GCP BYOC account.
-> This guide documents the future managed-cloud target. See `contabo-ops.md` and
-> `docs/CONTABO-LEAN-DEPLOYMENT.md` for the current single-host deployment.
+> This guide documents the future managed-cloud target. See `contabo-ops.md`
+> for the current single-host deployment.
 
 ## Overview
 
