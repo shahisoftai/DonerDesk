@@ -6,24 +6,24 @@ export const metadata = {
   metadataBase: new URL("https://donordesk.online"),
   applicationName: "DonorDesk",
   title: {
-    default: "DonorDesk — AI-assisted donor reporting for NGOs",
+    default: "DonorDesk — AI-assisted grant and donor reporting",
     template: "%s · DonorDesk",
   },
   description:
-    "DonorDesk is the AI-assisted donor reporting platform for NGOs. It turns scattered field evidence, activity notes, and logframe data into audit-ready donor reports — with source-linked AI drafting and a live compliance checklist.",
+    "Turn programme data, field evidence, and indicator results into professional, source-linked reports for donors, grantmakers, and funding authorities.",
   openGraph: {
-    title: "DonorDesk — Donor reporting for NGOs",
+    title: "DonorDesk — AI-assisted grant and donor reporting",
     description:
-      "From scattered field evidence to donor-ready reports, with source-linked AI and a live compliance checklist.",
+      "Turn programme data, field evidence, and indicator results into professional, source-linked reports.",
     url: "https://donordesk.online",
     siteName: "DonorDesk",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "DonorDesk — Donor reporting for NGOs",
+    title: "DonorDesk — AI-assisted grant and donor reporting",
     description:
-      "From scattered field evidence to donor-ready reports, with source-linked AI and a live compliance checklist.",
+      "Turn programme data, field evidence, and indicator results into professional, source-linked reports.",
   },
 };
 
@@ -36,7 +36,7 @@ const structuredData = {
       url: "https://donordesk.online",
       logo: "https://donordesk.online/brand/donordesk-logo.png",
       description:
-        "AI-assisted donor reporting platform for NGOs, humanitarian programmes, and compliance teams.",
+        "AI-assisted grant and donor reporting for humanitarian, development, and other evidence-heavy funded programmes.",
     },
     {
       "@type": "WebApplication",
@@ -45,7 +45,7 @@ const structuredData = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "DonorDesk is the AI-assisted donor reporting platform for NGOs. It turns messy field evidence, activity notes, and logframe data into audit-ready donor reports with source-linked AI drafting, a live compliance checklist, and donor-ready exports.",
+        "DonorDesk turns programme data, activity records, indicator results, and supporting evidence into source-linked reports with compliance checks and human approval.",
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       publisher: { "@type": "Organization", name: "DonorDesk" },
     },

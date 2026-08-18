@@ -119,6 +119,91 @@
   }
 }
 
+@keyframes tech-float {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -20px, 0) scale(1.05); }
+}
+
+@keyframes tech-scan {
+  0% { transform: translateY(-120%); opacity: 0; }
+  12%, 75% { opacity: 0.55; }
+  100% { transform: translateY(720px); opacity: 0; }
+}
+
+@keyframes cookie-rise {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-cookie-rise {
+  animation: cookie-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.landing-tech {
+  background-image:
+    radial-gradient(circle at 50% 12%, rgba(14, 165, 233, 0.08), transparent 30%),
+    linear-gradient(180deg, #020617 0%, #050b1b 48%, #020617 100%);
+}
+
+.tech-orb {
+  position: absolute;
+  z-index: -1;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 999px;
+  filter: blur(80px);
+  opacity: 0.18;
+  animation: tech-float 9s ease-in-out infinite;
+}
+
+.tech-orb-left {
+  left: -12rem;
+  top: 18rem;
+  background: #0c8de6;
+}
+
+.tech-orb-right {
+  right: -11rem;
+  top: 6rem;
+  background: #22d3ee;
+  animation-delay: -4s;
+}
+
+.tech-dashboard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.055) 50%, transparent 65%);
+}
+
+.tech-scan-line {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(34,211,238,0.8), transparent);
+  box-shadow: 0 0 18px rgba(34,211,238,0.5);
+  animation: tech-scan 8s linear infinite;
+}
+
+.tech-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(120deg, transparent 20%, rgba(34,211,238,0.08), transparent 80%);
+  transition: opacity 300ms ease;
+}
+
+.tech-card:hover::after {
+  opacity: 1;
+}
+
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition hover:from-brand-400 hover:to-brand-500 hover:shadow-brand-500/40 disabled:cursor-not-allowed disabled:opacity-60;
