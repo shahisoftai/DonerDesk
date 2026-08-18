@@ -606,7 +606,7 @@ export default function HomePage() {
                 alt="DonorDesk"
                 width={1653}
                 height={589}
-                className="h-12 w-auto object-contain"
+                className="h-[30px] w-auto object-contain"
               />
             </Link>
             <a
