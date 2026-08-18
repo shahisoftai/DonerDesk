@@ -4,6 +4,7 @@ import type {
   BillingSubscriptionStatus,
   EntitlementGrant,
   PlanCode,
+  PlanCatalogOverride,
   BillingInterval,
   UsageCounter,
   UsageMetric,
@@ -65,6 +66,15 @@ export interface IEntitlementGrantRepository {
   listEffectiveByTenant(tenantId: string, now: Date): Promise<Result<EntitlementGrant[]>>;
   /** Trial grants whose window ended at/before `now`. */
   listExpiredTrialGrants(now: Date): Promise<Result<EntitlementGrant[]>>;
+}
+
+/**
+ * Persisted, globally-applied overrides to the static plan catalog. SuperAdmin
+ * tier management writes here; entitlement resolution consults it so edited
+ * allocations apply platform-wide without a deploy.
+ */
+export interface IPlanCatalogRepository {
+  listOverrides(): Promise<Result<PlanCatalogOverride[]>>;
 }
 
 export interface IBillingSubscriptionRepository {

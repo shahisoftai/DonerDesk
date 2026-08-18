@@ -31,3 +31,7 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO donordesk_app;
 -- runtime role needs DML to upsert model/prompt rows referenced by LlmRun.
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "LlmModel" TO donordesk_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "LlmPrompt" TO donordesk_app;
+
+-- PlanCatalogOverride is a global platform table (no tenantId column), read by
+-- tenant-facing entitlement resolution and written by the SuperAdmin portal.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "PlanCatalogOverride" TO donordesk_app;

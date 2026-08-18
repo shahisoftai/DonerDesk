@@ -30,6 +30,7 @@ export {
   PrismaBillingEventInboxRepository,
   PrismaTrialIdentityRepository,
   PrismaLlmUsageRepository,
+  PrismaPlanCatalogRepository,
 } from "./repositories/billing.js";
 export { createBillingProvider, CreemBillingProvider, StubBillingProvider } from "./billing/index.js";
 export * from "./ai/index.js";

@@ -10,6 +10,10 @@ const UserCreate = z.object({ tenantId: z.string().min(1), email: z.string().ema
 const TenantCreate = z.object({ name: z.string().min(2), tenantId: z.string().regex(/^[a-z0-9][a-z0-9-]{2,62}$/), organizationType: z.string().min(2), country: z.string().min(2), sectors: z.array(z.string()).default([]), contactName: z.string().min(2), contactEmail: z.string().email(), website: z.string().url().optional().or(z.literal("")), defaultLanguage: z.string().min(2).default("en"), dataResidency: z.enum(["DEFAULT", "EU", "US", "AFRICA", "ASIA"]), aiEnabled: z.boolean() });
 const TenantUpdate = TenantCreate.omit({ tenantId: true }).partial();
 const CreditsAdjust = z.object({ mode: z.enum(["SET", "INCREASE", "DECREASE"]), value: z.number().int().min(0), reason: z.string().max(200).optional() });
+const TierLimits = z.object({ maxActiveProjects: z.number().int().min(0).nullable(), maxSeats: z.number().int().min(0).nullable(), maxManagedStorageBytes: z.string().regex(/^\d+$/).nullable(), monthlyAiDraftCredits: z.number().int().min(0).nullable() });
+const TierUpdate = z.object({ name: z.string().min(1).optional(), monthlyPriceUsd: z.number().int().min(0).nullable().optional(), annualPriceUsd: z.number().int().min(0).nullable().optional(), trialDays: z.number().int().min(0).nullable().optional(), enabled: z.boolean().optional(), limits: TierLimits.partial().nullable().optional() });
+const TenantTierChange = z.object({ planCode: z.enum(["STARTER", "TEAM", "GROWTH", "ENTERPRISE"]), reason: z.string().max(200).optional(), limits: TierLimits.partial().nullable().optional() });
+const TenantLimitsSet = z.object({ limits: TierLimits, reason: z.string().max(200).optional() });
 
 export async function registerSuperAdminRoutes(app: FastifyInstance) {
   let platform: PlatformControlPlane | undefined;
@@ -35,6 +39,13 @@ export async function registerSuperAdminRoutes(app: FastifyInstance) {
     const meta = (req: FastifyRequest) => ({ ip: req.ip, userAgent: req.headers["user-agent"] });
     secured.get("/superadmin/overview", () => service().overview());
     secured.get("/superadmin/billing", () => service().listBilling());
+    secured.get("/superadmin/tiers", () => service().listTiers());
+    secured.put("/superadmin/tiers/:planCode", req => service().updateTier(actor(req), (req.params as { planCode: string }).planCode, TierUpdate.parse(req.body), meta(req)));
+    secured.post("/superadmin/tiers/:planCode/reset", req => service().resetTier(actor(req), (req.params as { planCode: string }).planCode, meta(req)));
+    secured.get("/superadmin/tenants/:id/tier", req => service().getTenantTier((req.params as { id: string }).id));
+    secured.post("/superadmin/tenants/:id/tier", req => service().changeTenantTier(actor(req), (req.params as { id: string }).id, TenantTierChange.parse(req.body), meta(req)));
+    secured.put("/superadmin/tenants/:id/tier/limits", req => service().setTenantLimits(actor(req), (req.params as { id: string }).id, TenantLimitsSet.parse(req.body), meta(req)));
+    secured.post("/superadmin/tenants/:id/tier/reset", req => service().resetTenantTier(actor(req), (req.params as { id: string }).id, meta(req)));
     secured.post("/superadmin/tenants/:id/credits", req => service().adjustCredits(actor(req), (req.params as { id: string }).id, CreditsAdjust.parse(req.body), meta(req)));
     secured.post("/superadmin/tenants/:id/credits/reset", req => service().resetCreditsCounter(actor(req), (req.params as { id: string }).id, meta(req)));
     secured.get("/superadmin/tenants", () => service().listTenants());

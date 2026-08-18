@@ -119,6 +119,7 @@ import {
   PrismaBillingEventInboxRepository,
   PrismaTrialIdentityRepository,
   PrismaLlmUsageRepository,
+  PrismaPlanCatalogRepository,
 } from "./repositories/billing.js";
 import { PrismaDonorTemplateRepository } from "./repositories/templates.js";
 import {
@@ -209,6 +210,7 @@ export interface Container {
   billingInbox: PrismaBillingEventInboxRepository;
   trialIdentities: PrismaTrialIdentityRepository;
   llmUsage: PrismaLlmUsageRepository;
+  planCatalog: PrismaPlanCatalogRepository;
   billingProvider: ReturnType<typeof createBillingProvider>;
   projects: PrismaProjectRepository;
   projectMembers: PrismaProjectMemberRepository;
@@ -455,8 +457,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const billingInbox = new PrismaBillingEventInboxRepository(prisma);
   const trialIdentities = new PrismaTrialIdentityRepository(prisma);
   const llmUsage = new PrismaLlmUsageRepository(prisma);
+  const planCatalog = new PrismaPlanCatalogRepository(prisma);
   const billingProvider = createBillingProvider();
-  const entitlements = new EntitlementService(entitlementGrants, billingSubscriptions, usageCounters, projects, users);
+  const entitlements = new EntitlementService(entitlementGrants, billingSubscriptions, usageCounters, projects, users, planCatalog);
   const provisionTenant = new ProvisionTenantHandler(ids, organizations, users, entitlementGrants, trialIdentities, auth, events, audits, clock);
 
   const readiness = new ProjectReadinessService(
@@ -648,7 +651,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     evidenceTagger, activityPolisher, templateExtraction, checklistDetector, exportBuilder,
     organizations, users, invitations,     projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
     periods, drafts, sections, reportPlans, reportClaims, generationRuns, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
-    billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, billingProvider,
+    billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, planCatalog, billingProvider,
     handlers,
   };
 }

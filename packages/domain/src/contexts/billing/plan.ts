@@ -130,3 +130,118 @@ export function planLimitsFromJson(json: PlanLimitsJson): PlanLimits {
 export function isPlanForTrial(code: PlanCode): boolean {
   return code === "TEAM" || code === "GROWTH";
 }
+
+/**
+ * Partial, persisted override of a static catalog entry. Unset fields fall
+ * back to the static `PLAN_CATALOG` values, so a SuperAdmin can adjust one
+ * allocation (e.g. AI credits) without rewriting the whole tier.
+ */
+export interface PlanCatalogOverride {
+  planCode: PlanCode;
+  name?: string;
+  monthlyPriceUsd?: number | null;
+  annualPriceUsd?: number | null;
+  trialDays?: number | null;
+  enabled?: boolean;
+  /** Partial limits override; unset buckets keep the static catalog value. */
+  limits?: Partial<PlanLimits>;
+  /** Platform actor that created/updated the override. */
+  createdById?: string;
+}
+
+/** JSON-safe persisted form of a catalog override. */
+export interface PlanCatalogOverrideJson {
+  planCode: PlanCode;
+  name?: string | null;
+  monthlyPriceUsd?: number | null;
+  annualPriceUsd?: number | null;
+  trialDays?: number | null;
+  enabled?: boolean;
+  limits?: PlanLimitsJson | null;
+}
+
+export function planCatalogOverrideFromJson(json: PlanCatalogOverrideJson): PlanCatalogOverride {
+  return {
+    planCode: json.planCode,
+    name: json.name ?? undefined,
+    monthlyPriceUsd: json.monthlyPriceUsd ?? undefined,
+    annualPriceUsd: json.annualPriceUsd ?? undefined,
+    trialDays: json.trialDays ?? undefined,
+    enabled: json.enabled,
+    limits: json.limits ? planLimitsFromJson(json.limits) : undefined,
+  };
+}
+
+/**
+ * Merge a partial PlanLimitsJson onto a base. `undefined` buckets (and missing
+ * keys) keep the base value; explicit `null` means unlimited/contract and is
+ * preserved (never collapsed to the base).
+ */
+export function mergePartialLimits(
+  partial: Partial<PlanLimitsJson> | null | undefined,
+  base: PlanLimitsJson,
+): PlanLimitsJson {
+  return {
+    maxActiveProjects: partial?.maxActiveProjects !== undefined ? partial.maxActiveProjects : base.maxActiveProjects,
+    maxSeats: partial?.maxSeats !== undefined ? partial.maxSeats : base.maxSeats,
+    maxManagedStorageBytes: partial?.maxManagedStorageBytes !== undefined ? partial.maxManagedStorageBytes : base.maxManagedStorageBytes,
+    monthlyAiDraftCredits: partial?.monthlyAiDraftCredits !== undefined ? partial.monthlyAiDraftCredits : base.monthlyAiDraftCredits,
+  };
+}
+
+export function planCatalogOverrideToJson(override: PlanCatalogOverride | null | undefined): PlanCatalogOverrideJson | null {
+  if (!override) return null;
+  const base = planLimitsToJson(resolvePlanLimits(override.planCode));
+  return {
+    planCode: override.planCode,
+    name: override.name ?? null,
+    monthlyPriceUsd: override.monthlyPriceUsd ?? null,
+    annualPriceUsd: override.annualPriceUsd ?? null,
+    trialDays: override.trialDays ?? null,
+    enabled: override.enabled,
+    limits: override.limits
+      ? mergePartialLimits(
+          {
+            maxActiveProjects: override.limits.maxActiveProjects,
+            maxSeats: override.limits.maxSeats,
+            maxManagedStorageBytes: override.limits.maxManagedStorageBytes === undefined ? undefined : override.limits.maxManagedStorageBytes === null ? null : override.limits.maxManagedStorageBytes.toString(),
+            monthlyAiDraftCredits: override.limits.monthlyAiDraftCredits,
+          },
+          base,
+        )
+      : null,
+  };
+}
+
+/** Apply a partial override onto the static catalog entry. */
+export function resolvePlanWithOverride(code: PlanCode, override?: PlanCatalogOverride | null): PlanDefinition {
+  const base = resolvePlan(code);
+  if (!override) return base;
+  const limits = override.limits;
+  return {
+    ...base,
+    name: override.name !== undefined ? override.name : base.name,
+    monthlyPriceUsd: override.monthlyPriceUsd !== undefined ? override.monthlyPriceUsd : base.monthlyPriceUsd,
+    annualPriceUsd: override.annualPriceUsd !== undefined ? override.annualPriceUsd : base.annualPriceUsd,
+    trialDays: override.trialDays !== undefined ? override.trialDays : base.trialDays,
+    maxActiveProjects: limits?.maxActiveProjects !== undefined ? limits.maxActiveProjects : base.maxActiveProjects,
+    maxSeats: limits?.maxSeats !== undefined ? limits.maxSeats : base.maxSeats,
+    maxManagedStorageBytes: limits?.maxManagedStorageBytes !== undefined ? limits.maxManagedStorageBytes : base.maxManagedStorageBytes,
+    monthlyAiDraftCredits: limits?.monthlyAiDraftCredits !== undefined ? limits.monthlyAiDraftCredits : base.monthlyAiDraftCredits,
+  };
+}
+
+export function resolvePlanLimitsWithOverride(code: PlanCode, override?: PlanCatalogOverride | null): PlanLimits {
+  const plan = resolvePlanWithOverride(code, override);
+  return {
+    maxActiveProjects: plan.maxActiveProjects,
+    maxSeats: plan.maxSeats,
+    maxManagedStorageBytes: plan.maxManagedStorageBytes,
+    monthlyAiDraftCredits: plan.monthlyAiDraftCredits,
+  };
+}
+
+/** Resolver used by entitlement calculation; defaults to the static catalog. */
+export type PlanLimitsResolver = (code: PlanCode) => PlanLimits;
+
+export const STATIC_PLAN_LIMITS: PlanLimitsResolver = resolvePlanLimits;

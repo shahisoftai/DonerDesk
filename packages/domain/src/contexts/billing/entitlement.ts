@@ -1,6 +1,6 @@
 import { DomainError } from "../../core/domain-error.js";
-import type { PlanLimits } from "./plan.js";
-import { resolvePlanLimits } from "./plan.js";
+import type { PlanLimits, PlanCode, PlanLimitsResolver } from "./plan.js";
+import { STATIC_PLAN_LIMITS } from "./plan.js";
 import type { BillingSubscriptionStatus } from "./billing-subscription.js";
 
 export type EntitlementSource =
@@ -58,6 +58,8 @@ export interface EntitlementInput {
   subscription?: EntitlementSubscriptionView;
   /** Plan-specific override limits; falls back to catalog when omitted. */
   overrideLimits?: PlanLimits;
+  /** Creation timestamp; ties broken toward the most recent grant. */
+  createdAt?: Date;
 }
 
 export interface EntitlementSnapshot {
@@ -90,20 +92,32 @@ export interface EntitlementUsage {
  *   ACTIVE/TRIALING or inside its grace window.
  * - A TRIAL grant is effective only until `effectiveUntil`.
  * - No valid grant -> STARTER (DEFAULT) is the effective fallback.
+ *
+ * `resolveLimits` maps a plan code to its limits; SuperAdmin tier overrides are
+ * injected through this resolver (defaults to the static catalog).
  */
 export function calculateEntitlement(
   grants: EntitlementInput[],
   usage: EntitlementUsage,
   now: Date,
+  resolveLimits: PlanLimitsResolver = STATIC_PLAN_LIMITS,
 ): EntitlementSnapshot {
   const effective = grants
     .filter((grant) => isGrantEffective(grant, now))
-    .sort((a, b) => sourcePrecedence(a.source) - sourcePrecedence(b.source));
+    .sort((a, b) => {
+      const precedenceDiff = sourcePrecedence(a.source) - sourcePrecedence(b.source);
+      if (precedenceDiff !== 0) return precedenceDiff;
+      // Ties (multiple MANUAL/GRANDFATHERED grants) resolve to the most recent
+      // grant so the newest override wins.
+      const aTime = a.createdAt?.getTime() ?? a.effectiveFrom.getTime();
+      const bTime = b.createdAt?.getTime() ?? b.effectiveFrom.getTime();
+      return bTime - aTime;
+    });
 
   const selected = effective[0];
 
   if (!selected) {
-    const starter = resolvePlanLimits("STARTER");
+    const starter = resolveLimits("STARTER");
     return {
       planCode: "STARTER",
       source: "DEFAULT",
@@ -115,7 +129,7 @@ export function calculateEntitlement(
     };
   }
 
-  const limits = selected.overrideLimits ?? resolvePlanLimits(selected.planCode as import("./plan.js").PlanCode);
+  const limits = selected.overrideLimits ?? resolveLimits(selected.planCode as PlanCode);
   const trialEndsAt = selected.source === "TRIAL" ? selected.effectiveUntil : undefined;
 
   return {

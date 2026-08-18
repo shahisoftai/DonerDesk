@@ -4,11 +4,18 @@ import jwt from "jsonwebtoken";
 import type { PrismaClient } from "@prisma/client";
 import {
   PLAN_CATALOG,
-  resolvePlanLimits,
+  PLAN_CODES,
+  resolvePlan,
+  resolvePlanLimitsWithOverride,
+  resolvePlanWithOverride,
   planLimitsToJson,
+  mergePartialLimits,
+  planCatalogOverrideToJson,
   isPlanCode,
   type PlanLimitsJson,
   type PlanCode,
+  type PlanCatalogOverride,
+  type PlanDefinition,
 } from "@donordesk/domain";
 
 export const PLATFORM_CATEGORIES = ["LLM", "EMAIL", "OBJECT_STORAGE", "BACKUP", "CONNECTOR"] as const;
@@ -23,7 +30,11 @@ export const PLATFORM_PROVIDERS = {
 export type PlatformSession = { sub: string; email: string; role: "SUPER_ADMIN"; purpose: "session" | "mfa" };
 type AdminRow = { id: string; email: string; name: string; passwordHash: string; status: string; totpSecretEncrypted: string | null; recoveryCodesHash: string; failedLoginCount: number; lockedUntil: Date | null };
 type ConfigurationRow = Record<string, unknown> & { id: string; secretCiphertext: string | null; secretIv: string | null; secretTag: string | null; secretVersion: number };
-type BillingGrantRow = { id: string; tenantId: string; planCode: string; source: string; effectiveFrom: Date; effectiveUntil: Date | null; overrideLimitsJson: string | null; createdAt: Date };
+type BillingGrantRow = { id: string; tenantId: string; planCode: string; source: string; effectiveFrom: Date; effectiveUntil: Date | null; overrideLimitsJson: string | null; reason: string | null; billingSubscriptionId: string | null; createdAt: Date };
+type BillingSubscriptionRow = { id: string; tenantId: string; planCode: string; status: string; currentPeriodEnd: Date | null; graceEndsAt: Date | null; billingInterval: string; unitAmountMinor: number };
+type PlanCatalogOverrideRow = { planCode: string; name: string | null; monthlyPriceUsd: number | null; annualPriceUsd: number | null; trialDays: number | null; enabled: boolean | null; limitsJson: string | null; createdAt?: Date; updatedAt?: Date };
+
+const GRANT_PRECEDENCE: Record<string, number> = { MANUAL: 0, ENTERPRISE_CONTRACT: 1, GRANDFATHERED: 2, CREEM_SUBSCRIPTION: 3, TRIAL: 4, DEFAULT: 5 };
 
 export class PlatformControlPlane {
   private readonly masterKey: Buffer;
@@ -119,57 +130,263 @@ export class PlatformControlPlane {
   listUsers() { return this.prisma.user.findMany({ select: { id: true, tenantId: true, email: true, name: true, role: true, status: true, lastLoginAt: true, createdAt: true }, orderBy: { createdAt: "desc" } }); }
 
   /**
-   * Billing & credits overview for the SuperAdmin portal: one row per tenant
-   * with the effective plan (resolved via the same precedence rules the app
-   * uses), the AI-credit limit and current-month usage, and the active
-   * subscription when present. Pure read; uses the public domain calculators
-   * so the portal never disagrees with tenant-facing billing.
+   * Billing & tier overview for the SuperAdmin portal: one row per tenant with
+   * the effective plan (resolved via the same precedence rules the app uses),
+   * full effective limits, current-month usage, and the active subscription.
+   * Pure read; uses the public domain calculators and merges global
+   * `PlanCatalogOverride` rows so the portal never disagrees with tenant-facing
+   * billing.
    */
   async listBilling() {
     const organizations = await this.prisma.organization.findMany({ orderBy: { createdAt: "desc" } });
-    const grants = await this.query<{ id: string; tenantId: string; planCode: string; source: string; effectiveFrom: Date; effectiveUntil: Date | null; overrideLimitsJson: string | null; createdAt: Date }>(`SELECT * FROM "EntitlementGrant"`);
-    const subscriptions = await this.query<{ id: string; tenantId: string; planCode: string; status: string; currentPeriodEnd: Date | null; billingInterval: string; unitAmountMinor: number }>(`SELECT * FROM "BillingSubscription"`);
-    const aiCounters = await this.query<{ tenantId: string; used: bigint; reserved: bigint; periodStart: Date }>(`SELECT "tenantId","used","reserved","periodStart" FROM "UsageCounter" WHERE metric='AI_DRAFT_CREDITS'`);
+    const grants = await this.query<BillingGrantRow>(`SELECT * FROM "EntitlementGrant"`);
+    const subscriptions = await this.query<BillingSubscriptionRow>(`SELECT * FROM "BillingSubscription"`);
+    const overrides = await this.catalogOverrides();
 
     const now = new Date();
     const subByTenant = new Map(subscriptions.map((s) => [s.tenantId, s]));
-    const counterByTenant = new Map(aiCounters.map((c) => [c.tenantId, c]));
+    const usage = await this.usageByTenant(now);
 
-    return organizations.map((org) => {
-      const tenantGrants = grants.filter((g) => g.tenantId === org.tenantId && g.effectiveFrom.getTime() <= now.getTime() && (!g.effectiveUntil || g.effectiveUntil.getTime() > now.getTime()));
-      const precedence: Record<string, number> = { MANUAL: 0, ENTERPRISE_CONTRACT: 1, GRANDFATHERED: 2, CREEM_SUBSCRIPTION: 3, TRIAL: 4, DEFAULT: 5 };
-      const selected = [...tenantGrants].sort((a, b) => (precedence[a.source] ?? 9) - (precedence[b.source] ?? 9))[0];
+    return organizations.map((org) => this.billingRow(org, grants, subByTenant, usage, overrides, now));
+  }
 
-      let planCode: PlanCode = "STARTER";
-      let source = "DEFAULT";
-      let overrideLimits: PlanLimitsJson | undefined;
-      if (selected) {
-        planCode = (isPlanCode(selected.planCode) ? selected.planCode : "STARTER") as PlanCode;
-        source = selected.source;
-        if (selected.overrideLimitsJson) {
-          try { overrideLimits = JSON.parse(selected.overrideLimitsJson) as PlanLimitsJson; } catch { /* keep undefined */ }
-        }
-      }
+  /**
+   * Comprehensive tier management read model: the merged global catalog (all
+   * plans with applied overrides, tenant counts, enabled flags) plus the same
+   * per-tenant rows as `listBilling`. Powers the dedicated "Tier management"
+   * SuperAdmin area.
+   */
+  async listTiers() {
+    const [overrides, billing] = await Promise.all([this.catalogOverrides(), this.listBilling()]);
+    const tenantCountByPlan = new Map<string, number>();
+    for (const row of billing) tenantCountByPlan.set(row.planCode, (tenantCountByPlan.get(row.planCode) ?? 0) + 1);
 
-      const limits = overrideLimits ?? planLimitsToJson(resolvePlanLimits(planCode));
-      const counter = counterByTenant.get(org.tenantId);
-      const subscription = subByTenant.get(org.tenantId);
-
+    const catalog = PLAN_CODES.map((code) => {
+      const override = overrides.get(code);
+      const definition: PlanDefinition = resolvePlanWithOverride(code, override);
       return {
-        tenantId: org.tenantId,
-        organizationId: org.id,
-        name: org.name,
-        aiEnabled: org.aiEnabled,
-        planCode,
-        source,
-        planName: PLAN_CATALOG[planCode]?.name ?? planCode,
-        monthlyAiDraftCredits: limits.monthlyAiDraftCredits,
-        aiCreditsUsed: Number(counter?.used ?? 0n),
-        aiCreditsReserved: Number(counter?.reserved ?? 0n),
-        overrideApplied: Boolean(overrideLimits),
-        subscription: subscription ? { status: subscription.status, planCode: subscription.planCode, interval: subscription.billingInterval, unitAmountMinor: subscription.unitAmountMinor, currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() ?? null } : null,
+        planCode: code,
+        name: definition.name,
+        monthlyPriceUsd: definition.monthlyPriceUsd,
+        annualPriceUsd: definition.annualPriceUsd,
+        trialDays: definition.trialDays,
+        enabled: override?.enabled ?? true,
+        overridden: Boolean(override),
+        limits: planLimitsToJson({
+          maxActiveProjects: definition.maxActiveProjects,
+          maxSeats: definition.maxSeats,
+          maxManagedStorageBytes: definition.maxManagedStorageBytes,
+          monthlyAiDraftCredits: definition.monthlyAiDraftCredits,
+        }),
+        tenantCount: tenantCountByPlan.get(code) ?? 0,
       };
     });
+
+    return { catalog, tenants: billing };
+  }
+
+  /**
+   * Updates the global catalog override for a plan. Any provided field is
+   * persisted; omitted fields keep the static catalog value. `limits` is a
+   * partial PlanLimitsJson merged on top of the static catalog at resolution
+   * time. Write the whole desired limits object from the UI to avoid
+   * ambiguity; buckets sent as `null` mean unlimited for that tier.
+   */
+  async updateTier(actor: PlatformSession, planCode: string, input: { name?: string; monthlyPriceUsd?: number | null; annualPriceUsd?: number | null; trialDays?: number | null; enabled?: boolean; limits?: Partial<PlanLimitsJson> | null }, meta?: { ip?: string; userAgent?: string }) {
+    if (!isPlanCode(planCode)) throw new Error("Unknown plan");
+    const code = planCode as PlanCode;
+    const existing = await this.planOverrideRow(code);
+    const before = existing ? this.toCatalogOverride(existing) : null;
+
+    const existingLimits = existing?.limitsJson ? this.parseLimitsJson(existing.limitsJson) : null;
+    const staticDef = resolvePlan(code);
+    const staticLimits = planLimitsToJson(staticDef);
+    // Preserve explicit `null` buckets stored earlier (unlimited/custom): a
+    // partial update must fall back to the *stored* override value first and
+    // only then to the static catalog, so a stored null is never resurrected.
+    const limitsJson = input.limits
+      ? JSON.stringify(
+          mergePartialLimits(input.limits, {
+            maxActiveProjects: existingLimits !== null && existingLimits.maxActiveProjects !== undefined ? existingLimits.maxActiveProjects : staticLimits.maxActiveProjects,
+            maxSeats: existingLimits !== null && existingLimits.maxSeats !== undefined ? existingLimits.maxSeats : staticLimits.maxSeats,
+            maxManagedStorageBytes: existingLimits !== null && existingLimits.maxManagedStorageBytes !== undefined ? existingLimits.maxManagedStorageBytes : staticLimits.maxManagedStorageBytes,
+            monthlyAiDraftCredits: existingLimits !== null && existingLimits.monthlyAiDraftCredits !== undefined ? existingLimits.monthlyAiDraftCredits : staticLimits.monthlyAiDraftCredits,
+          }),
+        )
+      : existing?.limitsJson ?? null;
+
+    await this.execute(
+      `INSERT INTO "PlanCatalogOverride" ("planCode","name","monthlyPriceUsd","annualPriceUsd","trialDays","enabled","limitsJson","createdById","updatedById","updatedAt")
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8,NOW())
+       ON CONFLICT ("planCode") DO UPDATE SET
+         "name"=EXCLUDED."name",
+         "monthlyPriceUsd"=EXCLUDED."monthlyPriceUsd",
+         "annualPriceUsd"=EXCLUDED."annualPriceUsd",
+         "trialDays"=EXCLUDED."trialDays",
+         "enabled"=EXCLUDED."enabled",
+         "limitsJson"=EXCLUDED."limitsJson",
+         "updatedById"=EXCLUDED."updatedById",
+         "updatedAt"=NOW()`,
+      code,
+      input.name !== undefined ? input.name : (existing?.name ?? staticDef.name),
+      input.monthlyPriceUsd !== undefined ? input.monthlyPriceUsd : (existing?.monthlyPriceUsd ?? staticDef.monthlyPriceUsd),
+      input.annualPriceUsd !== undefined ? input.annualPriceUsd : (existing?.annualPriceUsd ?? staticDef.annualPriceUsd),
+      input.trialDays !== undefined ? input.trialDays : (existing?.trialDays ?? staticDef.trialDays),
+      input.enabled ?? existing?.enabled ?? true,
+      limitsJson,
+      actor.sub,
+      actor.sub,
+    );
+
+    const after = this.toCatalogOverride({
+      planCode: code,
+      name: input.name !== undefined ? input.name : (existing?.name ?? staticDef.name),
+      monthlyPriceUsd: input.monthlyPriceUsd !== undefined ? input.monthlyPriceUsd : (existing?.monthlyPriceUsd ?? staticDef.monthlyPriceUsd),
+      annualPriceUsd: input.annualPriceUsd !== undefined ? input.annualPriceUsd : (existing?.annualPriceUsd ?? staticDef.annualPriceUsd),
+      trialDays: input.trialDays !== undefined ? input.trialDays : (existing?.trialDays ?? staticDef.trialDays),
+      enabled: input.enabled ?? existing?.enabled ?? true,
+      limitsJson,
+    } as PlanCatalogOverrideRow);
+    await this.audit(actor, "tier.updated", "PlanCatalogOverride", code, planCatalogOverrideToJson(before), planCatalogOverrideToJson(after), meta);
+    return { planCode: code, ...planCatalogOverrideToJson(after) };
+  }
+
+  /** Removes the global override for a plan, reverting it to the static catalog. */
+  async resetTier(actor: PlatformSession, planCode: string, meta?: { ip?: string; userAgent?: string }) {
+    if (!isPlanCode(planCode)) throw new Error("Unknown plan");
+    const existing = await this.planOverrideRow(planCode as PlanCode);
+    if (!existing) throw new Error("Tier has no override to reset");
+    await this.execute(`DELETE FROM "PlanCatalogOverride" WHERE "planCode"=$1`, planCode);
+    await this.audit(actor, "tier.reset", "PlanCatalogOverride", planCode, planCatalogOverrideToJson(this.toCatalogOverride(existing)), null, meta);
+    return { planCode, reset: true };
+  }
+
+  /**
+   * Detailed tier view for one tenant: effective plan/source/limits, current
+   * usage, active subscription, and the full grant history (append-only).
+   */
+  async getTenantTier(tenantId: string) {
+    const org = await this.prisma.organization.findFirst({ where: { tenantId } });
+    if (!org) throw new Error("Tenant not found");
+    const [grants, subscriptions, usage, overrides] = await Promise.all([
+      this.query<BillingGrantRow>(`SELECT * FROM "EntitlementGrant" WHERE "tenantId"=$1 ORDER BY "createdAt" DESC`, tenantId),
+      this.query<BillingSubscriptionRow>(`SELECT * FROM "BillingSubscription" WHERE "tenantId"=$1`, tenantId),
+      this.usageByTenant(new Date(), tenantId),
+      this.catalogOverrides(),
+    ]);
+    const subByTenant = new Map(subscriptions.map((s) => [s.tenantId, s]));
+    const row = this.billingRow(org, grants, subByTenant, usage, overrides, new Date());
+    return {
+      ...row,
+      history: grants.map((g) => ({
+        id: g.id,
+        planCode: g.planCode,
+        source: g.source,
+        effectiveFrom: g.effectiveFrom.toISOString(),
+        effectiveUntil: g.effectiveUntil?.toISOString() ?? null,
+        reason: g.reason ?? null,
+        overrideLimitsJson: g.overrideLimitsJson,
+        createdAt: g.createdAt.toISOString(),
+      })),
+    };
+  }
+
+  /**
+   * Changes a tenant's tier by writing a MANUAL grant for the target plan.
+   * The new grant takes effect immediately (MANUAL is the highest-precedence
+   * source); limits resolve from the catalog/global overrides unless a partial
+   * limits override is supplied. Append-only: previous grants remain for audit.
+   */
+  async changeTenantTier(actor: PlatformSession, tenantId: string, input: { planCode: PlanCode; reason?: string; limits?: Partial<PlanLimitsJson> | null }, meta?: { ip?: string; userAgent?: string }) {
+    const org = await this.prisma.organization.findFirst({ where: { tenantId } });
+    if (!org) throw new Error("Tenant not found");
+    if (!isPlanCode(input.planCode)) throw new Error("Unknown plan");
+
+    // A disabled tier is not assignable.
+    const overrides = await this.catalogOverrides();
+    const targetOverride = overrides.get(input.planCode);
+    if (targetOverride?.enabled === false) throw new Error(`Tier ${input.planCode} is disabled and cannot be assigned`);
+
+    const before = await this.currentPlanLimits(tenantId);
+    const id = randomUUID();
+    const now = new Date();
+    // Partial limits merge against the *target* plan's limits (catalog +
+    // global override), so unmentioned buckets follow the target tier instead
+    // of silently carrying the old plan's allocation.
+    const targetLimits = planLimitsToJson(resolvePlanLimitsWithOverride(input.planCode, targetOverride));
+    const merged = input.limits ? mergePartialLimits(input.limits, targetLimits) : null;
+    // Keep a stable "tier-change-to-*" marker in the reason so resetTenantTier
+    // can identify tier-assignment grants; user reason text is preserved after.
+    const reason = input.reason
+      ? `tier-change-to-${input.planCode.toLowerCase()}:${input.reason}`
+      : `tier-change-to-${input.planCode.toLowerCase()}`;
+    await this.prisma.entitlementGrant.create({
+      data: {
+        id,
+        tenantId,
+        planCode: input.planCode,
+        source: "MANUAL",
+        effectiveFrom: now,
+        overrideLimitsJson: merged ? JSON.stringify(merged) : null,
+        reason,
+        createdById: actor.sub,
+      },
+    });
+    await this.audit(actor, "tenant.tier_changed", "Tenant", tenantId, { plan: before.planCode ?? "STARTER", source: before.source ?? "DEFAULT" }, { plan: input.planCode, source: "MANUAL", reason: input.reason ?? null, limits: merged }, meta);
+    return { tenantId, previous: before.planCode ?? "STARTER", next: input.planCode, source: "MANUAL", limits: merged };
+  }
+
+  /**
+   * Sets per-tenant feature allocation by writing a MANUAL grant with a full
+   * PlanLimits override on the tenant's current effective plan. `limits` is a
+   * PlanLimitsJson; `null` buckets mean unlimited for that tenant.
+   */
+  async setTenantLimits(actor: PlatformSession, tenantId: string, input: { limits: PlanLimitsJson; reason?: string }, meta?: { ip?: string; userAgent?: string }) {
+    const org = await this.prisma.organization.findFirst({ where: { tenantId } });
+    if (!org) throw new Error("Tenant not found");
+
+    const before = await this.currentPlanLimits(tenantId);
+    const id = randomUUID();
+    const now = new Date();
+    await this.prisma.entitlementGrant.create({
+      data: {
+        id,
+        tenantId,
+        planCode: before.planCode ?? "STARTER",
+        source: "MANUAL",
+        effectiveFrom: now,
+        overrideLimitsJson: JSON.stringify(input.limits satisfies PlanLimitsJson),
+        reason: input.reason ?? "tenant-limits-override",
+        createdById: actor.sub,
+      },
+    });
+    await this.audit(actor, "tenant.limits_set", "Tenant", tenantId, { plan: before.planCode ?? "STARTER", limits: { maxActiveProjects: before.maxActiveProjects, maxSeats: before.maxSeats, maxManagedStorageBytes: before.maxManagedStorageBytes, monthlyAiDraftCredits: before.monthlyAiDraftCredits } }, { plan: before.planCode ?? "STARTER", limits: input.limits }, meta);
+    return { tenantId, planCode: before.planCode ?? "STARTER", limits: input.limits };
+  }
+
+  /**
+   * Ends the tenant's MANUAL tier-assignment grants (written by
+   * `changeTenantTier`) by closing their validity window, so the tenant falls
+   * back to their subscription / trial / Starter entitlement. Grants are never
+   * deleted — their window is ended for audit and rollback. Credit-allowance
+   * and feature-allocation MANUAL grants are intentionally left intact.
+   */
+  async resetTenantTier(actor: PlatformSession, tenantId: string, meta?: { ip?: string; userAgent?: string }) {
+    const org = await this.prisma.organization.findFirst({ where: { tenantId } });
+    if (!org) throw new Error("Tenant not found");
+    const now = new Date();
+    const open = await this.prisma.entitlementGrant.findMany({
+      where: { tenantId, source: "MANUAL", reason: { startsWith: "tier-change-to-" }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gt: now } }] },
+      select: { id: true, planCode: true, effectiveUntil: true },
+    });
+    const closed = [];
+    for (const grant of open) {
+      await this.prisma.entitlementGrant.update({ where: { id: grant.id }, data: { effectiveUntil: now } });
+      closed.push({ id: grant.id, planCode: grant.planCode });
+    }
+    const after = await this.currentPlanLimits(tenantId);
+    await this.audit(actor, "tenant.tier_reset", "Tenant", tenantId, { closedGrants: closed }, { plan: after.planCode ?? "STARTER", source: after.source ?? "DEFAULT" }, meta);
+    return { tenantId, closedGrants: closed, plan: after.planCode ?? "STARTER", source: after.source ?? "DEFAULT" };
   }
 
   /**
@@ -210,7 +427,7 @@ export class PlatformControlPlane {
       data: {
         id,
         tenantId,
-        planCode: "STARTER",
+        planCode: base.planCode ?? "STARTER",
         source: "MANUAL",
         effectiveFrom: now,
         overrideLimitsJson: JSON.stringify(override),
@@ -238,21 +455,183 @@ export class PlatformControlPlane {
     return plan.monthlyAiDraftCredits ?? 0;
   }
 
-  private async currentPlanLimits(tenantId: string): Promise<PlanLimitsJson> {
+  private async currentPlanLimits(tenantId: string): Promise<PlanLimitsJson & { planCode?: PlanCode; source?: string }> {
     const now = new Date();
     const grants = await this.query<BillingGrantRow>(`SELECT * FROM "EntitlementGrant" WHERE "tenantId"=$1`, tenantId);
-    const effective = grants.filter((g) => g.effectiveFrom.getTime() <= now.getTime() && (!g.effectiveUntil || g.effectiveUntil.getTime() > now.getTime()));
-    const precedence: Record<string, number> = { MANUAL: 0, ENTERPRISE_CONTRACT: 1, GRANDFATHERED: 2, CREEM_SUBSCRIPTION: 3, TRIAL: 4, DEFAULT: 5 };
-    const selected = [...effective].sort((a, b) => (precedence[a.source] ?? 9) - (precedence[b.source] ?? 9))[0];
+    const subscriptions = await this.query<BillingSubscriptionRow>(`SELECT * FROM "BillingSubscription" WHERE "tenantId"=$1`, tenantId);
+    const overrides = await this.catalogOverrides();
+    const selected = this.selectEffectiveGrant(grants, subscriptions, now);
     const planCode = (isPlanCode(selected?.planCode ?? "") ? selected?.planCode : "STARTER") as PlanCode;
-    const base = planLimitsToJson(resolvePlanLimits(planCode));
+    const base = planLimitsToJson(resolvePlanLimitsWithOverride(planCode, overrides.get(planCode)));
     if (selected?.overrideLimitsJson) {
       try {
         const parsed = JSON.parse(selected.overrideLimitsJson) as PlanLimitsJson;
-        if (typeof parsed.monthlyAiDraftCredits === "number") return { ...base, monthlyAiDraftCredits: parsed.monthlyAiDraftCredits };
+        if (typeof parsed.monthlyAiDraftCredits === "number") return { ...base, planCode, source: selected.source, monthlyAiDraftCredits: parsed.monthlyAiDraftCredits };
       } catch { /* ignore malformed override */ }
     }
-    return base;
+    return { ...base, planCode, source: selected?.source };
+  }
+
+  /**
+   * Resolves one tenant's billing row. Shares the exact precedence rules used
+   * by the app's entitlement service (including subscription status/grace
+   * effectiveness), plus global catalog overrides.
+   */
+  private billingRow(
+    org: { id: string; tenantId: string; name: string; aiEnabled: boolean },
+    grants: BillingGrantRow[],
+    subByTenant: Map<string, BillingSubscriptionRow>,
+    usage: Map<string, { activeProjects: number; seats: number; managedStorageBytes: bigint; aiUsed: bigint; aiReserved: bigint }>,
+    overrides: Map<PlanCode, PlanCatalogOverride>,
+    now: Date,
+  ) {
+    const selected = this.selectEffectiveGrant(grants.filter((g) => g.tenantId === org.tenantId), subByTenant, now);
+
+    let planCode: PlanCode = "STARTER";
+    let source = "DEFAULT";
+    let overrideLimits: PlanLimitsJson | undefined;
+    if (selected) {
+      planCode = (isPlanCode(selected.planCode) ? selected.planCode : "STARTER") as PlanCode;
+      source = selected.source;
+      if (selected.overrideLimitsJson) {
+        try { overrideLimits = JSON.parse(selected.overrideLimitsJson) as PlanLimitsJson; } catch { /* keep undefined */ }
+      }
+    }
+
+    const limits = overrideLimits ?? planLimitsToJson(resolvePlanLimitsWithOverride(planCode, overrides.get(planCode)));
+    const counter = usage.get(org.tenantId);
+    const subscription = subByTenant.get(org.tenantId);
+
+    return {
+      tenantId: org.tenantId,
+      organizationId: org.id,
+      name: org.name,
+      aiEnabled: org.aiEnabled,
+      planCode,
+      source,
+      planName: PLAN_CATALOG[planCode]?.name ?? planCode,
+      limits,
+      monthlyAiDraftCredits: limits.monthlyAiDraftCredits,
+      aiCreditsUsed: Number(counter?.aiUsed ?? 0n),
+      aiCreditsReserved: Number(counter?.aiReserved ?? 0n),
+      usage: {
+        projects: counter?.activeProjects ?? 0,
+        seats: counter?.seats ?? 0,
+        managedStorageBytes: (counter?.managedStorageBytes ?? 0n).toString(),
+        aiDraftCredits: Number(counter?.aiUsed ?? 0n),
+      },
+      overrideApplied: Boolean(overrideLimits),
+      subscription: subscription ? { status: subscription.status, planCode: subscription.planCode, interval: subscription.billingInterval, unitAmountMinor: subscription.unitAmountMinor, currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() ?? null } : null,
+    };
+  }
+
+  /**
+   * Shared effective-grant selector used by the portal reads. Mirrors the app's
+   * `calculateEntitlement`: only grants effective at `now` (including
+   * subscription status/grace for CREEM_SUBSCRIPTION grants) are considered,
+   * highest-precedence source wins, and ties resolve to the most recent grant.
+   */
+  private selectEffectiveGrant(tenantGrants: BillingGrantRow[], subscriptions: BillingSubscriptionRow[] | Map<string, BillingSubscriptionRow>, now: Date): BillingGrantRow | undefined {
+    const subByTenant = subscriptions instanceof Map ? subscriptions : new Map(subscriptions.map((s) => [s.tenantId, s]));
+    const effective = tenantGrants.filter((g) => {
+      if (g.effectiveFrom.getTime() > now.getTime()) return false;
+      if (g.effectiveUntil && g.effectiveUntil.getTime() <= now.getTime()) return false;
+      if (g.source === "CREEM_SUBSCRIPTION") {
+        const sub = g.billingSubscriptionId ? [...subByTenant.values()].find((s) => s.id === g.billingSubscriptionId) : subByTenant.get(g.tenantId);
+        if (sub) {
+          if (sub.status === "CANCELLED" || sub.status === "EXPIRED" || sub.status === "PAUSED") return false;
+          if (sub.status === "PAST_DUE") {
+            if (!sub.graceEndsAt || sub.graceEndsAt.getTime() <= now.getTime()) return false;
+          }
+          if (sub.currentPeriodEnd && sub.currentPeriodEnd.getTime() < now.getTime()) return false;
+        }
+      }
+      return true;
+    });
+    return [...effective].sort((a, b) => {
+      const p = (GRANT_PRECEDENCE[a.source] ?? 9) - (GRANT_PRECEDENCE[b.source] ?? 9);
+      if (p !== 0) return p;
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    })[0];
+  }
+
+  /** Current UTC-month usage per tenant (optionally filtered to one tenant). */
+  private async usageByTenant(now: Date, tenantId?: string) {
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    const tenantFilter = tenantId ? { tenantId } : {};
+    const [projects, users, storageRows, aiRows] = await Promise.all([
+      this.prisma.project.groupBy({ by: ["tenantId"], where: { ...tenantFilter, status: { not: "ARCHIVED" } }, _count: { _all: true } }),
+      this.prisma.user.groupBy({ by: ["tenantId"], where: { ...tenantFilter, status: { in: ["ACTIVE", "INVITED", "SUSPENDED"] } }, _count: { _all: true } }),
+      this.query<{ tenantId: string; used: bigint; reserved: bigint }>(`SELECT "tenantId","used","reserved" FROM "UsageCounter" WHERE metric='MANAGED_STORAGE_BYTES' AND "periodStart">=$1 AND "periodStart"<$2`, monthStart, monthEnd),
+      this.query<{ tenantId: string; used: bigint; reserved: bigint }>(`SELECT "tenantId","used","reserved" FROM "UsageCounter" WHERE metric='AI_DRAFT_CREDITS' AND "periodStart">=$1 AND "periodStart"<$2`, monthStart, monthEnd),
+    ]);
+    const map = new Map<string, { activeProjects: number; seats: number; managedStorageBytes: bigint; aiUsed: bigint; aiReserved: bigint }>();
+    for (const row of projects) map.set(row.tenantId, { activeProjects: row._count._all, seats: 0, managedStorageBytes: 0n, aiUsed: 0n, aiReserved: 0n });
+    for (const row of users) {
+      const entry = map.get(row.tenantId) ?? { activeProjects: 0, seats: 0, managedStorageBytes: 0n, aiUsed: 0n, aiReserved: 0n };
+      entry.seats = row._count._all;
+      map.set(row.tenantId, entry);
+    }
+    for (const row of storageRows) {
+      const entry = map.get(row.tenantId) ?? { activeProjects: 0, seats: 0, managedStorageBytes: 0n, aiUsed: 0n, aiReserved: 0n };
+      entry.managedStorageBytes = row.used;
+      map.set(row.tenantId, entry);
+    }
+    for (const row of aiRows) {
+      const entry = map.get(row.tenantId) ?? { activeProjects: 0, seats: 0, managedStorageBytes: 0n, aiUsed: 0n, aiReserved: 0n };
+      entry.aiUsed = row.used;
+      entry.aiReserved = row.reserved;
+      map.set(row.tenantId, entry);
+    }
+    return map;
+  }
+
+  /** All global catalog overrides keyed by plan code. */
+  private async catalogOverrides(): Promise<Map<PlanCode, PlanCatalogOverride>> {
+    const rows = await this.query<PlanCatalogOverrideRow>(`SELECT * FROM "PlanCatalogOverride"`);
+    const map = new Map<PlanCode, PlanCatalogOverride>();
+    for (const row of rows) {
+      const override = this.toCatalogOverride(row);
+      if (override) map.set(row.planCode as PlanCode, override);
+    }
+    return map;
+  }
+
+  private async planOverrideRow(planCode: PlanCode): Promise<PlanCatalogOverrideRow | null> {
+    return (await this.query<PlanCatalogOverrideRow>(`SELECT * FROM "PlanCatalogOverride" WHERE "planCode"=$1`, planCode))[0] ?? null;
+  }
+
+  private toCatalogOverride(row: PlanCatalogOverrideRow | null | undefined): PlanCatalogOverride | null {
+    if (!row) return null;
+    const override: PlanCatalogOverride = { planCode: row.planCode as PlanCode };
+    override.name = row.name ?? undefined;
+    override.monthlyPriceUsd = row.monthlyPriceUsd;
+    override.annualPriceUsd = row.annualPriceUsd;
+    override.trialDays = row.trialDays;
+    override.enabled = row.enabled ?? true;
+    const parsed = row.limitsJson ? this.parseLimitsJson(row.limitsJson) : null;
+    if (parsed) override.limits = {
+      ...(parsed.maxActiveProjects !== undefined ? { maxActiveProjects: parsed.maxActiveProjects } : {}),
+      ...(parsed.maxSeats !== undefined ? { maxSeats: parsed.maxSeats } : {}),
+      ...(parsed.maxManagedStorageBytes !== undefined ? { maxManagedStorageBytes: parsed.maxManagedStorageBytes === null ? null : BigInt(parsed.maxManagedStorageBytes) } : {}),
+      ...(parsed.monthlyAiDraftCredits !== undefined ? { monthlyAiDraftCredits: parsed.monthlyAiDraftCredits } : {}),
+    };
+    return override;
+  }
+
+  private parseLimitsJson(json: string): Partial<PlanLimitsJson> | null {
+    try {
+      const parsed = JSON.parse(json) as Partial<PlanLimitsJson>;
+      return {
+        ...(parsed.maxActiveProjects !== undefined ? { maxActiveProjects: parsed.maxActiveProjects } : {}),
+        ...(parsed.maxSeats !== undefined ? { maxSeats: parsed.maxSeats } : {}),
+        ...(parsed.maxManagedStorageBytes !== undefined ? { maxManagedStorageBytes: parsed.maxManagedStorageBytes } : {}),
+        ...(parsed.monthlyAiDraftCredits !== undefined ? { monthlyAiDraftCredits: parsed.monthlyAiDraftCredits } : {}),
+      };
+    } catch {
+      return null;
+    }
   }
 
   async createTenant(actor: PlatformSession, data: { name: string; tenantId: string; organizationType: string; country: string; sectors: string[]; contactName: string; contactEmail: string; website?: string; defaultLanguage: string; dataResidency: string; aiEnabled: boolean }, meta?: { ip?: string; userAgent?: string }) {

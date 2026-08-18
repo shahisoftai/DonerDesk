@@ -4,9 +4,13 @@ import {
   EntitlementGrant,
   TenantId,
   DomainError,
+  PlanCatalogOverride,
+  isPlanCode,
   type Result,
   type UsageMetric,
   UsageCounter,
+  type PlanLimitsJson,
+  type PlanCode,
 } from "@donordesk/domain";
 import type {
   IEntitlementGrantRepository,
@@ -15,6 +19,7 @@ import type {
   IBillingEventInboxRepository,
   ITrialIdentityRepository,
   ILlmUsageRepository,
+  IPlanCatalogRepository,
 } from "@donordesk/application";
 
 type DbClient = PrismaClient | Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0];
@@ -237,6 +242,53 @@ export class PrismaEntitlementGrantRepository implements IEntitlementGrantReposi
         createdById: row.createdById ?? undefined,
       },
     });
+  }
+}
+
+export class PrismaPlanCatalogRepository implements IPlanCatalogRepository {
+  constructor(private readonly prisma: DbClient) {}
+
+  async listOverrides(): Promise<Result<PlanCatalogOverride[], DomainError>> {
+    const rows = await this.prisma.planCatalogOverride.findMany({ orderBy: { planCode: "asc" } });
+    return ok(rows.map((r) => this.toDomain(r)).filter((o): o is PlanCatalogOverride => o !== null));
+  }
+
+  private toDomain(row: {
+    planCode: string;
+    name: string | null;
+    monthlyPriceUsd: number | null;
+    annualPriceUsd: number | null;
+    trialDays: number | null;
+    enabled: boolean;
+    limitsJson: string | null;
+    createdById: string | null;
+    updatedById: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }): PlanCatalogOverride | null {
+    if (!isPlanCode(row.planCode)) return null;
+    const result: PlanCatalogOverride = {
+      planCode: row.planCode,
+      name: row.name ?? undefined,
+      monthlyPriceUsd: row.monthlyPriceUsd ?? undefined,
+      annualPriceUsd: row.annualPriceUsd ?? undefined,
+      trialDays: row.trialDays ?? undefined,
+      enabled: row.enabled,
+    };
+    if (row.limitsJson) {
+      try {
+        const parsed = JSON.parse(row.limitsJson) as Partial<PlanLimitsJson>;
+        result.limits = {
+          ...(parsed.maxActiveProjects !== undefined ? { maxActiveProjects: parsed.maxActiveProjects } : {}),
+          ...(parsed.maxSeats !== undefined ? { maxSeats: parsed.maxSeats } : {}),
+          ...(parsed.maxManagedStorageBytes !== undefined ? { maxManagedStorageBytes: parsed.maxManagedStorageBytes === null ? null : BigInt(parsed.maxManagedStorageBytes) } : {}),
+          ...(parsed.monthlyAiDraftCredits !== undefined ? { monthlyAiDraftCredits: parsed.monthlyAiDraftCredits } : {}),
+        };
+      } catch {
+        // Malformed limits JSON is ignored; static catalog applies.
+      }
+    }
+    return result;
   }
 }
 

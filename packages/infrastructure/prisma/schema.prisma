@@ -1000,6 +1000,25 @@ model EntitlementGrant {
   @@index([billingSubscriptionId])
 }
 
+// Global (platform-wide) tier catalog overrides. Written by the SuperAdmin
+// "Tier management" portal; entitlement resolution merges these on top of the
+// static PLAN_CATALOG so edited allocations apply everywhere immediately.
+model PlanCatalogOverride {
+  planCode               String   @id
+  name                   String?
+  monthlyPriceUsd        Int?
+  annualPriceUsd         Int?
+  trialDays              Int?
+  enabled                Boolean  @default(true)
+  limitsJson             String?  // JSON PlanLimitsJson (partial/full limits override)
+  createdById            String?
+  updatedById            String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([enabled])
+}
+
 model BillingEventInbox {
   id                String   @id
   provider          String   @default("CREEM")

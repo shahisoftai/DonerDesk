@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type Tab = "overview" | "tenants" | "users" | "billing" | "ai" | "email" | "storage" | "backups" | "connectors" | "kestra" | "audit" | "system";
+type Tab = "overview" | "tenants" | "users" | "tiers" | "billing" | "ai" | "email" | "storage" | "backups" | "connectors" | "kestra" | "audit" | "system";
 type AnyRow = Record<string, any>;
+
+const tierPlanCodes = ["STARTER", "TEAM", "GROWTH", "ENTERPRISE"];
 
 const roles = ["ADMIN", "PROJECT_MANAGER", "ME_OFFICER", "GRANTS_OFFICER", "FIELD_OFFICER", "COMPLIANCE_OFFICER", "VIEWER"];
 const providerGroups = {
@@ -49,7 +51,7 @@ export function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ type: "ok" | "error"; text: string } | null>(null);
-  const [modal, setModal] = useState<null | { kind: "tenant" | "user" | "provider"; row?: AnyRow }>(null);
+  const [modal, setModal] = useState<null | { kind: "tenant" | "user" | "provider" | "tier" | "tierTenant"; row?: AnyRow }>(null);
   const [tenants, setTenants] = useState<AnyRow[]>([]);
 
   const endpoint = tab === "ai" || tab === "email" || tab === "storage" || tab === "backups" || tab === "connectors" ? "configurations" : tab;  async function load() {
@@ -66,7 +68,7 @@ export function Dashboard() {
 
   const navigation: Array<[Tab, string, string]> = [
     ["overview", "Overview", "⌂"], ["tenants", "Tenants", "▦"], ["users", "Users", "♙"],
-    ["billing", "Billing & credits", "¤"],
+    ["tiers", "Tier management", "◈"], ["billing", "Billing & credits", "¤"],
     ["ai", "AI & LLM", "✦"], ["email", "Email", "✉"], ["storage", "Object storage", "▤"],
     ["backups", "Off-host backups", "↥"], ["connectors", "Inbound connectors", "⇄"],
     ["kestra", "Kestra plugins", "⚙"], ["audit", "Audit trail", "◷"], ["system", "System health", "●"],
@@ -83,6 +85,7 @@ export function Dashboard() {
       {notice && <div className={`toast ${notice.type}`}>{notice.text}</div>}
       {tab === "overview" && <Overview data={data} onNavigate={changeTab} />}
       {tab === "tenants" && <Tenants rows={Array.isArray(data) ? data : []} onAdd={() => setModal({ kind: "tenant" })} onEdit={(row: AnyRow) => setModal({ kind: "tenant", row })} onDelete={(row: AnyRow) => action(() => api(`tenants/${row.id}`, { method: "DELETE", body: JSON.stringify({ confirmation: prompt(`Type ${row.name} to permanently delete this empty tenant`) || "" }) }), "Tenant deleted")} />}
+      {tab === "tiers" && <Tiers data={data || {}} onEditTier={(tier: AnyRow) => setModal({ kind: "tier", row: tier })} onResetTier={(tier: AnyRow) => confirm(`Revert ${tier.name} (${tier.planCode}) to the static catalog? Any global overrides are removed.`) && void action(() => api(`tiers/${tier.planCode}/reset`, { method: "POST" }), "Tier reset to catalog")} onManageTenant={(row: AnyRow) => setModal({ kind: "tierTenant", row })} />}
       {tab === "billing" && <Billing rows={Array.isArray(data) ? data : []} onSetCredits={(row: AnyRow) => { const value = prompt(`Set monthly AI draft credits for ${row.name} (current: ${row.monthlyAiDraftCredits})`, String(row.monthlyAiDraftCredits)); if (value !== null && value.trim() !== "") { const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0) void action(() => api(`tenants/${row.tenantId}/credits`, { method: "POST", body: JSON.stringify({ mode: "SET", value: parsed, reason: "superadmin" }) }), "Credits updated"); else flash("error", "Credit value must be a non-negative integer"); } }} onAdjustCredits={(row: AnyRow, mode: "INCREASE" | "DECREASE") => { const value = prompt(mode === "INCREASE" ? `Increase AI draft credits for ${row.name} by:` : `Reduce AI draft credits for ${row.name} by:`); if (value !== null && value.trim() !== "") { const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0) void action(() => api(`tenants/${row.tenantId}/credits`, { method: "POST", body: JSON.stringify({ mode, value: parsed, reason: "superadmin" }) }), "Credits updated"); else flash("error", "Credit value must be a non-negative integer"); } }} onResetCounter={(row: AnyRow) => confirm(`Reset the current month's AI credit usage for ${row.name}? This does not change the allowance.`) && void action(() => api(`tenants/${row.tenantId}/credits/reset`, { method: "POST" }), "Usage counter reset")} />}
       {tab === "users" && <Users rows={Array.isArray(data) ? data : []} tenants={tenants} onAdd={() => setModal({ kind: "user" })} onEdit={(row: AnyRow) => setModal({ kind: "user", row })} onReset={(row: AnyRow) => { const password = prompt(`Enter a new password (minimum 12 characters) for ${row.email}`); if (password) void action(() => api(`users/${row.id}`, { method: "PATCH", body: JSON.stringify({ password }) }), "Password reset successfully"); }} onDelete={(row: AnyRow) => confirm(`Delete ${row.email}? This cannot be undone.`) && void action(() => api(`users/${row.id}`, { method: "DELETE" }), "User deleted")} />}
       {(tab in providerGroups) && <Providers tab={tab as keyof typeof providerGroups} rows={(Array.isArray(data) ? data : []).filter((x: AnyRow) => x.category === providerGroups[tab as keyof typeof providerGroups].category)} onAdd={() => setModal({ kind: "provider" })} onEdit={(row: AnyRow) => setModal({ kind: "provider", row })} onTest={(row: AnyRow) => action(() => api(`configurations/${row.id}/test`, { method: "POST" }), "Connection test completed")} onToggle={(row: AnyRow) => action(() => api("configurations", { method: "PUT", body: JSON.stringify(configurationPayload(row, { enabled: !row.enabled })) }), row.enabled ? "Provider disabled" : "Provider enabled")} onDelete={(row: AnyRow) => confirm(`Delete ${row.displayName}? Encrypted credentials will also be removed.`) && void action(() => api(`configurations/${row.id}`, { method: "DELETE" }), "Configuration deleted")} />}
@@ -93,6 +96,8 @@ export function Dashboard() {
     {modal?.kind === "tenant" && <TenantModal row={modal.row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(modal.row ? `tenants/${modal.row.id}` : "tenants", { method: modal.row ? "PATCH" : "POST", body: JSON.stringify(value) }), modal.row ? "Tenant updated" : "Tenant created")} />}
     {modal?.kind === "user" && <UserModal row={modal.row} tenants={tenants} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(modal.row ? `users/${modal.row.id}` : "users", { method: modal.row ? "PATCH" : "POST", body: JSON.stringify(value) }), modal.row ? "User updated" : "User created")} />}
     {modal?.kind === "provider" && <ProviderModal group={providerGroups[tab as keyof typeof providerGroups]} row={modal.row} tenants={tenants} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api("configurations", { method: "PUT", body: JSON.stringify(value) }), modal.row ? "Configuration updated and secrets rotated" : "Credentials encrypted and saved")} />}
+    {modal?.kind === "tier" && (() => { const row = modal.row!; return <TierModal row={row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(`tiers/${row.planCode}`, { method: "PUT", body: JSON.stringify(value) }), "Tier updated globally")} />; })()}
+    {modal?.kind === "tierTenant" && (() => { const row = modal.row!; return <TenantTierModal row={row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(`tenants/${row.tenantId}/tier`, { method: "POST", body: JSON.stringify({ planCode: value.planCode, reason: value.reason, limits: value.customLimits ? value.limits : undefined }) }), "Tenant tier updated")} onReset={() => action(() => api(`tenants/${row.tenantId}/tier/reset`, { method: "POST" }), "Tenant tier overrides reset")} />; })()}
   </div>;
 }
 
@@ -133,6 +138,122 @@ function Billing({ rows, onSetCredits, onAdjustCredits, onResetCounter }: any) {
 }
 
 function Providers({ tab, rows, onAdd, onEdit, onTest, onToggle, onDelete }: any) { const allMeta: Record<string, string[]> = { ai: ["AI and language models", "Configure models used for drafting, tagging and analysis.", "Add LLM provider"], email: ["Transactional email", "Control outbound invitations, alerts and notifications.", "Add email provider"], storage: ["Object storage", "Manage evidence and export storage destinations.", "Add storage"], backups: ["Encrypted off-host backups", "Configure independent disaster-recovery destinations.", "Add backup target"], connectors: ["Inbound data connectors", "Ingest evidence and field data from external systems.", "Add connector"] }; const meta = allMeta[String(tab)]!; return <Resource title={meta[0]} description={meta[1]} add={meta[2]} onAdd={onAdd}><div className="provider-grid">{rows.length === 0 && <Empty text="No provider configured yet." />}{rows.map((r: AnyRow) => <article className="provider-card" key={r.id}><div className="provider-head"><span className="provider-icon">{providerIcon(r.provider)}</span><div><h3>{r.displayName}</h3><p>{pretty(r.provider)} · {r.scopeType === "TENANT" ? `Tenant ${r.scopeId}` : "All tenants"}</p></div><Badge ok={r.enabled}>{r.enabled ? "Active" : "Disabled"}</Badge></div><div className="provider-meta"><span>Credentials <strong>{r.secretConfigured ? "✓ Encrypted" : "Not set"}</strong></span><span>Last test <strong>{r.lastTestStatus || "Never"}</strong></span><span>Updated <strong>{date(r.updatedAt)}</strong></span></div>{r.lastTestMessage && <p className={`test-result ${r.lastTestStatus === "SUCCESS" ? "pass" : "fail"}`}>{r.lastTestMessage}</p>}<div className="card-actions"><button onClick={() => onTest(r)}>Test connection</button><button onClick={() => onToggle(r)}>{r.enabled ? "Disable" : "Enable"}</button><button onClick={() => onEdit(r)}>Edit / rotate keys</button><button className="danger-link" onClick={() => onDelete(r)}>Delete</button></div></article>)}</div></Resource>; }
+
+function Tiers({ data, onEditTier, onResetTier, onManageTenant }: any) {
+  const catalog: AnyRow[] = Array.isArray(data.catalog) ? data.catalog : [];
+  const tenants: AnyRow[] = Array.isArray(data.tenants) ? data.tenants : [];
+  return <div className="tiers-wrap">
+    <section className="panel resource">
+      <div className="panel-title"><div><h2>Tier catalog</h2><p>Global feature allocation for every tier. Overrides apply to all tenants on the tier immediately; static values are the shipped defaults.</p></div></div>
+      <div className="table-wrap"><table>
+        <thead><tr><th>Tier</th><th>Monthly</th><th>Annual</th><th>Trial</th><th>Projects</th><th>Seats</th><th>Managed storage</th><th>AI drafts / month</th><th>Tenants</th><th>State</th><th /></tr></thead>
+        <tbody>{catalog.map((t: AnyRow) => <tr key={t.planCode}>
+          <td><strong>{t.name}</strong><small><code>{t.planCode}</code>{t.overridden ? " · overridden" : ""}</small></td>
+          <td>{t.monthlyPriceUsd == null ? "Custom" : `$${t.monthlyPriceUsd}`}</td>
+          <td>{t.annualPriceUsd == null ? "Custom" : `$${t.annualPriceUsd}`}</td>
+          <td>{t.trialDays == null ? "—" : `${t.trialDays} days`}</td>
+          <td>{t.limits?.maxActiveProjects ?? "Unlimited"}</td>
+          <td>{t.limits?.maxSeats ?? "Unlimited"}</td>
+          <td>{bytes(t.limits?.maxManagedStorageBytes)}</td>
+          <td>{t.limits?.monthlyAiDraftCredits ?? "Unlimited"}</td>
+          <td>{t.tenantCount}</td>
+          <td><Badge ok={t.enabled}>{t.enabled ? "Enabled" : "Disabled"}</Badge></td>
+          <td><div className="row-actions"><button onClick={() => onEditTier(t)}>Edit tier</button>{t.overridden && <button className="danger-link" onClick={() => onResetTier(t)}>Reset to catalog</button>}</div></td>
+        </tr>)}</tbody>
+      </table></div>
+      <p className="help-note">Editing a tier writes a global <code>PlanCatalogOverride</code>; feature allocations take effect on next entitlement resolution. Disabling a tier hides it from new assignments and checkout options.</p>
+    </section>
+    <section className="panel resource">
+      <div className="panel-title"><div><h2>Tenant tier assignments</h2><p>Change any tenant's tier or override its feature allocation within the current tier.</p></div></div>
+      <div className="table-wrap"><table>
+        <thead><tr><th>Organization</th><th>Effective tier</th><th>Source</th><th>Projects</th><th>Seats</th><th>Storage</th><th>AI drafts</th><th /></tr></thead>
+        <tbody>{tenants.map((r: AnyRow) => <tr key={r.tenantId}>
+          <td><strong>{r.name}</strong><small><code>{r.tenantId}</code>{r.overrideApplied ? " · manual override" : ""}</small></td>
+          <td><Badge ok>{r.planName}</Badge></td>
+          <td>{pretty(r.source)}</td>
+          <td>{r.usage?.projects ?? 0} / {r.limits?.maxActiveProjects ?? "∞"}</td>
+          <td>{r.usage?.seats ?? 0} / {r.limits?.maxSeats ?? "∞"}</td>
+          <td>{bytes(r.usage?.managedStorageBytes)} / {bytes(r.limits?.maxManagedStorageBytes)}</td>
+          <td>{r.usage?.aiDraftCredits ?? r.aiCreditsUsed ?? 0} / {r.monthlyAiDraftCredits ?? "∞"}</td>
+          <td><div className="row-actions"><button onClick={() => onManageTenant(r)}>Manage tier</button></div></td>
+        </tr>)}</tbody>
+      </table></div>
+      <p className="help-note">"Manage tier" lets you move the tenant to another tier (writes a MANUAL grant) and, optionally, set a per-tenant feature allocation. Reset restores the tenant to its subscription / trial / Starter entitlement.</p>
+    </section>
+  </div>;
+}
+
+function TierModal({ row, busy, onClose, onSave }: any) {
+  const [form, setForm] = useState({
+    name: row?.name || "",
+    monthlyPriceUsd: row?.monthlyPriceUsd == null ? "" : String(row.monthlyPriceUsd),
+    annualPriceUsd: row?.annualPriceUsd == null ? "" : String(row.annualPriceUsd),
+    trialDays: row?.trialDays == null ? "" : String(row.trialDays),
+    enabled: row?.enabled ?? true,
+    maxActiveProjects: row?.limits?.maxActiveProjects == null ? "" : String(row.limits.maxActiveProjects),
+    maxSeats: row?.limits?.maxSeats == null ? "" : String(row.limits.maxSeats),
+    maxManagedStorageGb: row?.limits?.maxManagedStorageBytes == null ? "" : String(Number(row.limits.maxManagedStorageBytes) / 1073741824),
+    monthlyAiDraftCredits: row?.limits?.monthlyAiDraftCredits == null ? "" : String(row.limits.monthlyAiDraftCredits),
+  });
+  const storageBytes = form.maxManagedStorageGb === "" ? null : String(Math.round(Number(form.maxManagedStorageGb) * 1073741824));
+  return <Modal title={`Edit ${row?.name ?? row?.planCode} tier`} subtitle="Global feature allocation — applies to every tenant on this tier" onClose={onClose} wide>
+    <FormGrid>
+      {input("Display name", "name", form, setForm)}
+      {input("Monthly price (USD)", "monthlyPriceUsd", form, setForm, { placeholder: "Blank = custom / contract" })}
+      {input("Annual price (USD)", "annualPriceUsd", form, setForm, { placeholder: "Blank = custom / contract" })}
+      {input("Trial days", "trialDays", form, setForm, { placeholder: "Blank = no trial" })}
+      <label className="field"><span>Max active projects</span><input value={form.maxActiveProjects} onChange={e => setForm({ ...form, maxActiveProjects: e.target.value })} placeholder="Blank = unlimited" /></label>
+      <label className="field"><span>Max seats</span><input value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} placeholder="Blank = unlimited" /></label>
+      <label className="field"><span>Managed storage (GB)</span><input value={form.maxManagedStorageGb} onChange={e => setForm({ ...form, maxManagedStorageGb: e.target.value })} placeholder="Blank = unlimited" /></label>
+      <label className="field"><span>AI report drafts / month</span><input value={form.monthlyAiDraftCredits} onChange={e => setForm({ ...form, monthlyAiDraftCredits: e.target.value })} placeholder="Blank = unlimited" /></label>
+      <label className="check full"><input type="checkbox" checked={form.enabled} onChange={e => setForm({ ...form, enabled: e.target.checked })} /> Tier enabled (available for new assignments and checkout)</label>
+    </FormGrid>
+    <ModalActions busy={busy} onClose={onClose} onSave={() => onSave({
+      name: form.name || undefined,
+      monthlyPriceUsd: form.monthlyPriceUsd === "" ? null : Number(form.monthlyPriceUsd),
+      annualPriceUsd: form.annualPriceUsd === "" ? null : Number(form.annualPriceUsd),
+      trialDays: form.trialDays === "" ? null : Number(form.trialDays),
+      enabled: form.enabled,
+      limits: {
+        maxActiveProjects: form.maxActiveProjects === "" ? null : Number(form.maxActiveProjects),
+        maxSeats: form.maxSeats === "" ? null : Number(form.maxSeats),
+        maxManagedStorageBytes: storageBytes,
+        monthlyAiDraftCredits: form.monthlyAiDraftCredits === "" ? null : Number(form.monthlyAiDraftCredits),
+      },
+    })} label="Save tier" />;
+  </Modal>;
+}
+
+function TenantTierModal({ row, busy, onClose, onSave, onReset }: any) {
+  const [planCode, setPlanCode] = useState(row?.planCode || "STARTER");
+  const [reason, setReason] = useState("");
+  const [customLimits, setCustomLimits] = useState(false);
+  const [limits, setLimits] = useState({
+    maxActiveProjects: row?.limits?.maxActiveProjects == null ? "" : String(row.limits.maxActiveProjects),
+    maxSeats: row?.limits?.maxSeats == null ? "" : String(row.limits.maxSeats),
+    maxManagedStorageGb: row?.limits?.maxManagedStorageBytes == null ? "" : String(Number(row.limits.maxManagedStorageBytes) / 1073741824),
+    monthlyAiDraftCredits: row?.limits?.monthlyAiDraftCredits == null ? "" : String(row.limits.monthlyAiDraftCredits),
+  });
+  const storageBytes = limits.maxManagedStorageGb === "" ? null : String(Math.round(Number(limits.maxManagedStorageGb) * 1073741824));
+  return <Modal title={`Manage tier — ${row?.name}`} subtitle={`Currently ${row?.planName ?? row?.planCode} via ${pretty(row?.source)}. Manual changes take effect immediately.`} onClose={onClose} wide>
+    <FormGrid>
+      {select("Target tier", "planCode", tierPlanCodes, { planCode }, (x: any) => setPlanCode(x.planCode), false, { STARTER: "Starter — free", TEAM: "Team — $59/mo", GROWTH: "Growth — $149/mo", ENTERPRISE: "Enterprise — custom" })}
+      {input("Reason (audit trail)", "reason", { reason }, (x: any) => setReason(x.reason))}
+      <label className="check full"><input type="checkbox" checked={customLimits} onChange={e => setCustomLimits(e.target.checked)} /> Override feature allocation for this tenant (within the selected tier)</label>
+      {customLimits && <>
+        <label className="field"><span>Max active projects</span><input value={limits.maxActiveProjects} onChange={e => setLimits({ ...limits, maxActiveProjects: e.target.value })} placeholder="Blank = unlimited" /></label>
+        <label className="field"><span>Max seats</span><input value={limits.maxSeats} onChange={e => setLimits({ ...limits, maxSeats: e.target.value })} placeholder="Blank = unlimited" /></label>
+        <label className="field"><span>Managed storage (GB)</span><input value={limits.maxManagedStorageGb} onChange={e => setLimits({ ...limits, maxManagedStorageGb: e.target.value })} placeholder="Blank = unlimited" /></label>
+        <label className="field"><span>AI report drafts / month</span><input value={limits.monthlyAiDraftCredits} onChange={e => setLimits({ ...limits, monthlyAiDraftCredits: e.target.value })} placeholder="Blank = unlimited" /></label>
+      </>}
+    </FormGrid>
+    <footer className="modal-actions">
+      <button onClick={onReset} disabled={busy}>Reset overrides</button>
+      <button onClick={onClose}>Cancel</button>
+      <button className="primary" disabled={busy} onClick={() => onSave({ planCode, reason: reason || undefined, customLimits, limits: { maxActiveProjects: limits.maxActiveProjects === "" ? null : Number(limits.maxActiveProjects), maxSeats: limits.maxSeats === "" ? null : Number(limits.maxSeats), maxManagedStorageBytes: storageBytes, monthlyAiDraftCredits: limits.monthlyAiDraftCredits === "" ? null : Number(limits.monthlyAiDraftCredits) } })}>{busy ? "Saving…" : "Apply tier change"}</button>
+    </footer>
+  </Modal>;
+}
 
 function Audit({ rows }: { rows: AnyRow[] }) { return <Resource title="Platform audit trail" description="Immutable, hash-chained record of every SuperAdmin mutation."><table><thead><tr><th>Time</th><th>Action</th><th>Entity</th><th>Source</th><th>Integrity</th></tr></thead><tbody>{rows.map(r => <tr key={r.id}><td>{date(r.createdAt)}</td><td><strong>{pretty(r.action)}</strong></td><td>{r.entityType}<small>{r.entityId}</small></td><td>{r.ipAddress || "Internal"}</td><td><Badge ok>Hash chained</Badge></td></tr>)}</tbody></table></Resource>; }
 function System({ data }: { data: AnyRow }) { return <div className="health-grid">{Object.entries(data).map(([key, value]) => <article className="health-card" key={key}><span className={value === "UP" ? "pulse" : "pulse down"} /><div><h3>{pretty(key)}</h3><p>Platform service</p></div><Badge ok={value === "UP"}>{String(value)}</Badge></article>)}</div>; }
@@ -199,5 +320,6 @@ function safeJson(value: any, fallback: any) { try { return typeof value === "st
 function configurationPayload(row: AnyRow, patch: AnyRow) { return { id: row.id, scopeType: row.scopeType, scopeId: row.scopeId || "GLOBAL", category: row.category, provider: row.provider, displayName: row.displayName, enabled: row.enabled, configuration: safeJson(row.configurationJson, {}), ...patch }; }
 function pretty(value: string) { return String(value || "").replace(/[._-]/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\b\w/g, x => x.toUpperCase()); }
 function date(value: any) { return value ? new Date(value).toLocaleString() : "Never"; }
+function bytes(value: any) { if (value == null || value === "" || value === "null") return "Unlimited"; const n = Number(value); if (!Number.isFinite(n) || n <= 0) return "0 B"; const units = ["B", "KB", "MB", "GB", "TB"]; let i = 0; let v = n; while (v >= 1024 && i < units.length - 1) { v /= 1024; i += 1; } return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`; }
 function providerIcon(provider: string) { return ({ openai: "◎", anthropic: "A", deepseek: "D", minimax: "M", brevo: "B", postmark: "P", resend: "R", smtp: "✉", "cloudflare-r2": "☁", "backblaze-b2": "B2", "aws-s3": "S3",   kobotoolbox: "K", "odk-central": "O", "google-drive": "G", "google-drive-oauth": "GO", sharepoint: "S" } as AnyRow)[provider] || "◆"; }
 function placeholder(name: string) { return ({ model: "Provider model name", baseUrl: "Optional custom API URL", senderEmail: "notifications@example.org", endpoint: "https://...", bucket: "Bucket name", region: "Region", prefix: "donordesk/", port: "587", schedule: "0 */6 * * *", tenantId: "Destination tenant" } as AnyRow)[name] || ""; }

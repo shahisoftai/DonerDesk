@@ -147,6 +147,7 @@ The current application presents these navigation areas:
 | Overview | Counts for tenants, users, configurations, recent backups, and connector runs | Available |
 | Tenants | Global tenant inventory with user/project counts | Create, edit and guarded delete UI/API available |
 | Users | Cross-tenant user inventory | Create, edit, suspend, role change, password reset and delete UI/API available |
+| **Tier management** | Global tier catalog editor + per-tenant tier assignment | **Available (2026-08-17):** edit any tier's global feature allocation (projects/seats/storage/AI credits/prices/trial days/enabled), reset a tier to the static catalog, change any tenant's tier (MANUAL grant), set a per-tenant feature allocation override, and reset a tenant's overrides back to subscription/trial/Starter |
 | **Billing & credits** | Per-tenant plan, AI-credit allowance, current-month usage, subscription | **Available (2026-08-17):** set/increase/reduce the monthly AI-draft allowance (writes a MANUAL `EntitlementGrant` override) and reset the current UTC-month usage counter |
 | Providers | Encrypted global or tenant-scoped provider management | Provider-specific create/edit/rotate, enable/disable, test and delete UI/API available |
 | Audit | Most recent 250 platform audit events | Available |
@@ -249,7 +250,14 @@ be verified independently before declaring an entered provider operational.
 | `GET` | `/superadmin/audit` | Recent platform audit events |
 | `GET` | `/superadmin/system` | API, database, workers, and Kestra health |
 | `GET` | `/superadmin/kestra` | Live Kestra/worker health + free plugin and flow catalog (declarative) |
-| `GET` | `/superadmin/billing` | Per-tenant effective plan, AI-credit allowance, current-month used/reserved, override flag, subscription (2026-08-17) |
+| `GET` | `/superadmin/billing` | Per-tenant effective plan, full effective limits, AI-credit allowance, current-month used/reserved, override flag, subscription (2026-08-17) |
+| `GET` | `/superadmin/tiers` | Merged global tier catalog (all plans with applied overrides, tenant counts, enabled flags) plus the same per-tenant rows as billing — powers Tier management (2026-08-17) |
+| `PUT` | `/superadmin/tiers/:planCode` | Update a tier's global feature allocation (`name`, prices, `trialDays`, `enabled`, partial `limits`) — writes a `PlanCatalogOverride`; `null` limit buckets mean unlimited for that tier (2026-08-17) |
+| `POST` | `/superadmin/tiers/:planCode/reset` | Remove the global override for a tier, reverting it to the static catalog (2026-08-17) |
+| `GET` | `/superadmin/tenants/:id/tier` | Detailed tier view for one tenant: effective plan/source/limits, usage, subscription, and full grant history (2026-08-17) |
+| `POST` | `/superadmin/tenants/:id/tier` | Change a tenant's tier — writes a MANUAL `EntitlementGrant` for the target plan (`{planCode, reason?, limits?}`), optional partial limits merged over current effective limits (2026-08-17) |
+| `PUT` | `/superadmin/tenants/:id/tier/limits` | Set a per-tenant feature allocation override (full `PlanLimitsJson`) on the tenant's current effective plan (2026-08-17) |
+| `POST` | `/superadmin/tenants/:id/tier/reset` | End the tenant's MANUAL overrides so it falls back to subscription / trial / Starter entitlement (grants are closed, never deleted) (2026-08-17) |
 | `POST` | `/superadmin/tenants/:id/credits` | Set / increase / reduce `monthlyAiDraftCredits` via a MANUAL `EntitlementGrant` override — `{mode: "SET"|"INCREASE"|"DECREASE", value: int, reason?}` (2026-08-17) |
 | `POST` | `/superadmin/tenants/:id/credits/reset` | Zero the current UTC-month `AI_DRAFT_CREDITS` usage counter (2026-08-17) |
 

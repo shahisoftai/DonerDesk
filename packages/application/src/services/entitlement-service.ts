@@ -3,9 +3,13 @@ import {
   DomainError,
   TenantId,
   calculateEntitlement,
+  resolvePlanLimitsWithOverride,
   type EntitlementSnapshot,
   type EntitlementInput,
   type EntitlementUsage,
+  type PlanCatalogOverride,
+  type PlanLimitsResolver,
+  type PlanCode,
   planLimitsToJson,
   type UsageMetric,
 } from "@donordesk/domain";
@@ -13,6 +17,7 @@ import type {
   IEntitlementGrantRepository,
   IBillingSubscriptionRepository,
   IUsageCounterRepository,
+  IPlanCatalogRepository,
 } from "../ports/billing.js";
 import type { IProjectRepository } from "../ports/projects.js";
 import type { IUserRepository } from "../ports/identity.js";
@@ -44,6 +49,7 @@ export class EntitlementService {
     private readonly usage: IUsageCounterRepository,
     private readonly projects: IProjectRepository,
     private readonly users: IUserRepository,
+    private readonly catalog?: IPlanCatalogRepository,
   ) {}
 
   async resolve(query: EntitlementQuery): Promise<Result<EntitlementSnapshot, DomainError>> {
@@ -88,6 +94,15 @@ export class EntitlementService {
     if (!grantResult.ok) return grantResult;
     if (!subResult.ok) return subResult;
 
+    const overrides: Result<PlanCatalogOverride[]> = this.catalog
+      ? await this.catalog.listOverrides()
+      : { ok: true, value: [] };
+    if (!overrides.ok) return overrides;
+    const overrideByCode = new Map(overrides.value.map((o) => [o.planCode, o] as const));
+
+    const resolveLimits: PlanLimitsResolver = (code: PlanCode) =>
+      resolvePlanLimitsWithOverride(code, overrideByCode.get(code));
+
     const subscription = subResult.value;
     const subscriptionView = subscription
       ? {
@@ -105,6 +120,7 @@ export class EntitlementService {
       effectiveUntil: g.effectiveUntil,
       subscription: g.source === "CREEM_SUBSCRIPTION" ? subscriptionView : undefined,
       overrideLimits: g.overrideLimitsJson ? JSON.parse(g.overrideLimitsJson) : undefined,
+      createdAt: g.createdAt,
     }));
 
     const entitlementUsage: EntitlementUsage = {
@@ -114,7 +130,7 @@ export class EntitlementService {
       aiDraftCreditsUsed: usage.aiDraftCreditsUsed,
     };
 
-    return { ok: true, value: calculateEntitlement(inputs, entitlementUsage, now) };
+    return { ok: true, value: calculateEntitlement(inputs, entitlementUsage, now, resolveLimits) };
   }
 
   /** Serializable JSON summary consumed by the billing settings page. */

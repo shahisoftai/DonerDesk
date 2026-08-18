@@ -13,7 +13,8 @@ and SuperAdmin credit management are live; Creem billing adapter behind
 > - `EntitlementService` resolves the effective grant (precedence `MANUAL >
 >   ENTERPRISE_CONTRACT > GRANDFATHERED > CREEM_SUBSCRIPTION > TRIAL > DEFAULT`)
 >   and exposes `limits.monthlyAiDraftCredits` (`plan.ts`: STARTER 5, TEAM 100,
->   GROWTH 500, ENTERPRISE `null`/unlimited).
+>   GROWTH 500, ENTERPRISE `null`/unlimited). Ties (multiple MANUAL grants) now
+>   resolve to the most recent grant so the newest override wins.
 > - `GenerateReportDraftHandler` meters real AI drafts only: a successful
 >   non-stub generation consumes exactly one credit; a stub fallback releases the
 >   reserved credit, records an error run, and never bills (see
@@ -25,6 +26,33 @@ and SuperAdmin credit management are live; Creem billing adapter behind
 >   a MANUAL `EntitlementGrant` with a full PlanLimits override — takes effect
 >   immediately), `POST /superadmin/tenants/:id/credits/reset` (zeroes the current
 >   UTC-month counter). All audit-trailed. See `../SUPERADMIN-PORTAL.md` §5/§7.
+> - **SuperAdmin Tier management** (2026-08-17): a dedicated **Tier management**
+>   navigation area (`sa.donordesk.online`) with
+>   - **Global tier catalog editor** — `GET /superadmin/tiers` returns all plans
+>     with applied `PlanCatalogOverride`s (limits/prices/trial days/enabled) and
+>     per-plan tenant counts. `PUT /superadmin/tiers/:planCode` persists a partial
+>     override (missing limit buckets fall back to the static catalog; `null`
+>     means unlimited for that tier); `POST /superadmin/tiers/:planCode/reset`
+>     reverts a tier to the static catalog. The override table is
+>     `PlanCatalogOverride` (migration
+>     `20260817210000_plan_catalog_override`); `EntitlementService` and the
+>     control plane merge these overrides on every entitlement read, so edits
+>     apply platform-wide immediately, including tenant-facing `/v1/billing/summary`.
+>   - **Per-tenant tier assignment** — `POST /superadmin/tenants/:id/tier`
+>     (`{planCode, reason?, limits?}`) writes a MANUAL grant for the target plan
+>     (optional partial limits merged over the *target* plan's catalog/override
+>     limits, never the old plan's); disabled tiers are rejected at assignment.
+>     `PUT /superadmin/tenants/:id/tier/limits` writes a full per-tenant
+>     `PlanLimitsJson` override; `POST /superadmin/tenants/:id/tier/reset` closes
+>     only `tier-change-to-*` MANUAL grants (typed-client UTC dates) so credit and
+>     feature-allocation overrides survive. `GET /superadmin/tenants/:id/tier`
+>     returns the effective plan, limits, usage, subscription, and append-only
+>     grant history.
+> - **Deploy note:** the new `PlanCatalogOverride` table is a global (non-tenant)
+>   reference table. `infra/postgres/rls.sql` grants it to `donordesk_app` so
+>   tenant-facing entitlement resolution can read catalog overrides; it is NOT in
+>   the tenant-isolation array (no `tenantId` column). Re-run the RLS script on
+>   deploy.
 > - Timezone note: MANUAL grants must be written via the typed Prisma client (raw
 >   SQL binds dates in the host's CEST session timezone → 2h future-dated grants).
 > - Remaining: live Creem checkout/subscription + webhook-created grants in
