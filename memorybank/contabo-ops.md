@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-19 (release `20260819090000`, professional donor-reporting hardening; API + web + prisma migration `20260818180000_professional_reporting`).
+**Last deployment:** 2026-08-19 (release `20260819163537`, Excel import templates + report section management; API + web, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,26 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-19 — Excel import templates + report section management (release
+> `20260819163537`, API + web):** xlsx template download for Logframe
+> (two sheets: Logframe + Indicators), Activities, and Evidence (link-first —
+> a Google Drive share link per row) with authenticated BFF proxy routes
+> (`/api/templates/logframe|activities|evidence`) and memoized workbook
+> buffers. Structured upload imports for indicators
+> (`POST /v1/logframe/indicators/import`), activities
+> (`POST /v1/activities/import`), and evidence (`POST /v1/evidence/import`)
+> backed by fuzzy header parsers (multi-sheet-safe boundary detection, shared
+> indicator header vocabulary, delimiter-aware cell splitting, Excel serial
+> date rejection, indicator type-synonym normalization), code/title resolution
+> to logframe items/indicators/activities, dedup, 1000-row caps, and audit
+> events. Report sections can now be added (`POST /v1/report-sections`) and
+> deleted (`DELETE /v1/report-sections/:id`, FK-safe claims→revisions→section
+> ordering, DRAFT-gated). RBAC rules added for every new route. No schema
+> migration required. Typecheck/build/tests green; deployed incrementally via
+> §21.1 and verified live (health/ready ok, web 200, all new routes
+> registered and auth-gated, public HTTPS 200). Rollback:
+> `RELEASE_ID=20260819090000 scripts/rollback.sh`.
 
 > **2026-08-19 — Professional donor-reporting hardening (release
 > `20260819090000`, API + web + prisma):** shipped the full

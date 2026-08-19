@@ -1,6 +1,20 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-19T09:35+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-19T21:40+05:00.
+
+> **Deployment (2026-08-19):** **Excel import templates + report section
+> management** — release `20260819163537` (API + web; no migration). xlsx
+> template download for Logframe (two sheets: Logframe + Indicators),
+> Activities, and Evidence (link-first, Google Drive share link per row) with
+> authenticated `/api/templates/*` BFF routes; structured upload imports for
+> indicators/activities/evidence with fuzzy header parsers (multi-sheet-safe
+> boundary detection, delimiter-aware cells, Excel serial-date rejection,
+> type-synonym normalization), code/title resolution, dedup, 1000-row caps,
+> and audit events; report section add (`POST /v1/report-sections`) and delete
+> (`DELETE /v1/report-sections/:id`, FK-safe ordering, DRAFT-gated); RBAC rules
+> for every new route. Typecheck/build/tests green; deployed incrementally and
+> verified live (health/ready ok, all new routes registered and auth-gated,
+> public HTTPS 200). Rollback: `RELEASE_ID=20260819090000 scripts/rollback.sh`.
 
 > **Deployment (2026-08-19):** **Professional donor reporting hardening** —
 > release `20260819090000` (API + web + prisma migration `20260818180000_professional_reporting`).
