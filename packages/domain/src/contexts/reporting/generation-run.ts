@@ -24,6 +24,13 @@ export interface GenerationRunSnapshot {
   modelId: string;
   promptVersion: number;
   generationParams: Record<string, string>;
+  /** Child rewrite runs reference their parent generation run. */
+  parentRunId?: string;
+  /** Section this run produced content for (rewrites/section runs). */
+  sectionId?: string;
+  /** Exact prompt hash and response hash for reproduction. */
+  promptHash?: string;
+  responseHash?: string;
   createdAt: Date;
 }
 

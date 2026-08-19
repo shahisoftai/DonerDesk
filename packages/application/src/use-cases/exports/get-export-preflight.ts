@@ -9,6 +9,7 @@ import type {
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
+import type { ApproveReportHandler } from "../reporting/approve-report.js";
 
 export const EXPORT_TYPES = [
   "WORD",
@@ -31,6 +32,7 @@ export class GetExportPreflightHandler {
     private readonly updates: IIndicatorUpdateRepository,
     private readonly checklist: IChecklistRepository,
     private readonly evidence: IEvidenceRepository,
+    private readonly gate: ApproveReportHandler,
   ) {}
 
   async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<unknown, DomainError>> {
@@ -120,6 +122,30 @@ export class GetExportPreflightHandler {
         overridable: true,
       });
     }
+
+    // Single gate evaluator: identical decision to approval/submission, so the
+    // export wizard can never disagree with the review surface.
+    let submissionGate: { approvalBlocked: boolean; submitBlocked: boolean; submitNeedsDecision: boolean; blockReasons: string[] } = {
+      approvalBlocked: false,
+      submitBlocked: false,
+      submitNeedsDecision: false,
+      blockReasons: [],
+    };
+    const gateResult = await this.gate.evaluateGate(ctx, reportingPeriodId, draft.id);
+    if (gateResult.ok) {
+      submissionGate = gateResult.value;
+      if (submissionGate.submitBlocked || submissionGate.approvalBlocked) {
+        for (const reason of submissionGate.blockReasons) {
+          blocking.push({ code: "SUBMISSION_GATE", message: reason });
+        }
+      } else if (submissionGate.submitNeedsDecision) {
+        warnings.push({
+          code: "SUBMISSION_NEEDS_DECISION",
+          message: "Submission requires an authorized limitation, exclusion, or human decision.",
+          overridable: false,
+        });
+      }
+    }
     if (incompleteSections > 0) {
       warnings.push({
         code: "INCOMPLETE_SECTIONS",
@@ -167,6 +193,7 @@ export class GetExportPreflightHandler {
         sensitiveCount,
         annexGapCount,
         unverifiedIndicatorCount,
+        submissionGate,
       },
     };
   }

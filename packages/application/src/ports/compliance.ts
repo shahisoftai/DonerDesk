@@ -37,3 +37,17 @@ export interface IChecklistDetector {
     }>
   >;
 }
+
+/**
+ * Projects material assertion coverage gaps into existing UNSUPPORTED_REPORT_CLAIM
+ * checklist items (Phase 2). Deduplication keys make repeated re-assessment
+ * idempotent; the projector never computes gate policy itself.
+ */
+export interface IUnsupportedClaimProjector {
+  project(input: {
+    tenantId: TenantId;
+    periodId: string;
+    projectId: string;
+    gaps: Array<{ key: string; title: string; description: string }>;
+  }): Promise<Result<void>>;
+}

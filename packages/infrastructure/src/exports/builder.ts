@@ -18,6 +18,17 @@ function textRuns(s: string): TextRun[] {
 
 export class DefaultExportBuilder implements IExportBuilder {
   async build(input: Parameters<IExportBuilder["build"]>[0]): Promise<ExportArtifacts> {
+    if (input.exportIntent === "DONOR_SUBMISSION") {
+      if (input.watermark) {
+        throw new Error("Donor submission exports must never be watermarked");
+      }
+      if (!input.submissionSnapshotId) {
+        throw new Error("Donor submission exports require a submission snapshot id");
+      }
+    }
+    if (input.exportIntent === "INTERNAL_REVIEW" && !input.watermark) {
+      throw new Error("Internal preview exports must be visibly watermarked");
+    }
     switch (input.exportType) {
       case "WORD":
         return this.buildWord(input);
@@ -34,6 +45,10 @@ export class DefaultExportBuilder implements IExportBuilder {
       default:
         throw new Error(`Unsupported export type: ${input.exportType}`);
     }
+  }
+
+  private watermarkText(input: Parameters<IExportBuilder["build"]>[0]): string {
+    return input.watermark ? `${input.watermark} — NOT FOR DONOR SUBMISSION` : "";
   }
 
   private async buildWord(input: Parameters<IExportBuilder["build"]>[0]): Promise<ExportArtifacts> {
@@ -103,6 +118,9 @@ export class DefaultExportBuilder implements IExportBuilder {
               children: textRuns("Indicator Progress"),
             }),
             indicatorTable,
+            ...(this.watermarkText(input)
+              ? [new Paragraph({ children: textRuns("") }), new Paragraph({ children: textRuns(this.watermarkText(input)) })]
+              : []),
           ],
         },
       ],
@@ -168,6 +186,10 @@ export class DefaultExportBuilder implements IExportBuilder {
     doc.fontSize(10);
     for (const e of input.evidenceItems) {
       doc.text(`- ${e.fileName} (${e.type}, ${e.verificationStatus}, confidentiality ${e.confidentiality})`);
+    }
+    if (this.watermarkText(input)) {
+      doc.moveDown();
+      doc.fontSize(9).text(this.watermarkText(input), { align: "center" });
     }
     doc.end();
     await done;

@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ReportDraft, ReportSection, ReportClaim, ReportGenerationRun } from "@donordesk/domain";
+import { DomainError, ReportDraft, ReportSection, ReportGenerationRun } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
   IReportingPeriodRepository,
@@ -8,11 +8,11 @@ import type {
   IReportDraftGenerator,
   IReportPlanner,
   IIndicatorAnalyticsService,
-  IClaimVerifier,
   IGenerationRunRepository,
   IReportPlanRepository,
-  IReportClaimRepository,
   IEvidencePackageBuilder,
+  IReportRevisionService,
+  IReportAssuranceService,
   ReportingProfileSnapshot,
   ReportGenerationContext,
 } from "../../ports/reporting.js";
@@ -51,9 +51,11 @@ function parseProfileSnapshot(json: string): ReportingProfileSnapshot {
 
 /**
  * Orchestrates the full generation pipeline: plan -> deterministic analysis ->
- * immutable generation snapshot -> drafting -> claim verification -> claim and
- * plan persistence. The LLM (or stub) only narrates verified findings; every
- * numeric claim is verified deterministically before it is persisted.
+ * immutable generation snapshot -> drafting -> revision commit -> assertion
+ * extraction and verification -> claim and plan persistence. The LLM (or stub)
+ * only narrates verified findings; every material assertion in the final
+ * content is extracted and verified deterministically before it is persisted,
+ * bound to its exact revision and content hash.
  */
 export class GenerateReportDraftHandler {
   constructor(
@@ -69,10 +71,10 @@ export class GenerateReportDraftHandler {
     private readonly planner: IReportPlanner,
     private readonly analytics: IIndicatorAnalyticsService,
     private readonly evidencePackages: IEvidencePackageBuilder,
-    private readonly verifier: IClaimVerifier,
     private readonly generationRuns: IGenerationRunRepository,
     private readonly reportPlans: IReportPlanRepository,
-    private readonly reportClaims: IReportClaimRepository,
+    private readonly revisionService: IReportRevisionService,
+    private readonly assuranceService: IReportAssuranceService,
     private readonly getGenerator: (tenantId?: string) => Promise<IReportDraftGenerator>,
     private readonly audit: IAuditLogger,
     private readonly entitlements: EntitlementService,
@@ -310,20 +312,19 @@ export class GenerateReportDraftHandler {
     }
 
     const sectionIds: string[] = [];
-    const claimSectionMap = new Map<string, Array<{ text: string; type: ReportClaim["type"]; proposedSources: Array<{ evidenceId: string; chunkId: string; sourceText: string }> }>>();
+    let claimCount = 0;
 
     for (let i = 0; i < generated.length; i++) {
       const g = generated[i]!;
       const sectionId = this.ids.generate();
       sectionIds.push(sectionId);
-      claimSectionMap.set(sectionId, g.claims ?? []);
       const section = ReportSection.create({
         id: sectionId,
         tenantId: ctx.tenant.tenantId.toString(),
         reportDraftId: draftId,
         sectionTitle: g.title,
         sectionOrder: i,
-        content: g.content,
+        content: "",
         sourceReferences: g.sourceReferences,
         unsupportedClaims: [],
         status: "DRAFTED",
@@ -335,55 +336,45 @@ export class GenerateReportDraftHandler {
         }
         return savedSection;
       }
-    }
 
-    // Verify every claim deterministically before persisting.
-    let claimCount = 0;
-    for (const [sectionId, claims] of claimSectionMap) {
-      for (const claim of claims) {
-        const verificationResult = await this.verifier.verify({
-          claim,
-          findings: verifiedFindings,
-          evidencePackages,
-        });
-        if (!verificationResult.ok) {
-          if (creditReserved) {
-            await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
-          }
-          return verificationResult;
+      // Every content mutation goes through the revision pipeline: a new
+      // UNASSESSED revision is created and the section repoints at it.
+      const committed = await this.revisionService.commitChange({
+        tenantId: ctx.tenant.tenantId,
+        section,
+        content: g.content,
+        sourceReferences: g.sourceReferences,
+        unsupportedClaims: [],
+        changeOrigin: "GENERATION",
+        actorId: ctx.tenant.userId,
+        modelId: realAiGenerated ? generator.model.modelId : undefined,
+        promptVersion: realAiGenerated ? generator.model.promptVersion : undefined,
+        generationRunId: run.id,
+      });
+      if (!committed.ok) {
+        if (creditReserved) {
+          await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
         }
-        const v = verificationResult.value;
-        const reportClaim = ReportClaim.create({
-          id: this.ids.generate(),
-          tenantId: ctx.tenant.tenantId.toString(),
-          projectId: period.projectId,
-          reportDraftId: draftId,
-          sectionId,
-          text: claim.text,
-          type: claim.type,
-          sources: claim.proposedSources.map((s) => {
-            const pkg = evidencePackages.find((p) => p.evidenceId === s.evidenceId);
-            return {
-              evidenceId: s.evidenceId,
-              chunkId: s.chunkId,
-              sourceText: s.sourceText,
-              evidenceHash: pkg?.evidenceHash ?? "",
-              evidenceUpdatedAt: pkg?.evidenceUpdatedAt ?? new Date(),
-              chunkerVersion: pkg?.chunkerVersion ?? "unknown",
-            };
-          }),
-          verificationResult: v.result,
-          verificationDetail: v.detail,
-        });
-        const savedClaim = await this.reportClaims.create(reportClaim);
-        if (!savedClaim.ok) {
-          if (creditReserved) {
-            await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
-          }
-          return savedClaim;
-        }
-        claimCount++;
+        return committed;
       }
+
+      // Extract assertions from the final content, reconcile the writer's
+      // claims, verify every material assertion, and set revision assurance.
+      const assessed = await this.assuranceService.assessRevision({
+        ctx: { tenantId: ctx.tenant.tenantId, userId: ctx.tenant.userId },
+        sectionId,
+        revisionId: committed.value.id,
+        writerClaims: g.claims,
+        findings: verifiedFindings,
+        evidencePackages,
+      });
+      if (!assessed.ok) {
+        if (creditReserved) {
+          await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+        }
+        return assessed;
+      }
+      claimCount += assessed.value.claims.length;
     }
 
     // ReportPlan is unique on (tenantId, reportingPeriodId, version);

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -114,5 +114,62 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.resolveReportClaim.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  app.get("/v1/report-drafts/:id/assurance", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getReportAssurance.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-sections/:id/reassess", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = ReassessRevisionSchema.parse(req.body ?? {});
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.reassessReportRevision.handle(ctx, id, body.revisionId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/reporting-periods/:id/resolve-requirements", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.resolveEffectiveRequirements.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/reporting-requirement-packs", async (req) => {
+    const body = UpsertRequirementPackSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.upsertRequirementPack.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/reporting-requirement-packs/:id/activate", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.activateRequirementPack.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.post("/v1/award-reporting-overrides", async (req) => {
+    const body = UpsertAwardOverrideSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.upsertAwardOverride.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-drafts/:id/submission-snapshot", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.createSubmissionSnapshot.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 }

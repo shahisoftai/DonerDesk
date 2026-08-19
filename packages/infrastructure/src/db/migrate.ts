@@ -13,4 +13,7 @@ execSync(`pnpm exec prisma generate`, { stdio: "inherit", env: { ...process.env,
 console.log("Applying tenant row-level-security policies...");
 execSync(`psql "${DATABASE_URL}" --set ON_ERROR_STOP=1 --file ../../infra/postgres/rls.sql`, { stdio: "inherit" });
 
+console.log("Backfilling baseline report revisions...");
+execSync(`psql "${DATABASE_URL}" --set ON_ERROR_STOP=1 --file ../../infra/postgres/backfill-report-revisions.sql`, { stdio: "inherit" });
+
 console.log("Migration complete.");

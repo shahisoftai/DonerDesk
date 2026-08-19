@@ -25,7 +25,8 @@ export class ResolveReportClaimHandler {
     if (!r.value) return { ok: false, error: DomainError.notFound("ReportClaim", claimId) };
     const claim = r.value;
 
-    const isConfidentialSource = claim.verificationDetail.toLowerCase().includes("confidential");
+    const isConfidentialSource = claim.verificationReasonCode === "CONFIDENTIALITY_RESTRICTED" ||
+      claim.verificationDetail.toLowerCase().includes("confidential");
     const decision = resolveClaimDecision({
       resolution: input.resolution,
       notes: input.notes,

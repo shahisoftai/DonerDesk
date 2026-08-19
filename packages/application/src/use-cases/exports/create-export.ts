@@ -1,10 +1,10 @@
 import type { Result } from "@donordesk/domain";
 import { DomainError, ExportPackage, type ChartConfig } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IExportRepository, IExportBuilder } from "../../ports/exports.js";
+import type { IExportRepository, IExportBuilder, ExportIntent } from "../../ports/exports.js";
 import type { IStorage } from "../../ports/infrastructure.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
-import type { IReportingPeriodRepository, IReportDraftRepository, IReportSectionRepository } from "../../ports/reporting.js";
+import type { IReportingPeriodRepository, IReportDraftRepository, IReportSectionRepository, ISubmissionSnapshotRepository } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
@@ -25,12 +25,34 @@ export class CreateExportHandler {
     private readonly activities: IActivityUpdateRepository,
     private readonly checklist: IChecklistRepository,
     private readonly evidence: IEvidenceRepository,
+    private readonly snapshots: ISubmissionSnapshotRepository,
     private readonly builder: IExportBuilder,
     private readonly storage: IStorage,
     private readonly audit: IAuditLogger,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateExportInput): Promise<Result<{ id: string; fileUrl: string }, DomainError>> {
+    const intent: ExportIntent = input.exportIntent ?? "INTERNAL_REVIEW";
+    if (intent === "DONOR_SUBMISSION" && !input.submissionSnapshotId) {
+      return {
+        ok: false,
+        error: DomainError.reportGateBlocked("Donor submission exports require a submission snapshot id"),
+      };
+    }
+    if (intent === "DONOR_SUBMISSION" && input.submissionSnapshotId) {
+      const snapshotResult = await this.snapshots.findById(input.submissionSnapshotId, ctx.tenant.tenantId);
+      if (!snapshotResult.ok) return snapshotResult;
+      if (!snapshotResult.value) {
+        return { ok: false, error: DomainError.notFound("SubmissionSnapshot", input.submissionSnapshotId) };
+      }
+      if (snapshotResult.value.status !== "SEALED") {
+        return { ok: false, error: DomainError.reportGateBlocked("Submission snapshot is not sealed") };
+      }
+      if (snapshotResult.value.reportingPeriodId !== input.reportingPeriodId) {
+        return { ok: false, error: DomainError.reportGateBlocked("Submission snapshot does not match this reporting period") };
+      }
+    }
+
     const project = await this.projects.findById(input.projectId, ctx.tenant.tenantId);
     if (!project.ok) return project;
     if (!project.value) return { ok: false, error: DomainError.notFound("Project", input.projectId) };
@@ -126,6 +148,8 @@ export class CreateExportHandler {
 
     const artifacts = await this.builder.build({
       exportType: input.exportType,
+      exportIntent: intent,
+      submissionSnapshotId: input.submissionSnapshotId,
       projectName: project.value.title,
       reportingPeriodLabel: `${period.value.duration.start.toISOString().slice(0, 10)} → ${period.value.duration.end.toISOString().slice(0, 10)}`,
       reportTitle: draft?.title ?? `${project.value.title} report`,
@@ -136,6 +160,7 @@ export class CreateExportHandler {
       checklist: checklistRows,
       evidenceItems: evidenceRows,
       includeSensitive: input.includeSensitive,
+      watermark: intent === "DONOR_SUBMISSION" ? undefined : "INTERNAL PREVIEW",
     });
 
     const id = this.ids.generate();
@@ -153,6 +178,8 @@ export class CreateExportHandler {
       projectId: input.projectId,
       reportingPeriodId: input.reportingPeriodId,
       exportType: input.exportType,
+      exportIntent: intent,
+      submissionSnapshotId: input.submissionSnapshotId,
       fileUrl: stored.url,
       version: draft?.version ?? 1,
       exportedById: ctx.tenant.userId,

@@ -1,8 +1,61 @@
 # Professional Donor Reporting — Comprehensive Phased Implementation Plan
 
 **Created:** 2026-08-18  
-**Status:** PROPOSED  
+**Status:** IMPLEMENTED (2026-08-19, release `20260819090000` — see §15 below)  
 **Scope:** Hardening and completing Feature 20 so approved outputs can be treated as donor-submission candidates for institutional funders such as UN agencies, USAID/BHA, DG ECHO/EU, Gavi, the Global Fund, GPE, climate funds, and bilateral donors.
+
+> ## 15. Implementation status (2026-08-19)
+>
+> All phases 0–9 of this plan are implemented in code and shipped together with
+> the first professional-reporting release (API + web). The ownership map lives
+> at [`REPORTING-OWNERSHIP-MAP.md`](REPORTING-OWNERSHIP-MAP.md); the new ADRs are
+> `docs/architecture/decisions/0005-report-revisions.md` through
+> `0009-donor-native-rendering.md`.
+>
+> - **Phase 0 — Baseline/ADRs/ownership:** ADRs 0005–0009 + ownership map written;
+>   characterization tests added.
+> - **Phase 1 — Revision integrity:** `ReportRevision` aggregate, revision-bound
+>   `ReportClaim` (revision id/hash, span, numeric atoms, reason code), single
+>   `IReportRevisionService` mutation pipeline, child generation runs with
+>   prompt/response hashes, `CURRENT`-assurance-required approval, baseline
+>   revision backfill migration.
+> - **Phase 2 — Assertion coverage:** `IAssertionExtractor`
+>   (`DeterministicAssertionExtractor`), extraction from final content (empty
+>   writer claims cannot bypass), fingerprint reconciliation, materiality rules,
+>   coverage metrics, coverage-gap projection into `UNSUPPORTED_REPORT_CLAIM`
+>   checklist items.
+> - **Phase 3 — Structured numeric verification:** typed numeric atoms with
+>   semantic roles, indicator/period/unit/entity binding, percentage derivation
+>   via domain decimal math, `VerificationReasonCode` enums consumed by gates.
+> - **Phase 4 — Evidence validity/entailment:** exact chunk/hash/source-text
+>   integrity validation, `DeterministicEvidenceRetriever`, entailment strategy
+>   (supported/contradicted/insufficient/uncertain), causal human-review policy,
+>   PII/prompt-injection hardening and tests.
+> - **Phase 5 — Requirement packs:** versioned packs/overrides/resolved snapshots,
+>   deterministic precedence resolver, `IRequirementEvaluator`, requirement keys
+>   on plan sections, human-review activation.
+> - **Phase 6 — Narrative quality:** neutral evidence-proportionate rewrite
+>   prompts, caveat-preservation rules, prompt/response hash recording.
+> - **Phase 7 — Submission gates:** `SubmissionSnapshot` sealing, one gate
+>   evaluator shared by approval/preflight/submission/export, checklist
+>   critical/high + sensitive-data + template/mapping-version checks, export
+>   intent (`INTERNAL_REVIEW` watermark vs `DONOR_SUBMISSION` snapshot).
+> - **Phase 8 — Donor-native rendering:** `DONOR_TEMPLATE` stays worker-backed;
+>   the TS-side export builder enforces intent/watermark invariants and artifact
+>   hashes; real `docxtpl` fidelity remains the documented worker swap point.
+> - **Phase 9 — Evaluation/security:** anonymized golden corpus (6 mechanism
+>   cases), `reporting:eval` CLI, verifier contract suite, adversarial security
+>   tests.
+>
+> **Remaining known follow-ups (non-blocking, documented):** transactional
+> generation state machine, LLM-backed entailment/extraction swap-ins, worker
+> `docxtpl` deep template fidelity + visual-diff tests, and the consolidated web
+> exception surface (the API contract is live: `GET /v1/report-drafts/:id/assurance`,
+> `POST /v1/report-sections/:id/reassess`,
+> `POST /v1/reporting-periods/:id/resolve-requirements`,
+> `POST /v1/reporting-requirement-packs[:id/activate]`,
+> `POST /v1/award-reporting-overrides`, `POST /v1/report-drafts/:id/submission-snapshot`,
+> and `POST /v1/exports` with `exportIntent`).
 
 ## 1. Purpose and outcome
 

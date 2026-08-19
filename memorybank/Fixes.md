@@ -1,6 +1,46 @@
 # Fixes
 
-Record of fixes applied to DonorDesk. Last updated: 2026-08-18.
+Record of fixes applied to DonorDesk. Last updated: 2026-08-19.
+
+## Numeric-atom currency regex matched "rs" inside ordinary words — false CURRENCY roles (2026-08-19)
+
+**Status:** Fixed in release `20260819090000` (professional donor-reporting hardening).
+
+**Root cause:** `classifyNumericAtomRoles` used `/(usd|eur|gbp|kes|uzs|afn|npr|rs|$|€|£)/i`
+to detect currency. The bare `rs` alternative matched substrings inside ordinary
+words (e.g. the "rs" in "period"), so a claim like "99 people were reached in
+this period" was misclassified as a CURRENCY atom and failed with
+`DERIVATION_INVALID` instead of `VALUE_MISMATCH`.
+
+**Fix:** currency codes now require word boundaries
+(`/\b(usd|eur|gbp|kes|uzs|afn|npr|rwh|rwf|pkr)\b|\$|€|£/i`). See
+`packages/domain/src/contexts/reporting/numeric-atom.ts`.
+
+## Evidence-integrity verifier short-circuited before the confidentiality check (2026-08-19)
+
+**Status:** Fixed in release `20260819090000`.
+
+**Root cause:** the deterministic integrity verifier `continue`d a source as soon
+as it found a `SOURCE_TEXT_MISMATCH`, so a source that was BOTH text-mismatched
+AND confidential never emitted `CONFIDENTIALITY_RESTRICTED`. Confidentiality
+therefore could not be enforced independently of relevance.
+
+**Fix:** integrity reasons now accumulate per source instead of short-circuiting;
+a source can carry `SOURCE_TEXT_MISMATCH` + `CONFIDENTIALITY_RESTRICTED`
+together. See `packages/infrastructure/src/llm/evidence-integrity-verifier.ts`.
+
+## Reporting eval `assertion-recall` metric masked real matches by trailing punctuation (2026-08-19)
+
+**Status:** Fixed in release `20260819090000`.
+
+**Root cause:** `ReportDraftEvaluator` split drafts on `[.!?]+\s+` (dropping the
+sentence's trailing period) but fingerprinted reference assertions including
+their trailing period, so recall was always ~0 for period-terminated sentences.
+
+**Fix:** recall now compares punctuation-stripped, normalized sentence keys.
+Also, a missing required limitation or a missed numeric fact is a hard failure
+(it can no longer be averaged away by the aggregate score). See
+`packages/infrastructure/src/ai/reporting-eval.ts`.
 
 ## AI report generation could not narrate period-over-period change — previous-period value was computed then dropped (2026-08-18)
 

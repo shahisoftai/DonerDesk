@@ -217,6 +217,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         unsupportedClaims: JSON.stringify(s.unsupportedClaims),
         status: s.status,
         chartConfigJson: s.chartConfig ? JSON.stringify(s.chartConfig) : null,
+        currentRevisionId: s.currentRevisionId,
       },
     });
     return ok(s);
@@ -232,6 +233,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         unsupportedClaims: JSON.stringify(s.unsupportedClaims),
         status: s.status,
         chartConfigJson: s.chartConfig ? JSON.stringify(s.chartConfig) : null,
+        currentRevisionId: s.currentRevisionId,
       },
     });
     return ok(s);
@@ -260,6 +262,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
     unsupportedClaims: string;
     status: string;
     chartConfigJson: string | null;
+    currentRevisionId: string | null;
     createdAt: Date;
   }): ReportSection {
     return ReportSection.rehydrate({
@@ -275,6 +278,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         unsupportedClaims: JSON.parse(row.unsupportedClaims),
         status: row.status as SectionStatus,
         chartConfig: parseChartConfig(row.chartConfigJson),
+        currentRevisionId: row.currentRevisionId ?? undefined,
       },
     });
   }

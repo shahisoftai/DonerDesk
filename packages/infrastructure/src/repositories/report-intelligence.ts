@@ -11,6 +11,10 @@ import {
   type ClaimType,
   type TemplateRegionMapping,
   type VerificationResult,
+  type VerificationReasonCode,
+  type AssertionType,
+  type Materiality,
+  type NumericAtom,
 } from "@donordesk/domain";
 import type {
   IReportPlanRepository,
@@ -148,6 +152,14 @@ export class PrismaReportClaimRepository implements IReportClaimRepository {
         resolutionNotes: c.resolutionNotes,
         resolvedById: c.resolvedById,
         resolvedAt: c.resolvedAt,
+        revisionId: c.revisionId,
+        revisionHash: c.revisionHash,
+        charStart: c.charStart,
+        charEnd: c.charEnd,
+        numericAtomsJson: c.numericAtoms.length > 0 ? JSON.stringify(c.numericAtoms) : null,
+        verificationReasonCode: c.verificationReasonCode,
+        assertionType: c.assertionType,
+        materiality: c.materiality,
       },
     });
     return ok(c);
@@ -163,6 +175,14 @@ export class PrismaReportClaimRepository implements IReportClaimRepository {
         resolutionNotes: c.resolutionNotes,
         resolvedById: c.resolvedById,
         resolvedAt: c.resolvedAt,
+        revisionId: c.revisionId,
+        revisionHash: c.revisionHash,
+        charStart: c.charStart,
+        charEnd: c.charEnd,
+        numericAtomsJson: c.numericAtoms.length > 0 ? JSON.stringify(c.numericAtoms) : null,
+        verificationReasonCode: c.verificationReasonCode,
+        assertionType: c.assertionType,
+        materiality: c.materiality,
       },
     });
     return ok(c);
@@ -190,6 +210,11 @@ export class PrismaReportClaimRepository implements IReportClaimRepository {
     return ok(rows.map((r) => this.toDomain(r)));
   }
 
+  async deleteBySection(sectionId: string, tenantId: { toString(): string }): Promise<Result<void, DomainError>> {
+    await this.prisma.reportClaim.deleteMany({ where: { sectionId, tenantId: tenantId.toString() } });
+    return ok(undefined);
+  }
+
   private toDomain(row: {
     id: string;
     tenantId: string;
@@ -204,6 +229,14 @@ export class PrismaReportClaimRepository implements IReportClaimRepository {
     resolutionNotes: string | null;
     resolvedById: string | null;
     resolvedAt: Date | null;
+    revisionId: string | null;
+    revisionHash: string | null;
+    charStart: number | null;
+    charEnd: number | null;
+    numericAtomsJson: string | null;
+    verificationReasonCode: string | null;
+    assertionType: string | null;
+    materiality: string | null;
     createdAt: Date;
   }): ReportClaim {
     return ReportClaim.rehydrate({
@@ -222,6 +255,14 @@ export class PrismaReportClaimRepository implements IReportClaimRepository {
         resolutionNotes: row.resolutionNotes ?? undefined,
         resolvedById: row.resolvedById ?? undefined,
         resolvedAt: row.resolvedAt ?? undefined,
+        revisionId: row.revisionId ?? undefined,
+        revisionHash: row.revisionHash ?? undefined,
+        charStart: row.charStart ?? undefined,
+        charEnd: row.charEnd ?? undefined,
+        numericAtoms: row.numericAtomsJson ? JSON.parse(row.numericAtomsJson) : undefined,
+        verificationReasonCode: (row.verificationReasonCode as VerificationReasonCode | null) ?? undefined,
+        assertionType: (row.assertionType as AssertionType | null) ?? undefined,
+        materiality: (row.materiality as Materiality | null) ?? undefined,
       },
     });
   }

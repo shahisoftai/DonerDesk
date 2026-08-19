@@ -38,6 +38,20 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 > evidence chunks raised 3×600 → 8×800 chars (`maxTokens` stays 4096 for the
 > MiniMax timeout constraint). See `11-AI-Report-Draft-Generator.md`,
 > `20-report-gen.md` §16–17, `../Fixes.md`, and `../contabo-ops.md` §29.
+> **2026-08-19 (professional donor-reporting hardening, release
+> `20260819090000`):** the `../imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`
+> (Phases 0–9, status **IMPLEMENTED**) ships revision-bound assurance
+> (`ReportRevision` + single mutation pipeline), complete assertion coverage
+> (empty writer claims cannot bypass), structured numeric/period/entity/unit/
+> derivation verification, evidence hash/chunk/source-text integrity +
+> entailment + causal human-review policy, requirement packs with deterministic
+> precedence + `IRequirementEvaluator`, `SubmissionSnapshot` sealing, ONE gate
+> evaluator (approval/preflight/submission/export), export intent
+> (watermarked internal vs snapshot-bound donor submission), coverage-gap
+> checklist projection, neutral rewrite prompts, golden corpus + `reporting:eval`
+> + verifier contract suite, and ADRs 0005–0009. Migration
+> `20260818180000_professional_reporting` includes a baseline-revision backfill.
+> See `20-report-gen.md` §18 and `../contabo-ops.md` §29.
 
 ## Features
 

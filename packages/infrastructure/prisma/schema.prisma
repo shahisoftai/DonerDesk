@@ -501,11 +501,13 @@ model ReportSection {
   unsupportedClaims   String   @default("[]")
   status              String   @default("NOT_STARTED")
   chartConfigJson     String?
+  currentRevisionId   String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   reportDraft ReportDraft @relation(fields: [reportDraftId], references: [id])
   claims      ReportClaim[]
+  revisions   ReportRevision[]
   @@index([tenantId])
   @@index([reportDraftId])
 }
@@ -532,27 +534,36 @@ model ReportPlan {
 }
 
 model ReportClaim {
-  id                  String   @id
-  tenantId            String
-  projectId           String
-  reportDraftId       String
-  sectionId           String
-  text                String   @db.Text
-  type                String
-  sourcesJson         String   @default("[]")
-  verificationResult  String   @default("FAILED")
-  verificationDetail  String   @default("")
-  resolutionNotes     String?
-  resolvedById        String?
-  resolvedAt          DateTime?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                     String   @id
+  tenantId               String
+  projectId              String
+  reportDraftId          String
+  sectionId              String
+  text                   String   @db.Text
+  type                   String
+  sourcesJson            String   @default("[]")
+  verificationResult     String   @default("FAILED")
+  verificationDetail     String   @default("")
+  resolutionNotes        String?
+  resolvedById           String?
+  resolvedAt             DateTime?
+  revisionId             String?
+  revisionHash           String?
+  charStart              Int?
+  charEnd                Int?
+  numericAtomsJson       String?
+  verificationReasonCode String?
+  assertionType          String?
+  materiality            String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   reportDraft ReportDraft @relation(fields: [reportDraftId], references: [id])
   section     ReportSection @relation(fields: [sectionId], references: [id])
   @@index([tenantId])
   @@index([reportDraftId])
   @@index([sectionId])
+  @@index([revisionId])
 }
 
 model ReportGenerationRun {
@@ -588,6 +599,103 @@ model DonorTemplateMapping {
   @@index([templateId])
 }
 
+// Professional donor reporting — revision integrity, requirement packs, and
+// submission snapshots.
+model ReportRevision {
+  id              String   @id
+  tenantId        String
+  draftId         String
+  sectionId       String
+  revisionNumber  Int
+  parentRevisionId String?
+  content         String   @db.Text
+  contentHash     String
+  changeOrigin    String
+  actorId         String
+  modelId         String?
+  promptVersion   Int?
+  generationRunId String?
+  assuranceState  String   @default("UNASSESSED")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  section ReportSection @relation(fields: [sectionId], references: [id])
+  @@unique([tenantId, sectionId, revisionNumber])
+  @@index([tenantId])
+  @@index([draftId])
+  @@index([sectionId])
+}
+
+model SubmissionSnapshot {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  reportDraftId     String
+  reportingPeriodId String
+  status            String   @default("SEALED")
+  propsJson         String   @db.Text
+  createdAt         DateTime @default(now())
+  sealedAt          DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([reportDraftId])
+  @@index([reportingPeriodId])
+}
+
+model ReportingRequirementPack {
+  id              String   @id
+  tenantId        String?
+  donorKey        String
+  mechanismKey    String
+  reportType      String
+  version         Int      @default(1)
+  language        String   @default("en")
+  name            String
+  status          String   @default("DRAFT")
+  requirementsJson String  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([tenantId, donorKey, mechanismKey, reportType, version])
+  @@index([tenantId])
+  @@index([donorKey, mechanismKey, reportType])
+}
+
+model AwardReportingOverride {
+  id                 String   @id
+  tenantId           String
+  projectId          String
+  awardId            String
+  effectiveFrom      DateTime
+  effectiveTo        DateTime?
+  documentHash       String?
+  version            Int      @default(1)
+  status             String   @default("DRAFT")
+  requirementsJson   String   @db.Text
+  sourceReferenceJson String  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([tenantId, projectId, awardId, version])
+  @@index([tenantId])
+  @@index([projectId])
+}
+
+model ResolvedReportingRequirements {
+  id                String   @id
+  tenantId          String
+  reportingPeriodId String
+  generationRunId   String?
+  snapshotJson      String   @db.Text
+  sourceTraceJson   String   @db.Text
+  coverageJson      String   @db.Text
+  resolvedAt        DateTime
+  createdAt         DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([reportingPeriodId])
+}
+
 model ChecklistItem {
   id                String   @id
   tenantId          String
@@ -613,16 +721,18 @@ model ChecklistItem {
 }
 
 model ExportPackage {
-  id                String   @id
-  tenantId          String
-  projectId         String
-  reportingPeriodId String
-  exportType        String
-  fileUrl           String
-  version           Int
-  exportedById      String
-  includedFiles     String   @default("[]")
-  createdAt         DateTime @default(now())
+  id                  String   @id
+  tenantId            String
+  projectId           String
+  reportingPeriodId   String
+  exportType          String
+  exportIntent        String   @default("INTERNAL_REVIEW")
+  submissionSnapshotId String?
+  fileUrl             String
+  version             Int
+  exportedById        String
+  includedFiles       String   @default("[]")
+  createdAt           DateTime @default(now())
 
   project         Project         @relation(fields: [projectId], references: [id])
   reportingPeriod ReportingPeriod @relation(fields: [reportingPeriodId], references: [id])

@@ -106,6 +106,15 @@ import {
   ReleaseStaleUsageReservationsHandler,
   RetryBillingInboxHandler,
   BillingSubscriptionSynchronizer,
+  ReportRevisionService,
+  ReportAssuranceService,
+  GetReportAssuranceHandler,
+  ReassessReportRevisionHandler,
+  ResolveEffectiveRequirementsHandler,
+  UpsertRequirementPackHandler,
+  ActivateRequirementPackHandler,
+  UpsertAwardOverrideHandler,
+  CreateSubmissionSnapshotHandler,
 } from "@donordesk/application";
 import type { IJobQueue, IReportDraftGenerator } from "@donordesk/application";
 
@@ -149,6 +158,13 @@ import {
   PrismaReportGenerationRunRepository,
   PrismaDonorTemplateMappingRepository,
 } from "./repositories/report-intelligence.js";
+import {
+  PrismaReportRevisionRepository,
+  PrismaSubmissionSnapshotRepository,
+  PrismaRequirementPackRepository,
+  PrismaAwardOverrideRepository,
+  PrismaResolvedRequirementsRepository,
+} from "./repositories/report-revisions.js";
 import { PrismaChecklistRepository } from "./repositories/checklist.js";
 import { PrismaExportRepository } from "./repositories/exports.js";
 import {
@@ -177,6 +193,10 @@ import { createLLMProvider } from "./llm/factory.js";
 import { PlatformLlmConfigResolver } from "./llm/llm-config-resolver.js";
 import { LlmReportDraftGenerator } from "./llm/llm-report-draft-generator.js";
 import { DeterministicClaimVerifier } from "./llm/claim-verifier.js";
+import { DeterministicAssertionExtractor } from "./llm/assertion-extractor.js";
+import { Sha256HashService } from "./llm/hash-service.js";
+import { DeterministicRequirementResolver } from "./llm/requirement-resolver.js";
+import { ChecklistUnsupportedClaimProjector } from "./llm/checklist-projector.js";
 import { EvidencePackageBuilder } from "./ai/evidence-package-builder.js";
 import { StubChecklistDetector } from "./llm/checklist-detector.js";
 import { DefaultExportBuilder } from "./exports/builder.js";
@@ -239,6 +259,11 @@ export interface Container {
   reportPlans: PrismaReportPlanRepository;
   reportClaims: PrismaReportClaimRepository;
   generationRuns: PrismaReportGenerationRunRepository;
+  reportRevisions: PrismaReportRevisionRepository;
+  submissionSnapshots: PrismaSubmissionSnapshotRepository;
+  requirementPacks: PrismaRequirementPackRepository;
+  awardOverrides: PrismaAwardOverrideRepository;
+  resolvedRequirements: PrismaResolvedRequirementsRepository;
   donorTemplateMappings: PrismaDonorTemplateMappingRepository;
   checklist: PrismaChecklistRepository;
   exports: PrismaExportRepository;
@@ -305,6 +330,7 @@ export interface Container {
     listReportingPeriods: ListReportingPeriodsHandler;
     generateReportDraft: GenerateReportDraftHandler;
     getReportDraft: GetReportDraftHandler;
+    getReportAssurance: GetReportAssuranceHandler;
     updateReportSection: UpdateReportSectionHandler;
     updateReportSectionChart: UpdateReportSectionChartHandler;
     approveReportSection: ApproveReportSectionHandler;
@@ -312,6 +338,12 @@ export interface Container {
     approveReport: ApproveReportHandler;
     rejectReport: RejectReportHandler;
     resolveReportClaim: ResolveReportClaimHandler;
+    reassessReportRevision: ReassessReportRevisionHandler;
+    resolveEffectiveRequirements: ResolveEffectiveRequirementsHandler;
+    upsertRequirementPack: UpsertRequirementPackHandler;
+    activateRequirementPack: ActivateRequirementPackHandler;
+    upsertAwardOverride: UpsertAwardOverrideHandler;
+    createSubmissionSnapshot: CreateSubmissionSnapshotHandler;
     detectMissingEvidence: DetectMissingEvidenceHandler;
     resolveChecklistItem: ResolveChecklistItemHandler;
     bulkResolveChecklist: BulkResolveChecklistHandler;
@@ -459,6 +491,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const reportPlans = new PrismaReportPlanRepository(prisma);
   const reportClaims = new PrismaReportClaimRepository(prisma);
   const generationRuns = new PrismaReportGenerationRunRepository(prisma);
+  const reportRevisions = new PrismaReportRevisionRepository(prisma);
+  const submissionSnapshots = new PrismaSubmissionSnapshotRepository(prisma);
+  const requirementPacks = new PrismaRequirementPackRepository(prisma);
+  const awardOverrides = new PrismaAwardOverrideRepository(prisma);
+  const resolvedRequirements = new PrismaResolvedRequirementsRepository(prisma);
   const donorTemplateMappings = new PrismaDonorTemplateMappingRepository(prisma);
   const checklist = new PrismaChecklistRepository(prisma);
   const exports = new PrismaExportRepository(prisma);
@@ -534,6 +571,12 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const reportPlanner = new InferredReportPlanner(ids);
   const evidencePackageBuilder = new EvidencePackageBuilder(evidence);
   const claimVerifier = new DeterministicClaimVerifier();
+  const hashService = new Sha256HashService();
+  const assertionExtractor = new DeterministicAssertionExtractor();
+  const revisionService = new ReportRevisionService(reportRevisions, sections, hashService);
+  const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);
+  const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector);
+  const requirementResolver = new DeterministicRequirementResolver(ids, periods, requirementPacks, awardOverrides, reportPlans, resolvedRequirements);
 
   const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, checklist, templates);
   const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits);
@@ -558,8 +601,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     );
   }
 
-  const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, exportBuilder, storage, audits);
+  const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, submissionSnapshots, exportBuilder, storage, audits);
   const uploadTemplateHandler = new UploadTemplateHandler(ids, templates, templateExtraction, audits);
+  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits);
 
   const handlers: Container["handlers"] = {
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
@@ -627,18 +671,26 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listReportingPeriods: new ListReportingPeriodsHandler(periods, calculateReadinessHandler),
     generateReportDraft: new GenerateReportDraftHandler(
       ids, periods, drafts, sections, projects, organizations, templates, indicatorUpdates, activities,
-      reportPlanner, indicatorAnalytics, evidencePackageBuilder, claimVerifier, generationRuns, reportPlans, reportClaims,
+      reportPlanner, indicatorAnalytics, evidencePackageBuilder, generationRuns, reportPlans,
+      revisionService, assuranceService,
       getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage,
     ),
     getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportPlans),
-    updateReportSection: new UpdateReportSectionHandler(sections, audits),
+    getReportAssurance: new GetReportAssuranceHandler(drafts, sections, reportClaims, reportRevisions, resolvedRequirements),
+    updateReportSection: new UpdateReportSectionHandler(sections, revisionService, assuranceService, audits),
     updateReportSectionChart: new UpdateReportSectionChartHandler(sections, audits),
-    rewriteReportSection: new RewriteReportSectionHandler(sections, getReportDraftGenerator, audits),
-    approveReportSection: new ApproveReportSectionHandler(sections, reportClaims, audits),
+    rewriteReportSection: new RewriteReportSectionHandler(ids, drafts, sections, getReportDraftGenerator, revisionService, assuranceService, generationRuns, audits),
+    approveReportSection: new ApproveReportSectionHandler(sections, reportClaims, reportRevisions, audits),
     submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),
-    approveReport: new ApproveReportHandler(drafts, periods, checklist, reportClaims, audits),
+    approveReport: approveReportHandler,
     rejectReport: new RejectReportHandler(drafts, audits),
     resolveReportClaim: new ResolveReportClaimHandler(reportClaims, audits),
+    reassessReportRevision: new ReassessReportRevisionHandler(sections, reportRevisions, assuranceService, audits),
+    resolveEffectiveRequirements: new ResolveEffectiveRequirementsHandler(requirementResolver, audits),
+    upsertRequirementPack: new UpsertRequirementPackHandler(ids, requirementPacks, audits),
+    activateRequirementPack: new ActivateRequirementPackHandler(requirementPacks, audits),
+    upsertAwardOverride: new UpsertAwardOverrideHandler(ids, awardOverrides, audits),
+    createSubmissionSnapshot: new CreateSubmissionSnapshotHandler(ids, drafts, sections, reportClaims, reportRevisions, resolvedRequirements, submissionSnapshots, periods, generationRuns, approveReportHandler, audits, events),
     detectMissingEvidence: detectMissingEvidenceHandler,
     resolveChecklistItem: new ResolveChecklistItemHandler(checklist, audits),
     bulkResolveChecklist: new BulkResolveChecklistHandler(checklist, audits),
@@ -648,7 +700,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     generateChecklist: new GenerateChecklistHandler(detectMissingEvidenceHandler),
     createExport: createExportHandler,
     runExport: new RunExportHandler(createExportHandler),
-    getExportPreflight: new GetExportPreflightHandler(periods, drafts, sections, indicatorUpdates, checklist, evidence),
+    getExportPreflight: new GetExportPreflightHandler(periods, drafts, sections, indicatorUpdates, checklist, evidence, approveReportHandler),
     generateDeadlineReminders: new GenerateDeadlineRemindersHandler(ids, drafts, sections, notifications, notify),
     addComment: new AddCommentHandler(ids, comments, audits, notify),
     resolveComment: new ResolveCommentHandler(comments, audits),
@@ -673,7 +725,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     prisma, auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, checklistDetector, exportBuilder,
     organizations, users, invitations,     projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
-    periods, drafts, sections, reportPlans, reportClaims, generationRuns, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
+    periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, planCatalog, billingProvider,
     handlers,
   };

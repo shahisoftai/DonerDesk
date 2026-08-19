@@ -22,6 +22,8 @@ export class PrismaExportRepository implements IExportRepository {
         projectId: e.projectId,
         reportingPeriodId: e.reportingPeriodId,
         exportType: e.exportType,
+        exportIntent: e.exportIntent,
+        submissionSnapshotId: e.submissionSnapshotId,
         fileUrl: e.fileUrl,
         version: e.version,
         exportedById: e.exportedById,
@@ -45,6 +47,8 @@ export class PrismaExportRepository implements IExportRepository {
     projectId: string;
     reportingPeriodId: string;
     exportType: string;
+    exportIntent: string;
+    submissionSnapshotId: string | null;
     fileUrl: string;
     version: number;
     exportedById: string;
@@ -59,6 +63,8 @@ export class PrismaExportRepository implements IExportRepository {
       props: {
         reportingPeriodId: row.reportingPeriodId,
         exportType: row.exportType as ExportType,
+        exportIntent: row.exportIntent as ExportPackage["exportIntent"],
+        submissionSnapshotId: row.submissionSnapshotId ?? undefined,
         fileUrl: row.fileUrl,
         version: row.version,
         exportedById: row.exportedById,

@@ -86,3 +86,96 @@ export const UpdateSectionChartSchema = z.object({
   expectedVersion: z.string().optional(),
 });
 
+export const RequirementKindSchema = z.enum([
+  "SECTION",
+  "QUESTION",
+  "FIELD",
+  "INDICATOR",
+  "ANNEX",
+  "DECLARATION",
+  "FINANCIAL",
+  "SAFEGUARD",
+  "APPROVAL",
+  "DEADLINE",
+  "FORMAT",
+]);
+
+export const RequirementSourceTypeSchema = z.enum([
+  "AWARD",
+  "AWARD_AMENDMENT",
+  "SCHEDULE",
+  "TEMPLATE",
+  "MECHANISM",
+  "DONOR_PACK",
+  "ORGANIZATION_PROFILE",
+  "BASELINE",
+]);
+
+export const ReportingRequirementSchema = z.object({
+  id: z.string().min(1),
+  key: z.string().min(1),
+  kind: RequirementKindSchema,
+  required: z.boolean(),
+  severity: z.enum(["INFO", "WARNING", "BLOCKING"]),
+  condition: z
+    .object({
+      field: z.string(),
+      operator: z.enum(["equals", "not_equals"]),
+      value: z.union([z.string(), z.boolean(), z.number()]),
+    })
+    .optional(),
+  evidenceRule: z
+    .object({
+      verifiedRequired: z.boolean(),
+      confidentialityPolicy: z.enum(["ANY", "NON_CONFIDENTIAL"]),
+    })
+    .optional(),
+  wordLimit: z
+    .object({ min: z.number().int().nonnegative().optional(), max: z.number().int().positive().optional() })
+    .optional(),
+  sourceReference: z.object({
+    sourceType: RequirementSourceTypeSchema,
+    sourceId: z.string().min(1),
+    documentHash: z.string().optional(),
+    effectiveFrom: z.string().optional(),
+    effectiveTo: z.string().optional(),
+    version: z.number().int().nonnegative(),
+    label: z.string(),
+  }),
+  guidance: z.string().optional(),
+});
+export type ReportingRequirementInput = z.infer<typeof ReportingRequirementSchema>;
+
+export const UpsertRequirementPackSchema = z.object({
+  id: z.string().optional(),
+  donorKey: z.string().min(4),
+  mechanismKey: z.string().min(1),
+  reportType: z.string().min(1),
+  name: z.string().min(1),
+  language: z.string().optional(),
+  requirements: z.array(ReportingRequirementSchema).min(1),
+});
+
+export const UpsertAwardOverrideSchema = z.object({
+  id: z.string().optional(),
+  awardId: z.string().min(1),
+  projectId: z.string().min(1),
+  effectiveFrom: z.string().datetime(),
+  effectiveTo: z.string().datetime().optional(),
+  documentHash: z.string().optional(),
+  requirements: z.array(ReportingRequirementSchema).min(1),
+  sourceReference: z.object({
+    sourceType: RequirementSourceTypeSchema,
+    sourceId: z.string().min(1),
+    documentHash: z.string().optional(),
+    effectiveFrom: z.string().optional(),
+    effectiveTo: z.string().optional(),
+    version: z.number().int().nonnegative(),
+    label: z.string(),
+  }),
+});
+
+export const ReassessRevisionSchema = z.object({
+  revisionId: z.string().optional(),
+});
+

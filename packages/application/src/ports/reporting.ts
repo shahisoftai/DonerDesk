@@ -13,6 +13,16 @@ import type {
   WordCountOverride,
   ProfileTone,
   TemplateSection,
+  ReportRevision,
+  Assertion,
+  AssertionType,
+  Materiality,
+  NumericAtom,
+  VerificationReasonCode,
+  SubmissionSnapshot,
+  ReportingRequirementPack,
+  AwardReportingOverride,
+  ResolvedReportingRequirements,
 } from "@donordesk/domain";
 import type { ReportingPeriod, ReportDraft, ReportSection } from "@donordesk/domain";
 
@@ -247,7 +257,8 @@ export interface IReportDraftGenerator {
   /**
    * Rewrites or shortens an existing section while preserving its facts and
    * source references. `mode` selects the transformation; `audience` adapts
-   * tone for the reader. Implementations must never invent claims.
+   * tone for the reader. Implementations must never invent claims. Exact
+   * prompt and response hashes are returned for reproduction and audit.
    */
   rewriteSection(input: {
     sectionTitle: string;
@@ -259,6 +270,8 @@ export interface IReportDraftGenerator {
   }): Promise<{
     content: string;
     unsupportedClaims: string[];
+    promptHash?: string;
+    responseHash?: string;
   }>;
 }
 
@@ -286,18 +299,34 @@ export interface IReportPlanner {
   }): Promise<Result<ReportPlan, DomainError>>;
 }
 
+export type EntailmentVerdict = "SUPPORTED" | "CONTRADICTED" | "INSUFFICIENT" | "UNCERTAIN";
+
+export interface EntailmentResult {
+  verdict: EntailmentVerdict;
+  citedSpans: Array<{ evidenceId: string; chunkId: string; sourceText: string }>;
+  confidence: number;
+  reasonCode: VerificationReasonCode | null;
+}
+
 export interface ClaimVerification {
   claimId: string;
   result: VerificationResult;
   detail: string;
   matchedFinding?: VerifiedFinding;
   tierUsed: 1 | 2 | 3 | 4 | 5;
+  /** Structured failure reasons; gate decisions consume these, never the detail string. */
+  reasonCodes: VerificationReasonCode[];
+  /** Numeric atoms verified for numeric assertions. */
+  numericAtoms?: NumericAtom[];
+  entailment?: EntailmentResult;
 }
 
 /**
- * Tiered claim verifier. Deterministic tiers (numeric exact match, unit and
- * period match) run first and short-circuit LLM cost; LLM-backed entailment
- * and elevated causal review sit behind provider swap points.
+ * Tiered claim verifier. Deterministic tiers (source integrity, numeric atom
+ * binding, unit/period/entity consistency, entailment) run in cost order and
+ * short-circuit LLM cost; LLM-backed entailment and elevated causal review sit
+ * behind provider swap points. A failed verification is never silently
+ * converted into a passed state.
  */
 export interface IClaimVerifier {
   verify(input: {
@@ -305,6 +334,208 @@ export interface IClaimVerifier {
     findings: VerifiedFinding[];
     evidencePackages: EvidencePackage[];
   }): Promise<Result<ClaimVerification, DomainError>>;
+}
+
+/**
+ * Verifies that every cited source still points at the exact evidence bytes
+ * snapshotted at generation time. Runs before semantic verification.
+ */
+export interface EvidenceIntegrityResult {
+  valid: boolean;
+  reasons: VerificationReasonCode[];
+  detail: string;
+}
+
+export interface IEvidenceIntegrityVerifier {
+  verify(input: {
+    sources: Array<{ evidenceId: string; chunkId: string; sourceText: string; evidenceHash?: string }>;
+    evidencePackages: EvidencePackage[];
+  }): Promise<Result<EvidenceIntegrityResult, DomainError>>;
+}
+
+export interface RetrievedEvidence {
+  evidenceId: string;
+  chunkId: string;
+  chunkText: string;
+  score: number;
+}
+
+export interface RetrievalRequest {
+  sectionTitle: string;
+  entities: string[];
+  dates: string[];
+  indicatorCodes: string[];
+  evidenceType?: string;
+  verificationStatus?: string;
+  maxTokens?: number;
+}
+
+export interface IEvidenceRetriever {
+  retrieve(input: RetrievalRequest): Promise<Result<RetrievedEvidence[], DomainError>>;
+}
+
+export interface IEntailmentVerifier {
+  verify(input: {
+    assertionText: string;
+    assertionType: AssertionType;
+    evidence: RetrievedEvidence[];
+  }): Promise<Result<EntailmentResult, DomainError>>;
+}
+
+export interface ICausalReviewPolicy {
+  requiresHumanDecision(type: AssertionType, verdict: EntailmentVerdict): boolean;
+  reasonCode(): VerificationReasonCode;
+}
+
+export interface ExtractedAssertion extends Assertion {}
+
+export interface AssertionExtractionInput {
+  content: string;
+  writerClaims: ReportClaimDraft[];
+}
+
+/**
+ * Extracts structured assertions from final normalized content. Implementations
+ * must not trust only the writer-provided claims array: every material
+ * statement in the content must enter the assurance pipeline.
+ */
+export interface IAssertionExtractor {
+  extract(input: AssertionExtractionInput): Promise<Result<Assertion[], DomainError>>;
+}
+
+export interface IReportRevisionRepository {
+  create(r: ReportRevision): Promise<Result<ReportRevision>>;
+  update(r: ReportRevision): Promise<Result<ReportRevision>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<ReportRevision | null>>;
+  findBySection(sectionId: string, tenantId: TenantId): Promise<Result<ReportRevision[]>>;
+  findByDraft(draftId: string, tenantId: TenantId): Promise<Result<ReportRevision[]>>;
+  findCurrentForSection(sectionId: string, tenantId: TenantId): Promise<Result<ReportRevision | null>>;
+  createNextForSection(input: {
+    tenantId: TenantId;
+    sectionId: string;
+    draftId: string;
+    content: string;
+    contentHash: string;
+    changeOrigin: ReportRevision["changeOrigin"];
+    actorId: string;
+    modelId?: string;
+    promptVersion?: number;
+    generationRunId?: string;
+  }): Promise<Result<ReportRevision>>;
+}
+
+export interface ISubmissionSnapshotRepository {
+  create(s: SubmissionSnapshot): Promise<Result<SubmissionSnapshot>>;
+  update(s: SubmissionSnapshot): Promise<Result<SubmissionSnapshot>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<SubmissionSnapshot | null>>;
+  findLatestForDraft(draftId: string, tenantId: TenantId): Promise<Result<SubmissionSnapshot | null>>;
+}
+
+export interface IRequirementPackRepository {
+  create(pack: ReportingRequirementPack): Promise<Result<ReportingRequirementPack>>;
+  update(pack: ReportingRequirementPack): Promise<Result<ReportingRequirementPack>>;
+  findById(id: string, tenantId: string | undefined): Promise<Result<ReportingRequirementPack | null>>;
+  findActiveByMechanism(input: {
+    donorKey: string;
+    mechanismKey: string;
+    reportType: string;
+    language: string;
+    tenantId?: string;
+  }): Promise<Result<ReportingRequirementPack | null>>;
+}
+
+export interface IAwardOverrideRepository {
+  create(o: AwardReportingOverride): Promise<Result<AwardReportingOverride>>;
+  update(o: AwardReportingOverride): Promise<Result<AwardReportingOverride>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<AwardReportingOverride | null>>;
+  findActiveForProject(projectId: string, tenantId: TenantId, effectiveDate: Date): Promise<Result<AwardReportingOverride[]>>;
+}
+
+export interface IResolvedRequirementsRepository {
+  create(r: ResolvedReportingRequirements): Promise<Result<ResolvedReportingRequirements>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<ResolvedReportingRequirements | null>>;
+  findLatestForPeriod(reportingPeriodId: string, tenantId: TenantId): Promise<Result<ResolvedReportingRequirements | null>>;
+}
+
+export interface IRequirementResolver {
+  resolve(input: {
+    tenantId: TenantId;
+    reportingPeriodId: string;
+    effectiveDate: Date;
+  }): Promise<Result<ResolvedReportingRequirements, DomainError>>;
+}
+
+export interface RequirementEvaluationInput {
+  requirements: ResolvedReportingRequirements["snapshot"];
+  sectionTitles: string[];
+  /** Parallel array of resolved requirement keys each section satisfies. */
+  sectionRequirementKeys: string[][];
+  /** Parallel array of section contents (for word-limit checks). */
+  sectionContents: string[];
+}
+
+export interface RequirementEvaluationResult {
+  satisfied: string[];
+  unmet: string[];
+  blocking: Array<{ key: string; reason: string }>;
+}
+
+/**
+ * Pluggable requirement evaluator (Phase 5). Computes which resolved
+ * requirements are satisfied by the report plan sections and flags unmet
+ * mandatory requirements and word-limit violations. Deterministic by default;
+ * an LLM-judge evaluator may be added behind the same port.
+ */
+export interface IRequirementEvaluator {
+  evaluate(input: RequirementEvaluationInput): Promise<Result<RequirementEvaluationResult, DomainError>>;
+}
+
+export interface IReportRevisionService {
+  /**
+   * Centralizes every content mutation (generation, manual edit, rewrite,
+   * auto-fix). Creates a new UNASSESSED revision, repoints the section at it,
+   * and persists both. Prior verification is never carried forward.
+   */
+  commitChange(input: {
+    tenantId: TenantId;
+    section: ReportSection;
+    content: string;
+    sourceReferences: SourceReference[];
+    unsupportedClaims: string[];
+    changeOrigin: ReportRevision["changeOrigin"];
+    actorId: string;
+    modelId?: string;
+    promptVersion?: number;
+    generationRunId?: string;
+  }): Promise<Result<ReportRevision, DomainError>>;
+}
+
+export interface AssessRevisionResult {
+  revisionId: string;
+  assuranceState: string;
+  claims: ReportClaim[];
+  coverage: { totalAssertions: number; materialAssertions: number; complete: boolean; blockingReasons: string[] };
+  blocked: boolean;
+  blockReasons: string[];
+}
+
+/**
+ * Runs the full assurance pipeline for one revision: extract assertions from
+ * final content (never only the writer's claims), reconcile writer claims,
+ * verify every material assertion, persist revision-bound claims, and set the
+ * revision's assurance state.
+ */
+export interface IReportAssuranceService {
+  assessRevision(input: {
+    ctx: { tenantId: TenantId; userId: string };
+    sectionId: string;
+    revisionId: string;
+    writerClaims?: ReportClaimDraft[];
+    /** Pre-computed findings; computed by the service when omitted. */
+    findings?: VerifiedFinding[];
+    /** Pre-built evidence packages; built by the service when omitted. */
+    evidencePackages?: EvidencePackage[];
+  }): Promise<Result<AssessRevisionResult, DomainError>>;
 }
 
 export interface IReportPlanRepository {
@@ -326,6 +557,8 @@ export interface IReportClaimRepository {
   findById(id: string, tenantId: TenantId): Promise<Result<ReportClaim | null>>;
   findByDraft(draftId: string, tenantId: TenantId): Promise<Result<ReportClaim[]>>;
   findBySection(sectionId: string, tenantId: TenantId): Promise<Result<ReportClaim[]>>;
+  /** Removes all claims bound to a section (used when a new revision supersedes them). */
+  deleteBySection(sectionId: string, tenantId: TenantId): Promise<Result<void>>;
 }
 
 export interface IGenerationRunRepository {

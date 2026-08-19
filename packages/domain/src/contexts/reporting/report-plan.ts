@@ -15,6 +15,12 @@ export interface ReportPlanSection {
   mandatoryQuestions: string[];
   evidenceNeeds: string[];
   relatedLogframeElement?: string;
+  /**
+   * Resolved reporting requirement keys this section satisfies (Phase 5). Populated
+   * when the plan is produced against a resolved requirement snapshot; consumed by
+   * the requirement evaluator for exact-match coverage instead of title guessing.
+   */
+  requirementKeys?: string[];
 }
 
 export interface ReportPlanStyle {

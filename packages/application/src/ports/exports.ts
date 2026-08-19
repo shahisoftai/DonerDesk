@@ -28,9 +28,13 @@ export interface ExportChartInput {
   }>;
 }
 
+export type ExportIntent = "INTERNAL_REVIEW" | "DONOR_SUBMISSION";
+
 export interface IExportBuilder {
   build(input: {
     exportType: "WORD" | "PDF" | "EXCEL_INDICATORS" | "EVIDENCE_CHECKLIST" | "EVIDENCE_PACK_ZIP" | "DONOR_TEMPLATE";
+    exportIntent: ExportIntent;
+    submissionSnapshotId?: string;
     projectName: string;
     reportingPeriodLabel: string;
     reportTitle: string;
@@ -48,5 +52,7 @@ export interface IExportBuilder {
       confidentiality: string;
     }>;
     includeSensitive: boolean;
+    /** Watermark text for internal previews; donor submissions must never be watermarked. */
+    watermark?: string;
   }): Promise<ExportArtifacts>;
 }

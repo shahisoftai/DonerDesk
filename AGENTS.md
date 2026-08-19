@@ -8,6 +8,7 @@ Agent guidance for coding on DonorDesk.
 - Typecheck everything: `pnpm -r typecheck`
 - Build everything: `pnpm -r build`
 - Run API + Web together: `pnpm dev`
+- Reporting golden-corpus eval: `pnpm --filter @donordesk/infrastructure reporting:eval`
 
 ## Architecture rules (Phase 1)
 - Domain (`packages/domain`) is pure TypeScript — zero infrastructure deps.

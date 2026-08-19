@@ -1,0 +1,149 @@
+{
+  "cases": [
+    {
+      "name": "un-ocha-annual-ok",
+      "draftText": "Reached 500 beneficiaries in the reporting period. 320 women and 180 children received assistance. The project complies with the safeguarding policy. 60 percent of trainees completed the course. Data quality limitation: disaggregated data was not recorded for one site; results are based on partial records.",
+      "referenceAssertions": [
+        {
+          "text": "Reached 500 beneficiaries in the reporting period."
+        },
+        {
+          "text": "The project complies with the safeguarding policy."
+        },
+        {
+          "text": "60 percent of trainees completed the course."
+        }
+      ],
+      "numericFacts": [
+        {
+          "value": "500",
+          "expected": "present"
+        },
+        {
+          "value": "60",
+          "expected": "present"
+        },
+        {
+          "value": "1200",
+          "expected": "absent"
+        }
+      ],
+      "requiredLimitations": [
+        "disaggregated data was not recorded",
+        "based on partial records"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "usaid-bha-overclaim",
+      "draftText": "The training dramatically transformed community health outcomes and permanently ended malnutrition in the district. Attendance records confirm strong programmatic impact.",
+      "referenceAssertions": [
+        {
+          "text": "The training was delivered to 45 participants."
+        }
+      ],
+      "numericFacts": [
+        {
+          "value": "45",
+          "expected": "absent"
+        }
+      ],
+      "requiredLimitations": [
+        "requires verification"
+      ],
+      "expected": "fail"
+    },
+    {
+      "name": "echo-single-form-budget",
+      "draftText": "Expenditure reached EUR 240,000 against a budget of EUR 300,000, leaving an underspend of EUR 60,000. Expenditure is reported on a cash basis and unaudited.",
+      "referenceAssertions": [
+        {
+          "text": "Expenditure reached EUR 240,000 against a budget of EUR 300,000."
+        }
+      ],
+      "numericFacts": [
+        {
+          "value": "240,000",
+          "expected": "present"
+        },
+        {
+          "value": "300,000",
+          "expected": "present"
+        },
+        {
+          "value": "450,000",
+          "expected": "absent"
+        }
+      ],
+      "requiredLimitations": [
+        "unaudited"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "gavi-gf-disaggregation",
+      "draftText": "Vaccinated 1,200 children in the reporting period. 600 girls and 600 boys received the first dose. Coverage data is preliminary.",
+      "referenceAssertions": [
+        {
+          "text": "Vaccinated 1,200 children in the reporting period."
+        }
+      ],
+      "numericFacts": [
+        {
+          "value": "1,200",
+          "expected": "present"
+        },
+        {
+          "value": "600",
+          "expected": "present"
+        },
+        {
+          "value": "900",
+          "expected": "absent"
+        }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "education-gpe-missing-caveat",
+      "draftText": "Enrolled 2,000 out-of-school children. The program fully achieved its literacy targets.",
+      "referenceAssertions": [
+        {
+          "text": "Enrolled 2,000 out-of-school children."
+        }
+      ],
+      "numericFacts": [
+        {
+          "value": "2,000",
+          "expected": "present"
+        }
+      ],
+      "requiredLimitations": [
+        "learning outcomes are not independently verified"
+      ],
+      "expected": "fail"
+    },
+    {
+      "name": "climate-fund-adaptation",
+      "draftText": "Reduced emissions by 1,500 tonnes of CO2 equivalent. The estimate uses conservative emission factors and excludes scope 3 emissions.",
+      "referenceAssertions": [
+        {
+          "text": "Reduced emissions by 1,500 tonnes of CO2 equivalent."
+        }
+      ],
+      "numericFacts": [
+        {
+          "value": "1,500",
+          "expected": "present"
+        }
+      ],
+      "requiredLimitations": [
+        "excludes scope 3 emissions"
+      ],
+      "expected": "pass"
+    }
+  ]
+}

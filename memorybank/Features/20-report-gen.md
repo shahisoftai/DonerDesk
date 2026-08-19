@@ -1,13 +1,13 @@
 # Feature 20: Report Intelligence Engine — Implementation Plan
 
-**Updated:** 2026-08-18
-**Status:** IMPLEMENTED — core (Phases 0–1 + foundation of 2–4) landed 2026-08-16: domain primitives, decimal-safe indicator analyst, semantics inference, generation-run snapshot, structured claim provenance with evidence-hash snapshots, deterministic tiered claim verifier, approval gates, reject/request-changes transition, report-plan/claim/run/mapping persistence, `DONOR_TEMPLATE` export type, API routes, RLS coverage, and tests. LLM-backed planner/writer/verifier and docxtpl rendering in Python workers remain behind the documented swap points. **2026-08-18:** the analyst/narrator contract was enriched for professional donor reports (indicator metadata + target/baseline, previous-period `comparisonValue`, deterministic `performanceEvaluation`, project/period/template context, per-section guidance) — see §17.
+**Updated:** 2026-08-19
+**Status:** IMPLEMENTED — core (Phases 0–1 + foundation of 2–4) landed 2026-08-16: domain primitives, decimal-safe indicator analyst, semantics inference, generation-run snapshot, structured claim provenance with evidence-hash snapshots, deterministic tiered claim verifier, approval gates, reject/request-changes transition, report-plan/claim/run/mapping persistence, `DONOR_TEMPLATE` export type, API routes, RLS coverage, and tests. LLM-backed planner/writer/verifier and docxtpl rendering in Python workers remain behind the documented swap points. **2026-08-18:** the analyst/narrator contract was enriched for professional donor reports (indicator metadata + target/baseline, previous-period `comparisonValue`, deterministic `performanceEvaluation`, project/period/template context, per-section guidance) — see §17. **2026-08-19:** the full professional-reporting hardening plan (revision integrity, assertion coverage, structured numeric/evidence verification, requirement packs, submission snapshots, one shared gate, export intent, golden corpus) is IMPLEMENTED and shipped — see §18.
 
 > **Next-stage plan:** [`../imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](../imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md)
 > is the canonical phased plan for revision-bound assurance, complete assertion
 > coverage, structured verification, award-specific requirement precedence,
-> submission snapshots, and donor-native rendering. It extends the implemented
-> Feature 20 architecture and must not be implemented as a parallel report stack.
+> submission snapshots, and donor-native rendering — **status IMPLEMENTED
+> (2026-08-19)**.
 
 ## 1. Objective
 
@@ -750,3 +750,82 @@ Verification: full release gate green (`pnpm -r typecheck`, `pnpm -r build`,
 failures); release-package smoke tests passed; deployed `20260818074405` and
 verified live — deployed dist contains the enriched prompt + `buildReportContext`
 handler, `/health` + `/ready` OK, web `/login` 200, no journal errors.
+
+## 18. Professional donor-reporting hardening (IMPLEMENTED 2026-08-19)
+
+The phased plan `../imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md` (Phases
+0–9, status **IMPLEMENTED**) is shipped in release `20260819090000` (API + web +
+migration `20260818180000_professional_reporting`). It hardens Feature 20 so
+approved outputs can be treated as donor-submission candidates:
+
+- **Revision integrity (Phase 1).** Immutable `ReportRevision` (content hash,
+  parent/child numbering, change origin, actor/model/prompt, assurance state
+  `UNASSESSED→ASSESSING→CURRENT|FAILED`, `STALE`). All content mutations go
+  through one `IReportRevisionService`; section approval requires `CURRENT`
+  assurance bound to the exact revision. Rewrites create child generation runs
+  with prompt/response hashes. A baseline revision is backfilled for every
+  pre-existing section and its claims are bound to it (`UNASSESSED` until a
+  re-assessment produces a SHA-256 revision).
+- **Assertion coverage (Phase 2).** `IAssertionExtractor`
+  (`DeterministicAssertionExtractor`) re-extracts assertions from the final
+  normalized content after every generation/edit/rewrite and reconciles them
+  with the writer's `claims` by stable fingerprint — an empty `claims` array can
+  never bypass verification. Materiality: numeric/causal/compliance
+  (safeguarding, incident, budget, target-performance, donor-commitment) are
+  material by default; factual/qualitative/forecast/recommendation only when
+  they carry a numeric atom. Coverage gaps project into
+  `UNSUPPORTED_REPORT_CLAIM` checklist items with deterministic dedup keys.
+- **Structured numeric verification (Phase 3).** Every numeric atom is bound to
+  indicator, reporting period, unit, entity, and semantic role
+  (ACHIEVEMENT/TARGET/BASELINE/COMPARISON/PERCENT/CURRENCY/DATE); percentages can
+  be derived from value/target or value/baseline via domain decimal math only.
+  All reason codes are enums (`VerificationReasonCode`) consumed by gates via
+  `gateKindForReason` — never prose string matching.
+- **Evidence validity and entailment (Phase 4).** Exact evidence/chunk existence,
+  hash, source-text, parser/chunker-version validation runs before semantic
+  verification; `DeterministicEvidenceRetriever` ranks evidence; entailment
+  returns supported/contradicted/insufficient/uncertain; causality is never
+  auto-approved. Evidence text is data (prompt-injection/PII tests).
+- **Requirement packs (Phase 5).** Versioned `ReportingRequirementPack`,
+  award-specific `AwardReportingOverride`, and immutable
+  `ResolvedReportingRequirements` snapshots merged by a deterministic precedence
+  resolver (award/amendment → schedule → mechanism → donor pack → org profile →
+  baseline) with full provenance; `IRequirementEvaluator` computes coverage
+  (exact `requirementKeys`, title match, word limits). Packs require human
+  review before activation.
+- **Narrative quality (Phase 6).** Rewrite prompts are neutral and
+  evidence-proportionate (no "positive, impact-focused" instruction), preserve
+  caveats, and record prompt/response hashes.
+- **Submission gates and snapshots (Phase 7).** ONE `evaluateReportGate` policy
+  is shared by report approval, export preflight, submission-snapshot creation,
+  and server-side export enforcement. `SubmissionSnapshot` freezes approved
+  revision IDs/hashes, the resolved requirement snapshot + coverage,
+  assertion/evidence/annex manifests, approval records, and authorized
+  overrides. `POST /v1/exports` accepts `exportIntent`; donor submissions
+  require a sealed snapshot and are never watermarked, internal previews are
+  always watermarked. Template/mapping version correctness and open
+  critical/high + sensitive-data checklist items block submission.
+- **Donor-native rendering (Phase 8).** `DONOR_TEMPLATE` stays worker-backed
+  (`docxtpl`); the TS-side export builder enforces intent/watermark invariants.
+  Deep template fidelity (headers/logos/numbering) remains the documented
+  worker swap point.
+- **Evaluation and security (Phase 9).** Anonymized golden corpus (UN OCHA,
+  USAID/BHA, DG ECHO, Gavi/GF, GPE, climate) with a deterministic
+  `reporting:eval` CLI (`pnpm --filter @donordesk/infrastructure reporting:eval`),
+  a shared `IClaimVerifier` contract suite, and adversarial security tests.
+
+API additions: `GET /v1/report-drafts/:id/assurance`,
+`POST /v1/report-sections/:id/reassess`,
+`POST /v1/reporting-periods/:id/resolve-requirements`,
+`POST /v1/reporting-requirement-packs` (+ `/:id/activate`),
+`POST /v1/award-reporting-overrides`,
+`POST /v1/report-drafts/:id/submission-snapshot`, and `exportIntent`/
+`submissionSnapshotId` on `POST /v1/exports`.
+
+ADRs: `docs/architecture/decisions/0005-report-revisions.md` through
+`0009-donor-native-rendering.md`; ownership map at
+`../imp/REPORTING-OWNERSHIP-MAP.md`.
+
+Remaining known follow-ups (non-blocking): transactional generation state
+machine, LLM-backed entailment/extraction swap-ins, worker `docxtpl` fidelity +
+visual diffs, and the consolidated web exception surface (API contract live).

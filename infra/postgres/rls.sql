@@ -9,6 +9,7 @@ BEGIN
     'Indicator','IndicatorUpdate','ReportingPeriod','EvidenceFile','ActivityUpdate',
     'ReportDraft','ReportSection','ChecklistItem','ExportPackage','Comment',
     'ReportPlan','ReportClaim','ReportGenerationRun','DonorTemplateMapping',
+    'ReportRevision','SubmissionSnapshot','ReportingRequirementPack','AwardReportingOverride','ResolvedReportingRequirements',
     'Notification','AuditEvent','LlmRun','LlmFeedback','EvidenceChunk','EvidenceEmbedding',
     'IdempotencyRecord',
     'BillingSubscription','EntitlementGrant','UsageCounter','TrialIdentity'

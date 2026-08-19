@@ -56,7 +56,8 @@ test("numeric claims fail tier 1 on contradiction", async () => {
   });
   assert.ok(result.ok);
   assert.equal(result.ok && result.value.result, "FAILED");
-  assert.ok(result.ok && result.value.detail.includes("contradict"));
+  assert.ok(result.ok && result.value.reasonCodes.includes("VALUE_MISMATCH"));
+  assert.equal(result.ok && result.value.detail.toLowerCase().includes("contradict"), false);
 });
 
 test("numeric claims over unresolved semantics never pass", async () => {
@@ -68,23 +69,40 @@ test("numeric claims over unresolved semantics never pass", async () => {
   });
   assert.ok(result.ok);
   assert.equal(result.ok && result.value.result, "FAILED");
-  assert.ok(result.ok && result.value.detail.includes("unresolved"));
+  assert.ok(result.ok && result.value.reasonCodes.includes("ENTITY_MISMATCH"));
 });
 
-test("factual claims pass when backed by a non-confidential evidence source", async () => {
+test("factual claims pass when cited evidence supports the assertion", async () => {
   const verifier = new DeterministicClaimVerifier();
   const result = await verifier.verify({
     claim: {
       text: "Training sessions were delivered",
       type: "FACTUAL",
-      proposedSources: [{ evidenceId: "e-1", chunkId: "e-1:0", sourceText: "45 participants attended" }],
+      proposedSources: [{ evidenceId: "e-1", chunkId: "e-1:0", sourceText: "Training sessions were delivered to 45 participants" }],
+    },
+    findings: [],
+    evidencePackages: [makePackage({ extractedText: "Training sessions were delivered to 45 participants.", chunks: [{ chunkId: "e-1:0", text: "Training sessions were delivered to 45 participants.", tokenCount: 8, chunkIndex: 0 }] })],
+  });
+  assert.ok(result.ok);
+  assert.equal(result.ok && result.value.result, "PASSED");
+  assert.equal(result.ok && result.value.tierUsed, 4);
+  assert.ok(result.ok && result.value.entailment?.verdict === "SUPPORTED");
+});
+
+test("factual claims fail when cited evidence does not support the assertion", async () => {
+  const verifier = new DeterministicClaimVerifier();
+  const result = await verifier.verify({
+    claim: {
+      text: "Programmatic impact was independently verified",
+      type: "FACTUAL",
+      proposedSources: [{ evidenceId: "e-1", chunkId: "e-1:0", sourceText: "45 participants attended the training session" }],
     },
     findings: [],
     evidencePackages: [makePackage()],
   });
   assert.ok(result.ok);
-  assert.equal(result.ok && result.value.result, "PASSED");
-  assert.equal(result.ok && result.value.tierUsed, 4);
+  assert.equal(result.ok && result.value.result, "FAILED");
+  assert.ok(result.ok && (result.value.reasonCodes.includes("ENTAILMENT_FAILED") || result.value.reasonCodes.includes("ENTAILMENT_UNCERTAIN")));
 });
 
 test("claims over confidential sources fail until authorized", async () => {
@@ -100,7 +118,23 @@ test("claims over confidential sources fail until authorized", async () => {
   });
   assert.ok(result.ok);
   assert.equal(result.ok && result.value.result, "FAILED");
-  assert.ok(result.ok && result.value.detail.toLowerCase().includes("confidential"));
+  assert.ok(result.ok && result.value.reasonCodes.includes("CONFIDENTIALITY_RESTRICTED"));
+});
+
+test("evidence hash mismatches block verification deterministically", async () => {
+  const verifier = new DeterministicClaimVerifier();
+  const result = await verifier.verify({
+    claim: {
+      text: "Training sessions were delivered to 45 participants",
+      type: "FACTUAL",
+      proposedSources: [{ evidenceId: "e-1", chunkId: "e-1:0", sourceText: "Training sessions were delivered to 45 participants", evidenceHash: "stale-hash" }],
+    },
+    findings: [],
+    evidencePackages: [makePackage({ evidenceHash: "current-hash" })],
+  });
+  assert.ok(result.ok);
+  assert.equal(result.ok && result.value.result, "FAILED");
+  assert.ok(result.ok && result.value.reasonCodes.includes("EVIDENCE_HASH_MISMATCH"));
 });
 
 test("causal claims with limited evidence require elevated review", async () => {

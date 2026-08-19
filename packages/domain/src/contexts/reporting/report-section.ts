@@ -23,6 +23,8 @@ export interface ReportSectionProps {
   unsupportedClaims: string[];
   status: SectionStatus;
   chartConfig?: ChartConfig | null;
+  /** The revision whose content this section currently points at. */
+  currentRevisionId?: string;
 }
 
 export class ReportSection extends Entity<string> {
@@ -77,6 +79,13 @@ export class ReportSection extends Entity<string> {
   get unsupportedClaims(): string[] { return [...this.props.unsupportedClaims]; }
   get status(): SectionStatus { return this.props.status; }
   get chartConfig(): ChartConfig | null { return this.props.chartConfig ?? null; }
+  get currentRevisionId(): string | undefined { return this.props.currentRevisionId; }
+
+  setCurrentRevision(revisionId: string): void {
+    if (!revisionId) throw DomainError.validation("Current revision id is required");
+    this.props.currentRevisionId = revisionId;
+    this.touch();
+  }
 
   setContent(content: string, sourceRefs: SourceReference[], unsupported: string[]): void {
     this.props.content = content;

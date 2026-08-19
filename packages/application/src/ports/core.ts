@@ -34,6 +34,18 @@ export class UuidIdGenerator implements IIdGenerator {
   }
 }
 
+/**
+ * Content-integrity hashing. Domain stays dependency-free, so SHA-256 digests
+ * are computed here and validated by domain aggregates.
+ */
+export interface IHashService {
+  sha256Hex(input: string): string;
+  /** Normalizes content (trim + collapse whitespace) and hashes it. */
+  normalizeAndHash(text: string): string;
+  /** Normalizes text deterministically (trim + collapse whitespace). */
+  normalize(text: string): string;
+}
+
 export interface ILogger {
   info(message: string, meta?: Record<string, unknown>): void;
   warn(message: string, meta?: Record<string, unknown>): void;

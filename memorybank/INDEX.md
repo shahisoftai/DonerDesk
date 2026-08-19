@@ -1,6 +1,6 @@
 # DonorDesk MemoryBank Index
 
-**Last updated:** 2026-08-18
+**Last updated:** 2026-08-19
 
 Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to search within files.
 
@@ -13,7 +13,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **What is DonorDesk?** | [`base/DonorDesk — Initial Concept Document.md`](base/DonorDesk%20—%20Initial%20Concept%20Document.md) |
 | **Why build it? (Executive pitch)** | [`base/DonorDesk — One-Page Concept Note for Approval.md`](base/DonorDesk%20—%20One-Page%20Concept%20Note%20for%20Approval.md) |
 | **Full engineering blueprint** | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) |
-| **Professional donor-reporting hardening plan** | [`imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md) |
+| **Professional donor-reporting hardening plan** | [`imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED) and [`imp/REPORTING-OWNERSHIP-MAP.md`](imp/REPORTING-OWNERSHIP-MAP.md) |
 | **Frontend portal blueprint** | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) |
 | **Frontend portal status** | [`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`](imp/FRONTEND-UX-INTEGRATION-AUDIT.md) (latest audit) and [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 | **Production issues & fixes** | [`Fixes.md`](Fixes.md) |
@@ -46,8 +46,14 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | [`docs/architecture/decisions/0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md) | ADR: LLM provider abstraction via strategy pattern |
 | [`docs/architecture/decisions/0003-fastify-over-nestjs.md`](docs/architecture/decisions/0003-fastify-over-nestjs.md) | ADR: Fastify over NestJS for Phase 1 |
 | [`docs/architecture/decisions/0004-async-job-orchestration.md`](docs/architecture/decisions/0004-async-job-orchestration.md) | ADR: async job ownership (memory/BullMQ/Kestra via `JOB_QUEUE`) |
-| [`imp/KESTRA-IMPLEMENTATION-PLAN.md`](imp/KESTRA-IMPLEMENTATION-PLAN.md) | Kestra orchestration implementation plan (Phases A–F) |
-| [`imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md) | Phased plan for revision-safe assurance, award-specific requirements, donor-native rendering, and validated submission snapshots |
+ | [`imp/KESTRA-IMPLEMENTATION-PLAN.md`](imp/KESTRA-IMPLEMENTATION-PLAN.md) | Kestra orchestration implementation plan (Phases A–F) |
+| [`imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md) | Phased plan for revision-safe assurance, award-specific requirements, donor-native rendering, and validated submission snapshots — **status: IMPLEMENTED (2026-08-19)** |
+| [`imp/REPORTING-OWNERSHIP-MAP.md`](imp/REPORTING-OWNERSHIP-MAP.md) | Professional-reporting component ownership map (no-duplication review) |
+| [`docs/architecture/decisions/0005-report-revisions.md`](docs/architecture/decisions/0005-report-revisions.md) | ADR: report revisions and revision-bound assurance |
+| [`docs/architecture/decisions/0006-requirement-precedence.md`](docs/architecture/decisions/0006-requirement-precedence.md) | ADR: reporting requirement precedence |
+| [`docs/architecture/decisions/0007-verification-composition.md`](docs/architecture/decisions/0007-verification-composition.md) | ADR: verification composition and structured reason codes |
+| [`docs/architecture/decisions/0008-submission-snapshots.md`](docs/architecture/decisions/0008-submission-snapshots.md) | ADR: immutable submission snapshots |
+| [`docs/architecture/decisions/0009-donor-native-rendering.md`](docs/architecture/decisions/0009-donor-native-rendering.md) | ADR: donor-native rendering behind the export builder |
 | [`imp/KESTRA-PLUGINS.md`](imp/KESTRA-PLUGINS.md) | **Free Kestra plugins** (Tika, Redis, JDBC-Postgres, GDrive, SFTP) — implementation + gating |
 | [`gdrive.md`](gdrive.md) | **Google Drive primary storage (link-first) + R2 optional tier** — status, architecture, implementation (Phases A–E), **+ login-page Google Sign-In (§9)** |
 | [`docs/security/threat-model.md`](docs/security/threat-model.md) | Security threat model |
@@ -75,36 +81,36 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 6 | Review, approval, export (REV, EXP) | ✅ Delivered | [`imp/PHASE6-FRONTEND-REPORT.md`](imp/PHASE6-FRONTEND-REPORT.md) |
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
- > **Deployment status (2026-08-18):** Latest release `20260818074405` (commit
- > `6bc6443`, **professional AI report generation**) is live on `donordesk.online`.
- > All five services (API `4001`, web
+ > **Deployment status (2026-08-19):** Latest release `20260819090000`
+ > (commit to be recorded, **professional donor reporting hardening**) is live on
+ > `donordesk.online`. All five services (API `4001`, web
  > `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`) are **enabled
- > and active**. **Professional report generation (2026-08-18):** verified
- > findings carry indicator name/type/baseline/target, the previous-period
- > `comparisonValue`, and a deterministic `performanceEvaluation`; the narrator
- > prompt gains project/reporting-period/donor-template context blocks,
- > per-section guidance, indicator target + period-on-period narration, evidence
- > metadata, participant disaggregation, quality-flag caveat language, and a
- > worked example. **Feature 19 — Creem billing is live in test mode**: Phase 4
- > reconciliation handlers + shared `BillingSubscriptionSynchronizer` +
- > `/internal/billing/*` Kestra routes, webhook tenant resolution from checkout
- > metadata, and the `/thanks` checkout return page (release `20260818053116`);
- > then the **Continue checkout flow** — pricing Continue buttons → signup →
- > `/checkout` → Creem — with **all 14-day trial references removed** (every
- > workspace starts on free STARTER; release `20260818061120`). Earlier today's
- > releases shipped: **real LLM report drafting** via the
- > SuperAdmin-configured MiniMax provider with per-tier AI-credit quotas
- > (STARTER 5 / TEAM 100 / GROWTH 500 / ENTERPRISE unlimited; stub fallback is
- > free and never billed), **user-selectable report charts**
- > (BAR/LINE/PIE/AREA/RADAR/GAUGE per indicator section, exported identically to
- > DOCX/PDF via ECharts SSR→sharp PNG), the **SuperAdmin Billing & credits**
- > section (per-tenant allowance Set/Increase/Reduce + reset month usage), plus
- > credit/timeout/section-switching fixes. Migrations applied through
- > `20260817210000_plan_catalog_override`. See `Features/19-Tiers-And-Payments.md`,
- > `Features/20-report-gen.md` §15–17, `Fixes.md`, and `contabo-ops.md` §29. **Gated (not deployed):** the five
- > plugin-referencing Kestra flows and plugin JARs (stage/verify against
- > Kestra 1.3.30 + add the `donordesk` datasource first). See `contabo-ops.md` §28
- > and `imp/KESTRA-PLUGINS.md`.
+ > and active**. **Professional donor-reporting hardening (2026-08-19):** the
+ > `PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md` (Phases 0–9) is now IMPLEMENTED —
+ > immutable `ReportRevision` with revision-bound `ReportClaim` assertions,
+ > `IReportRevisionService` single mutation pipeline, deterministic assertion
+ > extraction (empty writer-claims cannot bypass), structured numeric/period/
+ > entity/unit/derivation verification, evidence hash/chunk/source-text integrity,
+ > entailment + causal human-review policy, requirement packs/overrides with
+ > deterministic precedence resolver, `SubmissionSnapshot` sealing, one gate
+ > evaluator shared by approval/preflight/submission/export, export intent
+ > (watermarked internal vs snapshot-bound donor submission), coverage-gap
+ > projection into `UNSUPPORTED_REPORT_CLAIM` checklist items, neutral
+ > evidence-proportionate rewrite prompts, golden corpus + `reporting:eval` +
+ > verifier contract suite, and ADRs 0005–0009. Migration
+ > `20260818180000_professional_reporting` (additive; includes baseline-revision
+ > backfill) + RLS applied. Full gate green (254 tests). **Earlier releases:**
+ > 2026-08-18 shipped **Report Writing Skills course**, **Support Center + 104
+ > docs**, **professional AI report generation** (indicator metadata +
+ > previous-period comparison + deterministic performance evaluation),
+ > **Feature 19 — Creem billing live**, **real LLM report drafting** (SuperAdmin
+ > MiniMax provider with per-tier AI-credit quotas), **user-selectable report
+ > charts**, and the **SuperAdmin Billing & credits** section. Migrations applied
+ > through `20260818180000_professional_reporting`. See `Features/20-report-gen.md`
+ > §18, `Features/19-Tiers-And-Payments.md`, `Fixes.md`, and `contabo-ops.md` §29.
+ > **Gated (not deployed):** the five plugin-referencing Kestra flows and plugin
+ > JARs (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource
+ > first). See `contabo-ops.md` §28 and `imp/KESTRA-PLUGINS.md`.
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |
@@ -134,6 +140,11 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | 2 | LLM strategy pattern with provider abstraction | [`0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md) |
 | 3 | Fastify over NestJS for Phase 1 | [`0003-fastify-over-nestjs.md`](docs/architecture/decisions/0003-fastify-over-nestjs.md) |
 | 4 | Async job ownership (memory/BullMQ/Kestra) | [`0004-async-job-orchestration.md`](docs/architecture/decisions/0004-async-job-orchestration.md) |
+| 5 | Report revisions and revision-bound assurance | [`0005-report-revisions.md`](docs/architecture/decisions/0005-report-revisions.md) |
+| 6 | Reporting requirement precedence | [`0006-requirement-precedence.md`](docs/architecture/decisions/0006-requirement-precedence.md) |
+| 7 | Verification composition and structured reason codes | [`0007-verification-composition.md`](docs/architecture/decisions/0007-verification-composition.md) |
+| 8 | Immutable submission snapshots | [`0008-submission-snapshots.md`](docs/architecture/decisions/0008-submission-snapshots.md) |
+| 9 | Donor-native rendering behind the export builder | [`0009-donor-native-rendering.md`](docs/architecture/decisions/0009-donor-native-rendering.md) |
 
 ---
 
@@ -195,6 +206,8 @@ memorybank/
 │   ├── frontend-implementation.md   Frontend source spec
 │   ├── KESTRA-IMPLEMENTATION-PLAN.md  Kestra orchestration plan (Phases A–F)
 │   ├── KESTRA-PLUGINS.md              Free Kestra plugins implementation + gating
+│   ├── PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md  Professional donor reporting (IMPLEMENTED 2026-08-19)
+│   ├── REPORTING-OWNERSHIP-MAP.md     Professional-reporting ownership map
 │   ├── PHASE0-COMPLETION-REPORT.md
 │   ├── PHASE0-AUDIT.md
 │   ├── PHASE0-REPORT.md             Frontend Phase 0
@@ -221,7 +234,13 @@ memorybank/
     │   └── decisions/
     │       ├── 0001-multi-tenancy.md
     │       ├── 0002-llm-strategy.md
-    │       └── 0003-fastify-over-nestjs.md
+    │       ├── 0003-fastify-over-nestjs.md
+    │       ├── 0004-async-job-orchestration.md
+    │       ├── 0005-report-revisions.md
+    │       ├── 0006-requirement-precedence.md
+    │       ├── 0007-verification-composition.md
+    │       ├── 0008-submission-snapshots.md
+    │       └── 0009-donor-native-rendering.md
     ├── runbooks/
     │   ├── DISASTER-RECOVERY.md
     │   ├── BYOC-DEPLOYMENT.md

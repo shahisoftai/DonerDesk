@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-18 (release `20260818074405`, professional AI report generation; API + web).
+**Last deployment:** 2026-08-19 (release `20260819090000`, professional donor-reporting hardening; API + web + prisma migration `20260818180000_professional_reporting`).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -640,6 +640,17 @@ psql "$DATABASE_ADMIN_URL" --set ON_ERROR_STOP=1 \
   --file /opt/donordesk/releases/<release-id>/prisma/rls.sql
 ```
 
+> **2026-08-19:** the professional-reporting migration
+> (`20260818180000_professional_reporting`) is additive and **includes the
+> baseline-revision backfill** (every existing `ReportSection` gets one
+> `UNASSESSED` `ReportRevision` and its claims are bound to it) — no separate
+> operator step is required for it. The standalone copy at
+> `infra/postgres/backfill-report-revisions.sql` is idempotent and may be run
+> again if needed (e.g. for a `db push` dev environment). After this migration,
+> RLS covers **29 tenant tables** (`infra/postgres/rls.sql` adds
+> `ReportRevision`, `SubmissionSnapshot`, `ReportingRequirementPack`,
+> `AwardReportingOverride`, `ResolvedReportingRequirements`).
+
 Apply migrations **before** switching `current` so new code never queries a
 missing table. After every migration, verify `tenant_isolation` is
 enabled+forced on new tenant tables and `donordesk_app` has DML grants; run
@@ -892,6 +903,48 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-19 — Professional donor-reporting hardening (release
+> `20260819090000`, API + web + prisma):** shipped the full
+> `imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md` (Phases 0–9, status
+> IMPLEMENTED) so approved outputs can be treated as donor-submission
+> candidates. Immutable `ReportRevision` (content-hash, parent/child,
+> change-origin, actor/model, `UNASSESSED→ASSESSING→CURRENT|FAILED`/`STALE`
+> assurance) with a single `IReportRevisionService` mutation pipeline
+> (generation/edit/rewrite always create a new UNASSESSED revision; approval
+> requires CURRENT assurance bound to the exact revision hash);
+> `ReportClaim` evolved into revision-bound assertions (revision id/hash, text
+> span, numeric atoms, `VerificationReasonCode`); deterministic assertion
+> extraction from final content with fingerprint reconciliation (empty writer
+> claims cannot bypass); numeric verification bound to indicator/period/unit/
+> entity/role with percentage derivation via domain decimal math; evidence
+> chunk/hash/source-text integrity + `DeterministicEvidenceRetriever` +
+> entailment (supported/contradicted/insufficient/uncertain) + causal
+> human-review policy; requirement packs/award overrides with deterministic
+> precedence resolver + `IRequirementEvaluator`; `SubmissionSnapshot` sealing
+> (approved revision hashes, requirement snapshot + coverage, assertion/
+> evidence/annex manifests, approval records, overrides); ONE
+> `evaluateReportGate` shared by approval/preflight/submission/export with
+> structured reason enums; export intent (`INTERNAL_REVIEW` watermarked vs
+> `DONOR_SUBMISSION` snapshot-bound) enforced in the export builder;
+> coverage-gap projection into `UNSUPPORTED_REPORT_CLAIM` checklist items;
+> neutral evidence-proportionate rewrite prompts with prompt/response hashes;
+> baseline-revision backfill migration. New API: `GET /v1/report-drafts/:id/assurance`,
+> `POST /v1/report-sections/:id/reassess`,
+> `POST /v1/reporting-periods/:id/resolve-requirements`,
+> `POST /v1/reporting-requirement-packs` (+ `/:id/activate`),
+> `POST /v1/award-reporting-overrides`,
+> `POST /v1/report-drafts/:id/submission-snapshot`, and `exportIntent`/
+> `submissionSnapshotId` on `POST /v1/exports`. ADRs 0005–0009 added; ownership
+> map at `imp/REPORTING-OWNERSHIP-MAP.md`. Migration `20260818180000_professional_reporting`
+> (additive; backfills baseline revisions, binds existing claims) + updated RLS
+> (29 tenant tables) applied as `donordesk_migrator`; migration + RLS were
+> pre-validated against production inside a `BEGIN…ROLLBACK` transaction
+> (EXIT 0). Full gate green: `pnpm -r typecheck`, `pnpm -r build`, 254 tests
+> (domain 88, application 63, infrastructure 103), 0 failures; release-package
+> smoke tests passed; `reporting:eval` classifies all 6 golden cases correctly.
+> Rollback: `RELEASE_ID=20260818162955 scripts/rollback.sh` (preceding release;
+> schema change is additive and backward-compatible).
 
 > **2026-08-18 — NeureCore fully retired from this host.** All NeureCore assets
 > were removed cleanly and safely (operator-approved): 4 PM2 apps

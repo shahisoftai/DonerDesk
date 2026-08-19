@@ -10,6 +10,7 @@ import type {
 } from "@donordesk/application";
 import type { SourceReference, ClaimType } from "@donordesk/domain";
 import { StubReportDraftGenerator } from "./report-draft-generator.js";
+import { createHash } from "node:crypto";
 
 interface LlmRewriteSectionInput {
   sectionTitle: string;
@@ -295,7 +296,7 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
 function buildRewriteUserPrompt(input: LlmRewriteSectionInput): string {
   const audienceInstruction =
     input.audience === "DONOR"
-      ? "Adapt tone for a donor audience: formal, positive, impact-focused."
+      ? "Adapt tone for a donor audience: formal, neutral, evidence-proportionate. Do not inflate results, add impact claims that the evidence does not support, or soften caveats."
       : input.audience === "INTERNAL"
         ? "Adapt tone for an internal audience: concise, operational."
         : "Use plain, accessible language.";
@@ -312,9 +313,11 @@ function buildRewriteUserPrompt(input: LlmRewriteSectionInput): string {
     `# Existing Content`,
     input.content,
     ``,
-    input.mode === "SHORTEN"
-      ? "Shorten the content by keeping only the most essential sentences. Preserve lists and tables as-is."
-      : "Rewrite the content in the specified tone and audience. Preserve all facts. Remove [Needs verification] flags.",
+    `Rules:`,
+    `- Preserve every fact, number, and caveat exactly as stated.`,
+    `- Never remove a caveat, limitation, or "Needs verification" marker unless you are rewriting it into an explicit statement about the evidence gap.`,
+    `- Do not add outcomes, impact, or evaluative language unless the existing content already states it.`,
+    `- Keep all lists and tables intact (SHORTEN mode).`,
     ``,
     `Return JSON: { "content": "rewritten text" }. No markdown fences, no extra text.`,
   ]
@@ -476,11 +479,13 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
     }
   }
 
-  async rewriteSection(input: LlmRewriteSectionInput): Promise<{ content: string; unsupportedClaims: string[] }> {
+  async rewriteSection(input: LlmRewriteSectionInput): Promise<{ content: string; unsupportedClaims: string[]; promptHash?: string; responseHash?: string }> {
     try {
+      const systemPrompt = "You are a precise report editor. Return only JSON. No markdown fences.";
+      const userPrompt = buildRewriteUserPrompt(input);
       const result = await this.provider.complete({
-        systemPrompt: "You are a precise report editor. Return only JSON. No markdown fences.",
-        userPrompt: buildRewriteUserPrompt(input),
+        systemPrompt,
+        userPrompt,
         jsonMode: true,
         maxTokens: 2048,
         temperature: input.mode === "SHORTEN" ? 0.1 : 0.3,
@@ -501,7 +506,12 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
         });
         return this.fallback.rewriteSection(input);
       }
-      return { content, unsupportedClaims: [] };
+      return {
+        content,
+        unsupportedClaims: [],
+        promptHash: createHash("sha256").update(systemPrompt + "\n" + userPrompt, "utf8").digest("hex"),
+        responseHash: createHash("sha256").update(result.text, "utf8").digest("hex"),
+      };
     } catch (error) {
       this.logger?.warn("LLM section rewrite failed; falling back to stub", {
         model: this.model.modelId,

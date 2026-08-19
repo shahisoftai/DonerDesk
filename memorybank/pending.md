@@ -1,6 +1,30 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-18T21:43+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-19T09:35+05:00.
+
+> **Deployment (2026-08-19):** **Professional donor reporting hardening** —
+> release `20260819090000` (API + web + prisma migration `20260818180000_professional_reporting`).
+> The `imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md` (Phases 0–9) is now
+> **IMPLEMENTED**: immutable `ReportRevision` with revision-bound `ReportClaim`
+> assertions (revision id/hash, text span, numeric atoms, structured reason
+> codes), single `IReportRevisionService` mutation pipeline (generation/edit/
+> rewrite/shorten always create a new UNASSESSED revision), deterministic
+> assertion extraction from final content (an empty writer `claims` array can
+> never bypass verification), numeric verification bound to indicator/period/
+> unit/entity/role with percentage derivation via domain decimal math, exact
+> evidence chunk/hash/source-text integrity validation, entailment
+> (supported/contradicted/insufficient/uncertain) + causal human-review policy,
+> requirement packs/award overrides with deterministic precedence resolver and
+> `IRequirementEvaluator`, immutable `SubmissionSnapshot` sealing, ONE gate
+> evaluator shared by approval/preflight/submission/export (structured reason
+> enums — no more prose string matching), export intent
+> (`INTERNAL_REVIEW` watermarked vs `DONOR_SUBMISSION` snapshot-bound),
+> coverage-gap projection into `UNSUPPORTED_REPORT_CLAIM` checklist items,
+> neutral evidence-proportionate rewrite prompts, baseline-revision backfill,
+> golden corpus + `reporting:eval` CLI + verifier contract suite, and ADRs
+> 0005–0009. Full gate green (254 tests). Migration + RLS applied on Contabo;
+> baseline revisions backfilled. See `Features/20-report-gen.md` §18,
+> `contabo-ops.md` §29, and `Fixes.md`.
 
 > **Deployment (2026-08-18):** **Report Writing Skills full course** — release
 > `20260818162955` (web). Created 16 comprehensive donor-reporting lessons across 3 modules:
@@ -182,9 +206,10 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
   incl. Kestra DB + storage) is **prepared**; execution + rotation + restore-test
   remain a gated operator step. Record destination, retention, last success,
   checksum, and restore-test evidence. Local WAL archive is not DR.
-- [ ] **`api.env` line-8 stray `O`.** `/opt/donordesk/shared/api.env` contains a
-  stray `O` on line 8 (harmless to systemd `EnvironmentFile` but breaks bash
-  `.` sourcing). Remove the line on the next operator change.
+- [x] **`api.env` line-8 stray `O`.** **DONE 2026-08-19** — removed during the
+  `20260819090000` release; `api.env` now sources cleanly in bash
+  (`DATABASE_ADMIN_URL` reachable). Backup at
+  `api.env.bak-strayO-20260819`.
 - [ ] **Add the RLS step to the release procedure.** The RLS grants + policy were
   applied manually during the 2026-08-12 fix. Bake `infra/postgres/rls.sql`
   (applied to 21 tenant tables) into the deployment runbook so it runs on
@@ -411,7 +436,13 @@ actually supports; unsupported controls are omitted rather than simulated.
   needs, word limits), evidence metadata, participant disaggregation, and a
   worked example also shipped (release `20260818074405`). See
   `Features/20-report-gen.md` §17.
-- [ ] Unsupported claim warning UI
+- [x] **Structured claim verification with reason codes (2026-08-19)** — gate
+  decisions consume `VerificationReasonCode` enums (`gateKindForReason`), never
+  prose detail; revision-bound assertions carry `revisionId`/`revisionHash`,
+  span offsets, numeric atoms, and materiality. Coverage gaps project into
+  `UNSUPPORTED_REPORT_CLAIM` checklist items with deterministic dedup keys.
+- [ ] Unsupported claim warning UI (API + checklist projection done; the
+  consolidated exception surface in the web UI is a tracked follow-up)
 - [ ] Executive summary auto-generation
 - [ ] Donor-specific tone adjustment
 - **Frontend:** generate/regenerate AI draft + manual blank fallback; section-level
@@ -435,7 +466,12 @@ actually supports; unsupported controls are omitted rather than simulated.
 
 ### Feature 14 — Export Module
 - [x] Report charts embedded in DOCX/PDF exports (2026-08-17 — ECharts SSR→sharp PNG, `chart-png-renderer.ts`)
-- [ ] Enhanced formatting for donor-specific templates
+- [x] **Export intent + submission snapshot binding (2026-08-19)** — `POST /v1/exports`
+  accepts `exportIntent` (`INTERNAL_REVIEW` watermark vs `DONOR_SUBMISSION`
+  requiring a sealed `SubmissionSnapshot`); the export builder enforces the
+  invariants server-side.
+- [ ] Enhanced formatting for donor-specific templates (real `docxtpl` worker
+  fidelity remains a documented swap point — `DONOR_TEMPLATE` is placeholder-aware)
 - [ ] Export progress tracking
 - [ ] Automated export on period close
 - [ ] Export to Google Drive / Dropbox destination
