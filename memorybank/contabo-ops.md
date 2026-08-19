@@ -904,6 +904,18 @@ backup/restore.
 
 ## 29. Change log
 
+> **2026-08-19 — OLS vhost context fix for `/api/files` and `/api/templates` (host
+> config, no release):** The `donordesk.online` OLS vhost proxied the entire `/api`
+> context to Fastify (4001), so Next.js BFF routes at `/api/files/*` (evidence
+> downloads) and `/api/templates/*` (template downloads) returned Fastify 404s in
+> production. Added explicit contexts before the catch-all `/api` context:
+> `context /api/files` → `donordesk_web` (Next.js :3002) and
+> `context /api/templates` → `donordesk_web`, mirroring the existing `/api/auth`
+> pattern. Validated with `lshttpd -t` and reloaded OLS. Config backed up at
+> `vhost.conf.bak-20260819184350`. Note: this was later superseded by adding the
+> routes directly to Fastify (see next entry), so the OLS contexts for
+> `/api/templates/*` are now redundant but harmless.
+
 > **2026-08-19 — `/api/templates/*` routes added to Fastify (release
 > `20260819165731`):** OLS proxies `/api/*` to Fastify (4001), bypassing
 > Next.js BFF entirely. Fastify had no `/api/templates/*` routes registered —
