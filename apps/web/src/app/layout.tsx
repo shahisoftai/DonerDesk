@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { ReactNode } from "react";
+import { GeistSans } from "geist/font/sans";
 import { ThemeScript } from "@/components/ThemeScript";
 
 export const metadata = {
@@ -54,7 +55,7 @@ const structuredData = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={GeistSans.variable}>
       <body>
         <script
           type="application/ld+json"

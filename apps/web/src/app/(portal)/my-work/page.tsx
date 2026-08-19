@@ -72,8 +72,8 @@ export default async function MyWorkPage({
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold">My work</h1>
-      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+      <h1 className="text-xl font-semibold tracking-tight">My work</h1>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         Assigned reports, compliance gaps, pending evidence reviews, activities, and notifications — ordered by urgency.
       </p>
 
@@ -127,15 +127,15 @@ export default async function MyWorkPage({
 function WorkItemRow({ item }: { item: WorkItem }) {
   return (
     <Link href={workItemHref(item)} className="card flex items-center justify-between gap-3 transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <Badge tone={kindTone(item.kind)}>{item.kind}</Badge>
-          <span className="truncate font-semibold">{workItemTitle(item)}</span>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <Badge tone={kindTone(item.kind)} className="shrink-0">{item.kind}</Badge>
+          <span className="min-w-0 break-words text-sm font-semibold leading-snug">{workItemTitle(item)}</span>
         </div>
-        <div className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
+        <div className="mt-1 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
       </div>
       {("daysUntilDeadline" in item && item.daysUntilDeadline !== null && item.daysUntilDeadline !== undefined) && (
-        <span className={`shrink-0 text-xs font-semibold ${item.daysUntilDeadline < 0 ? "text-danger-600 dark:text-danger-400" : item.daysUntilDeadline <= 3 ? "text-warning-600 dark:text-warning-400" : "text-slate-500 dark:text-slate-400"}`}>
+        <span className={`shrink-0 self-start text-xs font-semibold ${item.daysUntilDeadline < 0 ? "text-danger-600 dark:text-danger-400" : item.daysUntilDeadline <= 3 ? "text-warning-600 dark:text-warning-400" : "text-slate-500 dark:text-slate-400"}`}>
           {item.daysUntilDeadline < 0 ? `${Math.abs(item.daysUntilDeadline)}d overdue` : `${item.daysUntilDeadline}d left`}
         </span>
       )}

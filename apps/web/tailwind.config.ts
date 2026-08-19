@@ -61,6 +61,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
+          "var(--font-geist-sans)",
           "ui-sans-serif",
           "system-ui",
           "Segoe UI",

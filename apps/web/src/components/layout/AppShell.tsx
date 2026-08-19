@@ -87,7 +87,7 @@ export function AppShell({
               type="button"
               aria-label="Open navigation menu"
               aria-expanded={mobileOpen}
-              className="grid h-11 w-11 place-items-center rounded-xl border border-slate-300 text-slate-600 lg:hidden dark:border-white/15 dark:text-slate-300"
+              className="grid h-10 w-10 place-items-center rounded-lg border border-slate-300 text-slate-600 lg:hidden dark:border-white/15 dark:text-slate-300"
               onClick={() => setMobileOpen(true)}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
@@ -97,7 +97,7 @@ export function AppShell({
               aria-label={navCollapsed ? "Expand navigation sidebar" : "Collapse navigation sidebar"}
               aria-pressed={!navCollapsed}
               title={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              className="hidden h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-300 text-slate-600 transition hover:border-brand-400 hover:text-brand-700 lg:grid dark:border-white/15 dark:text-slate-300 dark:hover:border-brand-400/60 dark:hover:text-brand-300"
+              className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-300 text-slate-600 transition hover:border-brand-400 hover:text-brand-700 lg:grid dark:border-white/15 dark:text-slate-300 dark:hover:border-brand-400/60 dark:hover:text-brand-300"
               onClick={() => setNavCollapsed((v) => !v)}
             >
               {navCollapsed ? (
@@ -125,7 +125,7 @@ export function AppShell({
               ref={searchLinkRef}
               href="/projects?focus=search"
               aria-label="Search workspace"
-              className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 bg-white/60 px-3 text-xs text-slate-500 hover:border-brand-400 hover:text-brand-700 sm:flex dark:border-white/15 dark:bg-white/5 dark:text-slate-300"
+              className="hidden h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white/60 px-3 text-xs text-slate-500 hover:border-brand-400 hover:text-brand-700 sm:flex dark:border-white/15 dark:bg-white/5 dark:text-slate-300"
             >
               <span aria-hidden="true">⌕</span> Search <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] dark:border-white/15">⌘K</kbd>
             </Link>

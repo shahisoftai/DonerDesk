@@ -50,8 +50,8 @@ export default async function Dashboard() {
     <div className="animate-fade-in">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">Operational home</p>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight">What needs your attention</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">Operational home</p>
+          <h1 className="mt-1 text-xl font-semibold tracking-tight">What needs your attention</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Authoritative counts from your workspace. Missing data is shown as unavailable, never as zero.
           </p>
@@ -59,7 +59,7 @@ export default async function Dashboard() {
         <Link className="btn-secondary" href="/my-work">Open My Work</Link>
       </header>
 
-      <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <CountCard
           label="Active projects"
           value={snapshot.projects.ok ? String(active.length) : null}
@@ -90,10 +90,10 @@ export default async function Dashboard() {
         />
       </section>
 
-      <section className="mt-8">
+      <section className="mt-6">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-bold">Deadline overview</h2>
-          <Link href="/reports" className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400">Open reports →</Link>
+          <h2 className="text-sm font-semibold">Deadline overview</h2>
+          <Link href="/reports" className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">Open reports →</Link>
         </div>
         {!snapshot.deadlineData.ok && (
           <div className="mt-3"><InlineError title={snapshot.deadlineData.error?.message ?? "Deadlines unavailable"} referenceId={snapshot.deadlineData.error?.referenceId} /></div>
@@ -104,18 +104,18 @@ export default async function Dashboard() {
         {snapshot.deadlineData.ok && deadlines.length > 0 && (
           <div className="mt-3 grid gap-3 lg:grid-cols-4">
             {(["overdue", "today", "soon", "later"] as const).map((band) => (
-              <div key={band} className="min-w-0 rounded-lg border border-slate-200/70 bg-white/70 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <div key={band} className="min-w-0 rounded-lg border border-slate-200/70 bg-white p-3 dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold">{BAND_LABEL[band]}</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{BAND_LABEL[band]}</h3>
                   <Badge tone={bandTone(band)}>{deadlines.filter((d) => d.band === band).length}</Badge>
                 </div>
                 <div className="mt-3 space-y-2">
                   {deadlines.filter((d) => d.band === band).slice(0, 4).map((d) => (
                     <Link key={`${d.projectId}-${d.periodId}`} href={`/projects/${d.projectId}/reports/${d.periodId}`} className="block rounded-md border border-slate-200/70 px-3 py-2 text-sm transition hover:border-brand-400/40 dark:border-white/10 dark:hover:border-brand-400/30">
-                      <div className="truncate font-semibold">{d.projectTitle}</div>
+                      <div className="break-words text-sm font-medium leading-snug">{d.projectTitle}</div>
                       <div className="mt-1 flex min-w-0 items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                         <span>{new Date(d.deadline).toLocaleDateString()}</span>
-                        <span>{d.readinessScore === null ? "readiness n/a" : `${d.readinessScore}% ready`}</span>
+                        <span className="shrink-0 tabular-nums">{d.readinessScore === null ? "readiness n/a" : `${d.readinessScore}% ready`}</span>
                       </div>
                     </Link>
                   ))}
@@ -132,11 +132,11 @@ export default async function Dashboard() {
         )}
       </section>
 
-      <section className="mt-8 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+      <section className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         <div className="min-w-0">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">My Work</h2>
-            <Link href="/my-work" className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400">View all →</Link>
+            <h2 className="text-sm font-semibold">My Work</h2>
+            <Link href="/my-work" className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">View all →</Link>
           </div>
           {!work.ok && (
             <div className="mt-3"><InlineError title={work.error?.message ?? "Could not load your work."} referenceId={work.error?.referenceId} /></div>
@@ -152,12 +152,12 @@ export default async function Dashboard() {
         </div>
 
         <div className="min-w-0">
-          <h2 className="text-lg font-bold">Readiness snapshot</h2>
+          <h2 className="text-sm font-semibold">Readiness snapshot</h2>
           <div className="mt-3 card">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Average readiness</div>
-                <div className="mt-2 text-3xl font-extrabold tracking-tight">{averageReadiness === null ? "—" : `${averageReadiness}%`}</div>
+                <div className="text-[11px] font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">Average readiness</div>
+                <div className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">{averageReadiness === null ? "—" : `${averageReadiness}%`}</div>
               </div>
               <Badge tone={averageReadiness === null ? "neutral" : readinessTone(averageReadiness)}>
                 {averageReadiness === null ? "Unavailable" : averageReadiness >= 75 ? "Ready" : averageReadiness >= 40 ? "At risk" : "Blocked"}
@@ -168,8 +168,8 @@ export default async function Dashboard() {
               {readinessProjects.map((d) => (
                 <Link key={`ready-${d.projectId}-${d.periodId}`} href={`/projects/${d.projectId}/reports/${d.periodId}`} className="block">
                   <div className="flex min-w-0 items-center justify-between gap-3 text-sm">
-                    <span className="truncate font-semibold">{d.projectTitle}</span>
-                    <span className="shrink-0 font-semibold">{d.readinessScore}%</span>
+                    <span className="min-w-0 break-words font-semibold leading-snug">{d.projectTitle}</span>
+                    <span className="shrink-0 font-semibold tabular-nums">{d.readinessScore}%</span>
                   </div>
                   <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
                     <div className={`h-full rounded-full ${readinessBar(d.readinessScore ?? 0)}`} style={{ width: `${d.readinessScore}%` }} />
@@ -181,17 +181,17 @@ export default async function Dashboard() {
         </div>
       </section>
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-3">
+      <section className="mt-6 grid gap-6 lg:grid-cols-3">
         <QueueCard title="Evidence review" count={evidenceWork.length} href="/evidence" items={evidenceWork} />
         <QueueCard title="Compliance blockers" count={complianceWork.length} href="/compliance" items={complianceWork} />
         <QueueCard title="Activity updates" count={activityWork.length} href="/my-work?type=activity" items={activityWork} />
       </section>
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-2">
+      <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div>
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold">Recent projects</h2>
-            <Link href="/projects" className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400">View all →</Link>
+            <h2 className="text-sm font-semibold">Recent projects</h2>
+            <Link href="/projects" className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">View all →</Link>
           </div>
           {!snapshot.projects.ok && <div className="mt-3"><InlineError title={snapshot.projects.error?.message ?? "Projects unavailable"} referenceId={snapshot.projects.error?.referenceId} /></div>}
           {snapshot.projects.ok && (
@@ -207,15 +207,15 @@ export default async function Dashboard() {
                   <Link key={p.id} href={`/projects/${p.id}`} className="card min-w-0 transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate font-semibold">{p.title}</div>
-                        <div className="truncate text-xs text-slate-500 dark:text-slate-400">{p.donorName} · {p.country}</div>
+                        <div className="break-words text-sm font-semibold leading-snug">{p.title}</div>
+                        <div className="mt-0.5 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{p.donorName} · {p.country}</div>
                       </div>
                       <Badge tone={projectStatusTone(p.status)} className="shrink-0">{p.status.replace(/_/g, " ")}</Badge>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400">
                       <span>{p.daysRemaining}d project time</span>
-                      <span className="text-right">{deadline?.readinessScore === null || deadline?.readinessScore === undefined ? "readiness n/a" : `${deadline.readinessScore}% ready`}</span>
-                      <span className="col-span-2 truncate">
+                      <span className="text-right tabular-nums">{deadline?.readinessScore === null || deadline?.readinessScore === undefined ? "readiness n/a" : `${deadline.readinessScore}% ready`}</span>
+                      <span className="col-span-2 break-words">
                         {deadline ? `Next report ${new Date(deadline.deadline).toLocaleDateString()}` : "No report scheduled"}
                       </span>
                     </div>
@@ -229,15 +229,15 @@ export default async function Dashboard() {
         <div className="min-w-0 grid gap-6">
           <div>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">Notifications</h2>
-              <Link href="/notifications" className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400">Open inbox →</Link>
+              <h2 className="text-sm font-semibold">Notifications</h2>
+              <Link href="/notifications" className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">Open inbox →</Link>
             </div>
             {!snapshot.notifications.ok && <div className="mt-3"><InlineError title={snapshot.notifications.error?.message ?? "Notifications unavailable"} referenceId={snapshot.notifications.error?.referenceId} /></div>}
             {snapshot.notifications.ok && (
               <ul className="mt-3 space-y-2">
                 {notifications.length === 0 && <li className="text-sm text-slate-500 dark:text-slate-400">No notifications yet.</li>}
                 {notifications.slice(0, 4).map((n) => (
-                  <li key={n.id} className="rounded-lg border border-slate-200/60 bg-white/60 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+                  <li key={n.id} className="rounded-lg border border-slate-200/60 bg-white px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
                     <div className="flex items-center justify-between gap-3">
                       <span className="min-w-0 break-words text-sm leading-snug">{n.title}</span>
                       <Badge tone={n.read ? "neutral" : "info"} className="shrink-0">{n.read ? "Read" : "New"}</Badge>
@@ -250,13 +250,13 @@ export default async function Dashboard() {
           </div>
 
           <div>
-            <h2 className="text-lg font-bold">Setup and storage</h2>
+            <h2 className="text-sm font-semibold">Setup and storage</h2>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <Link href="/settings/setup" className="rounded-lg border border-slate-200/70 bg-white/70 p-4 transition hover:border-brand-400/40 dark:border-white/10 dark:bg-white/[0.03]">
+              <Link href="/settings/setup" className="rounded-lg border border-slate-200/70 bg-white p-4 transition hover:border-brand-400/40 dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="text-sm font-semibold">Workspace setup</div>
                 <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">Templates, organization profile, and defaults</div>
               </Link>
-              <Link href="/evidence" className="rounded-lg border border-slate-200/70 bg-white/70 p-4 transition hover:border-brand-400/40 dark:border-white/10 dark:bg-white/[0.03]">
+              <Link href="/evidence" className="rounded-lg border border-slate-200/70 bg-white p-4 transition hover:border-brand-400/40 dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="text-sm font-semibold">Evidence storage</div>
                 <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{pendingEvidence === null ? "Review count unavailable" : `${pendingEvidence} file${pendingEvidence === 1 ? "" : "s"} pending review`}</div>
               </Link>
@@ -274,7 +274,7 @@ function WorkPreview({ item }: { item: WorkItem }) {
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
           <Badge tone={kindTone(item.kind)} className="shrink-0">{item.kind}</Badge>
-          <span className="min-w-0 break-words font-semibold leading-snug">{workItemTitle(item)}</span>
+          <span className="min-w-0 break-words text-sm font-semibold leading-snug">{workItemTitle(item)}</span>
         </div>
         <div className="mt-1 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
       </div>
@@ -291,15 +291,15 @@ function QueueCard({ title, count, href, items }: { title: string; count: number
   return (
     <div className="min-w-0">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold">{title}</h2>
-        <Link href={href} className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400">{count}</Link>
+        <h2 className="text-sm font-semibold">{title}</h2>
+        <Link href={href} className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">{count}</Link>
       </div>
-      <div className="mt-3 rounded-lg border border-slate-200/70 bg-white/70 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+      <div className="mt-3 rounded-lg border border-slate-200/70 bg-white p-3 dark:border-white/10 dark:bg-white/[0.03]">
         <div className="space-y-2">
           {items.slice(0, 4).map((item) => (
             <Link key={`${title}-${item.kind}-${item.id}`} href={workItemHref(item)} className="block rounded-md border border-slate-200/70 px-3 py-2 transition hover:border-brand-400/40 dark:border-white/10 dark:hover:border-brand-400/30">
-              <div className="truncate text-sm font-semibold">{workItemTitle(item)}</div>
-              <div className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
+              <div className="break-words text-sm font-medium leading-snug">{workItemTitle(item)}</div>
+              <div className="mt-1 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
             </Link>
           ))}
           {items.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">No items waiting.</p>}
@@ -347,8 +347,8 @@ function CountCard({
 }) {
   const body = (
     <>
-      <div className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="mt-2 text-3xl font-extrabold tracking-tight">{value === null ? "—" : value}</div>
+      <div className="text-[11px] font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">{value === null ? "—" : value}</div>
       <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{hint ?? (value === null ? "unavailable" : "")}</div>
     </>
   );
