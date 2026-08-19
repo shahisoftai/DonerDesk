@@ -1,6 +1,18 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-19T23:05+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-20T00:15+05:00.
+
+> **Done (2026-08-19):** **Vercel-inspired crisp UI refresh** — release
+> `20260819183029` (web-only, no migration). Geist Sans wired as the app font;
+> type scale reduced (page titles `3xl`→`xl`, section heads `lg`→`sm`, stat
+> values `3xl`→`2xl` `tabular-nums`, eyebrows `text-[11px]`); `.card`/`.btn`/
+> `.btn-secondary`/`.input` are now flat `rounded-lg` solid surfaces
+> (`shadow-sm`, no glass/gradient/glow) with the brand palette unchanged; card
+> text wraps (`break-words` + `min-w-0`) instead of truncating across My Work,
+> deadline overview, readiness snapshot, queue cards, recent projects, and
+> notifications; section spacing `mt-8`→`mt-6`; header/nav controls `h-10
+> rounded-lg`. Light + dark variants browser-verified; typecheck/tests/build
+> green. Rollback: `RELEASE_ID=20260819173232 scripts/rollback.sh`.
 
 > **Done (2026-08-19):** **Portal UI polish — collapsible sidebar + home-page
 > card overflow** — release `20260819173232` (web-only, no migration). The left

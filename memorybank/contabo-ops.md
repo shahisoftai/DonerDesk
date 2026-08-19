@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-19 (release `20260819173232`, collapsible sidebar + home-page card overflow fix; web-only, no migration).
+**Last deployment:** 2026-08-19 (release `20260819183029`, Vercel-inspired crisp UI refresh — Geist type, wrapped cards, tighter surfaces; web-only, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,23 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-19 — Vercel-inspired crisp UI refresh (release `20260819183029`,
+> web-only):** Geist Sans is now the app font (`geist` package, wired in the
+> root layout + `fontFamily.sans`) and the type scale is reduced and tightened:
+> page titles `3xl`→`xl`, section heads `lg`→`sm`, stat values `3xl`→`2xl` with
+> `tabular-nums`, eyebrows `text-[11px]`. Design-system primitives
+> (`.card`, `.btn`, `.btn-secondary`, `.input`) are now flat `rounded-lg` solid
+> surfaces with `shadow-sm` and no glass/gradient/glow — the brand palette is
+> unchanged. Card text now wraps (`break-words` + `leading-snug`, `min-w-0`
+> chains) instead of truncating across My Work, deadline overview, readiness
+> snapshot, queue cards, recent projects, and notifications. Section spacing
+> tightened (`mt-8`→`mt-6`), header/nav controls reduced to `h-10 rounded-lg`.
+> Light + dark variants verified for all surfaces (browser repro) and typecheck/
+> tests/build green. Verified live: web 200, CSS chunk
+> `629ab0641746b10e.css` carries `font-geist-sans`/`tabular-nums`, Geist woff2
+> served from `/_next/static/media/`, public HTTPS 200. Rollback:
+> `RELEASE_ID=20260819173232 scripts/rollback.sh`.
 
 > **2026-08-19 — Portal UI polish: collapsible sidebar + home-page card overflow
 > (release `20260819173232`, web-only):** The left nav now slides to the left
