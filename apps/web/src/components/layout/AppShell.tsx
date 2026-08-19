@@ -11,6 +11,8 @@ import { NotificationBell, type BellItem } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
+const NAV_COLLAPSE_KEY = "donordesk:nav-collapsed";
+
 export function AppShell({
   orgName,
   user,
@@ -27,8 +29,25 @@ export function AppShell({
   children: ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const searchLinkRef = useRef<HTMLAnchorElement>(null);
+  const desktopSidebarRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(NAV_COLLAPSE_KEY);
+    if (stored === "1") setNavCollapsed(true);
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(NAV_COLLAPSE_KEY, navCollapsed ? "1" : "0");
+  }, [navCollapsed]);
+
+  useEffect(() => {
+    if (desktopSidebarRef.current) {
+      desktopSidebarRef.current.inert = navCollapsed;
+    }
+  }, [navCollapsed]);
 
   useEffect(() => {
     function focusSearch(event: KeyboardEvent) {
@@ -73,6 +92,20 @@ export function AppShell({
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
             </button>
+            <button
+              type="button"
+              aria-label={navCollapsed ? "Expand navigation sidebar" : "Collapse navigation sidebar"}
+              aria-pressed={!navCollapsed}
+              title={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              className="hidden h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-300 text-slate-600 transition hover:border-brand-400 hover:text-brand-700 lg:grid dark:border-white/15 dark:text-slate-300 dark:hover:border-brand-400/60 dark:hover:text-brand-300"
+              onClick={() => setNavCollapsed((v) => !v)}
+            >
+              {navCollapsed ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 17l5-5-5-5M13 17l5-5-5-5"/></svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+              )}
+            </button>
             <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
               <Image
                 src="/brand/donordesk-logo.png"
@@ -105,8 +138,17 @@ export function AppShell({
       </header>
 
       <div className="mx-auto flex max-w-7xl gap-6 px-4 sm:px-6">
-        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-56 shrink-0 overflow-y-auto py-6 lg:block">
-          <SideNav items={navItems} />
+        <aside
+          ref={desktopSidebarRef}
+          aria-hidden={navCollapsed}
+          className={cn(
+            "sticky top-16 hidden h-[calc(100vh-4rem)] shrink-0 overflow-hidden transition-[width,opacity] duration-300 ease-in-out lg:block",
+            navCollapsed ? "w-0 opacity-0" : "w-56 opacity-100",
+          )}
+        >
+          <div className="h-full w-56 overflow-y-auto py-6">
+            <SideNav items={navItems} />
+          </div>
         </aside>
 
         <main id="main-content" className="min-w-0 flex-1 py-6" tabIndex={-1}>

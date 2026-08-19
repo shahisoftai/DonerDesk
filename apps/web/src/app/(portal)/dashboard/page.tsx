@@ -104,7 +104,7 @@ export default async function Dashboard() {
         {snapshot.deadlineData.ok && deadlines.length > 0 && (
           <div className="mt-3 grid gap-3 lg:grid-cols-4">
             {(["overdue", "today", "soon", "later"] as const).map((band) => (
-              <div key={band} className="rounded-lg border border-slate-200/70 bg-white/70 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <div key={band} className="min-w-0 rounded-lg border border-slate-200/70 bg-white/70 p-3 dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold">{BAND_LABEL[band]}</h3>
                   <Badge tone={bandTone(band)}>{deadlines.filter((d) => d.band === band).length}</Badge>
@@ -113,7 +113,7 @@ export default async function Dashboard() {
                   {deadlines.filter((d) => d.band === band).slice(0, 4).map((d) => (
                     <Link key={`${d.projectId}-${d.periodId}`} href={`/projects/${d.projectId}/reports/${d.periodId}`} className="block rounded-md border border-slate-200/70 px-3 py-2 text-sm transition hover:border-brand-400/40 dark:border-white/10 dark:hover:border-brand-400/30">
                       <div className="truncate font-semibold">{d.projectTitle}</div>
-                      <div className="mt-1 flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <div className="mt-1 flex min-w-0 items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                         <span>{new Date(d.deadline).toLocaleDateString()}</span>
                         <span>{d.readinessScore === null ? "readiness n/a" : `${d.readinessScore}% ready`}</span>
                       </div>
@@ -133,7 +133,7 @@ export default async function Dashboard() {
       </section>
 
       <section className="mt-8 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold">My Work</h2>
             <Link href="/my-work" className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400">View all →</Link>
@@ -151,7 +151,7 @@ export default async function Dashboard() {
           )}
         </div>
 
-        <div>
+        <div className="min-w-0">
           <h2 className="text-lg font-bold">Readiness snapshot</h2>
           <div className="mt-3 card">
             <div className="flex items-end justify-between gap-4">
@@ -167,7 +167,7 @@ export default async function Dashboard() {
               {readinessProjects.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">No reporting readiness data yet.</p>}
               {readinessProjects.map((d) => (
                 <Link key={`ready-${d.projectId}-${d.periodId}`} href={`/projects/${d.projectId}/reports/${d.periodId}`} className="block">
-                  <div className="flex items-center justify-between gap-3 text-sm">
+                  <div className="flex min-w-0 items-center justify-between gap-3 text-sm">
                     <span className="truncate font-semibold">{d.projectTitle}</span>
                     <span className="shrink-0 font-semibold">{d.readinessScore}%</span>
                   </div>
@@ -204,7 +204,7 @@ export default async function Dashboard() {
               {projects.slice(0, 6).map((p) => {
                 const deadline = deadlines.find((d) => d.projectId === p.id);
                 return (
-                  <Link key={p.id} href={`/projects/${p.id}`} className="card transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
+                  <Link key={p.id} href={`/projects/${p.id}`} className="card min-w-0 transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate font-semibold">{p.title}</div>
@@ -226,7 +226,7 @@ export default async function Dashboard() {
           )}
         </div>
 
-        <div className="grid gap-6">
+        <div className="min-w-0 grid gap-6">
           <div>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">Notifications</h2>
@@ -239,10 +239,10 @@ export default async function Dashboard() {
                 {notifications.slice(0, 4).map((n) => (
                   <li key={n.id} className="rounded-lg border border-slate-200/60 bg-white/60 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm">{n.title}</span>
-                      <Badge tone={n.read ? "neutral" : "info"}>{n.read ? "Read" : "New"}</Badge>
+                      <span className="min-w-0 break-words text-sm leading-snug">{n.title}</span>
+                      <Badge tone={n.read ? "neutral" : "info"} className="shrink-0">{n.read ? "Read" : "New"}</Badge>
                     </div>
-                    {n.message && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{n.message}</p>}
+                    {n.message && <p className="mt-1 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{n.message}</p>}
                   </li>
                 ))}
               </ul>
@@ -271,15 +271,15 @@ export default async function Dashboard() {
 function WorkPreview({ item }: { item: WorkItem }) {
   return (
     <Link href={workItemHref(item)} className="card flex items-center justify-between gap-3 transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <Badge tone={kindTone(item.kind)}>{item.kind}</Badge>
-          <span className="truncate font-semibold">{workItemTitle(item)}</span>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <Badge tone={kindTone(item.kind)} className="shrink-0">{item.kind}</Badge>
+          <span className="min-w-0 break-words font-semibold leading-snug">{workItemTitle(item)}</span>
         </div>
-        <div className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
+        <div className="mt-1 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
       </div>
       {("daysUntilDeadline" in item && item.daysUntilDeadline !== null && item.daysUntilDeadline !== undefined) && (
-        <span className={`shrink-0 text-xs font-semibold ${item.daysUntilDeadline < 0 ? "text-danger-600 dark:text-danger-400" : item.daysUntilDeadline <= 3 ? "text-warning-600 dark:text-warning-400" : "text-slate-500 dark:text-slate-400"}`}>
+        <span className={`shrink-0 self-start text-xs font-semibold ${item.daysUntilDeadline < 0 ? "text-danger-600 dark:text-danger-400" : item.daysUntilDeadline <= 3 ? "text-warning-600 dark:text-warning-400" : "text-slate-500 dark:text-slate-400"}`}>
           {item.daysUntilDeadline < 0 ? `${Math.abs(item.daysUntilDeadline)}d overdue` : `${item.daysUntilDeadline}d left`}
         </span>
       )}
@@ -289,7 +289,7 @@ function WorkPreview({ item }: { item: WorkItem }) {
 
 function QueueCard({ title, count, href, items }: { title: string; count: number; href: string; items: WorkItem[] }) {
   return (
-    <div>
+    <div className="min-w-0">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold">{title}</h2>
         <Link href={href} className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400">{count}</Link>
