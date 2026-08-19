@@ -1,7 +1,35 @@
 import type { FastifyInstance } from "fastify";
 import { CreateDonorTemplateSchema, UpdateTemplateSectionsSchema } from "@donordesk/contracts";
+import {
+  buildLogframeTemplate,
+  buildActivityTemplate,
+  buildEvidenceTemplate,
+  LOGFRAME_TEMPLATE_FILENAME,
+  ACTIVITY_TEMPLATE_FILENAME,
+  EVIDENCE_TEMPLATE_FILENAME,
+} from "@donordesk/infrastructure";
 
 export async function registerTemplateRoutes(app: FastifyInstance) {
+  app.get("/api/templates/logframe", async (_req, reply) => {
+    const buffer = await buildLogframeTemplate();
+    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    reply.header("content-disposition", `attachment; filename="${LOGFRAME_TEMPLATE_FILENAME}"`);
+    return buffer;
+  });
+
+  app.get("/api/templates/activities", async (_req, reply) => {
+    const buffer = await buildActivityTemplate();
+    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    reply.header("content-disposition", `attachment; filename="${ACTIVITY_TEMPLATE_FILENAME}"`);
+    return buffer;
+  });
+
+  app.get("/api/templates/evidence", async (_req, reply) => {
+    const buffer = await buildEvidenceTemplate();
+    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    reply.header("content-disposition", `attachment; filename="${EVIDENCE_TEMPLATE_FILENAME}"`);
+    return buffer;
+  });
   app.get("/v1/projects/:projectId/templates", async (req) => {
     const projectId = (req.params as { projectId: string }).projectId;
     const ctx = { tenant: req.tenant, requestId: req.id };
