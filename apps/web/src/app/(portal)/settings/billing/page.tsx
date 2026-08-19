@@ -13,7 +13,7 @@ export default async function BillingPage() {
   if (!summary.ok) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold">Billing & plan</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Billing & plan</h1>
         <div className="mt-6">
           <InlineError title={summary.error.message} referenceId={summary.error.referenceId} />
         </div>
@@ -23,7 +23,7 @@ export default async function BillingPage() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold">Billing &amp; plan</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Billing &amp; plan</h1>
       <BillingPanel summary={summary.value} canManage={canManage} />
     </div>
   );

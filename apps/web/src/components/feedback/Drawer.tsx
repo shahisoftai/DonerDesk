@@ -50,12 +50,12 @@ export function Drawer({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`absolute top-0 h-full w-80 max-w-[85vw] bg-white p-5 shadow-2xl outline-none dark:bg-slate-900 ${
+        className={`absolute top-0 h-full w-80 max-w-[85vw] bg-white p-4 shadow-xl outline-none dark:bg-slate-900 ${
           side === "right" ? "right-0" : "left-0"
         }`}
       >
         <div className="flex items-center justify-between">
-          <h2 id={titleId} className="text-lg font-bold">
+          <h2 id={titleId} className="text-sm font-semibold">
             {title}
           </h2>
           <button type="button" aria-label="Close drawer" className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-white/5" onClick={onClose}>

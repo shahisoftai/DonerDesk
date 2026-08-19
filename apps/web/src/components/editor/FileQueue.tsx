@@ -22,9 +22,9 @@ export function FileQueue({
       {files.map((file) => (
         <li
           key={file.key}
-          className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/60 px-3 py-2 text-sm dark:border-white/10 dark:bg-white/5"
+          className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-white/5"
         >
-          <span className="min-w-0 truncate">{file.name}</span>
+          <span className="min-w-0 break-words leading-snug">{file.name}</span>
           <span className="flex shrink-0 items-center gap-2 text-xs">
             {file.state === "uploading" && <span className="animate-pulse text-slate-500">Uploading…</span>}
             {file.state === "succeeded" && <span className="text-success-600 dark:text-success-400">Done</span>}

@@ -70,7 +70,7 @@ export default async function NotificationsPage({
     <div className="animate-fade-in mx-auto max-w-3xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Notifications</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Notifications</h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{unreadCount} unread</p>
         </div>
         <div className="flex gap-2">
@@ -88,7 +88,7 @@ export default async function NotificationsPage({
             <h2 className="text-xs font-bold uppercase tracking-wide text-slate-400">{date}</h2>
             <ul className="mt-2 space-y-2">
               {list.map((n) => (
-                <li key={n.id} className={`rounded-xl border px-4 py-3 ${n.read ? "border-slate-200/60 bg-white/40 dark:border-white/10 dark:bg-white/[0.02]" : "border-brand-400/40 bg-white/70 dark:bg-white/[0.05]"}`}>
+                <li key={n.id} className={`rounded-xl border px-4 py-3 ${n.read ? "border-slate-200/60 bg-white dark:border-white/10 dark:bg-white/[0.03]" : "border-brand-400/40 bg-white dark:bg-white/[0.05]"}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">

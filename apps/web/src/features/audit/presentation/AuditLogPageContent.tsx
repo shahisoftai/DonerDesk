@@ -11,7 +11,7 @@ export async function AuditLogPageContent({ heading = "Audit log" }: { heading?:
   if (!hasCapability(ctx, "audit.view")) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold">{heading}</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{heading}</h1>
         <div className="card mt-6 text-sm text-slate-600 dark:text-slate-300">
           You do not have permission to view the audit log.
         </div>
@@ -23,7 +23,7 @@ export async function AuditLogPageContent({ heading = "Audit log" }: { heading?:
   if (!result.ok) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold">{heading}</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{heading}</h1>
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
       </div>
     );
@@ -31,7 +31,7 @@ export async function AuditLogPageContent({ heading = "Audit log" }: { heading?:
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold">{heading}</h1>
+      <h1 className="text-xl font-semibold tracking-tight">{heading}</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         Sensitive values are redacted in the change summaries below.
       </p>

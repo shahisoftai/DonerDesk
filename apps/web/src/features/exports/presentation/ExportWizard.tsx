@@ -144,7 +144,7 @@ export function ExportWizard({
                     disabled={disabled}
                     onChange={() => toggleIncluded(e.id)}
                   />
-                  <span className="min-w-0 flex-1 truncate">{e.title}</span>
+                  <span className="min-w-0 flex-1 break-words leading-snug">{e.title}</span>
                   {isSensitive && <Badge tone="danger">Sensitive</Badge>}
                 </li>
               );

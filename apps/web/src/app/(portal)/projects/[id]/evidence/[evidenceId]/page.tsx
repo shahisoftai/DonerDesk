@@ -57,7 +57,7 @@ export default async function EvidenceDetailPage({
     <div className="animate-fade-in space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">{evidence.title}</h1>
+          <h1 className="text-xl font-semibold tracking-tight">{evidence.title}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">{evidence.fileName}</p>
         </div>
         <div className="flex gap-2">

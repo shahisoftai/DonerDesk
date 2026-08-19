@@ -22,8 +22,8 @@ export default async function GlobalEvidencePage({ searchParams }: { searchParam
   return (
     <div className="animate-fade-in">
       <header>
-        <p className="text-xs font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">Cross-project queue</p>
-        <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Evidence</h1>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">Cross-project queue</p>
+        <h1 className="mt-1 text-xl font-semibold tracking-tight">Evidence</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Review evidence across the projects you are allowed to access.</p>
       </header>
       <form className="card mt-6 grid gap-3 sm:grid-cols-[1fr_14rem_auto]" action="/evidence">

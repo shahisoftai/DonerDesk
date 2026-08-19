@@ -27,7 +27,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
     return (
       <div className="animate-fade-in">
         <header className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Logframe &amp; indicators</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Logframe &amp; indicators</h1>
           <Link className="btn" href={`/projects/${resolvedParams.id}/logframe/new`}>Add item</Link>
         </header>
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
@@ -51,7 +51,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
   return (
     <div className="animate-fade-in">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Logframe &amp; indicators</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Logframe &amp; indicators</h1>
         <div className="flex gap-2">
           <a className="btn-secondary text-xs" href="/api/templates/logframe">Download template</a>
           <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/logframe/new`}>Add logframe item</Link>

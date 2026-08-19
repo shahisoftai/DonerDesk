@@ -72,9 +72,9 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative z-10 w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl outline-none dark:border-white/10 dark:bg-slate-900"
+        className="relative z-10 w-full max-w-lg rounded-lg border border-slate-200 bg-white p-4 shadow-xl outline-none dark:border-white/10 dark:bg-slate-900"
       >
-        <h2 id={titleId} className="text-lg font-bold">
+        <h2 id={titleId} className="text-sm font-semibold">
           {title}
         </h2>
         <div className="mt-4">{children}</div>

@@ -59,7 +59,7 @@ export default function NewIndicatorPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="animate-fade-in mx-auto max-w-2xl">
-      <h1 className="text-2xl font-bold">Add indicator</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Add indicator</h1>
       <form onSubmit={submit} className="card mt-6 space-y-4">
         <Field label="Logframe item id" htmlFor="logframeItemId" description="Paste the id of the logframe item this indicator belongs to (e.g. a goal, outcome, or output).">
           <Input id="logframeItemId" value={logframeItemId} onChange={(e) => setLogframeItemId(e.target.value)} required />

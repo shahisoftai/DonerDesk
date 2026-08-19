@@ -13,7 +13,7 @@ export default async function OnboardingReportingDefaultsPage() {
   if (!result.ok) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold">Default reporting profile</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Default reporting profile</h1>
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
       </div>
     );
@@ -24,7 +24,7 @@ export default async function OnboardingReportingDefaultsPage() {
       <Link href="/onboarding" className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400">
         ← Back to setup
       </Link>
-      <h1 className="mt-2 text-2xl font-bold">Default reporting profile</h1>
+      <h1 className="mt-2 text-xl font-semibold tracking-tight">Default reporting profile</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         These settings are applied to every new project you create. You can always
         override them per project from the project setup checklist.

@@ -327,7 +327,7 @@ export function DriveFolderPanel({
                                             {item.level}
                                           </span>
                                           {item.code && <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{item.code}</span>}
-                                          <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                                          <span className="min-w-0 flex-1 break-words leading-snug">{item.title}</span>
                                         </li>
                                       ))}
                                     </ul>

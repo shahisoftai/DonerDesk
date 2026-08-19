@@ -14,7 +14,7 @@ export default async function OnboardingProfilePage() {
   if (!result.ok) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold">Organization profile</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Organization profile</h1>
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
       </div>
     );
@@ -25,7 +25,7 @@ export default async function OnboardingProfilePage() {
       <Link href="/onboarding" className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400">
         ← Back to setup
       </Link>
-      <h1 className="mt-2 text-2xl font-bold">Organization profile</h1>
+      <h1 className="mt-2 text-xl font-semibold tracking-tight">Organization profile</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         Confirm your organization details. Donors and reviewers use this information to verify who you are.
       </p>

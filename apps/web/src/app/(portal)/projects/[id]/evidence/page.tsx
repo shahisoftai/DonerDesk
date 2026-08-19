@@ -58,7 +58,7 @@ export default async function EvidencePage({
     return (
       <div className="animate-fade-in">
         <header className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Evidence library</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Evidence library</h1>
           <Link className="btn" href={`${baseUrl}/new`}>Upload evidence</Link>
         </header>
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
@@ -75,7 +75,7 @@ export default async function EvidencePage({
   return (
     <div className="animate-fade-in">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Evidence library</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Evidence library</h1>
         <div className="flex gap-2">
           <a className="btn-secondary text-xs" href="/api/templates/evidence">Download template</a>
           <Link className="btn-secondary text-xs" href={`${baseUrl}/import`}>Import</Link>

@@ -41,7 +41,7 @@ export default async function ReportWorkspacePage({ params }: { params: Promise<
     <div className="animate-fade-in">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Report workspace</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Report workspace</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">Reporting period {resolvedParams.periodId.slice(0, 8)}</p>
         </div>
         <div className="flex gap-2">

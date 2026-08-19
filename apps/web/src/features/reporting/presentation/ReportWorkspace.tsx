@@ -237,7 +237,7 @@ export function ReportWorkspace({
     <div className="mt-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold">{draft ? draft.title : "No report draft yet"}</h2>
+          <h2 className="text-sm font-semibold">{draft ? draft.title : "No report draft yet"}</h2>
           {draft && (
             <div className="mt-1 flex items-center gap-2">
               <Badge tone={reportDraftStatusTone(draft.status)}>
@@ -365,7 +365,7 @@ export function ReportWorkspace({
                   aria-current={selectedId === s.id ? "true" : undefined}
                   className="flex w-full items-center justify-between gap-2 rounded-l-lg px-3 py-2 text-left text-sm"
                 >
-                  <span className="truncate">{index + 1}. {s.sectionTitle}</span>
+                  <span className="min-w-0 break-words leading-snug">{index + 1}. {s.sectionTitle}</span>
                   <Badge tone={sectionStatusTone(s.status)}>{SECTION_STATUS_LABEL[s.status] ?? s.status.replace(/_/g, " ")}</Badge>
                 </button>
                 {draft && canEdit && draft.status === "DRAFT" && (
@@ -495,7 +495,7 @@ export function ReportWorkspace({
               <ul className="mt-2 space-y-1.5">
                 {openChecklist.slice(0, 6).map((c) => (
                   <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate">{c.title}</span>
+                    <span className="min-w-0 break-words leading-snug">{c.title}</span>
                     <Badge tone={severityTone(c.severity)}>{c.severity}</Badge>
                   </li>
                 ))}

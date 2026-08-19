@@ -66,7 +66,7 @@ export default function ImportLogframePage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold">Import logframe from Excel</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Import logframe from Excel</h1>
       <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
         Upload an Excel, CSV, or text file with your logframe structure. Rows with Level, Code, Title, and Description are
         auto-parsed into logframe records.

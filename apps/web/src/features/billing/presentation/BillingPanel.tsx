@@ -108,7 +108,7 @@ export function BillingPanel({ summary, canManage }: { summary: BillingPanelSumm
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">Current plan</p>
-            <h2 className="text-2xl font-bold capitalize text-slate-800 dark:text-slate-100">{summary.plan.toLowerCase()}</h2>
+            <h2 className="text-xl font-semibold tracking-tight capitalize text-slate-800 dark:text-slate-100">{summary.plan.toLowerCase()}</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Source: {summary.source.replace(/_/g, " ").toLowerCase()}
               {summary.subscription?.status === "PAST_DUE" && " · payment past due — access retained during grace"}
@@ -158,7 +158,7 @@ export function BillingPanel({ summary, canManage }: { summary: BillingPanelSumm
       {canManage && (summary.plan === "STARTER" || summary.plan === "TEAM") && (
         <section className="card max-w-2xl space-y-4">
           <div>
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Upgrade</h3>
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Upgrade</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {summary.plan === "STARTER"
                 ? "Move to Team or Growth for more projects, seats, storage, and AI drafts."

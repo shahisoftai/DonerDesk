@@ -72,7 +72,7 @@ export default function NewTemplatePage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold">Add donor template</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Add donor template</h1>
       <p className="text-sm text-slate-600 dark:text-slate-400">
         Paste the donor reporting instructions. We suggest sections for your review, which you can edit before saving.
       </p>

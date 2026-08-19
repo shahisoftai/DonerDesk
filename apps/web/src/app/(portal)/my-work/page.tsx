@@ -49,7 +49,7 @@ export default async function MyWorkPage({
   if (!load.ok) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold">My work</h1>
+        <h1 className="text-xl font-semibold tracking-tight">My work</h1>
         <div className="mt-6"><InlineError title={load.error?.message ?? "Could not load your work."} referenceId={load.error?.referenceId} /></div>
       </div>
     );

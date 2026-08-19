@@ -10,7 +10,7 @@ export function SetupOverview({ snapshot }: { snapshot: OnboardingSnapshot }) {
 
   return (
     <div className="animate-fade-in mx-auto max-w-2xl">
-      <h1 className="text-2xl font-bold">Set up your workspace</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Set up your workspace</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         Complete the setup so your team can start reporting. Progress is saved automatically as you finish each step.
       </p>

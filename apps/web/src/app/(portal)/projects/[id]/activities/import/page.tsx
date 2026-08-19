@@ -20,7 +20,7 @@ export default async function ImportActivitiesPage({ params }: { params: Promise
   if (periods.length === 0) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold">Import activities from Excel</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Import activities from Excel</h1>
         <div className="card mt-6 text-sm text-slate-600 dark:text-slate-300">
           <p>
             Imported activities must belong to a reporting period, but this project has no reporting periods yet.

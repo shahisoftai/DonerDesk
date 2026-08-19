@@ -81,7 +81,7 @@ export function LegalConsentCard({
     <div className="card" id="legal-consent" style={{ scrollMarginTop: "6rem" }}>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold">Terms of Reference — accept to finish setup</h2>
+          <h2 className="text-sm font-semibold">Terms of Reference — accept to finish setup</h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             This is the final onboarding step. Please review the summary below and
             the full documents, then accept. Your acceptance is recorded with your

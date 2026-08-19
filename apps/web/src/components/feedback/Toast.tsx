@@ -50,7 +50,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div aria-live="polite" aria-atomic="false" className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
         {toasts.map((toast) => (
-          <div key={toast.id} role="status" className={`pointer-events-auto flex items-start gap-2 rounded-xl border p-3 shadow-lg ${toastStyles[toast.tone]}`}>
+          <div key={toast.id} role="status" className={`pointer-events-auto flex items-start gap-2 rounded-lg border p-3 shadow-lg ${toastStyles[toast.tone]}`}>
             <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dotStyles[toast.tone]}`} aria-hidden="true" />
             <div>
               <p className="text-sm font-semibold">{toast.title}</p>

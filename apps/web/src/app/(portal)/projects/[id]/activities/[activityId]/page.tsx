@@ -56,7 +56,7 @@ export default async function ActivityDetailPage({
     <div className="animate-fade-in space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">{activity.activityTitle}</h1>
+          <h1 className="text-xl font-semibold tracking-tight">{activity.activityTitle}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {formatDate(activity.activityDate)}
             {activity.location ? ` · ${activity.location}` : ""}

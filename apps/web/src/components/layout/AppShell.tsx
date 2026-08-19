@@ -125,7 +125,7 @@ export function AppShell({
               ref={searchLinkRef}
               href="/projects?focus=search"
               aria-label="Search workspace"
-              className="hidden h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white/60 px-3 text-xs text-slate-500 hover:border-brand-400 hover:text-brand-700 sm:flex dark:border-white/15 dark:bg-white/5 dark:text-slate-300"
+              className="hidden h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-500 hover:border-brand-400 hover:text-brand-700 sm:flex dark:border-white/15 dark:bg-white/5 dark:text-slate-300"
             >
               <span aria-hidden="true">⌕</span> Search <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] dark:border-white/15">⌘K</kbd>
             </Link>

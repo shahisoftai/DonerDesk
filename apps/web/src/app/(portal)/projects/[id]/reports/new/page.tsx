@@ -19,7 +19,7 @@ export default async function NewReportingPeriodPage({ params }: { params: Promi
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold">New reporting period</h1>
+      <h1 className="text-xl font-semibold tracking-tight">New reporting period</h1>
       {!templatesResult.ok && <div className="mt-4"><InlineError title={templatesResult.error.message} /></div>}
       <NewReportingPeriodForm
         projectId={resolvedParams.id}

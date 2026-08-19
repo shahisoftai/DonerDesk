@@ -19,7 +19,7 @@ export default async function ProjectReportingProfilePage({ params }: { params: 
   return (
     <div className="animate-fade-in mx-auto max-w-2xl">
       <Link className="btn-secondary mb-4" href={`/projects/${id}/setup`}>← Back to setup</Link>
-      <h2 className="text-2xl font-bold">Reporting profile</h2>
+      <h2 className="text-xl font-semibold tracking-tight">Reporting profile</h2>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
         How DonorDesk writes your donor reports: language, tone, formatting rules, and word-count guidance.
       </p>

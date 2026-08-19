@@ -73,7 +73,7 @@ export function ImportActivitiesForm({
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold">Import activities from Excel</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Import activities from Excel</h1>
       <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
         Upload an Excel, CSV, or text file with your activity updates. Rows with Activity Title, Activity Date, and Summary
         are auto-parsed and submitted for review.

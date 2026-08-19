@@ -23,7 +23,7 @@ export default async function ProjectSetupPage({ params }: { params: Promise<{ i
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-mono text-xs text-slate-500">Project setup</p>
-          <h2 className="mt-1 text-2xl font-bold">Prepare your project for reporting</h2>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight">Prepare your project for reporting</h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             Complete the items below to unlock reporting periods. Everything else (evidence, activities, logframe editing) is available now.
           </p>

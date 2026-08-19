@@ -17,7 +17,7 @@ export default async function IndicatorEntryPage({ params }: { params: Promise<{
     return (
       <div className="animate-fade-in">
         <header className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Indicator data entry</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Indicator data entry</h1>
           <Link className="btn-secondary" href={`/projects/${resolvedParams.id}/reports/${resolvedParams.periodId}`}>
             Back
           </Link>
@@ -37,7 +37,7 @@ export default async function IndicatorEntryPage({ params }: { params: Promise<{
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-mono text-xs text-slate-500">Reporting period · {resolvedParams.periodId.slice(0, 8)}</p>
-          <h1 className="mt-1 text-2xl font-bold">Indicator data entry</h1>
+          <h1 className="mt-1 text-xl font-semibold tracking-tight">Indicator data entry</h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             Enter this period&apos;s indicator values in the grid below. Rows come from the project logframe; save them as drafts,
             then submit and verify each row.

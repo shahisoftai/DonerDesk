@@ -47,7 +47,7 @@ export function FileDropzone({
         setDragging(false);
         handleFiles(event.dataTransfer.files);
       }}
-      className={`flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 text-center transition ${
+      className={`flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition ${
         dragging
           ? "border-brand-500 bg-brand-500/5"
           : "border-slate-300 hover:border-brand-400 dark:border-white/15"

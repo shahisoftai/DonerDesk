@@ -31,7 +31,7 @@ export function ThemeToggle() {
       onClick={() => setTheme(next)}
       aria-label={`Switch to ${next} mode`}
       title={`Switch to ${next} mode`}
-      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-300 bg-white/70 text-slate-600 shadow-sm backdrop-blur transition-all hover:border-brand-400 hover:text-brand-600 hover:shadow-glow dark:border-white/15 dark:bg-white/5 dark:text-slate-300 dark:hover:border-brand-400/60 dark:hover:text-brand-300"
+      className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:border-brand-400 hover:text-brand-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300 dark:hover:border-brand-400/60 dark:hover:text-brand-300"
     >
       {theme === "dark" ? (
         <svg

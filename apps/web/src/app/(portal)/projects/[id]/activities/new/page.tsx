@@ -27,7 +27,7 @@ export default async function NewActivityPage({ params }: { params: Promise<{ id
   if (periods.length === 0) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold">New activity update</h1>
+        <h1 className="text-xl font-semibold tracking-tight">New activity update</h1>
         <div className="card mt-6 text-sm text-slate-600 dark:text-slate-300">
           <p>
             An activity update must belong to a reporting period, but this project has no reporting periods yet.
@@ -44,7 +44,7 @@ export default async function NewActivityPage({ params }: { params: Promise<{ id
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold">New activity update</h1>
+      <h1 className="text-xl font-semibold tracking-tight">New activity update</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         Submitting an activity update sends it for review by your project team.
       </p>

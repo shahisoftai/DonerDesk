@@ -23,7 +23,7 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
     return (
       <div className="animate-fade-in">
         <header className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Donor templates</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Donor templates</h1>
           <Link className="btn" href={`/projects/${resolvedParams.id}/templates/new`}>Add template</Link>
         </header>
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
@@ -35,7 +35,7 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
   return (
     <div className="animate-fade-in">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Donor templates</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Donor templates</h1>
         <Link className="btn" href={`/projects/${resolvedParams.id}/templates/new`}>Add template</Link>
       </header>
       {IS_STUB && (

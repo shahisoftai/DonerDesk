@@ -66,7 +66,7 @@ export default function ImportEvidencePage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold">Import evidence from Excel</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Import evidence from Excel</h1>
       <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
         Upload an Excel, CSV, or text file with your evidence metadata. Rows with Title, File Name, Evidence Type, and a
         Google Drive Web Link are auto-parsed into link-first evidence records.

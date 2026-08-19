@@ -63,7 +63,7 @@ export default async function ProjectsList({
   return (
     <div className="animate-fade-in">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Projects</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Projects</h1>
         <PermissionGate capabilities={ctx.capabilities} capability="project.create">
           <Link className="btn" href="/projects/new">New project</Link>
         </PermissionGate>

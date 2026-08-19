@@ -24,7 +24,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
     return (
       <div className="animate-fade-in">
         <header className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Reports</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Reports</h1>
           <Link className="btn" href={`/projects/${resolvedParams.id}/reports/new`}>Create reporting period</Link>
         </header>
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
@@ -42,7 +42,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
   return (
     <div className="animate-fade-in">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Reports</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Reports</h1>
         <Link className="btn" href={`/projects/${resolvedParams.id}/reports/new`}>Create reporting period</Link>
       </header>
 

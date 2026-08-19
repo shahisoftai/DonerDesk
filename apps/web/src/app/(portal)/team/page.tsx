@@ -13,7 +13,7 @@ export default async function TeamPage() {
   if (!canView) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold">Team</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Team</h1>
         <div className="card mt-6 text-sm text-slate-600 dark:text-slate-300">
           You do not have permission to view the team.
         </div>
@@ -25,7 +25,7 @@ export default async function TeamPage() {
   if (!result.ok) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold">Team</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Team</h1>
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
       </div>
     );
@@ -33,7 +33,7 @@ export default async function TeamPage() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold">Team</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Team</h1>
       <div className="mt-6">
         <TeamPanel
           members={result.value.items}

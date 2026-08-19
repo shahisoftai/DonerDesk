@@ -37,7 +37,7 @@ export default function NewLogframeItemPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold">Add logframe item</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Add logframe item</h1>
       <form onSubmit={submit} className="card mt-6 space-y-4">
         <div>
           <label className="label">Level</label>

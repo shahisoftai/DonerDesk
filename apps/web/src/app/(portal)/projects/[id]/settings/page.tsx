@@ -14,7 +14,7 @@ export default async function ProjectSettingsPage({ params }: { params: Promise<
 
   return (
     <div className="animate-fade-in">
-      <h2 className="text-2xl font-bold">Project settings</h2>
+      <h2 className="text-xl font-semibold tracking-tight">Project settings</h2>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         Project identity, dates, reporting schedule, and status. Every change is audited.
       </p>

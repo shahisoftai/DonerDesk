@@ -94,7 +94,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
                 <ul className="mt-3 space-y-2">
                   {openChecklist.slice(0, 6).map((c) => (
                     <li key={c.id} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="min-w-0 truncate">{c.title}</span>
+                      <span className="min-w-0 break-words leading-snug">{c.title}</span>
                       <Badge tone={severityTone(c.severity)}>{c.severity.toLowerCase()}</Badge>
                     </li>
                   ))}
@@ -134,7 +134,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="card">
       <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="mt-1 bg-gradient-to-r from-brand-500 to-accent-400 bg-clip-text text-2xl font-extrabold text-transparent">{value}</div>
+      <div className="mt-1 bg-gradient-to-r from-brand-500 to-accent-400 bg-clip-text text-2xl font-semibold tracking-tight text-transparent">{value}</div>
     </div>
   );
 }
