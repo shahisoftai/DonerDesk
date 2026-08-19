@@ -1,6 +1,22 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-20T00:15+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-20T00:55+05:00.
+
+> **Done (2026-08-19):** **Crisp UI rollout across all portal pages + modals**
+> — release `20260819184637` (web-only, no migration). Extends the Geist/
+> type-scale refresh to every left-nav destination and sub-page: page titles
+> `text-2xl`/`3xl`→`text-xl font-semibold tracking-tight`, panel headings
+> `text-lg`→`text-sm`, eyebrows `text-[11px]` across 52 portal pages + feature
+> components (Reports, Evidence, Compliance, Projects + workspace, Team,
+> Settings + audit/billing/setup, Notifications, onboarding, export center,
+> reporting workspace). Card/list text wraps (`break-words` + `min-w-0`) in
+> project compliance gaps, report workspace, export wizard, drive folder panel,
+> file queue. Modals/popups flattened: Dialog/Drawer `rounded-lg p-4 shadow-xl`,
+> notification + user menus, cookie banner, toasts, Button/IconButton/
+> ThemeToggle (solid, brand primary kept, md 38px). Translucent panels → solid
+> `bg-white`; glass header + avatar gradient retained; brand palette unchanged.
+> Light + dark browser-verified; gate green. Rollback:
+> `RELEASE_ID=20260819183029 scripts/rollback.sh`.
 
 > **Done (2026-08-19):** **Vercel-inspired crisp UI refresh** — release
 > `20260819183029` (web-only, no migration). Geist Sans wired as the app font;

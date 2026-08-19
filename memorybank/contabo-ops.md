@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-19 (release `20260819183029`, Vercel-inspired crisp UI refresh — Geist type, wrapped cards, tighter surfaces; web-only, no migration).
+**Last deployment:** 2026-08-19 (release `20260819184637`, crisp UI rollout across all portal pages + modals; web-only, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,25 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-19 — Crisp UI rollout across all portal pages + modals (release
+> `20260819184637`, web-only):** Extends the Geist/type-scale refresh to every
+> left-nav destination and their sub-pages: page titles `text-2xl`/`3xl` →
+> `text-xl font-semibold tracking-tight`, panel headings `text-lg` → `text-sm`,
+> eyebrows → `text-[11px]` across 52 portal pages + feature presentation
+> components (Reports, Evidence, Compliance, Projects + project workspace,
+> Team, Settings + audit/billing/setup, Notifications, onboarding, export
+> center, reporting workspace). Card/list text now wraps (`break-words` +
+> `min-w-0`) in project compliance gaps, report workspace section nav and
+> checklist, export wizard, drive folder panel, and file queue rows. Modals/
+> popups: `Dialog`/`Drawer` → `rounded-lg p-4 shadow-xl`; notification bell +
+> user menus, cookie banner, toasts, `Button`/`IconButton`/`ThemeToggle`
+> flattened (solid surfaces, `rounded-lg`, brand primary kept, md height 38px).
+> Translucent panels (`bg-white/60–80`) → solid `bg-white`; the sticky glass
+> header and the user avatar gradient are retained. Brand palette unchanged;
+> light + dark verified in a browser repro; typecheck/tests/build green.
+> Verified live: web 200, CSS chunk `42144b69f80cb376.css`, public HTTPS 200.
+> Rollback: `RELEASE_ID=20260819183029 scripts/rollback.sh`.
 
 > **2026-08-19 — Vercel-inspired crisp UI refresh (release `20260819183029`,
 > web-only):** Geist Sans is now the app font (`geist` package, wired in the
