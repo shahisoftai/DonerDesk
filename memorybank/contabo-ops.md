@@ -904,17 +904,17 @@ backup/restore.
 
 ## 29. Change log
 
-> **2026-08-19 — OLS routing fix for Next.js BFF routes (`/api/files`,
-> `/api/templates`):** the `donordesk.online` vhost previously proxied the
-> whole `/api` context to the Fastify API, so every Next.js BFF route under
-> `/api` (evidence downloads `/api/files/*` and the new template downloads
-> `/api/templates/*`) returned Fastify 404s in production. Added explicit
-> `context /api/files` and `context /api/templates` → `donordesk_web` (Next.js
-> on 3002) before the `/api` → `donordesk_api` context, mirroring the existing
-> `/api/auth` context; validated with `lshttpd -t` and reloaded OLS. Verified
-> public HTTPS: `/api/templates/{logframe,activities,evidence}` and
-> `/api/files/...` now return 401 (auth-gated, route live) instead of 404.
-> Config backed up at `vhost.conf.bak-20260819184350`.
+> **2026-08-19 — `/api/templates/*` routes added to Fastify (release
+> `20260819165731`):** OLS proxies `/api/*` to Fastify (4001), bypassing
+> Next.js BFF entirely. Fastify had no `/api/templates/*` routes registered —
+> confirmed 404 in production. Added `GET /api/templates/logframe`,
+> `/activities`, `/evidence` directly in `registerTemplateRoutes` using the
+> existing `build*Template()` functions from `@donordesk/infrastructure`. Routes
+> are inside the auth-gated block. Verified live: all three return 401
+> (auth-gated, route live) on both loopback and public HTTPS. BFF routes at
+> `apps/web/src/app/api/templates/*` remain unused but harmless (proxied to Fastify
+> which now has matching routes). No OLS change needed; deploy
+> `RELEASE_ID=20260819165731`.
 
 > **2026-08-19 — Excel import templates + report section management (release
 > `20260819163537`, API + web):** xlsx template download for Logframe

@@ -1,20 +1,28 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-19T21:40+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-19T21:57+05:00.
 
+> **Done (2026-08-19):** **Fix `/api/templates/*` download routes (release
+> `20260819165731`).** OLS proxies `/api/*` to Fastify (4001); Next.js BFF
+> routes at `apps/web/src/app/api/templates/*` were never reached. Fastify had
+> no `/api/templates/*` routes — confirmed Fastify 404 in production. Added
+> `GET /api/templates/logframe|activities|evidence` to `registerTemplateRoutes`
+> using existing `build*Template()` functions. Verified live: all three return
+> 401 on both loopback and public HTTPS.
+>
 > **Deployment (2026-08-19):** **Excel import templates + report section
 > management** — release `20260819163537` (API + web; no migration). xlsx
-> template download for Logframe (two sheets: Logframe + Indicators),
-> Activities, and Evidence (link-first, Google Drive share link per row) with
-> authenticated `/api/templates/*` BFF routes; structured upload imports for
-> indicators/activities/evidence with fuzzy header parsers (multi-sheet-safe
-> boundary detection, delimiter-aware cells, Excel serial-date rejection,
-> type-synonym normalization), code/title resolution, dedup, 1000-row caps,
-> and audit events; report section add (`POST /v1/report-sections`) and delete
-> (`DELETE /v1/report-sections/:id`, FK-safe ordering, DRAFT-gated); RBAC rules
-> for every new route. Typecheck/build/tests green; deployed incrementally and
-> verified live (health/ready ok, all new routes registered and auth-gated,
-> public HTTPS 200). Rollback: `RELEASE_ID=20260819090000 scripts/rollback.sh`.
+> template download (BFF routes at `/api/templates/{logframe,activities,evidence}`
+> — inaccessible behind OLS proxy, see "In progress" above); structured upload
+> imports for indicators/activities/evidence with fuzzy header parsers
+> (multi-sheet-safe boundary detection, delimiter-aware cells, Excel serial-date
+> rejection, type-synonym normalization), code/title resolution, dedup, 1000-row
+> caps, and audit events; report section add (`POST /v1/report-sections`) and
+> delete (`DELETE /v1/report-sections/:id`, FK-safe ordering, DRAFT-gated);
+> RBAC rules for every new route. Typecheck/build/tests green; deployed
+> incrementally and verified live (health/ready ok, all new routes registered
+> and auth-gated, public HTTPS 200). Rollback:
+> `RELEASE_ID=20260819090000 scripts/rollback.sh`.
 
 > **Deployment (2026-08-19):** **Professional donor reporting hardening** —
 > release `20260819090000` (API + web + prisma migration `20260818180000_professional_reporting`).
