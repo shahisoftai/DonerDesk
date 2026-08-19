@@ -1,6 +1,21 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-19T21:57+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-19T23:05+05:00.
+
+> **Done (2026-08-19):** **Portal UI polish — collapsible sidebar + home-page
+> card overflow** — release `20260819173232` (web-only, no migration). The left
+> nav slides to the left edge via a header toggle (lg+, same style as the
+> hamburger) so pages regain the full 224px; the preference persists in
+> localStorage (`donordesk:nav-collapsed`) and the collapsed sidebar is
+> `inert` + `aria-hidden`. Home page: the My Work / Readiness snapshot grid
+> (`xl:grid-cols-[1.25fr_0.75fr]`) overflowed because long card text (evidence
+> filenames, project titles) forced the first column's min-content past the
+> track, pushing the Readiness card off-screen — grid columns now carry
+> `min-w-0` and WorkPreview text wraps (`break-words`) instead of truncating;
+> the same min-content hardening applied to deadline overview, queue cards,
+> recent projects, and notifications. Verified live (loopback health/ready 200,
+> web 200, public HTTPS 200, new CSS/JS chunks confirmed on the server).
+> Rollback: `RELEASE_ID=20260819165731 scripts/rollback.sh`.
 
 > **Done (2026-08-19):** **Fix `/api/templates/*` download routes (release
 > `20260819165731`).** OLS proxies `/api/*` to Fastify (4001); Next.js BFF

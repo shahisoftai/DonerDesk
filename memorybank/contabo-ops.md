@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-19 (release `20260819163537`, Excel import templates + report section management; API + web, no migration).
+**Last deployment:** 2026-08-19 (release `20260819173232`, collapsible sidebar + home-page card overflow fix; web-only, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,23 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-19 — Portal UI polish: collapsible sidebar + home-page card overflow
+> (release `20260819173232`, web-only):** The left nav now slides to the left
+> edge via a header toggle (visible on `lg+`, matching the hamburger style) so
+> pages get the full 224px back; the preference persists in localStorage
+> (`donordesk:nav-collapsed`), and the collapsed sidebar gets `inert` +
+> `aria-hidden` so its links drop out of the tab order. Home page: the My Work /
+> Readiness snapshot grid (`xl:grid-cols-[1.25fr_0.75fr]`) overflowed because
+> long card text (evidence filenames, project titles) blew out the first
+> column's min-content, pushing the Readiness card off-screen — grid columns
+> now carry `min-w-0` and WorkPreview text wraps (`break-words`) instead of
+> truncating. The same `min-content` hardening was applied to the deadline
+> overview, queue cards, recent projects, and notifications. Verified live:
+> loopback health/ready 200, web 200, public HTTPS 200, new CSS chunk
+> (`b1c1d0681e153242.css`) carries `transition-property:width,opacity` +
+> `.w-0`/`.w-56`, portal layout chunk carries the sidebar toggle labels.
+> Rollback: `RELEASE_ID=20260819165731 scripts/rollback.sh`.
 
 > **2026-08-19 — OLS vhost context fix for `/api/files` and `/api/templates` (host
 > config, no release):** The `donordesk.online` OLS vhost proxied the entire `/api`
