@@ -1,12 +1,31 @@
 "use server";
 
-import { AcceptEvidenceTagsSchema } from "@donordesk/contracts";
+import { AcceptEvidenceTagsSchema, ImportEvidenceTextSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { OkResponseSchema, UploadResponseSchema } from "./_schemas";
+import { ImportEvidenceResponseSchema, type ImportEvidenceResponse } from "@/lib/server/schemas";
+
+export type ImportEvidenceResult = Result<ImportEvidenceResponse, AppError>;
+
+/** Auto-parses evidence metadata (Title/File Name/Evidence Type/Drive Web Link) and creates link-first records. */
+export async function importEvidenceTextAction(input: unknown): Promise<ImportEvidenceResult> {
+  const context = await requireSession();
+  const parsed = ImportEvidenceTextSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  return gatewayRequest("/v1/evidence/import", ImportEvidenceResponseSchema, context.token, {
+    method: "POST",
+    body: parsed.data,
+  });
+}
 
 export type UploadEvidenceResult = Result<{ id: string; fileUrl: string }, AppError>;
 

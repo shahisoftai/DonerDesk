@@ -56,6 +56,14 @@ export const UpdateSectionSchema = z.object({
   expectedVersion: z.string().optional(),
 });
 
+export const CreateReportSectionSchema = z.object({
+  reportDraftId: z.string().min(1),
+  sectionTitle: z.string().min(1).max(300),
+  /** Optional explicit position; defaults to the end of the draft when omitted. */
+  sectionOrder: z.number().int().nonnegative().optional(),
+});
+export type CreateReportSectionInput = z.infer<typeof CreateReportSectionSchema>;
+
 export const ReviewReportSchema = z.object({
   decision: z.enum(["APPROVE", "RETURN"]),
   notes: z.string().max(2000).optional(),

@@ -622,6 +622,55 @@ export const ImportLogframeResponseSchema = z.object({
 });
 export type ImportLogframeResponse = z.infer<typeof ImportLogframeResponseSchema>;
 
+export const ImportedIndicatorSchema = z.object({
+  id: z.string(),
+  logframeItemId: z.string(),
+  code: z.string(),
+  name: z.string(),
+  type: z.string(),
+  baseline: z.string(),
+  target: z.string(),
+  unit: z.string().optional(),
+});
+
+export const ImportIndicatorsResponseSchema = z.object({
+  created: z.number(),
+  skipped: z.number(),
+  warnings: z.array(z.string()),
+  items: z.array(ImportedIndicatorSchema),
+});
+export type ImportIndicatorsResponse = z.infer<typeof ImportIndicatorsResponseSchema>;
+
+export const ImportedActivitySchema = z.object({
+  id: z.string(),
+  activityTitle: z.string(),
+  activityDate: z.string(),
+});
+
+export const ImportActivitiesResponseSchema = z.object({
+  created: z.number(),
+  skipped: z.number(),
+  warnings: z.array(z.string()),
+  items: z.array(ImportedActivitySchema),
+});
+export type ImportActivitiesResponse = z.infer<typeof ImportActivitiesResponseSchema>;
+
+export const ImportedEvidenceSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  fileName: z.string(),
+  fileUrl: z.string(),
+  evidenceType: z.string(),
+});
+
+export const ImportEvidenceResponseSchema = z.object({
+  created: z.number(),
+  skipped: z.number(),
+  warnings: z.array(z.string()),
+  items: z.array(ImportedEvidenceSchema),
+});
+export type ImportEvidenceResponse = z.infer<typeof ImportEvidenceResponseSchema>;
+
 export const DriveImportResponseSchema = z.union([
   z.object({ kind: z.literal("template"), id: z.string(), templateName: z.string() }),
   z.object({ kind: z.literal("data"), text: z.string(), name: z.string() }),

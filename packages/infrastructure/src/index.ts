@@ -42,3 +42,4 @@ export { createLLMProvider, withPiiFirewall, registerLLMProvider, type LLMProvid
 export { PlatformControlPlane, PLATFORM_CATEGORIES, PLATFORM_PROVIDERS } from "./platform/control-plane.js";
 export { PlatformLlmConfigResolver } from "./llm/llm-config-resolver.js";
 export { SecretCipher } from "./security/secret-cipher.js";
+export * from "./exports/templates/index.js";

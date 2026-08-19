@@ -19,7 +19,7 @@ export type ParseFileResult = Result<{ text: string; metadata?: Record<string, u
  * backend in dev and is prefix-mismatched behind the production OLS proxy.
  */
 export async function parseFileAction(
-  kind: "templates" | "logframe" | "indicators",
+  kind: "templates" | "logframe" | "indicators" | "activities" | "evidence",
   file: File,
 ): Promise<ParseFileResult> {
   const context = await requireSession();

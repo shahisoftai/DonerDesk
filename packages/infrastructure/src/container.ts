@@ -25,6 +25,7 @@ import {
   ListTemplatesHandler,
   CreateLogframeItemHandler,
   ImportLogframeHandler,
+  ImportIndicatorsHandler,
   CreateIndicatorHandler,
   CreateIndicatorUpdateHandler,
   BulkUpsertIndicatorUpdatesHandler,
@@ -34,6 +35,7 @@ import {
   ListLogframeHandler,
   ListIndicatorsHandler,
   UploadEvidenceHandler,
+  ImportEvidenceHandler,
   SuggestEvidenceTagsHandler,
   AcceptEvidenceTagsHandler,
   PersistEvidenceTagsHandler,
@@ -41,6 +43,7 @@ import {
   SearchEvidenceHandler,
   GetEvidenceHandler,
   CreateActivityUpdateHandler,
+  ImportActivitiesHandler,
   PolishActivityHandler,
   ReviewActivityHandler,
   ListActivitiesHandler,
@@ -53,6 +56,8 @@ import {
   GenerateReportDraftHandler,
   GetReportDraftHandler,
   UpdateReportSectionHandler,
+  CreateReportSectionHandler,
+  DeleteReportSectionHandler,
   UpdateReportSectionChartHandler,
   ApproveReportSectionHandler,
   SubmitReportForReviewHandler,
@@ -303,6 +308,7 @@ export interface Container {
     listTemplates: ListTemplatesHandler;
     createLogframeItem: CreateLogframeItemHandler;
     importLogframe: ImportLogframeHandler;
+    importIndicators: ImportIndicatorsHandler;
     createIndicator: CreateIndicatorHandler;
     createIndicatorUpdate: CreateIndicatorUpdateHandler;
     bulkUpsertIndicatorUpdates: BulkUpsertIndicatorUpdatesHandler;
@@ -312,6 +318,7 @@ export interface Container {
     listLogframe: ListLogframeHandler;
     listIndicators: ListIndicatorsHandler;
     uploadEvidence: UploadEvidenceHandler;
+    importEvidence: ImportEvidenceHandler;
     suggestEvidenceTags: SuggestEvidenceTagsHandler;
     acceptEvidenceTags: AcceptEvidenceTagsHandler;
     persistEvidenceTags: PersistEvidenceTagsHandler;
@@ -319,6 +326,7 @@ export interface Container {
     searchEvidence: SearchEvidenceHandler;
     getEvidence: GetEvidenceHandler;
     createActivityUpdate: CreateActivityUpdateHandler;
+    importActivities: ImportActivitiesHandler;
     polishActivity: PolishActivityHandler;
     reviewActivity: ReviewActivityHandler;
     listActivities: ListActivitiesHandler;
@@ -332,6 +340,8 @@ export interface Container {
     getReportDraft: GetReportDraftHandler;
     getReportAssurance: GetReportAssuranceHandler;
     updateReportSection: UpdateReportSectionHandler;
+    createReportSection: CreateReportSectionHandler;
+    deleteReportSection: DeleteReportSectionHandler;
     updateReportSectionChart: UpdateReportSectionChartHandler;
     approveReportSection: ApproveReportSectionHandler;
     submitReportForReview: SubmitReportForReviewHandler;
@@ -644,6 +654,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listTemplates: new ListTemplatesHandler(templates),
     createLogframeItem: new CreateLogframeItemHandler(ids, logframe, audits),
     importLogframe: new ImportLogframeHandler(ids, logframe, audits),
+    importIndicators: new ImportIndicatorsHandler(ids, logframe, indicators, audits),
     createIndicator: new CreateIndicatorHandler(ids, indicators, audits),
     createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits),
     bulkUpsertIndicatorUpdates: new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits),
@@ -653,6 +664,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listLogframe: new ListLogframeHandler(logframe, indicators),
     listIndicators: new ListIndicatorsHandler(indicators),
     uploadEvidence: new UploadEvidenceHandler(ids, evidence, evidenceStorage, events, audits, usageCounters, entitlements),
+    importEvidence: new ImportEvidenceHandler(ids, evidence, activities, indicators, audits),
     suggestEvidenceTags: new SuggestEvidenceTagsHandler(evidence, evidenceTagger),
     acceptEvidenceTags: new AcceptEvidenceTagsHandler(evidence, audits),
     persistEvidenceTags: new PersistEvidenceTagsHandler(evidence, audits, idempotency),
@@ -660,6 +672,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     searchEvidence: new SearchEvidenceHandler(evidence),
     getEvidence: new GetEvidenceHandler(evidence),
     createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits),
+    importActivities: new ImportActivitiesHandler(ids, activities, logframe, indicators, audits),
     polishActivity: new PolishActivityHandler(activities, activityPolisher),
     reviewActivity: new ReviewActivityHandler(activities, audits),
     listActivities: new ListActivitiesHandler(activities),
@@ -678,6 +691,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportPlans),
     getReportAssurance: new GetReportAssuranceHandler(drafts, sections, reportClaims, reportRevisions, resolvedRequirements),
     updateReportSection: new UpdateReportSectionHandler(sections, revisionService, assuranceService, audits),
+    createReportSection: new CreateReportSectionHandler(ids, drafts, sections, audits),
+    deleteReportSection: new DeleteReportSectionHandler(drafts, sections, reportClaims, reportRevisions, audits),
     updateReportSectionChart: new UpdateReportSectionChartHandler(sections, audits),
     rewriteReportSection: new RewriteReportSectionHandler(ids, drafts, sections, getReportDraftGenerator, revisionService, assuranceService, generationRuns, audits),
     approveReportSection: new ApproveReportSectionHandler(sections, reportClaims, reportRevisions, audits),

@@ -76,7 +76,11 @@ export default async function EvidencePage({
     <div className="animate-fade-in">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Evidence library</h1>
-        <Link className="btn" href={`${baseUrl}/new`}>Upload evidence</Link>
+        <div className="flex gap-2">
+          <a className="btn-secondary text-xs" href="/api/templates/evidence">Download template</a>
+          <Link className="btn-secondary text-xs" href={`${baseUrl}/import`}>Import</Link>
+          <Link className="btn" href={`${baseUrl}/new`}>Upload evidence</Link>
+        </div>
       </header>
 
       <div className="mt-4">

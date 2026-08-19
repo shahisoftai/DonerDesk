@@ -53,6 +53,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Logframe &amp; indicators</h1>
         <div className="flex gap-2">
+          <a className="btn-secondary text-xs" href="/api/templates/logframe">Download template</a>
           <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/logframe/new`}>Add logframe item</Link>
           <ImportLogframeButton projectId={resolvedParams.id} />
         </div>

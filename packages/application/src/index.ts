@@ -57,6 +57,7 @@ export * from "./use-cases/templates/list-templates.js";
 
 export * from "./use-cases/logframe/create-logframe-item.js";
 export * from "./use-cases/logframe/import-logframe.js";
+export * from "./use-cases/logframe/import-indicators.js";
 export * from "./use-cases/logframe/create-indicator.js";
 export * from "./use-cases/logframe/create-indicator-update.js";
 export * from "./use-cases/logframe/upsert-indicator-update.js";
@@ -68,6 +69,7 @@ export * from "./use-cases/logframe/list-logframe.js";
 export * from "./use-cases/logframe/list-indicators.js";
 
 export * from "./use-cases/evidence/upload-evidence.js";
+export * from "./use-cases/evidence/import-evidence.js";
 export * from "./use-cases/evidence/link-google-drive-evidence.js";
 export * from "./use-cases/evidence/suggest-evidence-tags.js";
 export * from "./use-cases/evidence/accept-evidence-tags.js";
@@ -77,6 +79,7 @@ export * from "./use-cases/evidence/search-evidence.js";
 export * from "./use-cases/evidence/get-evidence.js";
 
 export * from "./use-cases/activities/create-activity-update.js";
+export * from "./use-cases/activities/import-activities.js";
 export * from "./use-cases/activities/polish-activity.js";
 export * from "./use-cases/activities/review-activity.js";
 export * from "./use-cases/activities/list-activities.js";
@@ -90,6 +93,8 @@ export * from "./use-cases/reporting/list-reporting-periods.js";
 export * from "./use-cases/reporting/generate-report-draft.js";
 export * from "./use-cases/reporting/get-report-draft.js";
 export * from "./use-cases/reporting/update-report-section.js";
+export * from "./use-cases/reporting/create-report-section.js";
+export * from "./use-cases/reporting/delete-report-section.js";
 export * from "./use-cases/reporting/update-report-section-chart.js";
 export * from "./use-cases/reporting/rewrite-report-section.js";
 export * from "./use-cases/reporting/approve-report-section.js";

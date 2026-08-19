@@ -1,6 +1,6 @@
 "use server";
 
-import { CreateReportingPeriodSchema, UpdateSectionSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -31,6 +31,34 @@ export async function createReportingPeriodAction(input: unknown): Promise<Creat
     method: "POST",
     body: parsed.data,
   });
+}
+
+export type CreateReportSectionResult = Result<{ id: string }, AppError>;
+
+export async function createReportSectionAction(reportDraftId: string, sectionTitle: string): Promise<CreateReportSectionResult> {
+  const context = await requireSession();
+  const parsed = CreateReportSectionSchema.safeParse({ reportDraftId, sectionTitle });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Please enter a section title.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  return gatewayRequest("/v1/report-sections", IdResponseSchema, context.token, {
+    method: "POST",
+    body: parsed.data,
+  });
+}
+
+export type DeleteReportSectionResult = Result<undefined, AppError>;
+
+export async function deleteReportSectionAction(sectionId: string): Promise<DeleteReportSectionResult> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/report-sections/${sectionId}`, OkResponseSchema, context.token, {
+    method: "DELETE",
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
 }
 
 export type GenerateDraftResult = Result<{ draftId: string; sectionIds: string[] }, AppError>;

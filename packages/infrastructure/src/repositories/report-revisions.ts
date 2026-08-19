@@ -94,6 +94,11 @@ export class PrismaReportRevisionRepository implements IReportRevisionRepository
     return ok(this.toDomain(row));
   }
 
+  async deleteBySection(sectionId: string, tenantId: TenantId): Promise<Result<void, DomainError>> {
+    await this.prisma.reportRevision.deleteMany({ where: { sectionId, tenantId: tenantId.toString() } });
+    return ok(undefined);
+  }
+
   async createNextForSection(input: {
     tenantId: TenantId;
     sectionId: string;

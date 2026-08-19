@@ -410,6 +410,8 @@ export interface IReportRevisionRepository {
   findBySection(sectionId: string, tenantId: TenantId): Promise<Result<ReportRevision[]>>;
   findByDraft(draftId: string, tenantId: TenantId): Promise<Result<ReportRevision[]>>;
   findCurrentForSection(sectionId: string, tenantId: TenantId): Promise<Result<ReportRevision | null>>;
+  /** Removes all revisions bound to a section (used when a section is deleted). */
+  deleteBySection(sectionId: string, tenantId: TenantId): Promise<Result<void>>;
   createNextForSection(input: {
     tenantId: TenantId;
     sectionId: string;

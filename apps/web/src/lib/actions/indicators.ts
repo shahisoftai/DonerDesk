@@ -1,6 +1,6 @@
 "use server";
 
-import { CreateIndicatorSchema, CreateIndicatorUpdateSchema, BulkUpsertIndicatorUpdatesSchema, ParseIndicatorSheetSchema } from "@donordesk/contracts";
+import { CreateIndicatorSchema, CreateIndicatorUpdateSchema, BulkUpsertIndicatorUpdatesSchema, ParseIndicatorSheetSchema, ImportIndicatorsTextSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -11,6 +11,8 @@ import {
   PeriodIndicatorsResponseSchema,
   ParseIndicatorSheetResponseSchema,
   BulkUpsertResponseSchema,
+  ImportIndicatorsResponseSchema,
+  type ImportIndicatorsResponse,
 } from "@/lib/server/schemas";
 
 export type CreateIndicatorResult = Result<{ id: string }, AppError>;
@@ -29,6 +31,28 @@ export async function createIndicatorAction(input: unknown): Promise<CreateIndic
     };
   }
   return gatewayRequest("/v1/indicators", IdResponseSchema, context.token, {
+    method: "POST",
+    body: parsed.data,
+  });
+}
+
+export type ImportIndicatorsResult = Result<ImportIndicatorsResponse, AppError>;
+
+/** Auto-parses indicator content (Code/Name/Type/Baseline/Target) and creates records. */
+export async function importIndicatorsTextAction(input: unknown): Promise<ImportIndicatorsResult> {
+  const context = await requireSession();
+  const parsed = ImportIndicatorsTextSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: {
+        kind: "validation",
+        message: "Please correct the highlighted fields.",
+        fields: flattenZodFields(parsed.error),
+      },
+    };
+  }
+  return gatewayRequest("/v1/logframe/indicators/import", ImportIndicatorsResponseSchema, context.token, {
     method: "POST",
     body: parsed.data,
   });

@@ -3,4 +3,5 @@ export * from "./indicator.js";
 export * from "./indicator-update.js";
 export * from "./indicator-semantics.js";
 export * from "./logframe-parser.js";
+export * from "./indicator-parser.js";
 export * from "./events.js";

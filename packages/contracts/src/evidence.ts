@@ -75,3 +75,11 @@ export const EvidenceSearchSchema = z.object({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(200).default(20),
 });
+
+/** Bulk-import evidence metadata as text (Excel/CSV/plain) and auto-create link-first records. */
+export const ImportEvidenceTextSchema = z.object({
+  projectId: z.string().min(1),
+  text: z.string().min(1).max(2_000_000),
+  sourceName: z.string().max(300).optional(),
+});
+export type ImportEvidenceTextInput = z.infer<typeof ImportEvidenceTextSchema>;

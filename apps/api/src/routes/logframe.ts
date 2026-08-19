@@ -2,13 +2,21 @@ import type { FastifyInstance } from "fastify";
 import {
   CreateLogframeItemSchema,
   ImportLogframeTextSchema,
+  ImportIndicatorsTextSchema,
   CreateIndicatorSchema,
   CreateIndicatorUpdateSchema,
   BulkUpsertIndicatorUpdatesSchema,
   ParseIndicatorSheetSchema,
 } from "@donordesk/contracts";
+import { buildLogframeTemplate, LOGFRAME_TEMPLATE_FILENAME } from "@donordesk/infrastructure";
 
 export async function registerLogframeRoutes(app: FastifyInstance) {
+  app.get("/v1/logframe/template", async (_req, reply) => {
+    const buffer = await buildLogframeTemplate();
+    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    reply.header("content-disposition", `attachment; filename="${LOGFRAME_TEMPLATE_FILENAME}"`);
+    return buffer;
+  });
   app.get("/v1/projects/:projectId/logframe", async (req) => {
     const projectId = (req.params as { projectId: string }).projectId;
     const ctx = { tenant: req.tenant, requestId: req.id };
@@ -29,6 +37,14 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const body = ImportLogframeTextSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.importLogframe.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/logframe/indicators/import", async (req) => {
+    const body = ImportIndicatorsTextSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.importIndicators.handle(ctx, body);
     if (!r.ok) throw r.error;
     return r.value;
   });

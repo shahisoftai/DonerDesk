@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { generateDraftAction, detectMissingAction, submitReportForReviewAction, approveReportSectionAction } from "@/lib/actions/reporting";
+import { generateDraftAction, detectMissingAction, submitReportForReviewAction, approveReportSectionAction, createReportSectionAction, deleteReportSectionAction } from "@/lib/actions/reporting";
 import { useActionState } from "@/lib/client/action-state";
 import { can, type Capability } from "@/lib/shared/capabilities";
 import { Badge } from "@/components/data/Badge";
@@ -124,6 +124,8 @@ export function ReportWorkspace({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panel, setPanel] = useState<Panel>("editor");
   const [draftMsg, setDraftMsg] = useState<string | null>(null);
+  const [addingSection, setAddingSection] = useState(false);
+  const [newSectionTitle, setNewSectionTitle] = useState("");
 
   const canGenerate = can(capabilities, "report.generate");
   const canEdit = can(capabilities, "reporting.edit");
@@ -202,6 +204,35 @@ export function ReportWorkspace({
     }
   }
 
+  async function addSection() {
+    if (!draft || !newSectionTitle.trim()) return;
+    setBusyAction("section-add");
+    try {
+      const result = await actionState.run(() => createReportSectionAction(draft.id, newSectionTitle.trim()));
+      if (result !== undefined) {
+        setNewSectionTitle("");
+        setAddingSection(false);
+        router.refresh();
+      }
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function removeSection(sectionId: string, sectionTitle: string) {
+    if (!window.confirm(`Delete "${sectionTitle}"? Its content, sources, and verification history will be permanently removed.`)) return;
+    setBusyAction("section-delete");
+    try {
+      const result = await actionState.run(() => deleteReportSectionAction(sectionId));
+      if (result !== undefined) {
+        setSelectedId(null);
+        router.refresh();
+      }
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   return (
     <div className="mt-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -269,28 +300,87 @@ export function ReportWorkspace({
         <aside className={`space-y-2 ${panel === "sections" ? "block" : "hidden lg:block"}`}>
           {sections.length === 0 && (
             <div className="card text-sm text-slate-600 dark:text-slate-300">
-              <p>No sections yet. Generate a draft to create the report structure.</p>
+              <p>No sections yet. Generate a draft to create the report structure, or add a section manually.</p>
+            </div>
+          )}
+          {draft && canEdit && draft.status === "DRAFT" && (
+            <div className="space-y-2">
+              {addingSection ? (
+                <div className="card space-y-2 p-3">
+                  <input
+                    type="text"
+                    value={newSectionTitle}
+                    onChange={(e) => setNewSectionTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void addSection();
+                      if (e.key === "Escape") {
+                        setAddingSection(false);
+                        setNewSectionTitle("");
+                      }
+                    }}
+                    placeholder="Section title"
+                    autoFocus
+                    className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm dark:border-white/15 dark:bg-white/5"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={busyAction !== null}
+                      onClick={() => {
+                        setAddingSection(false);
+                        setNewSectionTitle("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button size="sm" disabled={busyAction !== null || !newSectionTitle.trim()} pending={busyAction === "section-add"} onClick={() => void addSection()}>
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button size="sm" variant="secondary" className="w-full" disabled={busyAction !== null} onClick={() => setAddingSection(true)}>
+                  + Add section
+                </Button>
+              )}
             </div>
           )}
           <nav aria-label="Report sections" className="space-y-1.5">
             {sections.map((s, index) => (
-              <button
+              <div
                 key={s.id}
-                type="button"
-                onClick={() => {
-                  setSelectedId(s.id);
-                  setPanel("editor");
-                }}
-                aria-current={selectedId === s.id ? "true" : undefined}
-                className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition ${
+                className={`flex items-center gap-1 rounded-lg border transition ${
                   selectedId === s.id
-                    ? "border-brand-500/40 bg-brand-500/5 text-brand-700 dark:text-brand-300"
+                    ? "border-brand-500/40 bg-brand-500/5"
                     : "border-slate-200 hover:border-brand-400/40 dark:border-white/10"
                 }`}
               >
-                <span className="truncate">{index + 1}. {s.sectionTitle}</span>
-                <Badge tone={sectionStatusTone(s.status)}>{SECTION_STATUS_LABEL[s.status] ?? s.status.replace(/_/g, " ")}</Badge>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedId(s.id);
+                    setPanel("editor");
+                  }}
+                  aria-current={selectedId === s.id ? "true" : undefined}
+                  className="flex w-full items-center justify-between gap-2 rounded-l-lg px-3 py-2 text-left text-sm"
+                >
+                  <span className="truncate">{index + 1}. {s.sectionTitle}</span>
+                  <Badge tone={sectionStatusTone(s.status)}>{SECTION_STATUS_LABEL[s.status] ?? s.status.replace(/_/g, " ")}</Badge>
+                </button>
+                {draft && canEdit && draft.status === "DRAFT" && (
+                  <button
+                    type="button"
+                    title={`Delete ${s.sectionTitle}`}
+                    aria-label={`Delete ${s.sectionTitle}`}
+                    disabled={busyAction !== null}
+                    onClick={() => void removeSection(s.id, s.sectionTitle)}
+                    className="mr-1.5 rounded-md px-1.5 py-0.5 text-slate-400 transition hover:bg-danger-500/10 hover:text-danger-600 dark:hover:text-danger-400"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
             ))}
           </nav>
         </aside>

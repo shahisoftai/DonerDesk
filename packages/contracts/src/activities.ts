@@ -59,6 +59,15 @@ export const AttachEvidenceSchema = z.object({
 });
 export type AttachEvidenceInput = z.infer<typeof AttachEvidenceSchema>;
 
+/** Bulk-import activity content as text (Excel/CSV/plain) and auto-create records. */
+export const ImportActivitiesTextSchema = z.object({
+  projectId: z.string().min(1),
+  reportingPeriodId: z.string().min(1),
+  text: z.string().min(1).max(2_000_000),
+  sourceName: z.string().max(300).optional(),
+});
+export type ImportActivitiesTextInput = z.infer<typeof ImportActivitiesTextSchema>;
+
 export const DetachEvidenceSchema = z.object({
   evidenceId: z.string().min(1),
   activityId: z.string().min(1).optional(),

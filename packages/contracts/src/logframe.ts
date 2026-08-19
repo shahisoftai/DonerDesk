@@ -22,6 +22,14 @@ export const ImportLogframeTextSchema = z.object({
 });
 export type ImportLogframeTextInput = z.infer<typeof ImportLogframeTextSchema>;
 
+/** Import indicator content as text (Excel/CSV/plain) and auto-create records. */
+export const ImportIndicatorsTextSchema = z.object({
+  projectId: z.string().min(1),
+  text: z.string().min(1).max(2_000_000),
+  sourceName: z.string().max(300).optional(),
+});
+export type ImportIndicatorsTextInput = z.infer<typeof ImportIndicatorsTextSchema>;
+
 export const CreateIndicatorSchema = z.object({
   projectId: z.string().min(1),
   logframeItemId: z.string().min(1),

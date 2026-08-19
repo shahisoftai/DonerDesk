@@ -1,4 +1,5 @@
 import type { LogframeLevel } from "./logframe-item.js";
+import { INDICATOR_SHEET_HEADERS } from "./header-vocab.js";
 
 export interface ParsedLogframeRow {
   level: LogframeLevel;
@@ -34,16 +35,29 @@ const CODE_HEADERS: ReadonlyArray<string> = ["code", "itemcode", "resultcode", "
 const TITLE_HEADERS: ReadonlyArray<string> = ["title", "result", "resultstatement", "statement", "item", "name", "intervention"];
 const DESC_HEADERS: ReadonlyArray<string> = ["description", "desc", "definition", "detail", "descriptionofresult"];
 
+function looksLikeHeaderRow(cells: string[]): boolean {
+  const normalized = cells.map(normalizeHeader);
+  const known = new Set([...LEVEL_HEADERS, ...CODE_HEADERS, ...TITLE_HEADERS, ...DESC_HEADERS, ...INDICATOR_SHEET_HEADERS]);
+  return normalized.filter((h) => h && known.has(h)).length >= 2;
+}
+
 function normalizeHeader(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
 
-function splitDelimited(line: string): string[] {
+/**
+ * Splits a delimited line into cells. When `delimiter` is provided (the
+ * delimiter detected from the header row) only that character splits cells,
+ * so text fields may safely contain the other punctuation characters. Without
+ * a delimiter (legacy line-based mode) tab, comma, and semicolon all split.
+ */
+function splitDelimited(line: string, delimiter?: string): string[] {
   const cells: string[] = [];
   let current = "";
   let inQuotes = false;
+  const splitsOn = delimiter ? (ch: string) => ch === delimiter : (ch: string) => ch === "\t" || ch === "," || ch === ";";
   for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
+    const ch = line[i] ?? "";
     if (ch === '"') {
       if (inQuotes && line[i + 1] === '"') {
         current += '"';
@@ -51,7 +65,7 @@ function splitDelimited(line: string): string[] {
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (ch === "\t" || ch === "," || ch === ";") {
+    } else if (splitsOn(ch)) {
       if (inQuotes) {
         current += ch;
       } else {
@@ -118,7 +132,7 @@ function detectHeaderRow(lines: string[]): { index: number; delimiter: string } 
           ? ";"
           : "";
     if (!delimiter) continue;
-    const headers = splitDelimited(trimmed).map(normalizeHeader);
+    const headers = splitDelimited(trimmed, delimiter).map(normalizeHeader);
     const hasLevel = headers.some((h) => LEVEL_HEADERS.includes(h));
     const hasCode = headers.some((h) => CODE_HEADERS.includes(h));
     const hasTitle = headers.some((h) => TITLE_HEADERS.includes(h));
@@ -135,7 +149,7 @@ function parseTabular(text: string): { rows: ParsedLogframeRow[]; warnings: stri
   const header = detectHeaderRow(lines);
   if (!header) return { rows: [], warnings, structured: false };
 
-  const headers = splitDelimited(lines[header.index]?.trim() ?? "").map(normalizeHeader);
+  const headers = splitDelimited(lines[header.index]?.trim() ?? "", header.delimiter).map(normalizeHeader);
   const levelCol = headers.findIndex((h) => LEVEL_HEADERS.includes(h));
   const codeCol = headers.findIndex((h) => CODE_HEADERS.includes(h));
   const titleCol = headers.findIndex((h) => TITLE_HEADERS.includes(h));
@@ -146,11 +160,25 @@ function parseTabular(text: string): { rows: ParsedLogframeRow[]; warnings: stri
   }
 
   const rows: ParsedLogframeRow[] = [];
+  // When the uploaded workbook contains further sheets (e.g. the template's
+  // Indicators sheet), the text dump prefixes each sheet with a "# SheetName"
+  // marker line. A marker followed by another recognized header row means the
+  // previous sheet is finished, so parsing stops instead of misreading the
+  // next sheet's header/data as logframe rows.
+  let pendingSheetMarker = false;
   for (let i = header.index + 1; i < lines.length; i++) {
     const line = lines[i] ?? "";
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const cells = splitDelimited(trimmed);
+    if (!trimmed) continue;
+    if (trimmed.startsWith("#")) {
+      pendingSheetMarker = true;
+      continue;
+    }
+    const cells = splitDelimited(trimmed, header.delimiter);
+    if (pendingSheetMarker) {
+      if (looksLikeHeaderRow(cells)) break;
+      pendingSheetMarker = false;
+    }
     if (cells.length === 1 && (cells[0] ?? "") === "") continue;
 
     const title = titleCol >= 0 ? (cells[titleCol] ?? "").trim() : "";

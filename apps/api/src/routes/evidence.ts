@@ -1,7 +1,34 @@
 import type { FastifyInstance } from "fastify";
-import { EvidenceSearchSchema, AcceptEvidenceTagsSchema } from "@donordesk/contracts";
+import { EvidenceSearchSchema, AcceptEvidenceTagsSchema, ImportEvidenceTextSchema } from "@donordesk/contracts";
+import { buildEvidenceTemplate, EVIDENCE_TEMPLATE_FILENAME } from "@donordesk/infrastructure";
 
 export async function registerEvidenceRoutes(app: FastifyInstance) {
+  app.get("/v1/evidence/template", async (_req, reply) => {
+    const buffer = await buildEvidenceTemplate();
+    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    reply.header("content-disposition", `attachment; filename="${EVIDENCE_TEMPLATE_FILENAME}"`);
+    return buffer;
+  });
+
+  app.post("/v1/evidence/import", async (req) => {
+    const body = ImportEvidenceTextSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.importEvidence.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/evidence/parse-file", async (req) => {
+    const data = await req.file();
+    if (!data) throw new Error("file required");
+    const buffer = await data.toBuffer();
+    const result = await req.container.parser.parse({
+      buffer,
+      fileName: data.filename ?? "upload",
+      fileType: data.mimetype ?? "application/octet-stream",
+    });
+    return { text: result.text, metadata: result.metadata };
+  });
   app.post("/v1/evidence/upload", async (req) => {
     const data = await req.file();
     if (!data) throw new Error("file required");

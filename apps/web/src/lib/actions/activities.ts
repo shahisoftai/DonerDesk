@@ -1,14 +1,33 @@
 "use server";
 
-import { CreateActivityUpdateSchema, ReviewActivitySchema, UpdateActivitySchema, AttachEvidenceSchema, DetachEvidenceSchema } from "@donordesk/contracts";
+import { CreateActivityUpdateSchema, ReviewActivitySchema, UpdateActivitySchema, AttachEvidenceSchema, DetachEvidenceSchema, ImportActivitiesTextSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { IdResponseSchema, OkResponseSchema, PolishActivityResponseSchema } from "./_schemas";
+import { ImportActivitiesResponseSchema, type ImportActivitiesResponse } from "@/lib/server/schemas";
 
 export type CreateActivityResult = Result<{ id: string }, AppError>;
+
+export type ImportActivitiesResult = Result<ImportActivitiesResponse, AppError>;
+
+/** Auto-parses activity content (Activity Title/Date/Summary/...) and creates records. */
+export async function importActivitiesTextAction(input: unknown): Promise<ImportActivitiesResult> {
+  const context = await requireSession();
+  const parsed = ImportActivitiesTextSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  return gatewayRequest("/v1/activities/import", ImportActivitiesResponseSchema, context.token, {
+    method: "POST",
+    body: parsed.data,
+  });
+}
 
 export async function createActivityAction(input: unknown): Promise<CreateActivityResult> {
   const context = await requireSession();
