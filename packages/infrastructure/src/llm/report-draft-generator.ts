@@ -42,7 +42,7 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
       }
     }
 
-    return { sections, usedFallback: true };
+    return { sections, usedFallback: true, fallbackReason: "PROVIDER_NOT_CONFIGURED" };
   }
 
   async rewriteSection(input: {
@@ -65,12 +65,14 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
       return {
         content: this.shorten(source, input.audience),
         unsupportedClaims: unsupported,
+        writerClaims: [],
       };
     }
 
     return {
       content: this.rewrite(source, input.audience, input.instructions),
       unsupportedClaims: unsupported,
+      writerClaims: [],
     };
   }
 
@@ -387,7 +389,12 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
   }
 
   private rewrite(content: string, audience: "DONOR" | "INTERNAL" | "GENERAL", instructions?: string): string {
-    let text = content.replace(/\[Needs verification\]/g, "").replace(/\[Needs source verification\]/g, "").trim();
+    // Phase 6 invariant: a rewrite must never silently remove caveats. The
+    // unsupported-claim markers [Needs verification] / [Needs source
+    // verification] are preserved verbatim so the underlying checklist item
+    // can still be resolved in the UI; they are only removable via the
+    // explicit checklist resolution workflow.
+    let text = content.trim();
     if (audience === "DONOR") {
       text = text.replace(/\bgot\b/g, "received").replace(/\bwanna\b/g, "intend to");
       text = text.replace(/(^|[.!?]\s+)([a-z])/g, (_m, pre, ch) => `${pre}${(ch as string).toUpperCase()}`);

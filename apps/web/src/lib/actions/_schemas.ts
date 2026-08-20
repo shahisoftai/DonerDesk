@@ -20,6 +20,8 @@ export const TemplateCreatedResponseSchema = z.object({
 export const GeneratedDraftResponseSchema = z.object({
   draftId: z.string(),
   sectionIds: z.array(z.string()),
+  fallbackUsed: z.boolean().optional(),
+  fallbackReason: z.string().optional(),
 });
 
 export const DetectMissingResponseSchema = z.object({ created: z.number().int().nonnegative() });
@@ -39,7 +41,17 @@ export const UpdateSectionChartResponseSchema = z.object({
     .nullable(),
 });
 
-export const RewriteSectionResponseSchema = z.object({ version: z.string(), content: z.string() });
+export const RewriteSectionResponseSchema = z.object({
+  version: z.string(),
+  content: z.string(),
+  revisionId: z.string().optional(),
+  revisionNumber: z.number().int().nonnegative().optional(),
+  contentHash: z.string().optional(),
+  assuranceState: z.string().optional(),
+  generationRunId: z.string().optional(),
+  fallbackUsed: z.boolean().optional(),
+  fallbackReason: z.string().optional(),
+});
 
 export const InviteUserResponseSchema = z.object({
   invitationId: z.string(),

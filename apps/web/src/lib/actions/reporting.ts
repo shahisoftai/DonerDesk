@@ -61,7 +61,10 @@ export async function deleteReportSectionAction(sectionId: string): Promise<Dele
   return { ok: true, value: undefined };
 }
 
-export type GenerateDraftResult = Result<{ draftId: string; sectionIds: string[] }, AppError>;
+export type GenerateDraftResult = Result<
+  { draftId: string; sectionIds: string[]; fallbackUsed?: boolean; fallbackReason?: string },
+  AppError
+>;
 
 export async function generateDraftAction(periodId: string): Promise<GenerateDraftResult> {
   const context = await requireSession();
@@ -170,7 +173,20 @@ export async function approveReportSectionAction(sectionId: string): Promise<App
   return { ok: true, value: undefined };
 }
 
-export type RewriteSectionResult = Result<{ version: string; content: string }, AppError>;
+export type RewriteSectionResult = Result<
+  {
+    version: string;
+    content: string;
+    revisionId?: string;
+    revisionNumber?: number;
+    contentHash?: string;
+    assuranceState?: string;
+    generationRunId?: string;
+    fallbackUsed?: boolean;
+    fallbackReason?: string;
+  },
+  AppError
+>;
 
 export async function rewriteReportSectionAction(
   sectionId: string,
@@ -180,5 +196,9 @@ export async function rewriteReportSectionAction(
   return gatewayRequest(`/v1/report-sections/${sectionId}/rewrite`, RewriteSectionResponseSchema, context.token, {
     method: "POST",
     body: input,
+    // LLM rewrites also require more than the 15s default gateway timeout;
+    // MiniMax measured at 46-54s for a full draft and the rewrite has a
+    // similar latency profile on the same provider.
+    timeoutMs: 180_000,
   });
 }

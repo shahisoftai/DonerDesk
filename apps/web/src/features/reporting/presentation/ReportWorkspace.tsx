@@ -175,7 +175,10 @@ export function ReportWorkspace({
     try {
       const result = await actionState.run(() => generateDraftAction(periodId));
       if (result) {
-        setDraftMsg(`Draft generated with ${result.sectionIds.length} sections.`);
+        const fallbackSuffix = result.fallbackUsed
+          ? ` Content shown is a structured placeholder because the AI provider was unavailable${result.fallbackReason ? ` (${result.fallbackReason})` : ""}.`
+          : "";
+        setDraftMsg(`Draft generated with ${result.sectionIds.length} sections.${fallbackSuffix}`);
         router.refresh();
       }
     } finally {

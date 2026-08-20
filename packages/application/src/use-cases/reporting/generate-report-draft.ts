@@ -82,7 +82,23 @@ export class GenerateReportDraftHandler {
     private readonly llmRuns: ILlmUsageRepository,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<{ draftId: string; sectionIds: string[]; claimCount: number; planId: string; generationRunId: string }, DomainError>> {
+  async handle(
+    ctx: AuthenticatedContext,
+    reportingPeriodId: string,
+  ): Promise<
+    Result<
+      {
+        draftId: string;
+        sectionIds: string[];
+        claimCount: number;
+        planId: string;
+        generationRunId: string;
+        fallbackUsed: boolean;
+        fallbackReason?: string;
+      },
+      DomainError
+    >
+  > {
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", reportingPeriodId) };
@@ -276,6 +292,7 @@ export class GenerateReportDraftHandler {
     const startedAt = Date.now();
     let generated;
     let usedFallback = true;
+    let fallbackReason: string | undefined;
     let generationFailed = false;
     try {
       const result = aiEnabled
@@ -289,9 +306,14 @@ export class GenerateReportDraftHandler {
             generationRunId: run.id,
             reportContext: this.buildReportContext(project, period, template?.ok && template.value ? template.value : undefined),
           })
-        : { sections: this.buildManualSections(plan.sections), usedFallback: true };
+        : {
+            sections: this.buildManualSections(plan.sections),
+            usedFallback: true,
+            fallbackReason: "PROVIDER_NOT_CONFIGURED" as const,
+          };
       generated = result.sections;
       usedFallback = result.usedFallback;
+      fallbackReason = result.fallbackReason;
     } catch (error) {
       generationFailed = true;
       if (creditReserved) {
@@ -416,10 +438,32 @@ export class GenerateReportDraftHandler {
       entityType: "report_draft",
       entityId: draftId,
       projectId: period.projectId,
-      newValue: `sections=${sectionIds.length};claims=${claimCount};generatedByAi=${realAiGenerated};fallback=${usedFallback};run=${run.id}`,
+      newValue: `sections=${sectionIds.length};claims=${claimCount};generatedByAi=${realAiGenerated};fallback=${usedFallback};reason=${fallbackReason ?? "none"};run=${run.id}`,
     });
 
-    return { ok: true, value: { draftId, sectionIds, claimCount, planId: plan.id, generationRunId: run.id } };
+    if (usedFallback) {
+      await this.audit.record({
+        tenantId: ctx.tenant.tenantId,
+        actorId: ctx.tenant.userId,
+        eventType: "report.draft.fallback",
+        entityType: "report_draft",
+        entityId: draftId,
+        systemNote: `Draft generation fell back to stub generator (reason=${fallbackReason ?? "unknown"}).`,
+      });
+    }
+
+    return {
+      ok: true,
+      value: {
+        draftId,
+        sectionIds,
+        claimCount,
+        planId: plan.id,
+        generationRunId: run.id,
+        fallbackUsed: usedFallback,
+        fallbackReason,
+      },
+    };
   }
 
   private async recordLlmRun(

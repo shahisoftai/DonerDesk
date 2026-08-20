@@ -325,7 +325,10 @@ function buildRewriteUserPrompt(input: LlmRewriteSectionInput): string {
     .join("\n");
 }
 
-export function parseSections(raw: string): GeneratedSection[] | null {
+export function parseSections(
+  raw: string,
+  planSections: Array<{ title: string }> = [],
+): GeneratedSection[] | null {
   let json = raw.trim();
   const fenceMatch = json.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
   if (fenceMatch) json = fenceMatch[1]!;
@@ -333,27 +336,66 @@ export function parseSections(raw: string): GeneratedSection[] | null {
     const parsed = JSON.parse(json) as {
       sections?: unknown;
     };
-    if (!Array.isArray(parsed.sections) || parsed.sections.length === 0) return null;
-
-    const sections: GeneratedSection[] = [];
-    for (let i = 0; i < parsed.sections.length; i++) {
-      const sec = parsed.sections[i] as Record<string, unknown> | null;
-      if (!sec || typeof sec !== "object") return null;
-      const title = typeof sec.title === "string" ? sec.title.trim() : "";
-      const content = typeof sec.content === "string" ? sec.content.trim() : "";
-      if (!title || !content) return null;
-      sections.push({
-        sectionId: typeof sec.sectionId === "string" && sec.sectionId ? sec.sectionId : `section-${i}`,
-        title,
-        content,
-        claims: parseClaims(sec.claims),
-        sourceReferences: parseSourceReferences(sec.sourceReferences),
-      });
+    if (Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+      const sections: GeneratedSection[] = [];
+      for (let i = 0; i < parsed.sections.length; i++) {
+        const sec = parsed.sections[i] as Record<string, unknown> | null;
+        if (!sec || typeof sec !== "object") {
+          return null;
+        }
+        const title = typeof sec.title === "string" ? sec.title.trim() : "";
+        const content = typeof sec.content === "string" ? sec.content.trim() : "";
+        if (!title || !content) {
+          return null;
+        }
+        sections.push({
+          sectionId: typeof sec.sectionId === "string" && sec.sectionId ? sec.sectionId : `section-${i}`,
+          title,
+          content,
+          claims: parseClaims(sec.claims),
+          sourceReferences: parseSourceReferences(sec.sourceReferences),
+        });
+      }
+      return sections.length > 0 ? sections : null;
     }
-    return sections.length > 0 ? sections : null;
+    // Valid JSON but not in the expected sections-wrapper shape (either
+    // missing the field or empty array). The LLM produced no usable content;
+    // signal malformed so the caller falls back to the stub.
+    if (parsed && typeof parsed === "object" && "sections" in parsed) {
+      return null;
+    }
+    // The LLM narrated directly (e.g. MiniMax sometimes does not emit strict
+    // JSON). Mirror the rewrite path's lenient behaviour: keep the user's
+    // produced text instead of silently discarding it as a stub fallback.
+    return fallbackAsNarrative(raw, planSections);
   } catch {
-    return null;
+    // The LLM narrated directly (e.g. MiniMax sometimes does not emit strict
+    // JSON). Mirror the rewrite path's lenient behaviour: keep the user's
+    // produced text instead of silently discarding it as a stub fallback.
+    return fallbackAsNarrative(raw, planSections);
   }
+}
+
+/**
+ * Last-resort recovery when the LLM returns prose instead of strict JSON.
+ * Mirrors the single-section rewrite path: the entire response is treated as
+ * one section whose title is taken from the first plan section (or a generic
+ * label when no plan is available). This ensures the user's AI-produced text
+ * is never silently dropped in favour of the stub generator.
+ */
+function fallbackAsNarrative(raw: string, planSections: Array<{ title: string }>): GeneratedSection[] | null {
+  const text = raw.trim();
+  if (!text) return null;
+  const first = planSections[0]?.title?.trim();
+  return [
+    {
+      sectionId: "narrative",
+      title: first && first.length > 0 ? first : "Narrative",
+      content: text,
+      claims: [],
+      sourceReferences: [],
+    },
+  ];
 }
 
 function parseClaims(value: unknown): ReportClaimDraft[] {
@@ -421,6 +463,28 @@ function parseRewrite(raw: string): string | null {
   return null;
 }
 
+/**
+ * Classifies an LLM provider failure as a stable fallback reason so the audit
+ * log and the UI can distinguish "provider timed out" from "PII firewall
+ * rejected the prompt" instead of collapsing every failure into a generic
+ * "AI unavailable" message.
+ */
+function classifyError(error: unknown): GeneratedDraftResult["fallbackReason"] {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (error.name === "AbortError" || message.includes("timeout") || message.includes("aborted")) {
+      return "PROVIDER_TIMEOUT";
+    }
+    if (message.includes("pii") || message.includes("rejected")) {
+      return "PII_REJECTED";
+    }
+    if (message.includes("http") || message.includes("api error") || message.includes("status")) {
+      return "PROVIDER_HTTP_ERROR";
+    }
+  }
+  return "PROVIDER_HTTP_ERROR";
+}
+
 export class LlmReportDraftGenerator implements IReportDraftGenerator {
   readonly model: LlmGeneratorModelInfo;
 
@@ -456,30 +520,54 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
           model: this.model.modelId,
         });
         const sections = await this.fallback.generateDraft(input);
-        return { sections: sections.sections, usedFallback: true };
+        return {
+          sections: sections.sections,
+          usedFallback: true,
+          fallbackReason: "PROVIDER_EMPTY_RESPONSE",
+        };
       }
 
-      const sections = parseSections(result.text);
+      const sections = parseSections(result.text, input.reportPlan.sections);
       if (!sections || sections.length === 0) {
         this.logger?.warn("LLM report draft: response failed structural validation; falling back to stub", {
           model: this.model.modelId,
           snippet: result.text.slice(0, 200),
         });
         const fallback = await this.fallback.generateDraft(input);
-        return { sections: fallback.sections, usedFallback: true };
+        return {
+          sections: fallback.sections,
+          usedFallback: true,
+          fallbackReason: "PROVIDER_MALFORMED_RESPONSE",
+        };
       }
       return { sections, usedFallback: false };
     } catch (error) {
+      const reason = classifyError(error);
       this.logger?.warn("LLM report draft failed; falling back to stub", {
         model: this.model.modelId,
+        reason,
         error: error instanceof Error ? error.message : String(error),
       });
       const fallback = await this.fallback.generateDraft(input);
-      return { sections: fallback.sections, usedFallback: true };
+      return {
+        sections: fallback.sections,
+        usedFallback: true,
+        fallbackReason: reason,
+      };
     }
   }
 
-  async rewriteSection(input: LlmRewriteSectionInput): Promise<{ content: string; unsupportedClaims: string[]; promptHash?: string; responseHash?: string }> {
+  async rewriteSection(
+    input: LlmRewriteSectionInput,
+  ): Promise<{
+    content: string;
+    unsupportedClaims: string[];
+    writerClaims?: ReportClaimDraft[];
+    promptHash?: string;
+    responseHash?: string;
+    fallbackUsed?: boolean;
+    fallbackReason?: GeneratedDraftResult["fallbackReason"];
+  }> {
     try {
       const systemPrompt = "You are a precise report editor. Return only JSON. No markdown fences.";
       const userPrompt = buildRewriteUserPrompt(input);
@@ -495,7 +583,8 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
         this.logger?.warn("LLM section rewrite: provider returned empty content; falling back to stub", {
           model: this.model.modelId,
         });
-        return this.fallback.rewriteSection(input);
+        const fallback = await this.fallback.rewriteSection(input);
+        return { ...fallback, fallbackUsed: true, fallbackReason: "PROVIDER_EMPTY_RESPONSE" };
       }
 
       const content = parseRewrite(result.text);
@@ -504,20 +593,27 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
           model: this.model.modelId,
           snippet: result.text.slice(0, 200),
         });
-        return this.fallback.rewriteSection(input);
+        const fallback = await this.fallback.rewriteSection(input);
+        return { ...fallback, fallbackUsed: true, fallbackReason: "PROVIDER_MALFORMED_RESPONSE" };
       }
       return {
         content,
         unsupportedClaims: [],
+        // The rewrite does not introduce new structured claims; the assurance
+        // extractor reads the new content directly. writerClaims stays empty.
+        writerClaims: [],
         promptHash: createHash("sha256").update(systemPrompt + "\n" + userPrompt, "utf8").digest("hex"),
         responseHash: createHash("sha256").update(result.text, "utf8").digest("hex"),
       };
     } catch (error) {
+      const reason = classifyError(error);
       this.logger?.warn("LLM section rewrite failed; falling back to stub", {
         model: this.model.modelId,
+        reason,
         error: error instanceof Error ? error.message : String(error),
       });
-      return this.fallback.rewriteSection(input);
+      const fallback = await this.fallback.rewriteSection(input);
+      return { ...fallback, fallbackUsed: true, fallbackReason: reason };
     }
   }
 }

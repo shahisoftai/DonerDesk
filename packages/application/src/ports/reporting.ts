@@ -235,6 +235,18 @@ export interface GeneratedDraftResult {
    * produced by the LLM.
    */
   usedFallback: boolean;
+  /**
+   * Optional reason the fallback was taken. Callers surface this to the UI so
+   * users can distinguish "no real LLM configured", "provider timeout",
+   * "malformed response", etc. When `usedFallback` is false this is omitted.
+   */
+  fallbackReason?:
+    | "PROVIDER_NOT_CONFIGURED"
+    | "PROVIDER_EMPTY_RESPONSE"
+    | "PROVIDER_MALFORMED_RESPONSE"
+    | "PROVIDER_TIMEOUT"
+    | "PROVIDER_HTTP_ERROR"
+    | "PII_REJECTED";
 }
 
 export interface IReportDraftGenerator {
@@ -270,8 +282,23 @@ export interface IReportDraftGenerator {
   }): Promise<{
     content: string;
     unsupportedClaims: string[];
+    /**
+     * Optional structured claims produced by the rewrite so the assurance
+     * pipeline can re-extract assertions against the new content instead of
+     * losing the previous claim set. The stub generator omits this since it
+     * makes no factual edits.
+     */
+    writerClaims?: ReportClaimDraft[];
     promptHash?: string;
     responseHash?: string;
+    /**
+     * True when the provider failed (timeout, HTTP error, unparseable
+     * response) and the generator silently fell back to the deterministic
+     * stub. The rewrite handler surfaces this to the audit log and the UI so
+     * a fallback rewrite is never mistaken for a real AI rewrite.
+     */
+    fallbackUsed?: boolean;
+    fallbackReason?: GeneratedDraftResult["fallbackReason"];
   }>;
 }
 

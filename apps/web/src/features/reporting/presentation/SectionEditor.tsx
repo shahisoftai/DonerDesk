@@ -44,11 +44,13 @@ export function SectionEditor({
   const [rewriteAudience, setRewriteAudience] = useState<"DONOR" | "INTERNAL" | "GENERAL">("DONOR");
   const [rewriting, setRewriting] = useState(false);
   const [rewriteError, setRewriteError] = useState<string | null>(null);
+  const [rewriteNotice, setRewriteNotice] = useState<string | null>(null);
 
   async function runRewrite() {
     if (rewriting) return;
     setRewriting(true);
     setRewriteError(null);
+    setRewriteNotice(null);
     const result = await rewriteReportSectionAction(sectionId, {
       mode: rewriteMode,
       audience: rewriteAudience,
@@ -58,10 +60,20 @@ export function SectionEditor({
       setRewriteError(result.error.message);
       return;
     }
+    if (result.value.fallbackUsed) {
+      // The provider fell back to the stub generator — the rewrite still
+      // produces a deterministic rewrite (e.g. sentence case, audience tone)
+      // but the user must know it was not a real AI rewrite.
+      setRewriteNotice(
+        `AI rewrite was unavailable (${result.value.fallbackReason ?? "PROVIDER_NOT_CONFIGURED"}); a deterministic rewrite was applied instead.`,
+      );
+    }
+    // Always reload from the server so the editor reflects the persisted
+    // revision (and any other server-side changes) instead of trusting the
+    // dispatcher's local state. The new version returned by the server is
+    // already the persisted revision's version.
     if (timerRef.current) clearTimeout(timerRef.current);
-    versionRef.current = result.value.version;
-    dispatch({ type: "input", text: result.value.content });
-    dispatch({ type: "save-success", version: result.value.version });
+    onReload();
     setRewriteOpen(false);
   }
 
@@ -129,7 +141,15 @@ export function SectionEditor({
         <h2 className="text-sm font-medium text-slate-800 dark:text-slate-100">{title}</h2>
         <div className="flex items-center gap-2">
           {!readOnly && state.text.trim() && (
-            <Button size="sm" variant="secondary" onClick={() => setRewriteOpen((v) => !v)}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setRewriteOpen((v) => !v);
+                setRewriteNotice(null);
+                setRewriteError(null);
+              }}
+            >
               {rewriteOpen ? "Close AI rewrite" : "AI rewrite"}
             </Button>
           )}
@@ -157,6 +177,9 @@ export function SectionEditor({
           {rewriteError && (
             <p role="alert" className="mt-2 text-sm font-medium text-danger-700 dark:text-danger-400">{rewriteError}</p>
           )}
+          {rewriteNotice && (
+            <p role="status" className="mt-2 text-sm text-warning-700 dark:text-warning-400">{rewriteNotice}</p>
+          )}
           <div className="mt-3 flex justify-end gap-2">
             <Button size="sm" variant="ghost" onClick={() => setRewriteOpen(false)}>Cancel</Button>
             <Button size="sm" onClick={runRewrite} pending={rewriting}>
@@ -164,7 +187,7 @@ export function SectionEditor({
             </Button>
           </div>
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            AI rewriting preserves your facts and source references; it never invents new claims.
+            AI rewriting preserves your facts and source references; it never invents new claims. This can take up to three minutes.
           </p>
         </div>
       )}

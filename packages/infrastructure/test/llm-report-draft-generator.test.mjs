@@ -58,7 +58,11 @@ test("parseSections rejects empty content", () => {
 });
 
 test("parseSections rejects non-array sections", () => {
-  assert.equal(parseSections("not json"), null);
+  // Pure prose doesn't parse as JSON, so the lenient parser now treats it as
+  // a single narrative section (the user-facing fix for "AI rejected clean
+  // prose output"). Only malformed JSON shapes and empty sections arrays
+  // still fall back to the stub generator.
+  assert.ok(Array.isArray(parseSections("not json")));
   assert.equal(parseSections(JSON.stringify({ sections: "nope" })), null);
   assert.equal(parseSections(JSON.stringify({ sections: [] })), null);
 });

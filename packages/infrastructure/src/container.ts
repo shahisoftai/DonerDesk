@@ -694,7 +694,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createReportSection: new CreateReportSectionHandler(ids, drafts, sections, audits),
     deleteReportSection: new DeleteReportSectionHandler(drafts, sections, reportClaims, reportRevisions, audits),
     updateReportSectionChart: new UpdateReportSectionChartHandler(sections, audits),
-    rewriteReportSection: new RewriteReportSectionHandler(ids, drafts, sections, getReportDraftGenerator, revisionService, assuranceService, generationRuns, audits),
+    rewriteReportSection: new RewriteReportSectionHandler(
+      ids, drafts, sections, periods, indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder,
+      getReportDraftGenerator, revisionService, assuranceService, generationRuns, audits,
+    ),
     approveReportSection: new ApproveReportSectionHandler(sections, reportClaims, reportRevisions, audits),
     submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),
     approveReport: approveReportHandler,

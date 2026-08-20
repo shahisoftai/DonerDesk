@@ -314,8 +314,10 @@ function createMiniMaxAdapter(config: { apiKey: string; model?: string; baseUrl?
           temperature: input.temperature ?? 0.3,
         }),
         // MiniMax is slow (measured 46-54s for a full report draft); keep a
-        // generous default so the call completes instead of aborting.
-        signal: AbortSignal.timeout(config.timeoutMs ?? 120000),
+        // generous default so the call completes instead of aborting. A full
+        // donor report with sections, evidence, and activity records can push
+        // the call past 120s, so default to 180s.
+        signal: AbortSignal.timeout(config.timeoutMs ?? 180000),
       });
 
       if (!response.ok) {
