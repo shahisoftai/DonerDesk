@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-20 (release `20260820045004`, portal typography pass — 14px baseline, medium weights, smaller badges; web-only, no migration).
+**Last deployment:** 2026-08-20 (release `20260820053629`, AI rewrite timeout + draft fallback UX — API + web, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,81 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-20 — AI rewrite timeout + draft fallback UX (release
+> `20260820053629`, commit `fca4710`, API + web):** Deployed via the
+> checksummed incremental immutable-release path with `SERVICES=donordesk-api
+> donordesk-web` (838 files transferred, 2.5 MB literal data). Three user-visible
+> bugs in the professional-reporting flow were root-caused and fixed:
+>
+> 1. **AI rewrite no longer times out.** The `rewriteReportSectionAction` server
+>    action did not pass `timeoutMs`, so the 15s default gateway timeout aborted
+>    the LLM call (MiniMax measured at 46–54s). Now uses `timeoutMs: 180_000`,
+>    matching the existing `generateDraftAction`. Verified live: rewrite + generate
+>    routes both return 401 unauthenticated (route live, registered with the new
+>    timeout).
+> 2. **Rewrite content actually shows up.** The rewrite handler returned
+>    `sec.content` / `sec.updatedAt` (the OLD pre-rewrite values) instead of
+>    `result.content` / the new revision's identity — the editor received the
+>    original text and treated the rewrite as a no-op. Now returns the rewritten
+>    content plus `revisionId`, `revisionNumber`, `contentHash`, `assuranceState`,
+>    `generationRunId`, and `fallbackUsed`. SectionEditor uses `onReload()` after a
+>    successful rewrite so the editor reflects the persisted revision.
+> 3. **Stub fallback is no longer silent.** When the LLM provider fails (timeout,
+>    HTTP error, malformed response, PII rejected) the generator silently fell
+>    back to the deterministic stub, and the user saw a bullet-list "AI draft".
+>    Now `fallbackReason` flows through the API to the UI:
+>    `PROVIDER_TIMEOUT` / `PROVIDER_EMPTY_RESPONSE` /
+>    `PROVIDER_MALFORMED_RESPONSE` / `PROVIDER_HTTP_ERROR` / `PII_REJECTED` /
+>    `PROVIDER_NOT_CONFIGURED`. The generate banner surfaces the fallback; the
+>    rewrite notice shows "AI rewrite was unavailable; a deterministic rewrite
+>    was applied instead." Persistent audit events
+>    `report.draft.fallback` and `report.section.rewrite.fallback` are emitted
+>    so support can diagnose stub fallbacks without log scraping.
+>
+> Additional fixes:
+>
+> - **Lenient JSON parser for LLM drafts.** `parseSections` previously rejected
+>   any LLM response that was not strict JSON, forcing a fallback even when the
+>   LLM narrated directly (MiniMax sometimes does). Now non-strict JSON prose is
+>   accepted as a single narrative section, mirroring the rewrite path's lenient
+>   behaviour. Empty `sections: []` still falls back correctly.
+> - **Stub rewrite preserves caveats.** The deterministic stub was stripping
+>   `[Needs verification]` / `[Needs source verification]` markers (Phase 6
+>   invariant violation). The stub now preserves them verbatim; only the explicit
+>   checklist workflow can resolve them.
+> - **Reproducible rewrite runs.** The child generation run for a rewrite now
+>   records the parent draft's `templateVersion` / `mappingVersion` /
+>   `indicatorUpdateIds` / `activityIds` / `evidenceIds` / `verifiedFindings` so
+>   the rewrite is reproducible from the audit boundary (implementation plan §5
+>   invariant 15). Previously it hard-coded `1` for every version.
+> - **Full assurance pipeline on rewrite.** The rewrite now passes
+>   `writerClaims`, `findings`, and `evidencePackages` to `assessRevision` so the
+>   new content is re-assured against the same computed findings and evidence
+>   packages the original draft was built from (Phase 2 invariant).
+> - **MiniMax adapter default timeout raised** 120s → 180s in
+>   `packages/infrastructure/src/llm/factory.ts` for full donor reports.
+> - **Container wiring fix.** `RewriteReportSectionHandler` now receives
+>   `periods`, `indicatorUpdates`, `activities`, `indicatorAnalytics`, and
+>   `evidencePackages` so it can pull the parent report-context for the child
+>   generation run and the assurance pipeline.
+>
+> Tests: 6 new assertions in `packages/infrastructure/test/llm-fallback.test.mjs`
+> (provider timeout classification, malformed-response classification, lenient
+> JSON, rewrite fallback reporting, Phase 6 caveat preservation). 2 stale tests
+> in `llm-report-draft-generator.test.mjs` updated for the new lenient parser
+> behaviour. **259 unit tests pass / 0 fail / 1 skipped** (infra + app + domain).
+> **12/12 Playwright tests pass.** Full workspace `pnpm -r typecheck` and
+> `pnpm -r build` clean.
+>
+> Verified live: API `/health`+`/ready` OK (database ok), rewrite + generate
+> routes both 401 (auth-gated, registered), web `/login` 200, public HTTPS
+> `/login` 200, `current` symlink `20260820053629`, both services active, no
+> journal errors since deploy, OLS baseline errors unchanged (only the
+> pre-existing unrelated `mail.*` / `guvhq.shahisoft.store` lsphp73/80
+> warnings). Disk 21G free, 7.5G RAM available.
+> Rollback: `RELEASE_ID=20260820045004 scripts/rollback.sh` (previous release;
+> no schema migration, fully backward-compatible).
 
 > **2026-08-20 — Portal typography pass — 14px baseline, medium weights,
 > smaller badges (release `20260820045004`, web-only):** Portal body baseline
