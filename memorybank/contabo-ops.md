@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-20 (release `20260820074745`, reorderable report sections — API + web, no migration).
+**Last deployment:** 2026-08-20 (release `20260820125717`, section-wise AI report generation — API + web, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -904,21 +904,25 @@ backup/restore.
 
 ## 29. Change log
 
-> **2026-08-20 — Section-wise AI report generation (in source; deploy
-> pending):** fixes the "Generate AI draft" timeout/`No report draft yet`
-> failure by splitting generation into two phases. `POST /generate-draft`
-> creates the draft + all plan sections as `NOT_STARTED` placeholders and
-> returns immediately (`generating: true`); a background in-process loop drafts
-> each section via a new `IReportDraftGenerator.generateSection` port method
+> **2026-08-20 — Section-wise AI report generation (deployed, release
+> `20260820125717`, commits `5918dab` + `803a567`, API + web, no migration):**
+> fixes the "Generate AI draft" timeout/`No report draft yet` failure by
+> splitting generation into two phases. `POST /generate-draft` creates the
+> draft + all plan sections as `NOT_STARTED` placeholders and returns
+> immediately (`generating: true`); a background in-process loop drafts each
+> section via a new `IReportDraftGenerator.generateSection` port method
 > (single-section prompts, `maxTokens=2048`, within the MiniMax 180s adapter
 > timeout), committing + assessing each section as it completes. The web
 > workspace polls the draft and flips sections greyed→normal one at a time.
 > Includes resume-safety (loop skips already-`DRAFTED` sections), phase-1 credit
 > reservation reconciled at loop end, and `getReportDraftAction` polling.
-> Affected files: `packages/application/src/ports/reporting.ts`,
-> `generate-report-draft.ts`, `packages/infrastructure/src/llm/{llm-,
-> report-draft-generator.ts}`, `apps/web/src/{features/reporting/presentation/
-> ReportWorkspace.tsx, lib/actions/{reporting.ts,_schemas.ts}}`. Full
+> Deployed via the checksummed incremental path
+> (`SERVICES="donordesk-api donordesk-web"`, 836 files transferred, ~39 MB);
+> verified live: `/health` + `/ready` OK, web 200, services active, deployed
+> handler returns `generating: aiEnabled`, client chunk contains the polling
+> logic + "still running in the background" UX, zero journal errors since
+> deploy. Rollback: `RELEASE_ID=20260820074745 scripts/rollback.sh` (previous
+> release; no schema migration, fully backward-compatible). Full
 > `pnpm -r typecheck`/`build` clean; application (66) + infrastructure (108)
 > + web e2e (12) tests green. See `Features/11-AI-Report-Draft-Generator.md`.
 

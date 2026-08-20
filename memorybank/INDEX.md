@@ -118,11 +118,11 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
  > reporting-period readiness gate (missing `ProjectSetup`/`ReportingProfile`/
  > `REVIEWED` sections). See `contabo-ops.md` §29 (2026-08-20), `Fixes.md`,
  > and `Features/18-Project-Creation-Wizard.md` §4.5.
- > **2026-08-20 (in source, deploy pending):** **section-wise AI report
- > generation** — fixes the Generate-AI-draft timeout by splitting generation
- > into a fast skeleton-creation phase + a background per-section drafting
- > loop (see `Features/11-AI-Report-Draft-Generator.md`, `Fixes.md`, and
- > `contabo-ops.md` §29).
+ > **2026-08-20 (deployed, release `20260820125717`):** **section-wise AI
+ > report generation** — fixes the Generate-AI-draft timeout by splitting
+ > generation into a fast skeleton-creation phase + a background per-section
+ > drafting loop (see `Features/11-AI-Report-Draft-Generator.md`, `Fixes.md`,
+ > and `contabo-ops.md` §29).
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |

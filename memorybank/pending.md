@@ -170,7 +170,7 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-20T09:55+
 > `Features/20-report-gen.md` §17, `Features/11-AI-Report-Draft-Generator.md`,
 > `Fixes.md`, and `contabo-ops.md` §29.
 
-> **2026-08-20 (in source, deploy pending):** **Section-wise AI report
+> **2026-08-20 (deployed, release `20260820125717`):** **Section-wise AI report
 > generation.** Fixes the "Generate AI draft" timeout (a single full-report LLM
 > call raced the web gateway's 180s limit; see `Fixes.md`). `POST
 > /generate-draft` now creates the draft + all sections as `NOT_STARTED`
