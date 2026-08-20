@@ -166,23 +166,32 @@ function buildFindingsJson(input: GenerateReportDraftInput): string {
   );
 }
 
-function buildEvidenceJson(input: GenerateReportDraftInput): string {
+function buildEvidenceJson(input: GenerateReportDraftInput, limits?: { maxPackages?: number; maxChunksPerPackage?: number; maxCharsPerChunk?: number }): string {
+  const maxPackages = limits?.maxPackages ?? Infinity;
+  const maxChunksPerPackage = limits?.maxChunksPerPackage ?? 8;
+  const maxCharsPerChunk = limits?.maxCharsPerChunk ?? 800;
   return JSON.stringify(
-    input.evidencePackages.map((p) => ({
+    input.evidencePackages.slice(0, maxPackages).map((p) => ({
       evidenceId: p.evidenceId,
       title: p.title,
       evidenceType: p.evidenceType,
       verificationStatus: p.verificationStatus,
       confidentialityLevel: p.confidentialityLevel,
-      chunks: p.chunks.slice(0, 8).map((c) => ({ chunkId: c.chunkId, text: c.text.slice(0, 800) })),
+      chunks: p.chunks.slice(0, maxChunksPerPackage).map((c) => ({ chunkId: c.chunkId, text: c.text.slice(0, maxCharsPerChunk) })),
     })),
     null,
   );
 }
 
-function buildActivitiesJson(input: GenerateReportDraftInput): string {
+function buildActivitiesJson(input: GenerateReportDraftInput, limits?: { maxActivities?: number; maxCharsPerField?: number }): string {
+  const maxActivities = limits?.maxActivities ?? Infinity;
+  const maxCharsPerField = limits?.maxCharsPerField ?? Infinity;
+  const truncate = (s: string | undefined): string | null => {
+    if (!s) return null;
+    return s.length > maxCharsPerField ? `${s.slice(0, maxCharsPerField)}…` : s;
+  };
   return JSON.stringify(
-    input.activities.map((a) => ({
+    input.activities.slice(0, maxActivities).map((a) => ({
       activityId: a.activityId,
       activityTitle: a.activityTitle,
       activityDate: a.activityDate.toISOString().slice(0, 10),
@@ -192,11 +201,11 @@ function buildActivitiesJson(input: GenerateReportDraftInput): string {
       participantsFemale: a.participantsFemale ?? null,
       participantsChildren: a.participantsChildren ?? null,
       participantsDisability: a.participantsDisability ?? null,
-      summary: a.summary,
-      achievements: a.achievements,
-      challenges: a.challenges,
-      lessonsLearned: a.lessonsLearned,
-      nextSteps: a.nextSteps,
+      summary: truncate(a.summary),
+      achievements: truncate(a.achievements),
+      challenges: truncate(a.challenges),
+      lessonsLearned: truncate(a.lessonsLearned),
+      nextSteps: truncate(a.nextSteps),
       attachedEvidenceIds: a.attachedEvidenceIds,
       status: a.status,
     })),
@@ -329,9 +338,13 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
   const periodBlock = buildPeriodBlock(ctx);
   const templateBlock = buildTemplateBlock(ctx);
   const findingsJson = buildFindingsJson(input);
-  const evidenceJson = buildEvidenceJson(input);
-  const activitiesJson = buildActivitiesJson(input);
   const indicatorUpdatesJson = buildIndicatorUpdatesJson(input);
+  // Sections are drafted one at a time, so the prompt must be lean: a section
+  // only needs a bounded slice of the evidence/activity record set. Dumping
+  // every evidence chunk (8×800 chars each) and every activity narrative into
+  // each section call made a single section take 113-142s with MiniMax.
+  const evidenceJson = buildEvidenceJson(input, { maxPackages: 4, maxChunksPerPackage: 4, maxCharsPerChunk: 400 });
+  const activitiesJson = buildActivitiesJson(input, { maxActivities: 6, maxCharsPerField: 250 });
 
   const sectionGuidance = buildSectionGuidance(section);
   const formattingRules = (profile.formattingRules ?? []).filter(Boolean);
@@ -350,8 +363,8 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
     ...projectBlock,
     ...periodBlock,
     ...templateBlock,
-    `# Report Plan`,
-    JSON.stringify(input.reportPlan, null, 2),
+    `# Section Guidance`,
+    sectionGuidance,
     ``,
     `# Verified Findings`,
     findingsJson,
@@ -368,6 +381,7 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
     `# Instructions`,
     `Draft ONLY the section titled "${section.title}". Produce narrative content and structured claims for it.`,
     `The JSON output MUST contain exactly one section object whose "title" equals "${section.title}".`,
+    `Only the evidence, activities, findings, and indicator updates above are available to you — do not invent numbers or records.`,
     ...buildInstructionTail(),
   ].join("\n");
 }
@@ -408,13 +422,56 @@ export function parseSections(
   raw: string,
   planSections: Array<{ title: string }> = [],
 ): GeneratedSection[] | null {
-  let json = raw.trim();
-  const fenceMatch = json.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-  if (fenceMatch) json = fenceMatch[1]!;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  // 1. Strip markdown code fences wherever they appear (a leading or trailing
+  //    preamble around a fenced block is common from MiniMax).
+  const json = trimmed.replace(/```(?:json)?\s*\n?/gi, "").replace(/```/g, "").trim();
+
+  // 2. Try strict parse first (the common happy path).
+  const direct = tryParseSections(json);
+  if (direct) return direct;
+
+  // 3. The response is JSON-like when it starts with a value char, or when it
+  //    contains the expected "sections" wrapper key anywhere (MiniMax often
+  //    wraps JSON in prose like 'Here is the JSON: {...}' or fences with a
+  //    preamble). Locate the outermost balanced JSON value and parse only it.
+  const jsonLike = json.startsWith("{") || json.startsWith("[") || /"sections"\s*:/.test(json);
+  if (jsonLike) {
+    const extracted = extractBalancedJson(json);
+    if (extracted !== null) {
+      const parsedExtract = tryParseSections(extracted);
+      if (parsedExtract) return parsedExtract;
+    }
+    // It clearly wanted to be JSON but we could not make it parse. Never store
+    // raw JSON as narrative content — signal malformed so the caller falls
+    // back to the stub generator.
+    return null;
+  }
+
+  // 4. Genuine prose (no JSON wrapper): keep the user's AI-produced text as a
+  //    single narrative section instead of silently dropping it to the stub.
+  return fallbackAsNarrative(raw, planSections);
+}
+
+/**
+ * Detects a section whose content is itself a raw JSON blob (e.g. the whole
+ * `{"sections": [...]}` response was captured as narrative). Guardrail for the
+ * section-wise path: such content is malformed and must fall back to the stub.
+ */
+function looksLikeRawJson(content: string): boolean {
+  const trimmed = content.trim();
+  if (!trimmed.startsWith("{")) return false;
+  const sample = trimmed.slice(0, 400);
+  // A section's real narrative begins with prose, not a JSON key with a colon
+  // in the opening characters.
+  return /^\{[\s\n]*"[^"]+":/.test(sample);
+}
+
+function tryParseSections(json: string): GeneratedSection[] | null {
   try {
-    const parsed = JSON.parse(json) as {
-      sections?: unknown;
-    };
+    const parsed = JSON.parse(json) as { sections?: unknown };
     if (Array.isArray(parsed.sections) && parsed.sections.length > 0) {
       const sections: GeneratedSection[] = [];
       for (let i = 0; i < parsed.sections.length; i++) {
@@ -440,19 +497,51 @@ export function parseSections(
     // Valid JSON but not in the expected sections-wrapper shape (either
     // missing the field or empty array). The LLM produced no usable content;
     // signal malformed so the caller falls back to the stub.
-    if (parsed && typeof parsed === "object" && "sections" in parsed) {
-      return null;
-    }
-    // The LLM narrated directly (e.g. MiniMax sometimes does not emit strict
-    // JSON). Mirror the rewrite path's lenient behaviour: keep the user's
-    // produced text instead of silently discarding it as a stub fallback.
-    return fallbackAsNarrative(raw, planSections);
+    return null;
   } catch {
-    // The LLM narrated directly (e.g. MiniMax sometimes does not emit strict
-    // JSON). Mirror the rewrite path's lenient behaviour: keep the user's
-    // produced text instead of silently discarding it as a stub fallback.
-    return fallbackAsNarrative(raw, planSections);
+    return null;
   }
+}
+
+/**
+ * Extracts the outermost balanced JSON value (object or array) from a string
+ * that may be wrapped in prose. Returns null when no balanced JSON value can
+ * be located. The scanner understands string literals so braces inside quoted
+ * content do not break the balance.
+ */
+function extractBalancedJson(text: string): string | null {
+  const start = text.indexOf("{");
+  const arrayStart = start === -1 ? text.indexOf("[") : start;
+  if (arrayStart === -1) return null;
+  const openChar = text[arrayStart]!;
+  const closeChar = openChar === "{" ? "}" : "]";
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = arrayStart; i < text.length; i++) {
+    const ch = text[i]!;
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+    } else if (ch === openChar) {
+      depth += 1;
+    } else if (ch === closeChar) {
+      depth -= 1;
+      if (depth === 0) {
+        return text.slice(arrayStart, i + 1);
+      }
+    }
+  }
+  return null;
 }
 
 /**
@@ -607,7 +696,7 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
       }
 
       const sections = parseSections(result.text, input.reportPlan.sections);
-      if (!sections || sections.length === 0) {
+      if (!sections || sections.length === 0 || sections.some((s) => looksLikeRawJson(s.content))) {
         this.logger?.warn("LLM report draft: response failed structural validation; falling back to stub", {
           model: this.model.modelId,
           snippet: result.text.slice(0, 200),
@@ -648,7 +737,7 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
         systemPrompt,
         userPrompt,
         jsonMode: true,
-        maxTokens: 2048,
+        maxTokens: 1500,
         temperature: 0.3,
       });
 
@@ -663,7 +752,7 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
 
       const sections = parseSections(result.text, [section]);
       const generated = sections && sections.length > 0 ? sections[0] : null;
-      if (!generated) {
+      if (!generated || looksLikeRawJson(generated.content)) {
         this.logger?.warn("LLM section draft: response failed structural validation; falling back to stub", {
           model: this.model.modelId,
           section: section.title,

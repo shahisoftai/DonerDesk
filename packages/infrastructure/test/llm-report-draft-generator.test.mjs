@@ -66,3 +66,32 @@ test("parseSections rejects non-array sections", () => {
   assert.equal(parseSections(JSON.stringify({ sections: "nope" })), null);
   assert.equal(parseSections(JSON.stringify({ sections: [] })), null);
 });
+
+test("parseSections extracts JSON wrapped in prose preamble (MiniMax style)", () => {
+  const json = JSON.stringify({ sections: [{ title: "A", content: "Text" }] });
+  const raw = `Here is the JSON you requested:\n${json}\nThat is all.`;
+  const sections = parseSections(raw);
+  assert.ok(sections, "expected wrapped JSON to be extracted");
+  assert.equal(sections[0].title, "A");
+  assert.equal(sections[0].content, "Text");
+});
+
+test("parseSections never stores a raw JSON blob as narrative content", () => {
+  // A truncated/malformed JSON blob (looks like JSON, cannot be parsed) must
+  // return null so the caller falls back to the stub — never the raw JSON
+  // stored as a narrative section.
+  const truncated = `{"sections": [{"title": "Executive Summary", "content": "The prog`;
+  assert.equal(parseSections(truncated), null);
+  // A JSON blob that parses but has no usable sections array likewise is null.
+  assert.equal(parseSections(`{"sections": "nope"}`), null);
+  assert.equal(parseSections(`{"foo": "bar"}`), null);
+});
+
+test("parseSections extracts JSON from fenced block with surrounding text", () => {
+  const json = JSON.stringify({ sections: [{ title: "A", content: "Text" }] });
+  const raw = `Output:\n\`\`\`json\n${json}\n\`\`\``;
+  const sections = parseSections(raw);
+  assert.ok(sections);
+  assert.equal(sections[0].title, "A");
+  assert.equal(sections[0].content, "Text");
+});
