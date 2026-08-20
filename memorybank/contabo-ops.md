@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-20 (release `20260820144857`, MiniMax control-char JSON repair + demo evidence linkage — API + web, no migration).
+**Last deployment:** 2026-08-20 (release `20260820150838`, MiniMax JSON repair — control chars + truncation + demo evidence linkage — API + web, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -905,8 +905,8 @@ backup/restore.
 ## 29. Change log
 
 > **2026-08-20 — MiniMax JSON repair (control chars + truncation) + demo
-> evidence linkage (deployed, release `2026082015xxxx`, commits `835c6a7` +
-> memorybank follow-up, API + web, no migration):** two independent MiniMax
+> evidence linkage (deployed, release `20260820150838`, commits `835c6a7` +
+> `5832489`, API + web, no migration):** two independent MiniMax
 > behaviours broke AI report generation:
 > 1. **Literal unescaped control chars inside JSON string values** (real
 >    `\n`/`\t`/`\r` in markdown-heavy `content`) — `repairUnescapedControlChars()`
