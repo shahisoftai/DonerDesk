@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-19 (release `20260819184637`, crisp UI rollout across all portal pages + modals; web-only, no migration).
+**Last deployment:** 2026-08-20 (release `20260820045004`, portal typography pass — 14px baseline, medium weights, smaller badges; web-only, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,24 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-20 — Portal typography pass — 14px baseline, medium weights,
+> smaller badges (release `20260820045004`, web-only):** Portal body baseline
+> reduced 16px → 14px (`text-sm leading-5` on the AppShell root); card and
+> section headings `font-semibold` → `font-medium` appwide (projects, logframe,
+> indicators, templates, compliance, onboarding, reports, notifications,
+> settings, export); metric labels lose uppercase (`text-xs font-medium`),
+> stat values stay `text-2xl font-semibold tabular-nums`; page eyebrows →
+> `text-[10px] font-medium uppercase tracking-[0.12em]`; badges/tags →
+> `text-[11px] font-medium`; deadline chips → `text-[11px] font-medium`
+> (overdue keeps `font-semibold`); metadata → `text-xs leading-4`, card titles
+> `leading-5`; ReadinessGauge 36px extrabold → `text-3xl font-semibold
+> tracking-tight tabular-nums`; uppercase removed from table headers, form
+> labels, band labels, date groups, import status chips; active nav/tabs
+> `font-medium`; header org name `font-bold` → `font-medium`. Brand palette
+> unchanged. Verified: browser repro (14px baseline, 500 weights, 11px badges,
+> no uppercase on labels, dark surfaces correct) + gate green. Live: web 200,
+> public HTTPS 200. Rollback: `RELEASE_ID=20260819184637 scripts/rollback.sh`.
 
 > **2026-08-19 — Crisp UI rollout across all portal pages + modals (release
 > `20260819184637`, web-only):** Extends the Geist/type-scale refresh to every

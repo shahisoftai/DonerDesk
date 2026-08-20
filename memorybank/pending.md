@@ -1,6 +1,20 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-20T00:55+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-20T09:55+05:00.
+
+> **Done (2026-08-20):** **Portal typography pass — 14px baseline, medium
+> weights, smaller badges** — release `20260820045004` (web-only, no
+> migration). Body baseline 16px→14px (`text-sm leading-5` on AppShell root);
+> `font-semibold`→`font-medium` appwide for card/section headings; metric
+> labels de-uppercased (`text-xs font-medium`); eyebrows →
+> `text-[10px] font-medium uppercase tracking-[0.12em]`; badges/tags and
+> deadline chips → `text-[11px] font-medium` (overdue keeps semibold);
+> metadata `text-xs leading-4`, card titles `leading-5`; ReadinessGauge →
+> `text-3xl font-semibold tracking-tight tabular-nums`; uppercase removed from
+> table headers, form labels, band labels, date groups, import chips; active
+> nav/tabs `font-medium`; header org name `font-medium`. Brand palette
+> unchanged; light + dark verified; gate green. Rollback:
+> `RELEASE_ID=20260819184637 scripts/rollback.sh`.
 
 > **Done (2026-08-19):** **Crisp UI rollout across all portal pages + modals**
 > — release `20260819184637` (web-only, no migration). Extends the Geist/
