@@ -189,18 +189,23 @@ interface SourceReference {
     flipping to normal as they complete. Polling stops when all sections are
     drafted or after ~8 minutes (in which case the user is told generation is
     still running and can keep editing completed sections).
-- **MiniMax literal control-char JSON repair (2026-08-20, release
-  `20260820141254` follow-up):** the parser-hardening release caused **every
-  section to fall back to the stub** ("AI content disappeared") because MiniMax
-  emits **literal unescaped `\n`/`\t`/`\r` INSIDE JSON string values** (real
-  newlines in markdown-heavy `content` fields). Strict `JSON.parse` throws on
-  raw control chars in strings, so all responses were rejected. Fix:
-  `repairUnescapedControlChars()` — a string-literal-aware scanner that escapes
-  raw `0x00-0x1F` chars inside strings as `\uXXXX`; `tryParseSections` and
-  `parseRewrite` retry with the repaired text before falling back. See
-  `memorybank/Fixes.md` (2026-08-20) — the same MiniMax behaviour has broken
-  generation three times; the repair pass is now mandatory before any
-  "malformed response" fallback is accepted.
+- **MiniMax JSON repair — control chars AND truncation (2026-08-20):**
+  MiniMax breaks strict JSON in TWO ways that both caused sections to fall back
+  to the stub:
+  1. **Literal unescaped control chars inside string values** (real `\n`/`\t`/`\r`
+     in markdown-heavy `content`) — fixed by `repairUnescapedControlChars()`
+     (string-literal-aware scanner escaping raw `0x00-0x1F` as `\uXXXX`).
+  2. **maxTokens truncation** — table-heavy sections exceeded the output
+     budget, so MiniMax returned a truncated JSON prefix (cut mid-string,
+     unclosed braces). Fixed by `completeTruncatedJson()` (closes unclosed
+     strings + structures and retries) and raising `generateSection` `maxTokens`
+     to 4096.
+  Pipeline in `tryParseSections`: strict → control-char repair → truncation
+  completion → stub. **The fix covers the whole report**: `generateSection` is
+  called for every plan section in the background loop, and `generateDraft`
+  (full report) shares the same `parseSections`. See `memorybank/Fixes.md`
+  (2026-08-20) — this MiniMax behaviour has broken generation four times; both
+  repair passes are mandatory before any "malformed response" fallback.
 - **Section-wise hardening (2026-08-20):** the first section-wise release
   exposed two defects that are now fixed:
   - **Raw JSON stored as content.** `parseSections` treated an unparseable
@@ -216,8 +221,9 @@ interface SourceReference {
     all findings + all indicator updates + all activity narratives + all
     evidence (8×800 chars each) into every section call. It is now lean:
     evidence ≤ 4 packages × 4 chunks × 400 chars, activities ≤ 6 with 250-char
-    fields, no full plan dump, `maxTokens` 2048 → 1500. Sections carry only a
-    bounded, relevant context slice, cutting per-call latency substantially.
+    fields, and the full plan dump removed — cutting per-call latency
+    substantially. `maxTokens` stays at 4096 (sections with tables need the
+    headroom; 1500 caused truncation, see above).
   - See `memorybank/Fixes.md` (2026-08-20) and `contabo-ops.md` §29.
 - **Professional report context (2026-08-18, deployed `20260818074405`):** the
   narrator now receives the context a professional donor report needs:
