@@ -562,17 +562,25 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     const existing = generatorPromises.get(key);
     if (existing) return existing;
     const promise = (async () => {
-      const resolved = await llmConfigResolver.resolve({ tenantId });
-      if (resolved.ok && resolved.value) {
-        const provider = createLLMProvider(resolved.value);
-        generatorCache.set(key, new LlmReportDraftGenerator(provider, undefined, logger));
-      } else if (process.env.LLM_PROVIDER) {
-        // Documented fallback chain: platform config -> LLM_PROVIDER env -> stub.
-        const provider = createLLMProvider();
-        generatorCache.set(key, new LlmReportDraftGenerator(provider, undefined, logger));
-      } else {
-        generatorCache.set(key, new StubReportDraftGenerator());
+      try {
+        const resolved = await llmConfigResolver.resolve({ tenantId });
+        if (resolved.ok && resolved.value) {
+          const provider = createLLMProvider(resolved.value);
+          generatorCache.set(key, new LlmReportDraftGenerator(provider, undefined, logger));
+          return generatorCache.get(key)!;
+        }
+        if (process.env.LLM_PROVIDER) {
+          // Documented fallback chain: platform config -> LLM_PROVIDER env -> stub.
+          const provider = createLLMProvider();
+          generatorCache.set(key, new LlmReportDraftGenerator(provider, undefined, logger));
+          return generatorCache.get(key)!;
+        }
+      } catch (error) {
+        // A provider-construction failure (e.g. missing API key env) must
+        // degrade to the stub, never reject getGenerator and 500 the route.
+        logger?.warn("LLM provider resolution failed; using stub generator", { error: error instanceof Error ? error.message : String(error) });
       }
+      generatorCache.set(key, new StubReportDraftGenerator());
       return generatorCache.get(key)!;
     })();
     generatorPromises.set(key, promise);
