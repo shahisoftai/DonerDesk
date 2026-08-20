@@ -577,7 +577,107 @@ async function main() {
     console.log(`Created ${activities.length} Activity updates`);
   }
 
+  await linkEvidenceToActivitiesAndUpdates();
+
   console.log("\n✅ Evidence and Activities seeded successfully!");
+}
+
+/**
+ * Links evidence files to activity updates and indicator updates by title
+ * keywords, so AI report generation actually sees the evidence (without the
+ * link, the evidence packages the narrator receives are empty).
+ */
+async function linkEvidenceToActivitiesAndUpdates(): Promise<void> {
+  const evidenceRows = await prisma.$queryRaw<Array<{ id: string; title: string }>>`
+    SELECT id, title FROM "EvidenceFile" WHERE "projectId" = ${PROJECT_ID}
+  `;
+  const evidence = new Map<string, string>(evidenceRows.map((e) => [e.id, e.title.toLowerCase()]));
+
+  const activities = await prisma.$queryRaw<Array<{ id: string; activityTitle: string }>>`
+    SELECT id, "activityTitle" FROM "ActivityUpdate" WHERE "projectId" = ${PROJECT_ID}
+  `;
+
+  const indicatorRows = await prisma.$queryRaw<Array<{ id: string; code: string }>>`
+    SELECT id, code FROM "Indicator" WHERE "projectId" = ${PROJECT_ID}
+  `;
+  const codeById = new Map(indicatorRows.map((r) => [r.id, r.code]));
+  const updates = await prisma.$queryRaw<Array<{ id: string; indicatorId: string }>>`
+    SELECT id, "indicatorId" FROM "IndicatorUpdate"
+    WHERE "indicatorId" IN (SELECT id FROM "Indicator" WHERE "projectId" = ${PROJECT_ID})
+  `;
+
+  const ACTIVITY_MAP: Array<{ match: string[]; substrings: string[] }> = [
+    { match: ["teacher training"], substrings: ["teacher training attendance"] },
+    { match: ["learning centre", "establishment"], substrings: ["learning centre establishment photos", "learning centre inspection"] },
+    { match: ["learning centre", "expansion"], substrings: ["learning centre photos", "learning centre inspection"] },
+    { match: ["distribution", "kit", "material"], substrings: ["learning materials distribution"] },
+    { match: ["baseline", "assessment"], substrings: ["baseline learning assessment"] },
+    { match: ["midline", "assessment"], substrings: ["midline learning assessment"] },
+    { match: ["safeguarding", "protection", "referral"], substrings: ["child safeguarding training", "child protection referral"] },
+    { match: ["volunteer"], substrings: ["community volunteer training"] },
+    { match: ["enrolment", "mobilisation", "campaign"], substrings: ["enrolment campaign photos", "beneficiary list"] },
+    { match: ["numeracy"], substrings: ["numeracy flashcard"] },
+    { match: ["inspection"], substrings: ["learning centre inspection"] },
+    { match: ["remedial", "support"], substrings: ["midline learning assessment", "baseline learning assessment"] },
+  ];
+  const INDICATOR_MAP: Array<{ code: string; substrings: string[] }> = [
+    { code: "OUT-1", substrings: ["learning centre establishment photos", "learning centre inspection"] },
+    { code: "OUT-2", substrings: ["learning materials distribution"] },
+    { code: "OUT-3", substrings: ["teacher training attendance"] },
+    { code: "OUT-4", substrings: ["beneficiary list", "enrolment campaign"] },
+    { code: "OUT-5", substrings: ["beneficiary list", "attendance"] },
+    { code: "OUT-6", substrings: ["baseline learning assessment", "midline learning assessment"] },
+    { code: "OUT-7", substrings: ["baseline learning assessment", "midline learning assessment"] },
+    { code: "OUT-8", substrings: ["numeracy flashcard", "baseline learning assessment", "midline learning assessment"] },
+    { code: "OUT-9", substrings: ["numeracy flashcard", "midline learning assessment"] },
+    { code: "OUT-10", substrings: ["teacher training attendance"] },
+    { code: "OUT-11", substrings: ["child safeguarding training"] },
+    { code: "OUT-12", substrings: ["community volunteer training"] },
+    { code: "OUT-13", substrings: ["beneficiary list", "enrolment campaign"] },
+    { code: "OUT-14", substrings: ["beneficiary list", "attendance"] },
+    { code: "OUT-15", substrings: ["attendance"] },
+    { code: "OUT-16", substrings: ["baseline learning assessment", "midline learning assessment"] },
+    { code: "OUT-17", substrings: ["numeracy flashcard", "midline learning assessment"] },
+    { code: "OUT-18", substrings: ["child safeguarding training", "child protection referral"] },
+    { code: "OUT-19", substrings: ["child protection referral"] },
+    { code: "OUT-20", substrings: ["beneficiary list", "community volunteer"] },
+  ];
+
+  const match = (title: string, entries: Array<{ code?: string; match?: string[]; substrings: string[] }>, mode: "code" | "activity"): string[] => {
+    const t = title.toLowerCase();
+    const hits: string[] = [];
+    for (const e of entries) {
+      const selected = mode === "code" ? e.code === t : e.match?.some((m) => t.includes(m));
+      if (!selected) continue;
+      for (const [id, evTitle] of evidence) {
+        if (e.substrings.some((s) => evTitle.includes(s))) hits.push(id);
+      }
+    }
+    return [...new Set(hits)].slice(0, 2);
+  };
+
+  let a = 0;
+  for (const act of activities) {
+    const ids = match(act.activityTitle, ACTIVITY_MAP, "activity");
+    if (ids.length > 0) {
+      await prisma.$executeRaw`
+        UPDATE "ActivityUpdate" SET "attachedEvidenceIds" = ${JSON.stringify(ids)}::text, "updatedAt" = NOW() WHERE id = ${act.id}
+      `;
+      a += 1;
+    }
+  }
+  let u = 0;
+  for (const upd of updates) {
+    const code = codeById.get(upd.indicatorId) ?? "";
+    const ids = match(code, INDICATOR_MAP, "code");
+    if (ids.length > 0) {
+      await prisma.$executeRaw`
+        UPDATE "IndicatorUpdate" SET "attachedEvidenceIds" = ${JSON.stringify(ids)}::text, "updatedAt" = NOW() WHERE id = ${upd.id}
+      `;
+      u += 1;
+    }
+  }
+  console.log(`Linked evidence to ${a} activities and ${u} indicator updates.`);
 }
 
 main()

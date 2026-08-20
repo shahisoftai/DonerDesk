@@ -95,3 +95,45 @@ test("parseSections extracts JSON from fenced block with surrounding text", () =
   assert.equal(sections[0].title, "A");
   assert.equal(sections[0].content, "Text");
 });
+
+test("parseSections repairs MiniMax literal newlines inside JSON string values", () => {
+  // MiniMax (and other LLMs) emit unescaped control chars inside JSON string
+  // values (e.g. a real newline in "content"). Strict JSON forbids this; the
+  // parser must repair it instead of falling back to the stub.
+  const raw = `{
+  "sections": [
+    {
+      "title": "Programme Overview",
+      "content": "Line one of the narrative.
+Line two of the narrative.
+Line three.",
+      "claims": [],
+      "sourceReferences": []
+    }
+  ]
+}`;
+  const sections = parseSections(raw, [{ title: "Programme Overview" }]);
+  assert.ok(sections, "expected repaired JSON to parse");
+  assert.equal(sections[0].title, "Programme Overview");
+  assert.ok(sections[0].content.startsWith("Line one of the narrative."), "first line preserved");
+  assert.ok(sections[0].content.includes("Line two"), "second line preserved");
+  assert.ok(sections[0].content.includes("Line three"), "third line preserved");
+});
+
+test("parseSections repairs literal tabs and carriage returns inside string values", () => {
+  const raw = `{
+  "sections": [
+    {
+      "title": "A",
+      "content": "col1\tcol2\r\nrow",
+      "claims": [],
+      "sourceReferences": []
+    }
+  ]
+}`;
+  const sections = parseSections(raw, [{ title: "A" }]);
+  assert.ok(sections, "expected repaired JSON to parse");
+  assert.ok(sections[0].content.includes("col1"));
+  assert.ok(sections[0].content.includes("col2"));
+  assert.ok(sections[0].content.includes("row"));
+});

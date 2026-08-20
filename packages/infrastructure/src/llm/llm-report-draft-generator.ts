@@ -470,37 +470,109 @@ function looksLikeRawJson(content: string): boolean {
 }
 
 function tryParseSections(json: string): GeneratedSection[] | null {
-  try {
-    const parsed = JSON.parse(json) as { sections?: unknown };
-    if (Array.isArray(parsed.sections) && parsed.sections.length > 0) {
-      const sections: GeneratedSection[] = [];
-      for (let i = 0; i < parsed.sections.length; i++) {
-        const sec = parsed.sections[i] as Record<string, unknown> | null;
-        if (!sec || typeof sec !== "object") {
-          return null;
+  const attempt = (text: string): GeneratedSection[] | null => {
+    try {
+      const parsed = JSON.parse(text) as { sections?: unknown };
+      if (Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+        const sections: GeneratedSection[] = [];
+        for (let i = 0; i < parsed.sections.length; i++) {
+          const sec = parsed.sections[i] as Record<string, unknown> | null;
+          if (!sec || typeof sec !== "object") {
+            return null;
+          }
+          const title = typeof sec.title === "string" ? sec.title.trim() : "";
+          const content = typeof sec.content === "string" ? sec.content.trim() : "";
+          if (!title || !content) {
+            return null;
+          }
+          sections.push({
+            sectionId: typeof sec.sectionId === "string" && sec.sectionId ? sec.sectionId : `section-${i}`,
+            title,
+            content,
+            claims: parseClaims(sec.claims),
+            sourceReferences: parseSourceReferences(sec.sourceReferences),
+          });
         }
-        const title = typeof sec.title === "string" ? sec.title.trim() : "";
-        const content = typeof sec.content === "string" ? sec.content.trim() : "";
-        if (!title || !content) {
-          return null;
-        }
-        sections.push({
-          sectionId: typeof sec.sectionId === "string" && sec.sectionId ? sec.sectionId : `section-${i}`,
-          title,
-          content,
-          claims: parseClaims(sec.claims),
-          sourceReferences: parseSourceReferences(sec.sourceReferences),
-        });
+        return sections.length > 0 ? sections : null;
       }
-      return sections.length > 0 ? sections : null;
+      // Valid JSON but not in the expected sections-wrapper shape (either
+      // missing the field or empty array). The LLM produced no usable content;
+      // signal malformed so the caller falls back to the stub.
+      return null;
+    } catch {
+      return null;
     }
-    // Valid JSON but not in the expected sections-wrapper shape (either
-    // missing the field or empty array). The LLM produced no usable content;
-    // signal malformed so the caller falls back to the stub.
-    return null;
-  } catch {
-    return null;
+  };
+
+  const direct = attempt(json);
+  if (direct) return direct;
+
+  // MiniMax (and several other LLMs) frequently emit LITERAL unescaped control
+  // characters inside JSON string values — e.g. a real newline inside the
+  // "content" field. Strict JSON forbids this, so JSON.parse throws and every
+  // section would fall back to the stub. Repair the document first: walk the
+  // text, track string literals, and escape any raw control character found
+  // inside a string (outside it, control chars are whitespace and are fine).
+  const repaired = repairUnescapedControlChars(json);
+  if (repaired !== json) {
+    const retry = attempt(repaired);
+    if (retry) return retry;
   }
+  return null;
+}
+
+/**
+ * Escapes literal (unescaped) ASCII control characters that appear INSIDE a
+ * JSON string literal: \n, \r, \t, \f, \b, and any 0x00-0x1F. Returns the
+ * original string unchanged when no repair was needed.
+ */
+function repairUnescapedControlChars(text: string): string {
+  let repaired = false;
+  let out = "";
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!;
+    if (inString) {
+      if (escaped) {
+        out += ch;
+        escaped = false;
+        continue;
+      }
+      if (ch === "\\") {
+        out += ch;
+        escaped = true;
+        continue;
+      }
+      if (ch === '"') {
+        out += ch;
+        inString = false;
+        continue;
+      }
+      if (ch === "\n" || ch === "\r" || ch === "\t" || ch === "\f" || ch === "\b") {
+        // Repair the control char as a \uXXXX escape.
+        const hex = ch.charCodeAt(0).toString(16).padStart(4, "0");
+        out += `\\u${hex}`;
+        repaired = true;
+        continue;
+      }
+      const code = ch.charCodeAt(0);
+      if (code < 0x20) {
+        out += `\\u${code.toString(16).padStart(4, "0")}`;
+        repaired = true;
+        continue;
+      }
+      out += ch;
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      out += ch;
+      continue;
+    }
+    out += ch;
+  }
+  return repaired ? out : text;
 }
 
 /**
@@ -620,12 +692,23 @@ function parseRewrite(raw: string): string | null {
   let json = raw.trim();
   const fenceMatch = json.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
   if (fenceMatch) json = fenceMatch[1]!.trim();
-  try {
-    const parsed = JSON.parse(json) as { content?: unknown };
-    if (typeof parsed.content === "string") return parsed.content;
-  } catch {
-    // Not strict JSON — MiniMax sometimes narrates directly. Accept the text
-    // as the rewrite result so the user's edit is not silently dropped.
+  const attempt = (text: string): string | null => {
+    try {
+      const parsed = JSON.parse(text) as { content?: unknown };
+      if (typeof parsed.content === "string") return parsed.content;
+      return null;
+    } catch {
+      return null;
+    }
+  };
+  const direct = attempt(json);
+  if (direct !== null) return direct;
+  // MiniMax emits literal unescaped control characters inside JSON string
+  // values (e.g. a real newline inside "content"). Repair before giving up.
+  const repaired = repairUnescapedControlChars(json);
+  if (repaired !== json) {
+    const retry = attempt(repaired);
+    if (retry !== null) return retry;
   }
   if (json.length > 0 && !json.startsWith("{")) return json;
   return null;
