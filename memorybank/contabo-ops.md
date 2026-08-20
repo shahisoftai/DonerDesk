@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-20 (release `20260820125717`, section-wise AI report generation — API + web, no migration).
+**Last deployment:** 2026-08-20 (release `20260820141254`, section-wise AI generation parser hardening + prompt slimming — API + web, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -904,8 +904,9 @@ backup/restore.
 
 ## 29. Change log
 
-> **2026-08-20 — Section-wise AI report generation hardening (in source;
-> deploy pending):** the deployed section-wise release exposed two defects,
+> **2026-08-20 — Section-wise AI report generation hardening (deployed,
+> release `20260820141254`, commits `d30aa1e` + `acd58e2`, API + web, no
+> migration):** the deployed section-wise release exposed two defects,
 > now fixed in `llm-report-draft-generator.ts`:
 > - **Raw JSON stored as section content ("garbage").** `parseSections`
 >   treated unparseable JSON-ish responses as narrative prose, so MiniMax
@@ -921,8 +922,14 @@ backup/restore.
 >   lean: evidence ≤ 4 packages × 4 chunks × 400 chars, activities ≤ 6 × 250
 >   chars, no full plan dump, `maxTokens` 2048 → 1500.
 > - 112 infrastructure tests pass (3 new parser tests: prose-wrapped JSON,
->   fenced-with-surrounding-text, truncated-JSON→null). See `Fixes.md`
->   (2026-08-20) and `Features/11-AI-Report-Draft-Generator.md`.
+>   fenced-with-surrounding-text, truncated-JSON→null). Deployed via the
+>   checksummed incremental path (`SERVICES="donordesk-api donordesk-web"`,
+>   801 files transferred, ~38 MB); verified live: `/health` + `/ready` OK,
+>   web 200, services active, deployed artifact carries `looksLikeRawJson`/
+>   `extractBalancedJson` + slim-prompt caps, zero journal errors since
+>   deploy. Rollback: `RELEASE_ID=20260820125717 scripts/rollback.sh`.
+>   See `Fixes.md` (2026-08-20) and
+>   `Features/11-AI-Report-Draft-Generator.md`.
 
 > **2026-08-20 — Section-wise AI report generation (deployed, release
 > `20260820125717`, commits `5918dab` + `803a567`, API + web, no migration):**
