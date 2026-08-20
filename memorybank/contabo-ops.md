@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-20 (release `20260820064506`, AI rewrite timeout + draft fallback + LLM env fallback — API + web, no migration).
+**Last deployment:** 2026-08-20 (release `20260820065833`, AI rewrite timeout + draft fallback + LLM env fallback + stub-degradation hardening — API + web, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -905,17 +905,19 @@ backup/restore.
 ## 29. Change log
 
 > **2026-08-20 — AI rewrite timeout + draft fallback + LLM env fallback
-> (release `20260820064506`, commits `fca4710` + `6afb892`, API + web):**
-> Deployed via the checksummed incremental immutable-release path with
-> `SERVICES=donordesk-api donordesk-web` (838 files transferred, 2.4 MB
-> literal data, 36.4 MB matched). This is the first release to make the
-> professional-reporting AI fixes live — the previous `20260820053629`
-> record below described the same fixes, but the live host was actually
-> still on `20260820045004`, so the reported symptoms (rewrite timeout,
-> stub-only AI drafts) were still reproducible. Live `LlmRun` evidence
-> before deploy showed MiniMax calls at 90–125s with the error runs
-> aborted exactly at the 120s adapter timeout. Three user-visible bugs in
-> the professional-reporting flow were fixed, plus one hardening:
+> (release `20260820065833`, commits `fca4710` + `6afb892` + `79bbf94`,
+> API + web):** Deployed via the checksummed incremental immutable-release
+> path with `SERVICES=donordesk-api donordesk-web` (838 files transferred;
+> 2.4 MB literal data on the first pass, then a follow-up pass for the
+> stub-degradation hardening). This is the first release to make the
+> professional-reporting AI fixes live — a record of an earlier
+> `20260820053629` release described the same fixes, but the live host was
+> actually still on `20260820045004`, so the reported symptoms (rewrite
+> timeout, stub-only AI drafts) were still reproducible. Live `LlmRun`
+> evidence before deploy showed MiniMax calls at 90–125s with the error
+> runs aborted exactly at the 120s adapter timeout. Three user-visible
+> bugs in the professional-reporting flow were fixed, plus two hardening
+> items:
 >
 > 1. **AI rewrite no longer times out.** The `rewriteReportSectionAction`
 >    server action did not pass `timeoutMs`, so the 15s default gateway
@@ -944,10 +946,16 @@ backup/restore.
 >    audit events `report.draft.fallback` and
 >    `report.section.rewrite.fallback` are emitted so support can diagnose
 >    stub fallbacks without log scraping.
-> 4. **LLM env fallback (new, commit `6afb892`).** When
+> 4. **LLM env fallback (commit `6afb892`).** When
 >    `PlatformLlmConfigResolver` returns an error or no row, the container
 >    now falls back to `LLM_PROVIDER` env before the stub, implementing the
 >    documented chain: platform config → `LLM_PROVIDER` env → stub.
+> 5. **Stub degradation on provider-construction failure (commit
+>    `79bbf94`).** Generator resolution is wrapped in try/catch: a
+>    misconfigured `LLM_PROVIDER` env (missing API key) or a resolver
+>    throw now degrades to the stub generator with a logged warning
+>    instead of rejecting `getGenerator` and surfacing a 500 on
+>    generate/rewrite.
 >
 > Additional fixes:
 >
@@ -987,7 +995,7 @@ backup/restore.
 >
 > Verified live: API `/health`+`/ready` OK (database ok); rewrite +
 > generate routes both 401 (auth-gated, registered with the new timeout);
-> web `/login` 200; `current` symlink `20260820064506`; both services
+> web `/login` 200; `current` symlink `20260820065833`; both services
 > active; zero journal errors since deploy; OLS validation warnings
 > unchanged (pre-existing `donordesk.online`/`sa.donordesk.online` gid/uid
 > baseline only). Disk 21G free, 7.4G RAM available.
