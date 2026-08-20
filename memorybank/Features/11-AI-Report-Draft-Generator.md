@@ -170,7 +170,7 @@ interface SourceReference {
   - **Phase 2 (background, per-section):** the handler spawns an in-process
     `generateSectionsInBackground` loop that drafts one section per LLM call via
     the new `IReportDraftGenerator.generateSection(input, planSection)` port
-    method (short single-section prompts, `maxTokens=2048`, well within the 180s
+    method (slim single-section prompts, `maxTokens=1500`, well within the 180s
     adapter timeout). Each section is committed through the revision pipeline +
     assessed as it completes; sections flip `NOT_STARTED → DRAFTED` in place.
     The stub generator implements `generateSection` by reusing its per-title
@@ -189,6 +189,24 @@ interface SourceReference {
     flipping to normal as they complete. Polling stops when all sections are
     drafted or after ~8 minutes (in which case the user is told generation is
     still running and can keep editing completed sections).
+- **Section-wise hardening (2026-08-20):** the first section-wise release
+  exposed two defects that are now fixed:
+  - **Raw JSON stored as content.** `parseSections` treated an unparseable
+    JSON-ish response as narrative prose, so MiniMax responses wrapped in a
+    prose preamble / trailing text / fences-with-surrounding-text were
+    persisted as the **whole `{"sections":[...]}` blob**. The parser now:
+    strips fences anywhere; strict-parses first; detects a `"sections"`
+    wrapper anywhere and runs a balanced-brace JSON extractor; and **never**
+    falls back to narrative for anything JSON-like (returns `null` → stub).
+    A `looksLikeRawJson()` post-parse guard rejects any section whose content
+    is still a JSON object, in both `generateDraft` and `generateSection`.
+  - **113–142s per section.** The per-section prompt dumped the full plan +
+    all findings + all indicator updates + all activity narratives + all
+    evidence (8×800 chars each) into every section call. It is now lean:
+    evidence ≤ 4 packages × 4 chunks × 400 chars, activities ≤ 6 with 250-char
+    fields, no full plan dump, `maxTokens` 2048 → 1500. Sections carry only a
+    bounded, relevant context slice, cutting per-call latency substantially.
+  - See `memorybank/Fixes.md` (2026-08-20) and `contabo-ops.md` §29.
 - **Professional report context (2026-08-18, deployed `20260818074405`):** the
   narrator now receives the context a professional donor report needs:
   - `VerifiedFinding` enrichment — each finding carries `indicatorName`,

@@ -2,6 +2,45 @@
 
 Record of fixes applied to DonorDesk. Last updated: 2026-08-20.
 
+## Section-wise AI generation: raw JSON stored as content + 113–142s per section (2026-08-20)
+
+**Status:** Fixed (code + tests, in source; deploy pending).
+
+Two defects surfaced after the section-wise generation release
+(`20260820125717`):
+
+**Defect 1 — raw JSON blob stored as section content ("garbage").**
+`parseSections` (`llm-report-draft-generator.ts`) fell into
+`fallbackAsNarrative` whenever `JSON.parse` threw, so a MiniMax response that
+wrapped the JSON (prose preamble, trailing text, or a fence with surrounding
+text) caused the **entire `{"sections":[...]}` blob to be stored as a section's
+`content`**. Production rows literally begin `{` + `"sections": [`.
+
+**Defect 2 — 113–142s per section.** `buildSectionNarratorUserPrompt` dumped
+the **entire** report plan, all findings, all indicator updates, all 15 activity
+narratives, and all 15 evidence packages (8 chunks × 800 chars each ≈ 100K
+chars) into **every** section call, so each section took ~2 minutes.
+
+**Fix:**
+- `parseSections` rewritten to: strip fences anywhere; strict-parse first;
+  detect a `"sections"` wrapper anywhere in the response and run a
+  balanced-brace JSON extractor (prose-wrapped / fenced-with-preamble
+  responses now parse); and — critically — **never** fall back to narrative
+  for anything JSON-like (returns `null` → stub fallback). Only genuine prose
+  still becomes a narrative section.
+- Post-parse guard `looksLikeRawJson()`: `generateDraft`/`generateSection`
+  reject a parsed section whose content still starts with a JSON object, so a
+  malformed capture can never be persisted as report content.
+- Per-section prompt slimmed: evidence capped to 4 packages × 4 chunks × 400
+  chars, activities to 6 with 250-char fields, the full `# Report Plan` dump
+  removed, and `maxTokens` reduced 2048 → 1500. Sections now carry only a
+  bounded, relevant context slice.
+- New tests: prose-wrapped JSON extraction, fenced-with-surrounding-text,
+  truncated-JSON → `null`, and raw-JSON-never-narrative.
+
+See `Features/11-AI-Report-Draft-Generator.md` (Section-wise generation,
+2026-08-20) and `contabo-ops.md` §29.
+
 ## Generate AI draft timed out / "No report draft yet" — full-report LLM call raced the web timeout (2026-08-20)
 
 **Status:** Fixed (code, in source; deploy pending).

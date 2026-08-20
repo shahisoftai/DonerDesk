@@ -904,6 +904,26 @@ backup/restore.
 
 ## 29. Change log
 
+> **2026-08-20 — Section-wise AI report generation hardening (in source;
+> deploy pending):** the deployed section-wise release exposed two defects,
+> now fixed in `llm-report-draft-generator.ts`:
+> - **Raw JSON stored as section content ("garbage").** `parseSections`
+>   treated unparseable JSON-ish responses as narrative prose, so MiniMax
+>   responses wrapped in prose/fences/trailing text persisted the whole
+>   `{"sections":[...]}` blob as content. The parser now strips fences
+>   anywhere, strict-parses first, extracts a `"sections"` wrapper via a
+>   balanced-brace scanner, and never falls back to narrative for JSON-like
+>   text (→ `null` → stub). A `looksLikeRawJson()` post-parse guard rejects
+>   any section whose content is still a JSON object.
+> - **113–142s per section.** The per-section prompt dumped the full plan +
+>   all findings + all indicator updates + all activity narratives + all
+>   evidence (15 × 8 × 800 chars ≈ 100K chars) into every section call. Now
+>   lean: evidence ≤ 4 packages × 4 chunks × 400 chars, activities ≤ 6 × 250
+>   chars, no full plan dump, `maxTokens` 2048 → 1500.
+> - 112 infrastructure tests pass (3 new parser tests: prose-wrapped JSON,
+>   fenced-with-surrounding-text, truncated-JSON→null). See `Fixes.md`
+>   (2026-08-20) and `Features/11-AI-Report-Draft-Generator.md`.
+
 > **2026-08-20 — Section-wise AI report generation (deployed, release
 > `20260820125717`, commits `5918dab` + `803a567`, API + web, no migration):**
 > fixes the "Generate AI draft" timeout/`No report draft yet` failure by
