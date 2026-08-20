@@ -189,6 +189,18 @@ interface SourceReference {
     flipping to normal as they complete. Polling stops when all sections are
     drafted or after ~8 minutes (in which case the user is told generation is
     still running and can keep editing completed sections).
+- **MiniMax literal control-char JSON repair (2026-08-20, release
+  `20260820141254` follow-up):** the parser-hardening release caused **every
+  section to fall back to the stub** ("AI content disappeared") because MiniMax
+  emits **literal unescaped `\n`/`\t`/`\r` INSIDE JSON string values** (real
+  newlines in markdown-heavy `content` fields). Strict `JSON.parse` throws on
+  raw control chars in strings, so all responses were rejected. Fix:
+  `repairUnescapedControlChars()` — a string-literal-aware scanner that escapes
+  raw `0x00-0x1F` chars inside strings as `\uXXXX`; `tryParseSections` and
+  `parseRewrite` retry with the repaired text before falling back. See
+  `memorybank/Fixes.md` (2026-08-20) — the same MiniMax behaviour has broken
+  generation three times; the repair pass is now mandatory before any
+  "malformed response" fallback is accepted.
 - **Section-wise hardening (2026-08-20):** the first section-wise release
   exposed two defects that are now fixed:
   - **Raw JSON stored as content.** `parseSections` treated an unparseable

@@ -677,6 +677,15 @@ Remaining (tracked here, not claimed):
 
 ## Notes
 - Signup/login 500 errors are fixed; see `memorybank/Fixes.md`.
+- **LLM JSON parsing — recurring MiniMax trap:** MiniMax emits **literal
+  unescaped control characters inside JSON string values** (real `\n`/`\t`/`\r`
+  in `content`). This has broken AI report generation **three times**
+  (2026-08-17 stub/billing, 2026-08-20 raw-JSON-as-content, 2026-08-20
+  all-sections-fallback-to-stub). The mandatory rule: any LLM JSON parser MUST
+  attempt a control-character repair pass (`repairUnescapedControlChars`)
+  before treating a response as malformed, and must NEVER store an unparseable
+  JSON-looking response as narrative prose. See `memorybank/Fixes.md`
+  (2026-08-20) and `Features/11-AI-Report-Draft-Generator.md`.
 - The `LlmModel` / `LlmPrompt` tables are global (no `tenantId`) and are
   intentionally not RLS-tenant-isolated.
 - All 17 MVP features documented in `memorybank/Features/`

@@ -2,6 +2,59 @@
 
 Record of fixes applied to DonorDesk. Last updated: 2026-08-20.
 
+## AI content disappeared — MiniMax literal control chars broke JSON parsing (2026-08-20)
+
+**Status:** Fixed (code + tests, in source; deploy pending).
+
+**Symptom:** after the parser-hardening release (`20260820141254`), every
+section fell back to the stub again — reports showed only indicator lists
+("recorded via SUM:neutral:period … Source: Field reports…"), and even the stub
+reported "0 activity records, 0 evidence files".
+
+**Root cause — parser rejects valid-looking MiniMax JSON:** MiniMax emits
+**literal, unescaped ASCII control characters inside JSON string values** — a
+real `\n` inside the `content` field (very common for markdown-heavy sections),
+plus real `\t`/`\r`. Strict JSON forbids raw control chars inside strings, so
+`JSON.parse` threw, `tryParseSections` returned `null`, the balanced-brace
+extractor never found a balanced close, and `generateSection`/`generateDraft`
+fell back to the stub for EVERY section. The API journal showed the responses
+were structurally valid JSON that our parser rejected
+("response failed structural validation; falling back to stub"). The earlier
+balanced-brace extractor and `looksLikeRawJson` guard could not help because the
+JSON never parsed in the first place.
+
+**Fix:**
+- New `repairUnescapedControlChars()`: a string-literal-aware scanner that
+  walks the document, tracks in/out-of-string state (and escapes), and rewrites
+  any raw `\n`, `\r`, `\t`, `\f`, `\b`, or other `0x00-0x1F` character found
+  INSIDE a string as a `\uXXXX` escape. Control chars outside strings (real
+  whitespace) are left untouched.
+- `tryParseSections` and `parseRewrite` now: strict-parse first → on failure,
+  run the repair pass and retry → only then fall back to the stub / narrative.
+- Two new parser tests (literal newlines; literal tabs + CR in string values).
+
+**Also fixed — demo data had no evidence linkage:** the EERP seed created 15
+evidence files but never linked them to activities or indicator updates, so the
+evidence packages handed to the narrator (stub and LLM) were always empty and
+reports read "0 evidence files". Added `linkEvidenceToActivitiesAndUpdates()`
+to `seed-eerp-evidence-activities.ts` (title-keyword linkage) and applied a
+standalone `link-eerp-evidence.ts` to production (linked 15 activities + 20
+indicator updates). Note: the monthly period `5dce445a` genuinely has no
+activity records (only Q1/Q2 periods do), so "0 activity records" there is
+correct data, not a bug.
+
+**Lesson for the future (do not regress):**
+- NEVER treat an unparseable JSON-looking response as narrative prose, and
+  NEVER accept that a response "failed validation" until a control-character
+  repair pass has been attempted. MiniMax returns literal newlines inside JSON
+  strings — this has now broken generation three separate times (see
+  `Features/11-AI-Report-Draft-Generator.md` for the history).
+- Any demo seed that creates evidence MUST link it to activities/indicator
+  updates, or reports silently lose evidence context.
+
+See `Features/11-AI-Report-Draft-Generator.md` (Section-wise hardening,
+2026-08-20) and `contabo-ops.md` §29.
+
 ## Section-wise AI generation: raw JSON stored as content + 113–142s per section (2026-08-20)
 
 **Status:** Fixed (code + tests, in source; deploy pending).

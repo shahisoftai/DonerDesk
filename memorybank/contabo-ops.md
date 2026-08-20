@@ -904,6 +904,25 @@ backup/restore.
 
 ## 29. Change log
 
+> **2026-08-20 — MiniMax literal control-char JSON repair + demo evidence
+> linkage (in source; deploy pending):** the parser-hardening release
+> (`20260820141254`) caused **every section to fall back to the stub** ("AI
+> content disappeared") because MiniMax emits **literal unescaped `\n`/`\t`/`\r`
+> INSIDE JSON string values**. Strict `JSON.parse` throws on raw control chars
+> in strings, so `tryParseSections` returned null for every response and
+> `generateSection` fell back to the stub (journal: "response failed structural
+> validation; falling back to stub" for all 9 sections). Fix: new
+> `repairUnescapedControlChars()` string-literal-aware scanner escapes raw
+> `0x00-0x1F` chars inside strings as `\uXXXX`; `tryParseSections` +
+> `parseRewrite` retry with the repaired text before falling back. Also fixed
+> the demo evidence gap (seed never linked evidence to activities/updates →
+> reports said "0 evidence files"): `seed-eerp-evidence-activities.ts` now
+> links evidence by title keywords, and `link-eerp-evidence.ts` was applied to
+> production (15 activities + 20 indicator updates linked). 114 infra tests
+> pass (2 new control-char parser tests). This MiniMax behaviour has broken
+> generation three times — see `Fixes.md` (2026-08-20) for the regression
+> lesson.
+
 > **2026-08-20 — Section-wise AI report generation hardening (deployed,
 > release `20260820141254`, commits `d30aa1e` + `acd58e2`, API + web, no
 > migration):** the deployed section-wise release exposed two defects,
