@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-20 (release `20260820141254`, section-wise AI generation parser hardening + prompt slimming — API + web, no migration).
+**Last deployment:** 2026-08-20 (release `20260820144857`, MiniMax control-char JSON repair + demo evidence linkage — API + web, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -905,7 +905,8 @@ backup/restore.
 ## 29. Change log
 
 > **2026-08-20 — MiniMax literal control-char JSON repair + demo evidence
-> linkage (in source; deploy pending):** the parser-hardening release
+> linkage (deployed, release `20260820144857`, commits `d70332a` + `fd47b2f`,
+> API + web, no migration):** the parser-hardening release
 > (`20260820141254`) caused **every section to fall back to the stub** ("AI
 > content disappeared") because MiniMax emits **literal unescaped `\n`/`\t`/`\r`
 > INSIDE JSON string values**. Strict `JSON.parse` throws on raw control chars
@@ -918,10 +919,14 @@ backup/restore.
 > the demo evidence gap (seed never linked evidence to activities/updates →
 > reports said "0 evidence files"): `seed-eerp-evidence-activities.ts` now
 > links evidence by title keywords, and `link-eerp-evidence.ts` was applied to
-> production (15 activities + 20 indicator updates linked). 114 infra tests
-> pass (2 new control-char parser tests). This MiniMax behaviour has broken
-> generation three times — see `Fixes.md` (2026-08-20) for the regression
-> lesson.
+> production (15 activities + 20 indicator updates linked). Deployed via the
+> checksummed incremental path; verified live: `/health` + `/ready` OK, web
+> 200, deployed artifact carries `repairUnescapedControlChars` (verified: a
+> literal-newline JSON response parses into 7 preserved lines), zero journal
+> errors since deploy. Rollback: `RELEASE_ID=20260820141254
+> scripts/rollback.sh`. 114 infra tests pass (2 new control-char parser
+> tests). This MiniMax behaviour has broken generation three times — see
+> `Fixes.md` (2026-08-20) for the regression lesson.
 
 > **2026-08-20 — Section-wise AI report generation hardening (deployed,
 > release `20260820141254`, commits `d30aa1e` + `acd58e2`, API + web, no
