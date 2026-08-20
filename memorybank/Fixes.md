@@ -2,6 +2,36 @@
 
 Record of fixes applied to DonorDesk. Last updated: 2026-08-20.
 
+## Generate AI draft timed out / "No report draft yet" — full-report LLM call raced the web timeout (2026-08-20)
+
+**Status:** Fixed (code, in source; deploy pending).
+
+**Root cause:** `GenerateReportDraftHandler` drafted the WHOLE report in one LLM
+call (`generateDraft`, `maxTokens=4096`) while MiniMax has a **180s adapter
+timeout** (`factory.ts` MiniMax default) and the web server action also used a
+**180s gateway timeout** (`generateDraftAction`). For data-heavy demo projects
+the single call ran the full 180s, so the API aborted MiniMax, fell back to the
+stub, and saved a draft — but the browser had already given up at the same 180s
+mark, so the user saw "No report draft yet / The request timed out. Please try
+again." even though a stub draft existed server-side.
+
+**Fix — section-wise generation (2026-08-20):**
+- `POST /generate-draft` is now two-phase: it creates the draft + **all plan
+  sections as `NOT_STARTED` placeholders** and returns immediately
+  (`generating: true`); a background loop drafts each section in its own small
+  LLM call (`IReportDraftGenerator.generateSection`, `maxTokens=2048`, well
+  within the 180s timeout), committing + assessing each as it completes.
+- The web `generateDraftAction` timeout dropped 180s → 60s (only the skeleton
+  creation is awaited); the UI polls `getReportDraftAction` every 4s and flips
+  sections greyed→normal as they complete.
+- Resume-safe: the loop skips already-`DRAFTED` sections, so a re-click or API
+  restart only regenerates the remaining `NOT_STARTED` ones.
+- Credit/run accounting: the AI credit is reserved in phase 1 and reconciled at
+  loop completion (real AI draft = no section fell back → credit consumed;
+  otherwise released + `generatedByAi=false` + error run).
+- See `Features/11-AI-Report-Draft-Generator.md` (Section-wise generation,
+  2026-08-20).
+
 ## Seeded USAID demo template "Section title required" — wrong `sectionsJson` field names (2026-08-20)
 
 **Status:** Fixed in production (direct DB correction; no release required).

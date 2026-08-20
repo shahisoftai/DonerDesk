@@ -158,6 +158,37 @@ interface SourceReference {
     (first 8 chunks, 800 chars each) and mandates per-section `sourceReferences`.
   - The report workspace renders statement-level sources (claim evidence chips +
     verification status); `ReportGenerationRun` snapshots `activityIds`.
+- **Section-wise generation (2026-08-20):** `GenerateReportDraftHandler` no
+  longer blocks on a single full-report LLM call (which pushed MiniMax past the
+  180s adapter timeout and raced the web gateway's 180s limit, so the stub
+  fallback never reached the browser). The flow is now two-phase:
+  - **Phase 1 (fast, synchronous):** the handler builds the plan/findings/
+    evidence context, creates the draft + generation run, persists **every plan
+    section as a `NOT_STARTED` placeholder**, saves the plan, and returns
+    immediately `{ draftId, sectionIds, generating: true, totalSections }`.
+    The UI renders the full report skeleton (greyed-out left column) at once.
+  - **Phase 2 (background, per-section):** the handler spawns an in-process
+    `generateSectionsInBackground` loop that drafts one section per LLM call via
+    the new `IReportDraftGenerator.generateSection(input, planSection)` port
+    method (short single-section prompts, `maxTokens=2048`, well within the 180s
+    adapter timeout). Each section is committed through the revision pipeline +
+    assessed as it completes; sections flip `NOT_STARTED → DRAFTED` in place.
+    The stub generator implements `generateSection` by reusing its per-title
+    builders; the LLM generator builds a single-section prompt
+    (`buildSectionNarratorUserPrompt`) and falls back to the stub per section.
+  - **Resume-safety:** the loop skips sections already `DRAFTED`, so a
+    re-click or an API restart mid-run regenerates only the remaining
+    `NOT_STARTED` sections.
+  - **Credit/run accounting:** the AI credit is reserved in Phase 1; the
+    background loop reconciles it at completion — a real AI draft (no section
+    fell back) consumes the credit, otherwise it is released, the draft is
+    marked `generatedByAi=false`, and an error run is recorded.
+  - **Frontend:** `ReportWorkspace` polls `GET /v1/reporting-periods/:id/draft`
+    (via the new `getReportDraftAction`) every 4s while `generating`; pending
+    sections render greyed/disabled with a pulsing dot + "Not started" badge,
+    flipping to normal as they complete. Polling stops when all sections are
+    drafted or after ~8 minutes (in which case the user is told generation is
+    still running and can keep editing completed sections).
 - **Professional report context (2026-08-18, deployed `20260818074405`):** the
   narrator now receives the context a professional donor report needs:
   - `VerifiedFinding` enrichment — each finding carries `indicatorName`,

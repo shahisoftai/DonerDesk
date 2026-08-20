@@ -170,6 +170,17 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-20T09:55+
 > `Features/20-report-gen.md` §17, `Features/11-AI-Report-Draft-Generator.md`,
 > `Fixes.md`, and `contabo-ops.md` §29.
 
+> **2026-08-20 (in source, deploy pending):** **Section-wise AI report
+> generation.** Fixes the "Generate AI draft" timeout (a single full-report LLM
+> call raced the web gateway's 180s limit; see `Fixes.md`). `POST
+> /generate-draft` now creates the draft + all sections as `NOT_STARTED`
+> placeholders and returns immediately (`generating: true`); a background loop
+> drafts one section per LLM call (`generateSection`, `maxTokens=2048`) and
+> commits + assesses each as it completes. The web workspace polls the draft
+> and flips sections greyed→normal one at a time. Resume-safe (skips
+> already-`DRAFTED` sections); credit reserved in phase 1, reconciled at loop
+> end. See `Features/11-AI-Report-Draft-Generator.md` and `contabo-ops.md` §29.
+
 > **Deployment (2026-08-18):** **Feature 19 — Creem billing is live in
 > production (real mode).** Release `20260818053116` shipped Phase 4
 > reconciliation (all five handlers + `/internal/billing/*` routes), the shared

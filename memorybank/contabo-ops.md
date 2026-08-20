@@ -904,6 +904,24 @@ backup/restore.
 
 ## 29. Change log
 
+> **2026-08-20 — Section-wise AI report generation (in source; deploy
+> pending):** fixes the "Generate AI draft" timeout/`No report draft yet`
+> failure by splitting generation into two phases. `POST /generate-draft`
+> creates the draft + all plan sections as `NOT_STARTED` placeholders and
+> returns immediately (`generating: true`); a background in-process loop drafts
+> each section via a new `IReportDraftGenerator.generateSection` port method
+> (single-section prompts, `maxTokens=2048`, within the MiniMax 180s adapter
+> timeout), committing + assessing each section as it completes. The web
+> workspace polls the draft and flips sections greyed→normal one at a time.
+> Includes resume-safety (loop skips already-`DRAFTED` sections), phase-1 credit
+> reservation reconciled at loop end, and `getReportDraftAction` polling.
+> Affected files: `packages/application/src/ports/reporting.ts`,
+> `generate-report-draft.ts`, `packages/infrastructure/src/llm/{llm-,
+> report-draft-generator.ts}`, `apps/web/src/{features/reporting/presentation/
+> ReportWorkspace.tsx, lib/actions/{reporting.ts,_schemas.ts}}`. Full
+> `pnpm -r typecheck`/`build` clean; application (66) + infrastructure (108)
+> + web e2e (12) tests green. See `Features/11-AI-Report-Draft-Generator.md`.
+
 > **2026-08-20 — USAID Emergency Education Response Programme demo data
 > (no code release; direct DB operations via `DATABASE_ADMIN_URL`):** Seeded a
 > complete demo project for the GEC tenant
