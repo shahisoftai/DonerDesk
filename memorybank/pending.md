@@ -669,3 +669,10 @@ Remaining (tracked here, not claimed):
 - The `LlmModel` / `LlmPrompt` tables are global (no `tenantId`) and are
   intentionally not RLS-tenant-isolated.
 - All 17 MVP features documented in `memorybank/Features/`
+- Demo USAID project **Emergency Education Response Programme (EERP-2026)** was
+  seeded into production for tenant `mnpiracha@gmail.com` (GEC) on 2026-08-20
+  (`packages/infrastructure/src/db/seed-eerp.ts` +
+  `seed-eerp-evidence-activities.ts`). Directly-seeded projects must include a
+  ready `ProjectSetup`, a `ReportingProfile`, and `REVIEWED` template sections to
+  pass the reporting-period readiness gate — see `Features/18-Project-Creation-Wizard.md`
+  §4.5 and `memorybank/Fixes.md` (2026-08-20).

@@ -99,6 +99,26 @@ template/profile snapshot so later edits do not alter existing reports.
 - `LOCAL`/`R2`: provisioning is `NOT_REQUIRED`; do not create unused folder trees or label them
   “Drive ready.”
 
+### 4.5 Readiness gate requirements for seeded / directly-created projects (2026-08-20)
+
+Readiness is derived (never persisted), so a project created outside the wizard (seed scripts,
+backfills, support scripts) is not automatically reporting-ready. To create a reporting period
+for such a project, all of the following must be true (verified in production for the EERP-2026
+demo seed — see `memorybank/Fixes.md`, 2026-08-20):
+
+- **Workspace:** `ProjectSetup.workspaceProvisionStatus` = `READY` (or `NOT_REQUIRED` for
+  non-Drive tenants). For a Drive tenant, a missing `ProjectSetup` row defaults to `PENDING` and
+  blocks with `WORKSPACE_PENDING`.
+- **Profile:** a `ReportingProfile` row must exist (`REPORTING_PROFILE_MISSING` otherwise),
+  ideally with `defaultTemplateId` set.
+- **Template:** the active template must have ≥1 required section with `reviewStatus =
+  REVIEWED` (`TEMPLATE_HAS_NO_REVIEWED_REQUIRED_SECTIONS` otherwise).
+- **Indicators:** ≥1 indicator, and every quantitative indicator needs baseline, target, unit,
+  and frequency (`NO_REPORTABLE_INDICATORS` / `INDICATOR_CONFIGURATION_INCOMPLETE` otherwise).
+
+Demo seed scripts (`packages/infrastructure/src/db/seed-eerp.ts`,
+`seed-eerp-evidence-activities.ts`) create these records so the seeded project passes the gate.
+
 ## 5. Project lifecycle and management
 
 The wizard is the creation path, but Feature 18 must also define how a project is managed after

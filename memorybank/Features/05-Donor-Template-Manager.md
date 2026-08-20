@@ -71,7 +71,7 @@ Stores:
 - `createdAt: Date`
 - `updatedAt: Date`
 
-**ExtractedTemplateSection**:
+**ExtractedTemplateSection** (AI-extraction review shape; NOT the persisted shape):
 ```typescript
 interface ExtractedTemplateSection {
   id: string;
@@ -84,6 +84,20 @@ interface ExtractedTemplateSection {
   order: number;
 }
 ```
+
+> **Persisted shape (canonical — 2026-08-20):** `DonorTemplate.sectionsJson` stores
+> the domain `TemplateSection` shape, **not** the `ExtractedTemplateSection` fields
+> above. `PrismaDonorTemplateRepository.toDomain` parses it with `createSection()`,
+> which requires per section: `title` (≥2 chars), `description`, `inputType`
+> (`NARRATIVE` | `TABLE` | `ANNEX` | `INDICATOR_TABLE` | `COMPLIANCE`), `required`,
+> `evidenceNeeded` (string), `order`, `reviewStatus` (`DRAFT` | `REVIEWED`), plus
+> optional `id`, `relatedLogframeElement`, `minWords`, `maxWords`. Persisting the
+> UI-facing names (`sectionTitle`, `sectionDescription`, `inputNeeded`) throws
+> "Section title required" on every template read (see `memorybank/Fixes.md`,
+> 2026-08-20). The `ExtractedTemplateSection` shape is the intermediate result of
+> AI extraction only; it must be mapped to `TemplateSection` before save.
+> Reference: `packages/domain/src/contexts/templates/template-section.ts`,
+> `packages/infrastructure/src/repositories/templates.ts`.
 
 ### API Endpoints
 

@@ -28,6 +28,16 @@ Fields:
 - Submitted
 - Closed
 
+> **Canonical persisted values (2026-08-20):** the persisted `ReportingPeriod.status`
+> must be one of the eight `ReportStatusValue`s enforced by
+> `ReportStatus.create` (`packages/domain/src/value-objects/report-status.ts`):
+> `NOT_STARTED`, `IN_PROGRESS`, `EVIDENCE_COLLECTION`, `DRAFT_GENERATED`,
+> `UNDER_REVIEW`, `APPROVED`, `SUBMITTED`, `CLOSED`. Any other value (e.g.
+> `COMPLETED`) throws `Invalid ReportStatus: …` in
+> `PrismaReportingPeriodRepository.toDomain`, 500ing the Reports tab. Use
+> `SUBMITTED` (or `CLOSED`) for a finished period. See `memorybank/Fixes.md`,
+> 2026-08-20.
+
 ### Reporting Period Page
 Displays:
 - Report readiness score

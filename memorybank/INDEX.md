@@ -1,6 +1,6 @@
 # DonorDesk MemoryBank Index
 
-**Last updated:** 2026-08-19
+**Last updated:** 2026-08-20
 
 Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to search within files.
 
@@ -110,6 +110,14 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
  > **Gated (not deployed):** the five plugin-referencing Kestra flows and plugin
  > JARs (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource
  > first). See `contabo-ops.md` §28 and `imp/KESTRA-PLUGINS.md`.
+ > **2026-08-20 (demo data + data-shape fixes):** seeded the **USAID Emergency
+ > Education Response Programme (EERP-2026)** demo project for tenant
+ > `mnpiracha@gmail.com` (GEC) and fixed three data-shape bugs it exposed —
+ > template `sectionsJson` shape ("Section title required"), invalid
+ > `COMPLETED` period status ("Invalid ReportStatus"), and the closed
+ > reporting-period readiness gate (missing `ProjectSetup`/`ReportingProfile`/
+ > `REVIEWED` sections). See `contabo-ops.md` §29 (2026-08-20), `Fixes.md`,
+ > and `Features/18-Project-Creation-Wizard.md` §4.5.
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |

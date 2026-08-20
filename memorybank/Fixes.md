@@ -1,6 +1,82 @@
 # Fixes
 
-Record of fixes applied to DonorDesk. Last updated: 2026-08-19.
+Record of fixes applied to DonorDesk. Last updated: 2026-08-20.
+
+## Seeded USAID demo template "Section title required" — wrong `sectionsJson` field names (2026-08-20)
+
+**Status:** Fixed in production (direct DB correction; no release required).
+
+**Root cause:** The demo seed for the **Emergency Education Response Programme**
+(`packages/infrastructure/src/db/seed-eerp.ts`) persisted the donor template's
+`DonorTemplate.sectionsJson` using the spec's UI-facing names
+(`sectionTitle`, `sectionDescription`, `inputNeeded`) instead of the domain
+`TemplateSection` shape that `PrismaDonorTemplateRepository.toDomain`
+(`packages/infrastructure/src/repositories/templates.ts`) expects. Every section
+therefore lacked `title`, and `createSection()` in
+`packages/domain/src/contexts/templates/template-section.ts` threw
+`DomainError.validation("Section title required")`. The Project → **Donor
+Templates** page failed with "This information could not be loaded" — any read
+of the template's sections threw.
+
+**Fix:** Rewrote the seeded template's `sectionsJson` to the canonical persisted
+shape — every section carries `title`, `description`, `inputType`
+(`NARRATIVE`/`TABLE`/`INDICATOR_TABLE`/`ANNEX`/`COMPLIANCE`), `required`,
+`evidenceNeeded`, `order`, `reviewStatus` (`DRAFT`/`REVIEWED`), and optional
+`minWords`/`maxWords`. The seed script was corrected so future runs persist the
+right shape.
+
+**Process note:** Do not mirror the MVP spec's `ExtractedTemplateSection` fields
+into `sectionsJson` — the canonical persisted shape is `TemplateSection`
+(`title`, `description`, `inputType`, `evidenceNeeded`, `required`,
+`reviewStatus`, `order`). See `Features/05-Donor-Template-Manager.md`.
+
+## Reports tab 500 "Invalid ReportStatus: COMPLETED" — invalid persisted period status (2026-08-20)
+
+**Status:** Fixed in production (direct DB correction; no release required).
+
+**Root cause:** The demo seed created the Q1 2026 reporting period with
+`status = 'COMPLETED'`, which is **not** a valid `ReportStatus` value.
+`ReportStatus.create` (`packages/domain/src/value-objects/report-status.ts`)
+only accepts `NOT_STARTED`, `IN_PROGRESS`, `EVIDENCE_COLLECTION`,
+`DRAFT_GENERATED`, `UNDER_REVIEW`, `APPROVED`, `SUBMITTED`, `CLOSED`.
+`PrismaReportingPeriodRepository.toDomain` throws, so
+`GET /v1/projects/:projectId/reporting-periods` returned 500 and the project
+**Reports** tab showed "Internal Server Error" (journal: `Invalid ReportStatus:
+COMPLETED`).
+
+**Fix:** Updated the Q1 period row to `SUBMITTED` (a valid terminal status);
+`seed-eerp-evidence-activities.ts` now writes `SUBMITTED`.
+
+## "Project setup is not complete — WORKSPACE_PENDING" blocked reporting-period creation (2026-08-20)
+
+**Status:** Fixed in production (direct DB correction; no release required).
+
+**Root cause:** `ProjectReadinessService.compute`
+(`packages/application/src/readiness/project-readiness-service.ts`) derives the
+workspace provision status from `ProjectSetup.workspaceProvisionStatus`, defaulting
+to `PENDING` when no `ProjectSetup` row exists **and** the organization's
+`storageProvider` is `GOOGLE_DRIVE`. The GEC tenant
+(`mnpiracha@gmail.com`, tenant `faed0177-5f2d-4a42-864f-e4c254e6d247`) is a Drive
+tenant and the seeded project had no `ProjectSetup` row, so readiness reported
+`WORKSPACE_PENDING` and `CreateReportingPeriodHandler` denied period creation.
+Two further readiness blockers were also present: no `ReportingProfile`
+(`REPORTING_PROFILE_MISSING`) and template sections not marked `REVIEWED`
+(`TEMPLATE_HAS_NO_REVIEWED_REQUIRED_SECTIONS`).
+
+**Fix:** For the EERP-2026 project, created/updated:
+- `ProjectSetup` → `workspaceProvisionStatus = READY` (+ `acknowledgedAt`).
+- `ReportingProfile` → `defaultTemplateId` = the USAID template,
+  `language = en`, `tone = FORMAL`.
+- USAID template `sectionsJson` → all 9 sections `reviewStatus = REVIEWED`.
+
+`seed-eerp-evidence-activities.ts` now creates `ProjectSetup` + `ReportingProfile`
+automatically, and `seed-eerp.ts` writes `REVIEWED` sections. All 20 indicators
+were confirmed reportable (baseline/target/unit/frequency present).
+
+**Process note:** directly-seeded demo projects must include a ready
+`ProjectSetup`, a `ReportingProfile` (ideally with `defaultTemplateId`), and a
+template with `REVIEWED` required sections, otherwise the reporting-period gate
+stays closed. See `Features/18-Project-Creation-Wizard.md`.
 
 ## Numeric-atom currency regex matched "rs" inside ordinary words — false CURRENCY roles (2026-08-19)
 

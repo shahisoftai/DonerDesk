@@ -904,6 +904,49 @@ backup/restore.
 
 ## 29. Change log
 
+> **2026-08-20 — USAID Emergency Education Response Programme demo data
+> (no code release; direct DB operations via `DATABASE_ADMIN_URL`):** Seeded a
+> complete demo project for the GEC tenant
+> (`mnpiracha@gmail.com`, tenant `faed0177-5f2d-4a42-864f-e4c254e6d247`) on the
+> production `donordesk` database, then fixed three data-shape bugs the seed
+> exposed:
+>
+> - **Demo content seeded** (scripts now live in
+>   `packages/infrastructure/src/db/`):
+>   - `seed-eerp.ts` — Project **EERP-2026** (USAID, EDUCATION, Bangladesh/Cox's
+>     Bazar, Jan–Dec 2026, USD 4.5M, ACTIVE), logframe (1 Goal, 3 Outcomes,
+>     6 Outputs, 15 Activities), 20 indicators (all reportable), and the USAID
+>     quarterly donor template (9 sections).
+>   - `seed-eerp-evidence-activities.ts` — 15 evidence items (verified/pending,
+>     training records, photos, distribution lists, assessments), 15 accepted
+>     activity updates (Q1 + Q2 2026), Q1 + Q2 reporting periods, and (after the
+>     fixes below) a ready `ProjectSetup` + `ReportingProfile`.
+> - **Fix 1 — template `sectionsJson` shape.** The seeded template used the MVP
+>   spec field names (`sectionTitle`/`sectionDescription`/`inputNeeded`), which
+>   `PrismaDonorTemplateRepository.toDomain` rejects (`createSection` → "Section
+>   title required"), breaking the Project → Donor Templates tab. Rewrote the
+>   row to the canonical `TemplateSection` shape (`title`, `description`,
+>   `inputType`, `evidenceNeeded`, `required`, `order`, `reviewStatus`, word
+>   limits); verified all 9 sections parse via the production domain build.
+> - **Fix 2 — invalid `COMPLETED` period status.** Q1 2026 was seeded with
+>   `status='COMPLETED'`, which `ReportStatus.create` rejects (not one of the 8
+>   canonical values), so the Reports tab 500'd (`Invalid ReportStatus:
+>   COMPLETED`). Updated the row to `SUBMITTED`; verified both periods parse
+>   (`SUBMITTED`, `IN_PROGRESS`).
+> - **Fix 3 — reporting-period gate closed.** GEC is a Google-Drive tenant, so
+>   readiness defaults workspace provisioning to `PENDING` when no `ProjectSetup`
+>   exists (`WORKSPACE_PENDING`), and the project had no `ReportingProfile`
+>   (`REPORTING_PROFILE_MISSING`) nor `REVIEWED` template sections
+>   (`TEMPLATE_HAS_NO_REVIEWED_REQUIRED_SECTIONS`). Created/updated
+>   `ProjectSetup` (READY + acknowledged), `ReportingProfile`
+>   (`defaultTemplateId` = USAID template), and marked all 9 template sections
+>   `REVIEWED`.
+>
+> Verified live: template sections parse through the production domain
+> `createSection`; both reporting periods hydrate through production
+> `ReportStatus.create`; 20/20 indicators reportable; readiness blockers for the
+> project are cleared. No API/web restart needed (data-only).
+
 > **2026-08-20 — Reorderable report sections (release `20260820074745`,
 > commit `f0a6f2a`, API + web, no migration):** The left-hand section nav
 > in the report workspace now supports drag-and-drop plus ↑/↓ move buttons
