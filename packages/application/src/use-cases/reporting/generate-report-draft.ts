@@ -1,5 +1,6 @@
 import type { Result } from "@donordesk/domain";
 import { DomainError, ReportDraft, ReportSection, ReportGenerationRun } from "@donordesk/domain";
+import type { ReportPlan, ReportingPeriod, VerifiedFinding } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
   IReportingPeriodRepository,
@@ -15,6 +16,9 @@ import type {
   IReportAssuranceService,
   ReportingProfileSnapshot,
   ReportGenerationContext,
+  EvidencePackage,
+  ActivityGenerationContext,
+  IndicatorUpdateGenerationContext,
 } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
@@ -90,9 +94,8 @@ export class GenerateReportDraftHandler {
       {
         draftId: string;
         sectionIds: string[];
-        claimCount: number;
-        planId: string;
-        generationRunId: string;
+        generating: boolean;
+        totalSections: number;
         fallbackUsed: boolean;
         fallbackReason?: string;
       },
@@ -289,114 +292,60 @@ export class GenerateReportDraftHandler {
       return savedRun;
     }
 
-    const startedAt = Date.now();
-    let generated;
-    let usedFallback = true;
-    let fallbackReason: string | undefined;
-    let generationFailed = false;
-    try {
-      const result = aiEnabled
-        ? await generator.generateDraft({
-            reportPlan: plan,
-            verifiedFindings,
-            evidencePackages,
-            activities,
-            indicatorUpdates,
-            reportingProfileSnapshot,
-            generationRunId: run.id,
-            reportContext: this.buildReportContext(project, period, template?.ok && template.value ? template.value : undefined),
-          })
-        : {
-            sections: this.buildManualSections(plan.sections),
-            usedFallback: true,
-            fallbackReason: "PROVIDER_NOT_CONFIGURED" as const,
-          };
-      generated = result.sections;
-      usedFallback = result.usedFallback;
-      fallbackReason = result.fallbackReason;
-    } catch (error) {
-      generationFailed = true;
-      if (creditReserved) {
-        await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
-      }
-      await this.recordLlmRun(ctx, reportingPeriodId, chargeAiCredits, "error", 0, 0, 0, 0, Date.now() - startedAt, generator.model.modelId, generator.model.modelVersion, generator.model.promptVersion);
-      return { ok: false, error: DomainError.invariant("Report draft generation failed") };
-    }
-
-    // A real AI draft is one the configured provider actually produced. When
-    // the provider failed and the generator fell back to the stub, the draft
-    // is not AI-generated: it must not be metered, must not be billed, and the
-    // reserved credit must be released.
-    const realAiGenerated = chargeAiCredits && !usedFallback;
-    if (creditReserved && !realAiGenerated) {
-      await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
-      creditReserved = false;
-    }
-
+    // Phase 1 — create the draft structure immediately. Every plan section is
+    // persisted as a NOT_STARTED placeholder so the UI can render the full
+    // report skeleton (greyed out) right away. Actual narration runs section by
+    // section in a background loop so each LLM call stays small and within
+    // provider timeouts, and users see sections flip to ready one at a time.
     const sectionIds: string[] = [];
-    let claimCount = 0;
-
-    for (let i = 0; i < generated.length; i++) {
-      const g = generated[i]!;
-      const sectionId = this.ids.generate();
-      sectionIds.push(sectionId);
-      const section = ReportSection.create({
-        id: sectionId,
-        tenantId: ctx.tenant.tenantId.toString(),
-        reportDraftId: draftId,
-        sectionTitle: g.title,
-        sectionOrder: i,
-        content: "",
-        sourceReferences: g.sourceReferences,
-        unsupportedClaims: [],
-        status: "DRAFTED",
-      });
-      const savedSection = await this.sections.create(section);
-      if (!savedSection.ok) {
-        if (creditReserved) {
-          await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+    if (aiEnabled) {
+      for (let i = 0; i < plan.sections.length; i++) {
+        const sectionId = this.ids.generate();
+        sectionIds.push(sectionId);
+        const section = ReportSection.create({
+          id: sectionId,
+          tenantId: ctx.tenant.tenantId.toString(),
+          reportDraftId: draftId,
+          sectionTitle: plan.sections[i]!.title,
+          sectionOrder: i,
+          content: "",
+          sourceReferences: [],
+          unsupportedClaims: [],
+          status: "NOT_STARTED",
+        });
+        const savedSection = await this.sections.create(section);
+        if (!savedSection.ok) {
+          if (creditReserved) {
+            await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+          }
+          return savedSection;
         }
-        return savedSection;
       }
-
-      // Every content mutation goes through the revision pipeline: a new
-      // UNASSESSED revision is created and the section repoints at it.
-      const committed = await this.revisionService.commitChange({
-        tenantId: ctx.tenant.tenantId,
-        section,
-        content: g.content,
-        sourceReferences: g.sourceReferences,
-        unsupportedClaims: [],
-        changeOrigin: "GENERATION",
-        actorId: ctx.tenant.userId,
-        modelId: realAiGenerated ? generator.model.modelId : undefined,
-        promptVersion: realAiGenerated ? generator.model.promptVersion : undefined,
-        generationRunId: run.id,
-      });
-      if (!committed.ok) {
-        if (creditReserved) {
-          await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+    } else {
+      // AI disabled for the organization: emit empty manual sections so the
+      // report structure is still created, matching the pre-AI manual flow.
+      for (let i = 0; i < plan.sections.length; i++) {
+        const sectionId = this.ids.generate();
+        sectionIds.push(sectionId);
+        const section = ReportSection.create({
+          id: sectionId,
+          tenantId: ctx.tenant.tenantId.toString(),
+          reportDraftId: draftId,
+          sectionTitle: plan.sections[i]!.title,
+          sectionOrder: i,
+          content: "",
+          sourceReferences: [],
+          unsupportedClaims: [],
+          status: "DRAFTED",
+        });
+        const savedSection = await this.sections.create(section);
+        if (!savedSection.ok) {
+          if (creditReserved) {
+            await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+          }
+          return savedSection;
         }
-        return committed;
       }
-
-      // Extract assertions from the final content, reconcile the writer's
-      // claims, verify every material assertion, and set revision assurance.
-      const assessed = await this.assuranceService.assessRevision({
-        ctx: { tenantId: ctx.tenant.tenantId, userId: ctx.tenant.userId },
-        sectionId,
-        revisionId: committed.value.id,
-        writerClaims: g.claims,
-        findings: verifiedFindings,
-        evidencePackages,
-      });
-      if (!assessed.ok) {
-        if (creditReserved) {
-          await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
-        }
-        return assessed;
-      }
-      claimCount += assessed.value.claims.length;
     }
 
     // ReportPlan is unique on (tenantId, reportingPeriodId, version);
@@ -412,43 +361,53 @@ export class GenerateReportDraftHandler {
       return savedPlan;
     }
 
-    // Record the run and correct the draft's AI flag. A stub fallback is a
-    // failed AI attempt: it is recorded as an error run (never billed) and the
-    // draft is marked as not AI-generated so no credit is consumed.
-    if (chargeAiCredits && !generationFailed) {
-      if (realAiGenerated) {
-        await this.recordLlmRun(ctx, reportingPeriodId, true, "success", 0, 0, 0, 0, Date.now() - startedAt, generator.model.modelId, generator.model.modelVersion, generator.model.promptVersion);
-      } else {
-        await this.recordLlmRun(ctx, reportingPeriodId, true, "error", 0, 0, 0, 0, Date.now() - startedAt, generator.model.modelId, generator.model.modelVersion, generator.model.promptVersion);
-        draft.setGeneratedByAi(false);
-        const correctedDraft = await this.drafts.update(draft);
-        if (!correctedDraft.ok) return correctedDraft;
-      }
-    }
-    creditReserved = false;
-
-    period.transitionTo(period.status);
-    period.setDonorTemplate(period.donorTemplateId ?? "");
-    const updatedPeriod = await this.periods.update(period);
-
-    await this.audit.record({
-      tenantId: ctx.tenant.tenantId,
-      actorId: ctx.tenant.userId,
-      eventType: "report.draft.generated",
-      entityType: "report_draft",
-      entityId: draftId,
-      projectId: period.projectId,
-      newValue: `sections=${sectionIds.length};claims=${claimCount};generatedByAi=${realAiGenerated};fallback=${usedFallback};reason=${fallbackReason ?? "none"};run=${run.id}`,
-    });
-
-    if (usedFallback) {
+    // Phase 2 — background section-wise narration. Fire-and-forget: the HTTP
+    // response returns immediately (structure visible), and the loop drafts
+    // one section per LLM call, committing + assessing each as it completes.
+    // The UI polls GET /draft and observes sections flip NOT_STARTED -> DRAFTED.
+    if (aiEnabled) {
+      void this.generateSectionsInBackground({
+        ctx,
+        reportingPeriodId,
+        draftId,
+        draft,
+        runId: run.id,
+        plan,
+        sectionIds,
+        period,
+        verifiedFindings,
+        evidencePackages,
+        activities,
+        indicatorUpdates,
+        reportingProfileSnapshot,
+        reportContext: this.buildReportContext(project, period, template?.ok && template.value ? template.value : undefined),
+        generator,
+        chargeAiCredits,
+        creditReserved,
+      }).catch((error) => {
+        this.audit.record({
+          tenantId: ctx.tenant.tenantId,
+          actorId: ctx.tenant.userId,
+          eventType: "report.draft.generation_error",
+          entityType: "report_draft",
+          entityId: draftId,
+          projectId: period.projectId,
+          systemNote: `Background section-wise generation failed: ${error instanceof Error ? error.message : String(error)}`,
+        }).catch(() => undefined);
+      });
+    } else {
+      // AI disabled: no background work; the manual skeleton is the result.
+      period.transitionTo(period.status);
+      period.setDonorTemplate(period.donorTemplateId ?? "");
+      await this.periods.update(period);
       await this.audit.record({
         tenantId: ctx.tenant.tenantId,
         actorId: ctx.tenant.userId,
-        eventType: "report.draft.fallback",
+        eventType: "report.draft.generated",
         entityType: "report_draft",
         entityId: draftId,
-        systemNote: `Draft generation fell back to stub generator (reason=${fallbackReason ?? "unknown"}).`,
+        projectId: period.projectId,
+        newValue: `sections=${sectionIds.length};claims=0;generatedByAi=false;fallback=true;reason=PROVIDER_NOT_CONFIGURED;run=${run.id}`,
       });
     }
 
@@ -457,13 +416,156 @@ export class GenerateReportDraftHandler {
       value: {
         draftId,
         sectionIds,
-        claimCount,
-        planId: plan.id,
-        generationRunId: run.id,
-        fallbackUsed: usedFallback,
-        fallbackReason,
+        generating: aiEnabled,
+        totalSections: sectionIds.length,
+        fallbackUsed: !aiEnabled,
+        fallbackReason: !aiEnabled ? ("PROVIDER_NOT_CONFIGURED" as const) : undefined,
       },
     };
+  }
+
+  private async generateSectionsInBackground(input: {
+    ctx: AuthenticatedContext;
+    reportingPeriodId: string;
+    draftId: string;
+    draft: ReportDraft;
+    runId: string;
+    plan: ReportPlan;
+    sectionIds: string[];
+    period: ReportingPeriod;
+    verifiedFindings: VerifiedFinding[];
+    evidencePackages: EvidencePackage[];
+    activities: ActivityGenerationContext[];
+    indicatorUpdates: IndicatorUpdateGenerationContext[];
+    reportingProfileSnapshot: ReportingProfileSnapshot;
+    reportContext: ReportGenerationContext;
+    generator: IReportDraftGenerator;
+    chargeAiCredits: boolean;
+    creditReserved: boolean;
+  }): Promise<void> {
+    const startedAt = Date.now();
+    let usedFallback = false;
+    let fallbackReason: string | undefined;
+    let generationFailed = false;
+    let claimCount = 0;
+
+    try {
+      for (let i = 0; i < input.sectionIds.length; i++) {
+        const sectionId = input.sectionIds[i]!;
+        const planSection = input.plan.sections[i]!;
+
+        // Resume-safe: skip sections already drafted by a previous run.
+        const existing = await this.sections.findById(sectionId, input.ctx.tenant.tenantId);
+        if (!existing.ok || !existing.value) continue;
+        const section = existing.value;
+        if (section.status === "DRAFTED" || section.content.trim().length > 0) continue;
+
+        const generated = await input.generator.generateSection(
+          {
+            reportPlan: input.plan,
+            verifiedFindings: input.verifiedFindings,
+            evidencePackages: input.evidencePackages,
+            activities: input.activities,
+            indicatorUpdates: input.indicatorUpdates,
+            reportingProfileSnapshot: input.reportingProfileSnapshot,
+            generationRunId: input.runId,
+            reportContext: input.reportContext,
+          },
+          planSection,
+        );
+        if (generated.usedFallback) {
+          usedFallback = true;
+          fallbackReason = generated.fallbackReason ?? fallbackReason;
+        }
+
+        const committed = await this.revisionService.commitChange({
+          tenantId: input.ctx.tenant.tenantId,
+          section,
+          content: generated.section.content,
+          sourceReferences: generated.section.sourceReferences,
+          unsupportedClaims: [],
+          changeOrigin: "GENERATION",
+          actorId: input.ctx.tenant.userId,
+          modelId: !generated.usedFallback ? input.generator.model.modelId : undefined,
+          promptVersion: !generated.usedFallback ? input.generator.model.promptVersion : undefined,
+          generationRunId: input.runId,
+        });
+        if (!committed.ok) {
+          generationFailed = true;
+          break;
+        }
+
+        const assessed = await this.assuranceService.assessRevision({
+          ctx: { tenantId: input.ctx.tenant.tenantId, userId: input.ctx.tenant.userId },
+          sectionId,
+          revisionId: committed.value.id,
+          writerClaims: generated.section.claims,
+          findings: input.verifiedFindings,
+          evidencePackages: input.evidencePackages,
+        });
+        if (!assessed.ok) {
+          generationFailed = true;
+          break;
+        }
+        claimCount += assessed.value.claims.length;
+      }
+    } catch (error) {
+      generationFailed = true;
+      this.audit.record({
+        tenantId: input.ctx.tenant.tenantId,
+        actorId: input.ctx.tenant.userId,
+        eventType: "report.draft.generation_error",
+        entityType: "report_draft",
+        entityId: input.draftId,
+        projectId: input.draft.projectId,
+        systemNote: `Section-wise generation loop threw: ${error instanceof Error ? error.message : String(error)}`,
+      }).catch(() => undefined);
+    }
+
+    // A real AI draft is one the configured provider actually produced. When
+    // any section fell back to the stub (or the loop errored), the draft is
+    // not AI-generated: it must not be metered, must not be billed, and the
+    // reserved credit must be released.
+    const realAiGenerated = input.chargeAiCredits && !usedFallback && !generationFailed;
+    if (input.creditReserved && !realAiGenerated) {
+      await this.usage.add(input.ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+    }
+
+    if (input.chargeAiCredits && !generationFailed) {
+      if (realAiGenerated) {
+        await this.recordLlmRun(input.ctx, input.reportingPeriodId, true, "success", 0, 0, 0, 0, Date.now() - startedAt, input.generator.model.modelId, input.generator.model.modelVersion, input.generator.model.promptVersion);
+      } else {
+        await this.recordLlmRun(input.ctx, input.reportingPeriodId, true, "error", 0, 0, 0, 0, Date.now() - startedAt, input.generator.model.modelId, input.generator.model.modelVersion, input.generator.model.promptVersion);
+        input.draft.setGeneratedByAi(false);
+        const correctedDraft = await this.drafts.update(input.draft);
+        if (!correctedDraft.ok) return;
+      }
+    }
+
+    await this.audit.record({
+      tenantId: input.ctx.tenant.tenantId,
+      actorId: input.ctx.tenant.userId,
+      eventType: "report.draft.generated",
+      entityType: "report_draft",
+      entityId: input.draftId,
+      projectId: input.draft.projectId,
+      newValue: `sections=${input.sectionIds.length};claims=${claimCount};generatedByAi=${realAiGenerated};fallback=${usedFallback || generationFailed};reason=${fallbackReason ?? "none"};run=${input.runId}`,
+    });
+
+    if (usedFallback) {
+      await this.audit.record({
+        tenantId: input.ctx.tenant.tenantId,
+        actorId: input.ctx.tenant.userId,
+        eventType: "report.draft.fallback",
+        entityType: "report_draft",
+        entityId: input.draftId,
+        systemNote: `Draft generation fell back to stub generator (reason=${fallbackReason ?? "unknown"}).`,
+      });
+    }
+
+    input.period.transitionTo(input.period.status);
+    input.period.setDonorTemplate(input.period.donorTemplateId ?? "");
+    await this.periods.update(input.period);
   }
 
   private async recordLlmRun(
@@ -546,24 +648,5 @@ export class GenerateReportDraftHandler {
           }
         : undefined,
     };
-  }
-
-  private buildManualSections(planSections: Array<{ templateSectionId: string; title: string }>): Array<{
-    sectionId: string;
-    title: string;
-    content: string;
-    claims: [];
-    sourceReferences: [];
-  }> {
-    const sections = planSections.length > 0
-      ? planSections
-      : [{ templateSectionId: "manual-narrative", title: "Narrative Report" }];
-    return sections.map((section) => ({
-      sectionId: section.templateSectionId,
-      title: section.title,
-      content: "",
-      claims: [],
-      sourceReferences: [],
-    }));
   }
 }

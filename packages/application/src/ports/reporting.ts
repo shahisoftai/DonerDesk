@@ -3,6 +3,7 @@ import type {
   TenantId,
   DomainError,
   ReportPlan,
+  ReportPlanSection,
   VerifiedFinding,
   ReportClaim,
   ReportGenerationRun,
@@ -249,6 +250,17 @@ export interface GeneratedDraftResult {
     | "PII_REJECTED";
 }
 
+/**
+ * Result of a single-section generation call. Mirrors `GeneratedDraftResult`
+ * but for one plan section, so section-wise generation can run each section in
+ * its own LLM call (short prompts stay within provider timeouts).
+ */
+export interface GeneratedSectionResult {
+  section: GeneratedSection;
+  usedFallback: boolean;
+  fallbackReason?: GeneratedDraftResult["fallbackReason"];
+}
+
 export interface IReportDraftGenerator {
   /**
    * Identifies the model powering this generator. Used for accurate run
@@ -265,6 +277,14 @@ export interface IReportDraftGenerator {
    * a stub fallback was used.
    */
   generateDraft(input: GenerateReportDraftInput): Promise<GeneratedDraftResult>;
+
+  /**
+   * Drafts ONE section from a report plan and verified findings. Used by the
+   * section-wise generation pipeline: every section is drafted in its own LLM
+   * call so each call stays well within provider timeouts, the draft structure
+   * is visible (greyed) immediately, and sections flip to ready one at a time.
+   */
+  generateSection(input: GenerateReportDraftInput, section: ReportPlanSection): Promise<GeneratedSectionResult>;
 
   /**
    * Rewrites or shortens an existing section while preserving its facts and

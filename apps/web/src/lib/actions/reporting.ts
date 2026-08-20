@@ -8,6 +8,7 @@ import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import {
   DetectMissingResponseSchema,
+  DraftPollResponseSchema,
   GeneratedDraftResponseSchema,
   IdResponseSchema,
   OkResponseSchema,
@@ -76,7 +77,7 @@ export async function reorderReportSectionsAction(
 }
 
 export type GenerateDraftResult = Result<
-  { draftId: string; sectionIds: string[]; fallbackUsed?: boolean; fallbackReason?: string },
+  { draftId: string; sectionIds: string[]; generating?: boolean; totalSections?: number; fallbackUsed?: boolean; fallbackReason?: string },
   AppError
 >;
 
@@ -85,9 +86,39 @@ export async function generateDraftAction(periodId: string): Promise<GenerateDra
   return gatewayRequest(`/v1/reporting-periods/${periodId}/generate-draft`, GeneratedDraftResponseSchema, context.token, {
     method: "POST",
     body: {},
-    // LLM providers (MiniMax measured at 46-54s) need well beyond the 15s
-    // default gateway timeout to draft a full report.
-    timeoutMs: 180_000,
+    // Section-wise generation returns as soon as the draft skeleton is
+    // created; individual sections are drafted in a background loop. The
+    // timeout covers creating the plan + skeleton (fast) so a conservative
+    // generous ceiling is fine.
+    timeoutMs: 60_000,
+  });
+}
+
+export type GetReportDraftResult = Result<
+  {
+    draft: {
+      id: string;
+      title: string;
+      status: string;
+      version: number;
+      generatedByAi?: boolean;
+    } | null;
+    sections?: Array<{
+      id: string;
+      sectionTitle: string;
+      sectionOrder: number;
+      content: string;
+      status: string;
+      updatedAt: string;
+    }>;
+  },
+  AppError
+>;
+
+export async function getReportDraftAction(periodId: string): Promise<GetReportDraftResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/draft`, DraftPollResponseSchema, context.token, {
+    method: "GET",
   });
 }
 

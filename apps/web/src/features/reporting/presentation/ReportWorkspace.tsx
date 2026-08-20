@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { generateDraftAction, detectMissingAction, submitReportForReviewAction, approveReportSectionAction, createReportSectionAction, deleteReportSectionAction, reorderReportSectionsAction } from "@/lib/actions/reporting";
+import { generateDraftAction, getReportDraftAction, detectMissingAction, submitReportForReviewAction, approveReportSectionAction, createReportSectionAction, deleteReportSectionAction, reorderReportSectionsAction } from "@/lib/actions/reporting";
 import { useActionState } from "@/lib/client/action-state";
 import { can, type Capability } from "@/lib/shared/capabilities";
 import { Badge } from "@/components/data/Badge";
@@ -128,6 +128,15 @@ export function ReportWorkspace({
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [liveSections, setLiveSections] = useState<ReportSection[]>(sections);
+  const [generating, setGenerating] = useState(false);
+  const [generatedCount, setGeneratedCount] = useState(0);
+
+  // Keep the local section list in sync with server-rendered props unless a
+  // background section-wise generation is polling and owns the list.
+  useEffect(() => {
+    if (!generating) setLiveSections(sections);
+  }, [sections, generating]);
 
   const canGenerate = can(capabilities, "report.generate");
   const canEdit = can(capabilities, "reporting.edit");
@@ -144,14 +153,15 @@ export function ReportWorkspace({
   }
 
   useEffect(() => {
-    if (sections.length === 0) {
+    if (liveSections.length === 0) {
       setSelectedId(null);
-    } else if (!sections.some((s) => s.id === selectedId)) {
-      setSelectedId(sections[0]!.id);
+    } else if (!liveSections.some((s) => s.id === selectedId)) {
+      setSelectedId(liveSections[0]!.id);
     }
-  }, [sections, selectedId]);
+  }, [liveSections, selectedId]);
 
-  const selected = sections.find((s) => s.id === selectedId) ?? null;
+  const selected = liveSections.find((s) => s.id === selectedId) ?? null;
+  const pendingSectionCount = liveSections.filter((s) => s.status === "NOT_STARTED").length;
   const openChecklist = checklist.filter((c) => c.status !== "RESOLVED" && c.status !== "ACCEPTED_RISK" && c.status !== "NOT_APPLICABLE");
   const aiEnabledLabel = draft ? (draft.generatedByAi ? "AI-assisted draft" : "Manually created draft") : null;
 
@@ -177,16 +187,63 @@ export function ReportWorkspace({
     try {
       const result = await actionState.run(() => generateDraftAction(periodId));
       if (result) {
-        const fallbackSuffix = result.fallbackUsed
-          ? ` Content shown is a structured placeholder because the AI provider was unavailable${result.fallbackReason ? ` (${result.fallbackReason})` : ""}.`
-          : "";
-        setDraftMsg(`Draft generated with ${result.sectionIds.length} sections.${fallbackSuffix}`);
-        router.refresh();
+        if (result.generating) {
+          // Section-wise generation: skeleton returned immediately; poll the
+          // draft until every section has been drafted in the background.
+          setGenerating(true);
+          setDraftMsg(null);
+        } else {
+          const fallbackSuffix = result.fallbackUsed
+            ? ` Content shown is a structured placeholder because the AI provider was unavailable${result.fallbackReason ? ` (${result.fallbackReason})` : ""}.`
+            : "";
+          setDraftMsg(`Draft generated with ${result.sectionIds.length} sections.${fallbackSuffix}`);
+          router.refresh();
+        }
       }
     } finally {
       setBusyAction(null);
     }
   }
+
+  // Poll the draft while a background section-wise generation is in flight.
+  // Each section flips NOT_STARTED -> DRAFTED as it completes, and the left
+  // column updates in place instead of blocking on a single long LLM call.
+  useEffect(() => {
+    if (!generating) return;
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_POLL_ATTEMPTS = 120; // ~8 minutes: a 9-section draft at ~40s/section
+    const poll = async () => {
+      if (cancelled) return;
+      attempts += 1;
+      if (attempts > MAX_POLL_ATTEMPTS) {
+        setGenerating(false);
+        setDraftMsg("Generation is still running in the background. You can keep editing completed sections or refresh to see the latest progress.");
+        return;
+      }
+      const result = await actionState.run(() => getReportDraftAction(periodId));
+      if (cancelled) return;
+      if (result) {
+        const next = (result.sections ?? []).sort((a, b) => a.sectionOrder - b.sectionOrder);
+        setLiveSections(next);
+        const done = next.filter((s) => s.status !== "NOT_STARTED").length;
+        setGeneratedCount(done);
+        if (next.length > 0 && done >= next.length) {
+          setGenerating(false);
+          setDraftMsg("All sections drafted.");
+          router.refresh();
+          return;
+        }
+      }
+      window.setTimeout(poll, 4000);
+    };
+    const timer = window.setTimeout(poll, 2000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generating]);
 
   async function detectMissing() {
     setBusyAction("detect");
@@ -238,11 +295,11 @@ export function ReportWorkspace({
     }
   }
 
-  const canReorder = Boolean(canEdit && draft && draft.status === "DRAFT" && sections.length > 1);
+  const canReorder = Boolean(canEdit && draft && draft.status === "DRAFT" && liveSections.length > 1);
 
   async function persistOrder(nextSections: ReportSection[]) {
     if (!draft) return;
-    const currentIds = sections.map((s) => s.id).join(",");
+    const currentIds = liveSections.map((s) => s.id).join(",");
     const nextIds = nextSections.map((s) => s.id);
     if (nextIds.join(",") === currentIds) return;
     setBusyAction("section-reorder");
@@ -256,10 +313,10 @@ export function ReportWorkspace({
 
   function moveSectionTo(targetId: string) {
     if (draggingId === null) return;
-    const from = sections.findIndex((s) => s.id === draggingId);
-    const to = sections.findIndex((s) => s.id === targetId);
+    const from = liveSections.findIndex((s) => s.id === draggingId);
+    const to = liveSections.findIndex((s) => s.id === targetId);
     if (from < 0 || to < 0 || from === to) return;
-    const next = [...sections];
+    const next = [...liveSections];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved!);
     setDraggingId(null);
@@ -268,10 +325,10 @@ export function ReportWorkspace({
   }
 
   function moveSectionByOffset(sectionId: string, offset: number) {
-    const from = sections.findIndex((s) => s.id === sectionId);
+    const from = liveSections.findIndex((s) => s.id === sectionId);
     const to = from + offset;
-    if (from < 0 || to < 0 || to >= sections.length) return;
-    const next = [...sections];
+    if (from < 0 || to < 0 || to >= liveSections.length) return;
+    const next = [...liveSections];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved!);
     void persistOrder(next);
@@ -294,8 +351,8 @@ export function ReportWorkspace({
         </div>
         <div className="flex flex-wrap gap-2">
           {canGenerate && (
-            <Button size="sm" variant="secondary" disabled={busyAction === "draft"} onClick={generate}>
-              {busyAction === "draft" ? "Generating…" : draft ? "Regenerate AI draft" : "Generate AI draft"}
+            <Button size="sm" variant="secondary" disabled={busyAction === "draft" || generating} onClick={generate} pending={generating || busyAction === "draft"}>
+              {generating ? `Generating… ${generatedCount}/${liveSections.length}` : busyAction === "draft" ? "Generating…" : draft ? "Regenerate AI draft" : "Generate AI draft"}
             </Button>
           )}
           {canGenerate && (
@@ -342,9 +399,21 @@ export function ReportWorkspace({
       <div className="grid gap-6 lg:grid-cols-[220px_1fr_260px]">
         {/* Left: section navigation */}
         <aside className={`space-y-2 ${panel === "sections" ? "block" : "hidden lg:block"}`}>
-          {sections.length === 0 && (
+          {liveSections.length === 0 && (
             <div className="card text-sm text-slate-600 dark:text-slate-300">
               <p>No sections yet. Generate a draft to create the report structure, or add a section manually.</p>
+            </div>
+          )}
+          {generating && (
+            <div className="card space-y-1 p-3 text-sm">
+              <p className="font-medium text-brand-700 dark:text-brand-300">
+                Generating sections… {generatedCount}/{liveSections.length || draft?.title ? "" : ""}
+              </p>
+              {pendingSectionCount > 0 && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {pendingSectionCount} section{pendingSectionCount === 1 ? "" : "s"} left. Each section is drafted in its own AI call, so the report fills in one section at a time.
+                </p>
+              )}
             </div>
           )}
           {draft && canEdit && draft.status === "DRAFT" && (
@@ -391,13 +460,13 @@ export function ReportWorkspace({
             </div>
           )}
           <nav aria-label="Report sections" className="space-y-1.5">
-            {canReorder && (
+            {canReorder && !generating && (
               <p className="px-1 text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500">Drag or use arrows to reorder</p>
             )}
-            {sections.map((s, index) => (
+            {liveSections.map((s, index) => (
               <div
                 key={s.id}
-                draggable={canReorder}
+                draggable={canReorder && !generating}
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = "move";
                   e.dataTransfer.setData("text/plain", s.id);
@@ -418,22 +487,25 @@ export function ReportWorkspace({
                   setDragOverId(null);
                 }}
                 className={`flex items-center gap-1 rounded-lg border transition ${
-                  selectedId === s.id
-                    ? "border-brand-500/40 bg-brand-500/5"
-                    : "border-slate-200 hover:border-brand-400/40 dark:border-white/10"
+                  s.status === "NOT_STARTED"
+                    ? "border-slate-200/70 bg-slate-50 opacity-60 dark:border-white/5 dark:bg-white/[0.02]"
+                    : selectedId === s.id
+                      ? "border-brand-500/40 bg-brand-500/5"
+                      : "border-slate-200 hover:border-brand-400/40 dark:border-white/10"
                 } ${draggingId === s.id ? "opacity-50" : ""} ${
                   dragOverId === s.id && draggingId !== null && draggingId !== s.id
                     ? "border-brand-500 ring-1 ring-brand-500/40"
                     : ""
-                } ${canReorder ? "cursor-grab active:cursor-grabbing" : ""}`}
+                } ${canReorder && !generating ? "cursor-grab active:cursor-grabbing" : ""}`}
               >
-                {canReorder && (
+                {canReorder && !generating && (
                   <span aria-hidden="true" className="pl-1.5 text-slate-400 dark:text-slate-500">
                     ⋮⋮
                   </span>
                 )}
                 <button
                   type="button"
+                  disabled={s.status === "NOT_STARTED"}
                   onClick={() => {
                     setSelectedId(s.id);
                     setPanel("editor");
@@ -441,10 +513,13 @@ export function ReportWorkspace({
                   aria-current={selectedId === s.id ? "true" : undefined}
                   className="flex w-full items-center justify-between gap-2 rounded-l-lg px-2 py-2 text-left text-sm"
                 >
-                  <span className="min-w-0 break-words leading-5">{index + 1}. {s.sectionTitle}</span>
+                  <span className={`min-w-0 break-words leading-5 ${s.status === "NOT_STARTED" ? "italic text-slate-400 dark:text-slate-500" : ""}`}>
+                    {s.status === "NOT_STARTED" && <span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 animate-pulse rounded-full bg-slate-400" />}
+                    {index + 1}. {s.sectionTitle}
+                  </span>
                   <Badge tone={sectionStatusTone(s.status)}>{SECTION_STATUS_LABEL[s.status] ?? s.status.replace(/_/g, " ")}</Badge>
                 </button>
-                {canReorder && (
+                {canReorder && !generating && (
                   <span className="flex shrink-0 items-center gap-0.5 pr-1">
                     <button
                       type="button"
@@ -460,7 +535,7 @@ export function ReportWorkspace({
                       type="button"
                       title={`Move ${s.sectionTitle} down`}
                       aria-label={`Move ${s.sectionTitle} down`}
-                      disabled={busyAction !== null || index === sections.length - 1}
+                      disabled={busyAction !== null || index === liveSections.length - 1}
                       onClick={() => moveSectionByOffset(s.id, 1)}
                       className="rounded-md px-1 py-0.5 text-slate-400 transition hover:bg-brand-500/10 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:text-brand-400"
                     >
@@ -613,7 +688,7 @@ export function ReportWorkspace({
           <ReviewAndApproval
             draftId={draft.id}
             draftStatus={draft.status}
-            sections={sections}
+            sections={liveSections}
             checklist={checklist}
             unverifiedIndicatorCount={unverifiedIndicatorCount}
             sensitiveEvidenceCount={sensitiveEvidenceCount}

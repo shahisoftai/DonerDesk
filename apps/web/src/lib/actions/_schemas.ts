@@ -20,8 +20,34 @@ export const TemplateCreatedResponseSchema = z.object({
 export const GeneratedDraftResponseSchema = z.object({
   draftId: z.string(),
   sectionIds: z.array(z.string()),
+  generating: z.boolean().optional(),
+  totalSections: z.number().int().optional(),
   fallbackUsed: z.boolean().optional(),
   fallbackReason: z.string().optional(),
+});
+
+export const DraftPollResponseSchema = z.object({
+  draft: z
+    .object({
+      id: z.string(),
+      title: z.string(),
+      status: z.string(),
+      version: z.number(),
+      generatedByAi: z.boolean().optional(),
+    })
+    .nullable(),
+  sections: z
+    .array(
+      z.object({
+        id: z.string(),
+        sectionTitle: z.string(),
+        sectionOrder: z.number(),
+        content: z.string(),
+        status: z.string(),
+        updatedAt: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export const DetectMissingResponseSchema = z.object({ created: z.number().int().nonnegative() });

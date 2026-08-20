@@ -1,5 +1,5 @@
-import type { IReportDraftGenerator, GeneratedSection, ReportClaimDraft } from "@donordesk/application";
-import type { SourceReference, VerifiedFinding } from "@donordesk/domain";
+import type { IReportDraftGenerator, GeneratedSection, GeneratedSectionResult, ReportClaimDraft } from "@donordesk/application";
+import type { ReportPlanSection, SourceReference, VerifiedFinding } from "@donordesk/domain";
 
 /**
  * Heuristic, deterministic draft generator (no LLM). Narrates verified
@@ -16,33 +16,49 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     const planSections = input.reportPlan.sections;
 
     for (const planSection of planSections) {
-      const titleLower = planSection.title.toLowerCase();
-      if (titleLower.includes("executive summary")) {
-        sections.push(this.executiveSummary(input, planSection.title));
-      } else if (titleLower.includes("indicator")) {
-        sections.push(this.indicatorProgress(input, planSection.title));
-      } else if (titleLower.includes("activity")) {
-        sections.push(this.activityNarrative(input, planSection.title));
-      } else if (titleLower.includes("achievement")) {
-        sections.push(this.achievements(input, planSection.title));
-      } else if (titleLower.includes("challenge")) {
-        sections.push(this.challenges(input, planSection.title));
-      } else if (titleLower.includes("lesson")) {
-        sections.push(this.lessons(input, planSection.title));
-      } else if (titleLower.includes("annex")) {
-        sections.push(this.annexList(input, planSection.title));
-      } else {
-        sections.push({
-          sectionId: planSection.templateSectionId,
-          title: planSection.title,
-          content: this.descriptiveNarrative(input, planSection.title),
-          claims: findingsClaims(input),
-          sourceReferences: findingsRefs(input),
-        });
-      }
+      sections.push(this.buildSection(input, planSection));
     }
 
     return { sections, usedFallback: true, fallbackReason: "PROVIDER_NOT_CONFIGURED" };
+  }
+
+  async generateSection(
+    input: Parameters<IReportDraftGenerator["generateSection"]>[0],
+    planSection: ReportPlanSection,
+  ): Promise<GeneratedSectionResult> {
+    return { section: this.buildSection(input, planSection), usedFallback: true, fallbackReason: "PROVIDER_NOT_CONFIGURED" };
+  }
+
+  private buildSection(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], planSection: ReportPlanSection): GeneratedSection {
+    const titleLower = planSection.title.toLowerCase();
+    if (titleLower.includes("executive summary")) {
+      return this.executiveSummary(input, planSection.title);
+    }
+    if (titleLower.includes("indicator")) {
+      return this.indicatorProgress(input, planSection.title);
+    }
+    if (titleLower.includes("activity")) {
+      return this.activityNarrative(input, planSection.title);
+    }
+    if (titleLower.includes("achievement")) {
+      return this.achievements(input, planSection.title);
+    }
+    if (titleLower.includes("challenge")) {
+      return this.challenges(input, planSection.title);
+    }
+    if (titleLower.includes("lesson")) {
+      return this.lessons(input, planSection.title);
+    }
+    if (titleLower.includes("annex")) {
+      return this.annexList(input, planSection.title);
+    }
+    return {
+      sectionId: planSection.templateSectionId,
+      title: planSection.title,
+      content: this.descriptiveNarrative(input, planSection.title),
+      claims: findingsClaims(input),
+      sourceReferences: findingsRefs(input),
+    };
   }
 
   async rewriteSection(input: {
