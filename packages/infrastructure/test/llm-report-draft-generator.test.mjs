@@ -77,14 +77,17 @@ test("parseSections extracts JSON wrapped in prose preamble (MiniMax style)", ()
 });
 
 test("parseSections never stores a raw JSON blob as narrative content", () => {
-  // A truncated/malformed JSON blob (looks like JSON, cannot be parsed) must
-  // return null so the caller falls back to the stub — never the raw JSON
-  // stored as a narrative section.
-  const truncated = `{"sections": [{"title": "Executive Summary", "content": "The prog`;
-  assert.equal(parseSections(truncated), null);
-  // A JSON blob that parses but has no usable sections array likewise is null.
+  // A JSON blob that parses but has no usable sections array is null (stub),
+  // never the raw JSON stored as a narrative section.
   assert.equal(parseSections(`{"sections": "nope"}`), null);
   assert.equal(parseSections(`{"foo": "bar"}`), null);
+  assert.equal(parseSections(`{"sections": []}`), null);
+  // A TRUNCATED JSON blob is now recovered via completeTruncatedJson: the
+  // salvaged partial content is returned as a real section instead of a stub.
+  const truncated = `{"sections": [{"title": "Executive Summary", "content": "The prog`;
+  const recovered = parseSections(truncated, [{ title: "Executive Summary" }]);
+  assert.ok(recovered, "expected truncated JSON to be recovered");
+  assert.equal(recovered[0].content, "The prog");
 });
 
 test("parseSections extracts JSON from fenced block with surrounding text", () => {
@@ -136,4 +139,43 @@ test("parseSections repairs literal tabs and carriage returns inside string valu
   assert.ok(sections[0].content.includes("col1"));
   assert.ok(sections[0].content.includes("col2"));
   assert.ok(sections[0].content.includes("row"));
+});
+
+test("parseSections completes JSON truncated by the output token limit", () => {
+  // A section longer than maxTokens: the response ends mid-string and with
+  // unclosed structures. The parser must complete it instead of returning null.
+  const raw = `{
+  "sections": [
+    {
+      "title": "Progress Against Indicators",
+      "content": "| Indicator | Value | Target | Method |
+| OUT-1 | 8 centres | 120 | SUM |
+| OUT-2 | 521 kits | 15000 | SUM |",
+      "claims": [
+        {
+          "text": "Eight learning centres established",
+          "type": "NUMERIC",
+          "proposedSources": [{"evidenceId": "e1", "chunkId": "e1:0", "sourceText": "Field reports"}]
+        }
+      ],
+      "sourceReferences": [
+        {"type": "indicator", "id": "i1", "label": "OUT-1"}
+      ]
+    }
+  ]}`;
+  // Cut mid-way: inside the sourceReferences array, before closing braces.
+  const cut = raw.slice(0, raw.indexOf('"sourceReferences"') + 120);
+  const sections = parseSections(cut, [{ title: "Progress Against Indicators" }]);
+  assert.ok(sections, "expected truncated JSON to be completed and parsed");
+  assert.equal(sections[0].title, "Progress Against Indicators");
+  assert.ok(sections[0].content.includes("OUT-1"));
+});
+
+test("parseSections completes JSON truncated mid-string", () => {
+  // Cut mid-string inside the content value.
+  const raw = `{"sections":[{"title":"A","content":"The narrative goes on`;
+  const sections = parseSections(raw, [{ title: "A" }]);
+  assert.ok(sections, "expected mid-string truncation to be completed");
+  assert.equal(sections[0].title, "A");
+  assert.ok(sections[0].content.startsWith("The narrative"));
 });

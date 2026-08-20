@@ -518,7 +518,71 @@ function tryParseSections(json: string): GeneratedSection[] | null {
     const retry = attempt(repaired);
     if (retry) return retry;
   }
+
+  // maxTokens truncation: when a section's content (especially a markdown
+  // table) is longer than the output budget, MiniMax returns a PREFIX of the
+  // JSON document — the trailing string literal and/or closing braces are cut
+  // off mid-output. The document is structurally incomplete, so neither strict
+  // parse nor control-char repair can help. Attempt to complete the JSON by
+  // closing unclosed strings and structures; salvage the parsed sections.
+  const completed = completeTruncatedJson(repaired);
+  if (completed !== null) {
+    const retry = attempt(completed);
+    if (retry) return retry;
+  }
   return null;
+}
+
+/**
+ * Attempts to repair a JSON document truncated by the output token limit.
+ * Walks the text, tracking string/escape state and an open-structure stack;
+ * when the input ends mid-string, mid-array, or mid-object, it appends the
+ * missing closing characters. Returns null when the text is not truncatable
+ * (already balanced) or cannot be completed.
+ */
+function completeTruncatedJson(text: string): string | null {
+  const stack: Array<"{" | "["> = [];
+  let inString = false;
+  let escaped = false;
+  let lastStructuralEnd = -1; // index of last complete `}` or `]`
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!;
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+        lastStructuralEnd = i;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+    } else if (ch === "{" || ch === "[") {
+      stack.push(ch as "{" | "[");
+      lastStructuralEnd = -1;
+    } else if (ch === "}" || ch === "]") {
+      stack.pop();
+      lastStructuralEnd = i;
+    }
+  }
+
+  // If we ended inside a string, close it first.
+  let suffix = "";
+  if (inString) {
+    // The string may have been cut mid-value; closing the quote yields a
+    // syntactically valid (if abbreviated) value.
+    suffix += '"';
+  }
+  // Close any unclosed structures, innermost first.
+  while (stack.length > 0) {
+    const open = stack.pop()!;
+    suffix += open === "{" ? "}" : "]";
+  }
+  if (!suffix) return null; // nothing to repair
+  return text + suffix;
 }
 
 /**
@@ -820,7 +884,7 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
         systemPrompt,
         userPrompt,
         jsonMode: true,
-        maxTokens: 1500,
+        maxTokens: 4096,
         temperature: 0.3,
       });
 
