@@ -95,6 +95,7 @@ export * from "./use-cases/reporting/get-report-draft.js";
 export * from "./use-cases/reporting/update-report-section.js";
 export * from "./use-cases/reporting/create-report-section.js";
 export * from "./use-cases/reporting/delete-report-section.js";
+export * from "./use-cases/reporting/reorder-report-sections.js";
 export * from "./use-cases/reporting/update-report-section-chart.js";
 export * from "./use-cases/reporting/rewrite-report-section.js";
 export * from "./use-cases/reporting/approve-report-section.js";

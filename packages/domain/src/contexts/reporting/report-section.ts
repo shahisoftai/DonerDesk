@@ -102,6 +102,14 @@ export class ReportSection extends Entity<string> {
     this.touch();
   }
 
+  setSectionOrder(order: number): void {
+    if (!Number.isInteger(order) || order < 0) {
+      throw DomainError.validation("Section order must be a non-negative integer");
+    }
+    this.props.sectionOrder = order;
+    this.touch();
+  }
+
   markNeedsEvidence(): void {
     this.props.status = "NEEDS_EVIDENCE";
     this.touch();

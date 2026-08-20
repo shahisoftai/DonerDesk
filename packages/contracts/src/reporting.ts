@@ -64,6 +64,12 @@ export const CreateReportSectionSchema = z.object({
 });
 export type CreateReportSectionInput = z.infer<typeof CreateReportSectionSchema>;
 
+export const ReorderReportSectionsSchema = z.object({
+  /** The complete section ordering for the draft, first to last. */
+  sectionIds: z.array(z.string().min(1)).min(1),
+});
+export type ReorderReportSectionsInput = z.infer<typeof ReorderReportSectionsSchema>;
+
 export const ReviewReportSchema = z.object({
   decision: z.enum(["APPROVE", "RETURN"]),
   notes: z.string().max(2000).optional(),

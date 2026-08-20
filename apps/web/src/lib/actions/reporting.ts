@@ -14,6 +14,7 @@ import {
   UpdateSectionResponseSchema,
   UpdateSectionChartResponseSchema,
   RewriteSectionResponseSchema,
+  ReorderSectionsResponseSchema,
 } from "./_schemas";
 
 export type CreateReportingPeriodResult = Result<{ id: string }, AppError>;
@@ -59,6 +60,19 @@ export async function deleteReportSectionAction(sectionId: string): Promise<Dele
   });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
+}
+
+export type ReorderReportSectionsResult = Result<{ sectionIds: string[] }, AppError>;
+
+export async function reorderReportSectionsAction(
+  draftId: string,
+  sectionIds: string[],
+): Promise<ReorderReportSectionsResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-drafts/${draftId}/sections-order`, ReorderSectionsResponseSchema, context.token, {
+    method: "PUT",
+    body: { sectionIds },
+  });
 }
 
 export type GenerateDraftResult = Result<

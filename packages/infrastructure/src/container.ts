@@ -58,6 +58,7 @@ import {
   UpdateReportSectionHandler,
   CreateReportSectionHandler,
   DeleteReportSectionHandler,
+  ReorderReportSectionsHandler,
   UpdateReportSectionChartHandler,
   ApproveReportSectionHandler,
   SubmitReportForReviewHandler,
@@ -342,6 +343,7 @@ export interface Container {
     updateReportSection: UpdateReportSectionHandler;
     createReportSection: CreateReportSectionHandler;
     deleteReportSection: DeleteReportSectionHandler;
+    reorderReportSections: ReorderReportSectionsHandler;
     updateReportSectionChart: UpdateReportSectionChartHandler;
     approveReportSection: ApproveReportSectionHandler;
     submitReportForReview: SubmitReportForReviewHandler;
@@ -705,6 +707,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     updateReportSection: new UpdateReportSectionHandler(sections, revisionService, assuranceService, audits),
     createReportSection: new CreateReportSectionHandler(ids, drafts, sections, audits),
     deleteReportSection: new DeleteReportSectionHandler(drafts, sections, reportClaims, reportRevisions, audits),
+    reorderReportSections: new ReorderReportSectionsHandler(drafts, sections, audits),
     updateReportSectionChart: new UpdateReportSectionChartHandler(sections, audits),
     rewriteReportSection: new RewriteReportSectionHandler(
       ids, drafts, sections, periods, indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder,

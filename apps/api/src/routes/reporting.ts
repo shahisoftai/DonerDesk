@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, ReorderReportSectionsSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -66,6 +66,15 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.deleteReportSection.handle(ctx, id);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  app.put("/v1/report-drafts/:id/sections-order", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = ReorderReportSectionsSchema.parse(req.body ?? {});
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.reorderReportSections.handle(ctx, id, body.sectionIds);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.patch("/v1/report-sections/:id/chart", async (req) => {

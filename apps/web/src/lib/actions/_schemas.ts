@@ -41,6 +41,10 @@ export const UpdateSectionChartResponseSchema = z.object({
     .nullable(),
 });
 
+export const ReorderSectionsResponseSchema = z.object({
+  sectionIds: z.array(z.string()),
+});
+
 export const RewriteSectionResponseSchema = z.object({
   version: z.string(),
   content: z.string(),

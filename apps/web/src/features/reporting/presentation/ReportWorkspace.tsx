@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { generateDraftAction, detectMissingAction, submitReportForReviewAction, approveReportSectionAction, createReportSectionAction, deleteReportSectionAction } from "@/lib/actions/reporting";
+import { generateDraftAction, detectMissingAction, submitReportForReviewAction, approveReportSectionAction, createReportSectionAction, deleteReportSectionAction, reorderReportSectionsAction } from "@/lib/actions/reporting";
 import { useActionState } from "@/lib/client/action-state";
 import { can, type Capability } from "@/lib/shared/capabilities";
 import { Badge } from "@/components/data/Badge";
@@ -126,6 +126,8 @@ export function ReportWorkspace({
   const [draftMsg, setDraftMsg] = useState<string | null>(null);
   const [addingSection, setAddingSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   const canGenerate = can(capabilities, "report.generate");
   const canEdit = can(capabilities, "reporting.edit");
@@ -234,6 +236,45 @@ export function ReportWorkspace({
     } finally {
       setBusyAction(null);
     }
+  }
+
+  const canReorder = Boolean(canEdit && draft && draft.status === "DRAFT" && sections.length > 1);
+
+  async function persistOrder(nextSections: ReportSection[]) {
+    if (!draft) return;
+    const currentIds = sections.map((s) => s.id).join(",");
+    const nextIds = nextSections.map((s) => s.id);
+    if (nextIds.join(",") === currentIds) return;
+    setBusyAction("section-reorder");
+    try {
+      const result = await actionState.run(() => reorderReportSectionsAction(draft.id, nextIds));
+      if (result !== undefined) router.refresh();
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  function moveSectionTo(targetId: string) {
+    if (draggingId === null) return;
+    const from = sections.findIndex((s) => s.id === draggingId);
+    const to = sections.findIndex((s) => s.id === targetId);
+    if (from < 0 || to < 0 || from === to) return;
+    const next = [...sections];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved!);
+    setDraggingId(null);
+    setDragOverId(null);
+    void persistOrder(next);
+  }
+
+  function moveSectionByOffset(sectionId: string, offset: number) {
+    const from = sections.findIndex((s) => s.id === sectionId);
+    const to = from + offset;
+    if (from < 0 || to < 0 || to >= sections.length) return;
+    const next = [...sections];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved!);
+    void persistOrder(next);
   }
 
   return (
@@ -350,15 +391,47 @@ export function ReportWorkspace({
             </div>
           )}
           <nav aria-label="Report sections" className="space-y-1.5">
+            {canReorder && (
+              <p className="px-1 text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500">Drag or use arrows to reorder</p>
+            )}
             {sections.map((s, index) => (
               <div
                 key={s.id}
+                draggable={canReorder}
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("text/plain", s.id);
+                  setDraggingId(s.id);
+                }}
+                onDragOver={(e) => {
+                  if (draggingId === null || draggingId === s.id) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDragOverId(s.id);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  moveSectionTo(s.id);
+                }}
+                onDragEnd={() => {
+                  setDraggingId(null);
+                  setDragOverId(null);
+                }}
                 className={`flex items-center gap-1 rounded-lg border transition ${
                   selectedId === s.id
                     ? "border-brand-500/40 bg-brand-500/5"
                     : "border-slate-200 hover:border-brand-400/40 dark:border-white/10"
-                }`}
+                } ${draggingId === s.id ? "opacity-50" : ""} ${
+                  dragOverId === s.id && draggingId !== null && draggingId !== s.id
+                    ? "border-brand-500 ring-1 ring-brand-500/40"
+                    : ""
+                } ${canReorder ? "cursor-grab active:cursor-grabbing" : ""}`}
               >
+                {canReorder && (
+                  <span aria-hidden="true" className="pl-1.5 text-slate-400 dark:text-slate-500">
+                    ⋮⋮
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -366,11 +439,35 @@ export function ReportWorkspace({
                     setPanel("editor");
                   }}
                   aria-current={selectedId === s.id ? "true" : undefined}
-                  className="flex w-full items-center justify-between gap-2 rounded-l-lg px-3 py-2 text-left text-sm"
+                  className="flex w-full items-center justify-between gap-2 rounded-l-lg px-2 py-2 text-left text-sm"
                 >
                   <span className="min-w-0 break-words leading-5">{index + 1}. {s.sectionTitle}</span>
                   <Badge tone={sectionStatusTone(s.status)}>{SECTION_STATUS_LABEL[s.status] ?? s.status.replace(/_/g, " ")}</Badge>
                 </button>
+                {canReorder && (
+                  <span className="flex shrink-0 items-center gap-0.5 pr-1">
+                    <button
+                      type="button"
+                      title={`Move ${s.sectionTitle} up`}
+                      aria-label={`Move ${s.sectionTitle} up`}
+                      disabled={busyAction !== null || index === 0}
+                      onClick={() => moveSectionByOffset(s.id, -1)}
+                      className="rounded-md px-1 py-0.5 text-slate-400 transition hover:bg-brand-500/10 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:text-brand-400"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      title={`Move ${s.sectionTitle} down`}
+                      aria-label={`Move ${s.sectionTitle} down`}
+                      disabled={busyAction !== null || index === sections.length - 1}
+                      onClick={() => moveSectionByOffset(s.id, 1)}
+                      className="rounded-md px-1 py-0.5 text-slate-400 transition hover:bg-brand-500/10 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:text-brand-400"
+                    >
+                      ↓
+                    </button>
+                  </span>
+                )}
                 {draft && canEdit && draft.status === "DRAFT" && (
                   <button
                     type="button"
