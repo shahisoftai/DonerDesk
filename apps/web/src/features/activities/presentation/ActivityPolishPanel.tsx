@@ -48,7 +48,7 @@ export function ActivityPolishPanel({
   return (
     <section aria-labelledby="polish-title" className="rounded-xl border border-ai-500/30 bg-ai-500/5 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="polish-title" className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+        <h2 id="polish-title" className="text-sm font-medium text-slate-800 dark:text-slate-100">
           AI writing assistance
         </h2>
         {demoMode && (

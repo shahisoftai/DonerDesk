@@ -83,7 +83,7 @@ export function CommentsThread({
 
   return (
     <section aria-labelledby="comments-title" className="card">
-      <h2 id="comments-title" className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+      <h2 id="comments-title" className="text-sm font-medium text-slate-800 dark:text-slate-100">
         {heading}
       </h2>
       {loadError && <p className="mt-2 text-sm text-danger-700 dark:text-danger-400">{loadError}</p>}

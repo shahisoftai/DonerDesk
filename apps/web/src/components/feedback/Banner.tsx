@@ -22,7 +22,7 @@ export function Banner({
   const t = toneFor(tone);
   return (
     <div role="status" className={`flex flex-wrap items-center justify-between gap-3 border-b px-6 py-3 text-sm ${bannerStyles[t]}`}>
-      <span className="font-semibold">{title}</span>
+      <span className="font-medium">{title}</span>
       {children}
     </div>
   );

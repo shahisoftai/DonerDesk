@@ -130,12 +130,12 @@ function WorkItemRow({ item }: { item: WorkItem }) {
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
           <Badge tone={kindTone(item.kind)} className="shrink-0">{item.kind}</Badge>
-          <span className="min-w-0 break-words text-sm font-semibold leading-snug">{workItemTitle(item)}</span>
+          <span className="min-w-0 break-words text-sm font-medium leading-5">{workItemTitle(item)}</span>
         </div>
-        <div className="mt-1 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
+        <div className="mt-1 break-words text-xs leading-4 text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
       </div>
       {("daysUntilDeadline" in item && item.daysUntilDeadline !== null && item.daysUntilDeadline !== undefined) && (
-        <span className={`shrink-0 self-start text-xs font-semibold ${item.daysUntilDeadline < 0 ? "text-danger-600 dark:text-danger-400" : item.daysUntilDeadline <= 3 ? "text-warning-600 dark:text-warning-400" : "text-slate-500 dark:text-slate-400"}`}>
+        <span className={`shrink-0 self-start text-[11px] font-medium ${item.daysUntilDeadline < 0 ? "font-semibold text-danger-600 dark:text-danger-400" : item.daysUntilDeadline <= 3 ? "text-warning-600 dark:text-warning-400" : "text-slate-500 dark:text-slate-400"}`}>
           {item.daysUntilDeadline < 0 ? `${Math.abs(item.daysUntilDeadline)}d overdue` : `${item.daysUntilDeadline}d left`}
         </span>
       )}

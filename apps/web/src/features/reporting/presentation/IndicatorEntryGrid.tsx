@@ -189,10 +189,10 @@ export function IndicatorEntryGrid({
     <div className="mt-6 space-y-6">
       <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
-          <p className="text-sm font-semibold">Record indicator values for this reporting period</p>
+          <p className="text-sm font-medium">Record indicator values for this reporting period</p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Values are saved as drafts. Someone with verify permission submits and verifies them, which locks the row against further edits.
-            {dirtyCount > 0 && <span className="ml-2 font-semibold text-brand-600 dark:text-brand-400">{dirtyCount} unsaved row{dirtyCount === 1 ? "" : "s"}</span>}
+            {dirtyCount > 0 && <span className="ml-2 text-xs font-medium text-brand-600 dark:text-brand-400">{dirtyCount} unsaved row{dirtyCount === 1 ? "" : "s"}</span>}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -215,7 +215,7 @@ export function IndicatorEntryGrid({
       {importOpen && canEdit && (
         <section className="card space-y-3 p-4" aria-label="Import indicator data from Google Sheets">
           <div>
-            <p className="text-sm font-semibold">Import from Google Sheets</p>
+            <p className="text-sm font-medium">Import from Google Sheets</p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Paste a Google Sheets link. The sheet must be shared with the connected Google account and have a header row with the indicator code,
               period achievement, and optional cumulative / comments / data source columns.
@@ -293,7 +293,7 @@ export function IndicatorEntryGrid({
       {grouped.length === 0 ? (
         <div className="card text-sm text-slate-600 dark:text-slate-300">
           No indicators defined yet.{" "}
-          <a className="font-semibold text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${projectId}/logframe`}>
+          <a className="font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${projectId}/logframe`}>
             Add indicators to the logframe
           </a>{" "}
           first, then return here to enter their values.

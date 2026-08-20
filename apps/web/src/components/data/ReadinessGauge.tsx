@@ -18,7 +18,7 @@ export function ReadinessGauge({ value, label }: { value: number; label?: string
         : "text-danger-600 dark:text-danger-400";
   return (
     <div className="text-center">
-      <div className={`text-4xl font-extrabold ${textColor}`}>{value}%</div>
+      <div className={`text-3xl font-semibold tracking-tight tabular-nums ${textColor}`}>{value}%</div>
       {label && <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{label}</div>}
       <div className="mt-3">
         <ProgressBar value={value} tone={tone} />

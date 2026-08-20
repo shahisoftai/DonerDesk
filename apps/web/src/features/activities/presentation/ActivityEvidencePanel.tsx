@@ -92,7 +92,7 @@ export function ActivityEvidencePanel({
   return (
     <section className="card" aria-label="Attached evidence">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Attached evidence</h2>
+        <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Attached evidence</h2>
         <Button
           variant="secondary"
           size="sm"

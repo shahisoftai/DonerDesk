@@ -170,7 +170,7 @@ export function DriveFolderPanel({
     <section className="card">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-semibold">{title}</h2>
+          <h2 className="font-medium">{title}</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Files currently in your project&apos;s storage folder. Added directly in Google Drive? Refresh to see them.
           </p>
@@ -197,7 +197,7 @@ export function DriveFolderPanel({
             const kind = importKindForRole(group.role);
             return (
               <div key={group.role}>
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">
                   {group.label} <span className="font-normal text-slate-400">({group.files.length})</span>
                 </h3>
                 {group.files.length === 0 ? (
@@ -293,7 +293,7 @@ export function DriveFolderPanel({
                             <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
                               {"text" in filePreview ? (
                                 <>
-                                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{filePreview.name}</p>
+                                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{filePreview.name}</p>
                                   <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words font-mono text-xs text-slate-700 dark:text-slate-300">
                                     {filePreview.text}
                                   </pre>
@@ -302,7 +302,7 @@ export function DriveFolderPanel({
                                 <>
                                   <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div>
-                                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
                                         Imported {filePreview.created} item{filePreview.created === 1 ? "" : "s"}
                                         {filePreview.skipped > 0 ? ` · ${filePreview.skipped} skipped (already exists)` : ""}
                                       </p>
@@ -323,11 +323,11 @@ export function DriveFolderPanel({
                                     <ul className="mt-2 divide-y divide-slate-200/70 dark:divide-white/10">
                                       {filePreview.items.map((item) => (
                                         <li key={item.id} className="flex items-center gap-2 py-1 text-sm">
-                                          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                                          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
                                             {item.level}
                                           </span>
                                           {item.code && <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{item.code}</span>}
-                                          <span className="min-w-0 flex-1 break-words leading-snug">{item.title}</span>
+                                          <span className="min-w-0 flex-1 break-words leading-5">{item.title}</span>
                                         </li>
                                       ))}
                                     </ul>

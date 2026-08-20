@@ -115,7 +115,7 @@ export default async function EvidencePage({
                 {items.map((e) => (
                   <tr key={e.id} className="trow">
                     <td className="px-3 py-2">
-                      <Link href={`${baseUrl}/${e.id}`} className="font-semibold text-brand-600 hover:underline dark:text-brand-400">
+                      <Link href={`${baseUrl}/${e.id}`} className="font-medium text-brand-600 hover:underline dark:text-brand-400">
                         {e.title}
                       </Link>
                       <span className="block text-xs text-slate-500 dark:text-slate-400">{e.fileName}</span>

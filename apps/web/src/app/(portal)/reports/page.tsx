@@ -20,13 +20,13 @@ export default async function GlobalReportsPage() {
   const failed = periodResults.filter(({ result }) => !result.ok).length;
 
   return <div className="animate-fade-in">
-    <header><p className="text-[11px] font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">Cross-project pipeline</p><h1 className="mt-1 text-xl font-semibold tracking-tight">Reports</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Deadlines and readiness for every accessible project.</p></header>
+    <header><p className="text-[10px] font-medium uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">Cross-project pipeline</p><h1 className="mt-1 text-xl font-semibold tracking-tight">Reports</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Deadlines and readiness for every accessible project.</p></header>
     {failed > 0 && <div className="mt-5"><InlineError title={`${failed} project report ${failed === 1 ? "list is" : "lists are"} temporarily unavailable.`} /></div>}
     {reports.length === 0 ? <div className="mt-6"><EmptyState>No reporting periods are available. Open a project to create one.</EmptyState></div> : <div className="mt-6 space-y-3">{reports.map(({ project, period }) => {
       const urgency = deadlineUrgency(period.daysUntilDeadline);
       return <Link key={period.id} href={`/projects/${project.id}/reports/${period.id}`} className="card grid gap-3 transition hover:border-brand-400/40 sm:grid-cols-[1fr_auto_auto] sm:items-center">
-        <div><div className="font-semibold">{project.title}</div><div className="text-xs text-slate-500">{REPORT_TYPE_LABEL[period.reportType] ?? period.reportType} · Deadline {formatDate(period.deadline)}</div></div>
-        <div><div className="text-xs text-slate-500">Readiness</div><div className="font-bold">{period.readinessScore}%</div></div>
+        <div><div className="font-medium">{project.title}</div><div className="text-xs text-slate-500">{REPORT_TYPE_LABEL[period.reportType] ?? period.reportType} · Deadline {formatDate(period.deadline)}</div></div>
+        <div><div className="text-xs text-slate-500">Readiness</div><div className="font-medium tabular-nums">{period.readinessScore}%</div></div>
         <div className="flex flex-wrap gap-2 sm:justify-end"><Badge tone={urgency.tone}>{urgency.label}</Badge><Badge tone={reportStatusTone(period.status)}>{REPORT_STATUS_LABEL[period.status] ?? period.status.replace(/_/g, " ")}</Badge></div>
       </Link>;
     })}</div>}

@@ -31,7 +31,7 @@ export function SetupOverview({ snapshot }: { snapshot: OnboardingSnapshot }) {
               <div className="flex items-start gap-3">
                 <StepIndicator status={step.status} label={step.label} />
                 <div>
-                  <div className="font-semibold">{step.label}</div>
+                  <div className="font-medium">{step.label}</div>
                   <div className="text-sm text-slate-500 dark:text-slate-400">{step.description}</div>
                   <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{step.summary}</div>
                 </div>

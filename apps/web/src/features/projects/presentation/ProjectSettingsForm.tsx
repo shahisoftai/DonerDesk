@@ -84,7 +84,7 @@ export function ProjectSettingsForm({ project }: { project: ProjectDetail }) {
   return (
     <form onSubmit={save} className="space-y-6" noValidate>
       <div className="card space-y-4">
-        <h3 className="font-semibold">Project configuration</h3>
+        <h3 className="font-medium">Project configuration</h3>
         <FormSummary errors={fields} count={errorCount} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Project title" htmlFor="settings-title" error={fields.title?.[0]}>
@@ -157,7 +157,7 @@ export function ProjectSettingsForm({ project }: { project: ProjectDetail }) {
       </div>
 
       <div className="card">
-        <h3 className="font-semibold">Danger zone</h3>
+        <h3 className="font-medium">Danger zone</h3>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           Ending a project moves it to the completed state and prevents new reporting periods. Archived projects are
           hidden from active lists.

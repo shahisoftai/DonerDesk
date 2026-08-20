@@ -50,7 +50,7 @@ export default async function Dashboard() {
     <div className="animate-fade-in">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">Operational home</p>
+          <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">Operational home</p>
           <h1 className="mt-1 text-xl font-semibold tracking-tight">What needs your attention</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Authoritative counts from your workspace. Missing data is shown as unavailable, never as zero.
@@ -92,7 +92,7 @@ export default async function Dashboard() {
 
       <section className="mt-6">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold">Deadline overview</h2>
+          <h2 className="text-sm font-medium">Deadline overview</h2>
           <Link href="/reports" className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">Open reports →</Link>
         </div>
         {!snapshot.deadlineData.ok && (
@@ -106,13 +106,13 @@ export default async function Dashboard() {
             {(["overdue", "today", "soon", "later"] as const).map((band) => (
               <div key={band} className="min-w-0 rounded-lg border border-slate-200/70 bg-white p-3 dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{BAND_LABEL[band]}</h3>
+                  <h3 className="text-xs font-medium text-slate-600 dark:text-slate-300">{BAND_LABEL[band]}</h3>
                   <Badge tone={bandTone(band)}>{deadlines.filter((d) => d.band === band).length}</Badge>
                 </div>
                 <div className="mt-3 space-y-2">
                   {deadlines.filter((d) => d.band === band).slice(0, 4).map((d) => (
                     <Link key={`${d.projectId}-${d.periodId}`} href={`/projects/${d.projectId}/reports/${d.periodId}`} className="block rounded-md border border-slate-200/70 px-3 py-2 text-sm transition hover:border-brand-400/40 dark:border-white/10 dark:hover:border-brand-400/30">
-                      <div className="break-words text-sm font-medium leading-snug">{d.projectTitle}</div>
+                      <div className="break-words text-sm font-medium leading-5">{d.projectTitle}</div>
                       <div className="mt-1 flex min-w-0 items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                         <span>{new Date(d.deadline).toLocaleDateString()}</span>
                         <span className="shrink-0 tabular-nums">{d.readinessScore === null ? "readiness n/a" : `${d.readinessScore}% ready`}</span>
@@ -123,7 +123,7 @@ export default async function Dashboard() {
                     <p className="text-xs text-slate-500 dark:text-slate-400">None</p>
                   )}
                   {deadlines.filter((d) => d.band === band).length > 4 && (
-                    <Link href={`/reports?band=${band}`} className="text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400">View more</Link>
+                    <Link href={`/reports?band=${band}`} className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">View more</Link>
                   )}
                 </div>
               </div>
@@ -135,7 +135,7 @@ export default async function Dashboard() {
       <section className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         <div className="min-w-0">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold">My Work</h2>
+            <h2 className="text-sm font-medium">My Work</h2>
             <Link href="/my-work" className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">View all →</Link>
           </div>
           {!work.ok && (
@@ -152,11 +152,11 @@ export default async function Dashboard() {
         </div>
 
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold">Readiness snapshot</h2>
+          <h2 className="text-sm font-medium">Readiness snapshot</h2>
           <div className="mt-3 card">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <div className="text-[11px] font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">Average readiness</div>
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Average readiness</div>
                 <div className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">{averageReadiness === null ? "—" : `${averageReadiness}%`}</div>
               </div>
               <Badge tone={averageReadiness === null ? "neutral" : readinessTone(averageReadiness)}>
@@ -168,8 +168,8 @@ export default async function Dashboard() {
               {readinessProjects.map((d) => (
                 <Link key={`ready-${d.projectId}-${d.periodId}`} href={`/projects/${d.projectId}/reports/${d.periodId}`} className="block">
                   <div className="flex min-w-0 items-center justify-between gap-3 text-sm">
-                    <span className="min-w-0 break-words font-semibold leading-snug">{d.projectTitle}</span>
-                    <span className="shrink-0 font-semibold tabular-nums">{d.readinessScore}%</span>
+                    <span className="min-w-0 break-words font-medium leading-5">{d.projectTitle}</span>
+                    <span className="shrink-0 font-medium tabular-nums">{d.readinessScore}%</span>
                   </div>
                   <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
                     <div className={`h-full rounded-full ${readinessBar(d.readinessScore ?? 0)}`} style={{ width: `${d.readinessScore}%` }} />
@@ -190,7 +190,7 @@ export default async function Dashboard() {
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div>
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Recent projects</h2>
+            <h2 className="text-sm font-medium">Recent projects</h2>
             <Link href="/projects" className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">View all →</Link>
           </div>
           {!snapshot.projects.ok && <div className="mt-3"><InlineError title={snapshot.projects.error?.message ?? "Projects unavailable"} referenceId={snapshot.projects.error?.referenceId} /></div>}
@@ -198,7 +198,7 @@ export default async function Dashboard() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {projects.length === 0 && (
                 <div className="card text-sm text-slate-600 dark:text-slate-300 sm:col-span-2">
-                  No projects yet. <Link className="font-semibold text-brand-600 hover:underline dark:text-brand-400" href="/projects/new">Create your first project</Link>.
+                  No projects yet. <Link className="font-medium text-brand-600 hover:underline dark:text-brand-400" href="/projects/new">Create your first project</Link>.
                 </div>
               )}
               {projects.slice(0, 6).map((p) => {
@@ -207,8 +207,8 @@ export default async function Dashboard() {
                   <Link key={p.id} href={`/projects/${p.id}`} className="card min-w-0 transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="break-words text-sm font-semibold leading-snug">{p.title}</div>
-                        <div className="mt-0.5 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{p.donorName} · {p.country}</div>
+                        <div className="break-words text-sm font-medium leading-5">{p.title}</div>
+                        <div className="mt-0.5 break-words text-xs leading-4 text-slate-500 dark:text-slate-400">{p.donorName} · {p.country}</div>
                       </div>
                       <Badge tone={projectStatusTone(p.status)} className="shrink-0">{p.status.replace(/_/g, " ")}</Badge>
                     </div>
@@ -229,7 +229,7 @@ export default async function Dashboard() {
         <div className="min-w-0 grid gap-6">
           <div>
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold">Notifications</h2>
+              <h2 className="text-sm font-medium">Notifications</h2>
               <Link href="/notifications" className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">Open inbox →</Link>
             </div>
             {!snapshot.notifications.ok && <div className="mt-3"><InlineError title={snapshot.notifications.error?.message ?? "Notifications unavailable"} referenceId={snapshot.notifications.error?.referenceId} /></div>}
@@ -239,10 +239,10 @@ export default async function Dashboard() {
                 {notifications.slice(0, 4).map((n) => (
                   <li key={n.id} className="rounded-lg border border-slate-200/60 bg-white px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="min-w-0 break-words text-sm leading-snug">{n.title}</span>
+                      <span className="min-w-0 break-words text-sm font-medium leading-5">{n.title}</span>
                       <Badge tone={n.read ? "neutral" : "info"} className="shrink-0">{n.read ? "Read" : "New"}</Badge>
                     </div>
-                    {n.message && <p className="mt-1 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{n.message}</p>}
+                    {n.message && <p className="mt-1 break-words text-xs leading-4 text-slate-500 dark:text-slate-400">{n.message}</p>}
                   </li>
                 ))}
               </ul>
@@ -250,14 +250,14 @@ export default async function Dashboard() {
           </div>
 
           <div>
-            <h2 className="text-sm font-semibold">Setup and storage</h2>
+            <h2 className="text-sm font-medium">Setup and storage</h2>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <Link href="/settings/setup" className="rounded-lg border border-slate-200/70 bg-white p-4 transition hover:border-brand-400/40 dark:border-white/10 dark:bg-white/[0.03]">
-                <div className="text-sm font-semibold">Workspace setup</div>
+                <div className="text-sm font-medium">Workspace setup</div>
                 <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">Templates, organization profile, and defaults</div>
               </Link>
               <Link href="/evidence" className="rounded-lg border border-slate-200/70 bg-white p-4 transition hover:border-brand-400/40 dark:border-white/10 dark:bg-white/[0.03]">
-                <div className="text-sm font-semibold">Evidence storage</div>
+                <div className="text-sm font-medium">Evidence storage</div>
                 <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{pendingEvidence === null ? "Review count unavailable" : `${pendingEvidence} file${pendingEvidence === 1 ? "" : "s"} pending review`}</div>
               </Link>
             </div>
@@ -274,12 +274,12 @@ function WorkPreview({ item }: { item: WorkItem }) {
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
           <Badge tone={kindTone(item.kind)} className="shrink-0">{item.kind}</Badge>
-          <span className="min-w-0 break-words text-sm font-semibold leading-snug">{workItemTitle(item)}</span>
+          <span className="min-w-0 break-words text-sm font-medium leading-5">{workItemTitle(item)}</span>
         </div>
-        <div className="mt-1 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
+        <div className="mt-1 break-words text-xs leading-4 text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
       </div>
       {("daysUntilDeadline" in item && item.daysUntilDeadline !== null && item.daysUntilDeadline !== undefined) && (
-        <span className={`shrink-0 self-start text-xs font-semibold ${item.daysUntilDeadline < 0 ? "text-danger-600 dark:text-danger-400" : item.daysUntilDeadline <= 3 ? "text-warning-600 dark:text-warning-400" : "text-slate-500 dark:text-slate-400"}`}>
+        <span className={`shrink-0 self-start text-[11px] font-medium ${item.daysUntilDeadline < 0 ? "font-semibold text-danger-600 dark:text-danger-400" : item.daysUntilDeadline <= 3 ? "text-warning-600 dark:text-warning-400" : "text-slate-500 dark:text-slate-400"}`}>
           {item.daysUntilDeadline < 0 ? `${Math.abs(item.daysUntilDeadline)}d overdue` : `${item.daysUntilDeadline}d left`}
         </span>
       )}
@@ -291,15 +291,15 @@ function QueueCard({ title, count, href, items }: { title: string; count: number
   return (
     <div className="min-w-0">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">{title}</h2>
+        <h2 className="text-sm font-medium">{title}</h2>
         <Link href={href} className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">{count}</Link>
       </div>
       <div className="mt-3 rounded-lg border border-slate-200/70 bg-white p-3 dark:border-white/10 dark:bg-white/[0.03]">
         <div className="space-y-2">
           {items.slice(0, 4).map((item) => (
             <Link key={`${title}-${item.kind}-${item.id}`} href={workItemHref(item)} className="block rounded-md border border-slate-200/70 px-3 py-2 transition hover:border-brand-400/40 dark:border-white/10 dark:hover:border-brand-400/30">
-              <div className="break-words text-sm font-medium leading-snug">{workItemTitle(item)}</div>
-              <div className="mt-1 break-words text-xs leading-snug text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
+              <div className="break-words text-sm font-medium leading-5">{workItemTitle(item)}</div>
+              <div className="mt-1 break-words text-xs leading-4 text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
             </Link>
           ))}
           {items.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">No items waiting.</p>}
@@ -347,7 +347,7 @@ function CountCard({
 }) {
   const body = (
     <>
-      <div className="text-[11px] font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</div>
       <div className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">{value === null ? "—" : value}</div>
       <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{hint ?? (value === null ? "unavailable" : "")}</div>
     </>

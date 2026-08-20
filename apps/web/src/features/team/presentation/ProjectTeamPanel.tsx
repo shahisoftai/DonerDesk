@@ -190,7 +190,7 @@ export function ProjectTeamPanel({
       {roleChange && canManage && (
         <div role="dialog" aria-modal="true" aria-labelledby="project-role-dialog" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="card w-full max-w-md">
-            <h3 id="project-role-dialog" className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <h3 id="project-role-dialog" className="text-sm font-medium text-slate-800 dark:text-slate-100">
               Change project role
             </h3>
             <div className="mt-3">
@@ -212,7 +212,7 @@ export function ProjectTeamPanel({
       {removing && canManage && (
         <div role="dialog" aria-modal="true" aria-labelledby="project-remove-dialog" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="card w-full max-w-md">
-            <h3 id="project-remove-dialog" className="text-sm font-semibold text-slate-800 dark:text-slate-100">Remove member</h3>
+            <h3 id="project-remove-dialog" className="text-sm font-medium text-slate-800 dark:text-slate-100">Remove member</h3>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               Remove {removing ? users.find((u) => u.id === removing.userId)?.name ?? "this member" : ""} from this project? Their access to this project is revoked.
             </p>

@@ -63,10 +63,10 @@ export function WikiLayout({
             <Link href="/support" className="transition hover:text-white text-brand-300">Support</Link>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white">
+            <Link href="/login" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-200 transition hover:text-white">
               Log in
             </Link>
-            <Link href="/support/contact" className="rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 transition hover:from-brand-400 hover:to-brand-500">
+            <Link href="/support/contact" className="rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-brand-500/30 transition hover:from-brand-400 hover:to-brand-500">
               Submit a ticket
             </Link>
           </div>
@@ -100,7 +100,7 @@ export function WikiLayout({
                 <div key={cat.slug}>
                   <Link
                     href={`/support/${cat.slug}`}
-                    className={`flex items-center gap-2.5 text-sm font-semibold transition ${
+                    className={`flex items-center gap-2.5 text-sm font-medium transition ${
                       isActive ? "text-brand-300" : "text-slate-200 hover:text-white"
                     }`}
                   >

@@ -74,7 +74,7 @@ export function Dialog({
         tabIndex={-1}
         className="relative z-10 w-full max-w-lg rounded-lg border border-slate-200 bg-white p-4 shadow-xl outline-none dark:border-white/10 dark:bg-slate-900"
       >
-        <h2 id={titleId} className="text-sm font-semibold">
+        <h2 id={titleId} className="text-sm font-medium">
           {title}
         </h2>
         <div className="mt-4">{children}</div>

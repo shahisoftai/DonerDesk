@@ -229,7 +229,7 @@ export default function GuidedProjectWizard() {
 function ReviewSummary({ data }: { data: ProjectWizardData }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 text-sm dark:border-white/10 dark:bg-white/5">
-      <div className="font-semibold">Review</div>
+      <div className="font-medium">Review</div>
       <dl className="mt-2 grid gap-x-6 gap-y-1 sm:grid-cols-2">
         <Row label="Project" value={data.step.title} />
         <Row label="Code" value={data.step.projectCode} />

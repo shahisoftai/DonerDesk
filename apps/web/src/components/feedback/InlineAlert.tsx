@@ -24,7 +24,7 @@ export function InlineAlert({
   const t = toneFor(tone);
   return (
     <div role="alert" className={`rounded-xl border p-3 text-sm ${alertStyles[t]} ${className ?? ""}`}>
-      <p className="font-semibold">{title}</p>
+      <p className="font-medium">{title}</p>
       {children && <div className="mt-1 text-sm opacity-90">{children}</div>}
     </div>
   );

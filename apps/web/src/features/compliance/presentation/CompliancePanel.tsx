@@ -171,7 +171,7 @@ export function CompliancePanel({
 
       {openBySeverity.map((group) => (
         <section key={group.severity} aria-label={`${group.severity} severity items`}>
-          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+          <h2 className="text-sm font-medium text-slate-600 dark:text-slate-300">
             {SEVERITY_LABEL[group.severity] ?? group.severity}
             <span className="ml-2 font-normal text-slate-400">({group.items.length})</span>
           </h2>
@@ -194,7 +194,7 @@ export function CompliancePanel({
 
       {resolved.length > 0 && (
         <section aria-label="Resolved items">
-          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">Resolved</h2>
+          <h2 className="text-sm font-medium text-slate-600 dark:text-slate-300">Resolved</h2>
           <div className="mt-2 space-y-3">
             {resolved.map((item) => (
               <ChecklistCard
@@ -258,7 +258,7 @@ function ChecklistCard({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-slate-800 dark:text-slate-100">{item.title}</span>
+            <span className="font-medium text-slate-800 dark:text-slate-100">{item.title}</span>
             <Badge tone={severityTone(item.severity)}>{SEVERITY_LABEL[item.severity] ?? item.severity}</Badge>
             <Badge tone={checklistStatusTone(item.status)}>{CHECKLIST_STATUS_LABEL[item.status] ?? item.status.replace(/_/g, " ")}</Badge>
           </div>
@@ -295,7 +295,7 @@ function ReadinessPanel({
 }) {
   return (
     <section className="card" aria-label="Readiness explanation">
-      <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Report readiness</h2>
+      <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Report readiness</h2>
       <div className="mt-2">
         <ReadinessGauge value={readiness.overall} />
       </div>

@@ -68,31 +68,31 @@ export default async function ActivityDetailPage({
       </header>
 
       <section className="card" aria-label="Activity summary">
-        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Summary</h2>
+        <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Summary</h2>
         <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{activity.summary}</p>
       </section>
 
       {activity.achievements && (
         <section className="card" aria-label="Achievements">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Achievements</h2>
+          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Achievements</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{activity.achievements}</p>
         </section>
       )}
       {activity.challenges && (
         <section className="card" aria-label="Challenges">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Challenges</h2>
+          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Challenges</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{activity.challenges}</p>
         </section>
       )}
       {activity.lessonsLearned && (
         <section className="card" aria-label="Lessons learned">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Lessons learned</h2>
+          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Lessons learned</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{activity.lessonsLearned}</p>
         </section>
       )}
       {activity.nextSteps && (
         <section className="card" aria-label="Next steps">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Next steps</h2>
+          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Next steps</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{activity.nextSteps}</p>
         </section>
       )}
@@ -108,7 +108,7 @@ export default async function ActivityDetailPage({
 
       {!canManageEvidence && attachedEvidenceIds.length > 0 && (
         <section className="card" aria-label="Attached evidence">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Attached evidence</h2>
+          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Attached evidence</h2>
           <ul className="mt-2 space-y-1 text-sm">
             {attachedEvidenceIds.map((id) => (
               <li key={id}>
@@ -125,7 +125,7 @@ export default async function ActivityDetailPage({
       )}
 
       <div className="card">
-        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Participants</h2>
+        <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Participants</h2>
         <dl className="mt-2 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <div>
             <dt className="text-xs text-slate-500 dark:text-slate-400">Total</dt>

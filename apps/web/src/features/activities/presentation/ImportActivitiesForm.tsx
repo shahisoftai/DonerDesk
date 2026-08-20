@@ -147,7 +147,7 @@ export function ImportActivitiesForm({
 
         {result && (
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
               Created {result.created} activit{result.created === 1 ? "y" : "ies"}
               {result.skipped > 0 ? ` · ${result.skipped} skipped` : ""}
             </p>

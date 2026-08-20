@@ -22,10 +22,10 @@ export default async function GlobalCompliancePage() {
   const failures = periodsByProject.filter(({ result }) => !result.ok).length + checklistResults.filter(({ result }) => !result.ok).length;
 
   return <div className="animate-fade-in">
-    <header><p className="text-[11px] font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">Cross-project queue</p><h1 className="mt-1 text-xl font-semibold tracking-tight">Compliance</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Open requirements ordered by risk across accessible reporting periods.</p></header>
+    <header><p className="text-[10px] font-medium uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">Cross-project queue</p><h1 className="mt-1 text-xl font-semibold tracking-tight">Compliance</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Open requirements ordered by risk across accessible reporting periods.</p></header>
     {failures > 0 && <div className="mt-5"><InlineError title="Some compliance data is temporarily unavailable; available items are shown below." /></div>}
     {items.length === 0 ? <div className="mt-6"><EmptyState>No open compliance gaps are available.</EmptyState></div> : <div className="mt-6 space-y-3">{items.map(({ project, period, item }) => <Link key={item.id} href={`/projects/${project.id}/compliance?period=${period.id}`} className="card flex flex-wrap items-center justify-between gap-3 transition hover:border-brand-400/40">
-      <div className="min-w-0"><div className="font-semibold">{item.title}</div><div className="text-xs text-slate-500">{project.title}{item.description ? ` · ${item.description}` : ""}</div></div>
+      <div className="min-w-0"><div className="font-medium">{item.title}</div><div className="text-xs text-slate-500">{project.title}{item.description ? ` · ${item.description}` : ""}</div></div>
       <div className="flex gap-2"><Badge tone={severityTone(item.severity)}>{SEVERITY_LABEL[item.severity] ?? item.severity}</Badge><Badge tone={checklistStatusTone(item.status)}>{CHECKLIST_STATUS_LABEL[item.status] ?? item.status.replace(/_/g, " ")}</Badge></div>
     </Link>)}</div>}
   </div>;

@@ -72,7 +72,7 @@ export default async function EvidenceDetailPage({
 
       {sensitive && (
         <div role="alert" className="rounded-xl border border-danger-500/30 bg-danger-500/5 p-4">
-          <p className="text-sm font-semibold text-danger-700 dark:text-danger-400">
+          <p className="text-sm font-medium text-danger-700 dark:text-danger-400">
             Confidential file
           </p>
           <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
@@ -119,7 +119,7 @@ export default async function EvidenceDetailPage({
 
       {evidence.aiSummary && (
         <section className="card" aria-label="AI summary">
-          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">AI summary</h2>
+          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">AI summary</h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{evidence.aiSummary}</p>
         </section>
       )}

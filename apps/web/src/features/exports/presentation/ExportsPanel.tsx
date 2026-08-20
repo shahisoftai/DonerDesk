@@ -38,7 +38,7 @@ export function ExportsPanel({
   return (
     <section aria-labelledby="exports-title" className="card">
       <div className="flex items-center justify-between gap-2">
-        <h2 id="exports-title" className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+        <h2 id="exports-title" className="text-sm font-medium text-slate-800 dark:text-slate-100">
           Exports
         </h2>
         {canExport && (

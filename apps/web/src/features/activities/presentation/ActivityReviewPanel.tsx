@@ -43,7 +43,7 @@ export function ActivityReviewPanel({ activityId }: { activityId: string }) {
 
   return (
     <section aria-labelledby="review-title" className="rounded-xl border border-slate-200 p-4 dark:border-white/10">
-      <h2 id="review-title" className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+      <h2 id="review-title" className="text-sm font-medium text-slate-800 dark:text-slate-100">
         Review activity update
       </h2>
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">

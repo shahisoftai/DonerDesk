@@ -43,7 +43,7 @@ export default async function ProjectSetupPage({ params }: { params: Promise<{ i
         </div>
         <aside className="space-y-4">
           <section className="card">
-            <h3 className="font-semibold">Workspace</h3>
+            <h3 className="font-medium">Workspace</h3>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               {setup.snapshot.workspace.provisionStatus === "READY"
                 ? "Your project folder tree is ready."
@@ -58,13 +58,13 @@ export default async function ProjectSetupPage({ params }: { params: Promise<{ i
             )}
           </section>
           <section className="card">
-            <h3 className="font-semibold">Indicator data entry</h3>
+            <h3 className="font-medium">Indicator data entry</h3>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               Indicator values are recorded against reporting periods. You can define indicators now, but you&apos;ll enter their
               values once a reporting period is open.
             </p>
             <p className="mt-2">
-              <Link className="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${id}/reports`}>
+              <Link className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${id}/reports`}>
                 Open reporting periods to enter indicator data
               </Link>
             </p>

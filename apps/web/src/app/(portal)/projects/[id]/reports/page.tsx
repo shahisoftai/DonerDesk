@@ -54,7 +54,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
         <div className="mt-6 space-y-6">
           {groups.map((group) => (
             <section key={group.status} aria-label={REPORT_STATUS_LABEL[group.status] ?? group.status}>
-              <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+              <h2 className="text-sm font-medium text-slate-600 dark:text-slate-300">
                 {REPORT_STATUS_LABEL[group.status] ?? group.status.replace(/_/g, " ")}
                 <span className="ml-2 font-normal text-slate-400">({group.items.length})</span>
               </h2>
@@ -63,7 +63,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
                   <div key={p.id} className="card transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <div className="font-semibold">{REPORT_TYPE_LABEL[p.reportType] ?? p.reportType}</div>
+                        <div className="font-medium">{REPORT_TYPE_LABEL[p.reportType] ?? p.reportType}</div>
                         <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                           Period {formatDate(p.startDate)} – {formatDate(p.endDate)} · Deadline {formatDate(p.deadline)}
                           {p.internalReviewDeadline && ` · Internal ${formatDate(p.internalReviewDeadline)}`}

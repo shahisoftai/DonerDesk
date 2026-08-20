@@ -210,7 +210,7 @@ function RoleChangeDialog({
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="role-dialog-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="card w-full max-w-md">
-        <h3 id="role-dialog-title" className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+        <h3 id="role-dialog-title" className="text-sm font-medium text-slate-800 dark:text-slate-100">
           Change role for {user.name}
         </h3>
         <div className="mt-3">
@@ -224,7 +224,7 @@ function RoleChangeDialog({
 
         {gained.length > 0 && (
           <div className="mt-3">
-            <p className="text-xs font-semibold text-success-700 dark:text-success-400">Will gain</p>
+            <p className="text-xs font-medium text-success-700 dark:text-success-400">Will gain</p>
             <ul className="mt-1 list-inside list-disc text-sm text-slate-600 dark:text-slate-300">
               {gained.map((c) => <li key={c}>{CAPABILITY_LABEL[c] ?? c}</li>)}
             </ul>
@@ -232,7 +232,7 @@ function RoleChangeDialog({
         )}
         {lost.length > 0 && (
           <div className="mt-3">
-            <p className="text-xs font-semibold text-danger-700 dark:text-danger-400">Will lose</p>
+            <p className="text-xs font-medium text-danger-700 dark:text-danger-400">Will lose</p>
             <ul className="mt-1 list-inside list-disc text-sm text-slate-600 dark:text-slate-300">
               {lost.map((c) => <li key={c}>{CAPABILITY_LABEL[c] ?? c}</li>)}
             </ul>

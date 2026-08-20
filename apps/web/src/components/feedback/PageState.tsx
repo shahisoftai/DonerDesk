@@ -27,7 +27,7 @@ export function ErrorState({
 }) {
   return (
     <div className="card">
-      <h2 className="text-sm font-semibold text-red-700 dark:text-red-400">{title}</h2>
+      <h2 className="text-sm font-medium text-red-700 dark:text-red-400">{title}</h2>
       {message && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{message}</p>}
       {referenceId && <p className="mt-1 text-xs text-slate-400">Reference: {referenceId}</p>}
       {onRetry && (

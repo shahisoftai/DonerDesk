@@ -34,7 +34,7 @@ export function JobProgress({
   return (
     <div className="w-full" role="status" aria-live="polite">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-semibold">{stageLabel[stage]}</span>
+        <span className="font-medium">{stageLabel[stage]}</span>
         {stageDetail && <span className="text-slate-500 dark:text-slate-400">{stageDetail}</span>}
       </div>
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-white/10">

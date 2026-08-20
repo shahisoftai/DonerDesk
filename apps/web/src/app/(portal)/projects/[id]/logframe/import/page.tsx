@@ -122,7 +122,7 @@ export default function ImportLogframePage({ params }: { params: Promise<{ id: s
 
         {result && (
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
               Created {result.created} logframe item{result.created === 1 ? "" : "s"}
               {result.skipped > 0 ? ` · ${result.skipped} skipped (already in this project)` : ""}
             </p>
@@ -137,7 +137,7 @@ export default function ImportLogframePage({ params }: { params: Promise<{ id: s
               <ul className="mt-3 divide-y divide-slate-200/70 dark:divide-white/10">
                 {result.items.map((item) => (
                   <li key={item.id} className="flex items-center gap-2 py-1.5 text-sm">
-                    <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                    <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
                       {LOGFRAME_LEVEL_LABEL[item.level as keyof typeof LOGFRAME_LEVEL_LABEL] ?? item.level}
                     </span>
                     {item.code && <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{item.code}</span>}

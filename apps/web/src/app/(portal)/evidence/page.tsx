@@ -22,7 +22,7 @@ export default async function GlobalEvidencePage({ searchParams }: { searchParam
   return (
     <div className="animate-fade-in">
       <header>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">Cross-project queue</p>
+        <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">Cross-project queue</p>
         <h1 className="mt-1 text-xl font-semibold tracking-tight">Evidence</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Review evidence across the projects you are allowed to access.</p>
       </header>
@@ -42,7 +42,7 @@ export default async function GlobalEvidencePage({ searchParams }: { searchParam
           <table className="w-full text-sm"><caption className="sr-only">Evidence across accessible projects</caption>
             <thead className="thead"><tr><th className="px-4 py-3 text-left">Evidence</th><th className="px-4 py-3 text-left">Type</th><th className="px-4 py-3 text-left">Verification</th><th className="px-4 py-3 text-left">Confidentiality</th></tr></thead>
             <tbody>{result.value.items.map((item) => <tr className="trow" key={item.id}>
-              <td className="px-4 py-3">{item.projectId ? <Link className="font-semibold text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${item.projectId}/evidence/${item.id}`}>{item.title}</Link> : <span className="font-semibold">{item.title}</span>}<span className="block text-xs text-slate-500">{item.fileName}</span></td>
+              <td className="px-4 py-3">{item.projectId ? <Link className="font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${item.projectId}/evidence/${item.id}`}>{item.title}</Link> : <span className="font-medium">{item.title}</span>}<span className="block text-xs text-slate-500">{item.fileName}</span></td>
               <td className="px-4 py-3">{EVIDENCE_TYPE_LABEL[item.evidenceType] ?? item.evidenceType.replace(/_/g, " ")}</td>
               <td className="px-4 py-3"><Badge tone={verificationStatusTone(item.verificationStatus)}>{EVIDENCE_VERIFICATION_LABEL[item.verificationStatus] ?? item.verificationStatus.replace(/_/g, " ")}</Badge></td>
               <td className="px-4 py-3"><Badge tone={confidentialityTone(item.confidentialityLevel)}>{CONFIDENTIALITY_LABEL[item.confidentialityLevel] ?? item.confidentialityLevel.replace(/_/g, " ")}</Badge></td>

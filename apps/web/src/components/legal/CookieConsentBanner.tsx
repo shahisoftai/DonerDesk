@@ -41,7 +41,7 @@ export function CookieConsentBanner() {
         <div className="max-w-2xl">
           <div className="flex items-center gap-2">
             <span aria-hidden className="grid h-8 w-8 place-items-center rounded-lg bg-brand-500/15 text-sm text-cyan-200">◉</span>
-            <h2 className="text-sm font-semibold text-white">Your privacy, your choice</h2>
+            <h2 className="text-sm font-medium text-white">Your privacy, your choice</h2>
           </div>
           <p className="mt-2 text-sm leading-relaxed text-slate-300">
             We use essential cookies to operate DonorDesk and, with your permission,

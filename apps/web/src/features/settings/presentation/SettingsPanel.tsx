@@ -118,7 +118,7 @@ export function SettingsPanel({
       </div>
 
       <fieldset className="rounded-xl border border-slate-200 p-4 dark:border-white/10">
-        <legend className="px-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Sectors</legend>
+        <legend className="px-1 text-sm font-medium text-slate-700 dark:text-slate-200">Sectors</legend>
         <div className="flex flex-wrap gap-2">
           {SECTOR_OPTIONS.map((s) => (
             <label key={s} className="flex items-center gap-1.5 text-sm">
@@ -138,7 +138,7 @@ export function SettingsPanel({
       <div className="rounded-xl border border-slate-200 p-4 dark:border-white/10">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
               AI-assisted reporting <InlineHelp help="When AI is enabled, report drafts are generated with AI assistance. When disabled, generation creates a blank draft for manual writing. Disabling AI never blocks manual editing." />
             </p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">

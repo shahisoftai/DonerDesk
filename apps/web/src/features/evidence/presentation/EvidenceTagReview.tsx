@@ -35,7 +35,7 @@ export function EvidenceTagReview({ evidenceId, tags, demoMode }: { evidenceId: 
   return (
     <section aria-labelledby="tag-review-title" className="rounded-xl border border-ai-500/30 bg-ai-500/5 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="tag-review-title" className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+        <h2 id="tag-review-title" className="text-sm font-medium text-slate-800 dark:text-slate-100">
           AI-suggested tags
         </h2>
         {demoMode && (

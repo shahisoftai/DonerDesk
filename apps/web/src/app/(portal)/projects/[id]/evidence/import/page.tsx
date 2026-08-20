@@ -122,7 +122,7 @@ export default function ImportEvidencePage({ params }: { params: Promise<{ id: s
 
         {result && (
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
               Created {result.created} evidence record{result.created === 1 ? "" : "s"}
               {result.skipped > 0 ? ` · ${result.skipped} skipped` : ""}
             </p>
@@ -138,7 +138,7 @@ export default function ImportEvidencePage({ params }: { params: Promise<{ id: s
                 {result.items.map((item) => (
                   <li key={item.id} className="flex items-center gap-2 py-1.5 text-sm">
                     <span className="min-w-0 flex-1">{item.title}</span>
-                    <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                    <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
                       {EVIDENCE_TYPE_LABEL[item.evidenceType] ?? item.evidenceType}
                     </span>
                   </li>

@@ -237,7 +237,7 @@ export function ReportWorkspace({
     <div className="mt-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold">{draft ? draft.title : "No report draft yet"}</h2>
+          <h2 className="text-sm font-medium">{draft ? draft.title : "No report draft yet"}</h2>
           {draft && (
             <div className="mt-1 flex items-center gap-2">
               <Badge tone={reportDraftStatusTone(draft.status)}>
@@ -288,7 +288,7 @@ export function ReportWorkspace({
             role="tab"
             aria-selected={panel === key}
             onClick={() => setPanel(key)}
-            className={`rounded-md px-3 py-1.5 ${panel === key ? "bg-brand-500/10 font-semibold text-brand-700 dark:text-brand-300" : "text-slate-600 dark:text-slate-300"}`}
+            className={`rounded-md px-3 py-1.5 ${panel === key ? "bg-brand-500/10 font-medium text-brand-700 dark:text-brand-300" : "text-slate-600 dark:text-slate-300"}`}
           >
             {label}
           </button>
@@ -365,7 +365,7 @@ export function ReportWorkspace({
                   aria-current={selectedId === s.id ? "true" : undefined}
                   className="flex w-full items-center justify-between gap-2 rounded-l-lg px-3 py-2 text-left text-sm"
                 >
-                  <span className="min-w-0 break-words leading-snug">{index + 1}. {s.sectionTitle}</span>
+                  <span className="min-w-0 break-words leading-5">{index + 1}. {s.sectionTitle}</span>
                   <Badge tone={sectionStatusTone(s.status)}>{SECTION_STATUS_LABEL[s.status] ?? s.status.replace(/_/g, " ")}</Badge>
                 </button>
                 {draft && canEdit && draft.status === "DRAFT" && (
@@ -418,7 +418,7 @@ export function ReportWorkspace({
               )}
               {claims.filter((c) => c.sectionId === selected.id).length > 0 && (
                 <div className="mt-4 border-t border-slate-200 pt-3 dark:border-white/10">
-                  <p className="mb-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Statement-level sources</p>
+                  <p className="mb-1 text-xs font-medium text-slate-500 dark:text-slate-400">Statement-level sources</p>
                   <ul className="space-y-2">
                     {claims
                       .filter((c) => c.sectionId === selected.id)
@@ -474,7 +474,7 @@ export function ReportWorkspace({
         {/* Right: context */}
         <aside className={`space-y-4 ${panel === "context" ? "block" : "hidden lg:block"}`}>
           <section className="card">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Readiness</h3>
+            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Readiness</h3>
             <div className="mt-2">
               <ReadinessGauge value={readiness.overall} />
             </div>
@@ -488,14 +488,14 @@ export function ReportWorkspace({
           </section>
 
           <section className="card">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Open checklist items</h3>
+            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Open checklist items</h3>
             {openChecklist.length === 0 ? (
               <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">No open items.</p>
             ) : (
               <ul className="mt-2 space-y-1.5">
                 {openChecklist.slice(0, 6).map((c) => (
                   <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="min-w-0 break-words leading-snug">{c.title}</span>
+                    <span className="min-w-0 break-words leading-5">{c.title}</span>
                     <Badge tone={severityTone(c.severity)}>{c.severity}</Badge>
                   </li>
                 ))}

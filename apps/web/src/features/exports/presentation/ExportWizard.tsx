@@ -65,7 +65,7 @@ export function ExportWizard({
   if (preflight.blocking.length > 0) {
     return (
       <div className="card">
-        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Export is blocked</h3>
+        <h3 className="text-sm font-medium text-slate-800 dark:text-slate-100">Export is blocked</h3>
         <ul className="mt-2 space-y-1 text-sm text-danger-700 dark:text-danger-400">
           {preflight.blocking.map((b) => (
             <li key={b.code}>{b.message}</li>
@@ -102,7 +102,7 @@ export function ExportWizard({
   return (
     <div className="card">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Export report</h3>
+        <h3 className="text-sm font-medium text-slate-800 dark:text-slate-100">Export report</h3>
         <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
       </div>
 
@@ -144,7 +144,7 @@ export function ExportWizard({
                     disabled={disabled}
                     onChange={() => toggleIncluded(e.id)}
                   />
-                  <span className="min-w-0 flex-1 break-words leading-snug">{e.title}</span>
+                  <span className="min-w-0 flex-1 break-words leading-5">{e.title}</span>
                   {isSensitive && <Badge tone="danger">Sensitive</Badge>}
                 </li>
               );

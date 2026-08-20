@@ -154,7 +154,7 @@ export function NewActivityForm({
       </div>
 
       <fieldset className="rounded-xl border border-slate-200 p-4 dark:border-white/10">
-        <legend className="px-1 text-sm font-semibold text-slate-700 dark:text-slate-200">Participants (optional)</legend>
+        <legend className="px-1 text-sm font-medium text-slate-700 dark:text-slate-200">Participants (optional)</legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Total participants" htmlFor="participantsTotal" error={fields.participantsTotal?.[0]}>
             <Input
@@ -282,7 +282,7 @@ export function NewActivityForm({
 
       {evidenceOptions.length > 0 && (
         <fieldset className="rounded-xl border border-slate-200 p-4 dark:border-white/10">
-          <legend className="px-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+          <legend className="px-1 text-sm font-medium text-slate-700 dark:text-slate-200">
             Attach evidence (optional)
           </legend>
           <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">

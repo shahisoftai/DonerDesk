@@ -55,7 +55,7 @@ export function Drawer({
         }`}
       >
         <div className="flex items-center justify-between">
-          <h2 id={titleId} className="text-sm font-semibold">
+          <h2 id={titleId} className="text-sm font-medium">
             {title}
           </h2>
           <button type="button" aria-label="Close drawer" className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-white/5" onClick={onClose}>

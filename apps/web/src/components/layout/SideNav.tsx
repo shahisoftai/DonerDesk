@@ -39,9 +39,9 @@ export function SideNav({
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition",
+                  "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-normal transition",
                   active
-                    ? "bg-brand-500/10 text-brand-700 dark:bg-brand-400/10 dark:text-brand-300"
+                    ? "bg-brand-500/10 font-medium text-brand-700 dark:bg-brand-400/10 dark:text-brand-300"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white",
                 )}
               >

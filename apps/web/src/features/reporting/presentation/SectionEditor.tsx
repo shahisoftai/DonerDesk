@@ -126,7 +126,7 @@ export function SectionEditor({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</h2>
+        <h2 className="text-sm font-medium text-slate-800 dark:text-slate-100">{title}</h2>
         <div className="flex items-center gap-2">
           {!readOnly && state.text.trim() && (
             <Button size="sm" variant="secondary" onClick={() => setRewriteOpen((v) => !v)}>

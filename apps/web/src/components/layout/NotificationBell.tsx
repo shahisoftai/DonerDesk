@@ -37,14 +37,14 @@ export function NotificationBell({ items }: { items: BellItem[] }) {
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-danger-600 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-danger-600 px-1 text-[10px] font-medium text-white">
             {unread}
           </span>
         )}
       </button>
       {open && (
         <div role="menu" className="absolute right-0 z-30 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-slate-900">
-          <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Notifications</p>
+          <p className="px-2 py-1 text-[11px] font-medium text-slate-400">Notifications</p>
           {items.length === 0 && <p className="px-2 py-3 text-sm text-slate-500 dark:text-slate-400">No notifications.</p>}
           <ul className="max-h-72 overflow-auto">
             {items.slice(0, 10).map((item) => (

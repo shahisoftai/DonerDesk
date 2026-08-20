@@ -206,7 +206,7 @@ export function SectionEditor({ projectId, templateId, initialSections }: { proj
       {error && <InlineAlert tone="danger" title={error} />}
 
       <div className="mt-8 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-        <h3 className="text-sm font-semibold text-red-800 dark:text-red-200">Danger zone</h3>
+        <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Danger zone</h3>
         <p className="mt-1 text-sm text-red-700 dark:text-red-300">
           Deleting this template removes it from the project. Reporting periods and reporting profiles that reference it will flag setup blockers until a new template is selected.
         </p>

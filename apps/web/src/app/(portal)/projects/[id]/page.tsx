@@ -54,7 +54,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
       {!hasPeriod && (
         <section className="mt-6">
           <div className="card">
-            <h2 className="font-semibold">Set up your reporting period</h2>
+            <h2 className="font-medium">Set up your reporting period</h2>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
               Create a reporting period to start collecting evidence and generating a report.
             </p>
@@ -72,7 +72,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
       {readiness && (
         <section className="mt-8 grid gap-6 lg:grid-cols-2">
           <div className="card">
-            <h2 className="font-semibold">Report readiness</h2>
+            <h2 className="font-medium">Report readiness</h2>
             <div className="mt-4"><ReadinessGauge value={readiness.overall} label={`${REPORT_TYPE_LABEL[periods[0]?.reportType ?? ""] ?? "Report"}`} /></div>
             <dl className="mt-6 space-y-3">
               <BreakdownRow label="Sections approved" value={readiness.sectionsScore} />
@@ -88,13 +88,13 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
 
           <div className="space-y-6">
             <div className="card">
-              <h2 className="font-semibold">Compliance gaps</h2>
+              <h2 className="font-medium">Compliance gaps</h2>
               {openChecklist.length === 0 && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">No open compliance items.</p>}
               {openChecklist.length > 0 && (
                 <ul className="mt-3 space-y-2">
                   {openChecklist.slice(0, 6).map((c) => (
                     <li key={c.id} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="min-w-0 break-words leading-snug">{c.title}</span>
+                      <span className="min-w-0 break-words leading-5">{c.title}</span>
                       <Badge tone={severityTone(c.severity)}>{c.severity.toLowerCase()}</Badge>
                     </li>
                   ))}
@@ -114,13 +114,13 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
 
       <section className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="card">
-          <h2 className="font-semibold">Donor templates</h2>
+          <h2 className="font-medium">Donor templates</h2>
           <Link className="mt-2 inline-block text-sm text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${project.id}/templates`}>
             Manage templates →
           </Link>
         </div>
         <div className="card">
-          <h2 className="font-semibold">Logframe</h2>
+          <h2 className="font-medium">Logframe</h2>
           <Link className="mt-2 inline-block text-sm text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${project.id}/logframe`}>
             Manage logframe →
           </Link>
@@ -133,7 +133,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="card">
-      <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{label}</div>
       <div className="mt-1 bg-gradient-to-r from-brand-500 to-accent-400 bg-clip-text text-2xl font-semibold tracking-tight text-transparent">{value}</div>
     </div>
   );
@@ -144,7 +144,7 @@ function BreakdownRow({ label, value }: { label: string; value: number }) {
     <div>
       <div className="flex items-center justify-between text-sm">
         <span>{label}</span>
-        <span className="font-semibold">{value}%</span>
+        <span className="font-medium">{value}%</span>
       </div>
       <div className="mt-1"><ProgressBar value={value} tone={value >= 75 ? "success" : value >= 40 ? "warning" : "danger"} /></div>
     </div>

@@ -141,7 +141,7 @@ export default async function ProjectsList({
             {rows.map((p) => (
               <Link key={p.id} href={`/projects/${p.id}`} className="card transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-semibold">{p.title}</span>
+                  <span className="font-medium">{p.title}</span>
                   <Badge tone={projectStatusTone(p.status)}>{p.status}</Badge>
                 </div>
                 <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{p.donorName} · {p.country}</div>

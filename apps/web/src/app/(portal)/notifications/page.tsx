@@ -85,7 +85,7 @@ export default async function NotificationsPage({
         {result.ok && filtered.length === 0 && <EmptyState>No notifications here.</EmptyState>}
         {[...group.entries()].map(([date, list]) => (
           <section key={date}>
-            <h2 className="text-xs font-bold uppercase tracking-wide text-slate-400">{date}</h2>
+            <h2 className="text-xs font-medium text-slate-400">{date}</h2>
             <ul className="mt-2 space-y-2">
               {list.map((n) => (
                 <li key={n.id} className={`rounded-xl border px-4 py-3 ${n.read ? "border-slate-200/60 bg-white dark:border-white/10 dark:bg-white/[0.03]" : "border-brand-400/40 bg-white dark:bg-white/[0.05]"}`}>
@@ -93,7 +93,7 @@ export default async function NotificationsPage({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <Badge tone={n.read ? "neutral" : "info"}>{TYPE_LABEL[n.type ?? ""] ?? (n.type ?? "Notification")}</Badge>
-                        <span className="font-semibold">{n.title}</span>
+                        <span className="font-medium">{n.title}</span>
                       </div>
                       {n.message && <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{n.message}</p>}
                     </div>

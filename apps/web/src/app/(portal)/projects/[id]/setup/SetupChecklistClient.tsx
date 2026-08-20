@@ -106,7 +106,7 @@ export function SetupChecklistClient({
     <div className="space-y-4">
       <section className="card">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-semibold">Setup status</h3>
+          <h3 className="font-medium">Setup status</h3>
           <Badge tone={toneForStatus(readiness.status)}>{statusLabel}</Badge>
         </div>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
@@ -143,7 +143,7 @@ export function SetupChecklistClient({
       </ul>
 
       <section className="card">
-        <h3 className="font-semibold">Blockers</h3>
+        <h3 className="font-medium">Blockers</h3>
         {blockerItems.length === 0 ? (
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">No blockers. Your project is ready to report.</p>
         ) : (

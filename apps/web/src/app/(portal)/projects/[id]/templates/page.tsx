@@ -58,7 +58,7 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
             className="card flex items-center justify-between transition duration-300 hover:-translate-y-0.5 hover:border-brand-400/40 dark:hover:border-brand-400/30"
           >
             <div>
-              <div className="font-semibold">{t.templateName}</div>
+              <div className="font-medium">{t.templateName}</div>
               <div className="text-xs text-slate-500 dark:text-slate-400">
                 {t.donorName} · {REPORT_TYPE_LABEL[t.reportType] ?? t.reportType} · {(t.sections ?? []).length} sections
                 {t.version ? ` · v${t.version}` : ""}

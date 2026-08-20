@@ -23,7 +23,7 @@ export function Tabs({ items, label }: { items: TabItem[]; label: string }) {
             className={cn(
               "rounded-md px-3 py-1.5",
               active
-                ? "bg-brand-500/10 font-semibold text-brand-700 dark:bg-brand-400/10 dark:text-brand-300"
+                ? "bg-brand-500/10 font-medium text-brand-700 dark:bg-brand-400/10 dark:text-brand-300"
                 : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5",
             )}
           >

@@ -60,14 +60,14 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
       </header>
 
       <section className="mt-8">
-        <h2 className="font-semibold">Results hierarchy</h2>
+        <h2 className="font-medium">Results hierarchy</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Goal → Outcome → Output → Activity. Expand items to see their children.
         </p>
         {tree.length === 0 ? (
           <div className="card mt-3 text-sm text-slate-600 dark:text-slate-300">
             No logframe items yet.{" "}
-            <Link className="font-semibold text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${resolvedParams.id}/logframe/new`}>
+            <Link className="font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${resolvedParams.id}/logframe/new`}>
               Add your first item
             </Link>.
           </div>
@@ -78,7 +78,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
 
       <section className="mt-10">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Indicators</h2>
+          <h2 className="font-medium">Indicators</h2>
           <div className="flex gap-2">
             <ImportIndicatorsButton projectId={resolvedParams.id} />
             <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/logframe/new-indicator`}>
@@ -174,7 +174,7 @@ function LogframeTree({
               <div className="flex items-center gap-2">
                 <Badge tone={levelTone(node.level)}>{LOGFRAME_LEVEL_LABEL[node.level] ?? node.level}</Badge>
                 {node.code && <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{node.code}</span>}
-                <span className="font-semibold">{node.title}</span>
+                <span className="font-medium">{node.title}</span>
               </div>
               <div className="flex items-center gap-3 text-xs">
                 {count > 0 && <span className="text-slate-500 dark:text-slate-400">{count} indicator{count === 1 ? "" : "s"}</span>}

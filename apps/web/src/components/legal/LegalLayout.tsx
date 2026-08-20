@@ -32,7 +32,7 @@ export function LegalLayout({
           </Link>
           <Link
             href="/"
-            className="text-sm font-semibold text-slate-300 transition hover:text-white"
+            className="text-sm font-medium text-slate-300 transition hover:text-white"
           >
             ← Back to home
           </Link>
@@ -55,7 +55,7 @@ export function LegalLayout({
           aria-label="Table of contents"
           className="mt-10 rounded-2xl border border-white/10 bg-white/[0.03] p-6"
         >
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+          <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">
             On this page
           </p>
           <ol className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
