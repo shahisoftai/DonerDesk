@@ -566,6 +566,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       if (resolved.ok && resolved.value) {
         const provider = createLLMProvider(resolved.value);
         generatorCache.set(key, new LlmReportDraftGenerator(provider, undefined, logger));
+      } else if (process.env.LLM_PROVIDER) {
+        // Documented fallback chain: platform config -> LLM_PROVIDER env -> stub.
+        const provider = createLLMProvider();
+        generatorCache.set(key, new LlmReportDraftGenerator(provider, undefined, logger));
       } else {
         generatorCache.set(key, new StubReportDraftGenerator());
       }
