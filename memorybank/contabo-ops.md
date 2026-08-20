@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-20 (release `20260820065833`, AI rewrite timeout + draft fallback + LLM env fallback + stub-degradation hardening — API + web, no migration).
+**Last deployment:** 2026-08-20 (release `20260820074745`, reorderable report sections — API + web, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,28 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-20 — Reorderable report sections (release `20260820074745`,
+> commit `f0a6f2a`, API + web, no migration):** The left-hand section nav
+> in the report workspace now supports drag-and-drop plus ↑/↓ move buttons
+> (gated to DRAFT drafts with `reporting.edit`). New
+> `PUT /v1/report-drafts/:id/sections-order` persists the complete ordering
+> by renumbering `ReportSection.sectionOrder` 0..n-1; content, revisions,
+> and approval state are untouched, and the export builder (which sorts by
+> `sectionOrder`) follows the new order. Validation rejects duplicate,
+> missing, or extra section ids, and reordering outside DRAFT is blocked.
+> 3 new application unit tests (reorder persists order, mismatched set
+> rejected, non-draft rejected). **292 unit tests pass / 0 fail**
+> (contracts 9, domain 88, application 66, infrastructure 108+1 skipped,
+> api 21+2 skipped). Full `pnpm -r typecheck` and `pnpm -r build` clean.
+> Note: the local build host hit `ENOSPC` on `/tmp` during packaging
+> (tmpfs 4G); cleaned old staging dirs before reassembling.
+>
+> Verified live: `current` symlink `20260820074745`, both services active,
+> `/ready` OK, `PUT /v1/report-drafts/:id/sections-order` returns 401
+> unauthenticated (route registered), zero journal errors since deploy.
+> Rollback: `RELEASE_ID=20260820065833 scripts/rollback.sh` (previous
+> release; no schema migration, fully backward-compatible).
 
 > **2026-08-20 — AI rewrite timeout + draft fallback + LLM env fallback
 > (release `20260820065833`, commits `fca4710` + `6afb892` + `79bbf94`,
