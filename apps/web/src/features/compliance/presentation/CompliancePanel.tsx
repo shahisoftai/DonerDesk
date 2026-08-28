@@ -107,6 +107,33 @@ export function CompliancePanel({
     });
   }
 
+  const eligibleIds = useMemo(
+    () =>
+      filtered
+        .filter(
+          (c) =>
+            c.status !== "RESOLVED" &&
+            c.status !== "ACCEPTED_RISK" &&
+            c.status !== "NOT_APPLICABLE",
+        )
+        .map((c) => c.id),
+    [filtered],
+  );
+  const allEligibleSelected =
+    eligibleIds.length > 0 &&
+    eligibleIds.every((id) => selectedIds.has(id));
+  const someEligibleSelected =
+    !allEligibleSelected &&
+    eligibleIds.some((id) => selectedIds.has(id));
+
+  function toggleSelectAll() {
+    if (allEligibleSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(eligibleIds));
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-3">
@@ -137,7 +164,27 @@ export function CompliancePanel({
           </Select>
         </div>
         {canResolve && openItems.length > 1 && (
-          <div className="flex items-end">
+          <div className="flex items-end gap-3">
+            {bulkMode && (
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                <input
+                  type="checkbox"
+                  aria-label="Select all checklist items"
+                  checked={allEligibleSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = someEligibleSelected;
+                  }}
+                  onChange={toggleSelectAll}
+                  className="h-4 w-4 accent-brand-600"
+                />
+                <span>Select all</span>
+                {eligibleIds.length > 0 && (
+                  <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+                    ({selectedIds.size}/{eligibleIds.length})
+                  </span>
+                )}
+              </label>
+            )}
             <button
               type="button"
               className={bulkMode ? "btn" : "btn-secondary"}
