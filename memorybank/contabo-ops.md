@@ -688,10 +688,14 @@ WHERE migration_name='<name>' AND finished_at IS NULL;
 - [ ] Real versioned Prisma migrations exist and pass empty-DB + upgrade tests.
 - [ ] No `db push --accept-data-loss` in any production path.
 - [ ] API respects `HOST=127.0.0.1`; web is `output: "standalone"` (the
-      deploy streams `.next/standalone/apps/web/` directly).
-- [ ] The shipped web tar contains
-      `.next/standalone/apps/web/{server.js,package.json,node_modules/next/...}`
-      — verify with `tar tzf <tar> | grep standalone/apps/web/node_modules/next`.
+      deploy streams the entire `.next/standalone/` tree directly).
+- [ ] The shipped web tar contains the full runtime tree at
+      `.next/standalone/` — including the top-level `node_modules/.pnpm/`
+      store (which the `apps/web/node_modules/next` symlink resolves into),
+      AND `.next/standalone/apps/web/.next/static/` (merged in by the
+      staging step so Next.js finds static assets at runtime). Verify with:
+      `tar tzf <tar> | grep -E 'standalone/(node_modules/\.pnpm|apps/web/.next/static)'`.
+      Without these, the site renders unstyled HTML or crashes with MODULE_NOT_FOUND.
 - [ ] The shipped api tar (when API changed) contains `dist/server.js` and
       `node_modules/` (verify with `tar tzf <tar> | grep dist/server.js`).
 - [ ] Artifact contains no `.env`, secrets, dev DB, uploads, or caches
@@ -996,6 +1000,25 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-28 — Web CSS/static-assets fix (deployed, release `20260828161514`):**
+> the fast-deploy cutover (release `20260828155553`) shipped an incomplete
+> Next.js standalone tar — it excluded the standalone's top-level
+> `node_modules/.pnpm/` store that the `apps/web/node_modules/next`
+> symlink resolves into, AND it did not merge `.next/static/` and
+> `public/` into `.next/standalone/apps/web/.next/` where Next.js looks
+> for them at runtime. Result: `server.js` crashed with MODULE_NOT_FOUND
+> (`next` unresolved) OR served unstyled HTML (CSS references returned
+> 404). Fix in `scripts/deploy-fast.sh`: stage the ENTIRE
+> `.next/standalone/` tree (incl. the top-level pnpm store + apps/web/
+> + memorybank/ + packages/) and explicitly merge `.next/static/` and
+> `public/` into `.next/standalone/apps/web/.next/` and
+> `.next/standalone/apps/web/` respectively before tarring. Also added
+> a CSS sanity check to the release gate (§19): the shipped tar must
+> contain both the pnpm store and the merged static dir. Web tar grew
+> from 22 MB to 23 MB (the pnpm store is included). Site is fully
+> styled; `curl https://donordesk.online/_next/static/css/<hash>.css`
+> returns 200 with the full 76 KB Tailwind CSS.
 
 > **2026-08-28 — Fast-deploy cutover (deployed, releases `20260828155011` +
 > `20260828155315` + `20260828155553`, web/API):** replaced the

@@ -148,15 +148,34 @@ if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
     echo "ERROR: ${ROOT}/apps/web/.next/standalone/apps/web missing — did next build run?" >&2
     exit 1
   fi
-  # The standalone bundle is self-contained (has its own node_modules). Tar it
-  # + .next/static.
-  tar -C "${ROOT}/apps/web" \
-      --exclude='.next/cache' \
-      --exclude='.next/standalone/memorybank' \
-      --exclude='.next/standalone/packages' \
-      -czf "${WEB_TAR}" \
-      .next/standalone .next/static package.json next.config.mjs next-env.d.ts tsconfig.json
-  echo "    web tar: $(du -h "${WEB_TAR}" | cut -f1)"
+  # Build the deploy tree the way Next.js standalone expects it at runtime.
+  # server.js chdir's to its own dir and resolves distDir="./.next" relative
+  # to cwd, so static MUST live inside .next/standalone/apps/web/.next/.
+  #
+  # Standalone bundles node_modules as symlinks (apps/web/node_modules/next
+  # -> ../../../node_modules/.pnpm/...). The pnpm store lives at the
+  # standalone's top-level node_modules/.pnpm/, so we ship the WHOLE
+  # .next/standalone tree (incl. top-level node_modules) — minus build caches.
+  # We then MERGE .next/static/ and public/ INSIDE standalone's .next/ so
+  # Next.js finds them at runtime.
+  WEB_STAGE="${WORK}/web-stage"
+  rm -rf "${WEB_STAGE}"
+  mkdir -p "${WEB_STAGE}/.next/standalone"
+  # Copy the whole standalone tree (top-level node_modules/.pnpm + apps/ + memorybank/ + packages/)
+  rsync -a \
+      "${ROOT}/apps/web/.next/standalone/" \
+      "${WEB_STAGE}/.next/standalone/"
+  # Merge static + public INSIDE standalone's .next/ so server.js finds them
+  rsync -a --delete "${ROOT}/apps/web/.next/static/" \
+      "${WEB_STAGE}/.next/standalone/apps/web/.next/static/"
+  if [[ -d "${ROOT}/apps/web/public" ]]; then
+    rsync -a --delete "${ROOT}/apps/web/public/" \
+        "${WEB_STAGE}/.next/standalone/apps/web/public/"
+  fi
+  # Tar the staged tree; top-level entries are .next/... so extract into
+  # apps/web/ lands them at apps/web/.next/standalone/... correctly.
+  tar -C "${WEB_STAGE}" -czf "${WEB_TAR}" .
+  echo "    web tar: $(du -h "${WEB_TAR}" | cut -f1)  (standalone + .pnpm + static + public)"
 fi
 
 if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
