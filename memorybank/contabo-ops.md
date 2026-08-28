@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-28 (release `20260828124537`, compliance "Select all" checkbox — web only, no migration).
+**Last deployment:** 2026-08-28 (release `20260828155553`, cutover to fast-deploy model — see §21.1).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -329,12 +329,13 @@ plugin-referencing flows and plugin JARs remain gated (see §29 log +
 
 | Resource | Allocation |
 |---|---|
-| Web | `127.0.0.1:3002` (DonorDesk Next.js standalone) |
+| Web | `127.0.0.1:3002` (DonorDesk Next.js standalone at `apps/web/.next/standalone/apps/web/server.js`) |
 | API | `127.0.0.1:4001` (Fastify) — **loopback-only confirmed** (was `0.0.0.0`) |
 | Worker | **ENABLED** `127.0.0.1:8092` (FastAPI `donordesk-workers.service`, venv at `/opt/donordesk/workers/.venv`, Python 3.12) |
 | Kestra | **ENABLED** `127.0.0.1:8093` (API/UI) + `127.0.0.1:8094` (management), Kestra 1.3.30 / Java 21 |
 | Files | `/opt/donordesk/shared/storage` |
-| Releases | `/opt/donordesk/releases/20260815063021` → `current` symlink |
+| Runtime | `/opt/donordesk/app/` (mutable, single dir); `current -> app/` (alias) |
+| Backups | `/opt/donordesk/backups/dd-app-pre-<id>.tgz` (last 3) |
 | Runtime user | `donordesk` system user; Kestra user `donordesk_kestra` (created) |
 | Database | `donordesk` (PostgreSQL 16.14); Kestra DB `donordesk_kestra` migrated through Flyway v1.57 |
 | DB roles | `donordesk_migrator` (schema owner), `donordesk_app` (runtime), `donordesk_kestra` (Kestra, created) |
@@ -507,24 +508,28 @@ storage (per-tenant Drive/R2 optional). Starting a container does not activate
 a feature: the runtime dependency container must select the adapter and a
 production-path test must prove it.
 
-Releases are **immutable directories** under `/opt/donordesk/releases/<id>`
-with an atomic `/opt/donordesk/current` symlink switch; never edit a file in a
-completed release in place.
+Deployments target a **single mutable runtime directory** at
+`/opt/donordesk/app/`. There is no immutable-release directory or `current`
+symlink switch — every deploy overwrites files in `app/` in place. See §21 for
+the fast tar-and-extract deploy model and §22 for rollback.
 
 ## 15. Filesystem and Unix identity
 
 ```text
 /opt/donordesk/
-├── current -> releases/<release-id>
-├── releases/
-│   └── <release-id>/
-│       ├── dist/                 API server.js + compiled routes
-│       ├── node_modules/         self-contained prod deps (@donordesk/*)
-│       ├── apps/web/             Next.js standalone (server.js + .next)
-│       ├── superadmin/           SuperAdmin standalone (preserved between releases)
-│       ├── prisma/               schema + migrations
-│       ├── release.json          {"releaseId","commit","builtAt"}
-│       └── (workers app code updated in place, not per-release)
+├── app/                          mutable runtime dir (services run from here)
+│   ├── dist/                     API server.js + compiled routes
+│   ├── node_modules/             API prod deps (@donordesk/*, fastify, etc.)
+│   ├── apps/web/
+│   │   ├── .next/standalone/apps/web/   Next.js standalone (server.js + node_modules)
+│   │   ├── .next/static/                static assets
+│   │   └── package.json
+│   ├── superadmin/               SuperAdmin standalone (updated in place)
+│   ├── prisma/                   schema + migrations
+│   ├── release.json              {"releaseId","commit","builtAt","scope"}
+│   └── workers/                  workers app (symlinked or copied in place)
+├── current -> app/               kept for backward compatibility (read-only alias)
+├── backups/                      last 3 deploy tarballs (dd-app-pre-*.tgz)
 ├── shared/
 │   ├── api.env                   (root-owned, group-readable, 0600)
 │   ├── workers.env               (0600)
@@ -534,13 +539,16 @@ completed release in place.
 └── kestra/                       pinned kestra-1.3.30 + .kestra/config.yml + plugins
 ```
 
-Release files are root/deploy-owned and read-only to the `donordesk` service
-user; only `shared/storage` and required runtime directories are writable.
-Migrator credentials are stored separately (root-only) and never exposed to the
-API service. `scripts/package-release.sh` assembles the self-contained directory
-off-host (API `pnpm deploy --legacy` + web standalone + prisma + generated
-Prisma client + release.json) and removes `.env`, `.env.*`, `dev.db`,
-`*.tsbuildinfo`, sources, tests, and Next.js build caches before deploy.
+Runtime files are owned by `donordesk:donordesk`; only `shared/storage` and
+required runtime directories are writable. Migrator credentials are stored
+separately (root-only) and never exposed to the API service.
+
+The deploy script is `scripts/deploy-fast.sh` — it builds locally (incremental
+filter: contracts + domain + web for the common case), tars the changed
+artifact (~22 MB web, ~100 MB api with deps), streams it over SSH, and
+extracts it over the live tree. A pre-deploy snapshot is written to
+`/opt/donordesk/backups/` and rotated (keep last 3) so rollback is a single
+`tar xzf` away.
 
 ## 16. Production environments
 
@@ -585,16 +593,21 @@ Rules:
 ## 17. Systemd services
 
 All units are installed under `/etc/systemd/system/` and, where they exist, have
-checked-in source under `infra/systemd/`. Key contracts (verified live 2026-08-18):
+checked-in source under `infra/systemd/`. Key contracts (verified live 2026-08-28
+after the fast-deploy cutover; the `WorkingDirectory` was changed from
+`/opt/donordesk/current` to `/opt/donordesk/app`):
 
-- **donordesk-api** — `User=donordesk`, `WorkingDirectory=/opt/donordesk/current`,
+- **donordesk-api** — `User=donordesk`,
+  `WorkingDirectory=/opt/donordesk/app`,
   `EnvironmentFile=/opt/donordesk/shared/api.env`,
   `ExecStart=/usr/bin/node dist/server.js`, `Restart=on-failure`, `RestartSec=5`,
   `ProtectSystem=strict`, `ReadWritePaths=/opt/donordesk/shared/storage`.
 - **donordesk-web** — `User=donordesk`,
-  `WorkingDirectory=/opt/donordesk/current/apps/web`,
+  `WorkingDirectory=/opt/donordesk/app/apps/web`,
   `Environment=NODE_ENV=production HOSTNAME=127.0.0.1 PORT=3002`,
-  `ExecStart=/usr/bin/node server.js`. Drop-in
+  `ExecStart=/usr/bin/node .next/standalone/apps/web/server.js` (the Next.js
+  standalone entry — its own `server.js` resolves `next` from its bundled
+  `node_modules/`). Drop-in
   `/etc/systemd/system/donordesk-web.service.d/google.conf` adds
   `API_INTERNAL_URL=http://127.0.0.1:4001`, `GOOGLE_DRIVE_CLIENT_ID`,
   `APP_URL=https://donordesk.online`.
@@ -605,7 +618,7 @@ checked-in source under `infra/systemd/`. Key contracts (verified live 2026-08-1
   127.0.0.1 --port 8092` (FastAPI; Python 3.12 venv lives at
   `/opt/donordesk/workers/.venv`).
 - **donordesk-superadmin** — `User=donordesk`,
-  `WorkingDirectory=/opt/donordesk/current/superadmin`,
+  `WorkingDirectory=/opt/donordesk/app/superadmin`,
   `Environment=PORT=3012 HOSTNAME=127.0.0.1
   SUPERADMIN_API_URL=http://127.0.0.1:4001`,
   `ExecStart=/usr/bin/node server.js`, `Requires=donordesk-api.service`.
@@ -619,7 +632,7 @@ checked-in source under `infra/systemd/`. Key contracts (verified live 2026-08-1
 
 Do not upgrade the global Node, pnpm, Python, PostgreSQL, Docker, or OLS
 versions during a DonorDesk deploy (NeureCore depends on global pnpm 9.15.9;
-DonorDesk builds with pnpm 10.34.5 off-host).
+DonorDesk builds with pnpm 10.34.5 off-host via corepack).
 
 ## 18. Database migrations and RLS
 
@@ -669,13 +682,23 @@ WHERE migration_name='<name>' AND finished_at IS NULL;
 
 **Code and artifact**
 
-- [ ] Clean `pnpm -r typecheck`, `pnpm -r test`, `pnpm -r build` pass.
+- [ ] Clean `pnpm -r typecheck`, `pnpm -r test`, `pnpm -r build` pass
+      (deploy-fast runs a scoped subset — `contracts + domain + web` for the
+      common case, full workspace only when `SCOPE=both` or dep changes).
 - [ ] Real versioned Prisma migrations exist and pass empty-DB + upgrade tests.
 - [ ] No `db push --accept-data-loss` in any production path.
-- [ ] API respects `HOST=127.0.0.1`; web is `output: "standalone"`.
-- [ ] Artifact contains no `.env`, secrets, dev DB, uploads, sources, or caches.
-- [ ] Artifact starts without a production `pnpm install` (own `.pnpm` store).
-- [ ] Artifact records commit, timestamp, and release.json.
+- [ ] API respects `HOST=127.0.0.1`; web is `output: "standalone"` (the
+      deploy streams `.next/standalone/apps/web/` directly).
+- [ ] The shipped web tar contains
+      `.next/standalone/apps/web/{server.js,package.json,node_modules/next/...}`
+      — verify with `tar tzf <tar> | grep standalone/apps/web/node_modules/next`.
+- [ ] The shipped api tar (when API changed) contains `dist/server.js` and
+      `node_modules/` (verify with `tar tzf <tar> | grep dist/server.js`).
+- [ ] Artifact contains no `.env`, secrets, dev DB, uploads, or caches
+      (deploy-fast excludes `.env*`, `dev.db`, `.next/cache`,
+      `node_modules/.cache`).
+- [ ] Artifact records commit, timestamp, and `release.json`
+      (`scripts/deploy-fast.sh` writes `app/release.json`).
 
 **Database and tenancy**
 
@@ -691,98 +714,168 @@ WHERE migration_name='<name>' AND finished_at IS NULL;
 - [ ] Same-day port + capacity preflight passes (§12).
 - [ ] No new OLS validation error is introduced.
 - [ ] Off-host backup + restore test status confirmed (§23).
-- [ ] Rollback to the preceding immutable release is exercised.
+- [ ] A pre-deploy tar exists at
+      `/opt/donordesk/backups/dd-app-pre-<id>.tgz` (deploy-fast creates it;
+      pass `NO_BACKUP=1` only for dev loops).
+- [ ] Rollback is exercised — the tar can be extracted and services come
+      up cleanly.
 
 ## 20. Release sequence
+
+The fast path is a single command:
+
+```bash
+RELEASE_ID="$(date -u +%Y%m%d%H%M%S)" scripts/deploy-fast.sh
+```
+
+For schema migrations, run them **before** the deploy as a separate operator
+step (§18), then deploy. The deploy script does not run migrations.
 
 1. Run the live-host preflight (§12).
 2. Confirm ports 3002/4001/8092 and disk/RAM margins.
 3. Confirm the latest off-host backup and restore-test status.
-4. Run the release gate (§19) and assemble the release (§21).
-5. Upload/extract the release directory (or transfer deltas) without touching `current`.
-6. Run migrations with root-only migrator credentials (§18).
-7. Apply RLS and run isolation tests as `donordesk_app`.
-8. Smoke the staged API/web on temporary loopback ports with the shared `api.env`.
-9. Atomically switch `current`.
-10. Restart only affected services (`donordesk-api`, `donordesk-web`,
-    `donordesk-superadmin`; worker/Kestra only if changed).
-11. Run local and public acceptance tests (§13, §24).
-12. Check journald, PostgreSQL, memory, swap, and disk.
-13. Record release ID, commit, migration, checksum, tests, and backup evidence (§26).
+4. Run migrations with root-only migrator credentials (§18), if the
+   release contains schema changes.
+5. Apply RLS and run isolation tests as `donordesk_app` (§18).
+6. Run the release gate (§19) — at minimum, `pnpm -r typecheck` and a
+   scoped build.
+7. `RELEASE_ID="$(date -u +%Y%m%d%H%M%S)" scripts/deploy-fast.sh`
+   (optionally `SCOPE=web|api|both`, `SKIP_*` for dev loops).
+8. Run local and public acceptance tests (§13, §24).
+9. Check journald, PostgreSQL, memory, swap, and disk.
+10. Record release ID, commit, migration, and verification evidence (§26).
 
 ## 21. Release paths
 
-### 21.1 Preferred — checksummed incremental immutable release
+### 21.1 Preferred — fast tar-and-extract (default since 2026-08-28)
 
-Build off-host, hard-link the current release into a staging directory, and use
-checksummed `rsync` to replace only changed files. Then atomically switch
-`current`, restart only affected services, and run bounded health checks. A
-failed verification automatically restores the previous symlink and restarts the
-same services. Never edit a file in a completed release in place.
+DonorDesk follows the same deploy model as `shahisoft-nextjs` and `gfcportal`
+on this host: **one mutable runtime dir** at `/opt/donordesk/app/`, build
+locally (incremental, scoped), tar the changed artifact, stream-extract over
+SSH into the live tree, restart the service, verify. No immutable-release
+directory, no `current` symlink switch, no `rsync` of 1.7 GB artifacts.
+
+Script: **`scripts/deploy-fast.sh`**.
 
 ```bash
-release_id="$(date -u +%Y%m%d%H%M%S)"
+# Default (auto-detect scope from git diff vs the previous deployed commit):
+RELEASE_ID="$(date -u +%Y%m%d%H%M%S)" scripts/deploy-fast.sh
 
-# Required release gate. CI may run these once and retain the build outputs.
-pnpm -r typecheck
-pnpm -r test
-pnpm -r build
+# Explicit scope (skip auto-detect):
+RELEASE_ID=… SCOPE=web  scripts/deploy-fast.sh
+RELEASE_ID=… SCOPE=api  scripts/deploy-fast.sh
+RELEASE_ID=… SCOPE=both scripts/deploy-fast.sh
 
-# SKIP_BUILD is allowed only because the gate above produced this artifact.
-RELEASE_ID="$release_id" CREATE_TARBALL=0 SKIP_BUILD=1 \
-  scripts/package-release.sh
-
-# Select only services affected by the change.
-RELEASE_ID="$release_id" \
-RELEASE_DIR="/tmp/dd-release-$release_id" \
-SERVICES="donordesk-api donordesk-web" \
-  scripts/deploy-incremental.sh
+# Dev loop — skip typecheck/build (artifacts already exist) and the safety
+# snapshot when iterating quickly:
+RELEASE_ID=… SKIP_BUILD=1 SKIP_TYPECHECK=1 NO_BACKUP=1 scripts/deploy-fast.sh
 ```
 
-Allowed `SERVICES` values are `donordesk-api`, `donordesk-web`, and
-`donordesk-superadmin`. The packager updates API/web and intentionally preserves
-the existing `superadmin/` tree; use the full release path when SuperAdmin
-itself changes until it is added to the fast packager.
+The script:
 
-Measured pilot (2026-08-14): full build 151.5 s; cached artifact assembly
-23.9 s; hardened artifact 811 MB logical; incremental deploy 86.2 s;
-no-change checksummed comparison 17.5 s with zero files transferred; API startup
-~9 s. Routine cached deployments normally finish in about one minute after the
-artifact exists.
+1. **Detects scope** (auto) from `git diff <prev_deployed_commit>` covering
+   `apps/web/`, `apps/api|workers|superadmin/`, `packages/`, and `prisma/`.
+   Includes working-tree changes (unstaged + staged), so dev-loop deploys of
+   uncommitted edits are detected.
+2. **Typechecks and builds** only the needed workspace packages
+   (`contracts + domain + web` for the common web-only case).
+3. **Stages a tarball** locally:
+   - web: `.next/standalone/apps/web/` (Next.js self-contained bundle,
+     includes its own `node_modules/`) + `.next/static/` + `package.json` →
+     ~22 MB tar.
+   - api: `dist/` + `node_modules/` + `package.json` + `tsconfig.json` →
+     ~100 MB tar.
+4. **Snapshots** the current `app/` tree (full, includes `node_modules/`) to
+   `/opt/donordesk/backups/dd-app-pre-<id>.tgz`. Rotates: keep last 3.
+5. **Streams** the new tar over SSH into the live `app/` tree, replacing only
+   the subtrees that changed.
+6. **Restarts** the affected services only (`web` for `SCOPE=web`,
+   `api` for `SCOPE=api`, both for `SCOPE=both`).
+7. **Verifies** via `ssh` `curl` to `/health`, `/ready`, `/login` (waits up
+   to 60 s for web). On failure, prints the manual rollback command and
+   exits 2 — **does not auto-rollback** (auto-rollback from a broken snapshot
+   left things worse in testing on 2026-08-28).
 
-### 21.2 Fallback — full self-contained tarball
+**Measured timings (cutover + first real deploy, 2026-08-28):**
 
-The bootstrap/fallback path uses a single tarball (see §11.1 of the former LEAN
-doc, now `scripts/package-release.sh` with `CREATE_TARBALL=1`): upload once,
-extract into an immutable release dir, switch with one symlink + restart. This
-is what `scripts/deploy.sh` (`RELEASE_ID` + `TARBALL` env vars) performs for the
-atomic-switch core; it does **not** run migrations/RLS — those are separate
-operator steps (§18) run before the switch.
+| Step | Time |
+|---|---|
+| Local typecheck + filtered web build (contracts+domain+web) | ~150 s |
+| Stage web tar (~22 MB) | ~5 s |
+| Pre-deploy snapshot (full app tar, ~250 MB) | ~70–80 s |
+| Stream + extract over SSH | ~10–18 s |
+| Restart + verify (60 s timeout, typically 3–5 s) | ~5–15 s |
+| **Total — web-only real deploy** | **~3–4 min** |
+| **Total — web-only with NO_BACKUP=1** | **~3 min** |
+| Deploy step alone (stream + restart + verify) | **~30 s** |
+
+The deploy step itself (stream → restart → verify) is now ~30 s. The
+remaining time is dominated by the Next.js build (CPU-bound) and the safety
+snapshot. Skip the snapshot for tight dev loops (`NO_BACKUP=1`); always keep
+it for production deploys.
+
+### 21.2 Fallback — old immutable-release path
+
+The previous flow (`scripts/package-release.sh` + `scripts/deploy-incremental.sh`)
+still works but is no longer the default. It builds a full self-contained
+artifact off-host (~1.7 GB) and rsyncs it into a timestamped immutable
+directory under `/opt/donordesk/releases/<id>/`, then atomically switches
+the `current` symlink. Keep it as the cold-path / emergency rollback
+mechanism (the `scripts/package-release.sh` logic is still useful for
+auditable artifacts). On 2026-08-28 the release dirs were deleted and
+`current` was repointed to `/opt/donordesk/app/`; the old scripts remain in
+the repo but require `/opt/donordesk/releases/` to exist.
+
+### 21.3 Why the change
+
+The immutable-release + rsync flow measured ~6 min per web deploy because:
+
+- `pnpm -r build` rebuilt the full workspace every release (~3 min).
+- `pnpm --filter @donordesk/api deploy --legacy` copied ~1.4 GB of
+  `node_modules` into the release (~90 s).
+- `rsync --checksum` of 62 k files over a 2.86 MB/s link added ~60 s of
+  per-file protocol overhead.
+- Disk grew toward 80% (98 release dirs × ~1.7 GB logical, ~5 GB unique
+  blocks — releases were hardlinked so actual disk was lower, but the
+  release-dir clutter was unmanageable).
+
+The fast path removes the `pnpm deploy --legacy` step (Next.js standalone is
+already self-contained), removes rsync (single tar stream), and keeps a
+single runtime directory instead of N immutable dirs.
 
 ## 22. Rollback
 
-The fast deployment script rolls back automatically when its local health checks
-fail. Manual rollback:
+Rollback in the fast-deploy model is a **single `tar xzf`** away.
 
 ```bash
-RELEASE_ID=<known-good-release> scripts/rollback.sh
-# or, directly:
-ln -sfn /opt/donordesk/releases/<known-good> /opt/donordesk/current
-systemctl restart donordesk-api donordesk-web donordesk-superadmin
+# 1. List available backups (newest first):
+ssh contabo 'ls -1t /opt/donordesk/backups/dd-app-pre-*.tgz'
+
+# 2. Extract the chosen backup over the live app dir and restart:
+ssh contabo '
+  PRE=$(ls -1t /opt/donordesk/backups/dd-app-pre-*.tgz | head -1)
+  rm -rf /opt/donordesk/app
+  tar -xzf "$PRE" -C /opt/donordesk
+  systemctl restart donordesk-api donordesk-web
+'
+
+# 3. Verify:
+curl -fsS https://donordesk.online/login
 ```
 
-Procedure:
+For non-emergency rollbacks the cleanest path is **`git checkout <prev-commit>`
++ redeploy** — git is the source of truth and `deploy-fast.sh` will rebuild
+the previous code in ~3 min.
 
-1. Verify the previous release is compatible with the current database schema.
-2. Atomically repoint `current` to the explicit previous release ID.
-3. Restart only the affected DonorDesk services.
-4. Run the same public acceptance checks.
-5. Preserve failed-release logs and artifact for diagnosis.
+The deploy script does **not** auto-rollback on verify failure (2026-08-28
+lesson: auto-rollback extracted a snapshot that itself had no
+`node_modules/`, making things worse). On failure the script exits 2 and
+prints the exact rollback command.
 
-**Application rollback does not undo database changes** — that is why production
-migrations must remain compatible with the preceding release. Never run
-`pm2 restart all`; DonorDesk systemd operations must not touch existing PM2
-applications.
+**Application rollback does not undo database changes** — production
+migrations must remain compatible with the preceding release (§18). Never
+run `pm2 restart all`; DonorDesk systemd operations must not touch
+existing PM2 applications.
 
 ## 23. Backup and disaster recovery
 
@@ -903,6 +996,40 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-28 — Fast-deploy cutover (deployed, releases `20260828155011` +
+> `20260828155315` + `20260828155553`, web/API):** replaced the
+> immutable-release + rsync-of-1.7-GB-artifact flow with a single mutable
+> runtime directory at `/opt/donordesk/app/` and a tar-and-extract deploy.
+> Motivation: the old flow measured ~6 min per web deploy (3 min build +
+> 90 s `pnpm deploy --legacy` + 60 s rsync of 62 k files over 2.86 MB/s);
+> disk was at 80% (96 GB / 77 GB used) with 98 immutable release dirs. The
+> new model mirrors `shahisoft-nextjs` and `gfcportal` on the same host:
+> build locally (incremental, scoped), tar the changed artifact, stream
+> over SSH into `/opt/donordesk/app/`, restart the affected service,
+> verify. Cutover steps: (a) `rsync --link-dest` from current release into
+> new `/opt/donordesk/app/`; (b) updated `donordesk-api.service` /
+> `donordesk-web.service` `WorkingDirectory` from `/opt/donordesk/current`
+> to `/opt/donordesk/app`; (c) web `ExecStart` now runs
+> `.next/standalone/apps/web/server.js` (Next.js self-contained bundle,
+> not the `pnpm deploy --legacy` 1.4 GB `node_modules/`); (d) deleted
+> `/opt/donordesk/releases/` (98 dirs) and the stale `/opt/donordesk/build/`
+> from a prior on-host-build attempt; (e) created
+> `/opt/donordesk/backups/` for rotating pre-deploy tars (last 3). Disk
+> dropped to 60% (40 GB free). New deploy script
+> `scripts/deploy-fast.sh` (`SCOPE=auto|web|api|both`, `SKIP_BUILD=1`,
+> `SKIP_TYPECHECK=1`, `NO_BACKUP=1`). Measured timings for a real
+> web-only deploy (build + snapshot + ship + verify): **~3–4 min total**;
+> the deploy step alone (stream + restart + verify) is **~30 s**. The
+> old `scripts/package-release.sh` + `scripts/deploy-incremental.sh`
+> remain in the repo as the cold-path / emergency rollback mechanism. See
+> §21.1 for the full deploy model and §22 for rollback (single
+> `tar xzf` from `/opt/donordesk/backups/`). **Lesson learned during
+> the cutover:** the deploy script must **not** auto-rollback on verify
+> failure — the first attempt extracted a pre-deploy snapshot that
+> itself had no `node_modules/` (the tar excluded them), making things
+> worse. The script now exits 2 on verify failure and prints the manual
+> rollback command; operator decides.
 
 > **2026-08-28 — Compliance "Select all" checkbox (deployed, release
 > `20260828124537`, commit `08c7ee6`, web only, no migration):** in a
