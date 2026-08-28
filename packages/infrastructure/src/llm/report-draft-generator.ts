@@ -37,7 +37,7 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     if (titleLower.includes("indicator")) {
       return this.indicatorProgress(input, planSection.title);
     }
-    if (titleLower.includes("activity")) {
+    if (titleLower.includes("activit")) {
       return this.activityNarrative(input, planSection.title);
     }
     if (titleLower.includes("achievement")) {
@@ -48,6 +48,9 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     }
     if (titleLower.includes("lesson")) {
       return this.lessons(input, planSection.title);
+    }
+    if (titleLower.includes("next period") || titleLower.includes("work plan")) {
+      return this.nextPeriodPlan(input, planSection.title);
     }
     if (titleLower.includes("annex")) {
       return this.annexList(input, planSection.title);
@@ -142,7 +145,9 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
 
   private executiveSummary(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], title: string): GeneratedSection {
     const findings = input.verifiedFindings;
-    const claims = findings.map((f) => this.numericClaim(input, f));
+    const claims = findings
+      .filter((f) => !f.qualityFlags.includes("MISSING_DENOMINATOR"))
+      .map((f) => this.numericClaim(input, f));
     const lines = [
       `This report summarises implementation progress during the reporting period.`,
       `${findings.length} indicator finding(s), ${input.activities.length} activity record(s), and ${input.evidencePackages.length} evidence file(s) support the claims below.`,
@@ -174,9 +179,14 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
       const name = f.indicatorName ? ` (${f.indicatorName})` : "";
       const target = f.target ? ` / target ${f.target}${f.unit ? ` ${f.unit}` : ""}` : "";
       const previous = f.comparisonValue !== undefined ? `; previous period: ${f.comparisonValue}${f.unit ? ` ${f.unit}` : ""}` : "";
-      return `| ${f.indicatorCode}${name} | ${f.value}${f.unit ? ` ${f.unit}` : ""} | ${target || "no target"}${previous} | ${f.calculationMethod} |${flags}${source} |`;
+      const displayedValue = f.qualityFlags.includes("MISSING_DENOMINATOR")
+        ? "Not calculable (denominator unavailable)"
+        : `${f.value}${f.unit ? ` ${f.unit}` : ""}`;
+      return `| ${f.indicatorCode}${name} | ${displayedValue} | ${target || "no target"}${previous} | ${f.calculationMethod} |${flags}${source} |`;
     });
-    const claims = findings.map((f) => this.numericClaim(input, f));
+    const claims = findings
+      .filter((f) => !f.qualityFlags.includes("MISSING_DENOMINATOR"))
+      .map((f) => this.numericClaim(input, f));
     const content = findings.length === 0
       ? "No verified indicator findings are available for this period."
       : ["| Indicator | Value | Target / Previous | Method |", "| --- | --- | --- | --- |", ...rows].join("\n");
@@ -344,6 +354,19 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     };
   }
 
+  private nextPeriodPlan(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], title: string): GeneratedSection {
+    const planned = input.activities.filter((a) => a.nextSteps.trim());
+    return {
+      sectionId: "next-period-plan",
+      title,
+      content: planned.length === 0
+        ? "No approved next-period actions were recorded in activity updates for this reporting period. Add the approved work plan before finalization."
+        : planned.map((a) => `- ${a.activityTitle}: ${a.nextSteps}`).join("\n"),
+      claims: [],
+      sourceReferences: planned.map((a) => ({ type: "activity" as const, id: a.activityId, label: a.activityTitle })),
+    };
+  }
+
   private annexList(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], title: string): GeneratedSection {
     const refs = this.evidenceRefs(input);
     return {
@@ -379,6 +402,9 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     const perf = finding.performanceEvaluation && finding.performanceEvaluation.type !== "NEUTRAL"
       ? ` Performance: ${finding.performanceEvaluation.type.toLowerCase()} (${finding.performanceEvaluation.detail}).`
       : "";
+    if (finding.qualityFlags.includes("MISSING_DENOMINATOR")) {
+      return `${label}: the result could not be calculated because the denominator was unavailable${flags}.${source}`;
+    }
     return `${label}: ${finding.value}${finding.unit ? ` ${finding.unit}` : ""} recorded via ${finding.calculationMethod}${target}${previous}${perf}${flags}.${source}`;
   }
 

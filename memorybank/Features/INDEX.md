@@ -52,6 +52,17 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 > + verifier contract suite, and ADRs 0005–0009. Migration
 > `20260818180000_professional_reporting` includes a baseline-revision backfill.
 > See `20-report-gen.md` §18 and `../contabo-ops.md` §29.
+> **2026-08-28 (AI Reporter sidecar):** a new multi-step, evidence-grounded
+> report-writing pipeline behind the same `IReportDraftGenerator` port
+> (feature-flagged `AI_REPORTER_ENABLED`): Python worker (`apps/workers/app/
+> ai_reporter.py`) runs a **draft → critique → refine** loop (LangGraph) under a
+> versioned writer contract; **pgvector semantic retrieval**
+> (`embedding` column on `EvidenceEmbedding`, HNSW cosine index, OpenAI/Ollama
+> embedding generators, `SemanticEvidenceRetriever`, `embedding:backfill` CLI);
+> and **prior-period intelligence** (`DeterministicPriorPeriodService`) keeps the
+> writer consistent with previously approved narrative. Golden corpus grown to 8
+> cases with a `repetition` qualitative metric. Full detail:
+> `../imp/AI-REPORTER-IMPLEMENTATION-PLAN.md` (status IMPLEMENTED).
 
 ## Features
 
@@ -67,7 +78,7 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 | 08 | [AI Evidence Tagging](./08-AI-Evidence-Tagging.md) | Orchestrated (heuristic tagger; real AI provider is a stub) | `packages/infrastructure/src/llm/evidence-tagger.ts`, `packages/contracts/src/strategies/heuristic-rules.json` |
 | 09 | [Activity Update Capture](./09-Activity-Update-Capture.md) | Implemented | `packages/domain/src/entities/ActivityUpdate.ts` |
 | 10 | [Reporting Period Manager](./10-Reporting-Period-Manager.md) | Implemented | `packages/domain/src/entities/ReportingPeriod.ts` |
-| 11 | [AI Report Draft Generator](./11-AI-Report-Draft-Generator.md) | Implemented (real LLM via SuperAdmin MiniMax config; full evidence/activity/indicator context 2026-08-17; professional context — indicator metadata/targets, project/period/template, performance gating 2026-08-18) | `packages/infrastructure/src/llm/llm-report-draft-generator.ts`, `packages/infrastructure/src/llm/report-draft-generator.ts`, `packages/infrastructure/src/llm/factory.ts`, `packages/infrastructure/src/llm/llm-config-resolver.ts`, `packages/infrastructure/src/ai/evidence-package-builder.ts`, `packages/application/src/use-cases/reporting/generate-report-draft.ts`, `packages/domain/src/contexts/reporting/verified-finding.ts`, `packages/domain/src/contexts/reporting/indicator-calculator.ts` |
+| 11 | [AI Report Draft Generator](./11-AI-Report-Draft-Generator.md) | Implemented (real LLM via SuperAdmin MiniMax config; full evidence/activity/indicator context 2026-08-17; professional context — indicator metadata/targets, project/period/template, performance gating 2026-08-18; **AI Reporter sidecar — draft/critique/refine + pgvector semantic retrieval + prior-period intelligence — 2026-08-28**) | `packages/infrastructure/src/llm/llm-report-draft-generator.ts`, `packages/infrastructure/src/llm/report-draft-generator.ts`, `packages/infrastructure/src/llm/ai-reporter-draft-generator.ts`, `packages/infrastructure/src/llm/semantic-evidence-retriever.ts`, `packages/infrastructure/src/llm/embedding.ts`, `apps/workers/app/ai_reporter.py`, `packages/infrastructure/src/llm/factory.ts`, `packages/infrastructure/src/llm/llm-config-resolver.ts`, `packages/infrastructure/src/ai/evidence-package-builder.ts`, `packages/application/src/use-cases/reporting/generate-report-draft.ts`, `packages/domain/src/contexts/reporting/verified-finding.ts`, `packages/domain/src/contexts/reporting/indicator-calculator.ts` |
 | 12 | [Missing Evidence and Compliance Checklist](./12-Missing-Evidence-And-Compliance-Checklist.md) | Implemented (auto-generation, templates, bulk ops 2026-08-16) | `packages/domain/src/entities/ChecklistItem.ts` |
 | 13 | [Review and Approval Workflow](./13-Review-And-Approval-Workflow.md) | Implemented | `packages/domain/src/entities/Comment.ts` |
 | 14 | [Export Module](./14-Export-Module.md) | Implemented (report charts embedded in DOCX/PDF 2026-08-17) | `packages/infrastructure/src/export/`, `packages/infrastructure/src/exports/chart-png-renderer.ts` |

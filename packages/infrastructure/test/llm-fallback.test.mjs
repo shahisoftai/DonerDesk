@@ -54,6 +54,111 @@ test("LLM generator returns usedFallback=false on valid output", async () => {
   assert.equal(result.sections[0].content, "Real AI narrative.");
 });
 
+test("section generation returns real provider usage and parse telemetry", async () => {
+  const provider = fakeProvider({
+    text: JSON.stringify({ sections: [{ title: "Executive Summary", content: "Grounded narrative." }] }),
+  });
+  provider.complete = async () => ({
+    text: JSON.stringify({ sections: [{ title: "Executive Summary", content: "Grounded narrative." }] }),
+    model: provider.model,
+    promptVersion: provider.promptVersion,
+    usage: { inputTokens: 123, outputTokens: 45 },
+  });
+  const result = await new LlmReportDraftGenerator(provider).generateSection(input, input.reportPlan.sections[0]);
+  assert.equal(result.usedFallback, false);
+  assert.equal(result.telemetry.inputTokens, 123);
+  assert.equal(result.telemetry.outputTokens, 45);
+  assert.equal(result.telemetry.parseOutcome, "VALID");
+  assert.equal(result.telemetry.promptHash.length, 64);
+  assert.equal(result.telemetry.responseHash.length, 64);
+});
+
+test("section prompt represents a missing denominator as unknown and forbids invented plans", async () => {
+  let captured;
+  const provider = fakeProvider({});
+  provider.complete = async (request) => {
+    captured = request;
+    return {
+      text: JSON.stringify({ sections: [{ title: "Executive Summary", content: "The percentage could not be calculated." }] }),
+      model: provider.model,
+      promptVersion: provider.promptVersion,
+      usage: { inputTokens: 1, outputTokens: 1 },
+    };
+  };
+  const missingInput = {
+    ...input,
+    verifiedFindings: [{ ...input.verifiedFindings[0], value: "0", qualityFlags: ["MISSING_DENOMINATOR"] }],
+  };
+  await new LlmReportDraftGenerator(provider).generateSection(missingInput, input.reportPlan.sections[0]);
+  assert.match(captured.userPrompt, /"value":null/);
+  assert.match(captured.userPrompt, /"valueStatus":"NOT_CALCULABLE"/);
+  assert.match(captured.userPrompt, /Never write it as zero/);
+  assert.match(captured.systemPrompt, /MUST NOT invent causes, challenges, mitigations/);
+});
+
+test("section prompt ranks directly linked evidence ahead of unrelated files", async () => {
+  let captured;
+  const provider = fakeProvider({});
+  provider.complete = async (request) => {
+    captured = request;
+    return {
+      text: JSON.stringify({ sections: [{ title: "Progress Against Indicators", content: "Grounded progress." }] }),
+      model: provider.model,
+      promptVersion: provider.promptVersion,
+      usage: { inputTokens: 1, outputTokens: 1 },
+    };
+  };
+  const evidencePackages = ["unrelated-1", "unrelated-2", "unrelated-3", "unrelated-4", "linked"].map((id) => ({
+    evidenceId: id,
+    title: id === "linked" ? "Verified indicator register" : `Unrelated photo ${id}`,
+    fileName: `${id}.txt`,
+    evidenceType: id === "linked" ? "MONITORING_DATA" : "PHOTO",
+    verificationStatus: "VERIFIED",
+    confidentialityLevel: "INTERNAL",
+    extractedText: id,
+    chunks: [{ chunkId: `${id}:0`, text: id, tokenCount: 1, chunkIndex: 0 }],
+    evidenceHash: id,
+    evidenceUpdatedAt: new Date(),
+    chunkerVersion: "v1",
+  }));
+  const rankedInput = {
+    ...input,
+    evidencePackages,
+    indicatorUpdates: [{
+      indicatorId: "ind-1",
+      indicatorCode: "IND-1",
+      periodAchievement: "10",
+      cumulativeAchievement: "10",
+      attachedEvidenceIds: ["linked"],
+      verificationStatus: "VERIFIED",
+    }],
+  };
+  const section = { ...input.reportPlan.sections[0], title: "Progress Against Indicators", evidenceNeeds: ["Indicator values with evidence"] };
+  await new LlmReportDraftGenerator(provider).generateSection(rankedInput, section);
+  const evidenceBlock = captured.userPrompt.split("# Evidence Packages\n")[1].split("\n\n# Instructions")[0];
+  assert.ok(evidenceBlock.includes('"evidenceId":"linked"'));
+  assert.ok(!evidenceBlock.includes('"evidenceId":"unrelated-4"'));
+});
+
+test("sections with no authoritative narrative inputs skip the provider and disclose the gap", async () => {
+  let calls = 0;
+  const provider = fakeProvider({});
+  provider.complete = async () => {
+    calls += 1;
+    throw new Error("provider must not be called");
+  };
+  const generator = new LlmReportDraftGenerator(provider);
+  for (const title of ["Activities Completed", "Challenges and Mitigations", "Lessons Learned", "Plan for Next Period"]) {
+    const result = await generator.generateSection(input, { ...input.reportPlan.sections[0], title });
+    assert.equal(result.usedFallback, false);
+    assert.equal(result.deterministicReason, "INSUFFICIENT_INPUT");
+    assert.equal(result.telemetry.parseOutcome, "INSUFFICIENT_INPUT");
+    assert.equal(result.section.claims.length, 0, title);
+    assert.match(result.section.content, /No (activity records|challenges|lessons learned|approved next-period actions)/i);
+  }
+  assert.equal(calls, 0);
+});
+
 test("LLM generator returns usedFallback=true on provider error", async () => {
   const provider = fakeProvider({ error: new Error("timeout") });
   const gen = new LlmReportDraftGenerator(provider);

@@ -251,13 +251,49 @@ interface SourceReference {
     that 8192 caused MiniMax timeouts and burned credits via stub fallback).
   - The stub generator narrates indicator names, targets, previous-period
     comparisons, and performance hints in its tables and summaries.
+- **AI Reporter sidecar (2026-08-28, implemented per `../imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`):**
+  a new multi-step, evidence-grounded writing pipeline behind the **same**
+  `IReportDraftGenerator` port, feature-flagged by `AI_REPORTER_ENABLED=1`. The
+  deterministic assurance pipeline is unchanged; it remains the final authority
+  (AI writes → deterministic code verifies → humans approve).
+  - **TS adapter:** `packages/infrastructure/src/llm/ai-reporter-draft-generator.ts`
+    (`AiReporterDraftGenerator`) + `ai-reporter-worker-client.ts` (`HttpWorkerClient`)
+    call the Python worker over HTTP. It fulfils `generateDraft`/`generateSection`/
+    `rewriteSection`, returns the same `GeneratedSection` shape (LSP), and falls
+    back to the stub on any worker/provider failure so generation never 500s.
+  - **Python worker:** `apps/workers/app/ai_reporter.py` — versioned writer
+    contract (v1), OpenAI-compatible LLM gateway (`AI_REPORTER_PROVIDER/MODEL/
+    BASE_URL/API_KEY`), and a **draft → critique → refine** pipeline orchestrated
+    with **LangGraph** (falls back to a plain sequential runner if LangGraph is
+    not installed). Routes `/v1/ai-reporter/{health,section,rewrite}` behind the
+    same `X-Internal-Token` as all worker routes. `langgraph` added to
+    `apps/workers/requirements.txt`.
+  - **Semantic retrieval (pgvector):** `packages/infrastructure/src/llm/embedding.ts`
+    (`IEmbeddingGenerator`/`IEmbeddingStore`), `embedding-generator.ts` (OpenAI +
+    Ollama), `repositories/embedding-store.ts` (`PrismaEmbeddingStore`, raw-SQL
+    RLS-scoped HNSW cosine search), `semantic-evidence-retriever.ts`
+    (`SemanticEvidenceRetriever` behind `IEvidenceRetriever` with lexical fallback),
+    and `embedding-backfill.ts` + `embedding:backfill` CLI. DB: `embedding` vector
+    column on `EvidenceEmbedding` (`Unsupported("vector(1536)")`) via
+    `infra/postgres/pgvector.sql`, dev image `pgvector/pgvector:pg16`.
+  - **Historical intelligence:** `packages/infrastructure/src/llm/prior-period.ts`
+    (`DeterministicPriorPeriodService` via `IPriorPeriodService`) fetches approved
+    prior-period narrative and feeds it to the writer as `priorNarrative` so it
+    stays consistent with previously approved reports.
+  - **Evaluation (2026-08-28):** golden corpus grown to 8 mechanism cases
+    (`packages/infrastructure/test/fixtures/reporting-golden.json`, + period-
+    comparison and repetition cases); deterministic `repetition` qualitative metric
+    added to `ReportDraftEvaluator` (signal only, never a hard failure). All 8
+    cases pass (`reporting:eval`).
+  - **Activation:** `pnpm db:migrate` (pgvector), `embedding:backfill`, set
+    `AI_REPORTER_ENABLED=1` + worker URL/model/API key + matching `INTERNAL_TOKEN`.
 
 ## Status
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Report Draft CRUD | Implemented | Full lifecycle |
-| AI Generation | Implemented | Real LLM via SuperAdmin MiniMax/DeepSeek config; stub fallback free + never billed (2026-08-17); professional context enrichment (indicator metadata/targets, project/period/template context, period-over-period narration, performance gating) 2026-08-18 |
+| AI Generation | Implemented | Real LLM via SuperAdmin MiniMax/DeepSeek config; stub fallback free + never billed (2026-08-17); professional context enrichment (indicator metadata/targets, project/period/template context, period-over-period narration, performance gating) 2026-08-18; AI Reporter sidecar (multi-step draft/critique/refine + pgvector semantic retrieval + prior-period intelligence) behind `IReportDraftGenerator`, feature-flagged `AI_REPORTER_ENABLED` 2026-08-28 |
 | Section Editing | Implemented | Rich text |
 | Source References | Implemented | Populated from activities/indicators/evidence; statement-level sources rendered in the workspace (2026-08-17); indicator labels include human-readable names (2026-08-18) |
 | Unsupported Claims | Implemented | Flagged per section and surfaced in compliance |
@@ -273,6 +309,8 @@ interface SourceReference {
   persisted + cited; activity/indicator narrative context in the generation input)
 - [x] Previous period comparison text (2026-08-18 — `VerifiedFinding.comparisonValue`
   is no longer dropped and the narrator describes period-on-period change)
+- [x] AI Reporter multi-step writing + semantic retrieval + prior-period intelligence
+  (2026-08-28 — see the section above and `../imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`)
 - [ ] Unsupported claim warning UI
 - [ ] AI regenerate individual sections
 - [ ] AI tone adjustment (donor-specific)

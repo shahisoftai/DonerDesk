@@ -2,7 +2,7 @@ name: donordesk
 
 services:
   postgres:
-    image: postgres:16.4-alpine
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: donordesk
       POSTGRES_USER: donordesk

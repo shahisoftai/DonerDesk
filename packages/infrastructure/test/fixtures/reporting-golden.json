@@ -144,6 +144,56 @@
         "excludes scope 3 emissions"
       ],
       "expected": "pass"
+    },
+    {
+      "name": "gavi-gf-period-comparison",
+      "draftText": "Vaccinated 1,200 children in this reporting period, up from 900 in the previous period. Coverage data is preliminary.",
+      "referenceAssertions": [
+        {
+          "text": "Vaccinated 1,200 children in this reporting period."
+        }
+      ],
+      "numericFacts": [
+        {
+          "value": "1,200",
+          "expected": "present"
+        },
+        {
+          "value": "900",
+          "expected": "present"
+        },
+        {
+          "value": "1,500",
+          "expected": "absent"
+        }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "echo-budget-repetition",
+      "draftText": "Expenditure reached EUR 240,000 against a budget of EUR 300,000. Expenditure reached EUR 240,000 against a budget of EUR 300,000. The financial statement is unaudited.",
+      "referenceAssertions": [
+        {
+          "text": "Expenditure reached EUR 240,000 against a budget of EUR 300,000."
+        }
+      ],
+      "numericFacts": [
+        {
+          "value": "240,000",
+          "expected": "present"
+        },
+        {
+          "value": "300,000",
+          "expected": "present"
+        }
+      ],
+      "requiredLimitations": [
+        "unaudited"
+      ],
+      "expected": "pass"
     }
   ]
 }

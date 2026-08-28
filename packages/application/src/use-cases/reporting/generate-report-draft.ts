@@ -448,6 +448,7 @@ export class GenerateReportDraftHandler {
     let fallbackReason: string | undefined;
     let generationFailed = false;
     let claimCount = 0;
+    let deterministicGapSections = 0;
 
     try {
       for (let i = 0; i < input.sectionIds.length; i++) {
@@ -473,10 +474,48 @@ export class GenerateReportDraftHandler {
           },
           planSection,
         );
+        if (generated.telemetry) {
+          const t = generated.telemetry;
+          const status = generated.deterministicReason
+            ? "skipped"
+            : generated.usedFallback
+            ? generated.fallbackReason === "PROVIDER_TIMEOUT" ? "timeout" : "error"
+            : "success";
+          await this.llmRuns.recordRun({
+            id: this.ids.generate(),
+            tenantId: input.ctx.tenant.tenantId.toString(),
+            operationType: "REPORT_SECTION",
+            resourceId: sectionId,
+            modelId: input.generator.model.modelId,
+            promptId: "report-section-drafter",
+            inputTokens: t.inputTokens,
+            outputTokens: t.outputTokens,
+            totalTokens: t.inputTokens + t.outputTokens,
+            costUsd: 0,
+            latencyMs: t.latencyMs,
+            status,
+            promptVersion: input.generator.model.promptVersion,
+            modelVersion: input.generator.model.modelVersion,
+            billableUnits: 0,
+            requestId: `${input.runId}:${sectionId}`,
+            errorMessage: generated.fallbackReason,
+            responseText: JSON.stringify({
+              generationRunId: input.runId,
+              sectionId,
+              templateSectionId: planSection.templateSectionId,
+              sectionTitle: planSection.title,
+              parseOutcome: t.parseOutcome,
+              promptHash: t.promptHash,
+              responseHash: t.responseHash,
+              responseChars: t.responseChars,
+            }),
+          });
+        }
         if (generated.usedFallback) {
           usedFallback = true;
           fallbackReason = generated.fallbackReason ?? fallbackReason;
         }
+        if (generated.deterministicReason) deterministicGapSections += 1;
 
         const committed = await this.revisionService.commitChange({
           tenantId: input.ctx.tenant.tenantId,
@@ -486,8 +525,8 @@ export class GenerateReportDraftHandler {
           unsupportedClaims: [],
           changeOrigin: "GENERATION",
           actorId: input.ctx.tenant.userId,
-          modelId: !generated.usedFallback ? input.generator.model.modelId : undefined,
-          promptVersion: !generated.usedFallback ? input.generator.model.promptVersion : undefined,
+          modelId: !generated.usedFallback && !generated.deterministicReason ? input.generator.model.modelId : undefined,
+          promptVersion: !generated.usedFallback && !generated.deterministicReason ? input.generator.model.promptVersion : undefined,
           generationRunId: input.runId,
         });
         if (!committed.ok) {
@@ -549,7 +588,7 @@ export class GenerateReportDraftHandler {
       entityType: "report_draft",
       entityId: input.draftId,
       projectId: input.draft.projectId,
-      newValue: `sections=${input.sectionIds.length};claims=${claimCount};generatedByAi=${realAiGenerated};fallback=${usedFallback || generationFailed};reason=${fallbackReason ?? "none"};run=${input.runId}`,
+      newValue: `sections=${input.sectionIds.length};claims=${claimCount};generatedByAi=${realAiGenerated};fallback=${usedFallback || generationFailed};reason=${fallbackReason ?? "none"};insufficientInputSections=${deterministicGapSections};run=${input.runId}`,
     });
 
     if (usedFallback) {

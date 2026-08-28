@@ -179,3 +179,18 @@ test("parseSections completes JSON truncated mid-string", () => {
   assert.equal(sections[0].title, "A");
   assert.ok(sections[0].content.startsWith("The narrative"));
 });
+
+test("parseSections tolerates invalid optional claims metadata when content is valid", () => {
+  const sections = parseSections(JSON.stringify({
+    sections: [{
+      title: "Challenges",
+      content: "No verified challenge narrative was recorded.",
+      claims: "invalid optional metadata",
+      sourceReferences: { invalid: true },
+    }],
+  }));
+  assert.ok(sections);
+  assert.equal(sections[0].content, "No verified challenge narrative was recorded.");
+  assert.deepEqual(sections[0].claims, []);
+  assert.deepEqual(sections[0].sourceReferences, []);
+});

@@ -166,5 +166,8 @@ export interface ILlmUsageRepository {
     modelVersion: string;
     billableUnits?: number;
     requestId?: string;
+    errorMessage?: string;
+    /** Redacted structured diagnostics only; never store unrestricted donor content here. */
+    responseText?: string;
   }): Promise<Result<{ id: string }>>;
 }

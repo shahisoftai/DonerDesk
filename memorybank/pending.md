@@ -531,6 +531,29 @@ actually supports; unsupported controls are omitted rather than simulated.
   prose detail; revision-bound assertions carry `revisionId`/`revisionHash`,
   span offsets, numeric atoms, and materiality. Coverage gaps project into
   `UNSUPPORTED_REPORT_CLAIM` checklist items with deterministic dedup keys.
+- [x] **AI Reporter multi-step writing + semantic retrieval (2026-08-28)** —
+  `AiReporterDraftGenerator` behind `IReportDraftGenerator` (feature-flagged
+  `AI_REPORTER_ENABLED`) calls a Python worker (`apps/workers/app/ai_reporter.py`)
+  that runs a **draft → critique → refine** loop (LangGraph, plain sequential
+  fallback) under a versioned writer contract; **pgvector semantic retrieval**
+  (`embedding` column on `EvidenceEmbedding`, HNSW cosine index, OpenAI/Ollama
+  embedding generators, `SemanticEvidenceRetriever` behind `IEvidenceRetriever`,
+  `embedding:backfill` CLI); **prior-period intelligence**
+  (`DeterministicPriorPeriodService` feeds approved prior narrative into the
+  writer brief). Golden corpus grown to 8 cases with a `repetition` qualitative
+  metric (`reporting:eval` 8/8). See `imp/AI-REPORTER-IMPLEMENTATION-PLAN.md` §11
+  and `Features/11-AI-Report-Draft-Generator.md`.
+- [ ] **AI Reporter activation (2026-08-28, deployment-dependent):** run
+  `pnpm db:migrate` (applies `infra/postgres/pgvector.sql` — pgvector extension +
+  vector column + HNSW index), run `embedding:backfill`, install the worker's
+  `langgraph` requirement, and set `AI_REPORTER_ENABLED=1` + `AI_REPORTER_URL` +
+  worker `AI_REPORTER_PROVIDER/MODEL/BASE_URL/API_KEY` + a matching
+  `INTERNAL_TOKEN` between the API and worker.
+- [ ] **LLM-judge evaluation (2026-08-28, optional):** the deterministic
+  `repetition` signal and numeric/grounding/limitation gates are the shipped
+  baseline; an LLM-judge for qualitative metrics (coherence, donor quality,
+  period-comparison) can be layered on the same metric surface without touching
+  the hard gates.
 - [ ] Unsupported claim warning UI (API + checklist projection done; the
   consolidated exception surface in the web UI is a tracked follow-up)
 - [ ] Executive summary auto-generation

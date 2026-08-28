@@ -508,6 +508,8 @@ export class PrismaLlmUsageRepository implements ILlmUsageRepository {
     modelVersion: string;
     billableUnits?: number;
     requestId?: string;
+    errorMessage?: string;
+    responseText?: string;
   }): Promise<Result<{ id: string }, DomainError>> {
     try {
       // LlmRun.modelId is a foreign key to LlmModel. Ensure the model row
@@ -556,6 +558,8 @@ export class PrismaLlmUsageRepository implements ILlmUsageRepository {
           modelVersion: input.modelVersion,
           billableUnits: input.billableUnits ?? 0,
           requestId: input.requestId,
+          errorMessage: input.errorMessage,
+          responseText: input.responseText,
         },
       });
       return ok({ id: input.id });

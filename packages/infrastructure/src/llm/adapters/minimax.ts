@@ -36,6 +36,65 @@ export function createMiniMaxAdapter(config: MiniMaxAdapterConfig): ILLMProvider
           ],
           max_tokens: input.maxTokens ?? 2048,
           temperature: input.temperature ?? 0.3,
+          ...(input.jsonMode && model === "MiniMax-Text-01"
+            ? {
+                response_format: {
+                  type: "json_schema",
+                  json_schema: {
+                    name: "donordesk_report_sections",
+                    schema: {
+                      type: "object",
+                      properties: {
+                        sections: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              title: { type: "string" },
+                              content: { type: "string" },
+                              claims: {
+                                type: "array",
+                                items: {
+                                  type: "object",
+                                  properties: {
+                                    text: { type: "string" },
+                                    type: { type: "string", enum: ["NUMERIC", "FACTUAL", "CAUSAL", "QUALITATIVE"] },
+                                    proposedSources: {
+                                      type: "array",
+                                      items: {
+                                        type: "object",
+                                        properties: {
+                                          evidenceId: { type: "string" },
+                                          chunkId: { type: "string" },
+                                          sourceText: { type: "string" },
+                                        },
+                                      },
+                                    },
+                                  },
+                                },
+                              },
+                              sourceReferences: {
+                                type: "array",
+                                items: {
+                                  type: "object",
+                                  properties: {
+                                    type: { type: "string", enum: ["indicator", "evidence", "activity", "template"] },
+                                    id: { type: "string" },
+                                    label: { type: "string" },
+                                  },
+                                },
+                              },
+                            },
+                            required: ["title", "content"],
+                          },
+                        },
+                      },
+                      required: ["sections"],
+                    },
+                  },
+                },
+              }
+            : {}),
         }),
         signal: AbortSignal.timeout(config.timeoutMs ?? 120000),
       });

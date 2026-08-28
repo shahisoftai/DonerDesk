@@ -30,6 +30,9 @@ function buildSystemPrompt(): string {
     "You are a precise donor report narrator.",
     "You MUST only describe data that appears verbatim in the provided verified findings or evidence.",
     "You MUST NOT compute, aggregate, extrapolate, or infer any numbers not present in the input.",
+    "You MUST NOT invent causes, challenges, mitigations, lessons, future activities, targets, dates, partners, incidents, or outcomes.",
+    "A document title is only inventory metadata; it does not support claims about the document's contents.",
+    "A null value with valueStatus NOT_CALCULABLE means unknown, never zero.",
     "You MUST NOT use evaluative language (positive/negative) for indicators with unresolved semantics.",
     "You may only use evaluative wording (favourable/unfavourable) when the finding's performanceEvaluation permits it.",
     "Output STRICT JSON matching the schema below. No markdown fences, no extra text.",
@@ -145,7 +148,11 @@ function buildFindingsJson(input: GenerateReportDraftInput): string {
       indicatorType: f.indicatorType ?? null,
       baseline: f.baseline ?? null,
       target: f.target ?? null,
-      value: f.value,
+      // A calculator placeholder of zero must not become a factual "0%"
+      // claim when the denominator is absent. Preserve the quality flag and
+      // expose the value as unknown to the narrator.
+      value: f.qualityFlags.includes("MISSING_DENOMINATOR") ? null : f.value,
+      valueStatus: f.qualityFlags.includes("MISSING_DENOMINATOR") ? "NOT_CALCULABLE" : "KNOWN",
       unit: f.unit ?? null,
       calculationMethod: f.calculationMethod,
       semantics: f.semantics
@@ -166,12 +173,35 @@ function buildFindingsJson(input: GenerateReportDraftInput): string {
   );
 }
 
-function buildEvidenceJson(input: GenerateReportDraftInput, limits?: { maxPackages?: number; maxChunksPerPackage?: number; maxCharsPerChunk?: number }): string {
+function buildEvidenceJson(
+  input: GenerateReportDraftInput,
+  limits?: { maxPackages?: number; maxChunksPerPackage?: number; maxCharsPerChunk?: number },
+  section?: ReportPlanSection,
+): string {
   const maxPackages = limits?.maxPackages ?? Infinity;
   const maxChunksPerPackage = limits?.maxChunksPerPackage ?? 8;
   const maxCharsPerChunk = limits?.maxCharsPerChunk ?? 800;
+  const activityEvidenceIds = new Set(input.activities.flatMap((a) => a.attachedEvidenceIds));
+  const indicatorEvidenceIds = new Set(input.indicatorUpdates.flatMap((u) => u.attachedEvidenceIds));
+  const sectionText = `${section?.title ?? ""} ${(section?.evidenceNeeds ?? []).join(" ")}`.toLowerCase();
+  const wantsActivities = /activit|challenge|mitigation|lesson|next period|work plan/.test(sectionText);
+  const wantsIndicators = /indicator|result|progress|performance|executive|overview/.test(sectionText);
+  const keywords = sectionText.split(/[^a-z0-9]+/).filter((word) => word.length >= 4);
+  const ranked = input.evidencePackages
+    .map((p, index) => {
+      let score = 0;
+      if (wantsActivities && activityEvidenceIds.has(p.evidenceId)) score += 10;
+      if (wantsIndicators && indicatorEvidenceIds.has(p.evidenceId)) score += 10;
+      const searchable = `${p.title} ${p.evidenceType}`.toLowerCase();
+      score += keywords.filter((word) => searchable.includes(word)).length;
+      if (p.verificationStatus === "VERIFIED") score += 2;
+      return { p, index, score };
+    })
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .slice(0, maxPackages)
+    .map(({ p }) => p);
   return JSON.stringify(
-    input.evidencePackages.slice(0, maxPackages).map((p) => ({
+    ranked.map((p) => ({
       evidenceId: p.evidenceId,
       title: p.title,
       evidenceType: p.evidenceType,
@@ -252,9 +282,13 @@ function buildInstructionTail(): string[] {
     `Narrative MUST draw on the activity records and indicator updates provided, and MUST cite evidence:`,
     `- Use activity titles, dates, locations and participant counts (including disaggregation) from the Activity Records.`,
     `- Use recorded achievements, challenges, lessons learned and next steps verbatim from activity updates.`,
+    `- If the relevant activity field is absent, state that no verified information was recorded; do not infer it from indicator gaps.`,
+    `- Future commitments and numeric targets may only come from an explicit recorded next step or supplied work plan. If none is supplied, state that the approved next-period plan was not available.`,
     `- Use indicator comments and data sources from the Indicator Updates as context.`,
     `- Describe each indicator by its name and code. When a target exists, describe progress against the target using only the target and value provided.`,
     `- When a comparisonValue exists, describe the period-on-period change using only the values provided (e.g. "up from 500 in the previous period").`,
+    `- When valueStatus is NOT_CALCULABLE or MISSING_DENOMINATOR is present, say the result could not be calculated because the denominator was unavailable. Never write it as zero.`,
+    `- Evidence titles prove only that a file is present. Do not claim that a file establishes a cause, finding, action, or result unless an evidence chunk contains that statement.`,
     `Claims must reference evidence by evidenceId and chunkId from the evidence packages above.`,
     `Every section MUST list its source references: indicators, evidence files, and activities actually used.`,
     `Honour the per-section input type: INDICATOR_TABLE sections must be tables, ANNEX sections must list annexed files, COMPLIANCE sections must state compliance status against the template requirements.`,
@@ -343,7 +377,7 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
   // only needs a bounded slice of the evidence/activity record set. Dumping
   // every evidence chunk (8×800 chars each) and every activity narrative into
   // each section call made a single section take 113-142s with MiniMax.
-  const evidenceJson = buildEvidenceJson(input, { maxPackages: 4, maxChunksPerPackage: 4, maxCharsPerChunk: 400 });
+  const evidenceJson = buildEvidenceJson(input, { maxPackages: 4, maxChunksPerPackage: 4, maxCharsPerChunk: 400 }, section);
   const activitiesJson = buildActivitiesJson(input, { maxActivities: 6, maxCharsPerField: 250 });
 
   const sectionGuidance = buildSectionGuidance(section);
@@ -811,7 +845,9 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
     this.model = {
       modelId: provider.name,
       modelVersion: provider.model,
-      promptVersion: Number(provider.promptVersion) || 1,
+      // Version 2 adds explicit missing-value semantics, source-sufficiency
+      // rules, and prohibitions on invented causes/plans.
+      promptVersion: 2,
     };
   }
 
@@ -876,9 +912,38 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
     input: GenerateReportDraftInput,
     section: ReportPlanSection,
   ): Promise<GeneratedSectionResult> {
+    const startedAt = Date.now();
+    let promptHash = "";
+    const title = section.title.toLowerCase();
+    const hasRequiredInput = title.includes("challenge")
+      ? input.activities.some((a) => a.challenges.trim())
+      : title.includes("lesson")
+        ? input.activities.some((a) => a.lessonsLearned.trim())
+        : title.includes("next period") || title.includes("work plan")
+          ? input.activities.some((a) => a.nextSteps.trim())
+          : title.includes("activit")
+            ? input.activities.length > 0
+            : true;
+    if (!hasRequiredInput) {
+      const deterministic = await this.fallback.generateSection(input, section);
+      return {
+        section: deterministic.section,
+        usedFallback: false,
+        deterministicReason: "INSUFFICIENT_INPUT",
+        telemetry: {
+          inputTokens: 0,
+          outputTokens: 0,
+          latencyMs: Date.now() - startedAt,
+          promptHash: "",
+          responseChars: 0,
+          parseOutcome: "INSUFFICIENT_INPUT",
+        },
+      };
+    }
     try {
       const systemPrompt = buildSystemPrompt();
       const userPrompt = buildSectionNarratorUserPrompt(input, section);
+      promptHash = createHash("sha256").update(`${systemPrompt}\n${userPrompt}`, "utf8").digest("hex");
 
       const result = await this.provider.complete({
         systemPrompt,
@@ -894,11 +959,24 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
           section: section.title,
         });
         const fallback = await this.fallback.generateSection(input, section);
-        return { ...fallback, usedFallback: true, fallbackReason: "PROVIDER_EMPTY_RESPONSE" };
+        return {
+          ...fallback,
+          usedFallback: true,
+          fallbackReason: "PROVIDER_EMPTY_RESPONSE",
+          telemetry: {
+            inputTokens: result.usage.inputTokens,
+            outputTokens: result.usage.outputTokens,
+            latencyMs: Date.now() - startedAt,
+            promptHash,
+            responseChars: 0,
+            parseOutcome: "EMPTY",
+          },
+        };
       }
 
       const sections = parseSections(result.text, [section]);
       const generated = sections && sections.length > 0 ? sections[0] : null;
+      const responseHash = createHash("sha256").update(result.text, "utf8").digest("hex");
       if (!generated || looksLikeRawJson(generated.content)) {
         this.logger?.warn("LLM section draft: response failed structural validation; falling back to stub", {
           model: this.model.modelId,
@@ -906,9 +984,43 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
           snippet: result.text.slice(0, 200),
         });
         const fallback = await this.fallback.generateSection(input, section);
-        return { ...fallback, usedFallback: true, fallbackReason: "PROVIDER_MALFORMED_RESPONSE" };
+        return {
+          ...fallback,
+          usedFallback: true,
+          fallbackReason: "PROVIDER_MALFORMED_RESPONSE",
+          telemetry: {
+            inputTokens: result.usage.inputTokens,
+            outputTokens: result.usage.outputTokens,
+            latencyMs: Date.now() - startedAt,
+            promptHash,
+            responseHash,
+            responseChars: result.text.length,
+            parseOutcome: "MALFORMED",
+          },
+        };
       }
-      return { section: generated, usedFallback: false };
+      let parseOutcome: NonNullable<GeneratedSectionResult["telemetry"]>["parseOutcome"] = "RECOVERED";
+      try {
+        const parsed = JSON.parse(result.text.trim()) as { sections?: unknown };
+        if (Array.isArray(parsed.sections)) parseOutcome = "VALID";
+      } catch {
+        if (!result.text.trim().startsWith("{") && !result.text.trim().startsWith("[") && !/"sections"\s*:/.test(result.text)) {
+          parseOutcome = "DIRECT_PROSE";
+        }
+      }
+      return {
+        section: generated,
+        usedFallback: false,
+        telemetry: {
+          inputTokens: result.usage.inputTokens,
+          outputTokens: result.usage.outputTokens,
+          latencyMs: Date.now() - startedAt,
+          promptHash,
+          responseHash,
+          responseChars: result.text.length,
+          parseOutcome,
+        },
+      };
     } catch (error) {
       const reason = classifyError(error);
       this.logger?.warn("LLM section draft failed; falling back to stub", {
@@ -918,7 +1030,19 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
         error: error instanceof Error ? error.message : String(error),
       });
       const fallback = await this.fallback.generateSection(input, section);
-      return { ...fallback, usedFallback: true, fallbackReason: reason };
+      return {
+        ...fallback,
+        usedFallback: true,
+        fallbackReason: reason,
+        telemetry: {
+          inputTokens: 0,
+          outputTokens: 0,
+          latencyMs: Date.now() - startedAt,
+          promptHash,
+          responseChars: 0,
+          parseOutcome: "PROVIDER_ERROR",
+        },
+      };
     }
   }
 

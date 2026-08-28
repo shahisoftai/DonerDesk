@@ -1,6 +1,6 @@
 # LLM Provider Wiring — Implementation Plan
 
-**Status:** PLANNED
+**Status:** IMPLEMENTED (Phase 1–4, 2026-08-17) + AI Reporter sidecar (2026-08-28)
 **Date:** 2026-08-17
 **Feature reference:** `memorybank/Features/11-AI-Report-Draft-Generator.md`,
 `memorybank/Features/20-report-gen.md`, `memorybank/SUPERADMIN-PORTAL.md`
@@ -367,3 +367,44 @@ actually completes will consume exactly one credit.
   would read a 2h future-dated grant as inactive. Verified live: INCREASE +7
   resolves to MANUAL/override immediately, reset zeroes the counter, and test
   grants were cleaned up afterwards.
+
+## 16. AI Reporter sidecar (IMPLEMENTED 2026-08-28)
+
+A new, higher-level writing pipeline sits **above** the provider wiring and
+behind the **same** `IReportDraftGenerator` port, feature-flagged by
+`AI_REPORTER_ENABLED=1`. It reuses the existing platform-provider config and
+adds an OpenAI-compatible LLM path in the worker plus an embedding path for
+semantic retrieval.
+
+- **TS adapter:** `src/llm/ai-reporter-draft-generator.ts` (`AiReporterDraftGenerator`)
+  + `src/llm/ai-reporter-worker-client.ts` (`HttpWorkerClient`, sends
+  `X-Internal-Token`) — fulfils `generateDraft`/`generateSection`/`rewriteSection`,
+  returns the same `GeneratedSection` shape, and falls back to the stub on any
+  worker/provider failure. Wired in `container.ts` `getReportDraftGenerator`
+  (feature-flagged) alongside the existing `LlmReportDraftGenerator`.
+- **Python worker:** `apps/workers/app/ai_reporter.py` — versioned writer
+  contract, OpenAI-compatible LLM gateway, and a **draft → critique → refine**
+  pipeline orchestrated with **LangGraph** (plain sequential fallback if
+  LangGraph is absent). Routes `/v1/ai-reporter/{health,section,rewrite}` behind
+  `X-Internal-Token`. `langgraph` added to `apps/workers/requirements.txt`.
+- **Embeddings (new provider-adjacent stack):**
+  - `src/llm/embedding.ts` — `IEmbeddingGenerator` / `IEmbeddingStore` ports.
+  - `src/llm/embedding-generator.ts` — `OpenAiEmbeddingGenerator` +
+    `OllamaEmbeddingGenerator` (selected via `EMBEDDING_PROVIDER`, default
+    ollama for a zero-external-API baseline).
+  - `src/repositories/embedding-store.ts` — `PrismaEmbeddingStore` (raw-SQL,
+    RLS-scoped HNSW cosine search over pgvector).
+  - `src/llm/semantic-evidence-retriever.ts` — `SemanticEvidenceRetriever`
+    behind `IEvidenceRetriever` (lexical fallback when embeddings unavailable).
+  - `src/llm/embedding-backfill.ts` + `embedding:backfill` CLI.
+- **DB:** `embedding` vector column on `EvidenceEmbedding`
+  (`Unsupported("vector(1536)")`) via `infra/postgres/pgvector.sql` (wired into
+  `db:migrate`); dev image `pgvector/pgvector:pg16`.
+- **Historical intelligence:** `src/llm/prior-period.ts`
+  (`DeterministicPriorPeriodService`) feeds approved prior-period narrative into
+  the writer brief.
+- **Runtime provider note:** the worker resolves its own LLM from
+  `AI_REPORTER_PROVIDER/MODEL/BASE_URL/API_KEY` (independent of the TS platform
+  config). Keep the worker's `INTERNAL_TOKEN` in sync with the API's.
+
+Full detail: `../imp/AI-REPORTER-IMPLEMENTATION-PLAN.md` §11.

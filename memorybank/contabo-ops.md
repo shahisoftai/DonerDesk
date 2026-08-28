@@ -904,6 +904,62 @@ backup/restore.
 
 ## 29. Change log
 
+> **2026-08-20 — Insufficient-input report guard (deployed, release
+> `20260820170209`, API only, no migration):** sections requiring activity
+> records, recorded challenges, lessons learned, or approved next steps now
+> bypass MiniMax when the corresponding production input is empty. They render
+> an explicit missing-data notice and emit non-billable `REPORT_SECTION`
+> telemetry with status `skipped` / parse outcome `INSUFFICIENT_INPUT`. The
+> deterministic `Activities Completed` title routing bug was also fixed.
+>
+> Production acceptance run `b8ab5fb9-2520-4f47-a113-99635ea0512c` guarded
+> four sections in 0–2 ms and reduced provider calls from nine to five. All
+> provider calls completed, but three hit 4,096 output tokens and required
+> recovery; assurance was still only 5 passed / 119 failed. MiniMax invented
+> values for explicitly not-calculable indicators, and the verifier marked many
+> supplied values `VALUE_MISMATCH`. Treat this release as a safety and
+> observability improvement, not final narrative-quality acceptance. Health and
+> readiness passed after deployment. Rollback:
+> `RELEASE_ID=20260820164344 scripts/rollback.sh`.
+
+> **2026-08-20 — Grounded report generation + per-section telemetry
+> (deployed, release `20260820164344`, API only, no migration):** production
+> audit of 22 `REPORT_DRAFT` runs found 8 successes / 14 errors, zero token
+> usage on every aggregate row, and a fluent demo report where only 3/115
+> extracted claims passed assurance. The latest report input had 20 verified
+> indicator updates but 0 activities, 14 title-only evidence records, and 0
+> previous-period comparisons. This release makes the smallest changes that
+> directly address those findings:
+> - sends MiniMax `MiniMax-Text-01` its supported `response_format=json_schema`
+>   when JSON mode is requested (the flag was previously ignored by the
+>   adapter); the existing fence/control-character/truncation recovery remains;
+> - records non-billable `REPORT_SECTION` `LlmRun` rows with real token usage,
+>   latency, fallback reason, parse outcome, prompt/response hashes, response
+>   length, generation run, section, and template-section identity; the
+>   existing `REPORT_DRAFT` row remains the one billing unit;
+> - serializes `MISSING_DENOMINATOR` findings as `value=null` /
+>   `NOT_CALCULABLE`, and the stub renders "not calculable" rather than a false
+>   `0%` claim;
+> - prompt v2 prohibits invented causes, mitigations, lessons, plans, targets,
+>   incidents, and claims inferred from document titles; missing inputs must be
+>   disclosed explicitly;
+> - ranks the bounded evidence slice deterministically using direct activity /
+>   indicator links, section evidence needs, verification state, and title/type
+>   relevance instead of taking the first four files.
+>
+> Full workspace typecheck and build passed. Domain (8 files), application
+> (11), infrastructure (17), and API (6) suites pass; targeted reporting tests
+> add live-usage telemetry, missing-value, evidence-ranking, optional-metadata,
+> and MiniMax request-schema coverage; reporting golden corpus passes. Release
+> packaging smoke tests passed. Live `/health` + `/ready` pass and current
+> points to `20260820164344`. A non-persisting live MiniMax probe returned a
+> fenced response despite `json_schema`, but the deployed production parser
+> recovered it successfully (2.653s, 59 input / 46 output tokens). A full
+> production-data probe was not run outside the application workflow; verify
+> visible quality on the next authorized in-app generation using the new
+> `REPORT_SECTION` telemetry and assurance results. Rollback:
+> `RELEASE_ID=20260820150838 scripts/rollback.sh`.
+
 > **2026-08-20 — MiniMax JSON repair (control chars + truncation) + demo
 > evidence linkage (deployed, release `20260820150838`, commits `835c6a7` +
 > `5832489`, API + web, no migration):** two independent MiniMax

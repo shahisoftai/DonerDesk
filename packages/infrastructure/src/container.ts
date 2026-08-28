@@ -198,6 +198,11 @@ import { StubReportDraftGenerator } from "./llm/report-draft-generator.js";
 import { createLLMProvider } from "./llm/factory.js";
 import { PlatformLlmConfigResolver } from "./llm/llm-config-resolver.js";
 import { LlmReportDraftGenerator } from "./llm/llm-report-draft-generator.js";
+import { AiReporterDraftGenerator } from "./llm/ai-reporter-draft-generator.js";
+import { HttpWorkerClient } from "./llm/ai-reporter-worker-client.js";
+import { createEmbeddingGenerator } from "./llm/embedding-generator.js";
+import { PrismaEmbeddingStore } from "./repositories/embedding-store.js";
+import { DeterministicPriorPeriodService } from "./llm/prior-period.js";
 import { DeterministicClaimVerifier } from "./llm/claim-verifier.js";
 import { DeterministicAssertionExtractor } from "./llm/assertion-extractor.js";
 import { Sha256HashService } from "./llm/hash-service.js";
@@ -564,6 +569,25 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     const existing = generatorPromises.get(key);
     if (existing) return existing;
     const promise = (async () => {
+      // AI Reporter sidecar (feature-flagged): a dedicated Python worker
+      // (LangGraph draft/critique/refine) behind the IReportDraftGenerator port.
+      if (process.env.AI_REPORTER_ENABLED === "1") {
+        try {
+          const worker = new HttpWorkerClient();
+          const embeddingGenerator = createEmbeddingGenerator();
+          const embeddingStore = new PrismaEmbeddingStore(prisma);
+          const prior = new DeterministicPriorPeriodService(periods, drafts, sections, reportRevisions);
+          generatorCache.set(
+            key,
+            new AiReporterDraftGenerator(worker, new StubReportDraftGenerator(), embeddingGenerator, embeddingStore, prior, logger),
+          );
+          return generatorCache.get(key)!;
+        } catch (error) {
+          logger?.warn("AI Reporter construction failed; falling back to standard LLM generator", {
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
       try {
         const resolved = await llmConfigResolver.resolve({ tenantId });
         if (resolved.ok && resolved.value) {
@@ -582,6 +606,13 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
         // degrade to the stub, never reject getGenerator and 500 the route.
         logger?.warn("LLM provider resolution failed; using stub generator", { error: error instanceof Error ? error.message : String(error) });
       }
+      // No platform config and no LLM_PROVIDER env: the deterministic stub is
+      // used. This must be an explicit, visible dev-only default, never a
+      // silent production path, so we log it loudly.
+      logger?.warn("No LLM provider configured (LLM_PROVIDER unset and no platform config); report drafting will use the deterministic stub generator", {
+        tenantId: tenantId ?? "default",
+        hint: "Set LLM_PROVIDER (e.g. openai|anthropic|deepseek|minimax|ollama) or configure an LLM provider in PlatformConfiguration.",
+      });
       generatorCache.set(key, new StubReportDraftGenerator());
       return generatorCache.get(key)!;
     })();

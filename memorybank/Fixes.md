@@ -2,6 +2,45 @@
 
 Record of fixes applied to DonorDesk. Last updated: 2026-08-20.
 
+## AI reports were fluent but unsupported and provider failures were opaque (2026-08-20)
+
+**Status:** Deployed in API releases `20260820164344` and `20260820170209`
+(no migration).
+
+Production evidence showed 14/22 report runs failed and only 3/115 claims in
+the latest fluent demo report passed assurance. Report-level telemetry had zero
+tokens and could not identify the failing section. Missing-denominator values
+were narrated as real zeroes, evidence selection used the first four files,
+and the prompt allowed the model to fill empty challenge/work-plan inputs with
+plausible but unsupported prose.
+
+The existing path now sends MiniMax Text-01 its supported JSON schema, records
+real non-billable per-section usage and parse diagnostics in `LlmRun`, exposes
+missing denominators as not calculable, ranks evidence using direct links and
+section needs, and uses prompt v2 to prohibit invented causes, mitigations,
+lessons and future plans. The report-level `REPORT_DRAFT` row remains the only
+billing unit.
+
+The follow-up release adds a production input-sufficiency gate. Sections that
+require activity records, challenges, lessons, or approved next steps no longer
+call the provider when those inputs are absent. They render explicit missing-data
+notices and record a non-billable `REPORT_SECTION` run with status `skipped` and
+parse outcome `INSUFFICIENT_INPUT`. It also fixes the deterministic Activities
+section title match (`Activities` previously missed the singular `activity`
+branch).
+
+Production acceptance run `b8ab5fb9-2520-4f47-a113-99635ea0512c` generated
+draft `e27e3e37-4f05-4b1f-84b1-5fad3ab21d46`: four unsupported sections were
+guarded in 0–2 ms and only five provider calls were made. All five provider
+calls returned, but three exhausted the 4,096-token output limit and required
+parser recovery. Assurance remained unacceptable at 5 passed / 119 failed.
+MiniMax still invented values for indicators explicitly marked not calculable
+(for example 78% and 62%), while the verifier also classified many supplied
+numeric values as `VALUE_MISMATCH`. This is a visible safety improvement, not
+final quality acceptance. Next: use deterministic output for indicator tables
+and annexes, reduce context/output size for narrative sections, and repair
+numeric assurance matching before further prompt tuning.
+
 ## AI content disappeared — MiniMax literal control chars + maxTokens truncation broke JSON parsing (2026-08-20)
 
 **Status:** Fixed (code + tests; release `2026082015xxxx` deployed).

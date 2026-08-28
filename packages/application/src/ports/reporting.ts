@@ -259,6 +259,25 @@ export interface GeneratedSectionResult {
   section: GeneratedSection;
   usedFallback: boolean;
   fallbackReason?: GeneratedDraftResult["fallbackReason"];
+  /** Deliberate deterministic output because this section had no authoritative inputs. */
+  deterministicReason?: "INSUFFICIENT_INPUT";
+  /** Provider-call facts used for section-level production diagnostics. */
+  telemetry?: {
+    inputTokens: number;
+    outputTokens: number;
+    latencyMs: number;
+    promptHash: string;
+    responseHash?: string;
+    responseChars: number;
+    parseOutcome:
+      | "VALID"
+      | "RECOVERED"
+      | "DIRECT_PROSE"
+      | "EMPTY"
+      | "MALFORMED"
+      | "PROVIDER_ERROR"
+      | "INSUFFICIENT_INPUT";
+  };
 }
 
 export interface IReportDraftGenerator {
@@ -415,6 +434,8 @@ export interface RetrievalRequest {
   evidenceType?: string;
   verificationStatus?: string;
   maxTokens?: number;
+  /** Optional tenant scope for tenant-safe vector search. */
+  tenantId?: string;
 }
 
 export interface IEvidenceRetriever {

@@ -37,6 +37,23 @@ function sentenceKey(text: string): string {
 }
 
 /**
+ * Qualitative repetition signal: 1 when no two sentences are near-identical,
+ * degrading toward 0 as duplicated content appears. This is a soft signal only;
+ * it never independently fails a case.
+ */
+function repetitionScore(text: string): number {
+  const sentences = text.split(/[.!?]+\s+/).map(sentenceKey).filter(Boolean);
+  if (sentences.length < 2) return 1;
+  const seen = new Set<string>();
+  let duplicates = 0;
+  for (const s of sentences) {
+    if (seen.has(s)) duplicates++;
+    seen.add(s);
+  }
+  return 1 - duplicates / sentences.length;
+}
+
+/**
  * Deterministic reporting evaluation harness. Scores assertion recall,
  * numeric accuracy, and limitation disclosure against anonymized golden
  * cases so submission-readiness claims are measured, not asserted. LLM-judge
@@ -82,6 +99,11 @@ export class ReportDraftEvaluator {
     scores.push({ metric: "limitation-disclosure", score: limitationScore, details: `${limitationHits}/${input.requiredLimitations.length}` });
 
     const overall = scores.reduce((sum, s) => sum + s.score, 0) / scores.length;
+
+    // Qualitative repetition is reported but never a hard failure.
+    const repetition = repetitionScore(input.draftText);
+    scores.push({ metric: "repetition", score: repetition, details: repetition.toFixed(2) });
+
     // Critical failures are never averaged away: a missing required limitation
     // or a missed numeric fact fails the case regardless of the aggregate score.
     const missingLimitation = input.requiredLimitations.length > 0 && limitationHits < input.requiredLimitations.length;

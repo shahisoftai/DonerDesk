@@ -14,6 +14,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **Why build it? (Executive pitch)** | [`base/DonorDesk — One-Page Concept Note for Approval.md`](base/DonorDesk%20—%20One-Page%20Concept%20Note%20for%20Approval.md) |
 | **Full engineering blueprint** | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) |
 | **Professional donor-reporting hardening plan** | [`imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED) and [`imp/REPORTING-OWNERSHIP-MAP.md`](imp/REPORTING-OWNERSHIP-MAP.md) |
+| **AI Reporter (multi-step report writing)** | [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED 2026-08-28) |
 | **Frontend portal blueprint** | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) |
 | **Frontend portal status** | [`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`](imp/FRONTEND-UX-INTEGRATION-AUDIT.md) (latest audit) and [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 | **Production issues & fixes** | [`Fixes.md`](Fixes.md) |
@@ -47,6 +48,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | [`docs/architecture/decisions/0003-fastify-over-nestjs.md`](docs/architecture/decisions/0003-fastify-over-nestjs.md) | ADR: Fastify over NestJS for Phase 1 |
 | [`docs/architecture/decisions/0004-async-job-orchestration.md`](docs/architecture/decisions/0004-async-job-orchestration.md) | ADR: async job ownership (memory/BullMQ/Kestra via `JOB_QUEUE`) |
  | [`imp/KESTRA-IMPLEMENTATION-PLAN.md`](imp/KESTRA-IMPLEMENTATION-PLAN.md) | Kestra orchestration implementation plan (Phases A–F) |
+| [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md) | AI Reporter: multi-step (draft→critique→refine) report writing behind `IReportDraftGenerator`, pgvector semantic retrieval, prior-period intelligence — **status: IMPLEMENTED (2026-08-28)** |
 | [`imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md) | Phased plan for revision-safe assurance, award-specific requirements, donor-native rendering, and validated submission snapshots — **status: IMPLEMENTED (2026-08-19)** |
 | [`imp/REPORTING-OWNERSHIP-MAP.md`](imp/REPORTING-OWNERSHIP-MAP.md) | Professional-reporting component ownership map (no-duplication review) |
 | [`docs/architecture/decisions/0005-report-revisions.md`](docs/architecture/decisions/0005-report-revisions.md) | ADR: report revisions and revision-bound assurance |
@@ -167,7 +169,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Topic | Locations |
 |-------|-----------|
 | Multi-tenancy / RLS | [`0001-multi-tenancy.md`](docs/architecture/decisions/0001-multi-tenancy.md), [`contabo-ops.md`](contabo-ops.md) §5.3, [`pending.md`](pending.md) |
-| LLM / AI | [`0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md), [`pending.md`](pending.md) (BullMQ) |
+| LLM / AI | [`0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md), [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md), [`pending.md`](pending.md) (BullMQ) |
 | AI credits / quotas | [`Features/19-Tiers-And-Payments.md`](Features/19-Tiers-And-Payments.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md) §14–15 |
 | Report charts | [`Features/20-report-gen.md`](Features/20-report-gen.md) §15, [`Features/11-AI-Report-Draft-Generator.md`](Features/11-AI-Report-Draft-Generator.md) |
 | Readiness percentages (evidence/approval/overall) | [`Fixes.md`](Fixes.md) (readiness fix log), [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-Period-Manager.md) |
@@ -219,6 +221,7 @@ memorybank/
 │   ├── KESTRA-IMPLEMENTATION-PLAN.md  Kestra orchestration plan (Phases A–F)
 │   ├── KESTRA-PLUGINS.md              Free Kestra plugins implementation + gating
 │   ├── PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md  Professional donor reporting (IMPLEMENTED 2026-08-19)
+│   ├── AI-REPORTER-IMPLEMENTATION-PLAN.md            AI Reporter multi-step writing + semantic retrieval (IMPLEMENTED 2026-08-28)
 │   ├── REPORTING-OWNERSHIP-MAP.md     Professional-reporting ownership map
 │   ├── PHASE0-COMPLETION-REPORT.md
 │   ├── PHASE0-AUDIT.md

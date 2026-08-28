@@ -913,6 +913,7 @@ model EvidenceEmbedding {
   vector      String   // JSON array of floats (stored as string for pgvector compatibility)
   dimensions  Int
   createdAt   DateTime @default(now())
+  embedding   Unsupported("vector(1536)")? // pgvector column managed via raw SQL (see infra/postgres/pgvector.sql)
 
   @@index([chunkId])
   @@index([tenantId])
