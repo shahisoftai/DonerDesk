@@ -309,6 +309,13 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
 - [ ] **Document `API_INTERNAL_URL` and the OLS `Origin` dedupe requirement** in
   the deployment doc so future releases build web with
   `API_INTERNAL_URL=http://127.0.0.1:4001` and keep `src/middleware.ts`.
+- [ ] **Supervise `donordesk-api` so clean exits self-heal.** On 2026-08-28 the
+  service was found `inactive (dead)` for ~7 days (exited cleanly `status=0`),
+  so `Restart=on-failure` never fired and all `/api/*` returned 503 while web
+  stayed up. Restarted manually. Add a watchdog (e.g. a systemd timer that
+  curls `/health` and restarts on failure, or `Restart=always` with a health
+  check), plus an external availability alert so a silent API outage is not
+  invisible for a week.
 
 ## Medium priority — async / AI features (Stage B)
 

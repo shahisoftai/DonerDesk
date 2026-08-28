@@ -1,6 +1,22 @@
 # Fixes
 
-Record of fixes applied to DonorDesk. Last updated: 2026-08-20.
+Record of fixes applied to DonorDesk. Last updated: 2026-08-28.
+
+## `donordesk-api` silently down for ~7 days (2026-08-28)
+
+**Status:** Restarted; root cause (supervision gap) still open — see `pending.md`.
+
+`donordesk-api.service` had been `inactive (dead)` since 2026-08-21 06:34 CEST
+with no automatic recovery. It exited cleanly (`status=0/SUCCESS`), so the
+unit's `Restart=on-failure` did not restart it (that policy only fires on
+non-zero exits). All API routes on `donordesk.online/api/*` returned 503 while
+the web kept serving.
+
+**Fix applied:** `systemctl restart donordesk-api`. Confirmed active; `/health`
+returns `{"status":"ok"}` and `/ready` returns `{"status":"ready","checks":{"database":"ok"}}`.
+
+**Remaining risk:** a clean exit will not self-heal. A watchdog (curl-based
+systemd timer or external monitor) is recommended.
 
 ## AI reports were fluent but unsupported and provider failures were opaque (2026-08-20)
 

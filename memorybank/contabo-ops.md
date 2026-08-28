@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-20 (release `20260820150838`, MiniMax JSON repair — control chars + truncation + demo evidence linkage — API + web, no migration).
+**Last deployment:** 2026-08-28 (release `20260828124537`, compliance "Select all" checkbox — web only, no migration).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -903,6 +903,32 @@ remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
 ## 29. Change log
+
+> **2026-08-28 — Compliance "Select all" checkbox (deployed, release
+> `20260828124537`, commit `08c7ee6`, web only, no migration):** in a
+> project's **Compliance** tab, when **Bulk actions** is enabled, a "Select
+> all" checkbox now appears next to the Bulk actions button. It selects every
+> selectable (open) checklist item matching the current status/severity
+> filters; unchecking clears the selection. It shows an indeterminate state
+> when a subset is selected, a checked state when all eligible items are
+> selected, and a `(selected/total)` counter. Selection continues to be scoped
+> to selectable items (RESOLVED / ACCEPTED_RISK / NOT_APPLICABLE are never
+> selected). File:
+> `apps/web/src/features/compliance/presentation/CompliancePanel.tsx`
+> (`eligibleIds`, `toggleSelectAll`, header checkbox with `indeterminate`).
+> Deployed via the checksummed incremental path (web service only). Full
+> workspace typecheck passed; packaging smoke tests passed. Verified live:
+> `/health` + `/ready` OK, `donordesk-api` + `donordesk-web` active, `home`
+> 200, `login` 200, compliance chunk containing `Select all checklist items`
+> serves 200, zero web journal errors since deploy. Rollback:
+> `RELEASE_ID=20260828122855 scripts/rollback.sh` (preceding release), or
+> `20260820170209` for the last known-good web-only rollback target.
+>
+> Also restored `donordesk-api` after it had been `inactive (dead)` since
+> 2026-08-21 06:34 CEST (~7 days). It exited cleanly (`status=0`), so the
+> `Restart=on-failure` unit did not resurrect it. Restarted via `systemctl
+> restart donordesk-api`; `/health` + `/ready` return OK and the API is active.
+> Root cause (clean-exit supervision gap) remains open — see `pending.md`.
 
 > **2026-08-20 — Insufficient-input report guard (deployed, release
 > `20260820170209`, API only, no migration):** sections requiring activity

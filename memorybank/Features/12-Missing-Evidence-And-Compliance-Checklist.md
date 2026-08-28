@@ -108,7 +108,7 @@ Open, In progress, Resolved, Accepted risk, Not applicable
 | Resolution Notes | Implemented | For accepted risk |
 | Automated Generation | Implemented | On period start via `reporting.period.created` → `checklist.generate` job (2026-08-16) |
 | Checklist Templates | Implemented | Config-driven baseline items per report type (2026-08-16) |
-| Bulk Operations | Implemented | `POST /checklist/bulk-resolve` + UI (2026-08-16) |
+| Bulk Operations | Implemented | `POST /checklist/bulk-resolve` + UI (2026-08-16); "Select all" header checkbox in bulk mode selects all open items matching the current filters, with indeterminate + `(selected/total)` states (2026-08-28, release `20260828124537`) |
 
 ## Pending Enhancements
 
