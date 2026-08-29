@@ -1,7 +1,13 @@
 import type { Result } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IReportDraftRepository, IReportSectionRepository, IReportClaimRepository, IReportPlanRepository } from "../../ports/reporting.js";
+import type {
+  IReportDraftRepository,
+  IReportSectionRepository,
+  IReportClaimRepository,
+  IReportPlanRepository,
+  IReportArtifactRepository,
+} from "../../ports/reporting.js";
 
 export class GetReportDraftHandler {
   constructor(
@@ -9,6 +15,7 @@ export class GetReportDraftHandler {
     private readonly sections: IReportSectionRepository,
     private readonly claims: IReportClaimRepository,
     private readonly plans: IReportPlanRepository,
+    private readonly reportArtifacts?: IReportArtifactRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<unknown, DomainError>> {
@@ -16,7 +23,7 @@ export class GetReportDraftHandler {
     if (!draftsResult.ok) return draftsResult;
     const draft = draftsResult.value[0];
     if (!draft) {
-      return { ok: true, value: { draft: null, sections: [], claims: [], plan: null } };
+      return { ok: true, value: { draft: null, sections: [], claims: [], plan: null, artifacts: {} } };
     }
 
     const sectionsResult = await this.sections.findByReportDraft(draft.id, ctx.tenant.tenantId);
@@ -27,6 +34,26 @@ export class GetReportDraftHandler {
     if (!plansResult.ok) return plansResult;
 
     const sorted = [...sectionsResult.value].sort((a, b) => a.sectionOrder - b.sectionOrder);
+
+    // AI Reporter 2 — fetch typed artifacts per section in one batch.
+    const artifactsBySection: Record<string, unknown> = {};
+    if (this.reportArtifacts) {
+      for (const section of sorted) {
+        const r = await this.reportArtifacts.findBySection(section.id, ctx.tenant.tenantId);
+        if (r.ok && r.value.length > 0) {
+          artifactsBySection[section.id] = r.value.map((art) => ({
+            id: art.id,
+            kind: art.kind,
+            ordinal: art.ordinal,
+            caption: art.caption,
+            payload: art.payload,
+            sourceReferences: art.sourceReferences,
+            rows: art.rows,
+            createdAt: art.createdAt.toISOString(),
+          }));
+        }
+      }
+    }
 
     return {
       ok: true,
@@ -65,6 +92,7 @@ export class GetReportDraftHandler {
           resolvedAt: c.resolvedAt?.toISOString(),
         })),
         plan: plansResult.value[0] ?? null,
+        artifacts: artifactsBySection,
       },
     };
   }

@@ -7,6 +7,13 @@ AI Reporter pipeline behind the existing `IReportDraftGenerator` port, backed by
 open-source components (not re-implemented). The deterministic assurance/compliance
 system remains the final authority: **AI writes, deterministic code verifies, humans approve.**
 
+> **Superseded by:** [`AI-REPORTER-2-IMPLEMENTATION-PLAN.md`](./AI-REPORTER-2-IMPLEMENTATION-PLAN.md)
+> (released `20260828200000`, 2026-08-29). The v1 plan above remains the
+> architectural baseline for pgvector, worker wiring, and writer-contract scope;
+> v2 adds typed artifacts (tables, charts, lists, Q&A, deltas), per-section
+> timeout/fallback, deterministic artifact validators, 25-case eval corpus,
+> and additive persistence (`ReportArtifact` / `ReportArtifactRow` tables).
+
 ---
 
 ## 11. Implementation status (2026-08-28)

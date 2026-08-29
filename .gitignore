@@ -17,3 +17,4 @@ test-results/
 *.egg-info/
 storage/
 !packages/infrastructure/src/storage/
+.freebuff/

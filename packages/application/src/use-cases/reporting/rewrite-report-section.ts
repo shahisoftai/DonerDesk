@@ -11,6 +11,7 @@ import type {
   IIndicatorAnalyticsService,
   IEvidencePackageBuilder,
   IReportingPeriodRepository,
+  IReportArtifactRepository,
 } from "../../ports/reporting.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
@@ -46,6 +47,7 @@ export class RewriteReportSectionHandler {
     private readonly assuranceService: IReportAssuranceService,
     private readonly generationRuns: IGenerationRunRepository,
     private readonly audit: IAuditLogger,
+    private readonly reportArtifacts?: IReportArtifactRepository,
   ) {}
 
   async handle(

@@ -14,6 +14,7 @@ import type {
   IEvidencePackageBuilder,
   IReportRevisionService,
   IReportAssuranceService,
+  IReportArtifactRepository,
   ReportingProfileSnapshot,
   ReportGenerationContext,
   EvidencePackage,
@@ -84,6 +85,7 @@ export class GenerateReportDraftHandler {
     private readonly entitlements: EntitlementService,
     private readonly usage: IUsageCounterRepository,
     private readonly llmRuns: ILlmUsageRepository,
+    private readonly reportArtifacts?: IReportArtifactRepository,
   ) {}
 
   async handle(
@@ -532,6 +534,29 @@ export class GenerateReportDraftHandler {
         if (!committed.ok) {
           generationFailed = true;
           break;
+        }
+
+        // AI Reporter 2 — persist typed artifacts (tables, charts, lists, Q&A,
+        // deltas) when the report artifact repository is wired. Best-effort;
+        // a failed persistence does not abort the section (prose is already
+        // committed and assured).
+        if (this.reportArtifacts && generated.section.artifacts && generated.section.artifacts.length > 0) {
+          const persisted = await this.reportArtifacts.replaceForSection({
+            tenantId: input.ctx.tenant.tenantId,
+            sectionId,
+            revisionId: committed.value.id,
+            artifacts: generated.section.artifacts,
+          });
+          if (!persisted.ok) {
+            await this.audit.record({
+              tenantId: input.ctx.tenant.tenantId,
+              actorId: input.ctx.tenant.userId,
+              eventType: "report.section.artifacts.persist_failed",
+              entityType: "report_section",
+              entityId: sectionId,
+              newValue: persisted.error.message,
+            });
+          }
         }
 
         const assessed = await this.assuranceService.assessRevision({

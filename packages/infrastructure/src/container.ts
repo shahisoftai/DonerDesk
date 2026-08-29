@@ -171,6 +171,7 @@ import {
   PrismaAwardOverrideRepository,
   PrismaResolvedRequirementsRepository,
 } from "./repositories/report-revisions.js";
+import { PrismaReportArtifactRepository } from "./repositories/report-artifact-repository.js";
 import { PrismaChecklistRepository } from "./repositories/checklist.js";
 import { PrismaExportRepository } from "./repositories/exports.js";
 import {
@@ -271,6 +272,7 @@ export interface Container {
   reportClaims: PrismaReportClaimRepository;
   generationRuns: PrismaReportGenerationRunRepository;
   reportRevisions: PrismaReportRevisionRepository;
+  reportArtifacts: PrismaReportArtifactRepository;
   submissionSnapshots: PrismaSubmissionSnapshotRepository;
   requirementPacks: PrismaRequirementPackRepository;
   awardOverrides: PrismaAwardOverrideRepository;
@@ -509,6 +511,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const reportClaims = new PrismaReportClaimRepository(prisma);
   const generationRuns = new PrismaReportGenerationRunRepository(prisma);
   const reportRevisions = new PrismaReportRevisionRepository(prisma);
+  const reportArtifacts = new PrismaReportArtifactRepository(prisma);
   const submissionSnapshots = new PrismaSubmissionSnapshotRepository(prisma);
   const requirementPacks = new PrismaRequirementPackRepository(prisma);
   const awardOverrides = new PrismaAwardOverrideRepository(prisma);
@@ -731,9 +734,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       ids, periods, drafts, sections, projects, organizations, templates, indicatorUpdates, activities,
       reportPlanner, indicatorAnalytics, evidencePackageBuilder, generationRuns, reportPlans,
       revisionService, assuranceService,
-      getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage,
+      getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage, reportArtifacts,
     ),
-    getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportPlans),
+    getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportPlans, reportArtifacts),
     getReportAssurance: new GetReportAssuranceHandler(drafts, sections, reportClaims, reportRevisions, resolvedRequirements),
     updateReportSection: new UpdateReportSectionHandler(sections, revisionService, assuranceService, audits),
     createReportSection: new CreateReportSectionHandler(ids, drafts, sections, audits),
@@ -742,7 +745,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     updateReportSectionChart: new UpdateReportSectionChartHandler(sections, audits),
     rewriteReportSection: new RewriteReportSectionHandler(
       ids, drafts, sections, periods, indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder,
-      getReportDraftGenerator, revisionService, assuranceService, generationRuns, audits,
+      getReportDraftGenerator, revisionService, assuranceService, generationRuns, audits, reportArtifacts,
     ),
     approveReportSection: new ApproveReportSectionHandler(sections, reportClaims, reportRevisions, audits),
     submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),
@@ -789,7 +792,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     prisma, auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, checklistDetector, exportBuilder,
     organizations, users, invitations,     projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
-    periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
+    periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, reportArtifacts, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, planCatalog, billingProvider,
     handlers,
   };

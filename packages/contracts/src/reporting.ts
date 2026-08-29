@@ -193,3 +193,114 @@ export const ReassessRevisionSchema = z.object({
   revisionId: z.string().optional(),
 });
 
+// ---------------------------------------------------------------------------
+// AI Reporter 2 — Artifact, QA, Chart, Delta wire-format (additive)
+// ---------------------------------------------------------------------------
+
+export const ArtifactKindSchema = z.enum(["TABLE", "CHART", "LIST", "KEY_VALUE", "QA", "DELTA"]);
+export type ArtifactKind = z.infer<typeof ArtifactKindSchema>;
+
+const ArtifactSourceRefSchema = z.object({
+  type: z.enum(["evidence", "activity", "indicator", "template"]),
+  id: z.string().min(1),
+  label: z.string().optional(),
+});
+
+const TableColumnSchema = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  unit: z.string().optional(),
+});
+
+const TableRowSchema = z.object({
+  cells: z.array(z.union([z.string(), z.number(), z.null()])).min(1),
+  sourceReferences: z.array(ArtifactSourceRefSchema).default([]),
+});
+
+const TablePayloadSchema = z.object({
+  columns: z.array(TableColumnSchema).min(1),
+  rows: z.array(TableRowSchema).min(1),
+});
+
+const ChartSeriesSchema = z.object({
+  name: z.string().min(1),
+  data: z.array(z.union([z.string(), z.number(), z.null()])).min(1),
+  sourceReferences: z.array(ArtifactSourceRefSchema).default([]),
+});
+
+const ChartPayloadSchema = z.object({
+  type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
+  dataBinding: z.enum(["INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),
+  unit: z.string().optional(),
+  title: z.string().min(1),
+  caption: z.string().min(1),
+  categories: z.array(z.string()).min(1),
+  series: z.array(ChartSeriesSchema).min(1),
+  sourceReferences: z.array(ArtifactSourceRefSchema).default([]),
+});
+
+const ListItemSchema = z.object({
+  text: z.string().min(1),
+  sourceReferences: z.array(ArtifactSourceRefSchema).default([]),
+});
+
+const ListPayloadSchema = z.object({
+  ordered: z.boolean().default(false),
+  items: z.array(ListItemSchema).min(1),
+});
+
+const KeyValueEntrySchema = z.object({
+  key: z.string().min(1),
+  value: z.string().min(1),
+  sourceReferences: z.array(ArtifactSourceRefSchema).default([]),
+});
+
+const KeyValuePayloadSchema = z.object({
+  entries: z.array(KeyValueEntrySchema).min(1),
+});
+
+const QaPayloadSchema = z.object({
+  question: z.string().min(1),
+  answer: z.string().min(1),
+  sourceReferences: z.array(ArtifactSourceRefSchema).min(1),
+});
+
+const DeltaPayloadSchema = z.object({
+  metric: z.string().min(1),
+  fromValue: z.string().min(1),
+  toValue: z.string().min(1),
+  direction: z.enum(["UP", "DOWN", "FLAT"]),
+  evidenceSummary: z.string().min(1),
+  sourceReferences: z.array(ArtifactSourceRefSchema).min(1),
+});
+
+export const ReportArtifactSchema = z.object({
+  kind: ArtifactKindSchema,
+  caption: z.string().optional(),
+  ordinal: z.number().int().nonnegative(),
+  payload: z.union([
+    TablePayloadSchema,
+    ChartPayloadSchema,
+    ListPayloadSchema,
+    KeyValuePayloadSchema,
+    QaPayloadSchema,
+    DeltaPayloadSchema,
+  ]),
+  sourceReferences: z.array(ArtifactSourceRefSchema).default([]),
+});
+export type ReportArtifactInput = z.infer<typeof ReportArtifactSchema>;
+
+export const ReportArtifactListSchema = z.array(ReportArtifactSchema);
+
+export const ReportDeltaFromPriorSchema = DeltaPayloadSchema;
+export type ReportDeltaFromPrior = z.infer<typeof ReportDeltaFromPriorSchema>;
+
+export const ReportQaItemSchema = QaPayloadSchema;
+export type ReportQaItem = z.infer<typeof ReportQaItemSchema>;
+
+export const ReportQaListSchema = z.array(ReportQaItemSchema);
+
+export const ReportChartSpecSchema = ChartPayloadSchema;
+export type ReportChartSpec = z.infer<typeof ReportChartSpecSchema>;
+
+

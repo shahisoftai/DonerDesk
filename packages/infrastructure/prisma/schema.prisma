@@ -508,6 +508,7 @@ model ReportSection {
   reportDraft ReportDraft @relation(fields: [reportDraftId], references: [id])
   claims      ReportClaim[]
   revisions   ReportRevision[]
+  artifacts   ReportArtifact[]
   @@index([tenantId])
   @@index([reportDraftId])
 }
@@ -1178,3 +1179,47 @@ model TrialIdentity {
   @@index([domainFingerprint])
   @@index([tenantId])
 }
+
+// --------------------------------------------------------------------------- //
+// AI Reporter 2 — typed artifact storage (additive, RLS-scoped)
+// --------------------------------------------------------------------------- //
+
+/// One row per typed artifact produced by the AI Reporter (table, chart, list,
+/// key/value, Q&A, delta). Always tenant-scoped; RLS forces the same.
+model ReportArtifact {
+  id           String   @id
+  tenantId     String
+  sectionId    String
+  revisionId   String?
+  /// TABLE | CHART | LIST | KEY_VALUE | QA | DELTA
+  kind         String
+  ordinal      Int      @default(0)
+  caption      String?
+  /// Kind-specific payload as JSON.
+  payloadJson  String   @default("{}")
+  /// Source references for the artifact as a whole (e.g. chart caption).
+  sourceRefsJson String @default("[]")
+  createdAt    DateTime @default(now())
+
+  section  ReportSection        @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  rows     ReportArtifactRow[]
+  @@index([tenantId])
+  @@index([sectionId])
+  @@index([revisionId])
+}
+
+/// Rows for TABLE and LIST artifacts. Carries per-row source references so the
+/// read API can render every cell with a citation chip.
+model ReportArtifactRow {
+  id          String   @id
+  tenantId    String
+  artifactId  String
+  ordinal     Int      @default(0)
+  cellsJson   String   @default("[]")
+  sourceRefsJson String @default("[]")
+
+  artifact ReportArtifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  @@index([tenantId])
+  @@index([artifactId])
+}
+

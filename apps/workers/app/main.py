@@ -17,7 +17,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI, File, UploadFile
 
-from .ai_reporter import router as ai_reporter_router
+from .ai_reporter.router import router as ai_reporter_router
 from .compliance import DetectChecklistRequest, RewriteSectionRequest, detect_checklist, rewrite_section
 from .drafting import DraftSectionRequest, draft_section
 from .parsers import parse

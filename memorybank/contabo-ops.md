@@ -1019,3 +1019,67 @@ backup/restore.
 > from 22 MB to 23 MB (the pnpm store is included). Site is fully
 > styled; `curl https://donordesk.online/_next/static/css/<hash>.css`
 > returns 200 with the full 76 KB Tailwind CSS.
+
+> **2026-08-29 — AI Reporter 2 deploy (deployed, release `20260828200000`):**
+> shipped the v2 worker code, typed artifact persistence, deterministic
+> artifact validators, per-section timeout, and the 25-case eval corpus
+> (8 → 25). Three structural changes:
+> 1. **Worker code (apps/workers/app/):** the monolithic 622-LOC
+>    `ai_reporter.py` was split into a 12-module `ai_reporter/`
+>    package (`models`, `writer_contract`, `llm_gateway`, `outline`,
+>    `chart_suggester`, `draft_writer`, `critique_writer`, `refiner`,
+>    `artifact_validators`, `timeouts`, `pipeline`, `router`). `main.py`
+>    now imports the new router. All FastAPI `/v1/ai-reporter/*` routes
+>    are registered.
+> 2. **Typed artifact storage:** new Prisma models `ReportArtifact` +
+>    `ReportArtifactRow` (migration `20260828200000_ai_reporter_artifacts`).
+>    RLS forced on both tables; cross-tenant INSERT verified to fail.
+>    `donordesk_app` has DML grants. `IReportArtifactRepository` port
+>    + `PrismaReportArtifactRepository` implementation wired into
+>    `GenerateReportDraftHandler` and `RewriteReportSectionHandler` (best-effort,
+>    non-blocking persistence). `GetReportDraftHandler` returns artifacts
+>    alongside content.
+> 3. **API workspace layout fix:** discovered (mid-deploy) that the
+>    pre-existing api tar shipped `apps/api/node_modules/` as 14 symlinks
+>    into `node_modules/.pnpm/...`, but the **fast-deploy tar layout
+>    placed the api's dist at `/opt/donordesk/app/dist/`**, not at
+>    `apps/api/dist/`. The api process at `/opt/donordesk/app/` couldn't
+>    resolve fastify (broken symlink). Two fixes:
+>    - Updated `infra/systemd/donordesk-api.service` so the unit runs
+>      `WorkingDirectory=/opt/donordesk/app/apps/api` (where the api
+>      tree's symlinks resolve correctly via the pnpm virtual store
+>      at `/opt/donordesk/app/node_modules/.pnpm/`).
+>    - Rewrote `scripts/deploy-fast.sh` to ship the api as
+>      `apps/api/{dist,node_modules,src}` (tree layout, not
+>      flattened), plus a separate `packages/` tar (workspace links
+>      `apps/api/node_modules/@donordesk/* → ../../../../packages/*`)
+>      and a `pnpm-store` tar (`node_modules/.pnpm/` contents).
+>      Subsequent deploys run `pnpm install` at `apps/api/` to regenerate
+>      the symlink farm after the pnpm store is replaced.
+>
+> **Deploy timeline (this release):**
+> - 19:38 UTC — preflight (ssh, ports, services all green)
+> - 19:46 UTC — applied Prisma migration `20260828200000_ai_reporter_artifacts`
+>   directly via SQL (the migrator role lacks CREATE on `_prisma_migrations`;
+>   recorded the row manually to keep `prisma migrate deploy` consistent)
+> - 19:48 UTC — granted `SELECT/INSERT/UPDATE/DELETE` to `donordesk_app`
+>   on the two new tables; applied RLS `tenant_isolation` policy to
+>   both; verified cross-tenant INSERT is denied
+> - 06:47 UTC+02:00 (after restart) — api tar extracted; first
+>   restart attempt failed with `MODULE_NOT_FOUND: fastify`
+> - 07:22 UTC+02:00 — api systemd unit updated, api restarted
+>   successfully (WorkingDirectory=/opt/donordesk/app/apps/api);
+>   `/v1/ai-reporter/health` returns `{"status":"ok"}`
+> - 07:24 UTC+02:00 — final post-deploy verification: api ok/ready,
+>   worker ok, web 200, RLS enforced
+>
+> **Feature flag:** `AI_REPORTER_ENABLED` is **NOT set** in
+> `/opt/donordesk/shared/api.env`. The system continues to use
+> `LlmReportDraftGenerator` for all tenants until the flag is flipped
+> (per §8 of `memorybank/imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md`,
+> controlled rollout). When enabled, also set
+> `AI_REPORTER_URL=http://127.0.0.1:8092` to override the
+> `HttpWorkerClient` default of `localhost:5000`. The default INTERNAL_TOKEN
+> in `/opt/donordesk/shared/api.env` is different from the one in
+> `/opt/donordesk/shared/workers.env` — both must be used for
+> internal service-to-service calls.

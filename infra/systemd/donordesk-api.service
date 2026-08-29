@@ -1,0 +1,28 @@
+[Unit]
+Description=DonorDesk API
+After=network-online.target postgresql@16-main.service
+Wants=network-online.target
+Requires=postgresql@16-main.service
+
+[Service]
+Type=simple
+User=donordesk
+Group=donordesk
+# The api tree lives at /opt/donordesk/app/apps/api/. The api's
+# workspace @donordesk/* symlinks (apps/api/node_modules/@donordesk/*
+# -> ../../../../packages/*) resolve to /opt/donordesk/app/packages/*,
+# shipped by deploy-fast.sh.
+WorkingDirectory=/opt/donordesk/app/apps/api
+EnvironmentFile=/opt/donordesk/shared/api.env
+ExecStart=/usr/bin/node dist/server.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/donordesk/shared/storage
+
+[Install]
+WantedBy=multi-user.target

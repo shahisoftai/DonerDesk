@@ -219,6 +219,78 @@ export interface GeneratedSection {
   content: string;
   claims: ReportClaimDraft[];
   sourceReferences: SourceReference[];
+  /**
+   * AI Reporter 2 — typed structured artifacts produced by the writer (tables,
+   * charts, lists, key/value, Q&A, period deltas). Always defaults to an empty
+   * array for generators that do not produce artifacts, so consumers may iterate
+   * unconditionally. See `ReportArtifactInput` in `@donordesk/contracts`.
+   */
+  artifacts?: GeneratedArtifact[];
+  /**
+   * AI Reporter 2 — typed Q&A slot per mandatory question in the section brief.
+   * Empty array when the brief has no mandatory questions or when the writer
+   * did not answer them.
+   */
+  qa?: GeneratedQaItem[];
+  /**
+   * AI Reporter 2 — convenience pointer to the primary chart artifact, when one
+   * was produced. Equivalent to `artifacts.find(a => a.kind === "CHART")` but
+   * avoids a linear scan on the hot read path.
+   */
+  chartSpec?: GeneratedChartSpec;
+  /**
+   * AI Reporter 2 — period-over-period delta slot. Present only when the
+   * `priorNarrative` brief input was non-empty for this section.
+   */
+  deltaFromPrior?: GeneratedDelta;
+}
+
+export type GeneratedArtifact =
+  | { kind: "TABLE"; caption?: string; ordinal: number; payload: GeneratedTablePayload; sourceReferences: SourceReference[] }
+  | { kind: "CHART"; caption?: string; ordinal: number; payload: GeneratedChartSpec; sourceReferences: SourceReference[] }
+  | { kind: "LIST"; caption?: string; ordinal: number; payload: GeneratedListPayload; sourceReferences: SourceReference[] }
+  | { kind: "KEY_VALUE"; caption?: string; ordinal: number; payload: GeneratedKeyValuePayload; sourceReferences: SourceReference[] }
+  | { kind: "QA"; caption?: string; ordinal: number; payload: GeneratedQaItem; sourceReferences: SourceReference[] }
+  | { kind: "DELTA"; caption?: string; ordinal: number; payload: GeneratedDelta; sourceReferences: SourceReference[] };
+
+export interface GeneratedTablePayload {
+  columns: Array<{ key: string; label: string; unit?: string }>;
+  rows: Array<{ cells: Array<string | number | null>; sourceReferences: SourceReference[] }>;
+}
+
+export interface GeneratedChartSpec {
+  type: "BAR" | "LINE" | "PIE" | "AREA" | "RADAR" | "GAUGE";
+  dataBinding: "INDICATOR_COMPARISON" | "INDICATOR_ACHIEVEMENT" | "STATUS_DISTRIBUTION";
+  unit?: string;
+  title: string;
+  caption: string;
+  categories: string[];
+  series: Array<{ name: string; data: Array<string | number | null>; sourceReferences: SourceReference[] }>;
+  sourceReferences: SourceReference[];
+}
+
+export interface GeneratedListPayload {
+  ordered: boolean;
+  items: Array<{ text: string; sourceReferences: SourceReference[] }>;
+}
+
+export interface GeneratedKeyValuePayload {
+  entries: Array<{ key: string; value: string; sourceReferences: SourceReference[] }>;
+}
+
+export interface GeneratedQaItem {
+  question: string;
+  answer: string;
+  sourceReferences: SourceReference[];
+}
+
+export interface GeneratedDelta {
+  metric: string;
+  fromValue: string;
+  toValue: string;
+  direction: "UP" | "DOWN" | "FLAT";
+  evidenceSummary: string;
+  sourceReferences: SourceReference[];
 }
 
 export interface LlmGeneratorModelInfo {
@@ -247,7 +319,8 @@ export interface GeneratedDraftResult {
     | "PROVIDER_MALFORMED_RESPONSE"
     | "PROVIDER_TIMEOUT"
     | "PROVIDER_HTTP_ERROR"
-    | "PII_REJECTED";
+    | "PII_REJECTED"
+    | "VALIDATOR_FAILED";
 }
 
 /**
@@ -635,6 +708,44 @@ export interface IGenerationRunRepository {
   create(run: ReportGenerationRun): Promise<Result<ReportGenerationRun>>;
   findById(id: string, tenantId: TenantId): Promise<Result<ReportGenerationRun | null>>;
   findByDraft(draftId: string, tenantId: TenantId): Promise<Result<ReportGenerationRun[]>>;
+}
+
+/**
+ * Persisted artifact produced by the AI Reporter 2 — additive over v1.
+ * Storage is `payloadJson` + per-row `cellsJson`; the kind discriminator
+ * (`kind: "TABLE" | "CHART" | "LIST" | "KEY_VALUE" | "QA" | "DELTA"`) tells
+ * consumers which payload schema to apply.
+ */
+export interface ReportArtifactRowData {
+  ordinal: number;
+  cells: ReadonlyArray<string | number | null>;
+  sourceReferences: SourceReference[];
+}
+
+export interface ReportArtifactRecord {
+  id: string;
+  tenantId: TenantId;
+  sectionId: string;
+  revisionId: string | null;
+  kind: GeneratedArtifact["kind"];
+  ordinal: number;
+  caption: string | null;
+  payload: unknown;
+  sourceReferences: SourceReference[];
+  rows: ReportArtifactRowData[];
+  createdAt: Date;
+}
+
+export interface IReportArtifactRepository {
+  /** Replace every artifact bound to a section in one transaction (idempotent). */
+  replaceForSection(input: {
+    tenantId: TenantId;
+    sectionId: string;
+    revisionId: string | null;
+    artifacts: ReadonlyArray<GeneratedArtifact>;
+  }): Promise<Result<void, DomainError>>;
+  findBySection(sectionId: string, tenantId: TenantId): Promise<Result<ReportArtifactRecord[], DomainError>>;
+  findByRevision(revisionId: string, tenantId: TenantId): Promise<Result<ReportArtifactRecord[], DomainError>>;
 }
 
 export interface IDonorTemplateMappingRepository {

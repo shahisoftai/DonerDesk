@@ -16,11 +16,15 @@ function ok<T>(value: T): Result<T, DomainError> {
  * worker's /v1/ai-reporter endpoints. On any transport or non-2xx failure it
  * returns a DomainError so the caller can fall back to the deterministic stub
  * without crashing the generation loop.
+ *
+ * Per-section timeout defaults to `AI_REPORTER_DRAFT_TIMEOUT_MS` (45s) so a
+ * single slow section never demotes the whole draft. The legacy 180s default
+ * is preserved when the env var is unset.
  */
 export class HttpWorkerClient implements IWorkerClient {
   constructor(
     private readonly baseUrl = process.env.AI_REPORTER_URL ?? "http://localhost:5000",
-    private readonly timeoutMs = 180000,
+    private readonly timeoutMs = Number(process.env.AI_REPORTER_DRAFT_TIMEOUT_MS ?? 180000),
     private readonly internalToken = process.env.INTERNAL_TOKEN ?? "",
   ) {}
 

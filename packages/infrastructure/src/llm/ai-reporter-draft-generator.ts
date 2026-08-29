@@ -2,9 +2,16 @@ import { createHash } from "node:crypto";
 import type {
   IReportDraftGenerator,
   GenerateReportDraftInput,
+  GeneratedArtifact,
+  GeneratedChartSpec,
+  GeneratedDelta,
   GeneratedDraftResult,
+  GeneratedQaItem,
   GeneratedSection,
   GeneratedSectionResult,
+  GeneratedTablePayload,
+  GeneratedListPayload,
+  GeneratedKeyValuePayload,
   ReportClaimDraft,
   RetrievedEvidence,
   LlmGeneratorModelInfo,
@@ -15,6 +22,10 @@ import type { StubReportDraftGenerator } from "./report-draft-generator.js";
 import type { IEmbeddingGenerator, IEmbeddingStore } from "./embedding.js";
 import { SemanticEvidenceRetriever } from "./semantic-evidence-retriever.js";
 import type {
+  AiReporterArtifact,
+  AiReporterChartPayload,
+  AiReporterDeltaPayload,
+  AiReporterQaPayload,
   AiReporterActivity,
   AiReporterContext,
   AiReporterFinding,
@@ -22,12 +33,16 @@ import type {
   AiReporterPriorNarrative,
   AiReporterSectionRequest,
   AiReporterSectionResponse,
+  AiReporterSourceReference,
   IWorkerClient,
 } from "./ai-reporter-worker.js";
 import type { IPriorPeriodService } from "./prior-period.js";
+import { runAll as runArtifactValidators, type RunAllOptions } from "../ai/artifact-validators.js";
 
 const CLAIM_TYPES = new Set(["NUMERIC", "FACTUAL", "CAUSAL", "QUALITATIVE"]);
 const REFERENCE_TYPES = new Set(["evidence", "activity", "indicator", "template"]);
+const VALID_REFERENCE_TYPES = new Set(["indicator", "evidence", "activity", "template"] as const);
+const ARTIFACT_KINDS = new Set<GeneratedArtifact["kind"]>(["TABLE", "CHART", "LIST", "KEY_VALUE", "QA", "DELTA"]);
 
 /**
  * AI Reporter draft generator. Adapter that fulfils the IReportDraftGenerator
@@ -61,18 +76,20 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
 
   async generateDraft(input: GenerateReportDraftInput): Promise<GeneratedDraftResult> {
     const sections: GeneratedSection[] = [];
+    let anyFallback = false;
+    let lastFallbackReason: GeneratedDraftResult["fallbackReason"];
     for (const section of input.reportPlan.sections) {
       const result = await this.generateSection(input, section);
-      if (result.usedFallback) {
-        // A single failed section degrades the whole draft to fallback so the
-        // handler never meters it as a real AI draft.
-        return {
-          sections: sections.length > 0 ? sections : [result.section],
-          usedFallback: true,
-          fallbackReason: result.fallbackReason,
-        };
-      }
       sections.push(result.section);
+      if (result.usedFallback) {
+        anyFallback = true;
+        lastFallbackReason = result.fallbackReason;
+        // Continue: per-section fallback — a single slow section no longer
+        // demotes the whole draft.
+      }
+    }
+    if (anyFallback) {
+      return { sections, usedFallback: true, fallbackReason: lastFallbackReason };
     }
     return { sections, usedFallback: false };
   }
@@ -125,25 +142,58 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         };
       }
 
-      return {
-        section: {
-          sectionId: payload.sectionId || section.templateSectionId || `section-${section.title}`,
-          title: payload.title || section.title,
-          content,
-          claims: mapClaims(payload.claims),
-          sourceReferences: mapReferences(payload.sourceReferences),
-        },
-        usedFallback: false,
-        telemetry: {
-          inputTokens: payload.telemetry?.inputTokens ?? 0,
-          outputTokens: payload.telemetry?.outputTokens ?? 0,
-          latencyMs: Date.now() - startedAt,
-          promptHash: payload.telemetry?.promptHash ?? "",
-          responseHash: payload.telemetry?.responseHash,
-          responseChars: content.length,
-          parseOutcome: "VALID",
-        },
+      // Map AI Reporter 2 typed artifacts.
+      const artifacts = mapArtifacts(payload.artifacts);
+      const qa = mapQa(payload.qa);
+      const chartSpec = mapChartPayload(payload.chartSpec);
+      const deltaFromPrior = mapDeltaPayload(payload.deltaFromPrior);
+
+      const generatedSection: GeneratedSection = {
+        sectionId: payload.sectionId || section.templateSectionId || `section-${section.title}`,
+        title: payload.title || section.title,
+        content,
+        claims: mapClaims(payload.claims),
+        sourceReferences: mapReferences(payload.sourceReferences),
+        artifacts,
+        qa,
+        chartSpec: chartSpec ?? undefined,
+        deltaFromPrior: deltaFromPrior ?? undefined,
       };
+
+      // Self-check (mirror of worker artifact_validators). On hard failure we
+      // log the issues but keep the section (the deterministic evaluator
+      // surfaces them in CI).
+      const verifiedNumbers = new Set<string>();
+      for (const f of input.verifiedFindings) {
+        if (f.value !== null && f.value !== undefined) verifiedNumbers.add(String(f.value));
+      }
+      const validatorOpts: RunAllOptions = {
+        verifiedNumbers,
+        priorNarrativePresent: Boolean(this.prior) && (await this.prior?.fetch(input, section))?.length !== 0,
+        mandatoryQuestions: section.mandatoryQuestions ?? [],
+        priorSectionsSummary: [], // filled in by the handler in batch mode
+        minWords: section.wordLimit?.min,
+        maxWords: section.wordLimit?.max,
+      };
+      const validatorResult = runArtifactValidators(generatedSection, validatorOpts);
+      if (!validatorResult.ok) {
+        this.logger?.warn("AI Reporter validator issues", {
+          section: section.title,
+          issues: validatorResult.issues,
+        });
+      }
+
+      const telemetry: GeneratedSectionResult["telemetry"] = {
+        inputTokens: payload.telemetry?.inputTokens ?? 0,
+        outputTokens: payload.telemetry?.outputTokens ?? 0,
+        latencyMs: Date.now() - startedAt,
+        promptHash: payload.telemetry?.promptHash ?? "",
+        responseHash: payload.telemetry?.responseHash,
+        responseChars: content.length,
+        parseOutcome: validatorResult.ok ? "VALID" : "PROVIDER_ERROR",
+      };
+
+      return { section: generatedSection, usedFallback: false, telemetry };
     } catch (error) {
       this.logger?.warn("AI Reporter draft threw; falling back to stub", {
         section: section.title,
@@ -428,4 +478,193 @@ function mapReferences(refs: AiReporterSectionResponse["sourceReferences"]): Sou
     result.push({ type, id: r.id, label: r.label });
   }
   return result;
+}
+
+// --------------------------------------------------------------------------- //
+// AI Reporter 2 — typed artifact / QA / chart / delta mapping
+// --------------------------------------------------------------------------- //
+
+function mapSourceReferences(
+  refs: ReadonlyArray<AiReporterSourceReference | undefined> | undefined,
+): SourceReference[] {
+  const result: SourceReference[] = [];
+  for (const r of refs ?? []) {
+    if (!r || typeof r.id !== "string" || !r.id) continue;
+    const t = r.type;
+    const safeType = (VALID_REFERENCE_TYPES.has(t as (typeof VALID_REFERENCE_TYPES extends Set<infer U> ? U : never))
+      ? t
+      : "indicator") as SourceReference["type"];
+    result.push({ type: safeType, id: r.id, label: r.label });
+  }
+  return result;
+}
+
+function mapTablePayload(payload: AiReporterChartPayload | undefined | unknown): GeneratedTablePayload | null {
+  if (!payload || typeof payload !== "object") return null;
+  const p = payload as { columns?: unknown; rows?: unknown };
+  if (!Array.isArray(p.columns) || !Array.isArray(p.rows)) return null;
+  const columns: GeneratedTablePayload["columns"] = [];
+  for (const c of p.columns) {
+    if (!c || typeof (c as { key?: unknown }).key !== "string" || typeof (c as { label?: unknown }).label !== "string") continue;
+    columns.push({
+      key: (c as { key: string }).key,
+      label: (c as { label: string }).label,
+      unit: typeof (c as { unit?: unknown }).unit === "string" ? (c as { unit: string }).unit : undefined,
+    });
+  }
+  if (columns.length === 0) return null;
+  const rows: GeneratedTablePayload["rows"] = [];
+  for (const r of p.rows) {
+    if (!r || !Array.isArray((r as { cells?: unknown }).cells)) continue;
+    const cells: Array<string | number | null> = [];
+    for (const cell of (r as { cells: unknown[] }).cells) {
+      if (cell === null || cell === undefined) cells.push(null);
+      else if (typeof cell === "number" || typeof cell === "string") cells.push(cell);
+      else cells.push(String(cell));
+    }
+    rows.push({
+      cells,
+      sourceReferences: mapSourceReferences((r as { sourceReferences?: AiReporterSourceReference[] }).sourceReferences),
+    });
+  }
+  if (rows.length === 0) return null;
+  return { columns, rows };
+}
+
+function mapChartPayload(payload: AiReporterChartPayload | undefined): GeneratedChartSpec | null {
+  if (!payload) return null;
+  if (typeof payload.type !== "string" || typeof payload.dataBinding !== "string") return null;
+  if (typeof payload.title !== "string" || typeof payload.caption !== "string") return null;
+  if (!Array.isArray(payload.categories) || !Array.isArray(payload.series)) return null;
+  const series: GeneratedChartSpec["series"] = [];
+  for (const s of payload.series) {
+    if (!s || typeof s.name !== "string" || !Array.isArray(s.data)) continue;
+    series.push({
+      name: s.name,
+      data: s.data.map((d) => (d === null || d === undefined ? null : (typeof d === "string" || typeof d === "number" ? d : String(d)))),
+      sourceReferences: mapSourceReferences(s.sourceReferences),
+    });
+  }
+  if (series.length === 0) return null;
+  return {
+    type: payload.type as GeneratedChartSpec["type"],
+    dataBinding: payload.dataBinding as GeneratedChartSpec["dataBinding"],
+    unit: typeof payload.unit === "string" ? payload.unit : undefined,
+    title: payload.title,
+    caption: payload.caption,
+    categories: payload.categories.map((c) => String(c)),
+    series,
+    sourceReferences: mapSourceReferences(payload.sourceReferences),
+  };
+}
+
+function mapListPayload(payload: unknown): GeneratedListPayload | null {
+  if (!payload || typeof payload !== "object") return null;
+  const p = payload as { ordered?: unknown; items?: unknown };
+  if (!Array.isArray(p.items)) return null;
+  const items: GeneratedListPayload["items"] = [];
+  for (const it of p.items) {
+    if (!it || typeof (it as { text?: unknown }).text !== "string") continue;
+    items.push({
+      text: (it as { text: string }).text,
+      sourceReferences: mapSourceReferences((it as { sourceReferences?: AiReporterSourceReference[] }).sourceReferences),
+    });
+  }
+  if (items.length === 0) return null;
+  return { ordered: p.ordered === true, items };
+}
+
+function mapKeyValuePayload(payload: unknown): GeneratedKeyValuePayload | null {
+  if (!payload || typeof payload !== "object") return null;
+  const p = payload as { entries?: unknown };
+  if (!Array.isArray(p.entries)) return null;
+  const entries: GeneratedKeyValuePayload["entries"] = [];
+  for (const e of p.entries) {
+    if (!e) continue;
+    const k = (e as { key?: unknown }).key;
+    const v = (e as { value?: unknown }).value;
+    if (typeof k !== "string" || typeof v !== "string") continue;
+    entries.push({
+      key: k,
+      value: v,
+      sourceReferences: mapSourceReferences((e as { sourceReferences?: AiReporterSourceReference[] }).sourceReferences),
+    });
+  }
+  if (entries.length === 0) return null;
+  return { entries };
+}
+
+function mapQaItem(payload: AiReporterQaPayload): GeneratedQaItem | null {
+  if (!payload || typeof payload.question !== "string" || typeof payload.answer !== "string") return null;
+  const refs = mapSourceReferences(payload.sourceReferences);
+  if (refs.length === 0) return null;
+  return { question: payload.question, answer: payload.answer, sourceReferences: refs };
+}
+
+function mapDeltaPayload(payload: AiReporterDeltaPayload | undefined): GeneratedDelta | null {
+  if (!payload) return null;
+  if (typeof payload.metric !== "string" || typeof payload.fromValue !== "string" || typeof payload.toValue !== "string") return null;
+  if (typeof payload.direction !== "string") return null;
+  if (!["UP", "DOWN", "FLAT"].includes(payload.direction)) return null;
+  if (typeof payload.evidenceSummary !== "string") return null;
+  const refs = mapSourceReferences(payload.sourceReferences);
+  if (refs.length === 0) return null;
+  return {
+    metric: payload.metric,
+    fromValue: payload.fromValue,
+    toValue: payload.toValue,
+    direction: payload.direction as GeneratedDelta["direction"],
+    evidenceSummary: payload.evidenceSummary,
+    sourceReferences: refs,
+  };
+}
+
+function mapArtifacts(artifacts: ReadonlyArray<AiReporterArtifact> | undefined): GeneratedArtifact[] {
+  if (!artifacts) return [];
+  const out: GeneratedArtifact[] = [];
+  let ordinal = 0;
+  for (const art of artifacts) {
+    if (!art || typeof art.kind !== "string" || !ARTIFACT_KINDS.has(art.kind as GeneratedArtifact["kind"])) continue;
+    const kind = art.kind as GeneratedArtifact["kind"];
+    const refs = mapSourceReferences(art.sourceReferences);
+    const caption = typeof art.caption === "string" ? art.caption : undefined;
+    const ord = typeof art.ordinal === "number" && Number.isFinite(art.ordinal) ? Math.max(0, Math.floor(art.ordinal)) : ordinal;
+    ordinal = ord + 1;
+    if (kind === "TABLE") {
+      const payload = mapTablePayload(art.payload as unknown);
+      if (!payload) continue;
+      out.push({ kind, caption, ordinal: ord, payload, sourceReferences: refs });
+    } else if (kind === "CHART") {
+      const payload = mapChartPayload(art.payload as AiReporterChartPayload);
+      if (!payload) continue;
+      out.push({ kind, caption, ordinal: ord, payload, sourceReferences: refs });
+    } else if (kind === "LIST") {
+      const payload = mapListPayload(art.payload);
+      if (!payload) continue;
+      out.push({ kind, caption, ordinal: ord, payload, sourceReferences: refs });
+    } else if (kind === "KEY_VALUE") {
+      const payload = mapKeyValuePayload(art.payload);
+      if (!payload) continue;
+      out.push({ kind, caption, ordinal: ord, payload, sourceReferences: refs });
+    } else if (kind === "QA") {
+      const qa = mapQaItem(art.payload as AiReporterQaPayload);
+      if (!qa) continue;
+      out.push({ kind, caption, ordinal: ord, payload: qa, sourceReferences: refs });
+    } else if (kind === "DELTA") {
+      const delta = mapDeltaPayload(art.payload as AiReporterDeltaPayload);
+      if (!delta) continue;
+      out.push({ kind, caption, ordinal: ord, payload: delta, sourceReferences: refs });
+    }
+  }
+  return out;
+}
+
+function mapQa(qa: ReadonlyArray<AiReporterQaPayload> | undefined): GeneratedQaItem[] {
+  if (!qa) return [];
+  const out: GeneratedQaItem[] = [];
+  for (const item of qa) {
+    const mapped = mapQaItem(item);
+    if (mapped) out.push(mapped);
+  }
+  return out;
 }

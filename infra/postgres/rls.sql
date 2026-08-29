@@ -12,6 +12,7 @@ BEGIN
     'ReportRevision','SubmissionSnapshot','ReportingRequirementPack','AwardReportingOverride','ResolvedReportingRequirements',
     'Notification','AuditEvent','LlmRun','LlmFeedback','EvidenceChunk','EvidenceEmbedding',
     'IdempotencyRecord',
+    'ReportArtifact','ReportArtifactRow',
     'BillingSubscription','EntitlementGrant','UsageCounter','TrialIdentity'
   ] LOOP
     EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO donordesk_app', table_name);

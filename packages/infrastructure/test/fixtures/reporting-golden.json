@@ -4,29 +4,14 @@
       "name": "un-ocha-annual-ok",
       "draftText": "Reached 500 beneficiaries in the reporting period. 320 women and 180 children received assistance. The project complies with the safeguarding policy. 60 percent of trainees completed the course. Data quality limitation: disaggregated data was not recorded for one site; results are based on partial records.",
       "referenceAssertions": [
-        {
-          "text": "Reached 500 beneficiaries in the reporting period."
-        },
-        {
-          "text": "The project complies with the safeguarding policy."
-        },
-        {
-          "text": "60 percent of trainees completed the course."
-        }
+        { "text": "Reached 500 beneficiaries in the reporting period." },
+        { "text": "The project complies with the safeguarding policy." },
+        { "text": "60 percent of trainees completed the course." }
       ],
       "numericFacts": [
-        {
-          "value": "500",
-          "expected": "present"
-        },
-        {
-          "value": "60",
-          "expected": "present"
-        },
-        {
-          "value": "1200",
-          "expected": "absent"
-        }
+        { "value": "500", "expected": "present" },
+        { "value": "60", "expected": "present" },
+        { "value": "1200", "expected": "absent" }
       ],
       "requiredLimitations": [
         "disaggregated data was not recorded",
@@ -38,15 +23,10 @@
       "name": "usaid-bha-overclaim",
       "draftText": "The training dramatically transformed community health outcomes and permanently ended malnutrition in the district. Attendance records confirm strong programmatic impact.",
       "referenceAssertions": [
-        {
-          "text": "The training was delivered to 45 participants."
-        }
+        { "text": "The training was delivered to 45 participants." }
       ],
       "numericFacts": [
-        {
-          "value": "45",
-          "expected": "absent"
-        }
+        { "value": "45", "expected": "absent" }
       ],
       "requiredLimitations": [
         "requires verification"
@@ -57,23 +37,12 @@
       "name": "echo-single-form-budget",
       "draftText": "Expenditure reached EUR 240,000 against a budget of EUR 300,000, leaving an underspend of EUR 60,000. Expenditure is reported on a cash basis and unaudited.",
       "referenceAssertions": [
-        {
-          "text": "Expenditure reached EUR 240,000 against a budget of EUR 300,000."
-        }
+        { "text": "Expenditure reached EUR 240,000 against a budget of EUR 300,000." }
       ],
       "numericFacts": [
-        {
-          "value": "240,000",
-          "expected": "present"
-        },
-        {
-          "value": "300,000",
-          "expected": "present"
-        },
-        {
-          "value": "450,000",
-          "expected": "absent"
-        }
+        { "value": "240,000", "expected": "present" },
+        { "value": "300,000", "expected": "present" },
+        { "value": "450,000", "expected": "absent" }
       ],
       "requiredLimitations": [
         "unaudited"
@@ -84,23 +53,12 @@
       "name": "gavi-gf-disaggregation",
       "draftText": "Vaccinated 1,200 children in the reporting period. 600 girls and 600 boys received the first dose. Coverage data is preliminary.",
       "referenceAssertions": [
-        {
-          "text": "Vaccinated 1,200 children in the reporting period."
-        }
+        { "text": "Vaccinated 1,200 children in the reporting period." }
       ],
       "numericFacts": [
-        {
-          "value": "1,200",
-          "expected": "present"
-        },
-        {
-          "value": "600",
-          "expected": "present"
-        },
-        {
-          "value": "900",
-          "expected": "absent"
-        }
+        { "value": "1,200", "expected": "present" },
+        { "value": "600", "expected": "present" },
+        { "value": "900", "expected": "absent" }
       ],
       "requiredLimitations": [
         "preliminary"
@@ -111,15 +69,10 @@
       "name": "education-gpe-missing-caveat",
       "draftText": "Enrolled 2,000 out-of-school children. The program fully achieved its literacy targets.",
       "referenceAssertions": [
-        {
-          "text": "Enrolled 2,000 out-of-school children."
-        }
+        { "text": "Enrolled 2,000 out-of-school children." }
       ],
       "numericFacts": [
-        {
-          "value": "2,000",
-          "expected": "present"
-        }
+        { "value": "2,000", "expected": "present" }
       ],
       "requiredLimitations": [
         "learning outcomes are not independently verified"
@@ -130,15 +83,10 @@
       "name": "climate-fund-adaptation",
       "draftText": "Reduced emissions by 1,500 tonnes of CO2 equivalent. The estimate uses conservative emission factors and excludes scope 3 emissions.",
       "referenceAssertions": [
-        {
-          "text": "Reduced emissions by 1,500 tonnes of CO2 equivalent."
-        }
+        { "text": "Reduced emissions by 1,500 tonnes of CO2 equivalent." }
       ],
       "numericFacts": [
-        {
-          "value": "1,500",
-          "expected": "present"
-        }
+        { "value": "1,500", "expected": "present" }
       ],
       "requiredLimitations": [
         "excludes scope 3 emissions"
@@ -149,23 +97,12 @@
       "name": "gavi-gf-period-comparison",
       "draftText": "Vaccinated 1,200 children in this reporting period, up from 900 in the previous period. Coverage data is preliminary.",
       "referenceAssertions": [
-        {
-          "text": "Vaccinated 1,200 children in this reporting period."
-        }
+        { "text": "Vaccinated 1,200 children in this reporting period." }
       ],
       "numericFacts": [
-        {
-          "value": "1,200",
-          "expected": "present"
-        },
-        {
-          "value": "900",
-          "expected": "present"
-        },
-        {
-          "value": "1,500",
-          "expected": "absent"
-        }
+        { "value": "1,200", "expected": "present" },
+        { "value": "900", "expected": "present" },
+        { "value": "1,500", "expected": "absent" }
       ],
       "requiredLimitations": [
         "preliminary"
@@ -176,23 +113,270 @@
       "name": "echo-budget-repetition",
       "draftText": "Expenditure reached EUR 240,000 against a budget of EUR 300,000. Expenditure reached EUR 240,000 against a budget of EUR 300,000. The financial statement is unaudited.",
       "referenceAssertions": [
-        {
-          "text": "Expenditure reached EUR 240,000 against a budget of EUR 300,000."
-        }
+        { "text": "Expenditure reached EUR 240,000 against a budget of EUR 300,000." }
       ],
       "numericFacts": [
-        {
-          "value": "240,000",
-          "expected": "present"
-        },
-        {
-          "value": "300,000",
-          "expected": "present"
-        }
+        { "value": "240,000", "expected": "present" },
+        { "value": "300,000", "expected": "present" }
       ],
       "requiredLimitations": [
         "unaudited"
       ],
+      "expected": "pass"
+    },
+    {
+      "name": "un-ocha-annual-table-disaggregation",
+      "draftText": "Indicator progress is summarised in the table below. Baseline, target, and current achievement are reported for each indicator. Coverage data is preliminary.\n\n| Indicator | Baseline | Target | Achievement |\n| --- | --- | --- | --- |\n| IND-1 | 100 | 500 | 500 |\n| IND-2 | 50 | 200 | 180 |\n| IND-3 | 0 | 300 | 275 |",
+      "referenceAssertions": [
+        { "text": "Indicator progress is summarised in the table below." }
+      ],
+      "numericFacts": [
+        { "value": "500", "expected": "present" },
+        { "value": "275", "expected": "present" },
+        { "value": "999", "expected": "absent" }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "artifacts": { "kinds": ["TABLE"] },
+      "expected": "pass"
+    },
+    {
+      "name": "gavi-gf-chart-line-time-series",
+      "draftText": "Vaccinations over time are summarised against baseline, target and achievement. In the current period 1,200 children were vaccinated, up from 900 in the prior period. Coverage data is preliminary.",
+      "referenceAssertions": [
+        { "text": "1,200 children were vaccinated in the current period." }
+      ],
+      "numericFacts": [
+        { "value": "1,200", "expected": "present" },
+        { "value": "900", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "artifacts": { "kinds": ["CHART"] },
+      "expected": "pass"
+    },
+    {
+      "name": "echo-budget-mandatory-qa",
+      "draftText": "Expenditure reached EUR 240,000 against a budget of EUR 300,000. Audit status: expenditure is unaudited. Partner reporting: this is a single-implementer project. Financial statement is unaudited.",
+      "referenceAssertions": [
+        { "text": "Expenditure reached EUR 240,000 against a budget of EUR 300,000." }
+      ],
+      "numericFacts": [
+        { "value": "240,000", "expected": "present" },
+        { "value": "300,000", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "unaudited"
+      ],
+      "mandatoryQuestions": [
+        "What was the audit status?",
+        "Which partner submitted the report?"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "usaid-bha-banned-phrase-rejection",
+      "draftText": "The training was transformative and life-changing for participants. 45 women attended. Results require verification.",
+      "referenceAssertions": [
+        { "text": "The training was delivered to 45 participants." }
+      ],
+      "numericFacts": [
+        { "value": "45", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "requires verification"
+      ],
+      "brief": {
+        "bannedPhrases": ["transformative", "life-changing"]
+      },
+      "expected": "fail"
+    },
+    {
+      "name": "gavi-gf-numeric-paraphrase-rejection",
+      "draftText": "Approximately twelve hundred children were vaccinated. Coverage data is preliminary.",
+      "referenceAssertions": [
+        { "text": "Vaccinated 1,200 children in the reporting period." }
+      ],
+      "numericFacts": [
+        { "value": "1,200", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "expected": "fail"
+    },
+    {
+      "name": "climate-fund-chart-pie-status",
+      "draftText": "Indicator status distribution is reported below. VERIFIED 12, NEEDS_REVIEW 3, DRAFT 1. Coverage data is preliminary.",
+      "referenceAssertions": [
+        { "text": "Indicator status distribution is reported below." }
+      ],
+      "numericFacts": [
+        { "value": "12", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "artifacts": { "kinds": ["CHART"] },
+      "expected": "pass"
+    },
+    {
+      "name": "gpe-education-cross-section-repetition",
+      "draftText": "Refer to the Challenges section for enrolment figures. Enrolment rose from baseline 500 to 1,000. Learning outcomes are not independently verified.",
+      "referenceAssertions": [
+        { "text": "Enrolment rose from baseline 500 to 1,000." }
+      ],
+      "numericFacts": [
+        { "value": "500", "expected": "present" },
+        { "value": "1,000", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "learning outcomes are not independently verified"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "echo-budget-shorten-rewrite-preserve-numbers",
+      "draftText": "Exp. EUR 240,000 vs. budget EUR 300,000. EUR 60,000 underspend. Unaudited.",
+      "referenceAssertions": [
+        { "text": "Expenditure reached EUR 240,000 against a budget of EUR 300,000." }
+      ],
+      "numericFacts": [
+        { "value": "240,000", "expected": "present" },
+        { "value": "300,000", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "unaudited"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "un-ocha-annual-delta-from-prior",
+      "draftText": "Reach increased from 900 to 1,200 compared to the prior period. Coverage data is preliminary. Reach increased from 900 to 1,200.",
+      "referenceAssertions": [
+        { "text": "Reach increased from 900 to 1,200." }
+      ],
+      "numericFacts": [
+        { "value": "900", "expected": "present" },
+        { "value": "1,200", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "artifacts": { "kinds": ["DELTA"] },
+      "priorNarrativePresent": true,
+      "expected": "pass"
+    },
+    {
+      "name": "un-ocha-annual-no-prior-baseline",
+      "draftText": "Baseline period. Coverage data is preliminary.",
+      "referenceAssertions": [
+        { "text": "This is the baseline reporting period." }
+      ],
+      "numericFacts": [],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "priorNarrativePresent": false,
+      "expected": "pass"
+    },
+    {
+      "name": "gavi-gf-audience-donor-tone",
+      "draftText": "Vaccinated 1,200 children in the reporting period. Coverage data is preliminary.",
+      "referenceAssertions": [
+        { "text": "Vaccinated 1,200 children in the reporting period." }
+      ],
+      "numericFacts": [
+        { "value": "1,200", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "gavi-gf-audience-internal-tone",
+      "draftText": "1,200 vaccinations this period. Preliminary.",
+      "referenceAssertions": [
+        { "text": "Vaccinated 1,200 children in the reporting period." }
+      ],
+      "numericFacts": [
+        { "value": "1,200", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "echo-budget-per-section-timeout",
+      "draftText": "Expenditure reached EUR 240,000 against a budget of EUR 300,000. Unaudited.",
+      "referenceAssertions": [
+        { "text": "Expenditure reached EUR 240,000 against a budget of EUR 300,000." }
+      ],
+      "numericFacts": [
+        { "value": "240,000", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "unaudited"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "un-ocha-contradictory-chunks",
+      "draftText": "Verified reach is 500 beneficiaries. Coverage data is preliminary.",
+      "referenceAssertions": [
+        { "text": "Verified reach is 500 beneficiaries." }
+      ],
+      "numericFacts": [
+        { "value": "500", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "climate-fund-no-figures-no-chart",
+      "draftText": "The project is in early implementation; no figures are recorded yet for this reporting period. This is the baseline period.",
+      "referenceAssertions": [
+        { "text": "No figures are recorded for this reporting period." }
+      ],
+      "numericFacts": [],
+      "requiredLimitations": [],
+      "expected": "pass"
+    },
+    {
+      "name": "echo-budget-word-count-tight",
+      "draftText": "Exp EUR 240,000 vs budget EUR 300,000. Unaudited.",
+      "referenceAssertions": [
+        { "text": "Expenditure reached EUR 240,000 against a budget of EUR 300,000." }
+      ],
+      "numericFacts": [
+        { "value": "240,000", "expected": "present" },
+        { "value": "300,000", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "unaudited"
+      ],
+      "brief": { "minWords": 60, "maxWords": 80 },
+      "expected": "fail"
+    },
+    {
+      "name": "gavi-gf-malformed-artifact-recovery",
+      "draftText": "Vaccinated 1,200 children in the reporting period. Coverage data is preliminary. Notes from the field: 600 girls, 600 boys received the first dose.",
+      "referenceAssertions": [
+        { "text": "Vaccinated 1,200 children in the reporting period." }
+      ],
+      "numericFacts": [
+        { "value": "1,200", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "artifacts": { "kinds": ["LIST"] },
       "expected": "pass"
     }
   ]
