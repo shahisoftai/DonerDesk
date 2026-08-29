@@ -1161,3 +1161,71 @@ backup/restore.
 > in `/opt/donordesk/shared/api.env` is different from the one in
 > `/opt/donordesk/shared/workers.env` — both must be used for
 > internal service-to-service calls.
+
+## 2026-08-29 — Reports Workspace Internal Server Error + Prisma client drift fix
+
+User reported `/reports` rendering `Internal Server Error` + `This
+information could not be loaded.` (the InlineError component). Reproduced
+on the live site: a fresh signup throws
+`PrismaClientValidationError: ... Unknown argument \`storageProvider\`.
+Available options are marked with ?.`
+
+**Root cause.** The Prisma client shipped to the host was generated
+against an older schema (pre-`Organization.storageProvider`, added in
+the evidence-storage migration `20260814000001_evidence_storage_provider`).
+The api code path uses `Organization.storageProvider` in
+`create()` and `select: { storageProvider: true }` for the workspace/
+evidence resolvers, so the running client threw on the first request
+that touched the column. The `/reports` page rendered the
+InlineError because its upstream `GET /v1/projects` failed the same way
+(`/v1/organization` happens to return gracefully with `storageProvider`
+undefined, masking the issue).
+
+**Why the drift happened.** `scripts/deploy-fast.sh` ships
+`node_modules/.pnpm/` (which contains the pre-generated Prisma client)
+from the local build. The local `pnpm -r build` correctly runs
+`prisma generate` inside `@donordesk/infrastructure`, but the deploy
+script then runs `pnpm install` only at `apps/api/` to fix the
+symlink farm; there is no `schema.prisma` in `apps/api/`, so the
+`@prisma/client` postinstall is a no-op there. The shipped `.pnpm/`
+tar carried the last locally-generated client, which was stale relative
+to the schema that ended up on the server (the api systemd unit's
+WorkingDirectory is `/opt/donordesk/app/apps/api`, so the schema at
+`/opt/donordesk/app/packages/infrastructure/prisma/schema.prisma` was
+newer than the bundled client).
+
+**Fix (3 layers).**
+1. **Always regenerate on the host.** Added `Stage B2` to
+   `scripts/deploy-fast.sh`: after extracting `packages/` and `.pnpm/`,
+   the script runs `npx prisma@5.22.0 generate --schema
+   ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma` on the
+   host against the freshly shipped schema. This guarantees the running
+   client matches the schema the api code expects.
+2. **Self-introspecting `/ready`.** `apps/api/src/routes/health.ts`
+   `/ready` endpoint now reads
+   `prisma._runtimeDataModel` and asserts a small allowlist of
+   `Model.field` pairs the application code relies on
+   (`Organization.storageProvider`, `ReportingPeriod.donorTemplateId`).
+   If any pair is missing it returns 503 with `missingPrismaFields` and
+   a hint to re-run `prisma generate`. Adding a new schema column the
+   app uses in `select`/`create` requires adding it to
+   `REQUIRED_PRISMA_FIELDS` in the same change.
+3. **Stricter verify gate.** The post-deploy verify block now reads
+   the `/ready` JSON and HTTP status (not just curl exit code), so a
+   stale client fails the deploy rather than passing health because
+   `SELECT 1` still works.
+
+**Operator note for the currently broken deploy.** A fresh deploy will
+regenerate the client and resolve everything. To recover without a
+full redeploy, run on the host:
+
+```
+ssh contabo
+cd /opt/donordesk/app/packages/infrastructure
+npx prisma@5.22.0 generate --schema prisma/schema.prisma
+systemctl restart donordesk-api donordesk-web
+curl -fsS http://127.0.0.1:4001/ready | jq
+```
+
+Expect `{ "status": "ready", "checks": { "database": "ok",
+"prismaClient": "ok" } }`.

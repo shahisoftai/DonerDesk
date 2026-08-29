@@ -244,6 +244,29 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
     "
   fi
 
+  # Stage B2: regenerate the Prisma client on the host against the freshly
+  # shipped schema. The tar only contains pre-generated client files baked
+  # at local-build time; if the local build was stale (e.g. schema changed
+  # but prisma generate did not re-run, or the tar was reused across schema
+  # revisions), the running api would still throw "Unknown argument <field>"
+  # on any model operation that uses the newer field. Re-running prisma
+  # generate here, against the just-shipped schema.prisma, guarantees the
+  # running client matches the schema the api code expects.
+  echo "==> Regenerate Prisma client against shipped schema"
+  ${SSH} "
+    set -eu
+    if [ ! -f ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma ]; then
+      echo 'ERROR: ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma missing on host' >&2
+      exit 1
+    fi
+    cd ${REMOTE_APP}/packages/infrastructure
+    npx -y prisma@5.22.0 generate --schema prisma/schema.prisma \
+      >/tmp/dd-prisma-generate.log 2>&1 \
+      || (echo 'prisma generate FAILED — see /tmp/dd-prisma-generate.log on host' >&2; cat /tmp/dd-prisma-generate.log >&2; exit 1)
+    chown -R donordesk:donordesk ${REMOTE_APP}/node_modules/.pnpm
+    echo '  prisma generate: ok'
+  "
+
   # Stage C: ship the api tree. apps/api/dist + apps/api/node_modules
   # (symlinks) + apps/api/src land at /opt/donordesk/app/apps/api/. The
   # systemd unit's WorkingDirectory=/opt/donordesk/app/apps/api finds dist/
@@ -323,7 +346,18 @@ ${SSH} "
   echo '--- api ---'
   curl -fsS --max-time 10 http://127.0.0.1:4001/health || (echo 'api health FAILED'; exit 1)
   echo
-  curl -fsS --max-time 10 http://127.0.0.1:4001/ready || (echo 'api ready FAILED'; exit 1)
+  # /ready now also introspects the running Prisma client against the
+  # expected schema. A 503 here means the generated client is stale (likely
+  # prisma generate did not re-run during deploy); curl with -f would fail
+  # the gate. Use --write-out to capture status and surface the JSON body
+  # so the operator can see which fields are missing.
+  READY_BODY=\$(curl -sS --max-time 10 -w '\nHTTP_STATUS:%{http_code}' http://127.0.0.1:4001/ready || true)
+  echo \"\${READY_BODY}\"
+  READY_STATUS=\$(printf '%s' \"\${READY_BODY}\" | sed -n 's/^HTTP_STATUS:\\([0-9][0-9][0-9]\\)$/\\1/p' | tail -n 1)
+  if [ \"\${READY_STATUS}\" != '200' ]; then
+    echo 'api ready FAILED (Prisma client likely stale vs schema)'
+    exit 1
+  fi
   echo
   echo '--- worker ---'
   if systemctl is-active donordesk-workers >/dev/null 2>&1; then

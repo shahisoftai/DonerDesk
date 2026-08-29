@@ -69,6 +69,23 @@ Agent guidance for coding on DonorDesk.
 - Every API mutation writes to `audit_events`.
 - Every LLM response records `model` + `promptVersion` (ready for `llm_runs` table).
 
+## Prisma client vs schema drift (deploy invariant)
+- The api ships `@donordesk/infrastructure`'s generated Prisma client in
+  `node_modules/.pnpm/`. The `apps/api` tree has no `schema.prisma`, so
+  the `@prisma/client` postinstall is a no-op there.
+- `scripts/deploy-fast.sh` always re-runs
+  `prisma generate --schema ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma`
+  on the host (Stage B2) before restarting the api, so the running
+  client is guaranteed to match the just-shipped schema.
+- `apps/api/src/routes/health.ts` `/ready` endpoint introspects
+  `prisma._runtimeDataModel` and asserts a small allowlist of
+  `Model.field` pairs the application code relies on
+  (`REQUIRED_PRISMA_FIELDS`). A 503 with `missingPrismaFields` means
+  the client is stale and must be regenerated.
+- **Adding a new schema column the app uses in a `select`/`create`/where?**
+  Add the model+field pair to `REQUIRED_PRISMA_FIELDS` in the same
+  PR. The `/ready` gate will block the deploy otherwise.
+
 ## Phase 1 deviations
 Each swap point is an interface with a production target behind it. Current
 state: PostgreSQL via Prisma, JWT auth, local file storage (dev default) with
