@@ -113,7 +113,15 @@ export class ApproveReportHandler {
         claimOutcomes.push({ kind: "VERIFIED", detail: claim.verificationDetail, claimId: claim.id, sectionId: claim.sectionId });
         continue;
       }
-      if (claim.verificationResult === "ACCEPTED_WITH_LIMITATION" || claim.verificationResult === "EXCLUDED") {
+      // A manually resolved claim (accepted-with-limitation or excluded) is
+      // no longer a blocking gate. The resolver records resolutionNotes +
+      // resolvedById while leaving verificationResult as FAILED, so honour the
+      // resolution marker here rather than the (unchanged) verification result.
+      if (
+        claim.verificationResult === "ACCEPTED_WITH_LIMITATION" ||
+        claim.verificationResult === "EXCLUDED" ||
+        claim.resolvedById !== undefined
+      ) {
         continue;
       }
       // Surface the first source's evidenceId so the preflight UI can link to
