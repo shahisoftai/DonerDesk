@@ -488,6 +488,18 @@ export const ExportPreflightEvidenceSchema = z.object({
   defaultIncluded: z.boolean(),
 });
 
+export const ExportPreflightItemSchema = z.object({
+  id: z.string(),
+  kind: z.string(),
+  message: z.string(),
+  claimId: z.string().optional(),
+  sectionId: z.string().optional(),
+  evidenceId: z.string().optional(),
+  navigateTo: z.string().nullable(),
+  resolution: z.enum(["ACCEPT_WITH_LIMITATION", "EXCLUDE", "NONE"]),
+});
+export type ExportPreflightItem = z.infer<typeof ExportPreflightItemSchema>;
+
 export const ExportPreflightSchema = z.object({
   draft: z
     .object({
@@ -500,6 +512,7 @@ export const ExportPreflightSchema = z.object({
     .nullable(),
   exportTypes: z.array(z.string()),
   blocking: z.array(z.object({ code: z.string(), message: z.string() })),
+  blockingItems: z.array(ExportPreflightItemSchema),
   warnings: z.array(z.object({ code: z.string(), message: z.string(), overridable: z.boolean() })),
   evidence: z.array(ExportPreflightEvidenceSchema),
   sensitiveCount: z.number(),

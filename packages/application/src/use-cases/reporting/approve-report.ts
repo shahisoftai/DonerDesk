@@ -71,7 +71,19 @@ export class ApproveReportHandler {
     return { ok: true, value: undefined };
   }
 
-  async evaluateGate(ctx: AuthenticatedContext, reportingPeriodId: string, draftId: string): Promise<Result<{ approvalBlocked: boolean; submitBlocked: boolean; submitNeedsDecision: boolean; blockReasons: string[] }, DomainError>> {
+  async evaluateGate(ctx: AuthenticatedContext, reportingPeriodId: string, draftId: string): Promise<Result<{
+    approvalBlocked: boolean;
+    submitBlocked: boolean;
+    submitNeedsDecision: boolean;
+    blockReasons: string[];
+    blockingIssues: Array<{
+      kind: GateKind;
+      detail: string;
+      claimId?: string;
+      sectionId?: string;
+      evidenceId?: string;
+    }>;
+  }, DomainError>> {
     const checklistResult = await this.checklist.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!checklistResult.ok) return checklistResult;
     const openSensitive = checklistResult.value.filter(
@@ -85,19 +97,38 @@ export class ApproveReportHandler {
     if (!claimsResult.ok) return claimsResult;
     const claims = claimsResult.value;
 
-    const claimOutcomes: Array<{ kind: GateKind; detail: string }> = [];
+    // Revision assurance: every section must point at a CURRENT revision.
+    const sectionsResult = await this.sections.findByReportDraft(draftId, ctx.tenant.tenantId);
+    if (!sectionsResult.ok) return sectionsResult;
+    const sectionTitleById = new Map(sectionsResult.value.map((s) => [s.id, s.sectionTitle]));
+
+    const claimOutcomes: Array<{ kind: GateKind; detail: string; claimId?: string; sectionId?: string; evidenceId?: string }> = [];
     let unresolvedSemantics = 0;
 
     for (const claim of claims) {
+      const sectionTitle = sectionTitleById.get(claim.sectionId);
+      const sectionPrefix = sectionTitle ? `Section "${sectionTitle}": ` : "";
+      const claimText = claim.text.length > 120 ? claim.text.slice(0, 117) + "…" : claim.text;
       if (claim.verificationResult === "PASSED") {
-        claimOutcomes.push({ kind: "VERIFIED", detail: claim.verificationDetail });
+        claimOutcomes.push({ kind: "VERIFIED", detail: claim.verificationDetail, claimId: claim.id, sectionId: claim.sectionId });
         continue;
       }
       if (claim.verificationResult === "ACCEPTED_WITH_LIMITATION" || claim.verificationResult === "EXCLUDED") {
         continue;
       }
+      // Surface the first source's evidenceId so the preflight UI can link to
+      // the underlying evidence file when the issue is an evidence-hash mismatch.
+      const firstEvidenceId = claim.sources[0]?.evidenceId;
+      const ctx: { kind: GateKind; detail: string; claimId: string; sectionId: string; evidenceId?: string } = {
+        kind: "UNSUPPORTED_MATERIAL_CLAIM",
+        detail: `${sectionPrefix}${claimText} — ${claim.verificationDetail}`,
+        claimId: claim.id,
+        sectionId: claim.sectionId,
+      };
+      if (firstEvidenceId) ctx.evidenceId = firstEvidenceId;
       if (claim.verificationReasonCode) {
-        claimOutcomes.push({ kind: gateKindForReason(claim.verificationReasonCode), detail: claim.verificationDetail });
+        ctx.kind = gateKindForReason(claim.verificationReasonCode);
+        claimOutcomes.push(ctx);
         continue;
       }
       // Legacy claims without a structured reason code: keep the historical
@@ -108,21 +139,19 @@ export class ApproveReportHandler {
         continue;
       }
       if (detail.includes("contradict")) {
-        claimOutcomes.push({ kind: "NUMERIC_CONTRADICTION", detail: claim.verificationDetail });
+        ctx.kind = "NUMERIC_CONTRADICTION";
+        claimOutcomes.push(ctx);
         continue;
       }
       if (claim.type === "NUMERIC" || claim.type === "CAUSAL") {
-        claimOutcomes.push({ kind: "UNSUPPORTED_MATERIAL_CLAIM", detail: claim.verificationDetail });
+        claimOutcomes.push(ctx);
       }
     }
 
-    // Revision assurance: every section must point at a CURRENT revision.
-    const sectionsResult = await this.sections.findByReportDraft(draftId, ctx.tenant.tenantId);
-    if (!sectionsResult.ok) return sectionsResult;
     for (const section of sectionsResult.value) {
       if (!section.currentRevisionId) {
         if (section.content.trim()) {
-          claimOutcomes.push({ kind: "ASSERTION_COVERAGE_GAP", detail: `Section "${section.sectionTitle}" has content but no assessed revision` });
+          claimOutcomes.push({ kind: "ASSERTION_COVERAGE_GAP", detail: `Section "${section.sectionTitle}" has content but no assessed revision`, sectionId: section.id });
         }
         continue;
       }
@@ -133,10 +162,11 @@ export class ApproveReportHandler {
         claimOutcomes.push({
           kind: revision?.assuranceState === "STALE" ? "VERIFICATION_STALE" : "ASSERTION_COVERAGE_GAP",
           detail: `Section "${section.sectionTitle}" has ${revision?.assuranceState ?? "missing"} assurance`,
+          sectionId: section.id,
         });
       }
       if (section.content.trim() && claims.filter((c) => c.sectionId === section.id).length === 0) {
-        claimOutcomes.push({ kind: "ASSERTION_COVERAGE_GAP", detail: `Section "${section.sectionTitle}" has content with no registered assertions` });
+        claimOutcomes.push({ kind: "ASSERTION_COVERAGE_GAP", detail: `Section "${section.sectionTitle}" has content with no registered assertions`, sectionId: section.id });
       }
     }
 
@@ -151,11 +181,11 @@ export class ApproveReportHandler {
     }
 
     for (const item of openSensitive) {
-      claimOutcomes.push({ kind: "CONFIDENTIALITY_VIOLATION", detail: item.title });
+      claimOutcomes.push({ kind: "CONFIDENTIALITY_VIOLATION", detail: item.title, sectionId: item.relatedEntityId ?? undefined });
     }
 
     for (const item of openCritical) {
-      claimOutcomes.push({ kind: "REQUIREMENT_UNSATISFIED", detail: `Open ${item.severity.toLowerCase()} checklist item: ${item.title}` });
+      claimOutcomes.push({ kind: "REQUIREMENT_UNSATISFIED", detail: `Open ${item.severity.toLowerCase()} checklist item: ${item.title}`, sectionId: item.relatedEntityId ?? undefined });
     }
 
     const gateInput: ReportGateInput = {
@@ -170,6 +200,7 @@ export class ApproveReportHandler {
         submitBlocked: result.submitBlocked,
         submitNeedsDecision: result.submitNeedsDecision,
         blockReasons: result.blockReasons,
+        blockingIssues: result.blockingIssues,
       },
     };
   }

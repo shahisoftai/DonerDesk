@@ -323,3 +323,36 @@ test("inference never claims a direction", () => {
 test("percentage semantics require numerator and denominator when configured", () => {
   assert.throws(() => sanitizeIndicatorSemantics({ aggregation: "PERCENTAGE", direction: "NEUTRAL", reportingBasis: "PERIOD", status: "INFERRED" }), /numerator/);
 });
+
+test("evaluateReportGate surfaces blocking issues with claim/section/evidence IDs", () => {
+  const result = evaluateReportGate({
+    claimOutcomes: [
+      { kind: "NUMERIC_CONTRADICTION", detail: "claim A", claimId: "c1", sectionId: "s1", evidenceId: "e1" },
+      { kind: "NUMERIC_CONTRADICTION", detail: "claim B", claimId: "c2", sectionId: "s2" },
+      { kind: "VERIFIED", detail: "ok", claimId: "c3" },
+      { kind: "ASSERTION_COVERAGE_GAP", detail: "no revision", sectionId: "s3" },
+      { kind: "SUBJECTIVE_CONCERN", detail: "subjective", claimId: "c4" },
+    ],
+    unresolvedSemantics: 0,
+  });
+  // Only the blocking kinds appear in blockingIssues (NUMERIC_CONTRADICTION and
+  // ASSERTION_COVERAGE_GAP). VERIFIED and SUBJECTIVE_CONCERN do not block.
+  const kinds = result.blockingIssues.map((i) => i.kind);
+  assert.deepEqual(kinds.sort(), ["ASSERTION_COVERAGE_GAP", "NUMERIC_CONTRADICTION", "NUMERIC_CONTRADICTION"]);
+  const numeric = result.blockingIssues.filter((i) => i.kind === "NUMERIC_CONTRADICTION");
+  assert.equal(numeric.length, 2);
+  assert.equal(numeric[0].claimId, "c1");
+  assert.equal(numeric[0].sectionId, "s1");
+  assert.equal(numeric[0].evidenceId, "e1");
+  assert.equal(numeric[1].claimId, "c2");
+  const coverage = result.blockingIssues.find((i) => i.kind === "ASSERTION_COVERAGE_GAP");
+  assert.equal(coverage.sectionId, "s3");
+  assert.equal(coverage.claimId, undefined);
+});
+
+test("evaluateReportGate blockingIssues include unresolved-semantics synthetic item", () => {
+  const result = evaluateReportGate({ claimOutcomes: [], unresolvedSemantics: 3 });
+  assert.equal(result.blockingIssues.length, 1);
+  assert.equal(result.blockingIssues[0].kind, "NUMERIC_CONTRADICTION");
+  assert.match(result.blockingIssues[0].detail, /unresolved semantics/);
+});

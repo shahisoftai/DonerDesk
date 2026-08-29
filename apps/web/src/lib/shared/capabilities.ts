@@ -38,6 +38,8 @@ export type Capability =
   | "reporting.edit"
   | "report.generate"
   | "report.approve"
+  | "report.resolve-claim"
+  | "report.override-confidentiality"
   | "checklist.resolve"
   | "checklist.manage"
   | "export.create"
@@ -67,6 +69,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "reporting.edit",
     "report.generate",
     "report.approve",
+    "report.resolve-claim",
+    "report.override-confidentiality",
     "checklist.resolve",
     "checklist.manage",
     "export.create",
@@ -89,6 +93,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "reporting.edit",
     "report.generate",
     "report.approve",
+    "report.resolve-claim",
     "checklist.resolve",
     "export.create",
   ],
@@ -108,6 +113,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "reporting.edit",
     "report.generate",
     "report.approve",
+    "report.override-confidentiality",
     "export.create",
   ],
   FIELD_OFFICER: ["activity.create", "evidence.upload"],

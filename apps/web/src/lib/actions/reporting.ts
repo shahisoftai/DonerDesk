@@ -1,6 +1,6 @@
 "use server";
 
-import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -246,4 +246,37 @@ export async function rewriteReportSectionAction(
     // similar latency profile on the same provider.
     timeoutMs: 180_000,
   });
+}
+
+export type ResolveReportClaimResult = Result<undefined, AppError>;
+
+/**
+ * Resolves a single ReportClaim with an authorized limitation or exclusion.
+ * The api enforces the capability:
+ * - `ACCEPT_WITH_LIMITATION` requires `report.resolve-claim` and a non-empty note.
+ * - `EXCLUDED` requires `report.override-confidentiality` when the claim cites
+ *   a confidential source.
+ *
+ * Used by the export wizard to override one issue row at a time and refresh
+ * the preflight. The caller is expected to refetch the preflight after a
+ * successful resolution so the row disappears.
+ */
+export async function resolveReportClaimAction(
+  claimId: string,
+  input: { resolution: "ACCEPTED_WITH_LIMITATION" | "EXCLUDED"; notes?: string },
+): Promise<ResolveReportClaimResult> {
+  const context = await requireSession();
+  const parsed = ResolveReportClaimSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  const result = await gatewayRequest(`/v1/report-claims/${claimId}/resolve`, OkResponseSchema, context.token, {
+    method: "POST",
+    body: parsed.data,
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
 }

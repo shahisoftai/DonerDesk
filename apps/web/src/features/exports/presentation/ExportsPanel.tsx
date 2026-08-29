@@ -22,11 +22,15 @@ export function ExportsPanel({
   periodId,
   initialExports,
   canExport,
+  canResolveClaim,
+  canOverrideConfidential,
 }: {
   projectId: string;
   periodId: string;
   initialExports: ExportHistoryItem[];
   canExport: boolean;
+  canResolveClaim: boolean;
+  canOverrideConfidential: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [exports, setExports] = useState<ExportHistoryItem[]>(initialExports);
@@ -53,6 +57,8 @@ export function ExportsPanel({
           <ExportWizard
             projectId={projectId}
             periodId={periodId}
+            canResolveClaim={canResolveClaim}
+            canOverrideConfidential={canOverrideConfidential}
             onClose={() => setOpen(false)}
             onExported={onExported}
           />

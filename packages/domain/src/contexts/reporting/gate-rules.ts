@@ -108,8 +108,24 @@ export function gateKindForReason(reason: VerificationReasonCode): GateKind {
   }
 }
 
+export interface GateIssue {
+  kind: GateKind;
+  detail: string;
+  claimId?: string;
+  sectionId?: string;
+  evidenceId?: string;
+}
+
+/**
+ * A single outcome from a verifier / revision / requirement / checklist. The
+ * gate kind drives the policy decision; the IDs (when present) let the
+ * preflight UI link the user to the exact claim / section / evidence record
+ * that produced the issue so they can fix it or override it.
+ */
+export type ClaimOutcome = GateIssue;
+
 export interface ReportGateInput {
-  claimOutcomes: Array<{ kind: GateKind; detail: string }>;
+  claimOutcomes: ClaimOutcome[];
   unresolvedSemantics: number;
 }
 
@@ -123,6 +139,13 @@ export interface ReportGateResult {
   submitNeedsDecision: boolean;
   warnCount: number;
   blockReasons: string[];
+  /**
+   * Every issue that contributed to a blocking decision, carrying the IDs
+   * needed for per-row navigation and resolution in the export wizard. The
+   * same issue may appear multiple times if it affects both approval and
+   * submission; the consumer should deduplicate by `claimId`/`sectionId`.
+   */
+  blockingIssues: GateIssue[];
 }
 
 /**
@@ -133,22 +156,28 @@ export interface ReportGateResult {
  */
 export function evaluateReportGate(input: ReportGateInput): ReportGateResult {
   const decisions: GateDecision[] = [];
-  const seen = new Set<GateKind>();
+  const blockingKinds = new Set<GateKind>();
   for (const outcome of input.claimOutcomes) {
     if (!GATE_KINDS.includes(outcome.kind)) throw new Error(`Unknown gate kind: ${outcome.kind}`);
     const decision = gateDecisionFor(outcome.kind);
-    if (seen.has(outcome.kind)) continue;
-    decisions.push(decision);
-    seen.add(outcome.kind);
+    if (!decisions.some((d) => d.kind === outcome.kind)) {
+      decisions.push(decision);
+    }
+    if (decision.approval === "BLOCK" || decision.submit === "BLOCK" || decision.submit === "BLOCK_OR_EXCLUDE") {
+      blockingKinds.add(outcome.kind);
+    }
   }
   if (input.unresolvedSemantics > 0) {
-    decisions.push({
-      kind: "NUMERIC_CONTRADICTION",
-      drafting: "CONTINUE",
-      approval: "BLOCK",
-      submit: "BLOCK_OR_EXCLUDE",
-      reason: `${input.unresolvedSemantics} indicator(s) have unresolved semantics; evaluative statements are blocked`,
-    });
+    if (!decisions.some((d) => d.kind === "NUMERIC_CONTRADICTION")) {
+      decisions.push({
+        kind: "NUMERIC_CONTRADICTION",
+        drafting: "CONTINUE",
+        approval: "BLOCK",
+        submit: "BLOCK_OR_EXCLUDE",
+        reason: `${input.unresolvedSemantics} indicator(s) have unresolved semantics; evaluative statements are blocked`,
+      });
+    }
+    blockingKinds.add("NUMERIC_CONTRADICTION");
   }
 
   const approvalBlocked = decisions.some((d) => d.approval === "BLOCK");
@@ -157,6 +186,14 @@ export function evaluateReportGate(input: ReportGateInput): ReportGateResult {
   const warnCount = decisions.filter((d) => d.approval === "WARN" || d.submit === "WARN").length;
   const blockReasons = decisions.filter((d) => d.approval === "BLOCK" || d.submit === "BLOCK" || d.submit === "BLOCK_OR_EXCLUDE").map((d) => d.reason);
 
+  const blockingIssues: GateIssue[] = input.claimOutcomes.filter((o) => blockingKinds.has(o.kind));
+  if (input.unresolvedSemantics > 0) {
+    blockingIssues.push({
+      kind: "NUMERIC_CONTRADICTION",
+      detail: `${input.unresolvedSemantics} indicator(s) have unresolved semantics; evaluative statements are blocked`,
+    });
+  }
+
   return {
     decisions,
     approvalBlocked,
@@ -164,5 +201,6 @@ export function evaluateReportGate(input: ReportGateInput): ReportGateResult {
     submitNeedsDecision,
     warnCount,
     blockReasons,
+    blockingIssues,
   };
 }

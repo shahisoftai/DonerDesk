@@ -699,6 +699,8 @@ export function ReportWorkspace({
             periodId={periodId}
             initialExports={exports}
             canExport={can(capabilities, "export.create")}
+            canResolveClaim={can(capabilities, "report.resolve-claim")}
+            canOverrideConfidential={can(capabilities, "report.override-confidentiality")}
           />
         </div>
       )}

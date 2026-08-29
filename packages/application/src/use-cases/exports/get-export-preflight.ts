@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, type GateKind } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
   IReportingPeriodRepository,
@@ -20,9 +20,48 @@ export const EXPORT_TYPES = [
 ] as const;
 
 /**
+ * One blocking issue surfaced to the export wizard. The IDs (when present)
+ * allow the wizard to render a "Fix" link to the exact page that produced the
+ * issue, and an "Override" button that calls POST /v1/report-claims/:id/resolve
+ * for claim-scoped issues.
+ */
+export interface ExportPreflightItem {
+  /** Stable identifier for React keys and any caller that needs to dedupe. */
+  id: string;
+  /** Mirrors GateKind so the wizard can group, badge, and route by category. */
+  kind: GateKind;
+  /** Human-readable detail (the underlying verifier detail). */
+  message: string;
+  /** Claim id when this issue originated from a single ReportClaim row. */
+  claimId?: string;
+  /** Section id when this issue is scoped to a report section. */
+  sectionId?: string;
+  /** Evidence id when this issue is an evidence-hash mismatch or similar. */
+  evidenceId?: string;
+  /**
+   * Best-effort link to the page where the user can fix the issue without an
+   * override. `null` when no specific page applies (e.g. open critical
+   * checklist items already on the workspace).
+   */
+  navigateTo: string | null;
+  /**
+   * What kind of manual resolution the user can apply from this row:
+   * - `ACCEPT_WITH_LIMITATION` — claim has failed verification; user accepts
+   *   the claim with a written note. Requires `report.resolve-claim`.
+   * - `EXCLUDE` — claim cites a confidential source; user excludes it from
+   *   the export. Requires `report.override-confidentiality` only when the
+   *   claim is confidentiality-scoped; otherwise `NONE`.
+   * - `NONE` — the issue is not claim-scoped and can only be fixed by
+   *   visiting `navigateTo`.
+   */
+  resolution: "ACCEPT_WITH_LIMITATION" | "EXCLUDE" | "NONE";
+}
+
+/**
  * Composes an authoritative preflight for the export wizard: the exact report
- * version, allowed export types, blocking and overridable warnings, and which
- * evidence files are included or excluded by default (sensitive handling).
+ * version, allowed export types, blocking and overridable warnings, per-issue
+ * blockers with navigate/override metadata, and which evidence files are
+ * included or excluded by default (sensitive handling).
  */
 export class GetExportPreflightHandler {
   constructor(
@@ -39,22 +78,32 @@ export class GetExportPreflightHandler {
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", reportingPeriodId) };
+    const projectId = periodResult.value.projectId;
 
     const draftsResult = await this.drafts.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!draftsResult.ok) return draftsResult;
     const draft = draftsResult.value[0];
 
     const blocking: Array<{ code: string; message: string }> = [];
+    const blockingItems: ExportPreflightItem[] = [];
     const warnings: Array<{ code: string; message: string; overridable: boolean }> = [];
 
     if (!draft) {
       blocking.push({ code: "NO_DRAFT", message: "No report draft exists yet. Generate or create a draft before exporting." });
+      blockingItems.push({
+        id: "NO_DRAFT",
+        kind: "ASSERTION_COVERAGE_GAP",
+        message: "No report draft exists yet. Generate or create a draft before exporting.",
+        navigateTo: `/projects/${projectId}/reports/${reportingPeriodId}`,
+        resolution: "NONE",
+      });
       return {
         ok: true,
         value: {
           draft: null,
           exportTypes: EXPORT_TYPES,
           blocking,
+          blockingItems,
           warnings: [],
           evidence: [],
           sensitiveCount: 0,
@@ -81,12 +130,16 @@ export class GetExportPreflightHandler {
 
     let openCriticalCount = 0;
     let annexGapCount = 0;
+    let openCriticalItems: Array<{ id: string; title: string; type: string; severity: string }> = [];
     const checklistResult = await this.checklist.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (checklistResult.ok) {
       for (const item of checklistResult.value) {
         const open = item.status !== "RESOLVED" && item.status !== "ACCEPTED_RISK" && item.status !== "NOT_APPLICABLE";
         if (!open) continue;
-        if (item.severity === "CRITICAL" || item.severity === "HIGH") openCriticalCount += 1;
+        if (item.severity === "CRITICAL" || item.severity === "HIGH") {
+          openCriticalCount += 1;
+          openCriticalItems.push({ id: item.id, title: item.title, type: item.type, severity: item.severity });
+        }
         if (item.type === "MISSING_ANNEX") annexGapCount += 1;
       }
     }
@@ -125,11 +178,18 @@ export class GetExportPreflightHandler {
 
     // Single gate evaluator: identical decision to approval/submission, so the
     // export wizard can never disagree with the review surface.
-    let submissionGate: { approvalBlocked: boolean; submitBlocked: boolean; submitNeedsDecision: boolean; blockReasons: string[] } = {
+    let submissionGate: {
+      approvalBlocked: boolean;
+      submitBlocked: boolean;
+      submitNeedsDecision: boolean;
+      blockReasons: string[];
+      blockingIssues: Array<{ kind: GateKind; detail: string; claimId?: string; sectionId?: string; evidenceId?: string }>;
+    } = {
       approvalBlocked: false,
       submitBlocked: false,
       submitNeedsDecision: false,
       blockReasons: [],
+      blockingIssues: [],
     };
     const gateResult = await this.gate.evaluateGate(ctx, reportingPeriodId, draft.id);
     if (gateResult.ok) {
@@ -138,12 +198,18 @@ export class GetExportPreflightHandler {
         for (const reason of submissionGate.blockReasons) {
           blocking.push({ code: "SUBMISSION_GATE", message: reason });
         }
+        for (const issue of submissionGate.blockingIssues) {
+          blockingItems.push(toPreflightItem(issue, { projectId, reportingPeriodId }));
+        }
       } else if (submissionGate.submitNeedsDecision) {
         warnings.push({
           code: "SUBMISSION_NEEDS_DECISION",
           message: "Submission requires an authorized limitation, exclusion, or human decision.",
           overridable: false,
         });
+        for (const issue of submissionGate.blockingIssues) {
+          blockingItems.push(toPreflightItem(issue, { projectId, reportingPeriodId }));
+        }
       }
     }
     if (incompleteSections > 0) {
@@ -166,6 +232,16 @@ export class GetExportPreflightHandler {
         message: `${openCriticalCount} critical/high checklist item(s) remain open.`,
         overridable: true,
       });
+      // Per-row items for the open checklist so the wizard can deep-link each one.
+      for (const item of openCriticalItems) {
+        blockingItems.push({
+          id: `checklist:${item.id}`,
+          kind: "REQUIREMENT_UNSATISFIED",
+          message: `Open ${item.severity.toLowerCase()} checklist item: ${item.title}`,
+          navigateTo: `/projects/${projectId}/reports/${reportingPeriodId}?checklist=${item.id}`,
+          resolution: "NONE",
+        });
+      }
     }
     if (sensitiveCount > 0) {
       warnings.push({
@@ -188,6 +264,7 @@ export class GetExportPreflightHandler {
         draft: { id: draft.id, title: draft.title, status: draft.status, version: draft.version, generatedByAi: draft.generatedByAi },
         exportTypes: EXPORT_TYPES,
         blocking,
+        blockingItems,
         warnings,
         evidence: evidenceRows,
         sensitiveCount,
@@ -197,4 +274,73 @@ export class GetExportPreflightHandler {
       },
     };
   }
+}
+
+/**
+ * Maps a gate issue (carrying claim/section/evidence IDs) to the wizard-facing
+ * item. Decision logic for `navigateTo` and `resolution`:
+ * - claim-scoped issues can be ACCEPT_WITH_LIMITATION (default) or EXCLUDE
+ *   when the claim is confidentiality-scoped;
+ * - section-scoped issues (assertion coverage gap, stale assurance) have no
+ *   override; user must visit the report workspace and run a reassessment;
+ * - evidence-scoped issues point at the evidence detail page;
+ * - everything else falls back to the report workspace root.
+ */
+function toPreflightItem(
+  issue: { kind: GateKind; detail: string; claimId?: string; sectionId?: string; evidenceId?: string },
+  ctx: { projectId: string; reportingPeriodId: string },
+): ExportPreflightItem {
+  const { projectId, reportingPeriodId } = ctx;
+  const baseId = issue.claimId ?? issue.sectionId ?? issue.evidenceId ?? issue.detail;
+  const id = `${issue.kind}:${baseId}`;
+
+  const workspaceHref = (anchor?: string) => {
+    const search = anchor ? `?${anchor}` : "";
+    return `/projects/${projectId}/reports/${reportingPeriodId}${search}`;
+  };
+
+  if (issue.claimId) {
+    const isConfidential = issue.kind === "CONFIDENTIALITY_VIOLATION" || /confidential/i.test(issue.detail);
+    return {
+      id,
+      kind: issue.kind,
+      message: issue.detail,
+      claimId: issue.claimId,
+      sectionId: issue.sectionId,
+      evidenceId: issue.evidenceId,
+      navigateTo: workspaceHref(`section=${issue.sectionId ?? ""}&claim=${issue.claimId}`),
+      resolution: isConfidential ? "EXCLUDE" : "ACCEPT_WITH_LIMITATION",
+    };
+  }
+
+  if (issue.evidenceId) {
+    return {
+      id,
+      kind: issue.kind,
+      message: issue.detail,
+      sectionId: issue.sectionId,
+      evidenceId: issue.evidenceId,
+      navigateTo: `/projects/${projectId}/evidence/${issue.evidenceId}`,
+      resolution: "NONE",
+    };
+  }
+
+  if (issue.sectionId) {
+    return {
+      id,
+      kind: issue.kind,
+      message: issue.detail,
+      sectionId: issue.sectionId,
+      navigateTo: workspaceHref(`section=${issue.sectionId}`),
+      resolution: "NONE",
+    };
+  }
+
+  return {
+    id,
+    kind: issue.kind,
+    message: issue.detail,
+    navigateTo: workspaceHref(),
+    resolution: "NONE",
+  };
 }
