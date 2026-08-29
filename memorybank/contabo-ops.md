@@ -783,22 +783,37 @@ The script:
    uncommitted edits are detected.
 2. **Typechecks and builds** only the needed workspace packages
    (`contracts + domain + web` for the common web-only case).
-3. **Stages a tarball** locally:
-   - web: `.next/standalone/apps/web/` (Next.js self-contained bundle,
-     includes its own `node_modules/`) + `.next/static/` + `package.json` →
-     ~22 MB tar.
-   - api: `dist/` + `node_modules/` + `package.json` + `tsconfig.json` →
-     ~100 MB tar.
+3. **Stages tarballs** locally:
+   - **web:** `.next/standalone/apps/web/` (Next.js self-contained bundle,
+     includes its own `node_modules/`) + `.next/static/` + `public/` +
+     `package.json` → ~23 MB tar.
+   - **api:** `apps/api/{dist,package.json,tsconfig.json,node_modules}` →
+     ~50 KB tar (tree layout; symlink farm preserved).
+   - **packages:** workspace `packages/{contracts,domain,application,
+     infrastructure}/{dist,package.json,prisma,scripts}` → ~200 KB tar. The
+     api's `node_modules/@donordesk/*` workspace symlinks resolve to
+     `../../../../packages/*`.
+   - **pnpm-store:** workspace `node_modules/.pnpm/` → ~50 MB tar. The api tar
+     ships only the api tree's `node_modules/` symlinks; the real package
+     files live under `node_modules/.pnpm/`.
+   - **worker:** `apps/workers/app/` (12 SRP modules under `ai_reporter/`,
+     excluding `.venv/`, `__pycache__/`, `*.pyc`) → ~50 KB tar.
 4. **Snapshots** the current `app/` tree (full, includes `node_modules/`) to
    `/opt/donordesk/backups/dd-app-pre-<id>.tgz`. Rotates: keep last 3.
-5. **Streams** the new tar over SSH into the live `app/` tree, replacing only
-   the subtrees that changed.
+5. **Streams** the new tars over SSH into the live `app/` tree, replacing
+   only the subtrees that changed. Per `SCOPE=api|both`, the api extract step
+   does (in order): ship `packages/`, ship `pnpm-store` and run
+   `pnpm install` at `apps/api/` to regenerate the symlink farm, ship the
+   api tree. Then the worker tree is rsynced into
+   `/opt/donordesk/workers/app/` and `donordesk-workers` is restarted.
 6. **Restarts** the affected services only (`web` for `SCOPE=web`,
    `api` for `SCOPE=api`, both for `SCOPE=both`).
-7. **Verifies** via `ssh` `curl` to `/health`, `/ready`, `/login` (waits up
-   to 60 s for web). On failure, prints the manual rollback command and
-   exits 2 — **does not auto-rollback** (auto-rollback from a broken snapshot
-   left things worse in testing on 2026-08-28).
+8. **Verifies** via `ssh` `curl` to `/health`, `/ready`, `/login` (waits up
+   to 60 s for web), and — when `SCOPE=api|both` — `/v1/ai-reporter/health`
+   on the worker (with the worker `INTERNAL_TOKEN`). On failure, prints the
+   manual rollback command and exits 2 — **does not auto-rollback**
+   (auto-rollback from a broken snapshot left things worse in testing on
+   2026-08-28).
 
 **Measured timings (cutover + first real deploy, 2026-08-28):**
 
@@ -846,6 +861,69 @@ The immutable-release + rsync flow measured ~6 min per web deploy because:
 The fast path removes the `pnpm deploy --legacy` step (Next.js standalone is
 already self-contained), removes rsync (single tar stream), and keeps a
 single runtime directory instead of N immutable dirs.
+
+### 21.4 API tar layout and workspace symlinks (added 2026-08-29)
+
+The api tar shipped before 2026-08-29 was created by `cd apps/api && tar … dist package.json …`
+which put `dist/` at the tar's root. When extracted to `/opt/donordesk/app/` it landed at
+`/opt/donordesk/app/dist/` and the api systemd unit's
+`WorkingDirectory=/opt/donordesk/app` ran `node dist/server.js` from there. This worked
+**only because** the api's `apps/api/node_modules/@donordesk/infrastructure` symlink
+resolved to `/opt/donordesk/app/packages/infrastructure/` and the api's
+`apps/api/node_modules/fastify -> ../../../../node_modules/.pnpm/fastify@5.11.3/...`
+resolved to `/node_modules/.pnpm/...` (filesystem root), which doesn't exist on Contabo.
+The api only worked because the previous code paths didn't import any
+transitive dependencies — they were cached in-process.
+
+As of release `20260828200000` (AI Reporter 2) the api tree gained
+transitive imports (artifact validators, chart suggester, report-artifact
+repository) and the broken `node_modules/fastify` symlink started producing
+`ERR_MODULE_NOT_FOUND` at every restart. Two fixes shipped together:
+
+- The api systemd unit now uses
+  `WorkingDirectory=/opt/donordesk/app/apps/api` so `dist/server.js` resolves
+  relative to the api tree, the workspace `@donordesk/*` symlinks resolve to
+  `/opt/donordesk/app/packages/*` (4 levels up), and the api's pnpm symlinks
+  resolve correctly via `/opt/donordesk/app/node_modules/.pnpm/` (3 levels up).
+- The deploy script (`scripts/deploy-fast.sh`) now ships **four** api-scoped
+  tars instead of one: `apps/api/{dist,node_modules,package.json,tsconfig.json}`
+  (tree layout), `packages/*/{dist,prisma,scripts}` (workspace source),
+  `node_modules/.pnpm/` (pnpm virtual store), and `apps/workers/app/` (Python
+  worker). The api extract step re-runs `pnpm install` at `apps/api/` to
+  regenerate the symlink farm after the pnpm store is replaced.
+
+The deploy script's verification step now also probes
+`/v1/ai-reporter/health` on the worker (with the worker `INTERNAL_TOKEN`)
+when `SCOPE=api|both`, so any pnpm-store/symlink regression fails the gate
+before the operator even sees a dashboard alert.
+
+### 21.5 AI Reporter 2 deploy specifics (added 2026-08-29)
+
+AI Reporter 2 is **feature-flagged off by default** in `/opt/donordesk/shared/api.env`.
+The system continues to use `LlmReportDraftGenerator` for all tenants until the
+operator flips the flag per the controlled-rollout plan in
+`memorybank/imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`. The deployment ships:
+
+- The Python worker code (12 SRP modules under `apps/workers/app/ai_reporter/`).
+  The systemd unit `donordesk-workers.service` reads from
+  `/opt/donordesk/workers/app/`; the deploy script rsyncs the new tree and
+  restarts the service.
+- The TS-side wire-format additions and adapter mappings
+  (`GeneratedSection.{artifacts,qa,chartSpec,deltaFromPrior}`).
+- The Prisma migration `20260828200000_ai_reporter_artifacts`
+  (`ReportArtifact` + `ReportArtifactRow`). The migrator role lacks
+  `CREATE` on `public`, so the SQL was applied directly via `psql` and the
+  migration row was inserted manually. See §18 for the exact procedure.
+- New RLS rows in `infra/postgres/rls.sql` + the matching manual grants
+  applied via `sudo -u postgres psql` (cross-tenant INSERT denied, verified
+  end-to-end).
+
+The api's `AI_REPORTER_URL` default is `http://localhost:5000` (legacy stub).
+When the flag is flipped, also set
+`AI_REPORTER_URL=http://127.0.0.1:8092` to override. The worker and api use
+**different** `INTERNAL_TOKEN`s — `/opt/donordesk/shared/api.env` and
+`/opt/donordesk/shared/workers.env` — and the worker's token is what
+`HttpWorkerClient` sends as `x-internal-token`.
 
 ## 22. Rollback
 

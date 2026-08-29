@@ -1,6 +1,6 @@
 # DonorDesk MemoryBank Index
 
-**Last updated:** 2026-08-28
+**Last updated:** 2026-08-29
 
 Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to search within files.
 
@@ -14,7 +14,8 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **Why build it? (Executive pitch)** | [`base/DonorDesk — One-Page Concept Note for Approval.md`](base/DonorDesk%20—%20One-Page%20Concept%20Note%20for%20Approval.md) |
 | **Full engineering blueprint** | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) |
 | **Professional donor-reporting hardening plan** | [`imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED) and [`imp/REPORTING-OWNERSHIP-MAP.md`](imp/REPORTING-OWNERSHIP-MAP.md) |
-| **AI Reporter (multi-step report writing)** | [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED 2026-08-28) |
+| **AI Reporter (multi-step report writing, v1)** | [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED 2026-08-28) — multi-step draft/critique/refine, pgvector, prior-period intelligence |
+| **AI Reporter 2 (typed artifacts + validators + per-section fallback)** | [`imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED 2026-08-29) and [`imp/AI-REPORTER-2-RESULTS.md`](imp/AI-REPORTER-2-RESULTS.md) (post-deploy retrospective) and [`imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`](imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md) (operator runbook for flag flip) |
 | **Frontend portal blueprint** | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) |
 | **Frontend portal status** | [`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`](imp/FRONTEND-UX-INTEGRATION-AUDIT.md) (latest audit) and [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 | **Production issues & fixes** | [`Fixes.md`](Fixes.md) |
@@ -48,7 +49,10 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | [`docs/architecture/decisions/0003-fastify-over-nestjs.md`](docs/architecture/decisions/0003-fastify-over-nestjs.md) | ADR: Fastify over NestJS for Phase 1 |
 | [`docs/architecture/decisions/0004-async-job-orchestration.md`](docs/architecture/decisions/0004-async-job-orchestration.md) | ADR: async job ownership (memory/BullMQ/Kestra via `JOB_QUEUE`) |
  | [`imp/KESTRA-IMPLEMENTATION-PLAN.md`](imp/KESTRA-IMPLEMENTATION-PLAN.md) | Kestra orchestration implementation plan (Phases A–F) |
-| [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md) | AI Reporter: multi-step (draft→critique→refine) report writing behind `IReportDraftGenerator`, pgvector semantic retrieval, prior-period intelligence — **status: IMPLEMENTED (2026-08-28)** |
+| [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md) | AI Reporter v1: multi-step (draft→critique→refine) report writing behind `IReportDraftGenerator`, pgvector semantic retrieval, prior-period intelligence — **status: IMPLEMENTED (2026-08-28)**, superseded by v2 below |
+| [`imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md) | AI Reporter v2: typed artifacts (tables, charts, lists, Q&A, deltas), per-section timeout + per-section fallback, deterministic artifact validators, 25-case eval corpus, additive persistence (`ReportArtifact` + `ReportArtifactRow`) — **status: IMPLEMENTED (2026-08-29)**, feature-flagged `AI_REPORTER_ENABLED=1` (off by default) |
+| [`imp/AI-REPORTER-2-RESULTS.md`](imp/AI-REPORTER-2-RESULTS.md) | AI Reporter v2 post-deploy retrospective: deploy timeline, gate results, lessons learned, ADR-style notes on the api-tar tree-layout fix and the per-section fallback semantics |
+| [`imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`](imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md) | Operator runbook for AI Reporter v2: how to flip `AI_REPORTER_ENABLED` for a preview tenant, canary rollout, validation, monitoring, rollback |
 | [`imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md) | Phased plan for revision-safe assurance, award-specific requirements, donor-native rendering, and validated submission snapshots — **status: IMPLEMENTED (2026-08-19)** |
 | [`imp/REPORTING-OWNERSHIP-MAP.md`](imp/REPORTING-OWNERSHIP-MAP.md) | Professional-reporting component ownership map (no-duplication review) |
 | [`docs/architecture/decisions/0005-report-revisions.md`](docs/architecture/decisions/0005-report-revisions.md) | ADR: report revisions and revision-bound assurance |
@@ -83,48 +87,74 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | Phase 6 | Review, approval, export (REV, EXP) | ✅ Delivered | [`imp/PHASE6-FRONTEND-REPORT.md`](imp/PHASE6-FRONTEND-REPORT.md) |
 | Phase 7 | Admin, search, hardening (ADM) | ✅ Delivered | [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 
- > **Deployment status (2026-08-19):** Latest release `20260819090000` (commit
- > `b349a7e`, **professional donor reporting hardening**) is live on `donordesk.online`. All five services (API `4001`, web
- > `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`) are **enabled
- > and active**. **Professional donor-reporting hardening (2026-08-19):** the
- > `PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md` (Phases 0–9) is now IMPLEMENTED —
- > immutable `ReportRevision` with revision-bound `ReportClaim` assertions,
- > `IReportRevisionService` single mutation pipeline, deterministic assertion
- > extraction (empty writer-claims cannot bypass), structured numeric/period/
- > entity/unit/derivation verification, evidence hash/chunk/source-text integrity,
- > entailment + causal human-review policy, requirement packs/overrides with
- > deterministic precedence resolver, `SubmissionSnapshot` sealing, one gate
- > evaluator shared by approval/preflight/submission/export, export intent
- > (watermarked internal vs snapshot-bound donor submission), coverage-gap
- > projection into `UNSUPPORTED_REPORT_CLAIM` checklist items, neutral
- > evidence-proportionate rewrite prompts, golden corpus + `reporting:eval` +
- > verifier contract suite, and ADRs 0005–0009. Migration
- > `20260818180000_professional_reporting` (additive; includes baseline-revision
- > backfill) + RLS applied. Full gate green (254 tests). **Earlier releases:**
- > 2026-08-18 shipped **Report Writing Skills course**, **Support Center + 104
- > docs**, **professional AI report generation** (indicator metadata +
- > previous-period comparison + deterministic performance evaluation),
- > **Feature 19 — Creem billing live**, **real LLM report drafting** (SuperAdmin
- > MiniMax provider with per-tier AI-credit quotas), **user-selectable report
- > charts**, and the **SuperAdmin Billing & credits** section. Migrations applied
- > through `20260818180000_professional_reporting`. See `Features/20-report-gen.md`
- > §18, `Features/19-Tiers-And-Payments.md`, `Fixes.md`, and `contabo-ops.md` §29.
- > **Gated (not deployed):** the five plugin-referencing Kestra flows and plugin
- > JARs (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource
- > first). See `contabo-ops.md` §28 and `imp/KESTRA-PLUGINS.md`.
- > **2026-08-20 (demo data + data-shape fixes):** seeded the **USAID Emergency
- > Education Response Programme (EERP-2026)** demo project for tenant
- > `mnpiracha@gmail.com` (GEC) and fixed three data-shape bugs it exposed —
- > template `sectionsJson` shape ("Section title required"), invalid
- > `COMPLETED` period status ("Invalid ReportStatus"), and the closed
- > reporting-period readiness gate (missing `ProjectSetup`/`ReportingProfile`/
- > `REVIEWED` sections). See `contabo-ops.md` §29 (2026-08-20), `Fixes.md`,
- > and `Features/18-Project-Creation-Wizard.md` §4.5.
- > **2026-08-20 (deployed, release `20260820125717`):** **section-wise AI
- > report generation** — fixes the Generate-AI-draft timeout by splitting
- > generation into a fast skeleton-creation phase + a background per-section
- > drafting loop (see `Features/11-AI-Report-Draft-Generator.md`, `Fixes.md`,
- > and `contabo-ops.md` §29).
+> **Deployment status (2026-08-29):** Latest release `20260828200000` (commit
+  > `a2ffc29`, **AI Reporter v2**) is live on `donordesk.online`. All five services
+  > (API `4001`, web `3002`, workers `8092`, Kestra `8093`/`8094`, SuperAdmin `3012`)
+  > are **enabled and active**. **AI Reporter v2 (2026-08-29):** the 622-LOC
+  > `apps/workers/app/ai_reporter.py` was split into a 12-module SRP package
+  > (`models`, `writer_contract`, `llm_gateway`, `outline`, `chart_suggester`,
+  > `draft_writer`, `critique_writer`, `refiner`, `artifact_validators`, `timeouts`,
+  > `pipeline`, `router`). Writer contract v2 (`WRITER_CONTRACT_VERSION=2`)
+  > adds banned-phrase list, numeric verbatim rule, repetition guard,
+  > mandatory-Q&A discipline, and table/chart/delta mandates. Typed artifacts
+  > (`TABLE | CHART | LIST | KEY_VALUE | QA | DELTA`) persist in two new tables
+  > (`ReportArtifact` + `ReportArtifactRow`, migration
+  > `20260828200000_ai_reporter_artifacts`, RLS forced + cross-tenant INSERT
+  > verified to fail). Deterministic artifact validators (9 hard gates)
+  > are mirrored Python + TS (`artifact_validators.py` +
+  > `src/ai/artifact-validators.ts`). Per-section timeout
+  > (`AI_REPORTER_DRAFT_TIMEOUT_MS=45000`) with **per-section fallback**
+  > — a single slow section no longer demotes the whole draft. Eval corpus
+  > grown 8 → 25 cases; deterministic metrics added for
+  > `banned-phrase`, `qa-coverage`, `narrative-length-vs-target`,
+  > `artifact-coverage`, `citation-density`. Full gate green: 137 TS tests
+  > (136 pass + 1 pre-existing skip), 55 Python tests, 25/25 eval cases.
+  > **Feature flag:** `AI_REPORTER_ENABLED=1` is **off by default** in
+  > `/opt/donordesk/shared/api.env`; the system continues to use
+  > `LlmReportDraftGenerator` for all tenants until the operator flips the
+  > flag per the controlled-rollout plan in
+  > `imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`. Deploy script
+  > (`scripts/deploy-fast.sh`) was rewritten to ship the api tree layout
+  > (`apps/api/{dist,node_modules}`), plus a separate workspace-packages tar
+  > and a pnpm-store tar; the api systemd unit's WorkingDirectory was
+  > updated to `/opt/donordesk/app/apps/api` so workspace `@donordesk/*`
+  > symlinks resolve correctly. Full detail in `contabo-ops.md` §29 (2026-08-29),
+  > `Fixes.md` (deploy log), and `imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md` §14.
+  > **Earlier releases:**
+  > 2026-08-28 shipped **AI Reporter sidecar v1** (multi-step draft/critique/refine +
+  > pgvector semantic retrieval + prior-period intelligence) — see
+  > `Features/11-AI-Report-Draft-Generator.md`, `imp/LLM-PROVIDER-WIRING.md` §16,
+  > `imp/AI-REPORTER-IMPLEMENTATION-PLAN.md` (status: superseded 2026-08-29 by v2).
+  > 2026-08-19 shipped **professional donor reporting hardening**
+  > (`PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md` Phases 0–9): immutable
+  > `ReportRevision` with revision-bound `ReportClaim` assertions,
+  > `IReportRevisionService` single mutation pipeline, deterministic assertion
+  > extraction, structured numeric/period/entity/unit/derivation verification,
+  > evidence hash/chunk/source-text integrity, entailment + causal human-review
+  > policy, requirement packs/overrides, `SubmissionSnapshot` sealing, one gate
+  > evaluator shared by approval/preflight/submission/export, export intent,
+  > coverage-gap projection into `UNSUPPORTED_REPORT_CLAIM` checklist items,
+  > neutral rewrite prompts, golden corpus + `reporting:eval`, and ADRs 0005–0009.
+  > Migration `20260818180000_professional_reporting` (additive; includes
+  > baseline-revision backfill) + RLS applied. Full gate green (254 tests).
+  > See `Features/20-report-gen.md` §18, `Features/19-Tiers-And-Payments.md`,
+  > `Fixes.md`, and `contabo-ops.md` §29.
+  > **Gated (not deployed):** the five plugin-referencing Kestra flows and plugin
+  > JARs (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource
+  > first). See `contabo-ops.md` §28 and `imp/KESTRA-PLUGINS.md`.
+  > **2026-08-20 (demo data + data-shape fixes):** seeded the **USAID Emergency
+  > Education Response Programme (EERP-2026)** demo project for tenant
+  > `mnpiracha@gmail.com` (GEC) and fixed three data-shape bugs it exposed —
+  > template `sectionsJson` shape ("Section title required"), invalid
+  > `COMPLETED` period status ("Invalid ReportStatus"), and the closed
+  > reporting-period readiness gate (missing `ProjectSetup`/`ReportingProfile`/
+  > `REVIEWED` sections). See `contabo-ops.md` §29 (2026-08-20), `Fixes.md`,
+  > and `Features/18-Project-Creation-Wizard.md` §4.5.
+  > **2026-08-20 (deployed, release `20260820125717`):** **section-wise AI
+  > report generation** — fixes the Generate-AI-draft timeout by splitting
+  > generation into a fast skeleton-creation phase + a background per-section
+  > drafting loop (see `Features/11-AI-Report-Draft-Generator.md`, `Fixes.md`,
+  > and `contabo-ops.md` §29).
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |
@@ -222,6 +252,9 @@ memorybank/
 │   ├── KESTRA-PLUGINS.md              Free Kestra plugins implementation + gating
 │   ├── PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md  Professional donor reporting (IMPLEMENTED 2026-08-19)
 │   ├── AI-REPORTER-IMPLEMENTATION-PLAN.md            AI Reporter multi-step writing + semantic retrieval (IMPLEMENTED 2026-08-28)
+│   ├── AI-REPORTER-2-IMPLEMENTATION-PLAN.md           AI Reporter v2 — typed artifacts, per-section fallback, validators, 25-case eval (IMPLEMENTED 2026-08-29)
+│   ├── AI-REPORTER-2-RESULTS.md                      AI Reporter v2 post-deploy retrospective
+│   ├── AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md           AI Reporter v2 operator runbook (flag flip, canary, rollback)
 │   ├── REPORTING-OWNERSHIP-MAP.md     Professional-reporting ownership map
 │   ├── PHASE0-COMPLETION-REPORT.md
 │   ├── PHASE0-AUDIT.md

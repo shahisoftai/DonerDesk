@@ -690,5 +690,114 @@ Four stacked root causes were found and fixed.
   without `app.current_tenant`.
 - Zero console errors on `/signup`, `/login`, `/dashboard`.
 
+## AI Reporter 2 deploy — api tree layout + pnpm symlink regression (2026-08-29)
+
+The 2026-08-29 release `20260828200000` shipped AI Reporter 2 (typed
+artifacts, deterministic validators, per-section fallback, 25-case
+eval). Three intertwined issues surfaced during the first deploy attempt
+that were unrelated to the AI Reporter code itself; they're documented
+here so future deploys avoid the same trap.
+
+### 1. Pre-deploy snapshot size tripled
+
+The old `apps/api/node_modules/` on Contabo was a small symlink farm (~14
+symlinks, <1 KB). The first deploy attempt at 09:47+02:00 shipped a new
+`apps/api/node_modules/` but the **pnpm virtual store** at
+`/opt/donordesk/app/node_modules/.pnpm/` (where the symlinks point) was
+unchanged. The api tar had only symlinks — the actual package files
+existed only in `.pnpm/`. When the api tar was extracted into
+`apps/api/node_modules/`, the 14 symlinks overlaid on top of the existing
+symlinks (also unchanged), but the `apps/api/dist/` was now the **new**
+compiled tree. The first restart after extract failed with
+`ERR_MODULE_NOT_FOUND: Cannot find package 'fastify' imported from
+/opt/donordesk/app/dist/server.js`.
+
+Root cause: the api systemd unit's `WorkingDirectory=/opt/donordesk/app`
+runs `node dist/server.js` from `/opt/donordesk/app/`. From that location,
+Node resolves `fastify` via `/opt/donordesk/app/node_modules/fastify`
+which is a **broken** symlink (target was 3 levels up to
+`/node_modules/.pnpm/fastify@5.11.3/...`, but pnpm 10 puts the store at
+`/opt/donordesk/app/node_modules/.pnpm/`). The pre-existing api process
+had worked because it was loaded into memory **before** my deploy broke
+the symlink resolution chain — once restarted, it couldn't find fastify.
+
+**Fix shipped in this release:**
+- The api systemd unit now uses
+  `WorkingDirectory=/opt/donordesk/app/apps/api` so the api tree's
+  pnpm symlinks (which resolve correctly to
+  `/opt/donordesk/app/node_modules/.pnpm/`) are honored. The unit file
+  is checked in at `infra/systemd/donordesk-api.service`.
+- The deploy script (`scripts/deploy-fast.sh`) ships **four** api-scoped
+  tars instead of one: the api tree, the workspace `packages/` tar, the
+  pnpm-store tar (`node_modules/.pnpm/`), and (optionally) the worker
+  tar. The api extract step now does:
+  1. Ship `packages/` so the api's `@donordesk/*` workspace links resolve.
+  2. Ship `node_modules/.pnpm/` and run `pnpm install` at `apps/api/` to
+     regenerate the api-level symlinks against the new store.
+  3. Ship the api tree.
+  4. Rsync the worker tree into `/opt/donordesk/workers/app/` and
+     `systemctl restart donordesk-workers`.
+
+### 2. Migrator role lacks CREATE on `public`
+
+`prisma migrate deploy` runs `ALTER TABLE _prisma_migrations …` which
+requires `CREATE` on the schema. The `donordesk_migrator` role had DML
+privileges on the table but not DDL. Two migration attempts failed with
+`ERROR: permission denied for table _prisma_migrations`.
+
+**Fix shipped in this release:**
+- Granted `donordesk_migrator` `CREATE ON SCHEMA public` and
+  `ALL ON TABLE _prisma_migrations` so future migrations run cleanly.
+- The SQL for migration `20260828200000_ai_reporter_artifacts` was
+  applied directly via `psql` because the pre-fix `migrate deploy`
+  couldn't run. The migration row was then inserted manually so the
+  bookkeeping table is consistent.
+
+This is now documented as a prerequisite in `contabo-ops.md` §18 for
+future additive migrations: **grant the migrator CREATE before
+running `prisma migrate deploy`.**
+
+### 3. `chown -R ${REMOTE_APP}/apps/api` killed the script silently
+
+The original api extract step in `scripts/deploy-fast.sh` ended with
+`chown -R donordesk:donordesk ${REMOTE_APP}/dist ${REMOTE_APP}/apps/api`.
+The latter directory didn't exist on the host (the api tar was created
+by `cd apps/api && tar dist …` and extracted to `${REMOTE_APP}/`,
+producing `${REMOTE_APP}/dist/` but **not** `${REMOTE_APP}/apps/api/`).
+Under `set -eu`, the chown exited 1, killing the script before the
+worker-sync step could run.
+
+**Fix shipped in this release:**
+- The new deploy script's api extract step only `chown`s paths that
+  exist (`${REMOTE_APP}/dist`), and the worker-sync step uses
+  `if [ -d apps/workers ]; then chown -R donordesk:donordesk apps/workers; fi`
+  (the directory is created by the tar before chown is attempted).
+
+### Verification (post-fix)
+- `RELEASE_ID=20260828200000 SCOPE=both scripts/deploy-fast.sh` runs
+  end-to-end in ~5 minutes (build + 4 api tar streams + worker rsync +
+  restart).
+- API: `curl http://127.0.0.1:4001/health` → `{"status":"ok"}`;
+  `curl http://127.0.0.1:4001/ready` → `{"status":"ready","checks":{"database":"ok"}}`.
+- Worker: `curl -H "x-internal-token: <worker-token>" http://127.0.0.1:8092/v1/ai-reporter/health`
+  → `{"status":"ok"}`.
+- Public: `curl https://donordesk.online/login` → 200 with full HTML.
+- Eval corpus: `pnpm --filter @donordesk/infrastructure reporting:eval` → 25/25.
+- RLS isolation: cross-tenant INSERT denied (verified on host).
+
+### Prevention for future deploys
+
+- The deploy script now probes `/v1/ai-reporter/health` as part of the
+  release gate (§19 in `contabo-ops.md`), so a pnpm-store or symlink
+  regression fails the gate before the operator even sees a dashboard
+  alert.
+- The api systemd unit file is checked into
+  `infra/systemd/donordesk-api.service` so any future change to
+  `WorkingDirectory` is visible in code review.
+- The migrator CREATE grant is now a prerequisite documented in
+  `contabo-ops.md` §18.
+
 ## Outstanding (tracked in memorybank/pending.md)
-See `memorybank/pending.md` for remaining deployment/hardening items.
+See `memorybank/pending.md` for remaining deployment/hardening items,
+including the AI Reporter v2 controlled rollout (preview tenant → 2 pilot
+tenants → default) per `memorybank/imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`.

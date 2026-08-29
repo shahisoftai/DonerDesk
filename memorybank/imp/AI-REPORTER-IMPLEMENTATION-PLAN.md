@@ -22,6 +22,19 @@ All phases implemented and verified: `pnpm -r typecheck` ✓, `pnpm -r build` �
 domain/application/infrastructure tests ✓, worker mypy ✓, ruff clean for new files ✓,
 `reporting:eval` 8/8 cases correct ✓.
 
+> **2026-08-29 — v1 superseded by AI Reporter 2 (release `20260828200000`):**
+> the writer contract was upgraded to v2 (`WRITER_CONTRACT_VERSION=2`), the
+> Python worker was split into a 12-module SRP package
+> (`apps/workers/app/ai_reporter/`), typed artifacts
+> (`TABLE | CHART | LIST | KEY_VALUE | QA | DELTA`) became first-class
+> outputs of `GeneratedSection`, persistence landed in
+> `ReportArtifact` + `ReportArtifactRow` (RLS forced), per-section
+> timeout + per-section fallback replaced the whole-draft demotion, and
+> the eval corpus grew 8 → 25 cases. The v1 baseline (pgvector semantic
+> retrieval, prior-period intelligence, draft/critique/refine LangGraph
+> pipeline, feature flag `AI_REPORTER_ENABLED=1`) is unchanged. See
+> `AI-REPORTER-2-IMPLEMENTATION-PLAN.md` and `AI-REPORTER-2-RESULTS.md`.
+
 - **Phase 1 — Provider default:** `getReportDraftGenerator` logs a loud warning when it
   degrades to the stub (no `LLM_PROVIDER`, no platform config), so stub is an explicit,
   visible dev-only default, never silent.

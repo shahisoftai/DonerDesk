@@ -550,12 +550,40 @@ actually supports; unsupported controls are omitted rather than simulated.
   writer brief). Golden corpus grown to 8 cases with a `repetition` qualitative
   metric (`reporting:eval` 8/8). See `imp/AI-REPORTER-IMPLEMENTATION-PLAN.md` §11
   and `Features/11-AI-Report-Draft-Generator.md`.
-- [ ] **AI Reporter activation (2026-08-28, deployment-dependent):** run
-  `pnpm db:migrate` (applies `infra/postgres/pgvector.sql` — pgvector extension +
-  vector column + HNSW index), run `embedding:backfill`, install the worker's
-  `langgraph` requirement, and set `AI_REPORTER_ENABLED=1` + `AI_REPORTER_URL` +
-  worker `AI_REPORTER_PROVIDER/MODEL/BASE_URL/API_KEY` + a matching
-  `INTERNAL_TOKEN` between the API and worker.
+- [x] **AI Reporter v2 (2026-08-29):** typed artifacts
+  (`TABLE | CHART | LIST | KEY_VALUE | QA | DELTA`) persisted in
+  `ReportArtifact` + `ReportArtifactRow` (migration
+  `20260828200000_ai_reporter_artifacts`, RLS forced); per-inputType outline
+  templates; deterministic chart suggestion heuristic; 9 deterministic
+  artifact validators mirrored Python + TS (numeric exactness, table citation,
+  chart data grounding, mandatory-Q&A coverage, delta from prior, word count,
+  repetition, banned phrases, artifact ordering); per-section timeout
+  (`AI_REPORTER_DRAFT_TIMEOUT_MS=45000`) with **per-section fallback** (a single
+  slow section no longer demotes the whole draft); eval corpus grown to 25
+  cases with new metrics (`banned-phrase`, `qa-coverage`,
+  `narrative-length-vs-target`, `artifact-coverage`, `citation-density`).
+  Worker code split into a 12-module SRP package
+  (`apps/workers/app/ai_reporter/`). Full deploy timeline, gate results, and
+  lessons learned in `imp/AI-REPORTER-2-RESULTS.md`. All 25/25 eval cases pass.
+  See `imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md`, `Features/11-AI-Report-Draft-Generator.md`,
+  `AGENTS.md` (AI Reporter 2 contracts).
+- [ ] **AI Reporter v2 controlled rollout (deployment-dependent):**
+  feature flag `AI_REPORTER_ENABLED` is **off by default** as of 2026-08-29;
+  the controlled rollout (preview tenant → 2 pilot tenants → default) is the
+  next step. Procedure in `imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`. Sequence:
+  flip flag for the internal `donordesk` tenant, run a non-trivial draft
+  end-to-end, observe `report.draft.section.fallback` rate and validator
+  failure events; if clean for ≥7 days, flip flag for 2 external pilot
+  tenants (one ECHO, one Gavi/GF); if clean for ≥7 more days, flip for all
+  tenants and remove the legacy `LlmReportDraftGenerator` factory path
+  (the class is retained for emergency rollback).
+- [ ] **AI Reporter frontend artifact renderers** (Phase 7 of v2):
+  TABLE renders via the existing TanStack table; CHART reuses the ECharts
+  renderer (`buildChartOption`); LIST / KEY_VALUE / QA / DELTA need new
+  components. The persistence + read paths are already live (the api returns
+  `artifacts` per section via `GetReportDraftHandler`); the web UI rendering
+  is the remaining work. See `Features/11-AI-Report-Draft-Generator.md`
+  "Frontend artifact renderers" entry.
 - [ ] **LLM-judge evaluation (2026-08-28, optional):** the deterministic
   `repetition` signal and numeric/grounding/limitation gates are the shipped
   baseline; an LLM-judge for qualitative metrics (coherence, donor quality,

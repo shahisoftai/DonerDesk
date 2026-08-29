@@ -408,3 +408,186 @@ semantic retrieval.
   config). Keep the worker's `INTERNAL_TOKEN` in sync with the API's.
 
 Full detail: `../imp/AI-REPORTER-IMPLEMENTATION-PLAN.md` §11.
+
+---
+
+## 17. AI Reporter v2 (IMPLEMENTED 2026-08-29)
+
+The v1 sidecar in §16 is extended by **typed artifacts**, **deterministic
+artifact validators**, **per-section timeout + per-section fallback**,
+and a **25-case eval corpus**. The same `AI_REPORTER_ENABLED=1` feature flag
+controls activation; the rollout is **off by default** pending the
+controlled rollout per `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`.
+
+### 17.1 Wire-format additions (additive)
+
+`GeneratedSection` (in `packages/application/src/ports/reporting.ts`) now
+carries four optional additive fields:
+
+```ts
+export interface GeneratedSection {
+  // ... existing fields
+  artifacts?: GeneratedArtifact[];
+  qa?: GeneratedQaItem[];
+  chartSpec?: GeneratedChartSpec;
+  deltaFromPrior?: GeneratedDelta;
+}
+
+export type GeneratedArtifact =
+  | { kind: "TABLE";       ordinal: number; payload: GeneratedTablePayload; sourceReferences: SourceReference[] }
+  | { kind: "CHART";       ordinal: number; payload: GeneratedChartSpec;   sourceReferences: SourceReference[] }
+  | { kind: "LIST";        ordinal: number; payload: GeneratedListPayload;  sourceReferences: SourceReference[] }
+  | { kind: "KEY_VALUE";   ordinal: number; payload: GeneratedKeyValuePayload; sourceReferences: SourceReference[] }
+  | { kind: "QA";          ordinal: number; payload: GeneratedQaItem;     sourceReferences: SourceReference[] }
+  | { kind: "DELTA";       ordinal: number; payload: GeneratedDelta;      sourceReferences: SourceReference[] };
+```
+
+Every v1 generator (`StubReportDraftGenerator`, `LlmReportDraftGenerator`)
+continues to produce sections with these fields absent; consumers
+iterate `section.artifacts ?? []` safely. **LSP is preserved.**
+
+The TS-side wire mirror is in `packages/contracts/src/reporting.ts`
+(Zod schemas for every field, exported as `ReportArtifactSchema`,
+`ReportArtifactListSchema`, `ReportChartSpecSchema`, etc.).
+
+### 17.2 Worker code (12-module SRP split)
+
+The 622-LOC `apps/workers/app/ai_reporter.py` was replaced by a 12-module
+package at `apps/workers/app/ai_reporter/`:
+
+| Module | Responsibility |
+|--------|----------------|
+| `models.py` | Pydantic v2 strict wire types (additive over v1) |
+| `writer_contract.py` | Persona rules, banned phrases (`BANNED_PHRASES`), numeric verbatim rule |
+| `llm_gateway.py` | Provider-agnostic chat completions + JSON extract |
+| `outline.py` | Per-inputType outline slot templates |
+| `chart_suggester.py` | Deterministic chart heuristic (LINE / PIE / BAR / GAUGE) |
+| `draft_writer.py` | Builds the user prompt; calls LLM; coerces to `GeneratedSection` |
+| `critique_writer.py` | Typed `CritiqueIssue` enum (BANNED_PHRASE / NUMERIC_PARAPHRASE / MISSING_TABLE / MISSING_CHART / MISSING_QA / MISSING_DELTA / DUPLICATE / WORD_LIMIT / UNSUPPORTED_CLAIM / MISSING_CAVEAT / OTHER) |
+| `refiner.py` | Single-pass refinement under the same retrieval manifest |
+| `artifact_validators.py` | Python mirror of TS validators; `runAll(section, req, opts)` aggregates 9 hard gates |
+| `timeouts.py` | Per-section deadline policy; raises `SectionTimeoutError` |
+| `pipeline.py` | LangGraph wiring (`START → draft → critique → refine → END`); plain sequential fallback |
+| `router.py` | FastAPI routes (`/v1/ai-reporter/{health,section,rewrite}`) |
+
+`apps/workers/app/main.py` now imports `from .ai_reporter.router import router
+as ai_reporter_router` and `v1.include_router(ai_reporter_router)`.
+
+### 17.3 Writer contract v2 (`WRITER_CONTRACT_VERSION=2`)
+
+New / hardened rules (mirrored in `packages/infrastructure/src/llm/ai-reporter/contract.ts`):
+
+| Rule | Type | Mechanism |
+|------|------|-----------|
+| Numeric verbatim | HARD | After generation, `numeric-atom-extractor` enumerates every numeric substring in `verifiedFindings` + `indicatorUpdates`. Evaluator rejects any value that diverges. |
+| Donor-token blocklist | HARD | `BANNED_PHRASES` list. Evaluator regex-fails the case if any banned phrase appears in `content`. Includes "transformative", "life-changing", "in these challenging times", etc. |
+| Repetition guard | HARD (pre-empt) | `SectionBriefBuilder` injects `priorSectionsSummary` (concise bullets of already-written sections). Writer rule: do not repeat; reference by section name. |
+| Mandatory-Q&A discipline | HARD | For every `mandatoryQuestions[]` entry, the writer MUST emit one `qa` slot with ≥1 `sourceReference`. Missing slot → retry once, then per-section fallback. |
+| Tables when ≥3 indicators / activities share scope | HARD | Writer must emit one `TABLE` artifact with ≥3 rows; every row must cite evidence. |
+| Charts when conditions met | HARD | Writer must emit one `CHART` artifact (numbers must come from `verifiedFindings` exactly). |
+| Cliché block | HARD | Banned phrase list. |
+| Delta articulation when prior exists | HARD | When `priorNarrative[]` is non-empty, writer must emit one `DELTA` artifact with `fromValue` / `toValue` / `direction`. |
+| Tone for `audience: DONOR` | SOFT | No enforcement; kept as prompt hint. |
+| Word-count discipline | HARD | `minWords` / `maxWords` per section → deterministic length check. |
+
+### 17.4 Deterministic artifact validators
+
+9 hard gates implemented in **both** Python and TypeScript, with
+parity verified by `apps/workers/tests/test_ai_reporter.py` and
+`packages/infrastructure/test/artifact-validators.test.mjs`:
+
+| Validator | Type | Behavior |
+|-----------|------|----------|
+| `assertNumericExactness` | HARD gate | Every numeric in `verifiedFindings` appears verbatim in `content` or artifact payload. |
+| `assertTableCitation` | HARD gate | Every non-empty TABLE row has ≥1 `sourceReference`. |
+| `assertChartDataGrounding` | HARD gate | Every CHART data point equals a numeric atom from `verifiedFindings` (exact equality, parsed number compare). |
+| `assertMandatoryQuestionsAnswered` | HARD gate | Every `mandatoryQuestions[]` has exactly one matching `qa[]` entry; each `qa.answer` has ≥1 `sourceReference`. |
+| `assertDeltaFromPrior` | HARD gate | When `priorNarrative` non-empty, `deltaFromPrior` is present. |
+| `assertWordCount` | HARD gate | `minWords ≤ words(content) ≤ maxWords`. |
+| `assertRepetition` | HARD gate | No sentence shares ≥70% token overlap with any `priorSectionsSummary` sentence. |
+| `assertBannedPhrases` | HARD gate | No banned phrase from `BANNED_PHRASES` appears in `content`. |
+| `assertArtifactOrdering` | HARD gate | `artifacts[].ordinal` strictly increasing, no gaps > 1. |
+
+These run in three places:
+1. **Worker self-check** (Python `artifact_validators.py`); on hard fail
+   the worker retries once with validator feedback appended to the user
+   prompt, then degrades per-section with `usedFallback: true,
+   fallbackReason: "VALIDATOR_FAILED"`.
+2. **Eval harness** (`reporting:eval-cli.ts`): every hard validator is
+   asserted per case. Soft validators are reported but never fail a case.
+3. **Application-side** (`IReportRevisionService.commitChange`): unchanged
+   — the assurance pipeline keeps the final say.
+
+### 17.5 Per-section timeout + per-section fallback
+
+- `ai_reporter.DRAFT_TIMEOUT_MS` (default `45_000`) — per-section cap.
+- `ai_reporter.TOTAL_DRAFT_TIMEOUT_MS` (default `240_000`) — per-draft wall clock.
+- On per-section timeout: retry once; on second timeout, the section
+  returns `usedFallback: true, fallbackReason: "PROVIDER_TIMEOUT"` for
+  that section only. **The rest of the draft continues.**
+- `GenerateReportDraftHandler.generateSectionsInBackground` aggregates
+  `usedFallback = sections.some(s => s.usedFallback)` for the draft
+  level, but the successful sections keep their AI-generated content.
+- `GeneratedDraftResult.fallbackReason` enum extended with `"VALIDATOR_FAILED"`.
+
+This is a **correctness fix** over v1: the old behavior demoted the
+whole draft to `usedFallback: true` whenever any one section was slow,
+even if the other sections had drafted successfully (the same pattern
+that caused "all-sections-fallback-to-stub" 2026-08-20, recorded in
+`pending.md`).
+
+### 17.6 Persistence (`ReportArtifact` + `ReportArtifactRow`)
+
+New Prisma models + migration
+`packages/infrastructure/prisma/migrations/20260828200000_ai_reporter_artifacts/migration.sql`.
+RLS forced on both tables; cross-tenant INSERT verified to fail.
+`IReportArtifactRepository` port +
+`PrismaReportArtifactRepository` impl wired into
+`GenerateReportDraftHandler` (best-effort, non-blocking) and
+`RewriteReportSectionHandler` (best-effort). `GetReportDraftHandler`
+returns artifacts alongside content.
+
+### 17.7 Eval corpus growth (8 → 25 cases)
+
+`packages/infrastructure/test/fixtures/reporting-golden.json` grew to 25
+cases. New deterministic metrics in `ReportDraftEvaluator`:
+`banned-phrase`, `qa-coverage`, `narrative-length-vs-target`,
+`artifact-coverage`, `citation-density`. Hard-gated when the brief
+declares the expectation; soft signal otherwise.
+
+All 25/25 pass locally. `pnpm --filter @donordesk/infrastructure
+reporting:eval` returns:
+```
+Eval: 25/25 cases correct
+```
+
+### 17.8 Activation (off by default)
+
+Same flag as v1 (`AI_REPORTER_ENABLED=1`); same env wiring as v1 plus
+`AI_REPORTER_URL=http://127.0.0.1:8092` to override the legacy
+`localhost:5000` default. The worker and api use **different**
+`INTERNAL_TOKEN`s — `/opt/donordesk/shared/api.env` and
+`/opt/donordesk/shared/workers.env`. Match them when debugging 401s.
+
+The feature flag is **OFF** in `/opt/donordesk/shared/api.env` as of
+2026-08-29. The controlled rollout (preview → 2 pilots → default) is the
+next step. Procedure in `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`.
+
+### 17.9 Deploy specifics (from `contabo-ops.md` §21.5)
+
+The deploy script (`scripts/deploy-fast.sh`) now ships four api-scoped
+tars instead of one:
+- `apps/api/{dist,node_modules,package.json,tsconfig.json}` (tree layout).
+- `packages/{contracts,domain,application,infrastructure}/{dist,package.json,prisma,scripts}`.
+- `node_modules/.pnpm/` (pnpm virtual store).
+- `apps/workers/app/` (Python worker tree, excluding `.venv/`).
+
+The api systemd unit now uses
+`WorkingDirectory=/opt/donordesk/app/apps/api` so the workspace symlinks
+resolve correctly. Both files are checked in
+(`infra/systemd/donordesk-api.service`).
+
+Full detail:
+- `../imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md` — the design plan
+- `../imp/AI-REPORTER-2-RESULTS.md` — post-deploy retrospective
+- `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md` — operator runbook

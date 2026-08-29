@@ -288,12 +288,76 @@ interface SourceReference {
   - **Activation:** `pnpm db:migrate` (pgvector), `embedding:backfill`, set
     `AI_REPORTER_ENABLED=1` + worker URL/model/API key + matching `INTERNAL_TOKEN`.
 
+- **AI Reporter v2 (2026-08-29, implemented per `../imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md`):**
+  extends v1 with typed artifacts, deterministic validators, per-section timeout
+  + per-section fallback, and a 25-case eval corpus. The same feature flag
+  (`AI_REPORTER_ENABLED=1`) controls activation; the v2 rollout is **off by default**
+  pending the controlled rollout per `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`.
+  - **Worker code (SRP split):** the 622-LOC `apps/workers/app/ai_reporter.py`
+    became a 12-module package `apps/workers/app/ai_reporter/`:
+    `models` (Pydantic v2 strict wire types), `writer_contract` (v2 persona
+    rules, banned-phrase list, numeric-verbatim rule), `llm_gateway` (provider-
+    agnostic chat completions + JSON extract), `outline` (per-inputType outline
+    slot templates), `chart_suggester` (deterministic chart heuristic),
+    `draft_writer`, `critique_writer` (typed `CritiqueIssue` enum), `refiner`,
+    `artifact_validators` (Python mirror of TS validators), `timeouts`
+    (per-section deadline), `pipeline` (LangGraph wiring + sequential fallback),
+    `router` (FastAPI routes). `main.py` now imports `from .ai_reporter.router
+    import router as ai_reporter_router`.
+  - **Typed artifacts:** `GeneratedSection` carries optional additive fields
+    (`artifacts[]`, `qa[]`, `chartSpec?`, `deltaFromPrior?`) — every v1 generator
+    continues to work unchanged (LSP holds). Artifact kinds:
+    `TABLE | CHART | LIST | KEY_VALUE | QA | DELTA`. Each artifact has a typed
+    payload, source references (per-artifact and per-row for tables), and an
+    `ordinal` for stable ordering. The writer is **required** to emit a TABLE
+    artifact for `INDICATOR_TABLE` sections and a CHART artifact when the brief's
+    `chartSuggestion` is non-null.
+  - **Deterministic artifact validators:** 9 hard gates mirrored in
+    Python (`apps/workers/app/ai_reporter/artifact_validators.py`) and
+    TypeScript (`packages/infrastructure/src/ai/artifact-validators.ts`):
+    numeric exactness, table citation, chart data grounding, mandatory-Q&A
+    coverage, delta from prior, word count, repetition, banned phrases,
+    artifact ordering. Each is exported individually for testability and
+    aggregated via `runAll`. The worker runs the Python mirror as a self-check
+    before returning; on hard fail it retries once with validator output
+    appended to the user prompt, then degrades per-section with
+    `usedFallback: true, fallbackReason: "VALIDATOR_FAILED"`.
+  - **Per-section timeout:** `AI_REPORTER_DRAFT_TIMEOUT_MS=45000` (default)
+    enforced by `timeouts.run_with_section_timeout` (Python wall-clock check)
+    and `AbortSignal.timeout(this.timeoutMs)` (TS `HttpWorkerClient`). On
+    per-section timeout: retry once; on second timeout, the section falls back
+    to deterministic output and the rest of the draft continues. **Per-section
+    fallback** is a correctness fix: the old behavior demoted the whole draft
+    to `usedFallback: true` whenever any one section was slow, even if the
+    other sections had drafted successfully.
+  - **Persistence:** `ReportArtifact` + `ReportArtifactRow` tables
+    (migration `20260828200000_ai_reporter_artifacts`, RLS forced, cross-tenant
+    INSERT verified to fail). `IReportArtifactRepository` port +
+    `PrismaReportArtifactRepository` impl wired into
+    `GenerateReportDraftHandler` and `RewriteReportSectionHandler`
+    (best-effort; a failed persistence does not abort the section because the
+    prose is already committed and assured). `GetReportDraftHandler` returns
+    artifacts alongside content.
+  - **Eval corpus (2026-08-29):** grown 8 → 25 cases
+    (`packages/infrastructure/test/fixtures/reporting-golden.json`). New
+    deterministic metrics in `ReportDraftEvaluator`: `banned-phrase`,
+    `qa-coverage`, `narrative-length-vs-target`, `artifact-coverage`,
+    `citation-density`. Hard-gated when the brief declares the expectation;
+    soft signal otherwise. All 25/25 pass (`reporting:eval`). The full
+    deploy timeline, gate results, and lessons learned are in
+    `../imp/AI-REPORTER-2-RESULTS.md`.
+  - **Activation:** `AI_REPORTER_ENABLED=1` + `AI_REPORTER_URL=http://127.0.0.1:8092`
+    (override the legacy `localhost:5000` default) + matching `INTERNAL_TOKEN`
+    in `/opt/donordesk/shared/api.env`. Controlled rollout per
+    `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md` (preview tenant → 2 pilot
+    tenants → default). Feature flag defaults to **off** as of 2026-08-29.
+
 ## Status
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Report Draft CRUD | Implemented | Full lifecycle |
-| AI Generation | Implemented | Real LLM via SuperAdmin MiniMax/DeepSeek config; stub fallback free + never billed (2026-08-17); professional context enrichment (indicator metadata/targets, project/period/template context, period-over-period narration, performance gating) 2026-08-18; AI Reporter sidecar (multi-step draft/critique/refine + pgvector semantic retrieval + prior-period intelligence) behind `IReportDraftGenerator`, feature-flagged `AI_REPORTER_ENABLED` 2026-08-28 |
+| AI Generation | Implemented | Real LLM via SuperAdmin MiniMax/DeepSeek config; stub fallback free + never billed (2026-08-17); professional context enrichment (indicator metadata/targets, project/period/template context, period-over-period narration, performance gating) 2026-08-18; AI Reporter sidecar (multi-step draft/critique/refine + pgvector semantic retrieval + prior-period intelligence) behind `IReportDraftGenerator`, feature-flagged `AI_REPORTER_ENABLED` 2026-08-28; **AI Reporter v2** (typed artifacts + validators + per-section fallback + 25-case eval) shipped behind the same flag 2026-08-29 — feature flag still defaults to off pending the controlled rollout |
 | Section Editing | Implemented | Rich text |
 | Source References | Implemented | Populated from activities/indicators/evidence; statement-level sources rendered in the workspace (2026-08-17); indicator labels include human-readable names (2026-08-18) |
 | Unsupported Claims | Implemented | Flagged per section and surfaced in compliance |
@@ -301,6 +365,9 @@ interface SourceReference {
 | Donor-friendly Mode | Implemented (heuristic) | Audience-aware rewrite in the section editor (2026-08-16) |
 | Section Status | Implemented | All 5 statuses |
 | Version Tracking | Implemented | Version number |
+| Typed Artifacts | Implemented (2026-08-29) | TABLE / CHART / LIST / KEY_VALUE / QA / DELTA persisted per section with per-row citations; renders still TODO in web |
+| Deterministic Validators | Implemented (2026-08-29) | 9 hard gates (numeric, table citation, chart grounding, Q&A coverage, delta, word count, repetition, banned phrases, ordering); mirrored Python + TS |
+| Per-section Timeout | Implemented (2026-08-29) | `AI_REPORTER_DRAFT_TIMEOUT_MS=45000` with per-section fallback (not whole-draft demotion) |
 
 ## Pending Enhancements
 
@@ -311,6 +378,17 @@ interface SourceReference {
   is no longer dropped and the narrator describes period-on-period change)
 - [x] AI Reporter multi-step writing + semantic retrieval + prior-period intelligence
   (2026-08-28 — see the section above and `../imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`)
+- [x] **AI Reporter v2 — typed artifacts, validators, per-section fallback, 25-case eval**
+  (2026-08-29 — see the section above and `../imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md`).
+  **Feature flag still OFF by default**; controlled rollout per
+  `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`.
+- [ ] **Frontend artifact renderers** (Phase 7 of AI Reporter 2):
+  TABLE renders via the existing TanStack table; CHART reuses the ECharts
+  renderer (`buildChartOption`); LIST / KEY_VALUE / QA / DELTA need new
+  components. Tracked in `../pending.md`.
+- [ ] **Controlled rollout** (Phase 8 of AI Reporter 2): preview tenant
+  → 2 pilot tenants → default. Procedure in
+  `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`.
 - [ ] Unsupported claim warning UI
 - [ ] AI regenerate individual sections
 - [ ] AI tone adjustment (donor-specific)
