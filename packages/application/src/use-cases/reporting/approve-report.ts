@@ -41,9 +41,10 @@ export class ApproveReportHandler {
     if (!gate.ok) return gate;
     const result = gate.value;
     if (result.approvalBlocked) {
+      const reasons = result.blockReasons.length > 0 ? result.blockReasons : ["Some report issues still need to be resolved"];
       return {
         ok: false,
-        error: DomainError.reportGateBlocked("Report cannot be approved until gate blockers are resolved", {
+        error: DomainError.reportGateBlocked(`Report cannot be approved yet: ${reasons.join("; ")}`, {
           blockers: result.blockReasons,
         }),
       };

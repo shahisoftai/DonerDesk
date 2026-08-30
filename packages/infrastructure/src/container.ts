@@ -38,6 +38,7 @@ import {
   ImportEvidenceHandler,
   SuggestEvidenceTagsHandler,
   AcceptEvidenceTagsHandler,
+  SetEvidencePeriodHandler,
   PersistEvidenceTagsHandler,
   VerifyEvidenceHandler,
   SearchEvidenceHandler,
@@ -62,6 +63,8 @@ import {
   UpdateReportSectionChartHandler,
   ApproveReportSectionHandler,
   SubmitReportForReviewHandler,
+  CancelReportGenerationHandler,
+  ActivateReportDraftHandler,
   ApproveReportHandler,
   RejectReportHandler,
   ResolveReportClaimHandler,
@@ -329,6 +332,7 @@ export interface Container {
     importEvidence: ImportEvidenceHandler;
     suggestEvidenceTags: SuggestEvidenceTagsHandler;
     acceptEvidenceTags: AcceptEvidenceTagsHandler;
+    setEvidencePeriod: SetEvidencePeriodHandler;
     persistEvidenceTags: PersistEvidenceTagsHandler;
     verifyEvidence: VerifyEvidenceHandler;
     searchEvidence: SearchEvidenceHandler;
@@ -346,6 +350,8 @@ export interface Container {
     listReportingPeriods: ListReportingPeriodsHandler;
     generateReportDraft: GenerateReportDraftHandler;
     getReportDraft: GetReportDraftHandler;
+    cancelReportGeneration: CancelReportGenerationHandler;
+    activateReportDraft: ActivateReportDraftHandler;
     getReportAssurance: GetReportAssuranceHandler;
     updateReportSection: UpdateReportSectionHandler;
     createReportSection: CreateReportSectionHandler;
@@ -636,7 +642,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector);
   const requirementResolver = new DeterministicRequirementResolver(ids, periods, requirementPacks, awardOverrides, reportPlans, resolvedRequirements);
 
-  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, checklist, templates);
+  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates);
   const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits);
 
   if (jobRegistrar?.register) {
@@ -715,6 +721,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     importEvidence: new ImportEvidenceHandler(ids, evidence, activities, indicators, audits),
     suggestEvidenceTags: new SuggestEvidenceTagsHandler(evidence, evidenceTagger),
     acceptEvidenceTags: new AcceptEvidenceTagsHandler(evidence, audits),
+    setEvidencePeriod: new SetEvidencePeriodHandler(evidence, periods, audits),
     persistEvidenceTags: new PersistEvidenceTagsHandler(evidence, audits, idempotency),
     verifyEvidence: new VerifyEvidenceHandler(evidence, audits),
     searchEvidence: new SearchEvidenceHandler(evidence),
@@ -736,7 +743,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       revisionService, assuranceService,
       getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage, reportArtifacts,
     ),
-    getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportPlans, reportArtifacts),
+    getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportRevisions, reportPlans, reportArtifacts),
+    cancelReportGeneration: new CancelReportGenerationHandler(drafts, sections, audits),
+    activateReportDraft: new ActivateReportDraftHandler(drafts, audits),
     getReportAssurance: new GetReportAssuranceHandler(drafts, sections, reportClaims, reportRevisions, resolvedRequirements),
     updateReportSection: new UpdateReportSectionHandler(sections, revisionService, assuranceService, audits),
     createReportSection: new CreateReportSectionHandler(ids, drafts, sections, audits),

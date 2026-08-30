@@ -8,7 +8,8 @@ import type { Result, TenantId } from "@donordesk/domain";
  * Projects material-assertion coverage gaps into existing
  * UNSUPPORTED_REPORT_CLAIM checklist items. Deterministic deduplication keys
  * (the stable assertion fingerprint) keep repeated re-assessment idempotent:
- * an already-active gap is not recreated.
+ * a gap that was ever created for the period — open or resolved — is not
+ * recreated, so resolving an item is a permanent decision.
  */
 export class ChecklistUnsupportedClaimProjector implements IUnsupportedClaimProjector {
   constructor(
@@ -26,9 +27,13 @@ export class ChecklistUnsupportedClaimProjector implements IUnsupportedClaimProj
 
     const existing = await this.checklist.findByReportingPeriod(input.periodId, input.tenantId);
     if (!existing.ok) return existing;
-    const activeKeys = new Set(
+    // Deduplicate against every UNSUPPORTED_REPORT_CLAIM item ever created for
+    // the period, not only open ones. A claim the user already resolved or
+    // accepted is never recreated, even when the same assertion reappears
+    // after an edit or regeneration.
+    const seenKeys = new Set(
       existing.value
-        .filter((i) => i.type === "UNSUPPORTED_REPORT_CLAIM" && (i.status === "OPEN" || i.status === "IN_PROGRESS"))
+        .filter((i) => i.type === "UNSUPPORTED_REPORT_CLAIM")
         .map((i) => `${i.type}:${i.relatedEntityId ?? ""}`),
     );
 
@@ -36,7 +41,7 @@ export class ChecklistUnsupportedClaimProjector implements IUnsupportedClaimProj
     for (const gap of input.gaps) {
       const dedupKey = stableFingerprint(gap.key);
       const key = `UNSUPPORTED_REPORT_CLAIM:${dedupKey}`;
-      if (activeKeys.has(key) || seen.has(key)) continue;
+      if (seenKeys.has(key) || seen.has(key)) continue;
       seen.add(key);
       const item = ChecklistItem.create({
         id: this.ids.generate(),

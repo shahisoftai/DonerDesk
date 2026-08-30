@@ -16,6 +16,9 @@ export interface PeriodIndicatorRow {
   dataSource?: string;
   frequency?: string;
   disaggregationRequired: boolean;
+  /** Percentage/ratio indicators without a configured denominator indicator
+   * cannot be independently calculated; their result stays unverifiable. */
+  requiresDenominator: boolean;
   logframeLevel: string | null;
   logframeCode: string | null;
   logframeTitle: string | null;
@@ -61,6 +64,8 @@ export class ListPeriodIndicatorsHandler {
     const rows: PeriodIndicatorRow[] = indicatorsResult.value.map((ind) => {
       const item = ind.logframeItemId ? itemsById.get(ind.logframeItemId) : undefined;
       const update = updatesByIndicator.get(ind.id);
+      const requiresDenominator =
+        (ind.type === "PERCENTAGE" || ind.type === "RATIO") && !Boolean(ind.semantics?.denominatorIndicatorId);
       return {
         id: ind.id,
         logframeItemId: ind.logframeItemId,
@@ -73,6 +78,7 @@ export class ListPeriodIndicatorsHandler {
         dataSource: ind.dataSource,
         frequency: ind.frequency,
         disaggregationRequired: ind.disaggregationRequired,
+        requiresDenominator,
         logframeLevel: item?.level ?? null,
         logframeCode: item?.code ?? null,
         logframeTitle: item?.title ?? null,

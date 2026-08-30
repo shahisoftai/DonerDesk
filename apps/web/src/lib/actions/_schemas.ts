@@ -55,7 +55,7 @@ export const DetectMissingResponseSchema = z.object({ created: z.number().int().
 export const BulkResolveResponseSchema = z.object({ resolved: z.number().int().nonnegative(), skipped: z.number().int().nonnegative() });
 
 export const UpdateSectionResponseSchema = z.object({ version: z.string() });
-
+export const CancelGenerationResponseSchema = z.object({ cancelled: z.boolean() });
 export const UpdateSectionChartResponseSchema = z.object({
   version: z.string(),
   chartConfig: z

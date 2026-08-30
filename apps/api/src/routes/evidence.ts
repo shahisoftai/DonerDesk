@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { EvidenceSearchSchema, AcceptEvidenceTagsSchema, ImportEvidenceTextSchema } from "@donordesk/contracts";
+import { EvidenceSearchSchema, AcceptEvidenceTagsSchema, ImportEvidenceTextSchema, SetEvidencePeriodSchema } from "@donordesk/contracts";
 import { buildEvidenceTemplate, EVIDENCE_TEMPLATE_FILENAME } from "@donordesk/infrastructure";
 
 export async function registerEvidenceRoutes(app: FastifyInstance) {
@@ -103,6 +103,15 @@ export async function registerEvidenceRoutes(app: FastifyInstance) {
     const id = (req.params as { id: string }).id;
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.verifyEvidence.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.post("/v1/evidence/:id/period", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = SetEvidencePeriodSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.setEvidencePeriod.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return { ok: true };
   });

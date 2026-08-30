@@ -59,6 +59,10 @@ export const AcceptEvidenceTagsSchema = z.object({
   indices: z.array(z.number().int().nonnegative()),
 });
 
+export const SetEvidencePeriodSchema = z.object({
+  reportingPeriodId: z.string().nullable(),
+});
+
 export const EvidenceSearchSchema = z.object({
   query: z.string().optional(),
   projectId: z.string().optional(),

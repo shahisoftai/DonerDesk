@@ -92,6 +92,25 @@ Search: File name, Evidence title, Notes, Extracted text, Tags
 | POST | `/api/evidence/:id/verify` | `verifyEvidence` |
 | GET | `/api/evidence/:id/history` | `getEvidenceHistory` |
 | GET | `/api/evidence/search` | `searchEvidence` |
+| POST | `/v1/evidence/:id/period` | `setEvidencePeriod` (2026-08-30) |
+
+### Reporting-period tagging (2026-08-30, release `20260829160000`)
+
+Evidence files can be linked to the reporting period they support. This drives
+the period's readiness **Evidence** score and the evidence packages the report
+generator consumes:
+
+- **API:** `POST /v1/evidence/:id/period` with `{ reportingPeriodId: string | null }`
+  (`SetEvidencePeriodHandler` — rejects periods belonging to a different
+  project; audit event `evidence.linked_to_period` / `evidence.unlinked_from_period`).
+- **UI:** the evidence library now has a **Reporting period** column with an
+  inline selector (`EvidencePeriodPicker.tsx`) listing the project's periods
+  (label = report type + date range). Unlinking uses "Not linked".
+- **Readiness:** `calculate-readiness.ts` counts the **union** of evidence
+  tagged to the period + evidence attached to its indicator updates + evidence
+  attached to its activity updates — matching the evidence set the generation
+  run actually consumes (fixes the "0% Evidence" score with real evidence
+  present).
 
 ### Storage Backend (per-tenant strategy)
 - Primary: **Google Drive (link-first)** — files stay in the tenant's own Drive; DonorDesk stores a reference (`storageProvider=GOOGLE_DRIVE`, `driveFileId`, `driveWebLink`), no byte copy.

@@ -156,6 +156,7 @@ export class PrismaReportDraftRepository implements IReportDraftRepository {
         version: d.version,
         approvedById: d.approvedById,
         approvedAt: d.approvedAt,
+        supersededAt: d.supersededAt,
       },
     });
     return ok(d);
@@ -166,7 +167,12 @@ export class PrismaReportDraftRepository implements IReportDraftRepository {
     return ok(this.toDomain(row));
   }
   async findByReportingPeriod(reportingPeriodId: string, tenantId: TenantId): Promise<Result<ReportDraft[], DomainError>> {
-    const rows = await this.prisma.reportDraft.findMany({ where: { reportingPeriodId, tenantId: tenantId.toString() }, orderBy: { createdAt: "desc" } });
+    const rows = await this.prisma.reportDraft.findMany({
+      where: { reportingPeriodId, tenantId: tenantId.toString() },
+      // The current working draft (never superseded) always comes first; all
+      // existing consumers treat rows[0] as "the current draft".
+      orderBy: [{ supersededAt: { sort: "asc", nulls: "first" } }, { createdAt: "desc" }],
+    });
     return ok(rows.map((r) => this.toDomain(r)));
   }
   private toDomain(row: {
@@ -181,6 +187,7 @@ export class PrismaReportDraftRepository implements IReportDraftRepository {
     createdById: string;
     approvedById: string | null;
     approvedAt: Date | null;
+    supersededAt: Date | null;
     createdAt: Date;
   }): ReportDraft {
     return ReportDraft.rehydrate({
@@ -197,6 +204,7 @@ export class PrismaReportDraftRepository implements IReportDraftRepository {
         createdById: row.createdById,
         approvedById: row.approvedById ?? undefined,
         approvedAt: row.approvedAt ?? undefined,
+        supersededAt: row.supersededAt ?? undefined,
       },
     });
   }

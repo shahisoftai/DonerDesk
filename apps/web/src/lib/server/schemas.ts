@@ -231,6 +231,7 @@ export const PeriodIndicatorRowSchema = z.object({
   dataSource: z.string().optional(),
   frequency: z.string().optional(),
   disaggregationRequired: z.boolean(),
+  requiresDenominator: z.boolean(),
   logframeLevel: z.string().nullable(),
   logframeCode: z.string().nullable(),
   logframeTitle: z.string().nullable(),
@@ -307,6 +308,7 @@ export type ActivityDetail = z.infer<typeof ActivityDetailSchema>;
 export const EvidenceItemSchema = z.object({
   id: z.string(),
   projectId: z.string().optional(),
+  reportingPeriodId: z.string().nullable().optional(),
   fileName: z.string(),
   title: z.string(),
   evidenceType: z.string(),
@@ -398,6 +400,7 @@ export const ReportSectionSchema = z.object({
   status: z.string(),
   chartConfig: ChartConfigSchema.nullable().optional(),
   updatedAt: z.string(),
+  generatedWithAi: z.boolean().nullable().optional(),
 });
 export type ReportSection = z.infer<typeof ReportSectionSchema>;
 
@@ -431,6 +434,8 @@ export const ReportClaimSchema = z.object({
   verificationResult: z.string(),
   verificationDetail: z.string(),
   resolutionNotes: z.string().nullable().optional(),
+  resolvedById: z.string().optional(),
+  resolvedAt: z.string().optional(),
 });
 export type ReportClaim = z.infer<typeof ReportClaimSchema>;
 
@@ -438,6 +443,22 @@ export const ReportDraftResponseSchema = z.object({
   draft: ReportDraftSchema.nullable(),
   sections: z.array(ReportSectionSchema).optional(),
   claims: z.array(ReportClaimSchema).optional(),
+  versions: z
+    .array(
+      z.object({
+        id: z.string(),
+        title: z.string(),
+        status: z.string(),
+        version: z.number(),
+        generatedByAi: z.boolean().optional(),
+        createdById: z.string().optional(),
+        approvedById: z.string().optional(),
+        approvedAt: z.string().nullable().optional(),
+        supersededAt: z.string().nullable().optional(),
+        createdAt: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export const UpdateSectionResponseSchema = z.object({ version: z.string() });

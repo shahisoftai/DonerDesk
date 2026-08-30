@@ -1,6 +1,6 @@
 "use server";
 
-import { AcceptEvidenceTagsSchema, ImportEvidenceTextSchema } from "@donordesk/contracts";
+import { AcceptEvidenceTagsSchema, ImportEvidenceTextSchema, SetEvidencePeriodSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -85,6 +85,30 @@ export async function verifyEvidenceAction(evidenceId: string): Promise<VerifyEv
   const context = await requireSession();
   const result = await gatewayRequest(`/v1/evidence/${evidenceId}/verify`, OkResponseSchema, context.token, {
     method: "POST",
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+export type SetEvidencePeriodResult = Result<undefined, AppError>;
+
+/**
+ * Links an evidence file to a reporting period (or unlinks it with null) so
+ * the period's readiness "Evidence" score and generation evidence packages
+ * include it.
+ */
+export async function setEvidencePeriodAction(evidenceId: string, reportingPeriodId: string | null): Promise<SetEvidencePeriodResult> {
+  const context = await requireSession();
+  const parsed = SetEvidencePeriodSchema.safeParse({ reportingPeriodId });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  const result = await gatewayRequest(`/v1/evidence/${evidenceId}/period`, OkResponseSchema, context.token, {
+    method: "POST",
+    body: parsed.data,
   });
   if (!result.ok) return result;
   return { ok: true, value: undefined };

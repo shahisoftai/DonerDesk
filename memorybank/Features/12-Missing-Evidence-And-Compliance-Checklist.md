@@ -110,6 +110,30 @@ Open, In progress, Resolved, Accepted risk, Not applicable
 | Checklist Templates | Implemented | Config-driven baseline items per report type (2026-08-16) |
 | Bulk Operations | Implemented | `POST /checklist/bulk-resolve` + UI (2026-08-16); "Select all" header checkbox in bulk mode selects all open items matching the current filters, with indeterminate + `(selected/total)` states (2026-08-28, release `20260828124537`) |
 
+## Product recovery (2026-08-30, release `20260829160000`)
+
+See `../imp/RECOVERY-PLAN-IMPLEMENTATION.md` for the full record. Changes to
+this feature:
+
+- **Idempotent projection:** `ChecklistUnsupportedClaimProjector` dedups against
+  **all** `UNSUPPORTED_REPORT_CLAIM` items ever created for the period (open or
+  resolved), so accepting a claim is a permanent decision and edits /
+  regenerations never recreate resolved items. Regression test added.
+- **Human-readable verification detail:** numeric failure detail now explains
+  expected vs actual in plain language (e.g. percentage claims cite the missing
+  denominator + indicator codes), instead of bare reason codes.
+- **Claim resolution moved into the report workspace:** per-statement
+  Accept-with-note / Exclude actions plus an aggregated Review view, so users
+  resolve failed statements where they review them rather than in the export
+  wizard.
+- **Actionable approval blockers:** report/section approval errors name the
+  blocker and the fix (statement decisions, verification fixes) in human
+  language — no CURRENT/FAILED/STALE/UNASSESSED terms in the UI.
+- **Evidence readiness score** (`calculate-readiness.ts`) now counts the union
+  of evidence tagged to the period + evidence attached to its indicator updates
+  + its activity updates (the same set the generation run consumes), so the
+  "Evidence" readiness component reflects what actually supports the report.
+
 ## Pending Enhancements
 
 - [ ] Wire real LLM provider for detection

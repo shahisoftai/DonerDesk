@@ -29,6 +29,7 @@ WORK="${WORK:-/tmp/dd-deploy-${RELEASE_ID}}"
 SSH="${SSH:-ssh -o ConnectTimeout=15 -o ServerAliveInterval=30}"
 SCPTGT="${SCPTGT:-contabo:}"
 REMOTE_BASE="${REMOTE_BASE:-/opt/donordesk}"
+BASE="${BASE:-${REMOTE_BASE}}"
 REMOTE_APP="${REMOTE_APP:-${REMOTE_BASE}/app}"
 REMOTE_WORKERS="${REMOTE_WORKERS:-${REMOTE_BASE}/workers}"
 REMOTE_BACKUPS="${REMOTE_BACKUPS:-${REMOTE_BASE}/backups}"
@@ -201,12 +202,16 @@ echo "    snapshot: $(($(date +%s)-SNAPSHOT_START))s"
 XFER_START=$(date +%s)
 
 if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
-  echo "==> Stream web artifact -> ${REMOTE_APP}/apps/web/"
+  # The web tar's root IS the Next.js standalone output (it contains
+  # apps/web/server.js at its top level), so it extracts into the systemd
+  # unit's expected path: <app>/apps/web/.next/standalone/apps/web/server.js.
+  echo "==> Stream web artifact -> ${REMOTE_APP}/apps/web/.next/standalone/"
   cat "${WEB_TAR}" | ${SSH} "
     set -eu
     cd ${REMOTE_APP}/apps/web
     rm -rf .next
-    tar -xzf - -C ${REMOTE_APP}/apps/web
+    mkdir -p .next/standalone
+    tar -xzf - -C ${REMOTE_APP}/apps/web/.next/standalone
     chown -R donordesk:donordesk ${REMOTE_APP}/apps/web
   "
 fi

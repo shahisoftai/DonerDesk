@@ -1,6 +1,6 @@
 # DonorDesk MemoryBank Index
 
-**Last updated:** 2026-08-29
+**Last updated:** 2026-08-30
 
 Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to search within files.
 
@@ -16,6 +16,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **Professional donor-reporting hardening plan** | [`imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED) and [`imp/REPORTING-OWNERSHIP-MAP.md`](imp/REPORTING-OWNERSHIP-MAP.md) |
 | **AI Reporter (multi-step report writing, v1)** | [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED 2026-08-28) — multi-step draft/critique/refine, pgvector, prior-period intelligence |
 | **AI Reporter 2 (typed artifacts + validators + per-section fallback)** | [`imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED 2026-08-29) and [`imp/AI-REPORTER-2-RESULTS.md`](imp/AI-REPORTER-2-RESULTS.md) (post-deploy retrospective) and [`imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`](imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md) (operator runbook for flag flip) |
+| **Product recovery (writer↔verifier↔human boundary)** | [`imp/RECOVERY-PLAN-IMPLEMENTATION.md`](imp/RECOVERY-PLAN-IMPLEMENTATION.md) (status IMPLEMENTED + DEPLOYED 2026-08-30, release `20260829160000`) — parser fixes, writer prompt alignment, tolerant verifier, idempotent checklist projection, workspace claim resolution, draft lifecycle (supersede/versions/cancel), evidence-period tagging, readiness evidence fix |
 | **Frontend portal blueprint** | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) |
 | **Frontend portal status** | [`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`](imp/FRONTEND-UX-INTEGRATION-AUDIT.md) (latest audit) and [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 | **Production issues & fixes** | [`Fixes.md`](Fixes.md) |

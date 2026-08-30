@@ -104,29 +104,66 @@ export function atomsEqual(a: NumericAtom, b: NumericAtom): boolean {
  * Extracts every numeric token from normalized text with its character offset.
  * Uses the same strict decimal parser as the deterministic analyst so no
  * value can slip through with a different number grammar.
+ *
+ * Two parsing rules keep extraction aligned with normal professional writing:
+ * - Thousands separators are normalized, so "3,251 children" is a single atom
+ *   with value "3251" instead of two unrelated atoms ("3", "251").
+ * - Digits embedded in alphanumeric or hyphenated tokens ("OUT-1", "OUT1",
+ *   "Stage-2") are not extracted; a leading minus is only a sign at a token
+ *   boundary, never part of an identifier.
  */
 export function extractNumericAtoms(text: string): NumericAtom[] {
   const atoms: NumericAtom[] = [];
-  const re = /(?:-?\d+(?:\.\d+)?)/g;
+  const re = /-?\d+(?:[.,]\d+)*/g;
   let match: RegExpExecArray | null;
-  let last = 0;
-  let cursor = 0;
   while ((match = re.exec(text)) !== null) {
-    const value = match[0];
-    if (parseDecimal(value) === null) continue;
-    const prefix = text.slice(last, match.index);
-    cursor += prefix.length;
+    const start = match.index;
+    const end = start + match[0].length;
+    if (isEmbeddedNumber(text, start, end)) continue;
+    const value = normalizeNumberToken(match[0]);
+    if (value === null || parseDecimal(value) === null) continue;
     atoms.push({
-      charStart: cursor,
-      charEnd: cursor + value.length,
+      charStart: start,
+      charEnd: end,
       value,
       role: "OTHER",
       bound: false,
     });
-    cursor += value.length;
-    last = match.index + value.length;
   }
   return atoms;
+}
+
+/**
+ * True when a candidate numeric token is part of a word or identifier rather
+ * than a standalone number: immediately adjacent to a word character, or
+ * following a hyphen that is itself attached to a letter ("OUT-1").
+ */
+function isEmbeddedNumber(text: string, start: number, end: number): boolean {
+  const before = text.charAt(start - 1);
+  if (before === "-") {
+    const beforeHyphen = text.charAt(start - 2);
+    if (/[A-Za-z]/.test(beforeHyphen)) return true;
+  }
+  if (/[\w]/.test(before)) return true;
+  const after = text.charAt(end);
+  if (/[\w]/.test(after)) return true;
+  return false;
+}
+
+/**
+ * Removes commas only when they group exactly three digits toward the end of
+ * the token ("3,251" -> "3251", "1,234,567.89" -> "1234567.89"). An ambiguous
+ * token such as "12,5" is left untouched so the strict decimal parser rejects
+ * it instead of silently misreading the number.
+ */
+function normalizeNumberToken(token: string): string | null {
+  let current = token;
+  let previous: string;
+  do {
+    previous = current;
+    current = current.replace(/,(?=\d{3}(?:,\d{3})*(?:\.\d+)?$)/, "");
+  } while (current !== previous);
+  return current;
 }
 
 /**

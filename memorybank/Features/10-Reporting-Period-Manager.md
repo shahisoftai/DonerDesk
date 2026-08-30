@@ -114,6 +114,31 @@ reports list, the report workspace header, and the project setup page):
   against edits, and a closed period rejects further writes.
 - Google Sheets values can be imported via `POST /v1/indicator-updates/parse-sheet`
   (rows mapped by indicator code, previewed, then applied to the grid).
+- **Percentage guard (2026-08-30):** PERCENTAGE/RATIO rows without a configured
+  denominator indicator display a warning that their result cannot be
+  independently verified in the report.
+
+### Draft lifecycle — one working draft per period (2026-08-30, release `20260829160000`)
+
+See `../imp/RECOVERY-PLAN-IMPLEMENTATION.md`:
+
+- **Supersede:** `ReportDraft.supersededAt` (migration
+  `20260829140000_report_draft_superseded`) — each generation supersedes prior
+  DRAFT/UNDER_REVIEW drafts, so there is exactly one current working draft.
+  Approved/exported/submitted drafts are never superseded (historical record).
+  `findByReportingPeriod` orders superseded drafts last, so existing `[0]`
+  consumers keep returning the current draft.
+- **Versions archive UI:** the report workspace's **Versions** tab lists all
+  drafts (status, created/superseded dates) with a **Make current** action for
+  working drafts (`POST /v1/report-drafts/:id/activate` → `ActivateReportDraftHandler`,
+  which supersedes the other working drafts in turn).
+- **Cancel generation:** `POST /v1/reporting-periods/:id/cancel-generation`
+  supersedes the working draft; the background section loop aborts on the
+  superseded marker. Non-working (approved/etc.) drafts return
+  `{cancelled:false}` without error.
+- **"What to do next":** the workspace sidebar computes the single next action
+  (verify indicators → generate draft → review statements → approve sections →
+  submit → approve) in plain language, linking to the exact fix location.
 
 ## Status
 

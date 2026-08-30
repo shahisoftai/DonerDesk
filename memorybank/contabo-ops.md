@@ -1056,6 +1056,27 @@ OLS baseline/new validation comparison:
 Operator / approver / date:
 ```
 
+### Release `20260829160000` (2026-08-29) — product recovery
+
+```text
+Host preflight timestamp:       2026-08-29 ~19:00 CEST
+Hostname and certificate:       vmi2954830.contaboserver.net, valid
+Release ID / Git commit:        20260829160000 / d6a08fbcfcd0432cc12feac46555f68e47f0a961
+Artifact SHA-256:               n/a (tar+extract model; release.json written to app/release.json)
+Node/pnpm build versions:       node v20.20.2 (host), pnpm 10.34.5
+Migration IDs:                  20260829140000_report_draft_superseded (applied pre-code)
+RLS test result:                unchanged (additive column on RLS-covered ReportDraft)
+Stage A acceptance result:      /health ok; /ready 200 (database + prismaClient checks)
+Stage B capabilities enabled:   draft supersede/versions/activate, cancel-generation,
+                                evidence-period tagging, tolerant verifier, workspace UX
+Latest off-host backup:         prior to deploy (backups rotate last 3)
+Latest restore test:            last verified restore before release
+Previous compatible release:   20260828200000
+Prometheus/Grafana verification: n/a
+Resource usage after deploy:    all services active; disk 37G free at deploy time
+Operator / approver / date:     najeeb / 2026-08-29
+```
+
 ## 27. Shared Prometheus and Grafana
 
 The existing Prometheus/Alertmanager/Grafana containers use host networking, so
@@ -1229,3 +1250,37 @@ curl -fsS http://127.0.0.1:4001/ready | jq
 
 Expect `{ "status": "ready", "checks": { "database": "ok",
 "prismaClient": "ok" } }`.
+
+## 2026-08-29 — Product recovery release + deploy-script fixes
+
+**Release:** `20260829160000` (commit `d6a08fb`, SCOPE=both).
+
+**Migration applied before code (expand/contract):**
+`20260829140000_report_draft_superseded` (adds `ReportDraft.supersededAt` +
+`ReportDraft_supersededAt_idx`), applied via
+`DATABASE_URL="$DATABASE_ADMIN_URL" npx prisma@5.22.0 migrate deploy
+--schema /opt/donordesk/app/packages/infrastructure/prisma/schema.prisma`
+as the migrator. `apps/api/src/routes/health.ts` `REQUIRED_PRISMA_FIELDS`
+now also asserts `ReportDraft.supersededAt`, so `/ready` blocks deploys that
+skip the migration.
+
+**Deploy-script fixes shipped in `scripts/deploy-fast.sh`:**
+1. **Unbound `BASE`** in the snapshot step — the script previously required
+   `BASE` exported in the environment (it failed with `BASE: unbound
+   variable` otherwise). It now defaults `BASE="${BASE:-${REMOTE_BASE}}"`.
+2. **Web standalone extract path** — the web tar's root IS the Next.js
+   standalone output (`apps/web/server.js` at top level), so it must extract
+   into `apps/web/.next/standalone/`, not `apps/web/`. The systemd unit runs
+   `node .next/standalone/apps/web/server.js` from
+   `WorkingDirectory=/opt/donordesk/app/apps/web`; extracting into the wrong
+   depth (or dropping the standalone's own `node_modules` symlinks for
+   `next`/`react`) caused `MODULE_NOT_FOUND: next`. Fix verified live.
+
+**Content of the release:** the P0+P1 product recovery — see
+`memorybank/imp/RECOVERY-PLAN-IMPLEMENTATION.md` and the
+`## Product recovery` entry in `memorybank/Fixes.md`.
+
+**Post-deploy fixes applied:** `CancelReportGenerationHandler` now returns
+`{cancelled:false}` for approved/exported/submitted drafts instead of throwing
+`INVALID_STATE_TRANSITION`; `packages/application`, `packages/infrastructure`,
+and `apps/api` dist re-shipped and the api restarted (no pnpm-store churn).

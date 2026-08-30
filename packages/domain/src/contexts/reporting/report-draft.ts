@@ -14,6 +14,7 @@ export interface ReportDraftProps {
   createdById: string;
   approvedById?: string;
   approvedAt?: Date;
+  supersededAt?: Date;
 }
 
 export class ReportDraft extends Entity<string> {
@@ -66,6 +67,35 @@ export class ReportDraft extends Entity<string> {
   get createdById(): string { return this.props.createdById; }
   get approvedById(): string | undefined { return this.props.approvedById; }
   get approvedAt(): Date | undefined { return this.props.approvedAt; }
+  get supersededAt(): Date | undefined { return this.props.supersededAt; }
+  get isSuperseded(): boolean { return this.props.supersededAt !== undefined; }
+
+  /**
+   * Marks a draft as superseded by a newer generation for the same reporting
+   * period. Approved, exported, and submitted drafts are never superseded: a
+   * generation only supersedes drafts that are still being worked on.
+   */
+  supersede(at: Date): void {
+    if (this.props.status === "APPROVED" || this.props.status === "EXPORTED" || this.props.status === "SUBMITTED") {
+      throw DomainError.invalidTransition("Approved, exported, or submitted drafts cannot be superseded");
+    }
+    this.props.supersededAt = at;
+    this.touch();
+  }
+
+  /**
+   * Reactivates a superseded working draft, making it the current draft again
+   * for its reporting period. Only draft/under-review drafts can be
+   * reactivated; approved reports remain the historical record.
+   */
+  activate(): void {
+    if (this.props.status === "APPROVED" || this.props.status === "EXPORTED" || this.props.status === "SUBMITTED") {
+      throw DomainError.invalidTransition("Approved, exported, or submitted drafts cannot be reactivated");
+    }
+    if (this.props.supersededAt === undefined) return;
+    this.props.supersededAt = undefined;
+    this.touch();
+  }
 
   /**
    * Corrects the AI-origin flag after generation. Set false when the provider

@@ -27,7 +27,7 @@ export class ApproveReportSectionHandler {
     if (!sec.currentRevisionId) {
       return {
         ok: false,
-        error: DomainError.reportGateBlocked("Section has no revision; generate or edit the section before approval"),
+        error: DomainError.reportGateBlocked("This section has no content yet. Generate a draft or write the section before approving it."),
       };
     }
     const revisionResult = await this.revisions.findById(sec.currentRevisionId, ctx.tenant.tenantId);
@@ -38,7 +38,7 @@ export class ApproveReportSectionHandler {
       return {
         ok: false,
         error: DomainError.reportGateBlocked(
-          `Section revision ${revision.revisionNumber} has ${revision.assuranceState} assurance; reassess before approval`,
+          "This section needs fixes before it can be approved: some statements could not be verified. Edit them below, or accept a statement with a note / exclude it, then try again.",
           { revisionId: revision.id, assuranceState: revision.assuranceState },
         ),
       };
@@ -52,9 +52,10 @@ export class ApproveReportSectionHandler {
     if (unresolved.length > 0) {
       return {
         ok: false,
-        error: DomainError.reportGateBlocked("Section contains unresolved claims; resolve or exclude them before approval", {
-          unresolvedClaims: unresolved.map((c) => c.id),
-        }),
+        error: DomainError.reportGateBlocked(
+          `This section contains ${unresolved.length} statement${unresolved.length === 1 ? "" : "s"} that still need a decision. Accept each statement with a note or exclude it below, then try again.`,
+          { unresolvedClaims: unresolved.map((c) => c.id) },
+        ),
       };
     }
 

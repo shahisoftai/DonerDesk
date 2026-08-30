@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { EvidenceResponseSchema, OrganizationSchema } from "@/lib/server/schemas";
+import { EvidenceResponseSchema, OrganizationSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
 import {
   parseEvidenceFilters,
   serializeEvidenceFilters,
@@ -14,6 +14,7 @@ import { verificationStatusTone, confidentialityTone } from "@/lib/shared/tone";
 import { EVIDENCE_TYPE_LABEL, EVIDENCE_VERIFICATION_LABEL, CONFIDENTIALITY_LABEL } from "@/lib/labels";
 import { EvidenceFilterBar } from "@/features/evidence/presentation/EvidenceFilterBar";
 import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
+import { EvidencePeriodPicker } from "@/features/evidence/presentation/EvidencePeriodPicker";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export default async function EvidencePage({
   const filters = parseEvidenceFilters(entries);
 
   const ctx = await requireSession();
-  const [result, orgResult] = await Promise.all([
+  const [result, orgResult, periodsResult] = await Promise.all([
     gatewayRequest(`/v1/evidence/search`, EvidenceResponseSchema, ctx.token, {
       method: "POST",
       body: {
@@ -49,8 +50,13 @@ export default async function EvidencePage({
       },
     }),
     gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token),
   ]);
   const driveConnected = orgResult.ok && orgResult.value.storageProvider === "GOOGLE_DRIVE";
+  const periodOptions = (periodsResult.ok ? periodsResult.value.items : []).map((p) => ({
+    id: p.id,
+    label: `${p.reportType.replace(/_/g, " ")} (${new Date(p.startDate).toLocaleDateString()} – ${new Date(p.endDate).toLocaleDateString()})`,
+  }));
 
   const baseUrl = `/projects/${resolvedParams.id}/evidence`;
 
@@ -107,6 +113,7 @@ export default async function EvidencePage({
                 <tr>
                   <th className="px-3 py-2 text-left">File</th>
                   <th className="px-3 py-2 text-left">Type</th>
+                  <th className="px-3 py-2 text-left">Reporting period</th>
                   <th className="px-3 py-2 text-left">Verification</th>
                   <th className="px-3 py-2 text-left">Confidentiality</th>
                 </tr>
@@ -121,6 +128,13 @@ export default async function EvidencePage({
                       <span className="block text-xs text-slate-500 dark:text-slate-400">{e.fileName}</span>
                     </td>
                     <td className="px-3 py-2">{EVIDENCE_TYPE_LABEL[e.evidenceType] ?? e.evidenceType.replace(/_/g, " ")}</td>
+                    <td className="px-3 py-2">
+                      <EvidencePeriodPicker
+                        evidenceId={e.id}
+                        currentPeriodId={e.reportingPeriodId ?? null}
+                        periods={periodOptions}
+                      />
+                    </td>
                     <td className="px-3 py-2">
                       <Badge tone={verificationStatusTone(e.verificationStatus)}>
                         {EVIDENCE_VERIFICATION_LABEL[e.verificationStatus] ?? e.verificationStatus.replace(/_/g, " ")}

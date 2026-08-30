@@ -5,6 +5,7 @@ import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IIndicatorRepository } from "../../ports/logframe.js";
+import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type {
   IReportingPeriodRepository,
@@ -21,6 +22,7 @@ export class CalculateReadinessHandler {
     private readonly indicators: IIndicatorRepository,
     private readonly updates: IIndicatorUpdateRepository,
     private readonly evidence: IEvidenceRepository,
+    private readonly activities: IActivityUpdateRepository,
     private readonly checklist: IChecklistRepository,
     private readonly templates: IDonorTemplateRepository,
   ) {}
@@ -58,8 +60,27 @@ export class CalculateReadinessHandler {
       verifiedIndicators = indUpdates.value.filter((u) => u.verificationStatus === "VERIFIED").length;
     }
 
-    const ev = await this.evidence.search({ reportingPeriodId, pageSize: 1 }, ctx.tenant.tenantId);
-    if (ev.ok) attachedEvidenceCount = ev.value.total;
+    // Evidence coverage counts every file that supports this period's report,
+    // not only files tagged directly to the period: evidence attached to the
+    // period's indicator updates and activity updates counts as well, matching
+    // the evidence set the generation run actually consumes.
+    const evidenceIds = new Set<string>();
+    const periodTagged = await this.evidence.search({ reportingPeriodId, pageSize: 500 }, ctx.tenant.tenantId);
+    if (periodTagged.ok) {
+      for (const item of periodTagged.value.items) evidenceIds.add(item.id);
+    }
+    if (indUpdates.ok) {
+      for (const u of indUpdates.value) {
+        for (const id of u.attachedEvidenceIds) evidenceIds.add(id);
+      }
+    }
+    const activityUpdates = await this.activities.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    if (activityUpdates.ok) {
+      for (const a of activityUpdates.value) {
+        for (const id of a.attachedEvidenceIds) evidenceIds.add(id);
+      }
+    }
+    attachedEvidenceCount = evidenceIds.size;
 
     const cl = await this.checklist.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (cl.ok) {

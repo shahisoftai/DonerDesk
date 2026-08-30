@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { generateDraftAction, getReportDraftAction, detectMissingAction, submitReportForReviewAction, approveReportSectionAction, createReportSectionAction, deleteReportSectionAction, reorderReportSectionsAction } from "@/lib/actions/reporting";
+import { generateDraftAction, getReportDraftAction, detectMissingAction, submitReportForReviewAction, approveReportSectionAction, createReportSectionAction, deleteReportSectionAction, reorderReportSectionsAction, cancelReportGenerationAction, activateReportDraftAction } from "@/lib/actions/reporting";
 import { useActionState } from "@/lib/client/action-state";
 import { can, type Capability } from "@/lib/shared/capabilities";
 import { Badge } from "@/components/data/Badge";
@@ -18,6 +18,10 @@ import {
 import { SECTION_STATUS_LABEL, REPORT_DRAFT_STATUS_LABEL } from "@/lib/labels";
 import { SectionEditor } from "./SectionEditor";
 import { ReportChartPanel } from "./ReportChartPanel";
+import { ClaimResolutionActions } from "./ClaimResolutionActions";
+import { ReportReviewPanel } from "./ReportReviewPanel";
+import { ReportPreviewPanel } from "./ReportPreviewPanel";
+import { DraftVersionsPanel } from "./DraftVersionsPanel";
 import type { ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import { ReviewAndApproval } from "@/features/review/presentation/ReviewAndApproval";
 import { ExportsPanel, type ExportHistoryItem } from "@/features/exports/presentation/ExportsPanel";
@@ -48,6 +52,7 @@ type ReportSection = {
   status: string;
   chartConfig?: ChartConfig | null;
   updatedAt: string;
+  generatedWithAi?: boolean | null;
 };
 type ReportClaim = {
   id: string;
@@ -57,6 +62,9 @@ type ReportClaim = {
   sources?: Array<{ evidenceId: string; chunkId: string; sourceText: string }>;
   verificationResult: string;
   verificationDetail: string;
+  resolutionNotes?: string | null;
+  resolvedById?: string;
+  resolvedAt?: string;
 };
 type ReportDraft = {
   id: string;
@@ -64,6 +72,17 @@ type ReportDraft = {
   status: string;
   version: number;
   generatedByAi?: boolean;
+};
+type DraftVersion = {
+  id: string;
+  title: string;
+  status: string;
+  version: number;
+  generatedByAi?: boolean;
+  approvedById?: string;
+  approvedAt?: string | null;
+  supersededAt?: string | null;
+  createdAt: string;
 };
 
 type ChartIndicator = {
@@ -97,6 +116,7 @@ export function ReportWorkspace({
   draft,
   sections,
   claims,
+  versions,
   indicators,
   readiness,
   checklist,
@@ -110,6 +130,7 @@ export function ReportWorkspace({
   draft: ReportDraft | null;
   sections: ReportSection[];
   claims: ReportClaim[];
+  versions: DraftVersion[];
   indicators: RawIndicatorRow[];
   readiness: Readiness;
   checklist: ChecklistItem[];
@@ -123,6 +144,7 @@ export function ReportWorkspace({
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panel, setPanel] = useState<Panel>("editor");
+  const [mode, setMode] = useState<"editor" | "review" | "preview" | "versions">("editor");
   const [draftMsg, setDraftMsg] = useState<string | null>(null);
   const [addingSection, setAddingSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
@@ -131,6 +153,8 @@ export function ReportWorkspace({
   const [liveSections, setLiveSections] = useState<ReportSection[]>(sections);
   const [generating, setGenerating] = useState(false);
   const [generatedCount, setGeneratedCount] = useState(0);
+  const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
+  const [sectionError, setSectionError] = useState<string | null>(null);
 
   // Keep the local section list in sync with server-rendered props unless a
   // background section-wise generation is polling and owns the list.
@@ -141,12 +165,19 @@ export function ReportWorkspace({
   const canGenerate = can(capabilities, "report.generate");
   const canEdit = can(capabilities, "reporting.edit");
   const canApproveSection = can(capabilities, "report.approve");
+  const canResolveClaim = can(capabilities, "report.resolve-claim");
+  const canOverrideConfidential = can(capabilities, "report.override-confidentiality");
 
   async function approveSection(sectionId: string) {
     setBusyAction("section");
     try {
-      const result = await actionState.run(() => approveReportSectionAction(sectionId));
-      if (result !== undefined) router.refresh();
+      const result = await approveReportSectionAction(sectionId);
+      if (!result.ok) {
+        setSectionError(result.error.message);
+      } else {
+        setSectionError(null);
+      }
+      router.refresh();
     } finally {
       setBusyAction(null);
     }
@@ -162,8 +193,59 @@ export function ReportWorkspace({
 
   const selected = liveSections.find((s) => s.id === selectedId) ?? null;
   const pendingSectionCount = liveSections.filter((s) => s.status === "NOT_STARTED").length;
+  const approvedSectionCount = liveSections.filter((s) => s.status === "APPROVED").length;
+  const pendingFailedClaims = claims.filter((c) => c.verificationResult === "FAILED" && !c.resolvedById).length;
   const openChecklist = checklist.filter((c) => c.status !== "RESOLVED" && c.status !== "ACCEPTED_RISK" && c.status !== "NOT_APPLICABLE");
   const aiEnabledLabel = draft ? (draft.generatedByAi ? "AI-assisted draft" : "Manually created draft") : null;
+
+  // Simple remaining-time estimate while sections draft in the background:
+  // average time per completed section projected over the pending sections.
+  const generationEtaLabel = useMemo(() => {
+    if (!generating || !generationStartedAt || generatedCount <= 0) return null;
+    const elapsedMs = Date.now() - generationStartedAt;
+    const perSectionMs = elapsedMs / generatedCount;
+    const remaining = Math.max(0, liveSections.length - generatedCount);
+    if (remaining === 0) return null;
+    const etaSec = Math.round((perSectionMs * remaining) / 1000);
+    if (etaSec <= 0) return null;
+    const mins = Math.floor(etaSec / 60);
+    const secs = etaSec % 60;
+    return `~${mins > 0 ? `${mins}m ` : ""}${secs}s left`;
+  }, [generating, generationStartedAt, generatedCount, liveSections.length]);
+
+  // The one thing the user should do next, in plain language. Each step links
+  // to the exact place where it is fixed; nothing here exposes internal
+  // assurance or revision terminology.
+  type NextStep = { label: string; href?: string; action?: () => void };
+  const nextSteps: NextStep[] = [];
+  if (unverifiedIndicatorCount > 0) {
+    nextSteps.push({
+      label: `Enter and verify ${unverifiedIndicatorCount} indicator row${unverifiedIndicatorCount === 1 ? "" : "s"}`,
+      href: `/projects/${projectId}/reports/${periodId}/indicators`,
+    });
+  }
+  if (!draft) {
+    nextSteps.push({ label: "Generate the AI draft", action: () => void generate() });
+  } else {
+    if (pendingFailedClaims > 0) {
+      nextSteps.push({
+        label: `Review ${pendingFailedClaims} statement${pendingFailedClaims === 1 ? "" : "s"} that need a decision`,
+        action: () => setMode("review"),
+      });
+    }
+    if (liveSections.length > 0 && approvedSectionCount < liveSections.length) {
+      nextSteps.push({
+        label: `Approve the remaining ${liveSections.length - approvedSectionCount} section${liveSections.length - approvedSectionCount === 1 ? "" : "s"}`,
+        action: () => setMode("editor"),
+      });
+    }
+    if (liveSections.length > 0 && approvedSectionCount === liveSections.length && draft.status === "DRAFT") {
+      nextSteps.push({ label: "Submit the report for review", action: () => void submitReview() });
+    }
+    if (draft.status === "UNDER_REVIEW") {
+      nextSteps.push({ label: "Approve the report", action: () => setMode("editor") });
+    }
+  }
 
   // Flat chart-ready indicator rows; a single memoised map is shared by every
   // section's chart panel.
@@ -191,6 +273,7 @@ export function ReportWorkspace({
           // Section-wise generation: skeleton returned immediately; poll the
           // draft until every section has been drafted in the background.
           setGenerating(true);
+          setGenerationStartedAt(Date.now());
           setDraftMsg(null);
         } else {
           const fallbackSuffix = result.fallbackUsed
@@ -200,6 +283,36 @@ export function ReportWorkspace({
           router.refresh();
         }
       }
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function stopGeneration() {
+    setBusyAction("stop");
+    try {
+      const result = await cancelReportGenerationAction(periodId);
+      if (result.ok) {
+        setGenerating(false);
+        setGenerationStartedAt(null);
+        setDraftMsg(result.value.cancelled ? "Generation stopped. Generate a new draft to continue." : "No active generation to stop.");
+      }
+      router.refresh();
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function activateVersion(draftId: string) {
+    setBusyAction("activate");
+    try {
+      const result = await activateReportDraftAction(draftId);
+      if (!result.ok) {
+        setSectionError(result.error.message);
+        return;
+      }
+      setMode("editor");
+      router.refresh();
     } finally {
       setBusyAction(null);
     }
@@ -352,7 +465,12 @@ export function ReportWorkspace({
         <div className="flex flex-wrap gap-2">
           {canGenerate && (
             <Button size="sm" variant="secondary" disabled={busyAction === "draft" || generating} onClick={generate} pending={generating || busyAction === "draft"}>
-              {generating ? `Generating… ${generatedCount}/${liveSections.length}` : busyAction === "draft" ? "Generating…" : draft ? "Regenerate AI draft" : "Generate AI draft"}
+              {generating ? `Generating… ${generatedCount}/${liveSections.length}${generationEtaLabel ? ` (${generationEtaLabel})` : ""}` : busyAction === "draft" ? "Generating…" : draft ? "Regenerate AI draft" : "Generate AI draft"}
+            </Button>
+          )}
+          {generating && (
+            <Button size="sm" variant="ghost" disabled={busyAction === "stop"} onClick={stopGeneration} pending={busyAction === "stop"}>
+              Stop generation
             </Button>
           )}
           {canGenerate && (
@@ -508,6 +626,7 @@ export function ReportWorkspace({
                   disabled={s.status === "NOT_STARTED"}
                   onClick={() => {
                     setSelectedId(s.id);
+                    setSectionError(null);
                     setPanel("editor");
                   }}
                   aria-current={selectedId === s.id ? "true" : undefined}
@@ -560,10 +679,55 @@ export function ReportWorkspace({
           </nav>
         </aside>
 
-        {/* Center: editor */}
+        {/* Center: editor / review / preview */}
         <section className={`space-y-4 ${panel === "editor" ? "block" : "hidden lg:block"}`}>
-          {selected ? (
+          {draft && (
+            <div className="flex gap-1 border-b border-slate-200 pb-2 text-sm dark:border-white/10" role="tablist" aria-label="Report views">
+              {(
+                [
+                  ["editor", "Edit sections"],
+                  ["review", `Review${pendingFailedClaims > 0 ? ` (${pendingFailedClaims})` : ""}`],
+                  ["preview", "Preview report"],
+                  ["versions", `Versions${versions.length > 1 ? ` (${versions.length})` : ""}`],
+                ] as Array<["editor" | "review" | "preview" | "versions", string]>
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  role="tab"
+                  aria-selected={mode === key}
+                  onClick={() => setMode(key)}
+                  className={`rounded-md px-3 py-1.5 ${mode === key ? "bg-brand-500/10 font-medium text-brand-700 dark:text-brand-300" : "text-slate-600 dark:text-slate-300"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {mode === "review" ? (
+            <ReportReviewPanel
+              claims={claims}
+              sections={liveSections}
+              canResolveClaim={canResolveClaim}
+              canOverrideConfidential={canOverrideConfidential}
+              onResolved={() => router.refresh()}
+            />
+          ) : mode === "preview" ? (
+            <ReportPreviewPanel sections={liveSections} />
+          ) : mode === "versions" ? (
+            <DraftVersionsPanel
+              versions={versions}
+              currentDraftId={draft?.id ?? null}
+              canEdit={canEdit}
+              onActivate={(draftId) => void activateVersion(draftId)}
+              busy={busyAction === "activate"}
+            />
+          ) : selected ? (
             <div className="card">
+              {selected.generatedWithAi === false && selected.content && draft?.generatedByAi === false && (
+                <p className="mb-3 rounded-md border border-warning-500/30 bg-warning-500/5 px-3 py-2 text-xs text-warning-700 dark:text-warning-400">
+                  This section was drafted without AI (deterministic fallback) or was written manually. Review it carefully.
+                </p>
+              )}
               <SectionEditor
                 key={selected.id}
                 sectionId={selected.id}
@@ -617,6 +781,18 @@ export function ReportWorkspace({
                           <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
                             Verification: {c.verificationResult} — {c.verificationDetail}
                           </p>
+                          {c.resolvedById ? (
+                            <p className="mt-1.5 text-xs text-emerald-700 dark:text-emerald-400">
+                              Resolved{c.resolutionNotes ? ` — ${c.resolutionNotes}` : ""}
+                            </p>
+                          ) : c.verificationResult === "FAILED" ? (
+                            <ClaimResolutionActions
+                              claimId={c.id}
+                              canResolve={canResolveClaim}
+                              canOverrideConfidential={canOverrideConfidential}
+                              onResolved={() => router.refresh()}
+                            />
+                          ) : null}
                         </li>
                       ))}
                   </ul>
@@ -627,6 +803,9 @@ export function ReportWorkspace({
                   <Button size="sm" variant="secondary" onClick={() => approveSection(selected.id)} pending={busyAction === "section"}>
                     Approve this section
                   </Button>
+                  {sectionError && (
+                    <p role="alert" className="mt-2 text-sm font-medium text-danger-700 dark:text-danger-400">{sectionError}</p>
+                  )}
                 </div>
               )}
               {canEdit && (
@@ -648,6 +827,27 @@ export function ReportWorkspace({
 
         {/* Right: context */}
         <aside className={`space-y-4 ${panel === "context" ? "block" : "hidden lg:block"}`}>
+          {nextSteps.length > 0 && (
+            <section className="card">
+              <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">What to do next</h3>
+              <ol className="mt-2 space-y-1.5 text-sm">
+                {nextSteps.map((step, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500/10 text-xs font-medium text-brand-700 dark:text-brand-300">
+                      {index + 1}
+                    </span>
+                    {step.href ? (
+                      <Link href={step.href} className="text-brand-700 hover:underline dark:text-brand-300">{step.label}</Link>
+                    ) : (
+                      <button type="button" onClick={step.action} className="text-left text-brand-700 hover:underline dark:text-brand-300">
+                        {step.label}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
           <section className="card">
             <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Readiness</h3>
             <div className="mt-2">

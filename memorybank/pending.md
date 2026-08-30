@@ -484,6 +484,11 @@ actually supports; unsupported controls are omitted rather than simulated.
 ### Feature 07 — Evidence Library
 - [x] **Google Drive primary storage (link-first)** — `storageProvider=GOOGLE_DRIVE`;
   `POST /v1/evidence/link-drive` links Drive files without a byte copy. See `gdrive.md`.
+- [x] **Reporting-period tagging (2026-08-30, release `20260829160000`)** —
+  `POST /v1/evidence/:id/period` + an inline "Reporting period" picker in the
+  evidence library; readiness "Evidence" score counts the union of period-tagged
+  + indicator-update-attached + activity-attached evidence. See
+  `Features/07-Evidence-Library.md`.
 - [ ] R2 storage wired via env for production (adapter exists, config placeholder)
 - [ ] Google OCR tagging by `driveFileId` (currently byte-based Tika for LOCAL/R2)
 - [ ] Bulk file upload (zip import)
@@ -519,6 +524,15 @@ actually supports; unsupported controls are omitted rather than simulated.
   (Phase 4 in code). Real LLM/bulk/recurring remain backend.
 
 ### Feature 11 — AI Report Draft Generator
+- [x] **Product recovery P0+P1 (2026-08-30, release `20260829160000`)** — fixed the
+  writer↔verifier↔human boundary: numeric-atom parser (thousands separators,
+  embedded-code digits, ambiguous tokens), temporary + relaxed narrator number
+  discipline, tolerant verifier (target/baseline references, derived-percent
+  1/2-decimal), human-readable failure detail, per-section fallback surfacing
+  (`generatedWithAi` banner), generation ETA + Stop (`cancel-generation`),
+  workspace claim resolution (Accept-with-note/Exclude) + Review/Preview views,
+  "What to do next" panel. See
+  `imp/RECOVERY-PLAN-IMPLEMENTATION.md` and `Features/11-AI-Report-Draft-Generator.md`.
 - [x] Real LLM drafting (2026-08-17 — SuperAdmin MiniMax/DeepSeek config, live in production)
 - [x] AI-credit metering — stub fallback never billed (2026-08-17)
 - [x] Actual source reference population from evidence (2026-08-17 — real document
@@ -589,8 +603,11 @@ actually supports; unsupported controls are omitted rather than simulated.
   baseline; an LLM-judge for qualitative metrics (coherence, donor quality,
   period-comparison) can be layered on the same metric surface without touching
   the hard gates.
-- [ ] Unsupported claim warning UI (API + checklist projection done; the
-  consolidated exception surface in the web UI is a tracked follow-up)
+- [x] **Consolidated exception surface (2026-08-30, release `20260829160000`)** —
+  the report workspace now has a Review view with per-statement Accept-with-note /
+  Exclude actions and an idempotent unsupported-claim projector (resolved items
+  are never recreated), replacing the former "wall of checklist items" flow.
+  See `Features/12-Missing-Evidence-And-Compliance-Checklist.md`.
 - [ ] Executive summary auto-generation
 - [ ] Donor-specific tone adjustment
 - **Frontend:** generate/regenerate AI draft + manual blank fallback; section-level
@@ -605,6 +622,11 @@ actually supports; unsupported controls are omitted rather than simulated.
   risk/N/A) with required note + confirmation, readiness explanation (Phase 5).
 
 ### Feature 13 — Review and Approval Workflow
+- [x] **Claim resolution in the workspace (2026-08-30, release `20260829160000`)** —
+  per-statement Accept-with-note / Exclude inline in the section editor and in
+  the aggregated Review view; approval blockers now render as actionable,
+  human-language messages. See
+  `Features/13-Review-And-Approval-Workflow.md`.
 - [ ] Email notifications for mentions
 - [ ] Review deadline tracking
 - [ ] Automated reminders for pending reviews

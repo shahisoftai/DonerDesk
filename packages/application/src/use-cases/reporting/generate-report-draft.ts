@@ -253,6 +253,21 @@ export class GenerateReportDraftHandler {
       }
     }
 
+    // Supersede any earlier working drafts for this period so there is always
+    // exactly one current draft. Approved, exported, and submitted drafts are
+    // preserved as the historical record.
+    const priorDraftsResult = await this.drafts.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    if (!priorDraftsResult.ok) return priorDraftsResult;
+    const supersedeAt = new Date();
+    for (const prior of priorDraftsResult.value) {
+      if (prior.isSuperseded) continue;
+      if (prior.status === "DRAFT" || prior.status === "UNDER_REVIEW") {
+        prior.supersede(supersedeAt);
+        const updated = await this.drafts.update(prior);
+        if (!updated.ok) return updated;
+      }
+    }
+
     const draftId = this.ids.generate();
     const draft = ReportDraft.create({
       id: draftId,
@@ -456,6 +471,23 @@ export class GenerateReportDraftHandler {
       for (let i = 0; i < input.sectionIds.length; i++) {
         const sectionId = input.sectionIds[i]!;
         const planSection = input.plan.sections[i]!;
+
+        // Honor cancellation: the draft is superseded by a regeneration or by
+        // the user's "Stop" action. Stop drafting further sections.
+        const freshDraft = await this.drafts.findById(input.draftId, input.ctx.tenant.tenantId);
+        if (!freshDraft.ok || !freshDraft.value) break;
+        if (freshDraft.value.isSuperseded) {
+          this.audit.record({
+            tenantId: input.ctx.tenant.tenantId,
+            actorId: input.ctx.tenant.userId,
+            eventType: "report.draft.generation_stopped",
+            entityType: "report_draft",
+            entityId: input.draftId,
+            projectId: input.draft.projectId,
+            systemNote: "Section-wise generation stopped because the draft was superseded (regenerated or cancelled).",
+          }).catch(() => undefined);
+          break;
+        }
 
         // Resume-safe: skip sections already drafted by a previous run.
         const existing = await this.sections.findById(sectionId, input.ctx.tenant.tenantId);

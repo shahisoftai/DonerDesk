@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   ReportRevision,
   ReportClaim,
+  ReportDraft,
   SubmissionSnapshot,
   createRequirementPack,
   createAwardOverride,
@@ -17,6 +18,42 @@ import {
   initialAssuranceState,
   canApproveAssurance,
 } from "../dist/index.js";
+
+test("ReportDraft supersedes only working drafts", () => {
+  const draft = ReportDraft.create({
+    id: "draft-1",
+    tenantId: "tenant-a",
+    projectId: "proj-1",
+    reportingPeriodId: "period-1",
+    title: "Draft",
+    generatedByAi: true,
+    createdById: "user-1",
+  });
+  assert.equal(draft.isSuperseded, false);
+  draft.supersede(new Date("2026-08-29T00:00:00Z"));
+  assert.equal(draft.isSuperseded, true);
+  assert.ok(draft.supersededAt);
+  draft.requestReview();
+  draft.approve("user-1");
+  assert.throws(() => draft.supersede(new Date()), /cannot be superseded/i);
+});
+
+test("ReportDraft reactivates a superseded working draft", () => {
+  const draft = ReportDraft.create({
+    id: "draft-2",
+    tenantId: "tenant-a",
+    projectId: "proj-1",
+    reportingPeriodId: "period-1",
+    title: "Older draft",
+    generatedByAi: false,
+    createdById: "user-1",
+  });
+  draft.supersede(new Date("2026-08-29T00:00:00Z"));
+  assert.equal(draft.isSuperseded, true);
+  draft.activate();
+  assert.equal(draft.isSuperseded, false);
+  assert.equal(draft.supersededAt, undefined);
+});
 
 test("ReportRevision starts UNASSESSED and transitions through assurance states", () => {
   const revision = ReportRevision.create({
@@ -127,6 +164,31 @@ test("numeric atoms extract with roles", () => {
   assert.equal(atoms[0].value, "500");
   assert.equal(atoms[1].value, "800");
   assert.equal(atoms[2].value, "200");
+});
+
+test("numeric atoms normalize thousands separators", () => {
+  const atoms = extractNumericAtoms("The programme enrolled 3,251 children and assessed 6,542.5 learners.");
+  assert.equal(atoms.length, 2);
+  assert.equal(atoms[0].value, "3251");
+  assert.equal(atoms[1].value, "6542.5");
+  assert.deepEqual(atoms.map((a) => [a.charStart, a.charEnd]), [[23, 28], [51, 58]]);
+});
+
+test("numeric atoms ignore digits inside words, codes and hyphenated identifiers", () => {
+  const atoms = extractNumericAtoms("8 learning centres (OUT-1) and 58 teachers (OUT-10) supported by Stage-2 funding.");
+  assert.equal(atoms.length, 2);
+  assert.deepEqual(atoms.map((a) => a.value), ["8", "58"]);
+});
+
+test("numeric atoms keep standalone negative numbers as signs", () => {
+  const atoms = extractNumericAtoms("Enrolment was 100 last period and fell to -5 this period.");
+  assert.equal(atoms.length, 2);
+  assert.deepEqual(atoms.map((a) => a.value), ["100", "-5"]);
+});
+
+test("ambiguous comma tokens are rejected instead of misread", () => {
+  const atoms = extractNumericAtoms("Ratio was 12,5 per group.");
+  assert.equal(atoms.length, 0);
 });
 
 test("materiality is derived deterministically", () => {

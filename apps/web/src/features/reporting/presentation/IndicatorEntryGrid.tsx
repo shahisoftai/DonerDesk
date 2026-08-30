@@ -378,6 +378,11 @@ function LevelGroupRows({
             <td className="min-w-[200px] px-3 py-2">
               <span className="font-medium">{row.name}</span>
               {row.logframeTitle && <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{row.logframeTitle}</span>}
+              {row.requiresDenominator && (
+                <span className="mt-1 block text-xs text-warning-700 dark:text-warning-400">
+                  This percentage/ratio indicator has no denominator indicator configured, so its result cannot be independently verified in the report.
+                </span>
+              )}
             </td>
             <td className="px-3 py-2 text-xs">{INDICATOR_TYPE_LABEL[row.type] ?? row.type}</td>
             <td className="px-3 py-2 text-xs">{row.baseline || "—"}</td>

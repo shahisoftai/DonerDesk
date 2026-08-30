@@ -9,6 +9,20 @@
 > submission snapshots, and donor-native rendering — **status IMPLEMENTED
 > (2026-08-19)**.
 
+> **Product recovery (2026-08-30, release `20260829160000`):** the writer ↔
+> verifier ↔ human-review boundary was fixed — see
+> [`../imp/RECOVERY-PLAN-IMPLEMENTATION.md`](../imp/RECOVERY-PLAN-IMPLEMENTATION.md).
+> Summary: numeric-atom parser handles thousands separators and ignores digits
+> embedded in codes; the narrator prompt enforces number discipline (temporary)
+> then was relaxed; the numeric verifier tolerates target/baseline reference
+> figures (only alongside a bound value) and 1-/2-decimal derived percentages;
+> verification failures carry human-readable expected/actual detail; the
+> unsupported-claim projector is idempotent against resolved items; claim
+> resolution moved into the report workspace (Review view); approval blockers
+> are actionable and human-language; drafts are superseded (one current draft +
+> Versions archive); generation has ETA + cancel; evidence readiness counts the
+> period-linked union; percentage indicators warn when unverifiable.
+
 ## 1. Objective
 
 DonorDesk does **not** need a new report-writing engine. It needs completion and wiring of its existing reporting architecture so the system performs the work automatically, surfaces only material exceptions, and asks for human judgment once — at the decision boundary.

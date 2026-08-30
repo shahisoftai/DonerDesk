@@ -16,6 +16,7 @@ import {
   UpdateSectionChartResponseSchema,
   RewriteSectionResponseSchema,
   ReorderSectionsResponseSchema,
+  CancelGenerationResponseSchema,
 } from "./_schemas";
 
 export type CreateReportingPeriodResult = Result<{ id: string }, AppError>;
@@ -249,7 +250,6 @@ export async function rewriteReportSectionAction(
 }
 
 export type ResolveReportClaimResult = Result<undefined, AppError>;
-
 /**
  * Resolves a single ReportClaim with an authorized limitation or exclusion.
  * The api enforces the capability:
@@ -279,4 +279,32 @@ export async function resolveReportClaimAction(
   });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
+}
+
+export type CancelReportGenerationResult = Result<{ cancelled: boolean }, AppError>;
+
+/**
+ * Stops an in-flight background section-wise generation for a reporting
+ * period by superseding the current working draft. Drafted sections already
+ * committed are retained in the superseded draft; a fresh generation creates
+ * a new draft.
+ */
+export async function cancelReportGenerationAction(periodId: string): Promise<CancelReportGenerationResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/cancel-generation`, CancelGenerationResponseSchema, context.token, {
+    method: "POST",
+  });
+}
+
+export type ActivateReportDraftResult = Result<{ id: string }, AppError>;
+
+/**
+ * Reactivates a superseded working draft as the current draft for its
+ * reporting period (draft versions archive).
+ */
+export async function activateReportDraftAction(draftId: string): Promise<ActivateReportDraftResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-drafts/${draftId}/activate`, IdResponseSchema, context.token, {
+    method: "POST",
+  });
 }

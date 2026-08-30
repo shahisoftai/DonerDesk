@@ -1,6 +1,63 @@
 # Fixes
 
-Record of fixes applied to DonorDesk. Last updated: 2026-08-28.
+Record of fixes applied to DonorDesk. Last updated: 2026-08-30.
+
+## Product recovery — writer ↔ verifier ↔ human-review boundary (2026-08-30, release `20260829160000`)
+
+**Status:** Implemented and deployed to donordesk.online.
+
+The end-to-end user audit found the AI report workflow generated hundreds of
+unsupported-claim checklist items, approval gates blocked without explanation,
+and the UI leaked internal assurance terminology. Full record:
+`memorybank/imp/RECOVERY-PLAN-IMPLEMENTATION.md`.
+
+**Root causes (code-traced):**
+1. `extractNumericAtoms` (`packages/domain/src/contexts/reporting/numeric-atom.ts`)
+   used `/-?\d+(?:\.\d+)?/g`: "3,251" became atoms `3,251,4,215`; "(OUT-1)"
+   became atom `-1`. Any unbound atom failed the whole sentence.
+2. The narrator prompt (`llm-report-draft-generator.ts`) encouraged
+   derived percentages + indicator codes and its worked example demonstrated the
+   exact pattern the verifier rejects.
+3. Percentage findings compute to `0`/`MISSING_DENOMINATOR` when no denominator
+   indicator is configured — claims about them can never verify, and nothing
+   warned the user at data entry.
+4. `checklist-projector.ts` deduped only against OPEN/IN_PROGRESS items, so
+   resolved items were recreated after edits/regenerations.
+5. Approval blockers surfaced only as a generic error line; claim resolution
+   lived only in the export wizard; every regeneration created a new draft with
+   no cleanup; the Evidence readiness score ignored evidence attached to
+   indicator/activity updates.
+
+**Fixes shipped:**
+- Parser: thousands separators, digits embedded in codes ignored, ambiguous
+  tokens rejected, standalone negatives preserved.
+- Writer: temporary "Number discipline" rules (quote only finding values; never
+  derive percentages / quote targets / substitute NOT_CALCULABLE values) +
+  verifier-safe worked example; relaxed again in P1-2 once the verifier became
+  tolerant.
+- Verifier: target/baseline figures accepted as references only alongside a
+  bound value; derived percentages accept 1-/2-decimal rounding; human-readable
+  expected/actual failure detail.
+- Projector: idempotent against ALL period items (open or resolved).
+- Workspace: per-statement Accept-with-note / Exclude; Review / Preview /
+  Versions tabs; actionable approval blockers; "What to do next" panel;
+  per-section "drafted without AI" banner; generation ETA + Stop button.
+- Draft lifecycle: `ReportDraft.supersededAt` (migration
+  `20260829140000_report_draft_superseded`) + Versions archive + activate +
+  cancel-generation.
+- Evidence: `POST /v1/evidence/:id/period` + library picker; readiness Evidence
+  score = union of period-linked evidence.
+- Percentage guard in the indicator grid.
+
+**Verification:** `pnpm -r typecheck` + `pnpm -r build` green; domain 96/96,
+infrastructure 143 pass / 0 fail; `reporting:eval` exit 0. Live: `/ready` 200
+(prisma client check includes `ReportDraft.supersededAt`), all services active,
+workspace + evidence features verified in-browser.
+
+**Deploy-script fixes surfaced by this release** (see `contabo-ops.md`):
+`BASE` unbound in the snapshot step (now defaults to `REMOTE_BASE`) and the web
+standalone extract path (now `apps/web/.next/standalone/`, matching the systemd
+unit).
 
 ## `donordesk-api` silently down for ~7 days (2026-08-28)
 

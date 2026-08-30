@@ -478,6 +478,7 @@ model ReportDraft {
   createdById       String
   approvedById      String?
   approvedAt        DateTime?
+  supersededAt      DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

@@ -43,6 +43,14 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.post("/v1/reporting-periods/:id/cancel-generation", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.cancelReportGeneration.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.put("/v1/report-sections/:id", async (req) => {
     const id = (req.params as { id: string }).id;
     const body = UpdateSectionSchema.parse(req.body);
@@ -130,6 +138,14 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.rejectReport.handle(ctx, id, body.notes);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  app.post("/v1/report-drafts/:id/activate", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.activateReportDraft.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.post("/v1/report-claims/:id/resolve", async (req) => {

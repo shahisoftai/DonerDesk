@@ -114,6 +114,29 @@ Rejected), and locks verified rows against edits in both the UI and the bulk
 upsert handler. `NEEDS_CORRECTION`/`REJECTED` transitions are still domain-only
 (no dedicated API routes yet — see `pending.md`).
 
+## Product recovery (2026-08-30, release `20260829160000`)
+
+See `../imp/RECOVERY-PLAN-IMPLEMENTATION.md`. Changes to this feature:
+
+- **Claim resolution in the workspace** (`ClaimResolutionActions.tsx`): every
+  failed statement in the section editor now has inline **Accept with note**
+  (`ACCEPTED_WITH_LIMITATION`, stays in the report flagged approved-with-caveat)
+  and **Exclude** (`EXCLUDED`) actions, gated by `report.resolve-claim` /
+  `report.override-confidentiality`. Resolved statements show their note.
+- **Review view** (`ReportReviewPanel.tsx`): aggregates all statements needing a
+  decision across every section in one place, with the same inline actions;
+  resolved statements are listed as a decision record.
+- **Actionable approval blockers**: `approve-report-section` and `approve-report`
+  return remedy-oriented, human-language messages ("This section contains 3
+  statements that still need a decision…"). The workspace renders the failure
+  inline under the Approve button.
+- **Section states in human language**: the UI no longer exposes
+  CURRENT/STALE/FAILED/UNASSESSED, revisions, or assertion internals — sections
+  read as Drafted / Needs fixes / Approved.
+- **Approval gate unchanged in substance**: a section still requires a
+  CURRENT-assurance revision and no unresolved FAILED claims; the difference is
+  that reasons and the path to resolve them are now visible and actionable.
+
 ## Pending Enhancements
 
 - [ ] Email notifications for mentions

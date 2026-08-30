@@ -56,6 +56,76 @@ test("numeric verifier fails a percentage that is not derived", () => {
   assert.ok(result.reasonCodes.includes("DERIVATION_INVALID"));
 });
 
+test("numeric verifier explains percentage failures with missing denominators", () => {
+  const verifier = new NumericAssertionVerifier();
+  const result = verifier.verify({
+    atoms: [{ charStart: 0, charEnd: 2, value: "78", role: "PERCENT", isPercent: true, bound: false }],
+    findings: [
+      finding({ value: "0", unit: "%", qualityFlags: ["MISSING_DENOMINATOR"], indicatorCode: "OUT-7" }),
+    ],
+  });
+  assert.equal(result.result, "FAILED");
+  assert.ok(result.detail.includes("denominator"));
+  assert.ok(result.detail.includes("OUT-7"));
+});
+
+test("numeric verifier explains unmatched values in plain language", () => {
+  const verifier = new NumericAssertionVerifier();
+  const result = verifier.verify({
+    atoms: [{ charStart: 0, charEnd: 3, value: "120", role: "OTHER", bound: false }],
+    findings: [finding({ value: "30", indicatorCode: "IND-1" })],
+  });
+  assert.equal(result.result, "FAILED");
+  assert.ok(result.detail.includes("120"));
+  assert.ok(result.detail.includes("no verified indicator value"));
+});
+
+test("numeric verifier accepts natural prose with derived percentages and target figures", () => {
+  const verifier = new NumericAssertionVerifier();
+  const result = verifier.verify({
+    atoms: [
+      { charStart: 0, charEnd: 1, value: "8", role: "OTHER", bound: false },
+      { charStart: 2, charEnd: 7, value: "6.67", role: "PERCENT", isPercent: true, bound: false },
+      { charStart: 8, charEnd: 11, value: "120", role: "OTHER", bound: false },
+    ],
+    findings: [finding({ value: "8", target: "120", indicatorCode: "OUT-1", unit: "centres" })],
+  });
+  assert.equal(result.result, "PASSED", result.detail);
+});
+
+test("numeric verifier accepts multiple indicators combined in one sentence", () => {
+  const verifier = new NumericAssertionVerifier();
+  const result = verifier.verify({
+    atoms: [
+      { charStart: 0, charEnd: 3, value: "521", role: "OTHER", bound: false },
+      { charStart: 4, charEnd: 6, value: "58", role: "OTHER", bound: false },
+    ],
+    findings: [
+      finding({ value: "521", indicatorCode: "OUT-2", unit: "kits" }),
+      finding({ value: "58", indicatorCode: "OUT-3", unit: "teachers" }),
+    ],
+  });
+  assert.equal(result.result, "PASSED", result.detail);
+});
+
+test("numeric verifier rejects a target figure without a matched value", () => {
+  const verifier = new NumericAssertionVerifier();
+  const result = verifier.verify({
+    atoms: [{ charStart: 0, charEnd: 3, value: "120", role: "OTHER", bound: false }],
+    findings: [finding({ value: "8", target: "120", indicatorCode: "OUT-1" })],
+  });
+  assert.equal(result.result, "FAILED");
+});
+
+test("numeric verifier rejects a baseline figure that contradicts the finding", () => {
+  const verifier = new NumericAssertionVerifier();
+  const result = verifier.verify({
+    atoms: [{ charStart: 0, charEnd: 1, value: "0", role: "OTHER", bound: false }],
+    findings: [finding({ value: "1", baseline: "0", indicatorCode: "OUT-19", unit: "incidents" })],
+  });
+  assert.equal(result.result, "FAILED");
+});
+
 test("evidence retriever ranks relevant chunks by query overlap", async () => {
   const packages = [
     {
@@ -138,6 +208,32 @@ test("checklist projector deduplicates coverage gaps", async () => {
   checklist.findByReportingPeriod = async () => ({
     ok: true,
     value: created.map((c) => ({ ...c, type: "UNSUPPORTED_REPORT_CLAIM", status: "OPEN", relatedEntityId: c.relatedEntityId })),
+  });
+  await projector.project({ tenantId: { toString: () => "t" }, periodId: "p1", projectId: "proj1", gaps });
+  assert.equal(created.length, 1);
+});
+
+test("checklist projector never recreates an item the user resolved", async () => {
+  const created = [];
+  let next = 0;
+  const checklist = {
+    findByReportingPeriod: async () => ({ ok: true, value: [] }),
+    create: async (item) => {
+      created.push(item);
+      return { ok: true, value: item };
+    },
+  };
+  const ids = { generate: () => `id-${++next}` };
+  const projector = new ChecklistUnsupportedClaimProjector(ids, checklist);
+  const gaps = [{ key: "Reached 500 beneficiaries", title: "Unsupported claim", description: "failed" }];
+  await projector.project({ tenantId: { toString: () => "t" }, periodId: "p1", projectId: "proj1", gaps });
+  assert.equal(created.length, 1);
+
+  // The user accepts the risk. The item no longer appears open, yet a
+  // re-assessment of the same assertion must not create a duplicate.
+  checklist.findByReportingPeriod = async () => ({
+    ok: true,
+    value: created.map((c) => ({ ...c, type: "UNSUPPORTED_REPORT_CLAIM", status: "ACCEPTED_RISK", relatedEntityId: c.relatedEntityId })),
   });
   await projector.project({ tenantId: { toString: () => "t" }, periodId: "p1", projectId: "proj1", gaps });
   assert.equal(created.length, 1);

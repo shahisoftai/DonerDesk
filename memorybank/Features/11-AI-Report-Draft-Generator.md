@@ -352,6 +352,38 @@ interface SourceReference {
     `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md` (preview tenant → 2 pilot
     tenants → default). Feature flag defaults to **off** as of 2026-08-29.
 
+- **Product recovery — writer ↔ verifier ↔ human boundary (2026-08-30, release
+  `20260829160000`):** the end-to-end user audit found the AI writer produced
+  prose the deterministic verifier rejected at scale (400–500 unsupported-claim
+  items per draft) and the review UX leaked internal assurance terminology. The
+  recovery (see `../imp/RECOVERY-PLAN-IMPLEMENTATION.md`) fixed the boundary
+  without touching the core pipeline:
+  - **Number parser fixed** (`packages/domain/.../numeric-atom.ts`):
+    thousands separators ("3,251" → one atom `3251`), digits embedded in codes
+    ("OUT-1" → no spurious `-1`), ambiguous tokens rejected ("12,5").
+  - **Writer prompt aligned**: temporary "Number discipline" rules (quote
+    finding values exactly, never derive percentages, never quote targets as
+    numbers, never substitute `periodAchievement` for NOT_CALCULABLE findings)
+    and a verifier-safe worked example. P1-2 then relaxed these once the
+    verifier became tolerant (derived percentages + target figures allowed).
+  - **Tolerant verifier** (`verifier-strategies.ts`): target/baseline figures
+    are accepted as references once a sentence binds a real value; derived
+    percentages accept 1- and 2-decimal rounding; combined indicators verify
+    naturally. Negative guards: a bare target/baseline figure without a matched
+    value still fails.
+  - **Human-readable verification detail**: numeric failures now explain
+    expected vs actual (e.g. "78% could not be verified … denominator was not
+    recorded (OUT-7, OUT-9)").
+  - **Fallback surfaced**: per-section `generatedWithAi` (from the current
+    revision's `modelId`) drives a "drafted without AI — review carefully"
+    banner; generation shows a live ETA and a **Stop generation** button
+    (`POST /v1/reporting-periods/:id/cancel-generation`, loop aborts on the
+    superseded marker).
+  - **Claim resolution in the workspace**: per-statement Accept-with-note /
+    Exclude inline (reuses `report.resolve-claim`); aggregated **Review** view;
+    rendered **Preview** view; "What to do next" panel; Edit/Review/Preview/
+    Versions tab bar.
+
 ## Status
 
 | Component | Status | Notes |

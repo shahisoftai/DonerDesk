@@ -13,6 +13,30 @@ interface AtomMatch {
 }
 
 /**
+ * Plain-language explanation for a numeric atom that failed to bind to a
+ * verified finding, so the report workspace can tell the reviewer what was
+ * expected and why the statement could not be confirmed.
+ */
+function describeAtomFailure(atom: NumericAtom, findings: VerifiedFinding[]): string {
+  const value = parseDecimal(atom.value);
+  if (value === null) return `${atom.value} could not be read as a number`;
+  const exact = findings.filter((f) => parseDecimal(f.value) !== null && decimalCompare(parseDecimal(f.value)!, value) === 0);
+  if (exact.length > 0) {
+    const codes = [...new Set(exact.map((f) => f.indicatorCode))].join(", ");
+    return `${atom.value} also matches ${codes}, so the statement may mix indicators, units, or reporting periods`;
+  }
+  if (atom.role === "PERCENT" || atom.isPercent) {
+    const denominatorMissing = findings.filter((f) => f.qualityFlags.includes("MISSING_DENOMINATOR"));
+    if (denominatorMissing.length > 0) {
+      const codes = [...new Set(denominatorMissing.map((f) => f.indicatorCode))].join(", ");
+      return `${atom.value}% could not be verified because the percentage could not be calculated: the denominator was not recorded (${codes})`;
+    }
+    return `${atom.value}% matches no verified indicator value this period`;
+  }
+  return `${atom.value} matches no verified indicator value this period`;
+}
+
+/**
  * Numeric verification strategy. Every numeric atom in an assertion is bound
  * to indicator, unit, period, entity, and semantic role before it can pass;
  * matching a single number never validates a sentence. Percentages may be
@@ -35,24 +59,47 @@ export class NumericAssertionVerifier {
 
     let matchedFinding: VerifiedFinding | undefined;
     const failures: VerificationReasonCode[] = [];
+    const explanations: string[] = [];
 
     for (const atom of input.atoms) {
       const matched = this.matchAtom(atom, input.findings);
+      if (!matched && matchedFinding !== undefined) {
+        // Tolerate normal professional prose: once a sentence carries a value
+        // that binds to a verified finding, target/baseline figures quoted
+        // alongside it ("8 of the 120-centre target") are legitimate
+        // references, not unverifiable claims.
+        const reference = this.matchReferenceAtom(atom, input.findings);
+        if (reference) continue;
+      }
       if (!matched) {
         failures.push(atom.role === "PERCENT" || atom.role === "CURRENCY" || atom.role === "DATE" ? "DERIVATION_INVALID" : "VALUE_MISMATCH");
+        explanations.push(describeAtomFailure(atom, input.findings));
         continue;
       }
       matchedFinding = matched.finding;
-      if (matched.periodMismatch) failures.push("PERIOD_MISMATCH");
-      if (matched.unitMismatch) failures.push("UNIT_MISMATCH");
-      if (matched.entityMismatch) failures.push("ENTITY_MISMATCH");
-      if (matched.semanticsUnresolved) failures.push("ENTITY_MISMATCH");
+      if (matched.periodMismatch) {
+        failures.push("PERIOD_MISMATCH");
+        explanations.push(`${atom.value} refers to a different reporting period than the verified ${matched.finding.indicatorCode}`);
+      }
+      if (matched.unitMismatch) {
+        failures.push("UNIT_MISMATCH");
+        explanations.push(`${atom.value} uses a different unit than the verified ${matched.finding.indicatorCode} (${matched.finding.unit ?? "no unit"})`);
+      }
+      if (matched.entityMismatch) {
+        failures.push("ENTITY_MISMATCH");
+        explanations.push(`${atom.value} was linked to a different indicator than the verified ${matched.finding.indicatorCode}`);
+      }
+      if (matched.semanticsUnresolved) {
+        failures.push("ENTITY_MISMATCH");
+        explanations.push(`the verified ${matched.finding.indicatorCode} is marked as needing review`);
+      }
     }
 
     if (failures.length > 0) {
+      const uniqueExplanations = [...new Set(explanations)];
       return {
         result: "FAILED",
-        detail: `Numeric assertion failed: ${[...new Set(failures)].join(", ")}`,
+        detail: `Numeric assertion failed: ${[...new Set(failures)].join(", ")}.${uniqueExplanations.length > 0 ? ` ${uniqueExplanations.join(" ")}` : ""}`,
         reasonCodes: [...new Set(failures)],
         matchedFinding,
       };
@@ -85,7 +132,6 @@ export class NumericAssertionVerifier {
       }
     }
     if (candidates.length === 0) return null;
-
     // Prefer a candidate bound to the atom's indicator/period.
     let finding = candidates[0]!;
     if (atom.indicatorId) {
@@ -107,6 +153,8 @@ export class NumericAssertionVerifier {
 
   private matchDerivedPercent(atom: NumericAtom, percentValue: Decimal, findings: VerifiedFinding[]): VerifiedFinding | null {
     // A percentage atom can be derived as value/target*100 or value/baseline*100.
+    // Accept both 1- and 2-decimal rounding so "6.7%" and "6.67%" both match
+    // the same 8/120 derivation (professional prose is not uniform).
     for (const finding of findings) {
       const value = parseDecimal(finding.value);
       if (value === null) continue;
@@ -116,8 +164,28 @@ export class NumericAssertionVerifier {
         if (base === null) continue;
         const ratio = decimalDivide(value, base, 6);
         if (ratio === null) continue;
-        const percent = decimalRound(decimalMultiply(ratio, parseDecimal("100")!), 1);
-        if (decimalCompare(percent, percentValue) === 0) return finding;
+        const raw = decimalMultiply(ratio, parseDecimal("100")!);
+        const rounded1 = decimalRound(raw, 1);
+        const rounded2 = decimalRound(raw, 2);
+        if (decimalCompare(rounded1, percentValue) === 0 || decimalCompare(rounded2, percentValue) === 0) return finding;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Matches an atom against a finding's declared target or baseline. Used only
+   * as a tolerated reference figure once the sentence already binds a real
+   * value ("8 learning centres, reaching 6.67% of the 120-centre target").
+   */
+  private matchReferenceAtom(atom: NumericAtom, findings: VerifiedFinding[]): VerifiedFinding | null {
+    const value = parseDecimal(atom.value);
+    if (value === null) return null;
+    for (const finding of findings) {
+      for (const baseText of [finding.target, finding.baseline]) {
+        if (!baseText) continue;
+        const base = parseDecimal(baseText);
+        if (base !== null && decimalCompare(base, value) === 0) return finding;
       }
     }
     return null;
