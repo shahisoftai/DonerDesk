@@ -4,6 +4,56 @@ import { DateRange } from "../../value-objects/date-range.js";
 import { ReportStatus } from "../../value-objects/report-status.js";
 import type { ReportType } from "../templates/donor-template.js";
 
+/**
+ * The "Tell the Story" inputs — the narrative context that indicators and
+ * evidence alone can never explain. Structured (not a single blob) so the
+ * report writer can reliably weave each element into the relevant section
+ * (achievements → progress; challenges/adaptations → risks & mitigation;
+ * varianceExplanations → why targets were over/under; lessons → lessons learned).
+ */
+export type StoryContextField =
+  | "achievements"
+  | "challenges"
+  | "varianceExplanations"
+  | "adaptations"
+  | "lessons";
+
+export const STORY_CONTEXT_FIELDS: StoryContextField[] = [
+  "achievements",
+  "challenges",
+  "varianceExplanations",
+  "adaptations",
+  "lessons",
+];
+
+export interface StoryContext {
+  /** What went well? */
+  achievements?: string;
+  /** What challenges did you face? */
+  challenges?: string;
+  /** Why were important targets over/under achieved? */
+  varianceExplanations?: string;
+  /** What changed or was adapted? */
+  adaptations?: string;
+  /** Any important lesson or story? (optional) */
+  lessons?: string;
+}
+
+export function parseStoryContext(json: string): StoryContext {
+  if (!json || json === "{}") return {};
+  try {
+    const raw = JSON.parse(json) as StoryContext;
+    const out: StoryContext = {};
+    for (const key of STORY_CONTEXT_FIELDS) {
+      const v = raw[key];
+      if (typeof v === "string") out[key] = v;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 export interface ReportingPeriodProps {
   donorTemplateId?: string;
   reportType: ReportType;
@@ -15,6 +65,7 @@ export interface ReportingPeriodProps {
   responsibleOfficerId?: string;
   reportingProfileSnapshotJson: string;
   templateSnapshotJson: string;
+  storyContextJson?: string;
   /** Locked donor template version at period creation; feeds the generation snapshot. */
   donorTemplateVersion?: number;
   /** Locked donor template mapping id at period creation. */
@@ -85,6 +136,8 @@ export class ReportingPeriod extends Entity<string> {
   get responsibleOfficerId(): string | undefined { return this.props.responsibleOfficerId; }
   get reportingProfileSnapshotJson(): string { return this.props.reportingProfileSnapshotJson; }
   get templateSnapshotJson(): string { return this.props.templateSnapshotJson; }
+  get storyContextJson(): string { return this.props.storyContextJson ?? "{}"; }
+  get storyContext(): StoryContext { return parseStoryContext(this.storyContextJson); }
   get donorTemplateVersion(): number | undefined { return this.props.donorTemplateVersion; }
   get donorTemplateMappingId(): string | undefined { return this.props.donorTemplateMappingId; }
 
@@ -125,6 +178,12 @@ export class ReportingPeriod extends Entity<string> {
     if (!mappingId) throw DomainError.validation("Donor template mapping id required");
     this.props.donorTemplateVersion = version;
     this.props.donorTemplateMappingId = mappingId;
+    this.touch();
+  }
+
+  /** Records the structured "Tell the Story" narrative context for this period. */
+  setStoryContext(context: StoryContext): void {
+    this.props.storyContextJson = JSON.stringify(context);
     this.touch();
   }
 }

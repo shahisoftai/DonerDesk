@@ -127,6 +127,19 @@ export class ReportAssuranceService implements IReportAssuranceService {
     if (!extraction.ok) return extraction;
     const assertions = extraction.value;
 
+    // P0-1 — Carry prior user resolutions forward so a reassessment never
+    // silently resurrects a claim the user accepted-with-a-limitation or
+    // excluded. Resolution is keyed by the claim's stable fingerprint.
+    const existingResult = await this.claims.findBySection(section.id, tenantId);
+    const resolvedByFingerprint = new Map<string, { by: string; notes?: string }>();
+    if (existingResult.ok) {
+      for (const existing of existingResult.value) {
+        if (existing.resolvedById !== undefined) {
+          resolvedByFingerprint.set(existing.fingerprint, { by: existing.resolvedById, notes: existing.resolutionNotes });
+        }
+      }
+    }
+
     const revisionHash = revision.contentHash;
     const persisted: ReportClaim[] = [];
 
@@ -161,6 +174,10 @@ export class ReportAssuranceService implements IReportAssuranceService {
       const v = verification.value;
       claim.setVerification(v.result, v.detail, v.reasonCodes[0]);
       claim.setNumericAtoms(v.numericAtoms ?? assertion.numericAtoms);
+      const prior = resolvedByFingerprint.get(claim.fingerprint);
+      if (prior) {
+        claim.preserveResolution(prior.by, prior.notes);
+      }
       persisted.push(claim);
     }
 
@@ -171,9 +188,13 @@ export class ReportAssuranceService implements IReportAssuranceService {
       if (!saved.ok) return saved;
     }
 
+    // P0-1 — For coverage/blocking purposes a resolved claim is satisfied
+    // (accepted-with-limitation / excluded). The persisted claim keeps its
+    // FAILED verification result plus its recorded decision; only the coverage
+    // projection treats it as non-blocking.
     const coverageInput = persisted.map((c) => ({
       materiality: c.materiality ?? "MATERIAL",
-      verificationResult: c.verificationResult,
+      verificationResult: c.resolvedById !== undefined ? "ACCEPTED_WITH_LIMITATION" : c.verificationResult,
       verificationReasonCode: c.verificationReasonCode,
       type: c.type,
       text: c.text,
@@ -186,6 +207,10 @@ export class ReportAssuranceService implements IReportAssuranceService {
       if (blocked) {
         revision.markFailed();
       } else {
+        // P0-1 — A FAILED revision must pass through ASSESSING before CURRENT;
+        // reconciliation (all blocking claims now resolved) promotes it so the
+        // section can be approved.
+        if (revision.assuranceState === "FAILED") revision.markAssessing();
         revision.markCurrent();
       }
     } catch (error) {

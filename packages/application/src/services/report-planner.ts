@@ -1,5 +1,5 @@
-import type { Result, DomainError, ReportPlan } from "@donordesk/domain";
-import { createReportPlan } from "@donordesk/domain";
+import type { Result, ReportPlan } from "@donordesk/domain";
+import { createReportPlan, DomainError } from "@donordesk/domain";
 import type { IReportPlanner, ReportingProfileSnapshot } from "../ports/reporting.js";
 import type { IIdGenerator } from "../ports/core.js";
 
@@ -47,16 +47,12 @@ export class InferredReportPlanner implements IReportPlanner {
     });
 
     if (sections.length === 0) {
-      sections.push({
-        templateSectionId: "narrative",
-        title: "Narrative Report",
-        inputType: "NARRATIVE" as ReportPlan["sections"][number]["inputType"],
-        required: true,
-        wordLimit: undefined,
-        mandatoryQuestions: [],
-        evidenceNeeds: [],
-        relatedLogframeElement: undefined,
-      });
+      return {
+        ok: false,
+        error: DomainError.reportGateBlocked(
+          "No report sections are defined. Attach a donor template (or an explicit report structure) before generating a report.",
+        ),
+      };
     }
 
     const plan = createReportPlan({

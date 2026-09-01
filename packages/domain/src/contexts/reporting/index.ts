@@ -1,4 +1,7 @@
 export * from "./reporting-period.js";
+export * from "./smart-review.js";
+export * from "./period-value-import.js";
+export * from "./field-report-extraction.js";
 export * from "./report-draft.js";
 export * from "./report-section.js";
 export * from "./verified-finding.js";

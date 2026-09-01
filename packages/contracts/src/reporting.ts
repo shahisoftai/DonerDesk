@@ -29,6 +29,87 @@ export const CreateReportingPeriodSchema = z
   });
 export type CreateReportingPeriodInput = z.infer<typeof CreateReportingPeriodSchema>;
 
+export const StoryContextFieldSchema = z.enum(["achievements", "challenges", "varianceExplanations", "adaptations", "lessons"]);
+
+export const StoryContextSchema = z
+  .object({
+    achievements: z.string().max(5000).optional(),
+    challenges: z.string().max(5000).optional(),
+    varianceExplanations: z.string().max(5000).optional(),
+    adaptations: z.string().max(5000).optional(),
+    lessons: z.string().max(5000).optional(),
+  })
+  .partial();
+export type StoryContextInput = z.infer<typeof StoryContextSchema>;
+
+export const UpdateReportingPeriodStorySchema = z.object({
+  storyContext: StoryContextSchema,
+});
+export type UpdateReportingPeriodStoryInput = z.infer<typeof UpdateReportingPeriodStorySchema>;
+
+export const SmartReviewActionSchema = z.object({
+  type: z.string(),
+  label: z.string(),
+});
+
+export const SmartReviewItemSchema = z.object({
+  id: z.string(),
+  severity: z.enum(["BLOCKING", "WARNING"]),
+  title: z.string(),
+  explanation: z.string(),
+  claimId: z.string().optional(),
+  sectionId: z.string().optional(),
+  evidenceId: z.string().optional(),
+  action: SmartReviewActionSchema,
+  blocksApproval: z.boolean(),
+});
+
+export const SmartReviewSummarySchema = z.object({
+  issueCount: z.number(),
+  blockingCount: z.number(),
+  items: z.array(SmartReviewItemSchema),
+});
+
+export const PeriodValueImportRowsSchema = z.array(z.array(z.string()));
+
+export const PreviewPeriodValuesSchema = z.object({
+  projectId: z.string().min(1),
+  reportingPeriodId: z.string().min(1),
+  rows: PeriodValueImportRowsSchema,
+});
+
+export const ConfirmedPeriodValueSchema = z.object({
+  indicatorCode: z.string().min(1),
+  periodAchievement: z.string().optional(),
+  cumulativeAchievement: z.string().optional(),
+});
+
+export const ConfirmPeriodValuesSchema = z.object({
+  projectId: z.string().min(1),
+  reportingPeriodId: z.string().min(1),
+  items: z.array(ConfirmedPeriodValueSchema),
+});
+
+export const ProposeFieldReportExtractionSchema = z.object({
+  projectId: z.string().min(1),
+  reportingPeriodId: z.string().min(1),
+  text: z.string().min(1),
+});
+
+export const ApplyFieldReportExtractionSchema = z.object({
+  projectId: z.string().min(1),
+  reportingPeriodId: z.string().min(1),
+  indicatorAchievements: z.array(z.object({ indicatorCode: z.string(), value: z.string() })).optional(),
+  activities: z.array(z.object({ title: z.string(), date: z.string().optional(), participants: z.string().optional() })).optional(),
+  story: z.object({
+    achievements: z.string().optional(),
+    challenges: z.string().optional(),
+    varianceExplanations: z.string().optional(),
+    adaptations: z.string().optional(),
+    lessons: z.string().optional(),
+  }).optional(),
+});
+
 export const GenerateDraftSchema = z
   .object({
     reportingPeriodId: z.string().min(1).optional(),

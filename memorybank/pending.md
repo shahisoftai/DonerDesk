@@ -1,6 +1,6 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-08-20T09:55+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-09-01T15:30+05:00.
 
 > **Done (2026-08-20):** **Portal typography pass — 14px baseline, medium
 > weights, smaller badges** — release `20260820045004` (web-only, no
@@ -781,3 +781,27 @@ Remaining (tracked here, not claimed):
   ready `ProjectSetup`, a `ReportingProfile`, and `REVIEWED` template sections to
   pass the reporting-period readiness gate — see `Features/18-Project-Creation-Wizard.md`
   §4.5 and `memorybank/Fixes.md` (2026-08-20).
+
+## Done (2026-09-01)
+
+> **Done:** Report-Quality root cause fix + UX reorganisation (Increments 1–5) +
+> deploy hardening + SaaS → Contabo runtime provisioning + MiniMax fix. Releases
+> `20260831154253` and `20260901140002` to donordesk.online; browser-verified;
+> zero regressions in domain (108) / application (86) / infrastructure
+> (165+) / api-web typecheck.
+>
+> Full record: `memorybank/Fixes.md` (section "Report-Quality root cause +
+> … AI runtime provisioning (2026-08-31 / 2026-09-01)") and
+> `memorybank/imp/RUNTIME-PROVISIONING.md`. The frozen reporting
+> architecture and UI are unchanged.
+>
+> Open sharp edge (deploy-tooling, not product): when an operator saves a
+> provider on sa.donordesk while the api is already running, the api's
+> `upsertConfiguration` writes the env files and *should* restart workers,
+> but in one observed case the workers restart did not take effect and the
+> worker held a stale key (→ 401 against the new provider). Operational
+> mitigation: a one-time `systemctl restart donordesk-workers`. A more
+> robust detection (verify worker pid loaded the new env, with a stronger
+> retry) is tracked as a deploy-tooling item — see
+> `memorybank/contabo-ops.md` (Runtime provisioning section, sharp-edge
+> note) and `memorybank/imp/RUNTIME-PROVISIONING.md` §8.

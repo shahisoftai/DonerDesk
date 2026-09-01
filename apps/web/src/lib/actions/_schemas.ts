@@ -87,3 +87,65 @@ export const InviteUserResponseSchema = z.object({
   invitationId: z.string(),
   token: z.string(),
 });
+
+export const StoryContextResponseSchema = z.object({
+  storyContext: z
+    .object({
+      achievements: z.string().optional(),
+      challenges: z.string().optional(),
+      varianceExplanations: z.string().optional(),
+      adaptations: z.string().optional(),
+      lessons: z.string().optional(),
+    })
+    .optional(),
+});
+
+export const SmartReviewSummarySchema = z.object({
+  issueCount: z.number(),
+  blockingCount: z.number(),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      severity: z.enum(["BLOCKING", "WARNING"]),
+      title: z.string(),
+      explanation: z.string(),
+      claimId: z.string().optional(),
+      sectionId: z.string().optional(),
+      evidenceId: z.string().optional(),
+      action: z.object({ type: z.string(), label: z.string() }),
+      blocksApproval: z.boolean(),
+    }),
+  ),
+});
+
+export const PeriodValuePreviewRowSchema = z.object({
+  rowIndex: z.number(),
+  indicatorCode: z.string(),
+  indicatorId: z.string().optional(),
+  periodAchievement: z.string().optional(),
+  cumulativeAchievement: z.string().optional(),
+  status: z.enum(["ready", "error"]),
+  error: z.string().optional(),
+  will: z.enum(["create", "update", "unknown"]),
+});
+
+export const PeriodValuePreviewResponseSchema = z.object({
+  totalRows: z.number(),
+  readyRows: z.number(),
+  errorRows: z.number(),
+  rows: z.array(PeriodValuePreviewRowSchema),
+});
+
+export const FieldReportExtractionResponseSchema = z.object({
+  indicatorAchievements: z.array(z.object({ indicatorCode: z.string(), value: z.string(), certainty: z.enum(["FOUND", "SUGGESTED"]), excerpt: z.string() })),
+  activities: z.array(z.object({ title: z.string(), date: z.string().optional(), certainty: z.enum(["FOUND", "SUGGESTED"]) })),
+  story: z.array(z.object({ field: z.string(), text: z.string(), certainty: z.enum(["FOUND", "SUGGESTED"]) })),
+});
+
+export const PeriodValueConfirmResponseSchema = z.object({
+  created: z.number(),
+  updated: z.number(),
+  errors: z.array(z.string()),
+});
+
+export const FieldReportApplyResponseSchema = z.object({ ok: z.boolean() });

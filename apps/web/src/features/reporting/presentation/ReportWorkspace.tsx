@@ -17,6 +17,11 @@ import {
 } from "@/lib/shared/tone";
 import { SECTION_STATUS_LABEL, REPORT_DRAFT_STATUS_LABEL } from "@/lib/labels";
 import { SectionEditor } from "./SectionEditor";
+import { ReportingStepGuide } from "./ReportingStepGuide";
+import { StoryPanel } from "./StoryPanel";
+import { FlexibleInputsPanel } from "./FlexibleInputsPanel";
+import { SmartReviewPanel } from "./SmartReviewPanel";
+import { ReportCheckPanel } from "./ReportCheckPanel";
 import { ReportChartPanel } from "./ReportChartPanel";
 import { ClaimResolutionActions } from "./ClaimResolutionActions";
 import { ReportReviewPanel } from "./ReportReviewPanel";
@@ -144,7 +149,7 @@ export function ReportWorkspace({
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panel, setPanel] = useState<Panel>("editor");
-  const [mode, setMode] = useState<"editor" | "review" | "preview" | "versions">("editor");
+  const [mode, setMode] = useState<"editor" | "review" | "check" | "preview" | "versions">("editor");
   const [draftMsg, setDraftMsg] = useState<string | null>(null);
   const [addingSection, setAddingSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
@@ -449,6 +454,7 @@ export function ReportWorkspace({
 
   return (
     <div className="mt-6 space-y-4">
+      <ReportingStepGuide projectId={projectId} periodId={periodId} hasDraft={Boolean(draft)} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-medium">{draft ? draft.title : "No report draft yet"}</h2>
@@ -687,9 +693,10 @@ export function ReportWorkspace({
                 [
                   ["editor", "Edit sections"],
                   ["review", `Review${pendingFailedClaims > 0 ? ` (${pendingFailedClaims})` : ""}`],
+                  ["check", "Report Check"],
                   ["preview", "Preview report"],
                   ["versions", `Versions${versions.length > 1 ? ` (${versions.length})` : ""}`],
-                ] as Array<["editor" | "review" | "preview" | "versions", string]>
+                ] as Array<["editor" | "review" | "check" | "preview" | "versions", string]>
               ).map(([key, label]) => (
                 <button
                   key={key}
@@ -704,12 +711,18 @@ export function ReportWorkspace({
             </div>
           )}
           {mode === "review" ? (
-            <ReportReviewPanel
-              claims={claims}
-              sections={liveSections}
-              canResolveClaim={canResolveClaim}
-              canOverrideConfidential={canOverrideConfidential}
-              onResolved={() => router.refresh()}
+            <SmartReviewPanel
+              projectId={projectId}
+              periodId={periodId}
+              detail={
+                <ReportReviewPanel
+                  claims={claims}
+                  sections={liveSections}
+                  canResolveClaim={canResolveClaim}
+                  canOverrideConfidential={canOverrideConfidential}
+                  onResolved={() => router.refresh()}
+                />
+              }
             />
           ) : mode === "preview" ? (
             <ReportPreviewPanel sections={liveSections} />
@@ -721,9 +734,28 @@ export function ReportWorkspace({
               onActivate={(draftId) => void activateVersion(draftId)}
               busy={busyAction === "activate"}
             />
+          ) : mode === "check" ? (
+            <ReportCheckPanel
+              readiness={readiness}
+              projectId={projectId}
+              periodId={periodId}
+              approval={
+                draft ? (
+                  <ReviewAndApproval
+                    draftId={draft.id}
+                    draftStatus={draft.status}
+                    sections={liveSections}
+                    checklist={checklist}
+                    unverifiedIndicatorCount={unverifiedIndicatorCount}
+                    sensitiveEvidenceCount={sensitiveEvidenceCount}
+                    capabilities={capabilities}
+                  />
+                ) : undefined
+              }
+            />
           ) : selected ? (
             <div className="card">
-              {selected.generatedWithAi === false && selected.content && draft?.generatedByAi === false && (
+              {selected.generatedWithAi === false && selected.content && (
                 <p className="mb-3 rounded-md border border-warning-500/30 bg-warning-500/5 px-3 py-2 text-xs text-warning-700 dark:text-warning-400">
                   This section was drafted without AI (deterministic fallback) or was written manually. Review it carefully.
                 </p>
@@ -827,6 +859,8 @@ export function ReportWorkspace({
 
         {/* Right: context */}
         <aside className={`space-y-4 ${panel === "context" ? "block" : "hidden lg:block"}`}>
+          <StoryPanel periodId={periodId} />
+          <FlexibleInputsPanel projectId={projectId} periodId={periodId} />
           {nextSteps.length > 0 && (
             <section className="card">
               <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">What to do next</h3>
@@ -883,7 +917,7 @@ export function ReportWorkspace({
         </aside>
       </div>
 
-      {draft && (
+      {draft && mode !== "check" && (
         <div className="grid gap-4 lg:grid-cols-2">
           <ReviewAndApproval
             draftId={draft.id}

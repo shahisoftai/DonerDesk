@@ -8,6 +8,7 @@ import { metrics } from "../observability.js";
 const REQUIRED_PRISMA_FIELDS = [
   { model: "Organization", field: "storageProvider" },
   { model: "ReportingPeriod", field: "donorTemplateId" },
+  { model: "ReportingPeriod", field: "storyContextJson" },
   { model: "ReportDraft", field: "supersededAt" },
 ] as const;
 

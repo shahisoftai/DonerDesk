@@ -139,6 +139,37 @@ function buildTemplateBlock(ctx: GenerateReportDraftInput["reportContext"]): str
   ].filter(Boolean) as string[];
 }
 
+/**
+ * P0-Increment2 — The "Tell the Story" narrative context, surfaced to the
+ * narrator as structured input. This is the information indicators and evidence
+ * alone cannot explain (why a target was missed, what changed, lessons). The
+ * narrator may weave it into the relevant sections but must never invent new
+ * context beyond what is written here.
+ */
+function buildStoryContextBlock(ctx: GenerateReportDraftInput["reportContext"]): string[] {
+  const story = ctx?.storyContext;
+  if (!story) return [];
+  const rows: string[] = [`# Tell the Story (narrative context provided by the reporting officer)`];
+  const labels: Record<string, string> = {
+    achievements: "What went well",
+    challenges: "What challenges were faced",
+    varianceExplanations: "Why targets were over/under achieved",
+    adaptations: "What changed or was adapted",
+    lessons: "Lessons and notable observations",
+  };
+  let any = false;
+  for (const [key, label] of Object.entries(labels)) {
+    const value = story[key as keyof typeof story];
+    if (value && value.trim()) {
+      rows.push(`- ${label}: ${value.trim()}`);
+      any = true;
+    }
+  }
+  if (!any) return [];
+  rows.push("", "Use this context to explain performance and enrich the narrative. Only reference what is written here; never invent additional causes, challenges, or lessons.");
+  return rows;
+}
+
 function buildFindingsJson(input: GenerateReportDraftInput): string {
   return JSON.stringify(
     input.verifiedFindings.map((f) => ({
@@ -344,6 +375,7 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
     ...projectBlock,
     ...periodBlock,
     ...templateBlock,
+    ...buildStoryContextBlock(ctx),
     `# Section Guidance`,
     sectionGuidance,
     ``,
@@ -402,6 +434,7 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
     ...projectBlock,
     ...periodBlock,
     ...templateBlock,
+    ...buildStoryContextBlock(ctx),
     `# Section Guidance`,
     sectionGuidance,
     ``,

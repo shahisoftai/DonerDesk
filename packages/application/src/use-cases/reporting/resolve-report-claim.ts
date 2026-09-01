@@ -1,7 +1,11 @@
 import type { Result } from "@donordesk/domain";
 import { DomainError, Permissions, resolveClaimDecision, type Role } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IReportClaimRepository } from "../../ports/reporting.js";
+import type {
+  IReportClaimRepository,
+  IReportSectionRepository,
+  IReportAssuranceService,
+} from "../../ports/reporting.js";
 import type { IAuditLogger } from "../../ports/core.js";
 
 export interface ResolveReportClaimInput {
@@ -15,9 +19,20 @@ export interface ResolveReportClaimInput {
  * preserves the failed verification status; EXCLUDED requires the grants-level
  * report.override-confidentiality capability when the claim cites a
  * confidential source. Both paths write audit events.
+ *
+ * P0-1 — After persisting the resolution the handler reconciles the owning
+ * section's revision: the resolution-aware assurance service re-runs and, when
+ * every blocking material claim is now resolved, promotes the revision to
+ * CURRENT so the section can be approved. Resolutions are carried forward, so
+ * a reassessment never resurrects an accepted/excluded claim.
  */
 export class ResolveReportClaimHandler {
-  constructor(private readonly claims: IReportClaimRepository, private readonly audit: IAuditLogger) {}
+  constructor(
+    private readonly claims: IReportClaimRepository,
+    private readonly audit: IAuditLogger,
+    private readonly sections: IReportSectionRepository,
+    private readonly assuranceService: IReportAssuranceService,
+  ) {}
 
   async handle(ctx: AuthenticatedContext, claimId: string, input: ResolveReportClaimInput): Promise<Result<void, DomainError>> {
     const r = await this.claims.findById(claimId, ctx.tenant.tenantId);
@@ -63,6 +78,33 @@ export class ResolveReportClaimHandler {
       projectId: claim.projectId,
       newValue: JSON.stringify({ resolution: input.resolution, notes: decision.notes }),
     });
+
+    // P0-1 — Reconcile the owning section's revision so a fully-resolved
+    // section reaches an approvable (CURRENT) state. Best-effort: a reconcile
+    // failure is logged but must not fail the resolution that already persisted.
+    try {
+      const sectionResult = await this.sections.findById(claim.sectionId, ctx.tenant.tenantId);
+      const section = sectionResult.ok ? sectionResult.value : undefined;
+      const revisionId = section?.currentRevisionId;
+      if (revisionId) {
+        await this.assuranceService.assessRevision({
+          ctx: { tenantId: ctx.tenant.tenantId, userId: ctx.tenant.userId },
+          sectionId: claim.sectionId,
+          revisionId,
+        });
+      }
+    } catch (error) {
+      await this.audit.record({
+        tenantId: ctx.tenant.tenantId,
+        actorId: ctx.tenant.userId,
+        eventType: "report.claim.reconcile_failed",
+        entityType: "report_claim",
+        entityId: claimId,
+        projectId: claim.projectId,
+        systemNote: `Reconciliation after resolution failed: ${error instanceof Error ? error.message : String(error)}`,
+      }).catch(() => undefined);
+    }
+
     return { ok: true, value: undefined };
   }
 }

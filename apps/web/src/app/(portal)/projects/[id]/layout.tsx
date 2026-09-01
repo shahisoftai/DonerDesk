@@ -21,13 +21,15 @@ export default async function ProjectLayout({ params, children }: { params: Prom
   const project = projectResult.value;
 
   const tabs = [
+    // Reporting is the primary surface: each reporting period is a workspace
+    // framed as "Update Project → Tell the Story → Generate → Review & Submit".
+    { label: "Reporting", href: `/projects/${project.id}/reports` },
     { label: "Overview", href: `/projects/${project.id}` },
-    { label: "Templates", href: `/projects/${project.id}/templates` },
     { label: "Logframe", href: `/projects/${project.id}/logframe` },
     { label: "Activities", href: `/projects/${project.id}/activities` },
     { label: "Evidence", href: `/projects/${project.id}/evidence` },
-    { label: "Reports", href: `/projects/${project.id}/reports` },
-    { label: "Compliance", href: `/projects/${project.id}/compliance` },
+    // One-time setup; placed last so it reads as configuration, not a workflow.
+    { label: "Templates", href: `/projects/${project.id}/templates` },
     { label: "Team", href: `/projects/${project.id}/team` },
     { label: "Settings", href: `/projects/${project.id}/settings` },
   ];

@@ -193,6 +193,8 @@ export interface ReportGenerationContext {
   project: ProjectGenerationContext;
   period: PeriodGenerationContext;
   template?: TemplateGenerationContext;
+  /** Structured "Tell the Story" narrative context for the reporting period. */
+  storyContext?: Partial<Record<"achievements" | "challenges" | "varianceExplanations" | "adaptations" | "lessons", string>>;
 }
 
 export interface GenerateReportDraftInput {

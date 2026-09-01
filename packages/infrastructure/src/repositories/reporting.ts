@@ -45,6 +45,7 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         responsibleOfficerId: p.responsibleOfficerId,
         reportingProfileSnapshotJson: p.reportingProfileSnapshotJson,
         templateSnapshotJson: p.templateSnapshotJson,
+        storyContextJson: p.storyContextJson,
       },
     });
     return ok(p);
@@ -59,6 +60,7 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         status: p.status.toString(),
         readinessScore: p.readinessScore,
         responsibleOfficerId: p.responsibleOfficerId,
+        storyContextJson: p.storyContextJson,
       },
     });
     return ok(p);
@@ -102,6 +104,7 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
     responsibleOfficerId: string | null;
     reportingProfileSnapshotJson: string;
     templateSnapshotJson: string;
+    storyContextJson: string;
     createdAt: Date;
   }): ReportingPeriod {
     return ReportingPeriod.rehydrate({
@@ -122,6 +125,7 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         responsibleOfficerId: row.responsibleOfficerId ?? undefined,
         reportingProfileSnapshotJson: row.reportingProfileSnapshotJson,
         templateSnapshotJson: row.templateSnapshotJson,
+        storyContextJson: row.storyContextJson,
       },
     });
   }

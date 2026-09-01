@@ -591,3 +591,78 @@ Full detail:
 - `../imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md` — the design plan
 - `../imp/AI-REPORTER-2-RESULTS.md` — post-deploy retrospective
 - `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md` — operator runbook
+
+### 18. Runtime provisioning — SaaS control-plane → Contabo runtime envs (2026-09-01, release `20260901140002`)
+
+The implementation plan above closed the SuperAdmin → generation-runtime gap
+*for the api's resolution path*. It did **not** close the same gap for the
+AI Reporter sidecar, which reads only its worker-side env file. Selecting
+DeepSeek / MiniMax on `sa.donordesk.online` still required an operator to
+copy secrets into `/opt/donordesk/shared/workers.env`. That manual step
+was never done, so reports kept falling through to the deterministic stub.
+
+**New: `packages/infrastructure/src/platform/runtime-provisioner.ts`
+(`RuntimeProvisioner`)** — atomic, idempotent env-file writer + scoped
+restart. Wired into `PlatformControlPlane.upsertConfiguration` /
+`deleteConfiguration` for GLOBAL enabled LLM configs, and called by an
+api-boot backfill so a provider selected on sa.donordesk reaches
+donordesk.online automatically.
+
+Key design points:
+- **Atomic write**: temp file → `chmod 0640` → `chown donordesk:donordesk`
+  → rename. Preserves existing ownership on re-provision.
+- **Idempotent managed block**
+  (`# dd-managed:LLM:GLOBAL:<provider>:<scopeId>` … `# dd-end-managed:LLM`)
+  — updates replace cleanly; re-applies are a no-op.
+- **Security**: secret value is written ONLY into the env file, never into
+  the command line / argv / log / audit. Restart via `execFile` of
+  `/usr/bin/sudo` + `/usr/bin/systemctl restart …` with no shell.
+- **Host (operator one-time, root)**:
+  - `/etc/sudoers.d/donordesk-restart` (`0440`, root):
+    `donordesk ALL=(root) NOPASSWD: /usr/bin/systemctl restart
+    donordesk-api, /usr/bin/systemctl restart donordesk-workers`.
+  - `donordesk-api.service` `ReadWritePaths=/opt/donesk/shared
+    /opt/donordesk/shared/storage` (expanded so the api process,
+    `User=donordesk`, can write the env files).
+  - `/opt/donordesk/shared/{api,workers}.env` chowned to
+    `donordesk:donordesk` mode `0640` so the api can write them;
+    systemd (root) still reads them via `EnvironmentFile`.
+- **Regression tests**
+  (`packages/infrastructure/test/runtime-provisioner.test.mjs`, 5 tests):
+  inserts/updates/idempotent managed block, remove targeted block,
+  render block content, `provisionGlobalLlm` writes env files + scoped
+  restart + **no secret in logs**, `deprovisionGlobalLlm` removes blocks
+  + restarts.
+
+### 19. MiniMax "Test connection" 404 → fix (2026-09-01)
+
+`PlatformControlPlane.testProvider` (used by the SuperAdmin's "Test
+connection" button → api route `POST /superadmin/configurations/:id/test`)
+built the test URL as `baseUrl + paths[provider]`. For MiniMax,
+`paths["minimax"] = "/v1/models"`. The operator saved
+`baseUrl = "https://api.minimax.io/v1"` (correct for the **worker**'s
+`llm_gateway.py`, which does `f"{base_url}/chat/completions"` →
+`.../v1/chat/completions`). But the Test-connection path then appended
+`/v1/models` → **`https://api.minimax.io/v1/v1/models` → HTTP 404**.
+Direct probes confirmed `https://api.minimax.io/v1/models` → 200 vs
+`.../v1/v1/models` → 404.
+
+Fix in `control-plane.ts testProvider`: strip a trailing `/v1` segment from
+`baseUrl` before appending the provider path, so the path's leading `/v1`
+doesn't double:
+
+```ts
+config.baseUrl.trim().replace(/\/(v1)\/?$/, "").replace(/\/+$/, "")
+```
+
+Verified via the actual UI path (login as superadmin + `POST
+/superadmin/configurations/:id/test` for both providers):
+
+```
+minimax → { "status": "SUCCESS", "message": "Connection and credentials verified" }
+deepseek → { "status": "SUCCESS", "message": "Connection and credentials verified" }
+```
+
+The MiniMax draft endpoint also produces real AI content (Executive
+Summary on OUT-1 30/120, `parseOutcome: VALID, critiqueIssues: 0,
+validatorIssues: []`).

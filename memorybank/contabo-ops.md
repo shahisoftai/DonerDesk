@@ -1284,3 +1284,88 @@ skip the migration.
 `{cancelled:false}` for approved/exported/submitted drafts instead of throwing
 `INVALID_STATE_TRANSITION`; `packages/application`, `packages/infrastructure`,
 and `apps/api` dist re-shipped and the api restarted (no pnpm-store churn).
+
+**Deploy-script hardening shipped (2026-08-31 → release `20260831154253`, 2026-09-01 → `20260901140002`):**
+
+The deploy script `scripts/deploy-fast.sh` had a single root-cause defect:
+`SSH="${SSH:-ssh -o ConnectTimeout=15 -o ServerAliveInterval=30}"` — missing the
+**`contabo`** host argument. Every `${SSH} "command"` invocation passed the
+command string as the hostname → `ssh: hostname contains invalid characters`,
+which aborted the snapshot and stream steps. Confirmed by `bash -x` trace.
+
+Hardening applied:
+- One-line root-cause fix: `SSH="${SSH:-ssh -o ConnectTimeout=15 -o ServerAliveInterval=30 contabo}"`.
+- **Canary preflight**: before building, the script scp-extracts a tiny tar to both env files via the host-file pattern; aborts with a clear error if the transfer path is broken.
+- **scp-based transfers** for all five artifacts (web, packages, pnpm-store, api, worker). Replaced the `cat | ssh "tar -xzf -"` pipe pattern (which was the surface where the symptom appeared) with `ssh "cat > /tmp/dd-art.tgz; tar -xzf /tmp/dd-art.tgz -C DEST; rm -f /tmp/dd-art.tgz" < LOCAL_TAR`.
+- **Snapshot retry** (attempt, retry once, warn-and-continue; `NO_BACKUP=1` still skips entirely).
+- **API ready-poll** in verify: retries `/health` every 2s up to 60s instead of failing the verify when the api was still starting.
+
+**Runtime provisioning shipped (release `20260901140002`):**
+
+Selecting DeepSeek / MiniMax on `sa.donordesk.online` previously only wrote to
+`PlatformConfiguration` — the api service and the worker had no path to read
+that. New: `packages/infrastructure/src/platform/runtime-provisioner.ts`
+(`RuntimeProvisioner`) writes the managed block into
+`/opt/donordesk/shared/{api,workers}.env` atomically (temp → `chmod 0640` →
+`chown donordesk:donordesk` → rename) and restarts the api + workers via
+scoped sudoers NOPASSWD. Idempotent via marker
+`# dd-managed:LLM:GLOBAL:<provider>:<scopeId>`. The secret value is never
+logged.
+
+- Wired into `PlatformControlPlane.upsertConfiguration` /
+  `deleteConfiguration` for GLOBAL enabled LLM configs (TENANT scope is out
+  of V1 for the AI Reporter path; it flows through `LlmConfigResolver`).
+- API boot backfill (`apps/api/src/server.ts`): on api startup, iterates
+  every GLOBAL enabled LLM `PlatformConfiguration` row, decrypts secrets,
+  provisions env files + restarts. So a provider selected on sa.donordesk
+  reaches donordesk.online automatically — **no operator copy step**.
+
+**Host one-time setup (operator, root):**
+- `/etc/sudoers.d/donordesk-restart` (`0440`, root):
+  `donordesk ALL=(root) NOPASSWD: /usr/bin/systemctl restart donordesk-api, /usr/bin/systemctl restart donordesk-workers`.
+- `donordesk-api.service`: `ReadWritePaths=/opt/donordesk/shared /opt/donordesk/shared/storage`
+  (expanded so the api process, `User=donordesk`, can write the env files).
+- `/opt/donordesk/shared/{api,workers}.env` chowned to `donordesk:donordesk` mode
+  `0640` so the api can write them; systemd (root) still reads them via
+  `EnvironmentFile`.
+
+**Sharp edge — worker env reload after a save made while api is already
+running:** the api's boot backfill handles *first* boot; for subsequent
+saves, `upsertConfiguration` calls `provisionGlobalLlm` → writes env files →
+`restartServices`. In one observed case the workers restart did not take
+effect and the worker held a stale key → 401 against the new provider.
+Operational mitigation: one-time `systemctl restart donordesk-workers`.
+Robust detection (verify worker pid loaded the new env, with a stronger
+retry) is tracked separately — this is a deploy-tooling item, not a product
+regression.
+
+**MiniMax "Test connection" 404 → fix shipped (release `20260901140002`):**
+
+`PlatformControlPlane.testProvider` built the test URL as `baseUrl + paths[provider]`.
+For MiniMax, `paths["minimax"] = "/v1/models"`. The operator saved
+`baseUrl = "https://api.minimax.io/v1"` (correct for the **worker**'s
+`llm_gateway.py`, which does `f"{base_url}/chat/completions"` →
+`.../v1/chat/completions`). But the Test-connection path then appended
+`/v1/models` → **`https://api.minimax.io/v1/v1/models` → HTTP 404**. Direct
+probes confirmed `https://api.minimax.io/v1/models` → 200 vs
+`.../v1/v1/models` → 404.
+
+Fix in `control-plane.ts testProvider`: strip a trailing `/v1` segment from
+`baseUrl` before appending the provider path, so the path's leading `/v1`
+doesn't double:
+
+```ts
+config.baseUrl.trim().replace(/\/(v1)\/?$/, "").replace(/\/+$/, "")
+```
+
+Verified via the actual UI path (login as superadmin + `POST
+/superadmin/configurations/:id/test` for both providers):
+
+```
+minimax → { "status": "SUCCESS", "message": "Connection and credentials verified" }
+deepseek → { "status": "SUCCESS", "message": "Connection and credentials verified" }
+```
+
+The MiniMax draft endpoint also produces real AI content (Executive Summary
+on OUT-1 30/120, `parseOutcome: VALID, critiqueIssues: 0,
+validatorIssues: []`).

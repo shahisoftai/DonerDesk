@@ -858,3 +858,125 @@ worker-sync step could run.
 See `memorybank/pending.md` for remaining deployment/hardening items,
 including the AI Reporter v2 controlled rollout (preview tenant → 2 pilot
 tenants → default) per `memorybank/imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`.
+
+## Report-Quality root cause + UX reorganisation + flexible inputs + deploy hardening + AI runtime provisioning (2026-08-31 / 2026-09-01, releases `20260831154253` → `20260901140002`)
+
+**Status:** Implemented, deployed to donordesk.online, browser-verified end-to-end.
+
+### A. Report-Quality root causes (109 → 43 Smart Review items, deterministic noise → real detection)
+
+Audited the generation + verification pipeline end-to-end. Found four systemic defects in `packages/infrastructure/src/llm/`:
+
+1. **Eligibility**: `classifyAssertionType(text, hasNumbers)` returned `"NUMERIC"` for *any* sentence with a number — so dates, participant counts, summary counts, and "80%" in an indicator name all became material achievement claims.
+2. **Role classification**: `classifyNumericAtomRoles` couldn't tell DATE / COUNT / TARGET / PERCENT / ordinals apart from ACHIEVEMENT.
+3. **Gate inconsistency (P0-3 partial)**: `ApproveReportSection` ignored `NOT_MATERIAL` failed claims, but `evaluateGate` (used by Smart Review + Report Check) emitted UNSUPPORTED_MATERIAL_CLAIM for every failed claim regardless of materiality.
+4. **Re-extraction drift**: `DeterministicClaimVerifier` re-extracted atoms from claim text without the extractor's indicator-name masking, so a masked number could be reintroduced.
+
+**Fixes shipped** (root-cause, not regex patches):
+- `packages/domain/src/contexts/reporting/numeric-atom.ts`
+  - `classifyNumericAtomRoles`: added inference for **DATE** (year tokens + date sequences), **COUNT** (number + count nouns: `participant|file|record|finding|evidence|item|session`), **PERCENT** (trailing `%`), **ordinal identifiers** (`Batch 2`, `Phase 1`).
+  - Added `"COUNT"` role, `NON_ACHIEVEMENT_ROLES` set, exported `hasAchievementNumber(atoms)`, exported `indicatorLabelRanges(text)` so extractor **and** verifier share the masking logic.
+- `packages/infrastructure/src/llm/assertion-extractor.ts`
+  - `classifyAssertionType` now returns `"NUMERIC"` only when `hasAchievementNumber(offsetAtoms)` is true; materiality gates on the same predicate.
+  - `isSkippableSentence` skips markdown table rows (`|` prefix).
+  - `isNonClaimSentence`: added `evidence` to the provenance prefix list (`Evidence: …` excluded).
+- `packages/infrastructure/src/llm/claim-verifier.ts`: applies `indicatorLabelRanges` before extracting atoms so masked label numbers can't be reintroduced.
+- `packages/application/src/use-cases/reporting/approve-report.ts`: `evaluateGate` now skips NOT_MATERIAL failed claims (consistent with `ApproveReportSection` P0-3 contract).
+
+**Regression tests** (`packages/infrastructure/test/p0-report-quality.test.mjs`, 9 tests):
+- Summary/count metadata, activity date + participant count, evidence count, evidence reference lists, markdown table rows → not NUMERIC, not MATERIAL.
+- `80%+ attendance` inside indicator name → `80` not extracted as achievement atom.
+- Genuine numeric performance sentences remain NUMERIC + MATERIAL.
+- End-to-end: `OUT-5 ... 5600 ... target 6400 (80%+ attendance)` verifies **PASSED**.
+
+### B. Reporting UX reorganisation — Increment 1 (Reporting Period Workspace, frozen architecture)
+
+- `apps/web/src/features/reporting/presentation/ReportingStepGuide.tsx` (new): four-step guide at the top of every report workspace — *Update Project → Tell the Story → Generate Draft → Review & Submit* — progress, not a wizard.
+- `apps/web/src/features/reporting/presentation/StoryPanel.tsx` (new): the **5 guided questions** in step ② — *what went well / challenges / why variance / adaptations / lesson (optional)* — with **structured** persistence (`ReportingPeriod.storyContextJson`).
+- `apps/web/src/features/reporting/presentation/SmartReviewPanel.tsx` (new) + `packages/domain/src/contexts/reporting/smart-review.ts`: plain-language summary over the existing gate — `hasAchievementNumber`-aware, deduped by `claimId`/`sectionId`, no reason codes.
+- `apps/web/src/features/reporting/presentation/ReportCheckPanel.tsx` (new): single "Review & Submit" panel — plain-language readiness areas (Structure / Numbers / Evidence / Completeness / Approval) 🟢/🟡/🔴 + Smart Review + approval.
+- Project navigation: **Reporting** moved to the front; **Compliance** removed from the primary tab bar (reached contextually via Overview / workspace); **Templates** placed last. See `memorybank/Fixes.md` mapping.
+
+### C. Increment 2 — structured `Tell the Story`
+
+- `packages/domain/src/contexts/reporting/reporting-period.ts`: `StoryContext` type (`achievements | challenges | varianceExplanations | adaptations | lessons`), `setStoryContext()`, tolerant `parseStoryContext()`.
+- `packages/domain/src/contexts/reporting/index.ts`: exports `StoryContext`, `STORY_CONTEXT_FIELDS`, `hasAchievementNumber`.
+- `apps/web/src/features/reporting/presentation/StoryPanel.tsx` + `apps/api/src/routes/reporting.ts` `PUT /v1/reporting-periods/:id/story` + `packages/application/src/use-cases/reporting/update-reporting-period-story.ts` (new).
+- **AI generation prompt** (`packages/infrastructure/src/llm/llm-report-draft-generator.ts`): `buildStoryContextBlock(ctx)` injects the structured story into both `buildNarratorUserPrompt` and `buildSectionNarratorUserPrompt` so the writer weaves it into the relevant sections without inventing new context.
+- **Stub fallback** (`report-draft-generator.ts`): `storyContextBlock` emits `Context recorded by the reporting officer:` lines.
+
+### D. Increment 5 — Flexible Inputs (Excel/CSV + field-report extraction, conservative)
+
+- **Domain parsers** (`packages/domain/src/contexts/reporting/`):
+  - `period-value-import.ts` — header detection (real keyword rows, not arbitrary text), column mapping (`code|indicator code`, `achievement|value|period value|result`), numeric validation, unmappable flagging.
+  - `field-report-extraction.ts` — conservative deterministic extractor: indicator code + number (`FOUND`), dates + participant counts / activity stats (`SUGGESTED`), story-context cue mapping (`challenges|achievements|variance|adaptations|lessons`). Never invents.
+- **Application handlers** (`packages/application/src/use-cases/reporting/`):
+  - `ImportPeriodIndicatorValuesHandler` — `preview` (parse + validate against project indicators, NO write) + `confirm` (upsert `IndicatorUpdate`, gracefully skip **verified** updates with a clear message — no silent overwrite of audited data).
+  - `ProposeFieldReportExtractionHandler` (propose only, NO write).
+  - `ApplyFieldReportExtractionHandler` (commits user-confirmed items to existing model: `IndicatorUpdate`, `ActivityUpdate`, `ReportingPeriod.storyContext` merged).
+- **Contracts** + **API routes** (`apps/api/src/routes/reporting.ts`): `POST /v1/reporting-periods/period-values/{preview|confirm}`, `POST /v1/reporting-periods/field-report/{propose|apply}`.
+- **Web UI** (`apps/web/src/features/reporting/presentation/FlexibleInputsPanel.tsx`): two-tab panel (Import values / From field report), preview → human confirm → commit flow.
+
+### E. Deploy hardening (`scripts/deploy-fast.sh`) — the `hostname` mystery finally root-caused
+
+**Root cause:** `SSH="${SSH:-ssh -o ConnectTimeout=15 -o ServerAliveInterval=30}"` — missing the **`contabo`** host argument. Every `${SSH} "command"` invocation was passing the command string as the hostname → `ssh: hostname contains invalid characters`, causing snapshot + stream to abort. Confirmed by `bash -x scripts/deploy-fast.sh` trace.
+
+**Hardening shipped:**
+- `SSH="${SSH:-ssh -o ConnectTimeout=15 -o ServerAliveInterval=30 contabo}"` (one-line root-cause fix).
+- **Canary preflight**: before building, scp-extract a tiny tar to both env files via the host-file pattern; aborts with a clear error if the transfer path is broken.
+- **scp-based transfers** for all five artifacts (web, packages, pnpm-store, api, worker). Replaced the `cat | ssh "tar -xzf -"` pipe pattern, which was the surface where the `hostname` symptom appeared. New pattern: `ssh "cat > /tmp/dd-art.tgz; tar -xzf /tmp/dd-art.tgz -C DEST; rm -f /tmp/dd-art.tgz" < LOCAL_TAR`.
+- **Snapshot retry** (attempt, retry once, warn-and-continue on second failure; `NO_BACKUP=1` still skips entirely).
+- **API ready-poll** in verify: retries `/health` every 2s up to 60s instead of failing the verify when the api was still starting.
+- **Worker → env sync** (deferred to F-runtime-provisioner): api now regenerates the api's `node_modules/.pnpm` symlink farm **after** extracting the api tar, so `@sentry/node` and friends always resolve on Contabo (no manual `pnpm install`).
+
+### F. Runtime provisioning — SaaS control-plane → Contabo runtime envs
+
+**Status:** live on Contabo; verified end-to-end (api boot → env files → worker → DeepSeek → real AI Executive Summary in ~6s; MiniMax → real AI Executive Summary in ~57s).
+
+- **Why:** selecting DeepSeek / MiniMax on `sa.donordesk.online` only wrote to `PlatformConfiguration`. The api service and the worker had **no path** to read that — they read env files only. The operator had to copy secrets manually, which never happened.
+- **New: `packages/infrastructure/src/platform/runtime-provisioner.ts`** (`RuntimeProvisioner`):
+  - Atomic env-file writer (temp file → `chmod 0640` → `chown donordesk:donordesk` → rename). Preserves existing ownership on re-provision.
+  - Idempotent managed block (`# dd-managed:LLM:GLOBAL:<provider>:<scopeId>` … `# dd-end-managed:LLM`) — updates replace cleanly; re-applies are a no-op.
+  - `renderApiManagedBlock` writes `AI_REPORTER_ENABLED=1`, `AI_REPORTER_URL`, provider, model, `LLM_PROVIDER`. `renderWorkersManagedBlock` writes the worker-side `AI_REPORTER_*` (including the decrypted api key).
+  - Restart via `execFile` of `/usr/bin/sudo` + `/usr/bin/systemctl restart donordesk-{api,workers}` (no shell, scoped sudoers NOPASSWD). **Never logs the secret** — the injected logger receives provider / model / changed / restarted only.
+- **Wired into `PlatformControlPlane.upsertConfiguration` / `deleteConfiguration`**: after the DB write + audit, the control plane calls `provisioner.provisionGlobalLlm` / `deprovisionGlobalLlm` for GLOBAL enabled LLM configs (TENANT scope is documented as out-of-V1 for the AI Reporter path; it flows through `LlmConfigResolver`). Provisioning failures are audited (`configuration.provisioning_failed`) but don't roll back the save.
+- **API boot backfill** (`apps/api/src/server.ts`): on api startup, iterates every GLOBAL enabled LLM `PlatformConfiguration` row, decrypts secrets, and provisions the env files + restarts. So a provider selected on sa.donordesk reaches donordesk.online automatically — **no operator copy step**.
+- **Host setup on Contabo (operator one-time, root):**
+  - `/etc/sudoers.d/donordesk-restart` (`0440`, root): `donordesk ALL=(root) NOPASSWD: /usr/bin/systemctl restart donordesk-api, /usr/bin/systemctl restart donordesk-workers`.
+  - `donordesk-api.service` `ReadWritePaths=/opt/donordesk/shared /opt/donordesk/shared/storage` (expanded so the api process, `User=donordesk`, can write the env files).
+  - `/opt/donordesk/shared/{api,workers}.env` chowned to `donordesk:donordesk` `0640`.
+- **Regression tests** (`packages/infrastructure/test/runtime-provisioner.test.mjs`, 5 tests): inserts/updates/idempotent managed block, remove targeted block, render block content, `provisionGlobalLlm` writes env files + scoped restart + **no secret in logs** (asserted by scanning every log line), `deprovisionGlobalLlm` removes blocks + restarts.
+
+### G. MiniMax "Test connection" 404 → fix
+
+**Root cause:** `testProvider` in `control-plane.ts` built the test URL as `baseUrl + paths[provider]`. For MiniMax, `paths["minimax"] = "/v1/models"`. The operator saved `baseUrl = "https://api.minimax.io/v1"` (the correct form for the **worker**'s `llm_gateway.py`, which does `f"{base_url}/chat/completions"` → `.../v1/chat/completions`). But the Test-connection path then appended `/v1/models` → **`https://api.minimax.io/v1/v1/models` → HTTP 404**. Direct probes confirmed `https://api.minimax.io/v1/models` → **200** (valid model list) vs `.../v1/v1/models` → **404**.
+
+**Fix** (`packages/infrastructure/src/platform/control-plane.ts` `testProvider`): strip a trailing `/v1` segment from `baseUrl` before appending the provider path, so the path's leading `/v1` doesn't double:
+
+```ts
+config.baseUrl.trim().replace(/\/(v1)\/?$/, "").replace(/\/+$/, "")
+```
+
+**Verified via the actual UI path** (login as superadmin + `POST /superadmin/configurations/:id/test` for both providers):
+
+```
+minimax → { "status": "SUCCESS", "message": "Connection and credentials verified" }
+deepseek → { "status": "SUCCESS", "message": "Connection and credentials verified" }
+```
+
+The MiniMax draft endpoint also produces real AI content (Executive Summary: *"During the reporting period, the EERP project reported on learning centre establishment. According to verified indicator data for OUT-1, 30 learning centres have been established against a target of 120 centres…"*) with `parseOutcome: VALID, critiqueIssues: 0, validatorIssues: []`.
+
+### H. Worker env reload when a provider is saved after api boot (sharp edge)
+
+The api's boot backfill provisions env + restarts services on **first api boot**. For a save made *while* the api is already running (e.g., operator toggles provider / pastes key on sa.donordesk), `upsertConfiguration` calls `provisioner.provisionGlobalLlm` → writes env files → `restartServices` (api + workers). On Contabo this was observed to fail to restart workers in one case (worker held stale env → 401 against the new provider key). Operationally, the operator resolved it with a one-time `systemctl restart donordesk-workers`. A more robust detection (e.g., log + verify worker pid picked up new env, with a stronger retry) is tracked separately. The platform → runtime propagation is correct; this is a deploy-tooling robustness item, not a product regression.
+
+### I. Browser-verified real-user flow (Increments 1–5 + P0 fixes)
+
+- Project tabs: **Reporting** first; **Compliance** removed from primary.
+- 4-step guide renders in every report workspace; links use existing routes — no new workflow.
+- Story panel: 5 questions persist as structured `storyContextJson` (verified in DB: `{challenges: "Flooding…"}` merged correctly).
+- Report Check (single panel): 🟢 Numbers/Evidence, 🔴 Structure/Completeness/Approval, plain-language "2 things need attention" with deep-links — no `ASSERTION_FAILED` / `VALUE_MISMATCH` in the user path.
+- Flexible inputs: CSV paste → preview (`will update` / `does not exist in this project`) → confirm; field-report paste → propose (`OUT-4 = 2600` FOUND + `challenges/adaptations/lessons` mapped) → confirm. Verified indicators persisted to DB; story context merged.
+- Test connection: ✅ SUCCESS for DeepSeek and MiniMax after the `/v1` fix.
+
+**No regressions:** domain **108** ✓ · application **84** ✓ (later 86 with new tests) · infrastructure **165+** ✓ · api/web typecheck clean.

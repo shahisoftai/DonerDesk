@@ -3,6 +3,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import type { PrismaClient } from "@prisma/client";
 import {
+  RuntimeProvisioner,
+  type RuntimeProvisionerDeps,
+} from "./runtime-provisioner.js";
+import {
   PLAN_CATALOG,
   PLAN_CODES,
   resolvePlan,
@@ -39,11 +43,13 @@ const GRANT_PRECEDENCE: Record<string, number> = { MANUAL: 0, ENTERPRISE_CONTRAC
 export class PlatformControlPlane {
   private readonly masterKey: Buffer;
   private readonly jwtSecret: string;
-  constructor(private readonly prisma: PrismaClient) {
+  private readonly provisioner: RuntimeProvisioner;
+  constructor(private readonly prisma: PrismaClient, deps: RuntimeProvisionerDeps = {}) {
     const raw = required("PLATFORM_MASTER_KEY");
     this.masterKey = Buffer.from(raw, "base64");
     if (this.masterKey.length !== 32) throw new Error("PLATFORM_MASTER_KEY must be a Base64-encoded 32-byte key");
     this.jwtSecret = required("SUPERADMIN_JWT_SECRET");
+    this.provisioner = new RuntimeProvisioner(deps);
   }
 
   async bootstrap(email: string, name: string, temporaryPassword: string) {
@@ -107,6 +113,44 @@ export class PlatformControlPlane {
     if (existing) await this.execute(`UPDATE "PlatformConfiguration" SET "scopeType"=$2,"scopeId"=$3,"category"=$4,"provider"=$5,"displayName"=$6,"enabled"=$7,"configurationJson"=$8,"updatedById"=$9,"secretCiphertext"=COALESCE($10,"secretCiphertext"),"secretIv"=COALESCE($11,"secretIv"),"secretTag"=COALESCE($12,"secretTag"),"secretVersion"=$13,"updatedAt"=NOW() WHERE "id"=$1`, id, scopeType, scopeId, input.category, input.provider, input.displayName, input.enabled, JSON.stringify(input.configuration), actor.sub, encrypted?.ciphertext ?? null, encrypted?.iv ?? null, encrypted?.tag ?? null, encrypted ? existing.secretVersion + 1 : existing.secretVersion);
     else await this.execute(`INSERT INTO "PlatformConfiguration" ("id","scopeType","scopeId","category","provider","displayName","enabled","configurationJson","secretCiphertext","secretIv","secretTag","createdById","updatedById","updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$12,NOW())`, id, scopeType, scopeId, input.category, input.provider, input.displayName, input.enabled, JSON.stringify(input.configuration), encrypted?.ciphertext ?? null, encrypted?.iv ?? null, encrypted?.tag ?? null, actor.sub);
     await this.audit(actor, existing ? "configuration.updated" : "configuration.created", "PlatformConfiguration", id, existing, { ...input, secrets: encrypted ? "[ROTATED]" : "[UNCHANGED]" }, meta);
+
+    // Runtime provisioning: write the selected LLM provider into the Contabo
+    // runtime env files (`api.env` + `workers.env`) and restart the services
+    // so the AI Reporter path becomes live. Only GLOBAL LLM is supported by the
+    // current AI Reporter (feature-flagged, reads global env). TENANT-scoped
+    // LLM configs flow through the standard LlmConfigResolver path, not the
+    // AI Reporter env.
+    if (input.category === "LLM" && scopeType === "GLOBAL") {
+      try {
+        if (input.enabled && encrypted) {
+          const secretMap = JSON.parse(this.decrypt(encrypted)) as Record<string, string>;
+          const apiKey = secretMap.apiKey;
+          const model = typeof input.configuration.model === "string" ? String(input.configuration.model) : "";
+          const baseUrl = typeof input.configuration.baseUrl === "string" ? String(input.configuration.baseUrl) : undefined;
+          if (apiKey && model) {
+            await this.provisioner.provisionGlobalLlm(
+              { provider: input.provider, model, baseUrl, apiKey },
+              {},
+              { actor: { sub: actor.sub, email: actor.email }, ip: meta?.ip, userAgent: meta?.userAgent },
+            );
+          }
+        } else if (!input.enabled) {
+          await this.provisioner.deprovisionGlobalLlm(
+            input.provider,
+            {},
+            { actor: { sub: actor.sub, email: actor.email }, ip: meta?.ip, userAgent: meta?.userAgent },
+          );
+        }
+      } catch (error) {
+        // Provisioning failure must not silently roll back the control-plane
+        // save — the operator can re-save to retry provisioning. Log and
+        // surface a clear audit note; the API still returns success for the
+        // DB write.
+        const message = error instanceof Error ? error.message : String(error);
+        await this.audit(actor, "configuration.provisioning_failed", "PlatformConfiguration", id, null, { provider: input.provider, error: message }, meta);
+      }
+    }
+
     return { id };
   }
 
@@ -114,6 +158,20 @@ export class PlatformControlPlane {
     const old = (await this.query<ConfigurationRow>(`DELETE FROM "PlatformConfiguration" WHERE "id"=$1 RETURNING *`, id))[0];
     if (!old) throw new Error("Configuration not found");
     await this.audit(actor, "configuration.deleted", "PlatformConfiguration", id, old, null, meta);
+    // Best-effort deprovision so deleting a config removes the runtime env
+    // block and restarts. Failures are audited but do not roll back the delete.
+    if ((old.category as string) === "LLM" && (old.scopeType as string) === "GLOBAL") {
+      try {
+        await this.provisioner.deprovisionGlobalLlm(
+          String(old.provider),
+          {},
+          { actor: { sub: actor.sub, email: actor.email }, ip: meta?.ip, userAgent: meta?.userAgent },
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await this.audit(actor, "configuration.provisioning_failed", "PlatformConfiguration", id, null, { provider: old.provider, phase: "delete", error: message }, meta);
+      }
+    }
   }
 
   async overview() {
@@ -709,7 +767,13 @@ async function testProvider(category: string, provider: string, config: Record<s
     // Test the configured base URL (not just the default) so a malformed or
     // unreachable baseUrl is caught here instead of failing at runtime.
     const paths: Record<string, string> = { openai: "/models", anthropic: "/v1/models", deepseek: "/models", minimax: "/v1/models" };
-    const baseUrl = typeof config.baseUrl === "string" && config.baseUrl.trim() ? config.baseUrl.trim().replace(/\/+$/, "") : "";
+    // Normalise the configured base URL: strip trailing slashes AND a trailing
+    // "/v1" segment so the provider-specific path (which already starts with
+    // "/v1/models" or "/v1/messages" for anthropic/MiniMax) doesn't produce a
+    // double "/v1" like ".../v1/v1/models" → 404.
+    const baseUrl = typeof config.baseUrl === "string" && config.baseUrl.trim()
+      ? config.baseUrl.trim().replace(/\/(v1)\/?$/, "").replace(/\/+$/, "")
+      : "";
     url = String(config.testUrl || (baseUrl ? `${baseUrl}${paths[provider] ?? ""}` : defaults[provider] || ""));
     const key = secrets.apiKey;
     if (!key) throw new Error("API key is required");

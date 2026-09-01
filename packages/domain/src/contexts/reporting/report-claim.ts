@@ -248,6 +248,18 @@ export class ReportClaim {
     }
     throw new Error(`Resolution ${input.result} is applied through verification, not manual resolution`);
   }
+
+  /**
+   * P0-1 — Carries a prior user resolution forward onto a re-verified claim so
+   * a reassessment never silently resurrects a claim the user accepted-with-a-
+   * limitation or excluded. Used only for reconciliation; it never mutates the
+   * verification result (the claim stays FAILED, with the decision recorded).
+   */
+  preserveResolution(by: string, notes?: string): void {
+    this.props.resolvedById = by;
+    this.props.resolvedAt = new Date();
+    if (notes !== undefined) this.props.resolutionNotes = notes;
+  }
 }
 
 export function mapClaimTypeToAssertionType(type: ClaimType): AssertionType {

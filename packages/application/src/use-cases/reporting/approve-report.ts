@@ -125,6 +125,14 @@ export class ApproveReportHandler {
       ) {
         continue;
       }
+      // P0-3 / report-quality: a NOT_MATERIAL failed claim (metadata, grounded
+      // narrative, references) is not a blocking issue and must not surface in
+      // Smart Review or block approval. Only MATERIAL failures count. This keeps
+      // legitimate content (activity lines, story context, summary counts) from
+      // flooding the review as "needs stronger supporting evidence".
+      if (claim.materiality !== "MATERIAL") {
+        continue;
+      }
       // Surface the first source's evidenceId so the preflight UI can link to
       // the underlying evidence file when the issue is an evidence-hash mismatch.
       const firstEvidenceId = claim.sources[0]?.evidenceId;

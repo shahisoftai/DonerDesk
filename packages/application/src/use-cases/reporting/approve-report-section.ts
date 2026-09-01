@@ -46,8 +46,11 @@ export class ApproveReportSectionHandler {
 
     const claimsResult = await this.claims.findBySection(sectionId, ctx.tenant.tenantId);
     if (!claimsResult.ok) return claimsResult;
+    // P0-3: only MATERIAL failed claims that are still unresolved block approval.
+    // NOT_MATERIAL failures (non-claim / metadata that slipped through) must not
+    // create blockers or noise in the review queue.
     const unresolved = claimsResult.value.filter(
-      (c) => c.verificationResult === "FAILED" && c.resolvedById === undefined,
+      (c) => c.materiality === "MATERIAL" && c.verificationResult === "FAILED" && c.resolvedById === undefined,
     );
     if (unresolved.length > 0) {
       return {

@@ -174,7 +174,7 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     const findings = input.verifiedFindings;
     const rows = findings.map((f) => {
       const update = input.indicatorUpdates.find((u) => u.indicatorId === f.indicatorId);
-      const flags = f.qualityFlags.length > 0 ? ` (flags: ${f.qualityFlags.join(", ")})` : "";
+      const caveat = this.cleanQualityCaveats(f.qualityFlags);
       const source = update?.dataSource ? `; source: ${update.dataSource}` : "";
       const name = f.indicatorName ? ` (${f.indicatorName})` : "";
       const target = f.target ? ` / target ${f.target}${f.unit ? ` ${f.unit}` : ""}` : "";
@@ -182,7 +182,8 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
       const displayedValue = f.qualityFlags.includes("MISSING_DENOMINATOR")
         ? "Not calculable (denominator unavailable)"
         : `${f.value}${f.unit ? ` ${f.unit}` : ""}`;
-      return `| ${f.indicatorCode}${name} | ${displayedValue} | ${target || "no target"}${previous} | ${f.calculationMethod} |${flags}${source} |`;
+      const methodCell = caveat ? caveat : "Verified finding";
+      return `| ${f.indicatorCode}${name} | ${displayedValue} | ${target || "no target"}${previous} | ${methodCell} |${source} |`;
     });
     const claims = findings
       .filter((f) => !f.qualityFlags.includes("MISSING_DENOMINATOR"))
@@ -382,16 +383,55 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
 
   private descriptiveNarrative(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], title: string): string {
     const findings = input.verifiedFindings;
+    const story = this.storyContextBlock(input);
+    let body: string;
     if (findings.length === 0) {
       const activityLines = input.activities.slice(0, 5).map((a) => `- ${a.activityTitle}: ${a.summary || a.achievements}`);
-      const body = activityLines.length > 0 ? activityLines.join("\n") : `[Drafted from verified findings, report plan, and evidence. No findings available this period.]`;
-      return `Activity records for the period:\n${body}`;
+      body = activityLines.length > 0 ? `Activity records for the period:\n${activityLines.join("\n")}` : `No verified findings or activity records were available for this period.`;
+    } else {
+      body = findings.slice(0, 5).map((f) => this.describeFinding(input, f)).join("\n\n");
     }
-    return findings.slice(0, 5).map((f) => this.describeFinding(input, f)).join("\n\n");
+    return story ? `${body}\n\n${story}` : body;
+  }
+
+  private storyContextBlock(input: Parameters<IReportDraftGenerator["generateDraft"]>[0]): string {
+    const story = input.reportContext?.storyContext;
+    if (!story) return "";
+    const labels: Record<string, string> = {
+      achievements: "What went well",
+      challenges: "Challenges faced",
+      varianceExplanations: "Why targets were over/under achieved",
+      adaptations: "What changed or was adapted",
+      lessons: "Lessons and observations",
+    };
+    const rows: string[] = [];
+    for (const [key, label] of Object.entries(labels)) {
+      const value = story[key as keyof typeof story];
+      if (value && value.trim()) rows.push(`- ${label}: ${value.trim()}`);
+    }
+    return rows.length > 0 ? `Context recorded by the reporting officer:\n${rows.join("\n")}` : "";
+  }
+
+  /**
+   * P0-2 — Converts internal quality-flag codes into donor-friendly caveat
+   * language so engineering/debug strings never leak into a user-facing report.
+   */
+  private cleanQualityCaveats(flags: string[]): string {
+    const map: Record<string, string> = {
+      MISSING_DISAGGREGATION: "disaggregated data was not recorded",
+      LOW_COVERAGE: "the figures are based on partial records",
+      STALE: "the underlying records predate the reporting period",
+      UNIT_MISMATCH: "units were inconsistent across the source records",
+      NEEDS_REVIEW: "the figure requires verification before finalisation",
+      MISSING_DENOMINATOR: "the denominator could not be established",
+    };
+    const clean = flags
+      .map((f) => map[f])
+      .filter((t): t is string => Boolean(t));
+    return clean.length > 0 ? clean.join("; ") : "";
   }
 
   private describeFinding(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], finding: VerifiedFinding): string {
-    const flags = finding.qualityFlags.length > 0 ? ` (${finding.qualityFlags.join(", ")})` : "";
     const update = input.indicatorUpdates.find((u) => u.indicatorId === finding.indicatorId);
     const source = update?.dataSource ? ` Source: ${update.dataSource}.` : "";
     const label = finding.indicatorName ? `${finding.indicatorCode} (${finding.indicatorName})` : finding.indicatorCode;
@@ -402,10 +442,12 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     const perf = finding.performanceEvaluation && finding.performanceEvaluation.type !== "NEUTRAL"
       ? ` Performance: ${finding.performanceEvaluation.type.toLowerCase()} (${finding.performanceEvaluation.detail}).`
       : "";
+    const caveat = this.cleanQualityCaveats(finding.qualityFlags);
     if (finding.qualityFlags.includes("MISSING_DENOMINATOR")) {
-      return `${label}: the result could not be calculated because the denominator was unavailable${flags}.${source}`;
+      return `${label}: the result could not be calculated because the denominator was unavailable.${source}`;
     }
-    return `${label}: ${finding.value}${finding.unit ? ` ${finding.unit}` : ""} recorded via ${finding.calculationMethod}${target}${previous}${perf}${flags}.${source}`;
+    const caveatsClause = caveat ? ` Note: ${caveat}.` : "";
+    return `${label}: ${finding.value}${finding.unit ? ` ${finding.unit}` : ""} recorded for the period${target}${previous}${perf}${caveatsClause}${source}`;
   }
 
   private shorten(content: string, audience: "DONOR" | "INTERNAL" | "GENERAL"): string {

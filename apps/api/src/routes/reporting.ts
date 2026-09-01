@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, ReorderReportSectionsSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -26,6 +26,23 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.put("/v1/reporting-periods/:id/story", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = UpdateReportingPeriodStorySchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.updateReportingPeriodStory.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.get("/v1/reporting-periods/:id/story", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const period = await req.container.periods.findById(id, ctx.tenant.tenantId);
+    if (!period.ok || !period.value) return { storyContext: {} };
+    return { storyContext: period.value.storyContext };
+  });
+
   app.post("/v1/reporting-periods/:id/generate-draft", async (req) => {
     const id = (req.params as { id: string }).id;
     GenerateDraftSchema.parse(req.body ?? {});
@@ -33,6 +50,46 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.generateReportDraft.handle(ctx, id);
     if (!r.ok) throw r.error;
     return r.value;
+  });
+
+  app.post("/v1/reporting-periods/period-values/preview", async (req) => {
+    const body = PreviewPeriodValuesSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.importPeriodIndicatorValues.preview(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/reporting-periods/period-values/confirm", async (req) => {
+    const body = ConfirmPeriodValuesSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.importPeriodIndicatorValues.confirm(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/reporting-periods/field-report/propose", async (req) => {
+    const body = ProposeFieldReportExtractionSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.proposeFieldReportExtraction.handle(ctx, body.text);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/reporting-periods/field-report/apply", async (req) => {
+    const body = ApplyFieldReportExtractionSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.applyFieldReportExtraction.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/reporting-periods/:id/smart-review", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getSmartReview.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return SmartReviewSummarySchema.parse(r.value);
   });
 
   app.get("/v1/reporting-periods/:id/draft", async (req) => {

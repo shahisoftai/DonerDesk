@@ -56,6 +56,7 @@ import {
   ListReportingPeriodsHandler,
   GenerateReportDraftHandler,
   GetReportDraftHandler,
+  GetSmartReviewHandler,
   UpdateReportSectionHandler,
   CreateReportSectionHandler,
   DeleteReportSectionHandler,
@@ -68,6 +69,10 @@ import {
   ApproveReportHandler,
   RejectReportHandler,
   ResolveReportClaimHandler,
+  UpdateReportingPeriodStoryHandler,
+  ImportPeriodIndicatorValuesHandler,
+  ProposeFieldReportExtractionHandler,
+  ApplyFieldReportExtractionHandler,
   DetectMissingEvidenceHandler,
   ResolveChecklistItemHandler,
   BulkResolveChecklistHandler,
@@ -347,9 +352,14 @@ export interface Container {
     attachEvidence: AttachEvidenceHandler;
     detachEvidence: DetachEvidenceHandler;
     createReportingPeriod: CreateReportingPeriodHandler;
+    updateReportingPeriodStory: UpdateReportingPeriodStoryHandler;
+    importPeriodIndicatorValues: ImportPeriodIndicatorValuesHandler;
+    proposeFieldReportExtraction: ProposeFieldReportExtractionHandler;
+    applyFieldReportExtraction: ApplyFieldReportExtractionHandler;
     listReportingPeriods: ListReportingPeriodsHandler;
     generateReportDraft: GenerateReportDraftHandler;
     getReportDraft: GetReportDraftHandler;
+    getSmartReview: GetSmartReviewHandler;
     cancelReportGeneration: CancelReportGenerationHandler;
     activateReportDraft: ActivateReportDraftHandler;
     getReportAssurance: GetReportAssuranceHandler;
@@ -736,6 +746,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     attachEvidence: new AttachEvidenceHandler(evidence, activities, indicatorUpdates, audits),
     detachEvidence: new DetachEvidenceHandler(evidence, activities, indicatorUpdates, audits),
     createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events),
+    updateReportingPeriodStory: new UpdateReportingPeriodStoryHandler(periods, audits),
+    importPeriodIndicatorValues: new ImportPeriodIndicatorValuesHandler(ids, indicators, indicatorUpdates, audits),
+    proposeFieldReportExtraction: new ProposeFieldReportExtractionHandler(),
+    applyFieldReportExtraction: new ApplyFieldReportExtractionHandler(ids, indicators, indicatorUpdates, activities, periods, audits),
     listReportingPeriods: new ListReportingPeriodsHandler(periods, calculateReadinessHandler),
     generateReportDraft: new GenerateReportDraftHandler(
       ids, periods, drafts, sections, projects, organizations, templates, indicatorUpdates, activities,
@@ -744,6 +758,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage, reportArtifacts,
     ),
     getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportRevisions, reportPlans, reportArtifacts),
+    getSmartReview: new GetSmartReviewHandler(drafts, approveReportHandler, reportClaims, sections),
     cancelReportGeneration: new CancelReportGenerationHandler(drafts, sections, audits),
     activateReportDraft: new ActivateReportDraftHandler(drafts, audits),
     getReportAssurance: new GetReportAssuranceHandler(drafts, sections, reportClaims, reportRevisions, resolvedRequirements),
@@ -760,7 +775,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),
     approveReport: approveReportHandler,
     rejectReport: new RejectReportHandler(drafts, audits),
-    resolveReportClaim: new ResolveReportClaimHandler(reportClaims, audits),
+    resolveReportClaim: new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService),
     reassessReportRevision: new ReassessReportRevisionHandler(sections, reportRevisions, assuranceService, audits),
     resolveEffectiveRequirements: new ResolveEffectiveRequirementsHandler(requirementResolver, audits),
     upsertRequirementPack: new UpsertRequirementPackHandler(ids, requirementPacks, audits),

@@ -90,9 +90,14 @@ export * from "./use-cases/activities/attach-evidence.js";
 export * from "./use-cases/activities/detach-evidence.js";
 
 export * from "./use-cases/reporting/create-reporting-period.js";
+export * from "./use-cases/reporting/update-reporting-period-story.js";
+export * from "./use-cases/reporting/import-period-indicator-values.js";
+export * from "./use-cases/reporting/propose-field-report-extraction.js";
+export * from "./use-cases/reporting/apply-field-report-extraction.js";
 export * from "./use-cases/reporting/list-reporting-periods.js";
 export * from "./use-cases/reporting/generate-report-draft.js";
 export * from "./use-cases/reporting/get-report-draft.js";
+export * from "./use-cases/reporting/get-smart-review.js";
 export * from "./use-cases/reporting/update-report-section.js";
 export * from "./use-cases/reporting/create-report-section.js";
 export * from "./use-cases/reporting/delete-report-section.js";

@@ -1,4 +1,4 @@
-import { DomainError, extractNumericAtoms, classifyNumericAtomRoles, type VerifiedFinding, type VerificationReasonCode, type Result } from "@donordesk/domain";
+import { DomainError, extractNumericAtoms, classifyNumericAtomRoles, indicatorLabelRanges, type VerifiedFinding, type VerificationReasonCode, type Result } from "@donordesk/domain";
 import type { IClaimVerifier, ClaimVerification, EvidencePackage, ReportClaimDraft, EntailmentResult, IEvidenceIntegrityVerifier } from "@donordesk/application";
 import { NumericAssertionVerifier, DeterministicEntailmentVerifier, CausalReviewPolicy } from "./verifier-strategies.js";
 import { DeterministicEvidenceIntegrityVerifier } from "./evidence-integrity-verifier.js";
@@ -57,7 +57,16 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
 
     switch (claim.type) {
       case "NUMERIC": {
-        const atoms = classifyNumericAtomRoles(claim.text, extractNumericAtoms(claim.text));
+        // Apply the same eligibility masking as the extractor (indicator-name
+        // label numbers) so a masked number like "80%" in "(80%+ attendance)"
+        // is never re-introduced during verification.
+        const labelRanges = indicatorLabelRanges(claim.text);
+        const atoms = classifyNumericAtomRoles(
+          claim.text,
+          extractNumericAtoms(claim.text).filter(
+            (a) => !labelRanges.some(([s, e]) => a.charStart >= s && a.charEnd <= e),
+          ),
+        );
         const result = this.numeric.verify({ atoms, findings: input.findings });
         return {
           ok: true,

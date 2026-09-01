@@ -26,7 +26,7 @@ RELEASE_ID="${RELEASE_ID:-$(date -u +%Y%m%d%H%M%S)}"
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 WORK="${WORK:-/tmp/dd-deploy-${RELEASE_ID}}"
-SSH="${SSH:-ssh -o ConnectTimeout=15 -o ServerAliveInterval=30}"
+SSH="${SSH:-ssh -o ConnectTimeout=15 -o ServerAliveInterval=30 contabo}"
 SCPTGT="${SCPTGT:-contabo:}"
 REMOTE_BASE="${REMOTE_BASE:-/opt/donordesk}"
 BASE="${BASE:-${REMOTE_BASE}}"
@@ -35,6 +35,69 @@ REMOTE_WORKERS="${REMOTE_WORKERS:-${REMOTE_BASE}/workers}"
 REMOTE_BACKUPS="${REMOTE_BACKUPS:-${REMOTE_BASE}/backups}"
 
 echo "==> Release: ${RELEASE_ID}  scope=${SCOPE}  host=contabo"
+
+# --------------------------------------------------------------------------- #
+# 0. Preflight — catch deploy-blocking environment issues before building.
+# --------------------------------------------------------------------------- #
+echo "==> Preflight"
+# (a) Hostname: a hostname with characters invalid for tar/gzip headers can
+#     abort the snapshot/stream ("hostname contains invalid characters"). We
+#     sanitise it and tell gzip not to embed the original name (GZIP=-n).
+HOSTNAME_CLEAN="$(hostname 2>/dev/null || echo 'donordesk-deploy')"
+if ! [[ "${HOSTNAME_CLEAN}" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]]; then
+  echo "  WARNING: hostname '${HOSTNAME_CLEAN}' has characters invalid for tar headers; using 'donordesk-deploy'." >&2
+  HOSTNAME_CLEAN="donordesk-deploy"
+fi
+export HOSTNAME="${HOSTNAME_CLEAN}"
+export GZIP="-n"
+echo "  hostname: ${HOSTNAME_CLEAN} (gzip -n enabled)"
+
+# (c) Canary: transfer via `scp` then extract on the host. Piping a tar over the
+#     SSH stdin (`cat file | ssh "tar -xzf -"`) has proven flaky on this host
+#     (intermittent 'hostname contains invalid characters' from a truncated
+#     gzip stream). scp+extract is reliable. Test the EXACT transfer path before
+#     spending time on the build.
+echo "  canary: scp + extract a tiny tar to ${REMOTE_APP}/.deploy-canary/"
+echo "canary-marker" > /tmp/dd-canary.txt
+( cd /tmp && tar -czf /tmp/dd-canary.tgz dd-canary.txt )
+if scp -q /tmp/dd-canary.tgz ${SCPTGT}/tmp/dd-canary.tgz 2>/tmp/dd-canary-scp.err; then
+  CANARY_OUT="$(${SSH} "
+    set -eu
+    cd ${REMOTE_APP}
+    mkdir -p .deploy-canary
+    tar -xzf /tmp/dd-canary.tgz -C ${REMOTE_APP}/.deploy-canary
+    rm -f /tmp/dd-canary.tgz
+    test -f ${REMOTE_APP}/.deploy-canary/dd-canary.txt
+    rm -rf ${REMOTE_APP}/.deploy-canary
+    echo CANARY_OK
+  " 2>&1 || true)"
+else
+  CANARY_OUT="scp failed: $(cat /tmp/dd-canary-scp.err)"
+fi
+if echo "${CANARY_OUT}" | grep -q "CANARY_OK"; then
+  echo "  canary: scp+extract OK"
+else
+  echo "  ERROR: scp+extract canary failed." >&2
+  echo "${CANARY_OUT}" >&2
+  rm -f /tmp/dd-canary.tgz /tmp/dd-canary.txt 2>/dev/null
+  exit 1
+fi
+rm -f /tmp/dd-canary.tgz /tmp/dd-canary.txt 2>/dev/null
+
+# (b) Api dependency reachability against the pnpm store. The api ships a
+#     node_modules symlink farm; a version/hash drift between the local build
+#     and the staged store breaks startup (e.g. "@sentry/node not found").
+#     We abort early with an actionable message instead of failing on restart.
+if [[ -d "${ROOT}/apps/api/node_modules/@sentry" ]]; then
+  if ! node -e "require.resolve('@sentry/node', {paths:['${ROOT}/apps/api']})" >/dev/null 2>&1; then
+    echo "  WARNING: @sentry/node does not resolve from apps/api/node_modules." >&2
+    echo "  Running 'pnpm install' at apps/api so the symlink farm matches the local store." >&2
+    (cd "${ROOT}/apps/api" && CI=true pnpm install --no-frozen-lockfile 2>/dev/null || echo "  (pnpm install failed; will regenerate on host)" >&2)
+  else
+    echo "  api deps: @sentry/node resolves OK"
+  fi
+fi
+
 
 # --------------------------------------------------------------------------- #
 # 1. Typecheck
@@ -180,16 +243,27 @@ echo "    stage: $(($(date +%s)-STAGE_START))s"
 SNAPSHOT_START=$(date +%s)
 if [[ "${NO_BACKUP}" != "1" ]]; then
   echo "==> Snapshot previous deploy on host (rotate, keep last 3)"
-  ${SSH} "
-    set -eu
-    if [[ ! -d ${REMOTE_BACKUPS} ]]; then mkdir -p ${REMOTE_BACKUPS}; fi
-    ls -1t ${REMOTE_BACKUPS}/dd-app-pre-*.tgz 2>/dev/null | tail -n +4 | xargs -r rm -f
-    tar --exclude='apps/*/.next/cache' \
-        --exclude='node_modules/.cache' \
-        -czf ${REMOTE_BACKUPS}/dd-app-pre-${RELEASE_ID}.tgz \
-        -C ${BASE} app
-    ls -1t ${REMOTE_BACKUPS}/dd-app-pre-*.tgz | head -5
-  "
+  SNAP_OK=0
+  for attempt in 1 2; do
+    if ${SSH} "
+      set -eu
+      if [[ ! -d ${REMOTE_BACKUPS} ]]; then mkdir -p ${REMOTE_BACKUPS}; fi
+      ls -1t ${REMOTE_BACKUPS}/dd-app-pre-*.tgz 2>/dev/null | tail -n +4 | xargs -r rm -f
+      tar --exclude='apps/*/.next/cache' \
+          --exclude='node_modules/.cache' \
+          -czf ${REMOTE_BACKUPS}/dd-app-pre-${RELEASE_ID}.tgz \
+          -C ${BASE} app
+      ls -1t ${REMOTE_BACKUPS}/dd-app-pre-*.tgz | head -5
+    " 2>&1; then
+      SNAP_OK=1
+      break
+    else
+      echo "  snapshot attempt ${attempt} failed; retrying once…" >&2
+    fi
+  done
+  if [[ "${SNAP_OK}" != "1" ]]; then
+    echo "  WARNING: snapshot failed twice; continuing without a fresh pre-deploy backup (existing backups remain)." >&2
+  fi
 else
   echo "==> Skipping snapshot (NO_BACKUP=1)"
 fi
@@ -205,13 +279,15 @@ if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
   # The web tar's root IS the Next.js standalone output (it contains
   # apps/web/server.js at its top level), so it extracts into the systemd
   # unit's expected path: <app>/apps/web/.next/standalone/apps/web/server.js.
-  echo "==> Stream web artifact -> ${REMOTE_APP}/apps/web/.next/standalone/"
-  cat "${WEB_TAR}" | ${SSH} "
+  echo "==> Ship web artifact -> ${REMOTE_APP}/apps/web/.next/standalone/"
+  scp -q "${WEB_TAR}" ${SCPTGT}/tmp/dd-web.tgz
+  ${SSH} "
     set -eu
     cd ${REMOTE_APP}/apps/web
     rm -rf .next
     mkdir -p .next/standalone
-    tar -xzf - -C ${REMOTE_APP}/apps/web/.next/standalone
+    tar -xzf /tmp/dd-web.tgz -C ${REMOTE_APP}/apps/web/.next/standalone
+    rm -f /tmp/dd-web.tgz
     chown -R donordesk:donordesk ${REMOTE_APP}/apps/web
   "
 fi
@@ -221,12 +297,14 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
   # to /opt/donordesk/app/packages/<pkg>/ via apps/api/node_modules/@donordesk/*
   # -> ../../../../packages/*.
   if [[ -f "${PACKAGES_TAR}" ]]; then
-    echo "==> Stream workspace packages -> ${REMOTE_APP}/packages/"
-    cat "${PACKAGES_TAR}" | ${SSH} "
+    echo "==> Ship workspace packages -> ${REMOTE_APP}/packages/"
+    scp -q "${PACKAGES_TAR}" ${SCPTGT}/tmp/dd-pkgs.tgz
+    ${SSH} "
       set -eu
       cd ${REMOTE_APP}
       rm -rf packages
-      tar -xzf - -C ${REMOTE_APP}
+      tar -xzf /tmp/dd-pkgs.tgz -C ${REMOTE_APP}
+      rm -f /tmp/dd-pkgs.tgz
       chown -R donordesk:donordesk ${REMOTE_APP}/packages
     "
   fi
@@ -234,17 +312,14 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
   # Stage B: ship pnpm store contents. The api tar ships apps/api/node_modules
   # with only symlinks; the real package files live under node_modules/.pnpm/.
   if [[ -f "${PNPM_TAR}" ]]; then
-    echo "==> Stream pnpm store -> ${REMOTE_APP}/node_modules/.pnpm/"
-    cat "${PNPM_TAR}" | ${SSH} "
+    echo "==> Ship pnpm store -> ${REMOTE_APP}/node_modules/.pnpm/"
+    scp -q "${PNPM_TAR}" ${SCPTGT}/tmp/dd-pnpm.tgz
+    ${SSH} "
       set -eu
       cd ${REMOTE_APP}
       rm -rf node_modules/.pnpm node_modules/.bin node_modules/.modules.yaml node_modules/.pnpm-workspace-state-v1.json
-      tar -xzf - -C ${REMOTE_APP}
-      # Restore the api-level symlink farm so apps/api's fastify etc. resolve.
-      cd ${REMOTE_APP}/apps/api
-      if [ -f package.json ]; then
-        CI=true npx -y pnpm@10.34.5 install --no-frozen-lockfile --silent 2>/dev/null || true
-      fi
+      tar -xzf /tmp/dd-pnpm.tgz -C ${REMOTE_APP}
+      rm -f /tmp/dd-pnpm.tgz
       chown -R donordesk:donordesk ${REMOTE_APP}/node_modules
     "
   fi
@@ -276,15 +351,29 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
   # (symlinks) + apps/api/src land at /opt/donordesk/app/apps/api/. The
   # systemd unit's WorkingDirectory=/opt/donordesk/app/apps/api finds dist/
   # relative to that path.
-  echo "==> Stream api artifact -> ${REMOTE_APP}/apps/api/"
-  cat "${API_TAR}" | ${SSH} "
+  echo "==> Ship api artifact -> ${REMOTE_APP}/apps/api/"
+    scp -q "${API_TAR}" ${SCPTGT}/tmp/dd-api.tgz
+    ${SSH} "
     set -eu
     cd ${REMOTE_APP}
     rm -rf apps/api/dist apps/api/node_modules
     mkdir -p apps
-    tar -xzf - -C ${REMOTE_APP}
+    tar -xzf /tmp/dd-api.tgz -C ${REMOTE_APP}
+    rm -f /tmp/dd-api.tgz
     if [ -d apps/api ]; then
       chown -R donordesk:donordesk apps/api
+    fi
+    # Regenerate the api symlink farm AFTER the api tree is extracted so the
+    # shipped node_modules symlinks always match the just-shipped pnpm store
+    # (avoids startup failures like '@sentry/node not found' from version/hash
+    # drift between the local build and the host store). Non-silent so a
+    # genuine failure surfaces instead of silently shipping a broken api.
+    cd ${REMOTE_APP}/apps/api
+    if [ -f package.json ]; then
+      echo '  regenerating api symlink farm (pnpm install)'
+      CI=true npx -y pnpm@10.34.5 install --no-frozen-lockfile >/tmp/dd-api-pnpm-install.log 2>&1 \\
+        || { echo '  WARNING: api pnpm install failed — deps may not resolve' >&2; cat /tmp/dd-api-pnpm-install.log >&2; }
+      chown -R donordesk:donordesk node_modules
     fi
   "
 
@@ -292,12 +381,14 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
   # /opt/donordesk/workers/, separate from the api tree. Mirror the new
   # apps/workers/app/ over it and restart the service.
   if [[ -f "${WORKER_TAR}" ]]; then
-    echo "==> Stream worker artifact + mirror to runtime dir"
-    cat "${WORKER_TAR}" | ${SSH} "
+    echo "==> Ship worker artifact + mirror to runtime dir"
+    scp -q "${WORKER_TAR}" ${SCPTGT}/tmp/dd-worker.tgz
+    ${SSH} "
       set -eu
       cd ${REMOTE_APP}
       rm -rf apps/workers
-      tar -xzf - -C ${REMOTE_APP}
+      tar -xzf /tmp/dd-worker.tgz -C ${REMOTE_APP}
+      rm -f /tmp/dd-worker.tgz
       if [ -d apps/workers ]; then
         chown -R donordesk:donordesk apps/workers
       fi
@@ -349,8 +440,13 @@ ${SSH} "
   echo '--- systemd ---'
   systemctl is-active ${SERVICES}
   echo '--- api ---'
-  curl -fsS --max-time 10 http://127.0.0.1:4001/health || (echo 'api health FAILED'; exit 1)
-  echo
+  API_OK=0
+  for i in \$(seq 1 30); do
+    if curl -fsS --max-time 5 http://127.0.0.1:4001/health >/dev/null 2>&1; then API_OK=1; break; fi
+    sleep 2
+  done
+  if [ \"\${API_OK}\" != '1' ]; then echo 'api health FAILED (timed out waiting)'; exit 1; fi
+  echo 'api health OK (after '\${i}' polls)'
   # /ready now also introspects the running Prisma client against the
   # expected schema. A 503 here means the generated client is stale (likely
   # prisma generate did not re-run during deploy); curl with -f would fail

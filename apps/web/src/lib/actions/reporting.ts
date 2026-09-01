@@ -1,6 +1,6 @@
 "use server";
 
-import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, UpdateReportingPeriodStorySchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -17,6 +17,12 @@ import {
   RewriteSectionResponseSchema,
   ReorderSectionsResponseSchema,
   CancelGenerationResponseSchema,
+  StoryContextResponseSchema,
+  SmartReviewSummarySchema,
+  PeriodValuePreviewResponseSchema,
+  PeriodValueConfirmResponseSchema,
+  FieldReportExtractionResponseSchema,
+  FieldReportApplyResponseSchema,
 } from "./_schemas";
 
 export type CreateReportingPeriodResult = Result<{ id: string }, AppError>;
@@ -32,6 +38,70 @@ export async function createReportingPeriodAction(input: unknown): Promise<Creat
   }
   return gatewayRequest("/v1/reporting-periods", IdResponseSchema, context.token, {
     method: "POST",
+    body: parsed.data,
+  });
+}
+
+export type StoryContextShape = { achievements?: string; challenges?: string; varianceExplanations?: string; adaptations?: string; lessons?: string };
+
+export type SmartReviewItemShape = {
+  id: string;
+  severity: "BLOCKING" | "WARNING";
+  title: string;
+  explanation: string;
+  claimId?: string;
+  sectionId?: string;
+  evidenceId?: string;
+  action: { type: string; label: string };
+  blocksApproval: boolean;
+};
+export type SmartReviewSummaryShape = { issueCount: number; blockingCount: number; items: SmartReviewItemShape[] };
+
+export async function getSmartReviewAction(periodId: string): Promise<Result<SmartReviewSummaryShape, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/smart-review`, SmartReviewSummarySchema, context.token);
+}
+
+export type PeriodValuePreviewShape = {
+  totalRows: number; readyRows: number; errorRows: number;
+  rows: Array<{ rowIndex: number; indicatorCode: string; periodAchievement?: string; status: "ready" | "error"; error?: string; will: "create" | "update" | "unknown" }>;
+};
+
+export async function previewPeriodValuesAction(projectId: string, reportingPeriodId: string, rows: string[][]): Promise<Result<PeriodValuePreviewShape, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/period-values/preview`, PeriodValuePreviewResponseSchema, context.token, { method: "POST", body: { projectId, reportingPeriodId, rows } });
+}
+
+export async function confirmPeriodValuesAction(projectId: string, reportingPeriodId: string, items: Array<{ indicatorCode: string; periodAchievement?: string }>): Promise<Result<{ created: number; updated: number; errors: string[] }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/period-values/confirm`, PeriodValueConfirmResponseSchema, context.token, { method: "POST", body: { projectId, reportingPeriodId, items } });
+}
+
+export async function proposeFieldReportAction(projectId: string, reportingPeriodId: string, text: string): Promise<Result<{ indicatorAchievements: Array<{ indicatorCode: string; value: string; certainty: string }>; activities: Array<{ title: string; certainty: string }>; story: Array<{ field: string; text: string }> }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/field-report/propose`, FieldReportExtractionResponseSchema, context.token, { method: "POST", body: { projectId, reportingPeriodId, text } });
+}
+
+export async function applyFieldReportAction(projectId: string, reportingPeriodId: string, payload: { indicatorAchievements?: Array<{ indicatorCode: string; value: string }>; activities?: Array<{ title: string }>; story?: StoryContextShape }): Promise<Result<{ ok: boolean }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/field-report/apply`, FieldReportApplyResponseSchema, context.token, { method: "POST", body: { projectId, reportingPeriodId, ...payload } });
+}
+
+export type StoryResult = Result<{ ok: boolean } | { storyContext?: StoryContextShape }, AppError>;
+
+export async function getReportingPeriodStoryAction(periodId: string): Promise<Result<{ storyContext?: StoryContextShape }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/story`, StoryContextResponseSchema, context.token);
+}
+
+export async function updateReportingPeriodStoryAction(periodId: string, storyContext: StoryContextShape): Promise<Result<{ ok: boolean }, AppError>> {
+  const context = await requireSession();
+  const parsed = UpdateReportingPeriodStorySchema.safeParse({ storyContext });
+  if (!parsed.success) {
+    return { ok: false, error: { kind: "validation", message: "Please check the story fields.", fields: flattenZodFields(parsed.error) } };
+  }
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/story`, OkResponseSchema, context.token, {
+    method: "PUT",
     body: parsed.data,
   });
 }

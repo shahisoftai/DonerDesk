@@ -2,7 +2,7 @@ import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply }
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import { randomUUID } from "node:crypto";
-import { createContainer } from "@donordesk/infrastructure";
+import { createContainer, RuntimeProvisioner, provisionExistingGlobalLlmConfigs } from "@donordesk/infrastructure";
 import { ZodError } from "zod";
 import { TenantId, DomainError, type Role } from "@donordesk/domain";
 
@@ -201,6 +201,37 @@ export async function start() {
   const port = Number(process.env.PORT ?? 4000);
   // Bind loopback by default (contabo-ops §4/§10); override with HOST if needed.
   await app.listen({ port, host: process.env.HOST ?? "127.0.0.1" });
+
+  // Runtime-provisioning backfill: on api boot, make sure any GLOBAL LLM
+  // configuration saved in the SuperAdmin control plane is reflected in the
+  // Contabo runtime env files (`api.env` + `workers.env`). Without this, a
+  // provider selected on `sa.donordesk.online` would never reach
+  // `donordesk.online` until the operator re-saved it. The provisioning
+  // restarts the api and workers so the new env takes effect immediately.
+  const container = app.container;
+  const masterKeyRaw = process.env.PLATFORM_MASTER_KEY;
+  if (masterKeyRaw) {
+    const masterKey = Buffer.from(masterKeyRaw, "base64");
+    if (masterKey.length === 32) {
+      const provisioner = new RuntimeProvisioner();
+      const query = container.prisma.$queryRawUnsafe.bind(container.prisma);
+      provisionExistingGlobalLlmConfigs(query, masterKey, provisioner)
+        .then((n) => {
+          app.log.info(
+            n > 0
+              ? `LLM runtime provisioning: ${n} GLOBAL configuration(s) provisioned; api and workers restarted to pick up new env`
+              : "LLM runtime provisioning: no enabled GLOBAL configuration to provision",
+          );
+        })
+        .catch((error: unknown) => {
+          app.log.warn(
+            { error: error instanceof Error ? error.message : String(error) },
+            "LLM runtime provisioning backfill failed",
+          );
+        });
+    }
+  }
+
   const shutdown = async () => {
     await app.close();
     await shutdownObservability();

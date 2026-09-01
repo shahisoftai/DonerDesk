@@ -130,6 +130,19 @@ export class GenerateReportDraftHandler {
     const templateSections = template?.ok && template.value ? template.value.sections : [];
     const templateVersion = template?.ok && template.value ? template.value.version : 1;
 
+    // P0-4 donor template gate: a donor report must have a defined section
+    // structure (a donor template with sections, or an explicit approved
+    // structure). Without it we must not silently fabricate a single generic
+    // section or create a draft/credit. Block before any side effects.
+    if (templateSections.length === 0) {
+      return {
+        ok: false,
+        error: DomainError.reportGateBlocked(
+          "Attach a donor template before generating. The report structure is defined by the donor template; a report cannot be generated without one.",
+        ),
+      };
+    }
+
     const reportingProfileSnapshot = parseProfileSnapshot(period.reportingProfileSnapshotJson);
 
     const planResult = await this.planner.plan({
@@ -397,7 +410,7 @@ export class GenerateReportDraftHandler {
         activities,
         indicatorUpdates,
         reportingProfileSnapshot,
-        reportContext: this.buildReportContext(project, period, template?.ok && template.value ? template.value : undefined),
+        reportContext: this.buildReportContext(project, period, template?.ok && template.value ? template.value : undefined, period.storyContext),
         generator,
         chargeAiCredits,
         creditReserved,
@@ -627,7 +640,12 @@ export class GenerateReportDraftHandler {
       await this.usage.add(input.ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
     }
 
-    if (input.chargeAiCredits && !generationFailed) {
+    if (input.chargeAiCredits) {
+      // P0-2 — `generatedByAi` must reflect the actual outcome, not an
+      // optimistic flag. Whenever the configured provider did not produce the
+      // persisted text (any fallback, or a loop error), the draft must not be
+      // presented as AI-generated. This correction is NOT gated on a clean
+      // completion: a partially-failed generation is also not AI.
       if (realAiGenerated) {
         await this.recordLlmRun(input.ctx, input.reportingPeriodId, true, "success", 0, 0, 0, 0, Date.now() - startedAt, input.generator.model.modelId, input.generator.model.modelVersion, input.generator.model.promptVersion);
       } else {
@@ -703,6 +721,7 @@ export class GenerateReportDraftHandler {
     project: { title: string; projectCode: string; donorName: string; implementingOrganization: string; partnerOrganization?: string; country: string; region?: string; district?: string; sector: string; duration: { start: Date; end: Date }; budget?: { amount: number; currency: string } | null; reportingFrequency: string; description?: string },
     period: { reportType: string; duration: { start: Date; end: Date }; deadline: Date; internalReviewDeadline?: Date; readinessScore: number; daysUntilDeadline(): number },
     template?: { templateName: string; donorName: string; language: string; requiredAnnexes: string[]; notes?: string; version: number } | undefined,
+    storyContext?: { achievements?: string; challenges?: string; varianceExplanations?: string; adaptations?: string; lessons?: string },
   ): ReportGenerationContext {
     const startDate = project.duration.start.toISOString();
     const endDate = project.duration.end.toISOString();
@@ -743,6 +762,7 @@ export class GenerateReportDraftHandler {
             version: template.version,
           }
         : undefined,
+      storyContext,
     };
   }
 }

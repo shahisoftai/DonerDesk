@@ -14,6 +14,7 @@ export type NumericAtomRole =
   | "PERCENT"
   | "CURRENCY"
   | "DATE"
+  | "COUNT"
   | "DISAGGREGATION"
   | "OTHER";
 
@@ -25,9 +26,68 @@ export const NUMERIC_ATOM_ROLES: NumericAtomRole[] = [
   "PERCENT",
   "CURRENCY",
   "DATE",
+  "COUNT",
   "DISAGGREGATION",
   "OTHER",
 ];
+
+/** Roles that are references/metadata, never a report-value achievement claim. */
+export const NON_ACHIEVEMENT_ROLES: ReadonlySet<NumericAtomRole> = new Set<NumericAtomRole>([
+  "TARGET",
+  "BASELINE",
+  "COMPARISON",
+  "PERCENT",
+  "CURRENCY",
+  "DATE",
+  "COUNT",
+  "DISAGGREGATION",
+]);
+
+/**
+ * True when at least one atom is an achievement-like magnitude (a report-value
+ * claim). Sentences whose numbers are all dates / counts / targets / percentages
+ * are metadata or references, NOT numeric achievement claims, and must not be
+ * verified as such (which is what previously produced VALUE_MISMATCH noise on
+ * dates, participant counts, summary counts, and table cells).
+ */
+export function hasAchievementNumber(atoms: NumericAtom[]): boolean {
+  return atoms.some((a) => !NON_ACHIEVEMENT_ROLES.has(a.role));
+}
+
+/**
+ * Returns the character ranges (relative to `text`) that belong to an indicator
+ * label prefix `CODE (Indicator Name)` — including nested parentheticals — up to
+ * (but not including) the value after the colon. Numbers embedded inside an
+ * indicator name (e.g. "80%+ attendance" in "OUT-5 (Number of children
+ * attending regularly (80%+ attendance)): 5600 …") are part of the label, not a
+ * report-value assertion, and must never become numeric atoms. Shared by the
+ * extractor AND the verifier so a masked label number can never be re-introduced
+ * during verification.
+ */
+export function indicatorLabelRanges(text: string): Array<[number, number]> {
+  const ranges: Array<[number, number]> = [];
+  const codeMatch = text.match(/^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*/);
+  // Only an indicator-like code (contains a digit, e.g. OUT-5, IND-H-003)
+  // marks a following parenthetical as an indicator-name label. A bare word
+  // ("The project …") must not trigger label masking.
+  if (!codeMatch || codeMatch[0].length === 0 || !/[0-9]/.test(codeMatch[0])) return ranges;
+  const codeEnd = codeMatch[0].length;
+  ranges.push([0, codeEnd]);
+  let i = codeEnd;
+  while (i < text.length && /\s/.test(text.charAt(i))) i++;
+  while (i < text.length && text.charAt(i) === "(") {
+    const groupStart = i;
+    let depth = 0;
+    do {
+      if (text.charAt(i) === "(") depth += 1;
+      else if (text.charAt(i) === ")") depth -= 1;
+      i += 1;
+    } while (i < text.length && depth > 0);
+    if (depth === 0) ranges.push([groupStart, i]);
+    while (i < text.length && /\s/.test(text.charAt(i))) i++;
+  }
+  return ranges;
+}
 
 /**
  * A single numeric atom extracted from an assertion. `value` is the raw text
@@ -172,6 +232,19 @@ function normalizeNumberToken(token: string): string | null {
  * findings. This helper is intentionally conservative: anything it cannot
  * classify stays OTHER.
  */
+/**
+ * The count nouns that signal a number is a COUNT (how many things), not an
+ * achievement magnitude. e.g. "25 participant(s)", "12 evidence file(s)",
+ * "10 activity record(s)", "20 indicator finding(s)".
+ */
+const COUNT_NOUN_RE = /(participant|file|record|finding|evidence|item|session|batch|checklist item)s?\b/i;
+
+/**
+ * Marks atoms that are DATES, COUNTs, or trailing percentages — references and
+ * metadata, never achievement claims. This is the root-cause guard that stops
+ * legitimate content (dates, participant counts, summary counts, "80%+")
+ * from being treated as report-value numbers and failing verification.
+ */
 export function classifyNumericAtomRoles(
   text: string,
   atoms: NumericAtom[],
@@ -183,17 +256,45 @@ export function classifyNumericAtomRoles(
   const hasCurrency = /\b(usd|eur|gbp|kes|uzs|afn|npr|rwh|rwf|pkr)\b|\$|€|£/i.test(lower);
   const hasPrevious = /previous|prior|last (month|quarter|year|period)|compared to|vs\.?/i.test(lower);
 
+  // Ranges of full dates like "2026-02-28" and standalone 4-digit years.
+  const nonAchievementRanges: Array<[number, number]> = [];
+  const dateSeqRe = /(?:19|20)\d{2}[-/.]\d{1,2}[-/.]\d{1,2}/g;
+  let dateMatch: RegExpExecArray | null;
+  while ((dateMatch = dateSeqRe.exec(text)) !== null) {
+    nonAchievementRanges.push([dateMatch.index, dateMatch.index + dateMatch[0].length]);
+  }
+  const yearRe = /(?:19|20)\d{2}/g;
+  let yearMatch: RegExpExecArray | null;
+  while ((yearMatch = yearRe.exec(text)) !== null) {
+    if (yearMatch.index >= 0) nonAchievementRanges.push([yearMatch.index, yearMatch.index + yearMatch[0].length]);
+  }
+
   return atoms.map((atom, index) => {
-    const role: NumericAtomRole = "OTHER";
-    const copy: NumericAtom = { ...atom, role };
-    if (hasPercent && index === atoms.length - 1 && /percent|rate/i.test(lower.slice(atom.charEnd - 8, atom.charEnd + 12))) {
+    const copy: NumericAtom = { ...atom, role: "OTHER" as NumericAtomRole };
+
+    // Trailing percent: "80%" in "80%+ attendance" — a rate, not a magnitude.
+    if (text.charAt(atom.charEnd) === "%") {
       copy.role = "PERCENT";
       copy.isPercent = true;
+    } else if (nonAchievementRanges.some(([s, e]) => atom.charStart >= s && atom.charStart < e)) {
+      copy.role = "DATE";
+    } else if (COUNT_NOUN_RE.test(text.slice(atom.charEnd, atom.charEnd + 24))) {
+      copy.role = "COUNT";
+    } else if (/\b(batch|phase|step|stage|group|round|version|edition)\s*$/i.test(text.slice(0, atom.charStart))) {
+      // Ordinal/identifier labels ("Batch 2", "Phase 1") — not magnitudes.
+      copy.role = "COUNT";
+    } else if (hasCurrency) {
+      copy.role = "CURRENCY";
+    } else if (hasPercent && index === atoms.length - 1 && /percent|rate/i.test(lower.slice(atom.charEnd - 8, atom.charEnd + 12))) {
+      copy.role = "PERCENT";
+      copy.isPercent = true;
+    } else if (hasTarget && index === 1) {
+      copy.role = "TARGET";
+    } else if (hasBaseline && index === 2) {
+      copy.role = "BASELINE";
+    } else if (hasPrevious) {
+      copy.role = "COMPARISON";
     }
-    if (hasCurrency) copy.role = "CURRENCY";
-    if (hasTarget && index === 1) copy.role = "TARGET";
-    if (hasBaseline && index === 2) copy.role = "BASELINE";
-    if (hasPrevious) copy.role = "COMPARISON";
     return copy;
   });
 }
