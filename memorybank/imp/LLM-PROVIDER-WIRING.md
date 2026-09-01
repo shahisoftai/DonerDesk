@@ -195,7 +195,7 @@ overridable via SuperAdmin config, which is the production path.
 > disaggregation, quality-flag caveat language, performance-evaluation gating
 > rules, and a worked example in the system prompt. Evidence chunks raised to 8 ×
 > 800 chars; `maxTokens` stays **4096** (see the timeout record in
-> `../contabo-ops.md` §29). Deployed `20260818074405`. See
+> `../contabo-ops.md` §26). Deployed `20260818074405`. See
 > `../Features/20-report-gen.md` §17.
 
 ## 8. Container wiring (container.ts, synchronous)
@@ -573,7 +573,7 @@ The feature flag is **OFF** in `/opt/donordesk/shared/api.env` as of
 2026-08-29. The controlled rollout (preview → 2 pilots → default) is the
 next step. Procedure in `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`.
 
-### 17.9 Deploy specifics (from `contabo-ops.md` §21.5)
+### 17.9 Deploy specifics (from `CONTABO-DEPLOY.md` §9)
 
 The deploy script (`scripts/deploy-fast.sh`) now ships four api-scoped
 tars instead of one:

@@ -1,13 +1,25 @@
 # AI Reporter 2 — Post-Deploy Operator Runbook
 
-**Release:** `20260828200000` (deployed 2026-08-29).
-**Status:** code shipped, feature flag **OFF** by default, controlled rollout
-next.
+**Latest deploy:** `20260901160940` (2026-09-01) — feature flag is **ON** on the live host.
+**Status:** internal preview complete; controlled rollout to pilot tenants next.
 
 This runbook is the operator-facing guide for the AI Reporter v2 rollout after
-the 2026-08-29 deploy. It assumes the system has already shipped v2 code (worker
+the 2026-09-01 deploy. It assumes the system has already shipped v2 code (worker
 tree, api artifacts, `ReportArtifact` persistence, deterministic validators)
-and is in the **flag-off** steady state.
+and that the api's startup banner logs `"AI Reporter flag is enabled…"` on
+every restart.
+
+> **Defaults (2026-09-01 update):** `HttpWorkerClient` now defaults to
+> `http://127.0.0.1:8092` and `AI_REPORTER_DRAFT_TIMEOUT_MS` defaults to
+> `45_000` (matching `AGENTS.md` §"AI Reporter 2 contracts"). Setting
+> `AI_REPORTER_URL` is **only** required if the worker is on a different host.
+> The previous legacy defaults (`localhost:5000` / `180_000`) were removed.
+>
+> **Token sync (2026-09-01 lesson):** the api reads `INTERNAL_TOKEN` from
+> `/opt/donordesk/shared/api.env` and sends it to the worker; the worker
+> reads its expected value from `/opt/donordesk/shared/workers.env`. These
+> drift after every secret rotation. The deploy step §9 in
+> [`CONTABO-DEPLOY.md`](../CONTABO-DEPLOY.md) covers the one-line fix.
 
 ## TL;DR
 
@@ -67,18 +79,23 @@ before exposing external tenants.
 
 ```bash
 ssh contabo 'set -a; . /opt/donordesk/shared/api.env; set +a
-# AI_REPORTER_URL defaults to http://localhost:5000; override to point
-# at the worker.
+# AI_REPORTER_URL defaults to http://127.0.0.1:8092 in the code; only set
+# it here if the worker is on a different host.
 if ! grep -q "^AI_REPORTER_URL=" /opt/donordesk/shared/api.env; then
   echo "AI_REPORTER_URL=http://127.0.0.1:8092" \
     >> /opt/donordesk/shared/api.env
 fi
+# Accepted truthy values: 1, true, on, yes, enabled (case-insensitive).
 if ! grep -q "^AI_REPORTER_ENABLED=" /opt/donordesk/shared/api.env; then
   echo "AI_REPORTER_ENABLED=1" >> /opt/donordesk/shared/api.env
 else
   sed -i "s/^AI_REPORTER_ENABLED=.*/AI_REPORTER_ENABLED=1/" \
     /opt/donordesk/shared/api.env
 fi
+# The api must send the worker's INTERNAL_TOKEN, not its own.
+WORKER_TOKEN=$(grep "^INTERNAL_TOKEN=" /opt/donordesk/shared/workers.env | cut -d= -f2-)
+sed -i "s|^INTERNAL_TOKEN=.*|INTERNAL_TOKEN=${WORKER_TOKEN}|" \
+  /opt/donordesk/shared/api.env
 systemctl restart donordesk-api
 sleep 3
 curl -fsS http://127.0.0.1:4001/health
@@ -91,19 +108,28 @@ tail -f /var/log/donordesk-api.log | grep -i "ai reporter\|reporter\|getReportDr
 ### Verifying the flag
 
 The container's `getReportDraftGenerator` has a single cache map keyed
-by `tenantId|enableAiReporter`. To confirm the AI Reporter path is active,
-the easiest check is to trigger a draft for the internal tenant and watch
-the api log:
+by `tenantId`.` it is built lazily — the **first request** to a `/generate-draft`
+route triggers both the construction and the worker `probe()`. The api's
+**startup banner** (always logged) confirms whether the flag is recognised:
 
 ```bash
-# Trigger a draft (any draft) via the api as the internal tenant.
-# Then in another shell:
-ssh contabo 'journalctl -u donordesk-api -f -n 200 | grep -i "ai.reporter\|generator\|AiReporter"'
+ssh contabo 'journalctl -u donordesk-api -n 5 --no-pager | grep -E "AI Reporter|flag"'
+# flag ON:  "AI Reporter flag is enabled; the dedicated Python worker will be used for report drafting" url=http://127.0.0.1:8092 timeoutMs=45000 internalTokenSet=true
+# flag OFF: (no banner line; the container falls through to LlmReportDraftGenerator)
+# flag bogus: "AI_REPORTER_ENABLED is set but unrecognised; treating as disabled."
 ```
 
-A successful flag-on draft shows an `AiReporterDraftGenerator`
-instantiation log; a flag-off draft shows an `LlmReportDraftGenerator`
-instantiation.
+To also confirm the worker is actually reachable, hit any tenant's
+`/generate-draft` route and then check:
+
+```bash
+ssh contabo 'journalctl -u donordesk-api -n 50 --no-pager | grep -E "probe|AI Reporter"'
+# success: "AI Reporter worker probe succeeded" url=… latencyMs=…
+# failure: "AI Reporter worker probe failed; falling back to standard LLM generator chain" url=… hint=…
+```
+
+The probe failure case shows the exact URL it tried and a hint pointing
+at `AI_REPORTER_URL`, the worker service, and `INTERNAL_TOKEN`.
 
 ### What to watch during stage 1
 
@@ -232,7 +258,7 @@ Once Stage 3 ships:
 ## Verifying the api-tar / worker tree (post-rollout hygiene)
 
 The deploy script ships four api-scoped tars (see
-`contabo-ops.md` §21.4): `apps/api/`, `packages/`, `node_modules/.pnpm/`,
+`CONTABO-DEPLOY.md` §5 — api tar layout): `apps/api/`, `packages/`, `node_modules/.pnpm/`,
 and the api-extract step re-runs `pnpm install` to regenerate the api's
 symlink farm. When upgrading to a future AI Reporter version:
 
@@ -252,42 +278,55 @@ symlink farm. When upgrading to a future AI Reporter version:
 | LLM provider costs spike | Lower `max_tokens` in `apps/workers/app/ai_reporter/draft_writer.py`; lower `temperature`; switch to a cheaper model via `AI_REPORTER_MODEL`. |
 | Validator failures cluster on one tenant | That tenant may have unusual evidence shape. Either (a) tighten the validator for that tenant via a per-tenant override (future feature), or (b) disable v2 for that tenant by adding it to a `BLOCKLIST` (future feature), or (c) flip the flag globally and wait for the corpus to grow. |
 | Worker unreachable | `HttpWorkerClient` returns `Result.err`; `AiReporterDraftGenerator` falls back to `StubReportDraftGenerator` per the existing fallback chain. The audit event records the reason (`PROVIDER_HTTP_ERROR`). |
-| Database migration conflict | The v2 migration `20260828200000_ai_reporter_artifacts` is additive. If a future migration conflicts, see `contabo-ops.md` §22 for rollback (single `tar xzf`). |
+| Database migration conflict | The v2 migration `20260828200000_ai_reporter_artifacts` is additive. If a future migration conflicts, see `CONTABO-DEPLOY.md` §7 for rollback (single `tar xzf`). |
 
 ## Useful Grafana queries
 
-The following queries (using the `audit_events` table or the
-`LlmRun`/`Prompt` tables) will be the operator's primary observability
-during the rollout:
+The following queries (using the `audit_events` and `llm_runs` tables)
+are the operator's primary observability during the rollout. The
+`AuditEvent` table uses scalar columns (`tenantId`, `eventType`,
+`newValue`, `systemNote`) — not a JSON `payload` column.
 
 ```sql
 -- Per-section fallback rate per tenant (last 24h)
+-- The handler writes eventType='report.draft.fallback' with a systemNote
+-- of the form "Draft generation fell back to stub generator (reason=…)."
 SELECT
   "tenantId",
-  COUNT(*) FILTER (WHERE payload->>'eventType' = 'report.draft.section.fallback')::float
-    / NULLIF(COUNT(*), 0) AS fallback_rate
+  COUNT(*)::float / NULLIF(SUM(COUNT(*)) OVER (), 0) AS fallback_share
 FROM "AuditEvent"
-WHERE "eventType" LIKE 'report.%'
+WHERE "eventType" = 'report.draft.fallback'
   AND "createdAt" > NOW() - INTERVAL '1 day'
 GROUP BY "tenantId"
-ORDER BY fallback_rate DESC NULLS LAST;
+ORDER BY fallback_share DESC NULLS LAST;
 
--- Validator failure rate
+-- Recent fallbacks (the systemNote carries the fallbackReason)
 SELECT
-  payload->>'tenantId' AS tenant_id,
-  payload->>'sectionId' AS section_id,
-  payload->>'errorMessage' AS message,
+  "tenantId",
+  "systemNote",
+  "createdAt"
+FROM "AuditEvent"
+WHERE "eventType" = 'report.draft.fallback'
+ORDER BY "createdAt" DESC
+LIMIT 50;
+
+-- Validator/persistence failures (per-section artifacts)
+SELECT
+  "tenantId",
+  "entityId"   AS section_id,
+  "newValue"   AS message,
   "createdAt"
 FROM "AuditEvent"
 WHERE "eventType" = 'report.section.artifacts.persist_failed'
 ORDER BY "createdAt" DESC
 LIMIT 50;
 
--- Per-section latency p95
+-- Per-section latency p95 (LlmRun records every drafted section)
 SELECT
-  percentile_disc(0.95) WITHIN GROUP (ORDER BY "latencyMs") AS p95_latency
+  percentile_disc(0.95) WITHIN GROUP (ORDER BY "latencyMs") AS p95_latency_ms
 FROM "LlmRun"
-WHERE "promptVersion" = 2  -- AI Reporter v2
+WHERE "operationType" = 'REPORT_SECTION'
+  AND "promptVersion" = 2  -- AI Reporter v2
   AND "createdAt" > NOW() - INTERVAL '7 days';
 ```
 
@@ -299,5 +338,5 @@ WHERE "promptVersion" = 2  -- AI Reporter v2
   retrospective with deploy timeline + lessons learned.
 - `memorybank/Features/11-AI-Report-Draft-Generator.md` — feature
   catalog entry (status tables, behavior).
-- `memorybank/contabo-ops.md` §21.4 — api tar layout + workspace
+- `memorybank/CONTABO-DEPLOY.md` §5 — api tar layout + workspace
   symlinks fix.

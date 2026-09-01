@@ -103,7 +103,7 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-09-01T15:30+
 > golden corpus + `reporting:eval` CLI + verifier contract suite, and ADRs
 > 0005–0009. Full gate green (254 tests). Migration + RLS applied on Contabo;
 > baseline revisions backfilled. See `Features/20-report-gen.md` §18,
-> `contabo-ops.md` §29, and `Fixes.md`.
+> `contabo-ops.md` §26, and `Fixes.md`.
 
 > **Deployment (2026-08-18):** **Report Writing Skills full course** — release
 > `20260818162955` (web). Created 16 comprehensive donor-reporting lessons across 3 modules:
@@ -168,7 +168,7 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-09-01T15:30+
 > timeout constraint). Also fixed a flaky `phase4-security` token-tamper test.
 > Full gate green (241 tests, 0 failures); deployed and verified live. See
 > `Features/20-report-gen.md` §17, `Features/11-AI-Report-Draft-Generator.md`,
-> `Fixes.md`, and `contabo-ops.md` §29.
+> `Fixes.md`, and `contabo-ops.md` §26.
 
 > **2026-08-20 (deployed, release `20260820125717`):** **Section-wise AI report
 > generation.** Fixes the "Generate AI draft" timeout (a single full-report LLM
@@ -179,7 +179,7 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-09-01T15:30+
 > commits + assesses each as it completes. The web workspace polls the draft
 > and flips sections greyed→normal one at a time. Resume-safe (skips
 > already-`DRAFTED` sections); credit reserved in phase 1, reconciled at loop
-> end. See `Features/11-AI-Report-Draft-Generator.md` and `contabo-ops.md` §29.
+> end. See `Features/11-AI-Report-Draft-Generator.md` and `contabo-ops.md` §26.
 
 > **Deployment (2026-08-18):** **Feature 19 — Creem billing is live in
 > production (real mode).** Release `20260818053116` shipped Phase 4

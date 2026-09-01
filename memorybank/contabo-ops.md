@@ -1,7 +1,7 @@
 # Contabo Operations — Shared Host and DonorDesk
 
 **Last read-only verification:** 2026-08-12 09:15–09:17 CEST
-**Last deployment:** 2026-08-28 (release `20260828155553`, cutover to fast-deploy model — see §21.1).
+**Last deployment:** 2026-09-01 (release `20260901160940`, AI Reporter flag detection + URL defaults + startup probe + UI surfacing).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`)
 
@@ -59,7 +59,7 @@ Corrections to the superseded inventory:
 
 ## 3. Existing workloads — do not disrupt
 
-> **2026-08-18:** all NeureCore workloads below were retired (see §29 top entry —
+> **2026-08-18:** all NeureCore workloads below were retired (see §26 top entry —
 > archive at `/root/neurecore-retirement-20260818-190257/`). Remaining colocated
 > workloads are GFC (PM2 + Docker), Shahisoft (PM2), CyberPanel, mail, and
 > DonorDesk (systemd).
@@ -74,7 +74,7 @@ All observed PM2 processes run as `root` in the existing root PM2 daemon:
 | `gfcportal` | fork | 105 MiB | public `*:3011`; standalone Next.js |
 | `shahisoft-nextjs` | cluster | 140 MiB | PM2 internal `127.0.0.1:3010` |
 
-(Former `neurecore-*` PM2 apps were retired 2026-08-18 — see §29 top entry.)
+(Former `neurecore-*` PM2 apps were retired 2026-08-18 — see §26 top entry.)
 DonorDesk commands must always use `--only` and must never run `pm2 restart all`,
 `pm2 reload all`, or replace the existing PM2 dump.
 
@@ -90,7 +90,7 @@ Verified active services include:
 - `fail2ban.service`
 
 (Former NeureCore units `hermes-sidecar`, `hermes-events-bridge`,
-`accounting-sidecar`, and `neurecore.service` were retired 2026-08-18 — see §29
+`accounting-sidecar`, and `neurecore.service` were retired 2026-08-18 — see §26
 top entry.)
 
 Port 8090 is CyberPanel/lscpd and is publicly bound. Never use it. Port 8081 is a
@@ -100,7 +100,7 @@ rechecking it immediately before deployment.
 ### 3.3 Docker
 
 Three GFC containers were running (NeureCore `observability` project containers,
-images, and volumes were removed 2026-08-18 — see §29 top entry):
+images, and volumes were removed 2026-08-18 — see §26 top entry):
 
 | Container | Image | Approx. memory | Exposure |
 |---|---:|---|
@@ -324,7 +324,7 @@ setup checklist (Feature 18, release `20260815054218`). Added an account-wide
 `20260815060000_onboarding_reporting_defaults`). Google OAuth client
 credentials are still pending (login-page button + Drive folder provisioning
 are env/credential gated). Workers and Kestra are both enabled; the five
-plugin-referencing flows and plugin JARs remain gated (see §29 log +
+plugin-referencing flows and plugin JARs remain gated (see §26 log +
 `imp/KESTRA-PLUGINS.md`).
 
 | Resource | Allocation |
@@ -470,12 +470,12 @@ Also verify from outside the server:
 ## 14. Deployment model and architecture
 
 DonorDesk runs as native systemd services on the shared host, **not** inside the
-existing root-owned PM2 daemon. Rationale: the host already runs seven PM2
+existing root-owned PM2 daemon. Rationale: the host already runs PM2
 applications for other projects and the root PM2 dump is a shared blast radius;
 systemd gives clean Unix-user, filesystem-hardening, journald, dependency, and
 restart boundaries.
 
-**Stage A — reliable core (live today):**
+**Topology (live):**
 
 ```text
 Internet
@@ -497,21 +497,20 @@ Native/systemd DonorDesk services
 
 Shared native infrastructure
    |-- PostgreSQL 16.14   host :5432, dedicated DB and roles
-   |-- Prometheus 2.55.1  existing host-network container
-   `-- Grafana 11.3.0     existing host-network container
+   |-- Redis 7.x          host loopback (auth required)
+   `-- Prometheus/Grafana existing host-network containers
 ```
-
-**Stage B — durable async/AI (partially enabled):** Redis ACL user + BullMQ
-(not yet wired; in-memory/kestra queue in use), Kestra (enabled), real LLM
-adapters (stub default), production notifications (console default), object
-storage (per-tenant Drive/R2 optional). Starting a container does not activate
-a feature: the runtime dependency container must select the adapter and a
-production-path test must prove it.
 
 Deployments target a **single mutable runtime directory** at
 `/opt/donordesk/app/`. There is no immutable-release directory or `current`
-symlink switch — every deploy overwrites files in `app/` in place. See §21 for
-the fast tar-and-extract deploy model and §22 for rollback.
+symlink switch — every deploy overwrites files in `app/` in place.
+
+> **Deploy procedure (current):** see [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md)
+> for the single fastest path (one-liner, preflight, gate, scope control,
+> rollback, token sync, pitfalls). The legacy release-sequence / release-path
+> / rollback sections that lived here (§19–§22 of the pre-2026-09-01 file)
+> were moved into that document so the operator-facing procedure lives in
+> one place. The change log (§26) below preserves the historical record.
 
 ## 15. Filesystem and Unix identity
 
@@ -680,286 +679,35 @@ WHERE migration_name='<name>' AND finished_at IS NULL;
 
 ## 19. Mandatory release gate
 
-**Code and artifact**
+> **Current authoritative copy:** see [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md)
+> §3 (gate), §5 (deploy steps), §6 (manual tail), §7 (rollback). The
+> previous long-form §19–§22 lived here until 2026-09-01 and was moved into
+> `CONTABO-DEPLOY.md` so the deploy procedure lives in one place.
 
-- [ ] Clean `pnpm -r typecheck`, `pnpm -r test`, `pnpm -r build` pass
-      (deploy-fast runs a scoped subset — `contracts + domain + web` for the
-      common case, full workspace only when `SCOPE=both` or dep changes).
-- [ ] Real versioned Prisma migrations exist and pass empty-DB + upgrade tests.
-- [ ] No `db push --accept-data-loss` in any production path.
-- [ ] API respects `HOST=127.0.0.1`; web is `output: "standalone"` (the
-      deploy streams the entire `.next/standalone/` tree directly).
-- [ ] The shipped web tar contains the full runtime tree at
-      `.next/standalone/` — including the top-level `node_modules/.pnpm/`
-      store (which the `apps/web/node_modules/next` symlink resolves into),
-      AND `.next/standalone/apps/web/.next/static/` (merged in by the
-      staging step so Next.js finds static assets at runtime). Verify with:
-      `tar tzf <tar> | grep -E 'standalone/(node_modules/\.pnpm|apps/web/.next/static)'`.
-      Without these, the site renders unstyled HTML or crashes with MODULE_NOT_FOUND.
-- [ ] The shipped api tar (when API changed) contains `dist/server.js` and
-      `node_modules/` (verify with `tar tzf <tar> | grep dist/server.js`).
-- [ ] Artifact contains no `.env`, secrets, dev DB, uploads, or caches
-      (deploy-fast excludes `.env*`, `dev.db`, `.next/cache`,
-      `node_modules/.cache`).
-- [ ] Artifact records commit, timestamp, and `release.json`
-      (`scripts/deploy-fast.sh` writes `app/release.json`).
+For audit: the pre-2026-09-01 release gate was a single combined checklist
+of code-artifact, database/tenancy, and operations items, run pre-deploy.
+The mandatory subset enforced today by `scripts/deploy-fast.sh` is:
 
-**Database and tenancy**
+- `pnpm -r typecheck` (script step §1; override with `SKIP_TYPECHECK=1`).
+- `pnpm -r build` (script step §2; override with `SKIP_BUILD=1`).
+- Web tar contains `standalone/node_modules/.pnpm` + `standalone/apps/web/.next/static`
+  (script step §3, hard-required).
+- Api tar contains `dist/server.js` + `node_modules/` (hard-required).
+- Pre-deploy snapshot at `/opt/donordesk/backups/dd-app-pre-<id>.tgz`
+  (override with `NO_BACKUP=1`).
+- Post-deploy verify: `/health`, `/ready` (200 + prismaClient ok), and
+  `/v1/ai-reporter/health` with the worker `INTERNAL_TOKEN` (when
+  `SCOPE=api|both`).
 
-- [ ] Separate `donordesk_migrator` (schema owner) and `donordesk_app`
-      (restricted runtime, no `BYPASSRLS`) roles exist.
-- [ ] RLS is forced on every tenant table; tenant tests run over the same
-      TCP/runtime path as production.
-- [ ] Missing tenant context denies access; cross-tenant read/write fails.
-- [ ] Every API mutation creates the required audit record.
+For schema changes the pre-deploy gate additionally requires:
 
-**Operations**
+1. `prisma migrate deploy` as the migrator role (§18).
+2. `infra/postgres/rls.sql` applied as `donordesk_migrator`.
+3. Any new `Model.field` the app uses in `select`/`create` added to
+   `REQUIRED_PRISMA_FIELDS` in `apps/api/src/routes/health.ts` in the same
+   PR — `/ready` blocks the deploy otherwise.
 
-- [ ] Same-day port + capacity preflight passes (§12).
-- [ ] No new OLS validation error is introduced.
-- [ ] Off-host backup + restore test status confirmed (§23).
-- [ ] A pre-deploy tar exists at
-      `/opt/donordesk/backups/dd-app-pre-<id>.tgz` (deploy-fast creates it;
-      pass `NO_BACKUP=1` only for dev loops).
-- [ ] Rollback is exercised — the tar can be extracted and services come
-      up cleanly.
-
-## 20. Release sequence
-
-The fast path is a single command:
-
-```bash
-RELEASE_ID="$(date -u +%Y%m%d%H%M%S)" scripts/deploy-fast.sh
-```
-
-For schema migrations, run them **before** the deploy as a separate operator
-step (§18), then deploy. The deploy script does not run migrations.
-
-1. Run the live-host preflight (§12).
-2. Confirm ports 3002/4001/8092 and disk/RAM margins.
-3. Confirm the latest off-host backup and restore-test status.
-4. Run migrations with root-only migrator credentials (§18), if the
-   release contains schema changes.
-5. Apply RLS and run isolation tests as `donordesk_app` (§18).
-6. Run the release gate (§19) — at minimum, `pnpm -r typecheck` and a
-   scoped build.
-7. `RELEASE_ID="$(date -u +%Y%m%d%H%M%S)" scripts/deploy-fast.sh`
-   (optionally `SCOPE=web|api|both`, `SKIP_*` for dev loops).
-8. Run local and public acceptance tests (§13, §24).
-9. Check journald, PostgreSQL, memory, swap, and disk.
-10. Record release ID, commit, migration, and verification evidence (§26).
-
-## 21. Release paths
-
-### 21.1 Preferred — fast tar-and-extract (default since 2026-08-28)
-
-DonorDesk follows the same deploy model as `shahisoft-nextjs` and `gfcportal`
-on this host: **one mutable runtime dir** at `/opt/donordesk/app/`, build
-locally (incremental, scoped), tar the changed artifact, stream-extract over
-SSH into the live tree, restart the service, verify. No immutable-release
-directory, no `current` symlink switch, no `rsync` of 1.7 GB artifacts.
-
-Script: **`scripts/deploy-fast.sh`**.
-
-```bash
-# Default (auto-detect scope from git diff vs the previous deployed commit):
-RELEASE_ID="$(date -u +%Y%m%d%H%M%S)" scripts/deploy-fast.sh
-
-# Explicit scope (skip auto-detect):
-RELEASE_ID=… SCOPE=web  scripts/deploy-fast.sh
-RELEASE_ID=… SCOPE=api  scripts/deploy-fast.sh
-RELEASE_ID=… SCOPE=both scripts/deploy-fast.sh
-
-# Dev loop — skip typecheck/build (artifacts already exist) and the safety
-# snapshot when iterating quickly:
-RELEASE_ID=… SKIP_BUILD=1 SKIP_TYPECHECK=1 NO_BACKUP=1 scripts/deploy-fast.sh
-```
-
-The script:
-
-1. **Detects scope** (auto) from `git diff <prev_deployed_commit>` covering
-   `apps/web/`, `apps/api|workers|superadmin/`, `packages/`, and `prisma/`.
-   Includes working-tree changes (unstaged + staged), so dev-loop deploys of
-   uncommitted edits are detected.
-2. **Typechecks and builds** only the needed workspace packages
-   (`contracts + domain + web` for the common web-only case).
-3. **Stages tarballs** locally:
-   - **web:** `.next/standalone/apps/web/` (Next.js self-contained bundle,
-     includes its own `node_modules/`) + `.next/static/` + `public/` +
-     `package.json` → ~23 MB tar.
-   - **api:** `apps/api/{dist,package.json,tsconfig.json,node_modules}` →
-     ~50 KB tar (tree layout; symlink farm preserved).
-   - **packages:** workspace `packages/{contracts,domain,application,
-     infrastructure}/{dist,package.json,prisma,scripts}` → ~200 KB tar. The
-     api's `node_modules/@donordesk/*` workspace symlinks resolve to
-     `../../../../packages/*`.
-   - **pnpm-store:** workspace `node_modules/.pnpm/` → ~50 MB tar. The api tar
-     ships only the api tree's `node_modules/` symlinks; the real package
-     files live under `node_modules/.pnpm/`.
-   - **worker:** `apps/workers/app/` (12 SRP modules under `ai_reporter/`,
-     excluding `.venv/`, `__pycache__/`, `*.pyc`) → ~50 KB tar.
-4. **Snapshots** the current `app/` tree (full, includes `node_modules/`) to
-   `/opt/donordesk/backups/dd-app-pre-<id>.tgz`. Rotates: keep last 3.
-5. **Streams** the new tars over SSH into the live `app/` tree, replacing
-   only the subtrees that changed. Per `SCOPE=api|both`, the api extract step
-   does (in order): ship `packages/`, ship `pnpm-store` and run
-   `pnpm install` at `apps/api/` to regenerate the symlink farm, ship the
-   api tree. Then the worker tree is rsynced into
-   `/opt/donordesk/workers/app/` and `donordesk-workers` is restarted.
-6. **Restarts** the affected services only (`web` for `SCOPE=web`,
-   `api` for `SCOPE=api`, both for `SCOPE=both`).
-8. **Verifies** via `ssh` `curl` to `/health`, `/ready`, `/login` (waits up
-   to 60 s for web), and — when `SCOPE=api|both` — `/v1/ai-reporter/health`
-   on the worker (with the worker `INTERNAL_TOKEN`). On failure, prints the
-   manual rollback command and exits 2 — **does not auto-rollback**
-   (auto-rollback from a broken snapshot left things worse in testing on
-   2026-08-28).
-
-**Measured timings (cutover + first real deploy, 2026-08-28):**
-
-| Step | Time |
-|---|---|
-| Local typecheck + filtered web build (contracts+domain+web) | ~150 s |
-| Stage web tar (~22 MB) | ~5 s |
-| Pre-deploy snapshot (full app tar, ~250 MB) | ~70–80 s |
-| Stream + extract over SSH | ~10–18 s |
-| Restart + verify (60 s timeout, typically 3–5 s) | ~5–15 s |
-| **Total — web-only real deploy** | **~3–4 min** |
-| **Total — web-only with NO_BACKUP=1** | **~3 min** |
-| Deploy step alone (stream + restart + verify) | **~30 s** |
-
-The deploy step itself (stream → restart → verify) is now ~30 s. The
-remaining time is dominated by the Next.js build (CPU-bound) and the safety
-snapshot. Skip the snapshot for tight dev loops (`NO_BACKUP=1`); always keep
-it for production deploys.
-
-### 21.2 Fallback — old immutable-release path
-
-The previous flow (`scripts/package-release.sh` + `scripts/deploy-incremental.sh`)
-still works but is no longer the default. It builds a full self-contained
-artifact off-host (~1.7 GB) and rsyncs it into a timestamped immutable
-directory under `/opt/donordesk/releases/<id>/`, then atomically switches
-the `current` symlink. Keep it as the cold-path / emergency rollback
-mechanism (the `scripts/package-release.sh` logic is still useful for
-auditable artifacts). On 2026-08-28 the release dirs were deleted and
-`current` was repointed to `/opt/donordesk/app/`; the old scripts remain in
-the repo but require `/opt/donordesk/releases/` to exist.
-
-### 21.3 Why the change
-
-The immutable-release + rsync flow measured ~6 min per web deploy because:
-
-- `pnpm -r build` rebuilt the full workspace every release (~3 min).
-- `pnpm --filter @donordesk/api deploy --legacy` copied ~1.4 GB of
-  `node_modules` into the release (~90 s).
-- `rsync --checksum` of 62 k files over a 2.86 MB/s link added ~60 s of
-  per-file protocol overhead.
-- Disk grew toward 80% (98 release dirs × ~1.7 GB logical, ~5 GB unique
-  blocks — releases were hardlinked so actual disk was lower, but the
-  release-dir clutter was unmanageable).
-
-The fast path removes the `pnpm deploy --legacy` step (Next.js standalone is
-already self-contained), removes rsync (single tar stream), and keeps a
-single runtime directory instead of N immutable dirs.
-
-### 21.4 API tar layout and workspace symlinks (added 2026-08-29)
-
-The api tar shipped before 2026-08-29 was created by `cd apps/api && tar … dist package.json …`
-which put `dist/` at the tar's root. When extracted to `/opt/donordesk/app/` it landed at
-`/opt/donordesk/app/dist/` and the api systemd unit's
-`WorkingDirectory=/opt/donordesk/app` ran `node dist/server.js` from there. This worked
-**only because** the api's `apps/api/node_modules/@donordesk/infrastructure` symlink
-resolved to `/opt/donordesk/app/packages/infrastructure/` and the api's
-`apps/api/node_modules/fastify -> ../../../../node_modules/.pnpm/fastify@5.11.3/...`
-resolved to `/node_modules/.pnpm/...` (filesystem root), which doesn't exist on Contabo.
-The api only worked because the previous code paths didn't import any
-transitive dependencies — they were cached in-process.
-
-As of release `20260828200000` (AI Reporter 2) the api tree gained
-transitive imports (artifact validators, chart suggester, report-artifact
-repository) and the broken `node_modules/fastify` symlink started producing
-`ERR_MODULE_NOT_FOUND` at every restart. Two fixes shipped together:
-
-- The api systemd unit now uses
-  `WorkingDirectory=/opt/donordesk/app/apps/api` so `dist/server.js` resolves
-  relative to the api tree, the workspace `@donordesk/*` symlinks resolve to
-  `/opt/donordesk/app/packages/*` (4 levels up), and the api's pnpm symlinks
-  resolve correctly via `/opt/donordesk/app/node_modules/.pnpm/` (3 levels up).
-- The deploy script (`scripts/deploy-fast.sh`) now ships **four** api-scoped
-  tars instead of one: `apps/api/{dist,node_modules,package.json,tsconfig.json}`
-  (tree layout), `packages/*/{dist,prisma,scripts}` (workspace source),
-  `node_modules/.pnpm/` (pnpm virtual store), and `apps/workers/app/` (Python
-  worker). The api extract step re-runs `pnpm install` at `apps/api/` to
-  regenerate the symlink farm after the pnpm store is replaced.
-
-The deploy script's verification step now also probes
-`/v1/ai-reporter/health` on the worker (with the worker `INTERNAL_TOKEN`)
-when `SCOPE=api|both`, so any pnpm-store/symlink regression fails the gate
-before the operator even sees a dashboard alert.
-
-### 21.5 AI Reporter 2 deploy specifics (added 2026-08-29)
-
-AI Reporter 2 is **feature-flagged off by default** in `/opt/donordesk/shared/api.env`.
-The system continues to use `LlmReportDraftGenerator` for all tenants until the
-operator flips the flag per the controlled-rollout plan in
-`memorybank/imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`. The deployment ships:
-
-- The Python worker code (12 SRP modules under `apps/workers/app/ai_reporter/`).
-  The systemd unit `donordesk-workers.service` reads from
-  `/opt/donordesk/workers/app/`; the deploy script rsyncs the new tree and
-  restarts the service.
-- The TS-side wire-format additions and adapter mappings
-  (`GeneratedSection.{artifacts,qa,chartSpec,deltaFromPrior}`).
-- The Prisma migration `20260828200000_ai_reporter_artifacts`
-  (`ReportArtifact` + `ReportArtifactRow`). The migrator role lacks
-  `CREATE` on `public`, so the SQL was applied directly via `psql` and the
-  migration row was inserted manually. See §18 for the exact procedure.
-- New RLS rows in `infra/postgres/rls.sql` + the matching manual grants
-  applied via `sudo -u postgres psql` (cross-tenant INSERT denied, verified
-  end-to-end).
-
-The api's `AI_REPORTER_URL` default is `http://localhost:5000` (legacy stub).
-When the flag is flipped, also set
-`AI_REPORTER_URL=http://127.0.0.1:8092` to override. The worker and api use
-**different** `INTERNAL_TOKEN`s — `/opt/donordesk/shared/api.env` and
-`/opt/donordesk/shared/workers.env` — and the worker's token is what
-`HttpWorkerClient` sends as `x-internal-token`.
-
-## 22. Rollback
-
-Rollback in the fast-deploy model is a **single `tar xzf`** away.
-
-```bash
-# 1. List available backups (newest first):
-ssh contabo 'ls -1t /opt/donordesk/backups/dd-app-pre-*.tgz'
-
-# 2. Extract the chosen backup over the live app dir and restart:
-ssh contabo '
-  PRE=$(ls -1t /opt/donordesk/backups/dd-app-pre-*.tgz | head -1)
-  rm -rf /opt/donordesk/app
-  tar -xzf "$PRE" -C /opt/donordesk
-  systemctl restart donordesk-api donordesk-web
-'
-
-# 3. Verify:
-curl -fsS https://donordesk.online/login
-```
-
-For non-emergency rollbacks the cleanest path is **`git checkout <prev-commit>`
-+ redeploy** — git is the source of truth and `deploy-fast.sh` will rebuild
-the previous code in ~3 min.
-
-The deploy script does **not** auto-rollback on verify failure (2026-08-28
-lesson: auto-rollback extracted a snapshot that itself had no
-`node_modules/`, making things worse). On failure the script exits 2 and
-prints the exact rollback command.
-
-**Application rollback does not undo database changes** — production
-migrations must remain compatible with the preceding release (§18). Never
-run `pm2 restart all`; DonorDesk systemd operations must not touch
-existing PM2 applications.
-
-## 23. Backup and disaster recovery
+## 20. Backup and disaster recovery
 
 > **Current status (2026-08-18):** no automated off-host DonorDesk backup is
 > scheduled yet. `scripts/backup.sh` (encrypted off-host backup of the
@@ -990,7 +738,7 @@ release metadata, RLS/migrations, vhosts, units, and a secret inventory (protect
 actual secret values). Local WAL archives and CyberPanel schedules are not
 off-host DR.
 
-## 24. Acceptance test
+## 21. Acceptance test
 
 Health-only checks are insufficient. Through the final TLS hostname:
 
@@ -1013,7 +761,7 @@ Health-only checks are insufficient. Through the final TLS hostname:
 Where the implementation intentionally uses a stub, label the result as
 stub-assisted rather than real AI/email/queue behavior.
 
-## 25. Security and coexistence sign-off
+## 22. Security and coexistence sign-off
 
 - [ ] Only 80/443 were used for new public access.
 - [ ] API/web/worker listen only on IPv4 loopback.
@@ -1033,7 +781,7 @@ validation has baseline errors, some unrelated certificates are expired/near
 expiry). Record these as separate host-hardening work; do not combine with
 deployments unless explicitly approved and rollback-tested.
 
-## 26. Production record
+## 23. Production record
 
 Complete for every release:
 
@@ -1077,7 +825,7 @@ Resource usage after deploy:    all services active; disk 37G free at deploy tim
 Operator / approver / date:     najeeb / 2026-08-29
 ```
 
-## 27. Shared Prometheus and Grafana
+## 24. Shared Prometheus and Grafana
 
 The existing Prometheus/Alertmanager/Grafana containers use host networking, so
 Prometheus can scrape `127.0.0.1:4001/metrics` directly (no
@@ -1088,7 +836,7 @@ reload only Prometheus; import a namespaced dashboard without replacing shared
 datasources; verify all existing targets remain healthy. Keep `/metrics` out of
 the public OLS vhost. Do not add Tempo or Loki in Stage A.
 
-## 28. Kestra design notes
+## 25. Kestra design notes
 
 Kestra runs as a native systemd process (not a bridge-network container, which
 cannot reach host loopback `127.0.0.1`). Bind loopback only; never expose the
@@ -1098,7 +846,7 @@ name. Deploy flows versioned; the five plugin-referencing flows and plugin JARs
 remain gated (see `imp/KESTRA-PLUGINS.md`). Include the Kestra database in
 backup/restore.
 
-## 29. Change log
+## 26. Change log
 
 > **2026-08-28 — Web CSS/static-assets fix (deployed, release `20260828161514`):**
 > the fast-deploy cutover (release `20260828155553`) shipped an incomplete
@@ -1113,7 +861,7 @@ backup/restore.
 > + memorybank/ + packages/) and explicitly merge `.next/static/` and
 > `public/` into `.next/standalone/apps/web/.next/` and
 > `.next/standalone/apps/web/` respectively before tarring. Also added
-> a CSS sanity check to the release gate (§19): the shipped tar must
+> a CSS sanity check to the release gate (former §19, now `CONTABO-DEPLOY.md` §5): the shipped tar must
 > contain both the pnpm store and the merged static dir. Web tar grew
 > from 22 MB to 23 MB (the pnpm store is included). Site is fully
 > styled; `curl https://donordesk.online/_next/static/css/<hash>.css`

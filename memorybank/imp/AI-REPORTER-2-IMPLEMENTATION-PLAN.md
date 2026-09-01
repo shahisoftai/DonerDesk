@@ -537,7 +537,7 @@ existing public contracts.
 1. Update `memorybank/imp/AI-REPORTER-IMPLEMENTATION-PLAN.md` §11 status table.
 2. New file `memorybank/imp/AI-REPORTER-2.md` for the v2 design (this file is
    its source).
-3. Update `memorybank/contabo-ops.md` §29 with the new release ID and any
+3. Update `memorybank/contabo-ops.md` §26 with the new release ID and any
    per-tenant flag notes.
 4. `AGENTS.md` updated with the new artifact validators and CLI commands.
 
@@ -683,7 +683,7 @@ ssh contabo '
 
 The fast-deploy script does **not** auto-rollback on verify failure (2026-08-28
 lesson). On any failure the operator runs the rollback command above, then
-records the failure mode in §29 of `contabo-ops.md`.
+records the failure mode in §26 of `contabo-ops.md`.
 
 **Database rollback:** migrations are additive; rolling back the application
 does not require a DB rollback. If Phase 6 introduced the migration and we
@@ -717,7 +717,7 @@ migration).
 - All phase exit gates from §11 green.
 - `pnpm --filter @donordesk/infrastructure reporting:eval` ≥ current case
   count.
-- Contabo preflight + post-deploy verification recorded in §29 of
+- Contabo preflight + post-deploy verification recorded in §26 of
   `contabo-ops.md`.
 - Pre-deploy tar at `/opt/donordesk/backups/dd-app-pre-<id>.tgz`.
 - Off-host backup ≤24h old; restore-test recorded.
@@ -730,7 +730,7 @@ migration).
 - ✅ All phase exit gates green: TS typecheck (8 pkgs), TS build, Python
   mypy (22 files), Python pytest 55/55, TS infra tests 136/137 (1 pre-existing
   skip), eval corpus 25/25.
-- ✅ Contabo preflight + post-deploy verification: see §29 entry for
+- ✅ Contabo preflight + post-deploy verification: see §26 entry for
   `2026-08-29` in `memorybank/contabo-ops.md`.
 - ✅ Pre-deploy tar created: `dd-app-pre-20260828200000.tgz` (rotated with
   last 3 kept).
@@ -747,7 +747,7 @@ migration).
   Phase 8 (controlled rollout per §8) completes successfully.
 - ⏳ Legacy `LlmReportDraftGenerator` factory path removed (class retained
   for emergency rollback) after the default rollout is stable for ≥1 week.
-- ✅ 25-case eval passes; results in §29 (`memorybank/contabo-ops.md`).
+- ✅ 25-case eval passes; results in §26 (`memorybank/contabo-ops.md`).
 - ⏳ One full week of zero `report.draft.section.fallback` rate >5%, zero
   `validator.failed` events in the audit log — measured after default
   rollout.
@@ -838,7 +838,7 @@ infra/systemd/donordesk-workers.service                    # unchanged (rsync ke
 # Docs
 memorybank/imp/AI-REPORTER-IMPLEMENTATION-PLAN.md          # §11 status table bump
 memorybank/imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md        # new (this file)
-memorybank/contabo-ops.md                                  # §29 entries per release
+memorybank/contabo-ops.md                                  # §26 entries per release
 AGENTS.md                                                   # commands + validators
 ```
 

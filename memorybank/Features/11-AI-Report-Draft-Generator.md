@@ -224,7 +224,7 @@ interface SourceReference {
     fields, and the full plan dump removed — cutting per-call latency
     substantially. `maxTokens` stays at 4096 (sections with tables need the
     headroom; 1500 caused truncation, see above).
-  - See `memorybank/Fixes.md` (2026-08-20) and `contabo-ops.md` §29.
+  - See `memorybank/Fixes.md` (2026-08-20) and `contabo-ops.md` §26.
 - **Professional report context (2026-08-18, deployed `20260818074405`):** the
   narrator now receives the context a professional donor report needs:
   - `VerifiedFinding` enrichment — each finding carries `indicatorName`,
@@ -247,7 +247,7 @@ interface SourceReference {
     participant disaggregation (male/female/children/disability), explicit
     quality-flag caveat language per flag, performance-evaluation gating rules,
     and a worked example section in the system prompt.
-  - `maxTokens` deliberately stays **4096** (the §29 contabo-ops record documents
+  - `maxTokens` deliberately stays **4096** (the §26 contabo-ops record documents
     that 8192 caused MiniMax timeouts and burned credits via stub fallback).
   - The stub generator narrates indicator names, targets, previous-period
     comparisons, and performance hints in its tables and summaries.

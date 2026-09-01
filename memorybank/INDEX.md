@@ -23,10 +23,10 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **Frontend portal status** | [`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`](imp/FRONTEND-UX-INTEGRATION-AUDIT.md) (latest audit) and [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 | **Production issues & fixes** | [`Fixes.md`](Fixes.md) |
 | **What still needs doing** | [`pending.md`](pending.md) |
-| **Contabo host operations** | [`contabo-ops.md`](contabo-ops.md) |
+| **Contabo host operations** | [`contabo-ops.md`](contabo-ops.md) (live-host inventory, ports, services, db, ops rules) |
+| **Deploy to Contabo** | [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) (single fastest procedure: one-liner, preflight, gate, scope control, rollback, token sync, pitfalls) |
 | **SuperAdmin portal** | [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) |
 | **Kestra plugins** | [`imp/KESTRA-PLUGINS.md`](imp/KESTRA-PLUGINS.md) |
-| **Deploy to Contabo** | [`contabo-ops.md`](contabo-ops.md) (sections 14–29: model, environments, services, migrations, release paths, rollback) |
 
 ---
 
@@ -121,7 +121,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
   > (`apps/api/{dist,node_modules}`), plus a separate workspace-packages tar
   > and a pnpm-store tar; the api systemd unit's WorkingDirectory was
   > updated to `/opt/donordesk/app/apps/api` so workspace `@donordesk/*`
-  > symlinks resolve correctly. Full detail in `contabo-ops.md` §29 (2026-08-29),
+  > symlinks resolve correctly. Full detail in `contabo-ops.md` §26 (2026-08-29),
   > `Fixes.md` (deploy log), and `imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md` §14.
   > **Earlier releases:**
   > 2026-08-28 shipped **AI Reporter sidecar v1** (multi-step draft/critique/refine +
@@ -141,29 +141,30 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
   > Migration `20260818180000_professional_reporting` (additive; includes
   > baseline-revision backfill) + RLS applied. Full gate green (254 tests).
   > See `Features/20-report-gen.md` §18, `Features/19-Tiers-And-Payments.md`,
-  > `Fixes.md`, and `contabo-ops.md` §29.
+  > `Fixes.md`, and `contabo-ops.md` §26.
   > **Gated (not deployed):** the five plugin-referencing Kestra flows and plugin
   > JARs (stage/verify against Kestra 1.3.30 + add the `donordesk` datasource
-  > first). See `contabo-ops.md` §28 and `imp/KESTRA-PLUGINS.md`.
+  > first). See `contabo-ops.md` §25 and `imp/KESTRA-PLUGINS.md`.
   > **2026-08-20 (demo data + data-shape fixes):** seeded the **USAID Emergency
   > Education Response Programme (EERP-2026)** demo project for tenant
   > `mnpiracha@gmail.com` (GEC) and fixed three data-shape bugs it exposed —
   > template `sectionsJson` shape ("Section title required"), invalid
   > `COMPLETED` period status ("Invalid ReportStatus"), and the closed
   > reporting-period readiness gate (missing `ProjectSetup`/`ReportingProfile`/
-  > `REVIEWED` sections). See `contabo-ops.md` §29 (2026-08-20), `Fixes.md`,
+  > `REVIEWED` sections). See `contabo-ops.md` §26 (2026-08-20), `Fixes.md`,
   > and `Features/18-Project-Creation-Wizard.md` §4.5.
   > **2026-08-20 (deployed, release `20260820125717`):** **section-wise AI
   > report generation** — fixes the Generate-AI-draft timeout by splitting
   > generation into a fast skeleton-creation phase + a background per-section
   > drafting loop (see `Features/11-AI-Report-Draft-Generator.md`, `Fixes.md`,
-  > and `contabo-ops.md` §29).
+  > and `contabo-ops.md` §26).
 
 ### 🛠️ Operations & Deployment
 | File | Purpose |
 |------|---------|
 | [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) | **SuperAdmin portal** — security boundary, capabilities, API, encrypted configuration, production topology, TLS, operations, rollback, and limitations |
-| [`contabo-ops.md`](contabo-ops.md) | **Live-host inventory + deployment runbook** — verified Contabo server state, ports, services, DOs/DON'Ts, preflight, systemd units, migrations/RLS, release paths, rollback, backup, acceptance, security sign-off, production record, change log (single source of truth; former `docs/CONTABO-LEAN-DEPLOYMENT.md` + `docs/CONTABO-FAST-DEPLOYMENT.md` merged in) |
+| [`contabo-ops.md`](contabo-ops.md) | **Live-host inventory** — verified Contabo server state, ports, services, DOs/DON'Ts, systemd units, migrations/RLS, security findings, backup, acceptance, change log (former `docs/CONTABO-LEAN-DEPLOYMENT.md` + `docs/CONTABO-FAST-DEPLOYMENT.md` merged in) |
+| [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) | **Single fastest deploy procedure** — one-liner, preflight, gate, scope control, snapshot/xfer/verify breakdown, rollback, token sync, common pitfalls |
 | [`docs/runbooks/DISASTER-RECOVERY.md`](docs/runbooks/DISASTER-RECOVERY.md) | DR procedures |
 | [`docs/runbooks/BYOC-DEPLOYMENT.md`](docs/runbooks/BYOC-DEPLOYMENT.md) | Bring-your-own-cloud deployment |
 | [`docs/runbooks/alerts.md`](docs/runbooks/alerts.md) | Alert definitions |
@@ -215,8 +216,8 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | PostgreSQL advisory lock | [`Fixes.md`](Fixes.md) §3 |
 | RLS / table privileges | [`Fixes.md`](Fixes.md) §4, [`contabo-ops.md`](contabo-ops.md) §5.3 |
 | Backup / DR | [`contabo-ops.md`](contabo-ops.md) §9, [`pending.md`](pending.md) |
-| Contabo ports / preflight | [`contabo-ops.md`](contabo-ops.md) §4, §12 |
-| DonorDesk deployment ports | [`contabo-ops.md`](contabo-ops.md) §4 (table), §10 |
+| Contabo ports / preflight | [`contabo-ops.md`](contabo-ops.md) §4, [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) §4 |
+| DonorDesk deployment ports | [`contabo-ops.md`](contabo-ops.md) §4 (table), [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) §4 |
 | Versioned migrations | [`pending.md`](pending.md) |
 | BullMQ / Redis | [`pending.md`](pending.md) |
 | Evidence storage (Google Drive / R2 / LOCAL) | [`gdrive.md`](gdrive.md), [`pending.md`](pending.md) |
@@ -237,7 +238,8 @@ memorybank/
 ├── Fixes.md                          Production fixes applied
 ├── pending.md                        Outstanding items
 ├── features.md                       Feature tracking (theme + portal)
-├── contabo-ops.md                   Live-host inventory & operations
+├── contabo-ops.md                   Live-host inventory & operations (host facts, ports, services, db, ops rules)
+├── CONTABO-DEPLOY.md                Single fastest deploy procedure (one-liner, preflight, gate, scope, pitfalls, rollback)
 ├── Features/
 │   ├── INDEX.md                     18 MVP feature specs index
 │   ├── 18-Project-Creation-Wizard.md  Project bootstrap wizard + Drive folders + setup gates
@@ -308,8 +310,10 @@ memorybank/
 | File | Read when... |
 |------|--------------|
 | [`pending.md`](pending.md) | Starting a session — check what needs doing |
-| [`contabo-ops.md`](contabo-ops.md) | Deploying or troubleshooting production |
+| [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) | Deploying to Contabo (single fastest procedure) |
+| [`contabo-ops.md`](contabo-ops.md) | Looking up live-host facts (ports, services, db rules, security findings) |
 | [`Fixes.md`](Fixes.md) | Investigating signup/login/auth issues |
 | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) | Frontend portal architecture and phase scope |
 | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) | Architecture questions, adding new features |
-| [`contabo-ops.md`](contabo-ops.md) | Deploying to Contabo (host inventory + release procedure) |
+| [`contabo-ops.md`](contabo-ops.md) | Looking up live-host facts during deploy or troubleshooting |
+| [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) | Deploying to Contabo (single fastest procedure) |
