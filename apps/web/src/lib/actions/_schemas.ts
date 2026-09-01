@@ -24,6 +24,9 @@ export const GeneratedDraftResponseSchema = z.object({
   totalSections: z.number().int().optional(),
   fallbackUsed: z.boolean().optional(),
   fallbackReason: z.string().optional(),
+  generatorId: z.string().optional(),
+  generatorModelVersion: z.string().optional(),
+  generatorPromptVersion: z.number().int().optional(),
 });
 
 export const DraftPollResponseSchema = z.object({

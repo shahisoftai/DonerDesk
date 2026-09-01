@@ -100,6 +100,9 @@ export class GenerateReportDraftHandler {
         totalSections: number;
         fallbackUsed: boolean;
         fallbackReason?: string;
+        generatorId?: string;
+        generatorModelVersion?: string;
+        generatorPromptVersion?: number;
       },
       DomainError
     >
@@ -450,6 +453,9 @@ export class GenerateReportDraftHandler {
         totalSections: sectionIds.length,
         fallbackUsed: !aiEnabled,
         fallbackReason: !aiEnabled ? ("PROVIDER_NOT_CONFIGURED" as const) : undefined,
+        generatorId: generator.model.modelId,
+        generatorModelVersion: generator.model.modelVersion,
+        generatorPromptVersion: generator.model.promptVersion,
       },
     };
   }

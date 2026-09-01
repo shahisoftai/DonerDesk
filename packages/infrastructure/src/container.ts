@@ -221,6 +221,7 @@ import { EvidencePackageBuilder } from "./ai/evidence-package-builder.js";
 import { StubChecklistDetector } from "./llm/checklist-detector.js";
 import { DefaultExportBuilder } from "./exports/builder.js";
 import { createLogger } from "./observability/logger.js";
+import { isTruthyFlag } from "./observability/feature-flags.js";
 import {
   LoggingNotificationAdapter,
 } from "./support.js";
@@ -579,6 +580,20 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
 
   const generatorCache = new Map<string, IReportDraftGenerator>();
   const generatorPromises = new Map<string, Promise<IReportDraftGenerator>>();
+  // Resolved once per process so it is visible in startup logs without
+  // waiting for the first /v1/reporting-periods/:id/generate-draft request.
+  const aiReporterFlagEnabled = isTruthyFlag(process.env.AI_REPORTER_ENABLED);
+  if (aiReporterFlagEnabled) {
+    logger?.info("AI Reporter flag is enabled; the dedicated Python worker will be used for report drafting", {
+      url: process.env.AI_REPORTER_URL ?? "http://127.0.0.1:8092 (default)",
+      timeoutMs: process.env.AI_REPORTER_DRAFT_TIMEOUT_MS ?? "45000 (default)",
+      internalTokenSet: Boolean(process.env.INTERNAL_TOKEN),
+    });
+  } else if (process.env.AI_REPORTER_ENABLED !== undefined) {
+    logger?.warn("AI_REPORTER_ENABLED is set but unrecognised; treating as disabled. Accepted values: 1, true, on, yes, enabled (case-insensitive).", {
+      raw: process.env.AI_REPORTER_ENABLED,
+    });
+  }
   const getReportDraftGenerator = (
     tenantId?: string,
   ): Promise<IReportDraftGenerator> => {
@@ -590,9 +605,32 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     const promise = (async () => {
       // AI Reporter sidecar (feature-flagged): a dedicated Python worker
       // (LangGraph draft/critique/refine) behind the IReportDraftGenerator port.
-      if (process.env.AI_REPORTER_ENABLED === "1") {
+      if (aiReporterFlagEnabled) {
         try {
           const worker = new HttpWorkerClient();
+          // Startup liveness check so a misconfigured worker URL is surfaced
+          // in the api logs immediately, not on the first draft request.
+          // The probe does NOT throw — a failed probe falls back to the
+          // standard LLM generator chain rather than crashing the route.
+          try {
+            const probe = await worker.probe();
+            if (!probe.ok) {
+              logger?.warn("AI Reporter worker probe failed; falling back to standard LLM generator chain", {
+                error: probe.error.message,
+                url: worker.baseUrl,
+                hint: "Verify AI_REPORTER_URL points at the Python worker (default http://127.0.0.1:8092) and the worker service is running. Restart the api after changing AI_REPORTER_URL.",
+              });
+            } else {
+              logger?.info("AI Reporter worker probe succeeded", {
+                url: probe.value.baseUrl,
+                latencyMs: probe.value.latencyMs,
+              });
+            }
+          } catch (probeError) {
+            logger?.warn("AI Reporter worker probe threw unexpectedly", {
+              error: probeError instanceof Error ? probeError.message : String(probeError),
+            });
+          }
           const embeddingGenerator = createEmbeddingGenerator();
           const embeddingStore = new PrismaEmbeddingStore(prisma);
           const prior = new DeterministicPriorPeriodService(periods, drafts, sections, reportRevisions);

@@ -322,7 +322,8 @@ export interface GeneratedDraftResult {
     | "PROVIDER_TIMEOUT"
     | "PROVIDER_HTTP_ERROR"
     | "PII_REJECTED"
-    | "VALIDATOR_FAILED";
+    | "VALIDATOR_FAILED"
+    | "AI_REPORTER_DISABLED";
 }
 
 /**

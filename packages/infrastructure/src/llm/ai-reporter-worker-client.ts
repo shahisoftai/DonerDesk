@@ -17,16 +17,59 @@ function ok<T>(value: T): Result<T, DomainError> {
  * returns a DomainError so the caller can fall back to the deterministic stub
  * without crashing the generation loop.
  *
- * Per-section timeout defaults to `AI_REPORTER_DRAFT_TIMEOUT_MS` (45s) so a
- * single slow section never demotes the whole draft. The legacy 180s default
- * is preserved when the env var is unset.
+ * Defaults (no env vars set):
+ *   - baseUrl: `http://127.0.0.1:8092` — the documented Python worker port
+ *     (see `AGENTS.md` and `memorybank/imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`).
+ *     The legacy `http://localhost:5000` was a stub address that has caused
+ *     `ECONNREFUSED` failures when `AI_REPORTER_URL` was unset.
+ *   - timeoutMs: `45_000` — the documented per-section ceiling so one slow
+ *     section never blocks the whole 8-minute poll cycle.
  */
+export const AI_REPORTER_DEFAULT_URL = "http://127.0.0.1:8092";
+export const AI_REPORTER_DEFAULT_TIMEOUT_MS = 45_000;
+
 export class HttpWorkerClient implements IWorkerClient {
+  readonly baseUrl: string;
+  readonly timeoutMs: number;
+
   constructor(
-    private readonly baseUrl = process.env.AI_REPORTER_URL ?? "http://localhost:5000",
-    private readonly timeoutMs = Number(process.env.AI_REPORTER_DRAFT_TIMEOUT_MS ?? 180000),
-    private readonly internalToken = process.env.INTERNAL_TOKEN ?? "",
-  ) {}
+    baseUrl: string | undefined = process.env.AI_REPORTER_URL ?? AI_REPORTER_DEFAULT_URL,
+    timeoutMs: number | string = process.env.AI_REPORTER_DRAFT_TIMEOUT_MS ?? AI_REPORTER_DEFAULT_TIMEOUT_MS,
+    private readonly internalToken: string = process.env.INTERNAL_TOKEN ?? "",
+  ) {
+    this.baseUrl = String(baseUrl).replace(/\/+$/, "");
+    const parsed = Number(timeoutMs);
+    this.timeoutMs = Number.isFinite(parsed) && parsed > 0 ? parsed : AI_REPORTER_DEFAULT_TIMEOUT_MS;
+  }
+
+  /**
+   * Probe the worker for liveness. Returns a typed Result so the caller can
+   * log a precise reason when AI_REPORTER_ENABLED=1 is set but the worker is
+   * unreachable. Does not throw.
+   */
+  async probe(): Promise<Result<{ ok: boolean; baseUrl: string; latencyMs: number }, DomainError>> {
+    const startedAt = Date.now();
+    try {
+      const response = await fetch(`${this.baseUrl}/v1/ai-reporter/health`, {
+        signal: AbortSignal.timeout(5000),
+        headers: this.internalToken ? { "X-Internal-Token": this.internalToken } : undefined,
+      });
+      if (!response.ok) {
+        return {
+          ok: false,
+          error: DomainError.invariant(`AI Reporter health probe returned ${response.status} (url=${this.baseUrl})`),
+        };
+      }
+      return { ok: true, value: { ok: true, baseUrl: this.baseUrl, latencyMs: Date.now() - startedAt } };
+    } catch (error) {
+      return {
+        ok: false,
+        error: DomainError.invariant(
+          `AI Reporter health probe failed (url=${this.baseUrl}): ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      };
+    }
+  }
 
   private async post<T>(path: string, body: unknown): Promise<Result<T, DomainError>> {
     let response: Response;
@@ -42,19 +85,19 @@ export class HttpWorkerClient implements IWorkerClient {
     } catch (error) {
       return {
         ok: false,
-        error: DomainError.invariant(`AI Reporter request failed: ${error instanceof Error ? error.message : String(error)}`),
+        error: DomainError.invariant(`AI Reporter request failed (url=${this.baseUrl}): ${error instanceof Error ? error.message : String(error)}`),
       };
     }
     if (!response.ok) {
       return {
         ok: false,
-        error: DomainError.invariant(`AI Reporter returned ${response.status} for ${path}`),
+        error: DomainError.invariant(`AI Reporter returned ${response.status} for ${path} (url=${this.baseUrl})`),
       };
     }
     try {
       return ok((await response.json()) as T);
     } catch {
-      return { ok: false, error: DomainError.invariant(`AI Reporter returned malformed JSON for ${path}`) };
+      return { ok: false, error: DomainError.invariant(`AI Reporter returned malformed JSON for ${path} (url=${this.baseUrl})`) };
     }
   }
 

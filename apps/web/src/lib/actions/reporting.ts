@@ -148,7 +148,17 @@ export async function reorderReportSectionsAction(
 }
 
 export type GenerateDraftResult = Result<
-  { draftId: string; sectionIds: string[]; generating?: boolean; totalSections?: number; fallbackUsed?: boolean; fallbackReason?: string },
+  {
+    draftId: string;
+    sectionIds: string[];
+    generating?: boolean;
+    totalSections?: number;
+    fallbackUsed?: boolean;
+    fallbackReason?: string;
+    generatorId?: string;
+    generatorModelVersion?: string;
+    generatorPromptVersion?: number;
+  },
   AppError
 >;
 

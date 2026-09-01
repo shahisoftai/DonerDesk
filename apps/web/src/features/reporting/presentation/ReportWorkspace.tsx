@@ -268,7 +268,30 @@ export function ReportWorkspace({
     [indicators],
   );
 
-  async function generate() {
+  function describeFallback(reason: string | undefined): string {
+  switch (reason) {
+    case "AI_REPORTER_DISABLED":
+      return " The AI Reporter worker is disabled (AI_REPORTER_ENABLED is not set on the api host). The api is using the deterministic stub generator.";
+    case "PROVIDER_NOT_CONFIGURED":
+      return " AI is disabled for this organisation, or no LLM provider is configured. The draft uses the deterministic stub.";
+    case "PROVIDER_TIMEOUT":
+      return " The AI provider timed out for this section; a placeholder was used. Try Regenerate to retry.";
+    case "PROVIDER_EMPTY_RESPONSE":
+      return " The AI provider returned an empty response; a placeholder was used.";
+    case "PROVIDER_MALFORMED_RESPONSE":
+      return " The AI provider returned an unparseable response; a placeholder was used.";
+    case "PROVIDER_HTTP_ERROR":
+      return " The AI Reporter worker could not be reached (check AI_REPORTER_URL, the worker service, and INTERNAL_TOKEN on the api host). The api fell back to the stub generator.";
+    case "PII_REJECTED":
+      return " The AI provider rejected the request (PII firewall). The section uses the deterministic stub.";
+    case "VALIDATOR_FAILED":
+      return " The AI output failed validation; a placeholder was used.";
+    default:
+      return reason ? ` The AI provider was unavailable (${reason}).` : " The AI provider was unavailable; a placeholder was used.";
+  }
+}
+
+async function generate() {
     setBusyAction("draft");
     setDraftMsg(null);
     try {
@@ -282,9 +305,12 @@ export function ReportWorkspace({
           setDraftMsg(null);
         } else {
           const fallbackSuffix = result.fallbackUsed
-            ? ` Content shown is a structured placeholder because the AI provider was unavailable${result.fallbackReason ? ` (${result.fallbackReason})` : ""}.`
+            ? describeFallback(result.fallbackReason)
             : "";
-          setDraftMsg(`Draft generated with ${result.sectionIds.length} sections.${fallbackSuffix}`);
+          const generatorSuffix = result.generatorId && result.generatorId !== "stub"
+            ? ` Generator: ${result.generatorId}${result.generatorModelVersion ? ` (${result.generatorModelVersion})` : ""}.`
+            : "";
+          setDraftMsg(`Draft generated with ${result.sectionIds.length} sections.${fallbackSuffix}${generatorSuffix}`);
           router.refresh();
         }
       }
