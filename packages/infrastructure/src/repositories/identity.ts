@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import {
   Organization,
+  PasswordResetToken,
   TenantId,
   User,
   Email,
@@ -15,6 +16,7 @@ import type {
   IOrganizationRepository,
   IUserRepository,
   IInvitationRepository,
+  IPasswordResetTokenRepository,
 } from "@donordesk/application";
 
 function ok<T>(value: T): Result<T, DomainError> {
@@ -158,6 +160,7 @@ export class PrismaUserRepository implements IUserRepository {
           status: user.status,
           lastLoginAt: user.lastLoginAt,
           assignedProjectIds: JSON.stringify(user.assignedProjectIds),
+          passwordChangedAt: user.passwordChangedAt,
         },
       });
       return ok(user);
@@ -178,6 +181,7 @@ export class PrismaUserRepository implements IUserRepository {
           status: user.status,
           lastLoginAt: user.lastLoginAt,
           assignedProjectIds: JSON.stringify(user.assignedProjectIds),
+          passwordChangedAt: user.passwordChangedAt,
         },
       });
       return ok(user);
@@ -186,8 +190,29 @@ export class PrismaUserRepository implements IUserRepository {
     }
   }
 
+  async updatePasswordHash(userId: string, tenantId: TenantId, passwordHash: string): Promise<Result<User, DomainError>> {
+    try {
+      const updated = await this.prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash, passwordChangedAt: new Date() },
+      });
+      if (updated.tenantId !== tenantId.toString()) {
+        return err(DomainError.notFound("User", userId));
+      }
+      return ok(this.toDomain(updated));
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
   async findById(id: string, tenantId: TenantId): Promise<Result<User | null, DomainError>> {
     const row = await this.prisma.user.findFirst({ where: { id, tenantId: tenantId.toString() } });
+    if (!row) return ok(null);
+    return ok(this.toDomain(row));
+  }
+
+  async findByIdGlobal(id: string): Promise<Result<User | null, DomainError>> {
+    const row = await this.prisma.user.findFirst({ where: { id } });
     if (!row) return ok(null);
     return ok(this.toDomain(row));
   }
@@ -227,6 +252,7 @@ export class PrismaUserRepository implements IUserRepository {
     status: string;
     lastLoginAt: Date | null;
     assignedProjectIds: string;
+    passwordChangedAt?: Date | null;
     createdAt: Date;
   }): User {
     return User.rehydrate({
@@ -241,6 +267,7 @@ export class PrismaUserRepository implements IUserRepository {
         status: row.status as UserStatus,
         lastLoginAt: row.lastLoginAt ?? undefined,
         assignedProjectIds: JSON.parse(row.assignedProjectIds),
+        passwordChangedAt: row.passwordChangedAt ?? null,
       },
     });
   }
@@ -287,5 +314,76 @@ export class PrismaInvitationRepository implements IInvitationRepository {
         projectIds: JSON.parse(row.projectIds) as string[],
       },
     }));
+  }
+}
+
+export class PrismaPasswordResetTokenRepository implements IPasswordResetTokenRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(token: PasswordResetToken): Promise<Result<PasswordResetToken, DomainError>> {
+    try {
+      await this.prisma.passwordResetToken.create({
+        data: {
+          id: token.id.toString(),
+          tenantId: token.tenantId.toString(),
+          userId: token.userId,
+          tokenHash: token.tokenHash,
+          expiresAt: token.expiresAt,
+          usedAt: token.usedAt,
+          ipAddress: token.ipAddress,
+          userAgent: token.userAgent,
+        },
+      });
+      return ok(token);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  async findActiveByHash(tokenHash: string): Promise<Result<PasswordResetToken | null, DomainError>> {
+    const row = await this.prisma.passwordResetToken.findUnique({ where: { tokenHash } });
+    if (!row) return ok(null);
+    return ok(this.toDomain(row));
+  }
+
+  async markUsed(id: string, tenantId: TenantId): Promise<Result<PasswordResetToken, DomainError>> {
+    try {
+      const updated = await this.prisma.passwordResetToken.update({
+        where: { id },
+        data: { usedAt: new Date() },
+      });
+      if (updated.tenantId !== tenantId.toString()) {
+        return err(DomainError.notFound("PasswordResetToken", id));
+      }
+      return ok(this.toDomain(updated));
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  private toDomain(row: {
+    id: string;
+    tenantId: string;
+    userId: string;
+    tokenHash: string;
+    expiresAt: Date;
+    usedAt: Date | null;
+    ipAddress: string | null;
+    userAgent: string | null;
+    createdAt: Date;
+  }): PasswordResetToken {
+    return PasswordResetToken.rehydrate({
+      id: row.id,
+      tenantId: TenantId.create(row.tenantId),
+      createdAt: row.createdAt,
+      props: {
+        userId: row.userId,
+        tokenHash: row.tokenHash,
+        expiresAt: row.expiresAt,
+        usedAt: row.usedAt,
+        ipAddress: row.ipAddress,
+        userAgent: row.userAgent,
+      },
+    });
   }
 }

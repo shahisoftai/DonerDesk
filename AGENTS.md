@@ -30,18 +30,31 @@ Agent guidance for coding on DonorDesk.
   `deltaFromPrior?` fields (all backward-compatible with v1 generators).
 - Artifact kinds: `TABLE | CHART | LIST | KEY_VALUE | QA | DELTA` (Zod schemas in
   `packages/contracts/src/reporting.ts`).
-- Writer contract v2 is mirrored in
+- Writer contract **v4** (report-quality v4; v2/v3 prompts byte-stable) is mirrored in
   `apps/workers/app/ai_reporter/writer_contract.py` (Python SSOT) and
-  `packages/infrastructure/src/llm/ai-reporter/contract.ts` (TS mirror). Parity
-  verified by `tests/test_ai_reporter.py`.
+  `packages/infrastructure/src/llm/ai-reporter/contract.ts` (TS mirror, generated
+  from the Python lists; pinned by `test_ts_contract_mirror_is_string_identical`).
 - Deterministic artifact validators live in
   `apps/workers/app/ai_reporter/artifact_validators.py` (Python, run on the
   worker before responding) and `packages/infrastructure/src/ai/artifact-validators.ts`
   (TS, run in the api on the response). Run `runAll(section, opts)` for the full set.
-- Per-section timeout: `AI_REPORTER_DRAFT_TIMEOUT_MS=45000` (default), enforced by
-  `apps/workers/app/ai_reporter/timeouts.py` + `AbortSignal.timeout` in the TS
-  HTTP client. On timeout, the section falls back to deterministic output;
-  the rest of the draft continues.
+- Timeouts: `AI_REPORTER_DRAFT_TIMEOUT_MS=90000` per LLM call and
+  `AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS=200000` per section (draft + one feedback retry),
+  both enforced by `apps/workers/app/ai_reporter/timeouts.py`. The TS HTTP client uses
+  `AI_REPORTER_HTTP_TIMEOUT_MS` (default 2 × draft + 30s), which must exceed the
+  worker's section budget. On timeout, the section falls back to deterministic output
+  and the rest of the draft continues.
+- Numbers: tables, charts and deltas are built deterministically from verified
+  findings (`artifact_builder.py`). The writer only writes prose. `grounding.py` /
+  `number-grounding.ts` reject any number not in the inputs; percent of target is the
+  only derived figure allowed. An ungrounded number that survives the retry gives
+  `VALIDATOR_FAILED`, and the API uses the deterministic section.
+- Synthesis sections (`isSynthesisSection`: executive summary, conclusion) are
+  drafted after all other sections, from their drafted text
+  (`GenerateReportDraftInput.draftedSections`).
+- Editorial guidance has one source of truth: `buildSectionSpecificGuidance`
+  (`llm-report-draft-generator.ts`) feeds both the legacy narrator and the AI
+  Reporter brief (`sectionGuidance`).
 - Typed artifact persistence: `IReportArtifactRepository` (port) +
   `PrismaReportArtifactRepository` (impl), backing `ReportArtifact` and
   `ReportArtifactRow` tables with RLS forced and `donordesk_app` DML grants.

@@ -1,10 +1,11 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ExportPackage, type ChartConfig } from "@donordesk/domain";
+import { DomainError, ExportPackage, createChartConfig, type ChartConfig } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IExportRepository, IExportBuilder, ExportIntent } from "../../ports/exports.js";
 import type { IStorage } from "../../ports/infrastructure.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
-import type { IReportingPeriodRepository, IReportDraftRepository, IReportSectionRepository, ISubmissionSnapshotRepository } from "../../ports/reporting.js";
+import type { IReportingPeriodRepository, IReportDraftRepository, IReportSectionRepository, ISubmissionSnapshotRepository, IDonorTemplateMappingRepository } from "../../ports/reporting.js";
+import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
@@ -29,6 +30,8 @@ export class CreateExportHandler {
     private readonly builder: IExportBuilder,
     private readonly storage: IStorage,
     private readonly audit: IAuditLogger,
+    private readonly donorTemplateMappings?: IDonorTemplateMappingRepository,
+    private readonly donorTemplates?: IDonorTemplateRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateExportInput): Promise<Result<{ id: string; fileUrl: string }, DomainError>> {
@@ -94,13 +97,30 @@ export class CreateExportHandler {
       }
     }
 
-    const charts = sectionChartConfigs
+    let charts = sectionChartConfigs
       .filter((c): c is { title: string; chartConfig: ChartConfig } => c.chartConfig !== null)
       .map((c) => ({
         sectionTitle: c.title,
         config: c.chartConfig,
         indicators: indicatorRows,
       }));
+
+    // Default chart: a report with numeric indicators but no user-configured
+    // section chart still ships with a comparison visual (the EERP Q2 export
+    // carried zero charts while the rendering pipeline existed unused).
+    if (charts.length === 0 && indicatorRows.length >= 2 && sectionsArr.length > 0) {
+      const chartSection =
+        sectionsArr.find((s) => /indicator|progress/i.test(s.title)) ?? sectionsArr[0];
+      if (chartSection) {
+        charts = [
+          {
+            sectionTitle: chartSection.title,
+            config: createChartConfig({ type: "BAR", dataBinding: "INDICATOR_COMPARISON" }),
+            indicators: indicatorRows,
+          },
+        ];
+      }
+    }
 
     const acts = await this.activities.findByReportingPeriod(input.reportingPeriodId, ctx.tenant.tenantId);
     const activityRows: Array<{ title: string; date: string; location?: string; participants: number }> = [];
@@ -146,6 +166,35 @@ export class CreateExportHandler {
       }
     }
 
+    // Donor-template rendering (docxtpl): only populated when the period
+    // has an APPROVED, locked mapping — every other tenant/period gets
+    // `undefined` here, which `buildDonorTemplate()` treats identically to
+    // the feature not existing at all. Resolution failure at any step
+    // (missing optional deps, no mapping, mapping not approved, template
+    // not found) simply leaves this undefined rather than failing the
+    // export — the generic fallback always still works.
+    let donorTemplate: Parameters<IExportBuilder["build"]>[0]["donorTemplate"];
+    if (input.exportType === "DONOR_TEMPLATE" && this.donorTemplateMappings && this.donorTemplates && period.value.donorTemplateMappingId) {
+      const mappingResult = await this.donorTemplateMappings.findById(period.value.donorTemplateMappingId, ctx.tenant.tenantId);
+      const mapping = mappingResult.ok ? mappingResult.value : null;
+      if (mapping?.approvedAt && mapping.templatedFileUrl) {
+        const templateResult = period.value.donorTemplateId
+          ? await this.donorTemplates.findById(period.value.donorTemplateId, ctx.tenant.tenantId)
+          : { ok: true as const, value: null };
+        const templateSections = templateResult.ok ? templateResult.value?.sections ?? [] : [];
+        const titleById = new Map(templateSections.map((s) => [s.id, s.title]));
+        const placeholderSections = mapping.regionsList
+          .map((r) => {
+            const sectionTitle = titleById.get(r.templateSectionId);
+            return sectionTitle ? { placeholderKey: r.placeholderKey, sectionTitle } : undefined;
+          })
+          .filter((r): r is { placeholderKey: string; sectionTitle: string } => r !== undefined);
+        if (placeholderSections.length > 0) {
+          donorTemplate = { templatedFileKey: mapping.templatedFileUrl, placeholderSections };
+        }
+      }
+    }
+
     const artifacts = await this.builder.build({
       exportType: input.exportType,
       exportIntent: intent,
@@ -161,6 +210,7 @@ export class CreateExportHandler {
       evidenceItems: evidenceRows,
       includeSensitive: input.includeSensitive,
       watermark: intent === "DONOR_SUBMISSION" ? undefined : "INTERNAL PREVIEW",
+      donorTemplate,
     });
 
     const id = this.ids.generate();

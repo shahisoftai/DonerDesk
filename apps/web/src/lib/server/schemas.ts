@@ -169,6 +169,42 @@ export const TemplateListItemSchema = z.object({
 
 export const TemplatesResponseSchema = z.object({ items: z.array(TemplateListItemSchema) });
 
+export const TemplateRegionSchema = z.object({
+  id: z.string(),
+  kind: z.enum(["HEADING", "TABLE"]),
+  level: z.number().int().optional(),
+  text: z.string(),
+  order: z.number().int(),
+});
+
+export const DetectTemplateRegionsResponseSchema = z.object({
+  mappingId: z.string(),
+  version: z.number().int(),
+  regions: z.array(TemplateRegionSchema),
+  autoMappedCount: z.number().int(),
+  unmappedCount: z.number().int(),
+  warnings: z.array(z.string()),
+});
+
+export const TemplateRegionMappingSchema = z.object({
+  regionId: z.string(),
+  templateSectionId: z.string(),
+  placeholderKey: z.string(),
+  mappedBy: z.enum(["AUTO", "MANUAL"]),
+  status: z.enum(["DRAFT", "REVIEWED", "APPROVED"]),
+});
+
+export const DonorTemplateMappingDtoSchema = z.object({
+  id: z.string(),
+  templateId: z.string(),
+  version: z.number().int(),
+  regions: z.array(TemplateRegionMappingSchema),
+  detectedRegions: z.array(TemplateRegionSchema),
+  approvedById: z.string().nullable(),
+  approvedAt: z.string().nullable(),
+  templatedFileUrl: z.string().nullable(),
+});
+
 export const LogframeItemSchema = z.object({
   id: z.string(),
   level: z.string(),
@@ -309,6 +345,8 @@ export const EvidenceItemSchema = z.object({
   id: z.string(),
   projectId: z.string().optional(),
   reportingPeriodId: z.string().nullable().optional(),
+  activityId: z.string().nullable().optional(),
+  indicatorId: z.string().nullable().optional(),
   fileName: z.string(),
   title: z.string(),
   evidenceType: z.string(),
@@ -439,9 +477,25 @@ export const ReportClaimSchema = z.object({
 });
 export type ReportClaim = z.infer<typeof ReportClaimSchema>;
 
+/**
+ * AI Reporter typed artifact (table, chart, list, key/value, Q&A, period
+ * delta). Payload shapes are validated at the API boundary; the web renders
+ * them defensively in `SectionArtifacts`.
+ */
+export const ReportArtifactSchema = z.object({
+  id: z.string().optional(),
+  kind: z.enum(["TABLE", "CHART", "LIST", "KEY_VALUE", "QA", "DELTA"]),
+  ordinal: z.number(),
+  caption: z.string().nullable().optional(),
+  payload: z.record(z.string(), z.unknown()),
+});
+export type ReportArtifact = z.infer<typeof ReportArtifactSchema>;
+
 export const ReportDraftResponseSchema = z.object({
   draft: ReportDraftSchema.nullable(),
   sections: z.array(ReportSectionSchema).optional(),
+  /** Typed artifacts keyed by section id. */
+  artifacts: z.record(z.string(), z.array(ReportArtifactSchema)).optional(),
   claims: z.array(ReportClaimSchema).optional(),
   versions: z
     .array(

@@ -24,7 +24,7 @@ import {
 
 export const PLATFORM_CATEGORIES = ["LLM", "EMAIL", "OBJECT_STORAGE", "BACKUP", "CONNECTOR"] as const;
 export const PLATFORM_PROVIDERS = {
-  LLM: ["openai", "anthropic", "deepseek", "minimax"],
+  LLM: ["openai", "anthropic", "gemini", "deepseek", "minimax"],
   EMAIL: ["brevo", "postmark", "resend", "ses", "smtp"],
   OBJECT_STORAGE: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"],
   BACKUP: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"],
@@ -114,6 +114,23 @@ export class PlatformControlPlane {
     else await this.execute(`INSERT INTO "PlatformConfiguration" ("id","scopeType","scopeId","category","provider","displayName","enabled","configurationJson","secretCiphertext","secretIv","secretTag","createdById","updatedById","updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$12,NOW())`, id, scopeType, scopeId, input.category, input.provider, input.displayName, input.enabled, JSON.stringify(input.configuration), encrypted?.ciphertext ?? null, encrypted?.iv ?? null, encrypted?.tag ?? null, actor.sub);
     await this.audit(actor, existing ? "configuration.updated" : "configuration.created", "PlatformConfiguration", id, existing, { ...input, secrets: encrypted ? "[ROTATED]" : "[UNCHANGED]" }, meta);
 
+    // One active LLM per scope: the enabled GLOBAL row is THE default every
+    // tenant's report generation uses, and an enabled TENANT row is that
+    // tenant's own API. Enabling a row switches off the previous one in the
+    // same scope (no deprovision — the new row's provisioning replaces the
+    // single managed env block).
+    if (input.category === "LLM" && input.enabled) {
+      const superseded = await this.query<{ id: string; provider: string }>(
+        `UPDATE "PlatformConfiguration" SET "enabled"=false,"updatedById"=$4,"updatedAt"=NOW()
+         WHERE "category"='LLM' AND "scopeType"=$1 AND "scopeId"=$2 AND "id"<>$3 AND "enabled"=true
+         RETURNING "id","provider"`,
+        scopeType, scopeId, id, actor.sub,
+      );
+      for (const row of superseded) {
+        await this.audit(actor, "configuration.superseded", "PlatformConfiguration", row.id, { enabled: true, provider: row.provider }, { enabled: false, supersededBy: id, provider: input.provider }, meta);
+      }
+    }
+
     // Runtime provisioning: write the selected LLM provider into the Contabo
     // runtime env files (`api.env` + `workers.env`) and restart the services
     // so the AI Reporter path becomes live. Only GLOBAL LLM is supported by the
@@ -122,8 +139,14 @@ export class PlatformControlPlane {
     // AI Reporter env.
     if (input.category === "LLM" && scopeType === "GLOBAL") {
       try {
-        if (input.enabled && encrypted) {
-          const secretMap = JSON.parse(this.decrypt(encrypted)) as Record<string, string>;
+        // Enabling an existing card (no new key typed) must still provision
+        // it, using the stored encrypted secret.
+        const secretSource = encrypted
+          ?? (existing?.secretCiphertext && existing.secretIv && existing.secretTag
+            ? { ciphertext: existing.secretCiphertext, iv: existing.secretIv, tag: existing.secretTag }
+            : null);
+        if (input.enabled && secretSource) {
+          const secretMap = JSON.parse(this.decrypt(secretSource)) as Record<string, string>;
           const apiKey = secretMap.apiKey;
           const model = typeof input.configuration.model === "string" ? String(input.configuration.model) : "";
           const baseUrl = typeof input.configuration.baseUrl === "string" ? String(input.configuration.baseUrl) : undefined;
@@ -712,10 +735,10 @@ export class PlatformControlPlane {
     const created = await this.prisma.user.create({ data: { id: randomUUID(), tenantId: data.tenantId, email: data.email.toLowerCase(), name: data.name, role: data.role, status: data.status, passwordHash: await bcrypt.hash(data.password, 12) } });
     await this.audit(actor, "user.created", "User", created.id, null, { ...created, passwordHash: "[HASHED]" }, meta); return { ...created, passwordHash: undefined };
   }
-  async updateUser(actor: PlatformSession, id: string, data: { name?: string; status?: string; role?: string; password?: string }, meta?: { ip?: string; userAgent?: string }) {
+  async updateUser(actor: PlatformSession, id: string, data: { name?: string; status?: string; role?: string; password?: string; reason?: string }, meta?: { ip?: string; userAgent?: string }) {
     const old = await this.prisma.user.findUniqueOrThrow({ where: { id } });
-    const updated = await this.prisma.user.update({ where: { id }, data: { name: data.name, status: data.status, role: data.role, ...(data.password ? { passwordHash: await bcrypt.hash(data.password, 12) } : {}) } });
-    await this.audit(actor, data.password ? "user.password_reset" : "user.updated", "User", id, old, { ...data, password: data.password ? "[RESET]" : undefined }, meta);
+    const updated = await this.prisma.user.update({ where: { id }, data: { name: data.name, status: data.status, role: data.role, ...(data.password ? { passwordHash: await bcrypt.hash(data.password, 12), passwordChangedAt: new Date() } : {}) } });
+    await this.audit(actor, data.password ? "superadmin.password.reset" : "user.updated", "User", id, old, { name: data.name, status: data.status, role: data.role, password: data.password ? "[RESET]" : undefined, reason: data.reason }, meta);
     return updated;
   }
   async deleteUser(actor: PlatformSession, id: string, meta?: { ip?: string; userAgent?: string }) { const old = await this.prisma.user.delete({ where: { id } }); await this.audit(actor, "user.deleted", "User", id, old, null, meta); }
@@ -763,10 +786,10 @@ function verifyTotp(secret: string, code: string) { if (!/^\d{6}$/.test(code)) r
 async function testProvider(category: string, provider: string, config: Record<string, unknown>, secrets: Record<string, string>) {
   let url = "", headers: Record<string, string> = {};
   if (category === "LLM") {
-    const defaults: Record<string, string> = { openai: "https://api.openai.com/v1/models", anthropic: "https://api.anthropic.com/v1/models", deepseek: "https://api.deepseek.com/models", minimax: "https://api.minimax.io/v1/models" };
+    const defaults: Record<string, string> = { openai: "https://api.openai.com/v1/models", anthropic: "https://api.anthropic.com/v1/models", gemini: "https://generativelanguage.googleapis.com/v1beta/openai/models", deepseek: "https://api.deepseek.com/models", minimax: "https://api.minimax.io/v1/models" };
     // Test the configured base URL (not just the default) so a malformed or
     // unreachable baseUrl is caught here instead of failing at runtime.
-    const paths: Record<string, string> = { openai: "/models", anthropic: "/v1/models", deepseek: "/models", minimax: "/v1/models" };
+    const paths: Record<string, string> = { openai: "/models", anthropic: "/v1/models", gemini: "/models", deepseek: "/models", minimax: "/v1/models" };
     // Normalise the configured base URL: strip trailing slashes AND a trailing
     // "/v1" segment so the provider-specific path (which already starts with
     // "/v1/models" or "/v1/messages" for anthropic/MiniMax) doesn't produce a
@@ -783,5 +806,23 @@ async function testProvider(category: string, provider: string, config: Record<s
   else if (category === "EMAIL" && provider === "postmark") { url = "https://api.postmarkapp.com/server"; headers = { "X-Postmark-Server-Token": secrets.serverToken || "" }; }
   else return { ok: Boolean(Object.keys(secrets).length), message: Object.keys(secrets).length ? "Credentials encrypted and configuration validated; live protocol test is performed by its worker adapter" : "No credentials are configured" };
   const response = await fetch(url, { headers, signal: AbortSignal.timeout(10_000) });
-  return { ok: response.ok, message: response.ok ? "Connection and credentials verified" : `Provider returned HTTP ${response.status}` };
+  if (!response.ok) return { ok: false, message: `Provider returned HTTP ${response.status}` };
+  if (category === "LLM") return describeModelAvailability(await response.json().catch(() => null), config.model);
+  return { ok: true, message: "Connection and credentials verified" };
+}
+
+/**
+ * LLM connection test result: credentials work AND the configured model is one
+ * the key can use. A wrong model ID otherwise only surfaces later as every
+ * report silently falling back to the deterministic draft.
+ */
+export function describeModelAvailability(body: unknown, configuredModel: unknown): { ok: boolean; message: string } {
+  const data = (body as { data?: Array<{ id?: unknown }> } | null)?.data;
+  const ids = Array.isArray(data) ? data.map((m) => String(m.id ?? "").replace(/^models\//, "")).filter(Boolean) : [];
+  const model = typeof configuredModel === "string" ? configuredModel.trim() : "";
+  if (ids.length === 0) return { ok: true, message: "Connection and credentials verified" };
+  const sample = ids.slice(0, 8).join(", ");
+  if (!model) return { ok: true, message: `Connection verified. No model set — available models include: ${sample}` };
+  if (ids.includes(model)) return { ok: true, message: `Connection verified; model ${model} is available` };
+  return { ok: false, message: `Credentials work, but model "${model}" is not available to this key. Available models include: ${sample}` };
 }

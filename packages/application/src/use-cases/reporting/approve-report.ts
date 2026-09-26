@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, evaluateReportGate, gateKindForReason, canApproveAssurance, type GateKind, type ReportGateInput } from "@donordesk/domain";
+import { DomainError, evaluateReportGate, gateKindForReason, canApproveAssurance, lintReportContradictions, type GateKind, type ReportGateInput, type ContradictionLintFindingData } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
   IReportDraftRepository,
@@ -8,6 +8,7 @@ import type {
   IReportClaimRepository,
   IReportRevisionRepository,
   IResolvedRequirementsRepository,
+  IIndicatorAnalyticsService,
 } from "../../ports/reporting.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IAuditLogger } from "../../ports/core.js";
@@ -29,6 +30,12 @@ export class ApproveReportHandler {
     private readonly revisions: IReportRevisionRepository,
     private readonly requirements: IResolvedRequirementsRepository,
     private readonly audit: IAuditLogger,
+    /**
+     * Optional deterministic analytics used by the cross-section
+     * contradiction lint. When absent, the gate still runs the
+     * content-only lint checks (divergence, dates, disaggregation).
+     */
+    private readonly analytics?: IIndicatorAnalyticsService,
   ) {}
 
   async handle(ctx: AuthenticatedContext, draftId: string): Promise<Result<void, DomainError>> {
@@ -203,6 +210,55 @@ export class ApproveReportHandler {
 
     for (const item of openCritical) {
       claimOutcomes.push({ kind: "REQUIREMENT_UNSATISFIED", detail: `Open ${item.severity.toLowerCase()} checklist item: ${item.title}`, sectionId: item.relatedEntityId ?? undefined });
+    }
+
+    // Cross-section contradiction lint (content-derived). BLOCKER findings map
+    // onto NUMERIC_CONTRADICTION (approval: BLOCK). They are recomputed from
+    // the current section text on every evaluation and are never persisted as
+    // claims, so they cannot be closed with an ACCEPTED_WITH_LIMITATION note —
+    // only by correcting the report text.
+    const lintFindingsData: ContradictionLintFindingData[] = [];
+    if (this.analytics) {
+      const draftResult = await this.drafts.findById(draftId, ctx.tenant.tenantId);
+      const draftRecord = draftResult.ok ? draftResult.value : null;
+      if (draftRecord) {
+        const computed = await this.analytics.computeFindings({
+          reportingPeriodId,
+          projectId: draftRecord.projectId,
+          tenantId: ctx.tenant.tenantId,
+        });
+        if (computed.ok) {
+          for (const f of computed.value) {
+            lintFindingsData.push({
+              indicatorCode: f.indicatorCode,
+              value: f.value,
+              unit: f.unit,
+              baseline: f.baseline,
+              target: f.target,
+              comparisonValue: f.comparisonValue,
+              qualityFlags: f.qualityFlags,
+            });
+          }
+        }
+      }
+      // Analytics or draft-lookup failure degrades gracefully: the lint still
+      // runs without the findings-backed value checks.
+    }
+    const lintPeriod = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
+    const lintPeriodValue = lintPeriod.ok ? lintPeriod.value : null;
+    const lint = lintReportContradictions({
+      sections: sectionsResult.value.map((s) => ({ id: s.id, title: s.sectionTitle, content: s.content })),
+      findings: lintFindingsData,
+      periodStart: lintPeriodValue?.duration?.start?.toISOString(),
+      periodEnd: lintPeriodValue?.duration?.end?.toISOString(),
+    });
+    for (const finding of lint.findings) {
+      if (finding.severity !== "BLOCKER") continue;
+      claimOutcomes.push({
+        kind: "NUMERIC_CONTRADICTION",
+        detail: `${finding.sectionTitle}: ${finding.detail}`,
+        sectionId: finding.sectionId || undefined,
+      });
     }
 
     const gateInput: ReportGateInput = {

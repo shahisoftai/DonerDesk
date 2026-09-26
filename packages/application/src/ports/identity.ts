@@ -1,6 +1,7 @@
 import type { Result, TenantId } from "@donordesk/domain";
 import {
   Organization,
+  PasswordResetToken,
   type Invitation,
   type User,
   type Role,
@@ -44,10 +45,23 @@ export interface IUserRepository {
   create(user: User): Promise<Result<User>>;
   update(user: User): Promise<Result<User>>;
   findById(id: string, tenantId: TenantId): Promise<Result<User | null>>;
+  findByIdGlobal(id: string): Promise<Result<User | null>>;
   findByEmail(email: string, tenantId: TenantId): Promise<Result<User | null>>;
   findByEmailGlobal(email: string): Promise<Result<User | null>>;
   listByTenant(tenantId: TenantId): Promise<Result<User[]>>;
   setStatus(id: string, tenantId: TenantId, status: UserStatus): Promise<Result<User>>;
+  updatePasswordHash(userId: string, tenantId: TenantId, passwordHash: string): Promise<Result<User>>;
+}
+
+export interface IPasswordResetTokenRepository {
+  create(token: PasswordResetToken): Promise<Result<PasswordResetToken>>;
+  findActiveByHash(tokenHash: string): Promise<Result<PasswordResetToken | null>>;
+  markUsed(id: string, tenantId: TenantId): Promise<Result<PasswordResetToken>>;
+}
+
+export interface IPasswordResetRateLimiter {
+  /** Returns true if the action is allowed; false if the limit has been reached. */
+  check(key: string, limit: number, windowMs: number): Promise<boolean>;
 }
 
 export interface IInvitationRepository {
@@ -61,6 +75,8 @@ export interface AuthenticatedUser {
   role: Role;
   email: string;
   name: string;
+  /** JWT issued-at (seconds since epoch) when available. */
+  iat?: number;
 }
 
 export interface IAuthProvider {

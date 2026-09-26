@@ -10,6 +10,7 @@ import { ReadinessGauge } from "@/components/data/ReadinessGauge";
 import { severityTone, checklistStatusTone } from "@/lib/shared/tone";
 import {
   CHECKLIST_ITEM_TYPE_LABEL,
+  CHECKLIST_ITEM_TYPE_HINT,
   CHECKLIST_STATUS_LABEL,
   SEVERITY_LABEL,
 } from "@/lib/labels";
@@ -315,6 +316,9 @@ function ChecklistCard({
           </div>
           {item.description && (
             <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{item.description}</p>
+          )}
+          {item.status === "OPEN" && CHECKLIST_ITEM_TYPE_HINT[item.type] && (
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">What to do: {CHECKLIST_ITEM_TYPE_HINT[item.type]}</p>
           )}
           {item.resolutionNotes && (
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Note: {item.resolutionNotes}</p>

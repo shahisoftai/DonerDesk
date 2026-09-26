@@ -54,5 +54,18 @@ export interface IExportBuilder {
     includeSensitive: boolean;
     /** Watermark text for internal previews; donor submissions must never be watermarked. */
     watermark?: string;
+    /** Present only when the period has an APPROVED, locked donor-template
+     * mapping and rendering is enabled — `buildDonorTemplate()` uses this to
+     * populate the donor's own uploaded template via docxtpl instead of the
+     * generic fallback DOCX. Absent (undefined) is the default/safe state
+     * for every tenant that has not gone through the mapping flow. */
+    donorTemplate?: {
+      /** Storage key for the cached "templated" DOCX (placeholders already
+       * physically inserted at mapping-approval time). */
+      templatedFileKey: string;
+      /** placeholderKey -> the matching report section's title, so the
+       * builder can look up its content from `sections` by title. */
+      placeholderSections: Array<{ placeholderKey: string; sectionTitle: string }>;
+    };
   }): Promise<ExportArtifacts>;
 }

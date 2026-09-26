@@ -1,6 +1,6 @@
 # DonorDesk MemoryBank Index
 
-**Last updated:** 2026-09-01
+**Last updated:** 2026-09-18
 
 Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to search within files.
 
@@ -14,13 +14,16 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **Why build it? (Executive pitch)** | [`base/DonorDesk — One-Page Concept Note for Approval.md`](base/DonorDesk%20—%20One-Page%20Concept%20Note%20for%20Approval.md) |
 | **Full engineering blueprint** | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) |
 | **Professional donor-reporting hardening plan** | [`imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED) and [`imp/REPORTING-OWNERSHIP-MAP.md`](imp/REPORTING-OWNERSHIP-MAP.md) |
-| **AI Reporter (multi-step report writing, v1)** | [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED 2026-08-28) — multi-step draft/critique/refine, pgvector, prior-period intelligence |
+| **AI Reporter (multi-step report writing, v1)** | [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED 2026-08-28) — original multi-step draft/critique/refine, pgvector, prior-period intelligence. **The draft/critique/refine pipeline was collapsed to a single self-reviewing draft call on 2026-09-18** — see the latency-rework row below. |
 | **AI Reporter 2 (typed artifacts + validators + per-section fallback)** | [`imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md) (status IMPLEMENTED 2026-08-29) and [`imp/AI-REPORTER-2-RESULTS.md`](imp/AI-REPORTER-2-RESULTS.md) (post-deploy retrospective) and [`imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`](imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md) (operator runbook for flag flip) |
 | **Product recovery (writer↔verifier↔human boundary)** | [`imp/RECOVERY-PLAN-IMPLEMENTATION.md`](imp/RECOVERY-PLAN-IMPLEMENTATION.md) (status IMPLEMENTED + DEPLOYED 2026-08-30, release `20260829160000`) — parser fixes, writer prompt alignment, tolerant verifier, idempotent checklist projection, workspace claim resolution, draft lifecycle (supersede/versions/cancel), evidence-period tagging, readiness evidence fix |
 | **Report-Quality root cause + UX reorganisation (Increments 1–5) + deploy hardening + SaaS→Contabo runtime provisioning** | [`Fixes.md`](Fixes.md) §"Report-Quality root cause + … AI runtime provisioning (2026-08-31 / 2026-09-01)" and [`imp/RUNTIME-PROVISIONING.md`](imp/RUNTIME-PROVISIONING.md) — eligibility/role fixes drop Smart Review noise 109→43; Reporting Period Workspace frozen; structured `Tell the Story`; flexible Excel/CSV + field-report inputs; deploy script hardened (root cause `SSH` missing host, canary preflight, scp-based transfers, API ready-poll); `RuntimeProvisioner` makes sa.donordesk → donordesk env propagation automatic; MiniMax Test-connection `/v1` double-prefix fix. Releases `20260831154253` + `20260901140002`. |
+| **Report-quality v4 + Claude/Gemini providers + per-tenant provider selection + tenant-own-provider credit exemption (2026-09-26, DEPLOYED `20260926153744`)** | [`Fixes.md`](Fixes.md) §"Report-quality v4", §"SuperAdmin LLM providers", §"Tenant's own AI provider consumes no DonorDesk AI credits"; [`Features/11-AI-Report-Draft-Generator.md`](Features/11-AI-Report-Draft-Generator.md); [`SUPERADMIN-PORTAL.md`](SUPERADMIN-PORTAL.md) §6; [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) (last deploy). Covers: writer contract v4, number grounding, deterministic tables/charts/deltas, executive summary drafted last, section-relevant retrieval, donor-voice metric, Claude (SDK) + Gemini, one active LLM per scope, resolution per generation. |
 | **LLM provider wiring + runtime provisioning (post-deploy)** | [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md) §18–19 (runtime provisioning + MiniMax fix) |
 | **Frontend portal blueprint** | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) |
 | **Frontend portal status** | [`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`](imp/FRONTEND-UX-INTEGRATION-AUDIT.md) (latest audit) and [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
+| **AI report-generation audit + fixes (provider auth, docxtpl donor-template rendering, entailment/backoff)** | [`Fixes.md`](Fixes.md) §"AI Reporter completely non-functional on production" and §"Systematic fix of the 8 AI-report-generation audit findings" (2026-09-17/18) — live outage root-caused and fixed (corrupted token, duplicate env keys, missing timeout, missing trailing newline in env files); full donor-template docxtpl rendering feature built end-to-end (previously data-model-only); shared lexical scorer + entailment bug fix; LLM 429 backoff + total-budget enforcement. |
+| **AI Reporter latency rework (single-call pipeline + parallel sections)** | [`Fixes.md`](Fixes.md) §"AI Reporter latency rework — single-call pipeline + parallel sections (2026-09-18)" and [`Features/20-report-gen.md`](Features/20-report-gen.md) §21 — closes out the sequential-generation performance rework deferred by the audit above; collapses draft→critique→refine to one LLM call/section, adds real (thread-cancelled) per-section timeouts, drafts sections with bounded concurrency (default 3) instead of one at a time, and raises the UI's poll-window safety ceiling accordingly. Not yet verified against a live provider or in the browser. |
 | **Production issues & fixes** | [`Fixes.md`](Fixes.md) |
 | **What still needs doing** | [`pending.md`](pending.md) |
 | **Contabo host operations** | [`contabo-ops.md`](contabo-ops.md) (live-host inventory, ports, services, db, ops rules) |
@@ -97,7 +100,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
   > `apps/workers/app/ai_reporter.py` was split into a 12-module SRP package
   > (`models`, `writer_contract`, `llm_gateway`, `outline`, `chart_suggester`,
   > `draft_writer`, `critique_writer`, `refiner`, `artifact_validators`, `timeouts`,
-  > `pipeline`, `router`). Writer contract v2 (`WRITER_CONTRACT_VERSION=2`)
+  > `pipeline`, `router`). Writer contract v2 (`WRITER_CONTRACT_VERSION=2`; **v4 since 2026-09-26**)
   > adds banned-phrase list, numeric verbatim rule, repetition guard,
   > mandatory-Q&A discipline, and table/chart/delta mandates. Typed artifacts
   > (`TABLE | CHART | LIST | KEY_VALUE | QA | DELTA`) persist in two new tables
@@ -106,7 +109,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
   > verified to fail). Deterministic artifact validators (9 hard gates)
   > are mirrored Python + TS (`artifact_validators.py` +
   > `src/ai/artifact-validators.ts`). Per-section timeout
-  > (`AI_REPORTER_DRAFT_TIMEOUT_MS=45000`) with **per-section fallback**
+  > (`AI_REPORTER_DRAFT_TIMEOUT_MS=45000` at the time — **90000 since v4, 2026-09-26**) with **per-section fallback**
   > — a single slow section no longer demotes the whole draft. Eval corpus
   > grown 8 → 25 cases; deterministic metrics added for
   > `banned-phrase`, `qa-coverage`, `narrative-length-vs-target`,

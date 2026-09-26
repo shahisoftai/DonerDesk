@@ -23,3 +23,21 @@ test("outbox bus logs unmapped events and does not enqueue", async () => {
   assert.equal(logged, "domain.event");
   assert.equal(enqueued, 0);
 });
+
+test("outbox bus survives a remote enqueue failure and logs it (kestra unmapped job)", async () => {
+  const errors = [];
+  const logger = {
+    info() {},
+    warn() {},
+    error: (msg, meta) => { errors.push({ msg, meta }); },
+    debug() {},
+  };
+  const jobs = { enqueue: async () => { throw new Error("No Kestra flow mapped for job: project.workspace.provision"); } };
+  const bus = new OutboxEventBus(logger, jobs, DEFAULT_EVENT_TO_JOB);
+  // Must not reject: the domain write is already committed when publish runs.
+  await bus.publish([new EvidenceUploaded(TenantId.create("tenant-a"), "ev-1", "proj-1", "user-1")]);
+  const logged = errors.find((e) => e.msg === "outbox.enqueue_failed");
+  assert.ok(logged, "expected outbox.enqueue_failed error log");
+  assert.equal(logged.meta.jobName, "evidence.suggest_tags");
+  assert.match(logged.meta.error, /No Kestra flow mapped/);
+});

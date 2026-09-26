@@ -10,6 +10,7 @@ import type {
   ILogger,
 } from "@donordesk/application";
 import type { ReportPlanSection, SourceReference, ClaimType } from "@donordesk/domain";
+import { isSynthesisSection, visibilityPromptBlock } from "@donordesk/domain";
 import { StubReportDraftGenerator } from "./report-draft-generator.js";
 import { createHash } from "node:crypto";
 
@@ -25,7 +26,20 @@ interface LlmRewriteSectionInput {
 const CLAIM_TYPES = new Set<ClaimType>(["NUMERIC", "FACTUAL", "CAUSAL", "QUALITATIVE"]);
 const REFERENCE_TYPES = new Set<SourceReference["type"]>(["evidence", "activity", "indicator", "template"]);
 
-function buildSystemPrompt(): string {
+/**
+ * Language-craft rules (quality remediation WS2). Exported for deterministic
+ * tests; mirrored conceptually by the AI Reporter writer contract v3.
+ */
+export const LANGUAGE_CRAFT_RULES: readonly string[] = [
+  `Write in the active voice and name the actor ("The project trained 30 volunteers"), never the passive ("30 volunteers were trained").`,
+  `Prefer plain, concrete words over bureaucratic vocabulary; no filler ("it is worth noting", "in order to").`,
+  `Front-load each sentence: state the outcome and its number first, context after.`,
+  `Keep one idea per sentence; keep sentences under about 25 words.`,
+  `Open sections with the result ("School attendance rose..."), never with a topic label ("Regarding education...").`,
+  `Never use the future tense for completed work; never use the present tense for finished delivery.`,
+];
+
+export function buildSystemPrompt(): string {
   return [
     "You are a precise donor report narrator.",
     "You MUST only describe data that appears verbatim in the provided verified findings or evidence.",
@@ -35,6 +49,8 @@ function buildSystemPrompt(): string {
     "A null value with valueStatus NOT_CALCULABLE means unknown, never zero.",
     "You MUST NOT use evaluative language (positive/negative) for indicators with unresolved semantics.",
     "You may only use evaluative wording (favourable/unfavourable) when the finding's performanceEvaluation permits it.",
+    "Language craft (mandatory):",
+    ...LANGUAGE_CRAFT_RULES.map((r) => `- ${r}`),
     "Output STRICT JSON matching the schema below. No markdown fences, no extra text.",
     "JSON schema:",
     `{`,
@@ -170,6 +186,39 @@ function buildStoryContextBlock(ctx: GenerateReportDraftInput["reportContext"]):
   return rows;
 }
 
+/**
+ * WS3: attribution/visibility prompt lines for the report's donor. Uses the
+ * pure domain catalog so wording is exact and donor-keyed. Empty when the
+ * donor is unknown (no fabricated attributions).
+ */
+function buildVisibilityLines(ctx: GenerateReportDraftInput["reportContext"]): string[] {
+  const donorName = ctx?.template?.donorName ?? ctx?.project?.donorName;
+  if (!donorName) return [];
+  return visibilityPromptBlock(donorName, ctx?.project?.implementingOrganization);
+}
+
+/**
+ * WS1: renders the donor requirement guidance stamped on the plan section by
+ * the planner, plus the mandatory-question answering rule. Pure and exported
+ * for deterministic tests. Empty when the section carries no stamps.
+ */
+export function buildRequirementGuidanceBlock(
+  section: Pick<ReportPlanSection, "requirementGuidance" | "mandatoryQuestions">,
+): string[] {
+  const guidance = section.requirementGuidance ?? [];
+  const questions = section.mandatoryQuestions ?? [];
+  if (guidance.length === 0 && questions.length === 0) return [];
+  const lines: string[] = [`# Donor Requirement Guidance (mandatory)`];
+  for (const g of guidance) lines.push(`- ${g}`);
+  if (questions.length > 0) {
+    lines.push(`- Answer every mandatory question explicitly in this section's prose, one short paragraph per question, in order:`);
+    for (const q of questions) lines.push(`  * ${q}`);
+    lines.push(`- If a mandatory question cannot be answered from the recorded data, state exactly what was not recorded; never guess.`);
+  }
+  lines.push(``);
+  return lines;
+}
+
 function buildFindingsJson(input: GenerateReportDraftInput): string {
   return JSON.stringify(
     input.verifiedFindings.map((f) => ({
@@ -214,7 +263,15 @@ function buildEvidenceJson(
   const maxCharsPerChunk = limits?.maxCharsPerChunk ?? 800;
   const activityEvidenceIds = new Set(input.activities.flatMap((a) => a.attachedEvidenceIds));
   const indicatorEvidenceIds = new Set(input.indicatorUpdates.flatMap((u) => u.attachedEvidenceIds));
-  const sectionText = `${section?.title ?? ""} ${(section?.evidenceNeeds ?? []).join(" ")}`.toLowerCase();
+  const sectionText = [
+    section?.title ?? "",
+    ...(section?.evidenceNeeds ?? []),
+    ...(section?.requirementGuidance ?? []),
+    ...(section?.mandatoryQuestions ?? []),
+    section?.relatedLogframeElement ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
   const wantsActivities = /activit|challenge|mitigation|lesson|next period|work plan/.test(sectionText);
   const wantsIndicators = /indicator|result|progress|performance|executive|overview/.test(sectionText);
   const keywords = sectionText.split(/[^a-z0-9]+/).filter((word) => word.length >= 4);
@@ -223,7 +280,9 @@ function buildEvidenceJson(
       let score = 0;
       if (wantsActivities && activityEvidenceIds.has(p.evidenceId)) score += 10;
       if (wantsIndicators && indicatorEvidenceIds.has(p.evidenceId)) score += 10;
-      const searchable = `${p.title} ${p.evidenceType}`.toLowerCase();
+      // Rank on what the file says, not only its title: the chunk text is
+      // what the narrator will actually read and cite.
+      const searchable = `${p.title} ${p.evidenceType} ${p.chunks.map((c) => c.text).join(" ").slice(0, 4000)}`.toLowerCase();
       score += keywords.filter((word) => searchable.includes(word)).length;
       if (p.verificationStatus === "VERIFIED") score += 2;
       return { p, index, score };
@@ -321,13 +380,19 @@ function buildInstructionTail(): string[] {
     `- When valueStatus is NOT_CALCULABLE or MISSING_DENOMINATOR is present, say the result could not be calculated because the denominator was unavailable. Never write it as zero.`,
     `Number discipline (mandatory):`,
     `- Quote every figure exactly as given in the Verified Findings block, which is authoritative. Never invent, extrapolate, or round a number yourself.`,
-    `- A progress percentage derived from a finding's value and its target or baseline is allowed and may be written naturally (e.g. "reached 6.67% of its 120-centre target").`,
+    `- A progress percentage may ONLY be quoted when that specific finding records a calculable value AND a target or baseline. NEVER write a percentage for a finding whose valueStatus is NOT_CALCULABLE or that carries MISSING_DENOMINATOR: the denominator does not exist, so no percentage exists.`,
     `- Do not add incidental numbers: no dates, years, word counts, or time spans such as "6 months".`,
+    `- Never quote a figure that appears in no verified finding, indicator update, or activity record: the report-level consistency check blocks approval for any number that is not backed by the recorded data, and a reviewer note cannot clear it — only correcting the text can.`,
+    `- Keep every count consistent across sections: the same quantity (e.g. number of centres, volunteers trained) must carry the same value everywhere it appears.`,
     `- When a finding has value null (NOT_CALCULABLE), the result could not be calculated; do not substitute the periodAchievement value from the Indicator Updates block.`,
     `- Evidence titles prove only that a file is present. Do not claim that a file establishes a cause, finding, action, or result unless an evidence chunk contains that statement.`,
     `Claims must reference evidence by evidenceId and chunkId from the evidence packages above.`,
     `Every section MUST list its source references: indicators, evidence files, and activities actually used.`,
     `Honour the per-section input type: INDICATOR_TABLE sections must be tables, ANNEX sections must list annexed files, COMPLIANCE sections must state compliance status against the template requirements.`,
+    `Quality of prose (mandatory):`,
+    `- Write flowing professional prose for narrative sections; use bullet lists only for genuine enumerations, never as a substitute for synthesis.`,
+    `- If a data category was not recorded, write exactly one honest sentence saying so (e.g. "No beneficiary testimonies were recorded in the evidence for this period.") and stop. Do not pad, do not speculate, do not repeat the gap.`,
+    `- Do not describe the reporting process, the platform, or the AI; describe the project.`,
     `Performance evaluation guidance (from verified findings):`,
     `- When performanceEvaluation.type is POSITIVE, you may describe the outcome favourably while remaining factual.`,
     `- When performanceEvaluation.type is NEGATIVE, you may describe the outcome as below expectation while remaining factual.`,
@@ -375,6 +440,7 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
     ...projectBlock,
     ...periodBlock,
     ...templateBlock,
+    ...buildVisibilityLines(ctx),
     ...buildStoryContextBlock(ctx),
     `# Section Guidance`,
     sectionGuidance,
@@ -400,6 +466,123 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
   ].join("\n");
 }
 
+/**
+ * Per-section craft guidance mirroring the deterministic stub builders.
+ * Keeps the LLM narrator aligned with the quality bar: synthesized exec
+ * summary, no duplicated full indicator tables, period-scoped activities,
+ * and honest one-sentence empty states.
+ *
+ * WS4 adds cross-cutting (protection/gender/AAP/environment) and financial
+ * narrative discipline. Exported pure for deterministic tests.
+ */
+export function buildSectionSpecificGuidance(section: ReportPlanSection, input: GenerateReportDraftInput): string[] {
+
+  const title = section.title.toLowerCase();
+  const guidance: string[] = [];
+  const period = input.reportContext?.period;
+  if (title.includes("executive summary")) {
+    guidance.push(
+      "Write 2-3 flowing paragraphs (target 180-260 words). NO bullet lists, NO tables, NO headings.",
+      "Paragraph 1 - one sentence of project context (project, location, implementer, donor from the context blocks) followed by the delivery snapshot: how many activity records and verified indicator results the period produced (quote the counts only from the context data).",
+      "Paragraph 2 - performance synthesis: name the strongest verified results and any below-expectation results, quoting values, targets, and previous-period values verbatim. Name any indicators that could not be calculated instead of guessing percentages.",
+      "Paragraph 3 - delivery: total participants engaged across recorded activities if counts exist; one recorded challenge (verbatim from activity updates); and a one-sentence outlook drawn from recorded next steps.",
+      "Every number must come from the provided findings, updates, or activity records.",
+    );
+  }
+  if (title.includes("indicator")) {
+    guidance.push(
+      "Do NOT reproduce the full indicator table - it already exists in Annex A. Write a short narrative synthesis and, if helpful, a SMALL highlights table of at most 6 rows (columns: Code, Indicator, This period, Previous, Direction).",
+      "For any finding flagged MISSING_DENOMINATOR, state that the result could not be calculated; never present it as a number or percentage.",
+    );
+  }
+  // "annex" alone matches every annex section (A, B, C, ...); the indicator
+  // table instructions below are wrong for a non-indicator annex (evidence
+  // checklist, activity log, etc.) — match on what the annex actually is,
+  // not on the word "annex".
+  if (title.includes("annex") && /(indicator|performance)/.test(title)) {
+    guidance.push(
+      "Produce ONE full markdown table of all findings with columns: Code, Indicator, Unit, Baseline, Target, This period, Previous, % of target, RAG, Data source.",
+      "RAG is derived only from performanceEvaluation (POSITIVE=GREEN, NEGATIVE=RED, NEUTRAL=AMBER; MISSING_DENOMINATOR=GREY). Use the recorded dataSource per indicator update; write 'Project records' when absent.",
+      "Follow the table with a short 'Data quality notes' list naming indicators that could not be calculated, had partial records, or lack disaggregation.",
+      "Output the table as literal markdown: a header row, a `---` separator row, and one data row per indicator, using `|` cell delimiters. Do not describe the table in prose instead of producing it.",
+    );
+  } else if (title.includes("annex") && /(evidence|document|file)/.test(title)) {
+    guidance.push(
+      "List the verified evidence files as a markdown table with columns: File, Type, Verification status, Confidentiality.",
+      "Do NOT produce an indicator findings table here — that belongs in the indicator performance annex. This annex lists evidence files, not indicator values.",
+      "Follow the table with one short paragraph naming any donor-required annex documents (from the template's required annexes list) that have no matching evidence file.",
+    );
+  } else if (title.includes("annex")) {
+    guidance.push(
+      "This annex's content type is not an indicator table or an evidence checklist — follow the section's mandatory questions and input type literally rather than defaulting to a findings table.",
+    );
+  }
+  if (title.includes("activit") && period) {
+    guidance.push(
+      `Only describe activity records dated within the reporting period ${period.startDate.slice(0, 10)} to ${period.endDate.slice(0, 10)} as this period's delivery.`,
+      "If an activity record is dated outside the window, either omit it or mention it in one context sentence explicitly labelled as outside the period. Do not blend it into this period's narrative.",
+    );
+  }
+  if (title.includes("voice") || title.includes("testimonial") || title.includes("quote")) {
+    guidance.push(
+      "Quote beneficiary speech ONLY as verbatim sentences found inside evidence chunk text between double quotes; cite the evidence title after each quote. If no quotations exist in the evidence, write one honest sentence saying no testimonies were recorded.",
+    );
+  }
+  if (title.includes("challenge") || title.includes("lesson")) {
+    guidance.push(
+      "Use only challenges/lessons recorded in activity updates or the story context. Synthesize them into prose grouped by theme; never invent causes or mitigations.",
+    );
+  }
+  // WS4: cross-cutting sections — theme synthesis with verbatim, per-activity
+  // disaggregation. Totals are never suggested: a computed sum would not be
+  // verbatim in the input and would fail the numeric-consistency gate.
+  if (
+    /(protection|gender|safeguard|accountability|affected populations|\baap\b|do no harm|environment|climate)/.test(
+      title,
+    )
+  ) {
+    guidance.push(
+      "Synthesize this section by theme (e.g. protection mainstreaming, gender, environment, accountability to affected populations) rather than activity-by-activity.",
+      'Quote recorded participant disaggregation per activity verbatim (e.g. "45 women and 30 men"); never total, merge, or re-aggregate recorded counts.',
+      "Where sex/age/disability breakdowns were not recorded for an activity, state that disaggregated data was not recorded for that activity.",
+      "Describe complaints, feedback, and response mechanisms only as recorded in activities or evidence.",
+    );
+  }
+  // WS4-lite: financial narrative discipline. Variance explanations come only
+  // from the officer-recorded story context; the narrator never computes one.
+  if (/(financial|budget|expenditure|finance)/.test(title)) {
+    guidance.push(
+      "Quote budget or variance explanations verbatim from the 'Tell the Story' narrative context when present.",
+      "Never compute, derive, or restate variance figures that are not present verbatim in the input.",
+      "When no recorded variance explanation exists, state that no variance explanation was recorded.",
+    );
+  }
+  return guidance;
+}
+
+/**
+ * Drafted sibling sections (section-wise generation). A synthesis section
+ * (executive summary) is drafted last and summarises them; any other section
+ * sees short excerpts so it does not restate them. Exported for tests.
+ */
+export function buildDraftedSectionsBlock(input: GenerateReportDraftInput, section: ReportPlanSection): string[] {
+  const drafted = (input.draftedSections ?? []).filter((d) => d.title !== section.title && d.content.trim());
+  if (drafted.length === 0) return [];
+  const synthesis = isSynthesisSection(section);
+  const limit = synthesis ? 1500 : 600;
+  const excerpt = (text: string) => {
+    const body = text.split("\n").filter((l) => !l.trimStart().startsWith("|")).join("\n").trim();
+    return body.length > limit ? `${body.slice(0, limit)}…` : body;
+  };
+  return [
+    synthesis
+      ? `# Drafted report sections to synthesise (your summary MUST be consistent with these; select the most important results; introduce no facts they do not contain)`
+      : `# Already-written sibling sections (do NOT restate their facts; refer to them by section name)`,
+    ...drafted.slice(0, 10).map((d) => `## ${d.title}\n${excerpt(d.content)}`),
+    ``,
+  ];
+}
+
 function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section: ReportPlanSection): string {
   const profile = input.reportingProfileSnapshot;
   const toneInstruction = toneInstructionFor(profile);
@@ -414,10 +597,12 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
   // only needs a bounded slice of the evidence/activity record set. Dumping
   // every evidence chunk (8×800 chars each) and every activity narrative into
   // each section call made a single section take 113-142s with MiniMax.
-  const evidenceJson = buildEvidenceJson(input, { maxPackages: 4, maxChunksPerPackage: 4, maxCharsPerChunk: 400 }, section);
+  const evidenceJson = buildEvidenceJson(input, { maxPackages: 4, maxChunksPerPackage: 4, maxCharsPerChunk: 600 }, section);
   const activitiesJson = buildActivitiesJson(input, { maxActivities: 6, maxCharsPerField: 250 });
 
   const sectionGuidance = buildSectionGuidance(section);
+  const specificGuidance = buildSectionSpecificGuidance(section, input);
+  const requirementGuidance = buildRequirementGuidanceBlock(section);
   const formattingRules = (profile.formattingRules ?? []).filter(Boolean);
 
   return [
@@ -434,10 +619,13 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
     ...projectBlock,
     ...periodBlock,
     ...templateBlock,
+    ...buildVisibilityLines(ctx),
     ...buildStoryContextBlock(ctx),
     `# Section Guidance`,
     sectionGuidance,
     ``,
+    ...requirementGuidance,
+    ...buildDraftedSectionsBlock(input, section),
     `# Verified Findings`,
     findingsJson,
     ``,
@@ -454,6 +642,7 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
     `Draft ONLY the section titled "${section.title}". Produce narrative content and structured claims for it.`,
     `The JSON output MUST contain exactly one section object whose "title" equals "${section.title}".`,
     `Only the evidence, activities, findings, and indicator updates above are available to you — do not invent numbers or records.`,
+    ...(specificGuidance.length > 0 ? [`# Section-specific quality guidance`, ...specificGuidance.map((g) => `- ${g}`), ``] : []),
     ...buildInstructionTail(),
   ].join("\n");
 }
@@ -883,9 +1072,12 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
     this.model = {
       modelId: provider.name,
       modelVersion: provider.model,
-      // Version 2 adds explicit missing-value semantics, source-sufficiency
-      // rules, and prohibitions on invented causes/plans.
-      promptVersion: 2,
+      // Version 4 adds language-craft rules (WS2), donor requirement guidance
+      // and attribution blocks (WS1/WS3), and cross-cutting guidance (WS4).
+      // Version 5 (report-quality v4) adds the drafted-sibling block (the
+      // executive summary is drafted last, from the other sections) and
+      // chunk-text evidence ranking.
+      promptVersion: 5,
     };
   }
 

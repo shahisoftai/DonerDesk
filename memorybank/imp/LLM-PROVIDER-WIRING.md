@@ -666,3 +666,21 @@ deepseek → { "status": "SUCCESS", "message": "Connection and credentials verif
 The MiniMax draft endpoint also produces real AI content (Executive
 Summary on OUT-1 30/120, `parseOutcome: VALID, critiqueIssues: 0,
 validatorIssues: []`).
+
+## 20. Claude + Gemini, one active provider per scope, resolution per generation (IMPLEMENTED + DEPLOYED 2026-09-26, `20260926153744`)
+
+- **Providers:** `anthropic` (official SDKs: `@anthropic-ai/sdk` in `factory.ts`, `anthropic` in the worker `llm_gateway._chat_anthropic`) and `gemini` (OpenAI-compatible, `https://generativelanguage.googleapis.com/v1beta/openai`, model required, no `response_format`) join deepseek/minimax/openai.
+- **Claude rules:**
+  - Default model `claude-opus-5`.
+  - No `temperature`; `max_tokens ≥ 16000`; no prefill.
+  - Optional `effort` sent as `output_config.effort`.
+  - `stop_reason: "refusal"` raises, giving a deterministic fallback.
+  - `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`) for `claude-opus-5` / `claude-fable-5-1`.
+  - 429/5xx/529 map to `TransientProviderError`.
+- **Resolution:** `PlatformLlmConfigResolver.resolve({tenantId})` returns a `ResolvedLlmConfig` (`scope` TENANT|GLOBAL, `configId`, `fingerprint`). `container.getReportDraftGenerator` resolves it on every generation and caches per tenant by fingerprint.
+  - The AI Reporter sends `{provider, model, baseUrl, apiKey, effort}` in each worker request.
+  - Env credentials are used only when the request names the same provider as the env.
+- **Control plane:** one enabled LLM per scope (`configuration.superseded` audit). Enabling a saved card provisions it with the stored secret. `describeModelAvailability` makes Test connection validate the model.
+- **Credits:** see `Features/19-Tiers-And-Payments.md` §8.4 (a tenant's own provider is not metered).
+- **Tests:** `apps/workers/tests/test_ai_reporter_providers.py`, `packages/infrastructure/test/llm-providers.test.mjs`, `packages/application/test/tenant-own-ai-provider.test.mjs`.
+- **Production state 2026-09-26:** the GLOBAL default is `anthropic` / `claude-sonnet-4-6` (DeepSeek and MiniMax disabled). A production smoke test through the real api → worker path resolved every tenant to it correctly, but **Anthropic returned 400 "credit balance is too low"**. Until the Anthropic account is funded, sections fall back to the deterministic draft.

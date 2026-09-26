@@ -19,6 +19,9 @@ export interface IStorage {
   put(input: StoragePutInput): Promise<StoragePutResult>;
   getSignedUrl(key: string, ttlSeconds: number): Promise<string>;
   remove(key: string): Promise<void>;
+  /** Reads back stored bytes by key. Used by donor-template rendering to
+   * fetch the cached "templated" DOCX at export time. */
+  read(key: string): Promise<Buffer>;
 }
 
 /**

@@ -60,6 +60,7 @@ export default async function ReportWorkspacePage({ params }: { params: Promise<
         periodId={resolvedParams.periodId}
         draft={draftResult.ok ? draftResult.value.draft : null}
         sections={draftResult.ok ? draftResult.value.sections ?? [] : []}
+        artifacts={draftResult.ok ? draftResult.value.artifacts ?? {} : {}}
         claims={draftResult.ok ? draftResult.value.claims ?? [] : []}
         versions={draftResult.ok ? draftResult.value.versions ?? [] : []}
         indicators={indicatorsResult.ok ? indicatorsResult.value.indicators : []}

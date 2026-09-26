@@ -77,6 +77,14 @@ export class PrismaProjectMemberRepository implements IProjectMemberRepository {
     return ok(this.toDomain(row));
   }
 
+  async listActiveProjectIdsForUser(userId: string, tenantId: TenantId): Promise<Result<string[], DomainError>> {
+    const rows = await this.prisma.projectMember.findMany({
+      where: { userId, tenantId: tenantId.toString(), status: "ACTIVE" },
+      select: { projectId: true },
+    });
+    return ok(rows.map((r) => r.projectId));
+  }
+
   private toDomain(row: ProjectMemberRow): ProjectMember {
     return ProjectMember.rehydrate({
       id: row.id,

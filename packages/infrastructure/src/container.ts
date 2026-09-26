@@ -5,6 +5,9 @@ import {
   LoginHandler,
   InviteUserHandler,
   ChangeRoleHandler,
+  ChangePasswordHandler,
+  RequestPasswordResetHandler,
+  ConfirmPasswordResetHandler,
   UpdateOrganizationHandler,
   UpdateOrganizationReportingDefaultsHandler,
   ConnectGoogleDriveHandler,
@@ -20,6 +23,10 @@ import {
   RemoveProjectMemberHandler,
   ListProjectMembersHandler,
   UploadTemplateHandler,
+  DetectTemplateRegionsHandler,
+  UpdateTemplateMappingHandler,
+  ApproveTemplateMappingHandler,
+  LockTemplateMappingHandler,
   UpdateTemplateSectionsHandler,
   DeleteTemplateHandler,
   ListTemplatesHandler,
@@ -52,6 +59,7 @@ import {
   UpdateActivityHandler,
   AttachEvidenceHandler,
   DetachEvidenceHandler,
+  SuggestEvidenceLinksHandler,
   CreateReportingPeriodHandler,
   ListReportingPeriodsHandler,
   GenerateReportDraftHandler,
@@ -69,6 +77,7 @@ import {
   ApproveReportHandler,
   RejectReportHandler,
   ResolveReportClaimHandler,
+  BulkResolveReportClaimHandler,
   UpdateReportingPeriodStoryHandler,
   ImportPeriodIndicatorValuesHandler,
   ProposeFieldReportExtractionHandler,
@@ -130,12 +139,15 @@ import {
   UpsertAwardOverrideHandler,
   CreateSubmissionSnapshotHandler,
 } from "@donordesk/application";
-import type { IJobQueue, IReportDraftGenerator } from "@donordesk/application";
+import type { IJobQueue, IReportDraftGenerator, INotificationPort } from "@donordesk/application";
+import { EmailAdapter } from "./comms/email.js";
+import { PostmarkNotificationAdapter, FanOutNotificationAdapter } from "./comms/postmark-notification-adapter.js";
 
 import {
   PrismaOrganizationRepository,
   PrismaUserRepository,
   PrismaInvitationRepository,
+  PrismaPasswordResetTokenRepository,
 } from "./repositories/identity.js";
 import { PrismaProjectRepository } from "./repositories/projects.js";
 import { PrismaProjectMemberRepository } from "./repositories/project-members.js";
@@ -200,12 +212,14 @@ import { GoogleDriveFileReader } from "./storage/google-drive.js";
 import { GoogleSheetsReader } from "./storage/google-sheets-reader.js";
 import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credentials.js";
 import { TolerantDocumentParser } from "./parsers/document-parser.js";
+import { MammothDonorTemplateStructureParser } from "./parsers/donor-template-structure-parser.js";
+import { HttpDonorTemplateWorkerClient } from "./llm/donor-template-worker-client.js";
 import { StubTemplateExtractionService } from "./llm/template-extraction.js";
 import { StubEvidenceTagger } from "./llm/evidence-tagger.js";
 import { StubActivityPolisher } from "./llm/activity-polisher.js";
 import { StubReportDraftGenerator } from "./llm/report-draft-generator.js";
 import { createLLMProvider } from "./llm/factory.js";
-import { PlatformLlmConfigResolver } from "./llm/llm-config-resolver.js";
+import { PlatformLlmConfigResolver, type ResolvedLlmConfig } from "./llm/llm-config-resolver.js";
 import { LlmReportDraftGenerator } from "./llm/llm-report-draft-generator.js";
 import { AiReporterDraftGenerator } from "./llm/ai-reporter-draft-generator.js";
 import { HttpWorkerClient } from "./llm/ai-reporter-worker-client.js";
@@ -228,6 +242,7 @@ import {
 import { OutboxEventBus, DEFAULT_EVENT_TO_JOB } from "./events/outbox-event-bus.js";
 import { createJobQueue } from "./jobs/index.js";
 import { createBillingProvider } from "./billing/index.js";
+import { InMemoryPasswordResetRateLimiter } from "./security/password-reset-rate-limiter.js";
 
 export interface Container {
   prisma: PrismaClient;
@@ -242,7 +257,7 @@ export interface Container {
   ids: UuidIdGenerator;
   clock: SystemClock;
   events: OutboxEventBus;
-  notify: LoggingNotificationAdapter;
+  notify: INotificationPort;
   jobQueue: IJobQueue;
   evidenceTagger: StubEvidenceTagger;
   activityPolisher: StubActivityPolisher;
@@ -253,6 +268,8 @@ export interface Container {
   organizations: PrismaOrganizationRepository;
   users: PrismaUserRepository;
   invitations: PrismaInvitationRepository;
+  passwordResetTokens: PrismaPasswordResetTokenRepository;
+  passwordResetRateLimiter: InMemoryPasswordResetRateLimiter;
   billingSubscriptions: PrismaBillingSubscriptionRepository;
   entitlementGrants: PrismaEntitlementGrantRepository;
   usageCounters: PrismaUsageCounterRepository;
@@ -299,6 +316,9 @@ export interface Container {
     googleSignIn: GoogleSignInHandler;
     inviteUser: InviteUserHandler;
     changeRole: ChangeRoleHandler;
+    changePassword: ChangePasswordHandler;
+    requestPasswordReset: RequestPasswordResetHandler;
+    confirmPasswordReset: ConfirmPasswordResetHandler;
     updateOrganization: UpdateOrganizationHandler;
     updateOrganizationReportingDefaults: UpdateOrganizationReportingDefaultsHandler;
     listUsers: ListUsersHandler;
@@ -320,6 +340,10 @@ export interface Container {
     getReportingProfile: GetReportingProfileHandler;
     upsertReportingProfile: UpsertReportingProfileHandler;
     uploadTemplate: UploadTemplateHandler;
+    detectTemplateRegions: DetectTemplateRegionsHandler;
+    updateTemplateMapping: UpdateTemplateMappingHandler;
+    approveTemplateMapping: ApproveTemplateMappingHandler;
+    lockTemplateMapping: LockTemplateMappingHandler;
     updateTemplateSections: UpdateTemplateSectionsHandler;
     deleteTemplate: DeleteTemplateHandler;
     listTemplates: ListTemplatesHandler;
@@ -351,6 +375,7 @@ export interface Container {
     getActivity: GetActivityHandler;
     updateActivity: UpdateActivityHandler;
     attachEvidence: AttachEvidenceHandler;
+    suggestEvidenceLinks: SuggestEvidenceLinksHandler;
     detachEvidence: DetachEvidenceHandler;
     createReportingPeriod: CreateReportingPeriodHandler;
     updateReportingPeriodStory: UpdateReportingPeriodStoryHandler;
@@ -374,6 +399,7 @@ export interface Container {
     approveReport: ApproveReportHandler;
     rejectReport: RejectReportHandler;
     resolveReportClaim: ResolveReportClaimHandler;
+    bulkResolveReportClaims: BulkResolveReportClaimHandler;
     reassessReportRevision: ReassessReportRevisionHandler;
     resolveEffectiveRequirements: ResolveEffectiveRequirementsHandler;
     upsertRequirementPack: UpsertRequirementPackHandler;
@@ -503,13 +529,31 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       },
     );
   }
-  const notify = new LoggingNotificationAdapter(logger);
-
   const googleDriveOAuth = new GoogleDriveOAuthConnector();
 
   const organizations = new PrismaOrganizationRepository(prisma);
   const users = new PrismaUserRepository(prisma);
+  const loggingNotifier = new LoggingNotificationAdapter(logger);
+  const notify: INotificationPort =
+    process.env.EMAIL_PROVIDER === "postmark" && process.env.POSTMARK_SERVER_TOKEN
+      ? new FanOutNotificationAdapter([
+          loggingNotifier,
+          new PostmarkNotificationAdapter(
+            new EmailAdapter({
+              smtpHost: "",
+              smtpPort: 0,
+              smtpUser: process.env.POSTMARK_SERVER_TOKEN,
+              smtpPassword: "",
+              fromAddress: process.env.EMAIL_FROM_ADDRESS ?? "notifications@donordesk.online",
+            }),
+            users,
+            logger,
+          ),
+        ])
+      : loggingNotifier;
   const invitations = new PrismaInvitationRepository(prisma);
+  const passwordResetTokens = new PrismaPasswordResetTokenRepository(prisma);
+  const passwordResetRateLimiter = new InMemoryPasswordResetRateLimiter();
   const projects = new PrismaProjectRepository(prisma);
   const projectMembers = new PrismaProjectMemberRepository(prisma);
   const projectSetup = new PrismaProjectSetupRepository(prisma);
@@ -578,7 +622,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     : Buffer.alloc(32);
   const llmConfigResolver = new PlatformLlmConfigResolver(prisma, masterKey);
 
-  const generatorCache = new Map<string, IReportDraftGenerator>();
+  // Report generators are cached per tenant, keyed by the resolved LLM
+  // configuration's fingerprint, so a SuperAdmin change (new default provider,
+  // rotated key, tenant's own API added/removed) applies to the next generation
+  // without an api restart.
+  const generatorCache = new Map<string, { key: string; generator: IReportDraftGenerator }>();
   const generatorPromises = new Map<string, Promise<IReportDraftGenerator>>();
   // Resolved once per process so it is visible in startup logs without
   // waiting for the first /v1/reporting-periods/:id/generate-draft request.
@@ -586,7 +634,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   if (aiReporterFlagEnabled) {
     logger?.info("AI Reporter flag is enabled; the dedicated Python worker will be used for report drafting", {
       url: process.env.AI_REPORTER_URL ?? "http://127.0.0.1:8092 (default)",
-      timeoutMs: process.env.AI_REPORTER_DRAFT_TIMEOUT_MS ?? "45000 (default)",
+      httpTimeoutMs: process.env.AI_REPORTER_HTTP_TIMEOUT_MS ?? `derived from AI_REPORTER_DRAFT_TIMEOUT_MS=${process.env.AI_REPORTER_DRAFT_TIMEOUT_MS ?? "90000 (default)"} (2x + 30s)`,
+      writerContractVersion: process.env.AI_REPORTER_CONTRACT_VERSION ?? "4 (default)",
       internalTokenSet: Boolean(process.env.INTERNAL_TOKEN),
     });
   } else if (process.env.AI_REPORTER_ENABLED !== undefined) {
@@ -594,90 +643,117 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       raw: process.env.AI_REPORTER_ENABLED,
     });
   }
-  const getReportDraftGenerator = (
-    tenantId?: string,
-  ): Promise<IReportDraftGenerator> => {
-    const key = tenantId ?? "default";
-    const cached = generatorCache.get(key);
-    if (cached) return Promise.resolve(cached);
-    const existing = generatorPromises.get(key);
-    if (existing) return existing;
-    const promise = (async () => {
-      // AI Reporter sidecar (feature-flagged): a dedicated Python worker
-      // (LangGraph draft/critique/refine) behind the IReportDraftGenerator port.
-      if (aiReporterFlagEnabled) {
+
+  const withProviderSource = (generator: IReportDraftGenerator, providerSource: "PLATFORM" | "TENANT"): IReportDraftGenerator => ({
+    model: generator.model,
+    providerSource,
+    generateDraft: (input) => generator.generateDraft(input),
+    generateSection: (input, section) => generator.generateSection(input, section),
+    rewriteSection: (input) => generator.rewriteSection(input),
+  });
+
+  const resolveTenantLlm = async (tenantId?: string): Promise<ResolvedLlmConfig | null> => {
+    try {
+      const resolved = await llmConfigResolver.resolve({ tenantId });
+      if (resolved.ok) return resolved.value;
+      logger?.warn("LLM configuration could not be resolved; using the environment fallback", { tenantId: tenantId ?? "default", error: resolved.error.message });
+    } catch (error) {
+      logger?.warn("LLM configuration lookup failed; using the environment fallback", { tenantId: tenantId ?? "default", error: error instanceof Error ? error.message : String(error) });
+    }
+    return null;
+  };
+
+  const buildReportDraftGenerator = async (tenantId: string | undefined, resolved: ResolvedLlmConfig | null): Promise<IReportDraftGenerator> => {
+    const source = resolved
+      ? { scope: resolved.scope, provider: resolved.provider, model: resolved.model ?? "(provider default)", configId: resolved.configId }
+      : { scope: "ENV", provider: process.env.AI_REPORTER_PROVIDER ?? process.env.LLM_PROVIDER ?? "stub" };
+    // AI Reporter sidecar (feature-flagged): the Python worker drafts with the
+    // SAME provider the tenant resolves to — the tenant's own API, else the
+    // SuperAdmin default. The resolved credentials are sent per request, so
+    // workers.env is only a fallback when no platform configuration exists.
+    if (aiReporterFlagEnabled) {
+      try {
+        const worker = new HttpWorkerClient();
+        // Liveness check so a misconfigured worker URL is surfaced in the api
+        // logs immediately. It does NOT throw — the generator itself falls
+        // back to the deterministic stub per section on worker failure.
         try {
-          const worker = new HttpWorkerClient();
-          // Startup liveness check so a misconfigured worker URL is surfaced
-          // in the api logs immediately, not on the first draft request.
-          // The probe does NOT throw — a failed probe falls back to the
-          // standard LLM generator chain rather than crashing the route.
-          try {
-            const probe = await worker.probe();
-            if (!probe.ok) {
-              logger?.warn("AI Reporter worker probe failed; falling back to standard LLM generator chain", {
-                error: probe.error.message,
-                url: worker.baseUrl,
-                hint: "Verify AI_REPORTER_URL points at the Python worker (default http://127.0.0.1:8092) and the worker service is running. Restart the api after changing AI_REPORTER_URL.",
-              });
-            } else {
-              logger?.info("AI Reporter worker probe succeeded", {
-                url: probe.value.baseUrl,
-                latencyMs: probe.value.latencyMs,
-              });
-            }
-          } catch (probeError) {
-            logger?.warn("AI Reporter worker probe threw unexpectedly", {
-              error: probeError instanceof Error ? probeError.message : String(probeError),
+          const probe = await worker.probe();
+          if (!probe.ok) {
+            logger?.warn("AI Reporter worker probe failed; sections will fall back to the deterministic stub until it recovers", {
+              error: probe.error.message,
+              url: worker.baseUrl,
+              hint: "Verify AI_REPORTER_URL points at the Python worker (default http://127.0.0.1:8092) and the worker service is running.",
             });
           }
-          const embeddingGenerator = createEmbeddingGenerator();
-          const embeddingStore = new PrismaEmbeddingStore(prisma);
-          const prior = new DeterministicPriorPeriodService(periods, drafts, sections, reportRevisions);
-          generatorCache.set(
-            key,
-            new AiReporterDraftGenerator(worker, new StubReportDraftGenerator(), embeddingGenerator, embeddingStore, prior, logger),
-          );
-          return generatorCache.get(key)!;
-        } catch (error) {
-          logger?.warn("AI Reporter construction failed; falling back to standard LLM generator", {
-            error: error instanceof Error ? error.message : String(error),
+        } catch (probeError) {
+          logger?.warn("AI Reporter worker probe threw unexpectedly", {
+            error: probeError instanceof Error ? probeError.message : String(probeError),
           });
         }
-      }
-      try {
-        const resolved = await llmConfigResolver.resolve({ tenantId });
-        if (resolved.ok && resolved.value) {
-          const provider = createLLMProvider(resolved.value);
-          generatorCache.set(key, new LlmReportDraftGenerator(provider, undefined, logger));
-          return generatorCache.get(key)!;
-        }
-        if (process.env.LLM_PROVIDER) {
-          // Documented fallback chain: platform config -> LLM_PROVIDER env -> stub.
-          const provider = createLLMProvider();
-          generatorCache.set(key, new LlmReportDraftGenerator(provider, undefined, logger));
-          return generatorCache.get(key)!;
-        }
+        const embeddingGenerator = createEmbeddingGenerator();
+        const embeddingStore = new PrismaEmbeddingStore(prisma);
+        const prior = new DeterministicPriorPeriodService(periods, drafts, sections, reportRevisions);
+        const modelConfig = resolved
+          ? { provider: resolved.provider, model: resolved.model, baseUrl: resolved.baseUrl, apiKey: resolved.apiKey, effort: resolved.effort }
+          : undefined; // env default (workers.env)
+        logger?.info("Report drafting provider selected", { tenantId: tenantId ?? "default", path: "ai-reporter", ...source });
+        return new AiReporterDraftGenerator(worker, new StubReportDraftGenerator(), embeddingGenerator, embeddingStore, prior, logger, undefined, modelConfig);
       } catch (error) {
-        // A provider-construction failure (e.g. missing API key env) must
-        // degrade to the stub, never reject getGenerator and 500 the route.
-        logger?.warn("LLM provider resolution failed; using stub generator", { error: error instanceof Error ? error.message : String(error) });
+        logger?.warn("AI Reporter construction failed; falling back to standard LLM generator", {
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
-      // No platform config and no LLM_PROVIDER env: the deterministic stub is
-      // used. This must be an explicit, visible dev-only default, never a
-      // silent production path, so we log it loudly.
-      logger?.warn("No LLM provider configured (LLM_PROVIDER unset and no platform config); report drafting will use the deterministic stub generator", {
-        tenantId: tenantId ?? "default",
-        hint: "Set LLM_PROVIDER (e.g. openai|anthropic|deepseek|minimax|ollama) or configure an LLM provider in PlatformConfiguration.",
-      });
-      generatorCache.set(key, new StubReportDraftGenerator());
-      return generatorCache.get(key)!;
-    })();
-    generatorPromises.set(key, promise);
+    }
+    try {
+      if (resolved) {
+        logger?.info("Report drafting provider selected", { tenantId: tenantId ?? "default", path: "llm", ...source });
+        return new LlmReportDraftGenerator(createLLMProvider(resolved), undefined, logger);
+      }
+      if (process.env.LLM_PROVIDER) {
+        // Documented fallback chain: platform config -> LLM_PROVIDER env -> stub.
+        return new LlmReportDraftGenerator(createLLMProvider(), undefined, logger);
+      }
+    } catch (error) {
+      // A provider-construction failure (e.g. missing API key or model) must
+      // degrade to the stub, never reject getGenerator and 500 the route.
+      logger?.warn("LLM provider construction failed; using stub generator", { tenantId: tenantId ?? "default", ...source, error: error instanceof Error ? error.message : String(error) });
+      return new StubReportDraftGenerator();
+    }
+    // No platform config and no LLM_PROVIDER env: the deterministic stub is
+    // used. This must be an explicit, visible dev-only default, never a
+    // silent production path, so we log it loudly.
+    logger?.warn("No LLM provider configured (no enabled SuperAdmin LLM configuration and LLM_PROVIDER unset); report drafting will use the deterministic stub generator", {
+      tenantId: tenantId ?? "default",
+      hint: "Enable an LLM provider for all tenants in the SuperAdmin portal (AI tab), or set LLM_PROVIDER.",
+    });
+    return new StubReportDraftGenerator();
+  };
+
+  const getReportDraftGenerator = async (tenantId?: string): Promise<IReportDraftGenerator> => {
+    const tenantKey = tenantId ?? "default";
+    const resolved = await resolveTenantLlm(tenantId);
+    const key = `${aiReporterFlagEnabled ? "ai-reporter" : "llm"}:${resolved?.fingerprint ?? "env"}`;
+    const cached = generatorCache.get(tenantKey);
+    if (cached && cached.key === key) return cached.generator;
+    const promiseKey = `${tenantKey}|${key}`;
+    const existing = generatorPromises.get(promiseKey);
+    if (existing) return existing;
+    const promise = buildReportDraftGenerator(tenantId, resolved)
+      .then((built) => {
+        // A tenant's own AI provider never consumes DonorDesk AI credits
+        // (see GenerateReportDraftHandler). The stub is never tagged.
+        const generator = resolved?.scope === "TENANT" && built.model.modelId !== "stub" ? withProviderSource(built, "TENANT") : built;
+        generatorCache.set(tenantKey, { key, generator });
+        return generator;
+      })
+      .finally(() => generatorPromises.delete(promiseKey));
+    generatorPromises.set(promiseKey, promise);
     return promise;
   };
   const checklistDetector = new StubChecklistDetector();
-  const exportBuilder = new DefaultExportBuilder();
+  const donorTemplateRenderer = new HttpDonorTemplateWorkerClient();
+  const exportBuilder = new DefaultExportBuilder(storage, donorTemplateRenderer);
 
   const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates);
   const reportPlanner = new InferredReportPlanner(ids);
@@ -690,7 +766,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector);
   const requirementResolver = new DeterministicRequirementResolver(ids, periods, requirementPacks, awardOverrides, reportPlans, resolvedRequirements);
 
-  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates);
+  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics);
   const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits);
 
   if (jobRegistrar?.register) {
@@ -713,9 +789,14 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     );
   }
 
-  const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, submissionSnapshots, exportBuilder, storage, audits);
+  const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, submissionSnapshots, exportBuilder, storage, audits, donorTemplateMappings, templates);
   const uploadTemplateHandler = new UploadTemplateHandler(ids, templates, templateExtraction, audits);
-  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits);
+  const donorTemplateStructureParser = new MammothDonorTemplateStructureParser();
+  const detectTemplateRegionsHandler = new DetectTemplateRegionsHandler(ids, templates, donorTemplateMappings, donorTemplateStructureParser, audits);
+  const updateTemplateMappingHandler = new UpdateTemplateMappingHandler(donorTemplateMappings, audits);
+  const approveTemplateMappingHandler = new ApproveTemplateMappingHandler(donorTemplateMappings, donorTemplateRenderer, storage, audits);
+  const lockTemplateMappingHandler = new LockTemplateMappingHandler(periods, donorTemplateMappings, audits);
+  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics);
 
   const handlers: Container["handlers"] = {
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
@@ -723,6 +804,12 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     googleSignIn: new GoogleSignInHandler(googleSignIn, users, organizations, auth, ids, audits, provisionTenant),
     inviteUser: new InviteUserHandler(ids, users, invitations, audits, notify, entitlements),
     changeRole: new ChangeRoleHandler(users, audits),
+    changePassword: new ChangePasswordHandler(users, auth, audits, clock),
+    requestPasswordReset: new RequestPasswordResetHandler(
+      ids, users, passwordResetTokens, passwordResetRateLimiter, audits, notify, clock,
+      { webBaseUrl: process.env.WEB_BASE_URL ?? "http://localhost:3000" },
+    ),
+    confirmPasswordReset: new ConfirmPasswordResetHandler(users, passwordResetTokens, auth, audits, clock),
     updateOrganization: new UpdateOrganizationHandler(organizations, audits),
     updateOrganizationReportingDefaults: new UpdateOrganizationReportingDefaultsHandler(organizations, audits),
     connectGoogleDrive: new ConnectGoogleDriveHandler(
@@ -735,7 +822,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listUsers: new ListUsersHandler(users),
     createProject: new CreateProjectHandler(ids, projects, projectSetup, reportingProfiles, organizations, projectWorkspace, events, audits, entitlements),
     updateProject: new UpdateProjectHandler(projects, periods, audits),
-    listProjects: new ListProjectsHandler(projects),
+    listProjects: new ListProjectsHandler(projects, projectMembers),
     getProject: new GetProjectHandler(projects),
     assignProjectMember: new AssignProjectMemberHandler(ids, projectMembers, projects, users, audits, notify),
     updateProjectMember: new UpdateProjectMemberHandler(projectMembers, audits),
@@ -751,6 +838,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     getReportingProfile: new GetReportingProfileHandler(reportingProfiles),
     upsertReportingProfile: new UpsertReportingProfileHandler(ids, reportingProfiles, templates, audits),
     uploadTemplate: uploadTemplateHandler,
+    detectTemplateRegions: detectTemplateRegionsHandler,
+    updateTemplateMapping: updateTemplateMappingHandler,
+    approveTemplateMapping: approveTemplateMappingHandler,
+    lockTemplateMapping: lockTemplateMappingHandler,
     updateTemplateSections: new UpdateTemplateSectionsHandler(templates, audits),
     deleteTemplate: new DeleteTemplateHandler(templates, audits),
     listTemplates: new ListTemplatesHandler(templates),
@@ -782,6 +873,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     getActivity: new GetActivityHandler(activities),
     updateActivity: new UpdateActivityHandler(activities, evidence, audits),
     attachEvidence: new AttachEvidenceHandler(evidence, activities, indicatorUpdates, audits),
+    suggestEvidenceLinks: new SuggestEvidenceLinksHandler(evidence, activities, indicators, indicatorUpdates),
     detachEvidence: new DetachEvidenceHandler(evidence, activities, indicatorUpdates, audits),
     createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events),
     updateReportingPeriodStory: new UpdateReportingPeriodStoryHandler(periods, audits),
@@ -791,7 +883,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listReportingPeriods: new ListReportingPeriodsHandler(periods, calculateReadinessHandler),
     generateReportDraft: new GenerateReportDraftHandler(
       ids, periods, drafts, sections, projects, organizations, templates, indicatorUpdates, activities,
-      reportPlanner, indicatorAnalytics, evidencePackageBuilder, generationRuns, reportPlans,
+      reportPlanner, requirementResolver, indicatorAnalytics, evidencePackageBuilder, generationRuns, reportPlans,
       revisionService, assuranceService,
       getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage, reportArtifacts,
     ),
@@ -814,6 +906,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     approveReport: approveReportHandler,
     rejectReport: new RejectReportHandler(drafts, audits),
     resolveReportClaim: new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService),
+    bulkResolveReportClaims: new BulkResolveReportClaimHandler(new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService)),
     reassessReportRevision: new ReassessReportRevisionHandler(sections, reportRevisions, assuranceService, audits),
     resolveEffectiveRequirements: new ResolveEffectiveRequirementsHandler(requirementResolver, audits),
     upsertRequirementPack: new UpsertRequirementPackHandler(ids, requirementPacks, audits),
@@ -853,7 +946,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   return {
     prisma, auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, checklistDetector, exportBuilder,
-    organizations, users, invitations,     projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
+    organizations, users, invitations, passwordResetTokens, passwordResetRateLimiter,    projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
     periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, reportArtifacts, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, planCatalog, billingProvider,
     handlers,

@@ -378,6 +378,57 @@
       ],
       "artifacts": { "kinds": ["LIST"] },
       "expected": "pass"
+    },
+    {
+      "name": "eu-echo-visibility",
+      "draftText": "The project rehabilitated 12 water points across the two districts during the reporting period, reaching 3,400 people. This project is funded by the European Union. Data quality limitation: service-use figures are based on partial records from partner reports.",
+      "referenceAssertions": [
+        { "text": "This project is funded by the European Union." },
+        { "text": "The project rehabilitated 12 water points across the two districts during the reporting period, reaching 3,400 people." }
+      ],
+      "numericFacts": [
+        { "value": "12", "expected": "present" },
+        { "value": "3,400", "expected": "present" },
+        { "value": "5,000", "expected": "absent" }
+      ],
+      "requiredLimitations": [
+        "based on partial records"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "cross-cutting-disaggregation",
+      "draftText": "Protection mainstreaming: 45 women and 30 men participated in the safety audits, and 20 children attended the child-friendly space. Activities applied the do-no-harm approach as recorded in the safety audit notes. Disaggregated data was not recorded for two activities.",
+      "referenceAssertions": [
+        { "text": "Protection mainstreaming: 45 women and 30 men participated in the safety audits, and 20 children attended the child-friendly space" },
+        { "text": "Disaggregated data was not recorded for two activities." }
+      ],
+      "numericFacts": [
+        { "value": "45", "expected": "present" },
+        { "value": "30", "expected": "present" },
+        { "value": "20", "expected": "present" },
+        { "value": "75", "expected": "absent" },
+        { "value": "95", "expected": "absent" }
+      ],
+      "requiredLimitations": [
+        "disaggregated data was not recorded"
+      ],
+      "expected": "pass"
+    },
+    {
+      "name": "usaid-qpr-missing-attribution",
+      "draftText": "The project reached 1,200 individuals with nutrition services this quarter. Coverage data is preliminary and subject to partner verification.",
+      "referenceAssertions": [
+        { "text": "This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID)." }
+      ],
+      "numericFacts": [
+        { "value": "1,200", "expected": "present" }
+      ],
+      "requiredLimitations": [
+        "preliminary"
+      ],
+      "requiredAttribution": "This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID).",
+      "expected": "fail"
     }
   ]
 }

@@ -15,6 +15,7 @@ import { EVIDENCE_TYPE_LABEL, EVIDENCE_VERIFICATION_LABEL, CONFIDENTIALITY_LABEL
 import { EvidenceFilterBar } from "@/features/evidence/presentation/EvidenceFilterBar";
 import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
 import { EvidencePeriodPicker } from "@/features/evidence/presentation/EvidencePeriodPicker";
+import { EvidenceLinkSuggestions } from "@/features/evidence/presentation/EvidenceLinkSuggestions";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +115,7 @@ export default async function EvidencePage({
                   <th className="px-3 py-2 text-left">File</th>
                   <th className="px-3 py-2 text-left">Type</th>
                   <th className="px-3 py-2 text-left">Reporting period</th>
+                  <th className="px-3 py-2 text-left">Linked to activity/indicator</th>
                   <th className="px-3 py-2 text-left">Verification</th>
                   <th className="px-3 py-2 text-left">Confidentiality</th>
                 </tr>
@@ -134,6 +136,9 @@ export default async function EvidencePage({
                         currentPeriodId={e.reportingPeriodId ?? null}
                         periods={periodOptions}
                       />
+                    </td>
+                    <td className="px-3 py-2">
+                      <EvidenceLinkSuggestions evidenceId={e.id} alreadyLinked={Boolean(e.activityId || e.indicatorId)} />
                     </td>
                     <td className="px-3 py-2">
                       <Badge tone={verificationStatusTone(e.verificationStatus)}>

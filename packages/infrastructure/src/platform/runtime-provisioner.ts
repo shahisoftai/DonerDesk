@@ -86,17 +86,60 @@ export function renderWorkersManagedBlock(config: GlobalLlmConfig, scopeId: stri
   }
   lines.push(`AI_REPORTER_API_KEY=${config.apiKey}`);
   lines.push(`AI_REPORTER_TIMEOUT=180`);
-  lines.push(`AI_REPORTER_DRAFT_TIMEOUT_MS=45000`);
-  lines.push(`AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS=240000`);
-  lines.push(`AI_REPORTER_CONTRACT_VERSION=2`);
+  // Report-quality v4: 90s per LLM call (45s timed out healthy MiniMax
+  // sections), 200s per section (draft + one validator-feedback retry).
+  lines.push(`AI_REPORTER_DRAFT_TIMEOUT_MS=90000`);
+  lines.push(`AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS=200000`);
+  lines.push(`AI_REPORTER_CONTRACT_VERSION=4`);
   lines.push(MANAGED_BLOCK_END_MARKER);
   return lines;
 }
 
 /**
+ * Operator-tunable AI Reporter keys that must survive a re-provision: the
+ * managed block re-renders catalog defaults, so any current value found in
+ * the existing env file is carried forward (last occurrence wins).
+ */
+const WORKERS_PRESERVED_KEYS = [
+  "AI_REPORTER_DRAFT_TIMEOUT_MS",
+  "AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS",
+  "AI_REPORTER_MAX_TOKENS",
+] as const;
+
+export function parseEnvValues(content: string, keys: readonly string[]): Record<string, string> {
+  const found: Record<string, string> = {};
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    const key = trimmed.slice(0, eq);
+    if (keys.includes(key)) found[key] = trimmed.slice(eq + 1);
+  }
+  return found;
+}
+
+/**
+ * Operator-tunable api.env keys that must survive a re-provision, mirroring
+ * WORKERS_PRESERVED_KEYS. `AI_REPORTER_DRAFT_TIMEOUT_MS` here is the ceiling
+ * `AiReporterWorkerClient` applies to the ENTIRE section pipeline call
+ * (draft -> critique -> refine, up to ~3-4 sequential LLM round-trips), not a
+ * single LLM call — it must stay comfortably above the worker's own
+ * per-call `AI_REPORTER_TIMEOUT` (workers.env), or every real generation
+ * aborts client-side before the worker can even respond.
+ */
+const API_PRESERVED_KEYS = ["AI_REPORTER_DRAFT_TIMEOUT_MS", "AI_REPORTER_HTTP_TIMEOUT_MS"] as const;
+
+/**
  * Render the api.env managed block. The api needs the feature flag and the
  * reporter URL; it also benefits from LLM_PROVIDER so the standard LLM fallback
  * path can resolve. No secret is written here — the api calls the worker.
+ *
+ * `AI_REPORTER_DRAFT_TIMEOUT_MS` is written here (catalog default 180000ms)
+ * so it is never silently unset: previously only `workers.env` carried this
+ * key, so `AiReporterWorkerClient` always fell back to its 45s hardcoded
+ * default regardless of what was configured, aborting every real
+ * (non-trivial) generation before the provider could respond.
  */
 export function renderApiManagedBlock(config: { provider: string; model: string }, scopeId: string): string[] {
   const header = `${MANAGED_BLOCK_MARKER}:GLOBAL:${config.provider}:${scopeId}`;
@@ -106,8 +149,51 @@ export function renderApiManagedBlock(config: { provider: string; model: string 
   lines.push(`AI_REPORTER_PROVIDER=${config.provider}`);
   lines.push(`AI_REPORTER_MODEL=${config.model}`);
   lines.push(`LLM_PROVIDER=${config.provider}`);
+  lines.push(`AI_REPORTER_DRAFT_TIMEOUT_MS=180000`);
+  // The api's HTTP ceiling for one worker section call. Explicit, because the
+  // api-side DRAFT value above predates v4 and means "whole call"; the client
+  // prefers AI_REPORTER_HTTP_TIMEOUT_MS. Must exceed the worker's
+  // AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS (200000).
+  lines.push(`AI_REPORTER_HTTP_TIMEOUT_MS=240000`);
+  lines.push(`AI_REPORTER_CONTRACT_VERSION=4`);
   lines.push(MANAGED_BLOCK_END_MARKER);
   return lines;
+}
+
+/**
+ * Remove any top-level (non-managed-block) declaration of a key the managed
+ * block is about to own. Environment files historically accumulated
+ * standalone `KEY=value` lines (e.g. `AI_REPORTER_ENABLED`/`AI_REPORTER_URL`
+ * added by hand before the provisioning system existed) that then duplicated
+ * the managed block's own declaration of the same key. Duplicate keys have
+ * caused `systemd`'s `EnvironmentFile` loader to silently drop later
+ * variables in the file in production — this removes the root cause instead
+ * of relying on "last occurrence wins" semantics that are not guaranteed by
+ * every env-file consumer.
+ */
+export function stripStandaloneManagedKeys(content: string, keys: readonly string[]): { content: string; changed: boolean } {
+  const blockRegex = new RegExp(`${escapeRegex(MANAGED_BLOCK_MARKER)}:GLOBAL:[^\\n]*\\n(?:[^\\n]*\\n)*?${escapeRegex(MANAGED_BLOCK_END_MARKER)}\\n?`, "m");
+  const blockMatch = content.match(blockRegex);
+  const blockStart = blockMatch ? content.indexOf(blockMatch[0]) : -1;
+  const blockEnd = blockMatch ? blockStart + blockMatch[0].length : -1;
+  let offset = 0;
+  let changed = false;
+  const lines = content.split("\n");
+  const kept: string[] = [];
+  for (const line of lines) {
+    const lineStart = offset;
+    offset += line.length + 1;
+    const insideBlock = blockStart >= 0 && lineStart >= blockStart && lineStart < blockEnd;
+    const trimmed = line.trim();
+    const eq = trimmed.indexOf("=");
+    const key = eq > 0 ? trimmed.slice(0, eq) : "";
+    if (!insideBlock && !trimmed.startsWith("#") && keys.includes(key)) {
+      changed = true;
+      continue;
+    }
+    kept.push(line);
+  }
+  return { content: kept.join("\n"), changed };
 }
 
 /**
@@ -166,7 +252,16 @@ async function atomicWriteEnvFile(path: string, content: string, fsImpl: typeof 
   } catch {
     owner = null;
   }
-  await fsImpl.writeFile(tempPath, content, { mode: 0o600 });
+  // A file with no trailing newline has been observed in production to make
+  // systemd's EnvironmentFile loader silently drop the last one or two
+  // KEY=VALUE lines (the ones immediately before the truncated final line),
+  // with no error logged anywhere — this was the root cause of two separate
+  // "provider config silently missing from the live process" incidents.
+  // applyManagedBlockToEnv/renderApiManagedBlock never guaranteed a trailing
+  // newline (`Array.join("\n")` never adds a final one), so every write path
+  // must add it here as the last line of defence.
+  const normalized = content.endsWith("\n") ? content : `${content}\n`;
+  await fsImpl.writeFile(tempPath, normalized, { mode: 0o600 });
   await fsImpl.chmod(tempPath, ENV_FILE_MODE);
   if (owner) {
     await fsImpl.chown(tempPath, owner.uid as unknown as number, owner.gid as unknown as number);
@@ -240,17 +335,47 @@ export class RuntimeProvisioner {
     const workersEnvPath = target.workersEnvPath ?? DEFAULT_WORKERS_ENV_PATH;
     const scopeId = "GLOBAL";
 
+    // Preserve operator-tuned values across re-provisions before stripping
+    // standalone duplicates, so a value an operator hand-tuned outside the
+    // managed block (rare, but not silently discarded) survives the dedup.
+    const apiOriginal0 = await this.readFile(apiEnvPath);
+    const apiPreserved = parseEnvValues(apiOriginal0, API_PRESERVED_KEYS);
     const apiBlock = renderApiManagedBlock(config, scopeId);
-    const workersBlock = renderWorkersManagedBlock(config, scopeId);
+    for (const key of API_PRESERVED_KEYS) {
+      const value = apiPreserved[key];
+      if (value === undefined) continue;
+      const idx = apiBlock.findIndex((l) => l.startsWith(`${key}=`));
+      if (idx >= 0) apiBlock[idx] = `${key}=${value}`;
+    }
 
-    const apiOriginal = await this.readFile(apiEnvPath);
-    const apiNext = applyManagedBlockToEnv(apiOriginal, apiBlock);
-    const apiChanged = apiNext.changed;
+    // Dedup: remove any standalone (pre-provisioning-era) declaration of a
+    // key the managed block now owns, for BOTH files, before applying the
+    // block. Duplicate keys across a file have been observed to make
+    // systemd's EnvironmentFile loader silently drop later variables in
+    // production (see runtime-provisioner.ts change log / contabo-ops.md).
+    const apiDeduped = stripStandaloneManagedKeys(apiOriginal0, apiBlock.map((l) => l.split("=")[0]!).filter((k) => !k.startsWith("#")));
+    const apiNext = applyManagedBlockToEnv(apiDeduped.content, apiBlock);
+    const apiChanged = apiNext.changed || apiDeduped.changed;
     if (apiChanged) await atomicWriteEnvFile(apiEnvPath, apiNext.content, this.fsImpl);
 
-    const workersOriginal = await this.readFile(workersEnvPath);
-    const workersNext = applyManagedBlockToEnv(workersOriginal, workersBlock);
-    const workersChanged = workersNext.changed;
+    const workersOriginal0 = await this.readFile(workersEnvPath);
+    // Preserve operator-tuned values (timeouts, token budget) across
+    // re-provisions: the rendered block carries catalog defaults, and without
+    // this merge a reprovision would silently reset slow-provider tuning
+    // (e.g. reasoning models needing >45s per section).
+    const preserved = parseEnvValues(workersOriginal0, WORKERS_PRESERVED_KEYS);
+    const workersBlock = renderWorkersManagedBlock(config, scopeId);
+    const endIdx = workersBlock.length - 1; // end-marker line
+    for (const key of WORKERS_PRESERVED_KEYS) {
+      const value = preserved[key];
+      if (value === undefined) continue;
+      const idx = workersBlock.findIndex((l) => l.startsWith(`${key}=`));
+      if (idx >= 0) workersBlock[idx] = `${key}=${value}`;
+      else workersBlock.splice(endIdx, 0, `${key}=${value}`);
+    }
+    const workersDeduped = stripStandaloneManagedKeys(workersOriginal0, workersBlock.map((l) => l.split("=")[0]!).filter((k) => !k.startsWith("#")));
+    const workersNext = applyManagedBlockToEnv(workersDeduped.content, workersBlock);
+    const workersChanged = workersNext.changed || workersDeduped.changed;
     if (workersChanged) await atomicWriteEnvFile(workersEnvPath, workersNext.content, this.fsImpl);
 
     let restarted = false;

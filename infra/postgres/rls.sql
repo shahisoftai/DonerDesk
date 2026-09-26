@@ -13,7 +13,8 @@ BEGIN
     'Notification','AuditEvent','LlmRun','LlmFeedback','EvidenceChunk','EvidenceEmbedding',
     'IdempotencyRecord',
     'ReportArtifact','ReportArtifactRow',
-    'BillingSubscription','EntitlementGrant','UsageCounter','TrialIdentity'
+    'BillingSubscription','EntitlementGrant','UsageCounter','TrialIdentity',
+    'PasswordResetToken'
   ] LOOP
     EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO donordesk_app', table_name);
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', table_name);

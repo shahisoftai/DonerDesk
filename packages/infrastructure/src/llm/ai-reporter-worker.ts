@@ -27,7 +27,24 @@ export interface AiReporterSectionBrief {
   mandatesTable?: boolean;
   /** AI Reporter 2 — when true the writer must emit a CHART artifact. */
   mandatesChart?: boolean;
+  /**
+   * Quality remediation WS1 — donor requirement guidance stamped on the plan
+   * section (from the resolved requirement snapshot). Must stay in lockstep
+   * with the Python `SectionBrief` model (extra="forbid").
+   */
+  requirementGuidance?: string[];
+  /**
+   * Quality v4 — section-specific editorial guidance rendered by
+   * `buildSectionSpecificGuidance` (single SSOT shared with the legacy narrator).
+   */
+  sectionGuidance?: string[];
+  /**
+   * Quality v4 — the section synthesises the drafted report (executive
+   * summary); `priorSectionsSummary` then carries the sections to summarise.
+   */
+  synthesis?: boolean;
 }
+
 
 export interface AiReporterNumericRow {
   indicatorId: string;
@@ -76,16 +93,31 @@ export interface AiReporterContextTemplate {
   version?: number;
 }
 
+export interface AiReporterContextStory {
+  achievements?: string;
+  challenges?: string;
+  varianceExplanations?: string;
+  adaptations?: string;
+  lessons?: string;
+}
+
 export interface AiReporterContext {
   project?: AiReporterContextProject;
   period?: AiReporterContextPeriod;
   template?: AiReporterContextTemplate;
   profile?: { tone: string; language: string; formattingRules: string[] };
+  /** Quality v4 — officer "Tell the Story" narrative context. */
+  story?: AiReporterContextStory;
+  /** Quality v4 — exact donor attribution lines from the domain visibility catalog. */
+  visibility?: string[];
 }
 
 export interface AiReporterFinding {
   indicatorCode: string;
+  indicatorId?: string;
   indicatorName?: string;
+  indicatorType?: string;
+  calculationMethod?: string;
   baseline?: string | number | null;
   target?: string | number | null;
   value?: string | number | null;
@@ -98,6 +130,7 @@ export interface AiReporterFinding {
 
 export interface AiReporterIndicatorUpdate {
   indicatorCode: string;
+  indicatorId?: string;
   periodAchievement?: string;
   cumulativeAchievement?: string;
   comments?: string;
@@ -106,6 +139,8 @@ export interface AiReporterIndicatorUpdate {
 
 export interface AiReporterActivity {
   title: string;
+  activityId?: string;
+  attachedEvidenceIds?: string[];
   date?: string;
   location?: string;
   participantsTotal?: number;
@@ -140,6 +175,22 @@ export interface AiReporterPriorNarrative {
   sourceSectionTitle: string;
 }
 
+/**
+ * The LLM the worker must call for this request — the tenant's own
+ * configuration or the platform default, resolved by the api per generation.
+ * `apiKey` travels only over the internal-token-protected localhost hop and is
+ * never logged or persisted by the worker. When `apiKey` is absent the worker
+ * falls back to its own env (`workers.env`) for the same provider only.
+ */
+export interface AiReporterModelConfig {
+  provider: string;
+  model?: string;
+  baseUrl?: string;
+  apiKey?: string;
+  /** Claude only: output_config.effort. */
+  effort?: string;
+}
+
 export interface AiReporterSectionRequest {
   section: AiReporterSectionBrief;
   context: AiReporterContext;
@@ -149,7 +200,7 @@ export interface AiReporterSectionRequest {
   retrievedEvidence: AiReporterEvidence[];
   priorNarrative: AiReporterPriorNarrative[];
   writerContractVersion: number;
-  model: { provider: string; model?: string };
+  model: AiReporterModelConfig;
 }
 
 export interface AiReporterProposedSource {
@@ -252,6 +303,10 @@ export interface AiReporterSectionResponse {
     usedFallback?: boolean;
     fallbackReason?: string;
     validatorIssues?: string[];
+    /** Quality v4 — donor-voice / word-minimum warnings (never fatal). */
+    qualityWarnings?: string[];
+    sectionKind?: string;
+    attempts?: number;
   };
 }
 
@@ -263,7 +318,7 @@ export interface AiReporterRewriteRequest {
   instructions?: string;
   sourceReferences: AiReporterSourceReference[];
   writerContractVersion: number;
-  model: { provider: string; model?: string };
+  model: AiReporterModelConfig;
 }
 
 export interface AiReporterRewriteResponse {

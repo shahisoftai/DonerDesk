@@ -296,6 +296,25 @@ export const CHECKLIST_ITEM_TYPE_LABEL: Record<string, string> = {
   UNREVIEWED_AI_OUTPUT: "Unreviewed AI output",
 };
 
+/**
+ * Plain-language "what to do" hint per checklist item type, shown alongside
+ * CHECKLIST_ITEM_TYPE_LABEL so a MEAL Officer never has to guess what a
+ * technical item type means or how to clear it.
+ */
+export const CHECKLIST_ITEM_TYPE_HINT: Record<string, string> = {
+  MISSING_EVIDENCE: "Upload or link a supporting file for this item.",
+  INCOMPLETE_EVIDENCE_METADATA: "Open the evidence file and fill in the missing details (type, date, or location).",
+  UNVERIFIED_INDICATOR: "Review this indicator's data and mark it verified once you've checked it.",
+  UNSUPPORTED_REPORT_CLAIM: "This statement in the report has no evidence backing it up — attach a source, edit the statement, or accept it with a note explaining why.",
+  MISSING_ANNEX: "Add the required annex document for this report.",
+  MISSING_PROCUREMENT_DOCUMENT: "Upload the procurement record (quote, PO, or receipt) this activity needs.",
+  MISSING_APPROVAL: "Get sign-off from the required approver before continuing.",
+  MISSING_DISAGGREGATION: "Break this figure down by the required categories (e.g. sex, age, disability).",
+  LATE_ACTIVITY_UPDATE: "This activity update is overdue — enter the missing data for the period.",
+  SENSITIVE_DATA_WARNING: "This item may contain sensitive information — confirm its confidentiality level is set correctly.",
+  UNREVIEWED_AI_OUTPUT: "An AI-drafted section still needs a human review before it can be approved.",
+};
+
 export const CHECKLIST_STATUS_LABEL: Record<string, string> = {
   OPEN: "Open",
   IN_PROGRESS: "In progress",

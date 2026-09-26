@@ -10,6 +10,7 @@ export * from "./report-plan.js";
 export * from "./report-claim.js";
 export * from "./generation-run.js";
 export * from "./gate-rules.js";
+export * from "./contradiction-lint.js";
 export * from "./indicator-calculator.js";
 export * from "./chart-config.js";
 export * from "./events.js";
@@ -20,3 +21,7 @@ export * from "./assertion.js";
 export * from "./report-revision.js";
 export * from "./reporting-requirement.js";
 export * from "./submission-snapshot.js";
+export * from "./requirement-mapping.js";
+export * from "./visibility-statement.js";
+export * from "./donor-pack-blueprints.js";
+

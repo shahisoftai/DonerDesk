@@ -6,3 +6,5 @@ python-docx==1.1.2
 PyPDF2==3.0.1
 openpyxl==3.1.5
 langgraph==0.2.60
+docxtpl==0.16.8
+anthropic>=1.8,<2

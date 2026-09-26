@@ -24,6 +24,7 @@ import type {
   ReportingRequirementPack,
   AwardReportingOverride,
   ResolvedReportingRequirements,
+  ReportingRequirement,
 } from "@donordesk/domain";
 import type { ReportingPeriod, ReportDraft, ReportSection } from "@donordesk/domain";
 
@@ -207,6 +208,13 @@ export interface GenerateReportDraftInput {
   generationRunId: string;
   /** Optional report/project/period/template context. Absent for legacy callers. */
   reportContext?: ReportGenerationContext;
+  /**
+   * Sections of this draft already written when this section is generated
+   * (section-wise generation). Non-synthesis sections use them to avoid
+   * repeating sibling facts; synthesis sections (executive summary) are drafted
+   * last and summarise them. Absent for legacy/full-draft callers.
+   */
+  draftedSections?: ReadonlyArray<{ title: string; content: string }>;
 }
 
 export interface ReportClaimDraft {
@@ -352,7 +360,11 @@ export interface GeneratedSectionResult {
       | "EMPTY"
       | "MALFORMED"
       | "PROVIDER_ERROR"
-      | "INSUFFICIENT_INPUT";
+      | "INSUFFICIENT_INPUT"
+      | "VALIDATOR_FAILED"
+      | "VALID_WITH_ISSUES";
+    /** Validator issues + donor-voice warnings that remained on the kept draft. */
+    qualityIssues?: string[];
   };
 }
 
@@ -362,6 +374,14 @@ export interface IReportDraftGenerator {
    * snapshots and billing records. The stub always returns stub values.
    */
   readonly model: LlmGeneratorModelInfo;
+
+  /**
+   * Whose AI account powers this generator. `TENANT` = the tenant's own AI
+   * provider (SuperAdmin tenant-scoped configuration): DonorDesk AI credits are
+   * neither enforced nor consumed. Absent or `PLATFORM` = DonorDesk's provider,
+   * metered against the tenant's monthly AI credits.
+   */
+  readonly providerSource?: "PLATFORM" | "TENANT";
 
   /**
    * Drafts sections from a report plan and verified findings. The LLM (or
@@ -438,6 +458,14 @@ export interface IReportPlanner {
     templateVersion: number;
     profileVersion: number;
     reportingProfileSnapshot: ReportingProfileSnapshot;
+    /**
+     * Resolved requirement snapshot for the period (quality remediation WS1).
+     * When provided, the planner stamps matched `requirementKeys`,
+     * `mandatoryQuestions`, and `requirementGuidance` onto the plan sections
+     * so narrators receive the donor's own guidance. Optional; absent for
+     * legacy callers, and implementations must not fail when omitted.
+     */
+    requirements?: ReportingRequirement[];
   }): Promise<Result<ReportPlan, DomainError>>;
 }
 
@@ -753,6 +781,7 @@ export interface IReportArtifactRepository {
 
 export interface IDonorTemplateMappingRepository {
   create(m: DonorTemplateMapping): Promise<Result<DonorTemplateMapping>>;
+  update(m: DonorTemplateMapping): Promise<Result<DonorTemplateMapping>>;
   findById(id: string, tenantId: TenantId): Promise<Result<DonorTemplateMapping | null>>;
   findByTemplate(templateId: string, tenantId: TenantId): Promise<Result<DonorTemplateMapping[]>>;
   findByTemplateAndVersion(templateId: string, version: number, tenantId: TenantId): Promise<Result<DonorTemplateMapping | null>>;

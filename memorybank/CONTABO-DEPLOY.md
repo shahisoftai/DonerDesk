@@ -1,6 +1,17 @@
 # Deploy to Contabo — Fastest Path
 
-**Last deploy:** 2026-09-01 — `releaseId=20260901160940`, ~8 min wall-clock
+**Last deploy:** 2026-09-26 — `releaseId=20260926153744` (`SCOPE=both`: report-quality v4, the Claude and Gemini providers, per-tenant provider resolution, and "tenant's own AI provider consumes no DonorDesk credits"). Green: api/web/workers/superadmin active, `/ready` 200, worker health 200, public `donordesk.online` + `sa.donordesk.online` 200, no warnings in the journals.
+- Pre-installed `anthropic==1.8.0` into the host worker venv (§9a; the venv has `pip`, and `uv` is not on the host PATH).
+- Env edits, with backups `*.bak.providers-20260926153736`:
+  - `workers.env`: `AI_REPORTER_DRAFT_TIMEOUT_MS=90000`, `AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS=200000`, `AI_REPORTER_CONTRACT_VERSION=4`.
+  - `api.env`: `AI_REPORTER_HTTP_TIMEOUT_MS=240000`, `AI_REPORTER_CONTRACT_VERSION=4`.
+- No migrations.
+- SuperAdmin shipped separately with a `.next` + `server.js` swap in `/opt/donordesk/app/superadmin`. BUILD_ID is `wsXef7TcybCfhFjNpzma-`; rollback is `/opt/donordesk/backups/superadmin-pre-20260926155153.tgz` or `.next.old`/`server.js.old`. `deploy-fast.sh` does NOT ship SuperAdmin.
+- **Gotcha:** re-provisioning (a SuperAdmin save, or the api's boot-time re-provision) rewrote both env files ~3 s *after* the deploy restarted the services, so they ran on stale env. After any deploy, compare `/proc/<pid>/environ` with the env files, and restart again if they differ.
+
+**Previous deploy:** 2026-09-18 — `releaseId=20260918043830` (see git history of this file).
+
+**Older deploy:** 2026-09-01 — `releaseId=20260901160940`, ~8 min wall-clock
 (96s build + **210s snapshot (foreground)** + 297s xfer + 8s restart + 10s verify).
 
 **Host:** `vmi2954830.contaboserver.net` (`109.123.248.253`) — SSH alias `contabo`.
@@ -287,6 +298,61 @@ ssh contabo '
 
 ---
 
+## 9b. pgvector extension + HNSW index (required once, before enabling semantic evidence retrieval)
+
+`infra/postgres/pgvector.sql` is a standalone idempotent DDL script (NOT a
+Prisma migration — Prisma cannot read/write the `vector` column type), so it
+is never applied automatically by `prisma migrate deploy`. It must be run by
+hand once per environment before `EMBEDDING_PROVIDER`/`OPENAI_API_KEY` are
+set, otherwise every `SemanticEvidenceRetriever` call fails closed to the
+lexical-matching fallback (safe, but not what you configured):
+
+```bash
+ssh contabo '
+  PGPASSWORD=$(grep "^DATABASE_ADMIN" /opt/donordesk/shared/api.env | ...) \
+  psql -h 127.0.0.1 -U donordesk_migrator -d donordesk < /opt/donordesk/app/infra/postgres/pgvector.sql
+'
+```
+
+Verify the extension and index exist:
+
+```bash
+ssh contabo "psql -h 127.0.0.1 -U donordesk_migrator -d donordesk -c \"\\dx vector\" -c \"\\di evidence_embedding_hnsw_idx\""
+```
+
+Then set `EMBEDDING_PROVIDER=openai` + `OPENAI_API_KEY` in `api.env`, restart
+the api, and run `pnpm --filter @donordesk/infrastructure embedding:backfill`
+once against existing evidence so historical files get embedded (new evidence
+is embedded going forward automatically whenever `AI_REPORTER_ENABLED` is set).
+
+---
+
+## 9a. Worker Python dependency changes (needed for the 2026-09-18 donor-template release, and any future one that touches `apps/workers/requirements.txt`)
+
+**`scripts/deploy-fast.sh` explicitly excludes `.venv/` from the worker
+artifact** (§5, `worker.tgz` = `apps/workers/app/` only) — it never installs
+or updates Python packages on the host. If a change adds a new entry to
+`apps/workers/requirements.txt` (as the 2026-09-18 donor-template feature did:
+`docxtpl` + its transitive deps `jinja2`, `docxcompose`, `babel`,
+`markupsafe`, `six`), the deploy will ship code that imports the new package
+**unconditionally at worker startup** (`apps/workers/app/main.py` imports
+`donor_template.router` at module load, not gated by any feature flag) —
+without a manual venv update first, `donordesk-workers` will crash-loop on
+the very next restart, taking the AI Reporter down with it (same process).
+
+**Before deploying a release that changes `requirements.txt`:**
+
+```bash
+ssh contabo 'cd /opt/donordesk/workers && uv pip install --python .venv/bin/python -r /opt/donordesk/app/apps/workers/requirements.txt'
+# then restart to confirm before proceeding with the wider deploy
+ssh contabo 'sudo systemctl restart donordesk-workers && sleep 3 && curl -fsS http://127.0.0.1:8092/v1/ai-reporter/health'
+```
+
+(`uv` was already present on the host during the 2026-09 work; if absent, the
+venv predates `pip` too — see `memorybank/Fixes.md` "AI Reporter completely
+non-functional on production" for how that was diagnosed. Fall back to
+whatever installer the host actually has, verified read-only first.)
+
 ## 10. Common pitfalls
 
 | Symptom | Cause | Fix |
@@ -299,3 +365,4 @@ ssh contabo '
 | Web OK but api 502 | Web reached the api through OLS and got a non-2xx | Check `journalctl -u donordesk-api -n 50`; check `host=127.0.0.1` is set in api.env. |
 | Build fails with `ELIFECYCLE` on `pnpm install` | Lockfile drift | `cd packages/infrastructure && pnpm install --no-frozen-lockfile` then re-run the deploy. |
 | `hostname contains invalid characters` | Local hostname has odd chars; gzip embeds it | The script sanitises and sets `GZIP=-n`. If you still see it, set `HOSTNAME=donordesk-deploy` in your shell. |
+| `donordesk-workers` crash-loops after a deploy that touched `requirements.txt` | New Python dependency not installed — the deploy script never touches `.venv/` | §9a — install the new dependency into the host venv, then restart, before assuming the deploy itself is broken. |

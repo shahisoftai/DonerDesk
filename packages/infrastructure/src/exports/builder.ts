@@ -1,9 +1,10 @@
-import type { IExportBuilder, ExportArtifacts, ExportChartInput } from "@donordesk/application";
-import { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType, TextRun, ImageRun } from "docx";
+import type { IExportBuilder, ExportArtifacts, ExportChartInput, IStorage, IDonorTemplateRenderer } from "@donordesk/application";
+import { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType, TextRun, ImageRun, PageBreak, TableOfContents } from "docx";
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
 import { renderChartPngCached, chartHasData } from "./chart-png-renderer.js";
+import { parseMarkdownBlocks, renderDocxBlocks, renderPdfBlocks } from "./markdown-renderer.js";
 
 function escapeCsv(value: string): string {
   if (value == null) return "";
@@ -17,6 +18,11 @@ function textRuns(s: string): TextRun[] {
 }
 
 export class DefaultExportBuilder implements IExportBuilder {
+  constructor(
+    private readonly donorTemplateStorage?: IStorage,
+    private readonly donorTemplateRenderer?: IDonorTemplateRenderer,
+  ) {}
+
   async build(input: Parameters<IExportBuilder["build"]>[0]): Promise<ExportArtifacts> {
     if (input.exportIntent === "DONOR_SUBMISSION") {
       if (input.watermark) {
@@ -52,13 +58,7 @@ export class DefaultExportBuilder implements IExportBuilder {
   }
 
   private async buildWord(input: Parameters<IExportBuilder["build"]>[0]): Promise<ExportArtifacts> {
-    const sections = input.sections.map(
-      (s) =>
-        new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          children: textRuns(s.title),
-        }),
-    );
+    const sections: Array<Paragraph | Table> = [];
     const chartImages = new Map<string, { png: Buffer; caption: string }>();
     if (input.charts && input.charts.length > 0) {
       for (const c of input.charts) {
@@ -72,7 +72,16 @@ export class DefaultExportBuilder implements IExportBuilder {
       }
     }
     for (const s of input.sections) {
-      sections.push(new Paragraph({ children: textRuns(s.content) }));
+      sections.push(
+        new Paragraph({
+          heading: HeadingLevel.HEADING_2,
+          children: textRuns(s.title),
+        }),
+      );
+      // Render the section's markdown natively: headings, bullet lists,
+      // emphasis, and real tables (previously one flat Paragraph of raw
+      // markdown text shipped to the donor).
+      sections.push(...renderDocxBlocks(parseMarkdownBlocks(s.content)));
       const chart = chartImages.get(s.title);
       if (chart) {
         sections.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "png", data: chart.png, transformation: { width: 540, height: 315 } })] }));
@@ -83,8 +92,9 @@ export class DefaultExportBuilder implements IExportBuilder {
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: [
         new TableRow({
+          tableHeader: true,
           children: ["Code", "Indicator", "Baseline", "Target", "Achievement", "Unit", "Status"].map(
-            (h) => new TableCell({ children: [new Paragraph({ children: textRuns(h) })] }),
+            (h) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })] }),
           ),
         }),
         ...input.indicators.map(
@@ -100,18 +110,20 @@ export class DefaultExportBuilder implements IExportBuilder {
     const doc = new Document({
       creator: "DonorDesk",
       title: input.reportTitle,
+      features: { updateFields: true },
       sections: [
         {
           properties: {},
           children: [
-            new Paragraph({
-              heading: HeadingLevel.TITLE,
-              alignment: AlignmentType.CENTER,
-              children: textRuns(input.reportTitle),
-            }),
-            new Paragraph({ children: textRuns(`Project: ${input.projectName}`) }),
-            new Paragraph({ children: textRuns(`Reporting period: ${input.reportingPeriodLabel}`) }),
-            new Paragraph({ children: textRuns("") }),
+            // Cover page.
+            new Paragraph({ heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER, spacing: { before: 2400 }, children: textRuns(input.reportTitle) }),
+            new Paragraph({ alignment: AlignmentType.CENTER, children: textRuns(`Project: ${input.projectName}`) }),
+            new Paragraph({ alignment: AlignmentType.CENTER, children: textRuns(`Reporting period: ${input.reportingPeriodLabel}`) }),
+            new Paragraph({ alignment: AlignmentType.CENTER, children: textRuns("Prepared with DonorDesk") }),
+            new Paragraph({ children: [new PageBreak()] }),
+            // Word populates this on open (features.updateFields).
+            new TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-3" }),
+            new Paragraph({ children: [new PageBreak()] }),
             ...sections,
             new Paragraph({
               heading: HeadingLevel.HEADING_1,
@@ -138,10 +150,12 @@ export class DefaultExportBuilder implements IExportBuilder {
     const doc = new PDFDocument({ margin: 50, info: { Title: input.reportTitle, Author: "DonorDesk" } });
     doc.on("data", (c) => chunks.push(c as Buffer));
     const done = new Promise<void>((resolve) => doc.on("end", () => resolve()));
-    doc.fontSize(20).text(input.reportTitle, { align: "center" });
-    doc.moveDown();
-    doc.fontSize(12).text(`Project: ${input.projectName}`);
-    doc.text(`Reporting period: ${input.reportingPeriodLabel}`);
+    // Cover page.
+    doc.fontSize(22).text(input.reportTitle, { align: "center" });
+    doc.moveDown(0.5);
+    doc.fontSize(12).text(`Project: ${input.projectName}`, { align: "center" });
+    doc.text(`Reporting period: ${input.reportingPeriodLabel}`, { align: "center" });
+    doc.text("Prepared with DonorDesk", { align: "center" });
     doc.moveDown();
     const chartImages = new Map<string, Buffer>();
     if (input.charts && input.charts.length > 0) {
@@ -155,9 +169,21 @@ export class DefaultExportBuilder implements IExportBuilder {
         }
       }
     }
+    // Contents (section list; PDFKit has no page-number pass, so entries are
+    // listed in reading order without page references).
+    doc.fontSize(14).text("Contents");
+    doc.fontSize(10);
     for (const s of input.sections) {
-      doc.fontSize(14).text(s.title);
-      doc.fontSize(11).text(s.content);
+      doc.text(`- ${s.title}`);
+    }
+    doc.moveDown();
+    doc.addPage();
+    for (const s of input.sections) {
+      doc.fontSize(14).font("Helvetica-Bold").text(s.title);
+      doc.font("Helvetica");
+      // Render the section's markdown natively instead of printing raw
+      // pipes/dashes: headings, bullets, emphasis, and ruled tables.
+      renderPdfBlocks(doc, parseMarkdownBlocks(s.content));
       const chart = chartImages.get(s.title);
       if (chart) {
         doc.moveDown();
@@ -170,8 +196,8 @@ export class DefaultExportBuilder implements IExportBuilder {
       }
       doc.moveDown();
     }
-    doc.fontSize(14).text("Indicator Progress");
-    doc.fontSize(10);
+    doc.fontSize(14).font("Helvetica-Bold").text("Indicator Progress");
+    doc.font("Helvetica").fontSize(10);
     for (const i of input.indicators) {
       doc.text(`${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, achievement ${i.achievement}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`);
     }
@@ -232,19 +258,50 @@ export class DefaultExportBuilder implements IExportBuilder {
     };
   }
 
+  /**
+   * Attempts to render the donor's own uploaded template via the docxtpl
+   * worker. Returns undefined (never throws) on ANY failure — no mapping
+   * configured, feature flag off, storage read failure, worker
+   * unreachable, render error — so `buildDonorTemplate()` always has a
+   * working fallback and an export never hard-fails because of this
+   * feature. Dark-launched behind `DONOR_TEMPLATE_RENDER_ENABLED=1`.
+   */
+  private async tryRenderDonorTemplate(input: Parameters<IExportBuilder["build"]>[0]): Promise<ExportArtifacts | undefined> {
+    if (process.env.DONOR_TEMPLATE_RENDER_ENABLED !== "1") return undefined;
+    if (!input.donorTemplate || !this.donorTemplateStorage || !this.donorTemplateRenderer) return undefined;
+
+    try {
+      const templatedBuffer = await this.donorTemplateStorage.read(input.donorTemplate.templatedFileKey);
+      const context: Record<string, string> = {};
+      for (const { placeholderKey, sectionTitle } of input.donorTemplate.placeholderSections) {
+        const section = input.sections.find((s) => s.title === sectionTitle);
+        context[placeholderKey] = section?.content ?? "";
+      }
+      const result = await this.donorTemplateRenderer.render({ templatedDocxBuffer: templatedBuffer, context });
+      if (!result.ok) return undefined;
+      return {
+        fileBuffer: result.value.renderedDocxBuffer,
+        contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        fileName: `${slug(input.projectName)}-${slug(input.reportingPeriodLabel)}-donor-template.docx`,
+      };
+    } catch {
+      return undefined;
+    }
+  }
+
   private async buildDonorTemplate(input: Parameters<IExportBuilder["build"]>[0]): Promise<ExportArtifacts> {
-    // The donor template itself is rendered by the Python workers (docxtpl).
-    // This TypeScript-side builder emits a placeholder-aware DOCX so the
-    // export pipeline and preflight continue to function without the worker.
-    const sections = input.sections.map(
-      (s) =>
-        new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          children: textRuns(s.title),
-        }),
-    );
+    const rendered = await this.tryRenderDonorTemplate(input);
+    if (rendered) return rendered;
+
+    // Fallback (default for every tenant without an approved, locked donor
+    // template mapping, and the safety net on any renderer/storage failure):
+    // a generic title+sections DOCX. Behaviour-identical to before this
+    // feature existed.
+    const sections: Array<Paragraph | Table> = [];
     for (const s of input.sections) {
-      sections.push(new Paragraph({ children: textRuns(s.content) }));
+      if (!s.title.trim()) continue;
+      sections.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: textRuns(s.title) }));
+      sections.push(...renderDocxBlocks(parseMarkdownBlocks(s.content)));
     }
     const doc = new Document({
       creator: "DonorDesk",

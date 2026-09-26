@@ -15,6 +15,7 @@ import { registerUserRoutes } from "./routes/users.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerProjectSetupRoutes } from "./routes/project-setup.js";
 import { registerTemplateRoutes } from "./routes/templates.js";
+import { registerDonorTemplateMappingRoutes } from "./routes/donor-template-mapping.js";
 import { registerLogframeRoutes } from "./routes/logframe.js";
 import { registerEvidenceRoutes } from "./routes/evidence.js";
 import { registerStorageRoutes } from "./routes/storage.js";
@@ -143,6 +144,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerProjectRoutes(instance);
     await registerProjectSetupRoutes(instance);
     await registerTemplateRoutes(instance);
+    await registerDonorTemplateMappingRoutes(instance);
     await registerLogframeRoutes(instance);
     await registerEvidenceRoutes(instance);
     await registerStorageRoutes(instance);

@@ -109,10 +109,12 @@ test("assertBannedPhrases allows clean prose", () => {
   assert.equal(assertBannedPhrases(section).ok, true);
 });
 
-test("assertWordCount enforces min and max", () => {
+test("assertWordCount: minWords shortfall is a warning, maxWords is hard", () => {
   const section = { ...baseSection, content: "one two three" };
-  const result = assertWordCount(section, { minWords: 10, maxWords: 20 });
-  assert.equal(result.ok, false);
+  const short = assertWordCount(section, { minWords: 10, maxWords: 20 });
+  assert.equal(short.ok, true, "padding to a minimum produces speculative prose");
+  assert.match(short.warnings.join(" "), /minWords/);
+  assert.equal(assertWordCount(section, { maxWords: 2 }).ok, false);
 });
 
 test("assertWordCount passes when in band", () => {

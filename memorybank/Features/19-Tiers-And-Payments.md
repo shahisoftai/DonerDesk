@@ -480,6 +480,13 @@ One customer credit means one successfully persisted full report draft. A
 regeneration consumes another; manual reports do not. Failed operations release
 customer credits but still record provider tokens/cost.
 
+**Tenant's own AI provider (2026-09-26, deployed `20260926153744`).** When a
+tenant has its own enabled LLM configuration (SuperAdmin tenant-scoped row), its
+reports are drafted with that provider only, and DonorDesk AI credits are neither
+checked nor reserved. The generator is tagged `providerSource: "TENANT"`, the run
+is recorded with `billableUnits = 0`, and `countAiReportDrafts` counts only
+`billableUnits > 0`. Test: `packages/application/test/tenant-own-ai-provider.test.mjs`.
+
 Before enforcement:
 
 - implement `ILlmRunRepository`/usage ledger;

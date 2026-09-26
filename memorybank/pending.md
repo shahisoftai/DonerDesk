@@ -285,6 +285,45 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
 - **Email/notification delivery** — in-app only; no delivery claims.
 - **Report reject/request-changes endpoint** — **DONE 2026-08-16 (Feature 20 core)**. `POST /v1/report-drafts/:id/reject` returns drafts to DRAFT with an audit trail.
 
+## SuperAdmin LLM providers — deploy follow-ups (added 2026-09-26)
+
+- [x] Install `anthropic>=1.8,<2` in the host worker venv, and make sure the api
+  `node_modules` has `@anthropic-ai/sdk` (done 2026-09-26, release `20260926153744`). See `Fixes.md` ("SuperAdmin LLM providers").
+- [ ] In SuperAdmin, add Claude and/or Gemini, run **Test connection**, then enable the
+  chosen all-tenants default. Set the DeepSeek model explicitly (the old alias is
+  reportedly retired).
+- [x] Reports generated with a **tenant's own API** no longer consume DonorDesk
+  AI credits (user decision, deployed 2026-09-26).
+- [x] Fix the production default model. The invalid `Haiku-4.5` was replaced by
+  `claude-sonnet-4-6` (validated by Test connection, 2026-09-26).
+- [ ] **Fund the Anthropic account.** A production smoke test (2026-09-26) got a
+  400 "credit balance is too low", so every AI section currently falls back to the
+  deterministic draft. After topping up, generate one report and check
+  `llm_runs.responseText` for `parseOutcome: VALID`.
+- [ ] Ship the stub fallback-text fix ("Performance: positive (undefined)" guard in
+  `report-draft-generator.ts`, committed, not yet deployed) with the next deploy.
+- [ ] Optional: teach `deploy-fast.sh` to run `pip install -r requirements.txt` in
+  the worker venv.
+
+## Report-quality v4 — deploy follow-ups (added 2026-09-26)
+
+- [x] Deploy report-quality v4 (release `20260926153744`). No Prisma migration is needed.
+  Deploy the worker and the api together, because the wire models use `extra="forbid"`.
+- [ ] `workers.env`: change the **preserved** `AI_REPORTER_DRAFT_TIMEOUT_MS=45000` to
+  `90000` and `AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS` to `200000`. Set
+  `AI_REPORTER_CONTRACT_VERSION=4` on both sides, or remove it. If
+  `AI_REPORTER_MAX_TOKENS` is pinned at 2048, raise it to 4096.
+- [ ] `api.env`: add `AI_REPORTER_HTTP_TIMEOUT_MS=240000`, or re-provision.
+- [ ] After the deploy, generate one report and check `llm_runs.responseText` for
+  `parseOutcome` and `qualityIssues`. Track the `VALIDATOR_FAILED` rate per section.
+- [ ] Set `EMBEDDING_PROVIDER` and a key, then run `embedding:backfill`, so retrieval
+  uses semantic search. The lexical ranker is now section-aware, but semantic search
+  is stronger.
+- [ ] Delete the unused `apps/workers/app/ai_reporter/critique_writer.py` and
+  `refiner.py` once their uncommitted edits are reviewed.
+- [ ] Optional: an interactive ECharts view of the CHART artifact in the section
+  editor. The Preview currently shows it as a data table.
+
 ## High priority — production hardening
 
 - [x] **API bind to loopback only.** **DONE 2026-08-13 (release `20260813064828`).**
@@ -640,8 +679,16 @@ actually supports; unsupported controls are omitted rather than simulated.
   accepts `exportIntent` (`INTERNAL_REVIEW` watermark vs `DONOR_SUBMISSION`
   requiring a sealed `SubmissionSnapshot`); the export builder enforces the
   invariants server-side.
-- [ ] Enhanced formatting for donor-specific templates (real `docxtpl` worker
-  fidelity remains a documented swap point — `DONOR_TEMPLATE` is placeholder-aware)
+- [x] **Real `docxtpl` worker fidelity (2026-09-18, NOT YET DEPLOYED)** — the
+  documented swap point is closed: full detect→auto-map→review→approve→lock→
+  render flow built end-to-end (structural DOCX parser, pure auto-mapper,
+  4 new use-case handlers, 6 new API routes, new `apps/workers/app/donor_template/`
+  docxtpl worker package). Dark-launched behind `DONOR_TEMPLATE_RENDER_ENABLED`;
+  falls back to the unchanged generic DOCX for every tenant that hasn't gone
+  through the new flow. See `Fixes.md` "Systematic fix of the 8
+  AI-report-generation audit findings". Still needs: migration applied to a
+  live DB, a deploy, and one real donor template piloted end-to-end before the
+  flag is enabled in production.
 - [ ] Export progress tracking
 - [ ] Automated export on period close
 - [ ] Export to Google Drive / Dropbox destination
@@ -805,3 +852,20 @@ Remaining (tracked here, not claimed):
 > retry) is tracked as a deploy-tooling item — see
 > `memorybank/contabo-ops.md` (Runtime provisioning section, sharp-edge
 > note) and `memorybank/imp/RUNTIME-PROVISIONING.md` §8.
+
+## Done (2026-09-18)
+
+- [x] **AI Reporter latency rework (2026-09-18)** — closes out the
+  section-generation performance rework previously noted as deferred
+  (`memorybank/Fixes.md`, "Systematic fix of the 8 AI-report-generation audit
+  findings"). The v1 **draft → critique → refine** loop noted above
+  (2026-08-28) is collapsed to a single LLM call per section (draft only,
+  with a self-review rule added to the writer contract); the deterministic
+  `artifact_validators.run_all` gate is unchanged. Sections that were
+  previously drafted strictly one after another now draft with bounded
+  concurrency (`AI_REPORTER_SECTION_CONCURRENCY`, default 3). The per-section
+  timeout (`AI_REPORTER_DRAFT_TIMEOUT_MS=45000`, noted above at 2026-08-29)
+  now actually cancels/abandons a slow in-flight call instead of only
+  checking elapsed time after the blocking call returns. See
+  `memorybank/Fixes.md` ("AI Reporter latency rework — single-call pipeline +
+  parallel sections", 2026-09-18) for the full file-by-file record.

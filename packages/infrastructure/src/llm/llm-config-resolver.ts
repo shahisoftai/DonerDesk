@@ -17,10 +17,22 @@ type PlatformConfigurationRow = {
   secretIv: string | null;
   secretTag: string | null;
   secretVersion: number;
+  updatedAt: Date | string;
 };
 
 export interface PlatformLlmConfigInput {
   tenantId?: string;
+}
+
+/** Providers a PlatformConfiguration LLM row may select. */
+export const PLATFORM_LLM_PROVIDERS = ["openai", "anthropic", "gemini", "deepseek", "minimax", "ollama"] as const;
+
+export interface ResolvedLlmConfig extends LLMProviderConfig {
+  /** TENANT = the tenant's own API configuration; GLOBAL = the platform default. */
+  scope: "TENANT" | "GLOBAL";
+  configId: string;
+  /** Changes whenever the row is edited or its secret rotated (cache key). */
+  fingerprint: string;
 }
 
 export class PlatformLlmConfigResolver {
@@ -33,7 +45,13 @@ export class PlatformLlmConfigResolver {
     this.cipher = new SecretCipher(masterKey);
   }
 
-  async resolve(input?: PlatformLlmConfigInput): Promise<Result<LLMProviderConfig | null, DomainError>> {
+  /**
+   * The LLM every report generation for `tenantId` must use: the tenant's own
+   * enabled configuration when present, otherwise the enabled GLOBAL (platform
+   * default) configuration. The control plane keeps at most one enabled row
+   * per scope, so the choice is deterministic.
+   */
+  async resolve(input?: PlatformLlmConfigInput): Promise<Result<ResolvedLlmConfig | null, DomainError>> {
     const rows = await this.prisma.$queryRawUnsafe<PlatformConfigurationRow[]>(
       `SELECT * FROM "PlatformConfiguration"
        WHERE "category" = 'LLM'
@@ -75,7 +93,7 @@ export class PlatformLlmConfigResolver {
     const config = JSON.parse(String(row.configurationJson || "{}")) as Record<string, unknown>;
 
     const provider = row.provider as LLMProviderConfig["provider"];
-    if (!["openai", "anthropic", "deepseek", "minimax", "ollama"].includes(provider)) {
+    if (!(PLATFORM_LLM_PROVIDERS as readonly string[]).includes(provider)) {
       return { ok: true, value: null };
     }
 
@@ -105,7 +123,11 @@ export class PlatformLlmConfigResolver {
         baseUrl,
         timeoutMs: typeof config.timeoutMs === "number" ? config.timeoutMs : undefined,
         groupId: typeof config.groupId === "string" ? config.groupId : undefined,
+        effort: typeof config.effort === "string" && config.effort.trim() ? config.effort.trim() : undefined,
         apiKey,
+        scope: row.scopeType === "TENANT" ? "TENANT" : "GLOBAL",
+        configId: row.id,
+        fingerprint: `${row.id}:${new Date(row.updatedAt).getTime()}:${row.secretVersion}`,
       },
     };
   }

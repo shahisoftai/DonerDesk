@@ -9,7 +9,7 @@ const tierPlanCodes = ["STARTER", "TEAM", "GROWTH", "ENTERPRISE"];
 
 const roles = ["ADMIN", "PROJECT_MANAGER", "ME_OFFICER", "GRANTS_OFFICER", "FIELD_OFFICER", "COMPLIANCE_OFFICER", "VIEWER"];
 const providerGroups = {
-  ai: { category: "LLM", providers: ["openai", "anthropic", "deepseek", "minimax"] },
+  ai: { category: "LLM", providers: ["anthropic", "gemini", "deepseek", "minimax", "openai"] },
   email: { category: "EMAIL", providers: ["brevo", "postmark", "resend", "ses", "smtp"] },
   storage: { category: "OBJECT_STORAGE", providers: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"] },
   backups: { category: "BACKUP", providers: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"] },
@@ -18,7 +18,8 @@ const providerGroups = {
 
 const fields: Record<string, { config: string[]; secrets: string[] }> = {
   openai: { config: ["model", "baseUrl", "organizationId"], secrets: ["apiKey"] },
-  anthropic: { config: ["model", "baseUrl"], secrets: ["apiKey"] },
+  anthropic: { config: ["model", "effort", "baseUrl"], secrets: ["apiKey"] },
+  gemini: { config: ["model", "baseUrl"], secrets: ["apiKey"] },
   deepseek: { config: ["model", "baseUrl"], secrets: ["apiKey"] },
   minimax: { config: ["model", "baseUrl", "groupId"], secrets: ["apiKey"] },
   brevo: { config: ["senderEmail", "senderName"], secrets: ["apiKey"] },
@@ -51,7 +52,7 @@ export function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ type: "ok" | "error"; text: string } | null>(null);
-  const [modal, setModal] = useState<null | { kind: "tenant" | "user" | "provider" | "tier" | "tierTenant"; row?: AnyRow }>(null);
+  const [modal, setModal] = useState<null | { kind: "tenant" | "user" | "provider" | "tier" | "tierTenant" | "resetPassword"; row?: AnyRow }>(null);
   const [tenants, setTenants] = useState<AnyRow[]>([]);
 
   const endpoint = tab === "ai" || tab === "email" || tab === "storage" || tab === "backups" || tab === "connectors" ? "configurations" : tab;  async function load() {
@@ -84,10 +85,10 @@ export function Dashboard() {
       <header className="topbar"><div><h1>{navigation.find(x => x[0] === tab)?.[1]}</h1><p>DonorDesk global platform control plane</p></div><div className="top-actions"><div className="secure">● SECURE SESSION</div><button onClick={async()=>{await api("auth/logout",{method:"POST"});location.reload()}}>Sign out</button></div></header>
       {notice && <div className={`toast ${notice.type}`}>{notice.text}</div>}
       {tab === "overview" && <Overview data={data} onNavigate={changeTab} />}
-      {tab === "tenants" && <Tenants rows={Array.isArray(data) ? data : []} onAdd={() => setModal({ kind: "tenant" })} onEdit={(row: AnyRow) => setModal({ kind: "tenant", row })} onDelete={(row: AnyRow) => action(() => api(`tenants/${row.id}`, { method: "DELETE", body: JSON.stringify({ confirmation: prompt(`Type ${row.name} to permanently delete this empty tenant`) || "" }) }), "Tenant deleted")} />}
+      {tab === "tenants" && <Tenants rows={Array.isArray(data) ? data : []} onAdd={() => setModal({ kind: "tenant" })} onEdit={(row: AnyRow) => setModal({ kind: "tenant", row })} onDelete={(row: AnyRow) => { const confirmation = prompt(`Type ${row.name} to permanently delete this empty tenant`); if (confirmation === null) return; void action(() => api(`tenants/${row.id}`, { method: "DELETE", body: JSON.stringify({ confirmation }) }), "Tenant deleted"); }} />}
       {tab === "tiers" && <Tiers data={data || {}} onEditTier={(tier: AnyRow) => setModal({ kind: "tier", row: tier })} onResetTier={(tier: AnyRow) => confirm(`Revert ${tier.name} (${tier.planCode}) to the static catalog? Any global overrides are removed.`) && void action(() => api(`tiers/${tier.planCode}/reset`, { method: "POST" }), "Tier reset to catalog")} onManageTenant={(row: AnyRow) => setModal({ kind: "tierTenant", row })} />}
       {tab === "billing" && <Billing rows={Array.isArray(data) ? data : []} onSetCredits={(row: AnyRow) => { const value = prompt(`Set monthly AI draft credits for ${row.name} (current: ${row.monthlyAiDraftCredits})`, String(row.monthlyAiDraftCredits)); if (value !== null && value.trim() !== "") { const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0) void action(() => api(`tenants/${row.tenantId}/credits`, { method: "POST", body: JSON.stringify({ mode: "SET", value: parsed, reason: "superadmin" }) }), "Credits updated"); else flash("error", "Credit value must be a non-negative integer"); } }} onAdjustCredits={(row: AnyRow, mode: "INCREASE" | "DECREASE") => { const value = prompt(mode === "INCREASE" ? `Increase AI draft credits for ${row.name} by:` : `Reduce AI draft credits for ${row.name} by:`); if (value !== null && value.trim() !== "") { const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0) void action(() => api(`tenants/${row.tenantId}/credits`, { method: "POST", body: JSON.stringify({ mode, value: parsed, reason: "superadmin" }) }), "Credits updated"); else flash("error", "Credit value must be a non-negative integer"); } }} onResetCounter={(row: AnyRow) => confirm(`Reset the current month's AI credit usage for ${row.name}? This does not change the allowance.`) && void action(() => api(`tenants/${row.tenantId}/credits/reset`, { method: "POST" }), "Usage counter reset")} />}
-      {tab === "users" && <Users rows={Array.isArray(data) ? data : []} tenants={tenants} onAdd={() => setModal({ kind: "user" })} onEdit={(row: AnyRow) => setModal({ kind: "user", row })} onReset={(row: AnyRow) => { const password = prompt(`Enter a new password (minimum 12 characters) for ${row.email}`); if (password) void action(() => api(`users/${row.id}`, { method: "PATCH", body: JSON.stringify({ password }) }), "Password reset successfully"); }} onDelete={(row: AnyRow) => confirm(`Delete ${row.email}? This cannot be undone.`) && void action(() => api(`users/${row.id}`, { method: "DELETE" }), "User deleted")} />}
+      {tab === "users" && <Users rows={Array.isArray(data) ? data : []} tenants={tenants} onAdd={() => setModal({ kind: "user" })} onEdit={(row: AnyRow) => setModal({ kind: "user", row })} onReset={(row: AnyRow) => setModal({ kind: "resetPassword", row })} onDelete={(row: AnyRow) => confirm(`Delete ${row.email}? This cannot be undone.`) && void action(() => api(`users/${row.id}`, { method: "DELETE" }), "User deleted")} />}
       {(tab in providerGroups) && <Providers tab={tab as keyof typeof providerGroups} rows={(Array.isArray(data) ? data : []).filter((x: AnyRow) => x.category === providerGroups[tab as keyof typeof providerGroups].category)} onAdd={() => setModal({ kind: "provider" })} onEdit={(row: AnyRow) => setModal({ kind: "provider", row })} onTest={(row: AnyRow) => action(() => api(`configurations/${row.id}/test`, { method: "POST" }), "Connection test completed")} onToggle={(row: AnyRow) => action(() => api("configurations", { method: "PUT", body: JSON.stringify(configurationPayload(row, { enabled: !row.enabled })) }), row.enabled ? "Provider disabled" : "Provider enabled")} onDelete={(row: AnyRow) => confirm(`Delete ${row.displayName}? Encrypted credentials will also be removed.`) && void action(() => api(`configurations/${row.id}`, { method: "DELETE" }), "Configuration deleted")} />}
       {tab === "audit" && <Audit rows={Array.isArray(data) ? data : []} />}
       {tab === "kestra" && <Kestra data={data || {}} />}
@@ -95,6 +96,7 @@ export function Dashboard() {
     </main>
     {modal?.kind === "tenant" && <TenantModal row={modal.row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(modal.row ? `tenants/${modal.row.id}` : "tenants", { method: modal.row ? "PATCH" : "POST", body: JSON.stringify(value) }), modal.row ? "Tenant updated" : "Tenant created")} />}
     {modal?.kind === "user" && <UserModal row={modal.row} tenants={tenants} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(modal.row ? `users/${modal.row.id}` : "users", { method: modal.row ? "PATCH" : "POST", body: JSON.stringify(value) }), modal.row ? "User updated" : "User created")} />}
+    {modal?.kind === "resetPassword" && modal.row && <UserResetPasswordModal row={modal.row} busy={busy} onClose={() => setModal(null)} />}
     {modal?.kind === "provider" && <ProviderModal group={providerGroups[tab as keyof typeof providerGroups]} row={modal.row} tenants={tenants} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api("configurations", { method: "PUT", body: JSON.stringify(value) }), modal.row ? "Configuration updated and secrets rotated" : "Credentials encrypted and saved")} />}
     {modal?.kind === "tier" && (() => { const row = modal.row!; return <TierModal row={row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(`tiers/${row.planCode}`, { method: "PUT", body: JSON.stringify(value) }), "Tier updated globally")} />; })()}
     {modal?.kind === "tierTenant" && (() => { const row = modal.row!; return <TenantTierModal row={row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(`tenants/${row.tenantId}/tier`, { method: "POST", body: JSON.stringify({ planCode: value.planCode, reason: value.reason, limits: value.customLimits ? value.limits : undefined }) }), "Tenant tier updated")} onReset={() => action(() => api(`tenants/${row.tenantId}/tier/reset`, { method: "POST" }), "Tenant tier overrides reset")} />; })()}
@@ -137,7 +139,7 @@ function Billing({ rows, onSetCredits, onAdjustCredits, onResetCounter }: any) {
   </Resource>;
 }
 
-function Providers({ tab, rows, onAdd, onEdit, onTest, onToggle, onDelete }: any) { const allMeta: Record<string, string[]> = { ai: ["AI and language models", "Configure models used for drafting, tagging and analysis.", "Add LLM provider"], email: ["Transactional email", "Control outbound invitations, alerts and notifications.", "Add email provider"], storage: ["Object storage", "Manage evidence and export storage destinations.", "Add storage"], backups: ["Encrypted off-host backups", "Configure independent disaster-recovery destinations.", "Add backup target"], connectors: ["Inbound data connectors", "Ingest evidence and field data from external systems.", "Add connector"] }; const meta = allMeta[String(tab)]!; return <Resource title={meta[0]} description={meta[1]} add={meta[2]} onAdd={onAdd}><div className="provider-grid">{rows.length === 0 && <Empty text="No provider configured yet." />}{rows.map((r: AnyRow) => <article className="provider-card" key={r.id}><div className="provider-head"><span className="provider-icon">{providerIcon(r.provider)}</span><div><h3>{r.displayName}</h3><p>{pretty(r.provider)} · {r.scopeType === "TENANT" ? `Tenant ${r.scopeId}` : "All tenants"}</p></div><Badge ok={r.enabled}>{r.enabled ? "Active" : "Disabled"}</Badge></div><div className="provider-meta"><span>Credentials <strong>{r.secretConfigured ? "✓ Encrypted" : "Not set"}</strong></span><span>Last test <strong>{r.lastTestStatus || "Never"}</strong></span><span>Updated <strong>{date(r.updatedAt)}</strong></span></div>{r.lastTestMessage && <p className={`test-result ${r.lastTestStatus === "SUCCESS" ? "pass" : "fail"}`}>{r.lastTestMessage}</p>}<div className="card-actions"><button onClick={() => onTest(r)}>Test connection</button><button onClick={() => onToggle(r)}>{r.enabled ? "Disable" : "Enable"}</button><button onClick={() => onEdit(r)}>Edit / rotate keys</button><button className="danger-link" onClick={() => onDelete(r)}>Delete</button></div></article>)}</div></Resource>; }
+function Providers({ tab, rows, onAdd, onEdit, onTest, onToggle, onDelete }: any) { const allMeta: Record<string, string[]> = { ai: ["AI and language models", "The enabled all-tenants provider drafts every tenant's reports. A tenant-scoped provider (the tenant's own API) overrides it for that tenant. Enabling a provider switches off the previous one in the same scope.", "Add LLM provider"], email: ["Transactional email", "Control outbound invitations, alerts and notifications.", "Add email provider"], storage: ["Object storage", "Manage evidence and export storage destinations.", "Add storage"], backups: ["Encrypted off-host backups", "Configure independent disaster-recovery destinations.", "Add backup target"], connectors: ["Inbound data connectors", "Ingest evidence and field data from external systems.", "Add connector"] }; const meta = allMeta[String(tab)]!; return <Resource title={meta[0]} description={meta[1]} add={meta[2]} onAdd={onAdd}><div className="provider-grid">{rows.length === 0 && <Empty text="No provider configured yet." />}{rows.map((r: AnyRow) => <article className="provider-card" key={r.id}><div className="provider-head"><span className="provider-icon">{providerIcon(r.provider)}</span><div><h3>{r.displayName}</h3><p>{pretty(r.provider)} · {r.scopeType === "TENANT" ? `Tenant's own API · ${r.scopeId}` : "All tenants"}{r.category === "LLM" && safeJson(r.configurationJson, {}).model ? ` · ${safeJson(r.configurationJson, {}).model}` : ""}</p></div><Badge ok={r.enabled}>{r.enabled ? (r.category === "LLM" ? (r.scopeType === "TENANT" ? "Active for tenant" : "Default for all tenants") : "Active") : "Disabled"}</Badge></div><div className="provider-meta"><span>Credentials <strong>{r.secretConfigured ? "✓ Encrypted" : "Not set"}</strong></span><span>Last test <strong>{r.lastTestStatus || "Never"}</strong></span><span>Updated <strong>{date(r.updatedAt)}</strong></span></div>{r.lastTestMessage && <p className={`test-result ${r.lastTestStatus === "SUCCESS" ? "pass" : "fail"}`}>{r.lastTestMessage}</p>}<div className="card-actions"><button onClick={() => onTest(r)}>Test connection</button><button onClick={() => onToggle(r)}>{r.enabled ? "Disable" : "Enable"}</button><button onClick={() => onEdit(r)}>Edit / rotate keys</button><button className="danger-link" onClick={() => onDelete(r)}>Delete</button></div></article>)}</div></Resource>; }
 
 function Tiers({ data, onEditTier, onResetTier, onManageTenant }: any) {
   const catalog: AnyRow[] = Array.isArray(data.catalog) ? data.catalog : [];
@@ -301,13 +303,85 @@ function UserModal({ row, tenants, busy, onClose, onSave }: any) {
   return <Modal title={row ? "Edit user" : "Create user"} subtitle="Tenant membership, role and account access" onClose={onClose}><FormGrid>{select("Tenant", "tenantId", tenants.map((x: AnyRow) => x.tenantId), form, setForm, row ? true : false, Object.fromEntries(tenants.map((x: AnyRow) => [x.tenantId, x.name])))}{input("Full name", "name", form, setForm)}{input("Email address", "email", form, setForm, { type: "email", disabled: Boolean(row) })}{select("Role", "role", roles, form, setForm)}{select("Account status", "status", ["ACTIVE", "INVITED", "SUSPENDED", "REMOVED"], form, setForm)}{!row && input("Temporary password", "password", form, setForm, { type: "password", placeholder: "Minimum 12 characters" })}</FormGrid><ModalActions busy={busy} onClose={onClose} onSave={() => onSave(row ? { name: form.name, role: form.role, status: form.status } : form)} label={row ? "Save user" : "Create user"} /></Modal>;
 }
 
+const resetReasons = ["User forgot password", "Account locked out", "Security precaution", "Onboarding new user", "Offboarding / handover", "Other (describe)"];
+
+function passwordStrength(value: string): { score: number; label: string } {
+  let score = 0;
+  if (value.length >= 12) score += 1;
+  if (value.length >= 16) score += 1;
+  if (/[a-z]/.test(value) && /[A-Z]/.test(value)) score += 1;
+  if (/[0-9]/.test(value)) score += 1;
+  if (/[^A-Za-z0-9]/.test(value)) score += 1;
+  const labels = ["Too short", "Weak", "Fair", "Good", "Strong", "Excellent"];
+  return { score, label: labels[Math.min(score, 5)] as string };
+}
+
+function UserResetPasswordModal({ row, busy, onClose }: any) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [reasonChoice, setReasonChoice] = useState(resetReasons[0]);
+  const [reasonText, setReasonText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const strength = passwordStrength(password);
+  const reason = reasonChoice === "Other (describe)" ? reasonText.trim() : reasonChoice;
+
+  async function submit() {
+    setError(null);
+    if (password.length < 12) { setError("Password must be at least 12 characters."); return; }
+    if (password !== confirm) { setError("Passwords do not match."); return; }
+    if (!reason) { setError("A reason is required for the audit trail."); return; }
+    setSaving(true);
+    try {
+      await api(`users/${row.id}`, { method: "PATCH", body: JSON.stringify({ password, reason }) });
+      setDone(true);
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setSaving(false); }
+  }
+
+  async function copy() {
+    try { await navigator.clipboard.writeText(password); setCopied(true); window.setTimeout(() => setCopied(false), 2000); } catch { /* clipboard unavailable */ }
+  }
+
+  if (done) return <Modal title="Password reset" subtitle={`${row.email} can now sign in with the new password`} onClose={onClose}>
+    <div className="security-note">Share this password with the user through a secure channel. It will not be shown again.</div>
+    <div className="form-grid"><label className="field full"><span>New password</span>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input type={revealed ? "text" : "password"} readOnly value={password} onFocus={e => e.currentTarget.select()} style={{ flex: 1 }} />
+        <button onClick={() => setRevealed(!revealed)}>{revealed ? "Hide" : "Show"}</button>
+        <button className="primary" onClick={copy}>{copied ? "Copied" : "Copy"}</button>
+      </div>
+    </label></div>
+    <ModalActions busy={false} onClose={onClose} onSave={onClose} label="Done" />
+  </Modal>;
+
+  return <Modal title="Reset password" subtitle={`Set a new password for ${row.email}`} onClose={onClose}>
+    <FormGrid>
+      <label className="field"><span>New password</span><input type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Minimum 12 characters" /></label>
+      <label className="field"><span>Confirm password</span><input type="password" autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat the password" /></label>
+      <div className="field full"><span>Strength <strong>{password ? strength.label : ""}</strong></span>
+        <div style={{ display: "flex", gap: 4 }}>{[0, 1, 2, 3, 4].map(i => <div key={i} style={{ height: 6, flex: 1, borderRadius: 3, background: password && i < strength.score ? (strength.score <= 2 ? "#dc2626" : strength.score <= 3 ? "#d97706" : "#16a34a") : "rgba(148,163,184,.3)" }} />)}</div>
+      </div>
+      <label className="field"><span>Reason (audit trail)</span>
+        <select value={reasonChoice} onChange={e => setReasonChoice(e.target.value)}>{resetReasons.map(r => <option key={r} value={r}>{r}</option>)}</select>
+      </label>
+      {reasonChoice === "Other (describe)" && <label className="field"><span>Describe the reason</span><input value={reasonText} onChange={e => setReasonText(e.target.value)} maxLength={200} placeholder="Required" /></label>}
+    </FormGrid>
+    <div className="security-note">🔒 The password is stored hashed. The reset is recorded in the audit trail with your reason and this action invalidates the user's existing sessions.</div>
+    {error && <div className="test-result fail">{error}</div>}
+    <ModalActions busy={saving} onClose={onClose} onSave={submit} label="Reset password" />
+  </Modal>;
+}
+
 function ProviderModal({ group, row, tenants, busy, onClose, onSave }: any) {
   const initialConfig = safeJson(row?.configurationJson, {}), [provider, setProvider] = useState(row?.provider || group.providers[0]);
   const [base, setBase] = useState({ displayName: row?.displayName || "", scopeType: row?.scopeType || "GLOBAL", scopeId: row?.scopeId || "", enabled: row?.enabled ?? true });
   const [configuration, setConfiguration] = useState<Record<string, string>>(initialConfig);
   const [secrets, setSecrets] = useState<Record<string, string>>({});
   const spec = fields[provider] || { config: [], secrets: [] };
-  return <Modal title={row ? "Edit configuration" : "Add provider"} subtitle="Credentials are encrypted before they are stored" onClose={onClose} wide><FormGrid>{select("Provider", "provider", [...group.providers], { provider }, (x: any) => { setProvider(x.provider); setConfiguration({}); setSecrets({}); }, Boolean(row))}{input("Display name", "displayName", base, setBase, { placeholder: "e.g. Primary production provider" })}{select("Scope", "scopeType", ["GLOBAL", "TENANT"], base, setBase)}{base.scopeType === "TENANT" && select("Tenant", "scopeId", tenants.map((x: AnyRow) => x.tenantId), base, setBase, false, Object.fromEntries(tenants.map((x: AnyRow) => [x.tenantId, x.name])))}<div className="section-label full">Configuration</div>{spec.config.map(name => input(pretty(name), name, configuration, setConfiguration, { placeholder: placeholder(name) }))}<div className="section-label full">Credentials <span>encrypted · never displayed again</span></div>{spec.secrets.map(name => <label className={`field ${name.toLowerCase().includes("json") ? "full" : ""}`} key={name}><span>{pretty(name)} {row?.secretConfigured && <em>leave blank to keep current</em>}</span>{name.toLowerCase().includes("json") ? <textarea rows={5} value={secrets[name] || ""} onChange={e => setSecrets({ ...secrets, [name]: e.target.value })} /> : <input type="password" autoComplete="new-password" value={secrets[name] || ""} onChange={e => setSecrets({ ...secrets, [name]: e.target.value })} placeholder={row?.secretConfigured ? "•••••••• (unchanged)" : "Required"} />}</label>)}<label className="check full"><input type="checkbox" checked={base.enabled} onChange={e => setBase({ ...base, enabled: e.target.checked })} /> Enable this configuration immediately</label></FormGrid><div className="security-note">🔒 Secrets are protected with AES-256-GCM. Saved credentials cannot be viewed or copied back out of DonorDesk.</div><ModalActions busy={busy} onClose={onClose} onSave={() => onSave({ id: row?.id, category: group.category, provider, ...base, scopeId: base.scopeType === "GLOBAL" ? "GLOBAL" : base.scopeId, configuration, secrets: Object.fromEntries(Object.entries(secrets).filter(([, v]) => v)) })} label={row ? "Save and rotate" : "Encrypt and save"} /></Modal>;
+  return <Modal title={row ? "Edit configuration" : "Add provider"} subtitle="Credentials are encrypted before they are stored" onClose={onClose} wide><FormGrid>{select("Provider", "provider", [...group.providers], { provider }, (x: any) => { setProvider(x.provider); setConfiguration({}); setSecrets({}); }, Boolean(row))}{input("Display name", "displayName", base, setBase, { placeholder: "e.g. Primary production provider" })}{select("Scope", "scopeType", ["GLOBAL", "TENANT"], base, setBase)}{base.scopeType === "TENANT" && select("Tenant", "scopeId", tenants.map((x: AnyRow) => x.tenantId), base, setBase, false, Object.fromEntries(tenants.map((x: AnyRow) => [x.tenantId, x.name])))}<div className="section-label full">Configuration</div>{spec.config.map(name => input(pretty(name), name, configuration, setConfiguration, { placeholder: placeholder(name, provider) }))}<div className="section-label full">Credentials <span>encrypted · never displayed again</span></div>{spec.secrets.map(name => <label className={`field ${name.toLowerCase().includes("json") ? "full" : ""}`} key={name}><span>{pretty(name)} {row?.secretConfigured && <em>leave blank to keep current</em>}</span>{name.toLowerCase().includes("json") ? <textarea rows={5} value={secrets[name] || ""} onChange={e => setSecrets({ ...secrets, [name]: e.target.value })} /> : <input type="password" autoComplete="new-password" value={secrets[name] || ""} onChange={e => setSecrets({ ...secrets, [name]: e.target.value })} placeholder={row?.secretConfigured ? "•••••••• (unchanged)" : "Required"} />}</label>)}<label className="check full"><input type="checkbox" checked={base.enabled} onChange={e => setBase({ ...base, enabled: e.target.checked })} /> Enable this configuration immediately</label></FormGrid><div className="security-note">🔒 Secrets are protected with AES-256-GCM. Saved credentials cannot be viewed or copied back out of DonorDesk.</div><ModalActions busy={busy} onClose={onClose} onSave={() => onSave({ id: row?.id, category: group.category, provider, ...base, scopeId: base.scopeType === "GLOBAL" ? "GLOBAL" : base.scopeId, configuration, secrets: Object.fromEntries(Object.entries(secrets).filter(([, v]) => v)) })} label={row ? "Save and rotate" : "Encrypt and save"} /></Modal>;
 }
 
 function Modal({ title, subtitle, onClose, wide, children }: any) { return <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && onClose()}><section className={`modal ${wide ? "wide" : ""}`}><header><div><h2>{title}</h2><p>{subtitle}</p></div><button className="close" onClick={onClose}>×</button></header>{children}</section></div>; }
@@ -321,5 +395,14 @@ function configurationPayload(row: AnyRow, patch: AnyRow) { return { id: row.id,
 function pretty(value: string) { return String(value || "").replace(/[._-]/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\b\w/g, x => x.toUpperCase()); }
 function date(value: any) { return value ? new Date(value).toLocaleString() : "Never"; }
 function bytes(value: any) { if (value == null || value === "" || value === "null") return "Unlimited"; const n = Number(value); if (!Number.isFinite(n) || n <= 0) return "0 B"; const units = ["B", "KB", "MB", "GB", "TB"]; let i = 0; let v = n; while (v >= 1024 && i < units.length - 1) { v /= 1024; i += 1; } return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`; }
-function providerIcon(provider: string) { return ({ openai: "◎", anthropic: "A", deepseek: "D", minimax: "M", brevo: "B", postmark: "P", resend: "R", smtp: "✉", "cloudflare-r2": "☁", "backblaze-b2": "B2", "aws-s3": "S3",   kobotoolbox: "K", "odk-central": "O", "google-drive": "G", "google-drive-oauth": "GO", sharepoint: "S" } as AnyRow)[provider] || "◆"; }
-function placeholder(name: string) { return ({ model: "Provider model name", baseUrl: "Optional custom API URL", senderEmail: "notifications@example.org", endpoint: "https://...", bucket: "Bucket name", region: "Region", prefix: "donordesk/", port: "587", schedule: "0 */6 * * *", tenantId: "Destination tenant" } as AnyRow)[name] || ""; }
+function providerIcon(provider: string) { return ({ openai: "◎", anthropic: "C", gemini: "G✦", deepseek: "D", minimax: "M", brevo: "B", postmark: "P", resend: "R", smtp: "✉", "cloudflare-r2": "☁", "backblaze-b2": "B2", "aws-s3": "S3",   kobotoolbox: "K", "odk-central": "O", "google-drive": "G", "google-drive-oauth": "GO", sharepoint: "S" } as AnyRow)[provider] || "◆"; }
+// Model hints for the LLM form. Gemini IDs change often: run "Test connection"
+// to list the models the key can use.
+const MODEL_HINTS: Record<string, string> = {
+  anthropic: "claude-opus-5 (default) · claude-sonnet-5 · claude-haiku-4-5 (cheapest)",
+  gemini: "Required — e.g. a current gemini-*-flash model; Test connection lists them",
+  deepseek: "Current model ID — Test connection lists them (deepseek-chat alias reportedly retired)",
+  minimax: "e.g. MiniMax-M3",
+  openai: "e.g. gpt-4o-mini",
+};
+function placeholder(name: string, provider?: string) { if (name === "model" && provider && MODEL_HINTS[provider]) return MODEL_HINTS[provider]; if (name === "effort") return "Optional: low · medium · high (Claude only; not Haiku 4.5)"; return ({ model: "Provider model name", baseUrl: "Optional custom API URL", senderEmail: "notifications@example.org", endpoint: "https://...", bucket: "Bucket name", region: "Region", prefix: "donordesk/", port: "587", schedule: "0 */6 * * *", tenantId: "Destination tenant" } as AnyRow)[name] || ""; }

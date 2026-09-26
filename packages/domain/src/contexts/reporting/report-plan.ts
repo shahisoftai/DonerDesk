@@ -21,6 +21,24 @@ export interface ReportPlanSection {
    * the requirement evaluator for exact-match coverage instead of title guessing.
    */
   requirementKeys?: string[];
+  /**
+   * Donor requirement guidance for this section (quality remediation WS1).
+   * Stamped from the resolved requirement snapshot by the planner; consumed by
+   * the narrators as a "Donor Requirement Guidance" prompt block. Optional so
+   * plans produced without a requirement snapshot are unchanged.
+   */
+  requirementGuidance?: string[];
+}
+
+const SYNTHESIS_TITLE_RE = /executive summary|summary of (?:results|progress|achievements)|key (?:results|highlights)|conclusion/i;
+
+/**
+ * A synthesis section (executive summary, conclusion) summarises the rest of
+ * the report, so it must be drafted after the other sections and from their
+ * drafted text — otherwise it can contradict or omit what they say.
+ */
+export function isSynthesisSection(section: Pick<ReportPlanSection, "title">): boolean {
+  return SYNTHESIS_TITLE_RE.test(section.title);
 }
 
 export interface ReportPlanStyle {
@@ -65,6 +83,21 @@ export function createReportPlan(input: {
     }
     if (min !== undefined && max !== undefined && min > max) {
       throw new Error("Plan section wordLimit.max must be at least min");
+    }
+    for (const question of section.mandatoryQuestions ?? []) {
+      if (typeof question !== "string" || !question.trim()) {
+        throw new Error("Plan section mandatoryQuestions must contain non-empty strings");
+      }
+    }
+    for (const guidance of section.requirementGuidance ?? []) {
+      if (typeof guidance !== "string" || !guidance.trim()) {
+        throw new Error("Plan section requirementGuidance must contain non-empty strings");
+      }
+    }
+    for (const key of section.requirementKeys ?? []) {
+      if (typeof key !== "string" || !key.trim()) {
+        throw new Error("Plan section requirementKeys must contain non-empty strings");
+      }
     }
   }
   return {

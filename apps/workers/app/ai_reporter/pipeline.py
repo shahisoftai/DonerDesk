@@ -1,21 +1,41 @@
-"""Pipeline orchestration — draft -> critique -> refine.
+"""Pipeline orchestration — draft, attach deterministic artifacts, validate, retry once.
 
-Uses LangGraph when installed; otherwise falls back to a plain sequential
-runner. After the refine step, runs the deterministic artifact validators;
-on hard failure the worker retries the draft step with validator output
-appended, then falls back per-section.
+Flow per section:
+  1. `draft()` — one LLM call for prose/claims/Q&A (writer contract v4).
+  2. `artifact_builder.attach()` — indicator table / chart / period delta built
+     from verified findings (grounded by construction).
+  3. `artifact_validators.run_all()` — number grounding, Q&A coverage, banned
+     phrases, repetition, word limit, required tables, donor-voice warnings.
+  4. On hard issues: ONE retry through the same guarded `draft()` path (same
+     per-call timeout, same parser) with the previous draft + every issue and
+     warning as feedback. The better of the two attempts is kept.
+  5. If the kept attempt still has an *integrity* issue (an ungrounded number),
+     the response sets `usedFallback`/`fallbackReason=VALIDATOR_FAILED` so the
+     API substitutes the deterministic section. Style-only issues (banned
+     phrase, length, repetition, missing Q&A) keep the AI prose and are
+     reported as `qualityIssues` for the reviewer.
+
+Worst case is 2 LLM calls per section, typical case 1.
 """
 from __future__ import annotations
 
 import hashlib
+import time
 from typing import Any
 
-from .artifact_validators import run_all
-from .critique_writer import critique
-from .draft_writer import build_user_prompt, draft
+from . import artifact_builder
+from .artifact_validators import ValidationResult, run_all
+from .draft_writer import draft, pop_last_telemetry
+from .llm_gateway import TransientProviderError
 from .models import GeneratedSection, SectionDraftRequest, SectionDraftResponse
-from .refiner import refine
+from .outline import section_kind
+from .timeouts import SectionTimeoutError, TotalBudgetExceededError, TotalBudgetTracker
 from .writer_contract import system_prompt
+
+# Cap on any single backoff sleep, independent of a provider's Retry-After
+# header — a provider misreporting a very long Retry-After must not stall a
+# request far beyond what the operator configured.
+_MAX_BACKOFF_S = 20.0
 
 
 def _response_for(section: GeneratedSection, telemetry: dict[str, Any]) -> SectionDraftResponse:
@@ -33,105 +53,81 @@ def _response_for(section: GeneratedSection, telemetry: dict[str, Any]) -> Secti
     )
 
 
-def _pipeline_sequential(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, Any]]:
-    d = draft(req)
-    issues = critique(req, d)
-    refined = refine(req, d, issues)
-    return refined, {
-        "promptHash": hashlib.sha256(system_prompt(req.writerContractVersion).encode("utf-8")).hexdigest()[:16],
-        "parseOutcome": "VALID",
-        "critiqueIssues": len(issues),
-    }
-
-
-def _try_langgraph(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, Any]] | None:
-    try:
-        from langgraph.graph import END, START, StateGraph
-    except Exception:
-        return None
-
-    def node_draft(state: dict[str, Any]) -> dict[str, Any]:
-        return {"draft": draft(req)}
-
-    def node_critique(state: dict[str, Any]) -> dict[str, Any]:
-        return {"issues": critique(req, state["draft"])}
-
-    def node_refine(state: dict[str, Any]) -> dict[str, Any]:
-        return {"refined": refine(req, state["draft"], state["issues"])}
-
-    graph = StateGraph(dict)
-    graph.add_node("draft", node_draft)
-    graph.add_node("critique", node_critique)
-    graph.add_node("refine", node_refine)
-    graph.add_edge(START, "draft")
-    graph.add_edge("draft", "critique")
-    graph.add_edge("critique", "refine")
-    graph.add_edge("refine", END)
-    compiled = graph.compile()
-    state = compiled.invoke({})
-    refined = state["refined"]
-    telemetry = {
-        "promptHash": hashlib.sha256(system_prompt(req.writerContractVersion).encode("utf-8")).hexdigest()[:16],
-        "parseOutcome": "VALID",
-        "critiqueIssues": len(state.get("issues", [])),
-    }
-    return refined, telemetry
+def _rank(result: ValidationResult) -> tuple[int, int, int]:
+    """Lower is better: integrity issues first, then hard issues, then warnings."""
+    return (len(result.integrity_issues), len(result.issues), len(result.warnings))
 
 
 def run_pipeline(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, Any]]:
-    """Run draft -> critique -> refine with validator self-check + retry."""
+    """Draft one section with deterministic artifacts, validation, and one feedback retry."""
     prompt_hash = hashlib.sha256(system_prompt(req.writerContractVersion).encode("utf-8")).hexdigest()[:16]
+    budget = TotalBudgetTracker()
+    kind = section_kind(req.section)
+    prior_present = bool(req.priorNarrative)
 
+    attempts: list[tuple[GeneratedSection, ValidationResult]] = []
+    tokens = {"inputTokens": 0, "outputTokens": 0}
+    feedback: list[str] | None = None
+    previous: str | None = None
     last_err: Exception | None = None
+
     for attempt in (1, 2):
+        if attempts and budget.remaining_s() <= 0:
+            break  # no time for the feedback retry; keep the first attempt
+        budget.check()
         try:
-            result = _try_langgraph(req)
-            if result is None:
-                refined, telemetry = _pipeline_sequential(req)
-            else:
-                refined, telemetry = result
-            telemetry.setdefault("promptHash", prompt_hash)
-
-            # Deterministic self-check.
-            v = run_all(refined, req, prior_narrative_present=bool(req.priorNarrative))
-            if v.ok:
-                telemetry["validatorIssues"] = []
-                telemetry["parseOutcome"] = "VALID"
-                return refined, telemetry
-
-            # First hard failure: retry with validator feedback appended to the user prompt.
-            telemetry["validatorIssues"] = list(v.issues)
-            telemetry["parseOutcome"] = "VALIDATOR_RETRY"
-            retry_user = build_user_prompt(req) + "\n\n# Validator feedback:\n" + "\n".join(f"- {i}" for i in v.issues)
-            # Force a second attempt via sequential path with explicit user prompt override.
-            from .llm_gateway import _chat, coerce_section, extract_json
-
-            system = system_prompt(req.writerContractVersion)
-            content, _ = _chat(system, retry_user, model=req.model)
-            raw = extract_json(content)
-            sections = raw.get("sections") if isinstance(raw, dict) and isinstance(raw.get("sections"), list) else None
-            obj = sections[0] if sections else raw
-            if isinstance(obj, dict):
-                refined2 = coerce_section(obj, req.section.title)
-                v2 = run_all(refined2, req, prior_narrative_present=bool(req.priorNarrative))
-                if v2.ok:
-                    telemetry["parseOutcome"] = "VALID"
-                    telemetry["validatorIssues"] = []
-                    return refined2, telemetry
-                telemetry["validatorIssues"] = list(v2.issues)
-
-            # Both attempts failed validation; degrade per-section with fallback.
-            telemetry["parseOutcome"] = "VALIDATOR_FAILED"
-            telemetry["usedFallback"] = True
-            telemetry["fallbackReason"] = "VALIDATOR_FAILED"
-            return refined, telemetry
+            written = draft(req) if feedback is None else draft(req, feedback=feedback, previous_content=previous)
+        except (TotalBudgetExceededError, SectionTimeoutError):
+            # Never retry once the total budget is gone, and never re-run the
+            # same slow call into the same deadline. A slow feedback retry
+            # keeps the first attempt; a slow first attempt hands over to the
+            # caller's deterministic fallback immediately.
+            if attempts:
+                break
+            raise
         except Exception as exc:  # noqa: BLE001
             last_err = exc
-            if attempt == 1:
-                continue
-            raise
+            if attempts or attempt == 2:
+                break  # keep the attempt we already have
+            if isinstance(exc, TransientProviderError):
+                # An immediate retry into the same rate-limit window almost
+                # always fails again for nothing. Back off — but never past
+                # the remaining total budget.
+                delay = exc.retry_after if exc.retry_after is not None else 2.0
+                delay = min(delay, _MAX_BACKOFF_S, budget.remaining_s())
+                if delay > 0:
+                    time.sleep(delay)
+            continue
+        finally:
+            call_telemetry = pop_last_telemetry()
+            tokens["inputTokens"] += int(call_telemetry.get("inputTokens", 0) or 0)
+            tokens["outputTokens"] += int(call_telemetry.get("outputTokens", 0) or 0)
 
-    # Should not reach here, but keep mypy happy.
-    if last_err:
-        raise last_err
-    raise RuntimeError("pipeline exhausted without result")
+        section = artifact_builder.attach(written, req, kind)
+        result = run_all(section, req, prior_narrative_present=prior_present)
+        attempts.append((section, result))
+        if result.ok:
+            break
+        feedback = list(result.issues) + list(result.warnings)
+        previous = written.content
+
+    if not attempts:
+        if last_err is not None:
+            raise last_err
+        raise RuntimeError("pipeline exhausted without result")
+
+    best_index = min(range(len(attempts)), key=lambda i: (_rank(attempts[i][1]), -i))
+    section, result = attempts[best_index]
+    telemetry: dict[str, Any] = {
+        **tokens,
+        "promptHash": prompt_hash,
+        "sectionKind": kind,
+        "attempts": len(attempts),
+        "validatorIssues": list(result.issues),
+        "qualityWarnings": list(result.warnings),
+        "parseOutcome": "VALID" if result.ok else ("VALIDATOR_FAILED" if result.integrity_issues else "VALID_WITH_ISSUES"),
+    }
+    if result.integrity_issues:
+        telemetry["usedFallback"] = True
+        telemetry["fallbackReason"] = "VALIDATOR_FAILED"
+    return section, telemetry

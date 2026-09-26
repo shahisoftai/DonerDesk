@@ -1,6 +1,6 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ReportDraft, ReportSection, ReportGenerationRun } from "@donordesk/domain";
-import type { ReportPlan, ReportingPeriod, VerifiedFinding } from "@donordesk/domain";
+import { DomainError, ReportDraft, ReportSection, ReportGenerationRun, isSynthesisSection } from "@donordesk/domain";
+import type { ReportPlan, ReportPlanSection, ReportingPeriod, ReportingRequirement, VerifiedFinding } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
   IReportingPeriodRepository,
@@ -8,6 +8,7 @@ import type {
   IReportSectionRepository,
   IReportDraftGenerator,
   IReportPlanner,
+  IRequirementResolver,
   IIndicatorAnalyticsService,
   IGenerationRunRepository,
   IReportPlanRepository,
@@ -74,6 +75,7 @@ export class GenerateReportDraftHandler {
     private readonly indicatorUpdates: IIndicatorUpdateRepository,
     private readonly activities: IActivityUpdateRepository,
     private readonly planner: IReportPlanner,
+    private readonly requirementResolver: IRequirementResolver,
     private readonly analytics: IIndicatorAnalyticsService,
     private readonly evidencePackages: IEvidencePackageBuilder,
     private readonly generationRuns: IGenerationRunRepository,
@@ -126,6 +128,11 @@ export class GenerateReportDraftHandler {
     // heuristic generation and manual reports are never metered.
     const aiProviderAvailable = generator.model.modelId !== "stub";
     const chargeAiCredits = aiEnabled && aiProviderAvailable;
+    // A tenant drafting with its own AI provider pays that provider directly:
+    // DonorDesk AI credits are neither checked nor consumed, and the run is
+    // recorded with zero billable units so it never counts against the ledger.
+    const usesTenantProvider = generator.providerSource === "TENANT";
+    const meterPlatformCredits = chargeAiCredits && !usesTenantProvider;
 
     const template = period.donorTemplateId
       ? await this.templates.findById(period.donorTemplateId, ctx.tenant.tenantId)
@@ -148,6 +155,7 @@ export class GenerateReportDraftHandler {
 
     const reportingProfileSnapshot = parseProfileSnapshot(period.reportingProfileSnapshotJson);
 
+    const requirementSnapshot = await this.resolveRequirementSnapshot(ctx, reportingPeriodId);
     const planResult = await this.planner.plan({
       reportingPeriodId,
       projectId: period.projectId,
@@ -156,6 +164,7 @@ export class GenerateReportDraftHandler {
       templateVersion,
       profileVersion: 1,
       reportingProfileSnapshot,
+      requirements: requirementSnapshot,
     });
     if (!planResult.ok) return planResult;
     const plan = planResult.value;
@@ -222,7 +231,7 @@ export class GenerateReportDraftHandler {
     // generation releases the reserved credit; a successful persisted draft
     // consumes it.
     let creditReserved = false;
-    if (chargeAiCredits) {
+    if (meterPlatformCredits) {
       const entitlementResult = await this.entitlements.resolve({ tenantId: ctx.tenant.tenantId.toString() });
       if (!entitlementResult.ok) return entitlementResult;
       const limit = entitlementResult.value.limits.monthlyAiDraftCredits;
@@ -480,152 +489,50 @@ export class GenerateReportDraftHandler {
     creditReserved: boolean;
   }): Promise<void> {
     const startedAt = Date.now();
-    let usedFallback = false;
-    let fallbackReason: string | undefined;
-    let generationFailed = false;
-    let claimCount = 0;
-    let deterministicGapSections = 0;
+    // Sections previously ran one at a time in this loop, so a ~9-section
+    // donor template took 9x a single section's LLM latency end to end.
+    // Bounded concurrency lets several sections draft in parallel while
+    // still capping how many simultaneous LLM/DB calls one draft can incur.
+    const CONCURRENCY = Math.max(1, Number(process.env.AI_REPORTER_SECTION_CONCURRENCY ?? "3") || 3);
+    const state = {
+      usedFallback: false,
+      fallbackReason: undefined as string | undefined,
+      generationFailed: false,
+      claimCount: 0,
+      deterministicGapSections: 0,
+      stopped: false,
+      drafted: [] as Array<{ title: string; content: string }>,
+    };
+
+    // Synthesis sections (executive summary, conclusion) summarise the
+    // report, so they are drafted only after every other section exists and
+    // receive those drafts as input. Previously the summary was drafted first
+    // (plan order) and could contradict or omit the sections it introduces.
+    const indexes = input.sectionIds.map((_, i) => i);
+    const isSynthesis = (i: number) => isSynthesisSection(input.plan.sections[i]!);
+    const phases = [indexes.filter((i) => !isSynthesis(i)), indexes.filter(isSynthesis)];
 
     try {
-      for (let i = 0; i < input.sectionIds.length; i++) {
-        const sectionId = input.sectionIds[i]!;
-        const planSection = input.plan.sections[i]!;
-
-        // Honor cancellation: the draft is superseded by a regeneration or by
-        // the user's "Stop" action. Stop drafting further sections.
-        const freshDraft = await this.drafts.findById(input.draftId, input.ctx.tenant.tenantId);
-        if (!freshDraft.ok || !freshDraft.value) break;
-        if (freshDraft.value.isSuperseded) {
-          this.audit.record({
-            tenantId: input.ctx.tenant.tenantId,
-            actorId: input.ctx.tenant.userId,
-            eventType: "report.draft.generation_stopped",
-            entityType: "report_draft",
-            entityId: input.draftId,
-            projectId: input.draft.projectId,
-            systemNote: "Section-wise generation stopped because the draft was superseded (regenerated or cancelled).",
-          }).catch(() => undefined);
-          break;
-        }
-
-        // Resume-safe: skip sections already drafted by a previous run.
-        const existing = await this.sections.findById(sectionId, input.ctx.tenant.tenantId);
-        if (!existing.ok || !existing.value) continue;
-        const section = existing.value;
-        if (section.status === "DRAFTED" || section.content.trim().length > 0) continue;
-
-        const generated = await input.generator.generateSection(
-          {
-            reportPlan: input.plan,
-            verifiedFindings: input.verifiedFindings,
-            evidencePackages: input.evidencePackages,
-            activities: input.activities,
-            indicatorUpdates: input.indicatorUpdates,
-            reportingProfileSnapshot: input.reportingProfileSnapshot,
-            generationRunId: input.runId,
-            reportContext: input.reportContext,
-          },
-          planSection,
-        );
-        if (generated.telemetry) {
-          const t = generated.telemetry;
-          const status = generated.deterministicReason
-            ? "skipped"
-            : generated.usedFallback
-            ? generated.fallbackReason === "PROVIDER_TIMEOUT" ? "timeout" : "error"
-            : "success";
-          await this.llmRuns.recordRun({
-            id: this.ids.generate(),
-            tenantId: input.ctx.tenant.tenantId.toString(),
-            operationType: "REPORT_SECTION",
-            resourceId: sectionId,
-            modelId: input.generator.model.modelId,
-            promptId: "report-section-drafter",
-            inputTokens: t.inputTokens,
-            outputTokens: t.outputTokens,
-            totalTokens: t.inputTokens + t.outputTokens,
-            costUsd: 0,
-            latencyMs: t.latencyMs,
-            status,
-            promptVersion: input.generator.model.promptVersion,
-            modelVersion: input.generator.model.modelVersion,
-            billableUnits: 0,
-            requestId: `${input.runId}:${sectionId}`,
-            errorMessage: generated.fallbackReason,
-            responseText: JSON.stringify({
-              generationRunId: input.runId,
-              sectionId,
-              templateSectionId: planSection.templateSectionId,
-              sectionTitle: planSection.title,
-              parseOutcome: t.parseOutcome,
-              promptHash: t.promptHash,
-              responseHash: t.responseHash,
-              responseChars: t.responseChars,
-            }),
-          });
-        }
-        if (generated.usedFallback) {
-          usedFallback = true;
-          fallbackReason = generated.fallbackReason ?? fallbackReason;
-        }
-        if (generated.deterministicReason) deterministicGapSections += 1;
-
-        const committed = await this.revisionService.commitChange({
-          tenantId: input.ctx.tenant.tenantId,
-          section,
-          content: generated.section.content,
-          sourceReferences: generated.section.sourceReferences,
-          unsupportedClaims: [],
-          changeOrigin: "GENERATION",
-          actorId: input.ctx.tenant.userId,
-          modelId: !generated.usedFallback && !generated.deterministicReason ? input.generator.model.modelId : undefined,
-          promptVersion: !generated.usedFallback && !generated.deterministicReason ? input.generator.model.promptVersion : undefined,
-          generationRunId: input.runId,
-        });
-        if (!committed.ok) {
-          generationFailed = true;
-          break;
-        }
-
-        // AI Reporter 2 — persist typed artifacts (tables, charts, lists, Q&A,
-        // deltas) when the report artifact repository is wired. Best-effort;
-        // a failed persistence does not abort the section (prose is already
-        // committed and assured).
-        if (this.reportArtifacts && generated.section.artifacts && generated.section.artifacts.length > 0) {
-          const persisted = await this.reportArtifacts.replaceForSection({
-            tenantId: input.ctx.tenant.tenantId,
-            sectionId,
-            revisionId: committed.value.id,
-            artifacts: generated.section.artifacts,
-          });
-          if (!persisted.ok) {
-            await this.audit.record({
-              tenantId: input.ctx.tenant.tenantId,
-              actorId: input.ctx.tenant.userId,
-              eventType: "report.section.artifacts.persist_failed",
-              entityType: "report_section",
-              entityId: sectionId,
-              newValue: persisted.error.message,
-            });
+      for (const phase of phases) {
+        let next = 0;
+        const runWorker = async (): Promise<void> => {
+          for (;;) {
+            if (state.stopped) return;
+            const i = phase[next++];
+            if (i === undefined) return;
+            const shouldStop = await this.generateOneSection(input, input.sectionIds[i]!, input.plan.sections[i]!, state);
+            if (shouldStop) {
+              state.stopped = true;
+              return;
+            }
           }
-        }
-
-        const assessed = await this.assuranceService.assessRevision({
-          ctx: { tenantId: input.ctx.tenant.tenantId, userId: input.ctx.tenant.userId },
-          sectionId,
-          revisionId: committed.value.id,
-          writerClaims: generated.section.claims,
-          findings: input.verifiedFindings,
-          evidencePackages: input.evidencePackages,
-        });
-        if (!assessed.ok) {
-          generationFailed = true;
-          break;
-        }
-        claimCount += assessed.value.claims.length;
+        };
+        const workerCount = Math.min(CONCURRENCY, phase.length);
+        await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
+        if (state.stopped) break;
       }
     } catch (error) {
-      generationFailed = true;
+      state.generationFailed = true;
       this.audit.record({
         tenantId: input.ctx.tenant.tenantId,
         actorId: input.ctx.tenant.userId,
@@ -636,6 +543,8 @@ export class GenerateReportDraftHandler {
         systemNote: `Section-wise generation loop threw: ${error instanceof Error ? error.message : String(error)}`,
       }).catch(() => undefined);
     }
+
+    const { usedFallback, fallbackReason, generationFailed, claimCount, deterministicGapSections } = state;
 
     // A real AI draft is one the configured provider actually produced. When
     // any section fell back to the stub (or the loop errored), the draft is
@@ -653,7 +562,7 @@ export class GenerateReportDraftHandler {
       // presented as AI-generated. This correction is NOT gated on a clean
       // completion: a partially-failed generation is also not AI.
       if (realAiGenerated) {
-        await this.recordLlmRun(input.ctx, input.reportingPeriodId, true, "success", 0, 0, 0, 0, Date.now() - startedAt, input.generator.model.modelId, input.generator.model.modelVersion, input.generator.model.promptVersion);
+        await this.recordLlmRun(input.ctx, input.reportingPeriodId, true, "success", 0, 0, 0, 0, Date.now() - startedAt, input.generator.model.modelId, input.generator.model.modelVersion, input.generator.model.promptVersion, input.generator.providerSource !== "TENANT");
       } else {
         await this.recordLlmRun(input.ctx, input.reportingPeriodId, true, "error", 0, 0, 0, 0, Date.now() - startedAt, input.generator.model.modelId, input.generator.model.modelVersion, input.generator.model.promptVersion);
         input.draft.setGeneratedByAi(false);
@@ -688,6 +597,204 @@ export class GenerateReportDraftHandler {
     await this.periods.update(input.period);
   }
 
+  /**
+   * Draft, persist, and assure a single section. Extracted so
+   * `generateSectionsInBackground` can run several of these concurrently
+   * instead of one at a time. Returns `true` when the caller should stop
+   * scheduling further sections (cancellation or a hard failure).
+   */
+  private async generateOneSection(
+    input: {
+      ctx: AuthenticatedContext;
+      draftId: string;
+      draft: ReportDraft;
+      runId: string;
+      plan: ReportPlan;
+      verifiedFindings: VerifiedFinding[];
+      evidencePackages: EvidencePackage[];
+      activities: ActivityGenerationContext[];
+      indicatorUpdates: IndicatorUpdateGenerationContext[];
+      reportingProfileSnapshot: ReportingProfileSnapshot;
+      reportContext: ReportGenerationContext;
+      generator: IReportDraftGenerator;
+    },
+    sectionId: string,
+    planSection: ReportPlanSection,
+    state: {
+      usedFallback: boolean;
+      fallbackReason: string | undefined;
+      generationFailed: boolean;
+      claimCount: number;
+      deterministicGapSections: number;
+      stopped: boolean;
+      /** Sections of this draft written so far (shared across concurrent workers). */
+      drafted: Array<{ title: string; content: string }>;
+    },
+  ): Promise<boolean> {
+    // Honor cancellation: the draft is superseded by a regeneration or by
+    // the user's "Stop" action. Stop drafting further sections.
+    const freshDraft = await this.drafts.findById(input.draftId, input.ctx.tenant.tenantId);
+    if (!freshDraft.ok || !freshDraft.value) return true;
+    if (freshDraft.value.isSuperseded) {
+      this.audit.record({
+        tenantId: input.ctx.tenant.tenantId,
+        actorId: input.ctx.tenant.userId,
+        eventType: "report.draft.generation_stopped",
+        entityType: "report_draft",
+        entityId: input.draftId,
+        projectId: input.draft.projectId,
+        systemNote: "Section-wise generation stopped because the draft was superseded (regenerated or cancelled).",
+      }).catch(() => undefined);
+      return true;
+    }
+
+    // Resume-safe: skip sections already drafted by a previous run.
+    const existing = await this.sections.findById(sectionId, input.ctx.tenant.tenantId);
+    if (!existing.ok || !existing.value) return false;
+    const section = existing.value;
+    if (section.status === "DRAFTED" || section.content.trim().length > 0) {
+      state.drafted.push({ title: planSection.title, content: section.content });
+      return false;
+    }
+
+    const generated = await input.generator.generateSection(
+      {
+        reportPlan: input.plan,
+        verifiedFindings: input.verifiedFindings,
+        evidencePackages: input.evidencePackages,
+        activities: input.activities,
+        indicatorUpdates: input.indicatorUpdates,
+        reportingProfileSnapshot: input.reportingProfileSnapshot,
+        generationRunId: input.runId,
+        reportContext: input.reportContext,
+        draftedSections: [...state.drafted],
+      },
+      planSection,
+    );
+    if (generated.telemetry) {
+      const t = generated.telemetry;
+      const status = generated.deterministicReason
+        ? "skipped"
+        : generated.usedFallback
+        ? generated.fallbackReason === "PROVIDER_TIMEOUT" ? "timeout" : "error"
+        : "success";
+      await this.llmRuns.recordRun({
+        id: this.ids.generate(),
+        tenantId: input.ctx.tenant.tenantId.toString(),
+        operationType: "REPORT_SECTION",
+        resourceId: sectionId,
+        modelId: input.generator.model.modelId,
+        promptId: "report-section-drafter",
+        inputTokens: t.inputTokens,
+        outputTokens: t.outputTokens,
+        totalTokens: t.inputTokens + t.outputTokens,
+        costUsd: 0,
+        latencyMs: t.latencyMs,
+        status,
+        promptVersion: input.generator.model.promptVersion,
+        modelVersion: input.generator.model.modelVersion,
+        billableUnits: 0,
+        requestId: `${input.runId}:${sectionId}`,
+        errorMessage: generated.fallbackReason,
+        responseText: JSON.stringify({
+          generationRunId: input.runId,
+          sectionId,
+          templateSectionId: planSection.templateSectionId,
+          sectionTitle: planSection.title,
+          parseOutcome: t.parseOutcome,
+          qualityIssues: t.qualityIssues,
+          promptHash: t.promptHash,
+          responseHash: t.responseHash,
+          responseChars: t.responseChars,
+        }),
+      });
+    }
+    if (generated.usedFallback) {
+      state.usedFallback = true;
+      state.fallbackReason = generated.fallbackReason ?? state.fallbackReason;
+    }
+    if (generated.deterministicReason) state.deterministicGapSections += 1;
+
+    const committed = await this.revisionService.commitChange({
+      tenantId: input.ctx.tenant.tenantId,
+      section,
+      content: generated.section.content,
+      sourceReferences: generated.section.sourceReferences,
+      unsupportedClaims: [],
+      changeOrigin: "GENERATION",
+      actorId: input.ctx.tenant.userId,
+      modelId: !generated.usedFallback && !generated.deterministicReason ? input.generator.model.modelId : undefined,
+      promptVersion: !generated.usedFallback && !generated.deterministicReason ? input.generator.model.promptVersion : undefined,
+      generationRunId: input.runId,
+    });
+    if (!committed.ok) {
+      state.generationFailed = true;
+      return true;
+    }
+    state.drafted.push({ title: planSection.title, content: generated.section.content });
+
+    // AI Reporter 2 — persist typed artifacts (tables, charts, lists, Q&A,
+    // deltas) when the report artifact repository is wired. Best-effort;
+    // a failed persistence does not abort the section (prose is already
+    // committed and assured).
+    if (this.reportArtifacts && generated.section.artifacts && generated.section.artifacts.length > 0) {
+      const persisted = await this.reportArtifacts.replaceForSection({
+        tenantId: input.ctx.tenant.tenantId,
+        sectionId,
+        revisionId: committed.value.id,
+        artifacts: generated.section.artifacts,
+      });
+      if (!persisted.ok) {
+        await this.audit.record({
+          tenantId: input.ctx.tenant.tenantId,
+          actorId: input.ctx.tenant.userId,
+          eventType: "report.section.artifacts.persist_failed",
+          entityType: "report_section",
+          entityId: sectionId,
+          newValue: persisted.error.message,
+        });
+      }
+    }
+
+    const assessed = await this.assuranceService.assessRevision({
+      ctx: { tenantId: input.ctx.tenant.tenantId, userId: input.ctx.tenant.userId },
+      sectionId,
+      revisionId: committed.value.id,
+      writerClaims: generated.section.claims,
+      findings: input.verifiedFindings,
+      evidencePackages: input.evidencePackages,
+    });
+    if (!assessed.ok) {
+      state.generationFailed = true;
+      return true;
+    }
+    state.claimCount += assessed.value.claims.length;
+    return false;
+  }
+
+  /**
+   * Quality remediation WS1: resolve the effective requirement snapshot so the
+   * plan carries donor requirement guidance, mandatory questions, and exact
+   * coverage keys. Best-effort by design — a resolver failure must never block
+   * drafting, because the REQUIREMENT_UNSATISFIED gate evaluates the same
+   * snapshot family separately at assurance time.
+   */
+  private async resolveRequirementSnapshot(
+    ctx: AuthenticatedContext,
+    reportingPeriodId: string,
+  ): Promise<ReportingRequirement[]> {
+    try {
+      const resolved = await this.requirementResolver.resolve({
+        tenantId: ctx.tenant.tenantId,
+        reportingPeriodId,
+        effectiveDate: new Date(),
+      });
+      return resolved.ok ? resolved.value.snapshot : [];
+    } catch {
+      return [];
+    }
+  }
+
   private async recordLlmRun(
     ctx: AuthenticatedContext,
     reportingPeriodId: string,
@@ -701,6 +808,7 @@ export class GenerateReportDraftHandler {
     modelId: string,
     modelVersion: string,
     promptVersion: number,
+    billable = true,
   ): Promise<void> {
     if (!generatedByAi) return;
     await this.llmRuns.recordRun({
@@ -718,7 +826,9 @@ export class GenerateReportDraftHandler {
       status,
       promptVersion,
       modelVersion,
-      billableUnits: status === "success" ? 1 : 0,
+      // Only DonorDesk-provider drafts are billable; a tenant's own provider
+      // records 0 so it never counts toward the AI-credit ledger.
+      billableUnits: billable && status === "success" ? 1 : 0,
       requestId: `${reportingPeriodId}:${Date.now()}`,
     });
   }

@@ -94,6 +94,34 @@ export const ChangeRoleSchema = z.object({
   role: RoleSchema,
 });
 
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(12).max(200),
+});
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
+
+export const RequestPasswordResetSchema = z.object({
+  email: EmailSchema,
+});
+export type RequestPasswordResetInput = z.infer<typeof RequestPasswordResetSchema>;
+
+export const ConfirmPasswordResetSchema = z.object({
+  token: z.string().min(20).max(200),
+  newPassword: z.string().min(12).max(200),
+});
+export type ConfirmPasswordResetInput = z.infer<typeof ConfirmPasswordResetSchema>;
+
+export const PasswordResetValidationResponseSchema = z.object({
+  valid: z.boolean(),
+});
+export type PasswordResetValidationResponse = z.infer<typeof PasswordResetValidationResponseSchema>;
+
+export const PasswordResetAcceptedResponseSchema = z.object({
+  accepted: z.literal(true),
+  deepLink: z.string().optional(),
+});
+export type PasswordResetAcceptedResponse = z.infer<typeof PasswordResetAcceptedResponseSchema>;
+
 export const OrganizationReportingDefaultsSchema = z
   .object({
     tone: ProfileToneSchema.default("FORMAL"),

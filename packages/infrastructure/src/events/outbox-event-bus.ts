@@ -58,7 +58,21 @@ export class OutboxEventBus implements IEventBus {
       this.logger.info("domain.event", { eventName: event.eventName, eventId: event.eventId });
       const mapping = this.mappings.find((m) => m.eventName === event.eventName);
       if (mapping) {
-        await this.jobs.enqueue(mapping.jobName, mapping.buildPayload(event));
+        // The bus is an event-to-queue adapter, not a durable transactional
+        // outbox (known Phase 1 deviation). A remote dispatch failure must
+        // never fail the use-case that emitted the event: the domain change
+        // is already committed, and side effects are recoverable through
+        // their own retry paths (e.g. `POST /v1/projects/:id/workspace/retry`).
+        // Log at error level so the dropped dispatch is observable.
+        try {
+          await this.jobs.enqueue(mapping.jobName, mapping.buildPayload(event));
+        } catch (error) {
+          this.logger.error("outbox.enqueue_failed", {
+            eventName: event.eventName,
+            jobName: mapping.jobName,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       }
     }
   }

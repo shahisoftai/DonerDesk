@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -212,6 +212,14 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.resolveReportClaim.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  app.post("/v1/report-claims/bulk-resolve", async (req) => {
+    const body = BulkResolveReportClaimSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.bulkResolveReportClaims.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.get("/v1/report-drafts/:id/assurance", async (req) => {

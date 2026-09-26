@@ -22,11 +22,22 @@ function ok<T>(value: T): Result<T, DomainError> {
  *     (see `AGENTS.md` and `memorybank/imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`).
  *     The legacy `http://localhost:5000` was a stub address that has caused
  *     `ECONNREFUSED` failures when `AI_REPORTER_URL` was unset.
- *   - timeoutMs: `45_000` — the documented per-section ceiling so one slow
- *     section never blocks the whole 8-minute poll cycle.
+ *   - timeoutMs: the whole worker request, which may make TWO LLM calls (a
+ *     draft plus one validator-feedback retry), each capped by the worker at
+ *     `AI_REPORTER_DRAFT_TIMEOUT_MS` (default 90s). The HTTP timeout is
+ *     therefore `AI_REPORTER_HTTP_TIMEOUT_MS`, defaulting to 2 x the per-call
+ *     cap + 30s. It used to equal the per-call cap, so the API aborted every
+ *     retry before the worker could answer.
  */
 export const AI_REPORTER_DEFAULT_URL = "http://127.0.0.1:8092";
-export const AI_REPORTER_DEFAULT_TIMEOUT_MS = 45_000;
+export const AI_REPORTER_DEFAULT_DRAFT_TIMEOUT_MS = 90_000;
+export const AI_REPORTER_DEFAULT_TIMEOUT_MS = 2 * AI_REPORTER_DEFAULT_DRAFT_TIMEOUT_MS + 30_000;
+
+function defaultHttpTimeoutMs(): number | string {
+  if (process.env.AI_REPORTER_HTTP_TIMEOUT_MS) return process.env.AI_REPORTER_HTTP_TIMEOUT_MS;
+  const perCall = Number(process.env.AI_REPORTER_DRAFT_TIMEOUT_MS);
+  return Number.isFinite(perCall) && perCall > 0 ? 2 * perCall + 30_000 : AI_REPORTER_DEFAULT_TIMEOUT_MS;
+}
 
 export class HttpWorkerClient implements IWorkerClient {
   readonly baseUrl: string;
@@ -34,7 +45,7 @@ export class HttpWorkerClient implements IWorkerClient {
 
   constructor(
     baseUrl: string | undefined = process.env.AI_REPORTER_URL ?? AI_REPORTER_DEFAULT_URL,
-    timeoutMs: number | string = process.env.AI_REPORTER_DRAFT_TIMEOUT_MS ?? AI_REPORTER_DEFAULT_TIMEOUT_MS,
+    timeoutMs: number | string = defaultHttpTimeoutMs(),
     private readonly internalToken: string = process.env.INTERNAL_TOKEN ?? "",
   ) {
     this.baseUrl = String(baseUrl).replace(/\/+$/, "");

@@ -146,7 +146,7 @@ export interface ITrialIdentityRepository {
 export interface ILlmUsageRepository {
   /** Successful REPORT_DRAFT runs for a tenant in a UTC month. */
   countSuccessfulReportDrafts(tenantId: string, monthStart: Date): Promise<Result<number>>;
-  /** Successful REPORT_DRAFT runs backed by a real (non-stub) model in a UTC month. */
+  /** Billable successful REPORT_DRAFT runs backed by a real (non-stub) DonorDesk model in a UTC month (tenant-own-provider runs excluded). */
   countAiReportDrafts(tenantId: string, monthStart: Date): Promise<Result<number>>;
   /** Record a run (success or failure) so cost is always tracked. */
   recordRun(input: {

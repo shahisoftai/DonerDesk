@@ -45,6 +45,7 @@ export class JwtAuthProvider implements IAuthProvider {
         role: Role;
         name: string;
         email: string;
+        iat?: number;
       };
       if (!decoded.sub || !decoded.tid || !decoded.email || !ALL_ROLES.includes(decoded.role)) return null;
       return {
@@ -53,6 +54,7 @@ export class JwtAuthProvider implements IAuthProvider {
         role: decoded.role,
         email: decoded.email,
         name: decoded.name,
+        iat: typeof decoded.iat === "number" ? decoded.iat : undefined,
       };
     } catch {
       return null;

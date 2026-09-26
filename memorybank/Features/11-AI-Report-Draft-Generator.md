@@ -384,6 +384,45 @@ interface SourceReference {
     rendered **Preview** view; "What to do next" panel; Edit/Review/Preview/
     Versions tab bar.
 
+- **Report-quality v4 (2026-09-26, not yet deployed):** a code audit found that the
+  AI Reporter path produced *lower*-quality reports than the legacy narrator. It also
+  found that several of its quality mechanisms were dead code. Full defect list:
+  `../Fixes.md` ("Report-quality v4"). Summary of the new behaviour:
+  - **Flow per section (worker):**
+    1. `draft()` writes the prose, claims and Q&A (writer contract **v4**).
+    2. `artifact_builder.attach()` adds the indicator TABLE (also written into
+       INDICATOR_TABLE content as markdown), a CHART and a DELTA, all built
+       deterministically from verified findings.
+    3. `run_all()` runs the checks: no invented numbers (`grounding.py`), Q&A
+       coverage, banned phrases, max words, repetition, and required tables, plus
+       donor-voice *warnings*.
+    4. One retry follows, using the previous draft and all feedback, and the better
+       attempt is kept.
+    5. An ungrounded number that survives the retry makes the section
+       `VALIDATOR_FAILED`, and the API substitutes the deterministic section. Style
+       issues keep the AI prose and are recorded as `qualityIssues`.
+  - **Context parity:** the brief now carries section-specific guidance (shared
+    `buildSectionSpecificGuidance`), "Tell the Story", donor visibility lines, tone,
+    outline slots by section kind, and indicator/activity IDs.
+  - **Executive summary last:** synthesis sections (`isSynthesisSection`) are drafted
+    after all other sections, from their drafted text (`draftedSections`). Other
+    sections see sibling excerpts, so they don't repeat facts. This applies to both
+    the AI Reporter and the legacy narrator (`promptVersion` 5).
+  - **Retrieval:** section-relevant lexical ranking over the full brief when
+    embeddings are absent, then linked evidence, then verified files.
+  - **Timeouts:** worker 90s per call / 200s per section. API HTTP timeout is
+    `AI_REPORTER_HTTP_TIMEOUT_MS` (default 2 × draft + 30s; the provisioner writes
+    240000).
+  - **Eval:** new soft `donor-voice` metric; the corpus is still 28/28 correct.
+  - **Web preview:** renders markdown tables and typed artifacts.
+
+- **Provider selection (2026-09-26, not yet deployed):** every generation resolves
+  the tenant's own enabled SuperAdmin LLM row, else the single enabled
+  all-tenants row. Supported providers: Claude, Gemini, DeepSeek, MiniMax, OpenAI.
+  The resolved provider and key are sent to the AI Reporter worker per request,
+  and generators are cached by config fingerprint, so changes need no restart.
+  See `../Fixes.md` ("SuperAdmin LLM providers").
+
 ## Status
 
 | Component | Status | Notes |
@@ -397,9 +436,10 @@ interface SourceReference {
 | Donor-friendly Mode | Implemented (heuristic) | Audience-aware rewrite in the section editor (2026-08-16) |
 | Section Status | Implemented | All 5 statuses |
 | Version Tracking | Implemented | Version number |
-| Typed Artifacts | Implemented (2026-08-29) | TABLE / CHART / LIST / KEY_VALUE / QA / DELTA persisted per section with per-row citations; renders still TODO in web |
-| Deterministic Validators | Implemented (2026-08-29) | 9 hard gates (numeric, table citation, chart grounding, Q&A coverage, delta, word count, repetition, banned phrases, ordering); mirrored Python + TS |
-| Per-section Timeout | Implemented (2026-08-29) | `AI_REPORTER_DRAFT_TIMEOUT_MS=45000` with per-section fallback (not whole-draft demotion) |
+| Typed Artifacts | Implemented (2026-08-29; v4 2026-09-26) | TABLE / CHART / DELTA built deterministically from verified findings (v4); rendered in the web Preview (v4); interactive chart remains the section chart panel |
+| Deterministic Validators | Implemented (2026-08-29; v4 2026-09-26) | v4: number grounding (no invented numbers), Q&A coverage, banned phrases (word-boundary), max words, repetition (+ paraphrase), required tables, delta (results sections only); donor-voice + min-words as warnings; mirrored Python + TS |
+| Per-section Timeout | Implemented (2026-08-29; v4 2026-09-26) | v4: `AI_REPORTER_DRAFT_TIMEOUT_MS=90000` per call, 200s per section, API HTTP timeout derived (2× + 30s) |
+| Executive summary synthesis | Implemented (2026-09-26) | Drafted last, from the other drafted sections |
 
 ## Pending Enhancements
 
@@ -414,18 +454,18 @@ interface SourceReference {
   (2026-08-29 — see the section above and `../imp/AI-REPORTER-2-IMPLEMENTATION-PLAN.md`).
   **Feature flag still OFF by default**; controlled rollout per
   `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`.
-- [ ] **Frontend artifact renderers** (Phase 7 of AI Reporter 2):
-  TABLE renders via the existing TanStack table; CHART reuses the ECharts
-  renderer (`buildChartOption`); LIST / KEY_VALUE / QA / DELTA need new
-  components. Tracked in `../pending.md`.
+- [x] **Frontend artifact renderers** (2026-09-26): the Preview renders markdown
+  tables and TABLE / CHART (as a data table) / DELTA / QA / LIST / KEY_VALUE
+  artifacts. Still open: an interactive ECharts view of the CHART artifact inside
+  the editor.
 - [ ] **Controlled rollout** (Phase 8 of AI Reporter 2): preview tenant
   → 2 pilot tenants → default. Procedure in
   `../imp/AI-REPORTER-2-POSTDEPLOY-RUNBOOK.md`.
 - [ ] Unsupported claim warning UI
 - [ ] AI regenerate individual sections
 - [ ] AI tone adjustment (donor-specific)
-- [ ] Indicator table auto-insertion
-- [ ] Executive summary auto-generation
+- [x] Indicator table auto-insertion (2026-09-26: deterministic verified table for INDICATOR_TABLE sections, AI Reporter path)
+- [x] Executive summary auto-generation (2026-09-26: drafted last, synthesising the drafted sections)
 - [ ] Risk and mitigation section suggestions
 - [ ] Export to DOCX with formatting
 

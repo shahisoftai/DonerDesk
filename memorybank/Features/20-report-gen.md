@@ -1,7 +1,7 @@
 # Feature 20: Report Intelligence Engine — Implementation Plan
 
 **Updated:** 2026-08-19
-**Status:** IMPLEMENTED — core (Phases 0–1 + foundation of 2–4) landed 2026-08-16: domain primitives, decimal-safe indicator analyst, semantics inference, generation-run snapshot, structured claim provenance with evidence-hash snapshots, deterministic tiered claim verifier, approval gates, reject/request-changes transition, report-plan/claim/run/mapping persistence, `DONOR_TEMPLATE` export type, API routes, RLS coverage, and tests. LLM-backed planner/writer/verifier and docxtpl rendering in Python workers remain behind the documented swap points. **2026-08-18:** the analyst/narrator contract was enriched for professional donor reports (indicator metadata + target/baseline, previous-period `comparisonValue`, deterministic `performanceEvaluation`, project/period/template context, per-section guidance) — see §17. **2026-08-19:** the full professional-reporting hardening plan (revision integrity, assertion coverage, structured numeric/evidence verification, requirement packs, submission snapshots, one shared gate, export intent, golden corpus) is IMPLEMENTED and shipped — see §18.
+**Status:** IMPLEMENTED — core (Phases 0–1 + foundation of 2–4) landed 2026-08-16: domain primitives, decimal-safe indicator analyst, semantics inference, generation-run snapshot, structured claim provenance with evidence-hash snapshots, deterministic tiered claim verifier, approval gates, reject/request-changes transition, report-plan/claim/run/mapping persistence, `DONOR_TEMPLATE` export type, API routes, RLS coverage, and tests. LLM-backed planner/writer/verifier are implemented; docxtpl rendering in Python workers was completed 2026-09-18 (see §20) and is dark-launched behind `DONOR_TEMPLATE_RENDER_ENABLED`. **2026-08-18:** the analyst/narrator contract was enriched for professional donor reports (indicator metadata + target/baseline, previous-period `comparisonValue`, deterministic `performanceEvaluation`, project/period/template context, per-section guidance) — see §17. **2026-08-19:** the full professional-reporting hardening plan (revision integrity, assertion coverage, structured numeric/evidence verification, requirement packs, submission snapshots, one shared gate, export intent, golden corpus) is IMPLEMENTED and shipped — see §18.
 
 > **Next-stage plan:** [`../imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md`](../imp/PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN.md)
 > is the canonical phased plan for revision-bound assurance, complete assertion
@@ -843,3 +843,184 @@ ADRs: `docs/architecture/decisions/0005-report-revisions.md` through
 Remaining known follow-ups (non-blocking): transactional generation state
 machine, LLM-backed entailment/extraction swap-ins, worker `docxtpl` fidelity +
 visual diffs, and the consolidated web exception surface (API contract live).
+
+---
+
+## High-quality AI report pipeline (ERP-2026-Q2 follow-up, 2026-09)
+
+End-to-end quality pipeline so AI drafts are genuinely submittable: content-derived
+contradiction lint, readiness quality dimension, markdown-native exports, overhauled
+deterministic generator, and a stricter LLM narrator prompt — all integrated into the
+assurance/approval path.
+
+### Contradiction lint (pure domain)
+- `packages/domain/src/contexts/reporting/contradiction-lint.ts` — `lintReportContradictions(input)`
+  returns `{ findings, blockers, warnings }`. Kinds: `PROSE_VALUE_NOT_IN_VERIFIED_DATA` (BLOCKER),
+  `PERCENTAGE_WITHOUT_BASIS` (BLOCKER), `SAME_METRIC_DIVERGENCE` (BLOCKER ≥3 values / WARNING at 2),
+  `OUT_OF_PERIOD_DATE` (WARNING), `DISAGGREGATION_CONTRADICTION` (BLOCKER).
+- Input: `sections[]` (id/title/content), optional `findings[]` (`ContradictionLintFindingData`:
+  indicatorCode/value/unit/baseline/target/comparisonValue/qualityFlags), `recordedValues[]`,
+  `activities[]`, `periodStart`/`periodEnd` (ISO). Findings are content-derived at evaluation time —
+  never persisted as claims — and BLOCKERs cannot be closed with `ACCEPTED_WITH_LIMITATION` notes;
+  only correcting the report text resolves them. Exemptions: tables, headings, blockquotes,
+  provenance/citation lines, delta phrasing, years, values <5, dates, inline indicator codes.
+  Dedup by (kind, excerpt). Tests: `packages/domain/test/contradiction-lint.test.mjs` (11).
+
+### Readiness quality dimension
+- `calculateReadiness` accepts optional `dataQualityBlockers`; adds `qualityScore` +
+  `dataQualityBlockers` to the breakdown (`DATA_QUALITY_PENALTY = 15`); when blockers > 0,
+  `overall = min(base, quality)`. Legacy callers without the field are unchanged.
+
+### Markdown-native exports
+- `packages/infrastructure/src/exports/markdown-renderer.ts` (`parseInline`, `parseMarkdownBlocks`,
+  `renderDocxBlocks`, `renderPdfBlocks`) renders headings, bullets, blockquotes, and ruled/shaded
+  tables (with page breaks) natively. Wired into `builder.ts` `buildWord` (cover + TOC with
+  `updateFields`), `buildPdf` (centered cover, Contents list), and `buildDonorTemplate`.
+  Tests: `export-markdown-renderer.test.mjs` (6). Note: pdfkit writes hex glyph runs split by
+  kerning — tests decode all `<hex>` runs with compression disabled before asserting.
+
+### Deterministic generator overhaul (stub parity)
+- `packages/infrastructure/src/llm/report-draft-generator.ts`: routing adds methodology/voice/
+  financial branches; 3-paragraph synthesized `executiveSummary`; `indicatorProgress` highlights +
+  small-movers table; `annexList` = Annex A v2 (Code/Indicator/Unit/Baseline/Target/This period/
+  Previous/% of target/RAG/Data source) + A.2 evidence pack + A.3 data-quality notes; new
+  `dataQualityNote`, `methodologyNote`, `beneficiaryVoice` (verbatim quotes only, honest empty
+  state), `financialSummary`, `activitiesInPeriod` (period windowing), `pctOfTarget`
+  (presentation-only), `ragFor`.
+
+### LLM narrator prompt v3 + per-section craft guidance
+- `packages/infrastructure/src/llm/llm-report-draft-generator.ts`: `promptVersion` 2→3. Percentages
+  only when the finding has a calculable value AND target/baseline (never for
+  MISSING_DENOMINATOR/NOT_CALCULABLE); no-unbacked-figures and cross-section count-consistency
+  rules; mandatory "Quality of prose" block. `buildSectionSpecificGuidance(section, input)` appends
+  per-section craft lines (exec-summary 180–260-word 3-paragraph spec, highlights-not-table for
+  indicators, Annex A table spec, activity period-scoping, voice verbatim-quoting,
+  challenge/lesson synthesis) into `buildSectionNarratorUserPrompt`.
+
+### Integration (application + container)
+- `ApproveReportHandler.evaluateGate` runs `lintReportContradictions` on the current section text
+  every evaluation; an optional `IIndicatorAnalyticsService` (last ctor arg) supplies verified
+  findings for the value-backed checks — analytics/lookup failure degrades gracefully to the
+  content-only lint. BLOCKERs map onto `NUMERIC_CONTRADICTION` claim outcomes (approval: BLOCK) and
+  surface to reviewers through the existing Smart Review grouping.
+- `CalculateReadinessHandler` takes the same optional analytics and feeds `lint.blockers` into
+  `calculateReadiness({ dataQualityBlockers })` — readiness 100 is unreachable while the text
+  contradicts the verified data. Legacy callers (tests without the extra arg) are unchanged.
+- `CreateExportHandler` now emits a default `BAR`/`INDICATOR_COMPARISON` chart (via
+  `createChartConfig`) on the indicator/progress section when a report has ≥2 numeric indicators
+  and no user-configured section chart, so exports always carry a comparison visual.
+- `packages/infrastructure/src/container.ts` passes `indicatorAnalytics` into both handlers.
+
+### Validation
+- `pnpm -r typecheck`-equivalent per package clean (application rebuilt before infrastructure —
+  infra resolves `@donordesk/application` types from `dist/`).
+- Domain 131/131 · application 95/95 · infrastructure 181 pass / 1 pre-existing skip / 0 fail
+  · targeted LLM groups (llm-fallback, p0-2-fallback-truthfulness, llm-report-draft-generator) 32/32.
+
+## 19. AI Reporter production outage — provider auth, timeout wiring, annex tables (2026-09-17)
+
+A live audit found the AI Reporter had **never** produced real content for a
+tenant that had it enabled — every generation silently fell back to the
+deterministic stub (audit: `generatedByAi=false;fallback=true;
+reason=PROVIDER_HTTP_ERROR`). Full root-cause chain, fixes, and a `systemd
+EnvironmentFile` trailing-newline gotcha worth knowing before any future
+runtime env-file edit are in
+[`../Fixes.md`](../Fixes.md#ai-reporter-completely-non-functional-on-production--provider-auth-env-file-truncation-annex-tables-2026-09-17-releases-20260917155946--20260917162657)
+and [`../contabo-ops.md`](../contabo-ops.md) §18. Summary relevant to this
+feature's design:
+
+- `buildSectionSpecificGuidance` (§17 above) matched `title.includes("annex")`
+  for every annex section, so "Annex B: Evidence Checklist" wrongly received
+  the "produce a full indicator findings table" instruction meant for
+  "Annex A: Indicator Performance Table". Now branches on annex *kind*
+  (indicator/performance vs evidence/document/file) with its own correct
+  table-column spec per kind.
+- New deterministic validator `assert_required_table_present`
+  (`apps/workers/app/ai_reporter/artifact_validators.py`) fails an annex
+  section whose content is prose describing a table instead of an actual
+  markdown table, wired into the existing draft→critique→refine retry loop.
+  **Known residual gap (confirmed live, not yet closed):** detection is
+  reliable, but the DeepSeek provider did not always comply with the table
+  instruction even on the automatic retry — worth a stronger table-specific
+  retry prompt or a deterministic-fallback safety net for non-compliant
+  sections as follow-up work.
+- `AiReporterWorkerClient`'s per-section-pipeline timeout
+  (`AI_REPORTER_DRAFT_TIMEOUT_MS`) was never provisioned into `api.env` by
+  `RuntimeProvisioner` — only `workers.env` carried it — so every real
+  generation always used the 45s hardcoded default regardless of SuperAdmin
+  configuration, aborting before the worker's draft→critique→refine sequence
+  (2-4 sequential LLM calls, observed 50-130s/section with DeepSeek) could
+  finish. Now provisioned at 180000ms with the value preserved across
+  re-provisions.
+- Verified live end-to-end post-fix: real 9-section DeepSeek-generated draft,
+  `generatedByAi=true;fallback=false;reason=none;claims=303`.
+
+## 20. Follow-up audit (2026-09-17) and systematic fix (2026-09-18)
+
+A fresh, code-verified audit of the whole report-generation pipeline (beyond
+the §19 provider-outage fix) found 8 further gaps/bugs/performance issues:
+`DONOR_TEMPLATE` exports never used the donor's real template (docxtpl never
+installed); `DeterministicEntailmentVerifier`'s contradiction check scanned
+the wrong evidence chunk; entailment/evidence-retrieval ran on raw unstemmed
+token overlap (no embedding provider deployed in production); the sequential
+9-section generation loop (~7 min/report); `AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS`
+defined but never enforced; and no backoff on transient LLM 429/5xx errors
+(the exact §19 outage's failure mode). Full findings and the systematic fix
+for all but the concurrency rework (deferred at the time; see §21) are in
+[`../Fixes.md`](../Fixes.md#systematic-fix-of-the-8-ai-report-generation-audit-findings-2026-09-18-not-yet-deployed).
+Summary: donor-template rendering built as a full feature (detect→auto-map→
+review→approve→lock→render, dark-launched); a shared stemmed/weighted lexical
+scorer (`packages/domain/src/contexts/ai/text-similarity.ts`) replaces raw
+token overlap in entailment verification and evidence retrieval, with the
+contradiction-chunk bug fixed alongside it; the worker gained typed
+transient-error backoff and real total-budget enforcement. Not yet deployed —
+needs the new Prisma migration applied and a release.
+
+## 21. AI Reporter latency rework — single-call pipeline + parallel sections (2026-09-18)
+
+Closes out the sequential-generation-loop performance rework noted as
+deferred in §20. A ~9-section donor template previously took ~8-20 minutes
+end to end (each section ran a 2-4 call draft → critique → refine →
+optional-validator-retry sequence at 50-130s observed per section, and
+sections ran strictly one after another), which routinely outran the UI's
+8-minute poll window ([`../Fixes.md`](../Fixes.md) has the full file-by-file
+record under "AI Reporter latency rework — single-call pipeline + parallel
+sections").
+
+- `apps/workers/app/ai_reporter/pipeline.py` collapses draft → critique →
+  refine into a single draft call; the writer contract
+  (`apps/workers/app/ai_reporter/writer_contract.py`) gained an explicit
+  self-review rule so the model checks its own output against every writer
+  rule (grounding, sourcing, caveats, banned phrases, word limits) before
+  returning, in place of the separate critique pass. The deterministic
+  `artifact_validators.run_all` check (§19/§20) is unchanged and remains the
+  actual quality gate, including its one validator-feedback retry on hard
+  failure. `critique_writer.py`/`refiner.py` still exist but are no longer
+  called from the pipeline.
+- `timeouts.run_with_section_timeout` now runs the blocking LLM call on a
+  daemon thread and enforces `AI_REPORTER_DRAFT_TIMEOUT_MS` as a real
+  deadline (raises and abandons the call) instead of only checking elapsed
+  time after a blocking `urllib` call returned, as before. A
+  `SectionTimeoutError` is no longer retried by the pipeline.
+- `AI_REPORTER_MAX_TOKENS` default halved (4096 → 2048) now that only one
+  call per section needs the full section-length budget.
+- `packages/application/src/use-cases/reporting/generate-report-draft.ts`'s
+  `generateSectionsInBackground` runs sections through a bounded worker pool
+  (`AI_REPORTER_SECTION_CONCURRENCY`, default 3) instead of one at a time,
+  via a new `generateOneSection` method; cancellation, resume-skip, and
+  hard-failure-abort behaviour are preserved.
+- The UI poll ceiling in
+  `apps/web/src/features/reporting/presentation/ReportWorkspace.tsx` moved
+  from `MAX_POLL_ATTEMPTS = 120` (~8 min) to `300` (~20 min), now a safety
+  ceiling rather than the expected duration.
+- Verified: `apps/workers` pytest (39/39 ai_reporter tests) and
+  `packages/application` typecheck + build + full test suite (98/98).
+  **Not yet verified against a live provider or in the browser** — no
+  end-to-end timing measurement taken.
+- Still deferred: bounding `draft_writer.build_user_prompt`'s
+  findings/indicator-update/activity-narrative inputs (no cap today),
+  populating the report brief's `outlineSlots`/`numericTable`/
+  `chartSuggestion` fields, hoisting the per-section embedding/prior-period
+  DB lookups out of the loop, and moving from in-process concurrency to the
+  documented `JOB_QUEUE` (`report.draft_section`) so sections survive an API
+  restart.

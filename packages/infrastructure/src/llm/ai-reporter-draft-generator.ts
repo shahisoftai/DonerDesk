@@ -18,7 +18,10 @@ import type {
   ILogger,
 } from "@donordesk/application";
 import type { ReportPlanSection, SourceReference } from "@donordesk/domain";
+import { isSynthesisSection, visibilityPromptBlock } from "@donordesk/domain";
 import type { StubReportDraftGenerator } from "./report-draft-generator.js";
+import { DeterministicEvidenceRetriever } from "./evidence-retriever.js";
+import { buildSectionSpecificGuidance } from "./llm-report-draft-generator.js";
 import type { IEmbeddingGenerator, IEmbeddingStore } from "./embedding.js";
 import { SemanticEvidenceRetriever } from "./semantic-evidence-retriever.js";
 import type {
@@ -30,6 +33,7 @@ import type {
   AiReporterContext,
   AiReporterFinding,
   AiReporterIndicatorUpdate,
+  AiReporterModelConfig,
   AiReporterPriorNarrative,
   AiReporterSectionRequest,
   AiReporterSectionResponse,
@@ -38,11 +42,24 @@ import type {
 } from "./ai-reporter-worker.js";
 import type { IPriorPeriodService } from "./prior-period.js";
 import { runAll as runArtifactValidators, type RunAllOptions } from "../ai/artifact-validators.js";
+import { allowedNumbers } from "../ai/number-grounding.js";
+import { WRITER_CONTRACT_VERSION } from "./ai-reporter/contract.js";
 
 const CLAIM_TYPES = new Set(["NUMERIC", "FACTUAL", "CAUSAL", "QUALITATIVE"]);
 const REFERENCE_TYPES = new Set(["evidence", "activity", "indicator", "template"]);
 const VALID_REFERENCE_TYPES = new Set(["indicator", "evidence", "activity", "template"] as const);
 const ARTIFACT_KINDS = new Set<GeneratedArtifact["kind"]>(["TABLE", "CHART", "LIST", "KEY_VALUE", "QA", "DELTA"]);
+
+// Evidence budget per section. The old 6 × 6 × 600-char pass-through of the
+// FIRST packages (not the relevant ones) left most extracted text unseen.
+const MAX_EVIDENCE_PACKAGES = 6;
+const MAX_CHUNKS_PER_PACKAGE = 4;
+const MAX_CHARS_PER_CHUNK = 1000;
+const RETRIEVAL_TOKEN_BUDGET = 4000;
+// Drafted-sibling context sent to the worker.
+const SYNTHESIS_CHARS_PER_SECTION = 1500;
+const SIBLING_CHARS_PER_SECTION = 600;
+const MAX_SIBLINGS = 10;
 
 /**
  * AI Reporter draft generator. Adapter that fulfils the IReportDraftGenerator
@@ -61,12 +78,14 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
     private readonly embeddingStore?: IEmbeddingStore,
     private readonly prior?: IPriorPeriodService,
     private readonly logger?: ILogger,
-    private readonly writerContractVersion = Number(process.env.AI_REPORTER_CONTRACT_VERSION ?? 1),
-    private readonly modelConfig: { provider: string; model?: string } = {
+    private readonly writerContractVersion = Number(process.env.AI_REPORTER_CONTRACT_VERSION ?? WRITER_CONTRACT_VERSION),
+
+    private readonly modelConfig: AiReporterModelConfig = {
       provider: process.env.AI_REPORTER_PROVIDER ?? "openai",
       model: process.env.AI_REPORTER_MODEL,
     },
   ) {
+    // modelVersion is recorded in llm_runs; it must never include the key.
     this.model = {
       modelId: "ai-reporter",
       modelVersion: `${this.modelConfig.provider}/${this.modelConfig.model ?? "default"}`,
@@ -100,7 +119,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
   ): Promise<GeneratedSectionResult> {
     const startedAt = Date.now();
     try {
-      const request = await this.buildSectionRequest(input, section);
+      const prior = this.prior ? await this.prior.fetch(input, section) : [];
+      const request = await this.buildSectionRequest(input, section, prior);
       const response = await this.worker.draftSection(request);
       if (!response.ok) {
         this.logger?.warn("AI Reporter draft failed; falling back to stub", {
@@ -125,19 +145,28 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
 
       const payload = response.value;
       const content = payload.content.trim();
-      if (!content) {
+      const workerIssues = [...(payload.telemetry?.validatorIssues ?? []), ...(payload.telemetry?.qualityWarnings ?? [])];
+      // The worker keeps AI prose with style-only issues, but flags a draft
+      // that still contains an ungrounded figure after its feedback retry.
+      // That prose must not reach the donor report: use the deterministic
+      // section, and report the fallback so billing and the "drafted without
+      // AI" banner stay truthful.
+      if (!content || payload.telemetry?.usedFallback) {
+        const reason = !content ? "PROVIDER_EMPTY_RESPONSE" : "VALIDATOR_FAILED";
+        this.logger?.warn("AI Reporter draft rejected; falling back to stub", { section: section.title, reason, issues: workerIssues });
         const fallback = await this.fallback.generateSection(input, section);
         return {
           ...fallback,
           usedFallback: true,
-          fallbackReason: "PROVIDER_EMPTY_RESPONSE",
+          fallbackReason: reason,
           telemetry: {
             inputTokens: payload.telemetry?.inputTokens ?? 0,
             outputTokens: payload.telemetry?.outputTokens ?? 0,
             latencyMs: Date.now() - startedAt,
             promptHash: payload.telemetry?.promptHash ?? "",
-            responseChars: 0,
-            parseOutcome: "EMPTY",
+            responseChars: content.length,
+            parseOutcome: !content ? "EMPTY" : "VALIDATOR_FAILED",
+            qualityIssues: workerIssues,
           },
         };
       }
@@ -160,26 +189,25 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         deltaFromPrior: deltaFromPrior ?? undefined,
       };
 
-      // Self-check (mirror of worker artifact_validators). On hard failure we
-      // log the issues but keep the section (the deterministic evaluator
-      // surfaces them in CI).
-      const verifiedNumbers = new Set<string>();
-      for (const f of input.verifiedFindings) {
-        if (f.value !== null && f.value !== undefined) verifiedNumbers.add(String(f.value));
-      }
+      // API-side self-check (mirror of the worker validators), grounded
+      // against exactly what was sent. A disagreement with the worker means
+      // version skew between the two deployments — log it, don't fail.
       const validatorOpts: RunAllOptions = {
-        verifiedNumbers,
-        priorNarrativePresent: Boolean(this.prior) && (await this.prior?.fetch(input, section))?.length !== 0,
+        allowedNumbers: allowedNumbers(request, request.verifiedFindings),
+        priorNarrativePresent: prior.length > 0,
+        comparableFindingPresent: Boolean(deltaFromPrior),
         mandatoryQuestions: section.mandatoryQuestions ?? [],
-        priorSectionsSummary: [], // filled in by the handler in batch mode
-        minWords: section.wordLimit?.min,
+        priorSectionsSummary: request.section.priorSectionsSummary ?? [],
+        synthesis: request.section.synthesis,
         maxWords: section.wordLimit?.max,
+        minWords: section.wordLimit?.min,
       };
       const validatorResult = runArtifactValidators(generatedSection, validatorOpts);
-      if (!validatorResult.ok) {
-        this.logger?.warn("AI Reporter validator issues", {
+      if (!validatorResult.ok || workerIssues.length > 0) {
+        this.logger?.warn("AI Reporter section kept with quality issues", {
           section: section.title,
-          issues: validatorResult.issues,
+          workerIssues,
+          apiIssues: validatorResult.issues,
         });
       }
 
@@ -190,7 +218,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         promptHash: payload.telemetry?.promptHash ?? "",
         responseHash: payload.telemetry?.responseHash,
         responseChars: content.length,
-        parseOutcome: validatorResult.ok ? "VALID" : "PROVIDER_ERROR",
+        parseOutcome: validatorResult.ok && workerIssues.length === 0 ? "VALID" : "VALID_WITH_ISSUES",
+        qualityIssues: [...new Set([...workerIssues, ...validatorResult.issues, ...(validatorResult.warnings ?? [])])],
       };
 
       return { section: generatedSection, usedFallback: false, telemetry };
@@ -276,9 +305,10 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
   private async buildSectionRequest(
     input: GenerateReportDraftInput,
     section: ReportPlanSection,
+    prior: AiReporterPriorNarrative[],
   ): Promise<AiReporterSectionRequest> {
     const retrieved = await this.buildRetrievedEvidence(input, section);
-    const prior = this.prior ? await this.prior.fetch(input, section) : [];
+    const synthesis = isSynthesisSection(section);
 
     return {
       section: {
@@ -289,11 +319,21 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         mandatoryQuestions: section.mandatoryQuestions ?? [],
         evidenceNeeds: section.evidenceNeeds ?? [],
         relatedLogframeElement: section.relatedLogframeElement,
+        requirementGuidance: section.requirementGuidance ?? [],
+        // One SSOT for editorial guidance: the same builder the legacy
+        // narrator uses (exec-summary structure, annex tables, cross-cutting
+        // disaggregation, financial discipline).
+        sectionGuidance: buildSectionSpecificGuidance(section, input),
+        synthesis,
+        priorSectionsSummary: summariseDraftedSections(input, section, synthesis),
       },
       context: this.buildContext(input),
       verifiedFindings: input.verifiedFindings.map((f) => ({
         indicatorCode: f.indicatorCode,
+        indicatorId: f.indicatorId,
         indicatorName: f.indicatorName ?? undefined,
+        indicatorType: f.indicatorType ?? undefined,
+        calculationMethod: f.calculationMethod,
         baseline: f.baseline ?? null,
         target: f.target ?? null,
         value: f.qualityFlags.includes("MISSING_DENOMINATOR") ? null : f.value,
@@ -305,6 +345,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
       })),
       indicatorUpdates: input.indicatorUpdates.map((u) => ({
         indicatorCode: u.indicatorCode,
+        indicatorId: u.indicatorId,
         periodAchievement: u.periodAchievement,
         cumulativeAchievement: u.cumulativeAchievement,
         comments: u.comments,
@@ -312,6 +353,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
       })),
       activities: input.activities.map((a) => ({
         title: a.activityTitle,
+        activityId: a.activityId,
+        attachedEvidenceIds: a.attachedEvidenceIds,
         date: a.activityDate.toISOString().slice(0, 10),
         location: a.location,
         participantsTotal: a.participantsTotal,
@@ -332,48 +375,58 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
     };
   }
 
+  /**
+   * Section-relevant evidence: semantic search when embeddings are wired,
+   * otherwise lexical ranking over the section's full brief (title, evidence
+   * needs, donor guidance, questions, logframe element, indicator names), then
+   * evidence linked to the period's activities/indicator updates, then the
+   * remaining packages with verified files first.
+   */
   private async buildRetrievedEvidence(
     input: GenerateReportDraftInput,
     section: ReportPlanSection,
   ): Promise<AiReporterSectionRequest["retrievedEvidence"]> {
-    const maxPackages = 6;
-    const maxChunks = 6;
-    const maxChars = 600;
-
-    if (this.embeddingGenerator && this.embeddingStore) {
-      const retriever = new SemanticEvidenceRetriever(input.evidencePackages, this.embeddingGenerator, this.embeddingStore);
-      const entities = [
-        input.reportContext?.project?.title ?? "",
+    const request = {
+      sectionTitle: section.title,
+      entities: [
+        ...(section.evidenceNeeds ?? []),
+        ...(section.requirementGuidance ?? []),
+        ...(section.mandatoryQuestions ?? []),
+        section.relatedLogframeElement ?? "",
         input.reportContext?.project?.sector ?? "",
-        input.reportContext?.project?.country ?? "",
-      ].filter(Boolean);
-      const dates = [
-        input.reportContext?.period?.startDate ?? "",
-        input.reportContext?.period?.endDate ?? "",
-      ].filter(Boolean);
-      const indicatorCodes = input.verifiedFindings.map((f) => f.indicatorCode);
-      const result = await retriever.retrieve({
-        sectionTitle: section.title,
-        entities,
-        dates,
-        indicatorCodes,
-        maxTokens: 3000,
-        tenantId: input.reportPlan.tenantId,
-      });
-      if (result.ok && result.value.length > 0) {
-        return groupByEvidence(result.value, input, maxPackages, maxChunks, maxChars);
-      }
+        ...input.verifiedFindings.map((f) => f.indicatorName ?? ""),
+      ].filter(Boolean),
+      dates: [input.reportContext?.period?.startDate ?? "", input.reportContext?.period?.endDate ?? ""].filter(Boolean),
+      indicatorCodes: input.verifiedFindings.map((f) => f.indicatorCode),
+      maxTokens: RETRIEVAL_TOKEN_BUDGET,
+      tenantId: input.reportPlan.tenantId,
+    };
+
+    let ranked: RetrievedEvidence[] = [];
+    if (this.embeddingGenerator && this.embeddingStore) {
+      const semantic = await new SemanticEvidenceRetriever(input.evidencePackages, this.embeddingGenerator, this.embeddingStore).retrieve(request);
+      if (semantic.ok) ranked = semantic.value;
+    }
+    if (ranked.length === 0) {
+      const lexical = await new DeterministicEvidenceRetriever(input.evidencePackages).retrieve(request);
+      if (lexical.ok) ranked = lexical.value;
     }
 
-    // Default: bounded pass-through of the already tenant-scoped packages.
-    return input.evidencePackages.slice(0, maxPackages).map((p) => ({
-      evidenceId: p.evidenceId,
-      title: p.title,
-      evidenceType: p.evidenceType,
-      verificationStatus: p.verificationStatus,
-      confidentialityLevel: p.confidentialityLevel,
-      chunks: p.chunks.slice(0, maxChunks).map((c) => ({ chunkId: c.chunkId, text: c.text.slice(0, maxChars) })),
-    }));
+    const linked = new Set([
+      ...input.activities.flatMap((a) => a.attachedEvidenceIds),
+      ...input.indicatorUpdates.flatMap((u) => u.attachedEvidenceIds),
+    ]);
+    const rest = [...input.evidencePackages].sort(
+      (a, b) =>
+        Number(linked.has(b.evidenceId)) - Number(linked.has(a.evidenceId)) ||
+        Number(b.verificationStatus === "VERIFIED") - Number(a.verificationStatus === "VERIFIED"),
+    );
+    for (const pkg of rest) {
+      for (const chunk of pkg.chunks.slice(0, MAX_CHUNKS_PER_PACKAGE)) {
+        ranked.push({ evidenceId: pkg.evidenceId, chunkId: chunk.chunkId, chunkText: chunk.text, score: 0 });
+      }
+    }
+    return groupByEvidence(ranked, input, MAX_EVIDENCE_PACKAGES, MAX_CHUNKS_PER_PACKAGE, MAX_CHARS_PER_CHUNK);
   }
 
   private buildContext(input: GenerateReportDraftInput): AiReporterContext {
@@ -418,8 +471,49 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         language: input.reportingProfileSnapshot.language,
         formattingRules: input.reportingProfileSnapshot.formattingRules,
       },
+      story: ctx?.storyContext
+        ? {
+            achievements: ctx.storyContext.achievements,
+            challenges: ctx.storyContext.challenges,
+            varianceExplanations: ctx.storyContext.varianceExplanations,
+            adaptations: ctx.storyContext.adaptations,
+            lessons: ctx.storyContext.lessons,
+          }
+        : undefined,
+      visibility: (() => {
+        const donorName = ctx?.template?.donorName ?? ctx?.project?.donorName;
+        return donorName ? visibilityPromptBlock(donorName, ctx?.project?.implementingOrganization) : [];
+      })(),
     };
   }
+}
+
+function stripTables(text: string): string {
+  return text
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith("|"))
+    .join("\n")
+    .trim();
+}
+
+/**
+ * Drafted sibling sections for the worker brief. A synthesis section gets the
+ * substantive text of every other drafted section to summarise; any other
+ * section gets a short excerpt of each so it does not restate them.
+ */
+function summariseDraftedSections(
+  input: GenerateReportDraftInput,
+  section: ReportPlanSection,
+  synthesis: boolean,
+): string[] {
+  const limit = synthesis ? SYNTHESIS_CHARS_PER_SECTION : SIBLING_CHARS_PER_SECTION;
+  return (input.draftedSections ?? [])
+    .filter((d) => d.title !== section.title && d.content.trim().length > 0)
+    .slice(0, MAX_SIBLINGS)
+    .map((d) => {
+      const body = stripTables(d.content);
+      return `## ${d.title}\n${body.length > limit ? `${body.slice(0, limit)}…` : body}`;
+    });
 }
 
 function groupByEvidence(
@@ -447,7 +541,7 @@ function groupByEvidence(
       };
       grouped.set(item.evidenceId, entry);
     }
-    if (entry.chunks.length < maxChunks) {
+    if (entry.chunks.length < maxChunks && !entry.chunks.some((c) => c.chunkId === item.chunkId)) {
       entry.chunks.push({ chunkId: item.chunkId, text: item.chunkText.slice(0, maxChars) });
     }
   }

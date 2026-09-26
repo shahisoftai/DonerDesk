@@ -1,9 +1,10 @@
+import Anthropic from "@anthropic-ai/sdk";
 import type { ILLMProvider, LLMCompletionInput } from "@donordesk/application";
 import { StubLLMProvider } from "./stub.js";
 import { OllamaProvider } from "../ai/ollama.js";
 import { createPiiFirewall, type PiiPolicy } from "../ai/pii-firewall.js";
 
-export type LLMProviderName = "stub" | "openai" | "anthropic" | "ollama" | "deepseek" | "minimax";
+export type LLMProviderName = "stub" | "openai" | "anthropic" | "gemini" | "ollama" | "deepseek" | "minimax";
 
 export interface LLMProviderConfig {
   provider: LLMProviderName;
@@ -12,7 +13,14 @@ export interface LLMProviderConfig {
   baseUrl?: string;
   timeoutMs?: number;
   groupId?: string;
+  /** Claude only: `output_config.effort` (low|medium|high|xhigh|max). Omitted = model default. */
+  effort?: string;
 }
+
+/** Google's OpenAI-compatible Gemini endpoint. */
+export const GEMINI_OPENAI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai";
+/** Default Claude model when a SuperAdmin config leaves the model blank. */
+export const DEFAULT_CLAUDE_MODEL = "claude-opus-5";
 
 type AdapterFactory = (config: LLMProviderConfig) => ILLMProvider;
 
@@ -24,6 +32,7 @@ function register(name: LLMProviderName, factory: AdapterFactory): void {
 
 register("openai", (cfg) =>
   createOpenAIAdapter({
+    name: "openai",
     apiKey: cfg.apiKey ?? process.env.OPENAI_API_KEY ?? "",
     model: cfg.model ?? process.env.OPENAI_MODEL ?? "gpt-4o-mini",
     baseUrl: cfg.baseUrl,
@@ -31,12 +40,28 @@ register("openai", (cfg) =>
   }),
 );
 
+// Gemini through Google's OpenAI-compatible endpoint. No model default: Gemini
+// model IDs change often, so the SuperAdmin config must name one (the
+// connection test lists the models the key can use).
+register("gemini", (cfg) => {
+  const model = cfg.model ?? process.env.GEMINI_MODEL;
+  if (!model) throw new Error("Gemini requires a model (set it in the SuperAdmin LLM configuration)");
+  return createOpenAIAdapter({
+    name: "gemini",
+    apiKey: cfg.apiKey ?? process.env.GEMINI_API_KEY ?? "",
+    model,
+    baseUrl: cfg.baseUrl ?? GEMINI_OPENAI_BASE_URL,
+    timeoutMs: cfg.timeoutMs,
+  });
+});
+
 register("anthropic", (cfg) =>
   createAnthropicAdapter({
     apiKey: cfg.apiKey ?? process.env.ANTHROPIC_API_KEY ?? "",
-    model: cfg.model ?? process.env.ANTHROPIC_MODEL ?? "claude-3-5-haiku",
+    model: cfg.model ?? process.env.ANTHROPIC_MODEL ?? DEFAULT_CLAUDE_MODEL,
     baseUrl: cfg.baseUrl,
     timeoutMs: cfg.timeoutMs,
+    effort: cfg.effort,
   }),
 );
 
@@ -91,6 +116,7 @@ export function createLLMProvider(config?: Partial<LLMProviderConfig>): ILLMProv
     baseUrl: config?.baseUrl,
     timeoutMs: config?.timeoutMs,
     groupId: config?.groupId,
+    effort: config?.effort,
   };
 
   const adapter = factory(fullConfig);
@@ -143,11 +169,14 @@ function createOllamaAdapter(config: { baseUrl: string; model: string; timeoutMs
   };
 }
 
-function createOpenAIAdapter(config: { apiKey: string; model: string; baseUrl?: string; timeoutMs?: number }): ILLMProvider {
-  if (!config.apiKey) throw new Error("OPENAI_API_KEY is required for the OpenAI provider");
-  const baseUrl = config.baseUrl ?? "https://api.openai.com/v1";
+/** OpenAI Chat Completions, also used for OpenAI-compatible providers (Gemini). */
+function createOpenAIAdapter(config: { name: "openai" | "gemini"; apiKey: string; model: string; baseUrl?: string; timeoutMs?: number }): ILLMProvider {
+  if (!config.apiKey) {
+    throw new Error(config.name === "openai" ? "OPENAI_API_KEY is required for the OpenAI provider" : "A Gemini API key is required for the Gemini provider");
+  }
+  const baseUrl = (config.baseUrl ?? "https://api.openai.com/v1").replace(/\/+$/, "");
   return {
-    name: "openai",
+    name: config.name,
     model: config.model,
     promptVersion: "1.0.0",
     async complete(input: LLMCompletionInput) {
@@ -170,12 +199,12 @@ function createOpenAIAdapter(config: { apiKey: string; model: string; baseUrl?: 
       });
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
+        throw new Error(`${config.name} API error: ${response.status}`);
       }
 
       const data = await response.json() as {
         choices: Array<{ message: { content: string } }>;
-        usage: { prompt_tokens: number; completion_tokens: number };
+        usage?: { prompt_tokens?: number; completion_tokens?: number };
       };
 
       return {
@@ -183,54 +212,61 @@ function createOpenAIAdapter(config: { apiKey: string; model: string; baseUrl?: 
         model: config.model,
         promptVersion: "1.0.0",
         usage: {
-          inputTokens: data.usage.prompt_tokens,
-          outputTokens: data.usage.completion_tokens,
+          inputTokens: data.usage?.prompt_tokens ?? 0,
+          outputTokens: data.usage?.completion_tokens ?? 0,
         },
       };
     },
   };
 }
 
-function createAnthropicAdapter(config: { apiKey: string; model: string; baseUrl?: string; timeoutMs?: number }): ILLMProvider {
+// Models that support the server-side refusal fallback (`fallbacks: "default"`).
+const CLAUDE_FALLBACK_MODELS = new Set(["claude-opus-5", "claude-fable-5-1"]);
+// Current Claude models reject sampling parameters and budget-style thinking;
+// adaptive thinking also spends from max_tokens, so never lowball it.
+const CLAUDE_MIN_MAX_TOKENS = 16000;
+
+/**
+ * Claude via the official Anthropic SDK. No temperature (rejected by current
+ * models), no prefill (unsupported); JSON shape comes from the prompt. A
+ * `refusal` stop reason is an error so the caller falls back deterministically.
+ */
+function createAnthropicAdapter(config: { apiKey: string; model: string; baseUrl?: string; timeoutMs?: number; effort?: string }): ILLMProvider {
   if (!config.apiKey) throw new Error("ANTHROPIC_API_KEY is required for the Anthropic provider");
-  const baseUrl = config.baseUrl ?? "https://api.anthropic.com";
+  const client = new Anthropic({
+    apiKey: config.apiKey,
+    baseURL: config.baseUrl,
+    timeout: config.timeoutMs ?? 180_000,
+    maxRetries: 1,
+  });
+  const useFallbacks = CLAUDE_FALLBACK_MODELS.has(config.model);
   return {
     name: "anthropic",
     model: config.model,
     promptVersion: "1.0.0",
     async complete(input: LLMCompletionInput) {
-      const response = await fetch(`${baseUrl}/v1/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": config.apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: config.model,
-          max_tokens: input.maxTokens ?? 2048,
-          system: input.systemPrompt || undefined,
-          messages: [{ role: "user", content: input.userPrompt }],
-        }),
-        signal: AbortSignal.timeout(config.timeoutMs ?? 60000),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Anthropic API error: ${response.status}`);
-      }
-
-      const data = await response.json() as {
-        content: Array<{ text: string }>;
-        usage: { input_tokens: number; output_tokens: number };
-      };
-
-      return {
-        text: data.content[0]?.text ?? "",
+      const response = await client.beta.messages.create({
         model: config.model,
+        max_tokens: Math.max(input.maxTokens ?? 0, CLAUDE_MIN_MAX_TOKENS),
+        ...(input.systemPrompt ? { system: input.systemPrompt } : {}),
+        messages: [{ role: "user", content: input.userPrompt }],
+        ...(config.effort ? { output_config: { effort: config.effort as "low" | "medium" | "high" | "xhigh" | "max" } } : {}),
+        ...(useFallbacks ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
+      });
+      if (response.stop_reason === "refusal") {
+        throw new Error(`Anthropic API refusal${response.stop_details?.category ? ` (${response.stop_details.category})` : ""}`);
+      }
+      const text = response.content
+        .filter((block): block is Anthropic.Beta.BetaTextBlock => block.type === "text")
+        .map((block) => block.text)
+        .join("");
+      return {
+        text,
+        model: response.model,
         promptVersion: "1.0.0",
         usage: {
-          inputTokens: data.usage.input_tokens,
-          outputTokens: data.usage.output_tokens,
+          inputTokens: response.usage.input_tokens,
+          outputTokens: response.usage.output_tokens,
         },
       };
     },

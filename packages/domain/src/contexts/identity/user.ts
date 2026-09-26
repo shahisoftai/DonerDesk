@@ -13,6 +13,7 @@ export interface UserProps {
   status: UserStatus;
   lastLoginAt?: Date;
   assignedProjectIds: string[];
+  passwordChangedAt?: Date | null;
 }
 
 export class User extends Entity<UserId> {
@@ -61,6 +62,7 @@ export class User extends Entity<UserId> {
   get passwordHash(): string { return this.props.passwordHash; }
   get assignedProjectIds(): string[] { return [...this.props.assignedProjectIds]; }
   get lastLoginAt(): Date | undefined { return this.props.lastLoginAt; }
+  get passwordChangedAt(): Date | null { return this.props.passwordChangedAt ?? null; }
 
   activate(): void {
     if (this.props.status === "REMOVED") throw DomainError.invalidTransition("Cannot activate removed user");
@@ -93,6 +95,7 @@ export class User extends Entity<UserId> {
   setPasswordHash(hash: string): void {
     if (!hash) throw DomainError.validation("Password hash required");
     this.props.passwordHash = hash;
+    this.props.passwordChangedAt = new Date();
     this.touch();
   }
 

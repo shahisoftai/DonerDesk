@@ -72,7 +72,7 @@ def critique(req: SectionDraftRequest, draft_section: GeneratedSection) -> list[
     user = build_user_prompt(req) + "\n\n# Draft to critique:\n" + draft_section.content
     try:
         content, _ = timeouts.run_with_section_timeout(
-            lambda: _chat(system, user, model=req.model, max_tokens=1024)
+            lambda: _chat(system, user, model=req.model)
         )
     except Exception:
         # Critique failures are non-fatal: return empty so the refine step

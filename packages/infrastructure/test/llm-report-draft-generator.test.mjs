@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseSections } from "../dist/llm/llm-report-draft-generator.js";
+import { parseSections, buildSectionSpecificGuidance } from "../dist/llm/llm-report-draft-generator.js";
 
 test("parseSections extracts claims and sourceReferences from LLM output", () => {
   const raw = JSON.stringify({
@@ -193,4 +193,30 @@ test("parseSections tolerates invalid optional claims metadata when content is v
   assert.equal(sections[0].content, "No verified challenge narrative was recorded.");
   assert.deepEqual(sections[0].claims, []);
   assert.deepEqual(sections[0].sourceReferences, []);
+});
+
+test("buildSectionSpecificGuidance: distinguishes indicator-performance annexes from evidence-checklist annexes", () => {
+  const input = { reportContext: {} };
+  const indicatorAnnex = { title: "Annex A: Indicator Performance Table" };
+  const evidenceAnnex = { title: "Annex B: Evidence Checklist" };
+
+  const indicatorGuidance = buildSectionSpecificGuidance(indicatorAnnex, input).join("\n");
+  assert.ok(
+    indicatorGuidance.includes("Code, Indicator, Unit, Baseline, Target"),
+    "indicator-performance annex must get the findings-table instruction",
+  );
+  assert.ok(
+    !indicatorGuidance.includes("Do NOT produce an indicator findings table"),
+    "indicator-performance annex must not get the evidence-checklist instruction",
+  );
+
+  const evidenceGuidance = buildSectionSpecificGuidance(evidenceAnnex, input).join("\n");
+  assert.ok(
+    evidenceGuidance.includes("File, Type, Verification status, Confidentiality"),
+    "evidence-checklist annex must get the evidence-file-table instruction",
+  );
+  assert.ok(
+    !evidenceGuidance.includes("Code, Indicator, Unit, Baseline, Target"),
+    "evidence-checklist annex must NOT be told to reproduce the indicator findings table (this was the production bug)",
+  );
 });

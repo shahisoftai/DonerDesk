@@ -36,7 +36,7 @@ tenant administrator from escalating into the global control plane.
 
 | Component | Production endpoint | Exposure | Service |
 |---|---|---|---|
-| OpenLiteSpeed vhost | `sa.donordesk.online:443` | Public HTTPS | `lshttpd.service` |
+| Hestia nginx vhost | `sa.donordesk.online:443` | Public HTTPS | `nginx.service` (Hestia 1.10.4) |
 | SuperAdmin Next.js app | `127.0.0.1:3012` | Loopback only | `donordesk-superadmin.service` |
 | DonorDesk API | `127.0.0.1:4001/superadmin/*` | Loopback; reached by the Next.js proxy | `donordesk-api.service` |
 | PostgreSQL | local PostgreSQL 16 | Host local | existing PostgreSQL service |
@@ -47,7 +47,7 @@ Request path:
 
 ```text
 Browser
-  -> HTTPS / OpenLiteSpeed vhost
+  -> HTTPS / Hestia nginx vhost
   -> Next.js on 127.0.0.1:3012
   -> server-side /api/control/* proxy
   -> Fastify /superadmin/* on 127.0.0.1:4001
@@ -66,8 +66,8 @@ proxied by Next.js, which reads the session from an HTTP-only cookie.
 | SuperAdmin app | `/opt/donordesk/current/superadmin` |
 | API environment | `/opt/donordesk/shared/api.env` |
 | systemd unit | `/etc/systemd/system/donordesk-superadmin.service` |
-| OpenLiteSpeed vhost | `/usr/local/lsws/conf/vhosts/sa.donordesk.online/vhost.conf` |
-| OpenLiteSpeed rollback copy | `/usr/local/lsws/conf/httpd_config.conf.pre-superadmin-20260813` |
+| Hestia nginx vhost | `/etc/nginx/conf.d/domains/sa.donordesk.online.conf` (+`.ssl.conf`) |
+| Hestia nginx rollback copy | `/etc/nginx/conf.d/domains/sa.donordesk.online.conf.bak*` (keep your own timestamped copy before editing) |
 | Initial credential handoff | `/root/donordesk-superadmin-initial.txt` (mode `0600`) |
 
 ---
@@ -164,10 +164,21 @@ completeness; see Section 12.
 
 ### LLM
 
-- OpenAI
-- Anthropic
+- Anthropic (Claude): official SDK. The model defaults to `claude-opus-5` when left blank; `claude-sonnet-4-6`, `claude-sonnet-5` and `claude-haiku-4-5` are valid choices. Optional `effort` field.
+- Google Gemini: OpenAI-compatible endpoint. **A model is required** (IDs change often).
 - DeepSeek
 - MiniMax
+- OpenAI
+
+**How report generation picks a provider (2026-09-26, release `20260926153744`):**
+
+- **One active LLM per scope.** Enabling a row switches off the previously enabled row in the same scope (audited as `configuration.superseded`).
+  - The enabled **All tenants** (GLOBAL) row is the default for every tenant; its card reads "Default for all tenants".
+  - An enabled **TENANT** row is that tenant's own AI provider. It overrides the default for that tenant only; its card reads "Tenant's own API".
+- **Resolved per generation.** The api resolves the tenant row, else the global row, on every report and sends the provider, model and key to the AI Reporter worker with the request. `workers.env` is only a fallback. Changes apply to the next report with no restart.
+- **Tenant's own provider consumes no DonorDesk AI credits.** No limit check, no reservation; the run is recorded with `billableUnits = 0`.
+- **Test connection** verifies the credentials **and** that the configured model is available, and lists valid model IDs when it isn't. It does **not** detect an empty provider account balance: that surfaces as a 400 at generation time (see §18 of `contabo-ops.md`).
+- Enabling a saved card now provisions it, using the stored encrypted key.
 
 ### Email
 
@@ -415,7 +426,35 @@ procedure have all passed production verification.
 
 ---
 
-## 13. Verification record — 2026-08-13
+## 13. Verification record — 2026-09-07 (tenant-delete fix deployed)
+
+**Deploy: 2026-09-07 — SuperAdmin-only fix live on `sa.donordesk.online`.**
+Tenant **Delete** was broken: the Next.js control proxy
+(`apps/superadmin/src/app/api/control/[...path]/route.ts`) dropped the request
+body of every `DELETE`, so the API never received the required `confirmation`
+field and always returned `400 confirmation: Required`. Fixed (DELETE bodies
+now forwarded) and the Tenant Delete button now cancels on empty confirmation.
+Deployed via snapshot + `.next`/`server.js` swap in
+`/opt/donordesk/current/superadmin`; rollback at
+`/opt/donordesk/backups/superadmin-pre-20260907104911.tgz` and
+`/opt/donordesk/app/superadmin/.next.old`.
+
+| Check | Result |
+|---|---|
+| Public portal (`sa.donordesk.online`) | HTTP 200 over HTTPS (Hestia nginx) |
+| Serving BUILD_ID | `_8FJYnrVyfGiwcho9_5de` |
+| Served client bundle `page-29210987bf6e47fe.js` | contains new delete-confirmation guard |
+| Unauthenticated `/api/control/tenants` | HTTP 401 (proxy + session gate live) |
+| `donordesk-superadmin` service | active (running) |
+| API `/health` (4001) | 200 |
+| Hestia nginx / TLS | active; cert expires 2026-12-05 |
+| Rollback | `/opt/donordesk/backups/superadmin-pre-20260907104911.tgz` + `.next.old` |
+
+**Follow-up:** optional browser click-through (Tenants Delete, Users
+Edit/Delete, Reset password) as the platform admin — code/API/proxy paths
+already verified programmatically above.
+
+## 14. Verification record — 2026-08-13
 
 Client hotfix `20260813171000` clears stale response state during navigation and
 defensively checks list payloads before rendering. This fixes the client-side
@@ -434,7 +473,7 @@ SuperAdmin email/password now creates the secure HTTP-only session directly.
 | Certificate SAN | `DNS:sa.donordesk.online` |
 | Certificate expiry | 2026-11-11 08:41:27 UTC |
 | Initial handoff file mode | `0600` |
-| OpenLiteSpeed | active |
+| Hestia nginx / panel | active |
 | API | active |
 | Main web | active |
 | SuperAdmin web | active |

@@ -1,5 +1,5 @@
-import type { Result, ReportPlan } from "@donordesk/domain";
-import { createReportPlan, DomainError } from "@donordesk/domain";
+import type { Result, ReportPlan, ReportPlanSection, ReportingRequirement } from "@donordesk/domain";
+import { createReportPlan, DomainError, stampPlanSectionsWithRequirements } from "@donordesk/domain";
 import type { IReportPlanner, ReportingProfileSnapshot } from "../ports/reporting.js";
 import type { IIdGenerator } from "../ports/core.js";
 
@@ -7,6 +7,12 @@ import type { IIdGenerator } from "../ports/core.js";
  * Deterministic, inference-based planner. Generates a ReportPlan from the
  * template sections and the reporting profile snapshot without any LLM call.
  * The LLM-based planner is a later swap point that satisfies the same port.
+ *
+ * Quality remediation WS1: when a resolved requirement snapshot is supplied,
+ * sections are stamped via the pure domain mapper with matched
+ * `requirementKeys`, `mandatoryQuestions`, and `requirementGuidance` so the
+ * narrators draft against the donor's own requirements. Without a snapshot
+ * the output is byte-identical to the pre-remediation planner.
  */
 export class InferredReportPlanner implements IReportPlanner {
   constructor(private readonly ids: IIdGenerator) {}
@@ -29,8 +35,9 @@ export class InferredReportPlanner implements IReportPlanner {
     templateVersion: number;
     profileVersion: number;
     reportingProfileSnapshot: ReportingProfileSnapshot;
+    requirements?: ReportingRequirement[];
   }): Promise<Result<ReportPlan, DomainError>> {
-    const sections = input.templateSections.map((s) => {
+    let sections: ReportPlanSection[] = input.templateSections.map((s) => {
       const override = input.reportingProfileSnapshot.sectionOverrides[s.id];
       const min = override?.min ?? s.minWords;
       const max = override?.max ?? s.maxWords;
@@ -53,6 +60,10 @@ export class InferredReportPlanner implements IReportPlanner {
           "No report sections are defined. Attach a donor template (or an explicit report structure) before generating a report.",
         ),
       };
+    }
+
+    if (input.requirements && input.requirements.length > 0) {
+      sections = stampPlanSectionsWithRequirements(sections, input.requirements);
     }
 
     const plan = createReportPlan({

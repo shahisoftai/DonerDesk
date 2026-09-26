@@ -10,6 +10,10 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "ReportingPeriod", field: "donorTemplateId" },
   { model: "ReportingPeriod", field: "storyContextJson" },
   { model: "ReportDraft", field: "supersededAt" },
+  { model: "User", field: "passwordChangedAt" },
+  { model: "PasswordResetToken", field: "tokenHash" },
+  { model: "DonorTemplateMapping", field: "detectedRegionsJson" },
+  { model: "DonorTemplateMapping", field: "templatedFileUrl" },
 ] as const;
 
 type RuntimeDataModel = {

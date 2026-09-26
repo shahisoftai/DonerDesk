@@ -17,7 +17,8 @@ from pydantic import BaseModel, ConfigDict, Field
 # Writer contract version (mirrors `packages/infrastructure/.../contract.ts`)
 # --------------------------------------------------------------------------- #
 
-WRITER_CONTRACT_VERSION = int(os.getenv("AI_REPORTER_CONTRACT_VERSION", "2"))
+WRITER_CONTRACT_VERSION = int(os.getenv("AI_REPORTER_CONTRACT_VERSION", "4"))
+
 
 
 # --------------------------------------------------------------------------- #
@@ -44,6 +45,18 @@ class SectionBrief(BaseModel):
     outlineSlots: list["OutlineSlot"] | None = None
     mandatesTable: bool | None = None
     mandatesChart: bool | None = None
+    # Quality remediation WS1 — donor requirement guidance from the resolved
+    # requirement snapshot. Must stay in lockstep with the TS
+    # `AiReporterSectionBrief` mirror.
+    requirementGuidance: list[str] = Field(default_factory=list)
+    # Quality v4 — section-specific editorial guidance rendered by the TS
+    # `buildSectionSpecificGuidance` (exec-summary structure, annex tables,
+    # cross-cutting disaggregation, financial discipline). One SSOT, sent as data.
+    sectionGuidance: list[str] = Field(default_factory=list)
+    # Quality v4 — the section synthesises the already-drafted report (executive
+    # summary / conclusion). `priorSectionsSummary` then carries the drafted
+    # sections to summarise, and the repetition guard does not apply.
+    synthesis: bool = False
 
 
 class ContextProject(BaseModel):
@@ -87,17 +100,35 @@ class ContextProfile(BaseModel):
     formattingRules: list[str] = Field(default_factory=list)
 
 
+class ContextStory(BaseModel):
+    """"Tell the Story" narrative context recorded by the reporting officer."""
+
+    model_config = ConfigDict(extra="forbid")
+    achievements: str | None = None
+    challenges: str | None = None
+    varianceExplanations: str | None = None
+    adaptations: str | None = None
+    lessons: str | None = None
+
+
 class Context(BaseModel):
     project: ContextProject | None = None
     period: ContextPeriod | None = None
     template: ContextTemplate | None = None
     profile: ContextProfile | None = None
+    # Quality v4 — officer narrative context + exact donor attribution lines
+    # (rendered from the domain visibility catalog on the TS side).
+    story: ContextStory | None = None
+    visibility: list[str] = Field(default_factory=list)
 
 
 class Finding(BaseModel):
     model_config = ConfigDict(extra="forbid")
     indicatorCode: str
+    indicatorId: str | None = None
     indicatorName: str | None = None
+    indicatorType: str | None = None
+    calculationMethod: str | None = None
     baseline: str | float | None = None
     target: str | float | None = None
     value: str | float | None = None
@@ -111,6 +142,7 @@ class Finding(BaseModel):
 class IndicatorUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     indicatorCode: str
+    indicatorId: str | None = None
     periodAchievement: str | None = None
     cumulativeAchievement: str | None = None
     comments: str | None = None
@@ -120,6 +152,8 @@ class IndicatorUpdate(BaseModel):
 class Activity(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str
+    activityId: str | None = None
+    attachedEvidenceIds: list[str] = Field(default_factory=list)
     date: str | None = None
     location: str | None = None
     participantsTotal: int | None = None
@@ -157,9 +191,17 @@ class PriorNarrative(BaseModel):
 
 
 class ModelConfig(BaseModel):
+    """The LLM for this request, resolved by the api per generation (the
+    tenant's own configuration or the SuperAdmin default). `apiKey` arrives only
+    over the internal-token-protected hop and is never logged or echoed."""
+
     model_config = ConfigDict(extra="forbid")
     provider: str | None = None
     model: str | None = None
+    baseUrl: str | None = None
+    apiKey: str | None = Field(default=None, repr=False)
+    # Claude only: output_config.effort.
+    effort: str | None = None
 
 
 class SectionDraftRequest(BaseModel):
@@ -331,6 +373,7 @@ class Artifact(BaseModel):
 # Resolve forward references for nested Pydantic models.
 SectionBrief.model_rebuild()
 Context.model_rebuild()
+ContextStory.model_rebuild()
 ContextProject.model_rebuild()
 ContextPeriod.model_rebuild()
 ContextTemplate.model_rebuild()

@@ -316,6 +316,25 @@ export class PrismaDonorTemplateMappingRepository implements IDonorTemplateMappi
         templateId: m.templateId,
         version: m.version,
         regionsJson: JSON.stringify(m.regionsList),
+        detectedRegionsJson: JSON.stringify(m.detectedRegions),
+        templatedFileUrl: m.templatedFileUrl,
+        approvedById: m.approvedById,
+        approvedAt: m.approvedAt,
+      },
+    });
+    return ok(m);
+  }
+
+  /** Persists the full current state of an existing mapping (regions,
+   * detected-regions cache, templated file, approval fields). Used by the
+   * review/approve handlers after a domain mutation. */
+  async update(m: DonorTemplateMapping): Promise<Result<DonorTemplateMapping, DomainError>> {
+    await this.prisma.donorTemplateMapping.update({
+      where: { id: m.id },
+      data: {
+        regionsJson: JSON.stringify(m.regionsList),
+        detectedRegionsJson: JSON.stringify(m.detectedRegions),
+        templatedFileUrl: m.templatedFileUrl,
         approvedById: m.approvedById,
         approvedAt: m.approvedAt,
       },
@@ -351,6 +370,8 @@ export class PrismaDonorTemplateMappingRepository implements IDonorTemplateMappi
     templateId: string;
     version: number;
     regionsJson: string;
+    detectedRegionsJson: string;
+    templatedFileUrl: string | null;
     approvedById: string | null;
     approvedAt: Date | null;
     createdAt: Date;
@@ -364,6 +385,8 @@ export class PrismaDonorTemplateMappingRepository implements IDonorTemplateMappi
       approvedById: row.approvedById ?? undefined,
       approvedAt: row.approvedAt ?? undefined,
       createdAt: row.createdAt,
+      detectedRegions: JSON.parse(row.detectedRegionsJson ?? "[]") as unknown[],
+      templatedFileUrl: row.templatedFileUrl ?? undefined,
     });
   }
 }

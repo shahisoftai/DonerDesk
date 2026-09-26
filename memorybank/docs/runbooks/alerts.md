@@ -62,11 +62,17 @@ state; the audit event is the source of truth.
    templates are correct.
 
 ## AI Reporter per-section fallback rate elevated (2026-08-29 — v2 sidecar)
-1. Per-section timeout is `AI_REPORTER_DRAFT_TIMEOUT_MS=45000` by
-   default. If many sections are timing out, lower the budget so the
-   fallback happens earlier and the rest of the draft isn't held up.
-2. If a specific provider is slow (e.g. MiniMax vs DeepSeek), switch
-   the model via `AI_REPORTER_MODEL` and observe.
+1. Per-call timeout is `AI_REPORTER_DRAFT_TIMEOUT_MS=90000` and the
+   per-section budget is `AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS=200000` (v4,
+   2026-09-26). The api HTTP ceiling `AI_REPORTER_HTTP_TIMEOUT_MS` (240000)
+   must stay above the section budget.
+2. Check `llm_runs.responseText` for `parseOutcome` / `qualityIssues`.
+   `VALIDATOR_FAILED` means the writer invented a figure; `PROVIDER_ERROR`
+   means the provider call failed. Read the worker journal for the provider
+   message (e.g. an Anthropic 400 "credit balance is too low").
+3. If a specific provider is slow or failing, switch the all-tenants default
+   in SuperAdmin → AI (not `AI_REPORTER_MODEL`: the per-request configuration
+   wins over the env since 2026-09-26).
 3. Check `journalctl -u donordesk-workers -n 200` for `SectionTimeoutError`
    tracebacks to identify whether the timeout is in the LLM call, the
    critique step, or the refine step.

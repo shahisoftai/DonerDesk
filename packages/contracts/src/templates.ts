@@ -59,3 +59,19 @@ export type CreateDonorTemplateInput = z.infer<typeof CreateDonorTemplateSchema>
 export const UpdateTemplateSectionsSchema = z.object({
   sections: z.array(TemplateSectionSchema),
 });
+
+export const RegionUpdateSchema = z.object({
+  regionId: z.string().min(1),
+  templateSectionId: z.string().min(1),
+  placeholderKey: z.string().min(1),
+});
+export type RegionUpdate = z.infer<typeof RegionUpdateSchema>;
+export const UpdateTemplateMappingSchema = z.object({
+  regionUpdates: z.array(RegionUpdateSchema).min(1),
+});
+export type UpdateTemplateMappingInput = z.infer<typeof UpdateTemplateMappingSchema>;
+
+export const LockTemplateMappingSchema = z.object({
+  mappingId: z.string().min(1),
+});
+export type LockTemplateMappingInput = z.infer<typeof LockTemplateMappingSchema>;

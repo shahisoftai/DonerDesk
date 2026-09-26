@@ -165,6 +165,13 @@ export const ResolveReportClaimSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
+export const BulkResolveReportClaimSchema = z.object({
+  claimIds: z.array(z.string().min(1)).min(1).max(200),
+  resolution: z.enum(["ACCEPTED_WITH_LIMITATION", "EXCLUDED"]),
+  notes: z.string().max(2000).optional(),
+});
+export type BulkResolveReportClaimInput = z.infer<typeof BulkResolveReportClaimSchema>;
+
 export const GenerateReportRunSchema = z.object({
   draftId: z.string().min(1),
 });

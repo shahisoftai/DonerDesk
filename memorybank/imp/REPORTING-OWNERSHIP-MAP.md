@@ -19,7 +19,7 @@ readiness, audit, cost, export, or job system was introduced.
 | Assertion extraction | `IAssertionExtractor` → `DeterministicAssertionExtractor` | Re-extracts from final content; reconciles writer claims by fingerprint |
 | Compliance exceptions | `ChecklistItem` | Unchanged — `REQUIREMENT_UNSATISFIED` projects into the gate |
 | Readiness | existing readiness composition | Unchanged |
-| Template mapping | `DonorTemplateMapping` | Unchanged (identity keys used by requirement packs) |
+| Template mapping | `DonorTemplateMapping` | 2026-09-18: fully wired end-to-end (detect/review/approve/lock/render via docxtpl) — was data-model-only with zero use-case callers until then. See `../Fixes.md` "Systematic fix of the 8 AI-report-generation audit findings". |
 | Generation audit | `ReportGenerationRun` + `LlmRun` | Extended snapshot with `parentRunId`, `sectionId`, `promptHash`, `responseHash` for child rewrite runs |
 | Approval | section/report handlers | Approval now requires `CURRENT` revision assurance and revision-hash binding |
 | Export | `IExportBuilder` / `CreateExportHandler` | Added `exportIntent`, `submissionSnapshotId`, watermark enforcement |

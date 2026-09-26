@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { ClaimResolutionActions } from "./ClaimResolutionActions";
+import { BulkClaimResolution } from "./BulkClaimResolution";
 
 export type ReviewClaim = {
   id: string;
@@ -34,6 +36,20 @@ export function ReportReviewPanel({
   const titleById = new Map(sections.map((s) => [s.id, s.sectionTitle]));
   const pending = claims.filter((c) => c.verificationResult === "FAILED" && !c.resolvedById);
   const resolved = claims.filter((c) => c.verificationResult === "FAILED" && c.resolvedById);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggle(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected((prev) => (prev.size === pending.length ? new Set() : new Set(pending.map((c) => c.id))));
+  }
 
   if (pending.length === 0 && resolved.length === 0) {
     return (
@@ -47,23 +63,61 @@ export function ReportReviewPanel({
     <div className="space-y-4">
       {pending.length > 0 && (
         <section className="card">
-          <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            {pending.length} statement{pending.length === 1 ? "" : "s"} need a decision
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              {pending.length} statement{pending.length === 1 ? "" : "s"} need a decision
+            </h3>
+            {canResolveClaim && pending.length > 1 && (
+              <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={selected.size === pending.length}
+                  onChange={toggleAll}
+                  aria-label="Select all statements"
+                />
+                Select all
+              </label>
+            )}
+          </div>
+          {canResolveClaim && selected.size > 0 && (
+            <div className="mt-3">
+              <BulkClaimResolution
+                claimIds={[...selected]}
+                canOverrideConfidential={canOverrideConfidential}
+                onDone={() => {
+                  setSelected(new Set());
+                  onResolved();
+                }}
+              />
+            </div>
+          )}
           <ul className="mt-3 space-y-2">
             {pending.map((c) => (
               <li key={c.id} className="rounded-md border border-slate-200 bg-slate-50 p-2 text-sm dark:border-white/10 dark:bg-white/5">
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{titleById.get(c.sectionId) ?? "Report"}</p>
-                <p className="mt-1 text-slate-700 dark:text-slate-200">{c.text}</p>
-                <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
-                  Verification: {c.verificationResult} — {c.verificationDetail}
-                </p>
-                <ClaimResolutionActions
-                  claimId={c.id}
-                  canResolve={canResolveClaim}
-                  canOverrideConfidential={canOverrideConfidential}
-                  onResolved={onResolved}
-                />
+                <div className="flex items-start gap-2">
+                  {canResolveClaim && pending.length > 1 && (
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={selected.has(c.id)}
+                      onChange={() => toggle(c.id)}
+                      aria-label={`Select statement: ${c.text}`}
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{titleById.get(c.sectionId) ?? "Report"}</p>
+                    <p className="mt-1 text-slate-700 dark:text-slate-200">{c.text}</p>
+                    <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
+                      Verification: {c.verificationResult} — {c.verificationDetail}
+                    </p>
+                    <ClaimResolutionActions
+                      claimId={c.id}
+                      canResolve={canResolveClaim}
+                      canOverrideConfidential={canOverrideConfidential}
+                      onResolved={onResolved}
+                    />
+                  </div>
+                </div>
               </li>
             ))}
           </ul>

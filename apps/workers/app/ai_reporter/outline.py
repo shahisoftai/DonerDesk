@@ -9,9 +9,40 @@ hand-mirror and verify parity via the test suite).
 """
 from __future__ import annotations
 
+import re
 from typing import Any
 
-from .models import OutlineSlot
+from .models import OutlineSlot, SectionBrief
+
+# Title patterns → outline kind. Donor templates only carry the coarse
+# `SectionInputType` (NARRATIVE | TABLE | ANNEX | INDICATOR_TABLE | COMPLIANCE),
+# so the editorial kind (achievement, challenge, …) must come from the title.
+# Order matters: the first match wins.
+_KIND_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
+    ("EXECUTIVE_SUMMARY", re.compile(r"executive summary|summary of (results|progress)|overview|abstract", re.I)),
+    ("INDICATOR_TABLE", re.compile(r"annex.*(indicator|performance)|indicator (table|matrix)|logframe (table|matrix)", re.I)),
+    ("ANNEX", re.compile(r"\bannex|appendix|attachment", re.I)),
+    ("CHALLENGE", re.compile(r"challenge|constraint|risk|mitigation|issue|delay", re.I)),
+    ("LESSON", re.compile(r"lesson|learning|recommendation|good practice|best practice", re.I)),
+    ("NEXT_PERIOD", re.compile(r"next (period|quarter|steps|phase)|work ?plan|planned activit|way forward|outlook", re.I)),
+    ("COMPLIANCE", re.compile(r"complian|safeguard|psea|visibility|declaration|audit", re.I)),
+    ("ACHIEVEMENT", re.compile(r"achievement|result|progress|outcome|output|indicator|performance|impact|reach|beneficiar", re.I)),
+]
+
+
+def section_kind(brief: SectionBrief) -> str:
+    """Editorial kind of a section, from its synthesis flag, title, and input type."""
+    if brief.synthesis:
+        return "EXECUTIVE_SUMMARY"
+    input_type = (brief.inputType or "NARRATIVE").upper()
+    if input_type == "INDICATOR_TABLE":
+        return "INDICATOR_TABLE"
+    for kind, pattern in _KIND_PATTERNS:
+        if pattern.search(brief.title or ""):
+            return kind
+    if input_type in {"ANNEX", "COMPLIANCE"}:
+        return input_type
+    return "NARRATIVE"
 
 
 def outline_for(input_type: str | None, brief: dict[str, Any] | None = None) -> list[OutlineSlot]:
@@ -33,15 +64,16 @@ def outline_for(input_type: str | None, brief: dict[str, Any] | None = None) -> 
 
     if normalized == "INDICATOR_TABLE":
         slots = [
-            OutlineSlot(id="table", intent="Emit a TABLE artifact with >=3 rows of disaggregated indicators.", required=True),
-            OutlineSlot(id="narrative", intent="Narrate the table contents in plain prose.", required=True),
-            OutlineSlot(id="caveat", intent="Surface every data-quality flag and limitation.", required=True),
+            OutlineSlot(id="table", intent="The verified indicator table is attached automatically; do not re-type it.", required=True),
+            OutlineSlot(id="narrative", intent="Summarise the table in 2-4 sentences: strongest results, results below expectation, indicators not calculable.", required=True),
+            OutlineSlot(id="caveat", intent="Surface every data-quality flag and limitation as 'Data quality notes'.", required=True),
         ]
     elif normalized == "ACHIEVEMENT":
         slots = [
-            OutlineSlot(id="claim", intent="State the achievement in one sentence.", required=True),
-            OutlineSlot(id="evidence", intent="Cite the evidence chunks that ground the claim.", required=True),
-            OutlineSlot(id="disaggregation", intent="Disaggregate by gender / district / donor when available.", required=False),
+            OutlineSlot(id="claim", intent="Lead with the most important verified result and its number.", required=True),
+            OutlineSlot(id="evidence", intent="Support each result with the activity records or evidence that ground it.", required=True),
+            OutlineSlot(id="change", intent="Compare with the previous period where a comparisonValue exists.", required=False),
+            OutlineSlot(id="disaggregation", intent="Quote recorded sex/age/disability breakdowns verbatim per activity; never total them.", required=False),
             OutlineSlot(id="caveat", intent="State any data-quality limitation.", required=False),
         ]
     elif normalized == "CHALLENGE":
@@ -74,8 +106,10 @@ def outline_for(input_type: str | None, brief: dict[str, Any] | None = None) -> 
     elif normalized == "EXECUTIVE_SUMMARY":
         slots = [
             OutlineSlot(id="headline", intent="State the single most important result of the period.", required=True),
-            OutlineSlot(id="scope", intent="State the period and scope.", required=True),
-            OutlineSlot(id="key-numbers", intent="Reference 1-3 verified numbers.", required=True),
+            OutlineSlot(id="scope", intent="State the project, donor, location, and period in one sentence.", required=True),
+            OutlineSlot(id="key-numbers", intent="Reference 2-4 verified numbers, including any result below expectation.", required=True),
+            OutlineSlot(id="challenge", intent="Name the main recorded challenge and how it was addressed, if recorded.", required=False),
+            OutlineSlot(id="outlook", intent="One sentence of outlook drawn only from recorded next steps.", required=False),
         ]
     else:  # NARRATIVE
         slots = [

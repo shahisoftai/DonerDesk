@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, lintReportContradictions, calculateReadiness, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
@@ -11,8 +11,8 @@ import type {
   IReportingPeriodRepository,
   IReportDraftRepository,
   IReportSectionRepository,
+  IIndicatorAnalyticsService,
 } from "../../ports/reporting.js";
-import { calculateReadiness, type ReadinessBreakdown } from "@donordesk/domain";
 
 export class CalculateReadinessHandler {
   constructor(
@@ -25,6 +25,12 @@ export class CalculateReadinessHandler {
     private readonly activities: IActivityUpdateRepository,
     private readonly checklist: IChecklistRepository,
     private readonly templates: IDonorTemplateRepository,
+    /**
+     * Optional analytics enabling the quality dimension: unresolved
+     * cross-section contradiction blockers degrade `qualityScore` and cap
+     * `overall`. Absent for legacy callers, whose scores are unchanged.
+     */
+    private readonly analytics?: IIndicatorAnalyticsService,
   ) {}
 
   async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<ReadinessBreakdown & { reportingPeriodId: string }, DomainError>> {
@@ -103,6 +109,42 @@ export class CalculateReadinessHandler {
       }
     }
 
+    // Quality dimension: run the cross-section contradiction lint over the
+    // current draft sections. "Readiness 100" must not be reachable while the
+    // report text contradicts the verified data.
+    let dataQualityBlockers: number | undefined;
+    if (draft && this.analytics) {
+      const s = await this.sections.findByReportDraft(draft.id, ctx.tenant.tenantId);
+      if (s.ok && s.value.length > 0) {
+        let lintFindingsData: ContradictionLintFindingData[] = [];
+        const computed = await this.analytics.computeFindings({
+          reportingPeriodId,
+          projectId: draft.projectId,
+          tenantId: ctx.tenant.tenantId,
+        });
+        if (computed.ok) {
+          lintFindingsData = computed.value.map((f) => ({
+            indicatorCode: f.indicatorCode,
+            value: f.value,
+            unit: f.unit,
+            baseline: f.baseline,
+            target: f.target,
+            comparisonValue: f.comparisonValue,
+            qualityFlags: f.qualityFlags,
+          }));
+        }
+        const lintPeriod = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
+        const lintPeriodValue = lintPeriod.ok ? lintPeriod.value : null;
+        const lint = lintReportContradictions({
+          sections: s.value.map((sec) => ({ id: sec.id, title: sec.sectionTitle, content: sec.content })),
+          findings: lintFindingsData,
+          periodStart: lintPeriodValue?.duration?.start?.toISOString(),
+          periodEnd: lintPeriodValue?.duration?.end?.toISOString(),
+        });
+        dataQualityBlockers = lint.blockers;
+      }
+    }
+
     const breakdown = calculateReadiness({
       totalSections,
       approvedSections,
@@ -113,6 +155,7 @@ export class CalculateReadinessHandler {
       totalChecklistItems,
       resolvedOrAcceptedItems,
       approvalProgress,
+      dataQualityBlockers,
     });
 
     return { ok: true, value: { ...breakdown, reportingPeriodId } };

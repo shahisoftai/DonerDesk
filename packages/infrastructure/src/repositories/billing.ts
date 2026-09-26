@@ -485,6 +485,9 @@ export class PrismaLlmUsageRepository implements ILlmUsageRepository {
         operationType: "REPORT_DRAFT",
         status: "success",
         modelId: { not: "stub" },
+        // Drafts made with a tenant's own AI provider are recorded with 0
+        // billable units and never consume DonorDesk AI credits.
+        billableUnits: { gt: 0 },
         createdAt: { gte: monthStart, lt: monthEnd },
       },
     });

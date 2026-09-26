@@ -1,4 +1,4 @@
-import { DomainError, parseDecimal, decimalCompare, decimalMultiply, decimalDivide, decimalRound, type VerifiedFinding, type Decimal } from "@donordesk/domain";
+import { DomainError, parseDecimal, decimalCompare, decimalMultiply, decimalDivide, decimalRound, scoreSimilarity, type VerifiedFinding, type Decimal } from "@donordesk/domain";
 import type { NumericAtom, VerificationReasonCode } from "@donordesk/domain";
 import type { IEntailmentVerifier, ICausalReviewPolicy, EntailmentResult, EntailmentVerdict, RetrievedEvidence } from "@donordesk/application";
 import type { AssertionType } from "@donordesk/domain";
@@ -197,6 +197,8 @@ export class NumericAssertionVerifier {
  * assertion and cited chunks and returns SUPPORTED/CONTRADICTED/INSUFFICIENT/
  * UNCERTAIN with cited spans and confidence. It never approves a report.
  */
+const CONTRADICTION_RE = /(no evidence|did not|was not|wasn't|contradicts|cannot be confirmed|unable to confirm|not supported)/i;
+
 export class DeterministicEntailmentVerifier implements IEntailmentVerifier {
   constructor(private readonly supportThreshold = 0.5, private readonly uncertainThreshold = 0.3) {}
 
@@ -205,20 +207,14 @@ export class DeterministicEntailmentVerifier implements IEntailmentVerifier {
     assertionType: AssertionType;
     evidence: RetrievedEvidence[];
   }): Promise<{ ok: true; value: EntailmentResult } | { ok: false; error: DomainError }> {
-    const assertionTokens = this.tokens(input.assertionText);
-    if (assertionTokens.size === 0) {
+    if (input.assertionText.trim().length === 0) {
       return { ok: true, value: { verdict: "UNCERTAIN", citedSpans: [], confidence: 0, reasonCode: "ENTAILMENT_UNCERTAIN" } };
     }
 
     let best: RetrievedEvidence | undefined;
     let bestScore = 0;
     for (const chunk of input.evidence) {
-      const chunkTokens = this.tokens(chunk.chunkText);
-      let overlap = 0;
-      for (const token of assertionTokens) {
-        if (chunkTokens.has(token)) overlap++;
-      }
-      const score = overlap / assertionTokens.size;
+      const score = scoreSimilarity(input.assertionText, chunk.chunkText);
       if (score > bestScore) {
         bestScore = score;
         best = chunk;
@@ -230,7 +226,14 @@ export class DeterministicEntailmentVerifier implements IEntailmentVerifier {
         : bestScore >= this.uncertainThreshold ? "UNCERTAIN"
           : "INSUFFICIENT";
 
-    const contradiction = input.evidence.some((c) => /(no evidence|did not|was not|wasn't|contradicts|cannot be confirmed|unable to confirm|not supported)/i.test(c.chunkText));
+    // Bug fix (donor-report quality audit, 2026-09-17): the contradiction
+    // check must look only at the chunk that actually matched this
+    // assertion (`best`), never at the whole evidence set — otherwise an
+    // unrelated chunk elsewhere in the retrieval window that happens to
+    // contain a phrase like "did not" (about something else entirely) could
+    // flip an otherwise well-supported, correctly-cited claim to
+    // CONTRADICTED.
+    const contradiction = best !== undefined && CONTRADICTION_RE.test(best.chunkText);
 
     if (verdict === "SUPPORTED" && contradiction) {
       return {
@@ -254,10 +257,6 @@ export class DeterministicEntailmentVerifier implements IEntailmentVerifier {
         reasonCode,
       },
     };
-  }
-
-  private tokens(text: string): Set<string> {
-    return new Set(text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean));
   }
 }
 

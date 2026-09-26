@@ -28,6 +28,7 @@ import { ReportReviewPanel } from "./ReportReviewPanel";
 import { ReportPreviewPanel } from "./ReportPreviewPanel";
 import { DraftVersionsPanel } from "./DraftVersionsPanel";
 import type { ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
+import type { ReportArtifact } from "@/lib/server/schemas";
 import { ReviewAndApproval } from "@/features/review/presentation/ReviewAndApproval";
 import { ExportsPanel, type ExportHistoryItem } from "@/features/exports/presentation/ExportsPanel";
 import { CommentsThread } from "@/features/comments/presentation/CommentsThread";
@@ -120,6 +121,7 @@ export function ReportWorkspace({
   periodId,
   draft,
   sections,
+  artifacts = {},
   claims,
   versions,
   indicators,
@@ -134,6 +136,8 @@ export function ReportWorkspace({
   periodId: string;
   draft: ReportDraft | null;
   sections: ReportSection[];
+  /** AI Reporter typed artifacts keyed by section id. */
+  artifacts?: Record<string, ReportArtifact[]>;
   claims: ReportClaim[];
   versions: DraftVersion[];
   indicators: RawIndicatorRow[];
@@ -356,7 +360,11 @@ async function generate() {
     if (!generating) return;
     let cancelled = false;
     let attempts = 0;
-    const MAX_POLL_ATTEMPTS = 120; // ~8 minutes: a 9-section draft at ~40s/section
+    // ~20 minutes: a safety ceiling, not the expected duration. The backend
+    // now drafts sections with bounded concurrency and a single LLM call per
+    // section, so a 9-section draft typically finishes in 1-3 minutes; this
+    // cap only guards against a genuinely stuck/hung generation run.
+    const MAX_POLL_ATTEMPTS = 300;
     const poll = async () => {
       if (cancelled) return;
       attempts += 1;
@@ -751,7 +759,7 @@ async function generate() {
               }
             />
           ) : mode === "preview" ? (
-            <ReportPreviewPanel sections={liveSections} />
+            <ReportPreviewPanel sections={liveSections} artifacts={artifacts} />
           ) : mode === "versions" ? (
             <DraftVersionsPanel
               versions={versions}

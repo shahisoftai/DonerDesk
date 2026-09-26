@@ -152,3 +152,15 @@ export const PeriodValueConfirmResponseSchema = z.object({
 });
 
 export const FieldReportApplyResponseSchema = z.object({ ok: z.boolean() });
+
+export const EvidenceLinkSuggestionsResponseSchema = z.object({
+  suggestions: z.array(
+    z.object({
+      evidenceId: z.string(),
+      targetType: z.enum(["activity", "indicator"]),
+      targetId: z.string(),
+      targetLabel: z.string(),
+      score: z.number(),
+    }),
+  ),
+});

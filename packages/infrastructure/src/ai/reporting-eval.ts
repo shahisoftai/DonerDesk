@@ -1,4 +1,5 @@
 import type { EvalResult, EvaluationScore } from "./eval.js";
+import { assessDonorVoice } from "./donor-voice.js";
 
 export interface GoldenNumericFact {
   value: string;
@@ -26,6 +27,12 @@ export interface ReportGoldenCase {
   requiredLimitations: string[];
   /** Expected classification: pass (compliant) or fail (adversarial). */
   expected?: "pass" | "fail";
+  /**
+   * Donor attribution sentence that must appear verbatim in the draft
+   * (WS3). When set, a missing sentence is a critical failure — donor
+   * visibility obligations are never averaged away by the aggregate score.
+   */
+  requiredAttribution?: string;
 
   // AI Reporter 2 — additive artifact/QA/chart expectations (optional).
   artifacts?: GoldenArtifactExpectation;
@@ -117,6 +124,25 @@ export class ReportDraftEvaluator {
     const limitationScore = input.requiredLimitations.length === 0 ? 1 : limitationHits / input.requiredLimitations.length;
     scores.push({ metric: "limitation-disclosure", score: limitationScore, details: `${limitationHits}/${input.requiredLimitations.length}` });
 
+    // Donor visibility (WS3): when the case declares a required attribution
+    // sentence, it must survive the draft (sentence-key normalized, trailing
+    // punctuation ignored). Reported only when declared, so legacy cases keep
+    // their exact metric surface.
+    let attributionScore = 1;
+    if (input.requiredAttribution !== undefined && input.requiredAttribution.length > 0) {
+      const key = sentenceKey(input.requiredAttribution);
+      attributionScore = input.draftText
+        .split(/[.!?]+\s+/)
+        .some((sentence) => sentenceKey(sentence) === key)
+        ? 1
+        : 0;
+      scores.push({
+        metric: "donor-visibility",
+        score: attributionScore,
+        details: attributionScore === 1 ? "present" : "missing",
+      });
+    }
+
     // --- AI Reporter 2 — additive artifact/QA/chart expectations ---
     // Each new metric is hard-failed when its brief declares the expectation
     // and the draft fails it; otherwise it's reported as a soft signal.
@@ -205,10 +231,22 @@ export class ReportDraftEvaluator {
     const repetition = repetitionScore(input.draftText);
     scores.push({ metric: "repetition", score: repetition, details: repetition.toFixed(2) });
 
-    // Critical failures are never averaged away: a missing required limitation
-    // or a missed numeric fact fails the case regardless of the aggregate score.
+    // Donor voice (language craft): active voice, result-first openings, no
+    // filler or vague quantifiers, readable sentence length. Same heuristic the
+    // AI Reporter worker feeds back to the writer. Soft signal: reported
+    // outside the aggregate and never a hard failure.
+    const voice = assessDonorVoice(input.draftText);
+    scores.push({ metric: "donor-voice", score: voice.score, details: voice.warnings.length ? voice.warnings.join("; ") : "clean" });
+
+    // Critical failures are never averaged away: a missing required limitation,
+    // a missed numeric fact, or a missing donor attribution fails the case
+    // regardless of the aggregate score.
     const missingLimitation = input.requiredLimitations.length > 0 && limitationHits < input.requiredLimitations.length;
     const numericMiss = input.numericFacts.length > 0 && numericAccuracy < 1;
+    const attributionFail =
+      input.requiredAttribution !== undefined &&
+      input.requiredAttribution.length > 0 &&
+      attributionScore < 1;
     const bannedPhraseFail =
       input.brief?.bannedPhrases !== undefined &&
       input.brief.bannedPhrases.length > 0 &&
@@ -216,7 +254,7 @@ export class ReportDraftEvaluator {
     const wordCountFail =
       input.brief !== undefined &&
       (scores.find((s) => s.metric === "narrative-length-vs-target")?.score ?? 1) < 1;
-    const criticalFailure = missingLimitation || numericMiss || bannedPhraseFail || wordCountFail;
+    const criticalFailure = missingLimitation || numericMiss || attributionFail || bannedPhraseFail || wordCountFail;
 
     return {
       overall,

@@ -6,7 +6,7 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
-import { OkResponseSchema, UploadResponseSchema } from "./_schemas";
+import { EvidenceLinkSuggestionsResponseSchema, OkResponseSchema, UploadResponseSchema } from "./_schemas";
 import { ImportEvidenceResponseSchema, type ImportEvidenceResponse } from "@/lib/server/schemas";
 
 export type ImportEvidenceResult = Result<ImportEvidenceResponse, AppError>;
@@ -88,6 +88,29 @@ export async function verifyEvidenceAction(evidenceId: string): Promise<VerifyEv
   });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
+}
+
+export type EvidenceLinkSuggestion = {
+  evidenceId: string;
+  targetType: "activity" | "indicator";
+  targetId: string;
+  targetLabel: string;
+  score: number;
+};
+
+export type SuggestEvidenceLinksResult = Result<EvidenceLinkSuggestion[], AppError>;
+
+/**
+ * Suggests activities/indicator updates this evidence file likely belongs to,
+ * by title similarity. Never attaches anything itself — the caller must
+ * confirm via attachEvidenceAction so evidence linkage always requires an
+ * explicit user decision.
+ */
+export async function suggestEvidenceLinksAction(evidenceId: string): Promise<SuggestEvidenceLinksResult> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/evidence/${evidenceId}/suggest-links`, EvidenceLinkSuggestionsResponseSchema, context.token);
+  if (!result.ok) return result;
+  return { ok: true, value: result.value.suggestions };
 }
 
 export type SetEvidencePeriodResult = Result<undefined, AppError>;

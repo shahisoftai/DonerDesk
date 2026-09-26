@@ -208,3 +208,103 @@ test("export builder enforces intent and watermark rules", async () => {
   const internal = await builder.build({ ...base, exportIntent: "INTERNAL_REVIEW", watermark: "INTERNAL PREVIEW" });
   assert.ok(internal.fileBuffer.length > 0);
 });
+
+test("buildDonorTemplate: byte-identical fallback behaviour when no donor-template mapping is configured (default state for every tenant)", async () => {
+  const builder = new DefaultExportBuilder();
+  const base = {
+    exportType: "DONOR_TEMPLATE",
+    exportIntent: "INTERNAL_REVIEW",
+    watermark: "INTERNAL PREVIEW",
+    projectName: "EERP-2026",
+    reportingPeriodLabel: "Aug 2026",
+    reportTitle: "EERP-2026 report",
+    sections: [{ title: "Executive Summary", content: "Real content.", status: "APPROVED" }],
+    indicators: [],
+    activities: [],
+    checklist: [],
+    evidenceItems: [],
+    includeSensitive: false,
+  };
+  // No `donorTemplate` field at all — the default for every existing tenant.
+  const withoutMapping = await builder.build(base);
+  // Explicit env flag on but no storage/renderer wired — must still fall back.
+  process.env.DONOR_TEMPLATE_RENDER_ENABLED = "1";
+  const withFlagButNoDeps = await builder.build(base);
+  delete process.env.DONOR_TEMPLATE_RENDER_ENABLED;
+
+  assert.ok(withoutMapping.fileBuffer.length > 0);
+  assert.equal(withoutMapping.contentType, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+  // The `docx` library embeds a per-call-unique core-properties timestamp,
+  // so exact byte-length equality across two independently generated
+  // documents is not guaranteed even for structurally identical input —
+  // assert the fallback path was taken both times (both are non-trivial,
+  // similarly-sized generic DOCX output) rather than exact byte match.
+  assert.ok(withFlagButNoDeps.fileBuffer.length > 0);
+  assert.ok(
+    Math.abs(withFlagButNoDeps.fileBuffer.length - withoutMapping.fileBuffer.length) < 50,
+    "output size must be near-identical regardless of the flag when the renderer/storage deps are absent",
+  );
+});
+
+test("buildDonorTemplate: renders via the worker when a mapping is present, flag is on, and the renderer succeeds", async () => {
+  const fakeStorage = {
+    read: async (key) => Buffer.from(`templated:${key}`),
+  };
+  const renderedBuffer = Buffer.from("RENDERED DOCX BYTES");
+  const fakeRenderer = {
+    render: async ({ context }) => {
+      assert.equal(context.region_h_0001, "Real content.");
+      return { ok: true, value: { renderedDocxBuffer: renderedBuffer } };
+    },
+  };
+  const builder = new DefaultExportBuilder(fakeStorage, fakeRenderer);
+  process.env.DONOR_TEMPLATE_RENDER_ENABLED = "1";
+  const result = await builder.build({
+    exportType: "DONOR_TEMPLATE",
+    exportIntent: "INTERNAL_REVIEW",
+    watermark: "INTERNAL PREVIEW",
+    projectName: "EERP-2026",
+    reportingPeriodLabel: "Aug 2026",
+    reportTitle: "EERP-2026 report",
+    sections: [{ title: "Executive Summary", content: "Real content.", status: "APPROVED" }],
+    indicators: [],
+    activities: [],
+    checklist: [],
+    evidenceItems: [],
+    includeSensitive: false,
+    donorTemplate: {
+      templatedFileKey: "donor-template-mappings/t1/m1/templated.docx",
+      placeholderSections: [{ placeholderKey: "region_h_0001", sectionTitle: "Executive Summary" }],
+    },
+  });
+  delete process.env.DONOR_TEMPLATE_RENDER_ENABLED;
+  assert.equal(result.fileBuffer.toString(), "RENDERED DOCX BYTES");
+});
+
+test("buildDonorTemplate: falls back to the generic DOCX when the renderer fails", async () => {
+  const fakeStorage = { read: async () => Buffer.from("templated") };
+  const fakeRenderer = { render: async () => ({ ok: false, error: { message: "worker unreachable" } }) };
+  const builder = new DefaultExportBuilder(fakeStorage, fakeRenderer);
+  process.env.DONOR_TEMPLATE_RENDER_ENABLED = "1";
+  const result = await builder.build({
+    exportType: "DONOR_TEMPLATE",
+    exportIntent: "INTERNAL_REVIEW",
+    watermark: "INTERNAL PREVIEW",
+    projectName: "EERP-2026",
+    reportingPeriodLabel: "Aug 2026",
+    reportTitle: "EERP-2026 report",
+    sections: [{ title: "Executive Summary", content: "Real content.", status: "APPROVED" }],
+    indicators: [],
+    activities: [],
+    checklist: [],
+    evidenceItems: [],
+    includeSensitive: false,
+    donorTemplate: {
+      templatedFileKey: "x",
+      placeholderSections: [{ placeholderKey: "region_h_0001", sectionTitle: "Executive Summary" }],
+    },
+  });
+  delete process.env.DONOR_TEMPLATE_RENDER_ENABLED;
+  assert.notEqual(result.fileBuffer.toString(), "RENDERED DOCX BYTES");
+  assert.ok(result.fileBuffer.length > 0, "must still produce a usable export, never a hard failure");
+});

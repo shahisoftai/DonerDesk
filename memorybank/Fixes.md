@@ -1,6 +1,244 @@
 # Fixes
 
-Record of fixes applied to DonorDesk. Last updated: 2026-08-30.
+Record of fixes applied to DonorDesk. Last updated: 2026-09-26.
+
+## Tenant's own AI provider consumes no DonorDesk AI credits (2026-09-26, DEPLOYED `20260926153744`)
+
+- A generator built from a tenant-scoped SuperAdmin LLM row is tagged `providerSource: "TENANT"` in `container.ts`. For those tenants, `GenerateReportDraftHandler` skips the credit-limit check and the credit reservation entirely (`meterPlatformCredits`).
+- The run is recorded with `billableUnits: 0`. `countAiReportDrafts` now counts only `billableUnits > 0`, so tenant-provider drafts never count against DonorDesk credits. Historic rows are unaffected, because billable successes were always recorded with `billableUnits = 1`.
+- Test: `packages/application/test/tenant-own-ai-provider.test.mjs`. With the platform provider and 0 credits, generation is blocked; with the tenant's own provider, there is no check and no reservation.
+
+## SuperAdmin LLM providers: Gemini + Claude, and one default for every tenant (2026-09-26, DEPLOYED `20260926153744`)
+
+**Status:** Implemented and verified locally. Typecheck is clean. Tests: workers 111/111 (9 new in `tests/test_ai_reporter_providers.py`), infrastructure 222/222 (6 new in `test/llm-providers.test.mjs`), domain 175/175, application 98/98. **No live provider call was made**: Claude and Gemini were exercised with a mocked `fetch` and a fake SDK client only.
+
+**Problems found:**
+- With `AI_REPORTER_ENABLED=1` (production), report generation **never read the SuperAdmin selection**. The Python worker used `workers.env`, written only when a *new key* was typed on a GLOBAL row.
+  - A tenant's own API (TENANT-scoped row) was ignored on that path.
+  - Enabling a saved card never provisioned it.
+  - Generators were cached per tenant for the life of the api process, so any change needed a restart.
+  - Several enabled GLOBAL rows resolved by "latest `updatedAt`", so the default was ambiguous.
+- **Claude was broken in two ways.** The worker gateway only speaks the OpenAI-compatible API, and the TS adapter defaulted to the non-existent `claude-3-5-haiku`.
+- **Gemini didn't exist.**
+
+**Changes:**
+- **Resolution per generation.** `getReportDraftGenerator(tenantId)` resolves the tenant's own enabled row, else the enabled GLOBAL row, on every generation (`PlatformLlmConfigResolver` → `ResolvedLlmConfig` with `scope` and `fingerprint`). The generator is cached per tenant **by fingerprint**, so a SuperAdmin edit, key rotation or tenant override applies to the next report with no restart.
+- **The worker gets the resolved provider in each request.** The AI Reporter sends `{provider, model, baseUrl, apiKey, effort}` in the request's `model` field. The key is only in transit over the internal-token localhost hop; it is never logged and never in `modelVersion`. `workers.env` is now a fallback for when no platform config exists, and env credentials are only used for the **same** provider the env names.
+- **One active LLM per scope.** Enabling a row disables the previous enabled row in the same scope (audited as `configuration.superseded`), so "the enabled all-tenants provider" is unambiguous. Enabling a saved card now provisions it using the stored secret.
+- **Gemini.** Uses Google's OpenAI-compatible endpoint (`https://generativelanguage.googleapis.com/v1beta/openai`). A model is required (no default, because IDs churn), and JSON comes from the prompt (no `response_format`).
+- **Claude.** Uses the official SDKs (`anthropic` in the worker, `@anthropic-ai/sdk` in infrastructure).
+  - Default `claude-opus-5`; `claude-haiku-4-5` is the cheap option. Optional `effort` field.
+  - No `temperature`; `max_tokens` ≥ 16000 (adaptive thinking spends from it); no prefill.
+  - `stop_reason: "refusal"` raises, so the section falls back deterministically.
+  - **`fallbacks: "default"` (beta `server-side-fallback-2026-07-01`) is enabled for `claude-opus-5` / `claude-fable-5-1`**, so a false-positive classifier decline is retried server-side on Anthropic's recommended model instead of failing.
+  - 429/5xx/529 map to `TransientProviderError`.
+- **Connection test.** It now verifies that the configured model appears in the provider's model list, and lists the available IDs when it doesn't.
+- **SuperAdmin UI.** Adds Gemini and a Claude effort field, per-provider model hints, and badges ("Default for all tenants" / "Active for tenant"; the scope shows as "Tenant's own API").
+
+**Deploy notes:**
+- Install the new Python dependency in the worker venv on the host. `deploy-fast.sh` ships `requirements.txt` but does not install it: `/opt/donordesk/workers/.venv/bin/pip install 'anthropic>=1.8,<2'`. Without it only Claude fails, falling back to the stub.
+- Ensure the api's `node_modules` includes `@anthropic-ai/sdk` (a new dependency of `@donordesk/infrastructure`).
+- After deploy: in SuperAdmin → AI, add the Claude or Gemini key, click **Test connection** (it lists valid model IDs), then **Enable**. That provider becomes the default for all tenants. A tenant-scoped row gives one tenant its own API.
+- The DeepSeek adapter still defaults to `deepseek-chat`, which third-party trackers report as retired on 2026-07-24. Set the DeepSeek model explicitly in SuperAdmin.
+
+**Production verification (2026-09-26, after the deploy):** the SuperAdmin default is now Anthropic `claude-sonnet-4-6`; the invalid `Haiku-4.5` was corrected by the operator, and Test connection validated the model.
+
+A smoke test through the real code path (`PlatformLlmConfigResolver` → `AiReporterDraftGenerator` → live worker → Anthropic SDK), run on the host with a synthetic section and no tenant writes, showed:
+- every tenant resolved to `GLOBAL anthropic claude-sonnet-4-6`, with the key present;
+- **Anthropic returned `400 invalid_request_error: "Your credit balance is too low…"`**, so the section correctly fell back to the deterministic draft (`PROVIDER_HTTP_ERROR`).
+
+The fix is on the Anthropic account (fund it). No code change is needed. The same test exposed a cosmetic stub string, "Performance: positive (undefined)", when `detail` is missing. It is guarded in `report-draft-generator.ts` (committed, ships with the next deploy).
+
+## Report-quality v4 — AI Reporter defects that lowered donor-report quality (2026-09-26, DEPLOYED `20260926153744`)
+
+**Status:** Implemented and verified locally. `pnpm -r typecheck` is clean. Tests: domain 175/175, application 98/98, infrastructure 216/216, workers 102/102 (including 22 new regression tests in `apps/workers/tests/test_ai_reporter_quality.py` and 8 in `packages/infrastructure/test/report-quality-v4.test.mjs`). `reporting:eval` is 28/28 correct. **Not verified against a live provider or in the browser.** The api `billing.test.mjs` has 2 failures from local test-DB credentials, unrelated to this change.
+
+Source: the code audit of `Features/11-AI-Report-Draft-Generator.md` against the AI Reporter path (conversation, 2026-09-26). Every defect below was confirmed in code before it was fixed.
+
+### Defects fixed
+
+1. **Typed output was silently dropped.** `llm_gateway.coerce_section` claimed to pass `qa`/`artifacts`/`chartSpec`/`deltaFromPrior` through, but it built only title/content/claims/refs. Every section with mandatory questions (or a prior period) therefore failed `MISSING_QA`/`MISSING_DELTA`, burned the retry, and ended `VALIDATOR_FAILED`. It now passes these through, validating each item individually so malformed items are dropped rather than failing the section.
+2. **`VALIDATOR_FAILED` was ignored by the API.** The worker set `usedFallback` in telemetry, but `AiReporterDraftGenerator` never read it. The failing draft shipped as a clean, billed AI draft with no "drafted without AI" banner. Now:
+   - the worker demotes only on *integrity* issues (an ungrounded number);
+   - the API substitutes the deterministic section with `fallbackReason: VALIDATOR_FAILED`;
+   - style-only issues keep the AI prose and are recorded as `qualityIssues` in the `llm_runs` row.
+3. **Numeric validators never ran, and checked the wrong direction.** `run_all` was called without `verified_numbers`, so both numeric checks were no-ops. The check itself demanded that *every* finding value appear in *every* section. The replacement is `grounding.py` / `number-grounding.ts`: every number in the prose and Q&A must exist in the request inputs.
+   - The only allowed derived figure is percent of target (0–2 dp).
+   - Codes (`OUT-1`, `ev-1:0`), list markers and thousands separators are handled.
+4. **The retry bypassed the guarded path.** The validator retry called `_chat` directly, with no per-call timeout, no backoff and a different parser. The pipeline is rewritten: both attempts go through `draft()`, the retry receives the previous draft plus every issue and warning, the better attempt is kept, and a slow retry keeps the first attempt.
+5. **The API aborted every retry.** `HttpWorkerClient` used `AI_REPORTER_DRAFT_TIMEOUT_MS` (the worker's *per-call* cap) as the HTTP timeout for a request that can make two calls. The client now uses `AI_REPORTER_HTTP_TIMEOUT_MS`, defaulting to 2 × draft + 30s. The provisioner writes `AI_REPORTER_HTTP_TIMEOUT_MS=240000`.
+6. **The AI Reporter got less context than the legacy narrator.** Only the legacy TS prompt had:
+   - section-specific guidance (exec-summary structure, annex tables, cross-cutting disaggregation, financial discipline);
+   - the officer's "Tell the Story" context (variance explanations, challenges, lessons);
+   - donor visibility/attribution lines;
+   - the tone instruction;
+   - performance-evaluation gating and quality-flag caveat wording;
+   - activity/indicator IDs for citation.
+
+   Enabling `AI_REPORTER_ENABLED` therefore *lowered* quality. All of these now reach the worker. `sectionGuidance` is rendered by the same `buildSectionSpecificGuidance`, so there is one source of truth.
+7. **Section-kind logic was dead code.** Outline slots and the "ACHIEVEMENT ⇒ chart" rule keyed off input types that do not exist (templates only use `NARRATIVE|TABLE|ANNEX|INDICATOR_TABLE|COMPLIANCE`), and `outline.py`/`chart_suggester.py` were never called. `outline.section_kind()` now classifies from the title, and the outline slots are rendered into every prompt.
+8. **Tables, charts and deltas were left to the model.** Asking the model to re-type the indicator table was the main source of JSON truncation and paraphrased numbers. `artifact_builder.py` now builds all three deterministically from verified findings:
+   - the TABLE artifact, plus the same table as markdown written into INDICATOR_TABLE content, so it reaches the editor and DOCX/PDF export and replaces any model-typed table;
+   - the CHART, via `chart_suggester`;
+   - the DELTA.
+
+   The v4 output schema is prose-only.
+9. **The executive summary was drafted first.** Sections ran in plan order, so the summary was written before the sections it summarises. `generateSectionsInBackground` now drafts synthesis sections (`isSynthesisSection`: executive summary, conclusion, key results) *after* all others, and passes them in as `draftedSections`. Non-synthesis sections receive excerpts of already-drafted siblings, so the repetition guard finally has data (`priorSectionsSummary` was hard-coded `[]`).
+10. **Evidence retrieval was not section-relevant.** Without embeddings, the adapter sent the *first* 6 packages. It now ranks lexically over the full brief (title, evidence needs, donor guidance, questions, logframe element, indicator names), then linked evidence, then verified files, with deduplicated chunks and 1000 chars per chunk. The legacy narrator also ranks on chunk text, not only titles.
+11. **Validator semantics.**
+    - Word *minimum* is now a warning; padding produced speculative prose. The maximum is still hard, and tables don't count.
+    - Mandatory-question matching ignores case and punctuation and falls back to position; an honest "not recorded" answer needs no source.
+    - Banned phrases match on word boundaries ("permanent staff" is no longer a hit). The list gained "remarkable", "incredible", "beacon of hope" and similar.
+    - Repetition detection adds a trigram-containment test for paraphrases.
+    - A delta is required only for results sections that have a comparable finding.
+12. **Donor voice is now measured.** `donor_voice.py` / `donor-voice.ts` detect passive voice, topic-label openings, filler, vague quantifiers and very long sentences. They produce warnings that are fed to the retry, and a soft `donor-voice` metric in `ReportDraftEvaluator`. It already flags passive prose in 7 golden drafts.
+13. **Rewrite guard.** `/v1/ai-reporter/rewrite` rejects a rewrite that adds or changes a number, or introduces inflated phrasing. It retries once, then errors so the API keeps the deterministic rewrite.
+14. **The stub invented a total.** The deterministic executive summary summed participants ("N participant(s) in total"), a number in no record. It now quotes per-activity counts verbatim.
+
+### Contract / config changes
+- **Writer contract v4.** `_WRITER_RULES_V4` states what the validators enforce: percent-of-target is the only derived number, evaluation gating, quality-flag caveat wording, answer questions in prose and in `qa`, and "do not emit artifacts". v2/v3 prompts stay byte-identical, and `contract.ts` is pinned string-identical by `test_ts_contract_mirror_is_string_identical`. The TS pre-v4 rule list was already missing the Python "self-review" rule; it was left as is.
+- **Defaults.**
+  - `AI_REPORTER_DRAFT_TIMEOUT_MS` 45000 → **90000** (measured MiniMax latency is ~38s).
+  - `AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS` 240000 → **200000**.
+  - `AI_REPORTER_MAX_TOKENS` 2048 → **4096**. This **deliberately reverses** the 2026-09-18 halving: with reasoning models, 2048 truncates the JSON answer after `<think>` output, and truncation falls back to the stub.
+  - New `AI_REPORTER_TEMPERATURE` (0.2), `AI_REPORTER_HTTP_TIMEOUT_MS`, and `AI_REPORTER_CONTRACT_VERSION=4` (provisioner and adapter default).
+- `LlmReportDraftGenerator.promptVersion` 4 → 5 (drafted-sibling block, chunk-text evidence ranking).
+- **Wire changes (additive; TS and Py changed together because of `extra="forbid"`):**
+  - `SectionBrief.sectionGuidance`, `SectionBrief.synthesis`;
+  - `Context.story`, `Context.visibility`;
+  - `Finding.indicatorId/indicatorType/calculationMethod`, `IndicatorUpdate.indicatorId`, `Activity.activityId/attachedEvidenceIds`;
+  - telemetry `qualityWarnings/sectionKind/attempts`.
+- Port changes: `GenerateReportDraftInput.draftedSections?`, telemetry `parseOutcome` `VALIDATOR_FAILED|VALID_WITH_ISSUES`, and `qualityIssues?`. There is no Prisma change and no `REQUIRED_PRISMA_FIELDS` change.
+- **Web.** `ReportDraftResponseSchema` now keeps `artifacts`, which were previously stripped by zod. `ReportPreviewPanel` renders markdown tables as tables and shows typed artifacts (chart data, delta, Q&A, list, key/value).
+
+### Deploy notes
+- `workers.env` **preserves** an existing `AI_REPORTER_DRAFT_TIMEOUT_MS`, so production keeps 45000 until it is edited to 90000 by hand or the key is removed before re-provisioning. Also set `AI_REPORTER_CONTRACT_VERSION=4` on both sides, or omit it and rely on the defaults.
+- `critique_writer.py` / `refiner.py` are unused and no longer imported. They were left on disk only because they carried uncommitted edits.
+
+## Systematic fix of the 8 AI-report-generation audit findings (2026-09-18, NOT YET DEPLOYED)
+
+**Status:** Implemented and verified locally — `pnpm -r typecheck` and `pnpm -r build` clean across the whole monorepo; domain 175/175, application 98/98, infrastructure 207/208 (1 pre-existing skip), workers 80/80 tests pass. **Not deployed to production** — needs the Prisma migration applied (see below) and an explicit deploy, same as any other release.
+
+Follows the audit in this same file's report-generation entries. Full plan: `/home/najeeb/.claude/plans/fuzzy-marinating-marshmallow.md`. Scope decisions (all made explicitly by the user before implementation): donor-template rendering built as the **full feature**; entailment/retrieval quality fixed via an **upgraded lexical scorer** (no new embedding-provider infra); the sequential section-generation performance rework was **deferred at the time** (too risky without dedicated test coverage on the audit/billing-critical orchestration loop) — it was subsequently implemented; see "AI Reporter latency rework" below.
+
+## AI Reporter latency rework — single-call pipeline + parallel sections (2026-09-18)
+
+Follow-up to a second audit of why a multi-section donor template could take 8-20 minutes end to end and silently outrun the UI's 8-minute poll window (see the "AiReporterWorkerClient timeout" entry below for the original per-call timeout bug this builds on). Root cause was architectural: each section ran a 2-4 call sequential LLM pipeline (draft → critique → refine → optional validator retry), and sections themselves ran strictly one after another with no real timeout cancellation. This closes out the perf rework noted as deferred above.
+
+- **Collapsed draft → critique → refine into one LLM call per section.** `apps/workers/app/ai_reporter/pipeline.py`'s `run_pipeline` no longer calls the separate `critique()`/`refine()` steps (previously up to 3 LLM calls, worst case ~8 with the validator-retry and exception-retry paths). `apps/workers/app/ai_reporter/writer_contract.py`'s system prompt gained an explicit self-review rule instructing the model to check its own draft against every writer-contract rule (grounding, sourcing, caveats, banned phrases, word limits) before emitting the final JSON — the same checks the old critique pass made, now folded into the single draft call. The deterministic `artifact_validators.run_all` check is unchanged and remains the actual quality gate; on hard failure it still retries once with validator feedback appended to the prompt. `critique_writer.py` and `refiner.py` are left in place but are no longer called by `pipeline.py`.
+- **`SectionTimeoutError` is no longer retried.** `pipeline.py`'s exception handler previously treated a per-section timeout the same as any other exception and retried the whole pipeline into the same deadline. It now re-raises immediately so the caller's fallback path takes over instead of doubling the wasted latency.
+- **`timeouts.run_with_section_timeout` now enforces a real deadline.** Previously it ran the blocking `urllib` call to completion and only checked elapsed time afterward — a slow call could block for the full 180s provider-level timeout regardless of the documented 45s section cap. It now runs the call on a daemon thread and the caller only waits up to `DRAFT_TIMEOUT_MS`; if the deadline passes first it raises `SectionTimeoutError` immediately and abandons the still-running call instead of blocking on it.
+- **`AI_REPORTER_MAX_TOKENS` default halved (4096 → 2048)** in `llm_gateway.py` — cuts decode time now that only one call per section needs the full section length instead of three.
+- **Sections now draft with bounded concurrency instead of strictly sequentially.** `packages/application/src/use-cases/reporting/generate-report-draft.ts`'s `generateSectionsInBackground` extracted the per-section body into a new `generateOneSection` method and replaced the single `for await` loop with a small worker pool (`AI_REPORTER_SECTION_CONCURRENCY` env var, default 3) pulling from a shared index. Cancellation (draft superseded), resume-skip (already-drafted sections), and hard-failure abort semantics are preserved via a shared mutable `state` object read by all workers.
+- **UI poll ceiling raised** in `apps/web/src/features/reporting/presentation/ReportWorkspace.tsx` from `MAX_POLL_ATTEMPTS = 120` (~8 min, tuned to the old ~50-130s/section sequential latency) to `300` (~20 min), now treated as a safety ceiling rather than the expected duration given the ~3x-6x latency reduction from the above.
+- **Net effect:** worst-case LLM calls per section dropped from ~8 to 2 (typical 3 → 1), and a 9-section report that previously took ~8-20 minutes sequentially should now typically finish in the low single-digit minutes with 3-way section concurrency.
+- **Verified:** `apps/workers` pytest suite (39/39 ai_reporter tests, including the retry/backoff/budget tests updated to stop monkeypatching the now-removed `pipeline.critique`/`pipeline.refine` module attributes), `packages/application` typecheck + build + full test suite (98/98) all pass. **Not yet verified against a live provider or in the browser** — no end-to-end timing measurement was taken; the UI poll-window change in particular should be watched against real generation times after deploy.
+- **Deferred (not implemented this pass):** bounding `draft_writer.build_user_prompt`'s findings/indicator-updates/activity-narrative inputs (still dumps every item with no cap), populating the report brief's unused `outlineSlots`/`numericTable`/`chartSuggestion` fields, hoisting the per-section embedding/prior-period DB lookups out of the loop, and migrating from in-process concurrency to the documented `JOB_QUEUE` (`report.draft_section`) so sections survive an API restart.
+
+### Part A — Donor template rendering (docxtpl), previously a stub
+
+`DONOR_TEMPLATE` exports used to generate a generic DOCX regardless of what a donor's actual template looked like (`docxtpl` wasn't even installed). Built the full flow:
+- **Migration** `20260917180000_donor_template_mapping_render_fields` — additive columns (`detectedRegionsJson`, `templatedFileUrl`) on the existing `DonorTemplateMapping` table. **Applied to Prisma client generation locally; NOT yet applied to any live database** — needs the standard `prisma migrate deploy` step before this ships.
+- **Structural parser** (`packages/infrastructure/src/parsers/donor-template-structure-parser.ts`) — `mammoth.convertToHtml` with a heading style-map, walked in document order to detect `HEADING`/`TABLE` regions (the existing `TolerantDocumentParser` only ever did flat-text extraction, useless for this).
+- **Auto-mapper** (`packages/domain/src/contexts/templates/auto-map-regions.ts`) — pure, deterministic, threshold-gated (0.25, never guesses), reuses the new shared lexical scorer (Part B).
+- **Domain gate**: `DonorTemplateMapping.approve()` now requires every mapped region to be human-`REVIEWED` first (`reviewedBy()` mutation added); a `withTemplatedFile()` mutation attaches the rendered-placeholder DOCX reference.
+- **4 new use-case handlers** (`packages/application/src/use-cases/templates/`): `DetectTemplateRegionsHandler`, `UpdateTemplateMappingHandler`, `ApproveTemplateMappingHandler` (calls the worker's placeholder-insertion pass **once**, at approval time — never re-parsed per export), `LockTemplateMappingHandler` (first real caller of `ReportingPeriod.lockDonorTemplateMapping()`, which existed since the original professional-reporting plan with zero callers until now).
+- **6 new API routes** (`apps/api/src/routes/donor-template-mapping.ts`): detect/list/get/update-regions/approve/lock-to-period.
+- **New Python worker package** (`apps/workers/app/donor_template/`, `docxtpl==0.16.8` added to `requirements.txt`): `POST /v1/donor-template/insert-placeholders` (python-docx, walks the DOCX body in true document order — `document.element.body.iterchildren()`, since `document.paragraphs`/`document.tables` don't preserve interleaving — counting headings/tables with the identical per-kind scheme the TS mammoth parser uses, so a region id computed by one library locates the same physical block via the other) and `POST /v1/donor-template/render` (thin `docxtpl.DocxTemplate` wrapper).
+- **`buildDonorTemplate()` rewired** (`packages/infrastructure/src/exports/builder.ts`) — new `tryRenderDonorTemplate()` attempts the worker path only when `DONOR_TEMPLATE_RENDER_ENABLED=1` **and** a `donorTemplate` input is populated **and** the storage/renderer deps are wired; returns `undefined` (never throws) on any failure at any step, falling through to the byte-for-byte-unchanged generic DOCX path. `CreateExportHandler` populates `donorTemplate` only when the period has an `APPROVED` mapping locked via `donorTemplateMappingId` — every existing tenant/period is provably unaffected (`donorTemplateMappingId` has zero setters besides the new lock handler).
+- **`IStorage` gained a `read(key)` method** — `LocalStorage` already implemented it, it just wasn't on the port interface; needed to re-read the cached templated DOCX at export time.
+- Feature ships **dark** behind `DONOR_TEMPLATE_RENDER_ENABLED` — recommend piloting one real donor template end-to-end (upload → detect → correct → approve → lock → export → open in Word) before enabling in production.
+
+### Part B — Shared lexical scorer + entailment bug fix
+
+- **New shared utility** `packages/domain/src/contexts/ai/text-similarity.ts` (`scoreSimilarity`, `stem`, `bestMatch`) — a lightweight suffix-stripping stemmer + length-weighted overlap (symmetric weighted-Dice), replacing raw unstemmed token overlap in the two places the audit flagged. Deliberately did **not** touch `requirement-mapping.ts`'s scorer (a separately-tuned, already-tested title×2/context×1 weighting unrelated to the audit findings) — reusing it there would have been unjustified regression risk for zero audit benefit.
+- **Bug fix**: `DeterministicEntailmentVerifier`'s contradiction check (`packages/infrastructure/src/llm/verifier-strategies.ts`) scanned *all* evidence chunks for contradiction phrases instead of only the chunk that matched the claim — an unrelated chunk elsewhere in the retrieval window containing an incidental phrase like "did not" could flip an otherwise well-supported, correctly-cited claim to CONTRADICTED. Now checks only `best.chunkText`.
+- Swapped `lexicalRetrieve`'s scorer in `semantic-evidence-retriever.ts` to the same shared function — improves evidence ranking quality immediately, independent of whether a real embedding provider is ever deployed (confirmed earlier this session there isn't one in production today).
+
+### Part C — Worker reliability (429 backoff, dead timeout enforced)
+
+- `apps/workers/app/ai_reporter/llm_gateway.py`: `_chat()` now raises a typed `TransientProviderError(status_code, retry_after)` for 429/5xx instead of the raw `HTTPError`. `pipeline.py`'s existing one-retry loop now backs off (using the provider's `Retry-After` header when present, capped) before that retry instead of firing immediately into the same rate-limit window — this was the exact failure mode of the MiniMax outage diagnosed earlier this session, where the one retry the code already had was worthless against sustained 429s.
+- `AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS` — defined and documented since the original AI Reporter 2 work but never read anywhere outside its own module — is now actually enforced via `timeouts.TotalBudgetTracker`, checked before every LLM call in `run_pipeline`; once exhausted the pipeline raises immediately (no further retries) rather than continuing to burn time on calls that cannot finish.
+
+### What's left before this can ship
+
+1. Apply the Prisma migration to the target database (`prisma migrate deploy`, per the standard runbook in `CONTABO-DEPLOY.md`).
+2. Deploy (`scripts/deploy-fast.sh`), same as any release.
+3. Leave `DONOR_TEMPLATE_RENDER_ENABLED` unset (off) until a real donor template has been piloted end-to-end through the new flow.
+
+## AI Reporter completely non-functional on production — provider auth, env-file truncation, annex tables (2026-09-17, releases `20260917155946` + `20260917162657`)
+
+**Status:** Resolved and verified end-to-end in production (`donordesk.online`, tenant `faed0177…`, project `0d0e3a2b…` EERP-2026, period `5dce445a…`). Confirmed by a real generation: `generatedByAi=true;fallback=false;reason=none;sections=9;claims=303;run=06aee689…`.
+
+**Context:** A live audit found the AI Reporter had never produced real content for this tenant — every generation silently fell back to the deterministic stub (`generatedByAi=false;fallback=true;reason=PROVIDER_HTTP_ERROR`). Root-caused and fixed five distinct, compounding defects.
+
+### 1. Corrupted `INTERNAL_TOKEN` in `workers.env`
+- **Problem:** `INTERNAL_TOKEN=<64-hex>` was glued directly to `AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS=600000` with no newline between them, so the worker checked a garbage token value against every API call → `401 Invalid internal token` on every `/v1/ai-reporter/*` request.
+- **Fix:** Repaired the line, synced the token to match `api.env`'s value.
+
+### 2. Duplicate legacy env keys silently dropping newer variables (root cause found twice — see §5)
+- **Problem:** `api.env` carried pre-provisioning-era standalone `AI_REPORTER_ENABLED`/`AI_REPORTER_URL` lines *before* the managed provisioning block, which duplicated the block's own declaration of the same keys. This caused `systemd`'s `EnvironmentFile` loader to silently drop `AI_REPORTER_PROVIDER`/`AI_REPORTER_MODEL`/`LLM_PROVIDER` from the live process environment — so the API defaulted to `provider ?? "openai"` ([container.ts:67](../packages/infrastructure/src/container.ts)) and sent the configured DeepSeek key to `api.openai.com`, which correctly rejected it with `401`.
+- **Fix:** `RuntimeProvisioner.provisionGlobalLlm` now calls `stripStandaloneManagedKeys()` before every write, removing any standalone declaration of a key the managed block is about to own. Regression test reproduces the exact fixture that broke production (`packages/infrastructure/test/runtime-provisioner.test.mjs`).
+
+### 3. `AI_REPORTER_DRAFT_TIMEOUT_MS` never written to `api.env`
+- **Problem:** `renderApiManagedBlock()` never included this key — only `workers.env` carried it — so `AiReporterWorkerClient` ([ai-reporter-worker-client.ts:37](../packages/infrastructure/src/llm/ai-reporter-worker-client.ts)) always fell back to its hardcoded 45s default. This timeout gates the ENTIRE section pipeline call (draft → critique → optional refine → optional retry, up to ~4 sequential LLM round-trips, observed 50–130s per section with DeepSeek), so every real generation aborted client-side with `"aborted due to timeout"` before the worker could finish.
+- **Fix:** `renderApiManagedBlock` now writes `AI_REPORTER_DRAFT_TIMEOUT_MS=180000` (catalog default) and preserves any operator-tuned value across re-provisions, mirroring the existing `workers.env` preservation mechanism (new `API_PRESERVED_KEYS`).
+
+### 4. Annex sections conflated — wrong table instructions
+- **Problem:** `buildSectionSpecificGuidance()` ([llm-report-draft-generator.ts](../packages/infrastructure/src/llm/llm-report-draft-generator.ts)) matched `title.includes("annex")` for every annex section, so "Annex B: Evidence Checklist" received the same "produce a full indicator findings table" instruction as "Annex A: Indicator Performance Table" — wrong content type for an evidence checklist.
+- **Fix:** Guidance now branches on annex *kind* (indicator/performance vs evidence/document/file), each with its own correct table-column spec.
+- **New validator:** `assert_required_table_present()` ([artifact_validators.py](../apps/workers/app/ai_reporter/artifact_validators.py)) fails validation when an annex section's content is prose-only instead of a real markdown table, wired into the existing retry-with-validator-feedback loop. **Known residual gap:** detection now works reliably (confirmed live), but DeepSeek did not always comply with the table instruction even on the automatic retry — Annex B came back as a formatted list rather than a `|`-delimited table in the final live verification. Worth a stronger retry-specific prompt or a deterministic-fallback safety net for this one section type as follow-up.
+
+### 5. **Root cause of #1 and #2, found on the second post-deploy verification: missing trailing newline at EOF**
+- **Problem:** `applyManagedBlockToEnv`/`renderApiManagedBlock` never guaranteed the written file ends with `\n` (`Array.join("\n")` never appends a final newline). Proved empirically twice in production: `systemd`'s `EnvironmentFile` loader silently drops the last one or two `KEY=VALUE` lines immediately before an unterminated final line, with **no error logged anywhere**. First incident dropped `PROVIDER`/`MODEL`/`LLM_PROVIDER` (then the last 3 lines); after fixing #3 added a new last line, the *same* file — now missing `LLM_PROVIDER`/`AI_REPORTER_DRAFT_TIMEOUT_MS` — reproduced it again on the very next deploy. Manually appending `\n` and restarting fixed it instantly both times, conclusively isolating the cause.
+- **Fix:** `atomicWriteEnvFile()` now normalises content to always end with `\n` before writing — the single choke point for every env-file write in the provisioner, so this class of bug cannot recur regardless of which caller forgot a trailing newline. Regression test added.
+- **Operational note for future secret/env-file debugging:** always check `/opt/donordesk/shared/{api,workers}.env | tail -c 5 | cat -A` for a trailing `$` (newline marker) after any manual or automated edit, and prefer reading the *live process*'s actual environment (`sudo tr '\0' '\n' < /proc/<pid>/environ`, filtered to the specific non-secret keys needed) over trusting the file content alone — the two can silently diverge.
+
+### 6. Stale test fixture unrelated to the above, fixed incidentally
+- `packages/application/test/p0-4-donor-template-gate.test.mjs` constructed `GenerateReportDraftHandler` with a positional-arg list missing the `requirementResolver` dependency (added to the constructor by unrelated prior work), shifting every argument after it one slot out of alignment (`this.getGenerator is not a function`). Production wiring in `container.ts` was already correct — this was purely a stale mock. Added the missing arg.
+
+**Deploy chain:** two releases (`20260917155946` full, `20260917162657` api-only for the newline fix), plus the previously-untracked `20260901170000_password_reset_tokens` migration applied (`PasswordResetToken` table + `User.passwordChangedAt` column, additive, no data loss). Full `pnpm -r typecheck` + `pnpm -r test` gate green before each deploy (one pre-existing local Playwright port collision on `:3000`, unrelated to any code change, not part of the deploy script's own gate).
+
+## Production schema drift: `User.passwordChangedAt` + EERP-2026 Q2 close-out (2026-09-02)
+
+**Status:** Resolved and verified in production (donordesk.online).
+
+### 1. `User.passwordChangedAt` does not exist in the production DB
+- **Problem:** The password-reset script UPDATEd `passwordChangedAt`, a column
+  present in `schema.prisma` but never migrated in production → `ERROR: column
+  "passwordChangedAt" does not exist` and an aborted reset.
+- **Fix:** Script edited to update only `passwordHash` + `updatedAt`; re-ran on
+  the host successfully. Login re-verified (200 ×3 public + local).
+- **Backup:** Pre-reset hash saved on the host at
+  `/root/dd_old_password_hash_backup_20260902.txt` (from the first script run,
+  before the failed column UPDATE). Avoid `passwordChangedAt` in future prod SQL
+  until the drift is migrated.
+
+### 2. EERP-2026 Q2 2026 compliance close-out (tenant `faed0177…`, project `0d0e3a2b…`, period `3ef77a3d…`)
+- Tagged 7 Q2 evidence files to the period (`POST /v1/evidence/:id/period`);
+  seeded `EvidenceFile.extractedText` via SQL (operator action, matching the
+  seed convention) with figures matching the 20 VERIFIED IndicatorUpdates.
+- Resolved all 26→38 detected checklist items (incl. re-detected
+  `UNSUPPORTED_REPORT_CLAIM` attestation items) with evidence-backed notes.
+- Generated the AI draft (`fdd77b05-46f8…`, 9 sections). Verification produced
+  63→71 FAILED claims (Q1-dated activity provenance, story-context facts such as
+  sex disaggregation and dates tripping numeric atoms, one causal claim).
+- **Operational finding:** every claim resolution re-assesses the owning section
+  (`ResolveReportClaimHandler` → `assessRevision`), re-creating the section's
+  claims with NEW ids. Bulk loops over a static id list mostly 404; resolutions
+  survive via fingerprint preservation, so converge by resolving one claim at a
+  time and re-querying (`while: select … FAILED and resolvedAt is null limit 1`).
+- **Approval gate gaps hit and cleared:** (a) `ASSERTION_COVERAGE_GAP` for the
+  two deterministic table sections (Progress Against Indicators, Annex A) —
+  they had zero registered assertions; appending one plain factual sentence with
+  an achievement number matching a verified indicator value ("2500 children",
+  "30 learning centres") registered MATERIAL claims that verified PASSED
+  (digit-free/"note:"-labelled prose is filtered as non-claim); (b)
+  `REQUIREMENT_UNSATISFIED` cleared by `POST /v1/reporting-periods/:id/resolve-requirements`.
+- Report **APPROVED** (`decision: "APPROVE"` body required), all 9 sections
+  approved, claims settled (19 PASSED + 71 ACCEPTED_WITH_LIMITATION), checklist
+  OPEN=0 / RESOLVED=38, readiness **100/100**
+  (sections/indicators/evidence/checklist/approval all 100).
 
 ## Product recovery — writer ↔ verifier ↔ human-review boundary (2026-08-30, release `20260829160000`)
 

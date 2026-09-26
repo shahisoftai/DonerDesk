@@ -14,15 +14,25 @@ test("HttpWorkerClient defaults to the documented worker URL (127.0.0.1:8092) wh
   }
 });
 
-test("HttpWorkerClient defaults to 45s timeout when AI_REPORTER_DRAFT_TIMEOUT_MS is unset", () => {
-  const prev = process.env.AI_REPORTER_DRAFT_TIMEOUT_MS;
+test("HttpWorkerClient timeout covers the worker's draft + feedback retry (2 x 90s + 30s) by default", () => {
+  const prev = { draft: process.env.AI_REPORTER_DRAFT_TIMEOUT_MS, http: process.env.AI_REPORTER_HTTP_TIMEOUT_MS };
   delete process.env.AI_REPORTER_DRAFT_TIMEOUT_MS;
+  delete process.env.AI_REPORTER_HTTP_TIMEOUT_MS;
   try {
     const client = new HttpWorkerClient();
     assert.equal(client.timeoutMs, AI_REPORTER_DEFAULT_TIMEOUT_MS);
-    assert.equal(client.timeoutMs, 45_000);
+    assert.equal(client.timeoutMs, 210_000);
+    // Regression: the HTTP timeout used to equal the per-call cap, so the API
+    // aborted every validator retry before the worker could answer.
+    process.env.AI_REPORTER_DRAFT_TIMEOUT_MS = "45000";
+    assert.equal(new HttpWorkerClient().timeoutMs, 120_000);
+    process.env.AI_REPORTER_HTTP_TIMEOUT_MS = "150000";
+    assert.equal(new HttpWorkerClient().timeoutMs, 150_000);
   } finally {
-    if (prev !== undefined) process.env.AI_REPORTER_DRAFT_TIMEOUT_MS = prev;
+    if (prev.draft !== undefined) process.env.AI_REPORTER_DRAFT_TIMEOUT_MS = prev.draft;
+    else delete process.env.AI_REPORTER_DRAFT_TIMEOUT_MS;
+    if (prev.http !== undefined) process.env.AI_REPORTER_HTTP_TIMEOUT_MS = prev.http;
+    else delete process.env.AI_REPORTER_HTTP_TIMEOUT_MS;
   }
 });
 

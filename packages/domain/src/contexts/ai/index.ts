@@ -3,3 +3,4 @@ export * from "./llm-prompt.js";
 export * from "./llm-run.js";
 export * from "./llm-feedback.js";
 export * from "./evidence-chunk.js";
+export * from "./text-similarity.js";

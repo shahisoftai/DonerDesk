@@ -18,6 +18,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, FastAPI, File, UploadFile
 
 from .ai_reporter.router import router as ai_reporter_router
+from .donor_template.router import router as donor_template_router
 from .compliance import DetectChecklistRequest, RewriteSectionRequest, detect_checklist, rewrite_section
 from .drafting import DraftSectionRequest, draft_section
 from .parsers import parse
@@ -72,6 +73,7 @@ def rewrite_section_route(req: RewriteSectionRequest) -> dict[str, Any]:
 
 
 v1.include_router(ai_reporter_router)
+v1.include_router(donor_template_router)
 
 
 app.include_router(v1)

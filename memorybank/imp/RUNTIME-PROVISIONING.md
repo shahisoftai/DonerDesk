@@ -76,3 +76,11 @@ Selecting a provider on `sa.donordesk.online` should make the provider live on `
 ## 8. Known sharp edge — worker reload on subsequent saves
 
 If a provider is saved *while the api is already running* (e.g., operator toggles enable or pastes a key on sa.donordesk), `upsertConfiguration` writes the env files and calls `restartServices` (api + workers). In one observed case the workers restart did not take effect and the worker held a stale key → 401 against the new provider. Operational mitigation: one-time `systemctl restart donordesk-workers`. A more robust detection (verify worker pid loaded the new env, with a stronger retry) is a deploy-tooling item, not a product regression — tracked separately.
+
+## Update 2026-09-26 (release `20260926153744`)
+
+- `workers.env` is now a **fallback only**. The api resolves the tenant's own or the platform-default SuperAdmin LLM configuration per generation, and sends the provider, model and key with each worker request.
+- `renderWorkersManagedBlock`: `AI_REPORTER_DRAFT_TIMEOUT_MS=90000`, `AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS=200000`, `AI_REPORTER_CONTRACT_VERSION=4`.
+- `renderApiManagedBlock`: adds `AI_REPORTER_HTTP_TIMEOUT_MS=240000` (preserved key) and `AI_REPORTER_CONTRACT_VERSION=4`.
+- Enabling an existing card (no new key typed) now provisions it from the stored secret.
+- **Race observed on deploy:** the api's boot-time re-provision rewrote both env files about 3 s after the deploy restart, so the services ran on stale env until they were restarted again. Compare `/proc/<pid>/environ` with the env files after a deploy.

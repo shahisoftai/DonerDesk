@@ -137,12 +137,30 @@ model User {
   status        String   @default("INVITED")
   lastLoginAt   DateTime?
   assignedProjectIds String @default("[]")
+  passwordChangedAt DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   organization  Organization @relation(fields: [tenantId], references: [tenantId])
+  passwordResetTokens PasswordResetToken[]
   @@unique([tenantId, email])
   @@index([tenantId])
+}
+
+model PasswordResetToken {
+  id          String   @id
+  tenantId    String
+  userId      String
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([tenantId, userId])
+  @@index([expiresAt])
 }
 
 model Invitation {
@@ -587,15 +605,17 @@ model ReportGenerationRun {
 }
 
 model DonorTemplateMapping {
-  id            String   @id
-  tenantId      String
-  templateId    String
-  version       Int      @default(1)
-  regionsJson   String   @default("[]")
-  approvedById  String?
-  approvedAt    DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String    @id
+  tenantId            String
+  templateId          String
+  version             Int       @default(1)
+  regionsJson         String    @default("[]")
+  detectedRegionsJson String    @default("[]")
+  templatedFileUrl    String?
+  approvedById        String?
+  approvedAt          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   @@unique([tenantId, templateId, version])
   @@index([tenantId])

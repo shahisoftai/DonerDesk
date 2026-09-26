@@ -1,6 +1,6 @@
 "use server";
 
-import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, UpdateReportingPeriodStorySchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, UpdateReportingPeriodStorySchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -23,6 +23,7 @@ import {
   PeriodValueConfirmResponseSchema,
   FieldReportExtractionResponseSchema,
   FieldReportApplyResponseSchema,
+  BulkResolveResponseSchema,
 } from "./_schemas";
 
 export type CreateReportingPeriodResult = Result<{ id: string }, AppError>;
@@ -359,6 +360,32 @@ export async function resolveReportClaimAction(
   });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
+}
+
+export type BulkResolveReportClaimsResult = Result<{ resolved: number; skipped: number }, AppError>;
+
+/**
+ * Applies one decision to several failed claims in one call, so a report
+ * with many similar findings (e.g. a batch of activity-level statements
+ * missing the same evidence) doesn't require resolving each one by hand.
+ */
+export async function bulkResolveReportClaimsAction(input: {
+  claimIds: string[];
+  resolution: "ACCEPTED_WITH_LIMITATION" | "EXCLUDED";
+  notes?: string;
+}): Promise<BulkResolveReportClaimsResult> {
+  const context = await requireSession();
+  const parsed = BulkResolveReportClaimSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  return gatewayRequest("/v1/report-claims/bulk-resolve", BulkResolveResponseSchema, context.token, {
+    method: "POST",
+    body: parsed.data,
+  });
 }
 
 export type CancelReportGenerationResult = Result<{ cancelled: boolean }, AppError>;

@@ -71,6 +71,8 @@ test("P0-4 handler: blocks generation when no donor template is attached, creati
     { findByReportingPeriod: async () => okValue([]) },
     // planner
     { plan: async () => okValue({ sections: [] }) },
+    // requirementResolver
+    { resolve: async () => okValue({ snapshot: [] }) },
     // analytics
     { computeFindings: async () => okValue([]) },
     // evidencePackages

@@ -82,6 +82,13 @@ export class IndicatorUpdate extends Entity<string> {
   get createdById(): string { return this.props.createdById; }
 
   submit(): void {
+    // Idempotent: an already-SUBMITTED row passes through unchanged so the
+    // verify endpoint (`submit()` + `verify()`) works for updates that were
+    // submitted earlier (e.g. via the period-values confirm flow). Without
+    // this, SUBMITTED rows can never reach VERIFIED and assurance always fails.
+    if (this.props.verificationStatus === "SUBMITTED") {
+      return;
+    }
     if (this.props.verificationStatus !== "DRAFT" && this.props.verificationStatus !== "NEEDS_CORRECTION") {
       throw DomainError.invalidTransition(`Cannot submit from status ${this.props.verificationStatus}`);
     }

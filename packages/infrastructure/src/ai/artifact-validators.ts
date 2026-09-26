@@ -14,10 +14,22 @@
 
 import type { GeneratedSection } from "@donordesk/application";
 import { BANNED_PHRASES } from "../llm/ai-reporter/contract.js";
+import { assessDonorVoice } from "./donor-voice.js";
+import { normaliseNumber, ungroundedNumbers } from "./number-grounding.js";
 
 export interface ValidationResult {
   ok: boolean;
+  /** Hard issues (trigger the worker's feedback retry). */
   issues: string[];
+  /** Craft signals (donor voice, word minimum) — never fail a section. */
+  warnings?: string[];
+}
+
+/** Issues meaning the prose may state something the inputs do not support. */
+export const INTEGRITY_ISSUE_PREFIXES: readonly string[] = ["UNGROUNDED_NUMBER", "CHART_UNGROUNDED", "NUMERIC_PARAPHRASE", "TABLE row"];
+
+export function integrityIssues(result: ValidationResult): string[] {
+  return result.issues.filter((i) => INTEGRITY_ISSUE_PREFIXES.some((p) => i.startsWith(p)));
 }
 
 function ok(): ValidationResult {
@@ -30,6 +42,14 @@ function fail(issue: string): ValidationResult {
 
 function words(text: string): string[] {
   return text.trim().split(/\s+/).filter(Boolean);
+}
+
+/** Section content without markdown table rows (tables are structure, not prose). */
+function prose(text: string): string {
+  return (text ?? "")
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith("|"))
+    .join("\n");
 }
 
 function normaliseTokens(text: string): string[] {
@@ -123,6 +143,16 @@ export function assertNumericExactness(
   return ok();
 }
 
+/** Every number in the prose and Q&A answers must exist in the inputs. */
+export function assertNumbersGrounded(section: GeneratedSection, allowed: ReadonlySet<string>): ValidationResult {
+  const text = [section.content ?? "", ...qaAsDicts(section).map((q) => q.answer)].join("\n");
+  const bad = ungroundedNumbers(text, allowed);
+  if (bad.length === 0) return ok();
+  return fail(
+    `UNGROUNDED_NUMBER: ${bad.slice(0, 8).join(", ")} do not appear in the verified inputs; quote only recorded figures (percent of target is the only derived figure allowed)`,
+  );
+}
+
 export function assertTableCitation(section: GeneratedSection): ValidationResult {
   for (const art of artifactsAsDicts(section)) {
     if (art.kind !== "TABLE") continue;
@@ -146,8 +176,8 @@ export function assertChartDataGrounding(
   verifiedNumbers: ReadonlySet<string>,
 ): ValidationResult {
   if (verifiedNumbers.size === 0) return ok();
-  const verifiedLower = new Set<string>();
-  for (const v of verifiedNumbers) verifiedLower.add(v.toLowerCase());
+  const allowed = new Set<string>();
+  for (const v of verifiedNumbers) allowed.add(normaliseNumber(v));
   for (const art of artifactsAsDicts(section)) {
     if (art.kind !== "CHART") continue;
     const series = (art.payload.series as ReadonlyArray<{ name?: string; data?: ReadonlyArray<unknown> }> | undefined) ?? [];
@@ -156,8 +186,8 @@ export function assertChartDataGrounding(
       for (let j = 0; j < data.length; j++) {
         const point = data[j];
         if (point === null || point === undefined || point === "") continue;
-        if (!verifiedLower.has(String(point).toLowerCase())) {
-          return fail(`CHART series '${s.name ?? "?"}' data[${j}]=${String(point)} not in verified numbers`);
+        if (!allowed.has(normaliseNumber(String(point)))) {
+          return fail(`CHART_UNGROUNDED: series '${s.name ?? "?"}' data[${j}]=${String(point)} not in verified numbers`);
         }
       }
     }
@@ -169,31 +199,50 @@ export interface MandatoryQuestionsContext {
   mandatoryQuestions: ReadonlyArray<string>;
 }
 
+const HONEST_GAP_RE =
+  /\b(?:no|not|none)\b[^.]{0,80}?\b(?:recorded|reported|available|collected|captured|documented|verified)\b/i;
+
+function questionKey(text: string): string {
+  return (text.toLowerCase().match(/[a-z0-9]+/g) ?? []).join(" ");
+}
+
+/**
+ * Each mandatory question needs a non-empty answer. Matching ignores case and
+ * punctuation and falls back to position when every question was answered in
+ * order. An honest "not recorded" answer needs no source.
+ */
 export function assertMandatoryQuestionsAnswered(
   section: GeneratedSection,
   ctx: MandatoryQuestionsContext,
 ): ValidationResult {
   const questions = ctx.mandatoryQuestions ?? [];
   if (questions.length === 0) return ok();
-  const qa = qaAsDicts(section);
-  const answered = new Set(qa.map((item) => item.question.trim().toLowerCase()));
+  const qa = qaAsDicts(section).filter((item) => item.answer.trim().length > 0);
+  const byKey = new Map(qa.map((item) => [questionKey(item.question), item]));
   const missing: string[] = [];
-  for (const q of questions) {
-    if (!answered.has(q.trim().toLowerCase())) missing.push(q);
-  }
-  if (missing.length > 0) return fail(`MISSING_QA: ${missing.join(", ")}`);
-  for (let i = 0; i < qa.length; i++) {
-    const item = qa[i];
-    if (!item) continue;
-    if ((item.sourceReferences ?? []).length < 1) {
-      return fail(`QA[${i}] missing sourceReferences`);
+  const matched: typeof qa = [];
+  questions.forEach((q, i) => {
+    const item = byKey.get(questionKey(q)) ?? (qa.length === questions.length ? qa[i] : undefined);
+    if (item) matched.push(item);
+    else missing.push(q);
+  });
+  if (missing.length > 0) return fail(`MISSING_QA: ${missing.join(" | ")}`);
+  for (let i = 0; i < matched.length; i++) {
+    const item = matched[i]!;
+    if ((item.sourceReferences ?? []).length < 1 && !HONEST_GAP_RE.test(item.answer)) {
+      return fail(`MISSING_QA_SOURCE: answer ${i + 1} has no sourceReferences`);
     }
   }
   return ok();
 }
 
-export function assertDeltaFromPrior(section: GeneratedSection, priorNarrativePresent: boolean): ValidationResult {
-  if (!priorNarrativePresent) return ok();
+/** A delta is required only when there is both a prior period and a comparable figure. */
+export function assertDeltaFromPrior(
+  section: GeneratedSection,
+  priorNarrativePresent: boolean,
+  comparableFindingPresent = true,
+): ValidationResult {
+  if (!priorNarrativePresent || !comparableFindingPresent) return ok();
   if (section.deltaFromPrior === undefined || section.deltaFromPrior === null) {
     return fail("MISSING_DELTA: deltaFromPrior is required when prior narrative exists");
   }
@@ -205,18 +254,21 @@ export interface WordCountContext {
   maxWords?: number;
 }
 
+/**
+ * maxWords is hard; a shortfall against minWords is only a warning (padding to
+ * reach a minimum is what produces speculative prose). Tables are not counted.
+ */
 export function assertWordCount(section: GeneratedSection, ctx: WordCountContext): ValidationResult {
-  const content = section.content ?? "";
-  const count = words(content).length;
+  const count = words(prose(section.content ?? "")).length;
   const issues: string[] = [];
+  const warnings: string[] = [];
   if (ctx.minWords !== undefined && count < ctx.minWords) {
-    issues.push(`WORD_LIMIT: ${count} words < minWords=${ctx.minWords}`);
+    warnings.push(`WORD_LIMIT: ${count} words < minWords=${ctx.minWords} (add only grounded detail; never pad)`);
   }
   if (ctx.maxWords !== undefined && count > ctx.maxWords) {
     issues.push(`WORD_LIMIT: ${count} words > maxWords=${ctx.maxWords}`);
   }
-  if (issues.length > 0) return { ok: false, issues };
-  return ok();
+  return { ok: issues.length === 0, issues, warnings };
 }
 
 export function assertRepetition(
@@ -224,38 +276,47 @@ export function assertRepetition(
   priorSummary: ReadonlyArray<string> | undefined,
 ): ValidationResult {
   if (!priorSummary || priorSummary.length === 0) return ok();
-  const newSents = (section.content ?? "")
-    .trim()
-    .split(/(?<=[.!?])\s+/)
-    .filter(Boolean);
-  const priorSents: string[] = [];
-  for (const blob of priorSummary) {
-    priorSents.push(...String(blob).trim().split(/(?<=[.!?])\s+/).filter(Boolean));
-  }
-  if (newSents.length === 0 || priorSents.length === 0) return ok();
+  const split = (text: string) => prose(text).trim().split(/(?<=[.!?])\s+/).filter(Boolean);
+  const trigrams = (tokens: string[]) => new Set(tokens.slice(0, Math.max(0, tokens.length - 2)).map((_, i) => tokens.slice(i, i + 3).join(" ")));
+  const newSents = split(section.content ?? "");
+  const priorTokens = priorSummary.flatMap((blob) => split(String(blob))).map(normaliseTokens).filter((t) => t.length > 0);
+  if (newSents.length === 0 || priorTokens.length === 0) return ok();
+  // Two signals: >=70% token Jaccard (near copies) or >=60% of the sentence's
+  // word trigrams contained in a sibling sentence (paraphrases). Short
+  // sentences (<8 tokens) are ignored.
   for (const ns of newSents) {
-    const nsTokens = new Set(normaliseTokens(ns));
-    if (nsTokens.size === 0) continue;
-    for (const ps of priorSents) {
-      const psTokens = new Set(normaliseTokens(ps));
-      if (psTokens.size === 0) continue;
-      const intersection = new Set([...nsTokens].filter((t) => psTokens.has(t)));
-      const union = new Set([...nsTokens, ...psTokens]);
-      const overlap = intersection.size / Math.max(1, union.size);
-      if (overlap >= 0.7) return fail("DUPLICATE: sentence overlaps prior section");
+    const nsList = normaliseTokens(ns);
+    if (nsList.length < 8) continue;
+    const nsTokens = new Set(nsList);
+    const nsTri = trigrams(nsList);
+    for (const psList of priorTokens) {
+      const psTokens = new Set(psList);
+      const intersection = [...nsTokens].filter((t) => psTokens.has(t)).length;
+      const jaccard = intersection / Math.max(1, new Set([...nsTokens, ...psTokens]).size);
+      const psTri = trigrams(psList);
+      const contained = nsTri.size === 0 ? 0 : [...nsTri].filter((t) => psTri.has(t)).length / nsTri.size;
+      if (jaccard >= 0.7 || contained >= 0.6) return fail(`DUPLICATE: sentence restates a sibling section: "${ns.slice(0, 90)}"`);
     }
   }
   return ok();
 }
 
+/** Banned phrases present as whole words/phrases ("permanent staff" is fine). */
+export function findBannedPhrases(text: string): string[] {
+  const lower = (text ?? "").toLowerCase();
+  return BANNED_PHRASES.filter((p) =>
+    new RegExp(`(?<![a-z])${p.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![a-z])`).test(lower),
+  );
+}
+
 export function assertBannedPhrases(section: GeneratedSection): ValidationResult {
-  const haystack = (section.content ?? "").toLowerCase();
-  const hits: string[] = [];
-  for (const phrase of BANNED_PHRASES) {
-    if (haystack.includes(phrase.toLowerCase())) hits.push(phrase);
-  }
+  const hits = findBannedPhrases(section.content ?? "");
   if (hits.length > 0) return fail(`BANNED_PHRASE: ${hits.join(", ")}`);
   return ok();
+}
+
+export function assertDonorVoice(section: GeneratedSection): ValidationResult {
+  return { ok: true, issues: [], warnings: assessDonorVoice(section.content ?? "").warnings };
 }
 
 export function assertArtifactOrdering(section: GeneratedSection): ValidationResult {
@@ -271,28 +332,42 @@ export function assertArtifactOrdering(section: GeneratedSection): ValidationRes
 }
 
 export interface RunAllOptions {
+  /** Legacy "every figure restated" check (only for sections that must restate all figures). */
   verifiedNumbers?: ReadonlySet<string>;
+  /** Normalised numbers the inputs contain (see `allowedNumbers`); enables the grounding check. */
+  allowedNumbers?: ReadonlySet<string>;
   priorNarrativePresent?: boolean;
+  /** Whether the section carries a comparable current/previous figure (default true). */
+  comparableFindingPresent?: boolean;
   mandatoryQuestions?: ReadonlyArray<string>;
   priorSectionsSummary?: ReadonlyArray<string>;
+  /** Synthesis sections (executive summary) summarise siblings; no repetition check. */
+  synthesis?: boolean;
   minWords?: number;
   maxWords?: number;
 }
 
 export function runAll(section: GeneratedSection, opts: RunAllOptions = {}): ValidationResult {
   const verifiedNumbers = opts.verifiedNumbers ?? new Set<string>();
+  const chartAllowed = new Set<string>([...(opts.allowedNumbers ?? []), ...verifiedNumbers]);
   const results: ValidationResult[] = [
     assertNumericExactness(section, verifiedNumbers),
+    opts.allowedNumbers ? assertNumbersGrounded(section, opts.allowedNumbers) : ok(),
     assertTableCitation(section),
-    assertChartDataGrounding(section, verifiedNumbers),
+    assertChartDataGrounding(section, chartAllowed),
     assertMandatoryQuestionsAnswered(section, { mandatoryQuestions: opts.mandatoryQuestions ?? [] }),
-    assertDeltaFromPrior(section, opts.priorNarrativePresent === true),
+    assertDeltaFromPrior(section, opts.priorNarrativePresent === true, opts.comparableFindingPresent ?? true),
     assertWordCount(section, { minWords: opts.minWords, maxWords: opts.maxWords }),
-    assertRepetition(section, opts.priorSectionsSummary ?? []),
+    opts.synthesis ? ok() : assertRepetition(section, opts.priorSectionsSummary ?? []),
     assertBannedPhrases(section),
     assertArtifactOrdering(section),
+    assertDonorVoice(section),
   ];
   const issues: string[] = [];
-  for (const r of results) issues.push(...r.issues);
-  return { ok: issues.length === 0, issues };
+  const warnings: string[] = [];
+  for (const r of results) {
+    issues.push(...r.issues);
+    warnings.push(...(r.warnings ?? []));
+  }
+  return { ok: issues.length === 0, issues, warnings };
 }

@@ -31,6 +31,7 @@
     "embedding:backfill": "node dist/llm/embedding-backfill-cli.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
     "@donordesk/application": "workspace:*",
     "@donordesk/contracts": "workspace:*",
     "@donordesk/domain": "workspace:*",
