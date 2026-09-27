@@ -10,22 +10,35 @@ import {
   ExportPreflightSchema,
   PeriodIndicatorsResponseSchema,
 } from "@/lib/server/schemas";
+import { StoryContextResponseSchema } from "@/lib/actions/_schemas";
 import { InlineError } from "@/components/feedback/PageState";
-import { ReportWorkspace } from "@/features/reporting/presentation/ReportWorkspace";
+import { ReportWorkspace, type WorkspaceView } from "@/features/reporting/presentation/ReportWorkspace";
+import { countStoryAnswers } from "@/features/reporting/application/reporting-steps";
+
+const WORKSPACE_VIEWS: readonly WorkspaceView[] = ["editor", "review", "check", "preview", "versions"];
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportWorkspacePage({ params }: { params: Promise<{ id: string; periodId: string }> }) {
+export default async function ReportWorkspacePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string; periodId: string }>;
+  searchParams: Promise<{ section?: string; view?: string }>;
+}) {
   const resolvedParams = await params;
+  const query = await searchParams;
+  const initialView = WORKSPACE_VIEWS.find((v) => v === query.view);
   const ctx = await requireSession();
 
-  const [readinessResult, checklistResult, draftResult, exportsResult, preflightResult, indicatorsResult] = await Promise.all([
+  const [readinessResult, checklistResult, draftResult, exportsResult, preflightResult, indicatorsResult, storyResult] = await Promise.all([
     gatewayRequest(`/v1/reporting-periods/${resolvedParams.periodId}/readiness`, ReadinessSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${resolvedParams.periodId}/checklist`, ChecklistResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${resolvedParams.periodId}/draft`, ReportDraftResponseSchema, ctx.token),
     gatewayRequest(`/v1/projects/${resolvedParams.id}/exports`, ExportsResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${resolvedParams.periodId}/export-preflight`, ExportPreflightSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${resolvedParams.periodId}/indicators`, PeriodIndicatorsResponseSchema, ctx.token),
+    gatewayRequest(`/v1/reporting-periods/${resolvedParams.periodId}/story`, StoryContextResponseSchema, ctx.token),
   ]);
 
   if (!readinessResult.ok) {
@@ -70,6 +83,9 @@ export default async function ReportWorkspacePage({ params }: { params: Promise<
         unverifiedIndicatorCount={preflightResult.ok ? preflightResult.value.unverifiedIndicatorCount : 0}
         sensitiveEvidenceCount={preflightResult.ok ? preflightResult.value.sensitiveCount : 0}
         capabilities={Array.from(ctx.capabilities)}
+        storyAnsweredCount={storyResult.ok ? countStoryAnswers(storyResult.value.storyContext) : 0}
+        initialSectionId={query.section}
+        initialView={initialView}
       />
     </div>
   );

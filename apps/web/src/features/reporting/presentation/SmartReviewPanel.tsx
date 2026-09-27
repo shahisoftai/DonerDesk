@@ -4,21 +4,17 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { getSmartReviewAction, type SmartReviewSummaryShape } from "@/lib/actions/reporting";
 
-function deepLink(projectId: string, periodId: string, item: SmartReviewSummaryShape["items"][number]): string | null {
+function deepLink(projectId: string, periodId: string, item: SmartReviewSummaryShape["items"][number]): string {
   switch (item.action.type) {
     case "add-evidence":
     case "review-evidence":
-      return `/projects/${projectId}/evidence`;
-    case "complete-section":
-    case "fix-number":
-    case "review-section":
-    case "reverify":
-    case "review-claim":
-    case "review-confidentiality":
+      return item.evidenceId ? `/projects/${projectId}/evidence/${item.evidenceId}` : `/projects/${projectId}/evidence`;
     default:
+      // Section-scoped items open the workspace on that section's editor,
+      // where its statements and their decisions are listed.
       return item.sectionId
-        ? `/projects/${projectId}/reports/${periodId}`
-        : `/projects/${projectId}/reports/${periodId}`;
+        ? `/projects/${projectId}/reports/${periodId}?section=${item.sectionId}&view=editor`
+        : `/projects/${projectId}/reports/${periodId}?view=check`;
   }
 }
 
@@ -55,7 +51,7 @@ export function SmartReviewPanel({
   if (!summary) {
     return (
       <div className="card space-y-3">
-        <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Report Check</h3>
+        <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Things to fix</h3>
         <p className="text-xs text-slate-500 dark:text-slate-400">Checking your report…</p>
       </div>
     );
@@ -64,7 +60,7 @@ export function SmartReviewPanel({
   if (summary.issueCount === 0) {
     return (
       <div className="card space-y-3">
-        <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Report Check</h3>
+        <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Things to fix</h3>
         <p className="rounded-md border border-success-500/30 bg-success-500/5 px-3 py-2 text-sm text-success-700 dark:text-success-400">
           🟢 No important issues found — your report is ready for final review.
         </p>
@@ -75,7 +71,7 @@ export function SmartReviewPanel({
   return (
     <div className="card space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Report Check</h3>
+        <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Things to fix</h3>
         <span className="text-xs text-slate-500 dark:text-slate-400">
           {summary.issueCount} thing{summary.issueCount === 1 ? "" : "s"} need attention
         </span>
@@ -95,13 +91,9 @@ export function SmartReviewPanel({
                 </div>
               </div>
               <div className="mt-2">
-                {href ? (
-                  <Link href={href} className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">
-                    {item.action.label}
-                  </Link>
-                ) : (
-                  <span className="text-sm text-slate-500">{item.action.label}</span>
-                )}
+                <Link href={href} className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">
+                  {item.action.label}
+                </Link>
               </div>
             </li>
           );

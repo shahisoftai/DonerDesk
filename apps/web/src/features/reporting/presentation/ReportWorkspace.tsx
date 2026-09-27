@@ -27,6 +27,8 @@ import { ClaimResolutionActions } from "./ClaimResolutionActions";
 import { ReportReviewPanel } from "./ReportReviewPanel";
 import { ReportPreviewPanel } from "./ReportPreviewPanel";
 import { DraftVersionsPanel } from "./DraftVersionsPanel";
+import { computeReportingSteps, type ReportingStepKey } from "../application/reporting-steps";
+import { draftGeneratedCopy, evidenceLabelCopy, verificationDetailCopy, verificationResultCopy } from "@/lib/reporting-copy";
 import type { ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import type { ReportArtifact } from "@/lib/server/schemas";
 import { ReviewAndApproval } from "@/features/review/presentation/ReviewAndApproval";
@@ -115,6 +117,7 @@ type RawIndicatorRow = {
 };
 
 type Panel = "sections" | "editor" | "context";
+export type WorkspaceView = "editor" | "review" | "check" | "preview" | "versions";
 
 export function ReportWorkspace({
   projectId,
@@ -131,6 +134,9 @@ export function ReportWorkspace({
   unverifiedIndicatorCount,
   sensitiveEvidenceCount,
   capabilities,
+  storyAnsweredCount = 0,
+  initialSectionId,
+  initialView,
 }: {
   projectId: string;
   periodId: string;
@@ -147,13 +153,20 @@ export function ReportWorkspace({
   unverifiedIndicatorCount: number;
   sensitiveEvidenceCount: number;
   capabilities: readonly Capability[];
+  /** Story questions answered for this period (drives the step guide). */
+  storyAnsweredCount?: number;
+  /** Deep link: `?section=<id>` selects this section on load. */
+  initialSectionId?: string;
+  /** Deep link: `?view=<view>` opens this workspace view on load. */
+  initialView?: WorkspaceView;
 }) {
   const router = useRouter();
   const actionState = useActionState();
   const [busyAction, setBusyAction] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialSectionId ?? null);
   const [panel, setPanel] = useState<Panel>("editor");
-  const [mode, setMode] = useState<"editor" | "review" | "check" | "preview" | "versions">("editor");
+  const [mode, setMode] = useState<WorkspaceView>(initialView ?? "editor");
+  const [storyAnswered, setStoryAnswered] = useState(storyAnsweredCount);
   const [draftMsg, setDraftMsg] = useState<string | null>(null);
   const [addingSection, setAddingSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
@@ -170,6 +183,20 @@ export function ReportWorkspace({
   useEffect(() => {
     if (!generating) setLiveSections(sections);
   }, [sections, generating]);
+
+  // Deep links (`?section=&view=`) can change while this client component
+  // stays mounted (soft navigation from Smart Review, notifications), so
+  // follow them instead of only reading them on first render.
+  useEffect(() => {
+    if (initialSectionId) {
+      setSelectedId(initialSectionId);
+      setPanel("editor");
+    }
+    if (initialView) setMode(initialView);
+    else if (initialSectionId) setMode("editor");
+  }, [initialSectionId, initialView]);
+
+  useEffect(() => setStoryAnswered(storyAnsweredCount), [storyAnsweredCount]);
 
   const canGenerate = can(capabilities, "report.generate");
   const canEdit = can(capabilities, "reporting.edit");
@@ -252,7 +279,7 @@ export function ReportWorkspace({
       nextSteps.push({ label: "Submit the report for review", action: () => void submitReview() });
     }
     if (draft.status === "UNDER_REVIEW") {
-      nextSteps.push({ label: "Approve the report", action: () => setMode("editor") });
+      nextSteps.push({ label: "Approve the report", action: () => setMode("check") });
     }
   }
 
@@ -272,30 +299,7 @@ export function ReportWorkspace({
     [indicators],
   );
 
-  function describeFallback(reason: string | undefined): string {
-  switch (reason) {
-    case "AI_REPORTER_DISABLED":
-      return " The AI Reporter worker is disabled (AI_REPORTER_ENABLED is not set on the api host). The api is using the deterministic stub generator.";
-    case "PROVIDER_NOT_CONFIGURED":
-      return " AI is disabled for this organisation, or no LLM provider is configured. The draft uses the deterministic stub.";
-    case "PROVIDER_TIMEOUT":
-      return " The AI provider timed out for this section; a placeholder was used. Try Regenerate to retry.";
-    case "PROVIDER_EMPTY_RESPONSE":
-      return " The AI provider returned an empty response; a placeholder was used.";
-    case "PROVIDER_MALFORMED_RESPONSE":
-      return " The AI provider returned an unparseable response; a placeholder was used.";
-    case "PROVIDER_HTTP_ERROR":
-      return " The AI Reporter worker could not be reached (check AI_REPORTER_URL, the worker service, and INTERNAL_TOKEN on the api host). The api fell back to the stub generator.";
-    case "PII_REJECTED":
-      return " The AI provider rejected the request (PII firewall). The section uses the deterministic stub.";
-    case "VALIDATOR_FAILED":
-      return " The AI output failed validation; a placeholder was used.";
-    default:
-      return reason ? ` The AI provider was unavailable (${reason}).` : " The AI provider was unavailable; a placeholder was used.";
-  }
-}
-
-async function generate() {
+  async function generate() {
     setBusyAction("draft");
     setDraftMsg(null);
     try {
@@ -308,13 +312,13 @@ async function generate() {
           setGenerationStartedAt(Date.now());
           setDraftMsg(null);
         } else {
-          const fallbackSuffix = result.fallbackUsed
-            ? describeFallback(result.fallbackReason)
-            : "";
-          const generatorSuffix = result.generatorId && result.generatorId !== "stub"
-            ? ` Generator: ${result.generatorId}${result.generatorModelVersion ? ` (${result.generatorModelVersion})` : ""}.`
-            : "";
-          setDraftMsg(`Draft generated with ${result.sectionIds.length} sections.${fallbackSuffix}${generatorSuffix}`);
+          setDraftMsg(
+            draftGeneratedCopy({
+              sectionCount: result.sectionIds.length,
+              fallbackUsed: Boolean(result.fallbackUsed),
+              fallbackReason: result.fallbackReason,
+            }),
+          );
           router.refresh();
         }
       }
@@ -447,6 +451,31 @@ async function generate() {
     }
   }
 
+  const stepStates = computeReportingSteps({
+    indicatorCount: indicators.length,
+    unverifiedIndicatorCount,
+    storyAnswered,
+    hasDraft: Boolean(draft),
+    draftStatus: draft?.status,
+  });
+
+  function selectStep(step: Exclude<ReportingStepKey, "update">) {
+    if (step === "story") {
+      setPanel("context");
+      window.requestAnimationFrame(() =>
+        document.getElementById("tell-the-story")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      );
+    } else if (step === "generate") {
+      setMode("editor");
+      window.requestAnimationFrame(() =>
+        document.getElementById("report-draft-actions")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      );
+    } else {
+      setMode("check");
+      setPanel("editor");
+    }
+  }
+
   const canReorder = Boolean(canEdit && draft && draft.status === "DRAFT" && liveSections.length > 1);
 
   async function persistOrder(nextSections: ReportSection[]) {
@@ -488,8 +517,8 @@ async function generate() {
 
   return (
     <div className="mt-6 space-y-4">
-      <ReportingStepGuide projectId={projectId} periodId={periodId} hasDraft={Boolean(draft)} />
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <ReportingStepGuide projectId={projectId} periodId={periodId} states={stepStates} onSelect={selectStep} />
+      <div id="report-draft-actions" className="flex scroll-mt-4 flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-medium">{draft ? draft.title : "No report draft yet"}</h2>
           {draft && (
@@ -565,7 +594,7 @@ async function generate() {
           {generating && (
             <div className="card space-y-1 p-3 text-sm">
               <p className="font-medium text-brand-700 dark:text-brand-300">
-                Generating sections… {generatedCount}/{liveSections.length || draft?.title ? "" : ""}
+                Generating sections… {generatedCount}/{liveSections.length}
               </p>
               {pendingSectionCount > 0 && (
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -726,11 +755,11 @@ async function generate() {
               {(
                 [
                   ["editor", "Edit sections"],
-                  ["review", `Review${pendingFailedClaims > 0 ? ` (${pendingFailedClaims})` : ""}`],
+                  ["review", `Statements${pendingFailedClaims > 0 ? ` (${pendingFailedClaims})` : ""}`],
                   ["check", "Report Check"],
                   ["preview", "Preview report"],
                   ["versions", `Versions${versions.length > 1 ? ` (${versions.length})` : ""}`],
-                ] as Array<["editor" | "review" | "check" | "preview" | "versions", string]>
+                ] as Array<[WorkspaceView, string]>
               ).map(([key, label]) => (
                 <button
                   key={key}
@@ -838,14 +867,16 @@ async function generate() {
                                   title={s.sourceText?.slice(0, 200)}
                                   className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] text-slate-500 dark:border-white/15 dark:bg-white/10 dark:text-slate-400"
                                 >
-                                  <span className="uppercase opacity-70">evidence</span>
-                                  {s.evidenceId.slice(0, 8)}
+                                  {evidenceLabelCopy(s.evidenceId, selected.sourceReferences)}
                                 </span>
                               ))}
                             </div>
                           )}
-                          <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
-                            Verification: {c.verificationResult} — {c.verificationDetail}
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            <span className="font-medium">{verificationResultCopy(c.verificationResult)}</span>
+                            {c.verificationResult === "FAILED" && verificationDetailCopy(c.verificationDetail)
+                              ? ` — ${verificationDetailCopy(c.verificationDetail)}`
+                              : ""}
                           </p>
                           {c.resolvedById ? (
                             <p className="mt-1.5 text-xs text-emerald-700 dark:text-emerald-400">
@@ -893,7 +924,7 @@ async function generate() {
 
         {/* Right: context */}
         <aside className={`space-y-4 ${panel === "context" ? "block" : "hidden lg:block"}`}>
-          <StoryPanel periodId={periodId} />
+          <StoryPanel periodId={periodId} onSaved={setStoryAnswered} />
           <FlexibleInputsPanel projectId={projectId} periodId={periodId} />
           {nextSteps.length > 0 && (
             <section className="card">
@@ -922,11 +953,11 @@ async function generate() {
               <ReadinessGauge value={readiness.overall} />
             </div>
             <dl className="mt-3 space-y-1.5 text-sm">
-              <ReadinessRow label="Sections" v={readiness.sectionsScore} href={`/projects/${projectId}/reports`} />
+              <ReadinessRow label="Sections" v={readiness.sectionsScore} onClick={() => { setMode("editor"); setPanel("sections"); }} />
               <ReadinessRow label="Indicators" v={readiness.indicatorsScore} href={`/projects/${projectId}/logframe`} />
               <ReadinessRow label="Evidence" v={readiness.evidenceScore} href={`/projects/${projectId}/evidence`} />
               <ReadinessRow label="Checklist" v={readiness.checklistScore} href={`/projects/${projectId}/compliance?period=${periodId}`} />
-              <ReadinessRow label="Approval" v={readiness.approvalScore} href={`/projects/${projectId}/reports/${periodId}`} />
+              <ReadinessRow label="Approval" v={readiness.approvalScore} onClick={() => { setMode("check"); setPanel("editor"); }} />
             </dl>
           </section>
 
@@ -976,12 +1007,19 @@ async function generate() {
   );
 }
 
-function ReadinessRow({ label, v, href }: { label: string; v: number; href: string }) {
+function ReadinessRow({ label, v, href, onClick }: { label: string; v: number; href?: string; onClick?: () => void }) {
+  const linkClass = "text-slate-500 hover:text-brand-600 hover:underline dark:text-slate-400 dark:hover:text-brand-400";
   return (
     <div className="flex items-center justify-between gap-2">
-      <Link href={href} className="text-slate-500 hover:text-brand-600 hover:underline dark:text-slate-400 dark:hover:text-brand-400">
-        {label}
-      </Link>
+      {href ? (
+        <Link href={href} className={linkClass}>
+          {label}
+        </Link>
+      ) : (
+        <button type="button" onClick={onClick} className={`text-left ${linkClass}`}>
+          {label}
+        </button>
+      )}
       <span className="font-mono text-xs">{v}%</span>
     </div>
   );

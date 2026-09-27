@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { Field } from "@/components/ui/Field";
+import { fallbackReasonCopy } from "@/lib/reporting-copy";
 import {
   autosaveReducer,
   createAutosaveState,
@@ -65,7 +66,7 @@ export function SectionEditor({
       // produces a deterministic rewrite (e.g. sentence case, audience tone)
       // but the user must know it was not a real AI rewrite.
       setRewriteNotice(
-        `AI rewrite was unavailable (${result.value.fallbackReason ?? "PROVIDER_NOT_CONFIGURED"}); a deterministic rewrite was applied instead.`,
+        `${fallbackReasonCopy(result.value.fallbackReason)} Only simple tone and casing changes were applied.`,
       );
     }
     // Always reload from the server so the editor reflects the persisted

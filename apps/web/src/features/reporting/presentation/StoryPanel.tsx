@@ -8,6 +8,7 @@ import {
   updateReportingPeriodStoryAction,
   type StoryContextShape,
 } from "@/lib/actions/reporting";
+import { countStoryAnswers } from "../application/reporting-steps";
 
 const FIELDS: Array<{ key: keyof StoryContextShape; label: string; placeholder: string }> = [
   { key: "achievements", label: "What went well?", placeholder: "e.g. Delivered all planned training sessions ahead of schedule." },
@@ -23,7 +24,7 @@ const FIELDS: Array<{ key: keyof StoryContextShape; label: string; placeholder: 
  * context key on the reporting period, which the AI report writer consumes
  * when generating the report. Simple to edit; heavy machinery stays behind it.
  */
-export function StoryPanel({ periodId }: { periodId: string }) {
+export function StoryPanel({ periodId, onSaved }: { periodId: string; onSaved?: (answeredCount: number) => void }) {
   const [story, setStory] = useState<StoryContextShape>({});
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -51,10 +52,11 @@ export function StoryPanel({ periodId }: { periodId: string }) {
     const result = await updateReportingPeriodStoryAction(periodId, story);
     setSaving(false);
     setStatus(result.ok ? "Saved." : result.error.message);
-  }, [periodId, story]);
+    if (result.ok) onSaved?.(countStoryAnswers(story));
+  }, [periodId, story, onSaved]);
 
   return (
-    <section className="card space-y-3">
+    <section id="tell-the-story" className="card scroll-mt-4 space-y-3">
       <div>
         <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Tell the Story</h3>
         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">

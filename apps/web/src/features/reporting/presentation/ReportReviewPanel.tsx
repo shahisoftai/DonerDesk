@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ClaimResolutionActions } from "./ClaimResolutionActions";
 import { BulkClaimResolution } from "./BulkClaimResolution";
+import { verificationDetailCopy, verificationResultCopy } from "@/lib/reporting-copy";
 
 export type ReviewClaim = {
   id: string;
@@ -108,7 +109,8 @@ export function ReportReviewPanel({
                     <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{titleById.get(c.sectionId) ?? "Report"}</p>
                     <p className="mt-1 text-slate-700 dark:text-slate-200">{c.text}</p>
                     <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
-                      Verification: {c.verificationResult} — {c.verificationDetail}
+                      {verificationResultCopy(c.verificationResult)}
+                      {verificationDetailCopy(c.verificationDetail) ? ` — ${verificationDetailCopy(c.verificationDetail)}` : ""}
                     </p>
                     <ClaimResolutionActions
                       claimId={c.id}
