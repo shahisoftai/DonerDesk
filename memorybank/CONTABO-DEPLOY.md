@@ -1,5 +1,30 @@
 # Deploy to Contabo — Fastest Path
 
+**Last deploy:** 2026-09-27 — `releaseId=20260927145612` (`SCOPE=api`, commit
+`a3041a9`). Fixes real extraction-quality bugs found by manually reviewing a
+production template on project "123" (a USAID BE NOFO QPR DOCX with no Word
+heading styles, a native TOC field, cover-page bracket placeholders, and a
+per-page running header baked into the body): a Word TOC hyperlink entry
+("1.     6" — the title lost through dot-leader flattening) was being read
+as a real section; bracket placeholders and the repeated running header were
+becoming sections; a heading titled "Guide for Implementing Partners" (meta
+guidance about the template) was not recognised as guidance and shown as a
+narrative report section; `Table N:`/`Chart N:`-titled sections were typed
+NARRATIVE instead of TABLE/CHART; and a real bug in the section re-extraction
+merge (`mergeExtractedSections`'s title key collapsed any all-numeric leftover
+title to the empty string, so most of a fresh extraction could be silently
+dropped on merge). Added a `CHART` section type end to end (domain/contracts/
+web) per the requirement to classify chart-needing sections, not just tables.
+Re-extracted the live "BE NOFO" template (id `aa684241-…`) in place: section
+count dropped from 106 (mostly duplicate/garbage, 84 NARRATIVE) to 59
+(accurate structure, 45 NARRATIVE/10 ANNEX/2 TABLE/1 INDICATOR_TABLE/1
+COMPLIANCE), both meta-guidance headings correctly excluded, verified via the
+API response and a real browser session (screenshots) against production.
+No migration. Pre-deploy gates green (domain 228, contracts 9, application
+138, infrastructure 236 incl. new regression coverage for this exact failure
+class; `pnpm -r typecheck` clean). Deploy verified: `/ready` 200, worker
+health ok.
+
 **Last deploy:** 2026-09-27 — `releaseId=20260927134429` (`SCOPE=both`,
 branch `0008-log-frame`, commit `e0bf15d`). Rebuilds the Donor Template
 Manager end to end (see `Features/05-Donor-Template-Manager-Plan.md`): the
