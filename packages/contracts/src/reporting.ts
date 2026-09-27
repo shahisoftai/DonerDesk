@@ -143,6 +143,11 @@ export const UpdateSectionSchema = z.object({
   changeOrigin: z.enum(["MANUAL_EDIT", "REWRITE", "RESTORE"]).optional(),
 });
 
+/** POST /v1/report-claims/:id/apply-suggestion — use the evidence value (Report Editor B5). */
+export const ApplyClaimSuggestionSchema = z.object({
+  expectedVersion: z.string().optional(),
+});
+
 /** POST /v1/report-sections/:id/regenerate — redraft one section (Report Editor B7). */
 export const RegenerateSectionSchema = z.object({
   instruction: z.string().max(500).optional(),

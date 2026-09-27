@@ -78,6 +78,7 @@ const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/report-claims\/bulk-resolve$/, permission: "report.resolve-claim" },
   { method: "POST", route: /^\/v1\/report-claims\/[^/]+\/reopen$/, permission: "report.resolve-claim" },
   { method: "GET", route: /^\/v1\/report-claims\/[^/]+\/suggestion$/, permission: "report.edit" },
+  { method: "POST", route: /^\/v1\/report-claims\/[^/]+\/apply-suggestion$/, permission: "report.edit" },
   { method: "GET", route: /^\/v1\/reporting-periods\/[^/]+\/draft$/, permission: "report.edit" },
   { method: "PUT", route: /^\/v1\/report-sections\/[^/]+$/, permission: "report.edit" },
   { method: "POST", route: /^\/v1\/report-sections$/, permission: "report.edit" },

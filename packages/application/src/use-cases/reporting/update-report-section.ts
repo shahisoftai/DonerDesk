@@ -10,8 +10,11 @@ export interface UpdateSectionInput {
   sourceReferences: SourceReference[];
   unsupportedClaims: string[];
   expectedVersion?: string;
-  /** Defaults to MANUAL_EDIT; REWRITE = accepted AI suggestion, RESTORE = earlier revision. */
-  changeOrigin?: Extract<ChangeOrigin, "MANUAL_EDIT" | "REWRITE" | "RESTORE">;
+  /**
+   * Defaults to MANUAL_EDIT; REWRITE = accepted AI suggestion, RESTORE =
+   * earlier revision, AUTO_FIX = a number corrected from evidence.
+   */
+  changeOrigin?: Extract<ChangeOrigin, "MANUAL_EDIT" | "REWRITE" | "RESTORE" | "AUTO_FIX">;
 }
 
 /**

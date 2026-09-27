@@ -11,6 +11,8 @@ import {
   GetReportDraftHandler,
   RewriteReportSectionHandler,
   RESTRICTED_EVIDENCE_LABEL,
+  locateClaimSpan,
+  replaceNumberInSpan,
 } from "../dist/index.js";
 
 /**
@@ -362,4 +364,23 @@ test("B10: a selection beyond the current text is a conflict (the section change
   const { handler } = buildRewrite("Short.");
   const result = await handler.preview(ctx(), "s1", { mode: "REWRITE", audience: "DONOR", selection: { from: 0, to: 50 }, preview: true });
   assert.equal(result.error.code, "CONFLICT");
+});
+
+// ---------------------------------------------------------------------------
+// B5 — apply the evidence value server-side
+// ---------------------------------------------------------------------------
+
+
+test("B5: the verifier span is used when it still holds the statement, else the text is searched", () => {
+  const content = "Intro. We reached 12,400 households. Later 12,400 again.";
+  assert.deepEqual(locateClaimSpan(content, { text: "We reached 12,400 households.", charStart: 7, charEnd: 36 }), { start: 7, end: 36 });
+  assert.deepEqual(locateClaimSpan(content, { text: "We reached 12,400 households.", charStart: 0, charEnd: 5 }), { start: 7, end: 36 });
+  assert.equal(locateClaimSpan(content, { text: "Gone." }), null);
+});
+
+test("B5: only the number inside the statement is replaced, never a longer number", () => {
+  const content = "We reached 112,400 people and 12,400 households. Later 12,400 again.";
+  const span = locateClaimSpan(content, { text: "We reached 112,400 people and 12,400 households." });
+  assert.equal(replaceNumberInSpan(content, span, "12,400", "11,860"), "We reached 112,400 people and 11,860 households. Later 12,400 again.");
+  assert.equal(replaceNumberInSpan(content, span, "999", "1"), null);
 });

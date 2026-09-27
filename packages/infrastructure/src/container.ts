@@ -141,6 +141,7 @@ import {
   CreateSubmissionSnapshotHandler,
   RegenerateReportSectionHandler,
   ReopenReportClaimHandler,
+  ApplyClaimSuggestionHandler,
   GetClaimSuggestionHandler,
   ListSectionRevisionsHandler,
   ReportGenerationContextBuilder,
@@ -414,6 +415,7 @@ export interface Container {
     regenerateReportSection: RegenerateReportSectionHandler;
     reopenReportClaim: ReopenReportClaimHandler;
     getClaimSuggestion: GetClaimSuggestionHandler;
+    applyClaimSuggestion: ApplyClaimSuggestionHandler;
     listSectionRevisions: ListSectionRevisionsHandler;
     resolveEffectiveRequirements: ResolveEffectiveRequirementsHandler;
     upsertRequirementPack: UpsertRequirementPackHandler;
@@ -779,6 +781,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const sectionRegenerationTracker = new InMemorySectionRegenerationTracker();
   const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);
   const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector);
+  const updateReportSectionHandler = new UpdateReportSectionHandler(sections, drafts, revisionService, assuranceService, audits);
+  const claimSuggestionHandler = new GetClaimSuggestionHandler(reportClaims, drafts, indicatorAnalytics);
   const requirementResolver = new DeterministicRequirementResolver(ids, periods, requirementPacks, awardOverrides, reportPlans, resolvedRequirements);
 
   const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics);
@@ -913,7 +917,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     cancelReportGeneration: new CancelReportGenerationHandler(drafts, sections, audits),
     activateReportDraft: new ActivateReportDraftHandler(drafts, audits),
     getReportAssurance: new GetReportAssuranceHandler(drafts, sections, reportClaims, reportRevisions, resolvedRequirements),
-    updateReportSection: new UpdateReportSectionHandler(sections, drafts, revisionService, assuranceService, audits),
+    updateReportSection: updateReportSectionHandler,
     createReportSection: new CreateReportSectionHandler(ids, drafts, sections, audits),
     deleteReportSection: new DeleteReportSectionHandler(drafts, sections, reportClaims, reportRevisions, audits),
     reorderReportSections: new ReorderReportSectionsHandler(drafts, sections, audits),
@@ -936,7 +940,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       sectionRegenerationTracker, audits,
     ),
     reopenReportClaim: new ReopenReportClaimHandler(reportClaims, sections, assuranceService, audits),
-    getClaimSuggestion: new GetClaimSuggestionHandler(reportClaims, drafts, indicatorAnalytics),
+    getClaimSuggestion: claimSuggestionHandler,
+    applyClaimSuggestion: new ApplyClaimSuggestionHandler(reportClaims, sections, claimSuggestionHandler, updateReportSectionHandler),
     listSectionRevisions: new ListSectionRevisionsHandler(sections, reportRevisions),
     resolveEffectiveRequirements: new ResolveEffectiveRequirementsHandler(requirementResolver, audits),
     upsertRequirementPack: new UpsertRequirementPackHandler(ids, requirementPacks, audits),

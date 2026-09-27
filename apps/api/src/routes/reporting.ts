@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -244,6 +244,15 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const id = (req.params as { id: string }).id;
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.getClaimSuggestion.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-claims/:id/apply-suggestion", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = ApplyClaimSuggestionSchema.parse(req.body ?? {});
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.applyClaimSuggestion.handle(ctx, id, body.expectedVersion);
     if (!r.ok) throw r.error;
     return r.value;
   });

@@ -166,3 +166,4 @@ export * from "./use-cases/reporting/regenerate-report-section.js";
 export * from "./use-cases/reporting/reopen-report-claim.js";
 export * from "./use-cases/reporting/get-claim-suggestion.js";
 export * from "./use-cases/reporting/list-section-revisions.js";
+export * from "./use-cases/reporting/apply-claim-suggestion.js";
