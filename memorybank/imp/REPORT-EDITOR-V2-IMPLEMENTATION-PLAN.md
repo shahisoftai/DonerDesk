@@ -1,6 +1,6 @@
 # Report Editor v2 — Document-First Workspace — Implementation Plan
 
-> **Status:** APPROVED FOR IMPLEMENTATION (2026-09-26) — next phase. **P0 code complete (not deployed); P1 next.**
+> **Status:** APPROVED FOR IMPLEMENTATION (2026-09-26) — next phase. **P0 + P1 code complete (not deployed; P1 behind `REPORT_EDITOR_V2`); P2 next.**
 > **Decision:** Option C ("document-first editor") from the Report Workspace UX
 > audit, chosen over A (declutter in place) and B (step screens).
 > **Scope decisions (2026-09-26):**
@@ -452,6 +452,41 @@ Estimates in focused engineering days (one developer).
   bottom approval/export row from the v2 path.
 - **Exit:** v2 renders any existing draft with editing, charts, comments,
   reorder, add/delete parity; unit tests for model/checks/primary-action/url-state.
+
+**P1 progress (2026-09-27, code complete behind the flag, not yet deployed):**
+- Flag: `lib/shared/feature-flags.ts` `isReportEditorV2Enabled(query, env)` —
+  `REPORT_EDITOR_V2=1|true` or `?editor=v2`; `?editor=classic` forces classic.
+  `page.tsx` renders `ReportEditor` (v2) or the classic `ReportWorkspace`; the v2
+  path also fetches smart-review, project and period list server-side for the
+  heading ("<project> · <start – end> · due <date>").
+- Application (pure, tested — `tests/unit/report-editor-model.test.mts`):
+  `features/report-editor/application/{editor-model,report-checks,primary-action,url-state}.ts`.
+- Presentation: `ReportEditor` shell; `useDraftGeneration` hook (generate / poll /
+  stop / ETA); top bar (`EditorTopBar`, `ReadinessButton`, `MoreActionsMenu`);
+  `OutlineNav` (status markers, Reorder mode with ↑↓×, add section);
+  `DocumentSection` + `StaticSectionView` (react-markdown + GFM, no raw HTML,
+  artifacts, `ChartFigure`), in-place `SectionEditor` for editing (rich text is P2);
+  `GenerateLaunchCard`; `Inspector` with Statements / Sources / Chart / Comments
+  and `ChecksPanel`; Version history and "Data & story" (Story + Flexible inputs)
+  in drawers until P5; confirm dialogs for delete / regenerate / approve report.
+- Selection lives in the URL via `history.replaceState` (no server re-render);
+  deep links `?section=&panel=&claim=` select, open the tab, focus the statement
+  and scroll on first load. Approve section moves to the next unapproved section.
+- Shared: `features/reporting/presentation/document-blocks.tsx` (moved from
+  `ReportPreviewPanel`); `ChartFigure.tsx` (read-only chart).
+- Fixed along the way: `ReportChartPanel` never initialised ECharts when a
+  section had no chart yet ("Add chart" drew nothing until reload) and leaked a
+  resize listener.
+- Verified: typecheck, `next build`, unit tests (the only failure is the
+  pre-existing `upload-queue` test), and a Playwright visual pass of draft,
+  checks, menu, deep link, empty, under-review, writing and 390px mobile states
+  against a temporary fixture route (removed). **Not yet exercised against a live
+  API** (the local DB credentials were rejected), so the first real run should be
+  with `?editor=v2` on production before flipping `REPORT_EDITOR_V2`.
+- Deferred to later phases as planned: autosave status in the top bar and
+  inline claim highlights (P2/P3), drag-to-reorder (arrows only for now),
+  responsive slide-over inspector (P6; below `xl` the inspector stacks under the
+  document and the outline becomes a section dropdown).
 
 ### P2 — Rich-text editor (5–7 d)
 - B8 (donor-template markdown rendering) and B9 (server normalisation) **first**.

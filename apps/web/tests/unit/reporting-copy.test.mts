@@ -63,6 +63,10 @@ test("detail copy never leaves UPPER_SNAKE codes behind", () => {
   ];
   for (const sample of samples) assert.doesNotMatch(verificationDetailCopy(sample), /[A-Z]{2,}_[A-Z]/, sample);
   assert.equal(verificationDetailCopy("Numeric assertion matches verified finding OUT-1"), "This figure matches the verified indicator data.");
+  assert.equal(
+    verificationDetailCopy("Entailment check ENTAILMENT_FAILED"),
+    "This statement could not be confirmed: the evidence does not support this statement.",
+  );
   assert.equal(verificationDetailCopy(undefined), "");
 });
 

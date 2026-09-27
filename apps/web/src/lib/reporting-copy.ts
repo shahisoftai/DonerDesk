@@ -79,9 +79,10 @@ export function verificationDetailCopy(detail: string | undefined | null): strin
   const text = (detail ?? "").trim();
   if (!text) return "";
   const codes = Array.from(new Set(text.match(CODE_RE) ?? [])).filter((c) => REASON_COPY[c]);
-  if (/^numeric assertion failed/i.test(text) && codes.length > 0) {
+  if (codes.length > 0) {
     const reasons = codes.map(verificationReasonCopy);
-    return `This figure could not be confirmed: ${reasons.join("; ")}.`;
+    const subject = /numeric|figure|number/i.test(text) ? "This figure" : "This statement";
+    return `${subject} could not be confirmed: ${reasons.join("; ")}.`;
   }
   if (/^numeric assertion matches verified finding/i.test(text)) return "This figure matches the verified indicator data.";
   return text

@@ -55,28 +55,33 @@ export function ReportChartPanel({
   const [saving, setSaving] = useState(false);
   const actionState = useActionState();
 
-  // Lazy-load ECharts only when the panel is mounted.
+  // Lazy-load ECharts once a chart exists. The chart container only renders
+  // when there is a config, so initialise on the first config (e.g. right
+  // after "Add chart"), not only on mount, and dispose on removal/unmount.
+  const hasConfig = config !== null;
   useEffect(() => {
-    let cancelled = false;
+    if (!hasConfig) return;
+    let disposed = false;
+    let cleanup: (() => void) | undefined;
     void import("echarts").then((mod) => {
-      if (cancelled || !chartRef.current) return;
-      chartInstance.current = mod.init(chartRef.current);
-      if (config) {
-        chartInstance.current.setOption(buildChartOption(indicators, config));
-      }
-      const onResize = () => chartInstance.current?.resize();
+      if (disposed || !chartRef.current) return;
+      const instance = mod.init(chartRef.current);
+      chartInstance.current = instance;
+      if (config) instance.setOption(buildChartOption(indicators, config));
+      const onResize = () => instance.resize();
       window.addEventListener("resize", onResize);
-      return () => {
+      cleanup = () => {
         window.removeEventListener("resize", onResize);
-        chartInstance.current?.dispose();
+        instance.dispose();
         chartInstance.current = null;
       };
     });
     return () => {
-      cancelled = true;
+      disposed = true;
+      cleanup?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hasConfig]);
 
   // Re-render whenever config or data changes.
   useEffect(() => {
