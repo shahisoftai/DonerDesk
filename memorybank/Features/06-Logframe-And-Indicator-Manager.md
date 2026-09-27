@@ -129,7 +129,9 @@ M&E Officer can update:
 | Verification Workflow | Implemented | Draft/Submitted/Verified/Rejected |
 | Spreadsheet Data Entry | Implemented | Per-period grid + bulk upsert + unique (indicator, period) |
 | Google Sheets Import | Implemented | Read-only scope + preview → apply to grid |
-| Disaggregation | Not implemented | Fields defined but not tracked |
+| Disaggregation | Implemented (2026-09-27) | Per-update breakdown (`disaggregationJson`), sums checked for NUMBER/CURRENCY — Phase 20 |
+| Logframe reorder / re-parent | Implemented (2026-09-27) | `PUT /v1/logframe-items/:id/position`, `sortOrder`; UI behind `LOGFRAME_DND_ENABLED` — Phase 20 |
+| Indicator history + review | Implemented (2026-09-27) | `GET /v1/indicators/:id/updates`, request-correction / reject routes — Phase 20 |
 | Indicator calculation (semantics) | Implemented (2026-09-26) | `PUT /v1/indicators/:id/semantics` + "How this value is calculated" card on the indicator page |
 
 ## Indicator calculation / semantics (2026-09-26, release `20260926164318`)
@@ -167,14 +169,16 @@ M&E Officer can update:
   `parseLogframeText` domain parser + `ImportLogframeHandler` + `POST /v1/logframe/import`;
   Drive `import-logframe` routes through the same handler.
 - [ ] AI logframe structuring from pasted text
-- [ ] Disaggregation tracking (Male/Female/Children/Disability)
-- [ ] Indicator baseline/target visualization
+- [x] Disaggregation tracking — Phase 20 (not yet used by report generation)
+- [x] Indicator baseline/target visualization — Phase 20
 - [ ] Cross-period indicator calculations
 - [ ] Indicator comparison across periods
 - [ ] Means of verification linking to evidence
-- [ ] Indicator-update history read model per indicator (`GET /v1/indicators/:id/updates`)
-- [ ] Request-correction / reject routes for indicator updates
+- [x] Indicator-update history read model per indicator (`GET /v1/indicators/:id/updates`) — Phase 20
+- [x] Request-correction / reject routes for indicator updates — Phase 20
 
 ## Notes
 
 Indicator updates are linked to reporting periods and can have evidence attached. Verification follows the approval workflow pattern.
+
+Phase 20 details: `../imp/Phase20_setup_logframe.md`.

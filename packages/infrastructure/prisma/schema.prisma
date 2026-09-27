@@ -315,6 +315,7 @@ model LogframeItem {
   code        String?
   title       String
   description String?
+  sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -362,6 +363,7 @@ model IndicatorUpdate {
   comments              String?
   dataSource            String?
   attachedEvidenceIds   String   @default("[]")
+  disaggregationJson    String   @default("[]") // JSON array of DisaggregationEntry
   verificationStatus    String   @default("DRAFT")
   verifiedById          String?
   verifiedAt            DateTime?

@@ -4,6 +4,8 @@ import type { LogframeItem, Indicator, IndicatorUpdate } from "@donordesk/domain
 export interface ILogframeRepository {
   create(item: LogframeItem): Promise<Result<LogframeItem>>;
   update(item: LogframeItem): Promise<Result<LogframeItem>>;
+  /** Atomically persists parentId + sortOrder of the given items. */
+  savePositions(items: LogframeItem[]): Promise<Result<void>>;
   findById(id: string, tenantId: TenantId): Promise<Result<LogframeItem | null>>;
   findByProject(projectId: string, tenantId: TenantId): Promise<Result<LogframeItem[]>>;
   delete(id: string, tenantId: TenantId): Promise<Result<void>>;

@@ -14,6 +14,13 @@ export const CreateLogframeItemSchema = z.object({
 });
 export type CreateLogframeItemInput = z.infer<typeof CreateLogframeItemSchema>;
 
+/** Place a logframe item under a new parent (null = top level) at a sibling position. */
+export const MoveLogframeItemSchema = z.object({
+  parentId: z.string().min(1).nullable(),
+  index: z.number().int().min(0).max(10_000),
+});
+export type MoveLogframeItemInput = z.infer<typeof MoveLogframeItemSchema>;
+
 /** Import logframe content as text (Excel/CSV/plain) and auto-create records. */
 export const ImportLogframeTextSchema = z.object({
   projectId: z.string().min(1),
@@ -68,6 +75,16 @@ export const CreateIndicatorUpdateSchema = z.object({
 });
 export type CreateIndicatorUpdateInput = z.infer<typeof CreateIndicatorUpdateSchema>;
 
+export const DisaggregationDimensionSchema = z.enum(["SEX", "AGE_GROUP", "DISABILITY", "LOCATION", "OTHER"]);
+
+/** One category's value in an indicator breakdown (e.g. SEX / Female / 120). */
+export const DisaggregationEntrySchema = z.object({
+  dimension: DisaggregationDimensionSchema,
+  category: z.string().trim().min(1).max(100),
+  value: z.string().trim().min(1).max(50),
+});
+export type DisaggregationEntryInput = z.infer<typeof DisaggregationEntrySchema>;
+
 /** One row of the spreadsheet-style indicator data entry grid. */
 export const UpsertIndicatorUpdateSchema = z.object({
   indicatorId: z.string().min(1),
@@ -75,6 +92,8 @@ export const UpsertIndicatorUpdateSchema = z.object({
   cumulativeAchievement: z.string().default(""),
   comments: z.string().max(2000).optional(),
   dataSource: z.string().max(500).optional(),
+  /** Omitted = keep the stored breakdown; [] = clear it. */
+  disaggregation: z.array(DisaggregationEntrySchema).max(50).optional(),
 });
 export type UpsertIndicatorUpdateInput = z.infer<typeof UpsertIndicatorUpdateSchema>;
 
@@ -84,6 +103,12 @@ export const BulkUpsertIndicatorUpdatesSchema = z.object({
   updates: z.array(UpsertIndicatorUpdateSchema).max(500).default([]),
 });
 export type BulkUpsertIndicatorUpdatesInput = z.infer<typeof BulkUpsertIndicatorUpdatesSchema>;
+
+/** Reviewer decision that sends an indicator update back (correction) or closes it (reject). */
+export const IndicatorUpdateReviewReasonSchema = z.object({
+  reason: z.string().trim().min(1).max(2000),
+});
+export type IndicatorUpdateReviewReasonInput = z.infer<typeof IndicatorUpdateReviewReasonSchema>;
 
 /** Resolve a Google Sheets spreadsheet into structured indicator rows. */
 export const ParseIndicatorSheetSchema = z.object({

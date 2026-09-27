@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DisaggregationEntrySchema } from "@donordesk/contracts";
 
 export const ProjectListItemSchema = z.object({
   id: z.string(),
@@ -212,6 +213,7 @@ export const LogframeItemSchema = z.object({
   code: z.string().optional(),
   title: z.string(),
   description: z.string().optional(),
+  sortOrder: z.number().int().optional(),
 });
 
 export const IndicatorItemSchema = z.object({
@@ -264,6 +266,7 @@ export const PeriodIndicatorUpdateSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   attachedEvidenceIds: z.array(z.string()).optional(),
+  disaggregation: z.array(DisaggregationEntrySchema).optional(),
 });
 
 export const PeriodIndicatorRowSchema = z.object({
@@ -278,6 +281,7 @@ export const PeriodIndicatorRowSchema = z.object({
   dataSource: z.string().optional(),
   frequency: z.string().optional(),
   disaggregationRequired: z.boolean(),
+  breakdownMustSum: z.boolean().optional(),
   requiresDenominator: z.boolean(),
   logframeLevel: z.string().nullable(),
   logframeCode: z.string().nullable(),
@@ -290,6 +294,20 @@ export const PeriodIndicatorsResponseSchema = z.object({
   periodId: z.string(),
   projectId: z.string(),
   indicators: z.array(PeriodIndicatorRowSchema),
+});
+
+export const IndicatorUpdateHistoryRowSchema = PeriodIndicatorUpdateSchema.extend({
+  reportingPeriodId: z.string(),
+  periodReportType: z.string().nullable(),
+  periodStart: z.string().nullable(),
+  periodEnd: z.string().nullable(),
+});
+export type IndicatorUpdateHistoryRow = z.infer<typeof IndicatorUpdateHistoryRowSchema>;
+
+export const IndicatorUpdateHistoryResponseSchema = z.object({
+  indicatorId: z.string(),
+  projectId: z.string(),
+  updates: z.array(IndicatorUpdateHistoryRowSchema),
 });
 
 export const ParsedIndicatorRowSchema = z.object({
@@ -559,6 +577,12 @@ export const ReadinessSchema = z.object({
   evidenceScore: z.number(),
   checklistScore: z.number(),
   approvalScore: z.number(),
+  qualityScore: z.number().optional(),
+  dataQualityBlockers: z.number().optional(),
+  dataQualityPenalty: z.number().optional(),
+  weights: z
+    .object({ sections: z.number(), indicators: z.number(), evidence: z.number(), checklist: z.number(), approval: z.number() })
+    .optional(),
 });
 
 export const ChecklistItemSchema = z.object({

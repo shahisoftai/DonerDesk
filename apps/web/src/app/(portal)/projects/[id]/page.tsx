@@ -4,16 +4,23 @@ import { loadProjectOverview } from "@/features/projects/application/project-ove
 import { InlineError, EmptyState } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { ReadinessGauge } from "@/components/data/ReadinessGauge";
-import { ProgressBar } from "@/components/data/ProgressBar";
+import { ReadinessBreakdownList } from "@/features/projects/presentation/ReadinessBreakdownList";
+import { PeriodSwitcher } from "@/features/projects/presentation/PeriodSwitcher";
 import { projectStatusTone, severityTone } from "@/lib/shared/tone";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProjectDetail({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
+export default async function ProjectDetail({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ period?: string }>;
+}) {
+  const [resolvedParams, { period }] = await Promise.all([params, searchParams]);
   const ctx = await requireSession();
-  const load = await loadProjectOverview(ctx.token, resolvedParams.id);
+  const load = await loadProjectOverview(ctx.token, resolvedParams.id, period);
 
   if (!load.ok) {
     return <InlineError title={load.error?.message ?? "Project could not be loaded."} referenceId={load.error?.referenceId} />;
@@ -41,13 +48,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
       {periods.length > 0 && (
         <section className="mt-4" aria-label="Reporting period">
           <label className="text-xs font-medium text-slate-500 dark:text-slate-400" htmlFor="period-select">Reporting period</label>
-          <select id="period-select" className="input mt-1 max-w-xs">
-            {periods.map((p) => (
-              <option key={p.id} value={p.id}>
-                {REPORT_TYPE_LABEL[p.reportType] ?? p.reportType} — {p.status.replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
+          <PeriodSwitcher periods={periods} value={activePeriodId ?? ""} />
         </section>
       )}
 
@@ -73,14 +74,8 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
         <section className="mt-8 grid gap-6 lg:grid-cols-2">
           <div className="card">
             <h2 className="font-medium">Report readiness</h2>
-            <div className="mt-4"><ReadinessGauge value={readiness.overall} label={`${REPORT_TYPE_LABEL[periods[0]?.reportType ?? ""] ?? "Report"}`} /></div>
-            <dl className="mt-6 space-y-3">
-              <BreakdownRow label="Sections approved" value={readiness.sectionsScore} />
-              <BreakdownRow label="Indicators verified" value={readiness.indicatorsScore} />
-              <BreakdownRow label="Evidence attached" value={readiness.evidenceScore} />
-              <BreakdownRow label="Checklist resolved" value={readiness.checklistScore} />
-              <BreakdownRow label="Approval" value={readiness.approvalScore} />
-            </dl>
+            <div className="mt-4"><ReadinessGauge value={readiness.overall} label={`${REPORT_TYPE_LABEL[periods.find((p) => p.id === activePeriodId)?.reportType ?? ""] ?? "Report"}`} /></div>
+            {activePeriodId && <ReadinessBreakdownList readiness={readiness} projectId={project.id} periodId={activePeriodId} />}
             <Link className="mt-4 inline-block text-sm text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${project.id}/reports/${activePeriodId ?? ""}`}>
               Open report workspace →
             </Link>
@@ -135,18 +130,6 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div className="card">
       <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{label}</div>
       <div className="mt-1 bg-gradient-to-r from-brand-500 to-accent-400 bg-clip-text text-2xl font-semibold tracking-tight text-transparent">{value}</div>
-    </div>
-  );
-}
-
-function BreakdownRow({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between text-sm">
-        <span>{label}</span>
-        <span className="font-medium">{value}%</span>
-      </div>
-      <div className="mt-1"><ProgressBar value={value} tone={value >= 75 ? "success" : value >= 40 ? "warning" : "danger"} /></div>
     </div>
   );
 }

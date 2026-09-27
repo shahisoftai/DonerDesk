@@ -126,6 +126,8 @@ interface ProjectDashboard {
 | Team Assignments | Implemented | Per-project roles via ProjectMember (2026-08-16) |
 | Project Settings | Implemented | Full editor for identity, dates, budget, status (2026-08-16) |
 | Project Archive | Not implemented | Soft delete only |
+| Wizard draft persistence | Implemented (2026-09-27) | Browser-local, 24 h, resume/start fresh — Phase 20 |
+| Readiness breakdown | Implemented (2026-09-27) | Weights, points, fix links, data-quality cap; period switcher fixed — Phase 20 |
 
 ## Pending Enhancements
 
@@ -144,3 +146,5 @@ The readiness score formula per MVP spec:
 ```
 Readiness Score = Sections Score × 0.25 + Indicator Score × 0.20 + Evidence Score × 0.25 + Checklist Score × 0.20 + Approval Score × 0.10
 ```
+
+Phase 20 details (incl. why sector-template seeding is blocked): `../imp/Phase20_setup_logframe.md`.

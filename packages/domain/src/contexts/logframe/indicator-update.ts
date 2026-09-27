@@ -1,5 +1,6 @@
 import { Entity } from "../../core/entity.js";
 import { DomainError } from "../../core/domain-error.js";
+import type { DisaggregationEntry } from "./indicator-disaggregation.js";
 
 export type VerificationStatus = "DRAFT" | "SUBMITTED" | "VERIFIED" | "NEEDS_CORRECTION" | "REJECTED";
 
@@ -19,6 +20,8 @@ export interface IndicatorUpdateProps {
   comments?: string;
   dataSource?: string;
   attachedEvidenceIds: string[];
+  /** Validated by `validateDisaggregation` before it reaches the aggregate. */
+  disaggregation?: DisaggregationEntry[];
   verificationStatus: VerificationStatus;
   verifiedById?: string;
   verifiedAt?: Date;
@@ -45,6 +48,7 @@ export class IndicatorUpdate extends Entity<string> {
     comments?: string;
     dataSource?: string;
     attachedEvidenceIds?: string[];
+    disaggregation?: DisaggregationEntry[];
     createdById: string;
   }): IndicatorUpdate {
     return new IndicatorUpdate(input.id, input.tenantId, {
@@ -55,6 +59,7 @@ export class IndicatorUpdate extends Entity<string> {
       comments: input.comments,
       dataSource: input.dataSource,
       attachedEvidenceIds: input.attachedEvidenceIds ?? [],
+      disaggregation: input.disaggregation ? [...input.disaggregation] : [],
       verificationStatus: "DRAFT",
       createdById: input.createdById,
     });
@@ -76,6 +81,7 @@ export class IndicatorUpdate extends Entity<string> {
   get comments(): string | undefined { return this.props.comments; }
   get dataSource(): string | undefined { return this.props.dataSource; }
   get attachedEvidenceIds(): string[] { return [...this.props.attachedEvidenceIds]; }
+  get disaggregation(): DisaggregationEntry[] { return (this.props.disaggregation ?? []).map((e) => ({ ...e })); }
   get verificationStatus(): VerificationStatus { return this.props.verificationStatus; }
   get verifiedById(): string | undefined { return this.props.verifiedById; }
   get verifiedAt(): Date | undefined { return this.props.verifiedAt; }
@@ -107,18 +113,31 @@ export class IndicatorUpdate extends Entity<string> {
   }
 
   requestCorrection(notes: string): void {
+    const status = this.props.verificationStatus;
+    if (status !== "SUBMITTED" && status !== "VERIFIED") {
+      throw DomainError.invalidTransition(`Cannot request correction from status ${status}`);
+    }
+    const reason = notes.trim();
+    if (!reason) throw DomainError.validation("A reason is required to request a correction");
     this.props.verificationStatus = "NEEDS_CORRECTION";
-    if (notes) this.props.comments = notes;
+    this.props.comments = reason;
+    this.props.verifiedById = undefined;
+    this.props.verifiedAt = undefined;
     this.touch();
   }
 
   reject(reason: string): void {
+    if (this.props.verificationStatus !== "SUBMITTED") {
+      throw DomainError.invalidTransition(`Cannot reject from status ${this.props.verificationStatus}`);
+    }
+    const trimmed = reason.trim();
+    if (!trimmed) throw DomainError.validation("A reason is required to reject an update");
     this.props.verificationStatus = "REJECTED";
-    if (reason) this.props.comments = reason;
+    this.props.comments = trimmed;
     this.touch();
   }
 
-  edit(patch: Partial<Pick<IndicatorUpdateProps, "periodAchievement" | "cumulativeAchievement" | "comments" | "dataSource">>): void {
+  edit(patch: Partial<Pick<IndicatorUpdateProps, "periodAchievement" | "cumulativeAchievement" | "comments" | "dataSource" | "disaggregation">>): void {
     if (this.props.verificationStatus === "VERIFIED") {
       throw DomainError.invalidTransition("Verified updates cannot be edited");
     }

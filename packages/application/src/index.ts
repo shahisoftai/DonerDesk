@@ -63,6 +63,7 @@ export * from "./use-cases/templates/approve-template-mapping.js";
 export * from "./use-cases/templates/lock-template-mapping.js";
 
 export * from "./use-cases/logframe/create-logframe-item.js";
+export * from "./use-cases/logframe/move-logframe-item.js";
 export * from "./use-cases/logframe/import-logframe.js";
 export * from "./use-cases/logframe/import-indicators.js";
 export * from "./use-cases/logframe/create-indicator.js";
@@ -73,6 +74,11 @@ export * from "./use-cases/logframe/bulk-upsert-indicator-updates.js";
 export * from "./use-cases/logframe/list-period-indicators.js";
 export * from "./use-cases/logframe/parse-indicator-sheet.js";
 export * from "./use-cases/logframe/verify-indicator-update.js";
+export * from "./use-cases/logframe/review-indicator-update.js";
+export * from "./use-cases/logframe/request-indicator-update-correction.js";
+export * from "./use-cases/logframe/reject-indicator-update.js";
+export * from "./use-cases/logframe/indicator-update-view.js";
+export * from "./use-cases/logframe/list-indicator-updates.js";
 export * from "./use-cases/logframe/list-logframe.js";
 export * from "./use-cases/logframe/list-indicators.js";
 

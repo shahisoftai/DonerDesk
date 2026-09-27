@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   CreateLogframeItemSchema,
+  MoveLogframeItemSchema,
   ImportLogframeTextSchema,
   ImportIndicatorsTextSchema,
   CreateIndicatorSchema,
@@ -8,6 +9,7 @@ import {
   CreateIndicatorUpdateSchema,
   BulkUpsertIndicatorUpdatesSchema,
   ParseIndicatorSheetSchema,
+  IndicatorUpdateReviewReasonSchema,
 } from "@donordesk/contracts";
 import { buildLogframeTemplate, LOGFRAME_TEMPLATE_FILENAME } from "@donordesk/infrastructure";
 
@@ -32,6 +34,15 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.createLogframeItem.handle(ctx, body);
     if (!r.ok) throw r.error;
     return r.value;
+  });
+
+  app.put("/v1/logframe-items/:id/position", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = MoveLogframeItemSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.moveLogframeItem.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
   });
 
   app.post("/v1/logframe/import", async (req) => {
@@ -121,5 +132,31 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.verifyIndicatorUpdate.handle(ctx, id);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  app.post("/v1/indicator-updates/:id/request-correction", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = IndicatorUpdateReviewReasonSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.requestIndicatorUpdateCorrection.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.post("/v1/indicator-updates/:id/reject", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = IndicatorUpdateReviewReasonSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.rejectIndicatorUpdate.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.get("/v1/indicators/:id/updates", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.listIndicatorUpdates.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 }

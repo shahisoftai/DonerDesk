@@ -3,17 +3,11 @@ import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { LogframeResponseSchema, OrganizationSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
-import { Badge } from "@/components/data/Badge";
-import { LOGFRAME_LEVEL_LABEL } from "@/lib/labels";
-import { buildHierarchy, walkHierarchy, type HierarchyNode } from "@/lib/shared/hierarchy";
 import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
-import type { z } from "zod";
+import { LogframeTreeEditor } from "@/features/logframe/presentation/LogframeTreeEditor";
+import { isLogframeReorderEnabled } from "@/lib/shared/feature-flags";
 
 export const dynamic = "force-dynamic";
-
-type LogframeItem = z.infer<typeof LogframeResponseSchema>["items"][number];
-
-const LEVEL_ORDER = ["GOAL", "OUTCOME", "OUTPUT", "ACTIVITY"];
 
 export default async function LogframePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -35,18 +29,11 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
     );
   }
   const data = result.value;
-  const sorted = [...data.items].sort(
-    (a, b) => LEVEL_ORDER.indexOf(a.level) - LEVEL_ORDER.indexOf(b.level) || (a.code ?? "").localeCompare(b.code ?? ""),
-  );
-  const tree = buildHierarchy<LogframeItem>(sorted);
-  const indicatorsByItem = new Map<string, typeof data.indicators>();
+  const indicatorCounts: Record<string, number> = {};
   for (const ind of data.indicators) {
-    const key = ind.logframeItemId ?? "";
-    if (!key) continue;
-    const list = indicatorsByItem.get(key) ?? [];
-    list.push(ind);
-    indicatorsByItem.set(key, list);
+    if (ind.logframeItemId) indicatorCounts[ind.logframeItemId] = (indicatorCounts[ind.logframeItemId] ?? 0) + 1;
   }
+  const canReorder = isLogframeReorderEnabled() && ctx.capabilities.has("logframe.edit");
 
   return (
     <div className="animate-fade-in">
@@ -62,9 +49,9 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
       <section className="mt-8">
         <h2 className="font-medium">Results hierarchy</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Goal → Outcome → Output → Activity. Expand items to see their children.
+          Goal → Outcome → Output → Activity.{canReorder ? " Drag the handle to reorder items, or use “Move to” to change an item’s parent." : ""}
         </p>
-        {tree.length === 0 ? (
+        {data.items.length === 0 ? (
           <div className="card mt-3 text-sm text-slate-600 dark:text-slate-300">
             No logframe items yet.{" "}
             <Link className="font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${resolvedParams.id}/logframe/new`}>
@@ -72,7 +59,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
             </Link>.
           </div>
         ) : (
-          <LogframeTree nodes={tree} projectId={resolvedParams.id} indicatorCounts={countsByItem(indicatorsByItem)} />
+          <LogframeTreeEditor projectId={resolvedParams.id} items={data.items} indicatorCounts={indicatorCounts} editable={canReorder} />
         )}
       </section>
 
@@ -143,58 +130,4 @@ function ImportIndicatorsButton({ projectId }: { projectId: string }) {
       Import indicators
     </Link>
   );
-}
-
-function countsByItem(map: Map<string, { id: string }[]>): Map<string, number> {
-  const out = new Map<string, number>();
-  for (const [key, list] of map) out.set(key, list.length);
-  return out;
-}
-
-function LogframeTree({
-  nodes,
-  projectId,
-  indicatorCounts,
-}: {
-  nodes: HierarchyNode<LogframeItem>[];
-  projectId: string;
-  indicatorCounts: Map<string, number>;
-}) {
-  const rows: Array<{ node: HierarchyNode<LogframeItem>; depth: number }> = [];
-  walkHierarchy(nodes, (node, depth) => rows.push({ node, depth }));
-
-  return (
-    <ul className="mt-3 space-y-2" role="tree" aria-label="Logframe hierarchy">
-      {rows.map(({ node, depth }) => {
-        const indent = { paddingLeft: `${depth * 1.5 + 0.25}rem` };
-        const count = indicatorCounts.get(node.id) ?? 0;
-        return (
-          <li key={node.id} role="treeitem" aria-level={depth + 1}>
-            <div className="card flex flex-wrap items-center justify-between gap-3" style={indent}>
-              <div className="flex items-center gap-2">
-                <Badge tone={levelTone(node.level)}>{LOGFRAME_LEVEL_LABEL[node.level] ?? node.level}</Badge>
-                {node.code && <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{node.code}</span>}
-                <span className="font-medium">{node.title}</span>
-              </div>
-              <div className="flex items-center gap-3 text-xs">
-                {count > 0 && <span className="text-slate-500 dark:text-slate-400">{count} indicator{count === 1 ? "" : "s"}</span>}
-                <Link className="text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${projectId}/logframe/new-indicator?itemId=${encodeURIComponent(node.id)}`}>
-                  Add indicator
-                </Link>
-              </div>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-function levelTone(level: string): "info" | "success" | "warning" | "neutral" | "ai" {
-  switch (level) {
-    case "GOAL": return "info";
-    case "OUTCOME": return "success";
-    case "OUTPUT": return "warning";
-    default: return "neutral";
-  }
 }

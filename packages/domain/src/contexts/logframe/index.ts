@@ -5,3 +5,5 @@ export * from "./indicator-semantics.js";
 export * from "./logframe-parser.js";
 export * from "./indicator-parser.js";
 export * from "./events.js";
+export * from "./logframe-move.js";
+export * from "./indicator-disaggregation.js";

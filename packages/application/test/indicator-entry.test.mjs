@@ -206,3 +206,44 @@ test("parse indicator sheet maps rows by indicator code and flags unknown codes"
   assert.equal(result.value.rows[1].matched, false);
   assert.equal(result.value.warnings.some((w) => w.includes("NOPE-9")), true);
 });
+
+test("bulk save rejects a breakdown that does not add up, before writing anything", async () => {
+  const indicator = makeIndicator("ind-d", "D-1");
+  const period = makePeriod();
+  const written = [];
+  const repo = {
+    async findByIndicatorAndPeriod() { return { ok: true, value: null }; },
+    async create(u) { written.push(u); return { ok: true, value: u }; },
+    async update(u) { written.push(u); return { ok: true, value: u }; },
+  };
+  const handler = new BulkUpsertIndicatorUpdatesHandler(
+    ids,
+    repo,
+    { async findByProject() { return { ok: true, value: [indicator, makeIndicator("ind-ok", "OK-1")] }; } },
+    { async findById() { return { ok: true, value: period }; } },
+    { async record() {} },
+  );
+  const bad = await handler.handle(ctx, {
+    reportingPeriodId: "period-1",
+    updates: [
+      { indicatorId: "ind-ok", periodAchievement: "5", cumulativeAchievement: "5" },
+      {
+        indicatorId: "ind-d", periodAchievement: "10", cumulativeAchievement: "10",
+        disaggregation: [{ dimension: "SEX", category: "Female", value: "3" }, { dimension: "SEX", category: "Male", value: "3" }],
+      },
+    ],
+  });
+  assert.equal(bad.ok, false);
+  assert.match(bad.error.message, /^D-1: SEX breakdown adds up to 6/);
+  assert.equal(written.length, 0);
+
+  const good = await handler.handle(ctx, {
+    reportingPeriodId: "period-1",
+    updates: [{
+      indicatorId: "ind-d", periodAchievement: "10", cumulativeAchievement: "10",
+      disaggregation: [{ dimension: "SEX", category: " Female ", value: "4" }, { dimension: "SEX", category: "Male", value: "6" }],
+    }],
+  });
+  assert.equal(good.ok, true);
+  assert.deepEqual(written[0].disaggregation.map((e) => e.category), ["Female", "Male"]);
+});

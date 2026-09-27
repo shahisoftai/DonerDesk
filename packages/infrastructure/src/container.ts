@@ -31,6 +31,7 @@ import {
   DeleteTemplateHandler,
   ListTemplatesHandler,
   CreateLogframeItemHandler,
+  MoveLogframeItemHandler,
   ImportLogframeHandler,
   ImportIndicatorsHandler,
   CreateIndicatorHandler,
@@ -40,6 +41,9 @@ import {
   ListPeriodIndicatorsHandler,
   ParseIndicatorSheetHandler,
   VerifyIndicatorUpdateHandler,
+  RequestIndicatorUpdateCorrectionHandler,
+  RejectIndicatorUpdateHandler,
+  ListIndicatorUpdatesHandler,
   ListLogframeHandler,
   ListIndicatorsHandler,
   UploadEvidenceHandler,
@@ -365,6 +369,7 @@ export interface Container {
     deleteTemplate: DeleteTemplateHandler;
     listTemplates: ListTemplatesHandler;
     createLogframeItem: CreateLogframeItemHandler;
+    moveLogframeItem: MoveLogframeItemHandler;
     importLogframe: ImportLogframeHandler;
     importIndicators: ImportIndicatorsHandler;
     createIndicator: CreateIndicatorHandler;
@@ -374,6 +379,9 @@ export interface Container {
     listPeriodIndicators: ListPeriodIndicatorsHandler;
     parseIndicatorSheet: ParseIndicatorSheetHandler;
     verifyIndicatorUpdate: VerifyIndicatorUpdateHandler;
+    requestIndicatorUpdateCorrection: RequestIndicatorUpdateCorrectionHandler;
+    rejectIndicatorUpdate: RejectIndicatorUpdateHandler;
+    listIndicatorUpdates: ListIndicatorUpdatesHandler;
     listLogframe: ListLogframeHandler;
     listIndicators: ListIndicatorsHandler;
     uploadEvidence: UploadEvidenceHandler;
@@ -879,6 +887,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     deleteTemplate: new DeleteTemplateHandler(templates, audits),
     listTemplates: new ListTemplatesHandler(templates),
     createLogframeItem: new CreateLogframeItemHandler(ids, logframe, audits),
+    moveLogframeItem: new MoveLogframeItemHandler(logframe, audits),
     importLogframe: new ImportLogframeHandler(ids, logframe, audits),
     importIndicators: new ImportIndicatorsHandler(ids, logframe, indicators, audits),
     createIndicator: new CreateIndicatorHandler(ids, indicators, audits),
@@ -888,6 +897,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listPeriodIndicators: new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates),
     parseIndicatorSheet: new ParseIndicatorSheetHandler(periods, indicators, sheetReader),
     verifyIndicatorUpdate: new VerifyIndicatorUpdateHandler(indicatorUpdates, audits),
+    requestIndicatorUpdateCorrection: new RequestIndicatorUpdateCorrectionHandler(indicatorUpdates, audits),
+    rejectIndicatorUpdate: new RejectIndicatorUpdateHandler(indicatorUpdates, audits),
+    listIndicatorUpdates: new ListIndicatorUpdatesHandler(indicators, indicatorUpdates, periods),
     listLogframe: new ListLogframeHandler(logframe, indicators),
     listIndicators: new ListIndicatorsHandler(indicators),
     uploadEvidence: new UploadEvidenceHandler(ids, evidence, evidenceStorage, events, audits, usageCounters, entitlements),

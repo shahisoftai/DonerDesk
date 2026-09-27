@@ -14,6 +14,8 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "PasswordResetToken", field: "tokenHash" },
   { model: "DonorTemplateMapping", field: "detectedRegionsJson" },
   { model: "DonorTemplateMapping", field: "templatedFileUrl" },
+  { model: "LogframeItem", field: "sortOrder" },
+  { model: "IndicatorUpdate", field: "disaggregationJson" },
 ] as const;
 
 type RuntimeDataModel = {

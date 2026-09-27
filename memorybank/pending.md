@@ -300,7 +300,7 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
 - **Project-assignment ABAC / cross-project isolation** (FE-B03) — backend must enforce non-admin project membership + integration tests before global lists are fully trusted. Feature 18 added `project.setup`/`project.archive` capabilities and scoped the setup/profile routes; full per-project membership ABAC remains a named dependency (Feature 18 §5.4).
 - **Global search (NTF-02)** — no permission-filtered search contract exists.
 - **Authoritative global queue read models** — current Reports and Compliance queues are composed server-side from accessible project APIs. Add organization-level paginated contracts before large-scale production use.
-- **Indicator detail/history read model** — definition data is available through the project logframe, but period update history and disaggregation are not exposed safely.
+- **Indicator detail/history read model** — **DONE 2026-09-27 (Phase 20)**. `GET /v1/indicators/:id/updates` (`ListIndicatorUpdatesHandler`) now backs the indicator page's history panel; disaggregation is tracked per update and shown for the latest period.
 - **Complete project settings update contract** — **DONE 2026-08-15 (release `20260815054218`)**. `UpdateProjectHandler` now supports editable dates/budget (ISO-4217 currency) with period-overlap protection (Feature 18 §5.2 / §5.11).
 - **Claim-level provenance / source-linking (REP-06)** — **DONE 2026-08-16 (Feature 20 core)**. Structured `ReportClaim`/`ClaimSource` contract with evidence hash + chunker version snapshots, deterministic tiered claim verification, approval gates, reject/request-changes transition, and report plan / generation-run persistence landed in domain, application, infrastructure, and API. **Extended 2026-08-17:** evidence packages now carry the real extracted document text (`EvidenceFile.extractedText`, Tika-persisted), and the generation input includes activity + indicator-update narrative so claims are sourced from actual project records, not titles/stub summaries.
 - **Real AI providers / job resources** — all AI handlers are stubs; UI labels them honestly.
@@ -521,6 +521,15 @@ actually supports; unsupported controls are omitted rather than simulated.
   the textarea for review. Parser wired via `apps/api/src/routes/templates.ts`.
 
 ### Feature 06 — Logframe and Indicator Manager
+- [x] Logframe drag-and-drop reorder / re-parent — **DONE 2026-09-27 (Phase 20)**.
+  `PUT /v1/logframe-items/:id/position` + `LogframeItem.sortOrder`; domain
+  `planLogframeMove` validates level and cycle rules; UI (`LogframeTreeEditor`,
+  `@dnd-kit`) behind `LOGFRAME_DND_ENABLED`, plus a "Move to" picker. There was
+  previously no move/reorder endpoint at all. See
+  `imp/Phase20_setup_logframe.md`.
+- [x] Indicator baseline/target progress visualization — **DONE 2026-09-27
+  (Phase 20)**. `IndicatorProgressCard` on the indicator detail page (handles
+  lower-is-better targets).
 - [x] Excel/CSV logframe file import — **STRUCTURED**. `POST /v1/logframe/import`
   (`ImportLogframeTextSchema`) runs `ImportLogframeHandler` which calls
   `parseLogframeText` (domain parser: tabular CSV/TSV with fuzzy Level/Code/Title/
@@ -536,6 +545,12 @@ actually supports; unsupported controls are omitted rather than simulated.
 - [x] Disaggregation tracking (Male/Female/Children/Disability) — **IMPLEMENTED in UI**.
   `NewActivityForm.tsx` has fields for `participantsMale`, `participantsFemale`,
   `participantsChildren`, `participantsDisability`. Detail page displays these.
+  Separately, **indicator-value** disaggregation (distinct from activity
+  participant counts above) shipped 2026-09-27 (Phase 20):
+  `IndicatorUpdate.disaggregationJson`, validated per-dimension sum for
+  NUMBER/CURRENCY indicators (`validateDisaggregation`,
+  `disaggregationMustSum`), editable per row in the period entry grid. Not yet
+  fed into report generation/grounding.
 - [x] Bulk indicator import from Excel — **WIRED**. `POST /v1/indicators/parse-file` uses
   `TolerantDocumentParser`. Frontend has "Import indicators" button at
   `/projects/[id]/logframe/indicators/import` that accepts XLSX/CSV/TXT and shows
@@ -766,12 +781,18 @@ Remaining follow-ups (tracked here, not claimed):
 - [ ] **Account-wide notification preferences** (deadline reminder recipients /
   lead time), **timezone**, and **default currency** onboarding steps —
   anticipated, deferred.
-- [ ] **Indicator-update submit / request-correction / reject routes** — domain
-  supports them; API only exposes create + verify (Feature 18 §8).
-- [ ] **Indicator-update history read model** — `GET /v1/indicators/:id/updates`
-  (Feature 18 §8); UI indicator page still shows the "not exposed" note. The
-  per-period grid (`GET /v1/reporting-periods/:id/indicators`) now covers the
-  primary data-entry read path.
+- [x] **Indicator-update submit / request-correction / reject routes** — **DONE
+  2026-09-27 (Phase 20)**. `POST /v1/indicator-updates/:id/request-correction`
+  and `/reject` (`IndicatorUpdateReviewReasonSchema`, permission
+  `indicator.verify`); domain transition guards added to `IndicatorUpdate`
+  (`requestCorrection`/`reject` previously had none and no callers).
+- [x] **Indicator-update history read model** — **DONE 2026-09-27 (Phase 20)**.
+  `GET /v1/indicators/:id/updates` (`ListIndicatorUpdatesHandler`, oldest period
+  first); the indicator page's "not exposed" note is replaced by
+  `IndicatorHistoryPanel` + `IndicatorVerificationPipeline` +
+  `IndicatorProgressCard`. The per-period grid
+  (`GET /v1/reporting-periods/:id/indicators`) remains the primary data-entry
+  read path.
 - [ ] **Automatic recurring reporting periods** — `autoPeriodCreation` flag stored
   on the profile; scheduling job not yet implemented (Feature 18 §5.5).
 - [ ] **Deadline-reminder wiring to the reporting profile** — `deadlineOffsetDays`
@@ -785,6 +806,28 @@ Remaining follow-ups (tracked here, not claimed):
   (pending.md "Wire the Drive token store"); Local/R2 tenants are NOT_REQUIRED.
 - [ ] **Project copy/duplicate, donor/partner entities, deletion/retention** —
   deferred per Feature 18 §5.6/§5.7/§5.9.
+- [x] **Wizard draft persistence (2026-09-27, Phase 20)** — the creation wizard
+  now saves in-progress answers to browser `localStorage` for 24 h with a
+  "Resume draft / Start fresh" prompt; previously work was lost on refresh
+  despite the wizard's own copy claiming it was "kept in your browser".
+- [x] **Readiness score breakdown UX (2026-09-27, Phase 20)** — the project
+  overview's readiness panel now shows each dimension's weight, points
+  contributed, a fix-it link, and the data-quality cap explanation; the
+  reporting-period `<select>` on that page previously did nothing when
+  changed and now actually switches the displayed period.
+- [ ] **Project template / "create from sector template" (Phase 20 item A1) —
+  BLOCKED, needs a decision.** `SectorTemplatePack` has a domain entity and a
+  Prisma table but no repository implementation, no seeded packs, no
+  authoring UI, and its shape (levels `goal/purpose/output/activity`, flat
+  nodes with no parent links, no indicator↔node link) does not map onto the
+  logframe. See `imp/Phase20_setup_logframe.md` §"A1 — why it is blocked" for
+  the two proposed alternatives (curated pack library, or "copy logframe from
+  an existing project").
+- [ ] **`PUT /v1/indicators/:id/semantics` has no permission rule** — found
+  during the Phase 20 audit; any authenticated user can currently change an
+  indicator's calculation semantics. Left unchanged pending a decision on
+  whether to restrict it to `logframe.manage` (would need to confirm today's
+  callers all hold that permission first).
 
 ## Feature 19 — Tiers and Payments (Creem live in test mode 2026-08-18)
 

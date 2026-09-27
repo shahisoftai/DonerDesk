@@ -14,6 +14,7 @@ export interface UpsertOutcome {
  * Creates a DRAFT update when none exists for the indicator+period; otherwise
  * applies the edit to the existing draft. Verified updates are intentionally
  * left untouched so approved figures cannot be silently overwritten.
+ * Callers validate `input.disaggregation` against the indicator first.
  */
 export async function upsertIndicatorUpdate(
   ids: IIdGenerator,
@@ -36,6 +37,7 @@ export async function upsertIndicatorUpdate(
       cumulativeAchievement: input.cumulativeAchievement,
       comments: input.comments,
       dataSource: input.dataSource,
+      ...(input.disaggregation ? { disaggregation: input.disaggregation } : {}),
     });
     const saved = await repo.update(existing);
     if (!saved.ok) return saved;
@@ -52,6 +54,7 @@ export async function upsertIndicatorUpdate(
     cumulativeAchievement: input.cumulativeAchievement,
     comments: input.comments,
     dataSource: input.dataSource,
+    disaggregation: input.disaggregation,
     createdById: userId,
   });
   const saved = await repo.create(update);

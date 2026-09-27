@@ -1,8 +1,9 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, disaggregationMustSum } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
+import { toIndicatorUpdateView, type IndicatorUpdateView } from "./indicator-update-view.js";
 
 export interface PeriodIndicatorRow {
   id: string;
@@ -16,24 +17,15 @@ export interface PeriodIndicatorRow {
   dataSource?: string;
   frequency?: string;
   disaggregationRequired: boolean;
+  /** Each breakdown dimension must add up to the period value (counts and amounts, not rates). */
+  breakdownMustSum: boolean;
   /** Percentage/ratio indicators without a configured denominator indicator
    * cannot be independently calculated; their result stays unverifiable. */
   requiresDenominator: boolean;
   logframeLevel: string | null;
   logframeCode: string | null;
   logframeTitle: string | null;
-  update: {
-    id: string;
-    periodAchievement: string;
-    cumulativeAchievement: string;
-    comments?: string;
-    dataSource?: string;
-    verificationStatus: string;
-    verifiedAt: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-    attachedEvidenceIds: string[];
-  } | null;
+  update: IndicatorUpdateView | null;
 }
 
 export class ListPeriodIndicatorsHandler {
@@ -82,24 +74,12 @@ export class ListPeriodIndicatorsHandler {
         dataSource: ind.dataSource,
         frequency: ind.frequency,
         disaggregationRequired: ind.disaggregationRequired,
+        breakdownMustSum: disaggregationMustSum(ind.type),
         requiresDenominator,
         logframeLevel: item?.level ?? null,
         logframeCode: item?.code ?? null,
         logframeTitle: item?.title ?? null,
-        update: update
-          ? {
-              id: update.id,
-              periodAchievement: update.periodAchievement,
-              cumulativeAchievement: update.cumulativeAchievement,
-              comments: update.comments,
-              dataSource: update.dataSource,
-              verificationStatus: update.verificationStatus,
-              verifiedAt: update.verifiedAt ?? null,
-              createdAt: update.createdAt,
-              updatedAt: update.updatedAt,
-              attachedEvidenceIds: update.attachedEvidenceIds,
-            }
-          : null,
+        update: update ? toIndicatorUpdateView(update) : null,
       };
     });
 

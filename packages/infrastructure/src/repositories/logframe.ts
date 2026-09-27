@@ -5,6 +5,7 @@ import {
   IndicatorUpdate,
   TenantId,
   DomainError,
+  parseDisaggregationJson,
   type Result,
   type IndicatorType,
   type VerificationStatus,
@@ -32,6 +33,7 @@ export class PrismaLogframeRepository implements ILogframeRepository {
         code: i.code,
         title: i.title,
         description: i.description,
+        sortOrder: i.sortOrder,
       },
     });
     return ok(i);
@@ -45,9 +47,22 @@ export class PrismaLogframeRepository implements ILogframeRepository {
         code: i.code,
         title: i.title,
         description: i.description,
+        sortOrder: i.sortOrder,
       },
     });
     return ok(i);
+  }
+  async savePositions(items: LogframeItem[]): Promise<Result<void, DomainError>> {
+    if (items.length === 0) return ok(undefined);
+    await this.prisma.$transaction(
+      items.map((i) =>
+        this.prisma.logframeItem.updateMany({
+          where: { id: i.id, tenantId: i.tenantIdValue },
+          data: { parentId: i.parentId ?? null, sortOrder: i.sortOrder },
+        }),
+      ),
+    );
+    return ok(undefined);
   }
   async findById(id: string, tenantId: TenantId): Promise<Result<LogframeItem | null, DomainError>> {
     const row = await this.prisma.logframeItem.findFirst({ where: { id, tenantId: tenantId.toString() } });
@@ -58,7 +73,7 @@ export class PrismaLogframeRepository implements ILogframeRepository {
         tenantId: row.tenantId,
         projectId: row.projectId,
         createdAt: row.createdAt,
-        props: { parentId: row.parentId ?? undefined, level: row.level as never, code: row.code ?? undefined, title: row.title, description: row.description ?? undefined },
+        props: { parentId: row.parentId ?? undefined, level: row.level as never, code: row.code ?? undefined, title: row.title, description: row.description ?? undefined, sortOrder: row.sortOrder },
       }),
     );
   }
@@ -71,7 +86,7 @@ export class PrismaLogframeRepository implements ILogframeRepository {
           tenantId: row.tenantId,
           projectId: row.projectId,
           createdAt: row.createdAt,
-          props: { parentId: row.parentId ?? undefined, level: row.level as never, code: row.code ?? undefined, title: row.title, description: row.description ?? undefined },
+          props: { parentId: row.parentId ?? undefined, level: row.level as never, code: row.code ?? undefined, title: row.title, description: row.description ?? undefined, sortOrder: row.sortOrder },
         }),
       ),
     );
@@ -201,6 +216,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
         comments: u.comments,
         dataSource: u.dataSource,
         attachedEvidenceIds: JSON.stringify(u.attachedEvidenceIds),
+        disaggregationJson: JSON.stringify(u.disaggregation),
         verificationStatus: u.verificationStatus,
         verifiedById: u.verifiedById,
         verifiedAt: u.verifiedAt,
@@ -218,9 +234,11 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
         comments: u.comments,
         dataSource: u.dataSource,
         attachedEvidenceIds: JSON.stringify(u.attachedEvidenceIds),
+        disaggregationJson: JSON.stringify(u.disaggregation),
         verificationStatus: u.verificationStatus,
-        verifiedById: u.verifiedById,
-        verifiedAt: u.verifiedAt,
+        // null (not undefined) so a correction request actually clears the verifier.
+        verifiedById: u.verifiedById ?? null,
+        verifiedAt: u.verifiedAt ?? null,
       },
     });
     return ok(u);
@@ -256,6 +274,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
     comments: string | null;
     dataSource: string | null;
     attachedEvidenceIds: string;
+    disaggregationJson: string;
     verificationStatus: string;
     verifiedById: string | null;
     verifiedAt: Date | null;
@@ -274,6 +293,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
         comments: row.comments ?? undefined,
         dataSource: row.dataSource ?? undefined,
         attachedEvidenceIds: JSON.parse(row.attachedEvidenceIds),
+        disaggregation: parseDisaggregationJson(row.disaggregationJson),
         verificationStatus: row.verificationStatus as VerificationStatus,
         verifiedById: row.verifiedById ?? undefined,
         verifiedAt: row.verifiedAt ?? undefined,

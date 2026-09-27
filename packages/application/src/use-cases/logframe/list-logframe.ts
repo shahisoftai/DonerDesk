@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, compareLogframeItems } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository } from "../../ports/logframe.js";
 
@@ -14,13 +14,14 @@ export class ListLogframeHandler {
     return {
       ok: true,
       value: {
-        items: itemResult.value.map((i) => ({
+        items: [...itemResult.value].sort(compareLogframeItems).map((i) => ({
           id: i.id,
           parentId: i.parentId,
           level: i.level,
           code: i.code,
           title: i.title,
           description: i.description,
+          sortOrder: i.sortOrder,
         })),
         indicators: indResult.value.map((i) => ({
           id: i.id,

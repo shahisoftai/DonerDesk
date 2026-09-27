@@ -11,6 +11,17 @@ export interface LogframeItemProps {
   code?: string;
   title: string;
   description?: string;
+  /** Position among siblings; 0 everywhere means "never reordered" (level/code order applies). */
+  sortOrder?: number;
+}
+
+export function logframeLevelRank(level: LogframeLevel): number {
+  return LOGFRAME_LEVELS.indexOf(level);
+}
+
+/** A parent must sit at a strictly higher level (a level may be skipped, e.g. Output under Goal). */
+export function canParentLogframeLevel(parent: LogframeLevel, child: LogframeLevel): boolean {
+  return logframeLevelRank(parent) < logframeLevelRank(child);
 }
 
 export class LogframeItem extends Entity<string> {
@@ -60,6 +71,13 @@ export class LogframeItem extends Entity<string> {
   get code(): string | undefined { return this.props.code; }
   get title(): string { return this.props.title; }
   get description(): string | undefined { return this.props.description; }
+  get sortOrder(): number { return this.props.sortOrder ?? 0; }
+
+  /** Callers must validate the move with `planLogframeMove`; this only records the result. */
+  placeAt(parentId: string | undefined, sortOrder: number): void {
+    this.props = { ...this.props, parentId, sortOrder };
+    this.touch();
+  }
 
   update(patch: Partial<LogframeItemProps>): void {
     this.props = { ...this.props, ...patch };

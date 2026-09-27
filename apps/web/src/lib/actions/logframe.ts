@@ -1,12 +1,12 @@
 "use server";
 
-import { CreateLogframeItemSchema, ImportLogframeTextSchema, UpdateIndicatorSemanticsSchema } from "@donordesk/contracts";
+import { CreateLogframeItemSchema, ImportLogframeTextSchema, MoveLogframeItemSchema, UpdateIndicatorSemanticsSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
-import { IdResponseSchema } from "./_schemas";
+import { IdResponseSchema, OkResponseSchema } from "./_schemas";
 import { ImportLogframeResponseSchema, type ImportLogframeResponse } from "@/lib/server/schemas";
 
 export type CreateLogframeItemResult = Result<{ id: string }, AppError>;
@@ -24,6 +24,20 @@ export async function createLogframeItemAction(input: unknown): Promise<CreateLo
     method: "POST",
     body: parsed.data,
   });
+}
+
+export async function moveLogframeItemAction(itemId: string, input: unknown): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const parsed = MoveLogframeItemSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: { kind: "validation", message: "Invalid move.", fields: flattenZodFields(parsed.error) } };
+  }
+  const result = await gatewayRequest(`/v1/logframe-items/${encodeURIComponent(itemId)}/position`, OkResponseSchema, context.token, {
+    method: "PUT",
+    body: parsed.data,
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
 }
 
 export type ImportLogframeTextResult = Result<ImportLogframeResponse, AppError>;

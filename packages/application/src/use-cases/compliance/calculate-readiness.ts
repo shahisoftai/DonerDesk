@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, lintReportContradictions, calculateReadiness, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
+import { DomainError, lintReportContradictions, calculateReadiness, READINESS_WEIGHTS, DATA_QUALITY_PENALTY, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
@@ -33,7 +33,10 @@ export class CalculateReadinessHandler {
     private readonly analytics?: IIndicatorAnalyticsService,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<ReadinessBreakdown & { reportingPeriodId: string }, DomainError>> {
+  async handle(
+    ctx: AuthenticatedContext,
+    reportingPeriodId: string,
+  ): Promise<Result<ReadinessBreakdown & { reportingPeriodId: string; weights: typeof READINESS_WEIGHTS; dataQualityPenalty: number }, DomainError>> {
     const draftsResult = await this.drafts.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!draftsResult.ok) return draftsResult;
     const draft = draftsResult.value[0];
@@ -158,6 +161,6 @@ export class CalculateReadinessHandler {
       dataQualityBlockers,
     });
 
-    return { ok: true, value: { ...breakdown, reportingPeriodId } };
+    return { ok: true, value: { ...breakdown, reportingPeriodId, weights: READINESS_WEIGHTS, dataQualityPenalty: DATA_QUALITY_PENALTY } };
   }
 }

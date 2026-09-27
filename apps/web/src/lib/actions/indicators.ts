@@ -1,6 +1,7 @@
 "use server";
 
-import { CreateIndicatorSchema, CreateIndicatorUpdateSchema, BulkUpsertIndicatorUpdatesSchema, ParseIndicatorSheetSchema, ImportIndicatorsTextSchema } from "@donordesk/contracts";
+import { CreateIndicatorSchema, CreateIndicatorUpdateSchema, BulkUpsertIndicatorUpdatesSchema, ParseIndicatorSheetSchema, ImportIndicatorsTextSchema, IndicatorUpdateReviewReasonSchema } from "@donordesk/contracts";
+import type { UpsertIndicatorUpdateInput } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -77,13 +78,7 @@ export async function createIndicatorUpdateAction(input: unknown): Promise<Resul
   });
 }
 
-export type BulkSaveRow = {
-  indicatorId: string;
-  periodAchievement: string;
-  cumulativeAchievement: string;
-  comments?: string;
-  dataSource?: string;
-};
+export type BulkSaveRow = UpsertIndicatorUpdateInput;
 
 export type BulkSaveIndicatorUpdatesResult = Result<{ saved: number; skipped: number }, AppError>;
 
@@ -147,6 +142,29 @@ export async function verifyIndicatorUpdateAction(id: string): Promise<Result<un
   const context = await requireSession();
   const result = await gatewayRequest(`/v1/indicator-updates/${id}/verify`, OkResponseSchema, context.token, {
     method: "POST",
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+export type IndicatorUpdateReviewDecision = "request-correction" | "reject";
+
+export async function reviewIndicatorUpdateAction(
+  id: string,
+  decision: IndicatorUpdateReviewDecision,
+  input: unknown,
+): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const parsed = IndicatorUpdateReviewReasonSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "A reason is required.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  const result = await gatewayRequest(`/v1/indicator-updates/${encodeURIComponent(id)}/${decision}`, OkResponseSchema, context.token, {
+    method: "POST",
+    body: parsed.data,
   });
   if (!result.ok) return result;
   return { ok: true, value: undefined };

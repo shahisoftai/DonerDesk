@@ -10,17 +10,11 @@ import {
   ReadinessSchema,
   type ProjectDetail,
 } from "@/lib/server/schemas";
+import type { z } from "zod";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 
-export type ReadinessBreakdown = {
-  overall: number;
-  sectionsScore: number;
-  indicatorsScore: number;
-  evidenceScore: number;
-  checklistScore: number;
-  approvalScore: number;
-};
+export type ReadinessBreakdown = z.infer<typeof ReadinessSchema>;
 
 export type ProjectOverview = {
   project: ProjectDetail;
@@ -47,7 +41,7 @@ export type OverviewLoad = {
 };
 
 export const loadProjectOverview = cache(
-  async (token: string, projectId: string): Promise<OverviewLoad> => {
+  async (token: string, projectId: string, requestedPeriodId?: string): Promise<OverviewLoad> => {
     const projectResult = await gatewayRequest(`/v1/projects/${projectId}`, ProjectDetailSchema, token);
     if (!projectResult.ok) {
       return { ok: false, error: projectResult.error, value: null };
@@ -61,7 +55,7 @@ export const loadProjectOverview = cache(
     );
     const periods = periodsResult.ok ? periodsResult.value.items : [];
 
-    const activePeriodId = periods[0]?.id ?? null;
+    const activePeriodId = periods.find((p) => p.id === requestedPeriodId)?.id ?? periods[0]?.id ?? null;
 
     const [readinessResult, checklistResult, evidenceResult, activitiesResult] = activePeriodId
       ? await Promise.all([

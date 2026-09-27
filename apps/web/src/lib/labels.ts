@@ -230,6 +230,21 @@ export const ACTIVITY_STATUS_LABEL: Record<string, string> = {
   REJECTED: "Rejected",
 };
 
+export const DISAGGREGATION_DIMENSION_LABEL: Record<string, string> = {
+  SEX: "Sex",
+  AGE_GROUP: "Age group",
+  DISABILITY: "Disability",
+  LOCATION: "Location",
+  OTHER: "Other",
+};
+
+/** Suggested categories that partition each dimension (users can type their own). */
+export const DISAGGREGATION_PRESETS: Record<string, readonly string[]> = {
+  SEX: ["Female", "Male"],
+  AGE_GROUP: ["Under 5", "5–17", "18–59", "60+"],
+  DISABILITY: ["With disability", "Without disability"],
+};
+
 export const INDICATOR_VERIFICATION_LABEL: Record<string, string> = {
   DRAFT: "Draft",
   SUBMITTED: "Submitted",

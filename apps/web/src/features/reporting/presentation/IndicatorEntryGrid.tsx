@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
+import type { DisaggregationEntryInput } from "@donordesk/contracts";
 import { useRouter } from "next/navigation";
 import {
   bulkSaveIndicatorUpdatesAction,
@@ -16,15 +17,14 @@ import { Badge } from "@/components/data/Badge";
 import { useToast } from "@/components/feedback/Toast";
 import { indicatorVerificationTone } from "@/lib/shared/tone";
 import { INDICATOR_VERIFICATION_LABEL, INDICATOR_TYPE_LABEL, LOGFRAME_LEVEL_LABEL } from "@/lib/labels";
+import { logframeLevelRank, logframeLevelTone } from "@/features/logframe/domain/logframe-outline";
+import { DisaggregationEditor } from "@/features/logframe/presentation/DisaggregationEditor";
 
-const LEVEL_ORDER = ["GOAL", "OUTCOME", "OUTPUT", "ACTIVITY"];
+type TextField = "periodAchievement" | "cumulativeAchievement" | "comments" | "dataSource";
 
-type RowValues = {
-  periodAchievement: string;
-  cumulativeAchievement: string;
-  comments: string;
-  dataSource: string;
-};
+type RowValues = Record<TextField, string> & { disaggregation: DisaggregationEntryInput[] };
+
+const COLUMN_COUNT = 12;
 
 function initialValues(row: PeriodIndicatorRow): RowValues {
   return {
@@ -32,7 +32,12 @@ function initialValues(row: PeriodIndicatorRow): RowValues {
     cumulativeAchievement: row.update?.cumulativeAchievement ?? "",
     comments: row.update?.comments ?? "",
     dataSource: row.update?.dataSource ?? (row.dataSource ?? ""),
+    disaggregation: row.update?.disaggregation ?? [],
   };
+}
+
+function hasBreakdown(row: PeriodIndicatorRow, values: RowValues): boolean {
+  return row.disaggregationRequired || values.disaggregation.length > 0;
 }
 
 export function IndicatorEntryGrid({
@@ -56,6 +61,7 @@ export function IndicatorEntryGrid({
   const [dirty, setDirty] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const [importOpen, setImportOpen] = useState(false);
   const [sheetUrl, setSheetUrl] = useState("");
@@ -70,18 +76,23 @@ export function IndicatorEntryGrid({
       list.push(row);
       groups.set(key, list);
     }
-    return [...groups.entries()].sort(
-      (a, b) =>
-        (LEVEL_ORDER.indexOf(a[0]) === -1 ? LEVEL_ORDER.length : LEVEL_ORDER.indexOf(a[0])) -
-        (LEVEL_ORDER.indexOf(b[0]) === -1 ? LEVEL_ORDER.length : LEVEL_ORDER.indexOf(b[0])),
-    );
+    return [...groups.entries()].sort((a, b) => logframeLevelRank(a[0]) - logframeLevelRank(b[0]));
   }, [rows]);
 
   const dirtyCount = dirty.size;
 
-  function updateCell(indicatorId: string, field: keyof RowValues, value: string) {
-    setValues((current) => ({ ...current, [indicatorId]: { ...(current[indicatorId] ?? initialValues(rows.find((r) => r.id === indicatorId)!)), [field]: value } }));
+  function updateRow(indicatorId: string, patch: Partial<RowValues>) {
+    setValues((current) => ({ ...current, [indicatorId]: { ...(current[indicatorId] ?? initialValues(rows.find((r) => r.id === indicatorId)!)), ...patch } }));
     setDirty((current) => new Set(current).add(indicatorId));
+  }
+
+  function toggleBreakdown(indicatorId: string) {
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (next.has(indicatorId)) next.delete(indicatorId);
+      else next.add(indicatorId);
+      return next;
+    });
   }
 
   function rowIsVerified(row: PeriodIndicatorRow): boolean {
@@ -102,6 +113,9 @@ export function IndicatorEntryGrid({
             cumulativeAchievement: v.cumulativeAchievement,
             comments: v.comments || undefined,
             dataSource: v.dataSource || undefined,
+            ...(hasBreakdown(row, v)
+              ? { disaggregation: v.disaggregation.filter((entry) => entry.category.trim() || entry.value.trim()) }
+              : {}),
           };
         });
       const result = await bulkSaveIndicatorUpdatesAction(periodId, payload);
@@ -166,6 +180,7 @@ export function IndicatorEntryGrid({
           cumulativeAchievement: parsed.cumulativeAchievement || base.cumulativeAchievement,
           comments: parsed.comments || base.comments,
           dataSource: parsed.dataSource || base.dataSource,
+          disaggregation: base.disaggregation,
         };
       }
       return next;
@@ -329,7 +344,9 @@ export function IndicatorEntryGrid({
                   canEdit={canEdit}
                   canVerify={canVerify}
                   verifyingId={verifyingId}
-                  onChange={updateCell}
+                  expanded={expanded}
+                  onChange={updateRow}
+                  onToggleBreakdown={toggleBreakdown}
                   onVerify={verifyRow}
                 />
               ))}
@@ -349,7 +366,9 @@ function LevelGroupRows({
   canEdit,
   canVerify,
   verifyingId,
+  expanded,
   onChange,
+  onToggleBreakdown,
   onVerify,
 }: {
   level: string;
@@ -359,7 +378,9 @@ function LevelGroupRows({
   canEdit: boolean;
   canVerify: boolean;
   verifyingId: string | null;
-  onChange: (indicatorId: string, field: keyof RowValues, value: string) => void;
+  expanded: Set<string>;
+  onChange: (indicatorId: string, patch: Partial<RowValues>) => void;
+  onToggleBreakdown: (indicatorId: string) => void;
   onVerify: (row: PeriodIndicatorRow) => void;
 }) {
   return (
@@ -369,110 +390,127 @@ function LevelGroupRows({
         const editable = canEdit && !verified;
         const v = values[row.id] ?? initialValues(row);
         const target = row.target ? `${row.target}${row.unit ? ` ${row.unit}` : ""}` : "—";
+        const showBreakdown = hasBreakdown(row, v);
+        const open = expanded.has(row.id);
         return (
-          <tr key={row.id} className={`trow ${dirty.has(row.id) ? "bg-brand-500/5" : ""}`}>
-            <td className="px-3 py-2">
-              {level === "UNASSIGNED" ? "—" : <Badge tone={levelTone(level)}>{LOGFRAME_LEVEL_LABEL[level] ?? level}</Badge>}
-            </td>
-            <td className="px-3 py-2 font-mono text-xs">{row.code}</td>
-            <td className="min-w-[200px] px-3 py-2">
-              <span className="font-medium">{row.name}</span>
-              {row.logframeTitle && <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{row.logframeTitle}</span>}
-              {row.requiresDenominator && (
-                <span className="mt-1 block text-xs text-warning-700 dark:text-warning-400">
-                  This percentage/ratio indicator has no denominator indicator configured, so its result cannot be independently verified in the report.
-                </span>
-              )}
-            </td>
-            <td className="px-3 py-2 text-xs">{INDICATOR_TYPE_LABEL[row.type] ?? row.type}</td>
-            <td className="px-3 py-2 text-xs">{row.baseline || "—"}</td>
-            <td className="px-3 py-2 text-xs">{target}</td>
-            <td className="min-w-[140px] px-3 py-2">
-              {row.type === "YES_NO" ? (
-                <Select
-                  value={v.periodAchievement}
-                  onChange={(e) => onChange(row.id, "periodAchievement", e.target.value)}
-                  disabled={!editable}
-                  aria-label={`Period achievement for ${row.code}`}
-                  className="min-h-[38px]"
-                >
-                  <option value="">—</option>
-                  <option value="YES">Yes</option>
-                  <option value="NO">No</option>
-                </Select>
-              ) : (
+          <Fragment key={row.id}>
+            <tr className={`trow ${dirty.has(row.id) ? "bg-brand-500/5" : ""}`}>
+              <td className="px-3 py-2">
+                {level === "UNASSIGNED" ? "—" : <Badge tone={logframeLevelTone(level)}>{LOGFRAME_LEVEL_LABEL[level] ?? level}</Badge>}
+              </td>
+              <td className="px-3 py-2 font-mono text-xs">{row.code}</td>
+              <td className="min-w-[200px] px-3 py-2">
+                <span className="font-medium">{row.name}</span>
+                {row.logframeTitle && <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{row.logframeTitle}</span>}
+                {row.requiresDenominator && (
+                  <span className="mt-1 block text-xs text-warning-700 dark:text-warning-400">
+                    This percentage/ratio indicator has no denominator indicator configured, so its result cannot be independently verified in the report.
+                  </span>
+                )}
+              </td>
+              <td className="px-3 py-2 text-xs">{INDICATOR_TYPE_LABEL[row.type] ?? row.type}</td>
+              <td className="px-3 py-2 text-xs">{row.baseline || "—"}</td>
+              <td className="px-3 py-2 text-xs">{target}</td>
+              <td className="min-w-[140px] px-3 py-2">
+                {row.type === "YES_NO" ? (
+                  <Select
+                    value={v.periodAchievement}
+                    onChange={(e) => onChange(row.id, { periodAchievement: e.target.value })}
+                    disabled={!editable}
+                    aria-label={`Period achievement for ${row.code}`}
+                    className="min-h-[38px]"
+                  >
+                    <option value="">—</option>
+                    <option value="YES">Yes</option>
+                    <option value="NO">No</option>
+                  </Select>
+                ) : (
+                  <Input
+                    value={v.periodAchievement}
+                    onChange={(e) => onChange(row.id, { periodAchievement: e.target.value })}
+                    disabled={!editable}
+                    placeholder={row.unit ? `e.g. value in ${row.unit}` : "Value"}
+                    className="min-h-[38px] px-2 py-1 text-xs"
+                    aria-label={`Period achievement for ${row.code}`}
+                  />
+                )}
+                {showBreakdown && (
+                  <button
+                    type="button"
+                    className="mt-1 text-xs text-brand-600 hover:underline dark:text-brand-400"
+                    aria-expanded={open}
+                    aria-controls={`breakdown-${row.id}`}
+                    onClick={() => onToggleBreakdown(row.id)}
+                  >
+                    {open ? "Hide" : "Breakdown"} ({v.disaggregation.length})
+                    {row.disaggregationRequired && v.disaggregation.length === 0 && <span className="ml-1 text-warning-700 dark:text-warning-400">required</span>}
+                  </button>
+                )}
+              </td>
+              <td className="min-w-[120px] px-3 py-2">
                 <Input
-                  value={v.periodAchievement}
-                  onChange={(e) => onChange(row.id, "periodAchievement", e.target.value)}
+                  value={v.cumulativeAchievement}
+                  onChange={(e) => onChange(row.id, { cumulativeAchievement: e.target.value })}
                   disabled={!editable}
-                  placeholder={row.unit ? `e.g. value in ${row.unit}` : "Value"}
+                  placeholder="Running total"
                   className="min-h-[38px] px-2 py-1 text-xs"
-                  aria-label={`Period achievement for ${row.code}`}
+                  aria-label={`Cumulative achievement for ${row.code}`}
                 />
-              )}
-            </td>
-            <td className="min-w-[120px] px-3 py-2">
-              <Input
-                value={v.cumulativeAchievement}
-                onChange={(e) => onChange(row.id, "cumulativeAchievement", e.target.value)}
-                disabled={!editable}
-                placeholder="Running total"
-                className="min-h-[38px] px-2 py-1 text-xs"
-                aria-label={`Cumulative achievement for ${row.code}`}
-              />
-            </td>
-            <td className="min-w-[160px] px-3 py-2">
-              <Input
-                value={v.comments}
-                onChange={(e) => onChange(row.id, "comments", e.target.value)}
-                disabled={!editable}
-                placeholder="Notes"
-                className="min-h-[38px] px-2 py-1 text-xs"
-                aria-label={`Comments for ${row.code}`}
-              />
-            </td>
-            <td className="min-w-[160px] px-3 py-2">
-              <Input
-                value={v.dataSource}
-                onChange={(e) => onChange(row.id, "dataSource", e.target.value)}
-                disabled={!editable}
-                placeholder="Source of the figure"
-                className="min-h-[38px] px-2 py-1 text-xs"
-                aria-label={`Data source for ${row.code}`}
-              />
-            </td>
-            <td className="px-3 py-2">
-              {row.update ? (
-                <Badge tone={indicatorVerificationTone(row.update.verificationStatus)}>
-                  {INDICATOR_VERIFICATION_LABEL[row.update.verificationStatus] ?? row.update.verificationStatus}
-                </Badge>
-              ) : (
-                <span className="text-xs text-slate-400">Not entered</span>
-              )}
-            </td>
-            <td className="px-3 py-2">
-              {canVerify && row.update && !verified && (
-                <Button variant="secondary" size="sm" pending={verifyingId === row.update.id} onClick={() => onVerify(row)}>
-                  Submit & verify
-                </Button>
-              )}
-            </td>
-          </tr>
+              </td>
+              <td className="min-w-[160px] px-3 py-2">
+                <Input
+                  value={v.comments}
+                  onChange={(e) => onChange(row.id, { comments: e.target.value })}
+                  disabled={!editable}
+                  placeholder="Notes"
+                  className="min-h-[38px] px-2 py-1 text-xs"
+                  aria-label={`Comments for ${row.code}`}
+                />
+              </td>
+              <td className="min-w-[160px] px-3 py-2">
+                <Input
+                  value={v.dataSource}
+                  onChange={(e) => onChange(row.id, { dataSource: e.target.value })}
+                  disabled={!editable}
+                  placeholder="Source of the figure"
+                  className="min-h-[38px] px-2 py-1 text-xs"
+                  aria-label={`Data source for ${row.code}`}
+                />
+              </td>
+              <td className="px-3 py-2">
+                {row.update ? (
+                  <Badge tone={indicatorVerificationTone(row.update.verificationStatus)}>
+                    {INDICATOR_VERIFICATION_LABEL[row.update.verificationStatus] ?? row.update.verificationStatus}
+                  </Badge>
+                ) : (
+                  <span className="text-xs text-slate-400">Not entered</span>
+                )}
+              </td>
+              <td className="px-3 py-2">
+                {canVerify && row.update && !verified && (
+                  <Button variant="secondary" size="sm" pending={verifyingId === row.update.id} onClick={() => onVerify(row)}>
+                    Submit & verify
+                  </Button>
+                )}
+              </td>
+            </tr>
+            {showBreakdown && open && (
+              <tr id={`breakdown-${row.id}`} className="bg-slate-50/60 dark:bg-white/5">
+                <td colSpan={COLUMN_COUNT} className="px-3 py-3">
+                  <DisaggregationEditor
+                    entries={v.disaggregation}
+                    onChange={(entries) => onChange(row.id, { disaggregation: entries })}
+                    disabled={!editable}
+                    total={v.periodAchievement}
+                    summable={row.breakdownMustSum ?? false}
+                    label={`Breakdown for ${row.code}`}
+                  />
+                </td>
+              </tr>
+            )}
+          </Fragment>
         );
       })}
     </>
   );
-}
-
-function levelTone(level: string): "info" | "success" | "warning" | "neutral" {
-  switch (level) {
-    case "GOAL":
-      return "info";
-    case "OUTCOME":
-      return "success";
-    case "OUTPUT":
-      return "warning";
-    default:
-      return "neutral";
-  }
 }

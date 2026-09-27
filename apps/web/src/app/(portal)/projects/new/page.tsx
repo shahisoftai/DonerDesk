@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProjectAction } from "@/lib/actions/projects";
 import { useActionState } from "@/lib/client/action-state";
@@ -15,6 +15,8 @@ import {
   type ProjectWizardData,
   type WizardFieldErrors,
 } from "@/features/projects/validation/project-wizard";
+import { createWizardDraftStore, hasWizardInput, type WizardDraft } from "@/features/projects/application/wizard-draft-store";
+import { formatDateTime } from "@/lib/shared/dates";
 import {
   SECTOR_OPTIONS,
   SECTOR_LABEL,
@@ -36,6 +38,33 @@ export default function GuidedProjectWizard() {
   const [data, setData] = useState<ProjectWizardData>(emptyWizardData);
   const [errors, setErrors] = useState<WizardFieldErrors>({});
   const { busy, error, run } = useActionState();
+  const drafts = useMemo(
+    () => createWizardDraftStore(typeof window === "undefined" ? null : window.localStorage, { maxStepIndex: STEPS.length - 1 }),
+    [],
+  );
+  // undefined = not checked yet; null = nothing to resume (or already decided).
+  const [pendingDraft, setPendingDraft] = useState<WizardDraft | null | undefined>(undefined);
+
+  useEffect(() => {
+    setPendingDraft(drafts.load());
+  }, [drafts]);
+
+  useEffect(() => {
+    if (pendingDraft !== null) return;
+    if (hasWizardInput(data)) drafts.save({ data, stepIndex });
+    else drafts.clear();
+  }, [data, stepIndex, pendingDraft, drafts]);
+
+  function resumeDraft(draft: WizardDraft) {
+    setData(draft.data);
+    setStepIndex(draft.stepIndex);
+    setPendingDraft(null);
+  }
+
+  function discardDraft() {
+    drafts.clear();
+    setPendingDraft(null);
+  }
 
   const step = STEPS[stepIndex]!.key;
 
@@ -83,7 +112,10 @@ export default function GuidedProjectWizard() {
         description: data.reporting.description || undefined,
       }),
     );
-    if (result) router.push(`/projects/${result.id}/setup`);
+    if (result) {
+      drafts.clear();
+      router.push(`/projects/${result.id}/setup`);
+    }
   }
 
   const fieldError = (key: string) => (errors[key] ? errors[key][0] : undefined);
@@ -92,8 +124,18 @@ export default function GuidedProjectWizard() {
     <div className="animate-fade-in mx-auto max-w-2xl">
       <h1 className="text-xl font-semibold tracking-tight">Create a project</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Set up a donor-funded project workspace. Work is kept in your browser until you submit at the end.
+        Set up a donor-funded project workspace. Your answers are saved in this browser for 24 hours until you create the project.
       </p>
+
+      {pendingDraft && (
+        <InlineAlert tone="info" title={`You have an unfinished project from ${formatDateTime(new Date(pendingDraft.savedAt))}`} className="mt-4">
+          <p>{pendingDraft.data.step.title ? `“${pendingDraft.data.step.title}”` : "Untitled project"} — continue where you left off?</p>
+          <div className="mt-2 flex gap-2">
+            <Button type="button" size="sm" onClick={() => resumeDraft(pendingDraft)}>Resume draft</Button>
+            <Button type="button" size="sm" variant="secondary" onClick={discardDraft}>Start fresh</Button>
+          </div>
+        </InlineAlert>
+      )}
 
       <ol className="mt-6 flex items-center gap-2 text-xs" aria-label="Project setup progress">
         {STEPS.map((s, i) => (

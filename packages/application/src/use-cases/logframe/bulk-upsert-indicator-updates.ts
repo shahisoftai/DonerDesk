@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, validateDisaggregation } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorUpdateRepository, IIndicatorRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -26,12 +26,30 @@ export class BulkUpsertIndicatorUpdatesHandler {
 
     const indicatorsResult = await this.indicators.findByProject(periodResult.value.projectId, ctx.tenant.tenantId);
     if (!indicatorsResult.ok) return indicatorsResult;
-    const validIndicatorIds = new Set(indicatorsResult.value.map((i) => i.id));
+    const indicatorsById = new Map(indicatorsResult.value.map((i) => [i.id, i]));
+
+    // Validate every row before writing any, so one bad breakdown cannot leave a half-saved sheet.
+    const rows = [];
+    for (const row of input.updates) {
+      const indicator = indicatorsById.get(row.indicatorId);
+      if (!indicator) continue;
+      if (!row.disaggregation) {
+        rows.push(row);
+        continue;
+      }
+      const checked = validateDisaggregation(row.disaggregation, {
+        indicatorType: indicator.type,
+        periodAchievement: row.periodAchievement,
+      });
+      if (!checked.ok) {
+        return { ok: false, error: DomainError.validation(`${indicator.code}: ${checked.error.message}`, checked.error.details) };
+      }
+      rows.push({ ...row, disaggregation: checked.value });
+    }
 
     let saved = 0;
     let skipped = 0;
-    for (const row of input.updates) {
-      if (!validIndicatorIds.has(row.indicatorId)) continue;
+    for (const row of rows) {
       const result = await upsertIndicatorUpdate(
         this.ids,
         this.repo,
