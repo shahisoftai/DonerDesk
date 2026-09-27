@@ -98,7 +98,12 @@ export class PdfBlockReader implements IStructuredDocumentParser {
   async parse(input: ParseInput): Promise<Result<StructuredDocument, DomainError>> {
     const pages: string[] = [];
     try {
-      const mod = (await import("pdf-parse")) as unknown as { default: (b: Buffer, o?: Record<string, unknown>) => Promise<{ numpages: number }> };
+      // Import the library module directly, not the package root: the root
+      // `index.js` runs a self-test (`isDebugMode = !module.parent`) that is
+      // truthy under ESM dynamic import (no CJS parent), which throws ENOENT
+      // trying to read the package's own fixture file before we ever get to
+      // call it. `lib/pdf-parse.js` is the real implementation, unwrapped.
+      const mod = await import("pdf-parse/lib/pdf-parse.js");
       const pagerender = async (pageData: { getTextContent: (o: Record<string, unknown>) => Promise<{ items: PdfTextItem[] }> }) => {
         const content = await pageData.getTextContent({ normalizeWhitespace: false, disableCombineTextItems: false });
         let lastY: number | undefined;
