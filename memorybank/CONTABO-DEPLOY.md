@@ -1,5 +1,19 @@
 # Deploy to Contabo — Fastest Path
 
+**Flag flip (same day, no new release):** 2026-09-27 — `REPORT_EDITOR_V2=1` set
+for **all tenants** via a systemd drop-in,
+`/etc/systemd/system/donordesk-web.service.d/report-editor-v2.conf`
+(`[Service]\nEnvironment=REPORT_EDITOR_V2=1`), then `systemctl daemon-reload &&
+systemctl restart donordesk-web`. Verified: flag present in
+`/proc/<donordesk-web pid>/environ`, `donordesk-web` active, and a real EERP
+report loads the new editor with **no `?editor=` query param** at all.
+`?editor=classic` still reaches the old workspace. This skips P7's staged
+internal-tenant → EERP-pilot → all rollout (the flag has no per-tenant
+granularity, only the global env var plus the query-param override) — done
+at the user's explicit request after confirming `?editor=v2` worked cleanly
+against production. To roll back: delete the drop-in file, `daemon-reload`,
+restart `donordesk-web`.
+
 **Last deploy:** 2026-09-27 — `releaseId=20260927062322` (`SCOPE=both`). Ships Report Editor v2 P3–P6 (statements inline, section regenerate + Ask AI, the `/inputs` page, shortcuts, responsive/a11y/dark-mode polish) — the full `REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md` build except the axe-core Playwright suite and editor usage-analytics events (both still open; see `pending.md`). Pre-deploy gates all green and matching the plan's documented counts: `pnpm -r typecheck` clean across all 8 packages; unit tests domain 205, application 121, infrastructure 229 (+1 skipped), contracts 9, web 163, worker pytest 125 — all passing (the two `apps/api/test/billing.test.mjs` failures are the known local-Postgres-credentials case, not a real regression). Deploy verified: systemd api/web/workers active, `/ready` 200, worker health `{"status":"ok"}`, and `/proc/<pid>/environ` matched `api.env`/`workers.env` with no post-restart rewrite this time. `REPORT_EDITOR_V2` is unset on the host (default off), so the new editor is reachable only via `?editor=v2` — this is intentionally P7's first rollout stage (internal tenant, by knowing the query param) before the env var is set for the EERP pilot and then everyone. No migrations.
 
 **Earlier:** 2026-09-26 — `releaseId=20260926174726` (SCOPE=api), preceded the same evening by `20260926164318` (SCOPE=both) and `20260926171958` (SCOPE=api). These carry the EERP Q2 run fixes: cumulative-aware verifier, date/count classifier, restricted evidence withheld from the writer, indicator-semantics API + UI, the manual evidence-link UI, worker `MAX_TOKENS` 16384 default, and truncated-JSON salvage. All gates were green (`/ready` 200, worker ok). A follow-up api deploy with the worker draft retry-on-no-JSON was started but not confirmed; check `grep -c "transient, so retry once" /opt/donordesk/workers/app/ai_reporter/draft_writer.py` on the host. Host env fix: re-added `AI_REPORTER_MAX_TOKENS=16384` to `workers.env` (see `contabo-ops.md`). No migrations. See `Fixes.md` §"EERP-2026 Q2 end-to-end report run".
