@@ -249,6 +249,25 @@ export function computeIndicator(input: IndicatorCalculationInput): VerifiedFind
     ? verified.map((u) => u.id)
     : input.updates.map((u) => u.id);
 
+  // Cumulative-to-date figure from the latest verified update. Only meaningful
+  // (and only exposed) when the headline value is period-based.
+  let cumulativeValue: string | undefined;
+  let priorCumulativeValue: string | undefined;
+  if (basis === "periodAchievement") {
+    const latestCumulative = verified
+      .filter((u) => isNumeric(u.cumulativeAchievement) && u.cumulativeAchievement.trim() !== "")
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0];
+    if (latestCumulative) {
+      const cumulative = parseDecimal(latestCumulative.cumulativeAchievement) as Decimal;
+      cumulativeValue = formatDecimal(cumulative, 6);
+      const period = parseDecimal(computed);
+      if (input.semantics.aggregation === "SUM" && period !== null) {
+        const prior = decimalSubtract(cumulative, period);
+        if (decimalCompare(prior, { value: 0n, scale: 0 }) >= 0) priorCumulativeValue = formatDecimal(prior, 6);
+      }
+    }
+  }
+
   const performanceEvaluation = evaluatePerformance({
     value: computed,
     baseline: input.baseline,
@@ -264,6 +283,8 @@ export function computeIndicator(input: IndicatorCalculationInput): VerifiedFind
     baseline: input.baseline,
     target: input.target,
     value: computed,
+    cumulativeValue,
+    priorCumulativeValue,
     unit: input.unit,
     calculationMethod: buildCalculationMethod(input.semantics.aggregation, input.semantics.direction, input.semantics.reportingBasis),
     semantics: input.semantics,

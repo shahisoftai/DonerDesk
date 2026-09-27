@@ -1,13 +1,15 @@
 # Deploy to Contabo — Fastest Path
 
-**Last deploy:** 2026-09-26 — `releaseId=20260926153744` (`SCOPE=both`: report-quality v4, the Claude and Gemini providers, per-tenant provider resolution, and "tenant's own AI provider consumes no DonorDesk credits"). Green: api/web/workers/superadmin active, `/ready` 200, worker health 200, public `donordesk.online` + `sa.donordesk.online` 200, no warnings in the journals.
+**Last deploy:** 2026-09-26 — `releaseId=20260926174726` (SCOPE=api), preceded the same evening by `20260926164318` (SCOPE=both) and `20260926171958` (SCOPE=api). These carry the EERP Q2 run fixes: cumulative-aware verifier, date/count classifier, restricted evidence withheld from the writer, indicator-semantics API + UI, the manual evidence-link UI, worker `MAX_TOKENS` 16384 default, and truncated-JSON salvage. All gates were green (`/ready` 200, worker ok). A follow-up api deploy with the worker draft retry-on-no-JSON was started but not confirmed; check `grep -c "transient, so retry once" /opt/donordesk/workers/app/ai_reporter/draft_writer.py` on the host. Host env fix: re-added `AI_REPORTER_MAX_TOKENS=16384` to `workers.env` (see `contabo-ops.md`). No migrations. See `Fixes.md` §"EERP-2026 Q2 end-to-end report run".
+
+**Earlier the same day:** `releaseId=20260926153744` (`SCOPE=both`: report-quality v4, the Claude and Gemini providers, per-tenant provider resolution, and "tenant's own AI provider consumes no DonorDesk credits"). Green: api/web/workers/superadmin active, `/ready` 200, worker health 200, public `donordesk.online` + `sa.donordesk.online` 200, no warnings in the journals.
 - Pre-installed `anthropic==1.8.0` into the host worker venv (§9a; the venv has `pip`, and `uv` is not on the host PATH).
 - Env edits, with backups `*.bak.providers-20260926153736`:
   - `workers.env`: `AI_REPORTER_DRAFT_TIMEOUT_MS=90000`, `AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS=200000`, `AI_REPORTER_CONTRACT_VERSION=4`.
   - `api.env`: `AI_REPORTER_HTTP_TIMEOUT_MS=240000`, `AI_REPORTER_CONTRACT_VERSION=4`.
 - No migrations.
 - SuperAdmin shipped separately with a `.next` + `server.js` swap in `/opt/donordesk/app/superadmin`. BUILD_ID is `wsXef7TcybCfhFjNpzma-`; rollback is `/opt/donordesk/backups/superadmin-pre-20260926155153.tgz` or `.next.old`/`server.js.old`. `deploy-fast.sh` does NOT ship SuperAdmin.
-- **Gotcha:** re-provisioning (a SuperAdmin save, or the api's boot-time re-provision) rewrote both env files ~3 s *after* the deploy restarted the services, so they ran on stale env. After any deploy, compare `/proc/<pid>/environ` with the env files, and restart again if they differ.
+- **Gotcha:** re-provisioning (a SuperAdmin save, or the api's boot-time re-provision) rewrote both env files ~3 s *after* the deploy restarted the services, so they ran on stale env. After any deploy, compare `/proc/<pid>/environ` with the env files, and restart again if they differ. **Also confirm `AI_REPORTER_MAX_TOKENS=16384` is still in `workers.env`.** It was lost in such a rewrite on 2026-09-26.
 
 **Previous deploy:** 2026-09-18 — `releaseId=20260918043830` (see git history of this file).
 

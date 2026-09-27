@@ -543,3 +543,57 @@ def test_run_pipeline_gives_up_once_total_budget_exhausted(monkeypatch) -> None:
 
     with pytest.raises(timeouts.TotalBudgetExceededError):
         pipeline.run_pipeline(_draft_request())
+
+
+def test_extract_json_salvages_output_truncated_in_trailing_list() -> None:
+    """Regression (live 2026-09-26): DeepSeek hit its output cap inside the
+    trailing proposedSources list. The prose was complete, but the whole
+    section fell back to deterministic text."""
+    from app.ai_reporter.llm_gateway import extract_json
+
+    raw = (
+        '{"title":"Programme Overview","content":"The project reached 75 centres.",'
+        '"proposedSources":[{"evidenceId":"e1","chunkId":"e1:0","sourceText":"Total learning kits"},'
+        '{"evidenceId":"e2","chunkId":"e2:0","sourceText":"Teacher attend'
+    )
+    parsed = extract_json(raw)
+    assert parsed["content"] == "The project reached 75 centres."
+    assert [s["evidenceId"] for s in parsed["proposedSources"]] == ["e1"]
+
+
+def test_extract_json_does_not_salvage_truncated_prose() -> None:
+    """A section whose own `content` was cut off is unusable and must still
+    raise so the pipeline falls back deterministically."""
+    from app.ai_reporter.llm_gateway import extract_json
+
+    raw = '{"title":"Executive Summary","content":"The project reached 75 cen'
+    with pytest.raises(ValueError):
+        extract_json(raw)
+
+    raw2 = '{"title":"X","claims":[{"text":"a"},{"text":"b'
+    with pytest.raises(ValueError):
+        extract_json(raw2)
+
+
+def test_draft_retries_once_when_model_returns_no_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Regression (live 2026-09-26): a reasoning model sometimes returns no JSON;
+    one retry avoids discarding the section."""
+    from app.ai_reporter import draft_writer
+
+    replies = iter(
+        [
+            ("", {"inputTokens": 1, "outputTokens": 0, "latencyMs": 1, "parseOutcome": "VALID"}),
+            ('{"title":"Results","content":"Ok."}', {"inputTokens": 1, "outputTokens": 5, "latencyMs": 1, "parseOutcome": "VALID"}),
+        ]
+    )
+    monkeypatch.setattr(draft_writer, "_chat", lambda *a, **k: next(replies))
+    section = draft_writer.draft(_request())
+    assert section.content == "Ok."
+
+
+def test_draft_raises_when_model_never_returns_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.ai_reporter import draft_writer
+
+    monkeypatch.setattr(draft_writer, "_chat", lambda *a, **k: ("", {"inputTokens": 1, "outputTokens": 0, "latencyMs": 1, "parseOutcome": "VALID"}))
+    with pytest.raises(ValueError):
+        draft_writer.draft(_request())

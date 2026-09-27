@@ -285,6 +285,17 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
 - **Email/notification delivery** — in-app only; no delivery claims.
 - **Report reject/request-changes endpoint** — **DONE 2026-08-16 (Feature 20 core)**. `POST /v1/report-drafts/:id/reject` returns drafts to DRAFT with an audit trail.
 
+## EERP Q2 run — follow-ups (added 2026-09-26)
+
+- [ ] **Commit** the EERP Q2 run fixes. They are deployed, but at the time of writing they were uncommitted on branch `0007-ai-report`.
+- [ ] Confirm the worker **draft retry-on-no-JSON** deploy reached the host (see `CONTABO-DEPLOY.md`), then regenerate EERP Q2 and check that 9/9 sections are AI-written (no "drafted without AI" banner; no `ai-reporter/section … 500` in the worker journal).
+- [ ] Find what rewrote `workers.env` at 18:11 on 2026-09-26 and dropped `AI_REPORTER_MAX_TOKENS`. Likely `RuntimeProvisioner` (it lists the key in `WORKERS_PRESERVED_KEYS`, so check why it was not carried forward). Also strip the leading space in `AI_REPORTER_MODEL= deepseek-flash`.
+- [ ] DeepSeek still occasionally truncates below 16384 output tokens on long sections (Programme Overview, Annex A). Consider trimming `proposedSources` in the v4 contract, or asking for sources before artifacts.
+- [ ] Triage the ~301 stale open `UNSUPPORTED_REPORT_CLAIM` compliance items on EERP (from superseded drafts). Consider auto-closing claims tied to superseded draft versions.
+- [ ] Entailment "Insufficient evidence support" is now the dominant review flag. The lexical scorer vs. short evidence notes needs work, or the evidence files need richer extracted text.
+- [ ] Link EERP evidence to the Q2 (not monthly) indicator updates with the new link manager. Existing links point mostly at the monthly-period updates.
+- [ ] EERP Q2 draft v11 is generated but not reviewed, submitted or approved.
+
 ## SuperAdmin LLM providers — deploy follow-ups (added 2026-09-26)
 
 - [x] Install `anthropic>=1.8,<2` in the host worker venv, and make sure the api

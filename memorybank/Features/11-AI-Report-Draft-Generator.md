@@ -441,6 +441,15 @@ interface SourceReference {
 | Per-section Timeout | Implemented (2026-08-29; v4 2026-09-26) | v4: `AI_REPORTER_DRAFT_TIMEOUT_MS=90000` per call, 200s per section, API HTTP timeout derived (2× + 30s) |
 | Executive summary synthesis | Implemented (2026-09-26) | Drafted last, from the other drafted sections |
 
+## EERP Q2 run fixes (2026-09-26)
+
+See `../Fixes.md` §"EERP-2026 Q2 end-to-end report run". In summary:
+- **Verifier:** cumulative-to-date figures verify (`cumulativeValue`), and prior-cumulative is a tolerated reference. DATE/COUNT atoms (day-of-month, "6-month", "N result(s)", "N performed") are no longer checked as indicator values.
+- **Writer inputs:** sensitive evidence is excluded from evidence packages (`excludeRestrictedEvidence`) in both generate and rewrite.
+- **Worker token limit:** `AI_REPORTER_MAX_TOKENS` default is now 16384. With 4096, DeepSeek JSON truncated and most sections silently fell back to deterministic text.
+- **Worker parsing:** `extract_json` salvages output truncated inside trailing lists (only if `content` is complete), and `draft()` retries once on a no-JSON answer.
+- **How to tell whether the AI actually wrote a section:** the workspace banner "This section was drafted without AI (deterministic fallback)", or worker journal `POST /v1/ai-reporter/section … 500`. Always check this after generating; a completed draft does not mean the AI wrote it.
+
 ## Pending Enhancements
 
 - [x] Wire real LLM provider for generation (2026-08-17 — SuperAdmin MiniMax/DeepSeek)

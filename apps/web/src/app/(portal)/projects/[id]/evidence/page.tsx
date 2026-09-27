@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { EvidenceResponseSchema, OrganizationSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
+import {
+  ActivitiesResponseSchema,
+  EvidenceResponseSchema,
+  OrganizationSchema,
+  PeriodIndicatorsResponseSchema,
+  ReportingPeriodsResponseSchema,
+} from "@/lib/server/schemas";
 import {
   parseEvidenceFilters,
   serializeEvidenceFilters,
@@ -16,6 +22,7 @@ import { EvidenceFilterBar } from "@/features/evidence/presentation/EvidenceFilt
 import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
 import { EvidencePeriodPicker } from "@/features/evidence/presentation/EvidencePeriodPicker";
 import { EvidenceLinkSuggestions } from "@/features/evidence/presentation/EvidenceLinkSuggestions";
+import { EvidenceLinkManager, type LinkTarget } from "@/features/evidence/presentation/EvidenceLinkManager";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +44,7 @@ export default async function EvidencePage({
   const filters = parseEvidenceFilters(entries);
 
   const ctx = await requireSession();
-  const [result, orgResult, periodsResult] = await Promise.all([
+  const [result, orgResult, periodsResult, activitiesResult] = await Promise.all([
     gatewayRequest(`/v1/evidence/search`, EvidenceResponseSchema, ctx.token, {
       method: "POST",
       body: {
@@ -52,12 +59,40 @@ export default async function EvidencePage({
     }),
     gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
     gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/activities`, ActivitiesResponseSchema, ctx.token),
   ]);
   const driveConnected = orgResult.ok && orgResult.value.storageProvider === "GOOGLE_DRIVE";
   const periodOptions = (periodsResult.ok ? periodsResult.value.items : []).map((p) => ({
     id: p.id,
     label: `${p.reportType.replace(/_/g, " ")} (${new Date(p.startDate).toLocaleDateString()} – ${new Date(p.endDate).toLocaleDateString()})`,
   }));
+
+  // Link targets: every activity update and every recorded indicator update
+  // (one per indicator per period) — the records report generation reads
+  // evidence through.
+  const periods = periodsResult.ok ? periodsResult.value.items : [];
+  const periodIndicatorResults = await Promise.all(
+    periods.map((p) => gatewayRequest(`/v1/reporting-periods/${p.id}/indicators`, PeriodIndicatorsResponseSchema, ctx.token)),
+  );
+  const activityTargets = (activitiesResult.ok ? activitiesResult.value.items : []).map((a) => ({
+    type: "activity" as const,
+    id: a.id,
+    label: `${a.activityTitle} (${new Date(a.activityDate).toLocaleDateString()})`,
+    attached: a.attachedEvidenceIds ?? [],
+  }));
+  const indicatorTargets = periodIndicatorResults.flatMap((r, i) => {
+    if (!r.ok) return [];
+    const p = periods[i]!;
+    const periodLabel = `${p.reportType.replace(/_/g, " ").toLowerCase()} ${new Date(p.startDate).toLocaleDateString()}–${new Date(p.endDate).toLocaleDateString()}`;
+    return r.value.indicators.flatMap((ind) =>
+      ind.update
+        ? [{ type: "indicator" as const, id: ind.update.id, label: `${ind.code} — ${ind.name} [${periodLabel}]`, attached: ind.update.attachedEvidenceIds ?? [] }]
+        : [],
+    );
+  });
+  const allTargets = [...activityTargets, ...indicatorTargets];
+  const targetsFor = (evidenceId: string): LinkTarget[] =>
+    allTargets.map((t) => ({ type: t.type, id: t.id, label: t.label, linked: t.attached.includes(evidenceId) }));
 
   const baseUrl = `/projects/${resolvedParams.id}/evidence`;
 
@@ -138,7 +173,13 @@ export default async function EvidencePage({
                       />
                     </td>
                     <td className="px-3 py-2">
-                      <EvidenceLinkSuggestions evidenceId={e.id} alreadyLinked={Boolean(e.activityId || e.indicatorId)} />
+                      <EvidenceLinkManager evidenceId={e.id} targets={targetsFor(e.id)} />
+                      <div className="mt-1.5">
+                        <EvidenceLinkSuggestions
+                          evidenceId={e.id}
+                          alreadyLinked={Boolean(e.activityId || e.indicatorId) || targetsFor(e.id).some((t) => t.linked)}
+                        />
+                      </div>
                     </td>
                     <td className="px-3 py-2">
                       <Badge tone={verificationStatusTone(e.verificationStatus)}>

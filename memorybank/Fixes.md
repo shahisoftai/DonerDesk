@@ -1,6 +1,78 @@
 # Fixes
 
-Record of fixes applied to DonorDesk. Last updated: 2026-09-26.
+Record of fixes applied to DonorDesk. Last updated: 2026-09-26 (EERP Q2 end-to-end run).
+
+## EERP-2026 Q2 end-to-end report run: verifier noise, restricted evidence, indicator calculation, evidence linking, and DeepSeek truncation (2026-09-26, releases `20260926164318`, `20260926171958`, `20260926174726`)
+
+**Context.** A browser run (visible Chromium, tenant `mnpiracha@gmail.com`) on the project **"Emergency Education Response Programme"** (`0d0e3a2b-ad21-4b07-a2e1-b649d828e26f`, USAID · Bangladesh, EERP-2026), Q2 2026 quarterly period `3ef77a3d-44fa-4fd5-9b70-d46115870337`. Don't confuse it with the similarly named "Emergency Education Response **Project**" (`ef98470a…`).
+
+**Starting state.** The data was already complete: logframe (goal, 3 outcomes, outputs, activities), 20 indicators with verified Q2 values, 15 accepted activities and 15 verified evidence files. The "Tell the Story" inputs contradicted the verified data: gross-enrolment target given as 80% instead of 100%, satisfaction target as 80% instead of 75%, and "all 30 learning centres" where the cumulative figure is 75. They were corrected in the UI to match the indicator grid. The first regenerated draft (v7) had **158 review items**. The project also carried ~301 stale open `UNSUPPORTED_REPORT_CLAIM` compliance items from earlier drafts; these were **not** bulk-closed.
+
+### Defects fixed
+
+1. **Correct cumulative figures failed numeric verification (`VALUE_MISMATCH`).** `VerifiedFinding` carried only the period value, so prose such as "taking cumulative enrolment to 7,000 against a target of 8,000" failed.
+   - `computeIndicator` (`packages/domain/src/contexts/reporting/indicator-calculator.ts`) now sets `cumulativeValue` (latest verified `cumulativeAchievement`) when the headline value is period-based. For SUM indicators it also sets `priorCumulativeValue` (cumulative − period, only if ≥ 0). Both are new optional fields on `VerifiedFinding`.
+   - `NumericAssertionVerifier` (`packages/infrastructure/src/llm/verifier-strategies.ts`) treats `cumulativeValue` as a verified value. It accepts `priorCumulativeValue` only as a tolerated reference figure, once the sentence already binds a real value (same rule as target/baseline). The failure explanation also checks cumulative values.
+
+2. **Sensitive evidence was cited in donor prose, then failed `CONFIDENTIALITY_RESTRICTED`.** New `excludeRestrictedEvidence()` in `packages/application/src/ports/reporting.ts` removes `SENSITIVE`/`HIGHLY_SENSITIVE` evidence packages before they reach the writer. It is used in both `generate-report-draft.ts` and `rewrite-report-section.ts`. The integrity verifier is unchanged and still rejects any claim that cites such a file.
+
+3. **Percentage indicators were permanently "Not calculable" (`MISSING_DENOMINATOR` / `ENTITY_MISMATCH … marked as needing review`).** `Indicator.semanticsJson` existed, but no API or UI could set it, so every PERCENTAGE/RATIO indicator kept its `REQUIRES_REVIEW` defaults.
+   - New `PUT /v1/indicators/:id/semantics` → `UpdateIndicatorSemanticsHandler` (`packages/application/src/use-cases/logframe/update-indicator-semantics.ts`), with contract `UpdateIndicatorSemanticsSchema`.
+     - The handler validates through `sanitizeIndicatorSemantics`, requires the numerator and denominator to belong to the same project, and stores `status: "CONFIGURED"`.
+     - It writes the audit event `logframe.indicator.semantics_configured`.
+   - `GET /v1/projects/:id/logframe` now returns each indicator's `semantics`.
+   - `ListPeriodIndicatorsHandler.requiresDenominator` is false for a CONFIGURED indicator whose aggregation is not PERCENTAGE/RATIO (a directly reported rate).
+   - UI: a new **"How this value is calculated"** card (`apps/web/src/features/logframe/presentation/IndicatorSemanticsCard.tsx`) on `/projects/[id]/indicators/[indicatorId]`. It covers calculation (Reported directly/LATEST, Sum, Average, Percentage or Ratio from a numerator ÷ denominator indicator, Min, Max), direction, and reporting basis.
+   - Data: EERP's OUT-7, 9, 13, 14, 15, 16, 17 and 20 are set to LATEST / HIGHER_IS_BETTER / PERIOD. These are rates measured by assessments and surveys and entered as-is.
+
+4. **Manual evidence linking UI (new feature).** Report generation reads evidence only through `attachedEvidenceIds` on ActivityUpdates and IndicatorUpdates. The evidence library offered only title-similarity "Suggest links", which found no matches for any EERP file.
+   - New `EvidenceLinkManager` (`apps/web/src/features/evidence/presentation/EvidenceLinkManager.tsx`) in the **"Linked to activity/indicator"** column of `/projects/[id]/evidence`:
+     - It lists current links, each with a **Remove** button (`/v1/activities/detach-evidence`).
+     - A **"Link to…"** picker (grouped Activities / Indicators) attaches via the existing `/v1/activities/attach-evidence`.
+     - Indicator targets are the per-period IndicatorUpdates, labelled with their period.
+   - "Suggest links" is kept below the picker.
+   - Read-model changes: activity items and period-indicator `update` now expose `attachedEvidenceIds` (optional in the web zod schemas).
+
+5. **Dates, durations and record counts were verified as indicator values.** `classifyNumericAtomRoles` (`packages/domain/src/contexts/reporting/numeric-atom.ts`) now classifies:
+   - day-of-month numbers ("10 May 2026", "May 10") as `DATE`;
+   - durations ("6-month", "5 day") as `COUNT`;
+   - `result(s)`, and "N performed / N could" summary counts, as `COUNT`. The count-noun look-ahead widened from 24 to 34 characters.
+
+   `NumericAssertionVerifier.verify` drops `DATE`/`COUNT` atoms before binding. A sentence made only of such atoms passes as "Numbers are dates or counts, not indicator values". Achievement numbers in the same sentence are still checked.
+
+6. **DeepSeek was not actually writing the report (the AI Reporter silently fell back).** In the first three regenerations, 13 of 15 `POST /v1/ai-reporter/section` calls returned 500 (`ValueError: … JSON … model output`), so most sections showed "This section was drafted without AI (deterministic fallback)".
+   - **Root cause:** the live `/opt/donordesk/shared/workers.env` had been rewritten at 18:11 on 2026-09-26 without `AI_REPORTER_MAX_TOKENS=16384`. It was present in both `workers.env.bak.*` files. The worker fell back to the code default of 4096, and DeepSeek's v4-contract JSON (prose + proposedSources + artifacts) was cut off mid-string. The cause of the rewrite is unknown; likely the RuntimeProvisioner re-render.
+   - **Host fix:** re-appended `AI_REPORTER_MAX_TOKENS=16384`, with backup `workers.env.bak.maxtokens-<ts>`, and restarted `donordesk-workers`. `/proc/<pid>/environ` was verified.
+   - **Code fixes** in `apps/workers/app/ai_reporter/`:
+     - (a) `llm_gateway.py` default `AI_REPORTER_MAX_TOKENS` is now 4096 → **16384**, so a lost env key no longer silently truncates.
+     - (b) New `_repair_truncated_json()` salvages an answer cut off inside a trailing list. It closes the containers at the last completely closed inner array or object. It is accepted only if `content` is a non-empty string, and logs `[llm_gateway] repaired truncated model JSON`.
+     - (c) `draft_writer.draft()` retries once when the model returns no parseable JSON at all (empty or prose-only).
+   - **Observed with 16384 plus repair:** 8 of 9 sections were AI-written and 1 repaired. With 16384 alone, 7 of 9. The remaining failure was the "no JSON object" mode that (c) addresses.
+
+### Tests added (all green)
+- **domain 179/179**: cumulative/prior-cumulative finding; a CONFIGURED directly-reported rate with no `MISSING_DENOMINATOR`; no `cumulativeValue` when the basis is CUMULATIVE; the date/duration/count classifier.
+- **application 101/101**: new `test/restricted-evidence.test.mjs`.
+- **infrastructure 225 pass / 0 fail**: verifier accepts cumulative and prior-cumulative references; still rejects unknown numbers; ignores DATE/COUNT atoms but still checks achievements.
+- **workers 115/115**: truncated-JSON salvage; no salvage when the prose itself is truncated; draft retry on no-JSON; raise when never JSON.
+
+### Deploys (`scripts/deploy-fast.sh`)
+- `20260926164318` (SCOPE=both): fixes 1–4. All gates green.
+- `20260926171958` (api): fix 5 (date/duration classifier and the DATE/COUNT drop).
+- `20260926174726` (api): fixes 5-extension and 6a/6b. Green; the worker env still showed `AI_REPORTER_MAX_TOKENS=16384` after the restart.
+- Fix 6c (draft retry): a deploy was **started but not confirmed** at the time of writing. Check with `ssh contabo 'grep -c "transient, so retry once" /opt/donordesk/workers/app/ai_reporter/draft_writer.py'` (1 = shipped).
+- No Prisma migrations: `semanticsJson` already existed.
+- **Not yet committed to git** at the time of writing.
+
+### Outcome on EERP Q2 (latest regeneration, version 11 of the period)
+- Review load: v7 had 158 items → 77 (fixes 1–4) → 71 (fix 5) → 123 in v11. v11 is longer AI prose (~5,000 words, Annex A 1,277 words), so it has more claims to review.
+- All `VALUE_MISMATCH`/`ENTITY_MISMATCH`/`CONFIDENTIALITY_RESTRICTED` noise from the cumulative, denominator and sensitive-evidence causes is gone.
+- The remaining flags are mostly entailment "Insufficient evidence support" (lexical scorer vs. evidence chunk text) and occasional numbers the writer derives itself (e.g. 1,860 remedial students quoted from an activity record, not an indicator).
+- Generation time: ~2.3–5 min for 9 sections.
+- The draft is **not** submitted or approved; that is left to the user.
+
+### Environment notes
+- **LLM provider:** the live AI Reporter provider is `deepseek`, and `workers.env`/`api.env` contain `AI_REPORTER_MODEL= deepseek-flash` (leading space, stripped by systemd). This contradicts `contabo-ops.md`'s 2026-09-26 entry (GLOBAL = anthropic `claude-sonnet-4-6`, deepseek disabled), so the SuperAdmin selection was changed after that entry.
+- **Browser driving:** Playwright screenshots over CDP (`connectOverCDP` to a visible Chromium on `:9222`) hang on font loading. Read `innerText` instead.
 
 ## Tenant's own AI provider consumes no DonorDesk AI credits (2026-09-26, DEPLOYED `20260926153744`)
 

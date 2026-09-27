@@ -1,6 +1,6 @@
 "use server";
 
-import { CreateLogframeItemSchema, ImportLogframeTextSchema } from "@donordesk/contracts";
+import { CreateLogframeItemSchema, ImportLogframeTextSchema, UpdateIndicatorSemanticsSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -40,6 +40,24 @@ export async function importLogframeTextAction(input: unknown): Promise<ImportLo
   }
   return gatewayRequest("/v1/logframe/import", ImportLogframeResponseSchema, context.token, {
     method: "POST",
+    body: parsed.data,
+  });
+}
+
+export type UpdateIndicatorSemanticsResult = Result<{ id: string }, AppError>;
+
+/** Declares how an indicator is aggregated (e.g. directly reported rate vs numerator ÷ denominator). */
+export async function updateIndicatorSemanticsAction(input: unknown): Promise<UpdateIndicatorSemanticsResult> {
+  const context = await requireSession();
+  const parsed = UpdateIndicatorSemanticsSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  return gatewayRequest(`/v1/indicators/${parsed.data.indicatorId}/semantics`, IdResponseSchema, context.token, {
+    method: "PUT",
     body: parsed.data,
   });
 }

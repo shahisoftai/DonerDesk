@@ -238,3 +238,52 @@ test("checklist projector never recreates an item the user resolved", async () =
   await projector.project({ tenantId: { toString: () => "t" }, periodId: "p1", projectId: "proj1", gaps });
   assert.equal(created.length, 1);
 });
+
+test("numeric verifier accepts a verified cumulative figure and prior-cumulative reference", () => {
+  const verifier = new NumericAssertionVerifier();
+  const f = finding({ indicatorCode: "OUT-4", value: "2500", cumulativeValue: "7000", priorCumulativeValue: "4500", target: "8000" });
+  const cumulative = verifier.verify({
+    atoms: [{ charStart: 0, charEnd: 4, value: "7000", role: "ACHIEVEMENT", bound: false }],
+    findings: [f],
+  });
+  assert.equal(cumulative.result, "PASSED");
+  const withReference = verifier.verify({
+    atoms: [
+      { charStart: 0, charEnd: 4, value: "2500", role: "ACHIEVEMENT", bound: false },
+      { charStart: 10, charEnd: 14, value: "4500", role: "ACHIEVEMENT", bound: false },
+    ],
+    findings: [f],
+  });
+  assert.equal(withReference.result, "PASSED");
+});
+
+test("numeric verifier still rejects a number that is neither period, cumulative nor a reference", () => {
+  const verifier = new NumericAssertionVerifier();
+  const result = verifier.verify({
+    atoms: [{ charStart: 0, charEnd: 4, value: "7100", role: "ACHIEVEMENT", bound: false }],
+    findings: [finding({ value: "2500", cumulativeValue: "7000" })],
+  });
+  assert.equal(result.result, "FAILED");
+  assert.ok(result.reasonCodes.includes("VALUE_MISMATCH"));
+});
+
+test("numeric verifier ignores date and count atoms but still checks achievement values", () => {
+  const verifier = new NumericAssertionVerifier();
+  const f = finding({ value: "52", cumulativeValue: "100", target: "240" });
+  const withMetadata = verifier.verify({
+    atoms: [
+      { charStart: 0, charEnd: 2, value: "52", role: "ACHIEVEMENT", bound: false },
+      { charStart: 10, charEnd: 11, value: "2", role: "COUNT", bound: false },
+      { charStart: 20, charEnd: 22, value: "10", role: "DATE", bound: false },
+    ],
+    findings: [f],
+  });
+  assert.equal(withMetadata.result, "PASSED");
+  const metadataOnly = verifier.verify({ atoms: [{ charStart: 0, charEnd: 2, value: "10", role: "DATE", bound: false }], findings: [f] });
+  assert.equal(metadataOnly.result, "PASSED");
+  const wrong = verifier.verify({
+    atoms: [{ charStart: 0, charEnd: 2, value: "53", role: "ACHIEVEMENT", bound: false }, { charStart: 5, charEnd: 6, value: "2", role: "COUNT", bound: false }],
+    findings: [f],
+  });
+  assert.equal(wrong.result, "FAILED");
+});

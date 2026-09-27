@@ -81,6 +81,16 @@ export interface EvidencePackage {
   chunkerVersion: string;
 }
 
+/**
+ * Sensitive / highly sensitive files (e.g. beneficiary lists) must never be
+ * quoted in donor-facing prose. The evidence-integrity verifier rejects any
+ * claim citing them (CONFIDENTIALITY_RESTRICTED), so they are withheld from
+ * the writer up front instead of generating claims that can only fail review.
+ */
+export function excludeRestrictedEvidence(packages: EvidencePackage[]): EvidencePackage[] {
+  return packages.filter((p) => p.confidentialityLevel !== "SENSITIVE" && p.confidentialityLevel !== "HIGHLY_SENSITIVE");
+}
+
 export interface ReportingProfileSnapshot {
   tone: ProfileTone;
   language: string;

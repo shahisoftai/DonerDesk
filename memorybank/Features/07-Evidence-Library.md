@@ -146,7 +146,7 @@ generator consumes:
 - [ ] R2 storage wired via env for production (adapter exists, config is a placeholder)
 - [ ] Google OCR tagging by `driveFileId` (currently uses byte-based Tika for LOCAL/R2)
 - [ ] Bulk file upload (zip import)
-- [ ] Evidence linking to multiple activities/indicators
+- [x] Evidence linking to multiple activities/indicators (2026-09-26 — manual link manager, see below)
 - [ ] Advanced search with extracted text
 - [ ] Video/audio file support
 - [ ] WhatsApp import
@@ -155,6 +155,16 @@ generator consumes:
 - [ ] Evidence batch operations
 - [ ] File version history
 
+## Manual evidence linking (2026-09-26, release `20260926164318`)
+
+Report generation only sees evidence attached to an ActivityUpdate/IndicatorUpdate (`attachedEvidenceIds`). The "Linked to activity/indicator" column of `/projects/[id]/evidence` now renders `EvidenceLinkManager` (`apps/web/src/features/evidence/presentation/EvidenceLinkManager.tsx`):
+- It lists every current link with **Remove** (`POST /v1/activities/detach-evidence`).
+- A **Link to…** picker (Activities / Indicators groups) attaches via `POST /v1/activities/attach-evidence`. Indicator targets are per-period IndicatorUpdates, labelled with the period.
+- The title-similarity **Suggest links** helper remains below it.
+- The server page loads activities plus `/v1/reporting-periods/:id/indicators` for every period. Both read models now expose `attachedEvidenceIds`.
+
 ## Notes
+
+**Report generation (2026-09-26):** SENSITIVE / HIGHLY_SENSITIVE evidence is withheld from the AI writer (`excludeRestrictedEvidence`), so it is never quoted in donor prose.
 
 Evidence files respect confidentiality levels. The `sensitivityWarning` flag is set by AI tagging. Sensitive evidence should be excluded from export unless intentionally selected per privacy requirements.

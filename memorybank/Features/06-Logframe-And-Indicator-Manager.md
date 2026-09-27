@@ -130,6 +130,19 @@ M&E Officer can update:
 | Spreadsheet Data Entry | Implemented | Per-period grid + bulk upsert + unique (indicator, period) |
 | Google Sheets Import | Implemented | Read-only scope + preview → apply to grid |
 | Disaggregation | Not implemented | Fields defined but not tracked |
+| Indicator calculation (semantics) | Implemented (2026-09-26) | `PUT /v1/indicators/:id/semantics` + "How this value is calculated" card on the indicator page |
+
+## Indicator calculation / semantics (2026-09-26, release `20260926164318`)
+
+- **Before:** `Indicator.semanticsJson` existed but nothing could set it, so every PERCENTAGE/RATIO indicator stayed `REQUIRES_REVIEW` with no denominator. Reports showed "Not calculable", and the verifier flagged `MISSING_DENOMINATOR` / `ENTITY_MISMATCH`.
+- **API:** `PUT /v1/indicators/:id/semantics` (`UpdateIndicatorSemanticsSchema`: aggregation, direction, reportingBasis, optional numerator/denominator indicator ids) → `UpdateIndicatorSemanticsHandler`.
+  - It validates via `sanitizeIndicatorSemantics`, requires both references to be same-project indicators, and saves `status: CONFIGURED`.
+  - It writes the audit event `logframe.indicator.semantics_configured`.
+- **UI:** `/projects/[id]/indicators/[indicatorId]` → `IndicatorSemanticsCard` (`apps/web/src/features/logframe/presentation/`).
+  - **Directly reported rates** (survey or assessment %) → "Reported directly (latest value)" (LATEST).
+  - **Calculated rates** → Percentage/Ratio with numerator and denominator indicators.
+- **Read models:** `GET /v1/projects/:id/logframe` returns `semantics`. The period grid's `requiresDenominator` is false for a CONFIGURED non-ratio aggregation.
+- **Cumulative in findings:** `VerifiedFinding.cumulativeValue` / `priorCumulativeValue` let the report quote verified cumulative-to-date figures without failing verification. See `../Fixes.md` (EERP-2026 Q2 end-to-end report run).
 
 ## Data entry (2026-08-16)
 

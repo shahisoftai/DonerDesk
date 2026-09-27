@@ -53,6 +53,14 @@ export interface VerifiedFinding {
   baseline?: string;
   target?: string;
   value: string;
+  /**
+   * Latest verified cumulative-to-date achievement (decimal string) when the
+   * finding's `value` is period-based. Lets narrative quote "cumulative 7,000
+   * against a target of 8,000" without failing numeric verification.
+   */
+  cumulativeValue?: string;
+  /** Cumulative achievement before this period (cumulative − period value); SUM indicators only. */
+  priorCumulativeValue?: string;
   unit?: string;
   calculationMethod: string;
   /** Resolved semantics snapshot consumed to produce this finding. */

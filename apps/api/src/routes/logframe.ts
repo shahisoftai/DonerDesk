@@ -4,6 +4,7 @@ import {
   ImportLogframeTextSchema,
   ImportIndicatorsTextSchema,
   CreateIndicatorSchema,
+  UpdateIndicatorSemanticsSchema,
   CreateIndicatorUpdateSchema,
   BulkUpsertIndicatorUpdatesSchema,
   ParseIndicatorSheetSchema,
@@ -65,6 +66,15 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const body = CreateIndicatorSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.createIndicator.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/indicators/:id/semantics", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = UpdateIndicatorSemanticsSchema.parse({ ...(req.body as object), indicatorId: id });
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.updateIndicatorSemantics.handle(ctx, body);
     if (!r.ok) throw r.error;
     return r.value;
   });

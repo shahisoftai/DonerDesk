@@ -32,6 +32,7 @@ export interface PeriodIndicatorRow {
     verifiedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    attachedEvidenceIds: string[];
   } | null;
 }
 
@@ -65,7 +66,10 @@ export class ListPeriodIndicatorsHandler {
       const item = ind.logframeItemId ? itemsById.get(ind.logframeItemId) : undefined;
       const update = updatesByIndicator.get(ind.id);
       const requiresDenominator =
-        (ind.type === "PERCENTAGE" || ind.type === "RATIO") && !Boolean(ind.semantics?.denominatorIndicatorId);
+        (ind.type === "PERCENTAGE" || ind.type === "RATIO") &&
+        !Boolean(ind.semantics?.denominatorIndicatorId) &&
+        // A configured directly-reported rate (not calculated from counts) needs no denominator.
+        !(ind.semantics?.status === "CONFIGURED" && ind.semantics.aggregation !== "PERCENTAGE" && ind.semantics.aggregation !== "RATIO");
       return {
         id: ind.id,
         logframeItemId: ind.logframeItemId,
@@ -93,6 +97,7 @@ export class ListPeriodIndicatorsHandler {
               verifiedAt: update.verifiedAt ?? null,
               createdAt: update.createdAt,
               updatedAt: update.updatedAt,
+              attachedEvidenceIds: update.attachedEvidenceIds,
             }
           : null,
       };

@@ -391,6 +391,14 @@ and a tested restore point. Never `prisma db push`/`--accept-data-loss`.
 > live). Recommended follow-up: click-through the Tenants Delete + Users
 > Edit/Delete as `mnpiracha@gmail.com` in a browser session.
 
+### 2026-09-26 — releases `20260926164318` / `20260926171958` / `20260926174726` (EERP Q2 run fixes)
+
+- `workers.env` had lost `AI_REPORTER_MAX_TOKENS=16384`: it was rewritten at 18:11 and the key is still present in the `.bak.*` copies. The worker ran at the 4096 default and DeepSeek JSON truncated, so 13 of 15 section calls fell back to deterministic text. The key was re-appended (backup `workers.env.bak.maxtokens-<ts>`) and the worker restarted. The code default is now 16384 too.
+- **Live AI Reporter provider** at the time: `AI_REPORTER_PROVIDER=deepseek`, `AI_REPORTER_MODEL= deepseek-flash` (note the leading space in both env files; systemd strips it). This supersedes the "GLOBAL = anthropic" line below.
+- **After any deploy or SuperAdmin save,** check `tr "\0" "\n" </proc/$(systemctl show -p MainPID --value donordesk-workers)/environ | grep AI_REPORTER` against `workers.env`, and confirm `AI_REPORTER_MAX_TOKENS=16384` is there.
+- `/v1/ai-reporter/health` returns 401 without the internal token; that is expected.
+- No migrations.
+
 ### 2026-09-26 — release `20260926153744` (report-quality v4 + Claude/Gemini + per-tenant provider)
 
 - Worker venv: `anthropic==1.8.0` installed (with `pip`; `uv` is not on PATH).

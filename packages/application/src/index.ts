@@ -67,6 +67,7 @@ export * from "./use-cases/logframe/import-logframe.js";
 export * from "./use-cases/logframe/import-indicators.js";
 export * from "./use-cases/logframe/create-indicator.js";
 export * from "./use-cases/logframe/create-indicator-update.js";
+export * from "./use-cases/logframe/update-indicator-semantics.js";
 export * from "./use-cases/logframe/upsert-indicator-update.js";
 export * from "./use-cases/logframe/bulk-upsert-indicator-updates.js";
 export * from "./use-cases/logframe/list-period-indicators.js";

@@ -125,11 +125,13 @@ def _chat(
     if not model_name:
         raise RuntimeError(f"AI Reporter model is not configured for provider {provider}")
     if max_tokens is None:
-        # Reasoning models (MiniMax-M3 et al.) spend completion tokens on
-        # hidden `<think>` output before the JSON answer; 2048 starved the
-        # answer into truncated JSON. 4096 matches the TS narrator budget
-        # (8192 caused provider timeouts — contabo-ops §26).
-        max_tokens = int(os.getenv("AI_REPORTER_MAX_TOKENS", "4096"))
+        # Reasoning models spend completion tokens on hidden `<think>` output
+        # and the v4 contract JSON (prose + sources + artifacts) is long, so
+        # 4096 truncated most DeepSeek sections and forced the deterministic
+        # fallback (live 2026-09-26: 13 of 15 section calls failed after the
+        # host's AI_REPORTER_MAX_TOKENS=16384 was lost in an env rewrite).
+        # The env var still overrides.
+        max_tokens = int(os.getenv("AI_REPORTER_MAX_TOKENS", "16384"))
     if provider == "anthropic":
         return _chat_anthropic(system, user, model_name=model_name, base_url=base_url, api_key=api_key,
                                max_tokens=max_tokens, effort=model.effort)
@@ -304,6 +306,15 @@ def extract_json(text: str) -> Any:
             return json.loads(lenient, strict=False)
         except json.JSONDecodeError:
             continue
+    # Last resort: the provider hit its output cap mid-way through the trailing
+    # lists (proposedSources, artifacts…). The prose is complete, so keep the
+    # section and drop only the cut-off tail instead of discarding all of it.
+    repaired = _repair_truncated_json(cleaned)
+    if repaired is not None:
+        import sys as _sys
+
+        _sys.stderr.write(f"[llm_gateway] repaired truncated model JSON; len={len(cleaned)}\n")
+        return repaired
     if os.getenv("AI_REPORTER_DEBUG_DUMP", "") == "1":
         # Ground-truth diagnostics for provider format drift (stderr → journald).
         import sys as _sys
@@ -313,6 +324,54 @@ def extract_json(text: str) -> Any:
             f"head={cleaned[:160]!r} tail={cleaned[-160:]!r}\n"
         )
     raise ValueError("could not extract valid JSON from model output")
+
+
+def _repair_truncated_json(text: str) -> dict[str, Any] | None:
+    """Salvage a JSON object cut off by an output-token cap.
+
+    Cuts at the last point where an inner array/object was completely closed
+    and closes the still-open containers. Only a result that is an object with
+    non-empty string `content` is accepted: a section whose prose itself was
+    truncated is not usable and must fall back deterministically.
+    """
+    start = text.find("{")
+    if start < 0:
+        return None
+    stack: list[str] = []
+    in_string = False
+    escaped = False
+    best: tuple[int, list[str]] | None = None
+    for i in range(start, len(text)):
+        ch = text[i]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+        elif ch in "{[":
+            stack.append("}" if ch == "{" else "]")
+        elif ch in "}]":
+            if not stack:
+                return None
+            stack.pop()
+            if stack:
+                best = (i, list(stack))
+    if not stack or best is None:
+        return None  # already balanced (handled earlier) or nothing to cut back to
+    cut, open_containers = best
+    candidate = text[start : cut + 1] + "".join(reversed(open_containers))
+    try:
+        data = json.loads(candidate, strict=False)
+    except json.JSONDecodeError:
+        return None
+    if isinstance(data, dict) and isinstance(data.get("content"), str) and data["content"].strip():
+        return data
+    return None
 
 
 def _balanced_json_blocks(text: str) -> list[str]:

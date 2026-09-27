@@ -13,6 +13,7 @@ import type {
   IReportingPeriodRepository,
   IReportArtifactRepository,
 } from "../../ports/reporting.js";
+import { excludeRestrictedEvidence } from "../../ports/reporting.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IAuditLogger, IIdGenerator } from "../../ports/core.js";
@@ -116,7 +117,7 @@ export class RewriteReportSectionHandler {
       evidenceIds,
     });
     if (!evidencePackagesResult.ok) return evidencePackagesResult;
-    const evidencePackages = evidencePackagesResult.value;
+    const evidencePackages = excludeRestrictedEvidence(evidencePackagesResult.value);
 
     const findingsResult = await this.analytics.computeFindings({
       reportingPeriodId: draft.reportingPeriodId,

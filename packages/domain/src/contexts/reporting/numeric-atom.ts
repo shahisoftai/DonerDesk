@@ -237,7 +237,15 @@ function normalizeNumberToken(token: string): string | null {
  * achievement magnitude. e.g. "25 participant(s)", "12 evidence file(s)",
  * "10 activity record(s)", "20 indicator finding(s)".
  */
-const COUNT_NOUN_RE = /(participant|file|record|finding|evidence|item|session|batch|checklist item)s?\b/i;
+const COUNT_NOUN_RE = /(participant|file|record|finding|result|evidence|item|session|batch|checklist item|performed|could)s?\b/i;
+
+const MONTH_NAMES = "jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?";
+/** "10 May", "10th of May" — the day number of a calendar date. */
+const DAY_BEFORE_MONTH_RE = new RegExp(`^(?:st|nd|rd|th)?\\s+(?:of\\s+)?(?:${MONTH_NAMES})\\b`, "i");
+/** "May 10", "May 10-22" — the day number(s) of a calendar date. */
+const DAY_AFTER_MONTH_RE = new RegExp(`(?:${MONTH_NAMES})\\.?\\s*$`, "i");
+/** "6-month", "5 day", "12 weeks" — a duration, not an achievement magnitude. */
+const DURATION_RE = /^[-\s]?(?:hour|day|week|month|year|quarter)s?\b/i;
 
 /**
  * Marks atoms that are DATES, COUNTs, or trailing percentages — references and
@@ -278,7 +286,14 @@ export function classifyNumericAtomRoles(
       copy.isPercent = true;
     } else if (nonAchievementRanges.some(([s, e]) => atom.charStart >= s && atom.charStart < e)) {
       copy.role = "DATE";
-    } else if (COUNT_NOUN_RE.test(text.slice(atom.charEnd, atom.charEnd + 24))) {
+    } else if (
+      DAY_BEFORE_MONTH_RE.test(text.slice(atom.charEnd, atom.charEnd + 24)) ||
+      DAY_AFTER_MONTH_RE.test(text.slice(Math.max(0, atom.charStart - 12), atom.charStart))
+    ) {
+      copy.role = "DATE";
+    } else if (DURATION_RE.test(text.slice(atom.charEnd, atom.charEnd + 12))) {
+      copy.role = "COUNT";
+    } else if (COUNT_NOUN_RE.test(text.slice(atom.charEnd, atom.charEnd + 34))) {
       copy.role = "COUNT";
     } else if (/\b(batch|phase|step|stage|group|round|version|edition)\s*$/i.test(text.slice(0, atom.charStart))) {
       // Ordinal/identifier labels ("Batch 2", "Phase 1") — not magnitudes.

@@ -22,6 +22,7 @@ import type {
   ActivityGenerationContext,
   IndicatorUpdateGenerationContext,
 } from "../../ports/reporting.js";
+import { excludeRestrictedEvidence } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
@@ -188,7 +189,7 @@ export class GenerateReportDraftHandler {
     ]));
     const evidencePackagesResult = await this.evidencePackages.build({ tenantId: ctx.tenant.tenantId, evidenceIds });
     if (!evidencePackagesResult.ok) return evidencePackagesResult;
-    const evidencePackages = evidencePackagesResult.value;
+    const evidencePackages = excludeRestrictedEvidence(evidencePackagesResult.value);
 
     // Narrative context: activity records and indicator updates are snapshotted
     // into the generation input so the narrator can cite them directly, not

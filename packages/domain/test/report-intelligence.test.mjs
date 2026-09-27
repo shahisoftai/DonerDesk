@@ -9,6 +9,8 @@ import {
   formatDecimal,
   parseDecimal,
   computeIndicator,
+  extractNumericAtoms,
+  classifyNumericAtomRoles,
   evaluatePerformance,
   defaultSemanticsForType,
   inferIndicatorSemantics,
@@ -355,4 +357,67 @@ test("evaluateReportGate blockingIssues include unresolved-semantics synthetic i
   assert.equal(result.blockingIssues.length, 1);
   assert.equal(result.blockingIssues[0].kind, "NUMERIC_CONTRADICTION");
   assert.match(result.blockingIssues[0].detail, /unresolved semantics/);
+});
+
+// ---------------------------------------------------------------------------
+// Cumulative figures + directly reported rates
+// ---------------------------------------------------------------------------
+
+test("computeIndicator exposes verified cumulative and prior-cumulative for SUM indicators", () => {
+  const finding = computeIndicator({
+    indicatorId: "ind-1",
+    indicatorCode: "OUT-4",
+    indicatorType: "NUMBER",
+    semantics: { aggregation: "SUM", direction: "NEUTRAL", reportingBasis: "PERIOD", status: "INFERRED" },
+    disaggregationRequired: false,
+    updates: [
+      { id: "u1", periodAchievement: "2500", cumulativeAchievement: "7000", verificationStatus: "VERIFIED", updatedAt: new Date() },
+    ],
+  });
+  assert.equal(finding.value, "2500");
+  assert.equal(finding.cumulativeValue, "7000");
+  assert.equal(finding.priorCumulativeValue, "4500");
+});
+
+test("computeIndicator reports a configured directly-reported rate without a denominator", () => {
+  const finding = computeIndicator({
+    indicatorId: "ind-13",
+    indicatorCode: "OUT-13",
+    indicatorType: "PERCENTAGE",
+    semantics: { aggregation: "LATEST", direction: "HIGHER_IS_BETTER", reportingBasis: "PERIOD", status: "CONFIGURED" },
+    disaggregationRequired: false,
+    target: "100",
+    updates: [
+      { id: "u1", periodAchievement: "87", cumulativeAchievement: "87", verificationStatus: "VERIFIED", updatedAt: new Date() },
+    ],
+  });
+  assert.equal(finding.value, "87");
+  assert.ok(!finding.qualityFlags.includes("MISSING_DENOMINATOR"));
+  assert.ok(!finding.qualityFlags.includes("NEEDS_REVIEW"));
+  assert.equal(finding.performanceEvaluation.type, "NEGATIVE");
+});
+
+test("computeIndicator does not expose cumulative when the headline value is already cumulative", () => {
+  const finding = computeIndicator({
+    indicatorId: "ind-1",
+    indicatorCode: "OUT-1",
+    indicatorType: "NUMBER",
+    semantics: { aggregation: "LATEST", direction: "NEUTRAL", reportingBasis: "CUMULATIVE", status: "CONFIGURED" },
+    disaggregationRequired: false,
+    updates: [
+      { id: "u1", periodAchievement: "30", cumulativeAchievement: "75", verificationStatus: "VERIFIED", updatedAt: new Date() },
+    ],
+  });
+  assert.equal(finding.value, "75");
+  assert.equal(finding.cumulativeValue, undefined);
+});
+
+test("numeric atom classifier treats dates, durations and record counts as metadata", () => {
+  const roles = (text) => classifyNumericAtomRoles(text, extractNumericAtoms(text)).map((a) => `${a.value}:${a.role}`);
+  assert.deepEqual(roles("Started on 10 May 2026."), ["10:DATE", "2026:DATE"]);
+  assert.deepEqual(roles("Held on May 10."), ["10:DATE"]);
+  assert.equal(roles("6-month retention was 85%")[0], "6:COUNT");
+  assert.equal(roles("recorded 20 verified indicator result(s)")[0], "20:COUNT");
+  assert.equal(roles("4500 kits were distributed")[0], "4500:OTHER");
+  assert.deepEqual(roles("1 performed favourably, 7 performed unfavourably, and 0 could not be assessed"), ["1:COUNT", "7:COUNT", "0:COUNT"]);
 });

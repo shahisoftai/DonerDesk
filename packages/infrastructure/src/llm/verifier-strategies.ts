@@ -20,7 +20,9 @@ interface AtomMatch {
 function describeAtomFailure(atom: NumericAtom, findings: VerifiedFinding[]): string {
   const value = parseDecimal(atom.value);
   if (value === null) return `${atom.value} could not be read as a number`;
-  const exact = findings.filter((f) => parseDecimal(f.value) !== null && decimalCompare(parseDecimal(f.value)!, value) === 0);
+  const exact = findings.filter((f) =>
+    [f.value, f.cumulativeValue].some((t) => t !== undefined && parseDecimal(t) !== null && decimalCompare(parseDecimal(t)!, value) === 0),
+  );
   if (exact.length > 0) {
     const codes = [...new Set(exact.map((f) => f.indicatorCode))].join(", ");
     return `${atom.value} also matches ${codes}, so the statement may mix indicators, units, or reporting periods`;
@@ -57,11 +59,20 @@ export class NumericAssertionVerifier {
       };
     }
 
+    // Dates and counts of things (records, files, participants, "Batch 2", "6-month")
+    // are metadata, never achievement values; they are not checked against
+    // indicator findings. A sentence made only of such atoms carries no numeric
+    // achievement claim to verify.
+    const atoms = input.atoms.filter((a) => a.role !== "DATE" && a.role !== "COUNT");
+    if (atoms.length === 0) {
+      return { result: "PASSED", detail: "Numbers are dates or counts, not indicator values", reasonCodes: [] };
+    }
+
     let matchedFinding: VerifiedFinding | undefined;
     const failures: VerificationReasonCode[] = [];
     const explanations: string[] = [];
 
-    for (const atom of input.atoms) {
+    for (const atom of atoms) {
       const matched = this.matchAtom(atom, input.findings);
       if (!matched && matchedFinding !== undefined) {
         // Tolerate normal professional prose: once a sentence carries a value
@@ -118,10 +129,14 @@ export class NumericAssertionVerifier {
     if (value === null) return null;
 
     // Direct value match first.
-    let candidates = findings.filter((f) => {
-      const fv = parseDecimal(f.value);
-      return fv !== null && decimalCompare(fv, value) === 0;
-    });
+    // A finding's verified cumulative-to-date figure is as authoritative as its
+    // period value ("taking cumulative enrolment to 7,000").
+    const equalsValue = (text: string | undefined): boolean => {
+      if (!text) return false;
+      const parsed = parseDecimal(text);
+      return parsed !== null && decimalCompare(parsed, value) === 0;
+    };
+    let candidates = findings.filter((f) => equalsValue(f.value) || equalsValue(f.cumulativeValue));
 
     let derived = false;
     if (candidates.length === 0 && atom.role === "PERCENT") {
@@ -182,7 +197,7 @@ export class NumericAssertionVerifier {
     const value = parseDecimal(atom.value);
     if (value === null) return null;
     for (const finding of findings) {
-      for (const baseText of [finding.target, finding.baseline]) {
+      for (const baseText of [finding.target, finding.baseline, finding.priorCumulativeValue]) {
         if (!baseText) continue;
         const base = parseDecimal(baseText);
         if (base !== null && decimalCompare(base, value) === 0) return finding;

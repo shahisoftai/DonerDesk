@@ -47,6 +47,16 @@ export const CreateIndicatorSchema = z.object({
 });
 export type CreateIndicatorInput = z.infer<typeof CreateIndicatorSchema>;
 
+export const UpdateIndicatorSemanticsSchema = z.object({
+  indicatorId: z.string().min(1),
+  aggregation: z.enum(["SUM", "AVERAGE", "LATEST", "MIN", "MAX", "RATIO", "PERCENTAGE"]),
+  direction: z.enum(["HIGHER_IS_BETTER", "LOWER_IS_BETTER", "NEUTRAL"]),
+  reportingBasis: z.enum(["PERIOD", "CUMULATIVE"]).default("PERIOD"),
+  numeratorIndicatorId: z.string().min(1).optional(),
+  denominatorIndicatorId: z.string().min(1).optional(),
+});
+export type UpdateIndicatorSemanticsInput = z.infer<typeof UpdateIndicatorSemanticsSchema>;
+
 export const CreateIndicatorUpdateSchema = z.object({
   indicatorId: z.string().min(1),
   reportingPeriodId: z.string().min(1),

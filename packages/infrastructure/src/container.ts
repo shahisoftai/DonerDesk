@@ -34,6 +34,7 @@ import {
   ImportLogframeHandler,
   ImportIndicatorsHandler,
   CreateIndicatorHandler,
+  UpdateIndicatorSemanticsHandler,
   CreateIndicatorUpdateHandler,
   BulkUpsertIndicatorUpdatesHandler,
   ListPeriodIndicatorsHandler,
@@ -351,6 +352,7 @@ export interface Container {
     importLogframe: ImportLogframeHandler;
     importIndicators: ImportIndicatorsHandler;
     createIndicator: CreateIndicatorHandler;
+    updateIndicatorSemantics: UpdateIndicatorSemanticsHandler;
     createIndicatorUpdate: CreateIndicatorUpdateHandler;
     bulkUpsertIndicatorUpdates: BulkUpsertIndicatorUpdatesHandler;
     listPeriodIndicators: ListPeriodIndicatorsHandler;
@@ -849,6 +851,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     importLogframe: new ImportLogframeHandler(ids, logframe, audits),
     importIndicators: new ImportIndicatorsHandler(ids, logframe, indicators, audits),
     createIndicator: new CreateIndicatorHandler(ids, indicators, audits),
+    updateIndicatorSemantics: new UpdateIndicatorSemanticsHandler(indicators, audits),
     createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits),
     bulkUpsertIndicatorUpdates: new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits),
     listPeriodIndicators: new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates),

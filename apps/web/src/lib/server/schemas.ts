@@ -227,6 +227,16 @@ export const IndicatorItemSchema = z.object({
   dataSource: z.string().optional(),
   frequency: z.string().optional(),
   disaggregationRequired: z.boolean().optional(),
+  semantics: z
+    .object({
+      aggregation: z.string(),
+      direction: z.string(),
+      reportingBasis: z.string(),
+      numeratorIndicatorId: z.string().optional(),
+      denominatorIndicatorId: z.string().optional(),
+      status: z.string(),
+    })
+    .nullish(),
 });
 
 export const IndicatorUpdateItemSchema = z.object({
@@ -253,6 +263,7 @@ export const PeriodIndicatorUpdateSchema = z.object({
   verifiedAt: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  attachedEvidenceIds: z.array(z.string()).optional(),
 });
 
 export const PeriodIndicatorRowSchema = z.object({
@@ -309,6 +320,7 @@ export const ActivityItemSchema = z.object({
   location: z.string().optional(),
   participantsTotal: z.number().optional(),
   status: z.string(),
+  attachedEvidenceIds: z.array(z.string()).optional(),
 });
 
 export const ActivitiesResponseSchema = z.object({ items: z.array(ActivityItemSchema) });

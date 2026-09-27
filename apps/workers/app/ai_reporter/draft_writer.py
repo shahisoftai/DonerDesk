@@ -193,7 +193,15 @@ def draft(
 
     content, telemetry = timeouts.run_with_section_timeout(_call)
     _local.telemetry = telemetry
-    raw = extract_json(content)
+    try:
+        raw = extract_json(content)
+    except ValueError:
+        # Reasoning models occasionally answer with no JSON at all (empty
+        # content or prose only). That is transient, so retry once before the
+        # whole section falls back to deterministic text.
+        content, telemetry = timeouts.run_with_section_timeout(_call)
+        _local.telemetry = telemetry
+        raw = extract_json(content)
     sections = raw.get("sections") if isinstance(raw, dict) and isinstance(raw.get("sections"), list) else None
     obj = sections[0] if sections else raw
     if not isinstance(obj, dict):

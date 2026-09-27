@@ -36,6 +36,7 @@ export class ListLogframeHandler {
           frequency: i.frequency,
           responsibleUserId: i.responsibleUserId,
           disaggregationRequired: i.disaggregationRequired,
+          semantics: i.semantics,
         })),
       },
     };
