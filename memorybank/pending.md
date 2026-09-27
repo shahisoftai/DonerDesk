@@ -3,8 +3,11 @@
 Outstanding and in-progress items for DonorDesk. Last updated: 2026-09-27.
 
 > **Pending (Report Editor v2 — P7 rollout):** P0–P6 are code complete behind
-> `REPORT_EDITOR_V2` (not deployed). Remaining: deploy; try `?editor=v2` on
-> production; flag on for internal tenant → EERP pilot → all; after one
+> `REPORT_EDITOR_V2` and deployed 2026-09-27 (`releaseId=20260927062322`,
+> see `CONTABO-DEPLOY.md`). The flag is unset on the host (default off), so
+> the new editor is reachable today only via `?editor=v2` — internal-tenant
+> tryout can start now with that query param. Remaining: try `?editor=v2` on
+> production end-to-end; flag on for internal tenant → EERP pilot → all; after one
 > release delete `ReportWorkspace`, `ReportingStepGuide`, `ReportCheckPanel`,
 > `SmartReviewPanel`, `ReportPreviewPanel`, `SectionEditor` and the
 > Story/Flexible panels from the editor path. Also open: axe-core Playwright
