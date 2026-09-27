@@ -1032,3 +1032,27 @@ Releases `20260926164318` (both), `20260926171958` (api) and `20260926174726` (a
 - **Review load on the Q2 draft:** 158 → 71 items on the prose-equivalent draft. Cumulative, denominator, sensitive-evidence and date/count false positives were removed. The remaining flags are mostly entailment "insufficient evidence" and writer-derived figures.
 - **AI authorship:** 2/15 → 8/9 sections written by DeepSeek after restoring `AI_REPORTER_MAX_TOKENS=16384` and adding truncated-JSON salvage.
 - **New UI:** the indicator "How this value is calculated" card (Feature 06), and the manual evidence Link/Remove manager (Feature 07).
+
+
+---
+
+## Report Editor v2 — document-first workspace (2026-09-27)
+
+Full plan and per-phase notes: [`../imp/REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md`](../imp/REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md). Behind `REPORT_EDITOR_V2=1` (or `?editor=v2`; `?editor=classic` forces the old workspace).
+
+**Web (`apps/web/src/features/report-editor/`):** one continuous document with statements marked in place (open / kept / left out / verified), evidence peek, rich-text editing (TipTap over the export-renderable markdown subset) with "Ask AI" on a selection, outline with approve-all-clean and comment counts, inspector (Statements · Sources · Chart · Comments · History) or the report Checks list, issue navigator, one primary action (generate → review statements → approve sections → finish checks → submit → approve / request changes → export). Inputs live at `/reports/[periodId]/inputs` (Indicators · Story · Import).
+
+**Api additions (all audited, additive):**
+
+| Route | Purpose |
+|---|---|
+| `GET /v1/reporting-periods/:id/draft` | + claim spans/materiality/reason codes, evidence titles (restricted masking), section `assuranceState`, `regeneratingSectionIds`, `summaryStaleSectionIds`, `commentCounts`, `inputsChangedSince` |
+| `POST /v1/report-sections/:id/regenerate` | Redraft one section (202) |
+| `GET /v1/report-sections/:id/revisions` | Section history (restore = save with `changeOrigin: RESTORE`) |
+| `POST /v1/report-sections/:id/rewrite` | + `selection`, `preview` |
+| `PUT /v1/report-sections/:id` | + `changeOrigin` (MANUAL_EDIT / REWRITE / RESTORE); sources kept when omitted; working draft only |
+| `GET /v1/report-claims/:id/suggestion` · `POST …/apply-suggestion` | Evidence value for a mismatched number; apply = AUTO_FIX save |
+| `POST /v1/report-claims/:id/reopen` | Undo keep-with-note / leave-out |
+| `POST /v1/report-claims/:id/resolve` | now returns `claimId` (claims are re-created by re-checks) |
+
+**Semantics to remember:** a decision is carried across re-checks by the statement fingerprint; "Leave out" records `EXCLUDED` and exports omit the statement; only MATERIAL + FAILED + undecided statements block approval; approval also needs CURRENT assurance (the editor offers "Re-check").

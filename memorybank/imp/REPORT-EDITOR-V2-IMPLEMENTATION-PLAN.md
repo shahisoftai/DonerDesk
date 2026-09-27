@@ -1,6 +1,6 @@
 # Report Editor v2 — Document-First Workspace — Implementation Plan
 
-> **Status:** APPROVED FOR IMPLEMENTATION (2026-09-26) — next phase. **P0–P2 code complete (not deployed; v2 behind `REPORT_EDITOR_V2`); P3 next.**
+> **Status:** APPROVED FOR IMPLEMENTATION (2026-09-26). **P0–P6 code complete (2026-09-27, not deployed; v2 behind `REPORT_EDITOR_V2`). P7 = rollout (flag on → pilot → all) and deletion of the classic workspace after one release.**
 > **Decision:** Option C ("document-first editor") from the Report Workspace UX
 > audit, chosen over A (declutter in place) and B (step screens).
 > **Scope decisions (2026-09-26):**
@@ -533,6 +533,13 @@ Estimates in focused engineering days (one developer).
 - Deferred: U28 Ask-AI-on-selection (P4 with B10), U24 lock badge on verified
   tables (P3, needs artifact↔table matching), Alt+F10 toolbar focus (P6).
 
+**P0–P2 audit (2026-09-27) — gaps found and fixed:**
+- **Section optimistic concurrency was broken (pre-existing).** `ReportSection` rehydrated with `updatedAt = createdAt` and the repository never wrote/read `updatedAt`, so the second autosave of any editing session got a false "changed by someone else" conflict and real concurrent edits were never detected. `Entity` now accepts a stored `updatedAt`; `PrismaReportSectionRepository` persists and reads it; update/rewrite handlers return the version read back *after* assurance (which may touch the section).
+- **Every text save wiped the section's sources (pre-existing).** `UpdateSectionSchema` defaulted `sourceReferences`/`unsupportedClaims` to `[]`; they are now optional and kept when omitted.
+- Edits are only accepted on the current working draft (not superseded / under review / approved); editing an approved section reopens it (`report.section.reopened`).
+- Missing route permissions added: reject (`report.approve`), activate, chart, sections-order, story (`report.edit`), cancel-generation (`report.generate`), bulk-resolve (`report.resolve-claim`), period-values + field-report apply (`indicator.update`), field-report propose (`report.edit`).
+- Web: saved text/version flow back to the read view and the next edit (no stale content after switching sections); saves are serialised with a reliable flush on close/"Done"; editor becomes read-only on conflict; generation polling resumes after a reload; "open statements" now means MATERIAL + FAILED + undecided (matches the server gate); classic `?view=` deep links open the matching v2 panel; whole-section "Rewrite with AI" hidden while editing; pre-existing `upload-queue` unit test fixed.
+
 ### P3 — Statements inline (3–4 d)
 - B1, B2, B3, B4, B5. `claim-anchors.ts`, static-view highlight plugin + editor
   decorations, `EvidencePeek` (U2), `StatementsTab` with plain verbs + undo (U7),
@@ -541,6 +548,15 @@ Estimates in focused engineering days (one developer).
 - **Exit:** a failed material claim can be found, understood and resolved without
   leaving the document; anchor tests cover offsets, fallback, stale text, tables,
   formatted text (bold/links inside a claim).
+
+**P3 progress (2026-09-27, code complete behind the flag):**
+- B1/B2: `GET …/draft` returns claim `charStart/charEnd/materiality/verificationReasonCode`, `evidenceTitle` on claim sources and evidence `sourceReferences` (`IEvidenceDirectory`; SENSITIVE/HIGHLY_SENSITIVE titles show "Restricted evidence" unless the caller has `report.override-confidentiality`), per-section `assuranceState`.
+- B3: domain `suggestNumericReplacement` (only when exactly one wrong achievement number and exactly one evidence number that is also a verified finding value) exposed on demand at `GET /v1/report-claims/:id/suggestion` (no schema change). B5 is applied **server-side**: `POST /v1/report-claims/:id/apply-suggestion` replaces the number inside the statement span and saves through the normal update (`AUTO_FIX`, re-verified); returns the previous text for Undo.
+- B4: web actions `reassessSectionAction`, `requestChangesAction`, `reopenReportClaimAction`.
+- New: `POST /v1/report-claims/:id/reopen` (undo keep/leave-out; reopens identical statements too because decisions follow the fingerprint). `resolve` now returns the claim id after reconciliation (assurance re-creates claims).
+- **"Leave out" is real now (pre-existing gap):** EXCLUDED resolutions set `verificationResult = EXCLUDED` (kept through re-checks, reset by undo) and every export omits excluded statements (`omitExcludedStatements`).
+- Web: `claim-anchors.ts` (§4.3), `highlight-hast.ts` (read-view marks via rehype on react-markdown source offsets), `rich-text/claim-highlights.ts` (ProseMirror decorations), `EvidencePeek`, rewritten `StatementsTab` (Use … from evidence / Keep with a note / Leave out, 10 s Undo toast, "Undo decision" link, "wording changed" + Re-check), `issue-order.ts` + `IssueNavigator`, Re-check (section and checks list), "Approve all clean sections (n)", `verified-tables.ts` lock badge + drift WARNING check, "Show evidence marks" toggle.
+- Tests: domain `report-editor-v2.test.mjs`, application `report-editor-v2.test.mjs`, web `report-editor-statements.test.mts`.
 
 ### P4 — Generation, section regenerate & lifecycle (5–6 d)
 - B7 (§5.1) incl. refactor; `RegeneratePopover` (U11), summary freshness (U31),
@@ -551,11 +567,22 @@ Estimates in focused engineering days (one developer).
 - **Exit:** happy path Generate → regenerate one section → resolve → approve
   sections → submit → approve → export works with the primary button alone.
 
+**P4 progress (2026-09-27, code complete behind the flag):**
+- B7: `POST /v1/report-sections/:id/regenerate` (202, `report.generate`) → `RegenerateReportSectionHandler`. `GenerateReportDraftHandler` refactored onto `ReportGenerationContextBuilder` + `SectionGenerationService` (constructor unchanged, existing tests unchanged). Guards via domain `sectionRegenerationBlock` (superseded / not DRAFT / generation in progress / already running / 10 per draft per hour — not metered). Plan section matched by title, synthetic plan section for user-added sections; other sections' text passed as `draftedSections`. On fallback/timeout the text is kept and `report.section.regeneration_failed` is audited; success commits `REGENERATION` (new `ChangeOrigin`, string column) and replaces artifacts; approved sections are reopened. `userInstruction` mirrored in TS (`AiReporterSectionBrief`, legacy prompt `buildAuthorInstructionBlock`) and Python (`SectionBrief.userInstruction`, max 500) — emitted only when present. In-progress ids from `InMemorySectionRegenerationTracker` → `regeneratingSectionIds` on `GET …/draft`.
+- Background work (section-wise generation and regenerate) now runs through an injected `BackgroundRunner`; the api's `onResponse` hook awaits `container.settleBackgroundWork()` before disconnecting the request's Prisma client (previously the client could be closed mid-transaction — found in the live run).
+- U31: domain `staleSynthesisSectionIds` (regenerated/rewritten/restored, or ≥25 % words changed after the summary was written) → `summaryStaleSectionIds`; notice + "Regenerate summary".
+- History: `GET /v1/report-sections/:id/revisions` + inspector History tab; Restore saves the text as a `RESTORE` revision. Regenerate toast offers "Restore previous version" for 30 s.
+- B10: rewrite accepts `selection {from,to}` + `preview` (no save). "Ask AI…" in the bubble menu (Rewrite / Shorten / Make donor-friendly / Expand) shows the suggestion struck/inserted; Accept inserts it and saves with `changeOrigin: REWRITE`.
+- U14 reviewer: "Request changes" (comment required) next to "Approve report"; U16 export opens the `ExportWizard` in a dialog; U9 launch card adds evidence and links to the inputs page.
+- Not done: §8 client analytics events (`editor.*`) — no client analytics infrastructure exists yet.
+
 ### P5 — Data & story inputs page (2–3 d)
 - `/projects/[id]/reports/[periodId]/inputs` tabs **Indicators** · **Story**
   (autosave) · **Import** (auto-refresh). `/indicators` redirects there.
 - `ReportInputsCard`, launch-card links, inputs-changed banner (U13, B6).
 - **Exit:** no input form remains on the editor page.
+
+**P5 progress (2026-09-27, code complete):** `/projects/[id]/reports/[periodId]/inputs?tab=indicators|story|import` (indicator grid, autosaving `StoryInputs`, `FlexibleInputsPanel` refreshing the page after imports + evidence link); `/indicators` redirects there; `ReportInputsCard` under the outline; B6 `inputsChangedSince {indicators, evidence, sectionIds}` via `PrismaReportInputsChangeReader` → `InputsChangedBanner` + WARNING check with "Re-check affected sections". The Story/Flexible drawer was removed from the editor.
 
 ### P6 — Polish: keyboard, responsive, a11y, dark mode (2–3 d)
 - Shortcuts (U19), responsive layouts (U21), dark tokens (U22), toast/undo
@@ -564,6 +591,11 @@ Estimates in focused engineering days (one developer).
   jumps, status never colour-only, 44px targets, contrast ≥ 4.5:1 both themes.
 - **Exit:** axe-core clean (Playwright + `@axe-core/playwright`), keyboard-only
   happy path.
+
+**P6 progress (2026-09-27, code complete):** `shortcuts.ts` + `useEditorShortcuts` (j/k, n/N, e, a, ?) and `ShortcutSheet`; inspector inline ≥1280 px, right slide-over 1024–1279 px, bottom sheet <1024 px (`Drawer` gained `side="bottom"`, `wide`, focus trap and scrolling body; `Dialog` gained scrolling + `size="lg"`); toasts support an action + duration (Undo); comment counts on outline rows, the Comments tab and a WARNING check (`ICommentCounter`); roving arrow keys on inspector tabs; status markers never colour-only. Dark mode: the Tailwind palette lacked 200/300/400/800/900 shades of success/warning/danger/info/ai, so ~100 existing `dark:text-*-400` classes app-wide were no-ops — added.
+- Not done: axe-core Playwright suite (`@axe-core/playwright` not installed); the live browser pass was stopped before completion.
+
+**Verification (2026-09-27):** typecheck all packages; domain 205, application 121, infrastructure 229, web unit 163, worker pytest 125 — all passing; `next build` clean. Live run on a local Postgres 16 + api + web: generate → edit (two autosaves, stale version → 409) → resolve (new claim id) → reopen → revisions → reassess → selection preview → regenerate (stub provider: text kept, failure audited). The two api `billing.test.mjs` cases fail only when a local Postgres is listening (they use fake credentials); they pass otherwise.
 
 ### P7 — Rollout & cleanup (1–2 d)
 - Flag on: internal tenant → pilot (EERP) → all. Keep `?editor=classic` one release,

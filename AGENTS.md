@@ -97,6 +97,18 @@ Agent guidance for coding on DonorDesk.
   (`test/export-markdown-renderer.test.mjs`, `tests/test_donor_template.py`,
   `apps/web/tests/unit/rich-text-roundtrip.test.mts`).
 
+## Report Editor v2 invariants
+- Section version = stored `ReportSection.updatedAt` (persisted by the repository); handlers
+  return the version read back after assurance. Clients send it as `expectedVersion`.
+- Claims are deleted and re-created by every assurance pass: never hold a claim id across a
+  save/resolve/re-check — use the id returned by `resolve`. Decisions follow the fingerprint.
+- `EXCLUDED` = left out: exports strip it via `omitExcludedStatements`.
+- Background work started by a handler (section-wise generation, section regenerate) must go
+  through the injected `BackgroundRunner`; the api awaits `container.settleBackgroundWork()`
+  before disconnecting the request's Prisma client.
+- Writer contract: `SectionBrief.userInstruction` (Python) ↔ `AiReporterSectionBrief.userInstruction`
+  (TS) and `buildAuthorInstructionBlock` (legacy narrator) — only emitted when present.
+
 ## Prisma client vs schema drift (deploy invariant)
 - The api ships `@donordesk/infrastructure`'s generated Prisma client in
   `node_modules/.pnpm/`. The `apps/api` tree has no `schema.prisma`, so

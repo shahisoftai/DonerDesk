@@ -36,10 +36,18 @@ export class ReopenReportClaimHandler {
       return { ok: false, error: DomainError.invalidTransition("This section is already approved. Edit the section to reopen it first.") };
     }
 
+    // Decisions are carried across re-checks by the statement's fingerprint,
+    // so every identical statement in the section is reopened together —
+    // otherwise the next re-check would re-apply the decision.
+    const siblings = await this.claims.findBySection(claim.sectionId, ctx.tenant.tenantId);
+    if (!siblings.ok) return siblings;
     const previous = { notes: claim.resolutionNotes ?? null };
-    claim.reopen();
-    const saved = await this.claims.update(claim);
-    if (!saved.ok) return saved;
+    const same = siblings.value.filter((c) => c.id !== claim.id && c.fingerprint === claim.fingerprint && c.resolvedById !== undefined);
+    for (const c of [claim, ...same]) {
+      c.reopen();
+      const saved = await this.claims.update(c);
+      if (!saved.ok) return saved;
+    }
 
     await this.audit.record({
       tenantId: ctx.tenant.tenantId,

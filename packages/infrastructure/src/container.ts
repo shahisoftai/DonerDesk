@@ -256,6 +256,13 @@ import { InMemoryPasswordResetRateLimiter } from "./security/password-reset-rate
 
 export interface Container {
   prisma: PrismaClient;
+  /**
+   * Waits for work a handler started in the background (section-wise
+   * generation, single-section regeneration). The api calls it before
+   * disconnecting a request's database client, so background writes never
+   * run on a closed connection. The response itself is not delayed.
+   */
+  settleBackgroundWork(): Promise<void>;
   auth: JwtAuthProvider | OidcAuthProvider;
   storage: LocalStorage;
   evidenceStorage: EvidenceStorageResolver;
@@ -779,6 +786,13 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const assertionExtractor = new DeterministicAssertionExtractor();
   const revisionService = new ReportRevisionService(reportRevisions, sections, hashService);
   const sectionRegenerationTracker = new InMemorySectionRegenerationTracker();
+  const backgroundTasks = new Set<Promise<void>>();
+  const runInBackground = (task: () => Promise<void>): void => {
+    const running: Promise<void> = task()
+      .catch((error: unknown) => logger.error("Background task failed", { error: error instanceof Error ? error.message : String(error) }))
+      .finally(() => backgroundTasks.delete(running));
+    backgroundTasks.add(running);
+  };
   const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);
   const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector);
   const updateReportSectionHandler = new UpdateReportSectionHandler(sections, drafts, revisionService, assuranceService, audits);
@@ -905,7 +919,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       ids, periods, drafts, sections, projects, organizations, templates, indicatorUpdates, activities,
       reportPlanner, requirementResolver, indicatorAnalytics, evidencePackageBuilder, generationRuns, reportPlans,
       revisionService, assuranceService,
-      getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage, reportArtifacts,
+      getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage, reportArtifacts, runInBackground,
     ),
     getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportRevisions, reportPlans, reportArtifacts, {
       evidenceDirectory: new PrismaEvidenceDirectory(prisma),
@@ -937,7 +951,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       ids, drafts, sections, reportPlans, generationRuns,
       new ReportGenerationContextBuilder(periods, projects, organizations, templates, indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator),
       new SectionGenerationService(ids, llmUsage, revisionService, assuranceService, audits, reportArtifacts),
-      sectionRegenerationTracker, audits,
+      sectionRegenerationTracker, audits, runInBackground,
     ),
     reopenReportClaim: new ReopenReportClaimHandler(reportClaims, sections, assuranceService, audits),
     getClaimSuggestion: claimSuggestionHandler,
@@ -979,7 +993,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   };
 
   return {
-    prisma, auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
+    prisma,
+    settleBackgroundWork: async () => {
+      while (backgroundTasks.size > 0) await Promise.allSettled([...backgroundTasks]);
+    },
+    auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, checklistDetector, exportBuilder,
     organizations, users, invitations, passwordResetTokens, passwordResetRateLimiter,    projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
     periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, reportArtifacts, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,

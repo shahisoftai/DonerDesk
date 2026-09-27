@@ -160,8 +160,8 @@ test("B7: a user-added section gets a synthetic plan section from its title", ()
 // U7 — reopen a resolved claim
 // ---------------------------------------------------------------------------
 
-function resolvedClaim() {
-  const claim = ReportClaim.create({ id: "c1", tenantId: "tenant-a", projectId: "p1", reportDraftId: "d1", sectionId: "s1", text: "We reached 10 schools.", type: "NUMERIC", verificationResult: "FAILED" });
+function resolvedClaim(id = "c1") {
+  const claim = ReportClaim.create({ id, tenantId: "tenant-a", projectId: "p1", reportDraftId: "d1", sectionId: "s1", text: "We reached 10 schools.", type: "NUMERIC", verificationResult: "FAILED" });
   claim.resolve({ result: "EXCLUDED", notes: "not needed", by: "user-1" });
   return claim;
 }
@@ -169,8 +169,9 @@ function resolvedClaim() {
 test("U7: reopening a decision clears it and reassesses the section", async () => {
   const claim = resolvedClaim();
   const assessed = [];
+  const twin = resolvedClaim("c1-twin");
   const handler = new ReopenReportClaimHandler(
-    { findById: async () => ok(claim), update: async (c) => ok(c) },
+    { findById: async () => ok(claim), update: async (c) => ok(c), findBySection: async () => ok([claim, twin]) },
     { findById: async () => ok(section()) },
     { assessRevision: async (input) => { assessed.push(input.revisionId); return ok({}); } },
     { record: noop },
@@ -178,12 +179,13 @@ test("U7: reopening a decision clears it and reassesses the section", async () =
   const result = await handler.handle(ctx(), "c1");
   assert.ok(result.ok);
   assert.equal(claim.resolvedById, undefined);
+  assert.equal(twin.resolvedById, undefined, "an identical statement is reopened too (decisions follow the fingerprint)");
   assert.deepEqual(assessed, ["rev-1"]);
 });
 
 test("U7: an approved section's decisions cannot be undone", async () => {
   const handler = new ReopenReportClaimHandler(
-    { findById: async () => ok(resolvedClaim()), update: async (c) => ok(c) },
+    { findById: async () => ok(resolvedClaim()), update: async (c) => ok(c), findBySection: async () => ok([]) },
     { findById: async () => ok(section({ status: "APPROVED" })) },
     { assessRevision: noop },
     { record: noop },

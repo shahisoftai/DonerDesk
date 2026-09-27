@@ -19,17 +19,12 @@ import type {
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { ReportGenerationContextBuilder, GenerationBase, GenerationInputs } from "../../services/report-generation-context.js";
 import type { SectionGenerationService } from "../../services/section-generation-service.js";
+import { fireAndForget, type BackgroundRunner } from "../../services/background-runner.js";
 
 export interface RegenerateSectionInput {
   instruction?: string;
 }
 
-/** Runs background work; injectable so tests can await it. */
-export type BackgroundRunner = (task: () => Promise<void>) => void;
-
-const fireAndForget: BackgroundRunner = (task) => {
-  void task();
-};
 
 function blockError(block: SectionRegenerationBlock): DomainError {
   const message = SECTION_REGENERATION_BLOCK_MESSAGE[block];

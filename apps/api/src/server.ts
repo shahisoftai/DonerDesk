@@ -137,6 +137,10 @@ export async function buildServer(): Promise<FastifyInstance> {
     instance.addHook("preHandler", authorizationMiddleware);
     instance.addHook("preHandler", dataResidencyMiddleware);
     instance.addHook("onResponse", async (req) => {
+      // Background work started by the request (report generation) must
+      // finish before its database client is closed. The response is
+      // already sent, so this never delays the caller.
+      await req.container?.settleBackgroundWork();
       await req.container?.prisma.$disconnect();
     });
     await registerOrgRoutes(instance);

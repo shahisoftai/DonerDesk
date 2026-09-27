@@ -29,6 +29,7 @@ import type { EntitlementService } from "../../services/entitlement-service.js";
 import { monthStartUtc, USAGE_METRIC_AI_CREDITS } from "../billing/_usage.js";
 import { ReportGenerationContextBuilder, type GenerationInputs } from "../../services/report-generation-context.js";
 import { SectionGenerationService } from "../../services/section-generation-service.js";
+import { fireAndForget, type BackgroundRunner } from "../../services/background-runner.js";
 
 /**
  * Orchestrates the full generation pipeline: plan -> deterministic analysis ->
@@ -63,6 +64,8 @@ export class GenerateReportDraftHandler {
     private readonly usage: IUsageCounterRepository,
     private readonly llmRuns: ILlmUsageRepository,
     reportArtifacts?: IReportArtifactRepository,
+    /** Runs the section-wise loop after the response (injectable so the api can await it). */
+    private readonly runInBackground: BackgroundRunner = fireAndForget,
   ) {
     this.context = new ReportGenerationContextBuilder(periods, projects, organizations, templates, indicatorUpdates, activities, analytics, evidencePackages, getGenerator);
     this.sectionGeneration = new SectionGenerationService(ids, llmRuns, revisionService, assuranceService, audit, reportArtifacts);
@@ -312,7 +315,7 @@ export class GenerateReportDraftHandler {
     // one section per LLM call, committing + assessing each as it completes.
     // The UI polls GET /draft and observes sections flip NOT_STARTED -> DRAFTED.
     if (aiEnabled) {
-      void this.generateSectionsInBackground({
+      this.runInBackground(() => this.generateSectionsInBackground({
         ctx,
         reportingPeriodId,
         draftId,
@@ -326,8 +329,8 @@ export class GenerateReportDraftHandler {
         generator,
         chargeAiCredits,
         creditReserved,
-      }).catch((error) => {
-        this.audit.record({
+      }).catch(async (error) => {
+        await this.audit.record({
           tenantId: ctx.tenant.tenantId,
           actorId: ctx.tenant.userId,
           eventType: "report.draft.generation_error",
@@ -336,7 +339,7 @@ export class GenerateReportDraftHandler {
           projectId: period.projectId,
           systemNote: `Background section-wise generation failed: ${error instanceof Error ? error.message : String(error)}`,
         }).catch(() => undefined);
-      });
+      }));
     } else {
       // AI disabled: no background work; the manual skeleton is the result.
       period.transitionTo(period.status);

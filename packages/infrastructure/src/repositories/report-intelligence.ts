@@ -300,8 +300,9 @@ export class PrismaReportGenerationRunRepository implements IGenerationRunReposi
   }
 
   private toDomain(row: { id: string; tenantId: string; snapshotJson: string; createdAt: Date }): ReportGenerationRun {
+    // The JSON snapshot stores dates as strings; the row's timestamp is authoritative.
     const snapshot = JSON.parse(row.snapshotJson) as GenerationRunSnapshot;
-    return ReportGenerationRun.rehydrate(snapshot);
+    return ReportGenerationRun.rehydrate({ ...snapshot, createdAt: row.createdAt });
   }
 }
 

@@ -1,6 +1,21 @@
 # Fixes
 
-Record of fixes applied to DonorDesk. Last updated: 2026-09-26 (EERP Q2 end-to-end run).
+Record of fixes applied to DonorDesk. Last updated: 2026-09-27 (Report Editor v2 audit + P3–P6).
+
+## Report Editor v2 audit and P3–P6 (2026-09-27, not yet deployed)
+
+Found while auditing P0–P2 and running the editor against a local Postgres + api + web. Plan: [`imp/REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md`](imp/REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md).
+
+1. **False "changed by someone else" on the second autosave; real conflicts never detected.** `ReportSection` rehydrated with `updatedAt = createdAt` and `PrismaReportSectionRepository` never wrote/read `updatedAt`. `Entity` now takes a stored `updatedAt`; the repository persists and reads it; `UpdateReportSectionHandler`/`RewriteReportSectionHandler` return the version read back after assurance.
+2. **Every manual save wiped a section's sources and unsupported claims.** `UpdateSectionSchema` defaulted both to `[]`; now optional and kept when omitted (web action no longer sends `[]`).
+3. **Sections of a report under review / approved / superseded could be edited.** Update and rewrite now require the current working draft; editing an approved section reopens it (audited `report.section.reopened`).
+4. **"Leave out" (EXCLUDED) was stored exactly like "Keep with a note".** The claim now records `EXCLUDED` (carried through re-checks, reset by undo), the submission snapshot records it correctly and every export omits left-out statements (`omitExcludedStatements`).
+5. **Missing route permissions**: reject, activate, cancel-generation, chart, sections-order, story, bulk-resolve, period-values preview/confirm, field-report propose/apply now have rules in `apps/api/src/middleware/authorization.ts`.
+6. **Background generation could run on a closed database client.** The per-request Prisma client was disconnected in `onResponse` while section-wise generation was still writing ("Transaction not found"). Background work now goes through an injected runner and `onResponse` awaits `container.settleBackgroundWork()`.
+7. **Generation-run timestamps came back as strings** (JSON snapshot), breaking date maths; `PrismaReportGenerationRunRepository` rehydrates `createdAt` from the row.
+8. **Claim ids change on every assurance pass**, so an Undo by the old id 404'd: `resolve` returns the new claim id; `reopen` clears identical statements too (decisions follow the fingerprint).
+9. **Dark-mode status text was a no-op app-wide**: the Tailwind palette lacked 200/300/400/800/900 shades of success/warning/danger/info/ai used by ~100 classes; added.
+10. Web: stale read view after switching sections mid-edit, unreliable flush on "Done editing", editable editor after a conflict, generation polling lost on reload, non-material statements counted as blocking, classic `?view=` links ignored by v2, `Drawer` body not scrollable and without focus trap, `upload-queue` unit test using an old action shape.
 
 ## EERP-2026 Q2 end-to-end report run: verifier noise, restricted evidence, indicator calculation, evidence linking, and DeepSeek truncation (2026-09-26, releases `20260926164318`, `20260926171958`, `20260926174726`)
 

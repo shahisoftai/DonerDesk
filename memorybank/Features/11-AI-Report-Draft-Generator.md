@@ -440,6 +440,14 @@ interface SourceReference {
 | Deterministic Validators | Implemented (2026-08-29; v4 2026-09-26) | v4: number grounding (no invented numbers), Q&A coverage, banned phrases (word-boundary), max words, repetition (+ paraphrase), required tables, delta (results sections only); donor-voice + min-words as warnings; mirrored Python + TS |
 | Per-section Timeout | Implemented (2026-08-29; v4 2026-09-26) | v4: `AI_REPORTER_DRAFT_TIMEOUT_MS=90000` per call, 200s per section, API HTTP timeout derived (2× + 30s) |
 | Executive summary synthesis | Implemented (2026-09-26) | Drafted last, from the other drafted sections |
+| Regenerate one section | Implemented (2026-09-27, Report Editor v2 B7) | `POST /v1/report-sections/:id/regenerate` with optional author instruction (`userInstruction`, ≤500 chars, TS↔Python mirror, prompt text only when present); keeps the text on fallback/timeout; `REGENERATION` revision; 10 per draft per hour, not metered |
+| Ask AI on a selection | Implemented (2026-09-27, B10) | Rewrite endpoint `selection` + `preview` returns a suggestion without saving |
+
+## Report Editor v2 additions (2026-09-27)
+
+- Shared generation services: `ReportGenerationContextBuilder` (period, generator/credit policy, template, findings, updates, activities, evidence) and `SectionGenerationService` (draft one section + telemetry; persist revision + artifacts + assurance), used by full drafts and single-section regenerate.
+- Background work runs through an injected `BackgroundRunner`; the api awaits it before closing the request's database client.
+- Section regenerate / "Leave out" / evidence corrections: see `20-report-gen.md` §"Report Editor v2" and `../Fixes.md` (2026-09-27).
 
 ## EERP Q2 run fixes (2026-09-26)
 

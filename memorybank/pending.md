@@ -1,6 +1,19 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-09-01T15:30+05:00.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-09-27.
+
+> **Pending (Report Editor v2 — P7 rollout):** P0–P6 are code complete behind
+> `REPORT_EDITOR_V2` (not deployed). Remaining: deploy; try `?editor=v2` on
+> production; flag on for internal tenant → EERP pilot → all; after one
+> release delete `ReportWorkspace`, `ReportingStepGuide`, `ReportCheckPanel`,
+> `SmartReviewPanel`, `ReportPreviewPanel`, `SectionEditor` and the
+> Story/Flexible panels from the editor path. Also open: axe-core Playwright
+> suite and an e2e `report-editor.spec.ts`; client analytics events
+> (`editor.*`, needs analytics infrastructure); section-regenerate credit
+> policy (currently not metered, 10 per draft per hour); regenerate with no
+> AI provider always keeps the text ("could not be rewritten").
+> Backlog [Later]: U3 length hints, U17 version compare, U20 tour, U30
+> footnotes/comment-on-selection/track changes.
 
 > **Done (2026-08-20):** **Portal typography pass — 14px baseline, medium
 > weights, smaller badges** — release `20260820045004` (web-only, no
