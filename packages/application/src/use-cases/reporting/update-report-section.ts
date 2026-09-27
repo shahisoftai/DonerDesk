@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, normalizeSectionMarkdown, SECTION_MARKDOWN_MAX_LENGTH } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportSectionRepository, IReportRevisionService, IReportAssuranceService } from "../../ports/reporting.js";
 import type { IAuditLogger } from "../../ports/core.js";
@@ -17,6 +17,10 @@ export interface UpdateSectionInput {
  * (Phase 1): a new UNASSESSED revision is created, the section repoints at it,
  * and the assurance pipeline re-extracts and re-verifies assertions so stale
  * verification can never survive an edit.
+ *
+ * Content is normalised to the supported markdown subset first
+ * (`normalizeSectionMarkdown`), so every client — including the rich-text
+ * editor — stores the same canonical form the exporters render.
  */
 export class UpdateReportSectionHandler {
   constructor(
@@ -42,10 +46,21 @@ export class UpdateReportSectionHandler {
       };
     }
 
+    const content = normalizeSectionMarkdown(input.content);
+    if (content.length > SECTION_MARKDOWN_MAX_LENGTH) {
+      return {
+        ok: false,
+        error: DomainError.validation(
+          `This section is too long (${content.length.toLocaleString("en")} characters). Split it into smaller sections.`,
+          { maxLength: SECTION_MARKDOWN_MAX_LENGTH },
+        ),
+      };
+    }
+
     const committed = await this.revisionService.commitChange({
       tenantId: ctx.tenant.tenantId,
       section: sec,
-      content: input.content,
+      content,
       sourceReferences: input.sourceReferences,
       unsupportedClaims: input.unsupportedClaims,
       changeOrigin: "MANUAL_EDIT",

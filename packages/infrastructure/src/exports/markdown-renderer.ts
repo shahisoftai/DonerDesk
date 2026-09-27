@@ -52,8 +52,10 @@ export function parseInline(text: string): MdInlineRun[] {
 
   while (cursor < text.length) {
     const rest = text.slice(cursor);
-    const bold = /^\*\*([^*\n]+)\*\*/.exec(rest);
-    const italic = /^\*([^*\n]+)\*/.exec(rest);
+    // Emphasis must not start or end with whitespace (CommonMark flanking),
+    // so "2 * 3 * 4" stays literal.
+    const bold = /^\*\*(?!\s)([^*\n]+?)(?<!\s)\*\*/.exec(rest);
+    const italic = /^\*(?!\s)([^*\n]+?)(?<!\s)\*/.exec(rest);
     const code = /^`([^`\n]+)`/.exec(rest);
     const link = /^\[([^\]\n]+)\]\(([^)\n]+)\)/.exec(rest);
     if (bold) {
@@ -69,8 +71,9 @@ export function parseInline(text: string): MdInlineRun[] {
       push(`${link[1] ?? ""} (${link[2] ?? ""})`);
       cursor += link[0].length;
     } else {
-      // Advance to the next marker candidate.
-      const next = rest.slice(1).search(/\*`\[|\*[^*]|`|\[/);
+      // Advance to the next marker candidate. (The previous pattern skipped
+      // the first `*` of `**bold**`, turning it into a literal `*` + italic.)
+      const next = rest.slice(1).search(/[*`[]/);
       const step = next < 0 ? rest.length : next + 1;
       push(rest.slice(0, step));
       cursor += step;

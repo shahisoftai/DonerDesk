@@ -82,6 +82,21 @@ Agent guidance for coding on DonorDesk.
 - Every API mutation writes to `audit_events`.
 - Every LLM response records `model` + `promptVersion` (ready for `llm_runs` table).
 
+## Report section content = a fixed markdown subset (editor/export invariant)
+- Section content is stored as markdown limited to what every exporter renders:
+  paragraphs, `###`/`####` headings, `-`/`1.` lists, `>` quotes, GFM tables,
+  `**bold**`, `*italic*`, `` `code` ``, `[label](url)`.
+- `normalizeSectionMarkdown` (`packages/domain/src/contexts/reporting/section-markdown.ts`)
+  runs on every manual save (`UpdateReportSectionHandler`); the rich-text editor
+  (`apps/web/src/features/report-editor/rich-text/`) only enables these constructs
+  and converts its output with `toStorageMarkdown` (`markdown-io.ts`).
+- Adding a construct to the editor? First teach all three renderers:
+  `packages/infrastructure/src/exports/markdown-renderer.ts` (DOCX/PDF),
+  `apps/workers/app/donor_template/markdown_docx.py` (donor templates) and
+  `StaticSectionView` — then extend the parity/round-trip tests
+  (`test/export-markdown-renderer.test.mjs`, `tests/test_donor_template.py`,
+  `apps/web/tests/unit/rich-text-roundtrip.test.mts`).
+
 ## Prisma client vs schema drift (deploy invariant)
 - The api ships `@donordesk/infrastructure`'s generated Prisma client in
   `node_modules/.pnpm/`. The `apps/api` tree has no `schema.prisma`, so

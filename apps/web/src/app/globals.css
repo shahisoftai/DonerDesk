@@ -323,3 +323,79 @@
     box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
   }
 }
+
+/*
+ * Report Editor v2 — one typography for the document read view and the
+ * rich-text editor, so clicking into a section never shifts the layout.
+ */
+@layer components {
+  .report-prose {
+    @apply font-serif text-[16.5px] leading-[1.7] text-slate-800 dark:text-slate-200;
+  }
+  .report-prose h3 {
+    @apply mb-2 mt-5 font-sans text-base font-semibold text-slate-900 dark:text-slate-100;
+  }
+  .report-prose h4 {
+    @apply mb-1.5 mt-4 font-sans text-[15px] font-semibold text-slate-900 dark:text-slate-100;
+  }
+  .report-prose p {
+    @apply mb-3;
+  }
+  .report-prose ul {
+    @apply mb-3 ml-6 list-disc space-y-1;
+  }
+  .report-prose ol {
+    @apply mb-3 ml-6 list-decimal space-y-1;
+  }
+  .report-prose li > p {
+    @apply mb-0;
+  }
+  .report-prose li > ul,
+  .report-prose li > ol {
+    @apply mb-0 mt-1;
+  }
+  .report-prose blockquote {
+    @apply mb-3 border-l-4 border-slate-200 pl-4 italic text-slate-600 dark:border-white/15 dark:text-slate-300;
+  }
+  .report-prose a {
+    @apply text-brand-700 underline dark:text-brand-300;
+  }
+  .report-prose code {
+    @apply rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.9em] dark:bg-white/10;
+  }
+  .report-prose table {
+    @apply mb-4 min-w-full border-collapse font-sans text-sm;
+  }
+  .report-prose th {
+    @apply border-b border-slate-300 bg-slate-50 px-2.5 py-1.5 text-left font-semibold dark:border-white/15 dark:bg-white/5;
+  }
+  .report-prose td {
+    @apply border-b border-slate-200 px-2.5 py-1.5 align-top dark:border-white/10;
+  }
+  .report-prose th > p,
+  .report-prose td > p {
+    @apply mb-0;
+  }
+  /* Editor-only affordances */
+  .report-prose.ProseMirror {
+    @apply min-h-[6rem] outline-none;
+  }
+  .report-prose.ProseMirror table {
+    @apply table-fixed;
+  }
+  .report-prose.ProseMirror td,
+  .report-prose.ProseMirror th {
+    @apply relative border border-slate-200 dark:border-white/10;
+  }
+  .report-prose.ProseMirror .selectedCell::after {
+    content: "";
+    @apply pointer-events-none absolute inset-0 bg-brand-500/15;
+  }
+  .report-prose.ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    @apply pointer-events-none float-left h-0 text-slate-400 dark:text-slate-500;
+  }
+  .report-prose.ProseMirror .tableWrapper {
+    @apply mb-4 overflow-x-auto;
+  }
+}

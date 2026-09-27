@@ -15,6 +15,7 @@ export function EditorTopBar({
   title,
   draftStatus,
   version,
+  saveStatus,
   readinessPercent,
   todo,
   checksOpen,
@@ -30,6 +31,8 @@ export function EditorTopBar({
   title: string;
   draftStatus: string | null;
   version: number | null;
+  /** Autosave state of the section being edited (null when not editing). */
+  saveStatus: "idle" | "dirty" | "saving" | "saved" | "failed" | "conflict" | null;
   readinessPercent: number;
   todo: number;
   checksOpen: boolean;
@@ -63,6 +66,7 @@ export function EditorTopBar({
               </Badge>
             )}
             {version !== null && <span className="text-xs text-slate-500 dark:text-slate-400">Version {version}</span>}
+            {saveStatus && <SaveIndicator status={saveStatus} />}
           </div>
         </div>
         </div>
@@ -91,5 +95,23 @@ export function EditorTopBar({
         )}
       </div>
     </div>
+  );
+}
+
+const SAVE_LABEL: Record<string, { text: string; className: string }> = {
+  idle: { text: "No changes", className: "text-slate-500 dark:text-slate-400" },
+  dirty: { text: "Unsaved changes", className: "text-slate-500 dark:text-slate-400" },
+  saving: { text: "Saving…", className: "text-slate-500 dark:text-slate-400" },
+  saved: { text: "All changes saved", className: "text-success-700 dark:text-success-400" },
+  failed: { text: "Couldn't save", className: "text-danger-700 dark:text-danger-400" },
+  conflict: { text: "Edited elsewhere", className: "text-warning-700 dark:text-warning-500" },
+};
+
+function SaveIndicator({ status }: { status: string }) {
+  const label = SAVE_LABEL[status] ?? SAVE_LABEL.idle!;
+  return (
+    <span role="status" aria-live="polite" className={`text-xs ${label.className}`}>
+      · {label.text}
+    </span>
   );
 }

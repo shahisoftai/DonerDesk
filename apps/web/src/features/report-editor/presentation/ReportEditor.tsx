@@ -37,6 +37,7 @@ import { GenerateLaunchCard } from "./document/GenerateLaunchCard";
 import { Inspector } from "./inspector/Inspector";
 import type { InspectorClaim } from "./inspector/StatementsTab";
 import type { SourceRef } from "./inspector/SourcesTab";
+import type { RichEditorSaveStatus } from "../rich-text/RichSectionEditor";
 
 type EditorSection = {
   id: string;
@@ -111,6 +112,7 @@ export function ReportEditor(props: ReportEditorProps) {
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [inputsOpen, setInputsOpen] = useState(false);
   const [storyAnswered, setStoryAnswered] = useState(props.storyAnsweredCount);
+  const [saveStatus, setSaveStatus] = useState<RichEditorSaveStatus | null>(null);
 
   // Follow deep links on soft navigation (Smart Review, notifications).
   const { section: urlSection, panel: urlPanel, claim: urlClaim } = props.initialUrlState;
@@ -305,6 +307,7 @@ export function ReportEditor(props: ReportEditorProps) {
         title={draft?.title ?? props.heading.title}
         draftStatus={draft?.status ?? null}
         version={draft?.version ?? null}
+        saveStatus={editingId ? saveStatus : null}
         readinessPercent={model.readiness.percent}
         todo={model.readiness.todo}
         checksOpen={panel === "checks"}
@@ -407,14 +410,22 @@ export function ReportEditor(props: ReportEditorProps) {
                     editing={s.id === editingId}
                     canEdit={canAuthor && !generation.generating}
                     approving={busy === "approve-section"}
-                    onSelect={() => updateUi({ section: s.id, panel: panel === "checks" ? "statements" : panel })}
+                    onSelect={() => {
+                      if (editingId && editingId !== s.id) setEditingId(null);
+                      updateUi({ section: s.id, panel: panel === "checks" ? "statements" : panel });
+                    }}
                     onEdit={() => setEditingId(s.id)}
                     onDoneEditing={() => {
                       setEditingId(null);
                       router.refresh();
                     }}
                     onApprove={() => void approveSection(s.id)}
-                    onReload={() => router.refresh()}
+                    onReload={() => {
+                      setEditingId(null);
+                      router.refresh();
+                    }}
+                    onSaveStatus={setSaveStatus}
+                    onNotice={(message) => toast.push({ title: message, tone: "warning" })}
                   />
                 );
               })}

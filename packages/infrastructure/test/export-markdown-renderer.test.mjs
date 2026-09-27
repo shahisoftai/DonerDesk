@@ -123,3 +123,54 @@ test("renderPdfBlocks never throws on odd input", () => {
   const blocks = parseMarkdownBlocks("| | \n|-|-|\n| | ");
   assert.equal(Array.isArray(blocks), true);
 });
+
+// Report Editor v2 parity: everything the rich-text editor can produce (its
+// canonical storage form — see apps/web rich-text/markdown-io.ts) must parse
+// into native export blocks, never literal markup.
+test("rich-text editor output renders as native blocks (parity gate)", () => {
+  const editorOutput = [
+    "### Key results",
+    "",
+    "Households reached **1,680** of the *2,000* target with `OUT-1` ([log](https://x.org)).",
+    "",
+    "- Boreholes",
+    "  - District A",
+    "",
+    "1. Training",
+    "   1. Refresher",
+    "",
+    "> Community feedback was positive.",
+    "",
+    "#### Variance",
+    "",
+    "| Indicator | Target | Achieved |",
+    "| --- | --- | --- |",
+    "| OUT-1 | 2,000 | 1,680 |",
+  ].join("\n");
+  const blocks = parseMarkdownBlocks(editorOutput);
+  assert.deepEqual(
+    blocks.map((b) => (b.type === "bullet" ? `bullet${b.ordered ? "#" : "-"}${b.level}` : b.type === "heading" ? `h${b.level}` : b.type)),
+    ["h3", "paragraph", "bullet-0", "bullet-1", "bullet#0", "bullet#1", "quote", "h4", "table"],
+  );
+  const para = blocks[1];
+  assert.ok(para.inline.some((r) => r.bold && r.text === "1,680"));
+  assert.ok(para.inline.some((r) => r.italic && r.text === "2,000"));
+  assert.ok(para.inline.some((r) => r.code && r.text === "OUT-1"));
+  assert.ok(para.inline.some((r) => r.text.includes("log (https://x.org)")));
+  const table = blocks[8];
+  assert.deepEqual(table.header, ["Indicator", "Target", "Achieved"]);
+  assert.deepEqual(table.rows, [["OUT-1", "2,000", "1,680"]]);
+  const flat = JSON.stringify(blocks);
+  assert.ok(!flat.includes("**") && !flat.includes("| ---"), "no literal markup reaches the exporter");
+});
+
+test("parseInline: bold numbers and spaced asterisks", () => {
+  assert.deepEqual(parseInline("Reached **1,680** of *2,000*."), [
+    { text: "Reached " },
+    { text: "1,680", bold: true },
+    { text: " of " },
+    { text: "2,000", italic: true },
+    { text: "." },
+  ]);
+  assert.deepEqual(parseInline("2 * 3 * 4 sessions"), [{ text: "2 * 3 * 4 sessions" }]);
+});

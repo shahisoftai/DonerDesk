@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import { useState } from "react";
 import type { ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import { Badge } from "@/components/data/Badge";
 import { Button } from "@/components/ui/Button";
@@ -7,10 +9,17 @@ import { sectionStatusTone } from "@/lib/shared/tone";
 import { SECTION_STATUS_LABEL } from "@/lib/labels";
 import type { ReportArtifact } from "@/lib/server/schemas";
 import { SectionArtifacts } from "@/features/reporting/presentation/document-blocks";
-import { SectionEditor } from "@/features/reporting/presentation/SectionEditor";
 import { ChartFigure, type ChartFigureIndicator } from "@/features/reporting/presentation/ChartFigure";
 import type { SectionVM } from "../../application/editor-model";
 import { StaticSectionView } from "./StaticSectionView";
+import { AiRewritePanel } from "./AiRewritePanel";
+import type { RichEditorSaveStatus } from "../../rich-text/RichSectionEditor";
+
+// The editor chunk (TipTap/ProseMirror) only downloads when someone edits.
+const RichSectionEditor = dynamic(() => import("../../rich-text/RichSectionEditor"), {
+  ssr: false,
+  loading: () => <div className="min-h-[6rem] animate-pulse rounded-lg bg-slate-50 dark:bg-white/5" aria-busy="true" />,
+});
 
 export type DocumentSectionData = {
   id: string;
@@ -25,7 +34,7 @@ export type DocumentSectionData = {
 /**
  * One section of the continuous report document. Read view by default; the
  * selected section shows a small toolbar (status, Edit, Approve) and, while
- * editing, the autosaving section editor in place of the read view.
+ * editing, the rich-text editor in place of the read view (same typography).
  */
 export function DocumentSection({
   vm,
@@ -41,6 +50,8 @@ export function DocumentSection({
   onDoneEditing,
   onApprove,
   onReload,
+  onSaveStatus,
+  onNotice,
 }: {
   vm: SectionVM;
   section: DocumentSectionData;
@@ -54,8 +65,12 @@ export function DocumentSection({
   onEdit: () => void;
   onDoneEditing: () => void;
   onApprove: () => void;
+  /** Refresh from the server and leave edit mode (conflict reload, AI rewrite). */
   onReload: () => void;
+  onSaveStatus?: (status: RichEditorSaveStatus) => void;
+  onNotice?: (message: string) => void;
 }) {
+  const [rewriteOpen, setRewriteOpen] = useState(false);
   const content = section.content ?? "";
   const statusLabel = vm.openStatements > 0 && !vm.isApproved ? "Needs a decision" : (SECTION_STATUS_LABEL[vm.status] ?? "Draft");
   const statusTone = vm.openStatements > 0 && !vm.isApproved ? "warning" : sectionStatusTone(vm.status);
@@ -89,14 +104,14 @@ export function DocumentSection({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Badge tone={statusTone}>{statusLabel}</Badge>
           <div className="flex-1" />
+          {canEdit && !vm.isApproved && content.trim() && (
+            <Button size="sm" variant="ghost" onClick={() => setRewriteOpen((v) => !v)} aria-expanded={rewriteOpen}>
+              Rewrite with AI
+            </Button>
+          )}
           {canEdit && !vm.isApproved && !editing && (
             <Button size="sm" variant="secondary" onClick={onEdit}>
               Edit
-            </Button>
-          )}
-          {editing && (
-            <Button size="sm" variant="secondary" onClick={onDoneEditing}>
-              Done editing
             </Button>
           )}
           {!vm.isApproved && vm.canApprove && !editing && (
@@ -122,15 +137,28 @@ export function DocumentSection({
         </p>
       )}
 
+      {rewriteOpen && selected && canEdit && (
+        <AiRewritePanel
+          sectionId={section.id}
+          onClose={() => setRewriteOpen(false)}
+          onApplied={(notice) => {
+            setRewriteOpen(false);
+            if (notice) onNotice?.(notice);
+            onReload();
+          }}
+        />
+      )}
+
       {editing ? (
-        <SectionEditor
+        <RichSectionEditor
           key={section.id}
           sectionId={section.id}
           title={vm.title}
           initialContent={content}
           initialVersion={section.updatedAt}
-          readOnly={false}
           onReload={onReload}
+          onStatusChange={onSaveStatus}
+          onDone={onDoneEditing}
         />
       ) : (
         <StaticSectionView content={content} />

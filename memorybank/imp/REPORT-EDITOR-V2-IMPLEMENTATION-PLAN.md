@@ -1,6 +1,6 @@
 # Report Editor v2 — Document-First Workspace — Implementation Plan
 
-> **Status:** APPROVED FOR IMPLEMENTATION (2026-09-26) — next phase. **P0 + P1 code complete (not deployed; P1 behind `REPORT_EDITOR_V2`); P2 next.**
+> **Status:** APPROVED FOR IMPLEMENTATION (2026-09-26) — next phase. **P0–P2 code complete (not deployed; v2 behind `REPORT_EDITOR_V2`); P3 next.**
 > **Decision:** Option C ("document-first editor") from the Report Workspace UX
 > audit, chosen over A (declutter in place) and B (step screens).
 > **Scope decisions (2026-09-26):**
@@ -498,6 +498,40 @@ Estimates in focused engineering days (one developer).
 - **Exit:** a user can produce every supported structure without seeing markdown,
   and the three export paths render it faithfully; no revision created by merely
   opening/closing a section.
+
+**P2 progress (2026-09-27, code complete behind the flag, not yet deployed):**
+- B8 — `apps/workers/app/donor_template/markdown_docx.py` parses the subset and
+  builds a docxtpl Subdoc (donor's own Heading 3/4, List Bullet/Number, Quote,
+  Table Grid styles when present; direct formatting otherwise). `renderer.py`
+  promotes whole-paragraph `{{ key }}` tags to `{{p key }}` at render time (no
+  change to stored templated files); inline tags get plain text; render now uses
+  `autoescape=True` (raw `&`/`<` in section text previously risked invalid XML).
+- B9 — `normalizeSectionMarkdown` / `sectionMarkdownEquivalent` /
+  `SECTION_MARKDOWN_MAX_LENGTH` (100k) in the domain (own subpath export); applied
+  in `UpdateReportSectionHandler` with a plain-language "too long" error.
+- Editor — TipTap 3.31.3 (MIT: core, pm, react, starter-kit, markdown,
+  extension-table, extensions; `@floating-ui/dom`), lazy chunk via `next/dynamic`.
+  `rich-text/extensions.ts` (schema = the subset; strike/underline/code blocks/
+  hr/hard breaks disabled), `markdown-io.ts` (`toStorageMarkdown`: decode entities,
+  drop serializer escapes, compact tables, domain normalisation),
+  `paste-cleanup.ts`, `EditorToolbar` (roving tabindex, table controls),
+  `LinkEditor` (http/https/mailto only), bubble menu, Ctrl+K, word count,
+  autosave + conflict recovery + unsaved guard, "Done editing" awaits the last
+  save; save status shown in the top bar. Shared `.report-prose` typography
+  (globals.css) for read view and editor. Whole-section "Rewrite with AI" moved
+  to `AiRewritePanel` in the section toolbar.
+- No spurious revisions: the editor's own serialisation at creation is the
+  baseline (load-time table normalisation emits updates), so opening/closing never
+  saves — verified in a browser (0 save requests on open; saves on real edits).
+- Fixed along the way: the api's DOCX/PDF inline parser turned `**1,680**` into a
+  literal `*` + italic (marker skip bug) and treated `2 * 3 * 4` as italic; the
+  Python parser had the same flanking issue. Both now follow CommonMark flanking.
+- Tests: web `rich-text-roundtrip.test.mts` (corpus incl. every golden draft,
+  stability, entities/escapes, paste cleanup); domain `section-markdown.test.mjs`;
+  infrastructure parity gate + bold/asterisk cases; worker donor-template markdown
+  tests (native blocks, placement, style fallback, escaping, inline placeholders).
+- Deferred: U28 Ask-AI-on-selection (P4 with B10), U24 lock badge on verified
+  tables (P3, needs artifact↔table matching), Alt+F10 toolbar focus (P6).
 
 ### P3 — Statements inline (3–4 d)
 - B1, B2, B3, B4, B5. `claim-anchors.ts`, static-view highlight plugin + editor
