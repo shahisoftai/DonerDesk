@@ -23,8 +23,8 @@ test("titleFromFile strips the extension", () => {
 
 test("add appends unique files and ignores duplicates", () => {
   const f = makeFile("a.pdf");
-  let state = uploadReducer([], { type: "add", files: [{ file: f, title: "a" }] });
-  state = uploadReducer(state, { type: "add", files: [{ file: f, title: "a" }] });
+  let state = uploadReducer([], { type: "add", items: [{ file: f, title: "a" }] });
+  state = uploadReducer(state, { type: "add", items: [{ file: f, title: "a" }] });
   assert.equal(state.length, 1);
 });
 

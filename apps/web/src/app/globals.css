@@ -398,4 +398,25 @@
   .report-prose.ProseMirror .tableWrapper {
     @apply mb-4 overflow-x-auto;
   }
+  /* Checked statements shown in the text (Report Editor §4.3). Status is
+     never colour-only: open = tinted + solid underline, kept = dotted
+     underline, left out = struck through, verified = thin underline. */
+  .claim-mark {
+    @apply cursor-pointer rounded-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-500;
+  }
+  .claim-mark[data-claim-state="open"] {
+    @apply border-b-2 border-warning-600 bg-warning-500/20 dark:border-warning-500 dark:bg-warning-500/15;
+  }
+  .claim-mark[data-claim-state="kept"] {
+    @apply underline decoration-slate-500 decoration-dotted decoration-2 underline-offset-4;
+  }
+  .claim-mark[data-claim-state="left-out"] {
+    @apply text-slate-500 line-through decoration-2 dark:text-slate-400;
+  }
+  .claim-mark[data-claim-state="verified"] {
+    @apply underline decoration-success-600 decoration-1 underline-offset-4 dark:decoration-success-500;
+  }
+  .claim-mark[data-claim-focused="true"] {
+    @apply ring-2 ring-warning-500/60;
+  }
 }

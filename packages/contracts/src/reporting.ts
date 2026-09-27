@@ -128,8 +128,9 @@ export const UpdateSectionSchema = z.object({
         label: z.string().optional(),
       }),
     )
-    .default([]),
-  unsupportedClaims: z.array(z.string()).default([]),
+    .optional(),
+  /** Omitted = keep the section's current sources / unsupported claims. */
+  unsupportedClaims: z.array(z.string()).optional(),
   /**
    * Optimistic concurrency token. When provided, the update is rejected with a
    * conflict if the section changed on the server after this token was issued.

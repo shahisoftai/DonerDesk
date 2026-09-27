@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import type { SectionVM } from "../../application/editor-model";
 
@@ -19,6 +19,10 @@ export function OutlineNav({
   onAdd,
   onMove,
   onDelete,
+  approvableCount,
+  approvingAll,
+  onApproveAllClean,
+  footer,
 }: {
   sections: SectionVM[];
   approvedCount: number;
@@ -29,6 +33,12 @@ export function OutlineNav({
   onAdd: (title: string) => Promise<boolean>;
   onMove: (id: string, offset: -1 | 1) => void;
   onDelete: (id: string, title: string) => void;
+  /** Sections with nothing left to decide or re-check (U8). */
+  approvableCount: number;
+  approvingAll: boolean;
+  onApproveAllClean?: () => void;
+  /** Rendered under the outline (report inputs summary). */
+  footer?: ReactNode;
 }) {
   const [reordering, setReordering] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -59,6 +69,11 @@ export function OutlineNav({
             <div className="h-full rounded-full bg-success-600 transition-all" style={{ width: `${Math.round((100 * approvedCount) / total)}%` }} />
           </div>
         )}
+        {onApproveAllClean && approvableCount > 1 && (
+          <Button size="sm" variant="secondary" className="w-full" pending={approvingAll} disabled={busy} onClick={onApproveAllClean}>
+            Approve all clean sections ({approvableCount})
+          </Button>
+        )}
       </div>
 
       <ol className="space-y-0.5">
@@ -79,6 +94,13 @@ export function OutlineNav({
               >
                 <span className="w-4 shrink-0 text-xs text-slate-400">{s.number}</span>
                 <span className="min-w-0 flex-1 break-words leading-5">{s.title}</span>
+                {s.commentCount > 0 && (
+                  <span className="shrink-0 rounded-full bg-slate-100 px-1.5 text-[11px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300" title={`${s.commentCount} open comment${s.commentCount === 1 ? "" : "s"}`}>
+                    <span aria-hidden="true">💬 </span>
+                    {s.commentCount}
+                    <span className="sr-only"> open comment{s.commentCount === 1 ? "" : "s"}</span>
+                  </span>
+                )}
                 <StatusMarker section={s} />
               </button>
               {reordering && canManage && (
@@ -141,6 +163,7 @@ export function OutlineNav({
           )}
         </div>
       )}
+      {footer}
     </nav>
   );
 }
@@ -153,6 +176,13 @@ function StatusMarker({ section }: { section: SectionVM }) {
           <path d="M5 12.5l4.5 4.5L19 7.5" />
         </svg>
         <span className="sr-only">Approved</span>
+      </span>
+    );
+  }
+  if (section.regenerating) {
+    return (
+      <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-ai-500" title="Being rewritten">
+        <span className="sr-only">Being rewritten</span>
       </span>
     );
   }
@@ -171,6 +201,14 @@ function StatusMarker({ section }: { section: SectionVM }) {
       >
         {section.openStatements}
         <span className="sr-only"> flagged statement{section.openStatements === 1 ? "" : "s"}</span>
+      </span>
+    );
+  }
+  if (section.needsRecheck) {
+    return (
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-warning-500 text-[11px] font-bold text-warning-700 dark:text-warning-400" title="Needs a re-check">
+        <span aria-hidden="true">↻</span>
+        <span className="sr-only">Needs a re-check</span>
       </span>
     );
   }

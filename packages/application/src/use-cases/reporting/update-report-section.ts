@@ -7,8 +7,9 @@ import type { SourceReference } from "@donordesk/domain";
 
 export interface UpdateSectionInput {
   content: string;
-  sourceReferences: SourceReference[];
-  unsupportedClaims: string[];
+  /** Omitted = keep the section's current sources (a text edit does not change them). */
+  sourceReferences?: SourceReference[];
+  unsupportedClaims?: string[];
   expectedVersion?: string;
   /**
    * Defaults to MANUAL_EDIT; REWRITE = accepted AI suggestion, RESTORE =
@@ -90,8 +91,8 @@ export class UpdateReportSectionHandler {
       tenantId: ctx.tenant.tenantId,
       section: sec,
       content,
-      sourceReferences: input.sourceReferences,
-      unsupportedClaims: input.unsupportedClaims,
+      sourceReferences: input.sourceReferences ?? sec.sourceReferences,
+      unsupportedClaims: input.unsupportedClaims ?? sec.unsupportedClaims,
       changeOrigin,
       actorId: ctx.tenant.userId,
     });

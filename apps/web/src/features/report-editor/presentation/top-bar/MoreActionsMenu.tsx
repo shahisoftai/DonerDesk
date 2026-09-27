@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
-export type MenuItem = { label: string; hint?: string } & ({ onSelect: () => void } | { href: string });
+/** `checked` makes the item a toggle (role="menuitemcheckbox"). */
+export type MenuItem = { label: string; hint?: string } & ({ onSelect: () => void; checked?: boolean } | { href: string });
+
+const ITEM_SELECTOR = '[role="menuitem"], [role="menuitemcheckbox"]';
 
 /**
  * The "⋯" menu for secondary report actions (regenerate, inputs, scan,
@@ -18,7 +21,7 @@ export function MoreActionsMenu({ items }: { items: MenuItem[] }) {
 
   useEffect(() => {
     if (!open) return;
-    const first = wrapRef.current?.querySelector<HTMLElement>('[role="menuitem"]');
+    const first = wrapRef.current?.querySelector<HTMLElement>(ITEM_SELECTOR);
     first?.focus();
     const onDown = (e: MouseEvent) => {
       if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
@@ -29,7 +32,7 @@ export function MoreActionsMenu({ items }: { items: MenuItem[] }) {
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (!open) return;
-    const itemsEls = Array.from(wrapRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    const itemsEls = Array.from(wrapRef.current?.querySelectorAll<HTMLElement>(ITEM_SELECTOR) ?? []);
     const index = itemsEls.indexOf(document.activeElement as HTMLElement);
     if (e.key === "Escape") {
       e.preventDefault();
@@ -83,14 +86,27 @@ export function MoreActionsMenu({ items }: { items: MenuItem[] }) {
               <button
                 key={item.label}
                 type="button"
-                role="menuitem"
+                role={item.checked === undefined ? "menuitem" : "menuitemcheckbox"}
+                aria-checked={item.checked}
                 className={itemClass}
                 onClick={() => {
                   setOpen(false);
                   item.onSelect();
                 }}
               >
-                <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{item.label}</span>
+                <span className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-100">
+                  {item.checked !== undefined && (
+                    <span
+                      aria-hidden="true"
+                      className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${
+                        item.checked ? "border-brand-600 bg-brand-600 text-white" : "border-slate-400 dark:border-white/30"
+                      }`}
+                    >
+                      {item.checked ? "✓" : ""}
+                    </span>
+                  )}
+                  {item.label}
+                </span>
                 {item.hint && <span className="text-xs text-slate-500 dark:text-slate-400">{item.hint}</span>}
               </button>
             ),

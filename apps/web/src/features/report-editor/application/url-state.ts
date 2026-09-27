@@ -5,7 +5,7 @@
  * browser Back works between selections.
  */
 
-export const INSPECTOR_PANELS = ["statements", "sources", "chart", "comments", "checks"] as const;
+export const INSPECTOR_PANELS = ["statements", "sources", "chart", "comments", "history", "checks"] as const;
 export type InspectorPanel = (typeof INSPECTOR_PANELS)[number];
 
 export type EditorUrlState = {
@@ -24,13 +24,25 @@ function read(source: ParamSource, key: string): string | undefined {
 
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
+/**
+ * Classic-workspace deep links (`?view=check|review|editor`, sent by Smart
+ * Review and older notifications) open the matching v2 panel.
+ */
+const LEGACY_VIEW_PANEL: Record<string, InspectorPanel> = {
+  check: "checks",
+  review: "statements",
+  editor: "statements",
+  versions: "history",
+};
+
 export function parseEditorUrlState(source: ParamSource): EditorUrlState {
   const section = read(source, "section");
   const panel = read(source, "panel");
   const claim = read(source, "claim");
+  const view = read(source, "view");
   return {
     section: section && ID_RE.test(section) ? section : undefined,
-    panel: INSPECTOR_PANELS.find((p) => p === panel),
+    panel: INSPECTOR_PANELS.find((p) => p === panel) ?? (view ? LEGACY_VIEW_PANEL[view] : undefined),
     claim: claim && ID_RE.test(claim) ? claim : undefined,
   };
 }

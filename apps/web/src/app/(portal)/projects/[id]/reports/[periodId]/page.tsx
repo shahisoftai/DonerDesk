@@ -99,6 +99,11 @@ export default async function ReportWorkspacePage({
           sensitiveEvidenceCount={sensitiveEvidenceCount}
           smartReviewItems={smartReviewResult.ok ? smartReviewResult.value.items : []}
           storyAnsweredCount={storyAnsweredCount}
+          evidenceCount={preflightResult.ok ? preflightResult.value.evidence.length : 0}
+          regeneratingSectionIds={draftValue?.regeneratingSectionIds ?? []}
+          summaryStaleSectionIds={draftValue?.summaryStaleSectionIds ?? []}
+          commentCounts={draftValue?.commentCounts ?? {}}
+          inputsChangedSince={draftValue?.inputsChangedSince ?? null}
           capabilities={Array.from(ctx.capabilities)}
           initialUrlState={parseEditorUrlState(query)}
         />

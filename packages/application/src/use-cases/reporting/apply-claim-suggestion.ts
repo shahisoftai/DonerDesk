@@ -54,8 +54,6 @@ export class ApplyClaimSuggestionHandler {
 
     const updated = await this.updateSection.handle(ctx, section.id, {
       content,
-      sourceReferences: section.sourceReferences,
-      unsupportedClaims: section.unsupportedClaims,
       expectedVersion,
       changeOrigin: "AUTO_FIX",
     });

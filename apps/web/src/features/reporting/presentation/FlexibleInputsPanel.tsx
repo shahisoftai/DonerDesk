@@ -26,7 +26,16 @@ function csvToRows(text: string): string[][] {
  * Nothing is written until the user confirms. Conservative: unmappable rows /
  * unconfirmed items are never silently guessed or dropped.
  */
-export function FlexibleInputsPanel({ projectId, periodId }: { projectId: string; periodId: string }) {
+export function FlexibleInputsPanel({
+  projectId,
+  periodId,
+  onApplied,
+}: {
+  projectId: string;
+  periodId: string;
+  /** Called after values were written, so the page can refresh its data. */
+  onApplied?: () => void;
+}) {
   const [tab, setTab] = useState<"import" | "extract">("import");
   const [csv, setCsv] = useState("");
   const [preview, setPreview] = useState<PeriodValuePreviewShape | null>(null);
@@ -52,8 +61,11 @@ export function FlexibleInputsPanel({ projectId, periodId }: { projectId: string
     const items = preview.rows.filter((x) => x.status === "ready").map((x) => ({ indicatorCode: x.indicatorCode, periodAchievement: x.periodAchievement ?? "" }));
     const r = await confirmPeriodValuesAction(projectId, periodId, items);
     setBusy(false);
-    if (r.ok) setStatus(`Imported ${preview.readyRows} row(s). Reload to refresh indicators.`);
-    else setStatus(r.error.message);
+    if (r.ok) {
+      setStatus(onApplied ? `Imported ${preview.readyRows} row(s).` : `Imported ${preview.readyRows} row(s). Reload to refresh indicators.`);
+      setPreview(null);
+      onApplied?.();
+    } else setStatus(r.error.message);
   }
 
   async function doExtract() {
@@ -75,8 +87,11 @@ export function FlexibleInputsPanel({ projectId, periodId }: { projectId: string
       story: Object.fromEntries(proposal.story.map((s) => [s.field, s.text])),
     });
     setBusy(false);
-    if (r.ok) setStatus("Confirmed items saved. Reload to refresh.");
-    else setStatus(r.error.message);
+    if (r.ok) {
+      setStatus(onApplied ? "Confirmed items saved." : "Confirmed items saved. Reload to refresh.");
+      setProposal(null);
+      onApplied?.();
+    } else setStatus(r.error.message);
   }
 
   return (

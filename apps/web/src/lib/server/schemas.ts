@@ -444,13 +444,15 @@ export const ReportSectionSchema = z.object({
   sectionOrder: z.number(),
   content: z.string().optional(),
   sourceReferences: z
-    .array(z.object({ type: z.string(), id: z.string(), label: z.string().optional() }))
+    .array(z.object({ type: z.string(), id: z.string(), label: z.string().optional(), evidenceTitle: z.string().optional() }))
     .optional(),
   unsupportedClaims: z.array(z.string()).optional(),
   status: z.string(),
   chartConfig: ChartConfigSchema.nullable().optional(),
   updatedAt: z.string(),
   generatedWithAi: z.boolean().nullable().optional(),
+  /** Assurance of the section's current revision (CURRENT = checked and approvable). */
+  assuranceState: z.string().nullable().optional(),
 });
 export type ReportSection = z.infer<typeof ReportSectionSchema>;
 
@@ -463,6 +465,7 @@ export const ReportDraftSchema = z.object({
   createdById: z.string().optional(),
   approvedById: z.string().optional(),
   approvedAt: z.string().optional(),
+  createdAt: z.string().optional(),
 });
 export type ReportDraft = z.infer<typeof ReportDraftSchema>;
 
@@ -473,6 +476,8 @@ export const ReportClaimSourceSchema = z.object({
   evidenceHash: z.string().optional(),
   evidenceUpdatedAt: z.string().optional(),
   chunkerVersion: z.string().optional(),
+  /** Evidence file title (or "Restricted evidence"), never a raw id. */
+  evidenceTitle: z.string().optional(),
 });
 
 export const ReportClaimSchema = z.object({
@@ -483,6 +488,12 @@ export const ReportClaimSchema = z.object({
   sources: z.array(ReportClaimSourceSchema).optional(),
   verificationResult: z.string(),
   verificationDetail: z.string(),
+  verificationReasonCode: z.string().nullable().optional(),
+  /** MATERIAL claims gate approval; NOT_MATERIAL ones never do. */
+  materiality: z.string().nullable().optional(),
+  /** Span of the statement in the section markdown when it was checked. */
+  charStart: z.number().int().nonnegative().nullable().optional(),
+  charEnd: z.number().int().nonnegative().nullable().optional(),
   resolutionNotes: z.string().nullable().optional(),
   resolvedById: z.string().optional(),
   resolvedAt: z.string().optional(),
@@ -525,7 +536,19 @@ export const ReportDraftResponseSchema = z.object({
       }),
     )
     .optional(),
+  /** Sections the AI is rewriting right now (single-section regenerate). */
+  regeneratingSectionIds: z.array(z.string()).optional(),
+  /** Executive summary / conclusion sections older than a substantial change elsewhere. */
+  summaryStaleSectionIds: z.array(z.string()).optional(),
+  /** Open comments per section id. */
+  commentCounts: z.record(z.string(), z.number().int().nonnegative()).optional(),
+  /** Indicator values / evidence changed after this draft was written. */
+  inputsChangedSince: z
+    .object({ indicators: z.number().int().nonnegative(), evidence: z.number().int().nonnegative(), sectionIds: z.array(z.string()) })
+    .nullable()
+    .optional(),
 });
+export type ReportDraftResponse = z.infer<typeof ReportDraftResponseSchema>;
 
 export const UpdateSectionResponseSchema = z.object({ version: z.string() });
 

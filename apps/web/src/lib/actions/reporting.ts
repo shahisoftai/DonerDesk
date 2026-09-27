@@ -24,6 +24,13 @@ import {
   FieldReportExtractionResponseSchema,
   FieldReportApplyResponseSchema,
   BulkResolveResponseSchema,
+  RewritePreviewResponseSchema,
+  RegenerateSectionResponseSchema,
+  ClaimSuggestionResponseSchema,
+  ApplyClaimSuggestionResponseSchema,
+  SectionRevisionsResponseSchema,
+  ReassessSectionResponseSchema,
+  ResolveClaimResponseSchema,
 } from "./_schemas";
 
 export type CreateReportingPeriodResult = Result<{ id: string }, AppError>;
@@ -193,6 +200,8 @@ export type GetReportDraftResult = Result<
       status: string;
       updatedAt: string;
     }>;
+    /** Sections the AI is rewriting right now (single-section regenerate). */
+    regeneratingSectionIds?: string[];
   },
   AppError
 >;
@@ -219,6 +228,8 @@ export type UpdateSectionInput = {
   sourceReferences?: Array<{ type: "evidence" | "activity" | "indicator" | "template"; id: string; label?: string }>;
   unsupportedClaims?: string[];
   expectedVersion?: string;
+  /** What produced the text: manual typing (default), an accepted AI suggestion, or a restored revision. */
+  changeOrigin?: "MANUAL_EDIT" | "REWRITE" | "RESTORE";
 };
 
 export type UpdateSectionResult = Result<{ version: string }, AppError>;
@@ -230,9 +241,11 @@ export async function updateReportSectionAction(
   const context = await requireSession();
   const parsed = UpdateSectionSchema.safeParse({
     content: input.content,
-    sourceReferences: input.sourceReferences ?? [],
-    unsupportedClaims: input.unsupportedClaims ?? [],
+    // Omitted = the api keeps the section's current sources.
+    sourceReferences: input.sourceReferences,
+    unsupportedClaims: input.unsupportedClaims,
     expectedVersion: input.expectedVersion,
+    changeOrigin: input.changeOrigin,
   });
   if (!parsed.success) {
     return {
@@ -330,7 +343,8 @@ export async function rewriteReportSectionAction(
   });
 }
 
-export type ResolveReportClaimResult = Result<undefined, AppError>;
+/** `claimId`: the statement's id after the decision (re-checks re-create statements). */
+export type ResolveReportClaimResult = Result<{ claimId: string }, AppError>;
 /**
  * Resolves a single ReportClaim with an authorized limitation or exclusion.
  * The api enforces the capability:
@@ -354,12 +368,12 @@ export async function resolveReportClaimAction(
       error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
     };
   }
-  const result = await gatewayRequest(`/v1/report-claims/${claimId}/resolve`, OkResponseSchema, context.token, {
+  const result = await gatewayRequest(`/v1/report-claims/${claimId}/resolve`, ResolveClaimResponseSchema, context.token, {
     method: "POST",
     body: parsed.data,
   });
   if (!result.ok) return result;
-  return { ok: true, value: undefined };
+  return { ok: true, value: { claimId: result.value.claimId ?? claimId } };
 }
 
 export type BulkResolveReportClaimsResult = Result<{ resolved: number; skipped: number }, AppError>;
@@ -413,5 +427,127 @@ export async function activateReportDraftAction(draftId: string): Promise<Activa
   const context = await requireSession();
   return gatewayRequest(`/v1/report-drafts/${draftId}/activate`, IdResponseSchema, context.token, {
     method: "POST",
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Report Editor v2 (P3–P5)
+// ---------------------------------------------------------------------------
+
+export type ReassessSectionResult = Result<{ assuranceState: string; blocked: boolean }, AppError>;
+
+/** Re-checks a section's statements against the current evidence (no text change). */
+export async function reassessSectionAction(sectionId: string): Promise<ReassessSectionResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-sections/${sectionId}/reassess`, ReassessSectionResponseSchema, context.token, {
+    method: "POST",
+    body: {},
+    timeoutMs: 60_000,
+  });
+}
+
+export type RequestChangesResult = Result<undefined, AppError>;
+
+const REQUEST_CHANGES_MAX = 2000;
+
+/** Returns a report under review to the writers with a required comment. */
+export async function requestChangesAction(draftId: string, notes: string): Promise<RequestChangesResult> {
+  const context = await requireSession();
+  const trimmed = notes.trim();
+  if (!trimmed) {
+    return { ok: false, error: { kind: "validation", message: "Say what needs to change.", fields: { notes: ["Required"] } } };
+  }
+  if (trimmed.length > REQUEST_CHANGES_MAX) {
+    return { ok: false, error: { kind: "validation", message: `Keep the comment under ${REQUEST_CHANGES_MAX} characters.`, fields: { notes: ["Too long"] } } };
+  }
+  const result = await gatewayRequest(`/v1/report-drafts/${draftId}/reject`, OkResponseSchema, context.token, {
+    method: "POST",
+    body: { notes: trimmed },
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+export type ReopenClaimResult = Result<undefined, AppError>;
+
+/** Undoes a keep-with-note / leave-out decision. */
+export async function reopenReportClaimAction(claimId: string): Promise<ReopenClaimResult> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/report-claims/${claimId}/reopen`, OkResponseSchema, context.token, { method: "POST", body: {} });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+export type ClaimSuggestionResult = Result<{ suggestion: { from: string; to: string; evidenceId: string } | null }, AppError>;
+
+/** The evidence value that would correct a mismatched number, when unambiguous. */
+export async function getClaimSuggestionAction(claimId: string): Promise<ClaimSuggestionResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-claims/${claimId}/suggestion`, ClaimSuggestionResponseSchema, context.token, { method: "GET" });
+}
+
+export type ApplyClaimSuggestionResult = Result<{ sectionId: string; version: string; previousContent: string }, AppError>;
+
+/** Replaces the mismatched number with the evidence value and re-checks the section. */
+export async function applyClaimSuggestionAction(claimId: string, expectedVersion: string): Promise<ApplyClaimSuggestionResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-claims/${claimId}/apply-suggestion`, ApplyClaimSuggestionResponseSchema, context.token, {
+    method: "POST",
+    body: { expectedVersion },
+    timeoutMs: 60_000,
+  });
+}
+
+export type RegenerateSectionResult = Result<{ sectionId: string; runId: string }, AppError>;
+
+const INSTRUCTION_MAX = 500;
+
+/** Starts redrafting one section in the background (optionally steered by an instruction). */
+export async function regenerateReportSectionAction(sectionId: string, instruction?: string): Promise<RegenerateSectionResult> {
+  const context = await requireSession();
+  const trimmed = instruction?.trim() || undefined;
+  if (trimmed && trimmed.length > INSTRUCTION_MAX) {
+    return { ok: false, error: { kind: "validation", message: `Keep the instruction under ${INSTRUCTION_MAX} characters.`, fields: { instruction: ["Too long"] } } };
+  }
+  return gatewayRequest(`/v1/report-sections/${sectionId}/regenerate`, RegenerateSectionResponseSchema, context.token, {
+    method: "POST",
+    body: trimmed ? { instruction: trimmed } : {},
+    timeoutMs: 60_000,
+  });
+}
+
+export type SectionRevision = {
+  id: string;
+  revisionNumber: number;
+  changeOrigin: string;
+  createdAt: string;
+  byAi: boolean;
+  isCurrent: boolean;
+  content: string;
+};
+
+export type ListSectionRevisionsResult = Result<{ items: SectionRevision[] }, AppError>;
+
+export async function listSectionRevisionsAction(sectionId: string): Promise<ListSectionRevisionsResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-sections/${sectionId}/revisions`, SectionRevisionsResponseSchema, context.token, { method: "GET" });
+}
+
+export type RewritePreviewResult = Result<
+  { preview: true; content: string; selection: { from: number; to: number }; fallbackUsed: boolean; fallbackReason?: string },
+  AppError
+>;
+
+/** "Ask AI" on a selection: returns a suggestion for the selected text without saving it. */
+export async function rewriteSelectionPreviewAction(
+  sectionId: string,
+  input: { mode: "REWRITE" | "SHORTEN"; audience: "DONOR" | "INTERNAL" | "GENERAL"; instructions?: string; selection: { from: number; to: number } },
+): Promise<RewritePreviewResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-sections/${sectionId}/rewrite`, RewritePreviewResponseSchema, context.token, {
+    method: "POST",
+    body: { ...input, preview: true },
+    // Same latency profile as a whole-section rewrite.
+    timeoutMs: 180_000,
   });
 }

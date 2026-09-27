@@ -4,9 +4,21 @@ import { createContext, useCallback, useContext, useRef, useState } from "react"
 import type { ReactNode } from "react";
 import { toneFor, type Tone } from "@/lib/shared/tone";
 
-type Toast = { id: number; title: string; description?: string; tone: Tone };
+/** An optional button on a toast, e.g. "Undo" after a reversible action. */
+export type ToastAction = { label: string; onAction: () => void };
 
-type ToastInput = { title: string; description?: string; tone?: Tone };
+type Toast = { id: number; title: string; description?: string; tone: Tone; action?: ToastAction };
+
+type ToastInput = {
+  title: string;
+  description?: string;
+  tone?: Tone;
+  action?: ToastAction;
+  /** How long the toast stays (default 5s). Undo toasts use a longer window. */
+  durationMs?: number;
+};
+
+const DEFAULT_DURATION_MS = 5000;
 
 const ToastContext = createContext<{ push: (input: ToastInput) => void }>({ push: () => undefined });
 
@@ -36,14 +48,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const idRef = useRef(0);
 
-  const push = useCallback((input: ToastInput) => {
-    const id = ++idRef.current;
-    const tone = toneFor(input.tone);
-    setToasts((current) => [...current, { id, title: input.title, description: input.description, tone }]);
-    window.setTimeout(() => {
-      setToasts((current) => current.filter((t) => t.id !== id));
-    }, 5000);
-  }, []);
+  const dismiss = useCallback((id: number) => setToasts((current) => current.filter((t) => t.id !== id)), []);
+
+  const push = useCallback(
+    (input: ToastInput) => {
+      const id = ++idRef.current;
+      const tone = toneFor(input.tone);
+      setToasts((current) => [...current, { id, title: input.title, description: input.description, tone, action: input.action }]);
+      window.setTimeout(() => dismiss(id), input.durationMs ?? DEFAULT_DURATION_MS);
+    },
+    [dismiss],
+  );
 
   return (
     <ToastContext.Provider value={{ push }}>
@@ -52,10 +67,22 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => (
           <div key={toast.id} role="status" className={`pointer-events-auto flex items-start gap-2 rounded-lg border p-3 shadow-lg ${toastStyles[toast.tone]}`}>
             <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dotStyles[toast.tone]}`} aria-hidden="true" />
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">{toast.title}</p>
               {toast.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{toast.description}</p>}
             </div>
+            {toast.action && (
+              <button
+                type="button"
+                onClick={() => {
+                  dismiss(toast.id);
+                  toast.action?.onAction();
+                }}
+                className="-my-1 min-h-[36px] shrink-0 rounded-md px-2 text-sm font-semibold text-brand-700 hover:bg-brand-500/10 dark:text-brand-300"
+              >
+                {toast.action.label}
+              </button>
+            )}
           </div>
         ))}
       </div>

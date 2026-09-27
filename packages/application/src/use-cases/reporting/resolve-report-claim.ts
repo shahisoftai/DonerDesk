@@ -34,7 +34,11 @@ export class ResolveReportClaimHandler {
     private readonly assuranceService: IReportAssuranceService,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, claimId: string, input: ResolveReportClaimInput): Promise<Result<void, DomainError>> {
+  /**
+   * Returns the id of the claim that carries the decision afterwards:
+   * reconciliation re-creates a section's claims, so the id can change.
+   */
+  async handle(ctx: AuthenticatedContext, claimId: string, input: ResolveReportClaimInput): Promise<Result<{ claimId: string }, DomainError>> {
     const r = await this.claims.findById(claimId, ctx.tenant.tenantId);
     if (!r.ok) return r;
     if (!r.value) return { ok: false, error: DomainError.notFound("ReportClaim", claimId) };
@@ -82,16 +86,20 @@ export class ResolveReportClaimHandler {
     // P0-1 — Reconcile the owning section's revision so a fully-resolved
     // section reaches an approvable (CURRENT) state. Best-effort: a reconcile
     // failure is logged but must not fail the resolution that already persisted.
+    let currentClaimId = claimId;
     try {
       const sectionResult = await this.sections.findById(claim.sectionId, ctx.tenant.tenantId);
       const section = sectionResult.ok ? sectionResult.value : undefined;
       const revisionId = section?.currentRevisionId;
       if (revisionId) {
-        await this.assuranceService.assessRevision({
+        const assessed = await this.assuranceService.assessRevision({
           ctx: { tenantId: ctx.tenant.tenantId, userId: ctx.tenant.userId },
           sectionId: claim.sectionId,
           revisionId,
         });
+        if (assessed.ok) {
+          currentClaimId = assessed.value.claims.find((c) => c.fingerprint === claim.fingerprint)?.id ?? claimId;
+        }
       }
     } catch (error) {
       await this.audit.record({
@@ -105,6 +113,6 @@ export class ResolveReportClaimHandler {
       }).catch(() => undefined);
     }
 
-    return { ok: true, value: undefined };
+    return { ok: true, value: { claimId: currentClaimId } };
   }
 }

@@ -6,7 +6,8 @@ import type { ReactNode } from "react";
 const focusableSelector =
   'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
-function trapFocus(container: HTMLElement, event: KeyboardEvent) {
+/** Keeps Tab / Shift+Tab inside a modal surface. */
+export function trapFocus(container: HTMLElement, event: KeyboardEvent) {
   if (event.key !== "Tab") return;
   const items = Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).filter(
     (el) => el.offsetParent !== null,
@@ -28,11 +29,14 @@ export function Dialog({
   onClose,
   title,
   children,
+  size = "md",
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
+  /** `lg` for multi-step content such as the export wizard. */
+  size?: "md" | "lg";
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -72,7 +76,9 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative z-10 w-full max-w-lg rounded-lg border border-slate-200 bg-white p-4 shadow-xl outline-none dark:border-white/10 dark:bg-slate-900"
+        className={`relative z-10 max-h-[calc(100vh-2rem)] w-full overflow-y-auto rounded-lg border border-slate-200 bg-white p-4 shadow-xl outline-none dark:border-white/10 dark:bg-slate-900 ${
+          size === "lg" ? "max-w-2xl" : "max-w-lg"
+        }`}
       >
         <h2 id={titleId} className="text-sm font-medium">
           {title}

@@ -269,6 +269,13 @@ test("update rejects a stale version and edits outside a working draft", async (
   assert.equal(superseded.error.code, "INVALID_STATE_TRANSITION");
 });
 
+test("a text edit keeps the section's sources when none are sent", async () => {
+  const current = section({ sourceReferences: [{ type: "evidence", id: "ev-1", label: "Log" }] });
+  const { handler } = buildUpdate({ current });
+  assert.ok((await handler.handle(ctx(), "s1", { content: "Changed" })).ok);
+  assert.deepEqual(current.sourceReferences, [{ type: "evidence", id: "ev-1", label: "Log" }]);
+});
+
 test("editing an approved section reopens it (audited)", async () => {
   const approved = section({ status: "APPROVED" });
   const { handler, audits } = buildUpdate({ current: approved });

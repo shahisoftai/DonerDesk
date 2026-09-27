@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-export type SourceRef = { type: string; id: string; label?: string };
+export type SourceRef = { type: string; id: string; label?: string; evidenceTitle?: string };
 
 const KIND_LABEL: Record<string, string> = {
   evidence: "Evidence file",
@@ -27,7 +27,7 @@ export function SourcesTab({ projectId, sources }: { projectId: string; sources:
       <p className="text-sm text-slate-600 dark:text-slate-300">What the AI used to write this section.</p>
       <ul className="space-y-2">
         {sources.map((s) => {
-          const label = s.label?.trim() || kindLabel(s.type);
+          const label = s.evidenceTitle?.trim() || s.label?.trim() || kindLabel(s.type);
           const isEvidence = s.type.toLowerCase() === "evidence";
           return (
             <li key={`${s.type}-${s.id}`} className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 dark:border-white/10">

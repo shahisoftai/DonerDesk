@@ -29,6 +29,8 @@ export type PrimaryActionInput = {
   checks: ReadonlyArray<ReportCheck>;
   /** Unapproved section count (excludes sections still being written). */
   unapprovedSectionCount: number;
+  /** First section that can be approved right now, in document order. */
+  nextApprovableSectionId?: string;
   openStatementCount: number;
 };
 
@@ -51,12 +53,11 @@ export function nextPrimaryAction(input: PrimaryActionInput): PrimaryAction {
           claimId: statements.target.claimId,
         };
       }
-      const sections = input.checks.find((c) => c.id === "sections");
-      if (input.unapprovedSectionCount > 0 && sections?.target.kind === "section") {
+      if (input.unapprovedSectionCount > 0 && input.nextApprovableSectionId) {
         return {
           kind: "approve-sections",
           label: `Approve ${plural(input.unapprovedSectionCount, "remaining section")}`,
-          sectionId: sections.target.sectionId,
+          sectionId: input.nextApprovableSectionId,
         };
       }
       const otherBlocking = input.checks.filter((c) => c.severity === "BLOCKING" && c.id !== "statements" && c.id !== "sections").length;

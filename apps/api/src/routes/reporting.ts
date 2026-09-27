@@ -229,7 +229,7 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.resolveReportClaim.handle(ctx, id, body);
     if (!r.ok) throw r.error;
-    return { ok: true };
+    return { ok: true, claimId: r.value.claimId };
   });
 
   app.post("/v1/report-claims/:id/reopen", async (req) => {

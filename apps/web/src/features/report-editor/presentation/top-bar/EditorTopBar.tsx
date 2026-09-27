@@ -8,6 +8,7 @@ import { REPORT_DRAFT_STATUS_LABEL } from "@/lib/labels";
 import type { PrimaryAction } from "../../application/primary-action";
 import { MoreActionsMenu, type MenuItem } from "./MoreActionsMenu";
 import { ReadinessButton } from "./ReadinessButton";
+import { IssueNavigator } from "./IssueNavigator";
 
 export function EditorTopBar({
   backHref,
@@ -23,6 +24,8 @@ export function EditorTopBar({
   primary,
   primaryPending,
   onPrimary,
+  secondary,
+  issues,
   menuItems,
   generation,
 }: {
@@ -40,6 +43,9 @@ export function EditorTopBar({
   primary: PrimaryAction;
   primaryPending: boolean;
   onPrimary: () => void;
+  /** A second visible action next to the primary one (reviewer: "Request changes"). */
+  secondary?: { label: string; onClick: () => void };
+  issues: { position: number; total: number; onPrev: () => void; onNext: () => void };
   menuItems: MenuItem[];
   generation: { active: boolean; done: number; total: number; etaLabel: string | null; stopping: boolean; onStop: () => void };
 }) {
@@ -83,10 +89,21 @@ export function EditorTopBar({
             </Button>
           </div>
         ) : (
-          draftStatus && <ReadinessButton percent={readinessPercent} todo={todo} expanded={checksOpen} onClick={onOpenChecks} />
+          draftStatus && (
+            <>
+              <ReadinessButton percent={readinessPercent} todo={todo} expanded={checksOpen} onClick={onOpenChecks} />
+              <IssueNavigator {...issues} />
+            </>
+          )
         )}
 
         <MoreActionsMenu items={menuItems} />
+
+        {secondary && (
+          <Button variant="secondary" onClick={secondary.onClick} className="whitespace-nowrap">
+            {secondary.label}
+          </Button>
+        )}
 
         {primary.kind !== "none" && (
           <Button onClick={onPrimary} pending={primaryPending} disabled={primary.kind === "waiting"} className="whitespace-nowrap">

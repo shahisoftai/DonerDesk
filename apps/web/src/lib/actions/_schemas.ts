@@ -51,6 +51,7 @@ export const DraftPollResponseSchema = z.object({
       }),
     )
     .optional(),
+  regeneratingSectionIds: z.array(z.string()).optional(),
 });
 
 export const DetectMissingResponseSchema = z.object({ created: z.number().int().nonnegative() });
@@ -84,6 +85,47 @@ export const RewriteSectionResponseSchema = z.object({
   generationRunId: z.string().optional(),
   fallbackUsed: z.boolean().optional(),
   fallbackReason: z.string().optional(),
+});
+
+export const RewritePreviewResponseSchema = z.object({
+  preview: z.literal(true),
+  content: z.string(),
+  selection: z.object({ from: z.number().int(), to: z.number().int() }),
+  fallbackUsed: z.boolean(),
+  fallbackReason: z.string().optional(),
+});
+
+export const ResolveClaimResponseSchema = z.object({ ok: z.boolean(), claimId: z.string().optional() });
+
+export const RegenerateSectionResponseSchema = z.object({ sectionId: z.string(), runId: z.string() });
+
+export const ClaimSuggestionResponseSchema = z.object({
+  suggestion: z.object({ from: z.string(), to: z.string(), evidenceId: z.string() }).nullable(),
+});
+
+export const ApplyClaimSuggestionResponseSchema = z.object({
+  sectionId: z.string(),
+  version: z.string(),
+  previousContent: z.string(),
+});
+
+export const SectionRevisionsResponseSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      revisionNumber: z.number().int(),
+      changeOrigin: z.string(),
+      createdAt: z.string(),
+      byAi: z.boolean(),
+      isCurrent: z.boolean(),
+      content: z.string(),
+    }),
+  ),
+});
+
+export const ReassessSectionResponseSchema = z.object({
+  assuranceState: z.string(),
+  blocked: z.boolean(),
 });
 
 export const InviteUserResponseSchema = z.object({
