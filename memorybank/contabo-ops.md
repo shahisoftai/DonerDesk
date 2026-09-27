@@ -189,6 +189,17 @@ Do not prune Docker globally without checking every project. ~2.5 GiB images
 - Dedicated DonorDesk roles: `donordesk` app role (via `donordesk_app` RLS
   grants), `donordesk_migrator` (root-only credentials, never in `api.env`).
   RLS is forced on tenant tables; `donordesk_app` has DML grants.
+- **2026-09-27 finding:** no `donordesk_migrator` password/credential file
+  exists anywhere on the host (checked `/opt/donordesk`, `/root`, shell
+  profiles, bash history). `pg_hba.conf` has `host all all 127.0.0.1/32
+  trust`, so `donordesk_migrator` (and any role) can connect with **no
+  password** over `postgresql://donordesk_migrator@127.0.0.1:5432/<db>` —
+  that is what the "root-only credentials" line in `CONTABO-DEPLOY.md` §3/§15
+  actually resolves to in practice. This `trust` rule is a standing risk
+  (any local process can connect as any role, including superuser
+  `postgres`, with zero authentication) — it is not scoped to a migrator
+  workflow and should be tightened to `peer`/`scram-sha-256` in a future,
+  separately-approved hardening pass, not folded into a feature deploy.
 - **Binding `0.0.0.0:5432` is a standing risk.** Keep 5432 out of the Hestia
   firewall table and re-check `ss` before every deploy.
 

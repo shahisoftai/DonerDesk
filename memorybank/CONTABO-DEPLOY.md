@@ -14,6 +14,36 @@ at the user's explicit request after confirming `?editor=v2` worked cleanly
 against production. To roll back: delete the drop-in file, `daemon-reload`,
 restart `donordesk-web`.
 
+**Last deploy:** 2026-09-27 — `releaseId=20260927082847` (`SCOPE=both`, branch
+`0008-log-frame`). Ships Phase 20 (Project Setup & Logframe/Indicator Manager
+UX): wizard draft persistence, readiness score breakdown, logframe
+drag-and-drop reorder/re-parent (behind `LOGFRAME_DND_ENABLED`, unset =
+read-only tree, so this ships dark by default), per-update indicator
+disaggregation with sum validation, indicator update history +
+verification-pipeline UI, request-correction/reject routes, and
+logframe-item/parent pickers on the create forms. **Two additive migrations
+applied manually before the code deploy** (the fast-deploy path does not run
+migrations itself — see `Fixes.md` "evidence_extracted_text" incident for why
+this order matters): `20260927120000_logframe_item_sort_order`
+(`LogframeItem.sortOrder Int @default(0)`) and
+`20260927130000_indicator_update_disaggregation`
+(`IndicatorUpdate.disaggregationJson Text @default('[]')`), both applied via
+`prisma migrate deploy` as `donordesk_migrator` over
+`postgresql://donordesk_migrator@127.0.0.1:5432/donordesk` — **no stored
+migrator credential file was found on the host; `pg_hba.conf` has `host all
+all 127.0.0.1/32 trust`, so the migrator role needs no password over that
+loopback connection.** `REQUIRED_PRISMA_FIELDS` in `apps/api/src/routes/health.ts`
+updated for both new columns in the same commit. Pre-deploy gates all green:
+`pnpm -r typecheck` clean across all packages; unit tests domain 217,
+application 129, infrastructure 229, contracts (bundled), web 175 all
+passing (the `apps/api/test` billing/webhook tests fail locally only for
+lack of a local Postgres — known, unrelated, not run as part of this
+deploy's gate). Deploy verified: systemd api/web/workers active, `/ready`
+200 with `database: ok` and `prismaClient: ok`, worker health `{"status":"ok"}`,
+public `https://donordesk.online/login` 200. See
+`imp/Phase20_setup_logframe.md` for the full plan and the one blocked item
+(A1, project templates — not shipped, no code path reaches it).
+
 **Last deploy:** 2026-09-27 — `releaseId=20260927062322` (`SCOPE=both`). Ships Report Editor v2 P3–P6 (statements inline, section regenerate + Ask AI, the `/inputs` page, shortcuts, responsive/a11y/dark-mode polish) — the full `REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md` build except the axe-core Playwright suite and editor usage-analytics events (both still open; see `pending.md`). Pre-deploy gates all green and matching the plan's documented counts: `pnpm -r typecheck` clean across all 8 packages; unit tests domain 205, application 121, infrastructure 229 (+1 skipped), contracts 9, web 163, worker pytest 125 — all passing (the two `apps/api/test/billing.test.mjs` failures are the known local-Postgres-credentials case, not a real regression). Deploy verified: systemd api/web/workers active, `/ready` 200, worker health `{"status":"ok"}`, and `/proc/<pid>/environ` matched `api.env`/`workers.env` with no post-restart rewrite this time. `REPORT_EDITOR_V2` is unset on the host (default off), so the new editor is reachable only via `?editor=v2` — this is intentionally P7's first rollout stage (internal tenant, by knowing the query param) before the env var is set for the EERP pilot and then everyone. No migrations.
 
 **Earlier:** 2026-09-26 — `releaseId=20260926174726` (SCOPE=api), preceded the same evening by `20260926164318` (SCOPE=both) and `20260926171958` (SCOPE=api). These carry the EERP Q2 run fixes: cumulative-aware verifier, date/count classifier, restricted evidence withheld from the writer, indicator-semantics API + UI, the manual evidence-link UI, worker `MAX_TOKENS` 16384 default, and truncated-JSON salvage. All gates were green (`/ready` 200, worker ok). A follow-up api deploy with the worker draft retry-on-no-JSON was started but not confirmed; check `grep -c "transient, so retry once" /opt/donordesk/workers/app/ai_reporter/draft_writer.py` on the host. Host env fix: re-added `AI_REPORTER_MAX_TOKENS=16384` to `workers.env` (see `contabo-ops.md`). No migrations. See `Fixes.md` §"EERP-2026 Q2 end-to-end report run".
