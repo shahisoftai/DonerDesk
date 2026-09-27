@@ -5,6 +5,7 @@ import type { IDriveFileContentReader } from "../../ports/infrastructure.js";
 import type { IDocumentParser } from "../../ports/evidence.js";
 import type { IAuditLogger } from "../../ports/core.js";
 import type { UploadTemplateHandler } from "../templates/upload-template.js";
+import type { ParseTemplateFileHandler } from "../templates/parse-template-file.js";
 import type { ImportLogframeHandler, ImportedLogframeItem } from "../logframe/import-logframe.js";
 
 export type DriveImportKind = "template" | "logframe" | "data";
@@ -39,6 +40,8 @@ export class ImportDriveFileHandler {
     private readonly uploadTemplate: UploadTemplateHandler,
     private readonly importLogframe: ImportLogframeHandler,
     private readonly audit: IAuditLogger,
+    /** Stores the original and parses with structure for donor templates. */
+    private readonly parseTemplateFile?: ParseTemplateFileHandler,
   ) {}
 
   async handle(
@@ -69,6 +72,9 @@ export class ImportDriveFileHandler {
         input.reportType && REPORT_TYPES.has(input.reportType)
           ? (input.reportType as CreateDonorTemplateInput["reportType"])
           : "CUSTOM";
+      const structured = this.parseTemplateFile
+        ? await this.parseTemplateFile.handle(ctx, { buffer: read.value.bytes, fileName: read.value.name, mimeType: read.value.mimeType })
+        : undefined;
       const created = await this.uploadTemplate.handle(ctx, {
         projectId,
         templateName,
@@ -77,7 +83,8 @@ export class ImportDriveFileHandler {
         language: input.language || "en",
         requiredAnnexes: [],
         sections: [],
-        extractedRawText: parsed.text || read.value.name,
+        extractedRawText: (structured?.ok ? structured.value.text : parsed.text) || read.value.name,
+        originalFileKey: structured?.ok ? structured.value.fileKey : undefined,
       });
       if (!created.ok) return created;
       await this.audit.record({

@@ -309,6 +309,7 @@ export const CHECKLIST_ITEM_TYPE_LABEL: Record<string, string> = {
   LATE_ACTIVITY_UPDATE: "Late activity update",
   SENSITIVE_DATA_WARNING: "Sensitive data warning",
   UNREVIEWED_AI_OUTPUT: "Unreviewed AI output",
+  DONOR_REQUIREMENT: "Donor requirement",
 };
 
 /**
@@ -328,6 +329,7 @@ export const CHECKLIST_ITEM_TYPE_HINT: Record<string, string> = {
   LATE_ACTIVITY_UPDATE: "This activity update is overdue — enter the missing data for the period.",
   SENSITIVE_DATA_WARNING: "This item may contain sensitive information — confirm its confidentiality level is set correctly.",
   UNREVIEWED_AI_OUTPUT: "An AI-drafted section still needs a human review before it can be approved.",
+  DONOR_REQUIREMENT: "A rule from the donor's template. Confirm the report and its annexes meet it, then resolve this item.",
 };
 
 export const CHECKLIST_STATUS_LABEL: Record<string, string> = {

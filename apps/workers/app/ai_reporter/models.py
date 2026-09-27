@@ -62,6 +62,22 @@ class SectionBrief(BaseModel):
     # Absent for full drafts, and the prompt only mentions it when present, so
     # full-draft prompts stay byte-stable.
     userInstruction: str | None = Field(default=None, max_length=500)
+    # Template Manager v2 — what the donor template itself asks of this section
+    # (verbatim instructions and required table shapes) and the organisation's
+    # own standing guidance. Mirrors the TS `AiReporterSectionBrief`; only sent
+    # when present so earlier prompts stay byte-stable.
+    donorInstructions: str | None = Field(default=None, max_length=8000)
+    requiredTables: list["RequiredTableBrief"] | None = None
+    authorInstructions: str | None = Field(default=None, max_length=4000)
+    pageLimit: int | None = None
+
+
+class RequiredTableBrief(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str
+    columns: list[str] = Field(default_factory=list)
+    notes: str | None = None
 
 
 class ContextProject(BaseModel):
@@ -96,6 +112,13 @@ class ContextTemplate(BaseModel):
     requiredAnnexes: list[str] = Field(default_factory=list)
     notes: str | None = None
     version: int | None = None
+    # Template Manager v2 — report-wide donor requirements (absent = not sent).
+    reportTitle: str | None = None
+    generalInstructions: list[str] | None = None
+    formattingRules: list[str] | None = None
+    submissionInstructions: list[str] | None = None
+    complianceRequirements: list[str] | None = None
+    indicatorRequirements: list[str] | None = None
 
 
 class ContextProfile(BaseModel):

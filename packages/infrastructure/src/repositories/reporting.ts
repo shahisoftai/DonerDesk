@@ -61,6 +61,8 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         readinessScore: p.readinessScore,
         responsibleOfficerId: p.responsibleOfficerId,
         storyContextJson: p.storyContextJson,
+        reportingProfileSnapshotJson: p.reportingProfileSnapshotJson,
+        templateSnapshotJson: p.templateSnapshotJson,
       },
     });
     return ok(p);

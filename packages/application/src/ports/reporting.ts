@@ -192,6 +192,12 @@ export interface TemplateGenerationContext {
   requiredAnnexes: string[];
   notes?: string;
   version: number;
+  reportTitle?: string;
+  generalInstructions?: string[];
+  formattingRules?: string[];
+  submissionInstructions?: string[];
+  complianceRequirements?: string[];
+  indicatorRequirements?: string[];
 }
 
 /**

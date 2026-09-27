@@ -146,26 +146,109 @@ export const TeamMemberSchema = z.object({
 
 export const TeamResponseSchema = z.object({ items: z.array(TeamMemberSchema) });
 
+const SourceRefSchema = z.object({ excerpt: z.string(), page: z.number().optional(), headingPath: z.array(z.string()).optional() });
+
 export const TemplateSectionSchema = z.object({
-  id: z.string().optional(),
+  id: z.string(),
   title: z.string(),
   description: z.string().default(""),
-  inputType: z.string(),
+  inputType: z.enum(["NARRATIVE", "TABLE", "ANNEX", "INDICATOR_TABLE", "COMPLIANCE"]).catch("NARRATIVE"),
   required: z.boolean().default(true),
-  evidenceNeeded: z.string().default(""),
+  evidenceNeeded: z
+    .union([z.string(), z.array(z.string())])
+    .default([])
+    .transform((v) => (typeof v === "string" ? v.split(/[;\n]+/).map((x) => x.trim()).filter(Boolean) : v)),
+  relatedLogframeElement: z.string().optional(),
   reviewStatus: z.enum(["DRAFT", "REVIEWED"]).default("DRAFT"),
   minWords: z.number().int().optional(),
   maxWords: z.number().int().optional(),
+  pageLimit: z.number().int().optional(),
+  parentId: z.string().optional(),
+  level: z.number().int().default(1),
+  numbering: z.string().optional(),
+  instructions: z.string().optional(),
+  mandatoryQuestions: z.array(z.string()).default([]),
+  requiredTables: z.array(z.object({ title: z.string(), columns: z.array(z.string()).default([]), notes: z.string().optional() })).default([]),
+  authorInstructions: z.string().optional(),
+  includeInReport: z.boolean().default(true),
+  source: SourceRefSchema.optional(),
+  confidence: z.number().optional(),
+});
+export type TemplateSectionView = z.infer<typeof TemplateSectionSchema>;
+
+export const TemplateRequirementsSchema = z.object({
+  reportTitle: z.string().optional(),
+  reportingFrequency: z.string().optional(),
+  submission: z.object({ instructions: z.array(z.string()).default([]), deadlineRule: z.string().optional(), deadlineOffsetDays: z.number().optional(), channel: z.string().optional(), format: z.string().optional() }).default({}),
+  formatting: z.object({ rules: z.array(z.string()).default([]), maxPages: z.number().optional(), font: z.string().optional() }).default({}),
+  annexes: z.array(z.object({ id: z.string().optional(), name: z.string(), required: z.boolean().default(true), description: z.string().optional(), source: SourceRefSchema.optional() })).default([]),
+  indicatorRequirements: z.array(z.object({ id: z.string().optional(), text: z.string(), disaggregation: z.array(z.string()).default([]), source: SourceRefSchema.optional() })).default([]),
+  compliance: z.array(z.object({ id: z.string().optional(), text: z.string(), severity: z.enum(["INFO", "WARN", "BLOCK"]).default("WARN"), source: SourceRefSchema.optional() })).default([]),
+  generalInstructions: z.array(z.string()).default([]),
+});
+export type TemplateRequirementsView = z.infer<typeof TemplateRequirementsSchema>;
+
+export const TemplateStatusSchema = z.enum(["EXTRACTING", "NEEDS_REVIEW", "REVIEWED", "EXTRACTION_FAILED"]).catch("REVIEWED");
+export type TemplateStatus = z.infer<typeof TemplateStatusSchema>;
+
+export const ExtractionMetaSchema = z.object({
+  method: z.enum(["LLM", "HEURISTIC", "CANONICAL", "MANUAL"]).catch("HEURISTIC"),
+  model: z.string().optional(),
+  promptVersion: z.string().optional(),
+  warnings: z.array(z.string()).default([]),
+  extractedAt: z.string().optional(),
+  durationMs: z.number().optional(),
 });
 
 export const TemplateListItemSchema = z.object({
   id: z.string(),
+  projectId: z.string().optional(),
   templateName: z.string(),
   donorName: z.string(),
   reportType: z.string(),
   language: z.string().optional(),
+  notes: z.string().optional(),
   version: z.number().optional(),
+  status: TemplateStatusSchema.default("REVIEWED"),
   sections: z.array(TemplateSectionSchema).default([]),
+  requirements: TemplateRequirementsSchema.default({}),
+  requiredAnnexes: z.array(z.string()).default([]),
+  extractionMeta: ExtractionMetaSchema.optional(),
+  originalFile: z.object({ name: z.string().optional(), mimeType: z.string().optional(), available: z.boolean() }).optional(),
+  hasExtractedText: z.boolean().default(false),
+  isLibrary: z.boolean().default(false),
+  sourceTemplateId: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+export type TemplateListItem = z.infer<typeof TemplateListItemSchema>;
+
+export const TemplateDetailSchema = TemplateListItemSchema.extend({
+  extractedRawText: z.string().optional(),
+  versions: z.array(z.object({ version: z.number(), createdAt: z.string(), createdById: z.string(), changeNote: z.string().optional() })).default([]),
+});
+export type TemplateDetail = z.infer<typeof TemplateDetailSchema>;
+
+export const TemplateVersionSnapshotSchema = z.object({
+  version: z.number(),
+  sections: z.array(TemplateSectionSchema),
+  requirements: TemplateRequirementsSchema,
+});
+
+export const TemplateBriefPreviewSchema = z.object({
+  version: z.number(),
+  template: z.string(),
+  sections: z.array(z.object({ templateSectionId: z.string(), title: z.string(), brief: z.string() })),
+});
+
+export const ParsedTemplateFileSchema = z.object({
+  text: z.string(),
+  fileKey: z.string(),
+  fileName: z.string(),
+  mimeType: z.string(),
+  format: z.string(),
+  headingCount: z.number(),
+  tableCount: z.number(),
+  pageCount: z.number().optional(),
 });
 
 export const TemplatesResponseSchema = z.object({ items: z.array(TemplateListItemSchema) });

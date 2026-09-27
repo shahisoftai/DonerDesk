@@ -1,4 +1,4 @@
-import type { Result, DonorTemplate, Project, ReportingPeriod, TemplateSection, VerifiedFinding } from "@donordesk/domain";
+import type { Result, Project, ReportingPeriod, TemplateSection, VerifiedFinding } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../context.js";
 import type {
@@ -16,7 +16,8 @@ import { excludeRestrictedEvidence } from "../ports/reporting.js";
 import type { IProjectRepository } from "../ports/projects.js";
 import type { IIndicatorUpdateRepository } from "../ports/logframe.js";
 import type { IActivityUpdateRepository } from "../ports/activities.js";
-import type { IDonorTemplateRepository } from "../ports/templates.js";
+import type { PeriodTemplateSnapshot } from "./template-snapshot.js";
+import type { PeriodTemplateResolver } from "./period-template-resolver.js";
 import type { IOrganizationRepository } from "../ports/identity.js";
 
 /** Who/what a generation run writes with, and the donor structure it follows. */
@@ -29,7 +30,8 @@ export interface GenerationBase {
   chargeAiCredits: boolean;
   /** Charged against DonorDesk credits (not the tenant's own provider). */
   meterPlatformCredits: boolean;
-  template: DonorTemplate | undefined;
+  /** The donor template version this run follows (see PeriodTemplateResolver). */
+  template: PeriodTemplateSnapshot | undefined;
   templateSections: TemplateSection[];
   templateVersion: number;
   reportingProfileSnapshot: ReportingProfileSnapshot;
@@ -82,7 +84,7 @@ export class ReportGenerationContextBuilder {
     private readonly periods: IReportingPeriodRepository,
     private readonly projects: IProjectRepository,
     private readonly organizations: IOrganizationRepository,
-    private readonly templates: IDonorTemplateRepository,
+    private readonly templateResolver: PeriodTemplateResolver,
     private readonly indicatorUpdates: IIndicatorUpdateRepository,
     private readonly activities: IActivityUpdateRepository,
     private readonly analytics: IIndicatorAnalyticsService,
@@ -90,7 +92,11 @@ export class ReportGenerationContextBuilder {
     private readonly getGenerator: (tenantId?: string) => Promise<IReportDraftGenerator>,
   ) {}
 
-  async loadBase(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<GenerationBase, DomainError>> {
+  /**
+   * `templateMode`: a full draft adopts the latest reviewed template ("latest");
+   * section regenerate/rewrite follow the version pinned on the period ("pinned").
+   */
+  async loadBase(ctx: AuthenticatedContext, reportingPeriodId: string, templateMode: "pinned" | "latest" = "pinned"): Promise<Result<GenerationBase, DomainError>> {
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", reportingPeriodId) };
@@ -115,8 +121,9 @@ export class ReportGenerationContextBuilder {
     // recorded with zero billable units so it never counts against the ledger.
     const usesTenantProvider = generator.providerSource === "TENANT";
 
-    const templateResult = period.donorTemplateId ? await this.templates.findById(period.donorTemplateId, ctx.tenant.tenantId) : undefined;
-    const template = templateResult?.ok && templateResult.value ? templateResult.value : undefined;
+    const templateResult = await this.templateResolver.resolve(period, ctx.tenant.tenantId, templateMode);
+    if (!templateResult.ok) return templateResult;
+    const template = templateResult.value;
 
     return {
       ok: true,
@@ -210,7 +217,7 @@ export class ReportGenerationContextBuilder {
 export function buildReportContext(
   project: { title: string; projectCode: string; donorName: string; implementingOrganization: string; partnerOrganization?: string; country: string; region?: string; district?: string; sector: string; duration: { start: Date; end: Date }; budget?: { amount: number; currency: string } | null; reportingFrequency: string; description?: string },
   period: { reportType: string; duration: { start: Date; end: Date }; deadline: Date; internalReviewDeadline?: Date; readinessScore: number; daysUntilDeadline(): number },
-  template?: { templateName: string; donorName: string; language: string; requiredAnnexes: string[]; notes?: string; version: number } | undefined,
+  template?: PeriodTemplateSnapshot,
   storyContext?: { achievements?: string; challenges?: string; varianceExplanations?: string; adaptations?: string; lessons?: string },
 ): ReportGenerationContext {
   return {
@@ -240,16 +247,38 @@ export function buildReportContext(
       readinessScore: period.readinessScore,
       daysUntilDeadline: period.daysUntilDeadline(),
     },
-    template: template
-      ? {
-          templateName: template.templateName,
-          donorName: template.donorName,
-          language: template.language,
-          requiredAnnexes: template.requiredAnnexes,
-          notes: template.notes,
-          version: template.version,
-        }
-      : undefined,
+    template: template ? buildTemplateGenerationContext(template) : undefined,
     storyContext,
+  };
+}
+
+function nonEmpty(values: string[]): string[] | undefined {
+  return values.length > 0 ? values : undefined;
+}
+
+/** Report-wide donor requirements the writer must honour (absent when empty). */
+export function buildTemplateGenerationContext(template: PeriodTemplateSnapshot): NonNullable<ReportGenerationContext["template"]> {
+  const r = template.requirements;
+  const formattingRules = [
+    ...r.formatting.rules,
+    ...(r.formatting.maxPages ? [`The whole report must not exceed ${r.formatting.maxPages} pages.`] : []),
+    ...(r.formatting.font ? [`Font: ${r.formatting.font}.`] : []),
+  ];
+  const submission = [...r.submission.instructions, ...(r.submission.deadlineRule ? [`Deadline: ${r.submission.deadlineRule}`] : [])];
+  const compliance = r.compliance.map((c) => c.text);
+  const indicators = r.indicatorRequirements.map((i) => (i.disaggregation.length ? `${i.text} (disaggregate by: ${i.disaggregation.join(", ")})` : i.text));
+  return {
+    templateName: template.templateName,
+    donorName: template.donorName,
+    language: template.language,
+    requiredAnnexes: r.annexes.filter((a) => a.required).map((a) => a.name),
+    notes: template.notes,
+    version: template.version,
+    ...(r.reportTitle ? { reportTitle: r.reportTitle } : {}),
+    ...(nonEmpty(r.generalInstructions) ? { generalInstructions: r.generalInstructions } : {}),
+    ...(nonEmpty(formattingRules) ? { formattingRules } : {}),
+    ...(nonEmpty(submission) ? { submissionInstructions: submission } : {}),
+    ...(nonEmpty(compliance) ? { complianceRequirements: compliance } : {}),
+    ...(nonEmpty(indicators) ? { indicatorRequirements: indicators } : {}),
   };
 }

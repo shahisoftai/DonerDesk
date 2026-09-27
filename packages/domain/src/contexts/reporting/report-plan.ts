@@ -1,4 +1,4 @@
-import type { SectionInputType } from "../templates/template-section.js";
+import type { RequiredTable, SectionInputType } from "../templates/template-section.js";
 import type { ProfileTone } from "../projects/reporting-profile.js";
 
 /**
@@ -28,6 +28,17 @@ export interface ReportPlanSection {
    * plans produced without a requirement snapshot are unchanged.
    */
   requirementGuidance?: string[];
+  /** Donor's own writing instructions for this section, from the template. */
+  donorInstructions?: string;
+  /** Tables the donor requires in this section (shape only). */
+  requiredTables?: RequiredTable[];
+  /** The organisation's extra guidance for the AI writer. */
+  authorInstructions?: string;
+  pageLimit?: number;
+  /** Donor numbering ("2.1") and heading depth, for workspace layout. */
+  numbering?: string;
+  level?: number;
+  parentTemplateSectionId?: string;
 }
 
 const SYNTHESIS_TITLE_RE = /executive summary|summary of (?:results|progress|achievements)|key (?:results|highlights)|conclusion/i;

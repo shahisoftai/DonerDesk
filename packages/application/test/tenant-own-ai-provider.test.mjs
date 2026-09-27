@@ -11,15 +11,28 @@ import { GenerateReportDraftHandler } from "../dist/index.js";
 const noop = async () => ({ ok: true, value: undefined });
 const okValue = (value) => ({ ok: true, value });
 
+const reviewedTemplate = {
+  id: "tpl-1",
+  version: 1,
+  status: "REVIEWED",
+  isReviewed: true,
+  templateName: "T",
+  donorName: "D",
+  reportType: "QUARTERLY",
+  language: "en",
+  sections: [{ id: "s1", title: "Narrative", description: "", inputType: "NARRATIVE", required: true, evidenceNeeded: [], mandatoryQuestions: [], requiredTables: [], level: 1, includeInReport: true }],
+  requirements: { submission: { instructions: [] }, formatting: { rules: [] }, annexes: [], indicatorRequirements: [], compliance: [], generalInstructions: [] },
+};
+
 function buildHandler(generator, calls) {
   return new GenerateReportDraftHandler(
     { generate: () => "id" },
-    { findById: async () => okValue({ id: "period-1", projectId: "proj-1", donorTemplateId: "tpl-1", reportType: "QUARTERLY", duration: { start: new Date(), end: new Date() }, deadline: new Date(), readinessScore: 0, daysUntilDeadline: () => 30 }) },
+    { findById: async () => okValue({ id: "period-1", projectId: "proj-1", donorTemplateId: "tpl-1", reportType: "QUARTERLY", duration: { start: new Date(), end: new Date() }, deadline: new Date(), readinessScore: 0, daysUntilDeadline: () => 30, templateSnapshotJson: "{}", reportingProfileSnapshotJson: "{}", setSnapshots() {} }), update: noop },
     { create: async () => okValue({}), findByReportingPeriod: async () => okValue([]), update: noop },
     { create: async () => okValue({}), findById: noop },
     { findById: async () => okValue({ id: "proj-1", title: "P", projectCode: "P1", donorName: "D", implementingOrganization: "I", country: "C", sector: "S", duration: { start: new Date(), end: new Date() }, reportingFrequency: "QUARTERLY" }) },
     { findByTenant: async () => okValue({ aiEnabled: true }) },
-    { findById: async () => okValue({ version: 1, sections: [{ id: "s1", title: "Narrative", description: "", inputType: "NARRATIVE", required: true, evidenceNeeded: "" }] }) },
+    { findById: async () => okValue(reviewedTemplate) },
     { findByReportingPeriod: async () => okValue([]) },
     { findByReportingPeriod: async () => okValue([]) },
     { plan: async () => okValue({ sections: [{ templateSectionId: "s1", title: "Narrative", inputType: "NARRATIVE", required: true, mandatoryQuestions: [], evidenceNeeds: [] }] }) },

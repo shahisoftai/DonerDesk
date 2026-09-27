@@ -1,3 +1,4 @@
+import { sectionDisplayTitle } from "@donordesk/domain";
 import type { Result } from "@donordesk/domain";
 import { DomainError, ReportDraft, ReportSection, ReportGenerationRun, isSynthesisSection } from "@donordesk/domain";
 import type { ReportPlan, ReportPlanSection, ReportingPeriod, ReportingRequirement } from "@donordesk/domain";
@@ -30,6 +31,7 @@ import { monthStartUtc, USAGE_METRIC_AI_CREDITS } from "../billing/_usage.js";
 import { ReportGenerationContextBuilder, type GenerationInputs } from "../../services/report-generation-context.js";
 import { SectionGenerationService } from "../../services/section-generation-service.js";
 import { fireAndForget, type BackgroundRunner } from "../../services/background-runner.js";
+import { PeriodTemplateResolver } from "../../services/period-template-resolver.js";
 
 /**
  * Orchestrates the full generation pipeline: plan -> deterministic analysis ->
@@ -67,7 +69,7 @@ export class GenerateReportDraftHandler {
     /** Runs the section-wise loop after the response (injectable so the api can await it). */
     private readonly runInBackground: BackgroundRunner = fireAndForget,
   ) {
-    this.context = new ReportGenerationContextBuilder(periods, projects, organizations, templates, indicatorUpdates, activities, analytics, evidencePackages, getGenerator);
+    this.context = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, analytics, evidencePackages, getGenerator);
     this.sectionGeneration = new SectionGenerationService(ids, llmRuns, revisionService, assuranceService, audit, reportArtifacts);
   }
 
@@ -93,7 +95,7 @@ export class GenerateReportDraftHandler {
       DomainError
     >
   > {
-    const baseResult = await this.context.loadBase(ctx, reportingPeriodId);
+    const baseResult = await this.context.loadBase(ctx, reportingPeriodId, "latest");
     if (!baseResult.ok) return baseResult;
     const base = baseResult.value;
     const { period, project, aiEnabled, generator, chargeAiCredits, meterPlatformCredits, templateSections, templateVersion, reportingProfileSnapshot } = base;
@@ -255,7 +257,7 @@ export class GenerateReportDraftHandler {
           id: sectionId,
           tenantId: ctx.tenant.tenantId.toString(),
           reportDraftId: draftId,
-          sectionTitle: plan.sections[i]!.title,
+          sectionTitle: sectionDisplayTitle(plan.sections[i]!),
           sectionOrder: i,
           content: "",
           sourceReferences: [],
@@ -280,7 +282,7 @@ export class GenerateReportDraftHandler {
           id: sectionId,
           tenantId: ctx.tenant.tenantId.toString(),
           reportDraftId: draftId,
-          sectionTitle: plan.sections[i]!.title,
+          sectionTitle: sectionDisplayTitle(plan.sections[i]!),
           sectionOrder: i,
           content: "",
           sourceReferences: [],

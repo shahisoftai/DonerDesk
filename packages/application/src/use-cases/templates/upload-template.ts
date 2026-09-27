@@ -1,57 +1,82 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, DonorTemplate } from "@donordesk/domain";
-import type { AuthenticatedContext } from "../../context.js";
-import type { IDonorTemplateRepository, ITemplateExtractionService } from "../../ports/templates.js";
-import type { IIdGenerator, IAuditLogger, INotificationPort } from "../../ports/core.js";
+import { DomainError, DonorTemplate, createSection, createTemplateRequirements } from "@donordesk/domain";
 import type { CreateDonorTemplateInput } from "@donordesk/contracts";
-import { createSection } from "@donordesk/domain";
+import type { AuthenticatedContext } from "../../context.js";
+import type { IDonorTemplateRepository, ITemplateFileStore } from "../../ports/templates.js";
+import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
+import type { BackgroundRunner } from "../../services/background-runner.js";
+import type { TemplateExtractionRunner } from "../../services/template-extraction-runner.js";
+import { toDonorTemplateView, type DonorTemplateView } from "../../services/donor-template-view.js";
+import { attempt } from "./load-template.js";
 
+/**
+ * Creates a donor template. With authored sections it is ready for review
+ * immediately; with only text/a file it starts in EXTRACTING and extraction
+ * runs in the background (clients poll GET /v1/templates/:id).
+ */
 export class UploadTemplateHandler {
   constructor(
     private readonly ids: IIdGenerator,
     private readonly templates: IDonorTemplateRepository,
-    private readonly extraction: ITemplateExtractionService,
+    private readonly files: ITemplateFileStore,
+    private readonly extraction: TemplateExtractionRunner,
+    private readonly runInBackground: BackgroundRunner,
     private readonly audit: IAuditLogger,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, input: CreateDonorTemplateInput): Promise<Result<{ id: string; sections: unknown[]; summary: string }, DomainError>> {
-    const id = this.ids.generate();
-    let sections = input.sections.map((s) => createSection(s));
-    let summary = "";
-    if (input.extractedRawText && input.sections.length === 0) {
-      const result = await this.extraction.extractSections({
-        rawText: input.extractedRawText,
-        language: input.language,
-      });
-      sections = result.sections;
-      summary = result.summary;
+  async handle(ctx: AuthenticatedContext, input: CreateDonorTemplateInput): Promise<Result<DonorTemplateView, DomainError>> {
+    const hasText = Boolean(input.extractedRawText?.trim());
+    if (input.sections.length === 0 && !hasText) {
+      return { ok: false, error: DomainError.validation("Provide template text, upload a file, or add sections manually") };
     }
-    const t = DonorTemplate.create({
-      id,
-      tenantId: ctx.tenant.tenantId,
-      projectId: input.projectId,
-      templateName: input.templateName,
-      donorName: input.donorName,
-      reportType: input.reportType,
-      language: input.language,
-      requiredAnnexes: input.requiredAnnexes,
-      notes: input.notes,
-      originalFileUrl: input.originalFileUrl,
-      extractedRawText: input.extractedRawText,
-      sections,
-      uploadedById: ctx.tenant.userId,
-    });
-    const saved = await this.templates.create(t);
+
+    let originalFile: { url: string; name: string; mimeType: string; sha256: string } | undefined;
+    if (input.originalFileKey) {
+      const file = await this.files.open(input.originalFileKey, ctx.tenant.tenantId);
+      if (!file.ok) return file;
+      originalFile = { url: file.value.key, name: file.value.fileName, mimeType: file.value.mimeType, sha256: file.value.sha256 };
+    }
+
+    const manual = input.sections.length > 0;
+    const built = attempt(() =>
+      DonorTemplate.create({
+        id: this.ids.generate(),
+        tenantId: ctx.tenant.tenantId,
+        projectId: input.projectId,
+        templateName: input.templateName,
+        donorName: input.donorName,
+        reportType: input.reportType,
+        language: input.language,
+        requirements: createTemplateRequirements({ ...(input.requirements ?? {}), annexes: [...(input.requirements?.annexes ?? []), ...input.requiredAnnexes] }),
+        notes: input.notes,
+        originalFile,
+        extractedRawText: input.extractedRawText,
+        sections: input.sections.map((s, order) => createSection({ ...s, order })),
+        status: manual ? "NEEDS_REVIEW" : "EXTRACTING",
+        extractionMeta: manual ? { method: "MANUAL", warnings: [], extractedAt: new Date().toISOString() } : undefined,
+        uploadedById: ctx.tenant.userId,
+      }),
+    );
+    if (!built.ok) return built;
+    const template = built.value;
+
+    const saved = await this.templates.create(template);
     if (!saved.ok) return saved;
     await this.audit.record({
       tenantId: ctx.tenant.tenantId,
       actorId: ctx.tenant.userId,
       eventType: "template.uploaded",
       entityType: "donor_template",
-      entityId: id,
+      entityId: template.id,
       projectId: input.projectId,
-      newValue: input.templateName,
+      newValue: JSON.stringify({ templateName: input.templateName, mode: manual ? "manual" : "extract", hasFile: Boolean(originalFile) }),
     });
-    return { ok: true, value: { id, sections, summary } };
+
+    if (!manual) {
+      this.runInBackground(async () => {
+        await this.extraction.run({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, templateId: template.id, mode: "replace" });
+      });
+    }
+    return { ok: true, value: toDonorTemplateView(template) };
   }
 }

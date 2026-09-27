@@ -1,47 +1,26 @@
-import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { TemplatesResponseSchema } from "@/lib/server/schemas";
-import { SectionEditor } from "./SectionEditor";
+import { LogframeResponseSchema, TemplateDetailSchema } from "@/lib/server/schemas";
+import { InlineError } from "@/components/feedback/PageState";
+import { TemplateWorkspace } from "@/features/templates/presentation/TemplateWorkspace";
 
 export const dynamic = "force-dynamic";
 
-export default async function TemplateEditor({ params }: { params: Promise<{ id: string; templateId: string }> }) {
-  const resolvedParams = await params;
+export default async function TemplateEditorPage({ params }: { params: Promise<{ id: string; templateId: string }> }) {
+  const { id, templateId } = await params;
   const ctx = await requireSession();
-  const result = await gatewayRequest(`/v1/projects/${resolvedParams.id}/templates`, TemplatesResponseSchema, ctx.token);
+  const [result, logframe] = await Promise.all([
+    gatewayRequest(`/v1/templates/${encodeURIComponent(templateId)}`, TemplateDetailSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${id}/logframe`, LogframeResponseSchema, ctx.token),
+  ]);
   if (!result.ok) {
-    return <div className="animate-fade-in"><p className="text-sm text-red-600 dark:text-red-400">{result.error.message}</p></div>;
+    return <div className="animate-fade-in"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>;
   }
-  const tpl = result.value.items.find((t) => t.id === resolvedParams.templateId);
-  if (!tpl) return <div className="p-8 text-sm text-slate-500 dark:text-slate-400">Template not found.</div>;
-  return (
-    <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold tracking-tight">{tpl.templateName}</h1>
-      <p className="text-sm text-slate-600 dark:text-slate-400">Review and confirm the sections that will shape reports for this donor. These are your own confirmed sections, not source-verified extractions. Mark the required sections as reviewed and save to unlock reporting periods.</p>
-      <p className="mt-2 text-sm">
-        <Link href={`/projects/${resolvedParams.id}/templates/${tpl.id}/mapping`} className="text-brand-600 hover:underline dark:text-brand-400">
-          Map this donor's own DOCX template →
-        </Link>
-        <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
-          Optional: renders exports directly into the donor's native document instead of the generic layout.
-        </span>
-      </p>
-      <SectionEditor
-        projectId={resolvedParams.id}
-        templateId={tpl.id}
-        initialSections={(tpl.sections ?? []).map((s) => ({
-          id: s.id,
-          title: s.title,
-          description: s.description ?? "",
-          inputType: s.inputType,
-          required: s.required ?? true,
-          evidenceNeeded: s.evidenceNeeded ?? "",
-          reviewStatus: s.reviewStatus ?? "DRAFT",
-          minWords: s.minWords,
-          maxWords: s.maxWords,
-        }))}
-      />
-    </div>
-  );
+  const logframeOptions = logframe.ok
+    ? logframe.value.items.map((item) => {
+        const label = `${item.code ? `${item.code} ` : ""}${item.title}`;
+        return { value: label, label: `${item.level}: ${label}` };
+      })
+    : [];
+  return <TemplateWorkspace projectId={id} template={result.value} logframeOptions={logframeOptions} />;
 }

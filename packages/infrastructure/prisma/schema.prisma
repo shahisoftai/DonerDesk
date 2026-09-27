@@ -296,14 +296,44 @@ model DonorTemplate {
   originalFileUrl String?
   extractedRawText String?
   sectionsJson    String   @default("[]")
+  /// Structured template-level requirements (submission, formatting, annexes, compliance, AI guidance).
+  requirementsJson String  @default("{}")
+  /// EXTRACTING | NEEDS_REVIEW | REVIEWED | EXTRACTION_FAILED. Pre-existing rows are REVIEWED.
+  status          String   @default("REVIEWED")
+  extractionMetaJson String?
+  originalFileName String?
+  originalFileMime String?
+  originalFileHash String?
+  isLibrary       Boolean  @default(false)
+  sourceTemplateId String?
   version         Int      @default(1)
   uploadedById    String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  project Project @relation(fields: [projectId], references: [id])
+  project  Project @relation(fields: [projectId], references: [id])
+  versions DonorTemplateVersion[]
   @@index([tenantId])
   @@index([projectId])
+  @@index([tenantId, isLibrary])
+}
+
+/// Immutable snapshot of a donor template's structure per version; reporting
+/// periods pin one version so later edits never change in-flight reports.
+model DonorTemplateVersion {
+  id               String   @id
+  tenantId         String
+  templateId       String
+  version          Int
+  sectionsJson     String   @db.Text
+  requirementsJson String   @db.Text
+  createdById      String
+  changeNote       String?
+  createdAt        DateTime @default(now())
+
+  template DonorTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  @@unique([templateId, version])
+  @@index([tenantId])
 }
 
 model LogframeItem {

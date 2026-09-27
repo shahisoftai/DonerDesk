@@ -16,6 +16,13 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "DonorTemplateMapping", field: "templatedFileUrl" },
   { model: "LogframeItem", field: "sortOrder" },
   { model: "IndicatorUpdate", field: "disaggregationJson" },
+  { model: "DonorTemplate", field: "requirementsJson" },
+  { model: "DonorTemplate", field: "status" },
+  { model: "DonorTemplate", field: "extractionMetaJson" },
+  { model: "DonorTemplate", field: "originalFileName" },
+  { model: "DonorTemplate", field: "isLibrary" },
+  { model: "DonorTemplate", field: "sourceTemplateId" },
+  { model: "DonorTemplateVersion", field: "sectionsJson" },
 ] as const;
 
 type RuntimeDataModel = {

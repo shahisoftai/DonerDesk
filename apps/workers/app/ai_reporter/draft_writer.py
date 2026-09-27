@@ -77,6 +77,26 @@ def build_user_prompt(req: SectionDraftRequest) -> str:
     ]
     if s.minWords is not None or s.maxWords is not None:
         parts.append(f"# Length: {s.minWords or 0}-{s.maxWords or 'no limit'} words of prose (never pad; tables do not count)")
+    if s.pageLimit is not None:
+        parts.append(f"# Page limit set by the donor: {s.pageLimit} page(s)")
+    if s.donorInstructions and s.donorInstructions.strip():
+        parts.append(
+            "# Donor instructions for this section (from the donor's template; follow them, "
+            "but never invent facts or numbers to satisfy them):\n" + s.donorInstructions.strip()
+        )
+    if s.requiredTables:
+        parts.append(
+            "# Tables the donor requires in this section (render each as a markdown table in `content` with exactly "
+            "these columns; fill cells only from the inputs and write 'Not reported' where no verified value exists):\n"
+            + "\n".join(
+                f"- {t.title}: | {' | '.join(t.columns)} |" + (f" ({t.notes})" if t.notes else "") for t in s.requiredTables
+            )
+        )
+    if s.authorInstructions and s.authorInstructions.strip():
+        parts.append(
+            "# Organisation guidance for this section (follow it unless it conflicts with the rules):\n"
+            + s.authorInstructions.strip()
+        )
 
     slots = s.outlineSlots or outline_for(kind)
     parts.append(
@@ -138,7 +158,19 @@ def build_user_prompt(req: SectionDraftRequest) -> str:
     if ctx.period:
         parts.append(_bullets("Reporting period:", [f"{k}: {v}" for k, v in ctx.period.model_dump(exclude_none=True).items()]))
     if ctx.template:
-        parts.append(_bullets("Donor template:", [f"{k}: {v}" for k, v in ctx.template.model_dump(exclude_none=True).items()]))
+        template_lists = {
+            "generalInstructions": "Donor's report-wide instructions (MUST be honoured):",
+            "formattingRules": "Donor formatting rules:",
+            "submissionInstructions": "Donor submission instructions (for awareness; do not restate unless asked):",
+            "complianceRequirements": "Donor compliance requirements (the report must not contradict these):",
+            "indicatorRequirements": "Donor indicator reporting requirements:",
+        }
+        info = ctx.template.model_dump(exclude_none=True)
+        parts.append(_bullets("Donor template:", [f"{k}: {v}" for k, v in info.items() if k not in template_lists]))
+        for key, title in template_lists.items():
+            items = info.get(key)
+            if items:
+                parts.append(_bullets(title, items))
     if ctx.story:
         story = [f"{_STORY_LABELS[k]}: {v.strip()}" for k, v in ctx.story.model_dump(exclude_none=True).items() if v and v.strip()]
         if story:

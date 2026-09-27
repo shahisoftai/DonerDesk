@@ -2,7 +2,7 @@ import "server-only";
 import { parseProblem, mergeReferenceId, type ProblemBody } from "@/lib/shared/problem";
 import type { AppError } from "@/lib/shared/app-error";
 import type { Result } from "@/lib/shared/result";
-import type { ZodType } from "zod";
+import type { ZodType, ZodTypeDef } from "zod";
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
@@ -33,7 +33,8 @@ type ProblemHeaders = { "x-request-id"?: string };
 
 export async function gatewayRequest<T>(
   path: string,
-  schema: ZodType<T>,
+  /** Typed by the schema's parsed output (defaults/transforms applied). */
+  schema: ZodType<T, ZodTypeDef, unknown>,
   token: string,
   options: GatewayRequestOptions = {},
 ): Promise<Result<T, AppError>> {
@@ -72,7 +73,7 @@ export async function gatewayRequest<T>(
   }
 }
 
-async function toResult<T>(response: Response, schema: ZodType<T>): Promise<Result<T, AppError>> {
+async function toResult<T>(response: Response, schema: ZodType<T, ZodTypeDef, unknown>): Promise<Result<T, AppError>> {
   const contentType = response.headers.get("content-type") ?? "";
   const text = await response.text();
   const referenceId =

@@ -23,7 +23,13 @@ export default async function NewReportingPeriodPage({ params }: { params: Promi
       {!templatesResult.ok && <div className="mt-4"><InlineError title={templatesResult.error.message} /></div>}
       <NewReportingPeriodForm
         projectId={resolvedParams.id}
-        templates={templatesResult.ok ? templatesResult.value.items.map((t) => ({ id: t.id, templateName: t.templateName })) : []}
+        templates={templatesResult.ok ? templatesResult.value.items.map((t) => ({
+                id: t.id,
+                templateName: t.templateName,
+                status: t.status,
+                deadlineOffsetDays: t.requirements.submission.deadlineOffsetDays,
+                deadlineRule: t.requirements.submission.deadlineRule,
+              })) : []}
         readiness={readiness}
       />
     </div>

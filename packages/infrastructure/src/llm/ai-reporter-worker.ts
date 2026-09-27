@@ -49,6 +49,15 @@ export interface AiReporterSectionBrief {
    * full drafts (prompts then stay byte-stable).
    */
   userInstruction?: string;
+  /**
+   * Template Manager v2 — the donor template's own guidance for this section,
+   * required table shapes, and the organisation's standing guidance. Mirror
+   * Python `SectionBrief` (extra="forbid"); only sent when present.
+   */
+  donorInstructions?: string;
+  requiredTables?: Array<{ title: string; columns: string[]; notes?: string }>;
+  authorInstructions?: string;
+  pageLimit?: number;
 }
 
 
@@ -97,6 +106,13 @@ export interface AiReporterContextTemplate {
   requiredAnnexes: string[];
   notes?: string;
   version?: number;
+  /** Template Manager v2 — report-wide donor requirements (absent = not sent). */
+  reportTitle?: string;
+  generalInstructions?: string[];
+  formattingRules?: string[];
+  submissionInstructions?: string[];
+  complianceRequirements?: string[];
+  indicatorRequirements?: string[];
 }
 
 export interface AiReporterContextStory {

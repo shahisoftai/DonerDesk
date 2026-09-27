@@ -132,3 +132,19 @@ state: PostgreSQL via Prisma, JWT auth, local file storage (dev default) with
 Google Drive link-first primary / R2 optional via per-tenant
 `Organization.storageProvider`, Kestra-or-BullMQ via `JOB_QUEUE` (memory
 in-process default), stub LLM (dev default), pino logs, console email.
+
+## Donor Template Manager v2 (2026-09-27)
+- Template sections (`TemplateSection`, domain) carry the donor's `instructions`, `mandatoryQuestions`,
+  `evidenceNeeded[]`, `requiredTables`, `pageLimit`, hierarchy (`parentId`/`level`/`numbering`),
+  `authorInstructions` (org guidance) and `includeInReport` (guidance-only sections are excluded).
+  Report-wide rules live in `TemplateRequirements` (`DonorTemplate.requirementsJson`).
+- Lifecycle: `EXTRACTING → NEEDS_REVIEW → REVIEWED` (`EXTRACTION_FAILED` recoverable). Every edit is a
+  new version snapshotted in `DonorTemplateVersion`. A full draft requires a REVIEWED template and pins
+  it into `ReportingPeriod.templateSnapshotJson` (`PeriodTemplateResolver`); section regenerate uses the pin.
+- Extraction: `FallbackTemplateExtractionService` = `LlmTemplateExtractor` (tenant LLM, source-grounded,
+  ungrounded items dropped) → `HeuristicTemplateExtractor` (outline-based; `CANONICAL` outline is always
+  flagged). Structured parsing: `packages/infrastructure/src/parsers/structured/`.
+- `ReportPlanner.toPlanSection` carries donor fields into the plan; both writers render them only when
+  present (legacy `buildSectionGuidance`, AI Reporter `SectionBrief.donorInstructions/requiredTables/
+  authorInstructions/pageLimit` + `ContextTemplate` requirement lists — Python and TS kept in lockstep).
+- Deploy: apply migration `20260927150000_donor_template_manager_v2`, then re-run `infra/postgres/rls.sql`.

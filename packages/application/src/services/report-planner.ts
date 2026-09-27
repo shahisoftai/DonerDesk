@@ -1,5 +1,5 @@
 import type { Result, ReportPlan, ReportPlanSection, ReportingRequirement } from "@donordesk/domain";
-import { createReportPlan, DomainError, stampPlanSectionsWithRequirements } from "@donordesk/domain";
+import { createReportPlan, DomainError, normalizeEvidence, reportableSections, stampPlanSectionsWithRequirements, type TemplateSection } from "@donordesk/domain";
 import type { IReportPlanner, ReportingProfileSnapshot } from "../ports/reporting.js";
 import type { IIdGenerator } from "../ports/core.js";
 
@@ -21,37 +21,15 @@ export class InferredReportPlanner implements IReportPlanner {
     reportingPeriodId: string;
     projectId: string;
     tenantId: { toString(): string };
-    templateSections: Array<{
-      id: string;
-      title: string;
-      description: string;
-      inputType: string;
-      required: boolean;
-      evidenceNeeded: string;
-      relatedLogframeElement?: string;
-      minWords?: number;
-      maxWords?: number;
-    }>;
+    templateSections: TemplateSection[];
     templateVersion: number;
     profileVersion: number;
     reportingProfileSnapshot: ReportingProfileSnapshot;
     requirements?: ReportingRequirement[];
   }): Promise<Result<ReportPlan, DomainError>> {
-    let sections: ReportPlanSection[] = input.templateSections.map((s) => {
-      const override = input.reportingProfileSnapshot.sectionOverrides[s.id];
-      const min = override?.min ?? s.minWords;
-      const max = override?.max ?? s.maxWords;
-      return {
-        templateSectionId: s.id,
-        title: s.title,
-        inputType: s.inputType as ReportPlan["sections"][number]["inputType"],
-        required: s.required,
-        wordLimit: min !== undefined || max !== undefined ? { min, max } : undefined,
-        mandatoryQuestions: [],
-        evidenceNeeds: s.evidenceNeeded ? [s.evidenceNeeded] : [],
-        relatedLogframeElement: s.relatedLogframeElement,
-      };
-    });
+    let sections: ReportPlanSection[] = reportableSections(input.templateSections).map((s) =>
+      toPlanSection(s, input.reportingProfileSnapshot.sectionOverrides[s.id]),
+    );
 
     if (sections.length === 0) {
       return {
@@ -81,4 +59,34 @@ export class InferredReportPlanner implements IReportPlanner {
     });
     return { ok: true, value: plan };
   }
+}
+
+/**
+ * Maps one reviewed template section to the plan section the narrators draft.
+ * Everything the donor asked for (instructions, questions, evidence, tables,
+ * limits) is carried through; the organisation's guidance travels separately.
+ */
+export function toPlanSection(s: TemplateSection, override?: { min?: number; max?: number }): ReportPlanSection {
+  const min = override?.min ?? s.minWords;
+  const max = override?.max ?? s.maxWords;
+  const questions = new Set((s.mandatoryQuestions ?? []).map((q) => q.trim().toLowerCase()));
+  const fallback = s.instructions?.trim() || questions.has(s.description.trim().toLowerCase()) ? undefined : s.description;
+  const donorInstructions = (s.instructions ?? fallback ?? "").trim();
+  return {
+    templateSectionId: s.id,
+    title: s.title,
+    inputType: s.inputType,
+    required: s.required,
+    wordLimit: min !== undefined || max !== undefined ? { min, max } : undefined,
+    mandatoryQuestions: [...(s.mandatoryQuestions ?? [])],
+    evidenceNeeds: normalizeEvidence(s.evidenceNeeded),
+    relatedLogframeElement: s.relatedLogframeElement,
+    ...(donorInstructions ? { donorInstructions } : {}),
+    ...(s.requiredTables?.length ? { requiredTables: s.requiredTables.map((t) => ({ ...t, columns: [...t.columns] })) } : {}),
+    ...(s.authorInstructions ? { authorInstructions: s.authorInstructions } : {}),
+    ...(s.pageLimit !== undefined ? { pageLimit: s.pageLimit } : {}),
+    ...(s.numbering ? { numbering: s.numbering } : {}),
+    level: s.level ?? 1,
+    ...(s.parentId ? { parentTemplateSectionId: s.parentId } : {}),
+  };
 }

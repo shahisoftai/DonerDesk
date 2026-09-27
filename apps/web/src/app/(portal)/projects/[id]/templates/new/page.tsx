@@ -1,150 +1,142 @@
 "use client";
-import { use, useState, useRef } from "react";
+
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createTemplateAction } from "@/lib/actions/templates";
-import { parseFileAction } from "@/lib/actions/parse";
+import { createTemplateAction, parseTemplateFileAction, type ParsedTemplateFile } from "@/lib/actions/templates";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { FileDropzone } from "@/components/editor/FileDropzone";
+import { RadioGroup } from "@/components/ui/RadioGroup";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 
 const REPORT_TYPES = ["MONTHLY", "QUARTERLY", "ANNUAL", "FINAL", "ACTIVITY", "SITUATION", "CUSTOM"];
-const IS_STUB = process.env.NODE_ENV !== "production";
-
-async function parseTemplateFile(file: File): Promise<string> {
-  const r = await parseFileAction("templates", file);
-  if (!r.ok) throw new Error(r.error.message);
-  return r.value.text;
-}
+const ACCEPT = ".docx,.pdf,.txt,.md,.xlsx,.csv";
+type Mode = "upload" | "paste" | "manual";
 
 export default function NewTemplatePage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
+  const { id: projectId } = use(params);
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useState<Mode>("upload");
   const [templateName, setTemplateName] = useState("");
   const [donorName, setDonorName] = useState("");
-  const [reportType, setReportType] = useState("MONTHLY");
+  const [reportType, setReportType] = useState("QUARTERLY");
   const [language, setLanguage] = useState("en");
-  const [extractedRawText, setExtractedRawText] = useState("");
+  const [text, setText] = useState("");
+  const [file, setFile] = useState<ParsedTemplateFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [parsing, setParsing] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function onFiles(files: File[]) {
+    const picked = files[0];
+    if (!picked) return;
     setParsing(true);
     setError(null);
-    try {
-      const text = await parseTemplateFile(file);
-      setExtractedRawText((prev) => (prev ? prev + "\n\n" + text : text));
-      setFileName(file.name);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to parse file");
-    } finally {
-      setParsing(false);
+    const form = new FormData();
+    form.set("file", picked);
+    const r = await parseTemplateFileAction(form);
+    setParsing(false);
+    if (!r.ok) {
+      setError(r.error.message);
+      return;
     }
+    setFile(r.value);
+    setText(r.value.text);
+    if (!templateName) setTemplateName(picked.name.replace(/\.[^.]+$/, ""));
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null); setBusy(true);
-    try {
-      const r = await createTemplateAction({
-        projectId: resolvedParams.id,
-        templateName,
-        donorName,
-        reportType,
-        language,
-        extractedRawText: extractedRawText || undefined,
-      });
-      if (!r.ok) {
-        setError(r.error.message);
-        return;
-      }
-      router.push(`/projects/${resolvedParams.id}/templates/${r.value.id}`);
-    } finally { setBusy(false); }
+    setError(null);
+    if (mode !== "manual" && !text.trim()) {
+      setError(mode === "upload" ? "Upload the donor's template file first." : "Paste the donor's template text first.");
+      return;
+    }
+    setBusy(true);
+    const r = await createTemplateAction({
+      projectId,
+      templateName,
+      donorName,
+      reportType,
+      language,
+      extractedRawText: mode === "manual" ? undefined : text,
+      originalFileKey: mode === "upload" && file ? file.fileKey : undefined,
+      sections: mode === "manual" ? [{ title: "Executive Summary", inputType: "NARRATIVE" }] : [],
+    });
+    setBusy(false);
+    if (!r.ok) {
+      setError(r.error.message);
+      return;
+    }
+    router.push(`/projects/${projectId}/templates/${r.value.id}`);
   }
 
   return (
     <div className="animate-fade-in">
       <h1 className="text-xl font-semibold tracking-tight">Add donor template</h1>
       <p className="text-sm text-slate-600 dark:text-slate-400">
-        Paste the donor reporting instructions. We suggest sections for your review, which you can edit before saving.
+        Upload the donor&rsquo;s reporting template. DonorDesk extracts its sections, the donor&rsquo;s instructions and questions for each section,
+        required tables, annexes and submission rules. You review and approve everything before it is used to write reports.
       </p>
-      {IS_STUB && (
-        <div className="mt-4">
-          <InlineAlert tone="ai" title="Extraction is a suggestion for review">
-            Section suggestions are generated from the pasted text for you to review and edit. They are not source-verified
-            and do not represent the donor&rsquo;s original formatting until you confirm them.
-          </InlineAlert>
-        </div>
-      )}
       <form onSubmit={onSubmit} className="card mt-6 space-y-4">
-        <Field label="Template name" htmlFor="templateName">
-          <Input id="templateName" value={templateName} onChange={(e) => setTemplateName(e.target.value)} required />
-        </Field>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Donor name" htmlFor="donorName">
-            <Input id="donorName" value={donorName} onChange={(e) => setDonorName(e.target.value)} required />
+          <Field label="Template name" htmlFor="templateName">
+            <Input id="templateName" value={templateName} onChange={(e) => setTemplateName(e.target.value)} required maxLength={200} />
+          </Field>
+          <Field label="Donor" htmlFor="donorName">
+            <Input id="donorName" value={donorName} onChange={(e) => setDonorName(e.target.value)} required maxLength={200} />
           </Field>
           <Field label="Report type" htmlFor="reportType">
             <Select id="reportType" value={reportType} onChange={(e) => setReportType(e.target.value)}>
               {REPORT_TYPES.map((t) => <option key={t} value={t}>{REPORT_TYPE_LABEL[t] ?? t}</option>)}
             </Select>
           </Field>
+          <Field label="Template language" htmlFor="language">
+            <Input id="language" value={language} onChange={(e) => setLanguage(e.target.value)} minLength={2} maxLength={10} />
+          </Field>
         </div>
-        <Field
-          label="Template document"
-          htmlFor="templateFile"
-          description="Upload a DOCX or PDF file to extract text. You can also paste text directly below."
-        >
-          <div className="flex items-center gap-3">
-            <input
-              ref={fileInputRef}
-              id="templateFile"
-              type="file"
-              accept=".docx,.pdf"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => fileInputRef.current?.click()}
-              pending={parsing}
-              disabled={parsing}
-            >
-              {parsing ? "Parsing..." : "Upload DOCX/PDF"}
-            </Button>
-            {fileName && (
-              <span className="text-sm text-slate-500 dark:text-slate-400">
-                {fileName}
-              </span>
+
+        <RadioGroup
+          name="mode"
+          label="How do you want to add it?"
+          value={mode}
+          onChange={(v) => setMode(v as Mode)}
+          options={[
+            { value: "upload", label: "Upload the template file" },
+            { value: "paste", label: "Paste the template text" },
+            { value: "manual", label: "Build the sections myself" },
+          ]}
+        />
+
+        {mode === "upload" && (
+          <div className="space-y-2">
+            <FileDropzone onFiles={onFiles} accept={ACCEPT} label={parsing ? "Reading file…" : "Drop the donor template here or choose a file"} hint="Word, PDF, text, Markdown, Excel or CSV, up to 20 MB. The original is kept with the template. Word keeps headings and tables best; scanned PDFs need the text pasted instead." />
+            {file && (
+              <InlineAlert tone="success" title={`Read ${file.fileName}`}>
+                {file.headingCount} heading(s), {file.tableCount} table(s){file.pageCount ? `, ${file.pageCount} page(s)` : ""}. Check the text below, then continue.
+              </InlineAlert>
             )}
           </div>
-        </Field>
-        <Field
-          label="Template text"
-          htmlFor="extractedRawText"
-          description="Extracted from uploaded file or paste text directly. Edit before submitting."
-        >
-          <Textarea
-            id="extractedRawText"
-            className="min-h-[200px]"
-            value={extractedRawText}
-            onChange={(e) => setExtractedRawText(e.target.value)}
-            placeholder="Section 1. Executive Summary&#10;Section 2. Activities completed..."
-          />
-        </Field>
+        )}
+        {mode !== "manual" && (mode === "paste" || file) && (
+          <Field label="Template text" htmlFor="templateText" description="Extraction works from this text (and the file's layout when uploaded). You can correct it first.">
+            <Textarea id="templateText" className="min-h-[220px] font-mono text-xs" value={text} onChange={(e) => setText(e.target.value)} placeholder={"1. Executive Summary\nProvide an overview of…\n2. Results\nDescribe progress against each outcome…"} />
+          </Field>
+        )}
+        {mode === "manual" && (
+          <InlineAlert tone="info" title="You will add sections on the next screen">
+            A first section is created for you; add the donor&rsquo;s sections, instructions and questions, then approve the template.
+          </InlineAlert>
+        )}
+
         {error && <InlineAlert tone="danger" title={error} />}
         <div className="flex justify-end gap-3">
           <Button type="button" variant="secondary" onClick={() => router.back()}>Cancel</Button>
-          <Button type="submit" pending={busy}>{busy ? "Reviewing..." : "Review sections"}</Button>
+          <Button type="submit" pending={busy} disabled={busy || parsing}>{mode === "manual" ? "Create template" : "Extract and review"}</Button>
         </div>
       </form>
     </div>

@@ -19,6 +19,7 @@ from app.ai_reporter.models import (
     Context,
     ContextProfile,
     ContextStory,
+    ContextTemplate,
     Finding,
     GeneratedSection,
     IndicatorUpdate,
@@ -311,3 +312,34 @@ def test_ts_contract_mirror_is_string_identical() -> None:
     for items in (writer_contract._WRITER_RULES_V4, writer_contract.BANNED_PHRASES, writer_contract.LANGUAGE_CRAFT_RULES):
         for item in items:
             assert json.dumps(item, ensure_ascii=False) in ts, item
+
+
+# --------------------------------------------------------------------------- #
+# Template Manager v2 — donor template guidance reaches the writer
+# --------------------------------------------------------------------------- #
+
+
+def test_prompt_renders_donor_instructions_tables_and_org_guidance_when_present() -> None:
+    req = _req(
+        donorInstructions="Report progress against each outcome.\n- Name the districts covered.",
+        requiredTables=[{"title": "Outcome table", "columns": ["Indicator", "Target", "Achieved"]}],
+        authorInstructions="Lead with the nutrition outcome.",
+        pageLimit=2,
+    )
+    req.context.template = ContextTemplate(
+        templateName="ECHO", generalInstructions=["Avoid acronyms."], complianceRequirements=["Use the EU logo."]
+    )
+    prompt = build_user_prompt(req)
+    assert "# Donor instructions for this section" in prompt and "Name the districts covered." in prompt
+    assert "- Outcome table: | Indicator | Target | Achieved |" in prompt
+    assert "# Organisation guidance for this section" in prompt and "Lead with the nutrition outcome." in prompt
+    assert "# Page limit set by the donor: 2 page(s)" in prompt
+    assert "# Donor's report-wide instructions (MUST be honoured):\n- Avoid acronyms." in prompt
+    assert "# Donor compliance requirements" in prompt and "Use the EU logo." in prompt
+    assert "generalInstructions:" not in prompt
+
+
+def test_prompt_is_unchanged_when_template_guidance_is_absent() -> None:
+    prompt = build_user_prompt(_req())
+    for marker in ("Donor instructions", "Tables the donor requires", "Organisation guidance", "Page limit set by the donor", "report-wide instructions"):
+        assert marker not in prompt

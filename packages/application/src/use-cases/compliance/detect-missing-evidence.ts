@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ChecklistItem, checklistTemplateForReportType, type Severity } from "@donordesk/domain";
+import { DomainError, ChecklistItem, checklistTemplateForReportType, type Severity, type TemplateRequirements } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IChecklistRepository, IChecklistDetector } from "../../ports/compliance.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -35,9 +35,13 @@ export class DetectMissingEvidenceHandler {
     const period = periodResult.value;
 
     const requiredAnnexes: string[] = [];
+    const donorRules: DonorRuleItem[] = [];
     if (period.donorTemplateId) {
       const t = await this.templates.findById(period.donorTemplateId, ctx.tenant.tenantId);
-      if (t.ok && t.value) requiredAnnexes.push(...t.value.requiredAnnexes);
+      if (t.ok && t.value) {
+        requiredAnnexes.push(...t.value.requiredAnnexes);
+        donorRules.push(...donorRequirementItems(t.value.requirements));
+      }
     }
 
     const updates = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
@@ -90,7 +94,7 @@ export class DetectMissingEvidenceHandler {
       relatedEntityType: undefined as string | undefined,
       relatedEntityId: undefined as string | undefined,
     }));
-    const combined = [...baseline, ...suggestions];
+    const combined = [...baseline, ...suggestions, ...donorRules];
 
     // Dedupe: never create a second OPEN/IN_PROGRESS item for the same
     // (type, relatedEntityId) concern already tracked in this period.
@@ -138,4 +142,27 @@ export class DetectMissingEvidenceHandler {
 
     return { ok: true, value: { created } };
   }
+}
+
+type DonorRuleItem = {
+  type: "DONOR_REQUIREMENT";
+  title: string;
+  description: string;
+  severity: Severity;
+  relatedEntityType: string | undefined;
+  relatedEntityId: string | undefined;
+};
+
+const RULE_SEVERITY: Record<TemplateRequirements["compliance"][number]["severity"], Severity> = { BLOCK: "HIGH", WARN: "MEDIUM", INFO: "LOW" };
+
+/** Each donor compliance rule becomes a trackable checklist item (deduped by rule id). */
+export function donorRequirementItems(requirements: TemplateRequirements): DonorRuleItem[] {
+  return requirements.compliance.map((rule) => ({
+    type: "DONOR_REQUIREMENT",
+    title: rule.text.length > 120 ? `${rule.text.slice(0, 117)}…` : rule.text,
+    description: `${rule.severity === "BLOCK" ? "Mandatory donor rule" : "Donor rule"}: ${rule.text}`,
+    severity: RULE_SEVERITY[rule.severity],
+    relatedEntityType: "template_requirement",
+    relatedEntityId: rule.id,
+  }));
 }

@@ -12,7 +12,8 @@ export type ChecklistItemType =
   | "MISSING_DISAGGREGATION"
   | "LATE_ACTIVITY_UPDATE"
   | "SENSITIVE_DATA_WARNING"
-  | "UNREVIEWED_AI_OUTPUT";
+  | "UNREVIEWED_AI_OUTPUT"
+  | "DONOR_REQUIREMENT";
 
 export const CHECKLIST_ITEM_TYPES: ChecklistItemType[] = [
   "MISSING_EVIDENCE",
@@ -26,6 +27,7 @@ export const CHECKLIST_ITEM_TYPES: ChecklistItemType[] = [
   "LATE_ACTIVITY_UPDATE",
   "SENSITIVE_DATA_WARNING",
   "UNREVIEWED_AI_OUTPUT",
+  "DONOR_REQUIREMENT",
 ];
 
 export type Severity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";

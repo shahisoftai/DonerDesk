@@ -1,20 +1,96 @@
-import type { Result, TenantId } from "@donordesk/domain";
-import type { DonorTemplate, TemplateSection, TemplateRegion } from "@donordesk/domain";
+import type { Result, TenantId, DomainError, ReportPlanSection } from "@donordesk/domain";
+import type { TemplateGenerationContext } from "./reporting.js";
+import type {
+  DonorTemplate,
+  TemplateSection,
+  TemplateRegion,
+  TemplateRequirements,
+  TemplateVersionSnapshot,
+  ExtractionMeta,
+} from "@donordesk/domain";
+
+export interface TemplateVersionSummary {
+  version: number;
+  createdAt: Date;
+  createdById: string;
+  changeNote?: string;
+}
 
 export interface IDonorTemplateRepository {
+  /** Persists the template and a snapshot of its current version. */
   create(t: DonorTemplate): Promise<Result<DonorTemplate>>;
-  update(t: DonorTemplate): Promise<Result<DonorTemplate>>;
+  /** Persists the template; snapshots the version when it is new. */
+  update(t: DonorTemplate, meta?: { actorId?: string; changeNote?: string }): Promise<Result<DonorTemplate>>;
   findById(id: string, tenantId: TenantId): Promise<Result<DonorTemplate | null>>;
   findByProject(projectId: string, tenantId: TenantId): Promise<Result<DonorTemplate[]>>;
+  findLibrary(tenantId: TenantId): Promise<Result<DonorTemplate[]>>;
   delete(id: string, tenantId: TenantId): Promise<Result<void>>;
 }
 
+/** Read side of template versioning (ISP: consumers that only need history). */
+export interface IDonorTemplateVersionReader {
+  findVersion(templateId: string, version: number, tenantId: TenantId): Promise<Result<TemplateVersionSnapshot | null>>;
+  listVersions(templateId: string, tenantId: TenantId): Promise<Result<TemplateVersionSummary[]>>;
+}
+
+/** A structure-preserving view of an uploaded document. */
+export type DocumentBlock =
+  | { kind: "HEADING"; level: number; text: string; page?: number }
+  | { kind: "PARAGRAPH"; text: string; emphasis?: boolean; page?: number }
+  | { kind: "LIST_ITEM"; text: string; ordered: boolean; depth: number; page?: number }
+  | { kind: "TABLE"; rows: string[][]; page?: number };
+
+export type StructuredDocumentFormat = "DOCX" | "PDF" | "XLSX" | "CSV" | "TEXT";
+
+export interface StructuredDocument {
+  format: StructuredDocumentFormat;
+  blocks: DocumentBlock[];
+  pageCount?: number;
+}
+
+export interface IStructuredDocumentParser {
+  supports(input: { fileName: string; mimeType: string }): boolean;
+  parse(input: { buffer: Buffer; fileName: string; mimeType: string }): Promise<Result<StructuredDocument, DomainError>>;
+}
+
+export interface TemplateExtractionRequest {
+  tenantId: TenantId;
+  rawText: string;
+  /** Present when the original file could be parsed with structure. */
+  document?: StructuredDocument;
+  language: string;
+  donorName?: string;
+  reportType?: string;
+}
+
+export interface TemplateExtractionResult {
+  sections: TemplateSection[];
+  requirements: TemplateRequirements;
+  meta: ExtractionMeta;
+  summary: string;
+}
+
+/**
+ * Extracts a donor template's report structure (sections, per-section donor
+ * instructions and questions, required tables) and template-level requirements
+ * (annexes, compliance, formatting, submission) from its content.
+ */
 export interface ITemplateExtractionService {
-  extractSections(input: {
-    rawText: string;
-    language: string;
-    existingSections?: TemplateSection[];
-  }): Promise<{ sections: TemplateSection[]; summary: string }>;
+  extract(request: TemplateExtractionRequest): Promise<Result<TemplateExtractionResult, DomainError>>;
+}
+
+export interface StoredTemplateFile {
+  key: string;
+  fileName: string;
+  mimeType: string;
+  sha256: string;
+}
+
+/** Stores and reads back original uploaded template files, scoped per tenant. */
+export interface ITemplateFileStore {
+  save(input: { tenantId: TenantId; fileName: string; mimeType: string; buffer: Buffer }): Promise<Result<StoredTemplateFile, DomainError>>;
+  /** Fails with forbidden when the key does not belong to the tenant. */
+  open(key: string, tenantId: TenantId): Promise<Result<StoredTemplateFile & { buffer: Buffer }, DomainError>>;
 }
 
 /**
@@ -43,4 +119,10 @@ export interface IDonorTemplateRenderer {
     templatedDocxBuffer: Buffer;
     context: Record<string, string>;
   }): Promise<Result<{ renderedDocxBuffer: Buffer }>>;
+}
+
+/** Renders the exact section brief the AI writer receives (for human preview). */
+export interface ISectionBriefRenderer {
+  renderSection(section: ReportPlanSection): string;
+  renderTemplate(template: TemplateGenerationContext): string;
 }

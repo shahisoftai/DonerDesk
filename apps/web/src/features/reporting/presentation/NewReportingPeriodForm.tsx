@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createReportingPeriodAction } from "@/lib/actions/reporting";
@@ -50,7 +50,7 @@ export function NewReportingPeriodForm({
   readiness,
 }: {
   projectId: string;
-  templates: Array<{ id: string; templateName: string }>;
+  templates: Array<{ id: string; templateName: string; status?: string; deadlineOffsetDays?: number; deadlineRule?: string }>;
   readiness: ProjectReadiness | null;
 }) {
   const router = useRouter();
@@ -60,6 +60,18 @@ export function NewReportingPeriodForm({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [deadline, setDeadline] = useState("");
+  const [deadlineAuto, setDeadlineAuto] = useState(false);
+  const selectedTemplate = templates.find((t) => t.id === donorTemplateId);
+
+  // The donor's deadline rule from the template pre-fills the deadline until the user edits it.
+  useEffect(() => {
+    const offset = selectedTemplate?.deadlineOffsetDays;
+    if (offset === undefined || !endDate || (deadline && !deadlineAuto)) return;
+    const d = new Date(`${endDate}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + offset);
+    setDeadline(d.toISOString().slice(0, 10));
+    setDeadlineAuto(true);
+  }, [selectedTemplate?.deadlineOffsetDays, endDate]); // eslint-disable-line react-hooks/exhaustive-deps
   const [internalReviewDeadline, setInternalReviewDeadline] = useState("");
   const [localErrors, setLocalErrors] = useState<Record<string, string[]>>({});
 
@@ -125,7 +137,7 @@ export function NewReportingPeriodForm({
         <Select id="donorTemplateId" value={donorTemplateId} onChange={(e) => setDonorTemplateId(e.target.value)}>
           <option value="">No template</option>
           {templates.map((t) => (
-            <option key={t.id} value={t.id}>{t.templateName}</option>
+            <option key={t.id} value={t.id}>{t.templateName}{t.status && t.status !== "REVIEWED" ? " (not approved yet)" : ""}</option>
           ))}
         </Select>
       </Field>
@@ -137,8 +149,13 @@ export function NewReportingPeriodForm({
         <Field label="End date" htmlFor="endDate" error={fields.endDate?.[0]}>
           <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} invalid={Boolean(fields.endDate)} required />
         </Field>
-        <Field label="Donor deadline" htmlFor="deadline" error={fields.deadline?.[0]}>
-          <Input id="deadline" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} invalid={Boolean(fields.deadline)} required />
+        <Field
+          label="Donor deadline"
+          htmlFor="deadline"
+          error={fields.deadline?.[0]}
+          hint={deadlineAuto && selectedTemplate?.deadlineRule ? `From the template: ${selectedTemplate.deadlineRule}` : undefined}
+        >
+          <Input id="deadline" type="date" value={deadline} onChange={(e) => { setDeadline(e.target.value); setDeadlineAuto(false); }} invalid={Boolean(fields.deadline)} required />
         </Field>
       </div>
 

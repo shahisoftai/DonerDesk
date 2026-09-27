@@ -8,6 +8,7 @@ import type { IProjectSetupRepository, IReportingProfileRepository } from "../..
 import type { IProjectReadinessService } from "../../ports/projects.js";
 import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { CreateReportingPeriodInput } from "@donordesk/contracts";
+import { serializeTemplateSnapshot } from "../../services/template-snapshot.js";
 
 /**
  * Authoritative reporting-period creation. The period is the first step of the
@@ -115,16 +116,7 @@ export class CreateReportingPeriodHandler {
         })
       : "{}";
 
-    const templateSnapshotJson = template
-      ? JSON.stringify({
-          id: template.id,
-          templateName: template.templateName,
-          donorName: template.donorName,
-          reportType: template.reportType,
-          language: template.language,
-          sections: template.sections,
-        })
-      : "{}";
+    const templateSnapshotJson = template ? serializeTemplateSnapshot(template) : "{}";
 
     // 6. Save + audit.
     const id = this.ids.generate();

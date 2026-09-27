@@ -1,6 +1,23 @@
 import { PrismaClient } from "@prisma/client";
+import { TenantId } from "@donordesk/domain";
 
 import {
+  UpdateTemplateRequirementsHandler,
+  UpdateTemplateMetadataHandler,
+  ReextractTemplateHandler,
+  MarkTemplateReviewedHandler,
+  GetTemplateHandler,
+  GetTemplateVersionHandler,
+  GetTemplateOriginalFileHandler,
+  SetTemplateLibraryHandler,
+  ListLibraryTemplatesHandler,
+  CloneTemplateHandler,
+  ParseTemplateFileHandler,
+  PreviewTemplateBriefHandler,
+  TemplateExtractionRunner,
+  PeriodTemplateResolver,
+  type ITemplateExtractionService,
+  type ILLMProvider,
   SignUpHandler,
   LoginHandler,
   InviteUserHandler,
@@ -226,7 +243,10 @@ import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credent
 import { TolerantDocumentParser } from "./parsers/document-parser.js";
 import { MammothDonorTemplateStructureParser } from "./parsers/donor-template-structure-parser.js";
 import { HttpDonorTemplateWorkerClient } from "./llm/donor-template-worker-client.js";
-import { StubTemplateExtractionService } from "./llm/template-extraction.js";
+import { FallbackTemplateExtractionService, HeuristicTemplateExtractor, LlmTemplateExtractor } from "./llm/template-extraction/index.js";
+import { CompositeStructuredDocumentParser } from "./parsers/structured/index.js";
+import { StorageTemplateFileStore } from "./storage/template-file-store.js";
+import { NarratorBriefRenderer } from "./llm/narrator-brief-renderer.js";
 import { StubEvidenceTagger } from "./llm/evidence-tagger.js";
 import { StubActivityPolisher } from "./llm/activity-polisher.js";
 import { StubReportDraftGenerator } from "./llm/report-draft-generator.js";
@@ -282,7 +302,9 @@ export interface Container {
   jobQueue: IJobQueue;
   evidenceTagger: StubEvidenceTagger;
   activityPolisher: StubActivityPolisher;
-  templateExtraction: StubTemplateExtractionService;
+  templateExtraction: ITemplateExtractionService;
+  structuredParser: CompositeStructuredDocumentParser;
+  templateFiles: StorageTemplateFileStore;
   checklistDetector: StubChecklistDetector;
   exportBuilder: DefaultExportBuilder;
   // Repositories
@@ -368,6 +390,18 @@ export interface Container {
     updateTemplateSections: UpdateTemplateSectionsHandler;
     deleteTemplate: DeleteTemplateHandler;
     listTemplates: ListTemplatesHandler;
+    getTemplate: GetTemplateHandler;
+    getTemplateVersion: GetTemplateVersionHandler;
+    getTemplateOriginalFile: GetTemplateOriginalFileHandler;
+    parseTemplateFile: ParseTemplateFileHandler;
+    updateTemplateRequirements: UpdateTemplateRequirementsHandler;
+    updateTemplateMetadata: UpdateTemplateMetadataHandler;
+    reextractTemplate: ReextractTemplateHandler;
+    markTemplateReviewed: MarkTemplateReviewedHandler;
+    setTemplateLibrary: SetTemplateLibraryHandler;
+    listLibraryTemplates: ListLibraryTemplatesHandler;
+    cloneTemplate: CloneTemplateHandler;
+    previewTemplateBrief: PreviewTemplateBriefHandler;
     createLogframeItem: CreateLogframeItemHandler;
     moveLogframeItem: MoveLogframeItemHandler;
     importLogframe: ImportLogframeHandler;
@@ -589,7 +623,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const projectMembers = new PrismaProjectMemberRepository(prisma);
   const projectSetup = new PrismaProjectSetupRepository(prisma);
   const reportingProfiles = new PrismaReportingProfileRepository(prisma);
-  const templates = new PrismaDonorTemplateRepository(prisma);
+  const templates = new PrismaDonorTemplateRepository(prisma, logger);
   const logframe = new PrismaLogframeRepository(prisma);
   const indicators = new PrismaIndicatorRepository(prisma);
   const indicatorUpdates = new PrismaIndicatorUpdateRepository(prisma);
@@ -647,7 +681,6 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
 
   const evidenceTagger = new StubEvidenceTagger();
   const activityPolisher = new StubActivityPolisher();
-  const templateExtraction = new StubTemplateExtractionService();
   const masterKey = process.env.PLATFORM_MASTER_KEY
     ? Buffer.from(process.env.PLATFORM_MASTER_KEY, "base64")
     : Buffer.alloc(32);
@@ -782,6 +815,31 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     generatorPromises.set(promiseKey, promise);
     return promise;
   };
+  // Template extraction uses the same provider the tenant drafts with; an
+  // organisation with AI disabled, or no configured provider, gets the
+  // deterministic extractor. The template is donor guidance (no beneficiary
+  // data), and redaction would break source-grounding, so no PII firewall.
+  const resolveTemplateLlm = async (tenantId: string): Promise<ILLMProvider | null> => {
+    try {
+      const org = await organizations.findByTenant(TenantId.create(tenantId));
+      if (!org.ok || !org.value?.aiEnabled) return null;
+      const resolved = await resolveTenantLlm(tenantId);
+      const provider = resolved ? createLLMProvider(resolved) : process.env.LLM_PROVIDER ? createLLMProvider() : null;
+      return provider && provider.name !== "stub" ? provider : null;
+    } catch (error) {
+      logger.warn("Template extraction LLM unavailable; using heuristic extraction", { tenantId, error: error instanceof Error ? error.message : String(error) });
+      return null;
+    }
+  };
+  const templateExtraction: ITemplateExtractionService = new FallbackTemplateExtractionService(
+    [
+      { name: "AI", extractor: new LlmTemplateExtractor(resolveTemplateLlm) },
+      { name: "Heuristic", extractor: new HeuristicTemplateExtractor() },
+    ],
+    logger,
+  );
+  const structuredParser = new CompositeStructuredDocumentParser();
+  const templateFiles = new StorageTemplateFileStore(storage);
   const checklistDetector = new StubChecklistDetector();
   const donorTemplateRenderer = new HttpDonorTemplateWorkerClient();
   const exportBuilder = new DefaultExportBuilder(storage, donorTemplateRenderer);
@@ -831,7 +889,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   }
 
   const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, submissionSnapshots, exportBuilder, storage, audits, donorTemplateMappings, templates, reportClaims);
-  const uploadTemplateHandler = new UploadTemplateHandler(ids, templates, templateExtraction, audits);
+  const templateExtractionRunner = new TemplateExtractionRunner(templates, templateExtraction, templateFiles, structuredParser, audits);
+  const uploadTemplateHandler = new UploadTemplateHandler(ids, templates, templateFiles, templateExtractionRunner, runInBackground, audits);
+  const parseTemplateFileHandler = new ParseTemplateFileHandler(structuredParser, templateFiles);
   const donorTemplateStructureParser = new MammothDonorTemplateStructureParser();
   const detectTemplateRegionsHandler = new DetectTemplateRegionsHandler(ids, templates, donorTemplateMappings, donorTemplateStructureParser, audits);
   const updateTemplateMappingHandler = new UpdateTemplateMappingHandler(donorTemplateMappings, audits);
@@ -875,7 +935,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     repairProjectWorkspace: new RepairProjectWorkspaceHandler(projectWorkspace, projects, projectSetup, audits),
     listWorkspaceFiles: new ListWorkspaceFilesHandler(projectWorkspace, projects),
     provisionTenantWorkspaces: new ProvisionTenantWorkspacesHandler(projectWorkspace, projects, projectSetup, events, audits),
-    importDriveFile: new ImportDriveFileHandler(driveFileReader, parser, uploadTemplateHandler, new ImportLogframeHandler(ids, logframe, audits), audits),
+    importDriveFile: new ImportDriveFileHandler(driveFileReader, parser, uploadTemplateHandler, new ImportLogframeHandler(ids, logframe, audits), audits, parseTemplateFileHandler),
     getReportingProfile: new GetReportingProfileHandler(reportingProfiles),
     upsertReportingProfile: new UpsertReportingProfileHandler(ids, reportingProfiles, templates, audits),
     uploadTemplate: uploadTemplateHandler,
@@ -886,6 +946,18 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     updateTemplateSections: new UpdateTemplateSectionsHandler(templates, audits),
     deleteTemplate: new DeleteTemplateHandler(templates, audits),
     listTemplates: new ListTemplatesHandler(templates),
+    getTemplate: new GetTemplateHandler(templates, templates),
+    getTemplateVersion: new GetTemplateVersionHandler(templates),
+    getTemplateOriginalFile: new GetTemplateOriginalFileHandler(templates, templateFiles),
+    parseTemplateFile: parseTemplateFileHandler,
+    updateTemplateRequirements: new UpdateTemplateRequirementsHandler(templates, audits),
+    updateTemplateMetadata: new UpdateTemplateMetadataHandler(templates, audits),
+    reextractTemplate: new ReextractTemplateHandler(templates, templateExtractionRunner, runInBackground, audits),
+    markTemplateReviewed: new MarkTemplateReviewedHandler(templates, audits),
+    setTemplateLibrary: new SetTemplateLibraryHandler(templates, audits),
+    listLibraryTemplates: new ListLibraryTemplatesHandler(templates),
+    cloneTemplate: new CloneTemplateHandler(ids, templates, audits),
+    previewTemplateBrief: new PreviewTemplateBriefHandler(templates, new NarratorBriefRenderer()),
     createLogframeItem: new CreateLogframeItemHandler(ids, logframe, audits),
     moveLogframeItem: new MoveLogframeItemHandler(logframe, audits),
     importLogframe: new ImportLogframeHandler(ids, logframe, audits),
@@ -961,7 +1033,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     reassessReportRevision: new ReassessReportRevisionHandler(sections, reportRevisions, assuranceService, audits),
     regenerateReportSection: new RegenerateReportSectionHandler(
       ids, drafts, sections, reportPlans, generationRuns,
-      new ReportGenerationContextBuilder(periods, projects, organizations, templates, indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator),
+      new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator),
       new SectionGenerationService(ids, llmUsage, revisionService, assuranceService, audits, reportArtifacts),
       sectionRegenerationTracker, audits, runInBackground,
     ),
@@ -1010,7 +1082,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       while (backgroundTasks.size > 0) await Promise.allSettled([...backgroundTasks]);
     },
     auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
-    evidenceTagger, activityPolisher, templateExtraction, checklistDetector, exportBuilder,
+    evidenceTagger, activityPolisher, templateExtraction, structuredParser, templateFiles, checklistDetector, exportBuilder,
     organizations, users, invitations, passwordResetTokens, passwordResetRateLimiter,    projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
     periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, reportArtifacts, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, planCatalog, billingProvider,

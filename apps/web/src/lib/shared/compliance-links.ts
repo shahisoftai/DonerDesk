@@ -14,7 +14,8 @@ export type ComplianceType =
   | "MISSING_DISAGGREGATION"
   | "LATE_ACTIVITY_UPDATE"
   | "SENSITIVE_DATA_WARNING"
-  | "UNREVIEWED_AI_OUTPUT";
+  | "UNREVIEWED_AI_OUTPUT"
+  | "DONOR_REQUIREMENT";
 
 /**
  * Maps a checklist item to the most direct place to resolve it, based on its
@@ -53,6 +54,8 @@ export function complianceFixLink(input: {
     case "MISSING_ANNEX":
     case "UNREVIEWED_AI_OUTPUT":
       return { label: "Open report workspace", href: `/projects/${project}/reports/${period}` };
+    case "DONOR_REQUIREMENT":
+      return { label: "Check the report", href: `/projects/${project}/reports/${period}` };
     case "MISSING_APPROVAL":
       return { label: "Review approvals", href: `/projects/${project}/reports/${period}` };
     default:

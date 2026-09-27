@@ -12,6 +12,7 @@ export const ChecklistItemTypeSchema = z.enum([
   "LATE_ACTIVITY_UPDATE",
   "SENSITIVE_DATA_WARNING",
   "UNREVIEWED_AI_OUTPUT",
+  "DONOR_REQUIREMENT",
 ]);
 
 export const SeveritySchema = z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]);

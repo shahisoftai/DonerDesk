@@ -36,6 +36,7 @@ import type {
   AiReporterModelConfig,
   AiReporterPriorNarrative,
   AiReporterSectionRequest,
+  AiReporterSectionBrief,
   AiReporterSectionResponse,
   AiReporterSourceReference,
   IWorkerClient,
@@ -329,6 +330,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         // Report Editor B7 — only sent when the author gave one (single-section
         // regenerate), so full-draft requests are unchanged on the wire.
         ...(input.sectionInstruction?.trim() ? { userInstruction: input.sectionInstruction.trim() } : {}),
+        ...donorBriefFields(section),
       },
       context: this.buildContext(input),
       verifiedFindings: input.verifiedFindings.map((f) => ({
@@ -467,6 +469,12 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
             requiredAnnexes: ctx.template.requiredAnnexes,
             notes: ctx.template.notes,
             version: ctx.template.version,
+            ...(ctx.template.reportTitle ? { reportTitle: ctx.template.reportTitle } : {}),
+            ...(ctx.template.generalInstructions?.length ? { generalInstructions: ctx.template.generalInstructions } : {}),
+            ...(ctx.template.formattingRules?.length ? { formattingRules: ctx.template.formattingRules } : {}),
+            ...(ctx.template.submissionInstructions?.length ? { submissionInstructions: ctx.template.submissionInstructions } : {}),
+            ...(ctx.template.complianceRequirements?.length ? { complianceRequirements: ctx.template.complianceRequirements } : {}),
+            ...(ctx.template.indicatorRequirements?.length ? { indicatorRequirements: ctx.template.indicatorRequirements } : {}),
           }
         : undefined,
       profile: {
@@ -764,4 +772,14 @@ function mapQa(qa: ReadonlyArray<AiReporterQaPayload> | undefined): GeneratedQaI
     if (mapped) out.push(mapped);
   }
   return out;
+}
+
+/** The donor template's section-level asks, sent only when present (byte-stable briefs otherwise). */
+export function donorBriefFields(section: ReportPlanSection): Pick<AiReporterSectionBrief, "donorInstructions" | "requiredTables" | "authorInstructions" | "pageLimit"> {
+  return {
+    ...(section.donorInstructions?.trim() ? { donorInstructions: section.donorInstructions.trim().slice(0, 8000) } : {}),
+    ...(section.requiredTables?.length ? { requiredTables: section.requiredTables.map((t) => ({ title: t.title, columns: [...t.columns], ...(t.notes ? { notes: t.notes } : {}) })) } : {}),
+    ...(section.authorInstructions?.trim() ? { authorInstructions: section.authorInstructions.trim().slice(0, 4000) } : {}),
+    ...(section.pageLimit !== undefined ? { pageLimit: section.pageLimit } : {}),
+  };
 }

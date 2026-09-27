@@ -1,3 +1,4 @@
+import { sectionDisplayTitle } from "@donordesk/domain";
 import type { Result, ReportPlan, ReportPlanSection, ReportSection, SectionRegenerationBlock } from "@donordesk/domain";
 import {
   DomainError,
@@ -46,7 +47,9 @@ function blockError(block: SectionRegenerationBlock): DomainError {
  */
 export function planSectionFor(plan: ReportPlan | undefined, section: Pick<ReportSection, "id" | "sectionTitle">): ReportPlanSection {
   const title = section.sectionTitle.trim().toLowerCase();
-  const match = plan?.sections.find((s) => s.title.trim().toLowerCase() === title);
+  const match = plan?.sections.find(
+    (s) => s.title.trim().toLowerCase() === title || sectionDisplayTitle(s).trim().toLowerCase() === title,
+  );
   if (match) return match;
   return {
     templateSectionId: `custom-${section.id}`,

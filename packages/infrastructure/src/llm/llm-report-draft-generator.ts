@@ -140,17 +140,30 @@ function buildPeriodBlock(ctx: GenerateReportDraftInput["reportContext"]): strin
   ].filter(Boolean) as string[];
 }
 
-function buildTemplateBlock(ctx: GenerateReportDraftInput["reportContext"]): string[] {
-  if (!ctx?.template) return [];
+function templateList(title: string, items: string[] | undefined): string[] {
+  if (!items || items.length === 0) return [];
+  return [`- ${title}:`, ...items.map((i) => `  - ${i}`)];
+}
+
+export function buildTemplateBlock(ctx: GenerateReportDraftInput["reportContext"]): string[] {
+  return ctx?.template ? renderTemplateBlock(ctx.template) : [];
+}
+
+/** The "# Donor Template" prompt block for one template generation context. */
+export function renderTemplateBlock(template: NonNullable<NonNullable<GenerateReportDraftInput["reportContext"]>["template"]>): string[] {
   return [
     `# Donor Template`,
-    `- Template: ${ctx.template.templateName} (v${ctx.template.version})`,
-    `- Donor: ${ctx.template.donorName}`,
-    `- Template Language: ${ctx.template.language}`,
-    ctx.template.requiredAnnexes.length > 0
-      ? `- Required Annexes: ${ctx.template.requiredAnnexes.join(", ")}`
-      : null,
-    ctx.template.notes ? `- Template Notes: ${ctx.template.notes}` : null,
+    `- Template: ${template.templateName} (v${template.version})`,
+    `- Donor: ${template.donorName}`,
+    `- Template Language: ${template.language}`,
+    template.requiredAnnexes.length > 0 ? `- Required Annexes: ${template.requiredAnnexes.join(", ")}` : null,
+    template.notes ? `- Template Notes: ${template.notes}` : null,
+    template.reportTitle ? `- Report Title (as required by the donor): ${template.reportTitle}` : null,
+    ...templateList("Donor's report-wide instructions (MUST be honoured)", template.generalInstructions),
+    ...templateList("Donor formatting rules", template.formattingRules),
+    ...templateList("Donor submission instructions (for awareness)", template.submissionInstructions),
+    ...templateList("Donor compliance requirements (the report must not contradict these)", template.complianceRequirements),
+    ...templateList("Donor indicator reporting requirements", template.indicatorRequirements),
     ``,
   ].filter(Boolean) as string[];
 }
@@ -349,7 +362,7 @@ function buildIndicatorUpdatesJson(input: GenerateReportDraftInput): string {
   );
 }
 
-function buildSectionGuidance(s: ReportPlanSection): string {
+export function buildSectionGuidance(s: ReportPlanSection): string {
   const parts: string[] = [`Input type: ${s.inputType ?? "NARRATIVE"}`];
   if (s.wordLimit?.min !== undefined) parts.push(`min ${s.wordLimit.min} words`);
   if (s.wordLimit?.max !== undefined) parts.push(`max ${s.wordLimit.max} words`);
@@ -362,6 +375,18 @@ function buildSectionGuidance(s: ReportPlanSection): string {
   }
   if (s.relatedLogframeElement) {
     lines.push(`  Related logframe element: ${s.relatedLogframeElement}`);
+  }
+  if (s.pageLimit !== undefined) lines.push(`  Page limit set by the donor: ${s.pageLimit}`);
+  if (s.donorInstructions?.trim()) {
+    lines.push(`  Donor instructions (from the donor's template; follow them, never invent facts to satisfy them):`);
+    lines.push(...s.donorInstructions.trim().split("\n").map((l) => `    ${l}`));
+  }
+  if (s.requiredTables && s.requiredTables.length > 0) {
+    lines.push(`  Tables the donor requires (markdown, exactly these columns; cells only from the inputs, 'Not reported' otherwise):`);
+    lines.push(...s.requiredTables.map((t) => `    - ${t.title}: | ${t.columns.join(" | ")} |${t.notes ? ` (${t.notes})` : ""}`));
+  }
+  if (s.authorInstructions?.trim()) {
+    lines.push(`  Organisation guidance: ${s.authorInstructions.trim()}`);
   }
   return lines.join("\n");
 }
