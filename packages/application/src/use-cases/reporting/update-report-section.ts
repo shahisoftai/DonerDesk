@@ -1,7 +1,7 @@
-import type { Result } from "@donordesk/domain";
+import type { Result, ChangeOrigin } from "@donordesk/domain";
 import { DomainError, normalizeSectionMarkdown, SECTION_MARKDOWN_MAX_LENGTH } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IReportSectionRepository, IReportRevisionService, IReportAssuranceService } from "../../ports/reporting.js";
+import type { IReportSectionRepository, IReportDraftRepository, IReportRevisionService, IReportAssuranceService } from "../../ports/reporting.js";
 import type { IAuditLogger } from "../../ports/core.js";
 import type { SourceReference } from "@donordesk/domain";
 
@@ -10,6 +10,8 @@ export interface UpdateSectionInput {
   sourceReferences: SourceReference[];
   unsupportedClaims: string[];
   expectedVersion?: string;
+  /** Defaults to MANUAL_EDIT; REWRITE = accepted AI suggestion, RESTORE = earlier revision. */
+  changeOrigin?: Extract<ChangeOrigin, "MANUAL_EDIT" | "REWRITE" | "RESTORE">;
 }
 
 /**
@@ -21,10 +23,15 @@ export interface UpdateSectionInput {
  * Content is normalised to the supported markdown subset first
  * (`normalizeSectionMarkdown`), so every client — including the rich-text
  * editor — stores the same canonical form the exporters render.
+ *
+ * Only the current working draft can be edited (a report under review,
+ * approved or superseded is read-only). Editing an approved section reopens
+ * it: its approval covered different text.
  */
 export class UpdateReportSectionHandler {
   constructor(
     private readonly sections: IReportSectionRepository,
+    private readonly drafts: IReportDraftRepository,
     private readonly revisionService: IReportRevisionService,
     private readonly assuranceService: IReportAssuranceService,
     private readonly audit: IAuditLogger,
@@ -46,6 +53,21 @@ export class UpdateReportSectionHandler {
       };
     }
 
+    const draftResult = await this.drafts.findById(sec.reportDraftId, ctx.tenant.tenantId);
+    if (!draftResult.ok) return draftResult;
+    const draft = draftResult.value;
+    if (!draft) return { ok: false, error: DomainError.notFound("ReportDraft", sec.reportDraftId) };
+    if (draft.isSuperseded || draft.status !== "DRAFT") {
+      return {
+        ok: false,
+        error: DomainError.invalidTransition(
+          draft.isSuperseded
+            ? "This is an older version of the report and can no longer be edited."
+            : "This report is no longer a draft, so its sections cannot be edited.",
+        ),
+      };
+    }
+
     const content = normalizeSectionMarkdown(input.content);
     if (content.length > SECTION_MARKDOWN_MAX_LENGTH) {
       return {
@@ -57,13 +79,17 @@ export class UpdateReportSectionHandler {
       };
     }
 
+    const reopened = sec.status === "APPROVED";
+    if (reopened) sec.resetToDraft();
+
+    const changeOrigin = input.changeOrigin ?? "MANUAL_EDIT";
     const committed = await this.revisionService.commitChange({
       tenantId: ctx.tenant.tenantId,
       section: sec,
       content,
       sourceReferences: input.sourceReferences,
       unsupportedClaims: input.unsupportedClaims,
-      changeOrigin: "MANUAL_EDIT",
+      changeOrigin,
       actorId: ctx.tenant.userId,
     });
     if (!committed.ok) return committed;
@@ -75,18 +101,35 @@ export class UpdateReportSectionHandler {
     });
     if (!assessed.ok) return assessed;
 
+    if (reopened) {
+      await this.audit.record({
+        tenantId: ctx.tenant.tenantId,
+        actorId: ctx.tenant.userId,
+        eventType: "report.section.reopened",
+        entityType: "report_section",
+        entityId: sectionId,
+        projectId: draft.projectId,
+        newValue: JSON.stringify({ reason: "edited" }),
+      });
+    }
     await this.audit.record({
       tenantId: ctx.tenant.tenantId,
       actorId: ctx.tenant.userId,
       eventType: "report.section.updated",
       entityType: "report_section",
       entityId: sectionId,
-      newValue: JSON.stringify({ revisionId: committed.value.id, revisionNumber: committed.value.revisionNumber, assuranceState: assessed.value.assuranceState }),
+      projectId: draft.projectId,
+      newValue: JSON.stringify({ revisionId: committed.value.id, revisionNumber: committed.value.revisionNumber, assuranceState: assessed.value.assuranceState, changeOrigin }),
     });
+
+    // Assurance may update the section again (status), so the version the
+    // editor sends with its next save must be read back after it.
+    const latest = await this.sections.findById(sectionId, ctx.tenant.tenantId);
+    if (!latest.ok) return latest;
     return {
       ok: true,
       value: {
-        version: sec.updatedAt.toISOString(),
+        version: (latest.value ?? sec).updatedAt.toISOString(),
         revisionId: committed.value.id,
         assuranceState: assessed.value.assuranceState,
       },

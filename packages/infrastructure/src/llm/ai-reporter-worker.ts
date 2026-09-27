@@ -43,6 +43,12 @@ export interface AiReporterSectionBrief {
    * summary); `priorSectionsSummary` then carries the sections to summarise.
    */
   synthesis?: boolean;
+  /**
+   * Report Editor B7 — the author's instruction when one section is
+   * regenerated. Mirrors Python `SectionBrief.userInstruction`; absent for
+   * full drafts (prompts then stay byte-stable).
+   */
+  userInstruction?: string;
 }
 
 

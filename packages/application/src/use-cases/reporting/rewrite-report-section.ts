@@ -1,5 +1,6 @@
 import type { Result, VerifiedFinding } from "@donordesk/domain";
 import { DomainError, ReportGenerationRun } from "@donordesk/domain";
+import type { ReportDraft, ReportSection } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
   IReportSectionRepository,
@@ -51,6 +52,44 @@ export class RewriteReportSectionHandler {
     private readonly reportArtifacts?: IReportArtifactRepository,
   ) {}
 
+  /**
+   * Report Editor B10 — rewrites only the selected range and returns the
+   * suggestion without saving anything. The editor shows it inline; accepting
+   * it goes through the normal section save (changeOrigin REWRITE).
+   */
+  async preview(
+    ctx: AuthenticatedContext,
+    sectionId: string,
+    input: RewriteSectionInput,
+  ): Promise<Result<{ preview: true; content: string; selection: { from: number; to: number }; fallbackUsed: boolean; fallbackReason?: string }, DomainError>> {
+    if (!input.selection) return { ok: false, error: DomainError.validation("Select the text to rewrite first.") };
+    const loaded = await this.loadEditable(ctx, sectionId);
+    if (!loaded.ok) return loaded;
+    const excerpt = sliceSelection(loaded.value.section.content, input.selection);
+    if (!excerpt.ok) return excerpt;
+
+    const generator = await this.getGenerator(ctx.tenant.tenantId.toString());
+    const result = await generator.rewriteSection({
+      sectionTitle: loaded.value.section.sectionTitle,
+      content: excerpt.value,
+      mode: input.mode,
+      audience: input.audience,
+      instructions: excerptInstructions(input.instructions),
+      sourceReferences: loaded.value.section.sourceReferences,
+    });
+    const fallbackUsed = result.fallbackUsed === true || generator.model.modelId === "stub";
+    return {
+      ok: true,
+      value: {
+        preview: true,
+        content: result.content.trim(),
+        selection: input.selection,
+        fallbackUsed,
+        ...(fallbackUsed ? { fallbackReason: result.fallbackReason ?? "PROVIDER_NOT_CONFIGURED" } : {}),
+      },
+    };
+  }
+
   async handle(
     ctx: AuthenticatedContext,
     sectionId: string,
@@ -65,28 +104,29 @@ export class RewriteReportSectionHandler {
       assuranceState: string;
       generationRunId: string;
       fallbackUsed: boolean;
+      fallbackReason?: string;
     },
     DomainError
   >> {
-    const r = await this.sections.findById(sectionId, ctx.tenant.tenantId);
-    if (!r.ok) return r;
-    if (!r.value) return { ok: false, error: DomainError.notFound("ReportSection", sectionId) };
-    const sec = r.value;
+    const loaded = await this.loadEditable(ctx, sectionId);
+    if (!loaded.ok) return loaded;
+    const { section: sec, draft } = loaded.value;
+    const excerpt = input.selection ? sliceSelection(sec.content, input.selection) : undefined;
+    if (excerpt && !excerpt.ok) return excerpt;
 
     const generator = await this.getGenerator(ctx.tenant.tenantId.toString());
     const result = await generator.rewriteSection({
       sectionTitle: sec.sectionTitle,
-      content: sec.content,
+      content: excerpt ? excerpt.value : sec.content,
       mode: input.mode,
       audience: input.audience,
-      instructions: input.instructions,
+      instructions: excerpt ? excerptInstructions(input.instructions) : input.instructions,
       sourceReferences: sec.sourceReferences,
     });
-
-    const draftResult = await this.drafts.findById(sec.reportDraftId, ctx.tenant.tenantId);
-    if (!draftResult.ok) return draftResult;
-    const draft = draftResult.value;
-    if (!draft) return { ok: false, error: DomainError.notFound("ReportDraft", sec.reportDraftId) };
+    const rewrittenContent =
+      excerpt && input.selection
+        ? `${sec.content.slice(0, input.selection.from)}${result.content.trim()}${sec.content.slice(input.selection.to)}`
+        : result.content;
 
     // Reproducibility: pull the parent generator's report-period snapshot so the
     // child rewrite run records the same template / profile / mapping versions
@@ -148,6 +188,7 @@ export class RewriteReportSectionHandler {
         audience: input.audience ?? "DONOR",
         changeOrigin: "REWRITE",
         ...(input.instructions ? { instructions: input.instructions } : {}),
+        ...(input.selection ? { selection: `${input.selection.from}-${input.selection.to}` } : {}),
       },
       sectionId,
       promptHash: result.promptHash,
@@ -157,10 +198,12 @@ export class RewriteReportSectionHandler {
     if (!savedRun.ok) return savedRun;
 
     const mergedUnsupported = [...new Set([...sec.unsupportedClaims, ...result.unsupportedClaims])];
+    // New text: an approval of the old text no longer applies.
+    if (sec.status === "APPROVED") sec.resetToDraft();
     const committed = await this.revisionService.commitChange({
       tenantId: ctx.tenant.tenantId,
       section: sec,
-      content: result.content,
+      content: rewrittenContent,
       sourceReferences: sec.sourceReferences,
       unsupportedClaims: mergedUnsupported,
       changeOrigin: "REWRITE",
@@ -213,18 +256,57 @@ export class RewriteReportSectionHandler {
       });
     }
 
+    // The section's version is its stored updatedAt (what the editor sends
+    // back as expectedVersion); assurance may have touched it, so re-read.
+    const latest = await this.sections.findById(sectionId, ctx.tenant.tenantId);
+    if (!latest.ok) return latest;
     return {
       ok: true,
       value: {
-        version: committed.value.createdAt.toISOString(),
-        content: result.content,
+        version: (latest.value ?? sec).updatedAt.toISOString(),
+        content: rewrittenContent,
         revisionId: committed.value.id,
         revisionNumber: committed.value.revisionNumber,
         contentHash: committed.value.contentHash,
         assuranceState: assessed.value.assuranceState,
         generationRunId: childRun.id,
         fallbackUsed,
+        ...(fallbackUsed ? { fallbackReason: result.fallbackReason ?? "PROVIDER_NOT_CONFIGURED" } : {}),
       },
     };
   }
+
+  /** The section and its draft, when the draft is the current editable one. */
+  private async loadEditable(
+    ctx: AuthenticatedContext,
+    sectionId: string,
+  ): Promise<Result<{ section: ReportSection; draft: ReportDraft }, DomainError>> {
+    const r = await this.sections.findById(sectionId, ctx.tenant.tenantId);
+    if (!r.ok) return r;
+    if (!r.value) return { ok: false, error: DomainError.notFound("ReportSection", sectionId) };
+    const draftResult = await this.drafts.findById(r.value.reportDraftId, ctx.tenant.tenantId);
+    if (!draftResult.ok) return draftResult;
+    const draft = draftResult.value;
+    if (!draft) return { ok: false, error: DomainError.notFound("ReportDraft", r.value.reportDraftId) };
+    if (draft.isSuperseded || draft.status !== "DRAFT") {
+      return { ok: false, error: DomainError.invalidTransition("This report is no longer a draft, so its sections cannot be rewritten.") };
+    }
+    return { ok: true, value: { section: r.value, draft } };
+  }
+}
+
+const EXCERPT_NOTE =
+  "You are rewriting an excerpt of a report section, not the whole section. Return only the rewritten excerpt, keeping its markdown structure (lists stay lists, tables stay tables). Do not add a heading.";
+
+function excerptInstructions(instructions: string | undefined): string {
+  return instructions ? `${EXCERPT_NOTE} ${instructions}` : EXCERPT_NOTE;
+}
+
+function sliceSelection(content: string, selection: { from: number; to: number }): Result<string, DomainError> {
+  if (selection.to > content.length) {
+    return { ok: false, error: DomainError.conflict("This section changed since you selected the text. Select it again.") };
+  }
+  const excerpt = content.slice(selection.from, selection.to);
+  if (!excerpt.trim()) return { ok: false, error: DomainError.validation("Select some text to rewrite.") };
+  return { ok: true, value: excerpt };
 }

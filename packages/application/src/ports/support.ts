@@ -76,3 +76,8 @@ export interface IAuditRepository {
     createdAt: Date;
   }>>>;
 }
+
+/** Unresolved comment counts per entity, for badges and checks (Report Editor U15). */
+export interface ICommentCounter {
+  countOpenByEntities(entityType: string, entityIds: readonly string[], tenantId: TenantId): Promise<Result<Record<string, number>>>;
+}

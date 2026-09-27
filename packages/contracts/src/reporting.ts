@@ -135,7 +135,19 @@ export const UpdateSectionSchema = z.object({
    * conflict if the section changed on the server after this token was issued.
    */
   expectedVersion: z.string().optional(),
+  /**
+   * What produced this text, for the revision history. Defaults to a manual
+   * edit; `REWRITE` = an accepted "Ask AI" suggestion, `RESTORE` = an earlier
+   * revision brought back.
+   */
+  changeOrigin: z.enum(["MANUAL_EDIT", "REWRITE", "RESTORE"]).optional(),
 });
+
+/** POST /v1/report-sections/:id/regenerate — redraft one section (Report Editor B7). */
+export const RegenerateSectionSchema = z.object({
+  instruction: z.string().max(500).optional(),
+});
+export type RegenerateSectionInput = z.infer<typeof RegenerateSectionSchema>;
 
 export const CreateReportSectionSchema = z.object({
   reportDraftId: z.string().min(1),

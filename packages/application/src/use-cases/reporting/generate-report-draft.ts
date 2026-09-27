@@ -1,6 +1,6 @@
 import type { Result } from "@donordesk/domain";
 import { DomainError, ReportDraft, ReportSection, ReportGenerationRun, isSynthesisSection } from "@donordesk/domain";
-import type { ReportPlan, ReportPlanSection, ReportingPeriod, ReportingRequirement, VerifiedFinding } from "@donordesk/domain";
+import type { ReportPlan, ReportPlanSection, ReportingPeriod, ReportingRequirement } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
   IReportingPeriodRepository,
@@ -17,12 +17,7 @@ import type {
   IReportAssuranceService,
   IReportArtifactRepository,
   ReportingProfileSnapshot,
-  ReportGenerationContext,
-  EvidencePackage,
-  ActivityGenerationContext,
-  IndicatorUpdateGenerationContext,
 } from "../../ports/reporting.js";
-import { excludeRestrictedEvidence } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
@@ -32,29 +27,8 @@ import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { ILlmUsageRepository, IUsageCounterRepository } from "../../ports/billing.js";
 import type { EntitlementService } from "../../services/entitlement-service.js";
 import { monthStartUtc, USAGE_METRIC_AI_CREDITS } from "../billing/_usage.js";
-
-function parseProfileSnapshot(json: string): ReportingProfileSnapshot {
-  if (!json || json === "{}") {
-    return { tone: "FORMAL", language: "en", formattingRules: [], sectionOverrides: {} };
-  }
-  try {
-    const raw = JSON.parse(json) as {
-      tone?: string;
-      language?: string;
-      formattingRules?: string[];
-      sectionOverrides?: Record<string, { min?: number; max?: number }>;
-    };
-    const tone = raw.tone as ReportingProfileSnapshot["tone"];
-    return {
-      tone: tone === "FORMAL" || tone === "CONCISE" || tone === "NARRATIVE" || tone === "TECHNICAL" ? tone : "FORMAL",
-      language: raw.language ?? "en",
-      formattingRules: Array.isArray(raw.formattingRules) ? raw.formattingRules : [],
-      sectionOverrides: raw.sectionOverrides ?? {},
-    };
-  } catch {
-    return { tone: "FORMAL", language: "en", formattingRules: [], sectionOverrides: {} };
-  }
-}
+import { ReportGenerationContextBuilder, type GenerationInputs } from "../../services/report-generation-context.js";
+import { SectionGenerationService } from "../../services/section-generation-service.js";
 
 /**
  * Orchestrates the full generation pipeline: plan -> deterministic analysis ->
@@ -70,26 +44,32 @@ export class GenerateReportDraftHandler {
     private readonly periods: IReportingPeriodRepository,
     private readonly drafts: IReportDraftRepository,
     private readonly sections: IReportSectionRepository,
-    private readonly projects: IProjectRepository,
-    private readonly organizations: IOrganizationRepository,
-    private readonly templates: IDonorTemplateRepository,
-    private readonly indicatorUpdates: IIndicatorUpdateRepository,
-    private readonly activities: IActivityUpdateRepository,
+    projects: IProjectRepository,
+    organizations: IOrganizationRepository,
+    templates: IDonorTemplateRepository,
+    indicatorUpdates: IIndicatorUpdateRepository,
+    activities: IActivityUpdateRepository,
     private readonly planner: IReportPlanner,
     private readonly requirementResolver: IRequirementResolver,
-    private readonly analytics: IIndicatorAnalyticsService,
-    private readonly evidencePackages: IEvidencePackageBuilder,
+    analytics: IIndicatorAnalyticsService,
+    evidencePackages: IEvidencePackageBuilder,
     private readonly generationRuns: IGenerationRunRepository,
     private readonly reportPlans: IReportPlanRepository,
-    private readonly revisionService: IReportRevisionService,
-    private readonly assuranceService: IReportAssuranceService,
-    private readonly getGenerator: (tenantId?: string) => Promise<IReportDraftGenerator>,
+    revisionService: IReportRevisionService,
+    assuranceService: IReportAssuranceService,
+    getGenerator: (tenantId?: string) => Promise<IReportDraftGenerator>,
     private readonly audit: IAuditLogger,
     private readonly entitlements: EntitlementService,
     private readonly usage: IUsageCounterRepository,
     private readonly llmRuns: ILlmUsageRepository,
-    private readonly reportArtifacts?: IReportArtifactRepository,
-  ) {}
+    reportArtifacts?: IReportArtifactRepository,
+  ) {
+    this.context = new ReportGenerationContextBuilder(periods, projects, organizations, templates, indicatorUpdates, activities, analytics, evidencePackages, getGenerator);
+    this.sectionGeneration = new SectionGenerationService(ids, llmRuns, revisionService, assuranceService, audit, reportArtifacts);
+  }
+
+  private readonly context: ReportGenerationContextBuilder;
+  private readonly sectionGeneration: SectionGenerationService;
 
   async handle(
     ctx: AuthenticatedContext,
@@ -110,36 +90,10 @@ export class GenerateReportDraftHandler {
       DomainError
     >
   > {
-    const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
-    if (!periodResult.ok) return periodResult;
-    if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", reportingPeriodId) };
-    const period = periodResult.value;
-
-    const projectResult = await this.projects.findById(period.projectId, ctx.tenant.tenantId);
-    if (!projectResult.ok) return projectResult;
-    if (!projectResult.value) return { ok: false, error: DomainError.notFound("Project", period.projectId) };
-    const project = projectResult.value;
-    const organizationResult = await this.organizations.findByTenant(ctx.tenant.tenantId);
-    if (!organizationResult.ok) return organizationResult;
-    if (!organizationResult.value) return { ok: false, error: DomainError.notFound("Organization", ctx.tenant.tenantId.toString()) };
-    const aiEnabled = organizationResult.value.aiEnabled;
-
-    const generator = await this.getGenerator(ctx.tenant.tenantId.toString());
-    // Only a real (non-stub) provider counts as AI for credit metering. Stub
-    // heuristic generation and manual reports are never metered.
-    const aiProviderAvailable = generator.model.modelId !== "stub";
-    const chargeAiCredits = aiEnabled && aiProviderAvailable;
-    // A tenant drafting with its own AI provider pays that provider directly:
-    // DonorDesk AI credits are neither checked nor consumed, and the run is
-    // recorded with zero billable units so it never counts against the ledger.
-    const usesTenantProvider = generator.providerSource === "TENANT";
-    const meterPlatformCredits = chargeAiCredits && !usesTenantProvider;
-
-    const template = period.donorTemplateId
-      ? await this.templates.findById(period.donorTemplateId, ctx.tenant.tenantId)
-      : undefined;
-    const templateSections = template?.ok && template.value ? template.value.sections : [];
-    const templateVersion = template?.ok && template.value ? template.value.version : 1;
+    const baseResult = await this.context.loadBase(ctx, reportingPeriodId);
+    if (!baseResult.ok) return baseResult;
+    const base = baseResult.value;
+    const { period, project, aiEnabled, generator, chargeAiCredits, meterPlatformCredits, templateSections, templateVersion, reportingProfileSnapshot } = base;
 
     // P0-4 donor template gate: a donor report must have a defined section
     // structure (a donor template with sections, or an explicit approved
@@ -153,8 +107,6 @@ export class GenerateReportDraftHandler {
         ),
       };
     }
-
-    const reportingProfileSnapshot = parseProfileSnapshot(period.reportingProfileSnapshotJson);
 
     const requirementSnapshot = await this.resolveRequirementSnapshot(ctx, reportingPeriodId);
     const planResult = await this.planner.plan({
@@ -170,59 +122,10 @@ export class GenerateReportDraftHandler {
     if (!planResult.ok) return planResult;
     const plan = planResult.value;
 
-    const findingsResult = await this.analytics.computeFindings({
-      reportingPeriodId,
-      projectId: period.projectId,
-      tenantId: ctx.tenant.tenantId,
-    });
-    if (!findingsResult.ok) return findingsResult;
-    const verifiedFindings = findingsResult.value;
-
-    const updatesResult = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
-    if (!updatesResult.ok) return updatesResult;
-    const activitiesResult = await this.activities.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
-    if (!activitiesResult.ok) return activitiesResult;
-
-    const evidenceIds = Array.from(new Set([
-      ...updatesResult.value.flatMap((u) => u.attachedEvidenceIds),
-      ...activitiesResult.value.flatMap((a) => a.attachedEvidenceIds),
-    ]));
-    const evidencePackagesResult = await this.evidencePackages.build({ tenantId: ctx.tenant.tenantId, evidenceIds });
-    if (!evidencePackagesResult.ok) return evidencePackagesResult;
-    const evidencePackages = excludeRestrictedEvidence(evidencePackagesResult.value);
-
-    // Narrative context: activity records and indicator updates are snapshotted
-    // into the generation input so the narrator can cite them directly, not
-    // just harvest their attached evidence IDs.
-    const indicatorCodeById = new Map(verifiedFindings.map((f) => [f.indicatorId, f.indicatorCode]));
-    const indicatorUpdates = updatesResult.value.map((u) => ({
-      indicatorId: u.indicatorId,
-      indicatorCode: indicatorCodeById.get(u.indicatorId) ?? u.indicatorId,
-      periodAchievement: u.periodAchievement,
-      cumulativeAchievement: u.cumulativeAchievement,
-      comments: u.comments,
-      dataSource: u.dataSource,
-      attachedEvidenceIds: u.attachedEvidenceIds,
-      verificationStatus: u.verificationStatus,
-    }));
-    const activities = activitiesResult.value.map((a) => ({
-      activityId: a.id,
-      activityTitle: a.activityTitle,
-      activityDate: a.activityDate,
-      location: a.location,
-      participantsTotal: a.participantsTotal,
-      participantsMale: a.participantsMale,
-      participantsFemale: a.participantsFemale,
-      participantsChildren: a.participantsChildren,
-      participantsDisability: a.participantsDisability,
-      summary: a.summary,
-      achievements: a.achievements,
-      challenges: a.challenges,
-      lessonsLearned: a.lessonsLearned,
-      nextSteps: a.nextSteps,
-      attachedEvidenceIds: a.attachedEvidenceIds,
-      status: a.status,
-    }));
+    const inputsResult = await this.context.loadInputs(ctx, reportingPeriodId, base);
+    if (!inputsResult.ok) return inputsResult;
+    const inputs = inputsResult.value;
+    const { verifiedFindings, evidenceIds } = inputs;
 
     // AI credit enforcement: one customer credit = one successfully persisted
     // real (non-stub) AI draft. Stub heuristic generation and manual reports
@@ -321,8 +224,8 @@ export class GenerateReportDraftHandler {
       profileVersion: 1,
       mappingVersion: period.donorTemplateVersion,
       plannerVersion: 1,
-      indicatorUpdateIds: updatesResult.value.map((u) => u.id),
-      activityIds: activitiesResult.value.map((a) => a.id),
+      indicatorUpdateIds: inputs.indicatorUpdateIds,
+      activityIds: inputs.activityIds,
       evidenceIds,
       verifiedFindings,
       modelId: chargeAiCredits ? generator.model.modelId : "none",
@@ -418,12 +321,8 @@ export class GenerateReportDraftHandler {
         plan,
         sectionIds,
         period,
-        verifiedFindings,
-        evidencePackages,
-        activities,
-        indicatorUpdates,
+        inputs,
         reportingProfileSnapshot,
-        reportContext: this.buildReportContext(project, period, template?.ok && template.value ? template.value : undefined, period.storyContext),
         generator,
         chargeAiCredits,
         creditReserved,
@@ -479,12 +378,8 @@ export class GenerateReportDraftHandler {
     plan: ReportPlan;
     sectionIds: string[];
     period: ReportingPeriod;
-    verifiedFindings: VerifiedFinding[];
-    evidencePackages: EvidencePackage[];
-    activities: ActivityGenerationContext[];
-    indicatorUpdates: IndicatorUpdateGenerationContext[];
+    inputs: GenerationInputs;
     reportingProfileSnapshot: ReportingProfileSnapshot;
-    reportContext: ReportGenerationContext;
     generator: IReportDraftGenerator;
     chargeAiCredits: boolean;
     creditReserved: boolean;
@@ -611,12 +506,8 @@ export class GenerateReportDraftHandler {
       draft: ReportDraft;
       runId: string;
       plan: ReportPlan;
-      verifiedFindings: VerifiedFinding[];
-      evidencePackages: EvidencePackage[];
-      activities: ActivityGenerationContext[];
-      indicatorUpdates: IndicatorUpdateGenerationContext[];
+      inputs: GenerationInputs;
       reportingProfileSnapshot: ReportingProfileSnapshot;
-      reportContext: ReportGenerationContext;
       generator: IReportDraftGenerator;
     },
     sectionId: string,
@@ -658,118 +549,40 @@ export class GenerateReportDraftHandler {
       return false;
     }
 
-    const generated = await input.generator.generateSection(
+    const generated = await this.sectionGeneration.draft(
       {
-        reportPlan: input.plan,
-        verifiedFindings: input.verifiedFindings,
-        evidencePackages: input.evidencePackages,
-        activities: input.activities,
-        indicatorUpdates: input.indicatorUpdates,
+        ctx: input.ctx,
+        runId: input.runId,
+        plan: input.plan,
+        inputs: input.inputs,
         reportingProfileSnapshot: input.reportingProfileSnapshot,
-        generationRunId: input.runId,
-        reportContext: input.reportContext,
-        draftedSections: [...state.drafted],
+        generator: input.generator,
+        draftedSections: state.drafted,
       },
+      sectionId,
       planSection,
     );
-    if (generated.telemetry) {
-      const t = generated.telemetry;
-      const status = generated.deterministicReason
-        ? "skipped"
-        : generated.usedFallback
-        ? generated.fallbackReason === "PROVIDER_TIMEOUT" ? "timeout" : "error"
-        : "success";
-      await this.llmRuns.recordRun({
-        id: this.ids.generate(),
-        tenantId: input.ctx.tenant.tenantId.toString(),
-        operationType: "REPORT_SECTION",
-        resourceId: sectionId,
-        modelId: input.generator.model.modelId,
-        promptId: "report-section-drafter",
-        inputTokens: t.inputTokens,
-        outputTokens: t.outputTokens,
-        totalTokens: t.inputTokens + t.outputTokens,
-        costUsd: 0,
-        latencyMs: t.latencyMs,
-        status,
-        promptVersion: input.generator.model.promptVersion,
-        modelVersion: input.generator.model.modelVersion,
-        billableUnits: 0,
-        requestId: `${input.runId}:${sectionId}`,
-        errorMessage: generated.fallbackReason,
-        responseText: JSON.stringify({
-          generationRunId: input.runId,
-          sectionId,
-          templateSectionId: planSection.templateSectionId,
-          sectionTitle: planSection.title,
-          parseOutcome: t.parseOutcome,
-          qualityIssues: t.qualityIssues,
-          promptHash: t.promptHash,
-          responseHash: t.responseHash,
-          responseChars: t.responseChars,
-        }),
-      });
-    }
     if (generated.usedFallback) {
       state.usedFallback = true;
       state.fallbackReason = generated.fallbackReason ?? state.fallbackReason;
     }
     if (generated.deterministicReason) state.deterministicGapSections += 1;
 
-    const committed = await this.revisionService.commitChange({
-      tenantId: input.ctx.tenant.tenantId,
+    const persisted = await this.sectionGeneration.persist({
+      ctx: input.ctx,
+      runId: input.runId,
       section,
-      content: generated.section.content,
-      sourceReferences: generated.section.sourceReferences,
-      unsupportedClaims: [],
+      generated,
+      generator: input.generator,
+      inputs: input.inputs,
       changeOrigin: "GENERATION",
-      actorId: input.ctx.tenant.userId,
-      modelId: !generated.usedFallback && !generated.deterministicReason ? input.generator.model.modelId : undefined,
-      promptVersion: !generated.usedFallback && !generated.deterministicReason ? input.generator.model.promptVersion : undefined,
-      generationRunId: input.runId,
+      onCommitted: () => state.drafted.push({ title: planSection.title, content: generated.section.content }),
     });
-    if (!committed.ok) {
+    if (!persisted.ok) {
       state.generationFailed = true;
       return true;
     }
-    state.drafted.push({ title: planSection.title, content: generated.section.content });
-
-    // AI Reporter 2 — persist typed artifacts (tables, charts, lists, Q&A,
-    // deltas) when the report artifact repository is wired. Best-effort;
-    // a failed persistence does not abort the section (prose is already
-    // committed and assured).
-    if (this.reportArtifacts && generated.section.artifacts && generated.section.artifacts.length > 0) {
-      const persisted = await this.reportArtifacts.replaceForSection({
-        tenantId: input.ctx.tenant.tenantId,
-        sectionId,
-        revisionId: committed.value.id,
-        artifacts: generated.section.artifacts,
-      });
-      if (!persisted.ok) {
-        await this.audit.record({
-          tenantId: input.ctx.tenant.tenantId,
-          actorId: input.ctx.tenant.userId,
-          eventType: "report.section.artifacts.persist_failed",
-          entityType: "report_section",
-          entityId: sectionId,
-          newValue: persisted.error.message,
-        });
-      }
-    }
-
-    const assessed = await this.assuranceService.assessRevision({
-      ctx: { tenantId: input.ctx.tenant.tenantId, userId: input.ctx.tenant.userId },
-      sectionId,
-      revisionId: committed.value.id,
-      writerClaims: generated.section.claims,
-      findings: input.verifiedFindings,
-      evidencePackages: input.evidencePackages,
-    });
-    if (!assessed.ok) {
-      state.generationFailed = true;
-      return true;
-    }
-    state.claimCount += assessed.value.claims.length;
+    state.claimCount += persisted.value.claimCount;
     return false;
   }
 
@@ -832,54 +645,5 @@ export class GenerateReportDraftHandler {
       billableUnits: billable && status === "success" ? 1 : 0,
       requestId: `${reportingPeriodId}:${Date.now()}`,
     });
-  }
-
-  private buildReportContext(
-    project: { title: string; projectCode: string; donorName: string; implementingOrganization: string; partnerOrganization?: string; country: string; region?: string; district?: string; sector: string; duration: { start: Date; end: Date }; budget?: { amount: number; currency: string } | null; reportingFrequency: string; description?: string },
-    period: { reportType: string; duration: { start: Date; end: Date }; deadline: Date; internalReviewDeadline?: Date; readinessScore: number; daysUntilDeadline(): number },
-    template?: { templateName: string; donorName: string; language: string; requiredAnnexes: string[]; notes?: string; version: number } | undefined,
-    storyContext?: { achievements?: string; challenges?: string; varianceExplanations?: string; adaptations?: string; lessons?: string },
-  ): ReportGenerationContext {
-    const startDate = project.duration.start.toISOString();
-    const endDate = project.duration.end.toISOString();
-    return {
-      project: {
-        title: project.title,
-        projectCode: project.projectCode,
-        donorName: project.donorName,
-        implementingOrganization: project.implementingOrganization,
-        partnerOrganization: project.partnerOrganization,
-        country: project.country,
-        region: project.region,
-        district: project.district,
-        sector: project.sector,
-        startDate,
-        endDate,
-        description: project.description,
-        budgetAmount: project.budget?.amount,
-        budgetCurrency: project.budget?.currency,
-        reportingFrequency: project.reportingFrequency,
-      },
-      period: {
-        reportType: period.reportType,
-        startDate: period.duration.start.toISOString(),
-        endDate: period.duration.end.toISOString(),
-        deadline: period.deadline.toISOString(),
-        internalReviewDeadline: period.internalReviewDeadline?.toISOString(),
-        readinessScore: period.readinessScore,
-        daysUntilDeadline: period.daysUntilDeadline(),
-      },
-      template: template
-        ? {
-            templateName: template.templateName,
-            donorName: template.donorName,
-            language: template.language,
-            requiredAnnexes: template.requiredAnnexes,
-            notes: template.notes,
-            version: template.version,
-          }
-        : undefined,
-      storyContext,
-    };
   }
 }

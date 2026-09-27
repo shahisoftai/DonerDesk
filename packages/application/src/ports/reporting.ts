@@ -225,6 +225,13 @@ export interface GenerateReportDraftInput {
    * last and summarise them. Absent for legacy/full-draft callers.
    */
   draftedSections?: ReadonlyArray<{ title: string; content: string }>;
+  /**
+   * Report Editor B7 — the author's optional instruction when ONE section is
+   * regenerated ("Focus more on the flood response"). Absent for full drafts;
+   * generators add it to the prompt only when present, so prompts for full
+   * drafts stay byte-identical.
+   */
+  sectionInstruction?: string;
 }
 
 export interface ReportClaimDraft {
@@ -804,4 +811,47 @@ export interface IDonorTemplateMappingRepository {
  */
 export interface IEvidencePackageBuilder {
   build(input: { tenantId: TenantId; evidenceIds: string[] }): Promise<Result<EvidencePackage[], DomainError>>;
+}
+
+// ---------------------------------------------------------------------------
+// Report Editor v2 — read-side ports (no schema changes)
+// ---------------------------------------------------------------------------
+
+/** Display data for an evidence file (B2: labels instead of raw ids). */
+export interface EvidenceLabel {
+  id: string;
+  title: string;
+  confidentialityLevel: string;
+}
+
+/** Light, tenant-scoped evidence lookup — no chunks or file contents. */
+export interface IEvidenceDirectory {
+  describe(ids: readonly string[], tenantId: TenantId): Promise<Result<EvidenceLabel[], DomainError>>;
+}
+
+/** Report inputs modified after a point in time (B6). */
+export interface ReportInputsChange {
+  /** Logframe indicator ids whose period value changed. */
+  indicatorIds: string[];
+  /** Indicator update ids that changed (sources may cite either id). */
+  indicatorUpdateIds: string[];
+  /** Evidence files of the period (or attached to its data) that changed. */
+  evidenceIds: string[];
+}
+
+export interface IReportInputsChangeReader {
+  changedSince(input: { reportingPeriodId: string; since: Date; tenantId: TenantId }): Promise<Result<ReportInputsChange, DomainError>>;
+}
+
+/**
+ * Single-section regenerations running in this api process (B7). The work
+ * itself runs in-process (like section-wise draft generation), so an
+ * in-memory registry is the accurate source; after a restart nothing is
+ * running and the section simply keeps its previous text.
+ */
+export interface ISectionRegenerationTracker {
+  /** Marks the section busy; false when it already was. */
+  tryStart(sectionId: string): boolean;
+  finish(sectionId: string): void;
+  runningAmong(sectionIds: readonly string[]): string[];
 }

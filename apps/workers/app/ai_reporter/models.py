@@ -57,6 +57,11 @@ class SectionBrief(BaseModel):
     # summary / conclusion). `priorSectionsSummary` then carries the drafted
     # sections to summarise, and the repetition guard does not apply.
     synthesis: bool = False
+    # Report Editor B7 — the author's instruction when ONE section is
+    # regenerated. Mirrors the TS `AiReporterSectionBrief.userInstruction`.
+    # Absent for full drafts, and the prompt only mentions it when present, so
+    # full-draft prompts stay byte-stable.
+    userInstruction: str | None = Field(default=None, max_length=500)
 
 
 class ContextProject(BaseModel):

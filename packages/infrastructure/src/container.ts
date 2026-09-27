@@ -139,6 +139,12 @@ import {
   ActivateRequirementPackHandler,
   UpsertAwardOverrideHandler,
   CreateSubmissionSnapshotHandler,
+  RegenerateReportSectionHandler,
+  ReopenReportClaimHandler,
+  GetClaimSuggestionHandler,
+  ListSectionRevisionsHandler,
+  ReportGenerationContextBuilder,
+  SectionGenerationService,
 } from "@donordesk/application";
 import type { IJobQueue, IReportDraftGenerator, INotificationPort } from "@donordesk/application";
 import { EmailAdapter } from "./comms/email.js";
@@ -226,6 +232,8 @@ import { AiReporterDraftGenerator } from "./llm/ai-reporter-draft-generator.js";
 import { HttpWorkerClient } from "./llm/ai-reporter-worker-client.js";
 import { createEmbeddingGenerator } from "./llm/embedding-generator.js";
 import { PrismaEmbeddingStore } from "./repositories/embedding-store.js";
+import { PrismaEvidenceDirectory, PrismaReportInputsChangeReader } from "./repositories/report-editor-read-models.js";
+import { InMemorySectionRegenerationTracker } from "./repositories/section-regeneration-tracker.js";
 import { DeterministicPriorPeriodService } from "./llm/prior-period.js";
 import { DeterministicClaimVerifier } from "./llm/claim-verifier.js";
 import { DeterministicAssertionExtractor } from "./llm/assertion-extractor.js";
@@ -403,6 +411,10 @@ export interface Container {
     resolveReportClaim: ResolveReportClaimHandler;
     bulkResolveReportClaims: BulkResolveReportClaimHandler;
     reassessReportRevision: ReassessReportRevisionHandler;
+    regenerateReportSection: RegenerateReportSectionHandler;
+    reopenReportClaim: ReopenReportClaimHandler;
+    getClaimSuggestion: GetClaimSuggestionHandler;
+    listSectionRevisions: ListSectionRevisionsHandler;
     resolveEffectiveRequirements: ResolveEffectiveRequirementsHandler;
     upsertRequirementPack: UpsertRequirementPackHandler;
     activateRequirementPack: ActivateRequirementPackHandler;
@@ -764,6 +776,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const hashService = new Sha256HashService();
   const assertionExtractor = new DeterministicAssertionExtractor();
   const revisionService = new ReportRevisionService(reportRevisions, sections, hashService);
+  const sectionRegenerationTracker = new InMemorySectionRegenerationTracker();
   const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);
   const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector);
   const requirementResolver = new DeterministicRequirementResolver(ids, periods, requirementPacks, awardOverrides, reportPlans, resolvedRequirements);
@@ -890,12 +903,17 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       revisionService, assuranceService,
       getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage, reportArtifacts,
     ),
-    getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportRevisions, reportPlans, reportArtifacts),
+    getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportRevisions, reportPlans, reportArtifacts, {
+      evidenceDirectory: new PrismaEvidenceDirectory(prisma),
+      inputsChangeReader: new PrismaReportInputsChangeReader(prisma),
+      regenerationTracker: sectionRegenerationTracker,
+      commentCounter: comments,
+    }),
     getSmartReview: new GetSmartReviewHandler(drafts, approveReportHandler, reportClaims, sections),
     cancelReportGeneration: new CancelReportGenerationHandler(drafts, sections, audits),
     activateReportDraft: new ActivateReportDraftHandler(drafts, audits),
     getReportAssurance: new GetReportAssuranceHandler(drafts, sections, reportClaims, reportRevisions, resolvedRequirements),
-    updateReportSection: new UpdateReportSectionHandler(sections, revisionService, assuranceService, audits),
+    updateReportSection: new UpdateReportSectionHandler(sections, drafts, revisionService, assuranceService, audits),
     createReportSection: new CreateReportSectionHandler(ids, drafts, sections, audits),
     deleteReportSection: new DeleteReportSectionHandler(drafts, sections, reportClaims, reportRevisions, audits),
     reorderReportSections: new ReorderReportSectionsHandler(drafts, sections, audits),
@@ -911,6 +929,15 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     resolveReportClaim: new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService),
     bulkResolveReportClaims: new BulkResolveReportClaimHandler(new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService)),
     reassessReportRevision: new ReassessReportRevisionHandler(sections, reportRevisions, assuranceService, audits),
+    regenerateReportSection: new RegenerateReportSectionHandler(
+      ids, drafts, sections, reportPlans, generationRuns,
+      new ReportGenerationContextBuilder(periods, projects, organizations, templates, indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator),
+      new SectionGenerationService(ids, llmUsage, revisionService, assuranceService, audits, reportArtifacts),
+      sectionRegenerationTracker, audits,
+    ),
+    reopenReportClaim: new ReopenReportClaimHandler(reportClaims, sections, assuranceService, audits),
+    getClaimSuggestion: new GetClaimSuggestionHandler(reportClaims, drafts, indicatorAnalytics),
+    listSectionRevisions: new ListSectionRevisionsHandler(sections, reportRevisions),
     resolveEffectiveRequirements: new ResolveEffectiveRequirementsHandler(requirementResolver, audits),
     upsertRequirementPack: new UpsertRequirementPackHandler(ids, requirementPacks, audits),
     activateRequirementPack: new ActivateRequirementPackHandler(requirementPacks, audits),

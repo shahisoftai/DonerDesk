@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -155,7 +155,25 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const id = (req.params as { id: string }).id;
     const body = RewriteSectionSchema.parse(req.body ?? {});
     const ctx = { tenant: req.tenant, requestId: req.id };
-    const r = await req.container.handlers.rewriteReportSection.handle(ctx, id, body);
+    const handler = req.container.handlers.rewriteReportSection;
+    const r = body.preview ? await handler.preview(ctx, id, body) : await handler.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-sections/:id/regenerate", async (req, reply) => {
+    const id = (req.params as { id: string }).id;
+    const body = RegenerateSectionSchema.parse(req.body ?? {});
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.regenerateReportSection.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return reply.code(202).send(r.value);
+  });
+
+  app.get("/v1/report-sections/:id/revisions", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.listSectionRevisions.handle(ctx, id);
     if (!r.ok) throw r.error;
     return r.value;
   });
@@ -212,6 +230,22 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.resolveReportClaim.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  app.post("/v1/report-claims/:id/reopen", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.reopenReportClaim.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.get("/v1/report-claims/:id/suggestion", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getClaimSuggestion.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.post("/v1/report-claims/bulk-resolve", async (req) => {

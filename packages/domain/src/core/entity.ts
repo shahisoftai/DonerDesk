@@ -3,10 +3,14 @@ export abstract class Entity<TId> {
   protected readonly _createdAt: Date;
   protected _updatedAt: Date;
 
-  protected constructor(id: TId, createdAt?: Date) {
+  /**
+   * `updatedAt` is supplied when rehydrating a persisted entity so optimistic
+   * concurrency checks compare against the stored value, not the creation time.
+   */
+  protected constructor(id: TId, createdAt?: Date, updatedAt?: Date) {
     this._id = id;
     this._createdAt = createdAt ?? new Date();
-    this._updatedAt = this._createdAt;
+    this._updatedAt = updatedAt ?? this._createdAt;
   }
 
   get id(): TId {

@@ -405,6 +405,30 @@ def test_build_user_prompt_omits_guidance_block_when_absent() -> None:
     assert "# Donor requirement guidance" not in prompt
 
 
+def test_build_user_prompt_includes_author_instruction_only_when_present() -> None:
+    """Report Editor B7: a single-section regenerate carries the author's
+    instruction; full drafts (no instruction) keep a byte-identical prompt."""
+    from app.ai_reporter.draft_writer import build_user_prompt
+
+    base = SectionBrief(title="Project context")
+    with_instruction = SectionBrief(title="Project context", userInstruction="  Focus more on the flood response ")
+    ctx = Context(profile=ContextProfile(tone="neutral"))
+    plain = build_user_prompt(SectionDraftRequest(section=base, context=ctx))
+    steered = build_user_prompt(SectionDraftRequest(section=with_instruction, context=ctx))
+    assert "Author's instruction" not in plain
+    assert "# Author's instruction for this section" in steered
+    assert "Focus more on the flood response" in steered
+    blank = SectionBrief(title="Project context", userInstruction="   ")
+    assert build_user_prompt(SectionDraftRequest(section=blank, context=ctx)) == plain
+
+
+def test_section_brief_rejects_overlong_instruction() -> None:
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        SectionBrief(title="Project context", userInstruction="x" * 501)
+
+
 def test_strip_think_blocks_removes_reasoning_and_keeps_json() -> None:
     from app.ai_reporter.llm_gateway import strip_think_blocks
 

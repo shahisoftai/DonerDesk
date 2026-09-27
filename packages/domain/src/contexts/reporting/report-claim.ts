@@ -250,6 +250,20 @@ export class ReportClaim {
   }
 
   /**
+   * Undoes a manual resolution (keep-with-note / leave-out): the claim is an
+   * open decision again. The verification result is untouched — it was never
+   * changed by the resolution.
+   */
+  reopen(): void {
+    if (this.props.resolvedById === undefined) {
+      throw new Error("Only a resolved claim can be reopened");
+    }
+    this.props.resolvedById = undefined;
+    this.props.resolvedAt = undefined;
+    this.props.resolutionNotes = undefined;
+  }
+
+  /**
    * P0-1 — Carries a prior user resolution forward onto a re-verified claim so
    * a reassessment never silently resurrects a claim the user accepted-with-a-
    * limitation or excluded. Used only for reconciliation; it never mutates the

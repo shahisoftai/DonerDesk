@@ -643,8 +643,25 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
     `The JSON output MUST contain exactly one section object whose "title" equals "${section.title}".`,
     `Only the evidence, activities, findings, and indicator updates above are available to you — do not invent numbers or records.`,
     ...(specificGuidance.length > 0 ? [`# Section-specific quality guidance`, ...specificGuidance.map((g) => `- ${g}`), ``] : []),
+    ...buildAuthorInstructionBlock(input.sectionInstruction),
     ...buildInstructionTail(),
   ].join("\n");
+}
+
+/**
+ * Report Editor B7 — the author's instruction for a single-section redraft.
+ * Emitted only when present, so full-draft prompts stay byte-identical. It
+ * steers emphasis and wording; it can never relax the grounding rules.
+ */
+export function buildAuthorInstructionBlock(instruction: string | undefined): string[] {
+  const text = instruction?.trim();
+  if (!text) return [];
+  return [
+    `# Author's instruction for this section`,
+    `Follow this instruction from the report author unless it conflicts with the rules above (never invent facts or numbers):`,
+    text,
+    ``,
+  ];
 }
 
 function buildRewriteUserPrompt(input: LlmRewriteSectionInput): string {

@@ -230,10 +230,14 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         status: s.status,
         chartConfigJson: s.chartConfig ? JSON.stringify(s.chartConfig) : null,
         currentRevisionId: s.currentRevisionId,
+        updatedAt: s.updatedAt,
       },
     });
     return ok(s);
   }
+  // `updatedAt` is written from the entity (not left to Prisma's @updatedAt)
+  // so the version a handler returns is exactly the stored one; the editor
+  // sends it back as `expectedVersion` for optimistic concurrency.
   async update(s: ReportSection): Promise<Result<ReportSection, DomainError>> {
     await this.prisma.reportSection.update({
       where: { id: s.id },
@@ -246,6 +250,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         status: s.status,
         chartConfigJson: s.chartConfig ? JSON.stringify(s.chartConfig) : null,
         currentRevisionId: s.currentRevisionId,
+        updatedAt: s.updatedAt,
       },
     });
     return ok(s);
@@ -276,12 +281,14 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
     chartConfigJson: string | null;
     currentRevisionId: string | null;
     createdAt: Date;
+    updatedAt: Date;
   }): ReportSection {
     return ReportSection.rehydrate({
       id: row.id,
       tenantId: row.tenantId,
       reportDraftId: row.reportDraftId,
       createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
       props: {
         sectionTitle: row.sectionTitle,
         sectionOrder: row.sectionOrder,

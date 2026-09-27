@@ -34,8 +34,9 @@ export class ReportSection extends Entity<string> {
     readonly reportDraftId: string,
     private props: ReportSectionProps,
     createdAt?: Date,
+    updatedAt?: Date,
   ) {
-    super(id, createdAt);
+    super(id, createdAt, updatedAt);
   }
 
   static create(input: {
@@ -68,8 +69,10 @@ export class ReportSection extends Entity<string> {
     reportDraftId: string;
     props: ReportSectionProps;
     createdAt: Date;
+    /** Stored last-modified time; the section's optimistic-concurrency version. */
+    updatedAt?: Date;
   }): ReportSection {
-    return new ReportSection(input.id, input.tenantId, input.reportDraftId, input.props, input.createdAt);
+    return new ReportSection(input.id, input.tenantId, input.reportDraftId, input.props, input.createdAt, input.updatedAt);
   }
 
   get sectionTitle(): string { return this.props.sectionTitle; }

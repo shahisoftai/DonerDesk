@@ -8,9 +8,13 @@ export type AssuranceState = "UNASSESSED" | "ASSESSING" | "CURRENT" | "STALE" | 
 
 export const ASSURANCE_STATES: AssuranceState[] = ["UNASSESSED", "ASSESSING", "CURRENT", "STALE", "FAILED"];
 
-export type ChangeOrigin = "GENERATION" | "MANUAL_EDIT" | "REWRITE" | "AUTO_FIX" | "MERGE";
+/**
+ * What produced a revision. `REGENERATION` = one section re-drafted by the AI
+ * on request; `RESTORE` = an earlier revision's text brought back by a user.
+ */
+export type ChangeOrigin = "GENERATION" | "MANUAL_EDIT" | "REWRITE" | "AUTO_FIX" | "MERGE" | "REGENERATION" | "RESTORE";
 
-export const CHANGE_ORIGINS: ChangeOrigin[] = ["GENERATION", "MANUAL_EDIT", "REWRITE", "AUTO_FIX", "MERGE"];
+export const CHANGE_ORIGINS: ChangeOrigin[] = ["GENERATION", "MANUAL_EDIT", "REWRITE", "AUTO_FIX", "MERGE", "REGENERATION", "RESTORE"];
 
 const TRANSITIONS: Record<AssuranceState, AssuranceState[]> = {
   UNASSESSED: ["ASSESSING", "FAILED"],

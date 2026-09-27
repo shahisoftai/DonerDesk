@@ -25,3 +25,6 @@ export * from "./requirement-mapping.js";
 export * from "./visibility-statement.js";
 export * from "./donor-pack-blueprints.js";
 export * from "./section-markdown.js";
+export * from "./numeric-correction.js";
+export * from "./section-freshness.js";
+export * from "./section-regeneration.js";

@@ -1,5 +1,5 @@
 import { PrismaClient, type Prisma } from "@prisma/client";
-import type { IAuditRepository, IAuditLogger, ICommentRepository, INotificationRepository, CommentRecord } from "@donordesk/application";
+import type { IAuditRepository, IAuditLogger, ICommentRepository, ICommentCounter, INotificationRepository, CommentRecord } from "@donordesk/application";
 import { DomainError, type Result, type TenantId } from "@donordesk/domain";
 import { computeAuditHash, resolveAuditChainKey } from "../audit/chain.js";
 
@@ -11,8 +11,17 @@ function err<T = never>(e: DomainError): Result<T, DomainError> {
   return { ok: false, error: e };
 }
 
-export class PrismaCommentRepository implements ICommentRepository {
+export class PrismaCommentRepository implements ICommentRepository, ICommentCounter {
   constructor(private readonly prisma: PrismaClient) {}
+  async countOpenByEntities(entityType: string, entityIds: readonly string[], tenantId: TenantId): Promise<Result<Record<string, number>, DomainError>> {
+    if (entityIds.length === 0) return ok({});
+    const rows = await this.prisma.comment.groupBy({
+      by: ["entityId"],
+      where: { tenantId: tenantId.toString(), entityType, entityId: { in: [...entityIds] }, status: "OPEN" },
+      _count: { _all: true },
+    });
+    return ok(Object.fromEntries(rows.map((r) => [r.entityId, r._count._all])));
+  }
   async create(c: CommentRecord): Promise<Result<CommentRecord, DomainError>> {
     await this.prisma.comment.create({
       data: {

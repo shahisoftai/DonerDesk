@@ -326,6 +326,9 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         sectionGuidance: buildSectionSpecificGuidance(section, input),
         synthesis,
         priorSectionsSummary: summariseDraftedSections(input, section, synthesis),
+        // Report Editor B7 — only sent when the author gave one (single-section
+        // regenerate), so full-draft requests are unchanged on the wire.
+        ...(input.sectionInstruction?.trim() ? { userInstruction: input.sectionInstruction.trim() } : {}),
       },
       context: this.buildContext(input),
       verifiedFindings: input.verifiedFindings.map((f) => ({

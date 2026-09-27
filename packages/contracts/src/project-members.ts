@@ -25,5 +25,18 @@ export const RewriteSectionSchema = z.object({
   instructions: z.string().max(1000).optional(),
   mode: z.enum(["REWRITE", "SHORTEN"]).default("REWRITE"),
   audience: z.enum(["DONOR", "INTERNAL", "GENERAL"]).default("DONOR"),
+  /**
+   * Report Editor B10 — rewrite only this character range of the section's
+   * stored markdown (`from` inclusive, `to` exclusive).
+   */
+  selection: z
+    .object({ from: z.number().int().nonnegative(), to: z.number().int().positive() })
+    .refine((s) => s.to > s.from, { message: "Selection end must be after its start" })
+    .optional(),
+  /** Return the suggestion without saving it (requires `selection`). */
+  preview: z.boolean().optional(),
+}).refine((input) => !input.preview || input.selection !== undefined, {
+  message: "A preview rewrite needs a selection",
+  path: ["preview"],
 });
 export type RewriteSectionInput = z.infer<typeof RewriteSectionSchema>;

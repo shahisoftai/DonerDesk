@@ -106,6 +106,12 @@ def build_user_prompt(req: SectionDraftRequest) -> str:
         else:
             parts.append(_bullets("Already-written sibling sections (do NOT restate their facts; refer to them by name):", s.priorSectionsSummary))
 
+    if s.userInstruction and s.userInstruction.strip():
+        parts.append(
+            "# Author's instruction for this section (follow it unless it conflicts with the rules; "
+            "never invent facts or numbers):\n" + s.userInstruction.strip()
+        )
+
     attached = _ATTACHED_BY_KIND.get(kind)
     if attached:
         parts.append(f"# Attached automatically: {attached}. Do not reproduce it; interpret it in prose.")
