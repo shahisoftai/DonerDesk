@@ -1,5 +1,62 @@
 # Deploy to Contabo — Fastest Path
 
+**Last deploy:** 2026-09-27 — `releaseId=20260927134429` (`SCOPE=both`,
+branch `0008-log-frame`, commit `e0bf15d`). Rebuilds the Donor Template
+Manager end to end (see `Features/05-Donor-Template-Manager-Plan.md`): the
+report planner now carries donor instructions/questions/required
+tables/hierarchy into `ReportPlanSection` — previously dropped entirely, so
+this is the fix for AI drafts ignoring the donor's own template — plus a
+structure-preserving DOCX/PDF/XLSX/CSV parser, LLM extraction with per-item
+grounding (heuristic fallback, canonical outline always flagged, never
+silent), a real template lifecycle (`EXTRACTING -> NEEDS_REVIEW ->
+REVIEWED`), per-version snapshots, donor compliance rules feeding the
+checklist, and a new Template Workspace UI (section tree, requirements
+editor, AI-brief preview, source panel, version diff, library/clone).
+
+**One additive migration applied manually before the code deploy**, per the
+usual order (fast-deploy does not run migrations itself):
+`20260927150000_donor_template_manager_v2` — adds `DonorTemplate.{requirementsJson,
+status, extractionMetaJson, originalFileName, originalFileMime,
+originalFileHash, isLibrary, sourceTemplateId}` and a new
+`DonorTemplateVersion` table (immutable per-version section/requirements
+snapshots), with a backfill of `requirementsJson` from the legacy
+`requiredAnnexes` column and a `DonorTemplateVersion` row per existing
+template (all 4 production templates backfilled as version-1 snapshots,
+status defaulted to `REVIEWED` so in-flight reports keep generating).
+Applied via `prisma migrate deploy` as `donordesk_migrator` over
+`postgresql://donordesk_migrator@127.0.0.1:5432/donordesk` (trust auth,
+per the standing host finding — no migrator password exists). **Caveat this
+time:** the new `packages/infrastructure/prisma/` folder had to be `rsync`'d
+to the host *before* running `migrate deploy` (it isn't there until a
+deploy ships it) — done via `rsync -az --relative packages/infrastructure/prisma/{migrations/<dir>,schema.prisma} contabo:/opt/donordesk/app/`.
+**Also caught:** `infra/postgres/rls.sql` was edited locally to add
+`DonorTemplateVersion` to the tenant-isolation table list, but the file on
+the host was stale (only the prisma folder had been shipped) — the first
+`rls.sql` apply was a silent no-op for the new table (`relrowsecurity=f`).
+Fixed by explicitly `rsync`-ing `infra/postgres/rls.sql` too before
+re-applying it. **Any future migration that also touches `rls.sql` must ship
+both files to the host, not just the prisma folder** — `deploy-fast.sh`
+itself ships both correctly as part of its worker tar; this only bit because
+the migration was applied manually, ahead of the scripted deploy.
+`REQUIRED_PRISMA_FIELDS` in `apps/api/src/routes/health.ts` updated for the
+new `DonorTemplate`/`DonorTemplateVersion` columns in the same commit.
+Verified after the migration and again after the code deploy: RLS forced on
+`DonorTemplateVersion` (`t/t`), cross-tenant query returns 0 rows under a
+foreign `app.current_tenant`, 4 rows visible as admin.
+
+Pre-deploy gates all green: `pnpm -r typecheck` clean across all 8 packages;
+unit tests domain 228, contracts 9, application 138, infrastructure 234, web
+178, worker pytest 127 — all passing (the two `apps/api/test/billing.test.mjs`
+failures are the known local-Postgres-credentials case, confirmed present on
+`HEAD~1` too, not a regression). Also verified end-to-end against a scratch
+local Postgres database (full migration chain, a realistic ECHO-style Word
+template through upload/parse/extract/review/approve/generate) and in a real
+Chromium browser session before shipping. Deploy verified: systemd
+api/web/superadmin active, `/health` `{"status":"ok"}`, `/ready` 200 with
+`database: ok` and `prismaClient: ok`, worker health `{"status":"ok"}`,
+public `https://donordesk.online/login` and `https://sa.donordesk.online/`
+both 200. No env changes.
+
 **Flag flip (same day, no new release):** 2026-09-27 — `REPORT_EDITOR_V2=1` set
 for **all tenants** via a systemd drop-in,
 `/etc/systemd/system/donordesk-web.service.d/report-editor-v2.conf`
