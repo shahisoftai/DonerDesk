@@ -80,7 +80,7 @@ export function AppShell({
     <div className="min-h-screen text-sm leading-5">
       <SkipLink />
       <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
               ref={menuButtonRef}
@@ -137,7 +137,7 @@ export function AppShell({
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl gap-6 px-4 sm:px-6">
+      <div className="flex gap-6 px-4 sm:px-6">
         <aside
           ref={desktopSidebarRef}
           aria-hidden={navCollapsed}
