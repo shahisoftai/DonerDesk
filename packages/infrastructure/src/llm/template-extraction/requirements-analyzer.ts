@@ -7,7 +7,7 @@ export type GuidanceKind = "GENERAL" | "SUBMISSION" | "FORMATTING" | "ANNEXES" |
 const GUIDANCE_HEADINGS: Array<[GuidanceKind, RegExp]> = [
   ["SUBMISSION", /^(submission|submitting|reporting\s+(schedule|deadlines?|timeline|calendar)|deadlines?|due\s+dates?|how\s+to\s+submit)\b/i],
   ["FORMATTING", /^(format(ting)?|presentation|layout|length(\s+and\s+format)?|style\s+guide|report\s+format)\b/i],
-  ["GENERAL", /^(general\s+(instructions|guidance|guidelines|notes)|instructions?(\s+for\s+(use|completion|completing))?|guidance(\s+notes?)?|how\s+to\s+(use|complete)|notes?\s+(to|for)\s+(the\s+)?(user|partner|grantee|applicant)s?|purpose\s+of\s+(this|the)\s+(template|document|report(ing)?\s+format)|about\s+this\s+template|introduction\s+to\s+(this|the)\s+template)\b/i],
+  ["GENERAL", /^(general\s+(instructions|guidance|guidelines|notes)|instructions?(\s+for\s+(use|completion|completing))?|guid(e|ance)(s)?(\s+(notes?|for\s+\w+))?|how\s+to\s+(use|complete)|notes?\s+(to|for)\s+(the\s+)?(user|partner|grantee|applicant)s?|purpose\s+of\s+(this|the)\s+(template|document|report(ing)?\s+format)|about\s+this\s+template|introduction\s+to\s+(this|the)\s+template)\b/i],
 ];
 
 const ANNEX_HEADING = /^(annexes|attachments|appendices|supporting\s+documents|list\s+of\s+(annexes|attachments))\b/i;
@@ -78,7 +78,9 @@ export function analyzeRequirements(input: RequirementScanInput): TemplateRequir
   for (const p of input.passages) {
     const sentences = [...splitSentences(p.text), ...(p.listItems ?? [])];
     for (const s of sentences) {
-      if (/_{3,}/.test(s) || s.length < 12) continue;
+      // Skip cover-page placeholder fields ("[ACTIVITY TITLE]", "[Quarterly] Progress Report … [XX]")
+      // — two or more bracketed fields in one line is a form field, never real guidance text.
+      if (/_{3,}/.test(s) || s.length < 12 || (s.match(/\[[^\]]{1,40}\]/g)?.length ?? 0) >= 2) continue;
       const source = { excerpt: s.slice(0, 500), ...(p.page ? { page: p.page } : {}) };
       if (!frequency) for (const [re, f] of FREQUENCIES) if (re.test(s)) frequency = f;
       const sectionOnly = p.kind === "SECTION";

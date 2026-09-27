@@ -1,8 +1,8 @@
 import { DomainError } from "../../core/domain-error.js";
 
-export type SectionInputType = "NARRATIVE" | "TABLE" | "ANNEX" | "INDICATOR_TABLE" | "COMPLIANCE";
+export type SectionInputType = "NARRATIVE" | "TABLE" | "CHART" | "ANNEX" | "INDICATOR_TABLE" | "COMPLIANCE";
 
-export const SECTION_INPUT_TYPES: readonly SectionInputType[] = ["NARRATIVE", "TABLE", "ANNEX", "INDICATOR_TABLE", "COMPLIANCE"];
+export const SECTION_INPUT_TYPES: readonly SectionInputType[] = ["NARRATIVE", "TABLE", "CHART", "ANNEX", "INDICATOR_TABLE", "COMPLIANCE"];
 
 export type SectionReviewStatus = "DRAFT" | "REVIEWED";
 

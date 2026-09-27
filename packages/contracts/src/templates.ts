@@ -11,7 +11,7 @@ export const ReportTypeSchema = z.enum([
   "CUSTOM",
 ]);
 
-export const SectionInputTypeSchema = z.enum(["NARRATIVE", "TABLE", "ANNEX", "INDICATOR_TABLE", "COMPLIANCE"]);
+export const SectionInputTypeSchema = z.enum(["NARRATIVE", "TABLE", "CHART", "ANNEX", "INDICATOR_TABLE", "COMPLIANCE"]);
 
 export const SectionReviewStatusSchema = z.enum(["DRAFT", "REVIEWED"]);
 

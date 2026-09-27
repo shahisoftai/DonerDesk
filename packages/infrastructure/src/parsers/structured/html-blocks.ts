@@ -22,6 +22,22 @@ interface Element {
   inner: string;
 }
 
+const BOOKMARK_ANCHOR_RE = /<a\s+id="[^"]*"[^>]*>\s*<\/a>/gi;
+
+/**
+ * A Word-generated table of contents renders each entry as a paragraph whose
+ * entire visible content is one hyperlink to an internal bookmark
+ * (`<a href="#_page_9_0">…</a>`). Real body headings are never wrapped this
+ * way, so any paragraph matching this shape is TOC/cross-reference noise,
+ * not a section — dropping it here is what keeps a TOC from being extracted
+ * as dozens of near-duplicate garbage sections.
+ */
+function isTocEntry(inner: string): boolean {
+  const stripped = inner.replace(BOOKMARK_ANCHOR_RE, "").trim();
+  if (!stripped) return false;
+  return /^<a\s+href="#[^"]*"[^>]*>[\s\S]*<\/a>$/i.test(stripped);
+}
+
 /** Top-level elements among `tags`, honouring nesting of any tracked tag. */
 function topLevel(html: string, tags: readonly string[]): Element[] {
   const re = new RegExp(`<(/?)(${tags.join("|")})\\b[^>]*?(/?)>`, "gi");
@@ -90,6 +106,7 @@ export function htmlToBlocks(html: string): DocumentBlock[] {
       const text = htmlText(el.inner);
       if (text) blocks.push({ kind: "HEADING", level: Number(el.tag.slice(1)), text });
     } else if (el.tag === "p") {
+      if (isTocEntry(el.inner)) continue;
       const text = htmlText(el.inner);
       if (!text) continue;
       const emphasis = /^\s*<(strong|b)>[\s\S]*<\/\1>\s*$/i.test(el.inner) && !/<\/(strong|b)>[\s\S]*\S[\s\S]*<(strong|b)>/i.test(el.inner);

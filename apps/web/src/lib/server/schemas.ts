@@ -152,7 +152,7 @@ export const TemplateSectionSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().default(""),
-  inputType: z.enum(["NARRATIVE", "TABLE", "ANNEX", "INDICATOR_TABLE", "COMPLIANCE"]).catch("NARRATIVE"),
+  inputType: z.enum(["NARRATIVE", "TABLE", "CHART", "ANNEX", "INDICATOR_TABLE", "COMPLIANCE"]).catch("NARRATIVE"),
   required: z.boolean().default(true),
   evidenceNeeded: z
     .union([z.string(), z.array(z.string())])

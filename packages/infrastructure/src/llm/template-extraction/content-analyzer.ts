@@ -82,14 +82,21 @@ function stripLimitsText(text: string): string {
     .trim();
 }
 
+/** A section whose own title names its required content ("Table 3: …", "Chart 2: …") — the strongest signal available. */
+const TITLE_TYPE: ReadonlyArray<readonly [RegExp, SectionInputType]> = [
+  [/^(chart|graph)s?\b/i, "CHART"],
+  [/^(table|figure|matrix)s?\b/i, "TABLE"],
+];
+
 function inferInputType(title: string, text: string, tables: RequiredTable[]): SectionInputType {
-  const explicit = /provide\s+(?:a\s+|an\s+)?(narrative|table|indicator\s+table|annex|compliance)/i.exec(text);
+  const explicit = /provide\s+(?:a\s+|an\s+)?(narrative|indicator\s+table|table|chart|graph|annex|compliance)/i.exec(text);
   if (explicit?.[1]) {
     const kind = explicit[1].toLowerCase().replace(/\s+/g, "_");
     if (kind === "indicator_table") return "INDICATOR_TABLE";
     if (kind === "compliance") return "COMPLIANCE";
     if (kind === "annex") return "ANNEX";
     if (kind === "table") return "TABLE";
+    if (kind === "graph" || kind === "chart") return "CHART";
     return "NARRATIVE";
   }
   const t = title.toLowerCase();
@@ -98,6 +105,8 @@ function inferInputType(title: string, text: string, tables: RequiredTable[]): S
   const indicatorTable = tables.some((tb) => tb.columns.filter((c) => INDICATOR_COLUMNS.test(c)).length >= 2);
   if (indicatorTable || (/\bindicator/.test(t) && /\b(table|baseline|target|actual)\b/.test(all))) return "INDICATOR_TABLE";
   if (/\b(compliance|safeguard|psea|do no harm|code of conduct)\b/.test(t)) return "COMPLIANCE";
+  for (const [re, kind] of TITLE_TYPE) if (re.test(t)) return kind;
+  if (/\b(chart|graph)\b/.test(all) && /\b(insert|include|provide|show|display|generate)\b/.test(all)) return "CHART";
   if (tables.length > 0 && text.replace(/\s+/g, " ").length < 200) return "TABLE";
   if (/\b(budget|expenditure|financial report|beneficiary (?:figures|numbers|table))\b/.test(t) && /\btable\b/.test(all)) return "TABLE";
   return "NARRATIVE";

@@ -36,7 +36,7 @@ const SCHEMA = `{
   "reportingFrequency": "MONTHLY"|"QUARTERLY"|"SEMI_ANNUAL"|"ANNUAL"|"FINAL"|"CUSTOM"|null,
   "sections": [{
     "ref": "S1", "parentRef": string|null, "numbering": string|null, "title": string,
-    "inputType": "NARRATIVE"|"TABLE"|"INDICATOR_TABLE"|"ANNEX"|"COMPLIANCE",
+    "inputType": "NARRATIVE"|"TABLE"|"CHART"|"INDICATOR_TABLE"|"ANNEX"|"COMPLIANCE",
     "required": boolean, "includeInReport": boolean,
     "instructions": string|null, "mandatoryQuestions": [string], "evidenceNeeded": [string],
     "requiredTables": [{"title": string, "columns": [string]}],

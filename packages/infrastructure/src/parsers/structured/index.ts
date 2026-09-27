@@ -3,8 +3,8 @@ import type { IStructuredDocumentParser, StructuredDocument } from "@donordesk/a
 import { CsvBlockReader, DocxBlockReader, PdfBlockReader, PlainTextBlockReader, SpreadsheetBlockReader } from "./readers.js";
 
 export { htmlToBlocks, htmlText } from "./html-blocks.js";
-export { linesToBlocks, headingLevel } from "./text-blocks.js";
-export { parseCsv } from "./readers.js";
+export { linesToBlocks, headingLevel, stripRepeatedBoilerplate } from "./text-blocks.js";
+export { parseCsv, cleanDocxBlocks } from "./readers.js";
 
 /** Dispatches to the first format reader that supports the file (open for new formats). */
 export class CompositeStructuredDocumentParser implements IStructuredDocumentParser {

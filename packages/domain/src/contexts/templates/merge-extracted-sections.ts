@@ -1,7 +1,19 @@
 import type { TemplateSection } from "./template-section.js";
 
+/**
+ * Matches sections across an extraction by title, ignoring a leading numbering
+ * prefix ("2.1 ", "IV. "). Only strips a prefix that is actually followed by
+ * more text — a title that is nothing but a number ("1.", "6") must never
+ * collapse to the empty string, or every such title collides on one key.
+ */
 function key(title: string): string {
-  return title.toLowerCase().replace(/^[\divxlc.)\s]+/i, "").replace(/[^a-z0-9]+/g, " ").trim();
+  const full = title.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const stripped = title
+    .toLowerCase()
+    .replace(/^(?:[ivxlc]+|\d+(?:\.\d+)*)[.):]?\s+/i, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  return /[a-z]/.test(stripped) ? stripped : full;
 }
 
 /**

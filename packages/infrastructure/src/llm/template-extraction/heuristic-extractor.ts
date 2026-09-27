@@ -94,6 +94,26 @@ function outlineFromGuidanceTable(blocks: DocumentBlock[]): OutlineNode[] {
   return [];
 }
 
+/** Drops a bare trailing page number that survived from a TOC/reference copy ("Annex A: Beneficiary List  4"). */
+function stripTrailingPageNumber(text: string): string {
+  return text.replace(/[\s.]+\d{1,4}\s*$/, "").trim() || text.trim();
+}
+
+/**
+ * A donor template often lists each annex twice — once as a bare TOC-adjacent
+ * reference, once as the real heading with its content underneath. Both carry
+ * the same roman-numeral numbering ("Annex II"), so when a top-level ANNEX
+ * draft's numbering repeats, only the later occurrence (the real heading) is
+ * kept.
+ */
+function dedupeAnnexNumbering(drafts: readonly SectionDraft[]): SectionDraft[] {
+  const lastIndexByNumbering = new Map<string, number>();
+  drafts.forEach((d, i) => {
+    if (!d.parentRef && d.inputType === "ANNEX" && d.numbering) lastIndexByNumbering.set(d.numbering, i);
+  });
+  return drafts.filter((d, i) => !(!d.parentRef && d.inputType === "ANNEX" && d.numbering) || lastIndexByNumbering.get(d.numbering!) === i);
+}
+
 function textOf(blocks: DocumentBlock[]): { text: string; listItems: string[] } {
   return {
     text: blocks.filter((b) => b.kind === "PARAGRAPH").map((b) => (b as { text: string }).text).join(" "),
@@ -136,9 +156,9 @@ export class HeuristicTemplateExtractor implements ITemplateExtractionService {
       const bodyText = textOf(node.body);
 
       if (annexHeading) {
-        for (const item of bodyText.listItems) scan.annexCandidates.push({ name: item });
+        for (const item of bodyText.listItems) scan.annexCandidates.push({ name: stripTrailingPageNumber(item) });
       } else if (annexItem) {
-        scan.annexCandidates.push({ name: node.heading, description: analysis.description || undefined });
+        scan.annexCandidates.push({ name: stripTrailingPageNumber(node.heading), description: analysis.description || undefined });
       }
 
       if (kind || parentExcluded) {
@@ -165,10 +185,11 @@ export class HeuristicTemplateExtractor implements ITemplateExtractionService {
         includeInReport: !(kind || parentExcluded),
         source: { excerpt: node.heading, ...(node.page ? { page: node.page } : {}) },
         confidence: styled ? 0.8 : 0.65,
+        ...(annexItem ? { title: stripTrailingPageNumber(sectionTitle.length >= 2 ? sectionTitle : node.heading) } : {}),
       });
     }
 
-    let sections = buildSectionTree(drafts.slice(0, MAX_SECTIONS), warnings);
+    let sections = buildSectionTree(dedupeAnnexNumbering(drafts).slice(0, MAX_SECTIONS), warnings);
     if (drafts.length > MAX_SECTIONS) warnings.push(`Only the first ${MAX_SECTIONS} headings were kept.`);
     let method: "HEURISTIC" | "CANONICAL" = "HEURISTIC";
     if (!sections.some((s) => s.includeInReport)) {

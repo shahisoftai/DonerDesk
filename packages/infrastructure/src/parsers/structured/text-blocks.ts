@@ -23,12 +23,23 @@ function looksLikeHeading(t: string): boolean {
   return t.length <= 120 && !TERMINATED.test(t.replace(/:$/, "")) && t.split(/\s+/).length <= 16;
 }
 
+/** A whole line wrapped in brackets is a form placeholder ("[ACTIVITY TITLE]", "[MM, DD, YYYY]"), never a heading. */
+const BRACKET_ONLY = /^\[.*\]$/;
+/** A document's own navigational scaffolding, not a section of its content. */
+const STRUCTURAL_LABEL = /^(contents|table of contents|index)\s*\d*$/i;
+
 /** Heading level for numbered/labelled lines, or undefined when not a heading. */
 export function headingLevel(t: string): number | undefined {
+  if (BRACKET_ONLY.test(t) || STRUCTURAL_LABEL.test(t)) return undefined;
   const md = MD_HEADING.exec(t);
   if (md) return md[1]!.length;
   const num = NUMBERED_HEADING.exec(t);
-  if (num && looksLikeHeading(num[2]!) && !/^\d+\s+(?:days?|words?|pages?|%)/i.test(t)) return Math.min(4, num[1]!.split(".").length);
+  // A table-of-contents dot-leader entry that lost its title (mammoth flattens
+  // the leader dots away) leaves just a page number, e.g. "1.     6" — reject
+  // any numbered "heading" whose remaining text has no letters at all.
+  if (num && /[A-Za-z]/.test(num[2]!) && looksLikeHeading(num[2]!) && !/^\d+\s+(?:days?|words?|pages?|%)/i.test(t)) {
+    return Math.min(4, num[1]!.split(".").length);
+  }
   if ((LABELED_HEADING.test(t) || ROMAN_HEADING.test(t) || LETTER_HEADING.test(t)) && looksLikeHeading(t)) return 1;
   if (isAllCapsTitle(t)) return 1;
   return undefined;
@@ -118,4 +129,36 @@ export function linesToBlocks(lines: readonly SourceLine[]): DocumentBlock[] {
   flushPara();
   flushTable();
   return blocks;
+}
+
+function blockText(b: DocumentBlock): string | undefined {
+  return b.kind === "TABLE" ? undefined : b.text;
+}
+
+/**
+ * A running header/footer baked into the document body (a page-break-repeated
+ * heading/paragraph such as "[xx] Report: [name] P 2/16") always contains a
+ * number that changes page to page and text that otherwise repeats verbatim.
+ * Any block whose text, with its digits blanked out, is identical to at least
+ * `minOccurrences` other blocks is boilerplate, not content, and is dropped.
+ * Text with no digit at all is never touched, so a genuinely repeated heading
+ * like "Introduction" is untouched — this only targets page/date markers.
+ */
+export function stripRepeatedBoilerplate(blocks: readonly DocumentBlock[], minOccurrences = 3): DocumentBlock[] {
+  const keyOf = (text: string): string | undefined => {
+    if (!/\d/.test(text)) return undefined;
+    const key = text.replace(/\d+/g, "#").replace(/\s+/g, " ").trim().toLowerCase();
+    return key.length >= 6 ? key : undefined;
+  };
+  const counts = new Map<string, number>();
+  for (const b of blocks) {
+    const text = blockText(b);
+    const key = text && keyOf(text);
+    if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return blocks.filter((b) => {
+    const text = blockText(b);
+    const key = text && keyOf(text);
+    return !key || (counts.get(key) ?? 0) < minOccurrences;
+  });
 }

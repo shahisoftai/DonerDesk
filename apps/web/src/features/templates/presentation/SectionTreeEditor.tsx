@@ -21,6 +21,7 @@ import { TablesEditor } from "./TablesEditor";
 const INPUT_TYPES = [
   { value: "NARRATIVE", label: "Narrative" },
   { value: "TABLE", label: "Table" },
+  { value: "CHART", label: "Chart" },
   { value: "INDICATOR_TABLE", label: "Indicator table" },
   { value: "ANNEX", label: "Annex" },
   { value: "COMPLIANCE", label: "Compliance" },

@@ -3,7 +3,9 @@ import * as ExcelJS from "exceljs";
 import { DomainError, type Result } from "@donordesk/domain";
 import type { DocumentBlock, IStructuredDocumentParser, StructuredDocument } from "@donordesk/application";
 import { htmlToBlocks } from "./html-blocks.js";
-import { linesToBlocks, type SourceLine } from "./text-blocks.js";
+import { linesToBlocks, stripRepeatedBoilerplate, type SourceLine } from "./text-blocks.js";
+
+const BRACKET_ONLY = /^\[.*\]$/;
 
 type ParseInput = { buffer: Buffer; fileName: string; mimeType: string };
 
@@ -31,24 +33,43 @@ const DOCX_STYLE_MAP = [
 ];
 
 /** Promotes numbered/capitalised plain or bold paragraphs to headings in DOCX files without heading styles. */
-function promotePseudoHeadings(blocks: DocumentBlock[]): DocumentBlock[] {
+/** Full post-process from raw `htmlToBlocks` output to the final DOCX block list (also used directly by tests). */
+export function cleanDocxBlocks(blocks: DocumentBlock[]): DocumentBlock[] {
+  return stripRepeatedBoilerplate(promotePseudoHeadings(blocks));
+}
+
+export function promotePseudoHeadings(blocks: DocumentBlock[]): DocumentBlock[] {
   if (blocks.some((b) => b.kind === "HEADING")) return blocks;
   const promoted: DocumentBlock[] = [];
   for (const b of blocks) {
     if (b.kind === "PARAGRAPH") {
       const [asBlock] = linesToBlocks([{ text: b.text }]);
-      if (asBlock?.kind === "HEADING") {
+      if (asBlock?.kind === "HEADING" || asBlock?.kind === "TABLE") {
         promoted.push(asBlock);
         continue;
       }
-      if (b.emphasis && b.text.length <= 100 && !/[.?!]$/.test(b.text)) {
+      if (b.emphasis && !BRACKET_ONLY.test(b.text) && b.text.length <= 100 && !/[.?!]$/.test(b.text)) {
         promoted.push({ kind: "HEADING", level: 1, text: b.text.replace(/:$/, "") });
         continue;
       }
     }
     promoted.push(b);
   }
-  return promoted;
+  return mergeAdjacentTables(promoted);
+}
+
+/** Each tab-delimited paragraph becomes its own single-row TABLE block above; fold consecutive ones back into one table. */
+function mergeAdjacentTables(blocks: DocumentBlock[]): DocumentBlock[] {
+  const out: DocumentBlock[] = [];
+  for (const b of blocks) {
+    const prev = out[out.length - 1];
+    if (b.kind === "TABLE" && prev?.kind === "TABLE") {
+      prev.rows.push(...b.rows);
+    } else {
+      out.push(b);
+    }
+  }
+  return out;
 }
 
 export class DocxBlockReader implements IStructuredDocumentParser {
@@ -58,7 +79,7 @@ export class DocxBlockReader implements IStructuredDocumentParser {
   async parse(input: ParseInput): Promise<Result<StructuredDocument, DomainError>> {
     try {
       const html = await mammoth.convertToHtml({ buffer: input.buffer }, { styleMap: DOCX_STYLE_MAP });
-      return { ok: true, value: { format: "DOCX", blocks: promotePseudoHeadings(htmlToBlocks(html.value)) } };
+      return { ok: true, value: { format: "DOCX", blocks: cleanDocxBlocks(htmlToBlocks(html.value)) } };
     } catch (error) {
       return failure("Word", error);
     }

@@ -8,7 +8,7 @@ import {
   SourceGrounding,
   splitNumbering,
 } from "../dist/llm/template-extraction/index.js";
-import { htmlToBlocks, linesToBlocks } from "../dist/parsers/structured/index.js";
+import { htmlToBlocks, linesToBlocks, cleanDocxBlocks } from "../dist/parsers/structured/index.js";
 
 const tenantId = TenantId.create("tenant-a");
 const heuristic = new HeuristicTemplateExtractor();
@@ -219,4 +219,93 @@ test("fallback chain: no AI provider → heuristic result records why", async ()
   assert.ok(r.ok);
   assert.equal(r.value.meta.method, "HEURISTIC");
   assert.ok(r.value.meta.warnings.some((w) => /AI extraction unavailable/.test(w)));
+});
+
+// --------------------------------------------------------------------------- #
+// Real-world regression: a Word template with a native TOC field, no Heading
+// styles at all, cover-page placeholder fields, and a per-page running header
+// baked into the body — the exact shape that turned a real USAID template
+// into ~106 mostly-NARRATIVE, mostly-garbage "sections" before these fixes.
+// --------------------------------------------------------------------------- #
+
+const NOFO_STYLE_HTML = [
+  "<p>[ACTIVITY TITLE] </p>",
+  "<p>[Quarterly] Progress Report Period [XX] – MMMM DD, YYYY to MMMM DD, YYYY</p>",
+  "<p>CONTENTS </p>",
+  "<p>CONTENTS 3 </p>",
+  '<p><a href="#_page_9_0">ACRONYMS AND ABBREVIATIONS                    5 </a></p>',
+  '<p><a href="#_page_11_0">GUIDE FOR IMPLEMENTING PARTNERS               6 </a></p>',
+  '<p><a href="#_page_13_0">1.     6</a></p>',
+  '<p><a href="#_page_15_0">2.     7</a></p>',
+  '<p><a href="#_page_23_0">ANNEX I INDICATOR PERFORMANCE TRACKING TABLE 12</a></p>',
+  "<p>ANNEX II GEOGRAPHIC DATA REPORTING 13</p>",
+  '<p><a href="#_page_13_0">TABLE 1: ACTIVITY DETAILS </a></p>',
+  '<p><a href="#_page_23_0">TABLE 3: INDICATOR PERFORMANCE TRACKING TABLE </a></p>',
+  "<p><strong><em>[xx] Report: [Insert short activity name]                 P 2/16</em></strong></p>",
+  "<p><strong><em>[MM, DD, YYYY]</em></strong></p>",
+  "<p>1. ACRONYMS AND ABBREVIATIONS</p>",
+  "<p>AAO Acquisition and Assistance Office.</p>",
+  "<p><strong><em>[xx] Report: [Insert short activity name]                 P 3/16</em></strong></p>",
+  "<p><strong><em>[MM, DD, YYYY]</em></strong></p>",
+  "<p>2. GUIDE FOR IMPLEMENTING PARTNERS</p>",
+  "<p>This section explains how to complete this template. It is not part of the report itself.</p>",
+  "<p><strong><em>[xx] Report: [Insert short activity name]                 P 4/16</em></strong></p>",
+  "<p><strong><em>[MM, DD, YYYY]</em></strong></p>",
+  "<p>3. ACTIVITY IMPLEMENTATION</p>",
+  "<p>Describe activities implemented this period.</p>",
+  "<p>TABLE 1: ACTIVITY DETAILS</p>",
+  "<p>Activity Name\tStart Date\tEnd Date</p>",
+  "<p>ANNEX II GEOGRAPHIC DATA REPORTING</p>",
+  "<p>Provide the geographic coverage data for this period.</p>",
+  "<p>ANNEX I INDICATOR PERFORMANCE TRACKING TABLE</p>",
+  "<p>TABLE 3: INDICATOR PERFORMANCE TRACKING TABLE</p>",
+  "<p>Indicator\tBaseline\tTarget\tActual</p>",
+];
+
+test("real-world NOFO-style template: TOC/placeholders/running-header dropped, guidance excluded, tables/annex typed correctly", async () => {
+  const r = await heuristic.extract({
+    tenantId,
+    rawText: "",
+    document: { format: "DOCX", blocks: cleanDocxBlocks(htmlToBlocks(NOFO_STYLE_HTML.join(""))) },
+    language: "en",
+  });
+  assert.ok(r.ok, r.ok ? "" : r.error.message);
+  const { sections } = r.value;
+  const titles = sections.map((s) => s.title);
+
+  // Table-of-contents hyperlink entries never become sections.
+  assert.ok(!titles.some((t) => /^\d+\.\s*$/.test(t) || t === "6" || t === "7"));
+  // Cover-page bracket placeholders never become sections.
+  assert.ok(!titles.some((t) => /^\[.*\]$/.test(t)));
+  // The per-page running header/footer (repeated, page number varies) is fully dropped.
+  assert.ok(!titles.some((t) => /Insert short activity name/.test(t)));
+  assert.ok(!titles.some((t) => /^\[MM, DD, YYYY\]$/.test(t)));
+  // The document's own "Contents" label is not a section.
+  assert.ok(!titles.some((t) => /^contents/i.test(t)));
+
+  const byTitle = Object.fromEntries(sections.map((s) => [s.title, s]));
+  // A heading that is meta-guidance about the template, not report content, is marked guidance (excluded), not narrative.
+  assert.equal(byTitle["GUIDE FOR IMPLEMENTING PARTNERS"].includeInReport, false);
+  // Real content sections are kept and typed correctly, not lumped in as narrative.
+  assert.equal(byTitle["ACRONYMS AND ABBREVIATIONS"].inputType, "NARRATIVE");
+  assert.equal(byTitle["ACTIVITY IMPLEMENTATION"].includeInReport, true);
+  assert.equal(byTitle["TABLE 1: ACTIVITY DETAILS"].inputType, "TABLE");
+  assert.equal(byTitle["TABLE 3: INDICATOR PERFORMANCE TRACKING TABLE"].inputType, "INDICATOR_TABLE");
+
+  // The TOC-adjacent annex reference and the real annex heading collapse to one section, not two.
+  assert.equal(titles.filter((t) => /GEOGRAPHIC DATA REPORTING/i.test(t)).length, 1);
+});
+
+test("inferInputType (via extraction): explicit \"provide a chart\" and a chart-titled heading are both typed CHART", async () => {
+  const html = [
+    "<p>1. RESULTS</p>",
+    "<p>Provide a chart of the trend over the reporting period.</p>",
+    "<p>2. CHART 1: BENEFICIARIES REACHED BY QUARTER</p>",
+    "<p>Summarise the trend shown.</p>",
+  ].join("");
+  const r = await heuristic.extract({ tenantId, rawText: "", document: { format: "DOCX", blocks: cleanDocxBlocks(htmlToBlocks(html)) }, language: "en" });
+  assert.ok(r.ok);
+  const byTitle = Object.fromEntries(r.value.sections.map((s) => [s.title, s]));
+  assert.equal(byTitle.RESULTS.inputType, "CHART");
+  assert.equal(byTitle["CHART 1: BENEFICIARIES REACHED BY QUARTER"].inputType, "CHART");
 });
