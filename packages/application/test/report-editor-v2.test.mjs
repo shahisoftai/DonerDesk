@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ReportSection, ReportClaim } from "@donordesk/domain";
+import { ReportSection, ReportClaim, locateClaimSpan } from "@donordesk/domain";
 import {
   RegenerateReportSectionHandler,
   planSectionFor,
@@ -11,7 +11,6 @@ import {
   GetReportDraftHandler,
   RewriteReportSectionHandler,
   RESTRICTED_EVIDENCE_LABEL,
-  locateClaimSpan,
   replaceNumberInSpan,
 } from "../dist/index.js";
 

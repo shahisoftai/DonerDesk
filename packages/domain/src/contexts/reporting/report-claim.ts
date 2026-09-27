@@ -241,6 +241,9 @@ export class ReportClaim {
       return;
     }
     if (input.result === "EXCLUDED") {
+      // The statement is left out of the report: exports omit it and the
+      // submission snapshot records the exclusion (not a limitation).
+      this.props.verificationResult = "EXCLUDED";
       this.props.resolutionNotes = input.notes ?? this.props.resolutionNotes;
       this.props.resolvedById = input.by;
       this.props.resolvedAt = input.at ?? new Date();
@@ -251,13 +254,13 @@ export class ReportClaim {
 
   /**
    * Undoes a manual resolution (keep-with-note / leave-out): the claim is an
-   * open decision again. The verification result is untouched — it was never
-   * changed by the resolution.
+   * open decision again (a left-out statement is FAILED again).
    */
   reopen(): void {
     if (this.props.resolvedById === undefined) {
       throw new Error("Only a resolved claim can be reopened");
     }
+    if (this.props.verificationResult === "EXCLUDED") this.props.verificationResult = "FAILED";
     this.props.resolvedById = undefined;
     this.props.resolvedAt = undefined;
     this.props.resolutionNotes = undefined;
@@ -266,13 +269,16 @@ export class ReportClaim {
   /**
    * P0-1 — Carries a prior user resolution forward onto a re-verified claim so
    * a reassessment never silently resurrects a claim the user accepted-with-a-
-   * limitation or excluded. Used only for reconciliation; it never mutates the
-   * verification result (the claim stays FAILED, with the decision recorded).
+   * limitation or excluded. Used only for reconciliation: an accepted claim
+   * stays FAILED with the decision recorded; an excluded one stays EXCLUDED.
    */
-  preserveResolution(by: string, notes?: string): void {
+  preserveResolution(by: string, notes?: string, excluded = false): void {
     this.props.resolvedById = by;
     this.props.resolvedAt = new Date();
     if (notes !== undefined) this.props.resolutionNotes = notes;
+    // A left-out statement stays left out; an accepted one keeps its (failed)
+    // verification result.
+    if (excluded && this.props.verificationResult !== "PASSED") this.props.verificationResult = "EXCLUDED";
   }
 }
 

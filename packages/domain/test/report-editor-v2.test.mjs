@@ -11,6 +11,7 @@ import {
   SECTION_REGENERATIONS_PER_HOUR,
   ReportClaim,
   ReportSection,
+  omitExcludedStatements,
 } from "../dist/index.js";
 
 // ---------------------------------------------------------------------------
@@ -179,4 +180,33 @@ test("a rehydrated section keeps its stored updatedAt as its version", () => {
     props: { sectionTitle: "A", sectionOrder: 0, content: "", sourceReferences: [], unsupportedClaims: [], status: "DRAFTED" },
   });
   assert.equal(section.updatedAt.toISOString(), updatedAt.toISOString());
+});
+
+// ---------------------------------------------------------------------------
+// Leave out (EXCLUDED)
+// ---------------------------------------------------------------------------
+
+test("leaving a statement out records EXCLUDED; undo restores FAILED; re-checks keep it excluded", () => {
+  const claim = ReportClaim.create({ id: "c1", tenantId: "t", projectId: "p", reportDraftId: "d", sectionId: "s", text: "We reached 10 schools.", type: "NUMERIC", verificationResult: "FAILED" });
+  claim.resolve({ result: "EXCLUDED", by: "u1" });
+  assert.equal(claim.verificationResult, "EXCLUDED");
+  claim.reopen();
+  assert.equal(claim.verificationResult, "FAILED");
+
+  const reverified = ReportClaim.create({ id: "c2", tenantId: "t", projectId: "p", reportDraftId: "d", sectionId: "s", text: "We reached 10 schools.", type: "NUMERIC", verificationResult: "FAILED" });
+  reverified.preserveResolution("u1", undefined, true);
+  assert.equal(reverified.verificationResult, "EXCLUDED");
+  const accepted = ReportClaim.create({ id: "c3", tenantId: "t", projectId: "p", reportDraftId: "d", sectionId: "s", text: "x", type: "FACTUAL", verificationResult: "FAILED" });
+  accepted.preserveResolution("u1", "note", false);
+  assert.equal(accepted.verificationResult, "FAILED");
+});
+
+test("exports omit left-out statements and tidy the whitespace", () => {
+  const content = "Floods hit the district. We reached 10 schools. Water points were repaired.\n\n- A list item";
+  const out = omitExcludedStatements(content, [
+    { text: "We reached 10 schools.", verificationResult: "EXCLUDED" },
+    { text: "Floods hit the district.", verificationResult: "FAILED" },
+    { text: "Not in the text.", verificationResult: "EXCLUDED" },
+  ]);
+  assert.equal(out, "Floods hit the district. Water points were repaired.\n\n- A list item");
 });

@@ -1,10 +1,10 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ExportPackage, createChartConfig, type ChartConfig } from "@donordesk/domain";
+import { DomainError, ExportPackage, createChartConfig, omitExcludedStatements, type ChartConfig } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IExportRepository, IExportBuilder, ExportIntent } from "../../ports/exports.js";
 import type { IStorage } from "../../ports/infrastructure.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
-import type { IReportingPeriodRepository, IReportDraftRepository, IReportSectionRepository, ISubmissionSnapshotRepository, IDonorTemplateMappingRepository } from "../../ports/reporting.js";
+import type { IReportingPeriodRepository, IReportDraftRepository, IReportSectionRepository, ISubmissionSnapshotRepository, IDonorTemplateMappingRepository, IReportClaimRepository } from "../../ports/reporting.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
@@ -32,6 +32,7 @@ export class CreateExportHandler {
     private readonly audit: IAuditLogger,
     private readonly donorTemplateMappings?: IDonorTemplateMappingRepository,
     private readonly donorTemplates?: IDonorTemplateRepository,
+    private readonly claims?: IReportClaimRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateExportInput): Promise<Result<{ id: string; fileUrl: string }, DomainError>> {
@@ -74,7 +75,14 @@ export class CreateExportHandler {
       const s = await this.sections.findByReportDraft(draft.id, ctx.tenant.tenantId);
       if (s.ok) {
         const sorted = [...s.value].sort((a, b) => a.sectionOrder - b.sectionOrder);
-        sectionsArr = sorted.map((sec) => ({ title: sec.sectionTitle, content: sec.content, status: sec.status }));
+        // Statements the reviewer chose to leave out never reach the donor.
+        const claimsResult = this.claims ? await this.claims.findByDraft(draft.id, ctx.tenant.tenantId) : undefined;
+        const claims = claimsResult?.ok ? claimsResult.value : [];
+        sectionsArr = sorted.map((sec) => ({
+          title: sec.sectionTitle,
+          content: omitExcludedStatements(sec.content, claims.filter((c) => c.sectionId === sec.id)),
+          status: sec.status,
+        }));
         sectionChartConfigs = sorted.map((sec) => ({ title: sec.sectionTitle, chartConfig: sec.chartConfig }));
       }
     }

@@ -131,11 +131,15 @@ export class ReportAssuranceService implements IReportAssuranceService {
     // silently resurrects a claim the user accepted-with-a-limitation or
     // excluded. Resolution is keyed by the claim's stable fingerprint.
     const existingResult = await this.claims.findBySection(section.id, tenantId);
-    const resolvedByFingerprint = new Map<string, { by: string; notes?: string }>();
+    const resolvedByFingerprint = new Map<string, { by: string; notes?: string; excluded: boolean }>();
     if (existingResult.ok) {
       for (const existing of existingResult.value) {
         if (existing.resolvedById !== undefined) {
-          resolvedByFingerprint.set(existing.fingerprint, { by: existing.resolvedById, notes: existing.resolutionNotes });
+          resolvedByFingerprint.set(existing.fingerprint, {
+            by: existing.resolvedById,
+            notes: existing.resolutionNotes,
+            excluded: existing.verificationResult === "EXCLUDED",
+          });
         }
       }
     }
@@ -176,7 +180,7 @@ export class ReportAssuranceService implements IReportAssuranceService {
       claim.setNumericAtoms(v.numericAtoms ?? assertion.numericAtoms);
       const prior = resolvedByFingerprint.get(claim.fingerprint);
       if (prior) {
-        claim.preserveResolution(prior.by, prior.notes);
+        claim.preserveResolution(prior.by, prior.notes, prior.excluded);
       }
       persisted.push(claim);
     }

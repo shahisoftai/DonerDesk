@@ -808,7 +808,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     );
   }
 
-  const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, submissionSnapshots, exportBuilder, storage, audits, donorTemplateMappings, templates);
+  const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, submissionSnapshots, exportBuilder, storage, audits, donorTemplateMappings, templates, reportClaims);
   const uploadTemplateHandler = new UploadTemplateHandler(ids, templates, templateExtraction, audits);
   const donorTemplateStructureParser = new MammothDonorTemplateStructureParser();
   const detectTemplateRegionsHandler = new DetectTemplateRegionsHandler(ids, templates, donorTemplateMappings, donorTemplateStructureParser, audits);

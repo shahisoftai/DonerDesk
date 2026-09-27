@@ -1,21 +1,9 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, locateClaimSpan } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportClaimRepository, IReportSectionRepository } from "../../ports/reporting.js";
 import type { GetClaimSuggestionHandler } from "./get-claim-suggestion.js";
 import type { UpdateReportSectionHandler } from "./update-report-section.js";
-
-/**
- * Where a statement sits in its section's markdown: the verifier's span when
- * it still holds the statement, otherwise the first exact occurrence.
- */
-export function locateClaimSpan(content: string, claim: { text: string; charStart?: number; charEnd?: number }): { start: number; end: number } | null {
-  if (claim.charStart !== undefined && claim.charEnd !== undefined && content.slice(claim.charStart, claim.charEnd) === claim.text) {
-    return { start: claim.charStart, end: claim.charEnd };
-  }
-  const index = content.indexOf(claim.text);
-  return index >= 0 ? { start: index, end: index + claim.text.length } : null;
-}
 
 /** Replaces the first standalone `from` number inside [start, end). */
 export function replaceNumberInSpan(content: string, span: { start: number; end: number }, from: string, to: string): string | null {

@@ -28,3 +28,4 @@ export * from "./section-markdown.js";
 export * from "./numeric-correction.js";
 export * from "./section-freshness.js";
 export * from "./section-regeneration.js";
+export * from "./statement-span.js";
