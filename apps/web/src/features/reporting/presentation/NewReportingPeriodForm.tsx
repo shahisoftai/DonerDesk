@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { suggestPeriodDates, suggestDeadline, DEFAULT_DEADLINE_OFFSET_DAYS } from "@donordesk/domain";
+// A deep, package.json-whitelisted import, not the "@donordesk/domain" barrel:
+// the barrel re-exports domain-event.js, which uses node:crypto and cannot be
+// bundled for the browser (this form is a client component).
+import { suggestPeriodDates, suggestDeadline, DEFAULT_DEADLINE_OFFSET_DAYS } from "@donordesk/domain/contexts/reporting/period-cadence.js";
 import { createReportingPeriodAction } from "@/lib/actions/reporting";
 import { useActionState } from "@/lib/client/action-state";
 import { validateReportDates } from "@/lib/shared/report-dates";
