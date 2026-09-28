@@ -289,12 +289,13 @@ export class PrismaPlanCatalogRepository implements IPlanCatalogRepository {
     };
     if (row.limitsJson) {
       try {
-        const parsed = JSON.parse(row.limitsJson) as Partial<PlanLimitsJson>;
+        // Whatever keys are present pass straight through (no per-field
+        // allowlist), except `maxManagedStorageBytes` which needs the
+        // decimal-string -> bigint conversion at this domain boundary.
+        const { maxManagedStorageBytes, ...rest } = JSON.parse(row.limitsJson) as Partial<PlanLimitsJson>;
         result.limits = {
-          ...(parsed.maxActiveProjects !== undefined ? { maxActiveProjects: parsed.maxActiveProjects } : {}),
-          ...(parsed.maxSeats !== undefined ? { maxSeats: parsed.maxSeats } : {}),
-          ...(parsed.maxManagedStorageBytes !== undefined ? { maxManagedStorageBytes: parsed.maxManagedStorageBytes === null ? null : BigInt(parsed.maxManagedStorageBytes) } : {}),
-          ...(parsed.monthlyAiDraftCredits !== undefined ? { monthlyAiDraftCredits: parsed.monthlyAiDraftCredits } : {}),
+          ...rest,
+          ...(maxManagedStorageBytes !== undefined ? { maxManagedStorageBytes: maxManagedStorageBytes === null ? null : BigInt(maxManagedStorageBytes) } : {}),
         };
       } catch {
         // Malformed limits JSON is ignored; static catalog applies.

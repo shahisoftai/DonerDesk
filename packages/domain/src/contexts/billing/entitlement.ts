@@ -1,6 +1,6 @@
 import { DomainError } from "../../core/domain-error.js";
 import type { PlanLimits, PlanCode, PlanLimitsResolver } from "./plan.js";
-import { STATIC_PLAN_LIMITS } from "./plan.js";
+import { PLAN_CATALOG_VERSION, STATIC_PLAN_LIMITS } from "./plan.js";
 import type { BillingSubscriptionStatus } from "./billing-subscription.js";
 
 export type EntitlementSource =
@@ -121,7 +121,7 @@ export function calculateEntitlement(
     return {
       planCode: "STARTER",
       source: "DEFAULT",
-      catalogVersion: 1,
+      catalogVersion: PLAN_CATALOG_VERSION,
       limits: starter,
       effectiveFrom: now,
       overLimit: computeOverLimit(starter, usage),
@@ -135,7 +135,7 @@ export function calculateEntitlement(
   return {
     planCode: selected.planCode,
     source: selected.source,
-    catalogVersion: 1,
+    catalogVersion: PLAN_CATALOG_VERSION,
     limits,
     effectiveFrom: selected.effectiveFrom,
     effectiveUntil: selected.effectiveUntil,

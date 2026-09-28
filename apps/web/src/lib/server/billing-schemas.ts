@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PlanLimitsJsonSchema } from "@donordesk/contracts";
 
 export const BillingSummarySchema = z.object({
   plan: z.enum(["STARTER", "TEAM", "GROWTH", "ENTERPRISE"]),
@@ -14,12 +15,7 @@ export const BillingSummarySchema = z.object({
       cancelAtPeriodEnd: z.boolean().default(false),
     })
     .optional(),
-  limits: z.object({
-    maxActiveProjects: z.number().int().nullable(),
-    maxSeats: z.number().int().nullable(),
-    maxManagedStorageBytes: z.string().nullable(),
-    monthlyAiDraftCredits: z.number().int().nullable(),
-  }),
+  limits: PlanLimitsJsonSchema,
   overLimit: z.array(z.enum(["PROJECTS", "SEATS", "STORAGE", "AI_CREDITS"])),
   usage: z.object({
     projects: z.object({ used: z.number().int(), limit: z.number().int().nullable() }),

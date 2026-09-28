@@ -33,6 +33,9 @@ export const PlanLimitsJsonSchema = z.object({
   maxSeats: z.number().int().nullable(),
   maxManagedStorageBytes: z.string().regex(/^\d+$/).nullable(),
   monthlyAiDraftCredits: z.number().int().nullable(),
+  viewerSeats: z.number().int().nullable(),
+  aiCreditTopUp: z.boolean(),
+  byoLlmEnabled: z.boolean(),
 });
 export type PlanLimitsJson = z.infer<typeof PlanLimitsJsonSchema>;
 

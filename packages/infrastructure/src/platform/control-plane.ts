@@ -253,12 +253,7 @@ export class PlatformControlPlane {
         trialDays: definition.trialDays,
         enabled: override?.enabled ?? true,
         overridden: Boolean(override),
-        limits: planLimitsToJson({
-          maxActiveProjects: definition.maxActiveProjects,
-          maxSeats: definition.maxSeats,
-          maxManagedStorageBytes: definition.maxManagedStorageBytes,
-          monthlyAiDraftCredits: definition.monthlyAiDraftCredits,
-        }),
+        limits: planLimitsToJson(definition),
         tenantCount: tenantCountByPlan.get(code) ?? 0,
       };
     });
@@ -285,16 +280,12 @@ export class PlatformControlPlane {
     // Preserve explicit `null` buckets stored earlier (unlimited/custom): a
     // partial update must fall back to the *stored* override value first and
     // only then to the static catalog, so a stored null is never resurrected.
-    const limitsJson = input.limits
-      ? JSON.stringify(
-          mergePartialLimits(input.limits, {
-            maxActiveProjects: existingLimits !== null && existingLimits.maxActiveProjects !== undefined ? existingLimits.maxActiveProjects : staticLimits.maxActiveProjects,
-            maxSeats: existingLimits !== null && existingLimits.maxSeats !== undefined ? existingLimits.maxSeats : staticLimits.maxSeats,
-            maxManagedStorageBytes: existingLimits !== null && existingLimits.maxManagedStorageBytes !== undefined ? existingLimits.maxManagedStorageBytes : staticLimits.maxManagedStorageBytes,
-            monthlyAiDraftCredits: existingLimits !== null && existingLimits.monthlyAiDraftCredits !== undefined ? existingLimits.monthlyAiDraftCredits : staticLimits.monthlyAiDraftCredits,
-          }),
-        )
-      : existing?.limitsJson ?? null;
+    // Stored-override-first, then static catalog: mergePartialLimits already
+    // implements "unset key keeps base" per field, so use it twice instead of
+    // hand-listing each PlanLimits bucket (keeps this in lockstep with plan.ts
+    // whenever a new limit bucket is added).
+    const storedOrStaticLimits = existingLimits !== null ? mergePartialLimits(existingLimits, staticLimits) : staticLimits;
+    const limitsJson = input.limits ? JSON.stringify(mergePartialLimits(input.limits, storedOrStaticLimits)) : existing?.limitsJson ?? null;
 
     await this.execute(
       `INSERT INTO "PlanCatalogOverride" ("planCode","name","monthlyPriceUsd","annualPriceUsd","trialDays","enabled","limitsJson","createdById","updatedById","updatedAt")
@@ -441,7 +432,8 @@ export class PlatformControlPlane {
         createdById: actor.sub,
       },
     });
-    await this.audit(actor, "tenant.limits_set", "Tenant", tenantId, { plan: before.planCode ?? "STARTER", limits: { maxActiveProjects: before.maxActiveProjects, maxSeats: before.maxSeats, maxManagedStorageBytes: before.maxManagedStorageBytes, monthlyAiDraftCredits: before.monthlyAiDraftCredits } }, { plan: before.planCode ?? "STARTER", limits: input.limits }, meta);
+    const { planCode: _beforePlanCode, source: _beforeSource, ...beforeLimits } = before;
+    await this.audit(actor, "tenant.limits_set", "Tenant", tenantId, { plan: before.planCode ?? "STARTER", limits: beforeLimits }, { plan: before.planCode ?? "STARTER", limits: input.limits }, meta);
     return { tenantId, planCode: before.planCode ?? "STARTER", limits: input.limits };
   }
 
@@ -489,14 +481,11 @@ export class PlatformControlPlane {
     const next = input.mode === "SET" ? input.value : input.mode === "INCREASE" ? current + input.value : Math.max(0, current - input.value);
 
     // Reuse the same limits the tenant currently has, only overriding the AI
-    // credit bucket; keeps projects/seats/storage untouched.
+    // credit bucket; keeps every other bucket (projects/seats/storage/viewer
+    // seats/top-up/BYO) untouched.
     const base = await this.currentPlanLimits(tenantId);
-    const override: PlanLimitsJson = {
-      maxActiveProjects: base.maxActiveProjects,
-      maxSeats: base.maxSeats,
-      maxManagedStorageBytes: base.maxManagedStorageBytes,
-      monthlyAiDraftCredits: next,
-    };
+    const { planCode: _basePlanCode, source: _baseSource, ...baseLimits } = base;
+    const override: PlanLimitsJson = { ...baseLimits, monthlyAiDraftCredits: next };
 
     const id = randomUUID();
     const now = new Date();
@@ -692,24 +681,25 @@ export class PlatformControlPlane {
     override.trialDays = row.trialDays;
     override.enabled = row.enabled ?? true;
     const parsed = row.limitsJson ? this.parseLimitsJson(row.limitsJson) : null;
-    if (parsed) override.limits = {
-      ...(parsed.maxActiveProjects !== undefined ? { maxActiveProjects: parsed.maxActiveProjects } : {}),
-      ...(parsed.maxSeats !== undefined ? { maxSeats: parsed.maxSeats } : {}),
-      ...(parsed.maxManagedStorageBytes !== undefined ? { maxManagedStorageBytes: parsed.maxManagedStorageBytes === null ? null : BigInt(parsed.maxManagedStorageBytes) } : {}),
-      ...(parsed.monthlyAiDraftCredits !== undefined ? { monthlyAiDraftCredits: parsed.monthlyAiDraftCredits } : {}),
-    };
+    if (parsed) {
+      const { maxManagedStorageBytes, ...rest } = parsed;
+      override.limits = {
+        ...rest,
+        ...(maxManagedStorageBytes !== undefined ? { maxManagedStorageBytes: maxManagedStorageBytes === null ? null : BigInt(maxManagedStorageBytes) } : {}),
+      };
+    }
     return override;
   }
 
+  /**
+   * Parses persisted `PlanLimitsJson` text defensively (malformed data ->
+   * null). Whatever keys `JSON.parse` yields pass straight through as a
+   * `Partial<PlanLimitsJson>` — no per-field allowlist here, so a new
+   * `PlanLimits` bucket round-trips without touching this method.
+   */
   private parseLimitsJson(json: string): Partial<PlanLimitsJson> | null {
     try {
-      const parsed = JSON.parse(json) as Partial<PlanLimitsJson>;
-      return {
-        ...(parsed.maxActiveProjects !== undefined ? { maxActiveProjects: parsed.maxActiveProjects } : {}),
-        ...(parsed.maxSeats !== undefined ? { maxSeats: parsed.maxSeats } : {}),
-        ...(parsed.maxManagedStorageBytes !== undefined ? { maxManagedStorageBytes: parsed.maxManagedStorageBytes } : {}),
-        ...(parsed.monthlyAiDraftCredits !== undefined ? { monthlyAiDraftCredits: parsed.monthlyAiDraftCredits } : {}),
-      };
+      return JSON.parse(json) as Partial<PlanLimitsJson>;
     } catch {
       return null;
     }

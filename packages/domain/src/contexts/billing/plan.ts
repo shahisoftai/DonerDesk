@@ -5,7 +5,7 @@ export type PlanCode = "STARTER" | "TEAM" | "GROWTH" | "ENTERPRISE";
 export const PLAN_CODES: readonly PlanCode[] = ["STARTER", "TEAM", "GROWTH", "ENTERPRISE"];
 
 /** Bumping this version invalidates persisted catalog-coded snapshots. */
-export const PLAN_CATALOG_VERSION = 1;
+export const PLAN_CATALOG_VERSION = 2;
 
 export interface PlanLimits {
   /** Active projects; null = unlimited (contractual). */
@@ -16,6 +16,12 @@ export interface PlanLimits {
   maxManagedStorageBytes: bigint | null;
   /** Successful AI report drafts per UTC month; null = unlimited (contractual). */
   monthlyAiDraftCredits: number | null;
+  /** Read-only viewer seats, counted separately from `maxSeats`; null = unlimited. */
+  viewerSeats: number | null;
+  /** Whether AI credit top-up packs are purchasable on this plan. */
+  aiCreditTopUp: boolean;
+  /** Whether the tenant may draft with its own (BYO) LLM provider on this plan. */
+  byoLlmEnabled: boolean;
 }
 
 export interface PlanDefinition extends PlanLimits {
@@ -43,28 +49,37 @@ export const PLAN_CATALOG: Readonly<Record<PlanCode, PlanDefinition>> = {
     maxSeats: 1,
     maxManagedStorageBytes: 1n * GB,
     monthlyAiDraftCredits: 5,
+    viewerSeats: 2,
+    aiCreditTopUp: false,
+    byoLlmEnabled: false,
   },
   TEAM: {
     code: "TEAM",
     name: "Team",
-    monthlyPriceUsd: 59,
-    annualPriceUsd: 590,
+    monthlyPriceUsd: 129,
+    annualPriceUsd: 1290,
     trialDays: null,
     maxActiveProjects: 5,
     maxSeats: 5,
     maxManagedStorageBytes: 25n * GB,
-    monthlyAiDraftCredits: 100,
+    monthlyAiDraftCredits: 20,
+    viewerSeats: null,
+    aiCreditTopUp: true,
+    byoLlmEnabled: false,
   },
   GROWTH: {
     code: "GROWTH",
     name: "Growth",
-    monthlyPriceUsd: 149,
-    annualPriceUsd: 1490,
+    monthlyPriceUsd: 299,
+    annualPriceUsd: 2990,
     trialDays: null,
     maxActiveProjects: 20,
     maxSeats: 15,
     maxManagedStorageBytes: 100n * GB,
-    monthlyAiDraftCredits: 500,
+    monthlyAiDraftCredits: 100,
+    viewerSeats: null,
+    aiCreditTopUp: true,
+    byoLlmEnabled: true,
   },
   ENTERPRISE: {
     code: "ENTERPRISE",
@@ -76,10 +91,13 @@ export const PLAN_CATALOG: Readonly<Record<PlanCode, PlanDefinition>> = {
     maxSeats: null,
     maxManagedStorageBytes: null,
     monthlyAiDraftCredits: null,
+    viewerSeats: null,
+    aiCreditTopUp: true,
+    byoLlmEnabled: true,
   },
 };
 
-export const ENTERPRISE_PRICE_FLOOR_ANNUAL_USD = 6000;
+export const ENTERPRISE_PRICE_FLOOR_ANNUAL_USD = 12000;
 
 export function isPlanCode(value: unknown): value is PlanCode {
   return typeof value === "string" && (PLAN_CODES as readonly string[]).includes(value);
@@ -91,14 +109,29 @@ export function resolvePlan(code: PlanCode): PlanDefinition {
   return plan;
 }
 
+/**
+ * Single list of `PlanLimits` keys that are not `maxManagedStorageBytes`
+ * (the one field needing bigint<->string conversion at the JSON boundary).
+ * Every helper below (JSON conversion, merge, override resolution) derives
+ * from this list instead of hand-listing fields, so adding a limit bucket to
+ * `PlanLimits` only requires one edit here plus the interface/catalog entries
+ * — never N scattered edits that can silently drop a field at a boundary.
+ */
+const PLAN_LIMITS_PASSTHROUGH_KEYS = [
+  "maxActiveProjects",
+  "maxSeats",
+  "monthlyAiDraftCredits",
+  "viewerSeats",
+  "aiCreditTopUp",
+  "byoLlmEnabled",
+] as const satisfies readonly (keyof PlanLimits)[];
+
 export function resolvePlanLimits(code: PlanCode): PlanLimits {
   const plan = resolvePlan(code);
   return {
-    maxActiveProjects: plan.maxActiveProjects,
-    maxSeats: plan.maxSeats,
+    ...Object.fromEntries(PLAN_LIMITS_PASSTHROUGH_KEYS.map((key) => [key, plan[key]])),
     maxManagedStorageBytes: plan.maxManagedStorageBytes,
-    monthlyAiDraftCredits: plan.monthlyAiDraftCredits,
-  };
+  } as unknown as PlanLimits;
 }
 
 /** JSON-safe shape (bigint -> decimal string) for API/contract boundaries. */
@@ -107,24 +140,23 @@ export interface PlanLimitsJson {
   maxSeats: number | null;
   maxManagedStorageBytes: string | null;
   monthlyAiDraftCredits: number | null;
+  viewerSeats: number | null;
+  aiCreditTopUp: boolean;
+  byoLlmEnabled: boolean;
 }
 
 export function planLimitsToJson(limits: PlanLimits): PlanLimitsJson {
   return {
-    maxActiveProjects: limits.maxActiveProjects,
-    maxSeats: limits.maxSeats,
+    ...Object.fromEntries(PLAN_LIMITS_PASSTHROUGH_KEYS.map((key) => [key, limits[key]])),
     maxManagedStorageBytes: limits.maxManagedStorageBytes === null ? null : limits.maxManagedStorageBytes.toString(),
-    monthlyAiDraftCredits: limits.monthlyAiDraftCredits,
-  };
+  } as unknown as PlanLimitsJson;
 }
 
 export function planLimitsFromJson(json: PlanLimitsJson): PlanLimits {
   return {
-    maxActiveProjects: json.maxActiveProjects,
-    maxSeats: json.maxSeats,
+    ...Object.fromEntries(PLAN_LIMITS_PASSTHROUGH_KEYS.map((key) => [key, json[key]])),
     maxManagedStorageBytes: json.maxManagedStorageBytes === null ? null : BigInt(json.maxManagedStorageBytes),
-    monthlyAiDraftCredits: json.monthlyAiDraftCredits,
-  };
+  } as unknown as PlanLimits;
 }
 
 export function isPlanForTrial(_code: PlanCode): boolean {
@@ -177,16 +209,18 @@ export function planCatalogOverrideFromJson(json: PlanCatalogOverrideJson): Plan
  * keys) keep the base value; explicit `null` means unlimited/contract and is
  * preserved (never collapsed to the base).
  */
+const PLAN_LIMITS_JSON_KEYS = [
+  ...PLAN_LIMITS_PASSTHROUGH_KEYS,
+  "maxManagedStorageBytes",
+] as const satisfies readonly (keyof PlanLimitsJson)[];
+
 export function mergePartialLimits(
   partial: Partial<PlanLimitsJson> | null | undefined,
   base: PlanLimitsJson,
 ): PlanLimitsJson {
-  return {
-    maxActiveProjects: partial?.maxActiveProjects !== undefined ? partial.maxActiveProjects : base.maxActiveProjects,
-    maxSeats: partial?.maxSeats !== undefined ? partial.maxSeats : base.maxSeats,
-    maxManagedStorageBytes: partial?.maxManagedStorageBytes !== undefined ? partial.maxManagedStorageBytes : base.maxManagedStorageBytes,
-    monthlyAiDraftCredits: partial?.monthlyAiDraftCredits !== undefined ? partial.monthlyAiDraftCredits : base.monthlyAiDraftCredits,
-  };
+  return Object.fromEntries(
+    PLAN_LIMITS_JSON_KEYS.map((key) => [key, partial?.[key] !== undefined ? partial[key] : base[key]]),
+  ) as unknown as PlanLimitsJson;
 }
 
 export function planCatalogOverrideToJson(override: PlanCatalogOverride | null | undefined): PlanCatalogOverrideJson | null {
@@ -199,18 +233,23 @@ export function planCatalogOverrideToJson(override: PlanCatalogOverride | null |
     annualPriceUsd: override.annualPriceUsd ?? null,
     trialDays: override.trialDays ?? null,
     enabled: override.enabled,
-    limits: override.limits
-      ? mergePartialLimits(
-          {
-            maxActiveProjects: override.limits.maxActiveProjects,
-            maxSeats: override.limits.maxSeats,
-            maxManagedStorageBytes: override.limits.maxManagedStorageBytes === undefined ? undefined : override.limits.maxManagedStorageBytes === null ? null : override.limits.maxManagedStorageBytes.toString(),
-            monthlyAiDraftCredits: override.limits.monthlyAiDraftCredits,
-          },
-          base,
-        )
-      : null,
+    limits: override.limits ? mergePartialLimits(limitsToPartialJson(override.limits), base) : null,
   };
+}
+
+/**
+ * Convert a partial `PlanLimits` override (bigint storage) into the partial
+ * JSON shape `mergePartialLimits` expects, preserving the "unset key stays
+ * unset" distinction (`undefined` vs explicit `null`).
+ */
+function limitsToPartialJson(limits: Partial<PlanLimits>): Partial<PlanLimitsJson> {
+  const json: Partial<PlanLimitsJson> = Object.fromEntries(
+    PLAN_LIMITS_PASSTHROUGH_KEYS.filter((key) => limits[key] !== undefined).map((key) => [key, limits[key]]),
+  );
+  if (limits.maxManagedStorageBytes !== undefined) {
+    json.maxManagedStorageBytes = limits.maxManagedStorageBytes === null ? null : limits.maxManagedStorageBytes.toString();
+  }
+  return json;
 }
 
 /** Apply a partial override onto the static catalog entry. */
@@ -218,27 +257,25 @@ export function resolvePlanWithOverride(code: PlanCode, override?: PlanCatalogOv
   const base = resolvePlan(code);
   if (!override) return base;
   const limits = override.limits;
+  const mergedLimits = limits
+    ? planLimitsFromJson(mergePartialLimits(limitsToPartialJson(limits), planLimitsToJson(base)))
+    : resolvePlanLimits(code);
   return {
     ...base,
+    ...mergedLimits,
     name: override.name !== undefined ? override.name : base.name,
     monthlyPriceUsd: override.monthlyPriceUsd !== undefined ? override.monthlyPriceUsd : base.monthlyPriceUsd,
     annualPriceUsd: override.annualPriceUsd !== undefined ? override.annualPriceUsd : base.annualPriceUsd,
     trialDays: override.trialDays !== undefined ? override.trialDays : base.trialDays,
-    maxActiveProjects: limits?.maxActiveProjects !== undefined ? limits.maxActiveProjects : base.maxActiveProjects,
-    maxSeats: limits?.maxSeats !== undefined ? limits.maxSeats : base.maxSeats,
-    maxManagedStorageBytes: limits?.maxManagedStorageBytes !== undefined ? limits.maxManagedStorageBytes : base.maxManagedStorageBytes,
-    monthlyAiDraftCredits: limits?.monthlyAiDraftCredits !== undefined ? limits.monthlyAiDraftCredits : base.monthlyAiDraftCredits,
   };
 }
 
 export function resolvePlanLimitsWithOverride(code: PlanCode, override?: PlanCatalogOverride | null): PlanLimits {
   const plan = resolvePlanWithOverride(code, override);
   return {
-    maxActiveProjects: plan.maxActiveProjects,
-    maxSeats: plan.maxSeats,
+    ...Object.fromEntries(PLAN_LIMITS_PASSTHROUGH_KEYS.map((key) => [key, plan[key]])),
     maxManagedStorageBytes: plan.maxManagedStorageBytes,
-    monthlyAiDraftCredits: plan.monthlyAiDraftCredits,
-  };
+  } as unknown as PlanLimits;
 }
 
 /** Resolver used by entitlement calculation; defaults to the static catalog. */

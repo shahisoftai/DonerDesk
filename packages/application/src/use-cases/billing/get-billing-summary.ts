@@ -20,6 +20,9 @@ export interface BillingSummaryDto {
     maxSeats: number | null;
     maxManagedStorageBytes: string | null;
     monthlyAiDraftCredits: number | null;
+    viewerSeats: number | null;
+    aiCreditTopUp: boolean;
+    byoLlmEnabled: boolean;
   };
   overLimit: string[];
   usage: {

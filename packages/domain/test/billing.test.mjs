@@ -23,9 +23,19 @@ test("plan catalog defines the four commercial plans", () => {
   assert.equal(isPlanCode("NOPE"), false);
 
   assert.equal(PLAN_CATALOG.STARTER.monthlyPriceUsd, 0);
-  assert.equal(PLAN_CATALOG.TEAM.monthlyPriceUsd, 59);
-  assert.equal(PLAN_CATALOG.GROWTH.monthlyPriceUsd, 149);
+  assert.equal(PLAN_CATALOG.TEAM.monthlyPriceUsd, 129);
+  assert.equal(PLAN_CATALOG.GROWTH.monthlyPriceUsd, 299);
   assert.equal(PLAN_CATALOG.ENTERPRISE.maxActiveProjects, null);
+
+  // Phase 22 catalog v2: viewer seats, top-up eligibility, BYO-LLM gating.
+  assert.equal(PLAN_CATALOG.STARTER.viewerSeats, 2);
+  assert.equal(PLAN_CATALOG.TEAM.viewerSeats, null);
+  assert.equal(PLAN_CATALOG.STARTER.aiCreditTopUp, false);
+  assert.equal(PLAN_CATALOG.TEAM.aiCreditTopUp, true);
+  assert.equal(PLAN_CATALOG.GROWTH.aiCreditTopUp, true);
+  assert.equal(PLAN_CATALOG.TEAM.byoLlmEnabled, false);
+  assert.equal(PLAN_CATALOG.GROWTH.byoLlmEnabled, true);
+  assert.equal(PLAN_CATALOG.ENTERPRISE.byoLlmEnabled, true);
 
   // No plan is trial-eligible anymore: the free Starter tier is the free offer,
   // and paid tiers (Team/Growth) are unlocked by a paid subscription.
@@ -40,17 +50,23 @@ test("plan limits resolve from the catalog and round-trip JSON-safe", () => {
   assert.equal(team.maxActiveProjects, 5);
   assert.equal(team.maxSeats, 5);
   assert.equal(team.maxManagedStorageBytes, 25n * 1024n * 1024n * 1024n);
-  assert.equal(team.monthlyAiDraftCredits, 100);
+  assert.equal(team.monthlyAiDraftCredits, 20);
 
   const json = planLimitsToJson({
     maxActiveProjects: 5,
     maxSeats: 5,
     maxManagedStorageBytes: 25n * 1024n * 1024n * 1024n,
-    monthlyAiDraftCredits: 100,
+    monthlyAiDraftCredits: 20,
+    viewerSeats: null,
+    aiCreditTopUp: true,
+    byoLlmEnabled: false,
   });
   assert.equal(json.maxManagedStorageBytes, "26843545600");
+  assert.equal(json.monthlyAiDraftCredits, 20);
+  assert.equal(json.aiCreditTopUp, true);
   const back = planLimitsFromJson(json);
   assert.equal(back.maxManagedStorageBytes, 25n * 1024n * 1024n * 1024n);
+  assert.equal(back.byoLlmEnabled, false);
 });
 
 test("calculateEntitlement falls back to Starter when no grant is effective", () => {
@@ -234,5 +250,5 @@ test("usage counter reserve/consume/release math", () => {
 });
 
 test("plan catalog version is stable", () => {
-  assert.equal(PLAN_CATALOG_VERSION, 1);
+  assert.equal(PLAN_CATALOG_VERSION, 2);
 });

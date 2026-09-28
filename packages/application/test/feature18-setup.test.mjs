@@ -14,12 +14,15 @@ function unrestrictedEntitlements() {
       value: {
         planCode: "ENTERPRISE",
         source: "MANUAL",
-        catalogVersion: 1,
+        catalogVersion: 2,
         limits: {
           maxActiveProjects: null,
           maxSeats: null,
           maxManagedStorageBytes: null,
           monthlyAiDraftCredits: null,
+          viewerSeats: null,
+          aiCreditTopUp: true,
+          byoLlmEnabled: true,
         },
         effectiveFrom: new Date(),
         overLimit: [],
