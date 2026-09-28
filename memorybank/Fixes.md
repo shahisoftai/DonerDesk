@@ -1,6 +1,110 @@
 # Fixes
 
-Record of fixes applied to DonorDesk. Last updated: 2026-09-27 (Report Editor v2 audit + P3–P6).
+Record of fixes applied to DonorDesk. Last updated: 2026-09-28 (Donor Template Manager verification demos).
+
+## PDF donor-template uploads completely broken (2026-09-27, found while building a WASH demo script)
+
+**Every** PDF template upload failed with "The PDF file could not be read. It
+may be corrupt, password-protected or not a real PDF" — including entirely
+valid PDFs — discovered while writing `scripts/demo-wash-pdf-template.mjs`
+to upload a real donor PDF end to end. Full account:
+`memorybank/demo/verification-demo-1.md`.
+
+**Root cause:** `pdf-parse`'s package root (`index.js`) runs a self-test
+guarded by `isDebugMode = !module.parent`. That is truthy whenever the module
+is loaded via ESM dynamic `import()` (there is no CJS `module.parent` in that
+case), so importing the bare package name executes the self-test
+unconditionally — it tries to read the package's own fixture file
+(`./test/data/05-versions-space.pdf`) and throws `ENOENT` before the caller's
+buffer is ever parsed. `PdfBlockReader` (`packages/infrastructure/src/parsers/structured/readers.ts`)
+used exactly this import form.
+
+**Fix:** import `pdf-parse/lib/pdf-parse.js` — the real implementation,
+without the self-test wrapper — instead of the package root. Added an
+ambient module declaration (`pdf-parse-lib.d.ts`) since `@types/pdf-parse`
+only types the package root.
+
+**Tests:** new `packages/infrastructure/test/pdf-reader.test.mjs` actually
+builds and parses a real PDF through `PdfBlockReader` (there was **no** PDF
+coverage in the test suite at all before this, which is exactly why the bug
+shipped unnoticed). Note for anyone writing a similar fixture: `pdfkit`'s
+default (compressed) stream output trips an unrelated "bad XRef entry" error
+in this `pdf-parse` version's bundled `pdf.js` — build test fixtures with
+`{ compress: false, pdfVersion: "1.4" }`.
+
+Deployed `releaseId=20260927171017` (api scope). Verified against a real
+16-page USAID donor PDF, both locally and after the WASH demo re-ran
+end to end in production.
+
+## Donor Template Manager: TOC/placeholder garbage, guidance mislabelled as narrative, wrong section types (2026-09-27, releaseId=20260927145612)
+
+Found by manually reviewing a real production template (`BE_NOFO_Attachment_7_QPR_Template.docx`,
+project "123") after the Donor Template Manager v2 rebuild: extraction had
+turned a ~16-page donor template into 106 sections, 84 of them typed
+NARRATIVE, full of table-of-contents fragments and cover-page placeholders.
+Full account, including before/after section counts:
+`memorybank/demo/verification-demo-1.md`.
+
+Root causes and fixes, all in `packages/infrastructure/src/parsers/structured/`
+and `packages/infrastructure/src/llm/template-extraction/` unless noted:
+
+1. **A Word-generated table of contents was extracted as dozens of fake
+   sections.** Each TOC entry renders as a paragraph that is entirely one
+   hyperlink to an internal bookmark (`<a href="#_page_9_0">…</a>`); a
+   dot-leader entry that lost its title through that hyperlink flattening
+   left just a bare page number ("1.     6"), which was then read as a
+   heading whose title is "6". Fix: `html-blocks.ts` drops any paragraph
+   that is entirely one internal-bookmark hyperlink before heading
+   detection; `text-blocks.ts`'s `headingLevel()` also now rejects a
+   numbered-heading match whose remaining text has no letters at all, and
+   rejects the document's own "Contents"/"Index" label.
+2. **Cover-page bracket placeholders** (`[ACTIVITY TITLE]`, `[MM, DD,
+   YYYY]`) **became headings.** `headingLevel()` and the emphasis-based
+   pseudo-heading promotion in `readers.ts` now reject a whole line wrapped
+   in brackets.
+3. **A per-page running header baked into the document body** (`"[xx]
+   Report: [Insert short activity name] P 2/16"`, repeated ~16 times with
+   only the page number changing) **became 16 separate sections.** New
+   `stripRepeatedBoilerplate()` (`text-blocks.ts`) drops any block whose
+   text, with its digits blanked out, is identical to at least 3 other
+   blocks; text with no digit at all is never touched, so a genuinely
+   repeated heading is unaffected.
+4. **A heading titled "Guide for Implementing Partners" (meta-guidance about
+   the template itself) was shown as a narrative report section**, not
+   excluded as guidance. `guidanceKindFor()` (`requirements-analyzer.ts`)
+   only recognised "Guidance", not "Guide" — broadened to `guid(e|ance)`.
+5. **`Table N:`/`Chart N:`-titled sections were typed NARRATIVE.**
+   `inferInputType()` now checks the section's own title first (the
+   strongest available signal) before falling back to structural/keyword
+   heuristics, and a new `CHART` section type (domain + contracts + web)
+   sits alongside NARRATIVE/TABLE/ANNEX/INDICATOR_TABLE/COMPLIANCE.
+6. **Tab-delimited table rows were silently discarded** when no real Word
+   heading/table style exists in the document (the pseudo-heading promotion
+   pass only checked for `HEADING`, not `TABLE`, in its per-paragraph
+   re-parse). Now recovered and merged back into one table.
+7. **A real, separate bug in section re-extraction merge**
+   (`packages/domain/src/contexts/templates/merge-extracted-sections.ts`):
+   the title-matching key stripped *any* leading run of
+   digits/roman-letters/dots/spaces, so a title that was nothing but a
+   number (e.g. the page-number-only garbage from #1) collapsed to the
+   empty string and collided with every other such title — most of a fresh
+   extraction could be silently dropped on merge. Fixed to only strip a
+   genuine numbering prefix followed by more text, with a full-title
+   fallback.
+8. Annex names have a trailing bare page number stripped, and a top-level
+   ANNEX heading that repeats under the same numbering (TOC-adjacent stray
+   copy vs. the real heading) now collapses to one section instead of two.
+
+**Result on the reference template:** 106 sections (84 NARRATIVE, mostly
+garbage) → 59 sections (45 NARRATIVE/10 ANNEX/2 TABLE/1 INDICATOR_TABLE/1
+COMPLIANCE), both meta-guidance headings correctly excluded. Re-extracted in
+place on the live template and verified via API + a real browser session.
+
+New regression coverage in `packages/infrastructure/test/template-extraction.test.mjs`
+reproducing this exact failure class (TOC hyperlinks, bracket placeholders,
+repeated running header, "Guide for…" heading, Table/Chart title typing, the
+annex-numbering dedupe). Residual known limitation: PDF-sourced templates
+have no equivalent of the DOCX anchor-hyperlink TOC filter (see `pending.md`).
 
 ## Report Editor v2 audit and P3–P6 (2026-09-27, not yet deployed)
 

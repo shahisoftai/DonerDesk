@@ -1,6 +1,6 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-09-27.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-09-28.
 
 > **Pending (Report Editor v2 — P7 rollout):** P0–P6 are code complete behind
 > `REPORT_EDITOR_V2` and deployed 2026-09-27 (`releaseId=20260927062322`,
@@ -510,15 +510,36 @@ actually supports; unsupported controls are omitted rather than simulated.
 - **Frontend:** login/signup hardened, honest forgot-password guidance, derived
   onboarding checklist (Phase 2). Reset/verification require backend + email delivery.
 
-### Feature 05 — Donor Template Manager
-- [x] Copy-paste text template input — working in UI at `/projects/[id]/templates/new`
-- [x] DOCX parsing for template content extraction — **WIRED**. `POST /v1/templates/parse-file`
-  uses `TolerantDocumentParser` with `mammoth`. Frontend has "Upload DOCX/PDF" button
-  that parses file and populates the textarea.
-- [x] PDF parsing for template content extraction — **WIRED**. Same endpoint handles PDF
-  via `pdf-parse`. Same UI as DOCX.
-- **Frontend:** text paste input works; file upload button parses DOCX/PDF and fills
-  the textarea for review. Parser wired via `apps/api/src/routes/templates.ts`.
+### Feature 05 — Donor Template Manager (v2, rebuilt 2026-09-27; verified live 2026-09-27/28)
+Full rebuild — see `Features/05-Donor-Template-Manager-Plan.md` (the design) and
+`demo/verification-demo-1.md` (live verification, incl. two real bugs found and
+fixed against a real donor DOCX/PDF). Superseded the entire earlier "Pending
+Enhancements" list under this heading (stale paths/claims removed).
+- [x] Structure-preserving parsing for DOCX/PDF/XLSX/CSV/TXT (`packages/infrastructure/src/parsers/structured/`).
+- [x] LLM extraction (source-grounded, ungrounded items dropped) with a heuristic
+  fallback (`FallbackTemplateExtractionService`); a no-structure-detected outline
+  is always flagged `CANONICAL`, never silent.
+- [x] Section hierarchy, donor instructions/questions/required tables/annexes/
+  compliance rules extracted and threaded into both AI writers.
+- [x] Lifecycle (`EXTRACTING → NEEDS_REVIEW → REVIEWED`) with per-version
+  snapshots (`DonorTemplateVersion`); a full draft requires a REVIEWED template
+  and pins that version onto the reporting period.
+- [x] Web workspace: section tree editor, requirements editor, AI-brief preview,
+  source panel with re-extraction, version diff, library/clone.
+- **Known residual issues (see `demo/verification-demo-1.md` for detail):**
+  - PDF-sourced templates have no equivalent of the DOCX TOC-hyperlink filter
+    (PDF text has no anchor/hyperlink structure to detect a table of contents
+    from), so a PDF template can retain a handful of TOC-duplicate section
+    titles with a trailing page number (e.g. both "Table 1: Activity Details"
+    and "Table 1: Activity Details 7"). Correctly typed and guidance-excluded
+    where relevant, just duplicated. Not yet fixed.
+  - The cross-section numeric-contradiction lint (report-approval gate, not the
+    Template Manager itself) does not recognise activity participant counts,
+    `Project.budgetAmount`, or literal document/section reference numbers as
+    grounded, so it can flag a majority-false-positive set of "unsupported
+    figure" blockers on a report built from a template with page-number
+    residue in section titles (which the AI writer sometimes echoes as if it
+    were a real count). Needs the lint's grounding scope widened. Not yet fixed.
 
 ### Feature 06 — Logframe and Indicator Manager
 - [x] Logframe drag-and-drop reorder / re-parent — **DONE 2026-09-27 (Phase 20)**.
@@ -581,6 +602,13 @@ actually supports; unsupported controls are omitted rather than simulated.
 - [ ] Bulk file upload (zip import)
 - [ ] Video/audio file support
 - [ ] Evidence batch operations
+- [ ] **Observed 2026-09-27** (`demo/verification-demo-1.md`): a report's "Evidence
+  log" annex said no evidence was recorded even though evidence files were
+  uploaded and verified for the same reporting period just before generation.
+  Suspected cause: `SemanticEvidenceRetriever`/embedding generation for newly
+  uploaded evidence is asynchronous and hadn't caught up before the section
+  writer ran. Not investigated further; worth a look if it reproduces outside
+  a same-minute upload→generate demo sequence.
 - [x] **Inbound ingestion (GDrive/SFTP)** — signed `/internal/evidence/upload`
   route + `gdrive_ingest`/`sftp_ingest` Kestra flows wired and deployed; `gdrive_ingest`
   is now **reference-only** (sends `driveFileId`, no base64 copy). Gated on
