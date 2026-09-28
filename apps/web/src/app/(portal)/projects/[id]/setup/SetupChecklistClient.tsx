@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { ProjectReadiness, ProjectReadinessSnapshot } from "@/lib/server/schemas";
+import { blockerHref } from "@/lib/shared/readiness-links";
 import { acknowledgeProjectSetupAction, retryProjectWorkspaceAction, repairProjectWorkspaceAction } from "@/lib/actions/setup";
 import { Badge } from "@/components/data/Badge";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
@@ -154,7 +155,7 @@ export function SetupChecklistClient({
                   <span className="font-mono text-xs text-slate-500">{b.code}</span>
                   <p className="text-slate-700 dark:text-slate-200">{b.label}</p>
                 </div>
-                {b.href && canManage && <Link className="btn-secondary text-sm shrink-0" href={b.href}>Fix</Link>}
+                {b.href && canManage && <Link className="btn-secondary text-sm shrink-0" href={blockerHref(projectId, b.href)}>Fix</Link>}
               </li>
             ))}
           </ul>

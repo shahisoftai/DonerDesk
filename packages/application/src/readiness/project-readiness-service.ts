@@ -69,7 +69,7 @@ export class ProjectReadinessService implements IProjectReadinessService {
 
     if (profile) {
       if (profile.defaultTemplateId && !activeTemplate) {
-        blockers.push({ code: "DEFAULT_TEMPLATE_MISSING", label: "The default template is no longer available", href: "/logframe" });
+        blockers.push({ code: "DEFAULT_TEMPLATE_MISSING", label: "The default template is no longer available", href: "/templates" });
       }
     } else {
       blockers.push({ code: "REPORTING_PROFILE_MISSING", label: "Set up your reporting profile", href: "/reporting-profile" });

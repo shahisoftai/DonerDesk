@@ -10,6 +10,7 @@ import {
   GetTemplateVersionHandler,
   GetTemplateOriginalFileHandler,
   SetTemplateLibraryHandler,
+  SetDefaultTemplateHandler,
   ListLibraryTemplatesHandler,
   CloneTemplateHandler,
   ParseTemplateFileHandler,
@@ -399,6 +400,7 @@ export interface Container {
     reextractTemplate: ReextractTemplateHandler;
     markTemplateReviewed: MarkTemplateReviewedHandler;
     setTemplateLibrary: SetTemplateLibraryHandler;
+    setTemplateDefault: SetDefaultTemplateHandler;
     listLibraryTemplates: ListLibraryTemplatesHandler;
     cloneTemplate: CloneTemplateHandler;
     previewTemplateBrief: PreviewTemplateBriefHandler;
@@ -946,7 +948,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     approveTemplateMapping: approveTemplateMappingHandler,
     lockTemplateMapping: lockTemplateMappingHandler,
     updateTemplateSections: new UpdateTemplateSectionsHandler(templates, audits),
-    deleteTemplate: new DeleteTemplateHandler(templates, audits),
+    deleteTemplate: new DeleteTemplateHandler(templates, reportingProfiles, audits),
     listTemplates: new ListTemplatesHandler(templates),
     getTemplate: new GetTemplateHandler(templates, templates),
     getTemplateVersion: new GetTemplateVersionHandler(templates),
@@ -957,6 +959,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     reextractTemplate: new ReextractTemplateHandler(templates, templateExtractionRunner, runInBackground, audits),
     markTemplateReviewed: new MarkTemplateReviewedHandler(templates, audits),
     setTemplateLibrary: new SetTemplateLibraryHandler(templates, audits),
+    setTemplateDefault: new SetDefaultTemplateHandler(ids, templates, reportingProfiles, audits),
     listLibraryTemplates: new ListLibraryTemplatesHandler(templates),
     cloneTemplate: new CloneTemplateHandler(ids, templates, audits),
     previewTemplateBrief: new PreviewTemplateBriefHandler(templates, new NarratorBriefRenderer()),

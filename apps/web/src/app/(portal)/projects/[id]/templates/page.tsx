@@ -1,23 +1,29 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { TemplatesResponseSchema, OrganizationSchema } from "@/lib/server/schemas";
+import { TemplatesResponseSchema, OrganizationSchema, ReportingProfileResponseSchema } from "@/lib/server/schemas";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import { InlineError } from "@/components/feedback/PageState";
 import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
 import { ExtractionMethodBadge, TemplateStatusBadge } from "@/features/templates/presentation/TemplateStatusBadge";
 import { LibraryPicker } from "@/features/templates/presentation/LibraryPicker";
+import { SetDefaultTemplateButton } from "@/features/templates/presentation/SetDefaultTemplateButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function TemplatesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const ctx = await requireSession();
-  const [result, library, orgResult] = await Promise.all([
+  const [result, library, orgResult, profileResult] = await Promise.all([
     gatewayRequest(`/v1/projects/${id}/templates`, TemplatesResponseSchema, ctx.token),
     gatewayRequest("/v1/templates/library", TemplatesResponseSchema, ctx.token),
     gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${id}/reporting-profile`, ReportingProfileResponseSchema, ctx.token),
   ]);
+  // With no default set, the first template is the effective one
+  // (ProjectReadinessService / CreateReportingPeriodHandler fall back this
+  // way too) — shown as read-only "Default" until there is a real choice.
+  const defaultTemplateId = profileResult.ok ? profileResult.value.profile?.defaultTemplateId : undefined;
   const driveConnected = orgResult.ok && orgResult.value.storageProvider === "GOOGLE_DRIVE";
   const header = (
     <header className="flex flex-wrap items-center justify-between gap-3">
@@ -46,28 +52,32 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
       {header}
       <div className="mt-6 space-y-3">
         {items.length === 0 && <div className="card text-sm text-slate-600 dark:text-slate-300">No templates yet. Upload the donor&rsquo;s template or start from your library.</div>}
-        {items.map((t) => {
+        {items.map((t, index) => {
           const reportable = t.sections.filter((s) => s.includeInReport);
           const pending = t.sections.filter((s) => s.reviewStatus !== "REVIEWED").length;
+          const isDefault = defaultTemplateId ? t.id === defaultTemplateId : index === 0;
           return (
-            <Link
+            <div
               key={t.id}
-              href={`/projects/${id}/templates/${t.id}`}
               className="card flex flex-wrap items-center justify-between gap-3 transition duration-300 hover:-translate-y-0.5 hover:border-brand-400/40 dark:hover:border-brand-400/30"
             >
-              <div>
+              <Link href={`/projects/${id}/templates/${t.id}`} className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2 font-medium">
                   {t.templateName}
                   <TemplateStatusBadge status={t.status} />
                   <ExtractionMethodBadge method={t.extractionMeta?.method} />
+                  {isDefault && items.length === 1 && <span className="rounded-full border border-success-500/50 px-2 py-0.5 text-[11px] font-medium text-success-700 dark:text-success-400">Default</span>}
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   {t.donorName} · {REPORT_TYPE_LABEL[t.reportType] ?? t.reportType} · {reportable.length} report section(s)
                   {pending > 0 ? ` · ${pending} to review` : ""} · {t.requirements.annexes.length} annex(es) · v{t.version ?? 1}
                 </div>
+              </Link>
+              <div className="flex shrink-0 items-center gap-2">
+                {items.length > 1 && <SetDefaultTemplateButton templateId={t.id} isDefault={isDefault} />}
+                <Link href={`/projects/${id}/templates/${t.id}`} className="text-sm text-brand-600 hover:underline dark:text-brand-400">Open</Link>
               </div>
-              <span className="text-sm text-brand-600 hover:underline dark:text-brand-400">Open</span>
-            </Link>
+            </div>
           );
         })}
       </div>

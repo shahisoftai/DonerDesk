@@ -184,6 +184,10 @@ export const SetTemplateLibrarySchema = z.object({
   isLibrary: z.boolean(),
 });
 
+export const SetTemplateDefaultSchema = z.object({
+  isDefault: z.boolean(),
+});
+
 export const RegionUpdateSchema = z.object({
   regionId: z.string().min(1),
   templateSectionId: z.string().min(1),

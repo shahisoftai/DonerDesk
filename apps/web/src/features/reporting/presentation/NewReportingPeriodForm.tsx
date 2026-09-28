@@ -13,12 +13,7 @@ import { Select } from "@/components/ui/Select";
 import { FormSummary } from "@/components/ui/FormSummary";
 import { REPORT_TYPE_LABEL, REPORT_TYPE_OPTIONS } from "@/lib/labels";
 import type { ProjectReadiness } from "@/lib/server/schemas";
-
-function fixHref(projectId: string, href: string): string {
-  if (href === "/reporting-profile") return `/projects/${projectId}/setup/profile`;
-  if (href.startsWith("/")) return `/projects/${projectId}${href}`;
-  return href;
-}
+import { blockerHref } from "@/lib/shared/readiness-links";
 
 function MissingSetupItems({ projectId, readiness }: { projectId: string; readiness: ProjectReadiness }) {
   return (
@@ -35,7 +30,7 @@ function MissingSetupItems({ projectId, readiness }: { projectId: string; readin
               <p className="text-slate-800 dark:text-slate-200">{b.label}</p>
             </div>
             {b.href && (
-              <Link className="btn-secondary shrink-0 text-sm" href={fixHref(projectId, b.href)}>Fix</Link>
+              <Link className="btn-secondary shrink-0 text-sm" href={blockerHref(projectId, b.href)}>Fix</Link>
             )}
           </li>
         ))}

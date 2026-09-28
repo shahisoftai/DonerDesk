@@ -110,6 +110,14 @@ export async function setTemplateLibraryAction(templateId: string, isLibrary: bo
   return { ok: true, value: undefined };
 }
 
+/** Sets or clears this template as its project's default (pre-selected for new reporting periods). */
+export async function setTemplateDefaultAction(templateId: string, isDefault: boolean): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/templates/${encodeURIComponent(templateId)}/default`, OkResponseSchema, context.token, { method: "PUT", body: { isDefault } });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
 export async function cloneTemplateAction(templateId: string, projectId: string): Promise<Result<{ id: string }, AppError>> {
   const context = await requireSession();
   const parsed = CloneTemplateSchema.safeParse({ projectId });

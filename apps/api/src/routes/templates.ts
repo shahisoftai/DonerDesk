@@ -4,6 +4,7 @@ import {
   CreateDonorTemplateSchema,
   ReextractTemplateSchema,
   SetTemplateLibrarySchema,
+  SetTemplateDefaultSchema,
   UpdateTemplateMetadataSchema,
   UpdateTemplateRequirementsSchema,
   UpdateTemplateSectionsSchema,
@@ -163,6 +164,15 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
     const body = SetTemplateLibrarySchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.setTemplateLibrary.handle(ctx, id, body.isLibrary);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.put("/v1/templates/:id/default", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = SetTemplateDefaultSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.setTemplateDefault.handle(ctx, id, body.isDefault);
     if (!r.ok) throw r.error;
     return { ok: true };
   });

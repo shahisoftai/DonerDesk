@@ -187,4 +187,17 @@ export class ReportingProfile extends Entity<string> {
     this.props.version += 1;
     this.touch();
   }
+
+  /**
+   * Sets or clears the project's default template, independently of every
+   * other profile field. A dedicated mutator (rather than `update()`) because
+   * `update()` treats `undefined` as "leave unchanged" and so cannot express
+   * clearing the field — this method always applies exactly the given value.
+   */
+  setDefaultTemplateId(templateId: string | undefined, updatedById: string): void {
+    this.props.defaultTemplateId = templateId;
+    this.props.updatedById = updatedById;
+    this.props.version += 1;
+    this.touch();
+  }
 }
