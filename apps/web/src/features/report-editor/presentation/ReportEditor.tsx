@@ -44,6 +44,7 @@ import { useMediaQuery } from "./useMediaQuery";
 import { EditorTopBar } from "./top-bar/EditorTopBar";
 import type { MenuItem } from "./top-bar/MoreActionsMenu";
 import { OutlineNav } from "./outline/OutlineNav";
+import { moveWithSubtree } from "../application/outline-tree";
 import { ReportInputsCard } from "./outline/ReportInputsCard";
 import { DocumentSection } from "./document/DocumentSection";
 import { GenerateLaunchCard } from "./document/GenerateLaunchCard";
@@ -503,13 +504,11 @@ export function ReportEditor(props: ReportEditorProps) {
     return created !== undefined;
   }
 
+  /** Moves a section, with its sub-sections, past its previous/next sibling. */
   function moveSection(id: string, offset: -1 | 1) {
     if (!draft) return;
-    const ids = sections.map((s) => s.id);
-    const from = ids.indexOf(id);
-    const to = from + offset;
-    if (from < 0 || to < 0 || to >= ids.length) return;
-    ids.splice(to, 0, ids.splice(from, 1)[0]!);
+    const ids = moveWithSubtree(model.sections, id, offset);
+    if (!ids) return;
     void run("reorder", () => reorderReportSectionsAction(draft.id, ids));
   }
 
@@ -708,7 +707,7 @@ export function ReportEditor(props: ReportEditorProps) {
           />
         </div>
       ) : (
-        <div className="mt-6 grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)_320px]">
+        <div className="mt-6 grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_320px]">
           <aside className="hidden lg:block">
             <div className="sticky top-36 max-h-[calc(100vh-10rem)] space-y-4 overflow-y-auto pb-4 pr-1">
               <OutlineNav
@@ -748,7 +747,8 @@ export function ReportEditor(props: ReportEditorProps) {
                 >
                   {model.sections.map((s) => (
                     <option key={s.id} value={s.id} disabled={s.isWriting}>
-                      {s.number}. {s.title}
+                      {"\u00a0\u00a0".repeat(s.level - 1)}
+                      {s.number} {s.title}
                       {s.isApproved ? " ✓" : s.openStatements > 0 ? ` (${s.openStatements} to decide)` : s.needsRecheck ? " (re-check)" : ""}
                     </option>
                   ))}
@@ -845,7 +845,13 @@ export function ReportEditor(props: ReportEditorProps) {
         open={confirm?.kind === "delete"}
         onClose={() => setConfirm(null)}
         title="Delete section?"
-        message={confirm?.kind === "delete" ? `“${confirm.title}” and its checked statements will be removed from this draft. This cannot be undone.` : ""}
+        message={
+          confirm?.kind === "delete"
+            ? `“${confirm.title}” and its checked statements will be removed from this draft. This cannot be undone.${
+                model.sections.find((s) => s.id === confirm.id)?.hasChildren ? " Its sub-sections are kept and move up under the section before it." : ""
+              }`
+            : ""
+        }
         confirmLabel="Delete section"
         onConfirm={async () => {
           if (confirm?.kind !== "delete") return;

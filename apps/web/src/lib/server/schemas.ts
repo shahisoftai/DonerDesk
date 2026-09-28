@@ -543,6 +543,9 @@ export const ReportSectionSchema = z.object({
   id: z.string(),
   sectionTitle: z.string(),
   sectionOrder: z.number(),
+  /** 1 = section, 2-4 = sub-sections (absent on drafts from older APIs). */
+  level: z.number().int().min(1).max(4).optional(),
+  numbering: z.string().nullable().optional(),
   content: z.string().optional(),
   sourceReferences: z
     .array(z.object({ type: z.string(), id: z.string(), label: z.string().optional(), evidenceTitle: z.string().optional() }))

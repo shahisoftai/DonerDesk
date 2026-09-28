@@ -1,5 +1,6 @@
 import { buildReportChecks, openClaimsInOrder, sectionsNeedingRecheck, type ChecksInput, type ReportCheck } from "./report-checks.ts";
 import { nextPrimaryAction, type EditorPhase, type PrimaryAction } from "./primary-action.ts";
+import { buildOutline } from "./outline-tree.ts";
 
 /**
  * Single derived view model for the document-first report editor. Every
@@ -9,8 +10,14 @@ import { nextPrimaryAction, type EditorPhase, type PrimaryAction } from "./prima
 
 export type SectionVM = {
   id: string;
-  number: number;
+  /** Table-of-contents number: the donor's ("Annex II") or computed ("3.2"). */
+  number: string;
+  /** Title without its leading number. */
   title: string;
+  /** 1 = section, 2-4 = sub-sections. */
+  level: number;
+  parentId?: string;
+  hasChildren: boolean;
   status: string;
   isApproved: boolean;
   isWriting: boolean;
@@ -41,7 +48,7 @@ export type EditorModel = {
 };
 
 export type EditorModelInput = Omit<ChecksInput, "sections"> & {
-  sections: ReadonlyArray<{ id: string; sectionTitle: string; status: string; content?: string; assuranceState?: string | null }>;
+  sections: ReadonlyArray<{ id: string; sectionTitle: string; status: string; content?: string; assuranceState?: string | null; level?: number | null; numbering?: string | null }>;
   draftStatus: string | null;
   generating: boolean;
   readinessPercent: number;
@@ -82,7 +89,9 @@ export function buildEditorModel(input: EditorModelInput): EditorModel {
   const regenerating = new Set(input.regeneratingSectionIds ?? []);
   const stale = new Set(input.staleSummaryIds ?? []);
 
+  const outline = buildOutline(input.sections);
   const sections: SectionVM[] = input.sections.map((s, i) => {
+    const row = outline[i]!;
     const isApproved = s.status === "APPROVED";
     const isWriting = s.status === "NOT_STARTED";
     const hasContent = s.content === undefined ? true : s.content.trim().length > 0;
@@ -99,8 +108,11 @@ export function buildEditorModel(input: EditorModelInput): EditorModel {
     else if (needsRecheck) approveBlockedReason = "Re-check this section before approving it.";
     return {
       id: s.id,
-      number: i + 1,
-      title: s.sectionTitle,
+      number: row.label,
+      title: row.title,
+      level: row.level,
+      ...(row.parentId ? { parentId: row.parentId } : {}),
+      hasChildren: row.hasChildren,
       status: s.status,
       isApproved,
       isWriting,

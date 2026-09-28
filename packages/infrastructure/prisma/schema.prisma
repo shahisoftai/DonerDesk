@@ -548,6 +548,11 @@ model ReportSection {
   reportDraftId       String
   sectionTitle        String
   sectionOrder        Int
+  /// Heading depth 1-4 (1 = section, 2-4 = sub-sections), from the template section.
+  level               Int      @default(1)
+  /// Donor numbering as printed in the template ("2.1", "Annex II").
+  numbering           String?
+  templateSectionId   String?
   content             String   @default("")
   sourceReferencesJson String  @default("[]")
   unsupportedClaims   String   @default("[]")

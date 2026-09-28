@@ -249,6 +249,7 @@ export class GenerateReportDraftHandler {
     // section in a background loop so each LLM call stays small and within
     // provider timeouts, and users see sections flip to ready one at a time.
     const sectionIds: string[] = [];
+    const hierarchy = planHierarchy(plan.sections);
     if (aiEnabled) {
       for (let i = 0; i < plan.sections.length; i++) {
         const sectionId = this.ids.generate();
@@ -259,6 +260,7 @@ export class GenerateReportDraftHandler {
           reportDraftId: draftId,
           sectionTitle: sectionDisplayTitle(plan.sections[i]!),
           sectionOrder: i,
+          ...hierarchy[i]!,
           content: "",
           sourceReferences: [],
           unsupportedClaims: [],
@@ -284,6 +286,7 @@ export class GenerateReportDraftHandler {
           reportDraftId: draftId,
           sectionTitle: sectionDisplayTitle(plan.sections[i]!),
           sectionOrder: i,
+          ...hierarchy[i]!,
           content: "",
           sourceReferences: [],
           unsupportedClaims: [],
@@ -651,4 +654,19 @@ export class GenerateReportDraftHandler {
       requestId: `${reportingPeriodId}:${Date.now()}`,
     });
   }
+}
+
+/**
+ * Report-section depth and numbering for each plan section. Levels are made
+ * contiguous (first section level 1, never more than one level below the
+ * previous one) because the plan can omit a template parent, e.g. a
+ * guidance-only section whose children were kept.
+ */
+export function planHierarchy(sections: readonly ReportPlanSection[]): Array<{ level: number; numbering?: string; templateSectionId?: string }> {
+  let previous = 0;
+  return sections.map((s) => {
+    const level = Math.max(1, Math.min(s.level ?? 1, previous + 1));
+    previous = level;
+    return { level, ...(s.numbering ? { numbering: s.numbering } : {}), ...(s.templateSectionId ? { templateSectionId: s.templateSectionId } : {}) };
+  });
 }

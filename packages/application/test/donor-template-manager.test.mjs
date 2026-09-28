@@ -198,3 +198,24 @@ test("runner: extractor failure marks the template EXTRACTION_FAILED with the re
   assert.equal(repo.rows.get("tpl-1").status, "EXTRACTION_FAILED");
   assert.deepEqual(repo.rows.get("tpl-1").extractionMeta.warnings, ["provider down"]);
 });
+
+test("planHierarchy: report sections keep the template depth and numbering, with contiguous levels", async () => {
+  const { planHierarchy } = await import("../dist/use-cases/reporting/generate-report-draft.js");
+  const plan = [
+    { templateSectionId: "t1", level: 2, numbering: "1" },
+    { templateSectionId: "t2", level: 3, numbering: "1.1" },
+    { templateSectionId: "t3", level: 4 },
+    { templateSectionId: "t4", level: 1, numbering: "2" },
+    { templateSectionId: "t5", level: 3 },
+  ];
+  assert.deepEqual(
+    planHierarchy(plan).map((h) => [h.level, h.numbering ?? null, h.templateSectionId]),
+    [
+      [1, "1", "t1"],
+      [2, "1.1", "t2"],
+      [3, null, "t3"],
+      [1, "2", "t4"],
+      [2, null, "t5"],
+    ],
+  );
+});

@@ -226,6 +226,9 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         reportDraftId: s.reportDraftId,
         sectionTitle: s.sectionTitle,
         sectionOrder: s.sectionOrder,
+        level: s.level,
+        numbering: s.numbering ?? null,
+        templateSectionId: s.templateSectionId ?? null,
         content: s.content,
         sourceReferencesJson: JSON.stringify(s.sourceReferences),
         unsupportedClaims: JSON.stringify(s.unsupportedClaims),
@@ -276,6 +279,9 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
     reportDraftId: string;
     sectionTitle: string;
     sectionOrder: number;
+    level: number;
+    numbering: string | null;
+    templateSectionId: string | null;
     content: string;
     sourceReferencesJson: string;
     unsupportedClaims: string;
@@ -294,6 +300,9 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
       props: {
         sectionTitle: row.sectionTitle,
         sectionOrder: row.sectionOrder,
+        level: row.level ?? 1,
+        ...(row.numbering ? { numbering: row.numbering } : {}),
+        ...(row.templateSectionId ? { templateSectionId: row.templateSectionId } : {}),
         content: row.content,
         sourceReferences: JSON.parse(row.sourceReferencesJson) as SourceReference[],
         unsupportedClaims: JSON.parse(row.unsupportedClaims),

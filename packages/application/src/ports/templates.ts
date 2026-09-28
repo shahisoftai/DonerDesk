@@ -33,10 +33,25 @@ export interface IDonorTemplateVersionReader {
   listVersions(templateId: string, tenantId: TenantId): Promise<Result<TemplateVersionSummary[]>>;
 }
 
+/**
+ * Visual formatting of a line/paragraph, when the reader can see it. Templates
+ * without heading styles show their hierarchy only through this (e.g. 14pt red
+ * bold = level 1, 10pt bold = level 2), so it is the level signal of last resort.
+ */
+export interface TextStyle {
+  /** Opaque signature; equal keys = same visual heading style. */
+  key: string;
+  /** Font size in points. */
+  size?: number;
+  bold?: boolean;
+  /** Hex colour without '#'; undefined = automatic/black. */
+  color?: string;
+}
+
 /** A structure-preserving view of an uploaded document. */
 export type DocumentBlock =
-  | { kind: "HEADING"; level: number; text: string; page?: number }
-  | { kind: "PARAGRAPH"; text: string; emphasis?: boolean; page?: number }
+  | { kind: "HEADING"; level: number; text: string; page?: number; style?: TextStyle }
+  | { kind: "PARAGRAPH"; text: string; emphasis?: boolean; page?: number; style?: TextStyle }
   | { kind: "LIST_ITEM"; text: string; ordered: boolean; depth: number; page?: number }
   | { kind: "TABLE"; rows: string[][]; page?: number };
 

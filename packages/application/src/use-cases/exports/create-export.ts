@@ -69,7 +69,7 @@ export class CreateExportHandler {
     if (!drafts.ok) return drafts;
     const draft = drafts.value[0];
 
-    let sectionsArr: Array<{ title: string; content: string; status: string }> = [];
+    let sectionsArr: Array<{ title: string; content: string; status: string; level: number }> = [];
     let sectionChartConfigs: Array<{ title: string; chartConfig: ChartConfig | null }> = [];
     if (draft) {
       const s = await this.sections.findByReportDraft(draft.id, ctx.tenant.tenantId);
@@ -82,6 +82,7 @@ export class CreateExportHandler {
           title: sec.sectionTitle,
           content: omitExcludedStatements(sec.content, claims.filter((c) => c.sectionId === sec.id)),
           status: sec.status,
+          level: sec.level,
         }));
         sectionChartConfigs = sorted.map((sec) => ({ title: sec.sectionTitle, chartConfig: sec.chartConfig }));
       }

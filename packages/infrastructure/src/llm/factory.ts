@@ -195,7 +195,7 @@ function createOpenAIAdapter(config: { name: "openai" | "gemini"; apiKey: string
           max_tokens: input.maxTokens ?? 2048,
           temperature: input.temperature ?? 0.3,
         }),
-        signal: AbortSignal.timeout(config.timeoutMs ?? 60000),
+        signal: AbortSignal.timeout(Math.max(input.timeoutMs ?? 0, config.timeoutMs ?? 60000)),
       });
 
       if (!response.ok) {
@@ -252,7 +252,7 @@ function createAnthropicAdapter(config: { apiKey: string; model: string; baseUrl
         messages: [{ role: "user", content: input.userPrompt }],
         ...(config.effort ? { output_config: { effort: config.effort as "low" | "medium" | "high" | "xhigh" | "max" } } : {}),
         ...(useFallbacks ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
-      });
+      }, input.timeoutMs && input.timeoutMs > (config.timeoutMs ?? 180_000) ? { timeout: input.timeoutMs } : undefined);
       if (response.stop_reason === "refusal") {
         throw new Error(`Anthropic API refusal${response.stop_details?.category ? ` (${response.stop_details.category})` : ""}`);
       }
@@ -297,7 +297,7 @@ function createDeepSeekAdapter(config: { apiKey: string; model?: string; baseUrl
           max_tokens: input.maxTokens ?? 2048,
           temperature: input.temperature ?? 0.3,
         }),
-        signal: AbortSignal.timeout(config.timeoutMs ?? 60000),
+        signal: AbortSignal.timeout(Math.max(input.timeoutMs ?? 0, config.timeoutMs ?? 60000)),
       });
 
       if (!response.ok) {
@@ -353,7 +353,7 @@ function createMiniMaxAdapter(config: { apiKey: string; model?: string; baseUrl?
         // generous default so the call completes instead of aborting. A full
         // donor report with sections, evidence, and activity records can push
         // the call past 120s, so default to 180s.
-        signal: AbortSignal.timeout(config.timeoutMs ?? 180000),
+        signal: AbortSignal.timeout(Math.max(input.timeoutMs ?? 0, config.timeoutMs ?? 180000)),
       });
 
       if (!response.ok) {

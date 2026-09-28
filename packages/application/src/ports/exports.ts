@@ -38,7 +38,8 @@ export interface IExportBuilder {
     projectName: string;
     reportingPeriodLabel: string;
     reportTitle: string;
-    sections: Array<{ title: string; content: string; status: string }>;
+    /** `level`: 1 = section, 2-4 = sub-sections (heading depth in the export). */
+    sections: Array<{ title: string; content: string; status: string; level?: number }>;
     indicators: Array<{ code: string; name: string; baseline: string; target: string; achievement: string; unit?: string; status: string }>;
     charts?: ExportChartInput[];
     activities: Array<{ title: string; date: string; location?: string; participants: number }>;

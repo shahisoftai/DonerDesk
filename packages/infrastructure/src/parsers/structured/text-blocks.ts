@@ -1,4 +1,4 @@
-import type { DocumentBlock } from "@donordesk/application";
+import type { DocumentBlock, TextStyle } from "@donordesk/application";
 
 const MD_HEADING = /^(#{1,6})\s+(.+)$/;
 const NUMBERED_HEADING = /^((?:\d+\.){0,3}\d+)\.?\s+(\S.*)$/;
@@ -12,6 +12,7 @@ const TERMINATED = /[.?!:;]["')\]]?$/;
 export interface SourceLine {
   text: string;
   page?: number;
+  style?: TextStyle;
 }
 
 function isAllCapsTitle(t: string): boolean {
@@ -62,10 +63,10 @@ function tableCells(t: string): string[] | undefined {
  */
 export function linesToBlocks(lines: readonly SourceLine[]): DocumentBlock[] {
   const blocks: DocumentBlock[] = [];
-  let para: { text: string; page?: number; lastLineLength: number } | undefined;
+  let para: { text: string; page?: number; lastLineLength: number; style?: TextStyle } | undefined;
   let table: { rows: string[][]; page?: number } | undefined;
   const flushPara = () => {
-    if (para?.text.trim()) blocks.push({ kind: "PARAGRAPH", text: para.text.trim(), ...(para.page ? { page: para.page } : {}) });
+    if (para?.text.trim()) blocks.push({ kind: "PARAGRAPH", text: para.text.trim(), ...(para.page ? { page: para.page } : {}), ...(para.style ? { style: para.style } : {}) });
     para = undefined;
   };
   const flushTable = () => {
@@ -76,6 +77,7 @@ export function linesToBlocks(lines: readonly SourceLine[]): DocumentBlock[] {
     const raw = line.text.replace(/ /g, " ").replace(/\s+$/, "");
     const t = raw.trim();
     const page = line.page ? { page: line.page } : {};
+    const style = line.style ? { style: line.style } : {};
     if (!t) {
       flushPara();
       flushTable();
@@ -92,7 +94,7 @@ export function linesToBlocks(lines: readonly SourceLine[]): DocumentBlock[] {
     const md = MD_HEADING.exec(t);
     if (md) {
       flushPara();
-      blocks.push({ kind: "HEADING", level: md[1]!.length, text: md[2]!.trim(), ...page });
+      blocks.push({ kind: "HEADING", level: md[1]!.length, text: md[2]!.trim(), ...page, ...style });
       continue;
     }
     const bullet = BULLET.exec(raw);
@@ -104,7 +106,7 @@ export function linesToBlocks(lines: readonly SourceLine[]): DocumentBlock[] {
     const level = headingLevel(t);
     if (level !== undefined) {
       flushPara();
-      blocks.push({ kind: "HEADING", level, text: t.replace(/:$/, ""), ...page });
+      blocks.push({ kind: "HEADING", level, text: t.replace(/:$/, ""), ...page, ...style });
       continue;
     }
     const ordered = ORDERED_ITEM.exec(raw);
@@ -123,7 +125,7 @@ export function linesToBlocks(lines: readonly SourceLine[]): DocumentBlock[] {
       para.lastLineLength = t.length;
     } else {
       flushPara();
-      para = { text: t, page: line.page, lastLineLength: t.length };
+      para = { text: t, page: line.page, lastLineLength: t.length, style: line.style };
     }
   }
   flushPara();

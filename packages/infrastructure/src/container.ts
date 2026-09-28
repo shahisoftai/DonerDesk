@@ -243,7 +243,7 @@ import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credent
 import { TolerantDocumentParser } from "./parsers/document-parser.js";
 import { MammothDonorTemplateStructureParser } from "./parsers/donor-template-structure-parser.js";
 import { HttpDonorTemplateWorkerClient } from "./llm/donor-template-worker-client.js";
-import { FallbackTemplateExtractionService, HeuristicTemplateExtractor, LlmTemplateExtractor } from "./llm/template-extraction/index.js";
+import { FallbackTemplateExtractionService, HeuristicTemplateExtractor, LlmTemplateExtractor, TocTemplateExtractor } from "./llm/template-extraction/index.js";
 import { CompositeStructuredDocumentParser } from "./parsers/structured/index.js";
 import { StorageTemplateFileStore } from "./storage/template-file-store.js";
 import { NarratorBriefRenderer } from "./llm/narrator-brief-renderer.js";
@@ -833,7 +833,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   };
   const templateExtraction: ITemplateExtractionService = new FallbackTemplateExtractionService(
     [
-      { name: "AI", extractor: new LlmTemplateExtractor(resolveTemplateLlm) },
+      // v2 (default): outline pass over the whole document, then guidance per branch.
+      // TEMPLATE_EXTRACTION_PROMPT=v1 restores the single-pass extractor for comparison.
+      { name: "AI", extractor: process.env.TEMPLATE_EXTRACTION_PROMPT === "v1" ? new LlmTemplateExtractor(resolveTemplateLlm) : new TocTemplateExtractor(resolveTemplateLlm) },
       { name: "Heuristic", extractor: new HeuristicTemplateExtractor() },
     ],
     logger,

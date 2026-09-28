@@ -6,6 +6,17 @@ import { ZipArchive } from "archiver";
 import { renderChartPngCached, chartHasData } from "./chart-png-renderer.js";
 import { parseMarkdownBlocks, renderDocxBlocks, renderPdfBlocks } from "./markdown-renderer.js";
 
+/** Report section depth (1 = section, 2-4 = sub-sections); absent on legacy data. */
+function sectionLevel(level: number | undefined): number {
+  return Math.min(4, Math.max(1, level ?? 1));
+}
+/** Sections are Heading 2 (Heading 1 is reserved for report parts); sub-sections go one step deeper per level. */
+const DOCX_SECTION_HEADINGS = [HeadingLevel.HEADING_2, HeadingLevel.HEADING_3, HeadingLevel.HEADING_4, HeadingLevel.HEADING_5] as const;
+function sectionHeading(level: number | undefined) {
+  return DOCX_SECTION_HEADINGS[sectionLevel(level) - 1]!;
+}
+const PDF_SECTION_SIZE = [14, 12.5, 11.5, 11] as const;
+
 function escapeCsv(value: string): string {
   if (value == null) return "";
   const needsQuotes = /[",\n]/.test(value);
@@ -74,7 +85,7 @@ export class DefaultExportBuilder implements IExportBuilder {
     for (const s of input.sections) {
       sections.push(
         new Paragraph({
-          heading: HeadingLevel.HEADING_2,
+          heading: sectionHeading(s.level),
           children: textRuns(s.title),
         }),
       );
@@ -174,12 +185,12 @@ export class DefaultExportBuilder implements IExportBuilder {
     doc.fontSize(14).text("Contents");
     doc.fontSize(10);
     for (const s of input.sections) {
-      doc.text(`- ${s.title}`);
+      doc.text(`${"    ".repeat(sectionLevel(s.level) - 1)}- ${s.title}`);
     }
     doc.moveDown();
     doc.addPage();
     for (const s of input.sections) {
-      doc.fontSize(14).font("Helvetica-Bold").text(s.title);
+      doc.fontSize(PDF_SECTION_SIZE[sectionLevel(s.level) - 1]!).font("Helvetica-Bold").text(s.title);
       doc.font("Helvetica");
       // Render the section's markdown natively instead of printing raw
       // pipes/dashes: headings, bullets, emphasis, and ruled tables.
@@ -300,7 +311,7 @@ export class DefaultExportBuilder implements IExportBuilder {
     const sections: Array<Paragraph | Table> = [];
     for (const s of input.sections) {
       if (!s.title.trim()) continue;
-      sections.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: textRuns(s.title) }));
+      sections.push(new Paragraph({ heading: sectionHeading(s.level), children: textRuns(s.title) }));
       sections.push(...renderDocxBlocks(parseMarkdownBlocks(s.content)));
     }
     const doc = new Document({

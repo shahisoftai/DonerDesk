@@ -126,6 +126,12 @@ export interface LLMCompletionInput {
   jsonMode?: boolean;
   maxTokens?: number;
   temperature?: number;
+  /**
+   * Minimum time this call may take (ms). Adapters use the longer of this and
+   * the provider's configured timeout, for large one-off jobs (template
+   * extraction) that reasoning models answer slowly.
+   */
+  timeoutMs?: number;
 }
 
 export interface LLMCompletionResult {

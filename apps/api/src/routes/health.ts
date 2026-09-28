@@ -23,6 +23,9 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "DonorTemplate", field: "isLibrary" },
   { model: "DonorTemplate", field: "sourceTemplateId" },
   { model: "DonorTemplateVersion", field: "sectionsJson" },
+  { model: "ReportSection", field: "level" },
+  { model: "ReportSection", field: "numbering" },
+  { model: "ReportSection", field: "templateSectionId" },
 ] as const;
 
 type RuntimeDataModel = {

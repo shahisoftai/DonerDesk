@@ -28,3 +28,5 @@ export class CompositeStructuredDocumentParser implements IStructuredDocumentPar
     return reader.parse(input);
   }
 }
+export { assignLevelsFromStyle } from "./style-levels.js";
+export { attachStyles, readDocxParagraphStyles } from "./docx-styles.js";

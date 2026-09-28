@@ -1,21 +1,13 @@
 import type { DocumentBlock, ILLMProvider, ITemplateExtractionService, TemplateExtractionRequest, TemplateExtractionResult } from "@donordesk/application";
 import { renderDocumentText } from "@donordesk/application";
-import {
-  DomainError,
-  SECTION_INPUT_TYPES,
-  createTemplateRequirements,
-  type ComplianceSeverity,
-  type Result,
-  type SectionInputType,
-  type TemplateRequirementsInput,
-} from "@donordesk/domain";
+import { DomainError, SECTION_INPUT_TYPES, type Result, type SectionInputType } from "@donordesk/domain";
 import { linesToBlocks } from "../../parsers/structured/text-blocks.js";
 import { SourceGrounding } from "./grounding.js";
+import { REQUIREMENTS_SCHEMA, RequirementsCollector, arr, blockLength, int, obj, parseJsonObject, renderBlock, str, strs, type Raw } from "./llm-shared.js";
 import { buildSectionTree, type SectionDraft } from "./section-tree.js";
 
 export const LLM_TEMPLATE_EXTRACTION_PROMPT_VERSION = "template-extract-v1";
 const CHUNK_CHARS = 45_000;
-const FREQUENCIES = ["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL", "FINAL", "CUSTOM"] as const;
 
 export type TemplateLlmResolver = (tenantId: string) => Promise<ILLMProvider | null>;
 
@@ -43,49 +35,11 @@ const SCHEMA = `{
     "minWords": integer|null, "maxWords": integer|null, "pageLimit": integer|null,
     "quote": string, "page": integer|null
   }],
-  "generalInstructions": [{"text": string, "quote": string}],
-  "submission": {"instructions": [{"text": string, "quote": string}], "deadlineRule": string|null, "deadlineOffsetDays": integer|null},
-  "formatting": {"rules": [{"text": string, "quote": string}], "maxPages": integer|null, "font": string|null},
-  "annexes": [{"name": string, "required": boolean, "description": string|null, "quote": string}],
-  "indicatorRequirements": [{"text": string, "disaggregation": [string], "quote": string}],
-  "compliance": [{"text": string, "severity": "INFO"|"WARN"|"BLOCK", "quote": string}]
+${REQUIREMENTS_SCHEMA}
 }`;
 
-type Raw = Record<string, unknown>;
-const obj = (v: unknown): Raw => (v && typeof v === "object" && !Array.isArray(v) ? (v as Raw) : {});
-const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
-const str = (v: unknown): string | undefined => (typeof v === "string" && v.trim() ? v.trim() : undefined);
-const int = (v: unknown): number | undefined => (typeof v === "number" && Number.isInteger(v) && v >= 0 ? v : undefined);
-const strs = (v: unknown): string[] => arr(v).map(str).filter((x): x is string => Boolean(x));
-
-function parseJsonObject(text: string): Raw | undefined {
-  const stripped = text.replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/i, "").trim();
-  const start = stripped.indexOf("{");
-  const end = stripped.lastIndexOf("}");
-  if (start === -1 || end <= start) return undefined;
-  try {
-    return obj(JSON.parse(stripped.slice(start, end + 1)));
-  } catch {
-    return undefined;
-  }
-}
-
 function renderBlocks(blocks: DocumentBlock[]): string {
-  return blocks
-    .map((b, i) => {
-      const page = "page" in b && b.page ? ` p${b.page}` : "";
-      switch (b.kind) {
-        case "HEADING":
-          return `[${i}${page}] ${"#".repeat(Math.min(6, b.level))} ${b.text}`;
-        case "PARAGRAPH":
-          return `[${i}${page}] ${b.emphasis ? `**${b.text}**` : b.text}`;
-        case "LIST_ITEM":
-          return `[${i}${page}] ${"  ".repeat(b.depth)}- ${b.text}`;
-        case "TABLE":
-          return `[${i}${page}] TABLE\n${b.rows.slice(0, 12).map((r) => `| ${r.join(" | ")} |`).join("\n")}${b.rows.length > 12 ? `\n(… ${b.rows.length - 12} more rows)` : ""}`;
-      }
-    })
-    .join("\n");
+  return blocks.map(renderBlock).join("\n");
 }
 
 /** Splits at top-level headings so each LLM call stays within budget. */
@@ -95,7 +49,7 @@ function chunk(blocks: DocumentBlock[]): DocumentBlock[][] {
   let size = 0;
   const minLevel = Math.min(...blocks.filter((b) => b.kind === "HEADING").map((b) => (b as { level: number }).level), 99);
   for (const b of blocks) {
-    const len = b.kind === "TABLE" ? b.rows.flat().join(" ").length : b.text.length;
+    const len = blockLength(b);
     if (size + len > CHUNK_CHARS && current.length > 0 && b.kind === "HEADING" && b.level === minLevel) {
       chunks.push(current);
       current = [];
@@ -127,12 +81,7 @@ export class LlmTemplateExtractor implements ITemplateExtractionService {
     const grounding = new SourceGrounding(sourceText);
     const warnings: string[] = [];
     const drafts: SectionDraft[] = [];
-    const reqs: Required<Pick<TemplateRequirementsInput, "annexes" | "indicatorRequirements" | "compliance" | "generalInstructions">> & {
-      reportTitle?: string;
-      reportingFrequency?: (typeof FREQUENCIES)[number];
-      submission: { instructions: string[]; deadlineRule?: string; deadlineOffsetDays?: number };
-      formatting: { rules: string[]; maxPages?: number; font?: string };
-    } = { annexes: [], indicatorRequirements: [], compliance: [], generalInstructions: [], submission: { instructions: [] }, formatting: { rules: [] } };
+    const requirements = new RequirementsCollector(grounding);
     let dropped = 0;
     let kept = 0;
     let model = provider.model;
@@ -207,65 +156,23 @@ export class LlmTemplateExtractor implements ITemplateExtractionService {
         });
       }
 
-      const grounded = (items: unknown[], field = "text") =>
-        items.map(obj).filter((i) => {
-          const ok = grounding.grounded(str(i.quote), 0.8) || grounding.grounded(str(i[field]), 0.6);
-          if (ok) kept++;
-          else dropped++;
-          return ok;
-        });
-      reqs.reportTitle ??= str(raw.reportTitle) && grounding.grounded(str(raw.reportTitle), 0.6) ? str(raw.reportTitle) : undefined;
-      if (!reqs.reportingFrequency && FREQUENCIES.includes(raw.reportingFrequency as (typeof FREQUENCIES)[number])) {
-        reqs.reportingFrequency = raw.reportingFrequency as (typeof FREQUENCIES)[number];
-      }
-      const sourceOf = (i: Raw) => (str(i.quote) && grounding.grounded(str(i.quote), 0.8) ? { excerpt: str(i.quote)! } : undefined);
-      reqs.generalInstructions.push(...grounded(arr(raw.generalInstructions)).map((i) => str(i.text)!).filter(Boolean));
-      const submission = obj(raw.submission);
-      reqs.submission.instructions.push(...grounded(arr(submission.instructions)).map((i) => str(i.text)!).filter(Boolean));
-      if (str(submission.deadlineRule) && grounding.grounded(str(submission.deadlineRule), 0.5)) {
-        reqs.submission.deadlineRule ??= str(submission.deadlineRule);
-        reqs.submission.deadlineOffsetDays ??= int(submission.deadlineOffsetDays);
-      }
-      const formatting = obj(raw.formatting);
-      reqs.formatting.rules.push(...grounded(arr(formatting.rules)).map((i) => str(i.text)!).filter(Boolean));
-      reqs.formatting.maxPages ??= int(formatting.maxPages) || undefined;
-      reqs.formatting.font ??= str(formatting.font);
-      reqs.annexes.push(
-        ...grounded(arr(raw.annexes), "name").map((a) => ({
-          name: str(a.name) ?? "",
-          required: typeof a.required === "boolean" ? a.required : true,
-          description: str(a.description),
-          source: sourceOf(a),
-        })),
-      );
-      reqs.indicatorRequirements.push(...grounded(arr(raw.indicatorRequirements)).map((i) => ({ text: str(i.text) ?? "", disaggregation: strs(i.disaggregation), source: sourceOf(i) })));
-      reqs.compliance.push(
-        ...grounded(arr(raw.compliance)).map((c) => ({
-          text: str(c.text) ?? "",
-          severity: (["INFO", "WARN", "BLOCK"].includes(String(c.severity)) ? c.severity : "WARN") as ComplianceSeverity,
-          source: sourceOf(c),
-        })),
-      );
+      requirements.add(raw);
     }
 
     const sections = buildSectionTree(drafts, warnings);
     if (!sections.some((s) => s.includeInReport)) {
       return { ok: false, error: DomainError.invariant("AI extraction found no report sections") };
     }
-    let requirements;
-    try {
-      requirements = createTemplateRequirements(reqs);
-    } catch (error) {
-      warnings.push(`Some report-level requirements were invalid and ignored: ${error instanceof Error ? error.message : String(error)}`);
-      requirements = createTemplateRequirements({ annexes: reqs.annexes, compliance: reqs.compliance });
-    }
+    const built = requirements.build(warnings);
+    dropped += requirements.dropped;
+    kept += requirements.kept;
     if (dropped > 0) warnings.push(`${dropped} extracted item(s) were not found in the template text and were discarded.`);
     const reportable = sections.filter((s) => s.includeInReport).length;
     return {
       ok: true,
       value: {
         sections,
-        requirements,
+        requirements: built,
         meta: {
           method: "LLM",
           model,
@@ -274,7 +181,7 @@ export class LlmTemplateExtractor implements ITemplateExtractionService {
           extractedAt: new Date().toISOString(),
           durationMs: Date.now() - started,
         },
-        summary: `AI found ${reportable} report section(s), ${requirements.annexes.length} annex(es), ${requirements.compliance.length} compliance rule(s); ${kept} item(s) verified against the template.`,
+        summary: `AI found ${reportable} report section(s), ${built.annexes.length} annex(es), ${built.compliance.length} compliance rule(s); ${kept} item(s) verified against the template.`,
       },
     };
   }

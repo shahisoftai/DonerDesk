@@ -108,6 +108,8 @@ export class GetReportDraftHandler {
             id: s.id,
             sectionTitle: s.sectionTitle,
             sectionOrder: s.sectionOrder,
+            level: s.level,
+            numbering: s.numbering ?? null,
             content: s.content,
             sourceReferences: s.sourceReferences.map((ref) =>
               ref.type === "evidence" && labelOf(ref.id) ? { ...ref, evidenceTitle: labelOf(ref.id) } : ref,

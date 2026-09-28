@@ -22,6 +22,9 @@ import { AiRewritePanel } from "./AiRewritePanel";
 import { RegeneratePopover } from "./RegeneratePopover";
 import { EvidencePeek } from "./EvidencePeek";
 
+/** Sub-sections read as sub-headings of their parent in the document. */
+const HEADING_SIZE: Record<number, string> = { 1: "text-xl", 2: "text-lg", 3: "text-base", 4: "text-base text-slate-700 dark:text-slate-200" };
+
 // The editor chunk (TipTap/ProseMirror) only downloads when someone edits.
 const RichSectionEditor = dynamic(() => import("../../rich-text/RichSectionEditor"), {
   ssr: false,
@@ -166,8 +169,8 @@ export function DocumentSection({
   if (vm.isWriting) {
     return (
       <section id={`section-${vm.id}`} aria-busy="true" className="-mx-5 mb-2 scroll-mt-36 rounded-xl px-5 py-4">
-        <h2 className="mb-3 text-xl font-semibold text-slate-400 dark:text-slate-500">
-          {vm.number}. {vm.title}
+        <h2 className={`mb-3 font-semibold text-slate-400 dark:text-slate-500 ${HEADING_SIZE[vm.level] ?? HEADING_SIZE[4]}`}>
+          {vm.number} {vm.title}
         </h2>
         <div className="space-y-2" aria-hidden="true">
           <div className="h-3 w-full animate-pulse rounded bg-slate-100 dark:bg-white/5" />
@@ -224,9 +227,9 @@ export function DocumentSection({
         </div>
       )}
 
-      <h2 id={`section-heading-${vm.id}`} className="mb-3 text-xl font-semibold leading-snug">
+      <h2 id={`section-heading-${vm.id}`} className={`mb-3 font-semibold leading-snug ${HEADING_SIZE[vm.level] ?? HEADING_SIZE[4]}`}>
         <button type="button" onClick={onSelect} className="rounded text-left hover:text-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:hover:text-brand-300">
-          {vm.number}. {vm.title}
+          {vm.number} {vm.title}
         </button>
       </h2>
 

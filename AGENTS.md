@@ -148,3 +148,22 @@ in-process default), stub LLM (dev default), pino logs, console email.
   present (legacy `buildSectionGuidance`, AI Reporter `SectionBrief.donorInstructions/requiredTables/
   authorInstructions/pageLimit` + `ContextTemplate` requirement lists — Python and TS kept in lockstep).
 - Deploy: apply migration `20260927150000_donor_template_manager_v2`, then re-run `infra/postgres/rls.sql`.
+
+## Template extraction v2 — table of contents first (2026-09-28)
+- `TocTemplateExtractor` (`template-extract-v2`, default) = pass 1: one call over a condensed view of the
+  WHOLE document (`renderOutlineView`) returns the TOC (≤ 4 levels) as block indices; `validateToc` grounds
+  titles, orders entries and makes levels contiguous. Pass 2: guidance per group of top-level branches
+  (`summary` → `TemplateSection.description`, plus instructions/questions/tables) + report-level requirements.
+  A failed pass-2 call keeps the outline and uses `analyzeSection` for that part. `TEMPLATE_EXTRACTION_PROMPT=v1`
+  restores `LlmTemplateExtractor`.
+- Reasoning models spend thinking tokens from `max_tokens`: extraction calls pass large `maxTokens` and a
+  per-call `LLMCompletionInput.timeoutMs` (adapters use the longer of it and the provider timeout). Too small a
+  budget returns empty content and silently falls back to the heuristic extractor.
+- Heading levels from formatting: templates without heading styles carry `DocumentBlock.style`
+  (`docx-styles.ts` reads run size/bold/colour from the DOCX XML; PDFs give font size), and
+  `assignLevelsFromStyle` nests each heading under the nearest more prominent one. Only used when all
+  headings share one level.
+- Report sections keep the hierarchy: `ReportSection.level/numbering/templateSectionId` (migration
+  `20260928120000_report_section_hierarchy`), set by `planHierarchy` in `GenerateReportDraftHandler`. The
+  parent is implicit (nearest earlier section one level up). The workspace outline (`outline-tree.ts`,
+  `OutlineNav`) and exports (Heading 2–5) render it; `sectionTitle` still starts with the donor numbering.

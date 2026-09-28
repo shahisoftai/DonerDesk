@@ -15,9 +15,18 @@ export interface SourceReference {
   chunkId?: string;
 }
 
+/** Deepest sub-section level (1 = section, 2-4 = sub-sections), as in the donor template. */
+export const MAX_REPORT_SECTION_LEVEL = 4;
+
 export interface ReportSectionProps {
   sectionTitle: string;
   sectionOrder: number;
+  /** Heading depth 1..MAX_REPORT_SECTION_LEVEL; the parent is the nearest earlier section one level up. */
+  level: number;
+  /** Donor numbering as printed in the template ("2.1"); `sectionTitle` already starts with it. */
+  numbering?: string;
+  /** The template section this was planned from; undefined for manually added sections. */
+  templateSectionId?: string;
   content: string;
   sourceReferences: SourceReference[];
   unsupportedClaims: string[];
@@ -45,6 +54,9 @@ export class ReportSection extends Entity<string> {
     reportDraftId: string;
     sectionTitle: string;
     sectionOrder: number;
+    level?: number;
+    numbering?: string;
+    templateSectionId?: string;
     content?: string;
     sourceReferences?: SourceReference[];
     unsupportedClaims?: string[];
@@ -52,9 +64,16 @@ export class ReportSection extends Entity<string> {
     chartConfig?: ChartConfig | null;
   }): ReportSection {
     if (!input.sectionTitle) throw DomainError.validation("Section title required");
+    const level = input.level ?? 1;
+    if (!Number.isInteger(level) || level < 1 || level > MAX_REPORT_SECTION_LEVEL) {
+      throw DomainError.validation(`Section level must be between 1 and ${MAX_REPORT_SECTION_LEVEL}`);
+    }
     return new ReportSection(input.id, input.tenantId, input.reportDraftId, {
       sectionTitle: input.sectionTitle,
       sectionOrder: input.sectionOrder,
+      level,
+      ...(input.numbering?.trim() ? { numbering: input.numbering.trim() } : {}),
+      ...(input.templateSectionId ? { templateSectionId: input.templateSectionId } : {}),
       content: input.content ?? "",
       sourceReferences: input.sourceReferences ?? [],
       unsupportedClaims: input.unsupportedClaims ?? [],
@@ -77,6 +96,9 @@ export class ReportSection extends Entity<string> {
 
   get sectionTitle(): string { return this.props.sectionTitle; }
   get sectionOrder(): number { return this.props.sectionOrder; }
+  get level(): number { return this.props.level ?? 1; }
+  get numbering(): string | undefined { return this.props.numbering; }
+  get templateSectionId(): string | undefined { return this.props.templateSectionId; }
   get content(): string { return this.props.content; }
   get sourceReferences(): SourceReference[] { return [...this.props.sourceReferences]; }
   get unsupportedClaims(): string[] { return [...this.props.unsupportedClaims]; }

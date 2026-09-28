@@ -4,6 +4,8 @@ import { DomainError, type Result } from "@donordesk/domain";
 import type { DocumentBlock, IStructuredDocumentParser, StructuredDocument } from "@donordesk/application";
 import { htmlToBlocks } from "./html-blocks.js";
 import { linesToBlocks, stripRepeatedBoilerplate, type SourceLine } from "./text-blocks.js";
+import { attachStyles, readDocxParagraphStyles } from "./docx-styles.js";
+import { assignLevelsFromStyle } from "./style-levels.js";
 
 const BRACKET_ONLY = /^\[.*\]$/;
 
@@ -32,24 +34,24 @@ const DOCX_STYLE_MAP = [
   "p[style-name='Heading 6'] => h6:fresh",
 ];
 
-/** Promotes numbered/capitalised plain or bold paragraphs to headings in DOCX files without heading styles. */
 /** Full post-process from raw `htmlToBlocks` output to the final DOCX block list (also used directly by tests). */
 export function cleanDocxBlocks(blocks: DocumentBlock[]): DocumentBlock[] {
-  return stripRepeatedBoilerplate(promotePseudoHeadings(blocks));
+  return stripRepeatedBoilerplate(assignLevelsFromStyle(promotePseudoHeadings(blocks)));
 }
 
+/** Promotes numbered/capitalised plain or bold paragraphs to headings in DOCX files without heading styles. */
 export function promotePseudoHeadings(blocks: DocumentBlock[]): DocumentBlock[] {
   if (blocks.some((b) => b.kind === "HEADING")) return blocks;
   const promoted: DocumentBlock[] = [];
   for (const b of blocks) {
     if (b.kind === "PARAGRAPH") {
-      const [asBlock] = linesToBlocks([{ text: b.text }]);
+      const [asBlock] = linesToBlocks([{ text: b.text, ...(b.style ? { style: b.style } : {}) }]);
       if (asBlock?.kind === "HEADING" || asBlock?.kind === "TABLE") {
         promoted.push(asBlock);
         continue;
       }
       if (b.emphasis && !BRACKET_ONLY.test(b.text) && b.text.length <= 100 && !/[.?!]$/.test(b.text)) {
-        promoted.push({ kind: "HEADING", level: 1, text: b.text.replace(/:$/, "") });
+        promoted.push({ kind: "HEADING", level: 1, text: b.text.replace(/:$/, ""), ...(b.style ? { style: b.style } : {}) });
         continue;
       }
     }
@@ -79,7 +81,9 @@ export class DocxBlockReader implements IStructuredDocumentParser {
   async parse(input: ParseInput): Promise<Result<StructuredDocument, DomainError>> {
     try {
       const html = await mammoth.convertToHtml({ buffer: input.buffer }, { styleMap: DOCX_STYLE_MAP });
-      return { ok: true, value: { format: "DOCX", blocks: cleanDocxBlocks(htmlToBlocks(html.value)) } };
+      // Formatting is only a level hint; a document we cannot re-read still parses.
+      const styles = await readDocxParagraphStyles(input.buffer).catch(() => new Map());
+      return { ok: true, value: { format: "DOCX", blocks: cleanDocxBlocks(attachStyles(htmlToBlocks(html.value), styles)) } };
     } catch (error) {
       return failure("Word", error);
     }
@@ -89,6 +93,16 @@ export class DocxBlockReader implements IStructuredDocumentParser {
 interface PdfTextItem {
   str: string;
   transform: number[];
+  fontName?: string;
+}
+
+/** A PDF line's style: the font and size of its longest text run (PDFs expose no bold/colour). */
+function pdfLineStyle(items: PdfTextItem[]): SourceLine["style"] {
+  let best: PdfTextItem | undefined;
+  for (const i of items) if (i.str.trim() && (!best || i.str.trim().length > best.str.trim().length)) best = i;
+  if (!best) return undefined;
+  const size = Math.round(Math.hypot(best.transform[0] ?? 0, best.transform[1] ?? 0) * 2) / 2;
+  return size > 0 ? { key: `${size}|${best.fontName ?? ""}`, size } : undefined;
 }
 
 export class PdfBlockReader implements IStructuredDocumentParser {
@@ -96,7 +110,7 @@ export class PdfBlockReader implements IStructuredDocumentParser {
     return ext(i.fileName) === "pdf" || i.mimeType === "application/pdf";
   }
   async parse(input: ParseInput): Promise<Result<StructuredDocument, DomainError>> {
-    const pages: string[] = [];
+    const pages: SourceLine[][] = [];
     try {
       // Import the library module directly, not the package root: the root
       // `index.js` runs a self-test (`isDebugMode = !module.parent`) that is
@@ -107,19 +121,20 @@ export class PdfBlockReader implements IStructuredDocumentParser {
       const pagerender = async (pageData: { getTextContent: (o: Record<string, unknown>) => Promise<{ items: PdfTextItem[] }> }) => {
         const content = await pageData.getTextContent({ normalizeWhitespace: false, disableCombineTextItems: false });
         let lastY: number | undefined;
-        let text = "";
+        const lines: PdfTextItem[][] = [];
         for (const item of content.items) {
           const y = item.transform[5];
-          if (lastY === undefined || Math.abs((y ?? 0) - lastY) < 2) text += item.str;
-          else text += `\n${item.str}`;
+          if (lastY === undefined || Math.abs((y ?? 0) - lastY) >= 2) lines.push([]);
+          lines[lines.length - 1]!.push(item);
           lastY = y;
         }
-        pages.push(text);
-        return text;
+        const page = pages.length + 1;
+        pages.push(lines.map((items) => ({ text: items.map((i) => i.str).join(""), page, style: pdfLineStyle(items) })));
+        return lines.map((items) => items.map((i) => i.str).join("")).join("\n");
       };
       const data = await mod.default(input.buffer, { pagerender });
-      const lines: SourceLine[] = pages.flatMap((p, i) => [...p.split(/\r?\n/).map((text) => ({ text, page: i + 1 })), { text: "", page: i + 1 }]);
-      return { ok: true, value: { format: "PDF", blocks: linesToBlocks(stripRunningHeaders(lines, pages.length)), pageCount: data.numpages } };
+      const lines: SourceLine[] = pages.flatMap((p, i) => [...p, { text: "", page: i + 1 }]);
+      return { ok: true, value: { format: "PDF", blocks: assignLevelsFromStyle(linesToBlocks(stripRunningHeaders(lines, pages.length))), pageCount: data.numpages } };
     } catch (error) {
       return failure("PDF", error);
     }

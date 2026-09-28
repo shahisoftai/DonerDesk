@@ -54,6 +54,8 @@ type ChecklistItem = {
 type ReportSection = {
   id: string;
   sectionTitle: string;
+  level?: number;
+  numbering?: string | null;
   content?: string;
   sourceReferences?: Array<{ type: string; id: string; label?: string }>;
   unsupportedClaims?: string[];

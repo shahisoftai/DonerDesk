@@ -75,6 +75,14 @@ function toPayload(s: Section) {
   };
 }
 
+/** "5 sections, 12 sub-sections" for the report part of the outline. */
+function outlineCounts(sections: Section[]): string {
+  const reportable = sections.filter((s) => s.includeInReport);
+  const top = reportable.filter((s) => s.level === 1).length;
+  const sub = reportable.length - top;
+  return `${top} section${top === 1 ? "" : "s"}${sub > 0 ? `, ${sub} sub-section${sub === 1 ? "" : "s"}` : ""}`;
+}
+
 function problems(sections: Section[]): Map<string, string> {
   const out = new Map<string, string>();
   for (const s of sections) {
@@ -154,7 +162,7 @@ export function SectionTreeEditor({
       <UnsavedChangesGuard dirty={dirty} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          {sections.filter((s) => s.includeInReport).length} report section(s) · {pending === 0 ? "all reviewed" : `${pending} awaiting review`}
+          {outlineCounts(sections)} · {pending === 0 ? "all reviewed" : `${pending} awaiting review`}
         </p>
         {!readOnly && (
           <div className="flex flex-wrap gap-2">
@@ -190,7 +198,10 @@ export function SectionTreeEditor({
                   <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => toggle(s.id)} aria-expanded={open}>
                     <span aria-hidden className="text-xs text-slate-400">{open ? "▾" : "▸"}</span>
                     {s.numbering && <span className="text-sm text-slate-500">{s.numbering}</span>}
-                    <span className="truncate font-medium">{s.title || "Untitled"}</span>
+                    <span className="min-w-0">
+                      <span className={cn("block truncate", s.level === 1 ? "font-semibold" : "font-medium")}>{s.title || "Untitled"}</span>
+                      {!open && s.description && <span className="block truncate text-xs font-normal text-slate-500 dark:text-slate-400">{s.description}</span>}
+                    </span>
                   </button>
                   <Badge tone="neutral">{INPUT_TYPES.find((t) => t.value === s.inputType)?.label ?? s.inputType}</Badge>
                   {!s.includeInReport && <Badge tone="info" title="Guidance only: not a report section">Guidance</Badge>}
