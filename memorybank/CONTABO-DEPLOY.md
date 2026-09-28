@@ -1,6 +1,8 @@
 # Deploy to Contabo — Fastest Path
 
-**Last deploy:** 2026-09-27 — `releaseId=20260927145612` (`SCOPE=api`, commit
+**Last deploy:** 2026-09-28 — `releaseId=20260928095726` (`SCOPE=both`). Template extraction v2 (TOC first: heading levels from DOCX formatting / PDF font size, outline pass over the whole document, guidance per branch; larger token budgets + per-call timeout because DeepSeek's reasoning tokens had been exhausting `max_tokens`, which silently sent every extraction to the heuristic fallback) and the hierarchical report outline (4-level TOC tree in the workspace, Heading 2–5 in exports). **One additive migration applied manually first:** `20260928120000_report_section_hierarchy` (`ReportSection.level/numbering/templateSectionId`), via the same `rsync --relative` + `prisma migrate deploy` as `donordesk_migrator` procedure below; DB backed up beforehand to `/opt/donordesk/backups/db-pre-20260928-hierarchy.dump`. No `rls.sql` change. Gates: `pnpm -r typecheck` clean; domain 228, application 139, infrastructure 245, web 182. Verified: api/web/worker active, `/ready` 200 (includes the three new `ReportSection` fields), `jszip` (new direct dependency) resolves from `packages/infrastructure`. Real-model check before deploy (tenant DeepSeek, BE NOFO QPR): DOCX 9 sections + 44 sub-sections, PDF 9 + 45, every section with an AI guidance note. Existing drafts stay flat until regenerated from a re-extracted template.
+
+**Earlier:** 2026-09-27 — `releaseId=20260927145612` (`SCOPE=api`, commit
 `a3041a9`). Fixes real extraction-quality bugs found by manually reviewing a
 production template on project "123" (a USAID BE NOFO QPR DOCX with no Word
 heading styles, a native TOC field, cover-page bracket placeholders, and a
