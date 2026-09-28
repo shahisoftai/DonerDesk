@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/Switch";
 import { Spinner } from "@/components/ui/Spinner";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
+import { AiActivityPopup } from "@/components/feedback/AiActivityPopup";
 import { cn } from "@/components/ui/cn";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import type { TemplateDetail } from "@/lib/server/schemas";
@@ -39,6 +40,18 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 const REPORT_TYPES = ["MONTHLY", "QUARTERLY", "ANNUAL", "FINAL", "ACTIVITY", "SITUATION", "CUSTOM"];
+
+/** Mirrors the AI extractor's actual two passes (packages/infrastructure/.../toc-extractor.ts): outline first, then per-section guidance. */
+const EXTRACTION_STEPS = [
+  "Reading the document's headings and structure…",
+  "Working out the report's outline — sections and sub-sections…",
+  "Reading the donor's instructions for each section…",
+  "Finding required tables, questions and word limits…",
+  "Checking every extracted detail against the original text…",
+  "Putting the template together…",
+] as const;
+// Real extractions have run 60-180s in practice; paces the simulated bar (no real % is available from the server).
+const EXTRACTION_ESTIMATED_MS = 110_000;
 
 export function TemplateWorkspace({
   projectId,
@@ -146,6 +159,14 @@ export function TemplateWorkspace({
             <span className="flex items-center gap-2"><Spinner /> Sections, instructions and requirements are being extracted. This page updates automatically.</span>
           </InlineAlert>
         )}
+        <AiActivityPopup
+          open={extracting}
+          title="Analysing your template"
+          steps={EXTRACTION_STEPS}
+          estimatedMs={EXTRACTION_ESTIMATED_MS}
+          note="This usually takes one to three minutes for a full donor template. You can leave this page open — it updates on its own."
+          variant="overlay"
+        />
         {template.status === "EXTRACTION_FAILED" && (
           <InlineAlert tone="danger" title="Extraction failed">
             {warnings[0] ?? "The template could not be analysed."} Correct the text under Source and extract again, or add sections manually.

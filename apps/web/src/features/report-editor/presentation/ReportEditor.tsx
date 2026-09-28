@@ -24,6 +24,7 @@ import type { ReportArtifact } from "@/lib/server/schemas";
 import { useToast } from "@/components/feedback/Toast";
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { Drawer } from "@/components/feedback/Drawer";
+import { AiActivityPopup } from "@/components/feedback/AiActivityPopup";
 import { Button } from "@/components/ui/Button";
 import { DraftVersionsPanel, type DraftVersion } from "@/features/reporting/presentation/DraftVersionsPanel";
 import type { ChartFigureIndicator } from "@/features/reporting/presentation/ChartFigure";
@@ -119,6 +120,16 @@ type Confirm = { kind: "delete"; id: string; title: string } | { kind: "regenera
 /** "Restore previous version" stays on the toast after a regenerate (U11). */
 const RESTORE_UNDO_MS = 30_000;
 const EVIDENCE_MARKS_KEY = "donordesk.report-editor.evidence-marks";
+
+const GENERATION_STEPS = [
+  "Gathering this period's indicator figures and evidence…",
+  "Drafting each section from your data…",
+  "Checking every figure against the evidence…",
+  "Writing the executive summary and conclusion…",
+  "Finishing up…",
+] as const;
+/** Paces the popup's bar before the first section reports progress (kickoff is normally a few seconds). */
+const GENERATION_STARTING_ESTIMATED_MS = 12_000;
 const NO_ANCHORS: ReadonlyMap<string, Anchor | null> = new Map();
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -621,8 +632,19 @@ export function ReportEditor(props: ReportEditorProps) {
     />
   );
 
+  const generationProgressKnown = generation.generating && model.sections.length > 0;
   return (
     <div className="animate-fade-in">
+      <AiActivityPopup
+        open={generation.starting || generation.generating}
+        title="Writing your report"
+        steps={GENERATION_STEPS}
+        progressPercent={generationProgressKnown ? (100 * generation.progress.done) / generation.progress.total : undefined}
+        progressLabel={generationProgressKnown ? `${generation.progress.done} of ${generation.progress.total} sections` : undefined}
+        estimatedMs={GENERATION_STARTING_ESTIMATED_MS}
+        note={generation.progress.etaLabel ? `About ${generation.progress.etaLabel}.` : "This can take a few minutes for a full report — you can keep browsing other pages meanwhile."}
+        variant="corner"
+      />
       <EditorTopBar
         backHref={`/projects/${projectId}/reports`}
         eyebrow={props.heading.eyebrow}
