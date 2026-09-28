@@ -168,12 +168,61 @@ The domain catalog is flipped and the drift described in §2.1 is closed:
   three fields are not enforced anywhere yet (WS-C viewer seats, WS-D top-up
   purchase flow, WS-E BYO gating each wire their own field into an
   authoritative write path); no migration was needed (`PlanLimits`/`PlanLimitsJson`
-  are code-level types over existing JSON columns, not new Prisma columns);
-  WS-A.6's grandfather-allowance migration for existing TEAM/GROWTH
-  subscribers crossing the credit-ladder cut has **not** been written yet —
-  this must land before `ENTITLEMENT_ENFORCEMENT` is turned on for existing
-  paid tenants, or a TEAM tenant using 30 drafts/mo today gets hard-blocked
-  the moment enforcement flips.
+  are code-level types over existing JSON columns, not new Prisma columns).
+
+### 2.1b WS-A.6 shipped (2026-09-28) — existing-subscriber cutover policy
+
+`RunGrandfatherCreditCutoverHandler`
+(`packages/application/src/use-cases/billing/grandfather-credit-cutover.ts`)
+implements the policy: for every tenant with an ACTIVE/PAST_DUE subscription
+on TEAM or GROWTH whose current-UTC-month `AI_DRAFT_CREDITS` usage already
+exceeds the *new* cap (20/100), it writes a time-bounded `GRANDFATHERED`
+entitlement grant preserving the tenant's *old* allowance (100/500) until the
+next UTC month boundary — full `PlanLimitsJson` is persisted in the override
+(not just the credit bucket), since `calculateEntitlement` reads
+`overrideLimits` as a complete `PlanLimits` object and a partial override
+would leave every other bucket `undefined`. Idempotent by construction: a
+tenant with an existing active grant tagged
+`GRANDFATHER_CREDIT_CUTOVER_REASON_PREFIX` is skipped, so re-running the
+migration never double-grants.
+
+The known cutover values (TEAM 100→20, GROWTH 500→100) are pinned in code as
+`PHASE22_CREDIT_CUTOVERS` rather than accepted as free-form SuperAdmin input
+— this is a one-time historical fact about the Phase 22 catalog change, not a
+general-purpose tool, so there's no way to trigger it with the wrong numbers.
+
+**Exposed as** `POST /superadmin/billing/grandfather-credit-cutover`
+(`apps/api/src/routes/superadmin.ts`), SuperAdmin-session-gated like every
+other tier/credit action, audited both per-tenant (via the handler's
+`IAuditLogger` calls, one `billing.credits.grandfathered` event per
+grandfathered tenant) and at the platform level (one
+`billing.credits.grandfather_cutover_run` entry via `PlatformControlPlane.audit`
+recording who triggered the run and how many tenants it touched). It runs
+against the **admin** Prisma connection (`app.container`, `useAdminConnection:
+true`, bypasses per-tenant RLS) rather than the tenant-scoped
+`/internal/billing/*` Kestra routes — those routes bind the Postgres session
+to one tenant via `app.current_tenant` (confirmed against
+`infra/postgres/rls.sql`, which RLS-isolates `BillingSubscription`/
+`EntitlementGrant`/`UsageCounter` by `tenantId`), so a genuinely
+cross-tenant, run-once migration like this cannot use that route pattern
+without silently only seeing one tenant per invocation.
+
+A new `IBillingSubscriptionRepository.listActiveByPlanCodes(planCodes, limit?)`
+port method (and its `PrismaBillingSubscriptionRepository` implementation)
+was added since no existing repository could enumerate all tenants on a
+given plan platform-wide.
+
+Verified: `packages/application` (168 tests, incl. 5 new for this handler:
+grandfathers a tenant past the new cap with the full limits object preserved,
+skips a tenant already within the new cap, covers both TEAM and GROWTH,
+idempotent re-run, ignores plans with no configured cutover),
+`packages/infrastructure` billing (6), full workspace build all pass.
+
+**Still not done:** this closes WS-A entirely, but `ENTITLEMENT_ENFORCEMENT`
+being turned on for existing paid tenants still depends on someone actually
+**running** this migration against production before the cutover takes
+effect — that's an operational step (§9 rollout, step 2's "grandfather
+backfill verified" gate), not a code gap.
 
 ---
 
@@ -213,7 +262,7 @@ consumers of the floor constant.
 
 ## 4. Workstreams
 
-### WS-A — Domain catalog + new limit dimensions (**shipped 2026-09-28 — see §2.1a; item 6 still open**)
+### WS-A — Domain catalog + new limit dimensions (**shipped 2026-09-28 — see §2.1a/§2.1b**)
 
 Files: `packages/domain/src/contexts/billing/plan.ts`,
 `packages/contracts/src/billing.ts`, `EntitlementService`,
@@ -247,14 +296,14 @@ Files: `packages/domain/src/contexts/billing/plan.ts`,
    (`viewerSeats`/`aiCreditTopUp`/`byoLlmEnabled`), so the API can persist
    them; building the actual UI is WS-K's job (SuperAdmin management
    surface), not WS-A's.
-6. ⏳ **Still open — existing-subscriber cutover policy:** a TEAM tenant at
-   20+ drafts this month must not be hard-blocked mid-cycle. On entitlement
-   read, if `catalogVersion < 2`-era usage exists, enforce new credit limits
-   only from the next UTC month boundary; before that, apply the old quota as
-   a time-bounded `GRANDFATHERED` allowance written by a one-shot migration
-   handler (mirrors Feature 19 §5.3 pattern). Storage/seats/projects
-   unchanged. **This must land before `ENTITLEMENT_ENFORCEMENT` is enabled
-   for existing paid tenants** — see §2.1a's "not done" note.
+6. ✅ **Existing-subscriber cutover policy** — see §2.1b.
+   `RunGrandfatherCreditCutoverHandler` + `POST
+   /superadmin/billing/grandfather-credit-cutover` grant a time-bounded
+   `GRANDFATHERED` allowance at the old cap to any TEAM/GROWTH tenant already
+   past the new cap this UTC month, until the next UTC month boundary.
+   Storage/seats/projects unchanged. Code is shipped; **someone must still
+   run it against production** before `ENTITLEMENT_ENFORCEMENT` is enabled
+   for existing paid tenants (operational step, §9 rollout gate).
 
 ### WS-B — Archived project status (active-only counting)
 

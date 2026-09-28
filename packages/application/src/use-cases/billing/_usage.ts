@@ -9,6 +9,12 @@ export function monthStartUtc(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 }
 
+/** UTC start of the month *after* `date`'s month (quota/grant reset boundary). */
+export function nextMonthStartUtc(date: Date): Date {
+  const start = monthStartUtc(date);
+  return new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1));
+}
+
 /** Normalized trial/email fingerprints for TrialIdentity abuse resistance. */
 export function emailFingerprint(email: string): string {
   const normalized = email.trim().toLowerCase();

@@ -92,6 +92,13 @@ export interface IBillingSubscriptionRepository {
    * converges even when the provider never retries.
    */
   listReconcileCandidates(staleBefore: Date, limit?: number): Promise<Result<BillingSubscription[]>>;
+  /**
+   * Currently access-granting subscriptions (ACTIVE, or PAST_DUE within
+   * grace) on any of `planCodes`. Platform-scoped (not tenant-qualified) —
+   * used by one-shot catalog-migration jobs that must enumerate every tenant
+   * on a plan, not resolve one tenant's entitlement.
+   */
+  listActiveByPlanCodes(planCodes: PlanCode[], limit?: number): Promise<Result<BillingSubscription[]>>;
 }
 
 export interface UsageCounterEntry {

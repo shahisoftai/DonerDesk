@@ -128,6 +128,15 @@ export class PrismaBillingSubscriptionRepository implements IBillingSubscription
     return ok(rows.map((r) => this.toDomain(r)));
   }
 
+  async listActiveByPlanCodes(planCodes: PlanCode[], limit = 5000): Promise<Result<BillingSubscription[], DomainError>> {
+    const rows = await this.prisma.billingSubscription.findMany({
+      where: { planCode: { in: planCodes }, status: { in: ["ACTIVE", "PAST_DUE"] } },
+      orderBy: { createdAt: "asc" },
+      take: limit,
+    });
+    return ok(rows.map((r) => this.toDomain(r)));
+  }
+
   private toDomain(row: {
     id: string;
     tenantId: string;

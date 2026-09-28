@@ -188,6 +188,7 @@ export * from "./use-cases/billing/reconcile-billing-subscriptions.js";
 export * from "./use-cases/billing/reconcile-managed-storage.js";
 export * from "./use-cases/billing/release-stale-usage-reservations.js";
 export * from "./use-cases/billing/retry-billing-inbox.js";
+export * from "./use-cases/billing/grandfather-credit-cutover.js";
 export * from "./use-cases/billing/_usage.js";
 export * from "./services/billing-subscription-synchronizer.js";
 export * from "./services/report-generation-context.js";

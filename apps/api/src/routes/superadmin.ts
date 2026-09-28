@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { PlatformControlPlane } from "@donordesk/infrastructure";
+import { PHASE22_CREDIT_CUTOVERS } from "@donordesk/application";
 
 const Login = z.object({ email: z.string().email(), password: z.string().min(1) });
 const Mfa = z.object({ token: z.string().min(1), code: z.string().regex(/^\d{6}$/) });
@@ -48,6 +49,17 @@ export async function registerSuperAdminRoutes(app: FastifyInstance) {
     secured.post("/superadmin/tenants/:id/tier/reset", req => service().resetTenantTier(actor(req), (req.params as { id: string }).id, meta(req)));
     secured.post("/superadmin/tenants/:id/credits", req => service().adjustCredits(actor(req), (req.params as { id: string }).id, CreditsAdjust.parse(req.body), meta(req)));
     secured.post("/superadmin/tenants/:id/credits/reset", req => service().resetCreditsCounter(actor(req), (req.params as { id: string }).id, meta(req)));
+    // Phase 22 WS-A.6: one-shot, idempotent migration granting TEAM/GROWTH
+    // tenants already past the new (lower) AI-credit cap a time-bounded
+    // GRANDFATHERED allowance at their old cap until next UTC month, so the
+    // catalog cutover never hard-blocks anyone mid-cycle. Safe to call more
+    // than once — already-grandfathered tenants are skipped.
+    secured.post("/superadmin/billing/grandfather-credit-cutover", async req => {
+      const result = await app.container.handlers.runGrandfatherCreditCutover.handle({ cutovers: PHASE22_CREDIT_CUTOVERS });
+      if (!result.ok) throw result.error;
+      await service().audit(actor(req), "billing.credits.grandfather_cutover_run", "Platform", "ALL", null, { grandfathered: result.value.length, tenants: result.value.map(o => o.tenantId) }, meta(req));
+      return { grandfathered: result.value.length, outcomes: result.value };
+    });
     secured.get("/superadmin/tenants", () => service().listTenants());
     secured.post("/superadmin/tenants", req => service().createTenant(actor(req), TenantCreate.parse(req.body), meta(req)));
     secured.patch("/superadmin/tenants/:id", req => service().updateTenant(actor(req), (req.params as { id: string }).id, TenantUpdate.parse(req.body), meta(req)));

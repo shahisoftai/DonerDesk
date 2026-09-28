@@ -21,7 +21,7 @@ import type {
 } from "../ports/billing.js";
 import type { IProjectRepository } from "../ports/projects.js";
 import type { IUserRepository } from "../ports/identity.js";
-import { monthStartUtc, USAGE_METRIC_STORAGE, USAGE_METRIC_AI_CREDITS } from "../use-cases/billing/_usage.js";
+import { monthStartUtc, nextMonthStartUtc, USAGE_METRIC_STORAGE, USAGE_METRIC_AI_CREDITS } from "../use-cases/billing/_usage.js";
 
 export interface EntitlementQuery {
   tenantId: string;
@@ -214,11 +214,6 @@ export class EntitlementService {
   static aiCreditsMetric(): UsageMetric {
     return USAGE_METRIC_AI_CREDITS;
   }
-}
-
-function nextMonthStartUtc(date: Date): Date {
-  const start = monthStartUtc(date);
-  return new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1));
 }
 
 export function entitlementLimitError(resource: string, limit: number | bigint | null, usage: number | bigint): DomainError {

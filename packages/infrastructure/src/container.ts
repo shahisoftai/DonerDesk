@@ -152,6 +152,7 @@ import {
   ReconcileManagedStorageUsageHandler,
   ReleaseStaleUsageReservationsHandler,
   RetryBillingInboxHandler,
+  RunGrandfatherCreditCutoverHandler,
   BillingSubscriptionSynchronizer,
   ReportRevisionService,
   ReportAssuranceService,
@@ -521,6 +522,7 @@ export interface Container {
     reconcileManagedStorageUsage: ReconcileManagedStorageUsageHandler;
     releaseStaleUsageReservations: ReleaseStaleUsageReservationsHandler;
     retryBillingInbox: RetryBillingInboxHandler;
+    runGrandfatherCreditCutover: RunGrandfatherCreditCutoverHandler;
   };
 }
 
@@ -1153,6 +1155,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     reconcileManagedStorageUsage: new ReconcileManagedStorageUsageHandler(usageCounters, evidence, clock, audits),
     releaseStaleUsageReservations: new ReleaseStaleUsageReservationsHandler(usageCounters, llmUsage, clock, audits),
     retryBillingInbox: new RetryBillingInboxHandler(billingProvider, billingSubscriptions, billingInbox, billingSubscriptionSynchronizer, clock, audits),
+    runGrandfatherCreditCutover: new RunGrandfatherCreditCutoverHandler(billingSubscriptions, entitlementGrants, usageCounters, audits, clock, planCatalog),
   };
 
   return {
