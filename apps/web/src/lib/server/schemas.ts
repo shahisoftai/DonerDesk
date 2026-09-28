@@ -91,6 +91,10 @@ export const OrganizationProfileSchema = z.object({
   aiEnabled: z.boolean().optional(),
   storageProvider: z.string().optional(),
   reportingDefaults: OrganizationReportingDefaultsSchema.optional(),
+  /** Agent Memory (Phase 21) tenant self-service toggle. */
+  agentMemoryEnabled: z.boolean().optional(),
+  /** Platform-wide rollout flag; the Settings tab is hidden entirely when false. */
+  agentMemoryPlatformEnabled: z.boolean().optional(),
 });
 export type OrganizationProfile = z.infer<typeof OrganizationProfileSchema>;
 

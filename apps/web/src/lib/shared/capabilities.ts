@@ -40,6 +40,7 @@ export type Capability =
   | "report.approve"
   | "report.resolve-claim"
   | "report.override-confidentiality"
+  | "report.manage-agent-memory"
   | "checklist.resolve"
   | "checklist.manage"
   | "export.create"
@@ -71,6 +72,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "report.approve",
     "report.resolve-claim",
     "report.override-confidentiality",
+    "report.manage-agent-memory",
     "checklist.resolve",
     "checklist.manage",
     "export.create",
@@ -94,6 +96,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "report.generate",
     "report.approve",
     "report.resolve-claim",
+    "report.manage-agent-memory",
     "checklist.resolve",
     "export.create",
   ],

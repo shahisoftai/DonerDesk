@@ -21,6 +21,7 @@ import { registerEvidenceRoutes } from "./routes/evidence.js";
 import { registerStorageRoutes } from "./routes/storage.js";
 import { registerActivityRoutes } from "./routes/activities.js";
 import { registerReportingRoutes } from "./routes/reporting.js";
+import { registerAgentMemoryRoutes } from "./routes/agent-memory.js";
 import { registerComplianceRoutes } from "./routes/compliance.js";
 import { registerExportRoutes } from "./routes/exports.js";
 import { registerCommentRoutes } from "./routes/comments.js";
@@ -154,6 +155,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerStorageRoutes(instance);
     await registerActivityRoutes(instance);
     await registerReportingRoutes(instance);
+    await registerAgentMemoryRoutes(instance);
     await registerComplianceRoutes(instance);
     await registerExportRoutes(instance);
     await registerCommentRoutes(instance);

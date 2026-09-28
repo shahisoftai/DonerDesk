@@ -23,6 +23,7 @@ export type Permission =
   | "report.export"
   | "report.resolve-claim"
   | "report.override-confidentiality"
+  | "report.manage-agent-memory"
   | "checklist.manage"
   | "comment.create"
   | "audit.view"
@@ -37,7 +38,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "indicator.update", "indicator.verify",
     "evidence.upload", "evidence.verify", "evidence.delete",
     "activity.create", "activity.approve",
-    "report.generate", "report.edit", "report.approve", "report.export", "report.resolve-claim", "report.override-confidentiality",
+    "report.generate", "report.edit", "report.approve", "report.export", "report.resolve-claim", "report.override-confidentiality", "report.manage-agent-memory",
     "checklist.manage", "comment.create", "audit.view", "billing.manage",
   ]),
   PROJECT_MANAGER: new Set<Permission>([
@@ -47,7 +48,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "indicator.update", "indicator.verify",
     "evidence.upload", "evidence.verify",
     "activity.create", "activity.approve",
-    "report.generate", "report.edit", "report.approve", "report.export", "report.resolve-claim",
+    "report.generate", "report.edit", "report.approve", "report.export", "report.resolve-claim", "report.manage-agent-memory",
     "checklist.manage", "comment.create", "audit.view",
   ]),
   ME_OFFICER: new Set<Permission>([

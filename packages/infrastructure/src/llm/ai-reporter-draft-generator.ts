@@ -85,6 +85,13 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
       provider: process.env.AI_REPORTER_PROVIDER ?? "openai",
       model: process.env.AI_REPORTER_MODEL,
     },
+    /**
+     * Agent Memory (Phase 21) — resolves ACTIVE learned style guidance for a
+     * section. Bound per-tenant at the composition root; undefined (the
+     * default) whenever the platform or tenant flag is off, so output stays
+     * byte-identical to pre-Phase-21 behaviour.
+     */
+    private readonly agentMemoryLookup?: (sectionTitle: string, donorTemplateId?: string) => Promise<string[]>,
   ) {
     // modelVersion is recorded in llm_runs; it must never include the key.
     this.model = {
@@ -121,7 +128,12 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
     const startedAt = Date.now();
     try {
       const prior = this.prior ? await this.prior.fetch(input, section) : [];
-      const request = await this.buildSectionRequest(input, section, prior);
+      // Donor/template-scoped memory is a future extension (v1 only ever
+      // proposes SECTION_TYPE-scoped statements — see
+      // DeterministicMemoryExtractor); no donor template id is threaded
+      // through generation context yet.
+      const agentMemoryGuidance = this.agentMemoryLookup ? await this.agentMemoryLookup(section.title) : [];
+      const request = await this.buildSectionRequest(input, section, prior, agentMemoryGuidance);
       const response = await this.worker.draftSection(request);
       if (!response.ok) {
         this.logger?.warn("AI Reporter draft failed; falling back to stub", {
@@ -307,6 +319,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
     input: GenerateReportDraftInput,
     section: ReportPlanSection,
     prior: AiReporterPriorNarrative[],
+    agentMemoryGuidance: string[] = [],
   ): Promise<AiReporterSectionRequest> {
     const retrieved = await this.buildRetrievedEvidence(input, section);
     const synthesis = isSynthesisSection(section);
@@ -323,8 +336,10 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         requirementGuidance: section.requirementGuidance ?? [],
         // One SSOT for editorial guidance: the same builder the legacy
         // narrator uses (exec-summary structure, annex tables, cross-cutting
-        // disaggregation, financial discipline).
-        sectionGuidance: buildSectionSpecificGuidance(section, input),
+        // disaggregation, financial discipline), plus any approved Agent
+        // Memory (Phase 21) statements for this section — folded into the
+        // same array rather than a new wire field.
+        sectionGuidance: [...buildSectionSpecificGuidance(section, input), ...agentMemoryGuidance],
         synthesis,
         priorSectionsSummary: summariseDraftedSections(input, section, synthesis),
         // Report Editor B7 — only sent when the author gave one (single-section

@@ -2,6 +2,11 @@
 
 This directory contains detailed documentation for each of DonorDesk's 19 MVP features.
 
+> **DonorDesk Version 2.0:** built on branch `0009-agent-memory`. Feature 21
+> (Agent Memory) is this release's headline addition — see
+> [`21-Agent-Memory.md`](./21-Agent-Memory.md) and
+> [`../imp/Phase21-agent-memory.md`](../imp/Phase21-agent-memory.md).
+
 > **Frontend status:** Portal UI for these features is implemented across Phases 0–7
 > of `../imp/frontend-imp-plan.md` (reports `../imp/PHASE*-FRONTEND-REPORT.md`).
 > Frontend routes live under `apps/web/src/app/(portal)/`. Backend/async statuses
@@ -87,6 +92,7 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 | 17 | [Basic Settings](./17-Basic-Settings.md) | Implemented | `apps/web/src/app/(portal)/settings/` |
 | 18 | [Project Creation Wizard](./18-Project-Creation-Wizard.md) | Implemented (release `20260815054218`) | `packages/application/src/readiness/project-readiness-service.ts`, `packages/infrastructure/src/storage/project-workspace.ts`, `packages/infrastructure/src/storage/workspace-router.ts`, `apps/api/src/routes/project-setup.ts` |
 | 19 | [Tiers and Payments](./19-Tiers-And-Payments.md) | Implemented — AI-credit quotas + SuperAdmin credit/tier management (2026-08-17); **Creem live in test mode, Phase 4 reconciliation, webhook tenant resolution, `/thanks` + `/checkout` flow, trial removal (2026-08-18)** | `packages/domain/src/contexts/billing/`, `packages/application/src/ports/billing.ts`, `packages/application/src/services/entitlement-service.ts`, `packages/application/src/services/billing-subscription-synchronizer.ts`, `packages/application/src/use-cases/billing/`, `packages/infrastructure/src/billing/`, `packages/infrastructure/src/repositories/billing.ts`, `apps/api/src/routes/billing.ts`, `apps/api/src/routes/webhooks.ts`, `apps/api/src/routes/internal.ts`, `apps/api/src/routes/superadmin.ts`, `apps/web/src/app/checkout/`, `apps/web/src/app/thanks/` |
+| 21 | [Agent Memory](./21-Agent-Memory.md) | **Version 2.0.** Implemented on branch `0009-agent-memory` (not yet merged to `master`) — learns tenant/donor narrative style and terminology from reviewer edits to AI-drafted sections, subject to human approval; never learns facts/figures (three independent guard layers); two-flag gated (`AGENT_MEMORY_ENABLED` platform + self-service "AI Writing Style" Settings tab) | `packages/domain/src/contexts/memory/agent-memory.ts`, `packages/application/src/ports/agent-memory.ts`, `packages/application/src/use-cases/memory/`, `packages/infrastructure/src/repositories/agent-memory-repository.ts`, `packages/infrastructure/src/memory/deterministic-memory-extractor.ts`, `apps/api/src/routes/agent-memory.ts`, `apps/web/src/app/(portal)/settings/ai-style/` — see [`../imp/Phase21-agent-memory.md`](../imp/Phase21-agent-memory.md) |
 
 ## Status Legend
 

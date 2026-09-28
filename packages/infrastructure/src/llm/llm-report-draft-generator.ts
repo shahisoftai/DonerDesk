@@ -608,7 +608,7 @@ export function buildDraftedSectionsBlock(input: GenerateReportDraftInput, secti
   ];
 }
 
-function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section: ReportPlanSection): string {
+function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section: ReportPlanSection, agentMemoryGuidance: string[] = []): string {
   const profile = input.reportingProfileSnapshot;
   const toneInstruction = toneInstructionFor(profile);
 
@@ -626,7 +626,9 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
   const activitiesJson = buildActivitiesJson(input, { maxActivities: 6, maxCharsPerField: 250 });
 
   const sectionGuidance = buildSectionGuidance(section);
-  const specificGuidance = buildSectionSpecificGuidance(section, input);
+  // Agent Memory (Phase 21) statements fold into the same array as the
+  // section-specific quality guidance — one SSOT, no new prompt block.
+  const specificGuidance = [...buildSectionSpecificGuidance(section, input), ...agentMemoryGuidance];
   const requirementGuidance = buildRequirementGuidanceBlock(section);
   const formattingRules = (profile.formattingRules ?? []).filter(Boolean);
 
@@ -1110,6 +1112,8 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
     private readonly provider: ILLMProvider,
     private readonly fallback: IReportDraftGenerator = new StubReportDraftGenerator(),
     private readonly logger?: ILogger,
+    /** Agent Memory (Phase 21) — see the identical parameter on `AiReporterDraftGenerator`. */
+    private readonly agentMemoryLookup?: (sectionTitle: string) => Promise<string[]>,
   ) {
     this.model = {
       modelId: provider.name,
@@ -1214,7 +1218,8 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
     }
     try {
       const systemPrompt = buildSystemPrompt();
-      const userPrompt = buildSectionNarratorUserPrompt(input, section);
+      const agentMemoryGuidance = this.agentMemoryLookup ? await this.agentMemoryLookup(section.title) : [];
+      const userPrompt = buildSectionNarratorUserPrompt(input, section, agentMemoryGuidance);
       promptHash = createHash("sha256").update(`${systemPrompt}\n${userPrompt}`, "utf8").digest("hex");
 
       const result = await this.provider.complete({

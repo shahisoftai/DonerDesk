@@ -26,6 +26,8 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "ReportSection", field: "level" },
   { model: "ReportSection", field: "numbering" },
   { model: "ReportSection", field: "templateSectionId" },
+  { model: "Organization", field: "agentMemoryEnabled" },
+  { model: "AgentMemory", field: "provenanceJson" },
 ] as const;
 
 type RuntimeDataModel = {

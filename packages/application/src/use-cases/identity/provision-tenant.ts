@@ -92,6 +92,9 @@ export class ProvisionTenantHandler {
         aiEnabled: cmd.organization.aiEnabled ?? true,
         storageProvider: cmd.organization.storageProvider ?? "LOCAL",
         reportingDefaults: Organization.defaultReportingDefaults(),
+        // Agent Memory (Phase 21) is off by default for every new tenant;
+        // self-service opt-in via Settings once the platform flag is on.
+        agentMemoryEnabled: false,
       },
     });
     const orgResult = await this.orgs.create(org);

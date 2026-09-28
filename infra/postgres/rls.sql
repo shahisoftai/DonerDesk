@@ -12,7 +12,7 @@ BEGIN
     'ReportRevision','SubmissionSnapshot','ReportingRequirementPack','AwardReportingOverride','ResolvedReportingRequirements',
     'Notification','AuditEvent','LlmRun','LlmFeedback','EvidenceChunk','EvidenceEmbedding',
     'IdempotencyRecord',
-    'ReportArtifact','ReportArtifactRow',
+    'ReportArtifact','ReportArtifactRow','AgentMemory',
     'BillingSubscription','EntitlementGrant','UsageCounter','TrialIdentity',
     'PasswordResetToken'
   ] LOOP

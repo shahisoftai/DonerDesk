@@ -26,6 +26,9 @@ model Organization {
   storageProvider String @default("LOCAL") // LOCAL | GOOGLE_DRIVE | R2
   driveRootFolderId String?
   reportingDefaults String @default("{}") // JSON: OrganizationReportingDefaults
+  /// Agent Memory (Phase 21) tenant self-service toggle. Effective state is
+  /// this AND the platform AGENT_MEMORY_ENABLED flag.
+  agentMemoryEnabled Boolean @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -1280,5 +1283,30 @@ model ReportArtifactRow {
   artifact ReportArtifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
   @@index([tenantId])
   @@index([artifactId])
+}
+
+// --------------------------------------------------------------------------- //
+// Agent Memory — learned tenant/donor style guidance (additive, RLS-scoped)
+// --------------------------------------------------------------------------- //
+
+/// One learned or proposed style/terminology statement. Never stores facts,
+/// figures, or claims — only narrative style guidance, gated by human review.
+model AgentMemory {
+  id              String   @id
+  tenantId        String
+  scope           String   // ORGANIZATION | DONOR | TEMPLATE | SECTION_TYPE
+  scopeId         String?
+  category        String   // TONE | STRUCTURE | TERMINOLOGY | FORMATTING | LENGTH
+  statement       String
+  confidence      String   // LOW | MEDIUM | HIGH
+  status          String   // PROPOSED | ACTIVE | REJECTED | SUPERSEDED | DEACTIVATED
+  provenanceJson  String   @default("[]")
+  approvedById    String?
+  approvedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, scope, scopeId, status])
 }
 

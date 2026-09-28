@@ -1,5 +1,6 @@
 export { createContainer } from "./container.js";
 export type { Container } from "./container.js";
+export { isTruthyFlag } from "./observability/feature-flags.js";
 export { prisma } from "./db/prisma.js";
 export { LocalStorage } from "./storage/local-storage.js";
 export { LocalEvidenceStorage } from "./storage/local-evidence.js";

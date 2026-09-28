@@ -1,9 +1,11 @@
-import type { Result, ChangeOrigin } from "@donordesk/domain";
+import type { Result, ChangeOrigin, TenantId } from "@donordesk/domain";
 import { DomainError, normalizeSectionMarkdown, SECTION_MARKDOWN_MAX_LENGTH } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportSectionRepository, IReportDraftRepository, IReportRevisionService, IReportAssuranceService } from "../../ports/reporting.js";
 import type { IAuditLogger } from "../../ports/core.js";
 import type { SourceReference } from "@donordesk/domain";
+import type { BackgroundRunner } from "../../services/background-runner.js";
+import { fireAndForget } from "../../services/background-runner.js";
 
 export interface UpdateSectionInput {
   content: string;
@@ -39,6 +41,16 @@ export class UpdateReportSectionHandler {
     private readonly revisionService: IReportRevisionService,
     private readonly assuranceService: IReportAssuranceService,
     private readonly audit: IAuditLogger,
+    /**
+     * Agent Memory (Phase 21) extraction hook, invoked after a MANUAL_EDIT
+     * revision commits successfully. Injected so this handler stays
+     * ignorant of the Agent Memory feature entirely (SRP) — the composition
+     * root decides whether to wire a real hook (both the platform and
+     * tenant flags on) or leave it undefined (a no-op, byte-identical to
+     * pre-Phase-21 behaviour).
+     */
+    private readonly onManualEditCommitted?: (input: { tenantId: TenantId; sectionId: string; revisionId: string }) => Promise<void>,
+    private readonly runInBackground: BackgroundRunner = fireAndForget,
   ) {}
 
   async handle(ctx: AuthenticatedContext, sectionId: string, input: UpdateSectionInput): Promise<Result<{ version: string; revisionId: string; assuranceState: string }, DomainError>> {
@@ -125,6 +137,13 @@ export class UpdateReportSectionHandler {
       projectId: draft.projectId,
       newValue: JSON.stringify({ revisionId: committed.value.id, revisionNumber: committed.value.revisionNumber, assuranceState: assessed.value.assuranceState, changeOrigin }),
     });
+
+    if (changeOrigin === "MANUAL_EDIT" && this.onManualEditCommitted) {
+      const hook = this.onManualEditCommitted;
+      const tenantId = ctx.tenant.tenantId;
+      const revisionId = committed.value.id;
+      this.runInBackground(() => hook({ tenantId, sectionId, revisionId }));
+    }
 
     // Assurance may update the section again (status), so the version the
     // editor sends with its next save must be read back after it.

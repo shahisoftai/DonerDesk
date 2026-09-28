@@ -51,6 +51,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           aiEnabled: org.aiEnabled,
           storageProvider: org.storageProvider,
           reportingDefaults: JSON.stringify(org.reportingDefaults),
+          agentMemoryEnabled: org.agentMemoryEnabled,
         } as Parameters<typeof this.prisma.organization.create>[0]["data"],
       });
       return ok(org);
@@ -79,6 +80,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           aiEnabled: org.aiEnabled,
           storageProvider: org.storageProvider,
           reportingDefaults: JSON.stringify(org.reportingDefaults),
+          agentMemoryEnabled: org.agentMemoryEnabled,
         } as Parameters<typeof this.prisma.organization.update>[0]["data"],
       });
       return ok(org);
@@ -90,13 +92,13 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
   async findByTenant(tenantId: TenantId): Promise<Result<Organization | null, DomainError>> {
     const row = await this.prisma.organization.findUnique({ where: { tenantId: tenantId.toString() } });
     if (!row) return ok(null);
-    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean }));
+    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean; agentMemoryEnabled?: boolean }));
   }
 
   async findById(id: string, tenantId: TenantId): Promise<Result<Organization | null, DomainError>> {
     const row = await this.prisma.organization.findFirst({ where: { id, tenantId: tenantId.toString() } });
     if (!row) return ok(null);
-    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean }));
+    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean; agentMemoryEnabled?: boolean }));
   }
 
   private toDomain(row: {
@@ -117,6 +119,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     aiEnabled?: boolean;
     storageProvider?: string;
     reportingDefaults?: string | null;
+    agentMemoryEnabled?: boolean;
     createdAt: Date;
   }): Organization {
     return Organization.rehydrate({
@@ -139,6 +142,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
         aiEnabled: row.aiEnabled ?? true,
         storageProvider: (row.storageProvider as import("@donordesk/domain").StorageProvider) ?? "LOCAL",
         reportingDefaults: JSON.parse(row.reportingDefaults ?? "{}") as import("@donordesk/domain").OrganizationReportingDefaults,
+        agentMemoryEnabled: row.agentMemoryEnabled ?? false,
       },
     });
   }

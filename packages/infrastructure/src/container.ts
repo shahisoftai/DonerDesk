@@ -169,8 +169,14 @@ import {
   ListSectionRevisionsHandler,
   ReportGenerationContextBuilder,
   SectionGenerationService,
+  UpdateAgentMemorySettingsHandler,
+  ExtractAgentMemoryHandler,
+  ListPendingAgentMemoryHandler,
+  ApproveAgentMemoryHandler,
+  RejectAgentMemoryHandler,
+  DeactivateAgentMemoryHandler,
 } from "@donordesk/application";
-import type { IJobQueue, IReportDraftGenerator, INotificationPort } from "@donordesk/application";
+import type { IJobQueue, IReportDraftGenerator, INotificationPort, IAgentMemoryRepository, IAgentMemoryExtractor } from "@donordesk/application";
 import { EmailAdapter } from "./comms/email.js";
 import { PostmarkNotificationAdapter, FanOutNotificationAdapter } from "./comms/postmark-notification-adapter.js";
 
@@ -223,6 +229,9 @@ import {
   PrismaResolvedRequirementsRepository,
 } from "./repositories/report-revisions.js";
 import { PrismaReportArtifactRepository } from "./repositories/report-artifact-repository.js";
+import { PrismaAgentMemoryRepository } from "./repositories/agent-memory-repository.js";
+import { DeterministicMemoryExtractor } from "./memory/deterministic-memory-extractor.js";
+import { createAgentMemoryLookup } from "./llm/agent-memory-brief.js";
 import { PrismaChecklistRepository } from "./repositories/checklist.js";
 import { PrismaExportRepository } from "./repositories/exports.js";
 import {
@@ -344,6 +353,7 @@ export interface Container {
   generationRuns: PrismaReportGenerationRunRepository;
   reportRevisions: PrismaReportRevisionRepository;
   reportArtifacts: PrismaReportArtifactRepository;
+  agentMemory: PrismaAgentMemoryRepository;
   submissionSnapshots: PrismaSubmissionSnapshotRepository;
   requirementPacks: PrismaRequirementPackRepository;
   awardOverrides: PrismaAwardOverrideRepository;
@@ -366,6 +376,11 @@ export interface Container {
     confirmPasswordReset: ConfirmPasswordResetHandler;
     updateOrganization: UpdateOrganizationHandler;
     updateOrganizationReportingDefaults: UpdateOrganizationReportingDefaultsHandler;
+    updateAgentMemorySettings: UpdateAgentMemorySettingsHandler;
+    listPendingAgentMemory: ListPendingAgentMemoryHandler;
+    approveAgentMemory: ApproveAgentMemoryHandler;
+    rejectAgentMemory: RejectAgentMemoryHandler;
+    deactivateAgentMemory: DeactivateAgentMemoryHandler;
     listUsers: ListUsersHandler;
     createProject: CreateProjectHandler;
     updateProject: UpdateProjectHandler;
@@ -642,6 +657,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const generationRuns = new PrismaReportGenerationRunRepository(prisma);
   const reportRevisions = new PrismaReportRevisionRepository(prisma);
   const reportArtifacts = new PrismaReportArtifactRepository(prisma);
+  const agentMemory = new PrismaAgentMemoryRepository(prisma);
   const submissionSnapshots = new PrismaSubmissionSnapshotRepository(prisma);
   const requirementPacks = new PrismaRequirementPackRepository(prisma);
   const awardOverrides = new PrismaAwardOverrideRepository(prisma);
@@ -712,6 +728,35 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     });
   }
 
+  // Agent Memory (Phase 21) — platform switch. Effective state is this AND
+  // the tenant's own Organization.agentMemoryEnabled toggle (§4.1/§8); either
+  // alone off means generation output stays byte-identical to pre-Phase-21
+  // behaviour.
+  const agentMemoryFlagEnabled = isTruthyFlag(process.env.AGENT_MEMORY_ENABLED);
+  if (agentMemoryFlagEnabled) {
+    logger?.info("Agent Memory flag is enabled; tenants may opt in from Settings to learn style guidance from reviewer edits");
+  } else if (process.env.AGENT_MEMORY_ENABLED !== undefined) {
+    logger?.warn("AGENT_MEMORY_ENABLED is set but unrecognised; treating as disabled. Accepted values: 1, true, on, yes, enabled (case-insensitive).", {
+      raw: process.env.AGENT_MEMORY_ENABLED,
+    });
+  }
+  const resolveAgentMemoryLookup = async (
+    tenantId: string | undefined,
+  ): Promise<((sectionTitle: string) => Promise<string[]>) | undefined> => {
+    if (!agentMemoryFlagEnabled || !tenantId) return undefined;
+    try {
+      const org = await organizations.findByTenant(TenantId.create(tenantId));
+      if (!org.ok || !org.value?.agentMemoryEnabled) return undefined;
+      return createAgentMemoryLookup(agentMemory, TenantId.create(tenantId));
+    } catch (error) {
+      logger?.warn("Agent Memory lookup unavailable; generation proceeds without learned style guidance", {
+        tenantId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return undefined;
+    }
+  };
+
   const withProviderSource = (generator: IReportDraftGenerator, providerSource: "PLATFORM" | "TENANT"): IReportDraftGenerator => ({
     model: generator.model,
     providerSource,
@@ -732,6 +777,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   };
 
   const buildReportDraftGenerator = async (tenantId: string | undefined, resolved: ResolvedLlmConfig | null): Promise<IReportDraftGenerator> => {
+    const agentMemoryLookup = await resolveAgentMemoryLookup(tenantId);
     const source = resolved
       ? { scope: resolved.scope, provider: resolved.provider, model: resolved.model ?? "(provider default)", configId: resolved.configId }
       : { scope: "ENV", provider: process.env.AI_REPORTER_PROVIDER ?? process.env.LLM_PROVIDER ?? "stub" };
@@ -766,7 +812,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
           ? { provider: resolved.provider, model: resolved.model, baseUrl: resolved.baseUrl, apiKey: resolved.apiKey, effort: resolved.effort }
           : undefined; // env default (workers.env)
         logger?.info("Report drafting provider selected", { tenantId: tenantId ?? "default", path: "ai-reporter", ...source });
-        return new AiReporterDraftGenerator(worker, new StubReportDraftGenerator(), embeddingGenerator, embeddingStore, prior, logger, undefined, modelConfig);
+        return new AiReporterDraftGenerator(worker, new StubReportDraftGenerator(), embeddingGenerator, embeddingStore, prior, logger, undefined, modelConfig, agentMemoryLookup);
       } catch (error) {
         logger?.warn("AI Reporter construction failed; falling back to standard LLM generator", {
           error: error instanceof Error ? error.message : String(error),
@@ -776,11 +822,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     try {
       if (resolved) {
         logger?.info("Report drafting provider selected", { tenantId: tenantId ?? "default", path: "llm", ...source });
-        return new LlmReportDraftGenerator(createLLMProvider(resolved), undefined, logger);
+        return new LlmReportDraftGenerator(createLLMProvider(resolved), undefined, logger, agentMemoryLookup);
       }
       if (process.env.LLM_PROVIDER) {
         // Documented fallback chain: platform config -> LLM_PROVIDER env -> stub.
-        return new LlmReportDraftGenerator(createLLMProvider(), undefined, logger);
+        return new LlmReportDraftGenerator(createLLMProvider(), undefined, logger, agentMemoryLookup);
       }
     } catch (error) {
       // A provider-construction failure (e.g. missing API key or model) must
@@ -867,7 +913,25 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   };
   const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);
   const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector);
-  const updateReportSectionHandler = new UpdateReportSectionHandler(sections, drafts, revisionService, assuranceService, audits);
+
+  // Agent Memory (Phase 21) — this handler has zero knowledge of the feature
+  // beyond invoking an injected hook after a MANUAL_EDIT revision commits
+  // (see UpdateReportSectionHandler's constructor docs). The hook itself
+  // re-checks both flags at call time (state can change between requests)
+  // and is a deliberate no-op — never an error — when either is off.
+  const memoryExtractor = new DeterministicMemoryExtractor();
+  const extractAgentMemoryHandler = new ExtractAgentMemoryHandler(reportRevisions, sections, drafts, periods, memoryExtractor, agentMemory);
+  const onManualEditCommitted = agentMemoryFlagEnabled
+    ? async (input: { tenantId: TenantId; sectionId: string; revisionId: string }): Promise<void> => {
+        const org = await organizations.findByTenant(input.tenantId);
+        if (!org.ok || !org.value?.agentMemoryEnabled) return;
+        const result = await extractAgentMemoryHandler.handle(input);
+        if (!result.ok) {
+          logger.warn("Agent Memory extraction failed", { sectionId: input.sectionId, error: result.error.message });
+        }
+      }
+    : undefined;
+  const updateReportSectionHandler = new UpdateReportSectionHandler(sections, drafts, revisionService, assuranceService, audits, onManualEditCommitted, runInBackground);
   const claimSuggestionHandler = new GetClaimSuggestionHandler(reportClaims, drafts, indicatorAnalytics);
   const requirementResolver = new DeterministicRequirementResolver(ids, periods, requirementPacks, awardOverrides, reportPlans, resolvedRequirements);
 
@@ -921,6 +985,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     confirmPasswordReset: new ConfirmPasswordResetHandler(users, passwordResetTokens, auth, audits, clock),
     updateOrganization: new UpdateOrganizationHandler(organizations, audits),
     updateOrganizationReportingDefaults: new UpdateOrganizationReportingDefaultsHandler(organizations, audits),
+    updateAgentMemorySettings: new UpdateAgentMemorySettingsHandler(organizations, audits),
+    listPendingAgentMemory: new ListPendingAgentMemoryHandler(agentMemory),
+    approveAgentMemory: new ApproveAgentMemoryHandler(agentMemory, audits),
+    rejectAgentMemory: new RejectAgentMemoryHandler(agentMemory, audits),
+    deactivateAgentMemory: new DeactivateAgentMemoryHandler(agentMemory, audits),
     connectGoogleDrive: new ConnectGoogleDriveHandler(
       googleDriveOAuth,
       organizations,
@@ -1094,7 +1163,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, structuredParser, templateFiles, checklistDetector, exportBuilder,
     organizations, users, invitations, passwordResetTokens, passwordResetRateLimiter,    projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
-    periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, reportArtifacts, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
+    periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, reportArtifacts, agentMemory, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, planCatalog, billingProvider,
     handlers,
   };

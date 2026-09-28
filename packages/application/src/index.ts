@@ -14,6 +14,7 @@ export * from "./ports/exports.js";
 export * from "./ports/support.js";
 export * from "./ports/setup.js";
 export * from "./ports/billing.js";
+export * from "./ports/agent-memory.js";
 export * from "./services/entitlement-service.js";
 export * from "./services/indicator-analytics-service.js";
 export * from "./services/report-planner.js";
@@ -29,10 +30,17 @@ export * from "./use-cases/identity/request-password-reset.js";
 export * from "./use-cases/identity/confirm-password-reset.js";
 export * from "./use-cases/identity/update-organization.js";
 export * from "./use-cases/identity/update-organization-reporting-defaults.js";
+export * from "./use-cases/identity/update-agent-memory-settings.js";
 export * from "./use-cases/identity/connect-google-drive.js";
 export * from "./use-cases/identity/google-sign-in.js";
 export * from "./use-cases/identity/list-users.js";
 export * from "./use-cases/identity/provision-tenant.js";
+
+export * from "./use-cases/memory/extract-agent-memory.js";
+export * from "./use-cases/memory/list-pending-agent-memory.js";
+export * from "./use-cases/memory/approve-agent-memory.js";
+export * from "./use-cases/memory/reject-agent-memory.js";
+export * from "./use-cases/memory/deactivate-agent-memory.js";
 
 export * from "./use-cases/projects/create-project.js";
 export * from "./use-cases/projects/update-project.js";

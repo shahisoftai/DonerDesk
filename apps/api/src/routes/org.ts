@@ -1,5 +1,12 @@
 import type { FastifyInstance } from "fastify";
-import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema } from "@donordesk/contracts";
+import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema } from "@donordesk/contracts";
+import { isTruthyFlag } from "@donordesk/infrastructure";
+
+// Resolved once per process, mirroring container.ts's own read of the same
+// env var — the platform half of the Agent Memory two-flag gate (§4.1/§8).
+// The web Settings tab is hidden entirely when this is false, regardless of
+// the tenant's own Organization.agentMemoryEnabled toggle.
+const agentMemoryPlatformEnabled = isTruthyFlag(process.env.AGENT_MEMORY_ENABLED);
 
 export async function registerOrgRoutes(app: FastifyInstance) {
   app.get("/v1/organization", async (req) => {
@@ -11,6 +18,8 @@ export async function registerOrgRoutes(app: FastifyInstance) {
         name: "", organizationType: "OTHER", country: "", sectors: [],
         contactName: "", contactEmail: "", defaultLanguage: "en",
         reportingDefaults: { tone: "FORMAL", formattingRules: [], autoPeriodCreation: false },
+        agentMemoryEnabled: false,
+        agentMemoryPlatformEnabled,
       };
     }
     const o = result.value;
@@ -31,6 +40,8 @@ export async function registerOrgRoutes(app: FastifyInstance) {
       aiEnabled: o.aiEnabled,
       storageProvider: o.storageProvider,
       reportingDefaults: o.reportingDefaults,
+      agentMemoryEnabled: o.agentMemoryEnabled,
+      agentMemoryPlatformEnabled,
     };
   });
 
@@ -47,6 +58,15 @@ export async function registerOrgRoutes(app: FastifyInstance) {
     const body = UpdateOrganizationReportingDefaultsSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const result = await req.container.handlers.updateOrganizationReportingDefaults.handle(ctx, body);
+    if (!result.ok) throw result.error;
+    return { ok: true };
+  });
+
+  // Agent Memory (Phase 21) tenant self-service toggle (§4.1).
+  app.put("/v1/organization/agent-memory-settings", async (req) => {
+    const body = UpdateAgentMemorySettingsSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const result = await req.container.handlers.updateAgentMemorySettings.handle(ctx, body);
     if (!result.ok) throw result.error;
     return { ok: true };
   });

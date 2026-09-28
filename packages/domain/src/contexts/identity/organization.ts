@@ -44,6 +44,14 @@ export interface OrganizationProps {
   aiEnabled: boolean;
   storageProvider: StorageProvider;
   reportingDefaults: OrganizationReportingDefaults;
+  /**
+   * Agent Memory (Phase 21) tenant self-service toggle. Effective state is
+   * this AND the platform `AGENT_MEMORY_ENABLED` flag — either alone off
+   * means byte-identical generation output to pre-Phase-21 behaviour.
+   * Defaults false (unlike `aiEnabled`, which defaults true): existing
+   * tenants must opt in.
+   */
+  agentMemoryEnabled: boolean;
 }
 
 export class Organization extends Entity<string> {
@@ -101,6 +109,7 @@ export class Organization extends Entity<string> {
   get donorTypesServed(): string | undefined { return this.props.donorTypesServed; }
   get dataResidency(): DataResidency { return this.props.dataResidency; }
   get aiEnabled(): boolean { return this.props.aiEnabled; }
+  get agentMemoryEnabled(): boolean { return this.props.agentMemoryEnabled; }
   get storageProvider(): StorageProvider { return this.props.storageProvider; }
   get reportingDefaults(): OrganizationReportingDefaults {
     return {
@@ -117,6 +126,12 @@ export class Organization extends Entity<string> {
       ...patch,
       formattingRules: patch.formattingRules ? [...patch.formattingRules] : this.props.reportingDefaults.formattingRules,
     };
+    this.touch();
+  }
+
+  /** Tenant self-service toggle for the Agent Memory feature (§4.1). */
+  updateAgentMemorySettings(patch: { enabled: boolean }): void {
+    this.props.agentMemoryEnabled = patch.enabled;
     this.touch();
   }
 
