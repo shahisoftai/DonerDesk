@@ -1,6 +1,36 @@
 # Deploy to Contabo — Fastest Path
 
-**Last deploy:** 2026-09-28 — `releaseId=20260928095726` (`SCOPE=both`). Template extraction v2 (TOC first: heading levels from DOCX formatting / PDF font size, outline pass over the whole document, guidance per branch; larger token budgets + per-call timeout because DeepSeek's reasoning tokens had been exhausting `max_tokens`, which silently sent every extraction to the heuristic fallback) and the hierarchical report outline (4-level TOC tree in the workspace, Heading 2–5 in exports). **One additive migration applied manually first:** `20260928120000_report_section_hierarchy` (`ReportSection.level/numbering/templateSectionId`), via the same `rsync --relative` + `prisma migrate deploy` as `donordesk_migrator` procedure below; DB backed up beforehand to `/opt/donordesk/backups/db-pre-20260928-hierarchy.dump`. No `rls.sql` change. Gates: `pnpm -r typecheck` clean; domain 228, application 139, infrastructure 245, web 182. Verified: api/web/worker active, `/ready` 200 (includes the three new `ReportSection` fields), `jszip` (new direct dependency) resolves from `packages/infrastructure`. Real-model check before deploy (tenant DeepSeek, BE NOFO QPR): DOCX 9 sections + 44 sub-sections, PDF 9 + 45, every section with an AI guidance note. Existing drafts stay flat until regenerated from a re-extracted template.
+**Last deploy:** 2026-09-28 — `releaseId=20260928094857` (`SCOPE=both`, branch
+`0009-agent-memory`, commit `9ebe213`). **DonorDesk Version 2.0 — Agent
+Memory** (Feature 21): lets the AI Reporter learn tenant/donor-specific
+narrative style and terminology from what reviewers change in AI-drafted
+sections, gated by explicit human approval; numbers/dates/facts are never
+learned (three independent guard layers — extraction-time hunk filtering,
+entity-construction validation, human approval). New `AgentMemory` table +
+`Organization.agentMemoryEnabled` tenant toggle; new capability
+`report.manage-agent-memory`; new "AI Writing Style" Settings tab (hidden
+unless both the platform flag and the capability are present). **One
+additive migration applied manually first:** `20260928150000_agent_memory`
+(`AgentMemory` table, `Organization.agentMemoryEnabled` column), via the
+same `rsync --relative` + `prisma migrate deploy` as `donordesk_migrator`
+procedure below; DB backed up beforehand to
+`/opt/donordesk/backups/db-pre-20260928-agent-memory.dump`. `rls.sql`
+re-applied (adds `AgentMemory` to the tenant-isolation table array) —
+verified `donordesk_app` cross-tenant read (no `app.current_tenant` set)
+returns zero rows. `REQUIRED_PRISMA_FIELDS` (`apps/api/src/routes/health.ts`)
+extended with `Organization.agentMemoryEnabled` and
+`AgentMemory.provenanceJson`. Gates: `pnpm -r typecheck` and `pnpm -r build`
+clean across all 9 workspace packages; new domain/application/infrastructure
+unit tests pass, no regressions on existing suites. **Shipped dark:**
+`AGENT_MEMORY_ENABLED` is unset in `api.env` (platform flag off), so
+generation output is byte-identical to pre-Version-2.0 behaviour for every
+tenant until both the platform flag and a tenant's own
+`agentMemoryEnabled` toggle are turned on. Verified post-deploy: api/web/
+worker active, `/health` and `/ready` 200 (Prisma client fresh, no
+`missingPrismaFields`), web root 200, no `AGENT_MEMORY_ENABLED` log line
+(confirms flag-off state).
+
+**Earlier:** 2026-09-28 — `releaseId=20260928095726` (`SCOPE=both`). Template extraction v2 (TOC first: heading levels from DOCX formatting / PDF font size, outline pass over the whole document, guidance per branch; larger token budgets + per-call timeout because DeepSeek's reasoning tokens had been exhausting `max_tokens`, which silently sent every extraction to the heuristic fallback) and the hierarchical report outline (4-level TOC tree in the workspace, Heading 2–5 in exports). **One additive migration applied manually first:** `20260928120000_report_section_hierarchy` (`ReportSection.level/numbering/templateSectionId`), via the same `rsync --relative` + `prisma migrate deploy` as `donordesk_migrator` procedure below; DB backed up beforehand to `/opt/donordesk/backups/db-pre-20260928-hierarchy.dump`. No `rls.sql` change. Gates: `pnpm -r typecheck` clean; domain 228, application 139, infrastructure 245, web 182. Verified: api/web/worker active, `/ready` 200 (includes the three new `ReportSection` fields), `jszip` (new direct dependency) resolves from `packages/infrastructure`. Real-model check before deploy (tenant DeepSeek, BE NOFO QPR): DOCX 9 sections + 44 sub-sections, PDF 9 + 45, every section with an AI guidance note. Existing drafts stay flat until regenerated from a re-extracted template.
 
 **Earlier:** 2026-09-27 — `releaseId=20260927145612` (`SCOPE=api`, commit
 `a3041a9`). Fixes real extraction-quality bugs found by manually reviewing a
