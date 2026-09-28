@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { suggestPeriodDates, suggestDeadline, DEFAULT_DEADLINE_OFFSET_DAYS } from "@donordesk/domain";
 import { createReportingPeriodAction } from "@/lib/actions/reporting";
 import { useActionState } from "@/lib/client/action-state";
 import { validateReportDates } from "@/lib/shared/report-dates";
@@ -43,10 +44,19 @@ export function NewReportingPeriodForm({
   projectId,
   templates,
   readiness,
+  projectBounds = null,
+  existingPeriodEnds = [],
+  profileDeadlineOffsetDays,
 }: {
   projectId: string;
   templates: Array<{ id: string; templateName: string; status?: string; deadlineOffsetDays?: number; deadlineRule?: string }>;
   readiness: ProjectReadiness | null;
+  /** The project's own start/end dates — bound every suggested period and are FINAL's own end date. */
+  projectBounds?: { startDate: string; endDate: string } | null;
+  /** End dates of this project's existing periods, so the next suggestion starts right after the latest one. */
+  existingPeriodEnds?: string[];
+  /** Fallback deadline offset (days after the period ends) from the project's reporting profile, used when the chosen template states none. */
+  profileDeadlineOffsetDays?: number;
 }) {
   const router = useRouter();
   const actionState = useActionState();
@@ -56,17 +66,40 @@ export function NewReportingPeriodForm({
   const [endDate, setEndDate] = useState("");
   const [deadline, setDeadline] = useState("");
   const [deadlineAuto, setDeadlineAuto] = useState(false);
+  // Both dates are auto-suggested from the report type and the project's own
+  // dates until the user edits either one by hand.
+  const [datesAuto, setDatesAuto] = useState(true);
   const selectedTemplate = templates.find((t) => t.id === donorTemplateId);
+  const suggestedDates = useMemo(
+    () => (projectBounds ? suggestPeriodDates(reportType, projectBounds.startDate, projectBounds.endDate, existingPeriodEnds) : null),
+    [reportType, projectBounds, existingPeriodEnds],
+  );
 
-  // The donor's deadline rule from the template pre-fills the deadline until the user edits it.
+  // Suggests Start/End from the report type + the project's dates, chained
+  // after the latest existing period. Types with no fixed cadence
+  // (Activity/Situation/Custom) get no suggestion and stay manual.
   useEffect(() => {
-    const offset = selectedTemplate?.deadlineOffsetDays;
-    if (offset === undefined || !endDate || (deadline && !deadlineAuto)) return;
-    const d = new Date(`${endDate}T00:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + offset);
-    setDeadline(d.toISOString().slice(0, 10));
+    if (!datesAuto) return;
+    setStartDate(suggestedDates?.startDate ?? "");
+    setEndDate(suggestedDates?.endDate ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-suggest when the report type changes, not on every keystroke
+  }, [suggestedDates]);
+
+  // The deadline auto-fills as the period's end date plus an offset: the
+  // template's own (if extracted from the donor's document), else the
+  // project's reporting-profile offset, else a 30-day default — so it is
+  // never left pointing at whatever the user last typed for "end date".
+  const deadlineOffsetDays = selectedTemplate?.deadlineOffsetDays ?? profileDeadlineOffsetDays ?? DEFAULT_DEADLINE_OFFSET_DAYS;
+  const deadlineSource = selectedTemplate?.deadlineOffsetDays !== undefined
+    ? (selectedTemplate.deadlineRule ? `From the template: ${selectedTemplate.deadlineRule}` : `From the template: ${deadlineOffsetDays} days after the period ends`)
+    : profileDeadlineOffsetDays !== undefined
+      ? `From your reporting profile: ${deadlineOffsetDays} days after the period ends`
+      : `Default: ${deadlineOffsetDays} days after the period ends`;
+  useEffect(() => {
+    if (!endDate || (deadline && !deadlineAuto)) return;
+    setDeadline(suggestDeadline(endDate, deadlineOffsetDays));
     setDeadlineAuto(true);
-  }, [selectedTemplate?.deadlineOffsetDays, endDate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [deadlineOffsetDays, endDate]); // eslint-disable-line react-hooks/exhaustive-deps
   const [internalReviewDeadline, setInternalReviewDeadline] = useState("");
   const [localErrors, setLocalErrors] = useState<Record<string, string[]>>({});
 
@@ -138,21 +171,39 @@ export function NewReportingPeriodForm({
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Start date" htmlFor="startDate" error={fields.startDate?.[0]}>
-          <Input id="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} invalid={Boolean(fields.startDate)} required />
-        </Field>
-        <Field label="End date" htmlFor="endDate" error={fields.endDate?.[0]}>
-          <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} invalid={Boolean(fields.endDate)} required />
+        <Field
+          label="Start date"
+          htmlFor="startDate"
+          error={fields.startDate?.[0]}
+          hint={datesAuto && startDate ? "Suggested from the report type and the project's dates." : undefined}
+        >
+          <Input id="startDate" type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setDatesAuto(false); }} invalid={Boolean(fields.startDate)} required />
         </Field>
         <Field
-          label="Donor deadline"
-          htmlFor="deadline"
-          error={fields.deadline?.[0]}
-          hint={deadlineAuto && selectedTemplate?.deadlineRule ? `From the template: ${selectedTemplate.deadlineRule}` : undefined}
+          label="End date"
+          htmlFor="endDate"
+          error={fields.endDate?.[0]}
+          hint={datesAuto && endDate ? "Suggested from the report type and the project's dates." : undefined}
         >
+          <Input id="endDate" type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setDatesAuto(false); }} invalid={Boolean(fields.endDate)} required />
+        </Field>
+        <Field label="Donor deadline" htmlFor="deadline" error={fields.deadline?.[0]} hint={deadlineAuto ? deadlineSource : undefined}>
           <Input id="deadline" type="date" value={deadline} onChange={(e) => { setDeadline(e.target.value); setDeadlineAuto(false); }} invalid={Boolean(fields.deadline)} required />
         </Field>
       </div>
+      {!datesAuto && suggestedDates && (startDate !== suggestedDates.startDate || endDate !== suggestedDates.endDate) && (
+        <button
+          type="button"
+          className="text-sm text-brand-600 hover:underline dark:text-brand-400"
+          onClick={() => {
+            setStartDate(suggestedDates.startDate);
+            setEndDate(suggestedDates.endDate);
+            setDatesAuto(true);
+          }}
+        >
+          Use the suggested dates ({suggestedDates.startDate} – {suggestedDates.endDate})
+        </button>
+      )}
 
       <Field
         label="Internal review deadline (optional)"

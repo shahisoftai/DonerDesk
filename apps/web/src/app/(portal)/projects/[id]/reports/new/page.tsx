@@ -1,6 +1,12 @@
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { TemplatesResponseSchema, type ProjectReadiness } from "@/lib/server/schemas";
+import {
+  TemplatesResponseSchema,
+  ProjectDetailSchema,
+  ReportingPeriodsResponseSchema,
+  ReportingProfileResponseSchema,
+  type ProjectReadiness,
+} from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
 import { loadProjectSetupAction } from "@/lib/actions/setup";
 import { NewReportingPeriodForm } from "@/features/reporting/presentation/NewReportingPeriodForm";
@@ -10,9 +16,12 @@ export const dynamic = "force-dynamic";
 export default async function NewReportingPeriodPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const ctx = await requireSession();
-  const [templatesResult, setupResult] = await Promise.all([
+  const [templatesResult, setupResult, projectResult, periodsResult, profileResult] = await Promise.all([
     gatewayRequest(`/v1/projects/${resolvedParams.id}/templates`, TemplatesResponseSchema, ctx.token),
     loadProjectSetupAction(resolvedParams.id),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}`, ProjectDetailSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-profile`, ReportingProfileResponseSchema, ctx.token),
   ]);
 
   const readiness: ProjectReadiness | null = setupResult.ok ? setupResult.value.setup.readiness : null;
@@ -31,6 +40,9 @@ export default async function NewReportingPeriodPage({ params }: { params: Promi
                 deadlineRule: t.requirements.submission.deadlineRule,
               })) : []}
         readiness={readiness}
+        projectBounds={projectResult.ok ? { startDate: projectResult.value.startDate, endDate: projectResult.value.endDate } : null}
+        existingPeriodEnds={periodsResult.ok ? periodsResult.value.items.map((p) => p.endDate) : []}
+        profileDeadlineOffsetDays={profileResult.ok ? (profileResult.value.profile?.deadlineOffsetDays ?? undefined) : undefined}
       />
     </div>
   );

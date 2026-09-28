@@ -71,6 +71,7 @@ export * from "./services/structured-document-text.js";
 export * from "./use-cases/templates/update-template-sections.js";
 export * from "./use-cases/templates/delete-template.js";
 export * from "./use-cases/templates/set-default-template.js";
+export * from "./use-cases/reporting/ensure-auto-period.js";
 export * from "./use-cases/templates/list-templates.js";
 export * from "./use-cases/templates/detect-template-regions.js";
 export * from "./use-cases/templates/update-template-mapping.js";

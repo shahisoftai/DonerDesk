@@ -532,6 +532,8 @@ export const ReportingPeriodItemSchema = z.object({
 
 export const ReportingPeriodsResponseSchema = z.object({ items: z.array(ReportingPeriodItemSchema) });
 
+export const EnsureAutoPeriodResponseSchema = z.object({ created: z.boolean(), periodId: z.string().optional() });
+
 export const ChartConfigSchema = z.object({
   type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
   dataBinding: z.enum(["INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),

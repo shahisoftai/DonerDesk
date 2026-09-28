@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
+import { ReportingPeriodsResponseSchema, EnsureAutoPeriodResponseSchema } from "@/lib/server/schemas";
 import { REPORT_TYPE_LABEL, REPORT_STATUS_LABEL } from "@/lib/labels";
 import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
@@ -15,6 +15,10 @@ const STATUS_ORDER = ["NOT_STARTED", "IN_PROGRESS", "EVIDENCE_COLLECTION", "DRAF
 export default async function ReportsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const ctx = await requireSession();
+  // Best-effort: creates the next due period when the reporting profile has
+  // auto-creation on. Never blocks the page — a failure here just means one
+  // fewer period than expected, not a broken Reports page.
+  await gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-periods/ensure-auto`, EnsureAutoPeriodResponseSchema, ctx.token, { method: "POST", body: {} });
   const result = await gatewayRequest(
     `/v1/projects/${resolvedParams.id}/reporting-periods`,
     ReportingPeriodsResponseSchema,

@@ -102,11 +102,21 @@ export function ReportingProfileForm({
         <div>
           <label className="label" htmlFor="deadlineOffsetDays">Deadline offset (days, optional)</label>
           <Input id="deadlineOffsetDays" type="number" min={0} max={365} value={deadlineOffsetDays} onChange={(e) => setDeadlineOffsetDays(e.target.value)} />
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Used to suggest each period&rsquo;s donor deadline when its donor template doesn&rsquo;t state one.
+          </p>
         </div>
-        <label className="flex items-end gap-2 pb-2 text-sm">
-          <input type="checkbox" checked={autoPeriodCreation} onChange={(e) => setAutoPeriodCreation(e.target.checked)} />
-          Auto-create reporting periods
-        </label>
+        <div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={autoPeriodCreation} onChange={(e) => setAutoPeriodCreation(e.target.checked)} />
+            Auto-create reporting periods
+          </label>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            When on, the next monthly, quarterly, annual or final period is created for you (using the project&rsquo;s reporting
+            frequency and dates above) the first time you open Reports after it&rsquo;s due. Not available for a semi-annual or
+            custom reporting frequency.
+          </p>
+        </div>
       </div>
 
       {error && <InlineAlert tone="danger" title={error} />}

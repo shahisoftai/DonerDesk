@@ -84,6 +84,7 @@ import {
   DetachEvidenceHandler,
   SuggestEvidenceLinksHandler,
   CreateReportingPeriodHandler,
+  EnsureAutoPeriodHandler,
   ListReportingPeriodsHandler,
   GenerateReportDraftHandler,
   GetReportDraftHandler,
@@ -440,6 +441,7 @@ export interface Container {
     suggestEvidenceLinks: SuggestEvidenceLinksHandler;
     detachEvidence: DetachEvidenceHandler;
     createReportingPeriod: CreateReportingPeriodHandler;
+    ensureAutoPeriod: EnsureAutoPeriodHandler;
     updateReportingPeriodStory: UpdateReportingPeriodStoryHandler;
     importPeriodIndicatorValues: ImportPeriodIndicatorValuesHandler;
     proposeFieldReportExtraction: ProposeFieldReportExtractionHandler;
@@ -902,6 +904,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const approveTemplateMappingHandler = new ApproveTemplateMappingHandler(donorTemplateMappings, donorTemplateRenderer, storage, audits);
   const lockTemplateMappingHandler = new LockTemplateMappingHandler(periods, donorTemplateMappings, audits);
   const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics);
+  const createReportingPeriodHandler = new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events);
+  const ensureAutoPeriodHandler = new EnsureAutoPeriodHandler(projects, reportingProfiles, periods, createReportingPeriodHandler);
 
   const handlers: Container["handlers"] = {
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
@@ -998,7 +1002,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     attachEvidence: new AttachEvidenceHandler(evidence, activities, indicatorUpdates, audits),
     suggestEvidenceLinks: new SuggestEvidenceLinksHandler(evidence, activities, indicators, indicatorUpdates),
     detachEvidence: new DetachEvidenceHandler(evidence, activities, indicatorUpdates, audits),
-    createReportingPeriod: new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events),
+    createReportingPeriod: createReportingPeriodHandler,
+    ensureAutoPeriod: ensureAutoPeriodHandler,
     updateReportingPeriodStory: new UpdateReportingPeriodStoryHandler(periods, audits),
     importPeriodIndicatorValues: new ImportPeriodIndicatorValuesHandler(ids, indicators, indicatorUpdates, audits),
     proposeFieldReportExtraction: new ProposeFieldReportExtractionHandler(),

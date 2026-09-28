@@ -10,6 +10,17 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     return { items: r.value };
   });
 
+  // Best-effort, idempotent auto-creation of the next due reporting period
+  // (no-op unless the reporting profile has it turned on). Called by the web
+  // app whenever the project's Reports page is opened.
+  app.post("/v1/projects/:projectId/reporting-periods/ensure-auto", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.ensureAutoPeriod.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.get("/v1/reporting-periods/:id/indicators", async (req) => {
     const id = (req.params as { id: string }).id;
     const ctx = { tenant: req.tenant, requestId: req.id };
