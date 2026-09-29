@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { TenantId, DomainError, UsageCounter } from "@donordesk/domain";
+import { TenantId, DomainError, UsageCounter, PurchasedCreditPack } from "@donordesk/domain";
 import {
   CreateProjectHandler,
   InviteUserHandler,
@@ -147,6 +147,80 @@ test("create-project enforces the Starter project limit", async () => {
   assert.equal(result.error.details?.resource, "PROJECTS");
 });
 
+test("ENTITLEMENT_ENFORCEMENT=report lets an over-limit create through and logs a would-block event", async () => {
+  const prior = process.env.ENTITLEMENT_ENFORCEMENT;
+  process.env.ENTITLEMENT_ENFORCEMENT = "report";
+  try {
+    const projects = [{ id: "p-1", tenantId: "tenant-a", status: "DRAFT", title: "Existing" }];
+    const audited = [];
+    const entitlements = makeEntitlementService([starterGrant()], [], new Map(), projects, []);
+    const handler = new CreateProjectHandler(
+      fakeIds("p"),
+      { listByTenant: async () => ({ ok: true, value: projects }), create: async (p) => { projects.push(p); return { ok: true, value: p }; } },
+      { create: async (s) => ({ ok: true, value: s }) },
+      { create: async (p) => ({ ok: true, value: p }) },
+      { findByTenant: async () => ({ ok: true, value: null }) },
+      { resolve: async () => ({ ok: true, value: { provider: "LOCAL" } }) },
+      { publish: async () => undefined },
+      { record: async (e) => { audited.push(e); return { ok: true, value: undefined }; } },
+      entitlements,
+    );
+    const result = await handler.handle(context(), {
+      title: "Second project",
+      projectCode: "PRJ-2",
+      donorName: "Donor",
+      implementingOrganization: "Org",
+      country: "US",
+      sector: "HEALTH",
+      startDate: "2026-01-01",
+      endDate: "2026-12-31",
+      reportingFrequency: "QUARTERLY",
+    });
+    assert.equal(result.ok, true);
+    assert.equal(audited.some((e) => e.eventType === "entitlement.limit_would_block"), true);
+  } finally {
+    if (prior === undefined) delete process.env.ENTITLEMENT_ENFORCEMENT;
+    else process.env.ENTITLEMENT_ENFORCEMENT = prior;
+  }
+});
+
+test("ENTITLEMENT_ENFORCEMENT=off lets an over-limit create through with no audit event", async () => {
+  const prior = process.env.ENTITLEMENT_ENFORCEMENT;
+  process.env.ENTITLEMENT_ENFORCEMENT = "off";
+  try {
+    const projects = [{ id: "p-1", tenantId: "tenant-a", status: "DRAFT", title: "Existing" }];
+    const audited = [];
+    const entitlements = makeEntitlementService([starterGrant()], [], new Map(), projects, []);
+    const handler = new CreateProjectHandler(
+      fakeIds("p"),
+      { listByTenant: async () => ({ ok: true, value: projects }), create: async (p) => { projects.push(p); return { ok: true, value: p }; } },
+      { create: async (s) => ({ ok: true, value: s }) },
+      { create: async (p) => ({ ok: true, value: p }) },
+      { findByTenant: async () => ({ ok: true, value: null }) },
+      { resolve: async () => ({ ok: true, value: { provider: "LOCAL" } }) },
+      { publish: async () => undefined },
+      { record: async (e) => { audited.push(e); return { ok: true, value: undefined }; } },
+      entitlements,
+    );
+    const result = await handler.handle(context(), {
+      title: "Second project",
+      projectCode: "PRJ-2",
+      donorName: "Donor",
+      implementingOrganization: "Org",
+      country: "US",
+      sector: "HEALTH",
+      startDate: "2026-01-01",
+      endDate: "2026-12-31",
+      reportingFrequency: "QUARTERLY",
+    });
+    assert.equal(result.ok, true);
+    assert.equal(audited.some((e) => e.eventType === "entitlement.limit_would_block"), false);
+  } finally {
+    if (prior === undefined) delete process.env.ENTITLEMENT_ENFORCEMENT;
+    else process.env.ENTITLEMENT_ENFORCEMENT = prior;
+  }
+});
+
 test("create-project allows projects under the limit", async () => {
   const projects = [];
   const entitlements = makeEntitlementService([starterGrant()], [], new Map(), projects, []);
@@ -204,7 +278,7 @@ test("trial grants increase the project capacity", async () => {
 });
 
 test("invite-user enforces the Starter seat limit", async () => {
-  const users = [{ id: "u-1", tenantId: "tenant-a", status: "ACTIVE", email: "a@example.com" }];
+  const users = [{ id: "u-1", tenantId: "tenant-a", status: "ACTIVE", role: "ADMIN", email: "a@example.com" }];
   const entitlements = makeEntitlementService([starterGrant()], [], new Map(), [], users);
   const handler = new InviteUserHandler(
     fakeIds("inv"),
@@ -217,10 +291,52 @@ test("invite-user enforces the Starter seat limit", async () => {
     { notify: async () => undefined },
     entitlements,
   );
-  const result = await handler.handle(context(), { email: "b@example.com", role: "VIEWER" });
+  const result = await handler.handle(context(), { email: "b@example.com", role: "FIELD_OFFICER" });
   assert.equal(result.ok, false);
   assert.equal(result.error.code, "PLAN_LIMIT_REACHED");
   assert.equal(result.error.details?.resource, "SEATS");
+});
+
+test("invite-user allows a VIEWER under the Starter seat limit even when full seats are exhausted", async () => {
+  const users = [{ id: "u-1", tenantId: "tenant-a", status: "ACTIVE", role: "ADMIN", email: "a@example.com" }];
+  const entitlements = makeEntitlementService([starterGrant()], [], new Map(), [], users);
+  const handler = new InviteUserHandler(
+    fakeIds("inv"),
+    {
+      findByEmail: async () => ({ ok: true, value: null }),
+      listByTenant: async () => ({ ok: true, value: users }),
+    },
+    { create: async (i) => ({ ok: true, value: i }) },
+    fakeAudit(),
+    { notify: async () => undefined },
+    entitlements,
+  );
+  const result = await handler.handle(context(), { email: "viewer@example.com", role: "VIEWER" });
+  assert.equal(result.ok, true);
+});
+
+test("invite-user enforces the Starter viewerSeats limit independently of full seats", async () => {
+  const users = [
+    { id: "u-1", tenantId: "tenant-a", status: "ACTIVE", role: "ADMIN", email: "a@example.com" },
+    { id: "u-2", tenantId: "tenant-a", status: "ACTIVE", role: "VIEWER", email: "v1@example.com" },
+    { id: "u-3", tenantId: "tenant-a", status: "ACTIVE", role: "VIEWER", email: "v2@example.com" },
+  ];
+  const entitlements = makeEntitlementService([starterGrant()], [], new Map(), [], users);
+  const handler = new InviteUserHandler(
+    fakeIds("inv"),
+    {
+      findByEmail: async () => ({ ok: true, value: null }),
+      listByTenant: async () => ({ ok: true, value: users }),
+    },
+    { create: async (i) => ({ ok: true, value: i }) },
+    fakeAudit(),
+    { notify: async () => undefined },
+    entitlements,
+  );
+  const result = await handler.handle(context(), { email: "v3@example.com", role: "VIEWER" });
+  assert.equal(result.ok, false);
+  assert.equal(result.error.code, "PLAN_LIMIT_REACHED");
+  assert.equal(result.error.details?.resource, "VIEWERS");
 });
 
 test("provision-tenant always starts on the free STARTER tier", async () => {
@@ -251,6 +367,149 @@ test("provision-tenant always starts on the free STARTER tier", async () => {
   assert.equal(grants.length, 1);
   assert.equal(grants[0].props.planCode, "STARTER");
   assert.equal(grants[0].props.source, "DEFAULT");
+});
+
+function fakeTrialIdentities(usedFingerprints = new Set()) {
+  const created = [];
+  return {
+    created,
+    existsByEmailFingerprint: async (fp) => ({ ok: true, value: usedFingerprints.has(fp) }),
+    create: async (input) => { created.push(input); usedFingerprints.add(input.emailFingerprint); return { ok: true, value: { id: input.id } }; },
+  };
+}
+
+test("provision-tenant grants a 14-day local TRIAL alongside the permanent STARTER base grant", async () => {
+  const grants = [];
+  const trialIdentities = fakeTrialIdentities();
+  const handler = new ProvisionTenantHandler(
+    fakeIds(),
+    { create: async (o) => ({ ok: true, value: o }) },
+    { create: async (u) => { u.activate(); return { ok: true, value: u }; } },
+    { create: async (g) => { grants.push(g); return { ok: true, value: g }; } },
+    { hashPassword: async (p) => `hash:${p}` },
+    { publish: async () => undefined },
+    fakeAudit(),
+    fakeClock(),
+    trialIdentities,
+    true,
+  );
+  const result = await handler.handle({
+    name: "Alice",
+    email: "alice@ngo.org",
+    passwordHash: "hash",
+    verifiedEmail: "alice@ngo.org",
+    requestedPlan: "TEAM",
+    startTrial: true,
+    organization: { name: "NGO", organizationType: "LOCAL_NGO", country: "US", primarySector: "HEALTH" },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.value.trialGranted, true);
+  assert.equal(result.value.plan, "TEAM");
+  assert.equal(grants.length, 2);
+  assert.equal(grants[0].props.source, "DEFAULT");
+  const trial = grants[1];
+  assert.equal(trial.props.source, "TRIAL");
+  assert.equal(trial.props.planCode, "TEAM");
+  assert.equal(trial.props.effectiveUntil.getTime() - trial.props.effectiveFrom.getTime(), 14 * 24 * 60 * 60 * 1000);
+  assert.equal(trialIdentities.created.length, 1);
+});
+
+test("provision-tenant blocks a repeat trial for the same email fingerprint (abuse resistance)", async () => {
+  const grants = [];
+  const trialIdentities = fakeTrialIdentities();
+  const handler = new ProvisionTenantHandler(
+    fakeIds(),
+    { create: async (o) => ({ ok: true, value: o }) },
+    { create: async (u) => { u.activate(); return { ok: true, value: u }; } },
+    { create: async (g) => { grants.push(g); return { ok: true, value: g }; } },
+    { hashPassword: async (p) => `hash:${p}` },
+    { publish: async () => undefined },
+    fakeAudit(),
+    fakeClock(),
+    trialIdentities,
+    true,
+  );
+  const input = {
+    name: "Bob",
+    email: "repeat@ngo.org",
+    passwordHash: "hash",
+    verifiedEmail: "repeat@ngo.org",
+    requestedPlan: "GROWTH",
+    startTrial: true,
+    organization: { name: "NGO2", organizationType: "LOCAL_NGO", country: "US", primarySector: "HEALTH" },
+  };
+  const first = await handler.handle(input);
+  assert.equal(first.value.trialGranted, true);
+
+  const second = await handler.handle(input);
+  assert.equal(second.ok, true);
+  assert.equal(second.value.trialGranted, false);
+  assert.equal(second.value.plan, "STARTER");
+  // Only the two STARTER base grants and the one trial grant from the first call exist.
+  assert.equal(grants.filter((g) => g.props.source === "TRIAL").length, 1);
+});
+
+test("provision-tenant never grants a trial for STARTER or ENTERPRISE (not trial-eligible)", async () => {  const grants = [];
+  const trialIdentities = fakeTrialIdentities();
+  const handler = new ProvisionTenantHandler(
+    fakeIds(),
+    { create: async (o) => ({ ok: true, value: o }) },
+    { create: async (u) => { u.activate(); return { ok: true, value: u }; } },
+    { create: async (g) => { grants.push(g); return { ok: true, value: g }; } },
+    { hashPassword: async (p) => `hash:${p}` },
+    { publish: async () => undefined },
+    fakeAudit(),
+    fakeClock(),
+    trialIdentities,
+    true,
+  );
+  const result = await handler.handle({
+    name: "Carol",
+    email: "carol@ngo.org",
+    passwordHash: "hash",
+    verifiedEmail: "carol@ngo.org",
+    requestedPlan: "STARTER",
+    startTrial: true,
+    organization: { name: "NGO3", organizationType: "LOCAL_NGO", country: "US", primarySector: "HEALTH" },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.value.trialGranted, false);
+  assert.equal(grants.length, 1);
+  assert.equal(trialIdentities.created.length, 0);
+});
+
+test("provision-tenant honors the server-side trials kill switch (no grant even with startTrial)", async () => {
+  const grants = [];
+  const trialIdentities = fakeTrialIdentities();
+  const handler = new ProvisionTenantHandler(
+    fakeIds(),
+    { create: async (o) => ({ ok: true, value: o }) },
+    { create: async (u) => { u.activate(); return { ok: true, value: u }; } },
+    { create: async (g) => { grants.push(g); return { ok: true, value: g }; } },
+    { hashPassword: async (p) => `hash:${p}` },
+    { publish: async () => undefined },
+    fakeAudit(),
+    fakeClock(),
+    trialIdentities,
+    false,
+  );
+  const result = await handler.handle({
+    name: "Dave",
+    email: "dave@ngo.org",
+    passwordHash: "hash",
+    verifiedEmail: "dave@ngo.org",
+    requestedPlan: "TEAM",
+    startTrial: true,
+    organization: { name: "NGO4", organizationType: "LOCAL_NGO", country: "US", primarySector: "HEALTH" },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.value.trialGranted, false);
+  assert.equal(result.value.plan, "STARTER");
+  // Only the permanent STARTER base grant exists; the flag-gated request is
+  // visible in the audit trail (trialDisabledByFlag) for ops.
+  assert.equal(grants.length, 1);
+  assert.equal(grants[0].props.source, "DEFAULT");
+  assert.equal(trialIdentities.created.length, 0);
 });
 
 test("billing summary reflects current plan and usage", async () => {
@@ -311,6 +570,7 @@ test("webhook processor ignores events without a subscription (checkout.complete
   const grants = {
     listByTenant: async () => ({ ok: true, value: [] }),
     create: async (g) => ({ ok: true, value: g }),
+    endGrant: async () => ({ ok: true, value: undefined }),
     listEffectiveByTenant: async () => ({ ok: true, value: [] }),
     listExpiredTrialGrants: async () => ({ ok: true, value: [] }),
   };
@@ -340,4 +600,164 @@ test("entitlement service resolves trial capacity for summary", async () => {
   assert.equal(result.value.plan, "GROWTH");
   assert.equal(result.value.isTrial, true);
   assert.equal(result.value.trialEndsAt, "2100-01-29T00:00:00.000Z");
+});
+
+// ---- BillingSubscriptionSynchronizer grant lifecycle (renewal / plan change / packs) ----
+
+function providerSub(overrides = {}) {
+  return {
+    providerSubscriptionId: "sub_provider_1",
+    providerCustomerId: "cust_1",
+    providerProductId: "prod_team_monthly",
+    planCode: "TEAM",
+    status: "ACTIVE",
+    currency: "USD",
+    unitAmountMinor: 12900,
+    billingInterval: "MONTH",
+    currentPeriodStart: new Date("2026-01-01T00:00:00Z"),
+    currentPeriodEnd: new Date("2026-02-01T00:00:00Z"),
+    cancelAtPeriodEnd: false,
+    providerUpdatedAt: new Date("2026-01-15T00:00:00Z"),
+    ...overrides,
+  };
+}
+
+function synchronizerFakes() {
+  const storedSubscription = { value: null };
+  const grantsRepo = {
+    created: [],
+    listByTenant: async () => ({ ok: true, value: grantsRepo.created }),
+    create: async (g) => { grantsRepo.created.push(g); return { ok: true, value: g }; },
+    // Mirrors the Prisma impl: ends the open window in place on the stored row.
+    endGrant: async (grantId, at) => {
+      const grant = grantsRepo.created.find((g) => g.id === grantId);
+      if (grant && (grant.effectiveUntil === undefined || grant.effectiveUntil > at)) grant.props.effectiveUntil = at;
+      return { ok: true, value: undefined };
+    },
+    listEffectiveByTenant: async () => ({ ok: true, value: grantsRepo.created }),
+    listExpiredTrialGrants: async () => ({ ok: true, value: [] }),
+  };
+  const subscriptionsRepo = {
+    findByProviderSubscriptionId: async () => ({ ok: true, value: storedSubscription.value }),
+    create: async (s) => { storedSubscription.value = s; return { ok: true, value: s }; },
+    update: async (s) => ({ ok: true, value: s }),
+    findAccessGrantingByTenant: async () => ({ ok: true, value: storedSubscription.value }),
+    listReconcileCandidates: async () => ({ ok: true, value: [] }),
+  };
+  return { grantsRepo, subscriptionsRepo, storedSubscription };
+}
+
+test("synchronizer grants exactly one covering window per period (renewal creates the next window)", async () => {
+  const clockNow = { t: new Date("2026-01-15T00:00:00Z").getTime() };
+  const clock = { now: () => new Date(clockNow.t) };
+  const { grantsRepo, subscriptionsRepo } = synchronizerFakes();
+  const sync = new BillingSubscriptionSynchronizer({}, subscriptionsRepo, grantsRepo, fakeIds("g"), fakeAudit(), clock);
+
+  const first = await sync.sync(providerSub(), "subscription.paid", "tenant-a");
+  assert.equal(first.ok, true);
+  assert.equal(grantsRepo.created.length, 1);
+  assert.equal(grantsRepo.created[0].planCode, "TEAM");
+  assert.equal(grantsRepo.created[0].effectiveUntil.toISOString(), "2026-02-01T00:00:00.000Z");
+
+  // Idempotent re-sync inside the same period: no duplicate grant.
+  const again = await sync.sync(providerSub(), "reconcile.daily", "tenant-a");
+  assert.equal(again.ok, true);
+  assert.equal(grantsRepo.created.length, 1);
+
+  // Renewal: the provider advances the period; the old window has expired by
+  // the sync date, and a fresh grant covering the new period must be created
+  // (before the lifecycle fix, the paying tenant silently fell back to STARTER).
+  clockNow.t = new Date("2026-02-15T00:00:00Z").getTime();
+  const renewed = await sync.sync(providerSub({
+    currentPeriodStart: new Date("2026-02-01T00:00:00Z"),
+    currentPeriodEnd: new Date("2026-03-01T00:00:00Z"),
+    providerUpdatedAt: new Date("2026-02-01T00:00:00Z"),
+  }), "subscription.paid", "tenant-a");
+  assert.equal(renewed.ok, true);
+  assert.equal(grantsRepo.created.length, 2);
+  const effective = grantsRepo.created.filter((g) => g.isEffectiveAt(clock.now()));
+  assert.equal(effective.length, 1);
+  assert.equal(effective[0].planCode, "TEAM");
+  assert.equal(effective[0].effectiveUntil.toISOString(), "2026-03-01T00:00:00.000Z");
+});
+
+test("synchronizer re-provisions the grant on a mid-cycle plan change (TEAM -> GROWTH)", async () => {
+  const clockNow = { t: new Date("2026-01-20T00:00:00Z").getTime() };
+  const clock = { now: () => new Date(clockNow.t) };
+  const { grantsRepo, subscriptionsRepo } = synchronizerFakes();
+  const sync = new BillingSubscriptionSynchronizer({}, subscriptionsRepo, grantsRepo, fakeIds("g"), fakeAudit(), clock);
+
+  const first = await sync.sync(providerSub(), "subscription.paid", "tenant-a");
+  assert.equal(first.ok, true);
+  assert.equal(grantsRepo.created.length, 1);
+
+  // Mid-cycle upgrade a few seconds later (still inside the same period).
+  clockNow.t = new Date("2026-01-20T00:00:05Z").getTime();
+  const upgraded = await sync.sync(providerSub({
+    planCode: "GROWTH",
+    providerProductId: "prod_growth_monthly",
+    unitAmountMinor: 29900,
+    providerUpdatedAt: new Date("2026-01-20T00:00:05Z"),
+  }), "subscription.updated", "tenant-a");
+  assert.equal(upgraded.ok, true);
+  const effective = grantsRepo.created.filter((g) => g.isEffectiveAt(clock.now()));
+  assert.equal(effective.length, 1);
+  assert.equal(effective[0].planCode, "GROWTH");
+  // The stale TEAM grant's window is genuinely ended in place (append-only
+  // history preserved), so it can never resurface as an effective grant.
+  const staleTeam = grantsRepo.created.find((g) => g.planCode === "TEAM");
+  assert.ok(staleTeam, "expected the original TEAM grant row");
+  assert.equal(staleTeam.effectiveUntil.getTime(), clock.now().getTime());
+});
+
+test("synchronizer suspends standing-balance packs on downgrade and reactivates them on re-subscribe", async () => {
+  const clockNow = { t: new Date("2026-01-20T00:00:00Z").getTime() };
+  const clock = { now: () => new Date(clockNow.t) };
+  const { grantsRepo, subscriptionsRepo } = synchronizerFakes();
+  const events = [];
+  const audit = { record: async (e) => { events.push(e.eventType); return { ok: true, value: undefined }; } };
+  const standing = PurchasedCreditPack.create({
+    id: "pack-standing",
+    props: {
+      tenantId: "tenant-a",
+      credits: 100,
+      source: "GROWTH_STANDING_BALANCE",
+      providerOrderId: "order_1",
+      purchasedAt: new Date("2026-01-10T00:00:00Z"),
+    },
+  });
+  const topup = PurchasedCreditPack.create({
+    id: "pack-topup",
+    props: {
+      tenantId: "tenant-a",
+      credits: 50,
+      source: "TOPUP",
+      providerOrderId: "order_2",
+      purchasedAt: new Date("2026-01-11T00:00:00Z"),
+    },
+  });
+  const packsRepo = {
+    listByTenant: async () => ({ ok: true, value: [standing, topup] }),
+    update: async (p) => ({ ok: true, value: p }),
+  };
+  const sync = new BillingSubscriptionSynchronizer({}, subscriptionsRepo, grantsRepo, fakeIds("g"), audit, clock, packsRepo);
+
+  // First sync establishes the GROWTH subscription.
+  const first = await sync.sync(providerSub({ planCode: "GROWTH" }), "subscription.paid", "tenant-a");
+  assert.equal(first.ok, true);
+  assert.equal(standing.status, "ACTIVE");
+  assert.equal(topup.status, "ACTIVE");
+
+  // Downgrade to TEAM: standing balance suspends, the TOPUP pack survives.
+  const downgraded = await sync.sync(providerSub({ planCode: "TEAM" }), "subscription.updated", "tenant-a");
+  assert.equal(downgraded.ok, true);
+  assert.equal(standing.status, "SUSPENDED");
+  assert.equal(topup.status, "ACTIVE");
+  assert.ok(events.includes("billing.credits.standing_balance_suspended"));
+
+  // Re-subscribe to GROWTH: the paid standing balance comes back.
+  const resubscribed = await sync.sync(providerSub({ planCode: "GROWTH" }), "subscription.updated", "tenant-a");
+  assert.equal(resubscribed.ok, true);
+  assert.equal(standing.status, "ACTIVE");
+  assert.ok(events.includes("billing.credits.standing_balance_reactivated"));
 });

@@ -110,10 +110,15 @@ test("Project lifecycle: activate blocks completed, restore unarchives", () => {
   assert.equal(project.status, "COMPLETED");
   assert.throws(() => project.activate(), DomainError);
 
+  assert.equal(project.archivedAt, undefined);
   project.archive();
   assert.equal(project.status, "ARCHIVED");
+  assert.ok(project.archivedAt instanceof Date);
+  assert.throws(() => project.archive(), DomainError);
   project.restore();
   assert.equal(project.status, "DRAFT");
+  assert.equal(project.archivedAt, undefined);
+  assert.throws(() => project.restore(), DomainError);
 });
 
 test("Project dates and budget are editable post-create (Feature 18 must-fix)", () => {

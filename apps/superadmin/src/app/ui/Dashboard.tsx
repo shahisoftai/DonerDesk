@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type Tab = "overview" | "tenants" | "users" | "tiers" | "billing" | "ai" | "email" | "storage" | "backups" | "connectors" | "kestra" | "audit" | "system";
+type Tab = "overview" | "tenants" | "users" | "tiers" | "billing" | "nonprofit" | "ai" | "email" | "storage" | "backups" | "connectors" | "kestra" | "audit" | "system";
 type AnyRow = Record<string, any>;
 
 const tierPlanCodes = ["STARTER", "TEAM", "GROWTH", "ENTERPRISE"];
@@ -47,19 +47,25 @@ async function api(path: string, init?: RequestInit) {
   return data;
 }
 
-export function Dashboard() {
+export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterprisePriceFloorAnnualUsd?: number }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [data, setData] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ type: "ok" | "error"; text: string } | null>(null);
-  const [modal, setModal] = useState<null | { kind: "tenant" | "user" | "provider" | "tier" | "tierTenant" | "resetPassword"; row?: AnyRow }>(null);
+  const [modal, setModal] = useState<null | { kind: "tenant" | "user" | "provider" | "tier" | "tierTenant" | "resetPassword" | "creditPacks"; row?: AnyRow }>(null);
   const [tenants, setTenants] = useState<AnyRow[]>([]);
+  const [byoStatus, setByoStatus] = useState<AnyRow[]>([]);
 
-  const endpoint = tab === "ai" || tab === "email" || tab === "storage" || tab === "backups" || tab === "connectors" ? "configurations" : tab;  async function load() {
+  const endpoint = tab === "ai" || tab === "email" || tab === "storage" || tab === "backups" || tab === "connectors" ? "configurations" : tab === "nonprofit" ? "billing/nonprofit-verifications" : tab;
+  async function load() {
     try {
       const result = await api(endpoint);
-      setData(result);
+      setData(tab === "nonprofit" ? result.items : result);
       if (tab === "users" || tab === "overview") setTenants(await api("tenants"));
+      // WS-K item 6: cross-reference tenant-scoped LLM configs against each
+      // tenant's resolved byoLlmEnabled entitlement, so the AI tab can flag a
+      // configured-but-ignored provider inline.
+      if (tab === "ai") setByoStatus(await api("billing/byo-llm-status"));
     } catch (error) { flash("error", String(error)); }
   }
   useEffect(() => { void load(); }, [tab]);
@@ -70,6 +76,7 @@ export function Dashboard() {
   const navigation: Array<[Tab, string, string]> = [
     ["overview", "Overview", "⌂"], ["tenants", "Tenants", "▦"], ["users", "Users", "♙"],
     ["tiers", "Tier management", "◈"], ["billing", "Billing & credits", "¤"],
+    ["nonprofit", "Nonprofit verification", "♥"],
     ["ai", "AI & LLM", "✦"], ["email", "Email", "✉"], ["storage", "Object storage", "▤"],
     ["backups", "Off-host backups", "↥"], ["connectors", "Inbound connectors", "⇄"],
     ["kestra", "Kestra plugins", "⚙"], ["audit", "Audit trail", "◷"], ["system", "System health", "●"],
@@ -86,10 +93,28 @@ export function Dashboard() {
       {notice && <div className={`toast ${notice.type}`}>{notice.text}</div>}
       {tab === "overview" && <Overview data={data} onNavigate={changeTab} />}
       {tab === "tenants" && <Tenants rows={Array.isArray(data) ? data : []} onAdd={() => setModal({ kind: "tenant" })} onEdit={(row: AnyRow) => setModal({ kind: "tenant", row })} onDelete={(row: AnyRow) => { const confirmation = prompt(`Type ${row.name} to permanently delete this empty tenant`); if (confirmation === null) return; void action(() => api(`tenants/${row.id}`, { method: "DELETE", body: JSON.stringify({ confirmation }) }), "Tenant deleted"); }} />}
-      {tab === "tiers" && <Tiers data={data || {}} onEditTier={(tier: AnyRow) => setModal({ kind: "tier", row: tier })} onResetTier={(tier: AnyRow) => confirm(`Revert ${tier.name} (${tier.planCode}) to the static catalog? Any global overrides are removed.`) && void action(() => api(`tiers/${tier.planCode}/reset`, { method: "POST" }), "Tier reset to catalog")} onManageTenant={(row: AnyRow) => setModal({ kind: "tierTenant", row })} />}
-      {tab === "billing" && <Billing rows={Array.isArray(data) ? data : []} onSetCredits={(row: AnyRow) => { const value = prompt(`Set monthly AI draft credits for ${row.name} (current: ${row.monthlyAiDraftCredits})`, String(row.monthlyAiDraftCredits)); if (value !== null && value.trim() !== "") { const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0) void action(() => api(`tenants/${row.tenantId}/credits`, { method: "POST", body: JSON.stringify({ mode: "SET", value: parsed, reason: "superadmin" }) }), "Credits updated"); else flash("error", "Credit value must be a non-negative integer"); } }} onAdjustCredits={(row: AnyRow, mode: "INCREASE" | "DECREASE") => { const value = prompt(mode === "INCREASE" ? `Increase AI draft credits for ${row.name} by:` : `Reduce AI draft credits for ${row.name} by:`); if (value !== null && value.trim() !== "") { const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0) void action(() => api(`tenants/${row.tenantId}/credits`, { method: "POST", body: JSON.stringify({ mode, value: parsed, reason: "superadmin" }) }), "Credits updated"); else flash("error", "Credit value must be a non-negative integer"); } }} onResetCounter={(row: AnyRow) => confirm(`Reset the current month's AI credit usage for ${row.name}? This does not change the allowance.`) && void action(() => api(`tenants/${row.tenantId}/credits/reset`, { method: "POST" }), "Usage counter reset")} />}
+      {tab === "tiers" && <Tiers data={data || {}} onEditTier={(tier: AnyRow) => setModal({ kind: "tier", row: tier })} onResetTier={(tier: AnyRow) => confirm(`Revert ${tier.name} (${tier.planCode}) to the static catalog? Any global overrides are removed.`) && void action(() => api(`tiers/${tier.planCode}/reset`, { method: "POST" }), "Tier reset to catalog")} onManageTenant={(row: AnyRow) => setModal({ kind: "tierTenant", row })}       onProvisionEnterprise={(row: AnyRow) => {
+        // Server-provided floor (from ENTERPRISE_PRICE_FLOOR_ANNUAL_USD via
+        // the server page) so the client bundle never imports the domain pkg.
+        const floor = enterprisePriceFloorAnnualUsd;
+        const floorLabel = floor.toLocaleString("en-US");
+        const annualPriceUsd = Number(prompt(`Annual contract price (USD, floor $${floorLabel}):`, String(floor)));
+        if (!annualPriceUsd || annualPriceUsd < floor) { flash("error", `Annual price must be at least $${floorLabel}`); return; }
+        const contractStart = prompt("Contract start date (YYYY-MM-DD):", new Date().toISOString().slice(0, 10));
+        if (!contractStart) return;
+        const contractEnd = prompt("Contract end date (YYYY-MM-DD):");
+        if (!contractEnd) return;
+        void action(() => api(`tenants/${row.tenantId}/enterprise-contract`, { method: "POST", body: JSON.stringify({ annualPriceUsd, contractStart, contractEnd }) }), "Enterprise contract provisioned");
+      }} />}
+      {tab === "billing" && <Billing rows={Array.isArray(data) ? data : []} onManagePacks={(row: AnyRow) => setModal({ kind: "creditPacks", row })} onSetCredits={(row: AnyRow) => { const value = prompt(`Set monthly AI draft credits for ${row.name} (current: ${row.monthlyAiDraftCredits})`, String(row.monthlyAiDraftCredits)); if (value !== null && value.trim() !== "") { const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0) void action(() => api(`tenants/${row.tenantId}/credits`, { method: "POST", body: JSON.stringify({ mode: "SET", value: parsed, reason: "superadmin" }) }), "Credits updated"); else flash("error", "Credit value must be a non-negative integer"); } }} onAdjustCredits={(row: AnyRow, mode: "INCREASE" | "DECREASE") => { const value = prompt(mode === "INCREASE" ? `Increase AI draft credits for ${row.name} by:` : `Reduce AI draft credits for ${row.name} by:`); if (value !== null && value.trim() !== "") { const parsed = Number(value); if (Number.isInteger(parsed) && parsed >= 0) void action(() => api(`tenants/${row.tenantId}/credits`, { method: "POST", body: JSON.stringify({ mode, value: parsed, reason: "superadmin" }) }), "Credits updated"); else flash("error", "Credit value must be a non-negative integer"); } }} onResetCounter={(row: AnyRow) => confirm(`Reset the current month's AI credit usage for ${row.name}? This does not change the allowance.`) && void action(() => api(`tenants/${row.tenantId}/credits/reset`, { method: "POST" }), "Usage counter reset")}
+        onGrantTrial={(row: AnyRow) => { const planCode = prompt("Grant a trial of which plan? (TEAM or GROWTH)", "TEAM"); if (!planCode || (planCode !== "TEAM" && planCode !== "GROWTH")) return; const days = prompt("Trial length in days:", "14"); if (days === null) return; void action(() => api(`tenants/${row.tenantId}/trial`, { method: "POST", body: JSON.stringify({ planCode, days: Number(days) || 14 }) }), "Trial granted"); }}
+        onExtendTrial={(row: AnyRow) => { const days = prompt(`Extend ${row.name}'s trial by how many days?`, "14"); if (days === null) return; void action(() => api(`tenants/${row.tenantId}/trial/extend`, { method: "POST", body: JSON.stringify({ days: Number(days) || 14 }) }), "Trial extended"); }}
+        onEndTrial={(row: AnyRow) => confirm(`End ${row.name}'s trial now? The tenant falls back to Starter (or its subscription) immediately.`) && void action(() => api(`tenants/${row.tenantId}/trial/end`, { method: "POST" }), "Trial ended")}
+        onOverrideFingerprint={() => { const email = prompt("Email to clear the trial-abuse fingerprint for (lets that email start another trial):"); if (!email) return; void action(() => api("trial-fingerprint/override", { method: "POST", body: JSON.stringify({ email }) }), "Trial fingerprint cleared"); }}
+      />}
+      {tab === "nonprofit" && <NonprofitVerifications rows={Array.isArray(data) ? data : []} busy={busy} onApprove={(row: AnyRow) => confirm(`Approve nonprofit verification for tenant ${row.tenantId}? This unlocks the discounted checkout product.`) && void action(() => api(`billing/nonprofit-verifications/${row.id}/approve`, { method: "POST" }), "Verification approved")} onReject={(row: AnyRow) => { const reason = prompt("Reason for rejection (recorded in the audit trail):"); if (reason && reason.trim()) void action(() => api(`billing/nonprofit-verifications/${row.id}/reject`, { method: "POST", body: JSON.stringify({ reason: reason.trim() }) }), "Verification rejected"); }} onRunByoLlmGrandfather={() => confirm("Run the BYO-LLM grandfather migration? This grants a permanent MANUAL override to any tenant with a working tenant-scoped LLM configuration whose plan does not include byoLlmEnabled. Safe to re-run.") && void action(() => api("billing/grandfather-byo-llm", { method: "POST" }), "BYO-LLM grandfather migration run")} />}
       {tab === "users" && <Users rows={Array.isArray(data) ? data : []} tenants={tenants} onAdd={() => setModal({ kind: "user" })} onEdit={(row: AnyRow) => setModal({ kind: "user", row })} onReset={(row: AnyRow) => setModal({ kind: "resetPassword", row })} onDelete={(row: AnyRow) => confirm(`Delete ${row.email}? This cannot be undone.`) && void action(() => api(`users/${row.id}`, { method: "DELETE" }), "User deleted")} />}
-      {(tab in providerGroups) && <Providers tab={tab as keyof typeof providerGroups} rows={(Array.isArray(data) ? data : []).filter((x: AnyRow) => x.category === providerGroups[tab as keyof typeof providerGroups].category)} onAdd={() => setModal({ kind: "provider" })} onEdit={(row: AnyRow) => setModal({ kind: "provider", row })} onTest={(row: AnyRow) => action(() => api(`configurations/${row.id}/test`, { method: "POST" }), "Connection test completed")} onToggle={(row: AnyRow) => action(() => api("configurations", { method: "PUT", body: JSON.stringify(configurationPayload(row, { enabled: !row.enabled })) }), row.enabled ? "Provider disabled" : "Provider enabled")} onDelete={(row: AnyRow) => confirm(`Delete ${row.displayName}? Encrypted credentials will also be removed.`) && void action(() => api(`configurations/${row.id}`, { method: "DELETE" }), "Configuration deleted")} />}
+      {(tab in providerGroups) && <Providers tab={tab as keyof typeof providerGroups} rows={(Array.isArray(data) ? data : []).filter((x: AnyRow) => x.category === providerGroups[tab as keyof typeof providerGroups].category)} byoStatus={byoStatus} onAdd={() => setModal({ kind: "provider" })} onEdit={(row: AnyRow) => setModal({ kind: "provider", row })} onTest={(row: AnyRow) => action(() => api(`configurations/${row.id}/test`, { method: "POST" }), "Connection test completed")} onToggle={(row: AnyRow) => action(() => api("configurations", { method: "PUT", body: JSON.stringify(configurationPayload(row, { enabled: !row.enabled })) }), row.enabled ? "Provider disabled" : "Provider enabled")} onDelete={(row: AnyRow) => confirm(`Delete ${row.displayName}? Encrypted credentials will also be removed.`) && void action(() => api(`configurations/${row.id}`, { method: "DELETE" }), "Configuration deleted")} />}
       {tab === "audit" && <Audit rows={Array.isArray(data) ? data : []} />}
       {tab === "kestra" && <Kestra data={data || {}} />}
       {tab === "system" && <System data={data || {}} />}
@@ -100,6 +125,7 @@ export function Dashboard() {
     {modal?.kind === "provider" && <ProviderModal group={providerGroups[tab as keyof typeof providerGroups]} row={modal.row} tenants={tenants} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api("configurations", { method: "PUT", body: JSON.stringify(value) }), modal.row ? "Configuration updated and secrets rotated" : "Credentials encrypted and saved")} />}
     {modal?.kind === "tier" && (() => { const row = modal.row!; return <TierModal row={row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(`tiers/${row.planCode}`, { method: "PUT", body: JSON.stringify(value) }), "Tier updated globally")} />; })()}
     {modal?.kind === "tierTenant" && (() => { const row = modal.row!; return <TenantTierModal row={row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(`tenants/${row.tenantId}/tier`, { method: "POST", body: JSON.stringify({ planCode: value.planCode, reason: value.reason, limits: value.customLimits ? value.limits : undefined }) }), "Tenant tier updated")} onReset={() => action(() => api(`tenants/${row.tenantId}/tier/reset`, { method: "POST" }), "Tenant tier overrides reset")} />; })()}
+    {modal?.kind === "creditPacks" && modal.row && <CreditPacksModal row={modal.row} busy={busy} onClose={() => setModal(null)} onComp={(credits: number, reason: string) => action(() => api(`billing/credit-packs/${modal.row!.tenantId}/comp`, { method: "POST", body: JSON.stringify({ credits, reason: reason || undefined }) }), "Comped credit pack granted")} onRefund={(packId: string) => action(() => api(`billing/credit-packs/${modal.row!.tenantId}/${packId}/refund`, { method: "POST" }), "Credit pack refunded")} />}
   </div>;
 }
 
@@ -108,29 +134,33 @@ function Overview({ data, onNavigate }: { data: any; onNavigate: (tab: Tab) => v
   return <><section className="hero"><div><span className="eyebrow">PLATFORM OPERATIONS</span><h2>Everything that runs DonorDesk,<br />under your control.</h2><p>Manage tenants, identities, AI, communications, storage, backups and data ingestion from one secured console.</p></div><span className="health-orb">✓<small>All systems<br />operational</small></span></section><div className="stat-grid">{cards.map(([label, value, target, sub]) => <button className="stat-card" onClick={() => onNavigate(target)} key={label}><small>{label}</small><strong>{value}</strong><span>{sub} →</span></button>)}</div><section className="panel"><div className="panel-title"><div><h3>Quick actions</h3><p>Common platform administration tasks</p></div></div><div className="quick-grid">{[["Add tenant", "tenants"], ["Create user", "users"], ["Configure an LLM", "ai"], ["Set up backup", "backups"], ["Connect data source", "connectors"]].map(([label, target]) => <button key={label} onClick={() => onNavigate(target as Tab)}>＋ {label}</button>)}</div></section></>;
 }
 
-function Tenants({ rows, onAdd, onEdit, onDelete }: any) { return <Resource title="Tenant organizations" description="Create and manage every organization using DonorDesk." add="Add tenant" onAdd={onAdd}><table><thead><tr><th>Organization</th><th>Tenant ID</th><th>Country</th><th>Contact</th><th>Users</th><th>Projects</th><th>AI</th><th /></tr></thead><tbody>{rows.map((r: AnyRow) => <tr key={r.id}><td><strong>{r.name}</strong><small>{r.organizationType}</small></td><td><code>{r.tenantId}</code></td><td>{r.country}</td><td>{r.contactEmail}</td><td>{r._count?.users ?? 0}</td><td>{r._count?.projects ?? 0}</td><td><Badge ok={r.aiEnabled}>{r.aiEnabled ? "Enabled" : "Disabled"}</Badge></td><td><Actions edit={() => onEdit(r)} remove={() => onDelete(r)} /></td></tr>)}</tbody></table></Resource>; }
+function Tenants({ rows, onAdd, onEdit, onDelete }: any) { return <Resource title="Tenant organizations" description="Create and manage every organization using DonorDesk." add="Add tenant" onAdd={onAdd}><table><thead><tr><th>Organization</th><th>Tenant ID</th><th>Country</th><th>Contact</th><th>Users</th><th>Projects</th><th>AI</th><th /></tr></thead><tbody>{rows.map((r: AnyRow) => <tr key={r.id}><td><strong>{r.name}</strong><small>{r.organizationType}</small></td><td><code>{r.tenantId}</code></td><td>{r.country}</td><td>{r.contactEmail}</td><td>{r._count?.users ?? 0}</td><td>{r._count?.projects ?? 0}{r.archivedProjects ? ` (${r.archivedProjects} archived)` : ""}</td><td><Badge ok={r.aiEnabled}>{r.aiEnabled ? "Enabled" : "Disabled"}</Badge></td><td><Actions edit={() => onEdit(r)} remove={() => onDelete(r)} /></td></tr>)}</tbody></table></Resource>; }
 
 function Users({ rows, tenants, onAdd, onEdit, onReset, onDelete }: any) { const names = Object.fromEntries(tenants.map((x: AnyRow) => [x.tenantId, x.name])); return <Resource title="Users and access" description="Control identities, tenant membership, roles, status and credentials." add="Create user" onAdd={onAdd}><table><thead><tr><th>User</th><th>Tenant</th><th>Role</th><th>Status</th><th>Last login</th><th /></tr></thead><tbody>{rows.map((r: AnyRow) => <tr key={r.id}><td><strong>{r.name}</strong><small>{r.email}</small></td><td>{names[r.tenantId] || r.tenantId}</td><td>{pretty(r.role)}</td><td><Badge ok={r.status === "ACTIVE"}>{pretty(r.status)}</Badge></td><td>{date(r.lastLoginAt)}</td><td><div className="row-actions"><button onClick={() => onReset(r)}>Reset password</button><Actions edit={() => onEdit(r)} remove={() => onDelete(r)} /></div></td></tr>)}</tbody></table></Resource>; }
 
-function Billing({ rows, onSetCredits, onAdjustCredits, onResetCounter }: any) {
+function Billing({ rows, onManagePacks, onSetCredits, onAdjustCredits, onResetCounter, onGrantTrial, onExtendTrial, onEndTrial, onOverrideFingerprint }: any) {
   return <Resource title="Billing & AI credits" description="Per-tenant plan, monthly AI-draft allowance and current usage. Manual grants take effect immediately.">
+    <div style={{ marginBottom: 12 }}><button onClick={onOverrideFingerprint}>Clear a trial-abuse fingerprint</button></div>
     <table>
-      <thead><tr><th>Organization</th><th>Plan</th><th>Source</th><th>AI credits / month</th><th>Used this month</th><th>Remaining</th><th>Subscription</th><th /></tr></thead>
+      <thead><tr><th>Organization</th><th>Plan</th><th>Source</th><th>AI credits / month</th><th>Used this month</th><th>Remaining</th><th>Top-up packs</th><th>Subscription</th><th /></tr></thead>
       <tbody>{rows.map((r: AnyRow) => {
         const remaining = r.monthlyAiDraftCredits == null ? null : Number(r.monthlyAiDraftCredits) - Number(r.aiCreditsUsed);
         return <tr key={r.tenantId}>
           <td><strong>{r.name}</strong><small><code>{r.tenantId}</code>{r.overrideApplied ? " · manual override" : ""}</small></td>
-          <td><Badge ok>{r.planName}</Badge></td>
+          <td><Badge ok>{r.planName}</Badge>{r.source === "TRIAL" && r.trialEndsAt ? <small> trial ends {date(r.trialEndsAt)}</small> : null}</td>
           <td>{pretty(r.source)}</td>
           <td>{r.monthlyAiDraftCredits == null ? "Unlimited" : r.monthlyAiDraftCredits}</td>
           <td>{Number(r.aiCreditsUsed)}{Number(r.aiCreditsReserved) > 0 ? ` (+${r.aiCreditsReserved} reserved)` : ""}</td>
           <td>{remaining == null ? "—" : remaining}</td>
+          <td>{r.creditPacks?.active ? `${r.creditPacks.active} active (${r.creditPacks.credits - r.creditPacks.used}/${r.creditPacks.credits} left)${r.creditPacks.suspended ? ` · ${r.creditPacks.suspended} suspended` : ""}` : (r.creditPacks?.suspended ? `${r.creditPacks.suspended} suspended` : "—")}</td>
           <td>{r.subscription ? <span><Badge ok={r.subscription.status === "ACTIVE"}>{pretty(r.subscription.status)}</Badge><small>{pretty(r.subscription.planCode)} · {pretty(r.subscription.interval)}</small></span> : <span className="muted">None</span>}</td>
           <td><div className="row-actions">
             <button onClick={() => onSetCredits(r)}>Set allowance</button>
             <button onClick={() => onAdjustCredits(r, "INCREASE")}>+ Increase</button>
             <button onClick={() => onAdjustCredits(r, "DECREASE")}>− Reduce</button>
             <button className="danger-link" onClick={() => onResetCounter(r)}>Reset month usage</button>
+            <button onClick={() => onManagePacks(r)}>Manage credit packs</button>
+            {r.source === "TRIAL" ? <><button onClick={() => onExtendTrial(r)}>Extend trial</button><button className="danger-link" onClick={() => onEndTrial(r)}>End trial</button></> : <button onClick={() => onGrantTrial(r)}>Grant trial</button>}
           </div></td>
         </tr>;
       })}</tbody>
@@ -139,9 +169,27 @@ function Billing({ rows, onSetCredits, onAdjustCredits, onResetCounter }: any) {
   </Resource>;
 }
 
-function Providers({ tab, rows, onAdd, onEdit, onTest, onToggle, onDelete }: any) { const allMeta: Record<string, string[]> = { ai: ["AI and language models", "The enabled all-tenants provider drafts every tenant's reports. A tenant-scoped provider (the tenant's own API) overrides it for that tenant. Enabling a provider switches off the previous one in the same scope.", "Add LLM provider"], email: ["Transactional email", "Control outbound invitations, alerts and notifications.", "Add email provider"], storage: ["Object storage", "Manage evidence and export storage destinations.", "Add storage"], backups: ["Encrypted off-host backups", "Configure independent disaster-recovery destinations.", "Add backup target"], connectors: ["Inbound data connectors", "Ingest evidence and field data from external systems.", "Add connector"] }; const meta = allMeta[String(tab)]!; return <Resource title={meta[0]} description={meta[1]} add={meta[2]} onAdd={onAdd}><div className="provider-grid">{rows.length === 0 && <Empty text="No provider configured yet." />}{rows.map((r: AnyRow) => <article className="provider-card" key={r.id}><div className="provider-head"><span className="provider-icon">{providerIcon(r.provider)}</span><div><h3>{r.displayName}</h3><p>{pretty(r.provider)} · {r.scopeType === "TENANT" ? `Tenant's own API · ${r.scopeId}` : "All tenants"}{r.category === "LLM" && safeJson(r.configurationJson, {}).model ? ` · ${safeJson(r.configurationJson, {}).model}` : ""}</p></div><Badge ok={r.enabled}>{r.enabled ? (r.category === "LLM" ? (r.scopeType === "TENANT" ? "Active for tenant" : "Default for all tenants") : "Active") : "Disabled"}</Badge></div><div className="provider-meta"><span>Credentials <strong>{r.secretConfigured ? "✓ Encrypted" : "Not set"}</strong></span><span>Last test <strong>{r.lastTestStatus || "Never"}</strong></span><span>Updated <strong>{date(r.updatedAt)}</strong></span></div>{r.lastTestMessage && <p className={`test-result ${r.lastTestStatus === "SUCCESS" ? "pass" : "fail"}`}>{r.lastTestMessage}</p>}<div className="card-actions"><button onClick={() => onTest(r)}>Test connection</button><button onClick={() => onToggle(r)}>{r.enabled ? "Disable" : "Enable"}</button><button onClick={() => onEdit(r)}>Edit / rotate keys</button><button className="danger-link" onClick={() => onDelete(r)}>Delete</button></div></article>)}</div></Resource>; }
+function NonprofitVerifications({ rows, busy, onApprove, onReject, onRunByoLlmGrandfather }: any) {
+  return <Resource title="Nonprofit verification queue" description="Pending submissions for the 40% verified nonprofit discount. Approving unlocks the discounted Creem checkout product for that tenant; it never changes plan limits.">
+    <div style={{ marginBottom: 12 }}><button onClick={onRunByoLlmGrandfather} disabled={busy}>Run BYO-LLM grandfather migration</button></div>
+    {rows.length === 0 && <Empty text="No pending nonprofit verifications." />}
+    {rows.length > 0 && <table>
+      <thead><tr><th>Tenant</th><th>Registration number</th><th>Document</th><th>Submitted</th><th /></tr></thead>
+      <tbody>{rows.map((r: AnyRow) => <tr key={r.id}>
+        <td><code>{r.tenantId}</code></td>
+        <td>{r.registrationNumber}</td>
+        <td><a href={r.documentUrl} target="_blank" rel="noreferrer">View document</a></td>
+        <td>{date(r.submittedAt)}</td>
+        <td><div className="row-actions"><button onClick={() => onApprove(r)} disabled={busy}>Approve</button><button className="danger-link" onClick={() => onReject(r)} disabled={busy}>Reject</button></div></td>
+      </tr>)}</tbody>
+    </table>}
+    <p className="help-note">Approval sets Organization.nonprofitVerifiedAt, which the checkout handler reads to offer the CREEM_PRODUCT_*_NONPROFIT product when configured. It never writes an entitlement grant or changes plan limits.</p>
+  </Resource>;
+}
 
-function Tiers({ data, onEditTier, onResetTier, onManageTenant }: any) {
+function Providers({ tab, rows, byoStatus, onAdd, onEdit, onTest, onToggle, onDelete }: any) { const allMeta: Record<string, string[]> = { ai: ["AI and language models", "The enabled all-tenants provider drafts every tenant's reports. A tenant-scoped provider (the tenant's own API) overrides it for that tenant. Enabling a provider switches off the previous one in the same scope.", "Add LLM provider"], email: ["Transactional email", "Control outbound invitations, alerts and notifications.", "Add email provider"], storage: ["Object storage", "Manage evidence and export storage destinations.", "Add storage"], backups: ["Encrypted off-host backups", "Configure independent disaster-recovery destinations.", "Add backup target"], connectors: ["Inbound data connectors", "Ingest evidence and field data from external systems.", "Add connector"] }; const meta = allMeta[String(tab)]!; const byoById = new Map((Array.isArray(byoStatus) ? byoStatus : []).map((s: AnyRow) => [s.configId, s])); return <Resource title={meta[0]} description={meta[1]} add={meta[2]} onAdd={onAdd}><div className="provider-grid">{rows.length === 0 && <Empty text="No provider configured yet." />}{rows.map((r: AnyRow) => { const byo = r.scopeType === "TENANT" ? byoById.get(r.id) : undefined; return <article className="provider-card" key={r.id}><div className="provider-head"><span className="provider-icon">{providerIcon(r.provider)}</span><div><h3>{r.displayName}</h3><p>{pretty(r.provider)} · {r.scopeType === "TENANT" ? `Tenant's own API · ${r.scopeId}` : "All tenants"}{r.category === "LLM" && safeJson(r.configurationJson, {}).model ? ` · ${safeJson(r.configurationJson, {}).model}` : ""}</p></div><Badge ok={r.enabled}>{r.enabled ? (r.category === "LLM" ? (r.scopeType === "TENANT" ? "Active for tenant" : "Default for all tenants") : "Active") : "Disabled"}</Badge></div><div className="provider-meta"><span>Credentials <strong>{r.secretConfigured ? "✓ Encrypted" : "Not set"}</strong></span><span>Last test <strong>{r.lastTestStatus || "Never"}</strong></span><span>Updated <strong>{date(r.updatedAt)}</strong></span></div>{byo?.ignoredByPlan && <p className="test-result fail">⚠ Ignored: this tenant's plan does not include byoLlmEnabled, so drafts fall back to the platform default provider (see audit event billing.byo_llm.blocked_by_plan).</p>}{r.lastTestMessage && <p className={`test-result ${r.lastTestStatus === "SUCCESS" ? "pass" : "fail"}`}>{r.lastTestMessage}</p>}<div className="card-actions"><button onClick={() => onTest(r)}>Test connection</button><button onClick={() => onToggle(r)}>{r.enabled ? "Disable" : "Enable"}</button><button onClick={() => onEdit(r)}>Edit / rotate keys</button><button className="danger-link" onClick={() => onDelete(r)}>Delete</button></div></article>; })}</div></Resource>; }
+
+function Tiers({ data, onEditTier, onResetTier, onManageTenant, onProvisionEnterprise }: any) {
   const catalog: AnyRow[] = Array.isArray(data.catalog) ? data.catalog : [];
   const tenants: AnyRow[] = Array.isArray(data.tenants) ? data.tenants : [];
   return <div className="tiers-wrap">
@@ -173,11 +221,11 @@ function Tiers({ data, onEditTier, onResetTier, onManageTenant }: any) {
           <td><strong>{r.name}</strong><small><code>{r.tenantId}</code>{r.overrideApplied ? " · manual override" : ""}</small></td>
           <td><Badge ok>{r.planName}</Badge></td>
           <td>{pretty(r.source)}</td>
-          <td>{r.usage?.projects ?? 0} / {r.limits?.maxActiveProjects ?? "∞"}</td>
+          <td>{r.usage?.projects ?? 0} / {r.limits?.maxActiveProjects ?? "∞"}{r.usage?.archivedProjects ? <small> ({r.usage.archivedProjects} archived)</small> : null}</td>
           <td>{r.usage?.seats ?? 0} / {r.limits?.maxSeats ?? "∞"}</td>
           <td>{bytes(r.usage?.managedStorageBytes)} / {bytes(r.limits?.maxManagedStorageBytes)}</td>
           <td>{r.usage?.aiDraftCredits ?? r.aiCreditsUsed ?? 0} / {r.monthlyAiDraftCredits ?? "∞"}</td>
-          <td><div className="row-actions"><button onClick={() => onManageTenant(r)}>Manage tier</button></div></td>
+          <td><div className="row-actions"><button onClick={() => onManageTenant(r)}>Manage tier</button>{r.planCode === "ENTERPRISE" && <button onClick={() => onProvisionEnterprise(r)}>Provision contract</button>}</div></td>
         </tr>)}</tbody>
       </table></div>
       <p className="help-note">"Manage tier" lets you move the tenant to another tier (writes a MANUAL grant) and, optionally, set a per-tenant feature allocation. Reset restores the tenant to its subscription / trial / Starter entitlement.</p>
@@ -196,6 +244,9 @@ function TierModal({ row, busy, onClose, onSave }: any) {
     maxSeats: row?.limits?.maxSeats == null ? "" : String(row.limits.maxSeats),
     maxManagedStorageGb: row?.limits?.maxManagedStorageBytes == null ? "" : String(Number(row.limits.maxManagedStorageBytes) / 1073741824),
     monthlyAiDraftCredits: row?.limits?.monthlyAiDraftCredits == null ? "" : String(row.limits.monthlyAiDraftCredits),
+    viewerSeats: row?.limits?.viewerSeats == null ? "" : String(row.limits.viewerSeats),
+    aiCreditTopUp: row?.limits?.aiCreditTopUp ?? false,
+    byoLlmEnabled: row?.limits?.byoLlmEnabled ?? false,
   });
   const storageBytes = form.maxManagedStorageGb === "" ? null : String(Math.round(Number(form.maxManagedStorageGb) * 1073741824));
   return <Modal title={`Edit ${row?.name ?? row?.planCode} tier`} subtitle="Global feature allocation — applies to every tenant on this tier" onClose={onClose} wide>
@@ -206,9 +257,12 @@ function TierModal({ row, busy, onClose, onSave }: any) {
       {input("Trial days", "trialDays", form, setForm, { placeholder: "Blank = no trial" })}
       <label className="field"><span>Max active projects</span><input value={form.maxActiveProjects} onChange={e => setForm({ ...form, maxActiveProjects: e.target.value })} placeholder="Blank = unlimited" /></label>
       <label className="field"><span>Max seats</span><input value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} placeholder="Blank = unlimited" /></label>
+      <label className="field"><span>Read-only viewer seats</span><input value={form.viewerSeats} onChange={e => setForm({ ...form, viewerSeats: e.target.value })} placeholder="Blank = unlimited" /></label>
       <label className="field"><span>Managed storage (GB)</span><input value={form.maxManagedStorageGb} onChange={e => setForm({ ...form, maxManagedStorageGb: e.target.value })} placeholder="Blank = unlimited" /></label>
       <label className="field"><span>AI report drafts / month</span><input value={form.monthlyAiDraftCredits} onChange={e => setForm({ ...form, monthlyAiDraftCredits: e.target.value })} placeholder="Blank = unlimited" /></label>
       <label className="check full"><input type="checkbox" checked={form.enabled} onChange={e => setForm({ ...form, enabled: e.target.checked })} /> Tier enabled (available for new assignments and checkout)</label>
+      <label className="check full"><input type="checkbox" checked={form.aiCreditTopUp} onChange={e => setForm({ ...form, aiCreditTopUp: e.target.checked })} /> AI credit top-up packs purchasable</label>
+      <label className="check full"><input type="checkbox" checked={form.byoLlmEnabled} onChange={e => setForm({ ...form, byoLlmEnabled: e.target.checked })} /> Tenant's own LLM provider (BYO-LLM) allowed</label>
     </FormGrid>
     <ModalActions busy={busy} onClose={onClose} onSave={() => onSave({
       name: form.name || undefined,
@@ -219,8 +273,11 @@ function TierModal({ row, busy, onClose, onSave }: any) {
       limits: {
         maxActiveProjects: form.maxActiveProjects === "" ? null : Number(form.maxActiveProjects),
         maxSeats: form.maxSeats === "" ? null : Number(form.maxSeats),
+        viewerSeats: form.viewerSeats === "" ? null : Number(form.viewerSeats),
         maxManagedStorageBytes: storageBytes,
         monthlyAiDraftCredits: form.monthlyAiDraftCredits === "" ? null : Number(form.monthlyAiDraftCredits),
+        aiCreditTopUp: form.aiCreditTopUp,
+        byoLlmEnabled: form.byoLlmEnabled,
       },
     })} label="Save tier" />;
   </Modal>;
@@ -235,25 +292,78 @@ function TenantTierModal({ row, busy, onClose, onSave, onReset }: any) {
     maxSeats: row?.limits?.maxSeats == null ? "" : String(row.limits.maxSeats),
     maxManagedStorageGb: row?.limits?.maxManagedStorageBytes == null ? "" : String(Number(row.limits.maxManagedStorageBytes) / 1073741824),
     monthlyAiDraftCredits: row?.limits?.monthlyAiDraftCredits == null ? "" : String(row.limits.monthlyAiDraftCredits),
+    viewerSeats: row?.limits?.viewerSeats == null ? "" : String(row.limits.viewerSeats),
+    aiCreditTopUp: row?.limits?.aiCreditTopUp ?? false,
+    byoLlmEnabled: row?.limits?.byoLlmEnabled ?? false,
   });
   const storageBytes = limits.maxManagedStorageGb === "" ? null : String(Math.round(Number(limits.maxManagedStorageGb) * 1073741824));
   return <Modal title={`Manage tier — ${row?.name}`} subtitle={`Currently ${row?.planName ?? row?.planCode} via ${pretty(row?.source)}. Manual changes take effect immediately.`} onClose={onClose} wide>
     <FormGrid>
-      {select("Target tier", "planCode", tierPlanCodes, { planCode }, (x: any) => setPlanCode(x.planCode), false, { STARTER: "Starter — free", TEAM: "Team — $59/mo", GROWTH: "Growth — $149/mo", ENTERPRISE: "Enterprise — custom" })}
+      {select("Target tier", "planCode", tierPlanCodes, { planCode }, (x: any) => setPlanCode(x.planCode), false, { STARTER: "Starter — free", TEAM: "Team — $129/mo", GROWTH: "Growth — $299/mo", ENTERPRISE: "Enterprise — custom" })}
       {input("Reason (audit trail)", "reason", { reason }, (x: any) => setReason(x.reason))}
       <label className="check full"><input type="checkbox" checked={customLimits} onChange={e => setCustomLimits(e.target.checked)} /> Override feature allocation for this tenant (within the selected tier)</label>
       {customLimits && <>
         <label className="field"><span>Max active projects</span><input value={limits.maxActiveProjects} onChange={e => setLimits({ ...limits, maxActiveProjects: e.target.value })} placeholder="Blank = unlimited" /></label>
         <label className="field"><span>Max seats</span><input value={limits.maxSeats} onChange={e => setLimits({ ...limits, maxSeats: e.target.value })} placeholder="Blank = unlimited" /></label>
+        <label className="field"><span>Read-only viewer seats</span><input value={limits.viewerSeats} onChange={e => setLimits({ ...limits, viewerSeats: e.target.value })} placeholder="Blank = unlimited" /></label>
         <label className="field"><span>Managed storage (GB)</span><input value={limits.maxManagedStorageGb} onChange={e => setLimits({ ...limits, maxManagedStorageGb: e.target.value })} placeholder="Blank = unlimited" /></label>
         <label className="field"><span>AI report drafts / month</span><input value={limits.monthlyAiDraftCredits} onChange={e => setLimits({ ...limits, monthlyAiDraftCredits: e.target.value })} placeholder="Blank = unlimited" /></label>
+        <label className="check full"><input type="checkbox" checked={limits.aiCreditTopUp} onChange={e => setLimits({ ...limits, aiCreditTopUp: e.target.checked })} /> AI credit top-up packs purchasable</label>
+        <label className="check full"><input type="checkbox" checked={limits.byoLlmEnabled} onChange={e => setLimits({ ...limits, byoLlmEnabled: e.target.checked })} /> Tenant's own LLM provider (BYO-LLM) allowed</label>
       </>}
     </FormGrid>
     <footer className="modal-actions">
       <button onClick={onReset} disabled={busy}>Reset overrides</button>
       <button onClick={onClose}>Cancel</button>
-      <button className="primary" disabled={busy} onClick={() => onSave({ planCode, reason: reason || undefined, customLimits, limits: { maxActiveProjects: limits.maxActiveProjects === "" ? null : Number(limits.maxActiveProjects), maxSeats: limits.maxSeats === "" ? null : Number(limits.maxSeats), maxManagedStorageBytes: storageBytes, monthlyAiDraftCredits: limits.monthlyAiDraftCredits === "" ? null : Number(limits.monthlyAiDraftCredits) } })}>{busy ? "Saving…" : "Apply tier change"}</button>
+      <button className="primary" disabled={busy} onClick={() => onSave({ planCode, reason: reason || undefined, customLimits, limits: { maxActiveProjects: limits.maxActiveProjects === "" ? null : Number(limits.maxActiveProjects), maxSeats: limits.maxSeats === "" ? null : Number(limits.maxSeats), viewerSeats: limits.viewerSeats === "" ? null : Number(limits.viewerSeats), maxManagedStorageBytes: storageBytes, monthlyAiDraftCredits: limits.monthlyAiDraftCredits === "" ? null : Number(limits.monthlyAiDraftCredits), aiCreditTopUp: limits.aiCreditTopUp, byoLlmEnabled: limits.byoLlmEnabled } })}>{busy ? "Saving…" : "Apply tier change"}</button>
     </footer>
+  </Modal>;
+}
+
+/**
+ * Phase 22 WS-K item 2 (write half): comped/goodwill pack grants and manual
+ * refund override outside the Creem webhook path. Lists every pack for the
+ * tenant (any status) via GET /superadmin/billing/credit-packs/:tenantId.
+ */
+function CreditPacksModal({ row, busy, onClose, onComp, onRefund }: any) {
+  const [packs, setPacks] = useState<AnyRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [compCredits, setCompCredits] = useState("50");
+  const [compReason, setCompReason] = useState("");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await api(`billing/credit-packs/${row.tenantId}`);
+        if (!cancelled) setPacks(Array.isArray(result?.items) ? result.items : []);
+      } finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [row.tenantId]);
+  return <Modal title={`Credit packs — ${row.name}`} subtitle="One-off AI-draft credit top-ups. A comped pack has no Creem order behind it; a manual refund stops future draw-down but never claws back credits already consumed." onClose={onClose} wide>
+    <FormGrid>
+      <label className="field"><span>Comp credits</span><input value={compCredits} onChange={e => setCompCredits(e.target.value)} placeholder="e.g. 50" /></label>
+      <label className="field"><span>Reason (audit trail)</span><input value={compReason} onChange={e => setCompReason(e.target.value)} placeholder="Optional" /></label>
+    </FormGrid>
+    <div style={{ marginBottom: 16 }}>
+      <button className="primary" disabled={busy || !Number(compCredits)} onClick={() => onComp(Number(compCredits), compReason)}>{busy ? "Granting…" : "Grant comped pack"}</button>
+    </div>
+    {loading && <p className="help-note">Loading packs…</p>}
+    {!loading && packs.length === 0 && <Empty text="No credit packs for this tenant." />}
+    {!loading && packs.length > 0 && <table>
+      <thead><tr><th>Status</th><th>Kind</th><th>Credits</th><th>Used</th><th>Remaining</th><th>Source</th><th>Purchased</th><th /></tr></thead>
+      <tbody>{packs.map((p: AnyRow) => <tr key={p.id}>
+        <td><Badge ok={p.status === "ACTIVE"}>{pretty(p.status)}</Badge></td>
+        <td>{p.source === "GROWTH_STANDING_BALANCE" ? "Standing balance" : "Top-up"}</td>
+        <td>{p.credits}</td>
+        <td>{p.used}</td>
+        <td>{p.remaining}</td>
+        <td>{p.providerOrderId ? <code>{p.providerOrderId}</code> : "Comped"}</td>
+        <td>{date(p.purchasedAt)}</td>
+        <td>{p.status !== "REFUNDED" && <button className="danger-link" disabled={busy} onClick={() => onRefund(p.id)}>Refund</button>}</td>
+      </tr>)}</tbody>
+    </table>}
+    <footer className="modal-actions"><button onClick={onClose}>Close</button></footer>
   </Modal>;
 }
 

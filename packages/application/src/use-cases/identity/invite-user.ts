@@ -5,7 +5,7 @@ import type { IInvitationRepository, IUserRepository } from "../../ports/identit
 import type { IIdGenerator } from "../../ports/core.js";
 import type { IAuditLogger, INotificationPort } from "../../ports/core.js";
 import type { EntitlementService } from "../../services/entitlement-service.js";
-import { entitlementLimitError } from "../../services/entitlement-service.js";
+import { applyEntitlementLimit } from "../../services/entitlement-service.js";
 
 export interface InviteUserCommand {
   email: string;
@@ -32,20 +32,20 @@ export class InviteUserHandler {
       return { ok: false, error: DomainError.conflict("User already exists") };
     }
 
-    // Seat capacity: an invitation reserves a seat. A live, unexpired
-    // invitation for the same email is reused rather than consuming another.
+    // Seat capacity: an invitation reserves a seat. VIEWER invites draw from
+    // the separate `viewerSeats` pool and never consume a full `maxSeats` slot.
     const entitlementResult = await this.entitlements.resolve({ tenantId: tenantId.toString() });
     if (!entitlementResult.ok) return entitlementResult;
     const entitlement = entitlementResult.value;
-    const limit = entitlement.limits.maxSeats;
+    const isViewer = cmd.role === "VIEWER";
+    const limit = isViewer ? entitlement.limits.viewerSeats : entitlement.limits.maxSeats;
     if (limit !== null) {
       const usageResult = await this.entitlements.usageSnapshot({ tenantId: tenantId.toString() });
       if (!usageResult.ok) return usageResult;
-      if (usageResult.value.seats >= limit) {
-        return {
-          ok: false,
-          error: entitlementLimitError("SEATS", limit, usageResult.value.seats),
-        };
+      const used = isViewer ? usageResult.value.viewerSeats : usageResult.value.seats;
+      if (used >= limit) {
+        const enforced = await applyEntitlementLimit(this.audit, tenantId, ctx.tenant.userId, isViewer ? "VIEWERS" : "SEATS", limit, used);
+        if (!enforced.ok) return enforced;
       }
     }
 

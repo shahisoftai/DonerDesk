@@ -79,3 +79,61 @@ test("/pricing page matches PLAN_CATALOG (prices, AI credits, Enterprise floor)"
     `pricing/page.tsx Enterprise floor copy must match ENTERPRISE_PRICE_FLOOR_ANNUAL_USD (${ENTERPRISE_PRICE_FLOOR_ANNUAL_USD})`,
   );
 });
+
+test("/pricing Free-card and comparison credits match PLAN_CATALOG (STARTER drift guard)", () => {
+  // The audit-found bug: the Free card hard-coded "10 drafts" while the catalog
+  // (and the page's own comparison row) said 5 — the landing-page STARTER check
+  // above did not cover this file, so add explicit STARTER coverage here.
+  const source = readSource("src/app/pricing/page.tsx");
+  const starterCredits = PLAN_CATALOG.STARTER.monthlyAiDraftCredits;
+
+  assert.ok(
+    source.includes(`${starterCredits} successful AI report drafts every month`),
+    `pricing/page.tsx Free-card AI credit copy must match PLAN_CATALOG.STARTER.monthlyAiDraftCredits (${starterCredits})`,
+  );
+  assert.ok(
+    source.includes(`cells: ["${starterCredits}", "${PLAN_CATALOG.TEAM.monthlyAiDraftCredits}", "${PLAN_CATALOG.GROWTH.monthlyAiDraftCredits}", "Contracted pool"]`),
+    "pricing/page.tsx comparison-table credits row must match PLAN_CATALOG for all tiers",
+  );
+  assert.ok(
+    !source.includes("10 successful AI report drafts"),
+    "pricing/page.tsx must not carry a hard-coded draft count that diverges from PLAN_CATALOG",
+  );
+});
+
+test("landing page Enterprise floor and signup plan options match PLAN_CATALOG", () => {
+  const landing = readSource("src/app/page.tsx");
+  assert.ok(
+    landing.includes(`annual: "From ${usd(Math.floor(ENTERPRISE_PRICE_FLOOR_ANNUAL_USD / 1000))}k / year"`),
+    `page.tsx Enterprise floor line must track ENTERPRISE_PRICE_FLOOR_ANNUAL_USD (${ENTERPRISE_PRICE_FLOOR_ANNUAL_USD})`,
+  );
+  // §3 pins the NGO ladder as its own decided prices ($79/$179 — "40%" is the
+  // marketing rounding, not exact arithmetic: 129*0.6 = 77). Pin them here so
+  // any change to the decided NGO ladder is a conscious edit in both places.
+  assert.ok(
+    landing.includes("NGO price: $79/mo (verified 40% discount)"),
+    "page.tsx Team NGO price must stay in lockstep with the §3 decided NGO ladder ($79)",
+  );
+  assert.ok(
+    landing.includes("NGO price: $179/mo (verified 40% discount)"),
+    "page.tsx Growth NGO price must stay in lockstep with the §3 decided NGO ladder ($179)",
+  );
+  assert.ok(
+    landing.includes("2 read-only viewers"),
+    "page.tsx Starter viewer copy must match PLAN_CATALOG.STARTER.viewerSeats (2)",
+  );
+
+  const signup = readSource("src/app/signup/SignupForm.tsx");
+  assert.ok(
+    signup.includes(`${PLAN_CATALOG.STARTER.monthlyAiDraftCredits} AI drafts/month`),
+    "SignupForm STARTER credit copy must match PLAN_CATALOG.STARTER.monthlyAiDraftCredits",
+  );
+  assert.ok(
+    signup.includes(`${PLAN_CATALOG.TEAM.monthlyPriceUsd}/mo`) && signup.includes(`${PLAN_CATALOG.TEAM.monthlyAiDraftCredits} AI drafts/month`),
+    "SignupForm Team copy must match PLAN_CATALOG.TEAM price and credits",
+  );
+  assert.ok(
+    signup.includes(`${PLAN_CATALOG.GROWTH.monthlyPriceUsd}/mo`) && signup.includes(`${PLAN_CATALOG.GROWTH.monthlyAiDraftCredits} AI drafts/month`),
+    "SignupForm Growth copy must match PLAN_CATALOG.GROWTH price and credits",
+  );
+});

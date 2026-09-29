@@ -49,6 +49,11 @@ export async function registerSuperAdminRoutes(app: FastifyInstance) {
     secured.post("/superadmin/tenants/:id/tier/reset", req => service().resetTenantTier(actor(req), (req.params as { id: string }).id, meta(req)));
     secured.post("/superadmin/tenants/:id/credits", req => service().adjustCredits(actor(req), (req.params as { id: string }).id, CreditsAdjust.parse(req.body), meta(req)));
     secured.post("/superadmin/tenants/:id/credits/reset", req => service().resetCreditsCounter(actor(req), (req.params as { id: string }).id, meta(req)));
+    secured.post("/superadmin/tenants/:id/trial", req => service().grantTrial(actor(req), (req.params as { id: string }).id, z.object({ planCode: z.enum(["TEAM", "GROWTH"]), days: z.number().int().min(1).max(365).optional(), reason: z.string().max(200).optional() }).parse(req.body), meta(req)));
+    secured.post("/superadmin/tenants/:id/trial/extend", req => service().extendTrial(actor(req), (req.params as { id: string }).id, z.object({ days: z.number().int().min(1).max(365).optional() }).parse(req.body ?? {}), meta(req)));
+    secured.post("/superadmin/tenants/:id/trial/end", req => service().endTrial(actor(req), (req.params as { id: string }).id, meta(req)));
+    secured.post("/superadmin/trial-fingerprint/override", req => service().overrideTrialFingerprint(actor(req), z.object({ email: z.string().email() }).parse(req.body), meta(req)));
+    secured.post("/superadmin/tenants/:id/enterprise-contract", req => service().provisionEnterpriseContract(actor(req), (req.params as { id: string }).id, z.object({ annualPriceUsd: z.number().int().min(0), contractStart: z.string(), contractEnd: z.string(), limits: TierLimits.partial().nullable().optional(), reason: z.string().max(200).optional() }).parse(req.body), meta(req)));
     // Phase 22 WS-A.6: one-shot, idempotent migration granting TEAM/GROWTH
     // tenants already past the new (lower) AI-credit cap a time-bounded
     // GRANDFATHERED allowance at their old cap until next UTC month, so the
@@ -59,6 +64,64 @@ export async function registerSuperAdminRoutes(app: FastifyInstance) {
       if (!result.ok) throw result.error;
       await service().audit(actor(req), "billing.credits.grandfather_cutover_run", "Platform", "ALL", null, { grandfathered: result.value.length, tenants: result.value.map(o => o.tenantId) }, meta(req));
       return { grandfathered: result.value.length, outcomes: result.value };
+    });
+    // Phase 22 WS-E.3: run once before enabling the BYO-LLM entitlement gate
+    // for existing tenants with a working tenant-scoped LLM configuration.
+    // Idempotent — already-grandfathered tenants are skipped.
+    secured.post("/superadmin/billing/grandfather-byo-llm", async req => {
+      const result = await app.container.handlers.runGrandfatherByoLlm.handle();
+      if (!result.ok) throw result.error;
+      await service().audit(actor(req), "billing.byo_llm.grandfather_run", "Platform", "ALL", null, { grandfathered: result.value.length, tenants: result.value.map(o => o.tenantId) }, meta(req));
+      return { grandfathered: result.value.length, outcomes: result.value };
+    });
+    // Phase 22 WS-K item 6: cross-references tenant-scoped LLM configs
+    // against each tenant's resolved entitlement so the "AI & LLM" tab can
+    // show inline when a configured provider is being ignored because the
+    // tenant's plan doesn't grant byoLlmEnabled (WS-E's gate).
+    secured.get("/superadmin/billing/byo-llm-status", () => service().listByoLlmStatus());
+    // Phase 22 WS-K item 2 (write half): comped/goodwill packs and manual
+    // refund override outside the Creem webhook path. Domain support
+    // (PurchasedCreditPack.refund(), repository.update()) already existed.
+    secured.get("/superadmin/billing/credit-packs/:tenantId", async req => {
+      const result = await app.container.handlers.listCreditPacks.handle((req.params as { tenantId: string }).tenantId);
+      if (!result.ok) throw result.error;
+      return { items: result.value };
+    });
+    secured.post("/superadmin/billing/credit-packs/:tenantId/comp", async req => {
+      const tenantId = (req.params as { tenantId: string }).tenantId;
+      const body = z.object({ credits: z.number().int().min(1), source: z.enum(["TOPUP", "GROWTH_STANDING_BALANCE"]).optional(), reason: z.string().max(200).optional() }).parse(req.body);
+      const result = await app.container.handlers.compCreditPack.handle(actor(req).sub, { tenantId, ...body });
+      if (!result.ok) throw result.error;
+      await service().audit(actor(req), "billing.credits.pack_comped", "PurchasedCreditPack", result.value.id, null, { tenantId, credits: body.credits, source: body.source ?? "TOPUP", reason: body.reason ?? null }, meta(req));
+      return result.value;
+    });
+    secured.post("/superadmin/billing/credit-packs/:tenantId/:packId/refund", async req => {
+      const { tenantId, packId } = req.params as { tenantId: string; packId: string };
+      const body = z.object({ reason: z.string().max(200).optional() }).parse(req.body ?? {});
+      const result = await app.container.handlers.refundCreditPack.handle(actor(req).sub, { tenantId, packId, reason: body.reason });
+      if (!result.ok) throw result.error;
+      await service().audit(actor(req), "billing.credits.pack_refunded", "PurchasedCreditPack", packId, null, { tenantId, reason: body.reason ?? null }, meta(req));
+      return result.value;
+    });
+    secured.get("/superadmin/billing/nonprofit-verifications", async () => {
+      const result = await app.container.handlers.listPendingNonprofitVerifications.handle();
+      if (!result.ok) throw result.error;
+      return { items: result.value };
+    });
+    secured.post("/superadmin/billing/nonprofit-verifications/:id/approve", async req => {
+      const id = (req.params as { id: string }).id;
+      const result = await app.container.handlers.approveNonprofitVerification.handle(actor(req).sub, id);
+      if (!result.ok) throw result.error;
+      await service().audit(actor(req), "billing.nonprofit_verification.approved", "NonprofitVerification", id, null, {}, meta(req));
+      return { ok: true };
+    });
+    secured.post("/superadmin/billing/nonprofit-verifications/:id/reject", async req => {
+      const id = (req.params as { id: string }).id;
+      const body = z.object({ reason: z.string().min(1).max(500) }).parse(req.body);
+      const result = await app.container.handlers.rejectNonprofitVerification.handle(actor(req).sub, id, body.reason);
+      if (!result.ok) throw result.error;
+      await service().audit(actor(req), "billing.nonprofit_verification.rejected", "NonprofitVerification", id, null, { reason: body.reason }, meta(req));
+      return { ok: true };
     });
     secured.get("/superadmin/tenants", () => service().listTenants());
     secured.post("/superadmin/tenants", req => service().createTenant(actor(req), TenantCreate.parse(req.body), meta(req)));

@@ -1,6 +1,6 @@
 import { sectionDisplayTitle } from "@donordesk/domain";
 import type { Result } from "@donordesk/domain";
-import { DomainError, ReportDraft, ReportSection, ReportGenerationRun, isSynthesisSection } from "@donordesk/domain";
+import { DomainError, ReportDraft, ReportSection, ReportGenerationRun, TenantId, isSynthesisSection } from "@donordesk/domain";
 import type { ReportPlan, ReportPlanSection, ReportingPeriod, ReportingRequirement } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
@@ -25,13 +25,18 @@ import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IOrganizationRepository } from "../../ports/identity.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
-import type { ILlmUsageRepository, IUsageCounterRepository } from "../../ports/billing.js";
+import type { ILlmUsageRepository, IUsageCounterRepository, IPurchasedCreditPackRepository } from "../../ports/billing.js";
+import type { PurchasedCreditPack } from "@donordesk/domain";
 import type { EntitlementService } from "../../services/entitlement-service.js";
+import { resolveEntitlementEnforcementMode } from "../../services/entitlement-service.js";
 import { monthStartUtc, USAGE_METRIC_AI_CREDITS } from "../billing/_usage.js";
 import { ReportGenerationContextBuilder, type GenerationInputs } from "../../services/report-generation-context.js";
 import { SectionGenerationService } from "../../services/section-generation-service.js";
 import { fireAndForget, type BackgroundRunner } from "../../services/background-runner.js";
 import { PeriodTemplateResolver } from "../../services/period-template-resolver.js";
+
+/** Which pool an AI-credit reservation drew from (WS-D: plan quota, then packs oldest-first). */
+type CreditReservation = { source: "PLAN" } | { source: "PACK"; packId: string };
 
 /**
  * Orchestrates the full generation pipeline: plan -> deterministic analysis ->
@@ -68,6 +73,8 @@ export class GenerateReportDraftHandler {
     reportArtifacts?: IReportArtifactRepository,
     /** Runs the section-wise loop after the response (injectable so the api can await it). */
     private readonly runInBackground: BackgroundRunner = fireAndForget,
+    /** Active top-up packs draw down after the plan's monthly AI-credit quota. */
+    private readonly packs?: IPurchasedCreditPackRepository,
   ) {
     this.context = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, analytics, evidencePackages, getGenerator);
     this.sectionGeneration = new SectionGenerationService(ids, llmRuns, revisionService, assuranceService, audit, reportArtifacts);
@@ -139,7 +146,7 @@ export class GenerateReportDraftHandler {
     // when stub generation was metered) cannot lock tenants out. A failed
     // generation releases the reserved credit; a successful persisted draft
     // consumes it.
-    let creditReserved = false;
+    let creditReservation: CreditReservation | null = null;
     if (meterPlatformCredits) {
       const entitlementResult = await this.entitlements.resolve({ tenantId: ctx.tenant.tenantId.toString() });
       if (!entitlementResult.ok) return entitlementResult;
@@ -158,32 +165,41 @@ export class GenerateReportDraftHandler {
           const healed = await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStart, BigInt(realAiUsed) - counter.value.used);
           if (!healed.ok) return healed;
         }
-        if (realAiUsed >= limit) {
-          return {
-            ok: false,
-            error: DomainError.aiCreditsExhausted("AI draft credits exhausted for the current billing month.", {
-              resource: "AI_CREDITS",
-              limit: String(limit),
-              usage: String(realAiUsed),
-              upgradePath: "/settings/billing",
-            }),
-          };
+        // Plan quota first, then active top-up packs oldest-first (WS-D). Both
+        // paths return a CreditReservation that the release call-sites below
+        // undo symmetrically on any downstream failure.
+        const enforcementMode = resolveEntitlementEnforcementMode();
+        if (enforcementMode !== "off") {
+          const reservationResult = await this.reserveAiCreditOrPack(ctx.tenant.tenantId.toString(), limit, realAiUsed);
+          if (!reservationResult.ok) return reservationResult;
+          if (!reservationResult.value) {
+            if (enforcementMode === "report") {
+              // Would have blocked: record it and let the draft generate
+              // unmetered (no reservation to release later) so real demand
+              // against the new caps is visible before anyone is actually cut off.
+              await this.audit.record({
+                tenantId: ctx.tenant.tenantId,
+                actorId: ctx.tenant.userId,
+                eventType: "entitlement.limit_would_block",
+                entityType: "entitlement",
+                entityId: ctx.tenant.tenantId.toString(),
+                newValue: JSON.stringify({ resource: "AI_CREDITS", limit: String(limit), used: String(realAiUsed) }),
+              });
+            } else {
+              return {
+                ok: false,
+                error: DomainError.aiCreditsExhausted("AI draft credits exhausted for the current billing month.", {
+                  resource: "AI_CREDITS",
+                  limit: String(limit),
+                  usage: String(realAiUsed),
+                  upgradePath: "/settings/billing",
+                }),
+              };
+            }
+          } else {
+            creditReservation = reservationResult.value;
+          }
         }
-        const reserved = await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStart, 1n);
-        if (!reserved.ok) return reserved;
-        if (reserved.value.used > limit) {
-          await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStart, -1n);
-          return {
-            ok: false,
-            error: DomainError.aiCreditsExhausted("AI draft credits exhausted for the current billing month.", {
-              resource: "AI_CREDITS",
-              limit: String(limit),
-              usage: String(reserved.value.used),
-              upgradePath: "/settings/billing",
-            }),
-          };
-        }
-        creditReserved = true;
       }
     }
 
@@ -214,7 +230,7 @@ export class GenerateReportDraftHandler {
     });
     const savedDraft = await this.drafts.create(draft);
     if (!savedDraft.ok) {
-      if (creditReserved) await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+      await this.releaseCreditReservation(ctx.tenant.tenantId.toString(), creditReservation);
       return savedDraft;
     }
 
@@ -239,7 +255,7 @@ export class GenerateReportDraftHandler {
     });
     const savedRun = await this.generationRuns.create(run);
     if (!savedRun.ok) {
-      if (creditReserved) await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+      await this.releaseCreditReservation(ctx.tenant.tenantId.toString(), creditReservation);
       return savedRun;
     }
 
@@ -268,9 +284,7 @@ export class GenerateReportDraftHandler {
         });
         const savedSection = await this.sections.create(section);
         if (!savedSection.ok) {
-          if (creditReserved) {
-            await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
-          }
+          await this.releaseCreditReservation(ctx.tenant.tenantId.toString(), creditReservation);
           return savedSection;
         }
       }
@@ -294,9 +308,7 @@ export class GenerateReportDraftHandler {
         });
         const savedSection = await this.sections.create(section);
         if (!savedSection.ok) {
-          if (creditReserved) {
-            await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
-          }
+          await this.releaseCreditReservation(ctx.tenant.tenantId.toString(), creditReservation);
           return savedSection;
         }
       }
@@ -309,9 +321,7 @@ export class GenerateReportDraftHandler {
       ? await this.reportPlans.createNextVersion(plan)
       : await this.reportPlans.create(plan);
     if (!savedPlan.ok) {
-      if (creditReserved) {
-        await this.usage.add(ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
-      }
+      await this.releaseCreditReservation(ctx.tenant.tenantId.toString(), creditReservation);
       return savedPlan;
     }
 
@@ -333,7 +343,7 @@ export class GenerateReportDraftHandler {
         reportingProfileSnapshot,
         generator,
         chargeAiCredits,
-        creditReserved,
+        creditReservation,
       }).catch(async (error) => {
         await this.audit.record({
           tenantId: ctx.tenant.tenantId,
@@ -377,6 +387,66 @@ export class GenerateReportDraftHandler {
     };
   }
 
+  /**
+   * Reserves one AI credit: plan quota first (existing counter, race-checked
+   * post-increment), then active top-up packs oldest-first. Returns `null`
+   * when neither has room (caller surfaces AI_CREDITS_EXHAUSTED).
+   */
+  private async reserveAiCreditOrPack(tenantId: string, limit: number, realAiUsed: number): Promise<Result<CreditReservation | null, DomainError>> {
+    if (realAiUsed < limit) {
+      const monthStart = monthStartUtc(new Date());
+      const reserved = await this.usage.add(tenantId, USAGE_METRIC_AI_CREDITS, monthStart, 1n);
+      if (!reserved.ok) return reserved;
+      if (reserved.value.used <= limit) {
+        return { ok: true, value: { source: "PLAN" } };
+      }
+      // Lost a race for the last unit of plan quota: release and fall through to packs.
+      await this.usage.add(tenantId, USAGE_METRIC_AI_CREDITS, monthStart, -1n);
+    }
+    return this.reserveFromPacks(tenantId);
+  }
+
+  private async reserveFromPacks(tenantId: string): Promise<Result<CreditReservation | null, DomainError>> {
+    if (!this.packs) return { ok: true, value: null };
+    const activeResult = await this.packs.listActiveByTenant(tenantId);
+    if (!activeResult.ok) return activeResult;
+    for (const pack of activeResult.value) {
+      const wasBelow80 = pack.used / pack.credits < 0.8;
+      const reserved = await this.packs.reserve(pack.id, 1);
+      if (reserved.ok) {
+        // §4 WS-D item 5 "auto-reminder at 80%": no notification pipeline
+        // exists in this codebase (Phase 1 deviation is "console email" only,
+        // and this is a Growth-only balance, not a per-user email), so this
+        // is deliberately the minimal audit-based reminder called for in the
+        // plan rather than a newly invented delivery mechanism — fires once,
+        // the first draw-down that crosses the 80% mark for this pack.
+        if (pack.source === "GROWTH_STANDING_BALANCE" && wasBelow80 && reserved.value.used / reserved.value.credits >= 0.8) {
+          await this.audit.record({
+            tenantId: TenantId.create(tenantId),
+            actorId: "system",
+            eventType: "billing.credits.standing_balance_80pct",
+            entityType: "purchased_credit_pack",
+            entityId: pack.id,
+            newValue: JSON.stringify({ used: reserved.value.used, credits: reserved.value.credits }),
+          });
+        }
+        return { ok: true, value: { source: "PACK", packId: pack.id } };
+      }
+      if (reserved.error.code !== "CONFLICT") return reserved;
+      // CONFLICT: drawn down concurrently to exhaustion since listing; try the next oldest pack.
+    }
+    return { ok: true, value: null };
+  }
+
+  private async releaseCreditReservation(tenantId: string, reservation: CreditReservation | null): Promise<void> {
+    if (!reservation) return;
+    if (reservation.source === "PLAN") {
+      await this.usage.add(tenantId, USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+    } else if (this.packs) {
+      await this.packs.release(reservation.packId, 1);
+    }
+  }
+
   private async generateSectionsInBackground(input: {
     ctx: AuthenticatedContext;
     reportingPeriodId: string;
@@ -390,7 +460,7 @@ export class GenerateReportDraftHandler {
     reportingProfileSnapshot: ReportingProfileSnapshot;
     generator: IReportDraftGenerator;
     chargeAiCredits: boolean;
-    creditReserved: boolean;
+    creditReservation: CreditReservation | null;
   }): Promise<void> {
     const startedAt = Date.now();
     // Sections previously ran one at a time in this loop, so a ~9-section
@@ -455,8 +525,8 @@ export class GenerateReportDraftHandler {
     // not AI-generated: it must not be metered, must not be billed, and the
     // reserved credit must be released.
     const realAiGenerated = input.chargeAiCredits && !usedFallback && !generationFailed;
-    if (input.creditReserved && !realAiGenerated) {
-      await this.usage.add(input.ctx.tenant.tenantId.toString(), USAGE_METRIC_AI_CREDITS, monthStartUtc(new Date()), -1n);
+    if (!realAiGenerated) {
+      await this.releaseCreditReservation(input.ctx.tenant.tenantId.toString(), input.creditReservation);
     }
 
     if (input.chargeAiCredits) {

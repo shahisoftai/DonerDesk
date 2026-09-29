@@ -8,7 +8,7 @@ import type { IProjectWorkspaceProviderResolver } from "../../ports/infrastructu
 import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { CreateProjectInput } from "@donordesk/contracts";
 import type { EntitlementService } from "../../services/entitlement-service.js";
-import { entitlementLimitError } from "../../services/entitlement-service.js";
+import { applyEntitlementLimit } from "../../services/entitlement-service.js";
 
 export class CreateProjectHandler {
   constructor(
@@ -35,10 +35,15 @@ export class CreateProjectHandler {
       const usageResult = await this.entitlements.usageSnapshot({ tenantId: ctx.tenant.tenantId.toString() });
       if (!usageResult.ok) return usageResult;
       if (usageResult.value.activeProjects >= limit) {
-        return {
-          ok: false,
-          error: entitlementLimitError("PROJECTS", limit, usageResult.value.activeProjects),
-        };
+        const enforced = await applyEntitlementLimit(
+          this.audit,
+          ctx.tenant.tenantId,
+          ctx.tenant.userId,
+          "PROJECTS",
+          limit,
+          usageResult.value.activeProjects,
+        );
+        if (!enforced.ok) return enforced;
       }
     }
 

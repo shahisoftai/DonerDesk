@@ -28,6 +28,12 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "ReportSection", field: "templateSectionId" },
   { model: "Organization", field: "agentMemoryEnabled" },
   { model: "AgentMemory", field: "provenanceJson" },
+  { model: "Project", field: "archivedAt" },
+  { model: "Project", field: "isDemo" },
+  { model: "PurchasedCreditPack", field: "providerOrderId" },
+  { model: "PurchasedCreditPack", field: "source" },
+  { model: "Organization", field: "nonprofitVerifiedAt" },
+  { model: "NonprofitVerification", field: "status" },
 ] as const;
 
 type RuntimeDataModel = {

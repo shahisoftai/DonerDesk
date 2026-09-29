@@ -26,10 +26,20 @@ export interface BillingSummaryDto {
   };
   overLimit: string[];
   usage: {
-    projects: { used: number; limit: number | null };
-    seats: { used: number; limit: number | null };
+    projects: { active: number; archived: number; limit: number | null };
+    seats: {
+      full: { used: number; limit: number | null };
+      viewers: { used: number; limit: number | null };
+    };
     managedStorageBytes: { used: string; limit: string | null };
-    aiDraftCredits: { used: number; limit: number | null; resetsAt?: string };
+    aiDraftCredits: {
+      planAllowance: number | null;
+      packs: { active: number; credits: number; used: number };
+      standingBalance: { active: number; credits: number; used: number; maxActive: number };
+      used: number;
+      limit: number | null;
+      resetsAt?: string;
+    };
   };
 }
 

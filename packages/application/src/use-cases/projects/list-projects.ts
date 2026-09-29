@@ -44,6 +44,7 @@ export class ListProjectsHandler {
         endDate: p.duration.end.toISOString(),
         daysRemaining: p.daysRemaining(),
         workspaceRootId: p.workspaceRootId,
+        isDemo: p.isDemo,
       })),
     };
   }

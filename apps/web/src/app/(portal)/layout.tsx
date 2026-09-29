@@ -7,6 +7,7 @@ import { OrganizationSchema, NotificationsResponseSchema, LegalConsentSchema } f
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { AppShell } from "@/components/layout/AppShell";
 import { ToastProvider } from "@/components/feedback/Toast";
+import { TourOverlay } from "@/features/tour/presentation/TourOverlay";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       >
         {children}
       </AppShell>
+      <TourOverlay />
     </ToastProvider>
   );
 }

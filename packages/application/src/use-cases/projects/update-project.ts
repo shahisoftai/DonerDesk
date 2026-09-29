@@ -26,8 +26,9 @@ export class UpdateProjectHandler {
     const project = r.value;
     const before = JSON.stringify(project);
 
-    // Status transitions (lifecycle).
-    if (input.status) {
+    // Status transitions (lifecycle). Archive/restore are handled exclusively by
+    // ArchiveProjectHandler/RestoreProjectHandler (dedicated audit events + archivedAt).
+    if (input.status && input.status !== project.status) {
       switch (input.status) {
         case "ACTIVE":
           project.activate();
@@ -39,11 +40,13 @@ export class UpdateProjectHandler {
           project.complete();
           break;
         case "ARCHIVED":
-          project.archive();
-          break;
         case "DRAFT":
-          if (project.status === "ARCHIVED") project.restore();
-          break;
+          return {
+            ok: false,
+            error: DomainError.validation(
+              "Use POST /v1/projects/:id/archive or /restore to change archived status",
+            ),
+          };
       }
     }
 

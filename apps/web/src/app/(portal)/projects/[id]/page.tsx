@@ -8,6 +8,7 @@ import { ReadinessBreakdownList } from "@/features/projects/presentation/Readine
 import { PeriodSwitcher } from "@/features/projects/presentation/PeriodSwitcher";
 import { projectStatusTone, severityTone } from "@/lib/shared/tone";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
+import { DeleteDemoProjectButton } from "@/features/tour/presentation/DeleteDemoProjectButton";
 
 export const dynamic = "force-dynamic";
 
@@ -34,16 +35,23 @@ export default async function ProjectDetail({
   const hasPeriod = periods.length > 0;
 
   return (
-    <>
+    <div data-tour-id="demo-project-card">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-slate-600 dark:text-slate-400">
           {project.donorName} · {project.country} · {project.sector.replace(/_/g, " ")}
         </div>
         <div className="flex gap-2">
+          {project.isDemo ? <Badge tone="info">Demo</Badge> : null}
           <Badge tone={projectStatusTone(project.status)}>{project.status.replace(/_/g, " ")}</Badge>
           <Badge tone="neutral">{project.reportingFrequency.toLowerCase().replace("_", " ")}</Badge>
         </div>
       </div>
+
+      {project.isDemo ? (
+        <div className="mt-3">
+          <DeleteDemoProjectButton projectId={project.id} />
+        </div>
+      ) : null}
 
       {periods.length > 0 && (
         <section className="mt-4" aria-label="Reporting period">
@@ -121,7 +129,7 @@ export default async function ProjectDetail({
           </Link>
         </div>
       </section>
-    </>
+    </div>
   );
 }
 

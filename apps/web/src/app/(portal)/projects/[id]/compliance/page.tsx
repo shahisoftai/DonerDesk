@@ -7,6 +7,7 @@ import {
 } from "@/lib/server/schemas";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import { InlineError } from "@/components/feedback/PageState";
+import { HelpButton } from "@/features/tour/presentation/HelpButton";
 import { CompliancePanel } from "@/features/compliance/presentation/CompliancePanel";
 
 export const dynamic = "force-dynamic";
@@ -53,8 +54,11 @@ export default async function CompliancePage({
   ]);
 
   return (
-    <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold tracking-tight">Compliance</h1>
+    <div className="animate-fade-in" data-tour-id="compliance-checklist">
+      <div className="flex items-center gap-2">
+        <h1 className="text-xl font-semibold tracking-tight">Compliance</h1>
+        <HelpButton topic="compliance" />
+      </div>
       {!checklistResult.ok && <div className="mt-4"><InlineError title={checklistResult.error.message} /></div>}
       {!readinessResult.ok && <div className="mt-4"><InlineError title={readinessResult.error.message} /></div>}
       <CompliancePanel

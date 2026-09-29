@@ -11,6 +11,8 @@ import {
   UsageCounter,
   type PlanLimitsJson,
   type PlanCode,
+  PurchasedCreditPack,
+  NonprofitVerification,
 } from "@donordesk/domain";
 import type {
   IEntitlementGrantRepository,
@@ -20,6 +22,9 @@ import type {
   ITrialIdentityRepository,
   ILlmUsageRepository,
   IPlanCatalogRepository,
+  IPurchasedCreditPackRepository,
+  INonprofitVerificationRepository,
+  IPlatformLlmConfigRepository,
 } from "@donordesk/application";
 
 type DbClient = PrismaClient | Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0];
@@ -233,6 +238,21 @@ export class PrismaEntitlementGrantRepository implements IEntitlementGrantReposi
       where: { source: "TRIAL", effectiveUntil: { not: null, lte: now } },
     });
     return ok(rows.map((r) => this.toDomain(r)));
+  }
+
+  async endGrant(grantId: string, at: Date): Promise<Result<void, DomainError>> {
+    try {
+      // Conditional updateMany (not update) so a concurrent sync that already
+      // ended the window, or a grant whose window ended later than `at`, is
+      // never clobbered with an earlier end.
+      await this.prisma.entitlementGrant.updateMany({
+        where: { id: grantId, OR: [{ effectiveUntil: null }, { effectiveUntil: { gt: at } }] },
+        data: { effectiveUntil: at },
+      });
+      return { ok: true, value: undefined };
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
   }
 
   private toDomain(row: {
@@ -468,6 +488,226 @@ export class PrismaTrialIdentityRepository implements ITrialIdentityRepository {
     } catch (e) {
       return err(new DomainError("CONFLICT", String(e)));
     }
+  }
+}
+
+export class PrismaPurchasedCreditPackRepository implements IPurchasedCreditPackRepository {
+  constructor(private readonly prisma: DbClient) {}
+
+  async create(pack: PurchasedCreditPack): Promise<Result<PurchasedCreditPack, DomainError>> {
+    try {
+      await this.prisma.purchasedCreditPack.create({
+        data: {
+          id: pack.id,
+          tenantId: pack.tenantId,
+          credits: pack.credits,
+          used: pack.used,
+          status: pack.status,
+          source: pack.source,
+          providerOrderId: pack.providerOrderId,
+          purchasedAt: pack.purchasedAt,
+          expiresAt: pack.expiresAt,
+        },
+      });
+      return ok(pack);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  async findByProviderOrderId(providerOrderId: string): Promise<Result<PurchasedCreditPack | null, DomainError>> {
+    const row = await this.prisma.purchasedCreditPack.findUnique({ where: { providerOrderId } });
+    return ok(row ? this.toDomain(row) : null);
+  }
+
+  async listActiveByTenant(tenantId: string): Promise<Result<PurchasedCreditPack[], DomainError>> {
+    const rows = await this.prisma.purchasedCreditPack.findMany({
+      where: { tenantId, status: "ACTIVE" },
+      orderBy: { purchasedAt: "asc" },
+    });
+    return ok(rows.map((r) => this.toDomain(r)));
+  }
+
+  async listByTenant(tenantId: string): Promise<Result<PurchasedCreditPack[], DomainError>> {
+    const rows = await this.prisma.purchasedCreditPack.findMany({ where: { tenantId }, orderBy: { purchasedAt: "asc" } });
+    return ok(rows.map((r) => this.toDomain(r)));
+  }
+
+  async reserve(packId: string, amount: number): Promise<Result<PurchasedCreditPack, DomainError>> {
+    // Atomic, database-level guard: the row is only updated while the
+    // remaining balance covers `amount`, so two concurrent draw-downs can
+    // never overdraw a pack (Prisma's query builder can't express a
+    // column-vs-column comparison in a WHERE, hence the raw statement).
+    const affected = await this.prisma.$executeRaw`
+      UPDATE "PurchasedCreditPack"
+      SET "used" = "used" + ${amount},
+          "status" = CASE WHEN "used" + ${amount} >= "credits" THEN 'EXHAUSTED' ELSE "status" END,
+          "updatedAt" = now()
+      WHERE "id" = ${packId} AND "status" = 'ACTIVE' AND "used" + ${amount} <= "credits"
+    `;
+    if (affected === 0) {
+      return err(new DomainError("CONFLICT", "Pack does not have enough remaining credits"));
+    }
+    const row = await this.prisma.purchasedCreditPack.findUnique({ where: { id: packId } });
+    if (!row) return err(DomainError.notFound("PurchasedCreditPack", packId));
+    return ok(this.toDomain(row));
+  }
+
+  async release(packId: string, amount: number): Promise<Result<PurchasedCreditPack, DomainError>> {
+    // Atomic compensating release (mirror of reserve): a single conditional
+    // UPDATE, so a concurrent reserve between the read and the write of a
+    // read-modify-write implementation could never be lost, and the
+    // EXHAUSTED->ACTIVE flip can never race a concurrent reserve to EXHAUSTED.
+    // Only EXHAUSTED flips back (a REFUNDED/SUSPENDED pack keeps its status;
+    // draw-down never targets those, so their `used` is historical only).
+    await this.prisma.$executeRaw`
+      UPDATE "PurchasedCreditPack"
+      SET "used" = GREATEST(0, "used" - ${amount}),
+          "status" = CASE WHEN "status" = 'EXHAUSTED' AND GREATEST(0, "used" - ${amount}) < "credits" THEN 'ACTIVE' ELSE "status" END,
+          "updatedAt" = now()
+      WHERE "id" = ${packId}
+    `;
+    const row = await this.prisma.purchasedCreditPack.findUnique({ where: { id: packId } });
+    if (!row) return err(DomainError.notFound("PurchasedCreditPack", packId));
+    return ok(this.toDomain(row));
+  }
+
+  async update(pack: PurchasedCreditPack): Promise<Result<PurchasedCreditPack, DomainError>> {
+    try {
+      await this.prisma.purchasedCreditPack.update({
+        where: { id: pack.id },
+        data: { used: pack.used, status: pack.status, expiresAt: pack.expiresAt },
+      });
+      return ok(pack);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  private toDomain(row: {
+    id: string;
+    tenantId: string;
+    credits: number;
+    used: number;
+    status: string;
+    source: string;
+    providerOrderId: string | null;
+    purchasedAt: Date;
+    expiresAt: Date | null;
+    createdAt: Date;
+  }): PurchasedCreditPack {
+    return PurchasedCreditPack.rehydrate({
+      id: row.id,
+      createdAt: row.createdAt,
+      props: {
+        tenantId: row.tenantId,
+        credits: row.credits,
+        used: row.used,
+        status: row.status as PurchasedCreditPack["status"],
+        source: row.source as PurchasedCreditPack["source"],
+        providerOrderId: row.providerOrderId ?? undefined,
+        purchasedAt: row.purchasedAt,
+        expiresAt: row.expiresAt ?? undefined,
+      },
+    });
+  }
+}
+
+export class PrismaNonprofitVerificationRepository implements INonprofitVerificationRepository {
+  constructor(private readonly prisma: DbClient) {}
+
+  async create(v: NonprofitVerification): Promise<Result<NonprofitVerification, DomainError>> {
+    try {
+      await this.prisma.nonprofitVerification.create({
+        data: {
+          id: v.id,
+          tenantId: v.tenantId,
+          registrationNumber: v.registrationNumber,
+          documentUrl: v.documentUrl,
+          status: v.status,
+          submittedAt: v.submittedAt,
+        },
+      });
+      return ok(v);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  async update(v: NonprofitVerification): Promise<Result<NonprofitVerification, DomainError>> {
+    try {
+      await this.prisma.nonprofitVerification.update({
+        where: { id: v.id },
+        data: {
+          status: v.status,
+          reviewedById: v.reviewedById,
+          reviewedAt: v.reviewedAt,
+          rejectionReason: v.rejectionReason,
+        },
+      });
+      return ok(v);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  async findById(id: string): Promise<Result<NonprofitVerification | null, DomainError>> {
+    const row = await this.prisma.nonprofitVerification.findUnique({ where: { id } });
+    return ok(row ? this.toDomain(row) : null);
+  }
+
+  async findLatestByTenant(tenantId: string): Promise<Result<NonprofitVerification | null, DomainError>> {
+    const row = await this.prisma.nonprofitVerification.findFirst({ where: { tenantId }, orderBy: { submittedAt: "desc" } });
+    return ok(row ? this.toDomain(row) : null);
+  }
+
+  async listPending(limit = 100): Promise<Result<NonprofitVerification[], DomainError>> {
+    const rows = await this.prisma.nonprofitVerification.findMany({
+      where: { status: "PENDING" },
+      orderBy: { submittedAt: "asc" },
+      take: limit,
+    });
+    return ok(rows.map((r) => this.toDomain(r)));
+  }
+
+  private toDomain(row: {
+    id: string;
+    tenantId: string;
+    registrationNumber: string;
+    documentUrl: string;
+    status: string;
+    submittedAt: Date;
+    reviewedById: string | null;
+    reviewedAt: Date | null;
+    rejectionReason: string | null;
+    createdAt: Date;
+  }): NonprofitVerification {
+    return NonprofitVerification.rehydrate({
+      id: row.id,
+      createdAt: row.createdAt,
+      props: {
+        tenantId: row.tenantId,
+        registrationNumber: row.registrationNumber,
+        documentUrl: row.documentUrl,
+        status: row.status as NonprofitVerification["status"],
+        submittedAt: row.submittedAt,
+        reviewedById: row.reviewedById ?? undefined,
+        reviewedAt: row.reviewedAt ?? undefined,
+        rejectionReason: row.rejectionReason ?? undefined,
+      },
+    });
+  }
+}
+
+export class PrismaPlatformLlmConfigRepository implements IPlatformLlmConfigRepository {
+  constructor(private readonly prisma: DbClient) {}
+
+  async listEnabledTenantScopeIds(): Promise<Result<string[], DomainError>> {
+    const rows = await this.prisma.platformConfiguration.findMany({
+      where: { category: "LLM", enabled: true, scopeType: "TENANT", scopeId: { not: null } },
+      select: { scopeId: true },
+    });
+    return ok(rows.map((r) => r.scopeId).filter((id) => id !== null) as string[]);
   }
 }
 

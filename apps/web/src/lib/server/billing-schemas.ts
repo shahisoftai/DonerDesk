@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PlanLimitsJsonSchema } from "@donordesk/contracts";
+import { PlanLimitsJsonSchema, BillingSummaryUsageSchema } from "@donordesk/contracts";
 
 export const BillingSummarySchema = z.object({
   plan: z.enum(["STARTER", "TEAM", "GROWTH", "ENTERPRISE"]),
@@ -16,17 +16,8 @@ export const BillingSummarySchema = z.object({
     })
     .optional(),
   limits: PlanLimitsJsonSchema,
-  overLimit: z.array(z.enum(["PROJECTS", "SEATS", "STORAGE", "AI_CREDITS"])),
-  usage: z.object({
-    projects: z.object({ used: z.number().int(), limit: z.number().int().nullable() }),
-    seats: z.object({ used: z.number().int(), limit: z.number().int().nullable() }),
-    managedStorageBytes: z.object({ used: z.string(), limit: z.string().nullable() }),
-    aiDraftCredits: z.object({
-      used: z.number().int(),
-      limit: z.number().int().nullable(),
-      resetsAt: z.string().datetime().optional(),
-    }),
-  }),
+  overLimit: z.array(z.enum(["PROJECTS", "SEATS", "VIEWERS", "STORAGE", "AI_CREDITS"])),
+  usage: BillingSummaryUsageSchema,
 });
 export type BillingSummary = z.output<typeof BillingSummarySchema>;
 

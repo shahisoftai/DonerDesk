@@ -1,12 +1,24 @@
 import { createHash } from "node:crypto";
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
-import type { BillingProvider, ProviderBillingEvent } from "../../ports/billing.js";
+import { DomainError, MAX_ACTIVE_GROWTH_STANDING_BALANCE_PACKS, PurchasedCreditPack, TenantId } from "@donordesk/domain";
+import type { PurchasedCreditPackSource } from "@donordesk/domain";
+import type { BillingProvider, CreditPackSku, ProviderBillingEvent } from "../../ports/billing.js";
 import type {
   IBillingSubscriptionRepository,
   IBillingEventInboxRepository,
+  IPurchasedCreditPackRepository,
 } from "../../ports/billing.js";
+import type { IAuditLogger } from "../../ports/core.js";
 import { BillingSubscriptionSynchronizer } from "../../services/billing-subscription-synchronizer.js";
+
+const REFUND_EVENT_TYPES = new Set(["refund.created", "dispute.created"]);
+
+/** SKUs that create a Growth-only standing-balance pack rather than a regular top-up (§4 WS-D item 5). */
+const STANDING_BALANCE_SKUS = new Set<CreditPackSku>(["STANDING_BALANCE_100"]);
+
+function packSourceForSku(sku: CreditPackSku): PurchasedCreditPackSource {
+  return STANDING_BALANCE_SKUS.has(sku) ? "GROWTH_STANDING_BALANCE" : "TOPUP";
+}
 
 export interface ProcessBillingWebhookCommand {
   provider: string;
@@ -42,6 +54,8 @@ export class ProcessBillingWebhookHandler {
     private readonly subscriptions: IBillingSubscriptionRepository,
     private readonly inbox: IBillingEventInboxRepository,
     private readonly synchronizer: BillingSubscriptionSynchronizer,
+    private readonly packs?: IPurchasedCreditPackRepository,
+    private readonly audit?: IAuditLogger,
   ) {}
 
   async handle(cmd: ProcessBillingWebhookCommand): Promise<Result<ProcessBillingWebhookResult, DomainError>> {
@@ -57,9 +71,7 @@ export class ProcessBillingWebhookHandler {
       providerEventId: event.eventId,
       eventType: event.eventType,
       providerCreatedAt: event.providerCreatedAt,
-      tenantId: event.subscription
-        ? await this.resolveTenant(event)
-        : undefined,
+      tenantId: event.subscription || event.oneOffPurchase ? await this.resolveTenant(event) : undefined,
       payloadChecksum: checksum,
     });
     if (!inserted.ok) {
@@ -83,9 +95,16 @@ export class ProcessBillingWebhookHandler {
   }
 
   private async processEvent(event: ProviderBillingEvent): Promise<Result<void, DomainError>> {
+    if (event.oneOffPurchase) {
+      return this.processOneOffPurchase(event);
+    }
+    if (REFUND_EVENT_TYPES.has(event.eventType) && event.orderId) {
+      return this.processRefundOrDispute(event);
+    }
     if (!event.subscription) {
-      // Events without subscription context (e.g. checkout.completed mapping)
-      // are recorded but do not grant paid access by themselves.
+      // Events without subscription context and not recognized above (e.g. a
+      // subscription checkout.completed, which the subscription sync events
+      // already cover) are recorded but do not grant paid access by themselves.
       return { ok: true, value: undefined };
     }
 
@@ -106,6 +125,98 @@ export class ProcessBillingWebhookHandler {
 
     const synced = await this.synchronizer.sync(effective, event.eventType, tenantId);
     if (!synced.ok) return synced;
+    return { ok: true, value: undefined };
+  }
+
+  private async processOneOffPurchase(event: ProviderBillingEvent): Promise<Result<void, DomainError>> {
+    if (!this.packs) return { ok: true, value: undefined };
+    const tenantId = await this.resolveTenant(event);
+    if (!tenantId) {
+      return { ok: false, error: DomainError.billingStateInvalid("One-off purchase webhook is missing a trusted tenant reference.") };
+    }
+    if (!event.orderId) {
+      return { ok: false, error: DomainError.billingStateInvalid("One-off purchase webhook is missing a provider order id.") };
+    }
+    // Idempotent even if the inbox dedupe above is ever bypassed: a second
+    // checkout.completed for the same order id is a no-op, not a double grant.
+    const existing = await this.packs.findByProviderOrderId(event.orderId);
+    if (!existing.ok) return existing;
+    if (existing.value) return { ok: true, value: undefined };
+
+    const sku = event.oneOffPurchase!.sku;
+    const source = packSourceForSku(sku);
+
+    if (source === "GROWTH_STANDING_BALANCE") {
+      // Authoritative cap enforcement (§4 WS-D item 5): CreateTopupCheckoutHandler
+      // already pre-checks this at checkout time, but the checkout->webhook gap
+      // is asynchronous (and provider-side), so the pack is only ever actually
+      // minted here. Money was already captured by Creem by this point; a
+      // cap breach here is a rare race (e.g. two concurrent purchases) and is
+      // handled by not minting a 3rd pack rather than failing the webhook —
+      // reconciling an over-cap real-money purchase is a manual SuperAdmin
+      // follow-up (comped/refund tooling already exists), flagged here rather
+      // than silently dropped.
+      const activeResult = await this.packs.listActiveByTenant(tenantId);
+      if (!activeResult.ok) return activeResult;
+      const activeStandingBalance = activeResult.value.filter((p) => p.source === "GROWTH_STANDING_BALANCE").length;
+      if (activeStandingBalance >= MAX_ACTIVE_GROWTH_STANDING_BALANCE_PACKS) {
+        await this.audit?.record({
+          tenantId: TenantId.create(tenantId),
+          actorId: "system:creem-webhook",
+          eventType: "billing.credits.standing_balance_capped",
+          entityType: "purchased_credit_pack",
+          entityId: event.orderId,
+          newValue: JSON.stringify({ providerOrderId: event.orderId, activeStandingBalance, cap: MAX_ACTIVE_GROWTH_STANDING_BALANCE_PACKS }),
+        });
+        return { ok: true, value: undefined };
+      }
+    }
+
+    const pack = PurchasedCreditPack.create({
+      id: crypto.randomUUID(),
+      props: {
+        tenantId,
+        credits: event.oneOffPurchase!.credits,
+        source,
+        providerOrderId: event.orderId,
+        purchasedAt: event.providerCreatedAt ?? new Date(),
+      },
+    });
+    const created = await this.packs.create(pack);
+    if (!created.ok) return created;
+    await this.audit?.record({
+      tenantId: TenantId.create(tenantId),
+      actorId: "system:creem-webhook",
+      eventType: "billing.credit_pack.purchased",
+      entityType: "purchased_credit_pack",
+      entityId: pack.id,
+      newValue: JSON.stringify({ credits: pack.credits, providerOrderId: pack.providerOrderId, sku, source }),
+    });
+    return { ok: true, value: undefined };
+  }
+
+  private async processRefundOrDispute(event: ProviderBillingEvent): Promise<Result<void, DomainError>> {
+    if (!this.packs || !event.orderId) return { ok: true, value: undefined };
+    const found = await this.packs.findByProviderOrderId(event.orderId);
+    if (!found.ok) return found;
+    const pack = found.value;
+    if (!pack) {
+      // Not every refund/dispute references a credit-pack order (e.g. a
+      // subscription refund) — nothing to do here.
+      return { ok: true, value: undefined };
+    }
+    if (pack.status === "REFUNDED") return { ok: true, value: undefined };
+    pack.refund();
+    const updated = await this.packs.update(pack);
+    if (!updated.ok) return updated;
+    await this.audit?.record({
+      tenantId: TenantId.create(pack.tenantId),
+      actorId: "system:creem-webhook",
+      eventType: "billing.credit_pack.refunded",
+      entityType: "purchased_credit_pack",
+      entityId: pack.id,
+      newValue: JSON.stringify({ providerOrderId: pack.providerOrderId, eventType: event.eventType }),
+    });
     return { ok: true, value: undefined };
   }
 

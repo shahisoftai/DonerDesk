@@ -2,6 +2,35 @@
 
 Outstanding and in-progress items for DonorDesk. Last updated: 2026-09-28.
 
+## Deadline reminders / auto-report audit (added 2026-09-28)
+
+- [ ] **Verify the `deadline_reminders` Kestra flow actually exists and is
+  scheduled.** `KestraJobQueue` maps job `"reminder.deadline"` → Kestra flow
+  `deadline_reminders` (namespace `donor_desk.phase1`,
+  `packages/infrastructure/src/jobs/kestra-job-queue.ts:22`), and
+  `GenerateDeadlineRemindersHandler`
+  (`packages/application/src/use-cases/support/generate-deadline-reminders.ts:19-69`)
+  is wired to `POST /internal/reminders/deadline`
+  (`apps/api/src/routes/internal.ts:191-196`). But
+  `memorybank/imp/KESTRA-IMPLEMENTATION-PLAN.md` (lines 49/80/100/174) flags
+  that several scheduled jobs, including this one, have "no flows and no
+  handler entry points" — i.e. the daily-trigger `.yml` may be aspirational
+  even though the endpoint/handler side is implemented. Confirm a real
+  scheduled flow is deployed on Contabo; if not, deadline reminders never
+  fire in production regardless of the code being present.
+- [ ] **Deadline reminder notifications are console/log-only in production
+  unless Postmark is explicitly enabled.** `container.ts:620-637` defaults to
+  `LoggingNotificationAdapter`; real email requires
+  `EMAIL_PROVIDER=postmark` + `POSTMARK_SERVER_TOKEN`
+  (`packages/infrastructure/src/comms/postmark-notification-adapter.ts:17-38`).
+  This matches the existing "Email/notification delivery" pending item above
+  (in-app only, no delivery claims), but is called out again here
+  specifically for the deadline-reminder path: even if the Kestra flow is
+  fixed, no tenant will receive an actual email/Slack/Teams/WhatsApp message
+  about an approaching deadline unless Postmark is wired and enabled — the
+  other comms adapters (`slack.ts`, `teams.ts`, `whatsapp.ts`) exist but
+  aren't wired into `generate-deadline-reminders.ts` at all.
+
 > **Pending (Report Editor v2 — P7 rollout):** P0–P6 are code complete behind
 > `REPORT_EDITOR_V2` and deployed 2026-09-27 (`releaseId=20260927062322`,
 > see `CONTABO-DEPLOY.md`). Verified live on production against a real EERP

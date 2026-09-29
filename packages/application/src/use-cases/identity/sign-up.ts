@@ -21,6 +21,8 @@ export interface SignUpCommand {
   };
   /** Requested plan from signup (?plan=). Validated; invalid becomes STARTER. */
   requestedPlan?: string;
+  /** "Start 14-day trial" chosen instead of "Subscribe now" (TEAM/GROWTH only). */
+  startTrial?: boolean;
 }
 
 export class SignUpHandler {
@@ -34,7 +36,7 @@ export class SignUpHandler {
     private readonly provisioner: ProvisionTenantHandler,
   ) {}
 
-  async handle(cmd: SignUpCommand): Promise<Result<{ userId: string; tenantId: string; token: string; plan: string }, DomainError>> {
+  async handle(cmd: SignUpCommand): Promise<Result<{ userId: string; tenantId: string; token: string; plan: string; trialGranted: boolean }, DomainError>> {
     const passwordHash = await this.auth.hashPassword(cmd.password);
     const provisioned = await this.provisioner.handle({
       name: cmd.name,
@@ -42,6 +44,7 @@ export class SignUpHandler {
       passwordHash,
       verifiedEmail: cmd.email,
       requestedPlan: cmd.requestedPlan,
+      startTrial: cmd.startTrial,
       organization: {
         name: cmd.organization.name,
         organizationType: cmd.organization.organizationType,
@@ -69,7 +72,7 @@ export class SignUpHandler {
 
     return {
       ok: true,
-      value: { userId: value.userId, tenantId: value.tenantId, token, plan: value.plan },
+      value: { userId: value.userId, tenantId: value.tenantId, token, plan: value.plan, trialGranted: value.trialGranted },
     };
   }
 }

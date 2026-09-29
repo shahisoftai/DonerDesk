@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { SignUpSchema, LoginSchema, GoogleSignInSchema, ChangePasswordSchema, RequestPasswordResetSchema, ConfirmPasswordResetSchema, PasswordResetValidationResponseSchema, PasswordResetAcceptedResponseSchema } from "@donordesk/contracts";
+import { SignUpSchema, LoginSchema, GoogleSignInSchema, ChangePasswordSchema, RequestPasswordResetSchema, ConfirmPasswordResetSchema, PasswordResetValidationResponseSchema, PasswordResetAcceptedResponseSchema, AcceptInvitationSchema, AcceptInvitationResponseSchema, InvitationPreviewSchema } from "@donordesk/contracts";
 import { DomainError, PasswordResetToken } from "@donordesk/domain";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireResidencyMatch } from "../middleware/data-residency.js";
@@ -82,5 +82,29 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     });
     if (!result.ok) throw result.error;
     return reply.status(200).send({ confirmed: true });
+  });
+
+  // ---- Invitation acceptance (WS-C prerequisite) ----
+  // Public: the single-use, time-boxed token is the capability; the handler
+  // re-checks the destination seat pool at acceptance time and runs on the
+  // admin connection (no tenant session exists yet).
+
+  app.get("/v1/invitations/preview", async (req, reply) => {
+    const token = typeof (req.query as { token?: unknown }).token === "string" ? (req.query as { token: string }).token : "";
+    if (!token || token.length < 10) throw DomainError.validation("A valid invitation token is required");
+    const result = await app.container.handlers.acceptInvitation.preview(token);
+    if (!result.ok) throw result.error;
+    return reply.status(200).send(InvitationPreviewSchema.parse(result.value));
+  });
+
+  app.post("/v1/invitations/accept", async (req) => {
+    const body = AcceptInvitationSchema.parse(req.body);
+    const result = await app.container.handlers.acceptInvitation.handle({
+      token: body.token,
+      name: body.name,
+      password: body.password,
+    });
+    if (!result.ok) throw result.error;
+    return AcceptInvitationResponseSchema.parse({ token: result.value.token, userId: result.value.userId, tenantId: result.value.tenantId, role: result.value.role });
   });
 }

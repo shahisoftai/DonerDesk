@@ -16,6 +16,7 @@ import {
   mergePartialLimits,
   planCatalogOverrideToJson,
   isPlanCode,
+  ENTERPRISE_PRICE_FLOOR_ANNUAL_USD,
   type PlanLimitsJson,
   type PlanCode,
   type PlanCatalogOverride,
@@ -207,7 +208,15 @@ export class PlatformControlPlane {
     ]);
     return { tenants, users, configurations: configs, backups, connectors };
   }
-  listTenants() { return this.prisma.organization.findMany({ include: { _count: { select: { users: true, projects: true } } }, orderBy: { createdAt: "desc" } }); }
+  async listTenants() {
+    const [orgs, usage] = await Promise.all([
+      this.prisma.organization.findMany({ include: { _count: { select: { users: true, projects: true } } }, orderBy: { createdAt: "desc" } }),
+      this.usageByTenant(new Date()),
+    ]);
+    // Archived-project split per tenant (WS-B visibility): the Tenants tab
+    // shows `N projects (M archived)` without pulling the whole billing read.
+    return orgs.map((o) => ({ ...o, archivedProjects: usage.get(o.tenantId)?.archivedProjects ?? 0 }));
+  }
   listUsers() { return this.prisma.user.findMany({ select: { id: true, tenantId: true, email: true, name: true, role: true, status: true, lastLoginAt: true, createdAt: true }, orderBy: { createdAt: "desc" } }); }
 
   /**
@@ -227,8 +236,19 @@ export class PlatformControlPlane {
     const now = new Date();
     const subByTenant = new Map(subscriptions.map((s) => [s.tenantId, s]));
     const usage = await this.usageByTenant(now);
+    const packs = await this.query<{ tenantId: string; credits: bigint; used: bigint; count: bigint; suspended: bigint }>(
+      `SELECT "tenantId",
+              COALESCE(SUM("credits") FILTER (WHERE status='ACTIVE'),0) as credits,
+              COALESCE(SUM("used") FILTER (WHERE status='ACTIVE'),0) as used,
+              COUNT(*) FILTER (WHERE status='ACTIVE') as count,
+              COUNT(*) FILTER (WHERE status='SUSPENDED') as suspended
+       FROM "PurchasedCreditPack" WHERE status IN ('ACTIVE','SUSPENDED') GROUP BY "tenantId"`,
+    );
+    // SUSPENDED standing-balance packs stop drawing down but still hold paid
+    // credits — the portal must show them, not silently drop the balance.
+    const packsByTenant = new Map(packs.map((p) => [p.tenantId, { active: Number(p.count), credits: Number(p.credits), used: Number(p.used), suspended: Number(p.suspended) }]));
 
-    return organizations.map((org) => this.billingRow(org, grants, subByTenant, usage, overrides, now));
+    return organizations.map((org) => this.billingRow(org, grants, subByTenant, usage, overrides, now, packsByTenant.get(org.tenantId)));
   }
 
   /**
@@ -409,6 +429,140 @@ export class PlatformControlPlane {
   }
 
   /**
+   * Phase 22 WS-K.5: grant a local trial to a tenant outside the normal
+   * signup flow — bypasses the `TrialIdentity` fingerprint check entirely,
+   * since this is an explicit admin action, not a self-serve signup. Mirrors
+   * `ProvisionTenantHandler`'s trial grant shape (TRIAL source, time-bounded).
+   */
+  async grantTrial(actor: PlatformSession, tenantId: string, input: { planCode: PlanCode; days?: number; reason?: string }, meta?: { ip?: string; userAgent?: string }) {
+    const org = await this.prisma.organization.findFirst({ where: { tenantId } });
+    if (!org) throw new Error("Tenant not found");
+    if (input.planCode !== "TEAM" && input.planCode !== "GROWTH") throw new Error("Only Team and Growth are trial-eligible");
+    const days = input.days && input.days > 0 ? input.days : 14;
+    const now = new Date();
+    // Overlapping-grant guard: ending any already-effective TRIAL first keeps
+    // one active trial per tenant (repeated grants must replace, not stack —
+    // stacked TRIAL grants would silently extend access past the intended
+    // window). Appended history is preserved; nothing is deleted.
+    const existing = await this.currentTrialGrant(tenantId);
+    if (existing) {
+      await this.prisma.entitlementGrant.update({ where: { id: existing.id }, data: { effectiveUntil: now } });
+      await this.audit(actor, "tenant.trial_superseded", "Tenant", tenantId, { effectiveUntil: existing.effectiveUntil?.toISOString() ?? null }, { reason: "new-admin-grant" }, meta);
+    }
+    const effectiveUntil = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+    const id = randomUUID();
+    await this.prisma.entitlementGrant.create({
+      data: { id, tenantId, planCode: input.planCode, source: "TRIAL", effectiveFrom: now, effectiveUntil, reason: input.reason ? `superadmin-trial-grant:${input.reason}` : "superadmin-trial-grant", createdById: actor.sub },
+    });
+    await this.audit(actor, "tenant.trial_granted", "Tenant", tenantId, null, { planCode: input.planCode, effectiveUntil: effectiveUntil.toISOString() }, meta);
+    return { tenantId, planCode: input.planCode, effectiveUntil: effectiveUntil.toISOString() };
+  }
+
+  /** The tenant's currently-effective TRIAL grant, if any (open-ended or not yet expired). */
+  private async currentTrialGrant(tenantId: string) {
+    const now = new Date();
+    return this.prisma.entitlementGrant.findFirst({
+      where: { tenantId, source: "TRIAL", effectiveFrom: { lte: now }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gt: now } }] },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /** Extends the tenant's currently-active trial by `days` (default 14). */
+  async extendTrial(actor: PlatformSession, tenantId: string, input: { days?: number }, meta?: { ip?: string; userAgent?: string }) {
+    const trial = await this.currentTrialGrant(tenantId);
+    if (!trial) throw new Error("No active trial for this tenant");
+    const days = input.days && input.days > 0 ? input.days : 14;
+    const base = trial.effectiveUntil && trial.effectiveUntil.getTime() > Date.now() ? trial.effectiveUntil : new Date();
+    const effectiveUntil = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+    await this.prisma.entitlementGrant.update({ where: { id: trial.id }, data: { effectiveUntil } });
+    await this.audit(actor, "tenant.trial_extended", "Tenant", tenantId, { effectiveUntil: trial.effectiveUntil?.toISOString() ?? null }, { effectiveUntil: effectiveUntil.toISOString() }, meta);
+    return { tenantId, effectiveUntil: effectiveUntil.toISOString() };
+  }
+
+  /** Ends the tenant's currently-active trial immediately (falls back to STARTER/subscription per normal precedence). */
+  async endTrial(actor: PlatformSession, tenantId: string, meta?: { ip?: string; userAgent?: string }) {
+    const trial = await this.currentTrialGrant(tenantId);
+    if (!trial) throw new Error("No active trial for this tenant");
+    const now = new Date();
+    await this.prisma.entitlementGrant.update({ where: { id: trial.id }, data: { effectiveUntil: now } });
+    await this.audit(actor, "tenant.trial_ended", "Tenant", tenantId, { effectiveUntil: trial.effectiveUntil?.toISOString() ?? null }, { effectiveUntil: now.toISOString() }, meta);
+    return { tenantId, endedAt: now.toISOString() };
+  }
+
+  /**
+   * Removes a TrialIdentity fingerprint so that email can start another local
+   * trial. Hashing must match `emailFingerprint()` in
+   * `packages/application/src/use-cases/billing/_usage.ts` exactly (normalized
+   * lowercase email, sha256) so the same identity is matched on the next signup.
+   */
+  async overrideTrialFingerprint(actor: PlatformSession, input: { email: string }, meta?: { ip?: string; userAgent?: string }) {
+    const fingerprint = createHash("sha256").update(input.email.trim().toLowerCase()).digest("hex");
+    const deleted = await this.prisma.trialIdentity.deleteMany({ where: { emailFingerprint: fingerprint } });
+    await this.audit(actor, "tenant.trial_fingerprint_overridden", "TrialIdentity", fingerprint, null, { email: input.email, removed: deleted.count }, meta);
+    return { removed: deleted.count };
+  }
+
+  /**
+   * Phase 22 WS-K.7: provisions an Enterprise contract for a tenant — a
+   * distinct `ENTERPRISE_CONTRACT` grant (not the generic `MANUAL` tier
+   * change) with a floor-enforced annual price and explicit contract
+   * start/end dates. The renewal reminder is a manual runbook step in this
+   * phase (see the plan doc), not an automated job — `contractEndsAt` is
+   * recorded here so support/finance can query for contracts approaching
+   * renewal.
+   */
+  async provisionEnterpriseContract(
+    actor: PlatformSession,
+    tenantId: string,
+    input: { annualPriceUsd: number; contractStart: string; contractEnd: string; limits?: Partial<PlanLimitsJson> | null; reason?: string },
+    meta?: { ip?: string; userAgent?: string },
+  ) {
+    const org = await this.prisma.organization.findFirst({ where: { tenantId } });
+    if (!org) throw new Error("Tenant not found");
+    if (!Number.isFinite(input.annualPriceUsd) || input.annualPriceUsd < ENTERPRISE_PRICE_FLOOR_ANNUAL_USD) {
+      throw new Error(`Enterprise annual contracts must be at least $${ENTERPRISE_PRICE_FLOOR_ANNUAL_USD.toLocaleString()}`);
+    }
+    const contractStart = new Date(input.contractStart);
+    const contractEnd = new Date(input.contractEnd);
+    if (!(contractStart.getTime() < contractEnd.getTime())) throw new Error("Contract end must be after contract start");
+
+    const overrides = await this.catalogOverrides();
+    const targetLimits = planLimitsToJson(resolvePlanLimitsWithOverride("ENTERPRISE", overrides.get("ENTERPRISE")));
+    const merged = input.limits ? mergePartialLimits(input.limits, targetLimits) : targetLimits;
+    // Overlapping-grant guard: end any ENTERPRISE_CONTRACT grant whose window
+    // overlaps the new contract, so two "current" contracts can never both be
+    // effective (ties would resolve by newest createdAt, hiding the older
+    // contract instead of replacing it). History is preserved.
+    const overlapping = await this.prisma.entitlementGrant.findMany({
+      where: {
+        tenantId,
+        source: "ENTERPRISE_CONTRACT",
+        effectiveFrom: { lt: contractEnd },
+        OR: [{ effectiveUntil: null }, { effectiveUntil: { gt: contractStart } }],
+      },
+    });
+    for (const grant of overlapping) {
+      await this.prisma.entitlementGrant.update({ where: { id: grant.id }, data: { effectiveUntil: contractStart } });
+    }
+    const id = randomUUID();
+    await this.prisma.entitlementGrant.create({
+      data: {
+        id,
+        tenantId,
+        planCode: "ENTERPRISE",
+        source: "ENTERPRISE_CONTRACT",
+        effectiveFrom: contractStart,
+        effectiveUntil: contractEnd,
+        overrideLimitsJson: JSON.stringify(merged),
+        reason: input.reason ? `enterprise-contract:${input.annualPriceUsd}:${input.reason}` : `enterprise-contract:${input.annualPriceUsd}`,
+        createdById: actor.sub,
+      },
+    });
+    await this.audit(actor, "tenant.enterprise_contract_provisioned", "Tenant", tenantId, null, { annualPriceUsd: input.annualPriceUsd, contractStart: contractStart.toISOString(), contractEnd: contractEnd.toISOString() }, meta);
+    return { tenantId, annualPriceUsd: input.annualPriceUsd, contractStart: contractStart.toISOString(), contractEnd: contractEnd.toISOString() };
+  }
+
+  /**
    * Sets per-tenant feature allocation by writing a MANUAL grant with a full
    * PlanLimits override on the tenant's current effective plan. `limits` is a
    * PlanLimitsJson; `null` buckets mean unlimited for that tenant.
@@ -536,7 +690,13 @@ export class PlatformControlPlane {
     if (selected?.overrideLimitsJson) {
       try {
         const parsed = JSON.parse(selected.overrideLimitsJson) as PlanLimitsJson;
-        if (typeof parsed.monthlyAiDraftCredits === "number") return { ...base, planCode, source: selected.source, monthlyAiDraftCredits: parsed.monthlyAiDraftCredits };
+        // Lift EVERY bucket the tenant's stored override actually carries (not
+        // just the credit bucket): adjustCredits builds its new MANUAL grant
+        // from this object, and dropping buckets here would silently revert
+        // per-tenant viewerSeats/seats/projects/aiCreditTopUp/byoLlmEnabled
+        // overrides — including a WS-E BYO grandfather grant — back to the
+        // plan defaults on the next credit adjustment.
+        return { ...mergePartialLimits(parsed, base), planCode, source: selected.source };
       } catch { /* ignore malformed override */ }
     }
     return { ...base, planCode, source: selected?.source };
@@ -551,9 +711,10 @@ export class PlatformControlPlane {
     org: { id: string; tenantId: string; name: string; aiEnabled: boolean },
     grants: BillingGrantRow[],
     subByTenant: Map<string, BillingSubscriptionRow>,
-    usage: Map<string, { activeProjects: number; seats: number; managedStorageBytes: bigint; aiUsed: bigint; aiReserved: bigint }>,
+    usage: Map<string, { activeProjects: number; archivedProjects: number; seats: number; managedStorageBytes: bigint; aiUsed: bigint; aiReserved: bigint }>,
     overrides: Map<PlanCode, PlanCatalogOverride>,
     now: Date,
+    packs?: { active: number; credits: number; used: number; suspended?: number },
   ) {
     const selected = this.selectEffectiveGrant(grants.filter((g) => g.tenantId === org.tenantId), subByTenant, now);
 
@@ -568,7 +729,12 @@ export class PlatformControlPlane {
       }
     }
 
-    const limits = overrideLimits ?? planLimitsToJson(resolvePlanLimitsWithOverride(planCode, overrides.get(planCode)));
+    // Merge a stored override over the catalog base (unset keys keep the base
+    // value) instead of using it raw: a partial `overrideLimitsJson` must never
+    // surface `undefined` buckets (e.g. byoLlmEnabled undefined -> "not
+    // allowed" downstream) just because an older writer stored a partial object.
+    const catalogLimits = planLimitsToJson(resolvePlanLimitsWithOverride(planCode, overrides.get(planCode)));
+    const limits = overrideLimits ? mergePartialLimits(overrideLimits, catalogLimits) : catalogLimits;
     const counter = usage.get(org.tenantId);
     const subscription = subByTenant.get(org.tenantId);
 
@@ -580,16 +746,19 @@ export class PlatformControlPlane {
       planCode,
       source,
       planName: PLAN_CATALOG[planCode]?.name ?? planCode,
+      trialEndsAt: source === "TRIAL" ? selected?.effectiveUntil?.toISOString() ?? null : null,
       limits,
       monthlyAiDraftCredits: limits.monthlyAiDraftCredits,
       aiCreditsUsed: Number(counter?.aiUsed ?? 0n),
       aiCreditsReserved: Number(counter?.aiReserved ?? 0n),
       usage: {
         projects: counter?.activeProjects ?? 0,
+        archivedProjects: counter?.archivedProjects ?? 0,
         seats: counter?.seats ?? 0,
         managedStorageBytes: (counter?.managedStorageBytes ?? 0n).toString(),
         aiDraftCredits: Number(counter?.aiUsed ?? 0n),
       },
+      creditPacks: packs ?? { active: 0, credits: 0, used: 0, suspended: 0 },
       overrideApplied: Boolean(overrideLimits),
       subscription: subscription ? { status: subscription.status, planCode: subscription.planCode, interval: subscription.billingInterval, unitAmountMinor: subscription.unitAmountMinor, currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() ?? null } : null,
     };
@@ -630,26 +799,33 @@ export class PlatformControlPlane {
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
     const tenantFilter = tenantId ? { tenantId } : {};
-    const [projects, users, storageRows, aiRows] = await Promise.all([
+    const [projects, archivedProjects, users, storageRows, aiRows] = await Promise.all([
       this.prisma.project.groupBy({ by: ["tenantId"], where: { ...tenantFilter, status: { not: "ARCHIVED" } }, _count: { _all: true } }),
+      this.prisma.project.groupBy({ by: ["tenantId"], where: { ...tenantFilter, status: "ARCHIVED" }, _count: { _all: true } }),
       this.prisma.user.groupBy({ by: ["tenantId"], where: { ...tenantFilter, status: { in: ["ACTIVE", "INVITED", "SUSPENDED"] } }, _count: { _all: true } }),
       this.query<{ tenantId: string; used: bigint; reserved: bigint }>(`SELECT "tenantId","used","reserved" FROM "UsageCounter" WHERE metric='MANAGED_STORAGE_BYTES' AND "periodStart">=$1 AND "periodStart"<$2`, monthStart, monthEnd),
       this.query<{ tenantId: string; used: bigint; reserved: bigint }>(`SELECT "tenantId","used","reserved" FROM "UsageCounter" WHERE metric='AI_DRAFT_CREDITS' AND "periodStart">=$1 AND "periodStart"<$2`, monthStart, monthEnd),
     ]);
-    const map = new Map<string, { activeProjects: number; seats: number; managedStorageBytes: bigint; aiUsed: bigint; aiReserved: bigint }>();
-    for (const row of projects) map.set(row.tenantId, { activeProjects: row._count._all, seats: 0, managedStorageBytes: 0n, aiUsed: 0n, aiReserved: 0n });
+    const empty = () => ({ activeProjects: 0, archivedProjects: 0, seats: 0, managedStorageBytes: 0n, aiUsed: 0n, aiReserved: 0n });
+    const map = new Map<string, ReturnType<typeof empty>>();
+    for (const row of projects) map.set(row.tenantId, { ...empty(), activeProjects: row._count._all });
+    for (const row of archivedProjects) {
+      const entry = map.get(row.tenantId) ?? empty();
+      entry.archivedProjects = row._count._all;
+      map.set(row.tenantId, entry);
+    }
     for (const row of users) {
-      const entry = map.get(row.tenantId) ?? { activeProjects: 0, seats: 0, managedStorageBytes: 0n, aiUsed: 0n, aiReserved: 0n };
+      const entry = map.get(row.tenantId) ?? empty();
       entry.seats = row._count._all;
       map.set(row.tenantId, entry);
     }
     for (const row of storageRows) {
-      const entry = map.get(row.tenantId) ?? { activeProjects: 0, seats: 0, managedStorageBytes: 0n, aiUsed: 0n, aiReserved: 0n };
+      const entry = map.get(row.tenantId) ?? empty();
       entry.managedStorageBytes = row.used;
       map.set(row.tenantId, entry);
     }
     for (const row of aiRows) {
-      const entry = map.get(row.tenantId) ?? { activeProjects: 0, seats: 0, managedStorageBytes: 0n, aiUsed: 0n, aiReserved: 0n };
+      const entry = map.get(row.tenantId) ?? empty();
       entry.aiUsed = row.used;
       entry.aiReserved = row.reserved;
       map.set(row.tenantId, entry);
@@ -703,6 +879,43 @@ export class PlatformControlPlane {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Phase 22 WS-K.6: cross-references every tenant-scoped LLM
+   * `PlatformConfiguration` row against that tenant's *currently resolved*
+   * entitlement (`billingRow`, the same precedence-aware resolver the
+   * Billing/Tiers tabs already use) to answer "is this tenant's configured
+   * provider actually being used?" The gating itself lives in
+   * `container.ts`'s `getReportDraftGenerator` closure (WS-E) and already
+   * audits `billing.byo_llm.blocked_by_plan` every time it discards a
+   * tenant config for `byoLlmEnabled=false` — this method is the read-side
+   * the "AI & LLM" SuperAdmin tab was missing to show that inline instead of
+   * only in the Audit tab.
+   */
+  async listByoLlmStatus() {
+    const configs = await this.query<{ id: string; scopeId: string; provider: string; enabled: boolean; displayName: string }>(
+      `SELECT "id","scopeId","provider","enabled","displayName" FROM "PlatformConfiguration" WHERE "category"='LLM' AND "scopeType"='TENANT'`,
+    );
+    if (configs.length === 0) return [];
+    const billing = await this.listBilling();
+    const byTenant = new Map(billing.map((row) => [row.tenantId, row]));
+    return configs.map((config) => {
+      const row = byTenant.get(config.scopeId);
+      const byoLlmEnabled = Boolean(row?.limits?.byoLlmEnabled);
+      return {
+        configId: config.id,
+        tenantId: config.scopeId,
+        provider: config.provider,
+        displayName: config.displayName,
+        configEnabled: config.enabled,
+        byoLlmEnabled,
+        // Ignored: the tenant has a configured+enabled provider, but their
+        // resolved plan does not grant byoLlmEnabled, so `container.ts`
+        // discards it at draft time and falls back to the platform default.
+        ignoredByPlan: config.enabled && !byoLlmEnabled,
+      };
+    });
   }
 
   async createTenant(actor: PlatformSession, data: { name: string; tenantId: string; organizationType: string; country: string; sectors: string[]; contactName: string; contactEmail: string; website?: string; defaultLanguage: string; dataResidency: string; aiEnabled: boolean }, meta?: { ip?: string; userAgent?: string }) {

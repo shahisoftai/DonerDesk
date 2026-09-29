@@ -102,3 +102,56 @@ test("billing provider factory defaults to the stub", () => {
   const provider = createBillingProvider();
   assert.ok(provider instanceof StubBillingProvider);
 });
+
+test("stub provider parses one-off top-up purchases (orderId + SKU) for the pack mint flow", () => {
+  const provider = new StubBillingProvider("secret");
+  const { raw, signature } = signedWebhookBody("secret", {
+    top: { eventType: "checkout.completed" },
+    object: {
+      id: "order_topup_1",
+      product: { id: "stub-product-topup-50", currency: "USD" },
+      customer: { id: "cust_1" },
+      metadata: { tenant_id: "tenant-a", sku: "TOPUP_50" },
+    },
+  });
+  const parsed = provider.verifyAndParseWebhook(raw, signature);
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.value.orderId, "order_topup_1");
+  assert.deepEqual(parsed.value.oneOffPurchase, { sku: "TOPUP_50", credits: 50 });
+  assert.equal(parsed.value.subscription, undefined);
+});
+
+test("stub provider extracts the order id from refund/dispute events", () => {
+  const provider = new StubBillingProvider("secret");
+  const { raw, signature } = signedWebhookBody("secret", {
+    top: { eventType: "refund.created" },
+    object: {
+      id: "refund_1",
+      order_id: "order_topup_1",
+      amount: 7900,
+      reason: "requested_by_customer",
+      // A refund payload references an order, not a subscription/product.
+      product: {},
+    },
+  });
+  const parsed = provider.verifyAndParseWebhook(raw, signature);
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.value.eventType, "refund.created");
+  assert.equal(parsed.value.orderId, "order_topup_1");
+  assert.equal(parsed.value.subscription, undefined);
+});
+
+test("stub checkout URL records the nonprofit routing flag", async () => {
+  const provider = new StubBillingProvider("secret");
+  const standard = await provider.createCheckout({
+    tenantId: "tenant-a", requestId: "r1", plan: "TEAM", interval: "MONTH",
+    customerEmail: "org@example.com", successUrl: "https://app.example.com",
+  });
+  const discounted = await provider.createCheckout({
+    tenantId: "tenant-a", requestId: "r2", plan: "TEAM", interval: "MONTH",
+    customerEmail: "org@example.com", successUrl: "https://app.example.com", nonprofit: true,
+  });
+  assert.equal(standard.ok && discounted.ok, true);
+  assert.ok(!standard.value.url.includes("nonprofit=1"));
+  assert.ok(discounted.value.url.includes("nonprofit=1"));
+});

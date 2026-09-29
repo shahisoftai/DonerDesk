@@ -7,7 +7,7 @@ import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js"
 import type { CreateEvidenceInput } from "@donordesk/contracts";
 import type { IUsageCounterRepository } from "../../ports/billing.js";
 import type { EntitlementService } from "../../services/entitlement-service.js";
-import { entitlementLimitError } from "../../services/entitlement-service.js";
+import { applyEntitlementLimit } from "../../services/entitlement-service.js";
 import { monthStartUtc, USAGE_METRIC_STORAGE } from "../billing/_usage.js";
 
 export interface UploadEvidenceCommand extends Omit<CreateEvidenceInput, "storageProvider"> {
@@ -50,10 +50,15 @@ export class UploadEvidenceHandler {
         const counter = await this.usage.get(tenantId, USAGE_METRIC_STORAGE, monthStartUtc(now));
         if (!counter.ok) return counter;
         if (counter.value.totalCommitted() + managedBytes > limit) {
-          return {
-            ok: false,
-            error: entitlementLimitError("STORAGE", limit, counter.value.totalCommitted() + managedBytes),
-          };
+          const enforced = await applyEntitlementLimit(
+            this.audit,
+            ctx.tenant.tenantId,
+            ctx.tenant.userId,
+            "STORAGE",
+            limit,
+            counter.value.totalCommitted() + managedBytes,
+          );
+          if (!enforced.ok) return enforced;
         }
       }
       const reserved = await this.usage.add(tenantId, USAGE_METRIC_STORAGE, monthStartUtc(now), managedBytes);

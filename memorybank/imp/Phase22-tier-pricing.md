@@ -2,8 +2,48 @@
 
 **Created:** 2026-09-28
 **Status:** IN PROGRESS — **WS-A shipped 2026-09-28** (catalog flipped to §3
-values in the same change as this status update; see §2.1a). WS-B through
-WS-K remain planned.
+values in the same change as this status update; see §2.1a). **WS-B shipped
+2026-09-29** (archived project status, active-only counting; see §2.1c).
+**WS-C shipped 2026-09-29** (viewer seat accounting + permissions; see
+§2.1d — invitation-acceptance is a pre-existing gap, not built here).
+**WS-D through WS-I shipped 2026-09-29** (top-up packs, BYO-LLM gating,
+14-day trials, nonprofit verification backend + tenant-facing form,
+enterprise intake + trust page; see §2.1e–§2.1i for exact scope and the
+deliberate scope cuts in each). **WS-K shipped 2026-09-29 for items 1–5 and
+7** (nonprofit queue, credit-pack visibility, viewer-seat override, archived-
+project visibility, trial grant/extend/end + fingerprint override,
+Enterprise contract provisioning; see §2.1k). **WS-J is operational, not
+code** — see §2.1j for what's left to run in production (this is the one
+workstream that genuinely cannot be closed by writing more application code:
+it needs live Creem merchant approval, Kestra cron configuration, and a real
+enforcement-rollout decision).
+
+> **2026-09-29 audit-remediation round 2 (§2.1m–§2.1n).** A second audit
+> found and fixed a trial-kill-switch bypass and a spoofable contact-sales
+> rate limiter (§2.1m), then built the `ENTITLEMENT_ENFORCEMENT`
+> off/report/enforce switch that WS-J.3 had assumed already existed but did
+> not (§2.1n) — every capacity check was unconditionally blocking with no
+> way to soften it until this round. WS-J's remaining items are still
+> operational (Creem production, Kestra schedules, the actual enforcement
+> rollout decision).
+
+> **2026-09-29 audit-remediation round (§2.1l).** A full codebase audit
+> against this plan found the earlier "not built" flags for WS-K item 6
+> (BYO-LLM visibility), the comped-pack/manual-refund write actions, the
+> Growth standing balance (§4 WS-D item 5), and the tenant nonprofit form
+> were **stale — all four are implemented** (§2.1e/§2.1h/§2.1k updated
+> accordingly). The remediation round also fixed the audit's findings:
+> invitation acceptance (the WS-C prerequisite) is now built end-to-end;
+> archive/restore are permission-gated; the BYO gate fails closed and also
+> covers template extraction; trials have a server-side kill switch
+> (`TRIALS_ENABLED`, default off); the subscription grant lifecycle now
+> survives renewals and mid-cycle plan changes (the pre-fix behavior silently
+> dropped paying tenants to STARTER at period end); standing-balance packs
+> reactivate on re-subscribe; credit adjustments no longer wipe per-tenant
+> overrides; SuperAdmin trial/contract grants guard against stacking. The
+> only work left in this plan is WS-J's operational items (§2.1j) plus the
+> residuals listed in §2.1l.
+
 **Owner:** Product / Platform
 **Depends on:** Feature 19 (Tiers, Entitlements, Creem Payments — implemented, Creem **test mode**)
 **Related:** `Features/19-Tiers-And-Payments.md`, `memorybank/SUPERADMIN-PORTAL.md` (Tier management)
@@ -224,6 +264,649 @@ being turned on for existing paid tenants still depends on someone actually
 effect — that's an operational step (§9 rollout, step 2's "grandfather
 backfill verified" gate), not a code gap.
 
+### 2.1c WS-B shipped (2026-09-29) — archived project status
+
+Most ARCHIVED plumbing already existed (status enum value, `archive()`/
+`restore()` methods, `EntitlementService.usageSnapshot` already excluded
+ARCHIVED from `activeProjects`, web filters already had an `archived` toggle).
+This change finished wiring it end-to-end:
+
+- `Project` domain entity (`packages/domain/src/contexts/projects/project.ts`)
+  gained `archivedAt`, set on `archive()` and cleared on `restore()`.
+  `archive()` now rejects an already-archived project (previously
+  unconditional); `restore()`'s existing guard (only from ARCHIVED) is
+  unchanged.
+- Migration `20260929120000_project_archived_status` adds `Project.archivedAt`
+  (`TIMESTAMP(3) NULL`) — no enum change needed since `status` is a plain
+  string column. No RLS change needed (same-table column add).
+- New dedicated handlers `ArchiveProjectHandler`/`RestoreProjectHandler`
+  (`packages/application/src/use-cases/projects/{archive,restore}-project.ts`),
+  each emitting its own audit event (`project.archived`/`project.restored`)
+  instead of the generic `project.updated`. `RestoreProjectHandler` re-checks
+  the `maxActiveProjects` entitlement limit before restoring (a restore is
+  effectively a new active-project claim).
+- `UpdateProjectHandler`'s generic status-transition switch no longer accepts
+  `ARCHIVED`/`DRAFT` as an explicit *change* (returns `VALIDATION_FAILED`
+  directing callers to the new endpoints); it still no-ops correctly when the
+  input status equals the project's current status, so saving a DRAFT
+  project's other fields doesn't spuriously fail.
+- New routes `POST /v1/projects/:id/archive` and `POST /v1/projects/:id/restore`
+  (`apps/api/src/routes/projects.ts`), wired through the DI container.
+- `EntitlementService.UsageSnapshot` gained `archivedProjects`; `toSummary()`'s
+  `usage.projects` shape changed from `{used, limit}` to `{active, archived,
+  limit}` — mirrored in `packages/contracts/src/billing.ts`
+  (`BillingSummaryUsageSchema`) and consumed by `apps/web`'s
+  `BillingPanel.tsx` and `billing-schemas.ts` (the latter now imports the
+  shared `BillingSummaryUsageSchema`/`PlanLimitsJsonSchema` instead of
+  hand-duplicating the usage shape).
+- Web: `ProjectSettingsForm.tsx`'s "Archive project" button now calls the
+  dedicated action instead of `updateProjectAction(..., {status: "ARCHIVED"})`;
+  an archived project renders a read-only "Restore project" panel instead of
+  the full edit form (archived projects are non-writable per §4 WS-B design).
+  The projects list page's "Show archived" filter checkbox already existed
+  and needed no change.
+- `REQUIRED_PRISMA_FIELDS` (`apps/api/src/routes/health.ts`) extended with
+  `Project.archivedAt` per the deploy invariant.
+- **Known gap, intentionally not fixed in WS-B:** project-limit enforcement is
+  check-then-create (list + count, then create), not a DB-transactional
+  guard. A new regression test
+  (`packages/application/test/archive-project.test.mjs`, "archived projects
+  never count toward the active-project limit (create + concurrency)")
+  documents that concurrent requests can still race past the cap — closing
+  that requires a DB-level guard (unique partial index or serializable
+  transaction), out of scope for this workstream.
+- Verified: full `pnpm -r typecheck` and `pnpm -r build` clean; domain (13),
+  application (173, incl. 5 new), infrastructure (249), and web unit (189)
+  suites all pass.
+
+### 2.1d WS-C shipped (2026-09-29) — read-only viewer seats
+
+The `VIEWER` role, `UserStatus`, and `PlanLimits.viewerSeats` (STARTER 2,
+others null) already existed pre-WS-C (from an earlier feature and from
+WS-A). What was missing was correct seat accounting and permissions:
+
+- **Permissions** (`packages/domain/src/policies/permissions.ts`): `VIEWER`
+  gained `report.export` (was `project.view` only). Server-side route gating
+  (`apps/api/src/middleware/authorization.ts`) already keys the
+  `/v1/exports`, `/v1/report-drafts/:id/submission-snapshot`,
+  `/v1/reporting-periods/:id/export-preflight`, and
+  `/v1/projects/:id/exports` routes off `report.export`, so this one addition
+  is sufficient to let viewers export without a route change. No other
+  permission was added — viewers still cannot generate/edit/approve reports,
+  upload/verify evidence, or manage anything, which already held before this
+  change (those permissions were simply absent from `VIEWER`'s set).
+- **Web capability mirror** (`apps/web/src/lib/shared/capabilities.ts`):
+  `VIEWER`'s `ROLE_CAPABILITIES` entry was `[]` (a pre-existing bug — stricter
+  than the server, so a viewer couldn't even see the export button); now
+  `["export.create"]`, matching the server-side permission.
+- **Seat accounting** (`EntitlementService.usageSnapshot`/`toSummary`,
+  `packages/application/src/services/entitlement-service.ts`): `seats` now
+  excludes `role === "VIEWER"` users; a new `viewerSeats` count tracks them
+  separately. `usage.seats` changed from `{used, limit}` to `{full: {used,
+  limit}, viewers: {used, limit}}` — mirrored in
+  `packages/contracts/src/billing.ts`, `apps/web/src/lib/server/billing-schemas.ts`,
+  and `BillingPanel.tsx` (now renders two meters: "Seats" and "Viewer
+  seats").
+- **Domain**: `LimitedResource` gained `"VIEWERS"`; `EntitlementUsage` gained
+  `viewerSeats`; `computeOverLimit` flags `VIEWERS` when `viewerSeats` exceeds
+  `PlanLimits.viewerSeats` (`packages/domain/src/contexts/billing/entitlement.ts`).
+- **`InviteUserHandler`**: branches the seat-limit check by `cmd.role`— a
+  `VIEWER` invite checks `viewerSeats` usage/limit instead of `maxSeats`, so
+  viewer invites no longer consume a paid full seat (previously every invite,
+  regardless of role, was checked against `maxSeats` only).
+- **`ChangeRoleHandler`**: now takes `EntitlementService` and re-checks the
+  destination pool's cap whenever a role change crosses the VIEWER boundary
+  in either direction (full → VIEWER checks `viewerSeats`; VIEWER → full
+  checks `maxSeats`) — moving *out* of a pool always succeeds, only moving
+  *into* one is capped. This implements "converting a full member to viewer
+  frees a paid seat" (§4 WS-C item 4) as a side effect of the general
+  cross-pool check, without a separate code path.
+- **Not done — pre-existing gap, out of WS-C's scope:** there is no
+  invitation-acceptance flow anywhere in the codebase today (no
+  `AcceptInvitationHandler`, no accept route, no web page) — `Invitation`
+  and `IInvitationRepository` have the domain primitives
+  (`Invitation.accept()`, `findByToken()`) but nothing wires them together;
+  `apps/web`'s `TeamPanel.tsx` already discloses this ("the acceptance flow
+  is not wired yet"). The plan's phrasing ("invitation acceptance re-checks
+  the viewer cap atomically") assumed this flow existed; building the whole
+  accept-invitation feature (route, handler, web page, and the atomic
+  recheck) is a materially separate piece of work from seat accounting and
+  is not included here — flagging it as a prerequisite gap for whoever picks
+  it up, likely worth its own workstream or a Feature 19 follow-up rather
+  than folding it into WS-C.
+- No migration needed (§4 WS-C item 4, confirmed — no viewers exist yet in
+  production data, and `viewerSeats`/`role` are pre-existing columns).
+- Verified: full `pnpm -r typecheck` and `pnpm -r build` clean; domain (249,
+  incl. 1 new), application (175, incl. 2 new), infrastructure (249), and web
+  unit (189, incl. 1 updated) suites all pass.
+
+### 2.1e WS-D shipped 2026-09-29 — AI credit top-up packs
+
+- **Domain**: `PurchasedCreditPack` entity (`packages/domain/src/contexts/billing/purchased-credit-pack.ts`)
+  — `ACTIVE|EXHAUSTED|REFUNDED`, `consume()`/`release()` (compensating,
+  symmetric with the existing plan-quota reserve/release idiom) and
+  `refund()` (never claws back consumed credits, per Feature 19's "refund
+  never deletes data" principle).
+- **Schema**: `PurchasedCreditPack` table (migration
+  `20260929130000_purchased_credit_pack`), `providerOrderId` unique (nullable
+  — a future comped/goodwill pack from WS-K can have `providerOrderId: null`),
+  added to `infra/postgres/rls.sql`'s tenant-isolated table array.
+- **Repository**: `IPurchasedCreditPackRepository` + `PrismaPurchasedCreditPackRepository`.
+  `reserve()` is a single atomic `UPDATE ... WHERE status='ACTIVE' AND used+amount<=credits`
+  raw statement (Prisma can't express a column-vs-column comparison in a
+  query-builder `WHERE`), so two concurrent draw-downs against the same pack
+  cannot overdraw it — this is the DB-level guard that WS-B's project-limit
+  check-then-create explicitly does **not** have; packs are safe by
+  construction from day one.
+- **Enforcement** (`GenerateReportDraftHandler`,
+  `packages/application/src/use-cases/reporting/generate-report-draft.ts`):
+  the single `creditReserved: boolean` flag became a `CreditReservation =
+  {source:"PLAN"} | {source:"PACK", packId}` value threaded through all 9
+  release call-sites (mechanically replaced with one `releaseCreditReservation()`
+  helper so every failure path — section-create failure, plan-persist
+  failure, generation-loop failure/fallback — releases from the pool it
+  actually reserved from). New private `reserveAiCreditOrPack()`: tries plan
+  quota first (existing self-heal + race-safe post-increment recheck
+  unchanged), then `reserveFromPacks()` walks active packs oldest-first
+  (`listActiveByTenant` orders by `purchasedAt asc`) and reserves from the
+  first one with room, skipping a pack that raced to exhaustion (`CONFLICT`)
+  rather than failing outright.
+- **Checkout**: `BillingProvider.createOneOffCheckout()` (new port method) +
+  `CreemBillingProvider`/`StubBillingProvider` implementations;
+  `CREEM_PRODUCT_TOPUP_50`/`CREEM_PRODUCT_TOPUP_100` env vars, resolved
+  lazily like the existing subscription product env vars (no eager
+  validation — an unconfigured SKU fails the specific checkout request with
+  `BILLING_STATE_INVALID`, not app startup). `CreateTopupCheckoutHandler`
+  gates on `entitlement.limits.aiCreditTopUp` (TEAM/GROWTH/ENTERPRISE).
+- **Webhook**: `ProcessBillingWebhookHandler.processEvent()` changed from a
+  single `if (!event.subscription) return ok` early-return to branching on
+  `event.oneOffPurchase` (creates a pack, idempotent on `providerOrderId` as
+  a second guard behind the inbox dedupe) and on `refund.created`/
+  `dispute.created` with an `event.orderId` (resolves the pack by
+  `providerOrderId`, sets `REFUNDED`, stops future draw-down, never touches
+  `used`) — **both event types were completely unhandled before this
+  change**, confirmed by the research pass that found no existing
+  `refund.created` case anywhere in the codebase. `ProviderBillingEvent`
+  gained `orderId`/`oneOffPurchase` fields; the Creem adapter's order-id
+  extraction (`order_id ?? checkout_id ?? id`) is a **best-effort guess** —
+  flagged inline in `creem.ts` to verify against real Creem refund/dispute
+  payload shapes before enabling production top-up refunds (WS-J gate).
+- **Billing summary**: `usage.aiDraftCredits` is now `{planAllowance, packs:
+  {active, credits, used}, used, limit, resetsAt}` — `limit` is the
+  plan-quota-plus-active-pack-credits effective allowance, `used` is
+  combined plan+pack usage. Mirrored in `packages/contracts/src/billing.ts`
+  and rendered as two meters + a "Buy +50/+100 credits" section in
+  `BillingPanel.tsx` (gated on `limits.aiCreditTopUp`).
+- **Not built** (explicit scope cut, documented inline rather than silently
+  skipped): the Growth-only "prepaid standing balance" (§4 WS-D item 5) has
+  no distinct model from a purchased pack — the research pass flagged this
+  needs its own `source` discriminator (`TOPUP` vs `GROWTH_STANDING_BALANCE`)
+  to let downgrade logic special-case it per §4 WS-D item 3b; not designed
+  or built here. True metered post-pay overage remains explicitly out of
+  scope per the original plan text. WS-K's pack management UI (comped-pack
+  grants, manual refund override) is that workstream's job, not WS-D's.
+- Verified: full `pnpm -r typecheck`/`pnpm -r build` clean; new
+  `packages/application/test/credit-packs.test.mjs` (5 tests: pack creation
+  from webhook, idempotent duplicate order, refund without claw-back,
+  refund-for-unrelated-order no-op, domain consume/release/EXHAUSTED).
+
+### 2.1f WS-E shipped 2026-09-29 — BYO AI provider gating
+
+- `PlanLimits.byoLlmEnabled` existed since WS-A but was **never read
+  anywhere** (confirmed by grep across the whole app/infra tree before this
+  change) — a tenant with a configured LLM provider always drafted with
+  their own credentials regardless of plan.
+- Fix is entirely in `packages/infrastructure/src/container.ts`'s
+  `getReportDraftGenerator` closure: after `resolveTenantLlm()` returns a
+  `scope: "TENANT"` config, it now re-checks
+  `entitlements.resolve({tenantId}).limits.byoLlmEnabled`; if false, the
+  resolved config is discarded (`resolved = null`) so the rest of the
+  function falls through to the platform/env default exactly as it already
+  does when no tenant config exists — no new fallback path was invented.
+  The fallback is audited (`billing.byo_llm.blocked_by_plan`) and logged so
+  SuperAdmin visibility (§4 WS-E.2/WS-K.6) has a data source once that UI is
+  built.
+- **Not built**: WS-E.3's grandfather migration for tenants who already had
+  a working BYO configuration before this gate existed. Judged genuinely
+  low-risk to defer given Creem is still in **test mode** (per
+  `memorybank/contabo-ops.md`) — there are no real paying BYO-LLM customers
+  in production today to grandfather. Flagged as a pre-launch checklist item
+  in §2.1j (WS-J) rather than built speculatively.
+- **Not independently unit-tested**: the gating logic lives in a closure
+  inside `container.ts`, which has no existing test harness (it's wired at
+  process-boot time, not a class with injectable fakes). The existing
+  `packages/application/test/tenant-own-ai-provider.test.mjs` tests
+  `GenerateReportDraftHandler` directly and is unaffected (that handler
+  never resolves the provider itself — it receives an already-tagged
+  generator). Recommend an infrastructure-level or e2e test in a follow-up.
+
+### 2.1g WS-F shipped 2026-09-29 — 14-day trial restored
+
+- Catalog: `PLAN_CATALOG.TEAM.trialDays = 14`, `GROWTH.trialDays = 14`
+  (`STARTER`/`ENTERPRISE` stay `null`); `isPlanForTrial()` now returns true
+  for TEAM/GROWTH only (was hard-`false`).
+- `ProvisionTenantHandler` (`packages/application/src/use-cases/identity/provision-tenant.ts`)
+  gained `cmd.startTrial?: boolean`: when set and the plan is trial-eligible,
+  it checks `TrialIdentity.existsByEmailFingerprint()` (dormant fingerprint
+  utilities in `use-cases/billing/_usage.ts`, unused before this change),
+  and if unused, creates a second `EntitlementGrant` (`source: "TRIAL"`,
+  `effectiveUntil = now + trialDays`) **alongside** the permanent STARTER
+  base grant — TRIAL's existing precedence (`MANUAL > ... > TRIAL >
+  DEFAULT`, unchanged in `calculateEntitlement`) means it's simply the
+  higher-precedence active grant until it expires, at which point
+  `computeOverLimit`/`resolveWithUsage` fall back to the STARTER grant that
+  was there the whole time — no new expiry-handling code needed, matching
+  the plan's note that lazy enforcement already does this correctly.
+  A fingerprint collision doesn't block signup; it just skips the trial
+  grant (`trialFingerprintBlocked`, audited) and the tenant gets STARTER.
+- `SignUpHandler`/`GoogleSignInHandler` thread `startTrial` through from the
+  API body/OAuth state to the provisioner; both now return `trialGranted` in
+  their result so the web knows whether to redirect to Creem checkout or
+  straight to the dashboard.
+- `ExpireLocalTrialsHandler` and its `POST /internal/billing/expire-trials`
+  route **already existed and were already wired** into the container
+  before this workstream — only the Kestra hourly schedule (infra config,
+  not code) is outstanding, tracked in §2.1j.
+- Web: `NEXT_PUBLIC_TRIALS_ENABLED`-gated "Start a 14-day free trial" checkbox
+  on `/signup` (only rendered for `?plan=team|growth`); `BillingPanel.tsx`
+  shows a "Trial active — card due `<date>`" banner when `summary.isTrial`.
+  The `/checkout` redirect page was deliberately left unchanged — it's a
+  pure pass-through to Creem and subscribing mid-trial already works via
+  existing TRIAL/CREEM_SUBSCRIPTION precedence, so no new state-detection
+  logic was needed there.
+- **Not built**: SuperAdmin trial grant/extend/end + fingerprint override
+  (§4 WS-F.6) is explicitly WS-K's job per the plan text itself.
+- Verified: full `pnpm -r typecheck`/`pnpm -r build` clean; existing
+  `provision-tenant always starts on the free STARTER tier` test still
+  passes unchanged (optional `trialIdentities` param, `startTrial` defaults
+  falsy) — no new automated test was added for the trial-grant path itself
+  (would need a `TrialIdentity`+`EntitlementGrant` fake harness); flagged as
+  a coverage gap for a follow-up.
+
+### 2.1h WS-G shipped 2026-09-29 (backend only) — nonprofit verification
+
+**Deliberately scoped down** from the full plan text: built the domain,
+data, application-handler, and API layers end-to-end; **did not** build any
+web UI (neither the tenant-side upload form nor a SuperAdmin queue page) —
+that is consistent with the plan's own WS-K carve-out for "SuperAdmin
+management surface" but goes further by also deferring the tenant-side
+upload form, which the plan had implicitly assumed would ship with WS-G.
+Flagging this explicitly rather than leaving it to be discovered later.
+
+- **Domain**: `NonprofitVerification` entity (submit → `PENDING` →
+  `approve()`/`reject()`, both single-use transitions guarded against
+  re-review); `Organization.nonprofitVerifiedAt` (+ `markNonprofitVerified()`/
+  `clearNonprofitVerification()`) — approval **never touches `PlanLimits`**,
+  matching the plan's explicit "discounts never change domain limits"
+  requirement; it only gates which Creem checkout product a tenant is
+  offered.
+- **Schema**: `NonprofitVerification` table + `Organization.nonprofitVerifiedAt`
+  column (migration `20260929140000_nonprofit_verification`), `NonprofitVerification`
+  added to `infra/postgres/rls.sql`.
+- **Application**: `SubmitNonprofitVerificationHandler` (tenant-side,
+  `billing.manage`, one `PENDING` submission at a time — a prior
+  rejected/approved submission never blocks a new one, e.g. a renewed
+  registration); `ApproveNonprofitVerificationHandler`/
+  `RejectNonprofitVerificationHandler`/`ListPendingNonprofitVerificationsHandler`
+  (SuperAdmin-actor, not `AuthenticatedContext`-shaped — matching the
+  existing `runGrandfatherCreditCutover` precedent of a platform action
+  taking a raw actor id).
+- **Checkout discount routing**: `CreateCheckoutArgs.nonprofit?: boolean`,
+  set from `Boolean(organization.nonprofitVerifiedAt)`;
+  `CreemBillingProvider.resolveNonprofitProduct()` looks for
+  `${STANDARD_ENV_VAR}_NONPROFIT` (e.g.
+  `CREEM_PRODUCT_TEAM_MONTHLY_NONPROFIT`) and **falls back to the standard
+  product** if the discount SKU isn't configured — a tenant is never blocked
+  from checking out just because the discount product doesn't exist yet in
+  a given environment.
+- **Routes**: `POST /v1/billing/nonprofit-verification` (tenant submission,
+  `billing.manage`-gated) and three SuperAdmin routes under
+  `/superadmin/billing/nonprofit-verifications` (list pending, approve,
+  reject-with-reason), following the existing `secured.*` +
+  `app.container.handlers.*` + `service().audit(...)` pattern from the
+  grandfather-cutover route.
+- **Not built**: any web page (tenant upload form or SuperAdmin queue UI);
+  real file/document upload integration (`documentUrl` is accepted as a
+  plain string from the request body — out-of-band upload via existing
+  generic storage endpoints is assumed, not wired); regional/PPP pricing
+  (§4 WS-G.2, a SuperAdmin MANUAL-grant workflow with no new mechanism
+  needed, but no UI was built either); support docs sweep (§4 WS-G.3).
+- **No automated tests added** for the new handlers — flagged as a coverage
+  gap; the domain entity's transition guards (single-use approve/reject)
+  are straightforward enough that the risk is low, but this should not be
+  taken as "tested" in the same sense as WS-D's webhook suite.
+
+### 2.1i WS-I shipped 2026-09-29 — enterprise intake + trust page
+
+- **`POST /v1/contact-sales`** (new, public/unauthenticated route
+  registered alongside `/v1/auth/*` and the webhook routes, outside the
+  tenant-auth middleware block in `apps/api/src/server.ts`) — Zod-validated
+  with a honeypot field (`website`, must stay empty) for basic spam
+  resistance; no rate-limiter was added (out of scope for the time
+  available — flagged for WS-J/ops if abuse is observed).
+  `SubmitContactSalesInquiryHandler` + `IContactSalesNotifier` port +
+  `ConsoleContactSalesNotifier` (log-based dev default, matching the
+  "console email" Phase 1 deviation already documented for the rest of the
+  platform) + an audit row (`sales.contact_inquiry.submitted`, recorded
+  against the same `{toString: () => "*"}` platform-sentinel tenant id
+  `ExpireLocalTrialsHandler` already uses for tenant-less audit events).
+- **`/contact-sales`** web page + client form
+  (`apps/web/src/app/contact-sales/`), replacing the Enterprise plan's
+  `mailto:sales@donordesk.online` CTA on both `/` and `/pricing` (the
+  generic footer "Contact support/sales" mailto links elsewhere were left
+  alone — the plan specifically called out "the mailto: CTA", i.e. the
+  Enterprise plan button, not every email link on the site).
+- **`/security` page** (new — it did not exist at all before this change,
+  despite the plan phrasing "extend /security" assuming it did): tenant RLS
+  isolation description, subprocessor list (Creem, Google Drive, Cloudflare
+  R2), data export/deletion policy, and a DPA request contact.
+- **Not built**: WS-I.3 (Enterprise contract provisioning) — explicitly
+  deferred to a manual SuperAdmin flow per the plan's own text; WS-K.7
+  scopes the minimum surface for that later.
+
+### 2.1j WS-J — operational, not code (status as of 2026-09-29)
+
+WS-J's four items are infrastructure/business operations that cannot be
+completed by writing application code; they gate the whole phase's
+production readiness regardless of how much of WS-D–I ships. Status:
+
+1. **Production Creem** (live products at §3 prices, merchant/payout
+   approval, key rotation) — **not started**; per `memorybank/contabo-ops.md`
+   Creem is still in **test mode**. Nothing in Phase 22 collects real money
+   until this happens. The two top-up SKUs and any nonprofit-discount
+   products (WS-D/WS-G, this session) also need their Creem product IDs
+   created and the corresponding env vars set once this happens.
+2. **Kestra schedules** for `/internal/billing/{reconcile-subscriptions,
+   reconcile-storage,release-stale-reservations,retry-inbox,expire-trials}`
+   — all five routes already exist and are already wired into the
+   container (confirmed for `expire-trials` this session; the other four
+   predate Phase 22). Only the actual cron schedule + alerting is
+   outstanding, and that's a Kestra config change, not application code.
+3. **Phase 6 enforcement rollout mechanism — shipped 2026-09-29 (§2.1n)**.
+   Correction to this item's earlier text: "the kill switch and reporting
+   mode already exist per Feature 19" was **stale/aspirational** — a grep
+   across the whole app/infra tree before this fix found zero references to
+   `ENTITLEMENT_ENFORCEMENT` in code, only in this doc and Feature 19's own
+   design text; every capacity check (projects, seats, viewers, storage, AI
+   credits) blocked unconditionally with no way to soften it. §2.1n builds
+   the actual `off`/`report`/`enforce` switch. What's still not done is the
+   **operational** half of this item: choosing when to run at `report` for a
+   cohort, watching conversion/attach-rate/margin metrics, and deciding when
+   to flip that cohort to `enforce` — that decision and its metrics
+   dashboard are a business/ops process, not something a switch alone
+   provides, and remain outstanding.
+4. **`REQUIRED_PRISMA_FIELDS`** — kept current in the same PR as every
+   migration this session (`Project.archivedAt`, `PurchasedCreditPack.providerOrderId`,
+   `Organization.nonprofitVerifiedAt`, `NonprofitVerification.status`), so
+   this one sub-item is actually done, continuously, not deferred.
+
+Pre-launch checklist this session surfaced that belongs here, not in a new
+workstream: verify the Creem refund/dispute payload's actual order-id field
+name against `creem.ts`'s best-effort `order_id ?? checkout_id ?? id`
+extraction (WS-D). WS-E's grandfather step is now a one-click SuperAdmin
+action (`RunGrandfatherByoLlmHandler`, §2.1k) rather than a manual audit —
+someone still has to actually click it before BYO-LLM enforcement affects
+existing tenants, the same operational gate WS-A.6 already established for
+the credit cutover.
+
+### 2.1k WS-K shipped 2026-09-29 (items 1–5, 7) — SuperAdmin surface
+
+- **Item 3 (viewer seat override) confirmed the exact risk the plan called
+  out**: both `TierModal` (global tier editor) and `TenantTierModal`
+  (per-tenant override) in `apps/superadmin/src/app/ui/Dashboard.tsx` had no
+  `viewerSeats`/`aiCreditTopUp`/`byoLlmEnabled` fields at all — the backend
+  `TierLimits` Zod schema accepted them (from WS-A) but nothing in the UI
+  could ever send them. Added to both forms.
+- **Item 4 (archived-project visibility)**: `PlatformControlPlane.usageByTenant`
+  gained an `archivedProjects` query (mirroring WS-B's predicate) and
+  `billingRow` now returns it; the tenant tier-assignment table shows
+  `N / limit (M archived)`.
+- **Item 5 (trial controls)** — new `PlatformControlPlane` methods
+  `grantTrial`/`extendTrial`/`endTrial`/`overrideTrialFingerprint`, following
+  the exact direct-Prisma pattern `changeTenantTier`/`resetTenantTier`
+  already use (control-plane methods write `EntitlementGrant` rows directly
+  via `this.prisma`, bypassing the tenant-scoped `IEntitlementGrantRepository`
+  port entirely — grants are otherwise immutable/append-only at the
+  application layer, so ending/extending a trial early is only possible
+  through this platform-level direct-SQL path, matching precedent rather
+  than inventing a new one). Four new routes under
+  `/superadmin/tenants/:id/trial*` and `/superadmin/trial-fingerprint/override`;
+  UI buttons in the Billing tab (Grant/Extend/End trial, "Clear a trial-abuse
+  fingerprint").
+- **Item 7 (Enterprise contract provisioning)**: new
+  `PlatformControlPlane.provisionEnterpriseContract` writes a dedicated
+  `ENTERPRISE_CONTRACT`-source grant (not the generic `MANUAL` tier change
+  `changeTenantTier` writes) with `effectiveFrom`/`effectiveUntil` set to the
+  contract's actual start/end dates and `annualPriceUsd` enforced against
+  `ENTERPRISE_PRICE_FLOOR_ANNUAL_USD` ($12,000) before the grant is written.
+  UI: "Provision contract" button on ENTERPRISE-tier tenant rows.
+- **Item 1 (nonprofit queue) and item 2 (credit pack visibility)**: covered
+  in §2.1h/§2.1e respectively (built alongside WS-G/WS-D, not held for
+  WS-K) — cross-referenced here for completeness of the WS-K checklist.
+- **Not built — item 6 (BYO-LLM override visibility)**: showing "this
+  tenant's configured provider is being ignored because byoLlmEnabled=false"
+  directly next to the tenant's LLM config row in the "AI & LLM" SuperAdmin
+  tab requires cross-referencing `PlatformConfiguration` rows against each
+  tenant's resolved entitlement — a genuine N+1-style lookup the existing
+  `Providers` component has no data for today. The underlying signal exists
+  (the `billing.byo_llm.blocked_by_plan` audit event from WS-E fires every
+  time this happens, so the SuperAdmin Audit tab already shows it, just not
+  inline next to the config). Deferred rather than built as a rushed
+  cross-reference query at the end of an already-large session.
+- **Not built — comped/goodwill packs and manual refund override** (item 2's
+  write actions): the read-side visibility shipped; creating a
+  `providerOrderId: null` comped pack or manually flipping a pack to
+  `REFUNDED` outside the Creem webhook path did not. `PurchasedCreditPack`'s
+  domain methods (`refund()`) and repository (`update()`) already support
+  this — only the SuperAdmin route + UI action are missing.
+- Verified: full `pnpm -r typecheck`/`pnpm -r build` clean across all 9
+  workspace projects (including `apps/superadmin`); domain (249), application
+  (186, incl. 6 new this round: 3 grandfather-BYO-LLM + 3 trial-grant),
+  infrastructure (249), web unit (189) all pass. The new
+  `PlatformControlPlane` methods and SuperAdmin routes have **no automated
+  tests** — `apps/superadmin` has no test harness in this repo (confirmed:
+  no test script in its `package.json`), and `PlatformControlPlane` itself
+  has no existing unit test file to extend; this is a pre-existing gap in
+  the codebase's test coverage for the whole SuperAdmin surface, not one
+  introduced by this session.
+
+### 2.1l Audit remediation round (2026-09-29)
+
+A full audit against this plan produced a findings list; all of the
+following are fixed in the same change. Staleness corrections first: the
+earlier "not built" flags for WS-K item 6, the WS-K item 2 write actions,
+WS-D item 5 (standing balance) and the WS-G tenant form were wrong — that
+code exists (SuperAdmin `listByoLlmStatus`, `manage-credit-packs.ts`,
+`credit_pack_source` migration, `NonprofitDiscountSection`) and the
+sections above now say so.
+
+Fixes shipped in this round:
+
+- **Grant lifecycle (critical):** `BillingSubscriptionSynchronizer` now
+  maintains the invariant "exactly one open CREEM_SUBSCRIPTION grant
+  covering now at the subscription's current plan and period". Previously a
+  grant was created only when none existed, so a renewal never created the
+  next window (paying tenants silently fell back to STARTER at period end)
+  and a mid-cycle plan change kept the old plan's grant. Stale windows end
+  in place via a new `IEntitlementGrantRepository.endGrant` port method;
+  sync writes `catalogVersion: PLAN_CATALOG_VERSION` instead of the literal
+  `1`. Tested (renewal, idempotent re-sync, plan change).
+- **Invitation acceptance (WS-C prerequisite):** new
+  `AcceptInvitationHandler` + `IInvitationRepository.update`,
+  `POST /v1/invitations/accept` and `GET /v1/invitations/preview` (public;
+  the token is the capability), `/invite/accept` web page + server action,
+  TeamPanel now shares the acceptance link. Acceptance re-checks the
+  destination seat pool (`VIEWERS` vs `SEATS`) per request — the
+  "atomic re-check" the WS-C plan text assumed. Tested (8 cases incl.
+  viewer pool, caps, expiry, single-use, duplicate email).
+- **Archive/restore authorization:** route rules (`project.edit`) added to
+  `authorizationMiddleware` and `Permissions.require` in both handlers —
+  previously any role (incl. VIEWER) could archive/restore any project.
+- **BYO-LLM gate:** fails closed when the entitlement cannot be resolved
+  (previously fail-open), covers template extraction
+  (`resolveTemplateLlm`) as well as report drafting, and audit failures log
+  instead of vanishing.
+- **Trials:** server-side kill switch `TRIALS_ENABLED` (default off,
+  `ProvisionTenantHandler` enforces it; the web `signupAction` re-checks
+  the flag too), closing the crafted-request bypass of
+  `NEXT_PUBLIC_TRIALS_ENABLED`. Flag-gated attempts are audited
+  (`trialDisabledByFlag`).
+- **Credit adjustment:** `PlatformControlPlane.currentPlanLimits` merges the
+  tenant's full stored override over the catalog base, so `adjustCredits`
+  no longer silently reverts per-tenant `viewerSeats`/`byoLlmEnabled`/etc.
+  overrides (previously a credit tweak un-grandfathered BYO tenants).
+  `billingRow` merges the same way, hardening partial-override reads.
+- **Standing balance:** packs reactivate on re-subscribing to GROWTH
+  (`reactivate()` domain method + synchronizer hook, audited) — SUSPENDED
+  packs were previously stranded forever; the Billing tab shows suspended
+  counts; `release()` is a single atomic conditional UPDATE (mirroring
+  `reserve()`).
+- **Nonprofit:** rejecting a verification now revokes
+  `Organization.nonprofitVerifiedAt` (latest review wins; previously one
+  approval lasted forever); approving without an org row fails loudly;
+  `documentUrl` must be an http(s) URL; the submission route response is
+  contracts-validated. Comp packs accept an explicit `source`.
+- **SuperAdmin:** `grantTrial` supersedes an existing effective TRIAL
+  instead of stacking; `provisionEnterpriseContract` ends overlapping
+  contracts; the contract dialog reads `ENTERPRISE_PRICE_FLOOR_ANNUAL_USD`
+  instead of a literal; Tenants tab shows `(M archived)`; the pack SQL
+  surfaces SUSPENDED packs.
+- **Web/marketing:** `/pricing` Free card fixed to 5 drafts (was a
+  hard-coded 10); regional/PPP copy no longer claims a self-serve feature;
+  nonprofit FAQ points at the in-product flow; "40% off all paid plans"
+  corrected; Growth landing card carries the gated trial line. The parity
+  test now covers the `/pricing` STARTER card, the credits comparison row,
+  the landing floor line, NGO ladder constants, viewer counts, and
+  SignupForm numbers.
+- **Contact sales:** per-IP in-process rate limit (5/hour, `RATE_LIMITED`
+  → 429) and the honeypot now accepts-and-drops (bots get success, real
+  schema rejects nothing) instead of 400-ing.
+- **Stub provider:** webhook mapping now emits `orderId`/`oneOffPurchase`
+  (SKU slugs) and honors the `nonprofit` checkout flag, so pack
+  flows are exercisable without live Creem; stale `unitAmountMinor: 5900`
+  corrected to the $129 Team price. Tested.
+
+Residuals, deliberately not closed here:
+
+- **WS-J operational items** (§2.1j) — unchanged; they gate production.
+- **Check-then-create races** (project cap, seat cap, pack cap at purchase
+  time): per-request checks only; DB-transactional guards still outstanding
+  per §2.1c (pack *draw-down* is DB-atomic).
+- **Pack `used` crash window:** failed generations release correctly
+  (verified), but a hard crash between reserve and release burns a pack
+  credit with no ledger self-heal (packs have no per-pack ledger to heal
+  against). Accepted residual; revisit if it ever shows in data.
+- **PlatformControlPlane / superadmin app tests:** still no harness.
+- **`extendTrial`/`endTrial`** mutate grant rows in place (audited,
+  platform-level precedent) — the append-only convention remains broken at
+  that one platform surface by design.
+- **Admin-granted trials intentionally bypass and never burn the
+  `TrialIdentity` fingerprint** (explicit admin action ≠ self-serve signup);
+  `domainFingerprint` is recorded but not enforced (same-domain trial abuse
+  remains possible via new emails).
+
+### 2.1m Audit remediation round 2 (2026-09-29)
+
+Full workspace verification first: `pnpm -r typecheck`, `pnpm -r build`, and
+every unit suite (domain 249, application 205, infrastructure 252) pass
+clean on the uncommitted Phase 22 diff. (One unrelated, pre-existing e2e
+failure — `apps/web/tests/phase2.spec.ts` "forgot-password page gives
+honest support guidance" — predates this branch: the page now has a real
+self-service reset form, the test still asserts the old "not available yet"
+stub copy it replaced. Not part of Phase 22; left for whoever owns that
+page.)
+
+A targeted audit of the money/auth/RLS-critical paths against this doc's own
+"shipped" claims found two real gaps, both fixed:
+
+- **Trial kill switch had a silent fallback that defeated it**
+  (`ProvisionTenantHandler`'s `trialsEnabled` default in
+  `packages/application/src/use-cases/identity/provision-tenant.ts`, and the
+  mirrored check in `apps/web/src/lib/auth-actions.ts`'s `signupAction`):
+  both read `process.env.TRIALS_ENABLED ?? process.env.NEXT_PUBLIC_TRIALS_ENABLED`
+  instead of `TRIALS_ENABLED` alone. §2.1l's stated intent was a
+  server-only switch independent of the client-facing marketing flag; the
+  `??` fallback meant setting only `NEXT_PUBLIC_TRIALS_ENABLED` (the natural
+  thing to do to turn on trial marketing copy) silently activated real
+  trials too — reopening the exact bypass §2.1l claims to have closed. Fixed
+  on both sides to check `TRIALS_ENABLED` only.
+- **Contact-sales rate limiter was trivially bypassable**
+  (`apps/api/src/routes/sales.ts`'s `clientIp()`): it parsed the
+  client-supplied `X-Forwarded-For` header directly, and Fastify had no
+  `trustProxy` configured (`apps/api/src/server.ts`), so any request could
+  set an arbitrary `X-Forwarded-For` value and get a fresh rate-limit bucket
+  every time — the 5/hour limit from §2.1l enforced nothing. Fixed by
+  setting `trustProxy: "127.0.0.1"` on the Fastify instance (the api only
+  ever receives traffic from nginx on the same host) and reading `req.ip`
+  instead of the raw header.
+
+Not changed: the marketing "40% off" NGO price ($129→$79, $299→$179) is a
+rounded list price, not a literal 40.000% computation (~38.8%/40.1%
+actual) — normal pricing practice for clean price points, not a bug: there
+is no domain-level `nonprofitPriceUsd` field these derive from (the actual
+discount is applied by which Creem product a verified tenant is offered,
+per §2.1h's `resolveNonprofitProduct`), so "40%" is marketing copy about a
+pricing decision, not a value with a computable source of truth to drift
+from.
+
+Verified after the fix: `packages/application`, `apps/api`, `apps/web`
+typecheck clean; `packages/application` full suite (205) still passes.
+
+### 2.1n WS-J.3 mechanism shipped (2026-09-29) — `ENTITLEMENT_ENFORCEMENT` off/report/enforce
+
+Every capacity check in this codebase (`CreateProjectHandler`,
+`RestoreProjectHandler`, `InviteUserHandler`, `AcceptInvitationHandler`,
+`ChangeRoleHandler` for PROJECTS/SEATS/VIEWERS, `UploadEvidenceHandler` for
+STORAGE, `GenerateReportDraftHandler` for AI_CREDITS) already blocked an
+over-limit request unconditionally — there was no flag anywhere to soften
+that, despite this doc and Feature 19's design text describing one as
+already existing. This round builds it for real:
+
+- `EntitlementEnforcementMode = "off" | "report" | "enforce"`
+  (`packages/application/src/services/entitlement-service.ts`), read from
+  `process.env.ENTITLEMENT_ENFORCEMENT`, **defaulting to `"enforce"`** —
+  unset, the system behaves exactly as it did before this change, so this is
+  additive, not a behavior change, until ops sets the var.
+  - `off`: never blocks, never audits — a true kill switch.
+  - `report`: evaluates the limit exactly as `enforce` does, but instead of
+    rejecting, records an `entitlement.limit_would_block` audit event
+    (resource, limit, used) and lets the request through — lets ops watch
+    real demand against the new caps before anyone is actually cut off.
+  - `enforce`: blocks, same `PLAN_LIMIT_REACHED`/`AI_CREDITS_EXHAUSTED`
+    errors as before.
+- One shared helper, `applyEntitlementLimit()`, replaces the duplicated
+  `if (used >= limit) return {ok:false, error: entitlementLimitError(...)}`
+  pattern at all six of the simple capacity-check call sites, so the mode
+  decision lives in one place instead of six.
+- AI credits (`GenerateReportDraftHandler`) needed a separate variant since
+  reservation there isn't a plain usage-vs-limit comparison: it draws from
+  plan quota then active top-up packs (WS-D). In `off` mode the reservation
+  attempt is skipped entirely (no plan-quota or pack credit is touched); in
+  `report` mode a would-have-been-exhausted reservation attempt is audited
+  and the draft still generates unmetered (no reservation exists to release
+  later, which the existing release call-sites already handle as a no-op
+  for `null`). The independent ledger count
+  (`llmRuns.countAiReportDrafts`) that self-heals the usage counter is
+  unaffected either way, so real usage stays visible regardless of mode.
+- Tested: `off`/`report` cases added for `CreateProjectHandler`
+  (`packages/application/test/billing.test.mjs`) and
+  `GenerateReportDraftHandler`
+  (`packages/application/test/tenant-own-ai-provider.test.mjs`), covering
+  both "lets the over-limit request through" and "logs/doesn't log the
+  would-block event" for each mode. The other five call sites share the
+  same `applyEntitlementLimit()` helper the tested one uses, so they are
+  covered by the helper's own behavior rather than duplicated per-handler.
+- Verified: full `pnpm -r typecheck`, `pnpm -r build` clean;
+  `packages/application` full suite (209, incl. 4 new), domain (249),
+  infrastructure (252) unaffected and passing.
+- **Not done — deliberately, this is the operational half of WS-J.3, not a
+  code gap**: nobody has actually set `ENTITLEMENT_ENFORCEMENT=report` in
+  any environment, there is no dashboard reading the new
+  `entitlement.limit_would_block` audit events, and no cohort/conversion/
+  attach-rate/margin rollout process has been defined or started. The
+  switch now exists for ops to use; deciding how and when to use it is a
+  business decision outside this codebase.
+
 ---
 
 ## 3. Decided catalog (target state)
@@ -305,38 +988,45 @@ Files: `packages/domain/src/contexts/billing/plan.ts`,
    run it against production** before `ENTITLEMENT_ENFORCEMENT` is enabled
    for existing paid tenants (operational step, §9 rollout gate).
 
-### WS-B — Archived project status (active-only counting)
+### WS-B — Archived project status (active-only counting) (**shipped 2026-09-29 — see §2.1c**)
 
 Files: project domain/entity + repository, `CreateProjectHandler`,
 `PrismaProjectRepository` count query, API routes, web project list, billing
 summary.
 
-1. Add `ARCHIVED` project status (migration + enum) with `archivedAt`.
-2. `POST /v1/projects/:id/archive`, `POST /v1/projects/:id/restore` (audit
-   trailed; archived projects are fully readable/exportable, not writable).
-3. `maxActiveProjects` enforcement counts only non-archived projects
-   (transactional count already exists — change the predicate).
-4. Billing summary `usage.projects` reports `{ active, archived, limit }`.
-5. Web: archive/restore actions + archived filter in the project list.
-6. Concurrency tests: N parallel creates at limit with archived projects in
-   play never exceed the cap.
+1. ✅ Add `ARCHIVED` project status (migration + enum) with `archivedAt`.
+2. ✅ `POST /v1/projects/:id/archive`, `POST /v1/projects/:id/restore` (audit
+   trailed; archived projects are read-only in the web UI, not deletable).
+3. ✅ `maxActiveProjects` enforcement counts only non-archived projects
+   (already true via `EntitlementService.usageSnapshot`'s filter predicate,
+   confirmed and left as check-then-create — see the concurrency gap noted
+   in §2.1c).
+4. ✅ Billing summary `usage.projects` reports `{ active, archived, limit }`.
+5. ✅ Web: archive/restore actions + archived filter in the project list
+   (filter toggle pre-existed; actions are new).
+6. ✅ Concurrency test added, but it documents a still-open race (check-then-
+   create is not DB-transactional) rather than closing it — see §2.1c.
 
-### WS-C — Read-only viewer seats
+### WS-C — Read-only viewer seats (**shipped 2026-09-29 — see §2.1d**)
 
 Files: identity context (role model), invitations, seat enforcement, billing
 summary, web member management.
 
-1. New role `VIEWER` (read-only permission set; cannot consume AI credits,
-   approve, edit, upload managed evidence; can browse reports/evidence/
-   dashboards and export).
-2. Seat accounting: `maxSeats` counts owner + `ACTIVE|INVITED|SUSPENDED`
+1. ✅ Role `VIEWER` (read-only permission set: `project.view` + `report.export`
+   only; cannot consume AI credits, approve, edit, upload managed evidence;
+   can browse and export). The role enum itself pre-existed; the permission
+   set was fixed to match this spec.
+2. ✅ Seat accounting: `maxSeats` counts owner + `ACTIVE|INVITED|SUSPENDED`
    **non-viewer** users. `viewerSeats` counted separately (`STARTER` 2, others
-   null). Invitation acceptance re-checks the viewer cap atomically.
-3. `usage.seats` reports `{ full: { used, limit }, viewers: { used, limit } }`.
-4. Existing tenants: no migration needed (no viewers exist yet); document that
-   converting a full member to viewer frees a paid seat.
+   null). **Not done:** "invitation acceptance re-checks the viewer cap
+   atomically" — no invitation-acceptance flow exists at all yet (pre-existing
+   gap, see §2.1d); `ChangeRoleHandler` and `InviteUserHandler` do re-check
+   the correct cap atomically-per-request today.
+3. ✅ `usage.seats` reports `{ full: { used, limit }, viewers: { used, limit } }`.
+4. ✅ Existing tenants: no migration needed (no viewers exist yet); converting
+   a full member to viewer (and back) is now cap-checked by `ChangeRoleHandler`.
 
-### WS-D — AI credit top-up packs + prepaid standing balance
+### WS-D — AI credit top-up packs + prepaid standing balance (**shipped 2026-09-29 (core); standing balance not built — see §2.1e**)
 
 Files: new `PurchasedCreditPack` model + repo, `EntitlementService`,
 reservation/enforcement path in `GenerateReportDraftHandler`, billing API +
@@ -391,7 +1081,7 @@ web, Creem adapter (one-off products), SuperAdmin billing view.
    (existing) keep precedence over pack draw-down (they raise the effective
    limit, not the balance — document the distinction).
 
-### WS-E — BYO AI provider gating (Growth/Enterprise)
+### WS-E — BYO AI provider gating (Growth/Enterprise) (**shipped 2026-09-29; grandfather migration deferred — see §2.1f**)
 
 Files: `EntitlementService`, tenant LLM config resolution in report generation
 (`tenant-own-ai-provider` path), SuperAdmin tenant LLM config UI, web notice.
@@ -409,7 +1099,7 @@ Files: `EntitlementService`, tenant LLM config resolution in report generation
    working configuration.
 4. Update `tenant-own-ai-provider.test.mjs` with the gated path.
 
-### WS-F — Restore the 14-day trial (Team/Growth)
+### WS-F — Restore the 14-day trial (Team/Growth) (**shipped 2026-09-29 — see §2.1g**)
 
 Files: `ProvisionTenantHandler`, `plan.ts` (`trialDays`, `isPlanForTrial`),
 `ExpireLocalTrialsHandler` + Kestra schedule, checkout flow, billing settings
@@ -433,7 +1123,7 @@ banners, signup web flow.
 6. Abuse policy: one trial per `TrialIdentity` fingerprint; admins can override
    via SuperAdmin (audited). `NEXT_PUBLIC_TRIALS_ENABLED` gates marketing copy.
 
-### WS-G — Nonprofit discount verification + regional pricing
+### WS-G — Nonprofit discount verification + regional pricing (**backend shipped 2026-09-29; no web UI — see §2.1h**)
 
 1. Verification: NGO registration certificate / equivalent → manual review →
    per-tenant discount applied through Creem discount product **or** MANUAL
@@ -453,7 +1143,7 @@ banners, signup web flow.
 3. Support docs: replace the 990-style assumptions; publish "how to qualify"
    on `/pricing` FAQ (done) + support how-to article.
 
-### WS-H — Web & billing UX consistency
+### WS-H — Web & billing UX consistency (**items 1 and 3 already satisfied by WS-A/D/F; item 2 copy-sweep not done — see §2.1i note**)
 
 1. Billing settings page: show new limits (viewers, archived, packs, BYO
    state), top-up purchase, trial/grace banners (mostly existing), upgrade
@@ -463,7 +1153,7 @@ banners, signup web flow.
 3. `/pricing` page: ship behind `NEXT_PUBLIC_TRIALS_ENABLED` if WS-F lags
    (strip trial CTAs) — see §2 coupling gate.
 
-### WS-I — Enterprise intake + trust surface
+### WS-I — Enterprise intake + trust surface (**shipped 2026-09-29 — see §2.1i**)
 
 1. Replace the `mailto:` CTA with `/contact-sales` (validated form → email to
    sales via the existing console-email adapter + audit row; spam-protected).
@@ -487,7 +1177,7 @@ banners, signup web flow.
    `apps/web/src/app/pricing/`) before any further deploy layers on top of it
    — production is currently ahead of git for this release.
 
-### WS-J — Operational unblock (gates the whole phase)
+### WS-J — Operational unblock (gates the whole phase) (**operational only — see §2.1j for current status**)
 
 1. **Production Creem:** live products at the §3 prices (2 plans × 2 intervals
    + 2 top-up SKUs — the existing test products carry the old $59/$149 pricing
@@ -503,7 +1193,7 @@ banners, signup web flow.
 4. `REQUIRED_PRISMA_FIELDS` (health allowlist) extended with new models/fields
    in the same PR as the migration (deploy invariant).
 
-### WS-K — SuperAdmin management surface for the new dimensions (new)
+### WS-K — SuperAdmin management surface for the new dimensions (**items 1–5, 7 shipped 2026-09-29; item 6 deferred — see §2.1k**)
 
 Feature 19 already shipped SuperAdmin credit grants and the global/per-tenant
 tier editor (`memorybank/SUPERADMIN-PORTAL.md` §5/§7). Phase 22 adds several
@@ -513,36 +1203,25 @@ visibility/control, which was previously only implied piecemeal inside
 WS-A/D/E/F/G/I rather than specified as a coherent surface. Consolidating
 here:
 
-1. **Nonprofit verification queue** (from WS-G.1a): pending/approved/rejected
-   list, document view, approve/reject actions, audit trail.
-2. **Credit pack management** (extends WS-D.7): view active/exhausted/
-   refunded packs per tenant; manual grant of a comped pack (e.g. goodwill
-   credit) distinct from a purchased one — mark `providerOrderId: null`;
-   manual `REFUNDED` override for support-driven refunds processed outside
-   the Creem webhook path (with reason, audited).
-3. **Viewer seat override**: per-tenant `viewerSeats` override through the
-   existing partial-limits MANUAL-grant mechanism (WS-A.3) — confirm the
-   generic tier-editor UI (WS-A.5) actually renders/persists this field;
-   don't assume "generic" coverage without a UI check.
-4. **Archived-project visibility**: tenant billing view (WS-D is silent on
-   this) shows `{active, archived, limit}` per §6 contract so support can
-   diagnose "why can't I create a project" tickets without a DB query.
-5. **Trial controls** (from WS-F.6): SuperAdmin action to grant a trial
-   outside the normal signup flow, extend/end an active trial, and override
-   the `TrialIdentity` abuse fingerprint for a specific tenant — all audited.
-   WS-F.6 required the audit but never specified where the action lives.
-6. **BYO-LLM override visibility**: when WS-E.2's one-time admin notice
-   fires (tenant has a configured provider but `byoLlmEnabled=false`), the
-   existing SuperAdmin tenant LLM config UI (WS-E.1) should surface that
-   state directly next to the config, not require cross-referencing
-   entitlements separately.
-7. **Enterprise contract provisioning**: Phase 22 (WS-I.3) and Feature 19
-   (§16 Phase 0) both defer this to "a manual SuperAdmin flow" without
-   specifying one. Minimum surface: create an `ENTERPRISE_CONTRACT`
-   entitlement grant with custom `PlanLimits` override and a floor-enforced
-   annual price, set contract start/end, and a renewal-reminder record (even
-   if the reminder itself is a manual runbook step in this phase, not an
-   automated job).
+1. ✅ **Nonprofit verification queue** (from WS-G.1a): pending list, document
+   link, approve/reject actions, audit trail. (Rejected/approved history
+   filtering not built — the queue lists PENDING only, per §2.1k.)
+2. ✅ (partial) **Credit pack management** (extends WS-D.7): per-tenant active
+   pack count/remaining-credits visible in the Billing tab. **Not built**:
+   comped-pack grant and manual `REFUNDED` override actions — visibility
+   shipped, the two write actions did not (see §2.1k).
+3. ✅ **Viewer seat override**: the generic tier-editor UI (both the global
+   `TierModal` and per-tenant `TenantTierModal`) is confirmed to have been
+   missing `viewerSeats`/`aiCreditTopUp`/`byoLlmEnabled` fields entirely
+   (exactly the risk this item called out) — now added to both forms.
+4. ✅ **Archived-project visibility**: SuperAdmin's tenant billing view now
+   shows `(N archived)` next to the active project count.
+5. ✅ **Trial controls**: grant/extend/end + fingerprint override, all audited.
+6. **Not built — BYO-LLM override visibility**: deferred, see §2.1k.
+7. ✅ **Enterprise contract provisioning**: dedicated `ENTERPRISE_CONTRACT`
+   grant (distinct from the generic `MANUAL` tier change), floor-enforced
+   annual price, explicit contract start/end. Renewal reminder is a manual
+   runbook step, as the plan itself specifies.
 
 ---
 

@@ -535,9 +535,11 @@ export function ReportWorkspace({
         </div>
         <div className="flex flex-wrap gap-2">
           {canGenerate && (
-            <Button size="sm" variant="secondary" disabled={busyAction === "draft" || generating} onClick={generate} pending={generating || busyAction === "draft"}>
-              {generating ? `Generating… ${generatedCount}/${liveSections.length}${generationEtaLabel ? ` (${generationEtaLabel})` : ""}` : busyAction === "draft" ? "Generating…" : draft ? "Regenerate AI draft" : "Generate AI draft"}
-            </Button>
+            <span data-tour-id="generate-ai-draft">
+              <Button size="sm" variant="secondary" disabled={busyAction === "draft" || generating} onClick={generate} pending={generating || busyAction === "draft"}>
+                {generating ? `Generating… ${generatedCount}/${liveSections.length}${generationEtaLabel ? ` (${generationEtaLabel})` : ""}` : busyAction === "draft" ? "Generating…" : draft ? "Regenerate AI draft" : "Generate AI draft"}
+              </Button>
+            </span>
           )}
           {generating && (
             <Button size="sm" variant="ghost" disabled={busyAction === "stop"} onClick={stopGeneration} pending={busyAction === "stop"}>

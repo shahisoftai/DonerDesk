@@ -127,6 +127,8 @@ const SECURITY = [
   },
 ];
 
+const TRIALS_ENABLED = process.env.NEXT_PUBLIC_TRIALS_ENABLED === "1";
+
 const PLANS = [
   {
     code: "STARTER",
@@ -137,63 +139,70 @@ const PLANS = [
     cta: { label: "Start free", href: "/signup" },
     highlight: false,
     features: [
-      "1 active project",
-      "1 seat (owner)",
+      "1 active project + unlimited archived",
+      "1 seat + 2 read-only viewers",
       "1 GB managed storage",
       "5 successful AI report drafts / month",
-      "Core reporting, logframe & exports",
+      "Evidence vault, provenance & audit trail",
       "Community support",
     ],
   },
   {
     code: "TEAM",
     name: "Team",
-    monthly: "$59",
-    annual: "$590",
+    monthly: "$129",
+    annual: "$1,290",
     tagline: "For growing teams reporting across several grants or projects.",
     cta: { label: "Continue", href: "/signup?plan=team" },
     highlight: true,
     features: [
-      "5 active projects",
-      "5 seats",
+      "5 active projects + unlimited archived",
+      "5 full seats + unlimited viewers",
       "25 GB managed storage",
-      "100 successful AI report drafts / month",
-      "Google Drive link-first storage",
+      "20 successful AI report drafts / month",
+      "AI donor-template extraction",
+      "AI credit top-ups (+50 for $79)",
+      TRIALS_ENABLED ? "14-day free trial" : "",
       "Email support",
-    ],
+      "NGO price: $79/mo (verified 40% discount)",
+    ].filter(Boolean),
   },
   {
     code: "GROWTH",
     name: "Growth",
-    monthly: "$149",
-    annual: "$1,490",
+    monthly: "$299",
+    annual: "$2,990",
     tagline: "For organizations with multiple funders and substantial reporting volume.",
     cta: { label: "Continue", href: "/signup?plan=growth" },
     highlight: false,
     features: [
       "20 active projects",
-      "15 seats",
+      "15 full seats + unlimited viewers",
       "100 GB managed storage",
-      "500 successful AI report drafts / month",
-      "R2-managed uploads within quota",
-      "Priority email support",
-    ],
+      "100 successful AI report drafts / month",
+      "Bring your own AI provider",
+      "AI credit top-ups (+100 for $149)",
+      TRIALS_ENABLED ? "14-day free trial" : "",
+      "Soft overage instead of a hard stop",
+      "Priority email support + onboarding call",
+      "NGO price: $179/mo (verified 40% discount)",
+    ].filter(Boolean),
   },
   {
     code: "ENTERPRISE",
     name: "Enterprise",
     monthly: "Custom",
-    annual: "Annual contract",
+    annual: "From $12k / year",
     tagline: "For INGOs, research institutions, public bodies, and multi-country programmes.",
-    cta: { label: "Contact us", href: "mailto:sales@donordesk.online" },
+    cta: { label: "Contact us", href: "/contact-sales" },
     highlight: false,
     features: [
       "Unlimited projects & seats",
-      "Contractual storage",
+      "Contractual storage & AI credits",
       "SSO / SCIM",
       "Custom data residency",
       "SLA & dedicated support",
-      "Nonprofit discounts available",
+      "Procurement & security review support",
     ],
   },
 ];
@@ -468,8 +477,10 @@ export default function HomePage() {
               Start free. Upgrade when you grow.
             </h2>
             <p className="mt-4 text-lg text-slate-300">
-              Every plan includes core donor reporting. Start on the free Starter
-              plan and upgrade any time — payment is handled securely at checkout.
+              Every plan includes core donor reporting, the evidence vault with
+              Google Drive link-first storage, exports, and an immutable audit
+              trail. Start on the free Starter plan and upgrade any time —
+              payment is handled securely at checkout.
             </p>
           </div>
           <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -517,9 +528,21 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <p className="mt-8 text-center text-sm text-slate-400">
-            Tax is calculated at checkout where applicable. Annual billing gives two months free.
-            Special pricing is available for qualifying nonprofits, research institutions, and public-interest programmes.
+          <div className="mt-10 text-center">
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-brand-300 transition hover:text-brand-200"
+            >
+              See the full plan comparison
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
+          <p className="mt-6 text-center text-sm text-slate-400">
+            Verified nonprofits get 40% off Team and Growth; nonprofit pricing
+            for Enterprise is built into the contract. Tax is calculated at
+            checkout where applicable. Annual billing gives two months free.
+            Regional pricing for eligible organizations in lower-income
+            countries is available on request — contact sales.
           </p>
         </div>
       </section>

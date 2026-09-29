@@ -8,6 +8,7 @@ import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPa
 import { ExtractionMethodBadge, TemplateStatusBadge } from "@/features/templates/presentation/TemplateStatusBadge";
 import { LibraryPicker } from "@/features/templates/presentation/LibraryPicker";
 import { SetDefaultTemplateButton } from "@/features/templates/presentation/SetDefaultTemplateButton";
+import { HelpButton } from "@/features/tour/presentation/HelpButton";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,10 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
   const header = (
     <header className="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Donor templates</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-semibold tracking-tight">Donor templates</h1>
+          <HelpButton topic="templates" />
+        </div>
         <p className="text-sm text-slate-600 dark:text-slate-400">
           A template defines the report&rsquo;s sections and the donor&rsquo;s instructions the AI writer follows for each one.
         </p>
@@ -48,7 +52,7 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
   const libraryItems = library.ok ? library.value.items.filter((t) => t.projectId !== id) : [];
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in" data-tour-id="donor-template-review">
       {header}
       <div className="mt-6 space-y-3">
         {items.length === 0 && <div className="card text-sm text-slate-600 dark:text-slate-300">No templates yet. Upload the donor&rsquo;s template or start from your library.</div>}

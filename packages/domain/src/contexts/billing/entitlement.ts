@@ -39,7 +39,7 @@ export function sourcePrecedence(source: EntitlementSource): number {
   return index === -1 ? SOURCE_PRECEDENCE.length : index;
 }
 
-export type LimitedResource = "PROJECTS" | "SEATS" | "STORAGE" | "AI_CREDITS";
+export type LimitedResource = "PROJECTS" | "SEATS" | "VIEWERS" | "STORAGE" | "AI_CREDITS";
 
 export interface EntitlementSubscriptionView {
   status: BillingSubscriptionStatus;
@@ -78,6 +78,7 @@ export interface EntitlementSnapshot {
 export interface EntitlementUsage {
   activeProjects: number;
   seats: number;
+  viewerSeats: number;
   managedStorageBytes: bigint;
   aiDraftCreditsUsed: number;
 }
@@ -167,6 +168,7 @@ function computeOverLimit(limits: PlanLimits, usage: EntitlementUsage): LimitedR
   const over: LimitedResource[] = [];
   if (limits.maxActiveProjects !== null && usage.activeProjects > limits.maxActiveProjects) over.push("PROJECTS");
   if (limits.maxSeats !== null && usage.seats > limits.maxSeats) over.push("SEATS");
+  if (limits.viewerSeats !== null && usage.viewerSeats > limits.viewerSeats) over.push("VIEWERS");
   if (limits.maxManagedStorageBytes !== null && usage.managedStorageBytes > limits.maxManagedStorageBytes) over.push("STORAGE");
   if (limits.monthlyAiDraftCredits !== null && usage.aiDraftCreditsUsed > limits.monthlyAiDraftCredits) over.push("AI_CREDITS");
   return over;

@@ -9,10 +9,13 @@ import {
   DataResidency,
   EntitlementGrant,
   isPlanCode,
+  isPlanForTrial,
+  PLAN_CATALOG,
 } from "@donordesk/domain";
 import type { IOrganizationRepository, IUserRepository, IAuthProvider } from "../../ports/identity.js";
 import type { IIdGenerator, IAuditLogger, IClock } from "../../ports/core.js";
-import type { IEntitlementGrantRepository } from "../../ports/billing.js";
+import type { IEntitlementGrantRepository, ITrialIdentityRepository } from "../../ports/billing.js";
+import { emailFingerprint, domainFingerprint } from "../billing/_usage.js";
 
 export interface ProvisionTenantCommand {
   name: string;
@@ -30,6 +33,8 @@ export interface ProvisionTenantCommand {
   };
   /** Requested plan (STARTER/TEAM/GROWTH). Enterprise cannot self-select. */
   requestedPlan?: string;
+  /** Start a local 14-day trial of `requestedPlan` instead of the free STARTER base (TEAM/GROWTH only). */
+  startTrial?: boolean;
   /** Verified signup identity; recorded for audit. */
   verifiedEmail?: string;
   /** Audit actor; defaults to the created owner. */
@@ -63,6 +68,18 @@ export class ProvisionTenantHandler {
     private readonly events: { publish(_events: unknown[]): Promise<void> },
     private readonly audit: IAuditLogger,
     private readonly clock: IClock,
+    private readonly trialIdentities?: ITrialIdentityRepository,
+    /**
+     * Server-side kill switch for local trials (defaults off — the marketing
+     * surface is separately gated by NEXT_PUBLIC_TRIALS_ENABLED; this closes
+     * the crafted-request bypass where a client flag alone controlled trials).
+     * Ops enables with TRIALS_ENABLED=1 in the api environment. Deliberately
+     * does NOT fall back to NEXT_PUBLIC_TRIALS_ENABLED — that var is read by
+     * the web app only, and falling back to it here would let ops turn on
+     * real trials by setting the public marketing flag alone, reopening the
+     * exact bypass this switch exists to close.
+     */
+    private readonly trialsEnabled: boolean = process.env.TRIALS_ENABLED === "1",
   ) {}
 
   async handle(cmd: ProvisionTenantCommand): Promise<Result<ProvisionTenantResult, DomainError>> {
@@ -127,6 +144,58 @@ export class ProvisionTenantHandler {
     const baseGrantResult = await this.grants.create(baseGrant);
     if (!baseGrantResult.ok) return baseGrantResult;
 
+    // Local trial (TRIAL source sits between CREEM_SUBSCRIPTION and DEFAULT in
+    // precedence — see calculateEntitlement — so a later paid subscription
+    // supersedes it, and expiry falls back to the permanent STARTER grant
+    // above without losing data). One trial per TrialIdentity fingerprint;
+    // a SuperAdmin can override (WS-K).
+    let trialGranted = false;
+    let trialFingerprintBlocked = false;
+    let trialDisabledByFlag = false;
+    if (cmd.startTrial && this.trialIdentities && isPlanForTrial(requestedPlan)) {
+      if (!this.trialsEnabled) {
+        // Server-side kill switch: honor the request shape but grant nothing,
+        // and record why so ops can see flag-gated trial attempts in audit.
+        trialDisabledByFlag = true;
+      } else {
+        const emailFp = emailFingerprint(cmd.email);
+        const alreadyUsed = await this.trialIdentities.existsByEmailFingerprint(emailFp);
+        if (!alreadyUsed.ok) return alreadyUsed;
+        if (!alreadyUsed.value) {
+          const trialDays = PLAN_CATALOG[requestedPlan].trialDays;
+          if (trialDays !== null) {
+            const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+            const trialGrant = EntitlementGrant.create({
+              id: this.ids.generate(),
+              props: {
+                tenantId: tenantIdStr,
+                planCode: requestedPlan,
+                source: "TRIAL",
+                effectiveFrom: now,
+                effectiveUntil: trialEnd,
+                createdById: userId,
+                reason: "signup-trial",
+              },
+            });
+            const trialGrantResult = await this.grants.create(trialGrant);
+            if (!trialGrantResult.ok) return trialGrantResult;
+            const identityResult = await this.trialIdentities.create({
+              id: this.ids.generate(),
+              tenantId: tenantIdStr,
+              emailFingerprint: emailFp,
+              domainFingerprint: domainFingerprint(cmd.email),
+              trialStartedAt: now,
+              trialEndedAt: trialEnd,
+            });
+            if (!identityResult.ok) return identityResult;
+            trialGranted = true;
+          }
+        } else {
+          trialFingerprintBlocked = true;
+        }
+      }
+    }
+
     const actorId = cmd.actorId ?? userId;
     await this.audit.record({
       tenantId,
@@ -134,7 +203,7 @@ export class ProvisionTenantHandler {
       eventType: "identity.organization.created",
       entityType: "organization",
       entityId: orgId,
-      newValue: JSON.stringify({ source: cmd.verifiedEmail ? "verified-signup" : "signup", plan: requestedPlan }),
+      newValue: JSON.stringify({ source: cmd.verifiedEmail ? "verified-signup" : "signup", plan: requestedPlan, trialGranted, trialFingerprintBlocked, trialDisabledByFlag }),
     });
     await this.audit.record({
       tenantId,
@@ -150,8 +219,8 @@ export class ProvisionTenantHandler {
         tenantId: tenantIdStr,
         orgId,
         userId,
-        plan: "STARTER",
-        trialGranted: false,
+        plan: trialGranted ? requestedPlan : "STARTER",
+        trialGranted,
       },
     };
   }

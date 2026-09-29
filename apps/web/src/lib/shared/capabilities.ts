@@ -127,7 +127,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "reporting.edit",
     "report.approve",
   ],
-  VIEWER: [],
+  VIEWER: ["export.create"],
 };
 
 export function capabilitiesForRole(role: string | undefined): ReadonlySet<Capability> {

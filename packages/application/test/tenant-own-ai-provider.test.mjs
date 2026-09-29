@@ -24,7 +24,7 @@ const reviewedTemplate = {
   requirements: { submission: { instructions: [] }, formatting: { rules: [] }, annexes: [], indicatorRequirements: [], compliance: [], generalInstructions: [] },
 };
 
-function buildHandler(generator, calls) {
+function buildHandler(generator, calls, audit = { record: noop }) {
   return new GenerateReportDraftHandler(
     { generate: () => "id" },
     { findById: async () => okValue({ id: "period-1", projectId: "proj-1", donorTemplateId: "tpl-1", reportType: "QUARTERLY", duration: { start: new Date(), end: new Date() }, deadline: new Date(), readinessScore: 0, daysUntilDeadline: () => 30, templateSnapshotJson: "{}", reportingProfileSnapshotJson: "{}", setSnapshots() {} }), update: noop },
@@ -44,7 +44,7 @@ function buildHandler(generator, calls) {
     { commitChange: noop },
     { assessRevision: noop },
     async () => generator,
-    { record: noop },
+    audit,
     { resolve: async () => { calls.entitlements++; return okValue({ limits: { monthlyAiDraftCredits: 0 } }); } },
     { get: async () => okValue({ used: 0n }), add: async () => { calls.reserved++; return okValue({ used: 1n }); } },
     { recordRun: noop, countAiReportDrafts: async () => okValue(0) },
@@ -60,6 +60,41 @@ test("DonorDesk provider with no credits left: generation is blocked (AI_CREDITS
   assert.equal(result.ok, false);
   assert.equal(result.error.code, "AI_CREDITS_EXHAUSTED");
   assert.equal(calls.entitlements, 1);
+});
+
+test("ENTITLEMENT_ENFORCEMENT=report lets generation through with no credits left and logs a would-block event", async () => {
+  const prior = process.env.ENTITLEMENT_ENFORCEMENT;
+  process.env.ENTITLEMENT_ENFORCEMENT = "report";
+  try {
+    const calls = { entitlements: 0, reserved: 0 };
+    const audited = [];
+    const result = await buildHandler({ model, providerSource: "PLATFORM" }, calls, {
+      record: async (e) => { audited.push(e); },
+    }).handle(ctx, "period-1");
+    assert.notEqual(result?.error?.code, "AI_CREDITS_EXHAUSTED");
+    assert.equal(audited.some((e) => e.eventType === "entitlement.limit_would_block"), true);
+  } finally {
+    if (prior === undefined) delete process.env.ENTITLEMENT_ENFORCEMENT;
+    else process.env.ENTITLEMENT_ENFORCEMENT = prior;
+  }
+});
+
+test("ENTITLEMENT_ENFORCEMENT=off skips the credit check entirely (no reservation attempted)", async () => {
+  const prior = process.env.ENTITLEMENT_ENFORCEMENT;
+  process.env.ENTITLEMENT_ENFORCEMENT = "off";
+  try {
+    const calls = { entitlements: 0, reserved: 0 };
+    const audited = [];
+    const result = await buildHandler({ model, providerSource: "PLATFORM" }, calls, {
+      record: async (e) => { audited.push(e); },
+    }).handle(ctx, "period-1");
+    assert.notEqual(result?.error?.code, "AI_CREDITS_EXHAUSTED");
+    assert.equal(calls.reserved, 0, "off mode must not touch the usage counter");
+    assert.equal(audited.some((e) => e.eventType === "entitlement.limit_would_block"), false);
+  } finally {
+    if (prior === undefined) delete process.env.ENTITLEMENT_ENFORCEMENT;
+    else process.env.ENTITLEMENT_ENFORCEMENT = prior;
+  }
 });
 
 test("tenant's own provider: DonorDesk AI credits are neither checked nor reserved", async () => {

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { createCheckoutAction, openPortalAction, type getBillingSummaryAction } from "@/lib/actions/billing";
+import { useEffect, useState } from "react";
+import { createCheckoutAction, openPortalAction, buyTopupAction, submitNonprofitVerificationAction, type getBillingSummaryAction } from "@/lib/actions/billing";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { InlineHelp } from "@/components/feedback/InlineHelp";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
 
 type SummaryResult = Awaited<ReturnType<typeof getBillingSummaryAction>>;
 export type BillingPanelSummary = Extract<SummaryResult, { ok: true }>["value"];
@@ -65,7 +67,7 @@ function UsageMeter({
 export function BillingPanel({ summary, canManage }: { summary: BillingPanelSummary; canManage: boolean }) {
   const [interval, setInterval] = useState<Interval>("MONTH");
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"checkout" | "portal" | null>(null);
+  const [busy, setBusy] = useState<"checkout" | "portal" | "topup" | null>(null);
 
   const overLimit = summary.overLimit.length > 0;
 
@@ -73,6 +75,18 @@ export function BillingPanel({ summary, canManage }: { summary: BillingPanelSumm
     setBusy("checkout");
     setCheckoutError(null);
     const result = await createCheckoutAction({ plan, interval });
+    setBusy(null);
+    if (!result.ok) {
+      setCheckoutError(result.error.message);
+      return;
+    }
+    window.location.href = result.value.url;
+  }
+
+  async function buyTopup(sku: "TOPUP_50" | "TOPUP_100" | "STANDING_BALANCE_100") {
+    setBusy("topup");
+    setCheckoutError(null);
+    const result = await buyTopupAction({ sku });
     setBusy(null);
     if (!result.ok) {
       setCheckoutError(result.error.message);
@@ -104,6 +118,17 @@ export function BillingPanel({ summary, canManage }: { summary: BillingPanelSumm
 
       {checkoutError && <InlineAlert tone="danger" title={checkoutError} />}
 
+      {summary.isTrial && (
+        <InlineAlert
+          tone="info"
+          title={
+            summary.trialEndsAt
+              ? `Trial active — card due ${new Date(summary.trialEndsAt).toLocaleDateString()}. Subscribe any time to keep access after your trial ends.`
+              : "Trial active. Subscribe any time to keep access after your trial ends."
+          }
+        />
+      )}
+
       <section className="card max-w-2xl space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -125,15 +150,21 @@ export function BillingPanel({ summary, canManage }: { summary: BillingPanelSumm
         <div className="grid gap-3 sm:grid-cols-2">
           <UsageMeter
             label="Projects"
-            used={summary.usage.projects.used}
+            used={summary.usage.projects.active}
             limit={summary.usage.projects.limit}
-            help="Active projects (archived projects do not count)."
+            help={`Active projects (${summary.usage.projects.archived} archived, not counted).`}
           />
           <UsageMeter
             label="Seats"
-            used={summary.usage.seats.used}
-            limit={summary.usage.seats.limit}
-            help="Team members including the owner (active, invited, suspended)."
+            used={summary.usage.seats.full.used}
+            limit={summary.usage.seats.full.limit}
+            help="Full (non-viewer) team members including the owner (active, invited, suspended)."
+          />
+          <UsageMeter
+            label="Viewer seats"
+            used={summary.usage.seats.viewers.used}
+            limit={summary.usage.seats.viewers.limit}
+            help="Read-only viewers, counted separately from full seats."
           />
           <UsageMeter
             label="Managed storage"
@@ -150,10 +181,61 @@ export function BillingPanel({ summary, canManage }: { summary: BillingPanelSumm
             label="AI report drafts"
             used={summary.usage.aiDraftCredits.used}
             limit={summary.usage.aiDraftCredits.limit}
-            help={`Successful AI report drafts this month. Resets ${summary.usage.aiDraftCredits.resetsAt ? new Date(summary.usage.aiDraftCredits.resetsAt).toLocaleDateString() : "monthly"}.`}
+            help={`Successful AI report drafts this month (${summary.usage.aiDraftCredits.planAllowance ?? "unlimited"} plan + ${summary.usage.aiDraftCredits.packs.credits} from top-up packs). Resets ${summary.usage.aiDraftCredits.resetsAt ? new Date(summary.usage.aiDraftCredits.resetsAt).toLocaleDateString() : "monthly"}.`}
           />
         </div>
       </section>
+
+      {canManage && summary.limits.aiCreditTopUp && (
+        <section className="card max-w-2xl space-y-3">
+          <div>
+            <h3 className="text-sm font-medium text-slate-800 dark:text-slate-100">AI credit top-ups</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Buy extra AI drafts for this month without changing your plan. Packs draw down after your plan
+              allowance is used and never expire mid-cycle if unused.
+              {summary.usage.aiDraftCredits.packs.active > 0 &&
+                ` You have ${summary.usage.aiDraftCredits.packs.active} active pack(s) with ${summary.usage.aiDraftCredits.packs.credits - summary.usage.aiDraftCredits.packs.used} credits remaining.`}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="secondary" pending={busy === "topup"} onClick={() => buyTopup("TOPUP_50")}>
+              Buy +50 credits
+            </Button>
+            <Button variant="secondary" pending={busy === "topup"} onClick={() => buyTopup("TOPUP_100")}>
+              Buy +100 credits
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {canManage && summary.plan === "GROWTH" && (
+        <section className="card max-w-2xl space-y-3">
+          <div>
+            <h3 className="text-sm font-medium text-slate-800 dark:text-slate-100">Prepaid standing balance (Growth)</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              A Growth-only soft-overage balance: draws down after your plan allowance and any top-up packs.
+              You may hold up to {summary.usage.aiDraftCredits.standingBalance.maxActive} active balances.
+              {summary.usage.aiDraftCredits.standingBalance.active > 0 &&
+                ` You have ${summary.usage.aiDraftCredits.standingBalance.active} active with ${summary.usage.aiDraftCredits.standingBalance.credits - summary.usage.aiDraftCredits.standingBalance.used} credits remaining.`}
+              {" "}Downgrading or canceling Growth stops these balances from drawing down (they do not survive the
+              downgrade like a purchased top-up pack does).
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="secondary"
+              pending={busy === "topup"}
+              disabled={summary.usage.aiDraftCredits.standingBalance.active >= summary.usage.aiDraftCredits.standingBalance.maxActive}
+              onClick={() => buyTopup("STANDING_BALANCE_100")}
+            >
+              Add +100 prepaid balance
+            </Button>
+            <StandingBalanceReminderToggle />
+          </div>
+        </section>
+      )}
+
+      {canManage && <NonprofitDiscountSection />}
 
       {canManage && (summary.plan === "STARTER" || summary.plan === "TEAM") && (
         <section className="card max-w-2xl space-y-4">
@@ -200,5 +282,92 @@ export function BillingPanel({ summary, canManage }: { summary: BillingPanelSumm
         </section>
       )}
     </div>
+  );
+}
+
+/**
+ * §4 WS-D item 5 "auto-reminder at 80%" UI toggle. The actual reminder is the
+ * server-side audit event `billing.credits.standing_balance_80pct` recorded
+ * by GenerateReportDraftHandler.reserveFromPacks — this codebase has no
+ * notification-delivery pipeline (Phase 1 deviation: "console email" only,
+ * and there is no per-tenant email/webhook mechanism to page into), so
+ * building one from scratch is out of scope here (documented scope cut, not
+ * silently skipped). This toggle is a per-viewer display preference only
+ * (localStorage) that does not change server behavior.
+ */
+function StandingBalanceReminderToggle() {
+  const [enabled, setEnabled] = useState(true);
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("donordesk.standingBalanceReminder");
+      if (stored !== null) setEnabled(stored === "true");
+    } catch {
+      // localStorage unavailable; keep the default.
+    }
+  }, []);
+  function toggle() {
+    const next = !enabled;
+    setEnabled(next);
+    try {
+      window.localStorage.setItem("donordesk.standingBalanceReminder", String(next));
+    } catch {
+      // best-effort only
+    }
+  }
+  return (
+    <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+      <input type="checkbox" checked={enabled} onChange={toggle} className="h-4 w-4 accent-brand-600" />
+      Auto-reminder at 80% usage
+    </label>
+  );
+}
+
+function NonprofitDiscountSection() {
+  const [registrationNumber, setRegistrationNumber] = useState("");
+  const [documentUrl, setDocumentUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    const result = await submitNonprofitVerificationAction({ registrationNumber, documentUrl });
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.error.message);
+      return;
+    }
+    setSubmitted(true);
+  }
+
+  return (
+    <section className="card max-w-2xl space-y-3">
+      <div>
+        <h3 className="text-sm font-medium text-slate-800 dark:text-slate-100">Nonprofit discount (40% off)</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Verified nonprofits get 40% off Team and Growth. Submit your registration number and a link to your
+          registration certificate (upload it to Drive/Dropbox and share a view link) — our team reviews submissions
+          manually.
+        </p>
+      </div>
+      {submitted ? (
+        <InlineAlert tone="success" title="Submitted — we'll review it and email you once approved." />
+      ) : (
+        <form onSubmit={submit} className="space-y-3" noValidate>
+          <Field label="Registration number" htmlFor="np-reg">
+            <Input id="np-reg" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} required minLength={1} />
+          </Field>
+          <Field label="Registration certificate link" htmlFor="np-doc">
+            <Input id="np-doc" type="url" value={documentUrl} onChange={(e) => setDocumentUrl(e.target.value)} required placeholder="https://..." />
+          </Field>
+          {error && <InlineAlert tone="danger" title={error} />}
+          <Button type="submit" variant="secondary" pending={busy}>
+            Submit for review
+          </Button>
+        </form>
+      )}
+    </section>
   );
 }

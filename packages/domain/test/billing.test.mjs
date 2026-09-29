@@ -37,12 +37,15 @@ test("plan catalog defines the four commercial plans", () => {
   assert.equal(PLAN_CATALOG.GROWTH.byoLlmEnabled, true);
   assert.equal(PLAN_CATALOG.ENTERPRISE.byoLlmEnabled, true);
 
-  // No plan is trial-eligible anymore: the free Starter tier is the free offer,
-  // and paid tiers (Team/Growth) are unlocked by a paid subscription.
-  assert.equal(isPlanForTrial("TEAM"), false);
-  assert.equal(isPlanForTrial("GROWTH"), false);
+  // Phase 22 WS-F: Team/Growth carry a 14-day local trial; Starter is the free
+  // tier itself (no trial needed) and Enterprise is a guided pilot, not a
+  // self-serve trial.
+  assert.equal(isPlanForTrial("TEAM"), true);
+  assert.equal(isPlanForTrial("GROWTH"), true);
   assert.equal(isPlanForTrial("STARTER"), false);
   assert.equal(isPlanForTrial("ENTERPRISE"), false);
+  assert.equal(PLAN_CATALOG.TEAM.trialDays, 14);
+  assert.equal(PLAN_CATALOG.GROWTH.trialDays, 14);
 });
 
 test("plan limits resolve from the catalog and round-trip JSON-safe", () => {
@@ -114,6 +117,17 @@ test("calculateEntitlement computes overLimit from current usage", () => {
     now,
   );
   assert.deepEqual(snapshot.overLimit.sort(), ["AI_CREDITS", "PROJECTS", "SEATS", "STORAGE"]);
+});
+
+test("calculateEntitlement flags VIEWERS over-limit independently of SEATS", () => {
+  const now = new Date("2026-01-15T00:00:00Z");
+  const starter = { planCode: "STARTER", source: "DEFAULT", effectiveFrom: new Date("2026-01-01T00:00:00Z") };
+  const snapshot = calculateEntitlement(
+    [starter],
+    { activeProjects: 0, seats: 0, viewerSeats: 3, managedStorageBytes: 0n, aiDraftCreditsUsed: 0 },
+    now,
+  );
+  assert.deepEqual(snapshot.overLimit, ["VIEWERS"]);
 });
 
 test("calculateEntitlement ends a cancelled subscription grant immediately", () => {

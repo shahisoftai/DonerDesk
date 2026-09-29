@@ -44,7 +44,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
   const hasItems = items.length > 0;
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in" data-tour-id="reporting-period-list">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Reports</h1>
         <Link className="btn" href={`/projects/${resolvedParams.id}/reports/new`}>Create reporting period</Link>

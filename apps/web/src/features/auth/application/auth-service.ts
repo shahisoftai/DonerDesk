@@ -30,14 +30,41 @@ export class AuthService {
     return await this.parseGoogleResponse(response);
   }
 
-  async signup(input: SignupInput): Promise<{ token: string }> {
+  async signup(input: SignupInput): Promise<{ token: string; trialGranted: boolean }> {
     const response = await fetch(`${this.baseUrl}/v1/auth/signup`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
       cache: "no-store",
     });
-    return await this.parseAuthResponse(response, GENERIC_SIGNUP_ERROR);
+    const data = await this.parseResponseData(response, GENERIC_SIGNUP_ERROR);
+    return { token: data.token, trialGranted: data.trialGranted === true };
+  }
+
+  /** Read-side preview of an invitation (WS-C acceptance flow). */
+  async invitationPreview(token: string): Promise<{ email: string; role: string; tenantId: string; expiresAt: string } | null> {
+    const response = await fetch(`${this.baseUrl}/v1/invitations/preview?token=${encodeURIComponent(token)}`, {
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const data = await response.json().catch(() => null);
+    const parsed = z.object({
+      email: z.string().email(),
+      role: z.string(),
+      tenantId: z.string(),
+      expiresAt: z.string(),
+    }).safeParse(data);
+    return parsed.success ? parsed.data : null;
+  }
+
+  async acceptInvitation(token: string, name: string, password: string): Promise<{ token: string }> {
+    const response = await fetch(`${this.baseUrl}/v1/invitations/accept`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ token, name, password }),
+      cache: "no-store",
+    });
+    return await this.parseAuthResponse(response, "We could not accept this invitation. It may have expired or already been used.");
   }
 
   private async parseAuthResponse(response: Response, genericMessage: string): Promise<{ token: string }> {
@@ -50,7 +77,7 @@ export class AuthService {
     return { token: data.token, provisioned: data.provisioned === true };
   }
 
-  private async parseResponseData(response: Response, genericMessage: string): Promise<{ token: string; provisioned?: boolean }> {
+  private async parseResponseData(response: Response, genericMessage: string): Promise<{ token: string; provisioned?: boolean; trialGranted?: boolean }> {
     if (!response.ok) {
       const message = await this.safeProblemTitle(response);
       if (response.status === 422 || response.status === 400) {
@@ -102,6 +129,7 @@ export type SignupInput = {
   email: string;
   password: string;
   requestedPlan?: "STARTER" | "TEAM" | "GROWTH";
+  startTrial?: boolean;
   organization: {
     name: string;
     organizationType: string;

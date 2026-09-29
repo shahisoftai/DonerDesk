@@ -4,6 +4,8 @@ import { DomainError, isPlanCode } from "@donordesk/domain";
 import type {
   BillingProvider,
   CreateCheckoutArgs,
+  CreateOneOffCheckoutArgs,
+  CreditPackSku,
   ProviderBillingEvent,
   ProviderSubscription,
 } from "@donordesk/application";
@@ -18,6 +20,17 @@ const STUB_STATUS_MAP: Record<string, string> = {
   "subscription.paused": "PAUSED",
   "subscription.past_due": "PAST_DUE",
   "subscription.unpaid": "UNPAID",
+};
+
+/**
+ * Stub mirror of Creem's one-off SKUs: a stub checkout URL/product id carries
+ * the SKU slug, and webhook events map back to it so the pack mint/refund
+ * flows are exercisable in dev and tests without live Creem.
+ */
+const STUB_TOPUP_SKUS: Record<string, { sku: CreditPackSku; credits: number }> = {
+  "topup-50": { sku: "TOPUP_50", credits: 50 },
+  "topup-100": { sku: "TOPUP_100", credits: 100 },
+  "standing-balance-100": { sku: "STANDING_BALANCE_100", credits: 100 },
 };
 
 /**
@@ -38,7 +51,20 @@ export class StubBillingProvider implements BillingProvider {
       ok: true,
       value: {
         checkoutId: `stub-checkout-${input.requestId}`,
-        url: `https://checkout.stub.local/${encodeURIComponent(input.plan)}?interval=${input.interval}&tenant=${input.tenantId}`,
+        // `nonprofit` mirrors Creem's resolveNonprofitProduct routing so the
+        // verified-discount branch is visible in dev (the stub has no separate
+        // discount product; the query flag records the routing decision).
+        url: `https://checkout.stub.local/${encodeURIComponent(input.plan)}?interval=${input.interval}&tenant=${input.tenantId}${input.nonprofit ? "&nonprofit=1" : ""}`,
+      },
+    };
+  }
+
+  async createOneOffCheckout(input: CreateOneOffCheckoutArgs): Promise<Result<{ checkoutId: string; url: string }, DomainError>> {
+    return {
+      ok: true,
+      value: {
+        checkoutId: `stub-topup-${input.requestId}`,
+        url: `https://checkout.stub.local/topup/${encodeURIComponent(input.sku)}?tenant=${input.tenantId}`,
       },
     };
   }
@@ -57,7 +83,7 @@ export class StubBillingProvider implements BillingProvider {
         planCode: "TEAM",
         status: "ACTIVE",
         currency: "USD",
-        unitAmountMinor: 5900,
+        unitAmountMinor: 12900,
         billingInterval: "MONTH",
         currentPeriodStart: new Date(),
         currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -105,6 +131,14 @@ export class StubBillingProvider implements BillingProvider {
       }
 
       const metadata = extractMetadata(object);
+      // Mirror the Creem adapter's order-id + one-off purchase extraction so
+      // the pack mint (`checkout.completed`) and refund/dispute paths can be
+      // driven from stub webhook payloads in dev/tests: give the stub product
+      // an id containing one of the SKU slugs (e.g. "stub-product-topup-50").
+      const productIdSlug = String(product.id ?? object.product_id ?? "");
+      const topupEntry = Object.entries(STUB_TOPUP_SKUS).find(([slug]) => productIdSlug.includes(slug));
+      const orderId = firstNonEmptyString(object.order_id, object.checkout_id, object.id);
+
       return {
         ok: true,
         value: {
@@ -114,6 +148,8 @@ export class StubBillingProvider implements BillingProvider {
           subscription,
           customerId: String((object.customer as { id?: string } | undefined)?.id ?? undefined),
           metadata: metadata ?? undefined,
+          orderId,
+          oneOffPurchase: topupEntry ? { sku: topupEntry[1].sku, credits: topupEntry[1].credits } : undefined,
         },
       };
     } catch (error) {
@@ -133,6 +169,13 @@ function extractMetadata(object: Record<string, unknown>): Record<string, unknow
   if (metadata && typeof metadata === "object") {
     const entries = Object.entries(metadata).filter(([, v]) => typeof v === "string" || typeof v === "number" || typeof v === "boolean");
     return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+  }
+  return undefined;
+}
+
+function firstNonEmptyString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value === "string" && value.length > 0) return value;
   }
   return undefined;
 }

@@ -4,6 +4,8 @@ import { DomainError, isPlanCode, type BillingInterval } from "@donordesk/domain
 import type {
   BillingProvider,
   CreateCheckoutArgs,
+  CreateOneOffCheckoutArgs,
+  CreditPackSku,
   ProviderBillingEvent,
   ProviderSubscription,
 } from "@donordesk/application";
@@ -19,11 +21,22 @@ const CREEM_PRODUCT_ENV: Record<"TEAM" | "GROWTH", Record<BillingInterval, strin
   },
 };
 
+/** One-off top-up SKUs: env var name + credit grant (pricing lives in Creem itself). */
+const CREEM_TOPUP_SKUS: Record<CreditPackSku, { envKey: string; credits: number }> = {
+  TOPUP_50: { envKey: "CREEM_PRODUCT_TOPUP_50", credits: 50 },
+  TOPUP_100: { envKey: "CREEM_PRODUCT_TOPUP_100", credits: 100 },
+  // Growth-only prepaid standing balance (§4 WS-D item 5) — same one-off
+  // checkout mechanics as a regular top-up, tagged GROWTH_STANDING_BALANCE by
+  // the webhook processor (see STANDING_BALANCE_SKUS in process-billing-webhook.ts).
+  STANDING_BALANCE_100: { envKey: "CREEM_PRODUCT_STANDING_BALANCE_100", credits: 100 },
+};
+
 export interface CreemBillingProviderOptions {
   apiKey?: string;
   webhookSecret?: string;
   testMode?: boolean;
   products?: Partial<Record<"TEAM" | "GROWTH", Partial<Record<BillingInterval, string>>>>;
+  topupProducts?: Partial<Record<CreditPackSku, string>>;
 }
 
 const EVENT_TO_STATUS: Record<string, string> = {
@@ -49,12 +62,14 @@ export class CreemBillingProvider implements BillingProvider {
   private readonly webhookSecret: string;
   private readonly testMode: boolean;
   private readonly products: Partial<Record<"TEAM" | "GROWTH", Partial<Record<BillingInterval, string>>>>;
+  private readonly topupProducts: Partial<Record<CreditPackSku, string>>;
 
   constructor(options: CreemBillingProviderOptions = {}) {
     this.apiKey = options.apiKey ?? process.env.CREEM_API_KEY ?? "";
     this.webhookSecret = options.webhookSecret ?? process.env.CREEM_WEBHOOK_SECRET ?? "";
     this.testMode = options.testMode ?? process.env.CREEM_TEST_MODE !== "false";
     this.products = options.products ?? {};
+    this.topupProducts = options.topupProducts ?? {};
     if (!this.apiKey) throw new Error("CREEM_API_KEY is required for the Creem billing provider");
     if (!this.webhookSecret) throw new Error("CREEM_WEBHOOK_SECRET is required for the Creem billing provider");
   }
@@ -64,7 +79,7 @@ export class CreemBillingProvider implements BillingProvider {
   }
 
   async createCheckout(input: CreateCheckoutArgs): Promise<Result<{ checkoutId: string; url: string }, DomainError>> {
-    const productId = this.resolveProduct(input.plan, input.interval);
+    const productId = (input.nonprofit && this.resolveNonprofitProduct(input.plan, input.interval)) || this.resolveProduct(input.plan, input.interval);
     if (!productId) {
       return { ok: false, error: DomainError.billingStateInvalid("No product configured for the requested plan/interval.") };
     }
@@ -78,6 +93,37 @@ export class CreemBillingProvider implements BillingProvider {
           success_url: input.successUrl,
           customer: { email: input.customerEmail },
           metadata: { tenant_id: input.tenantId },
+        }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!response.ok) {
+        return { ok: false, error: DomainError.billingProviderUnavailable(`Creem checkout failed (HTTP ${response.status}).`) };
+      }
+      const data = (await response.json()) as { id?: string; checkout_url?: string };
+      if (!data.id || !data.checkout_url) {
+        return { ok: false, error: DomainError.billingProviderUnavailable("Creem checkout returned an unexpected payload.") };
+      }
+      return { ok: true, value: { checkoutId: data.id, url: data.checkout_url } };
+    } catch (error) {
+      return { ok: false, error: DomainError.billingProviderUnavailable("Creem checkout could not be reached.", { cause: String(error) }) };
+    }
+  }
+
+  async createOneOffCheckout(input: CreateOneOffCheckoutArgs): Promise<Result<{ checkoutId: string; url: string }, DomainError>> {
+    const productId = this.resolveTopupProduct(input.sku);
+    if (!productId) {
+      return { ok: false, error: DomainError.billingStateInvalid("No product configured for the requested credit pack.") };
+    }
+    try {
+      const response = await fetch(`${this.baseUrl}/v1/checkouts`, {
+        method: "POST",
+        headers: { "x-api-key": this.apiKey, "content-type": "application/json" },
+        body: JSON.stringify({
+          product_id: productId,
+          request_id: input.requestId,
+          success_url: input.successUrl,
+          customer: { email: input.customerEmail },
+          metadata: { tenant_id: input.tenantId, sku: input.sku },
         }),
         signal: AbortSignal.timeout(15_000),
       });
@@ -154,6 +200,14 @@ export class CreemBillingProvider implements BillingProvider {
       const object = (payload.object ?? {}) as Record<string, unknown>;
       const subscription = mapSubscriptionObject(object);
       const metadata = extractMetadata(object);
+      const productId = String(((object.product ?? {}) as Record<string, unknown>).id ?? object.product_id ?? "");
+      const topupSku = this.resolveTopupSku(productId);
+      // Best-effort order-id extraction: a checkout/order response carries its
+      // own `id`; a refund/dispute payload references the original order
+      // through one of these fields depending on the Creem resource shape.
+      // Verify field names against real Creem refund/dispute payloads before
+      // enabling production top-up refunds (see Phase22 WS-D/WS-J).
+      const orderId = firstNonEmptyString(object.order_id, object.checkout_id, object.id);
 
       return {
         ok: true,
@@ -164,6 +218,8 @@ export class CreemBillingProvider implements BillingProvider {
           subscription: subscription ?? undefined,
           customerId: extractCustomerId(object),
           metadata: metadata ?? undefined,
+          orderId,
+          oneOffPurchase: topupSku ? { sku: topupSku, credits: CREEM_TOPUP_SKUS[topupSku].credits } : undefined,
         },
       };
     } catch (error) {
@@ -177,6 +233,27 @@ export class CreemBillingProvider implements BillingProvider {
     const envKey = CREEM_PRODUCT_ENV[plan][interval];
     return process.env[envKey];
   }
+
+  /** 40%-off verified-nonprofit product, e.g. CREEM_PRODUCT_TEAM_MONTHLY_NONPROFIT. Falls back to the standard product when unconfigured. */
+  private resolveNonprofitProduct(plan: "TEAM" | "GROWTH", interval: BillingInterval): string | undefined {
+    return process.env[`${CREEM_PRODUCT_ENV[plan][interval]}_NONPROFIT`];
+  }
+
+  private resolveTopupProduct(sku: CreditPackSku): string | undefined {
+    return this.topupProducts[sku] ?? process.env[CREEM_TOPUP_SKUS[sku].envKey];
+  }
+
+  private resolveTopupSku(productId: string): CreditPackSku | undefined {
+    if (!productId) return undefined;
+    return (Object.keys(CREEM_TOPUP_SKUS) as CreditPackSku[]).find((sku) => this.resolveTopupProduct(sku) === productId);
+  }
+}
+
+function firstNonEmptyString(...values: unknown[]): string | undefined {
+  for (const v of values) {
+    if (typeof v === "string" && v.length > 0) return v;
+  }
+  return undefined;
 }
 
 function extractCustomerId(object: Record<string, unknown>): string | undefined {

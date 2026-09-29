@@ -52,6 +52,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           storageProvider: org.storageProvider,
           reportingDefaults: JSON.stringify(org.reportingDefaults),
           agentMemoryEnabled: org.agentMemoryEnabled,
+          nonprofitVerifiedAt: org.nonprofitVerifiedAt,
         } as Parameters<typeof this.prisma.organization.create>[0]["data"],
       });
       return ok(org);
@@ -81,6 +82,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           storageProvider: org.storageProvider,
           reportingDefaults: JSON.stringify(org.reportingDefaults),
           agentMemoryEnabled: org.agentMemoryEnabled,
+          nonprofitVerifiedAt: org.nonprofitVerifiedAt,
         } as Parameters<typeof this.prisma.organization.update>[0]["data"],
       });
       return ok(org);
@@ -120,6 +122,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     storageProvider?: string;
     reportingDefaults?: string | null;
     agentMemoryEnabled?: boolean;
+    nonprofitVerifiedAt?: Date | null;
     createdAt: Date;
   }): Organization {
     return Organization.rehydrate({
@@ -143,6 +146,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
         storageProvider: (row.storageProvider as import("@donordesk/domain").StorageProvider) ?? "LOCAL",
         reportingDefaults: JSON.parse(row.reportingDefaults ?? "{}") as import("@donordesk/domain").OrganizationReportingDefaults,
         agentMemoryEnabled: row.agentMemoryEnabled ?? false,
+        nonprofitVerifiedAt: row.nonprofitVerifiedAt ?? undefined,
       },
     });
   }
@@ -318,6 +322,18 @@ export class PrismaInvitationRepository implements IInvitationRepository {
         projectIds: JSON.parse(row.projectIds) as string[],
       },
     }));
+  }
+
+  async update(invitation: Invitation): Promise<Result<Invitation, DomainError>> {
+    try {
+      await this.prisma.invitation.update({
+        where: { id: invitation.id },
+        data: { acceptedAt: invitation.acceptedAt },
+      });
+      return ok(invitation);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
   }
 }
 

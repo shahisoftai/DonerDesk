@@ -7,8 +7,10 @@ test("unknown role gets no capabilities", () => {
   assert.equal(capabilitiesForRole("NOT_A_ROLE").size, 0);
 });
 
-test("VIEWER has no capabilities", () => {
-  assert.equal(capabilitiesForRole("VIEWER").size, 0);
+test("VIEWER can export but has no write capabilities", () => {
+  const caps = capabilitiesForRole("VIEWER");
+  assert.equal(can(caps, "export.create"), true);
+  assert.equal(caps.size, 1);
 });
 
 test("FIELD_OFFICER can create activities and upload evidence only", () => {

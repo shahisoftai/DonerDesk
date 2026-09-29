@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateProjectAction } from "@/lib/actions/projects";
+import { updateProjectAction, archiveProjectAction, restoreProjectAction } from "@/lib/actions/projects";
 import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
@@ -13,7 +13,9 @@ import { FormSummary } from "@/components/ui/FormSummary";
 import { SECTOR_LABEL, SECTOR_OPTIONS, REPORT_FREQUENCY_LABEL } from "@/lib/labels";
 import type { ProjectDetail } from "@/lib/server/schemas";
 
-const STATUS_OPTIONS = ["DRAFT", "ACTIVE", "PAUSED", "COMPLETED", "ARCHIVED"];
+// DRAFT and ARCHIVED are reachable only through the dedicated archive/restore
+// actions below, not this generic status dropdown (see UpdateProjectHandler).
+const STATUS_OPTIONS = ["ACTIVE", "PAUSED", "COMPLETED"];
 
 function toDateInput(iso?: string): string {
   if (!iso) return "";
@@ -80,6 +82,36 @@ export function ProjectSettingsForm({ project }: { project: ProjectDetail }) {
 
   const fields = actionState.fields ?? {};
   const errorCount = Object.keys(fields).reduce((sum, k) => sum + (fields[k]?.length ?? 0), 0);
+  const isArchived = project.status === "ARCHIVED";
+
+  if (isArchived) {
+    return (
+      <div className="space-y-6">
+        <div className="card">
+          <h3 className="font-medium">Archived project</h3>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+            This project is archived: it is read-only and does not count against your plan&apos;s active project
+            limit. Restore it to resume editing.
+          </p>
+          {actionState.error && (
+            <p role="alert" className="mt-2 text-sm font-medium text-danger-700 dark:text-danger-400">{actionState.error}</p>
+          )}
+          <div className="mt-3">
+            <Button
+              type="button"
+              onClick={async () => {
+                const result = await actionState.run(() => restoreProjectAction(project.id));
+                if (result !== undefined) router.refresh();
+              }}
+              pending={actionState.busy}
+            >
+              Restore project
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={save} className="space-y-6" noValidate>
@@ -178,7 +210,7 @@ export function ProjectSettingsForm({ project }: { project: ProjectDetail }) {
             type="button"
             variant="danger"
             onClick={async () => {
-              const result = await actionState.run(() => updateProjectAction(project.id, { status: "ARCHIVED" }));
+              const result = await actionState.run(() => archiveProjectAction(project.id));
               if (result !== undefined) router.refresh();
             }}
             pending={actionState.busy}

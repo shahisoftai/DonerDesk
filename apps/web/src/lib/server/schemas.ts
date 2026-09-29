@@ -13,6 +13,7 @@ export const ProjectListItemSchema = z.object({
   startDate: z.string(),
   endDate: z.string(),
   daysRemaining: z.number(),
+  isDemo: z.boolean().optional(),
 });
 
 export const ProjectsResponseSchema = z.object({ items: z.array(ProjectListItemSchema) });
@@ -41,6 +42,7 @@ export const ProjectDetailSchema = z.object({
   meOfficerId: z.string().optional(),
   reportingOfficerId: z.string().optional(),
   workspaceRootId: z.string().optional(),
+  isDemo: z.boolean().optional(),
 });
 export type ProjectDetail = z.infer<typeof ProjectDetailSchema>;
 

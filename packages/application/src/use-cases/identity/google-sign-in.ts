@@ -16,6 +16,8 @@ export interface GoogleSignInCommand {
   code: string;
   /** Requested plan carried through signed OAuth state. */
   requestedPlan?: string;
+  /** "Start 14-day trial" carried through signed OAuth state (TEAM/GROWTH only). */
+  startTrial?: boolean;
 }
 
 export interface GoogleSignInResult {
@@ -111,13 +113,14 @@ export class GoogleSignInHandler {
       };
     }
 
-    return this.provision(email, profile, cmd.requestedPlan);
+    return this.provision(email, profile, cmd.requestedPlan, cmd.startTrial);
   }
 
   private async provision(
     email: Email,
     profile: { email: string; name: string; googleSubject: string },
     requestedPlan?: string,
+    startTrial?: boolean,
   ): Promise<Result<GoogleSignInResult, DomainError>> {
     const displayName = (profile.name && profile.name.trim().length > 0 ? profile.name.trim() : email.toString());
     const passwordHash = randomBytes(32).toString("hex");
@@ -128,6 +131,7 @@ export class GoogleSignInHandler {
       passwordHash,
       verifiedEmail: email.toString(),
       requestedPlan,
+      startTrial,
       organization: {
         name: `${displayName}'s Organization`,
         organizationType: "OTHER",

@@ -47,6 +47,7 @@ export const SignUpSchema = z.object({
   email: EmailSchema,
   password: z.string().min(8).max(200),
   requestedPlan: z.enum(["STARTER", "TEAM", "GROWTH"]).optional(),
+  startTrial: z.boolean().optional(),
   organization: z.object({
     name: z.string().min(2).max(200),
     organizationType: OrganizationTypeSchema,
@@ -68,8 +69,34 @@ export type LoginInput = z.infer<typeof LoginSchema>;
 export const GoogleSignInSchema = z.object({
   code: z.string().min(1),
   requestedPlan: z.enum(["STARTER", "TEAM", "GROWTH"]).optional(),
+  startTrial: z.boolean().optional(),
 });
 export type GoogleSignInInput = z.infer<typeof GoogleSignInSchema>;
+
+/** Redeems a single-use invitation token (WS-C acceptance flow). */
+export const AcceptInvitationSchema = z.object({
+  token: z.string().min(10).max(200),
+  name: z.string().min(2).max(120),
+  password: z.string().min(8).max(200),
+});
+export type AcceptInvitationInput = z.infer<typeof AcceptInvitationSchema>;
+
+export const AcceptInvitationResponseSchema = z.object({
+  token: z.string().min(1),
+  userId: z.string(),
+  tenantId: z.string(),
+  role: z.string(),
+});
+export type AcceptInvitationResponse = z.infer<typeof AcceptInvitationResponseSchema>;
+
+/** Read-side preview for the accept page (no secrets beyond the invite itself). */
+export const InvitationPreviewSchema = z.object({
+  email: z.string().email(),
+  role: z.string(),
+  tenantId: z.string(),
+  expiresAt: z.string().datetime(),
+});
+export type InvitationPreview = z.infer<typeof InvitationPreviewSchema>;
 
 export const GoogleSignInResponseSchema = z.object({
   token: z.string().min(1),

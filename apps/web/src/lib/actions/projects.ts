@@ -44,3 +44,23 @@ export async function updateProjectAction(projectId: string, input: unknown): Pr
   if (!result.ok) return result;
   return { ok: true, value: undefined };
 }
+
+export type ArchiveProjectResult = Result<undefined, AppError>;
+
+export async function archiveProjectAction(projectId: string): Promise<ArchiveProjectResult> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/projects/${projectId}/archive`, OkResponseSchema, context.token, {
+    method: "POST",
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+export async function restoreProjectAction(projectId: string): Promise<ArchiveProjectResult> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/projects/${projectId}/restore`, OkResponseSchema, context.token, {
+    method: "POST",
+  });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}

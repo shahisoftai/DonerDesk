@@ -36,7 +36,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
   const canReorder = isLogframeReorderEnabled() && ctx.capabilities.has("logframe.edit");
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in" data-tour-id="logframe-indicator-list">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Logframe &amp; indicators</h1>
         <div className="flex gap-2">

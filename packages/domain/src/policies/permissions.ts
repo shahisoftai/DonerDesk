@@ -80,7 +80,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "comment.create", "audit.view",
   ]),
   VIEWER: new Set<Permission>([
-    "project.view",
+    "project.view", "report.export",
   ]),
 };
 

@@ -100,9 +100,13 @@ export function TeamPanel({
             <div className="rounded-lg border border-brand-500/30 bg-brand-500/5 p-3">
               <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Invitation created</p>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Email delivery is not active in this build. Share the invite token with the invitee; the acceptance flow is not wired yet.
+                Email delivery is not active in this build. Share the acceptance link below with the invitee — they
+                choose a password there and join with the invited role.
               </p>
-              <code className="mt-2 block break-all rounded bg-slate-900/5 p-2 text-xs dark:bg-slate-900/60">{inviteToken}</code>
+              <code className="mt-2 block break-all rounded bg-slate-900/5 p-2 text-xs dark:bg-slate-900/60">
+                /invite/accept?token={inviteToken}
+              </code>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Prefix the path above with your workspace URL when sharing.</p>
             </div>
           )}
         </form>

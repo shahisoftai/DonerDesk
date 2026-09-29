@@ -115,7 +115,7 @@ export default async function EvidencePage({
   const queryString = new URLSearchParams(entries).toString();
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in" data-tour-id="evidence-upload">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Evidence library</h1>
         <div className="flex gap-2">

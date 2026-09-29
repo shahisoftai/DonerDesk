@@ -8,7 +8,31 @@ handlers, webhook tenant resolution, and the Continue→checkout→thanks flow.
 Stub remains the development/tests default. Enterprise custom contract
 provisioning is the remaining planned follow-up.  
 **Payment provider:** Creem (production Merchant of Record), stub (development/tests)  
-**Pricing decision:** Starter $0, Team $59/month, Growth $149/month, Enterprise custom
+**Pricing decision (updated 2026-09-28 — see §3.1a and
+[`../imp/Phase22-tier-pricing.md`](../imp/Phase22-tier-pricing.md)):**
+Starter $0, Team $129/month ($1,290/yr), Growth $299/month ($2,990/yr),
+Enterprise custom (floor $12,000/year); verified NGOs get 40% off paid plans
+(Team $79, Growth $179 effective); AI credit ladder 5/20/100 per month;
+AI credit top-up packs +50 $79 (Team) / +100 $149 (Growth).
+
+> **2026-09-28/29 pricing overhaul (shipped — Phase 22).** The commercial
+> tier system was reworked per the tier-system audit; the full plan and
+> status live in [`../imp/Phase22-tier-pricing.md`](../imp/Phase22-tier-pricing.md).
+> Live catalog (`PLAN_CATALOG_VERSION = 2`): Free (Starter) 1 project +
+> unlimited archived, 1 seat + 2 viewers, 1 GB, **5** AI drafts/mo; Team
+> **$129/mo** ($1,290/yr) 5 projects, 5 seats + unlimited viewers, 25 GB,
+> **20** drafts, top-up packs, 14-day local trial; Growth **$299/mo**
+> ($2,990/yr) 20 projects, 15 seats, 100 GB, **100** drafts, +100 top-ups +
+> Growth-only prepaid standing balance, BYO AI provider; Enterprise floor
+> **$12,000/yr**. Nonprofit 40% discount is **visible but verified**
+> (in-product submission → SuperAdmin review → discounted Creem product or
+> MANUAL grant; a rejection revokes the flag). Enforcement notes: trials
+> are double-gated (`NEXT_PUBLIC_TRIALS_ENABLED` for copy +
+> `TRIALS_ENABLED` server-side, default off); BYO-LLM keys are
+> entitlement-gated fail-closed on both drafting and template extraction;
+> subscription grants re-sync on renewal/plan change. Still operational
+> only: production Creem (test mode), Kestra schedules, enforcement
+> rollout.
 
 > **2026-08-18 implementation notes.** Two releases shipped the live Creem path:
 > **`20260818053116`** (Phase 4 reconciliation + checkout thanks page) and
@@ -188,27 +212,40 @@ Principal paths to change:
 
 ## 3. Commercial catalog
 
-### 3.1 Launch pricing
+### 3.1 Launch pricing — SUPERSEDED 2026-09-28 (see §3.1a)
 
-| | Starter | Team | Growth | Enterprise |
-|---|---:|---:|---:|---:|
-| Monthly price | $0 | $59 | $149 | Custom; target floor $6,000/year |
-| Annual price | $0 | $590 | $1,490 | Annual contract |
+> **Superseded:** the table below is the historical launch catalog
+> ($59/$149, credits 5/100/500, Enterprise floor $6,000). The decided catalog
+> is §3.1a / `imp/Phase22-tier-pricing.md` §3 and applies from the Phase 22
+> WS-A catalog flip. Kept for grant-history and Creem-product reconciliation.
+
+### 3.1a Decided pricing (2026-09-28 — Phase 22 target state)
+
+| | Starter (Free) | Team | Growth | Enterprise |
+|---|---|---|---|---|
+| Monthly price | $0 | $129 | $299 | Custom; **floor $12,000/year** |
+| Annual price | $0 | $1,290 | $2,990 | Annual contract |
+| NGO price (40% verified discount) | — | $79/mo · $790/yr | $179/mo · $1,790/yr | Built into contract |
 | Active projects | 1 | 5 | 20 | Contracted/unlimited |
-| Seats, including owner | 1 | 5 | 15 | Contracted/unlimited |
+| Archived projects | Unlimited (never counted) | Unlimited | Unlimited | Unlimited |
+| Seats (full, incl. owner) | 1 | 5 | 15 | Contracted/unlimited |
+| Read-only viewer seats | 2 | Unlimited | Unlimited | Unlimited |
 | DonorDesk-managed storage | 1 GB | 25 GB | 100 GB | Contracted |
 | Linked Google Drive bytes | Not charged | Not charged | Not charged | Not charged |
-| Successful AI report drafts/month | 5 | 100 | 500 | Contracted |
+| Successful AI report drafts/month | 5 | 20 | 100 | Contracted pool |
+| AI credit top-ups | — | +50 pack $79 | +100 pack $149, prepaid standing balance | Custom pool |
+| BYO AI provider | — | — | Included | Included |
 | Core reporting and exports | Included | Included | Included | Included |
+| Evidence vault, provenance, audit trail | Included | Included | Included | Included |
 | Google Drive link-first | Included | Included | Included | Included |
 | R2-managed uploads | Up to quota | Up to quota | Up to quota | Contracted |
-| Support | Community | Email | Priority email | SLA/dedicated |
+| Support | Community | Email | Priority email + onboarding call | SLA/dedicated |
 | SSO/SCIM, custom residency, SLA | — | — | — | Included/contracted |
 
-Annual billing gives two months free. Display tax treatment at checkout; Creem,
-as Merchant of Record, is responsible for customer tax calculation/remittance and
-compliant invoices. DonorDesk retains Creem order/transaction references required
-for support and accounting reconciliation.
+Annual billing gives two months free. The 40% nonprofit discount is
+**visible but verified**: discounted prices are shown on all marketing
+surfaces; verification (NGO registration certificate or equivalent) happens
+before the discount is applied, and discounts never change domain limits.
 
 ### 3.2 Trial and nonprofit policy
 
@@ -633,8 +670,16 @@ and object update timestamps; older events cannot overwrite newer state.
 | `subscription.past_due` / `unpaid` | Apply grace policy and billing warning |
 | `subscription.expired` / `paused` | End paid grant; fall back to another grant/Starter |
 | `subscription.update` | Re-fetch/map product and period idempotently |
-| `refund.created` | Reconcile access, audit, notify admin |
-| `dispute.created` | Flag review; preserve data; apply explicit risk policy |
+| `checkout.completed` (one-off top-up SKU) | Mint a `PurchasedCreditPack` (idempotent on `providerOrderId`); no entitlement-grant coupling; Growth standing-balance SKU enforces the 2-pack cap (over-cap purchase is audited, not minted) |
+| `refund.created` | Reconcile access, audit, notify admin; if the refunded order is a credit pack, set the pack `REFUNDED` (stops draw-down, never claws back consumed credits) |
+| `dispute.created` | Flag review; preserve data; apply explicit risk policy; same credit-pack `REFUNDED` handling when the disputed order is a pack |
+
+Pack draw-down order: plan monthly quota first (ledger-reconciled), then
+active packs oldest-first (single atomic conditional UPDATE per reserve —
+packs cannot be overdrawn). Failed generations release from the pool they
+actually reserved from. TOPUP packs survive downgrade/cancellation;
+GROWTH_STANDING_BALANCE packs suspend on leaving GROWTH and reactivate on
+re-subscribing.
 
 Initial grace: retain paid access seven days after `past_due`, then fall back to
 Starter unless Creem reports recovery. Store grace deadline explicitly.

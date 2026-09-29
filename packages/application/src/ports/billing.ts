@@ -8,7 +8,11 @@ import type {
   BillingInterval,
   UsageCounter,
   UsageMetric,
+  PurchasedCreditPack,
+  NonprofitVerification,
 } from "@donordesk/domain";
+
+export type CreditPackSku = "TOPUP_50" | "TOPUP_100" | "STANDING_BALANCE_100";
 
 export interface ProviderSubscription {
   providerSubscriptionId: string;
@@ -38,6 +42,14 @@ export interface ProviderBillingEvent {
   customerId?: string;
   /** Opaque provider metadata (e.g. the tenant reference recorded at checkout). */
   metadata?: Record<string, unknown>;
+  /**
+   * Provider order/transaction id. Present on one-off `checkout.completed`
+   * events and on the `refund.created`/`dispute.created` events that later
+   * reference the same order — the join key for `PurchasedCreditPack`.
+   */
+  orderId?: string;
+  /** Present only on a `checkout.completed` event for a one-off top-up SKU. */
+  oneOffPurchase?: { sku: CreditPackSku; credits: number };
 }
 
 export interface CreateCheckoutArgs {
@@ -47,14 +59,26 @@ export interface CreateCheckoutArgs {
   interval: BillingInterval;
   customerEmail: string;
   successUrl: string;
+  /** Tenant has an APPROVED NonprofitVerification: use the discounted product if configured. */
+  nonprofit?: boolean;
 }
 
 export interface CreateCustomerPortalArgs {
   providerCustomerId: string;
 }
 
+export interface CreateOneOffCheckoutArgs {
+  tenantId: string;
+  requestId: string;
+  sku: CreditPackSku;
+  customerEmail: string;
+  successUrl: string;
+}
+
 export interface BillingProvider {
   createCheckout(input: CreateCheckoutArgs): Promise<Result<{ checkoutId: string; url: string }, DomainError>>;
+  /** One-off (non-subscription) purchase, e.g. an AI-credit top-up pack. */
+  createOneOffCheckout(input: CreateOneOffCheckoutArgs): Promise<Result<{ checkoutId: string; url: string }, DomainError>>;
   createCustomerPortal(input: CreateCustomerPortalArgs): Promise<Result<{ url: string }, DomainError>>;
   getSubscription(providerSubscriptionId: string): Promise<Result<ProviderSubscription, DomainError>>;
   /** Verify the raw body against the provider signature and parse the event. */
@@ -68,6 +92,15 @@ export interface IEntitlementGrantRepository {
   listEffectiveByTenant(tenantId: string, now: Date): Promise<Result<EntitlementGrant[]>>;
   /** Trial grants whose window ended at/before `now`. */
   listExpiredTrialGrants(now: Date): Promise<Result<EntitlementGrant[]>>;
+  /**
+   * Ends one grant's open window in place at `at` (no-op if already ended at
+   * or before `at`). Grants are append-oriented for *creation*; ending a stale
+   * window early (subscription plan change/renewal resync) cannot be modeled
+   * as a new append, because a phantom "terminated" row would leave the
+   * original window effective. Precedent: PlatformControlPlane's
+   * extendTrial/endTrial mutate `effectiveUntil` in place the same way.
+   */
+  endGrant(grantId: string, at: Date): Promise<Result<void>>;
 }
 
 /**
@@ -77,6 +110,11 @@ export interface IEntitlementGrantRepository {
  */
 export interface IPlanCatalogRepository {
   listOverrides(): Promise<Result<PlanCatalogOverride[]>>;
+}
+
+export interface IPlatformLlmConfigRepository {
+  /** Tenant ids with an enabled tenant-scoped (BYO) LLM configuration. */
+  listEnabledTenantScopeIds(): Promise<Result<string[]>>;
 }
 
 export interface IBillingSubscriptionRepository {
@@ -136,6 +174,34 @@ export interface IBillingEventInboxRepository {
   markFailed(id: string, error: string): Promise<Result<void>>;
   /** Events stuck in PROCESSING beyond `olderThan` (worker crashed mid-claim). */
   listStaleProcessing(olderThan: Date, limit?: number): Promise<Result<Array<{ id: string; providerEventId: string; tenantId: string | null; attemptCount: number }>>>;
+}
+
+export interface IPurchasedCreditPackRepository {
+  create(pack: PurchasedCreditPack): Promise<Result<PurchasedCreditPack>>;
+  findByProviderOrderId(providerOrderId: string): Promise<Result<PurchasedCreditPack | null>>;
+  /** Active packs for a tenant, oldest-first (draw-down order). */
+  listActiveByTenant(tenantId: string): Promise<Result<PurchasedCreditPack[]>>;
+  /** All packs for a tenant, any status (billing summary / SuperAdmin view). */
+  listByTenant(tenantId: string): Promise<Result<PurchasedCreditPack[]>>;
+  /**
+   * Atomically draws `amount` credits from the pack, guarding the remaining
+   * balance at the database level (`used + amount <= credits`). Returns the
+   * updated pack, or a CONFLICT error if the pack no longer has enough
+   * remaining balance (raced by a concurrent draw-down).
+   */
+  reserve(packId: string, amount: number): Promise<Result<PurchasedCreditPack>>;
+  /** Compensating release after a reserved draw-down whose generation failed. */
+  release(packId: string, amount: number): Promise<Result<PurchasedCreditPack>>;
+  update(pack: PurchasedCreditPack): Promise<Result<PurchasedCreditPack>>;
+}
+
+export interface INonprofitVerificationRepository {
+  create(v: NonprofitVerification): Promise<Result<NonprofitVerification>>;
+  update(v: NonprofitVerification): Promise<Result<NonprofitVerification>>;
+  findById(id: string): Promise<Result<NonprofitVerification | null>>;
+  /** The tenant's most recent submission, regardless of status. */
+  findLatestByTenant(tenantId: string): Promise<Result<NonprofitVerification | null>>;
+  listPending(limit?: number): Promise<Result<NonprofitVerification[]>>;
 }
 
 export interface ITrialIdentityRepository {

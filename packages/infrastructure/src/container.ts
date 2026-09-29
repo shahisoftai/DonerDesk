@@ -22,6 +22,7 @@ import {
   SignUpHandler,
   LoginHandler,
   InviteUserHandler,
+  AcceptInvitationHandler,
   ChangeRoleHandler,
   ChangePasswordHandler,
   RequestPasswordResetHandler,
@@ -33,7 +34,11 @@ import {
   LinkGoogleDriveEvidenceHandler,
   ListUsersHandler,
   CreateProjectHandler,
+  CreateDemoProjectHandler,
+  DeleteDemoProjectHandler,
   UpdateProjectHandler,
+  ArchiveProjectHandler,
+  RestoreProjectHandler,
   ListProjectsHandler,
   GetProjectHandler,
   AssignProjectMemberHandler,
@@ -144,6 +149,15 @@ import {
   ProvisionTenantHandler,
   EntitlementService,
   CreateCheckoutHandler,
+  CreateTopupCheckoutHandler,
+  SubmitContactSalesInquiryHandler,
+  SubmitNonprofitVerificationHandler,
+  ApproveNonprofitVerificationHandler,
+  RejectNonprofitVerificationHandler,
+  ListPendingNonprofitVerificationsHandler,
+  ListCreditPacksHandler,
+  CompCreditPackHandler,
+  RefundCreditPackHandler,
   CreateCustomerPortalHandler,
   GetBillingSummaryHandler,
   ProcessBillingWebhookHandler,
@@ -153,6 +167,7 @@ import {
   ReleaseStaleUsageReservationsHandler,
   RetryBillingInboxHandler,
   RunGrandfatherCreditCutoverHandler,
+  RunGrandfatherByoLlmHandler,
   BillingSubscriptionSynchronizer,
   ReportRevisionService,
   ReportAssuranceService,
@@ -180,6 +195,7 @@ import {
 import type { IJobQueue, IReportDraftGenerator, INotificationPort, IAgentMemoryRepository, IAgentMemoryExtractor } from "@donordesk/application";
 import { EmailAdapter } from "./comms/email.js";
 import { PostmarkNotificationAdapter, FanOutNotificationAdapter } from "./comms/postmark-notification-adapter.js";
+import { ConsoleContactSalesNotifier } from "./comms/console-contact-sales-notifier.js";
 
 import {
   PrismaOrganizationRepository,
@@ -188,6 +204,7 @@ import {
   PrismaPasswordResetTokenRepository,
 } from "./repositories/identity.js";
 import { PrismaProjectRepository } from "./repositories/projects.js";
+import { PrismaDemoProjectRepository } from "./repositories/demo.js";
 import { PrismaProjectMemberRepository } from "./repositories/project-members.js";
 import {
   PrismaProjectSetupRepository,
@@ -199,6 +216,9 @@ import {
   PrismaUsageCounterRepository,
   PrismaBillingEventInboxRepository,
   PrismaTrialIdentityRepository,
+  PrismaPurchasedCreditPackRepository,
+  PrismaNonprofitVerificationRepository,
+  PrismaPlatformLlmConfigRepository,
   PrismaLlmUsageRepository,
   PrismaPlanCatalogRepository,
 } from "./repositories/billing.js";
@@ -330,10 +350,12 @@ export interface Container {
   usageCounters: PrismaUsageCounterRepository;
   billingInbox: PrismaBillingEventInboxRepository;
   trialIdentities: PrismaTrialIdentityRepository;
+  purchasedCreditPacks: PrismaPurchasedCreditPackRepository;
   llmUsage: PrismaLlmUsageRepository;
   planCatalog: PrismaPlanCatalogRepository;
   billingProvider: ReturnType<typeof createBillingProvider>;
   projects: PrismaProjectRepository;
+  demoProjects: PrismaDemoProjectRepository;
   projectMembers: PrismaProjectMemberRepository;
   projectSetup: PrismaProjectSetupRepository;
   reportingProfiles: PrismaReportingProfileRepository;
@@ -371,6 +393,7 @@ export interface Container {
     login: LoginHandler;
     googleSignIn: GoogleSignInHandler;
     inviteUser: InviteUserHandler;
+    acceptInvitation: AcceptInvitationHandler;
     changeRole: ChangeRoleHandler;
     changePassword: ChangePasswordHandler;
     requestPasswordReset: RequestPasswordResetHandler;
@@ -384,7 +407,11 @@ export interface Container {
     deactivateAgentMemory: DeactivateAgentMemoryHandler;
     listUsers: ListUsersHandler;
     createProject: CreateProjectHandler;
+    createDemoProject: CreateDemoProjectHandler;
+    deleteDemoProject: DeleteDemoProjectHandler;
     updateProject: UpdateProjectHandler;
+    archiveProject: ArchiveProjectHandler;
+    restoreProject: RestoreProjectHandler;
     listProjects: ListProjectsHandler;
     getProject: GetProjectHandler;
     assignProjectMember: AssignProjectMemberHandler;
@@ -514,6 +541,15 @@ export interface Container {
     connectGoogleDrive: ConnectGoogleDriveHandler;
     linkGoogleDriveEvidence: LinkGoogleDriveEvidenceHandler;
     createCheckout: CreateCheckoutHandler;
+    createTopupCheckout: CreateTopupCheckoutHandler;
+    submitContactSalesInquiry: SubmitContactSalesInquiryHandler;
+    submitNonprofitVerification: SubmitNonprofitVerificationHandler;
+    listPendingNonprofitVerifications: ListPendingNonprofitVerificationsHandler;
+    listCreditPacks: ListCreditPacksHandler;
+    compCreditPack: CompCreditPackHandler;
+    refundCreditPack: RefundCreditPackHandler;
+    approveNonprofitVerification: ApproveNonprofitVerificationHandler;
+    rejectNonprofitVerification: RejectNonprofitVerificationHandler;
     createCustomerPortal: CreateCustomerPortalHandler;
     getBillingSummary: GetBillingSummaryHandler;
     processBillingWebhook: ProcessBillingWebhookHandler;
@@ -523,6 +559,7 @@ export interface Container {
     releaseStaleUsageReservations: ReleaseStaleUsageReservationsHandler;
     retryBillingInbox: RetryBillingInboxHandler;
     runGrandfatherCreditCutover: RunGrandfatherCreditCutoverHandler;
+    runGrandfatherByoLlm: RunGrandfatherByoLlmHandler;
   };
 }
 
@@ -641,6 +678,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const passwordResetTokens = new PrismaPasswordResetTokenRepository(prisma);
   const passwordResetRateLimiter = new InMemoryPasswordResetRateLimiter();
   const projects = new PrismaProjectRepository(prisma);
+  const demoProjects = new PrismaDemoProjectRepository(prisma);
   const projectMembers = new PrismaProjectMemberRepository(prisma);
   const projectSetup = new PrismaProjectSetupRepository(prisma);
   const reportingProfiles = new PrismaReportingProfileRepository(prisma);
@@ -676,12 +714,15 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const usageCounters = new PrismaUsageCounterRepository(prisma);
   const billingInbox = new PrismaBillingEventInboxRepository(prisma);
   const trialIdentities = new PrismaTrialIdentityRepository(prisma);
+  const purchasedCreditPacks = new PrismaPurchasedCreditPackRepository(prisma);
+  const nonprofitVerifications = new PrismaNonprofitVerificationRepository(prisma);
+  const platformLlmConfigs = new PrismaPlatformLlmConfigRepository(prisma);
   const llmUsage = new PrismaLlmUsageRepository(prisma);
   const planCatalog = new PrismaPlanCatalogRepository(prisma);
   const billingProvider = createBillingProvider();
-  const entitlements = new EntitlementService(entitlementGrants, billingSubscriptions, usageCounters, projects, users, planCatalog);
-  const billingSubscriptionSynchronizer = new BillingSubscriptionSynchronizer(billingProvider, billingSubscriptions, entitlementGrants, ids, audits, clock);
-  const provisionTenant = new ProvisionTenantHandler(ids, organizations, users, entitlementGrants, auth, events, audits, clock);
+  const entitlements = new EntitlementService(entitlementGrants, billingSubscriptions, usageCounters, projects, users, planCatalog, purchasedCreditPacks);
+  const billingSubscriptionSynchronizer = new BillingSubscriptionSynchronizer(billingProvider, billingSubscriptions, entitlementGrants, ids, audits, clock, purchasedCreditPacks);
+  const provisionTenant = new ProvisionTenantHandler(ids, organizations, users, entitlementGrants, auth, events, audits, clock, trialIdentities);
 
   const readiness = new ProjectReadinessService(
     projects,
@@ -846,9 +887,51 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     return new StubReportDraftGenerator();
   };
 
+  /**
+   * WS-E gate shared by report drafting and template extraction: a TENANT-
+   * scoped LLM config is honored only on plans with byoLlmEnabled. Fails
+   * CLOSED: when the entitlement cannot be resolved for a tenant-scoped
+   * config, the tenant's credentials are discarded (platform/env default
+   * instead) and the failure is audited — an unresolvable entitlement must
+   * never widen access. Returns the config to use (null = platform default).
+   */
+  const gateTenantLlm = async (
+    resolved: ResolvedLlmConfig | null,
+    tenantId: string | undefined,
+    path: "report-draft" | "template-extraction",
+  ): Promise<ResolvedLlmConfig | null> => {
+    if (resolved?.scope !== "TENANT" || !tenantId) return resolved;
+    const entitlementResult = await entitlements.resolve({ tenantId });
+    const allowed = entitlementResult.ok && entitlementResult.value.limits.byoLlmEnabled === true;
+    if (allowed) return resolved;
+    logger?.warn(
+      entitlementResult.ok
+        ? "Tenant has a configured LLM provider but byoLlmEnabled=false for its plan; using the platform default instead"
+        : "Tenant has a configured LLM provider but its entitlement could not be resolved; failing closed to the platform default",
+      { tenantId, path },
+    );
+    audits
+      .record({
+        tenantId: TenantId.create(tenantId),
+        actorId: "system:generate-report-draft",
+        eventType: "billing.byo_llm.blocked_by_plan",
+        entityType: "organization",
+        entityId: tenantId,
+        systemNote: entitlementResult.ok
+          ? `Configured LLM provider (${resolved.provider}) ignored on ${path}: plan does not include byoLlmEnabled`
+          : `Configured LLM provider (${resolved.provider}) ignored on ${path}: entitlement resolution failed (fail-closed)`,
+      })
+      .catch((error) => {
+        // The block still applies; this only warns that the audit trail lost a row.
+        logger?.warn("Failed to record billing.byo_llm.blocked_by_plan audit event", { tenantId, path, error: error instanceof Error ? error.message : String(error) });
+      });
+    return null;
+  };
+
   const getReportDraftGenerator = async (tenantId?: string): Promise<IReportDraftGenerator> => {
     const tenantKey = tenantId ?? "default";
-    const resolved = await resolveTenantLlm(tenantId);
+    const tenantResolved = await resolveTenantLlm(tenantId);
+    const resolved = await gateTenantLlm(tenantResolved, tenantId, "report-draft");
     const key = `${aiReporterFlagEnabled ? "ai-reporter" : "llm"}:${resolved?.fingerprint ?? "env"}`;
     const cached = generatorCache.get(tenantKey);
     if (cached && cached.key === key) return cached.generator;
@@ -875,7 +958,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     try {
       const org = await organizations.findByTenant(TenantId.create(tenantId));
       if (!org.ok || !org.value?.aiEnabled) return null;
-      const resolved = await resolveTenantLlm(tenantId);
+      const tenantResolved = await resolveTenantLlm(tenantId);
+      // Same WS-E plan gate as report drafting (fail-closed) — tenant keys
+      // must not flow to the extraction path on plans without BYO either.
+      const resolved = await gateTenantLlm(tenantResolved, tenantId, "template-extraction");
       const provider = resolved ? createLLMProvider(resolved) : process.env.LLM_PROVIDER ? createLLMProvider() : null;
       return provider && provider.name !== "stub" ? provider : null;
     } catch (error) {
@@ -978,7 +1064,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     login: new LoginHandler(users, auth, audits),
     googleSignIn: new GoogleSignInHandler(googleSignIn, users, organizations, auth, ids, audits, provisionTenant),
     inviteUser: new InviteUserHandler(ids, users, invitations, audits, notify, entitlements),
-    changeRole: new ChangeRoleHandler(users, audits),
+    acceptInvitation: new AcceptInvitationHandler(ids, users, invitations, auth, audits, entitlements),
+    changeRole: new ChangeRoleHandler(users, audits, entitlements),
     changePassword: new ChangePasswordHandler(users, auth, audits, clock),
     requestPasswordReset: new RequestPasswordResetHandler(
       ids, users, passwordResetTokens, passwordResetRateLimiter, audits, notify, clock,
@@ -1001,7 +1088,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     linkGoogleDriveEvidence: new LinkGoogleDriveEvidenceHandler(ids, evidence, evidenceStorage, events, audits),
     listUsers: new ListUsersHandler(users),
     createProject: new CreateProjectHandler(ids, projects, projectSetup, reportingProfiles, organizations, projectWorkspace, events, audits, entitlements),
+    createDemoProject: new CreateDemoProjectHandler(ids, projects, projectSetup, reportingProfiles, logframe, indicators, templates, audits),
+    deleteDemoProject: new DeleteDemoProjectHandler(projects, demoProjects, audits),
     updateProject: new UpdateProjectHandler(projects, periods, audits),
+    archiveProject: new ArchiveProjectHandler(projects, audits),
+    restoreProject: new RestoreProjectHandler(projects, audits, entitlements),
     listProjects: new ListProjectsHandler(projects, projectMembers),
     getProject: new GetProjectHandler(projects),
     assignProjectMember: new AssignProjectMemberHandler(ids, projectMembers, projects, users, audits, notify),
@@ -1084,7 +1175,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       ids, periods, drafts, sections, projects, organizations, templates, indicatorUpdates, activities,
       reportPlanner, requirementResolver, indicatorAnalytics, evidencePackageBuilder, generationRuns, reportPlans,
       revisionService, assuranceService,
-      getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage, reportArtifacts, runInBackground,
+      getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage, reportArtifacts, runInBackground, purchasedCreditPacks,
     ),
     getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportRevisions, reportPlans, reportArtifacts, {
       evidenceDirectory: new PrismaEvidenceDirectory(prisma),
@@ -1147,15 +1238,25 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     recordLegalConsent: new RecordLegalConsentHandler(audits),
     getLegalConsent: new GetLegalConsentHandler(audits),
     createCheckout: new CreateCheckoutHandler(billingProvider, organizations, billingSubscriptions, ids, audits),
+    createTopupCheckout: new CreateTopupCheckoutHandler(billingProvider, organizations, entitlements, audits, purchasedCreditPacks),
+    submitContactSalesInquiry: new SubmitContactSalesInquiryHandler(new ConsoleContactSalesNotifier(logger), audits),
+    submitNonprofitVerification: new SubmitNonprofitVerificationHandler(ids, nonprofitVerifications, audits),
+    listPendingNonprofitVerifications: new ListPendingNonprofitVerificationsHandler(nonprofitVerifications),
+    listCreditPacks: new ListCreditPacksHandler(purchasedCreditPacks),
+    compCreditPack: new CompCreditPackHandler(purchasedCreditPacks, audits, clock),
+    refundCreditPack: new RefundCreditPackHandler(purchasedCreditPacks, audits),
+    approveNonprofitVerification: new ApproveNonprofitVerificationHandler(nonprofitVerifications, organizations, audits),
+    rejectNonprofitVerification: new RejectNonprofitVerificationHandler(nonprofitVerifications, organizations, audits),
     createCustomerPortal: new CreateCustomerPortalHandler(billingProvider, billingSubscriptions, audits),
     getBillingSummary: new GetBillingSummaryHandler(entitlements),
-    processBillingWebhook: new ProcessBillingWebhookHandler(billingProvider, billingSubscriptions, billingInbox, billingSubscriptionSynchronizer),
+    processBillingWebhook: new ProcessBillingWebhookHandler(billingProvider, billingSubscriptions, billingInbox, billingSubscriptionSynchronizer, purchasedCreditPacks, audits),
     expireLocalTrials: new ExpireLocalTrialsHandler(entitlementGrants, audits, clock),
     reconcileBillingSubscriptions: new ReconcileBillingSubscriptionsHandler(billingProvider, billingSubscriptions, billingSubscriptionSynchronizer, clock, audits),
     reconcileManagedStorageUsage: new ReconcileManagedStorageUsageHandler(usageCounters, evidence, clock, audits),
     releaseStaleUsageReservations: new ReleaseStaleUsageReservationsHandler(usageCounters, llmUsage, clock, audits),
     retryBillingInbox: new RetryBillingInboxHandler(billingProvider, billingSubscriptions, billingInbox, billingSubscriptionSynchronizer, clock, audits),
     runGrandfatherCreditCutover: new RunGrandfatherCreditCutoverHandler(billingSubscriptions, entitlementGrants, usageCounters, audits, clock, planCatalog),
+    runGrandfatherByoLlm: new RunGrandfatherByoLlmHandler(platformLlmConfigs, entitlementGrants, entitlements, audits, clock, planCatalog),
   };
 
   return {
@@ -1165,9 +1266,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     },
     auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, structuredParser, templateFiles, checklistDetector, exportBuilder,
-    organizations, users, invitations, passwordResetTokens, passwordResetRateLimiter,    projects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
+    organizations, users, invitations, passwordResetTokens, passwordResetRateLimiter,    projects, demoProjects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
     periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, reportArtifacts, agentMemory, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
-    billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, llmUsage, planCatalog, billingProvider,
+    billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, purchasedCreditPacks, llmUsage, planCatalog, billingProvider,
     handlers,
   };
 }

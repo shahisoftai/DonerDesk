@@ -354,6 +354,26 @@ and a tested restore point. Never `prisma db push`/`--accept-data-loss`.
 
 ## 18. Change log
 
+> **2026-09-28 — release `20260928162333` (web-only: pricing overhaul
+> marketing pages).** SCOPE=web deploy of the Phase 22 marketing surface:
+> landing pricing section and new `/pricing` page carry the decided catalog
+> (Team $129/$1,290, Growth $299/$2,990, Enterprise floor $12k, AI credits
+> 5/20/100, top-up packs $79/$149, visible 40% NGO pricing). No api/packages/
+> schema changes — `prisma migrate deploy` not needed; `/ready` 200. Trial
+> copy is gated behind `NEXT_PUBLIC_TRIALS_ENABLED` (unset → not rendered;
+> verified 0 occurrences live) until Feature Phase 22 WS-F implements trials.
+> **Known, intentional mismatch until Phase 22 WS-A ships:** the domain
+> catalog and `/v1/billing/summary` still carry the old $59/$149 prices and
+> 5/100/500 quotas — the in-app billing page will disagree with the public
+> marketing pages. Flip together per
+> [`imp/Phase22-tier-pricing.md`](imp/Phase22-tier-pricing.md) §2. Verified
+> post-deploy: BUILD_ID `ZELcI2v_cEq5k8xpkz7hj`; landing + `/pricing` HTTP
+> 200; new prices present, old plan prices absent (only the intentional
+> `$149` top-up-pack line remains); api `/health` + `/ready` + worker health
+> green. Rollback snapshot: `/opt/donordesk/backups/dd-app-pre-20260928162333.tgz`.
+> Note: `donordesk-kestra` was inactive before this deploy (pre-existing;
+> Phase 22 WS-J scope).
+
 > **2026-09-17 — AI Reporter provider auth fully broken, then fixed; `systemd
 > EnvironmentFile` trailing-newline gotcha found and closed (releases
 > `20260917155946`, `20260917162657`).** Full chain in

@@ -41,6 +41,17 @@ export async function signupAction(
   const orgName = String(form.get("orgName") ?? "").trim();
   const country = String(form.get("country") ?? "").trim();
   const requestedPlan = normalizeRequestedPlan(form.get("plan"));
+  // Server-side re-check of the trials flag: the checkbox not rendering is UI
+  // gating only; a crafted form post must not start a trial with the flag off
+  // (the api's ProvisionTenantHandler enforces the same switch again, off
+  // TRIALS_ENABLED only — not NEXT_PUBLIC_TRIALS_ENABLED, so this check must
+  // not OR the two either, or setting only the public marketing flag would
+  // request a trial that only the web layer thought was authorized).
+  const trialsEnabled = process.env.TRIALS_ENABLED === "1";
+  const startTrial =
+    trialsEnabled &&
+    form.get("startTrial") === "on" &&
+    (requestedPlan === "TEAM" || requestedPlan === "GROWTH");
 
   if (!name || !email || !password || !orgName || !country) {
     const fields: Record<string, string[]> = {};
@@ -57,6 +68,7 @@ export async function signupAction(
     email,
     password,
     requestedPlan,
+    startTrial,
     organization: {
       name: orgName,
       organizationType: String(form.get("orgType") ?? "LOCAL_NGO"),
@@ -68,14 +80,16 @@ export async function signupAction(
     },
   };
 
+  let trialGranted = false;
   try {
-    const { token } = await service.signup(body);
-    await setSessionCookie(token);
+    const result = await service.signup(body);
+    trialGranted = result.trialGranted;
+    await setSessionCookie(result.token);
   } catch (err) {
     if (err instanceof AuthFormError) return err.state;
     return { error: "We could not create your account. Please try again." };
   }
-  if (requestedPlan === "TEAM" || requestedPlan === "GROWTH") {
+  if ((requestedPlan === "TEAM" || requestedPlan === "GROWTH") && !trialGranted) {
     redirect(`/checkout?plan=${requestedPlan.toLowerCase()}`);
   }
   redirect("/dashboard");

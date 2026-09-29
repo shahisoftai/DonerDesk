@@ -48,6 +48,7 @@ export class CreateCheckoutHandler {
       interval: input.interval,
       customerEmail: orgResult.value.contactEmail,
       successUrl,
+      nonprofit: Boolean(orgResult.value.nonprofitVerifiedAt),
     });
     if (!created.ok) return created;
 

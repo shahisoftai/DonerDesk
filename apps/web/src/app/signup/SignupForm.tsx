@@ -12,10 +12,12 @@ import { ORG_TYPE_OPTIONS, ORG_TYPE_LABEL, SECTOR_OPTIONS, SECTOR_LABEL, DATA_RE
 
 type RequestedPlan = "starter" | "team" | "growth";
 
+const TRIALS_ENABLED = process.env.NEXT_PUBLIC_TRIALS_ENABLED === "1";
+
 const PLAN_OPTIONS: { value: RequestedPlan; label: string; description: string }[] = [
-  { value: "starter", label: "Starter — Free", description: "1 project, 1 seat, 1 GB storage, 5 AI drafts/month" },
-  { value: "team", label: "Team — $59/mo", description: "5 projects, 5 seats, 25 GB, 100 AI drafts/month" },
-  { value: "growth", label: "Growth — $149/mo", description: "20 projects, 15 seats, 100 GB, 500 AI drafts/month" },
+  { value: "starter", label: "Starter — Free", description: "1 project, 1 seat + 2 viewers, 1 GB storage, 5 AI drafts/month" },
+  { value: "team", label: "Team — $129/mo", description: "5 projects, 5 seats + unlimited viewers, 25 GB, 20 AI drafts/month" },
+  { value: "growth", label: "Growth — $299/mo", description: "20 projects, 15 seats + unlimited viewers, 100 GB, 100 AI drafts/month" },
 ];
 
 export default function SignupForm({ initialPlan }: { initialPlan: RequestedPlan }) {
@@ -108,6 +110,15 @@ export default function SignupForm({ initialPlan }: { initialPlan: RequestedPlan
             </Select>
           </Field>
         </div>
+        {TRIALS_ENABLED && (initialPlan === "team" || initialPlan === "growth") && (
+          <label className="sm:col-span-2 flex items-start gap-2 text-sm">
+            <input name="startTrial" type="checkbox" defaultChecked className="mt-1" />
+            <span>
+              Start a 14-day free trial of {initialPlan === "team" ? "Team" : "Growth"} — no card required. You can
+              subscribe at any time; unused trial time is lost once you subscribe or it expires.
+            </span>
+          </label>
+        )}
         {state?.error && (
           <div className="sm:col-span-2">
             <InlineAlert tone="danger" title={state.error} />

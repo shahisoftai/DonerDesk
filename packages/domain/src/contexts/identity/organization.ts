@@ -52,6 +52,8 @@ export interface OrganizationProps {
    * tenants must opt in.
    */
   agentMemoryEnabled: boolean;
+  /** Set when a NonprofitVerification for this tenant is APPROVED; gates the discounted Creem checkout product (Phase 22 WS-G). */
+  nonprofitVerifiedAt?: Date;
 }
 
 export class Organization extends Entity<string> {
@@ -111,6 +113,7 @@ export class Organization extends Entity<string> {
   get aiEnabled(): boolean { return this.props.aiEnabled; }
   get agentMemoryEnabled(): boolean { return this.props.agentMemoryEnabled; }
   get storageProvider(): StorageProvider { return this.props.storageProvider; }
+  get nonprofitVerifiedAt(): Date | undefined { return this.props.nonprofitVerifiedAt; }
   get reportingDefaults(): OrganizationReportingDefaults {
     return {
       tone: this.props.reportingDefaults.tone,
@@ -132,6 +135,16 @@ export class Organization extends Entity<string> {
   /** Tenant self-service toggle for the Agent Memory feature (§4.1). */
   updateAgentMemorySettings(patch: { enabled: boolean }): void {
     this.props.agentMemoryEnabled = patch.enabled;
+    this.touch();
+  }
+
+  markNonprofitVerified(at: Date): void {
+    this.props.nonprofitVerifiedAt = at;
+    this.touch();
+  }
+
+  clearNonprofitVerification(): void {
+    this.props.nonprofitVerifiedAt = undefined;
     this.touch();
   }
 

@@ -34,6 +34,7 @@ import { registerHealthRoutes } from "./routes/health.js";
 import { registerInternalRoutes } from "./routes/internal.js";
 import { registerSuperAdminRoutes } from "./routes/superadmin.js";
 import { registerWebhookRoutes } from "./routes/webhooks.js";
+import { registerSalesRoutes } from "./routes/sales.js";
 import { registerBillingRoutes } from "./routes/billing.js";
 import { captureException, httpDuration, httpRequests, initializeObservability, shutdownObservability } from "./observability.js";
 import { registerCollaborationWebSocket } from "./websocket/register.js";
@@ -51,6 +52,12 @@ export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { level: process.env.LOG_LEVEL ?? "info" },
     genReqId: () => randomUUID(),
+    // The api only ever receives traffic proxied through nginx on the same
+    // host (127.0.0.1) — trust that one hop's X-Forwarded-For so req.ip
+    // resolves to the real client address instead of the loopback peer.
+    // Without this, per-IP logic (e.g. the contact-sales rate limiter) reads
+    // the raw client-supplied header and is trivially spoofable.
+    trustProxy: "127.0.0.1",
   });
 
   const container = createContainer({ useAdminConnection: true });
@@ -130,6 +137,7 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   await registerHealthRoutes(app);
   await registerAuthRoutes(app);
+  await registerSalesRoutes(app);
   await app.register(async (instance) => {
     instance.addHook("preHandler", authMiddleware);
     instance.addHook("preHandler", async (req) => {
@@ -189,6 +197,8 @@ function errorToHttpStatus(code: string): number {
     case "CONFLICT":
     case "PLAN_LIMIT_REACHED":
       return 409;
+    case "RATE_LIMITED":
+      return 429;
     case "AI_CREDITS_EXHAUSTED":
       return 429;
     case "BILLING_PROVIDER_UNAVAILABLE":

@@ -38,6 +38,9 @@ export interface ProjectProps {
   reportingOfficerId?: string;
   status: ProjectStatus;
   workspaceRootId?: string;
+  archivedAt?: Date;
+  /** Sample project seeded for the DonorDesk Academy tour; excluded from plan-limit counts and AI-credit usage (Feature 22). */
+  isDemo: boolean;
 }
 
 export class Project extends Entity<string> {
@@ -53,12 +56,13 @@ export class Project extends Entity<string> {
   static create(input: {
     id: string;
     tenantId: TenantId;
-    props: Omit<ProjectProps, "duration" | "budget" | "status"> & {
+    props: Omit<ProjectProps, "duration" | "budget" | "status" | "isDemo"> & {
       startDate: Date;
       endDate: Date;
       budgetAmount?: number;
       budgetCurrency?: string;
       workspaceRootId?: string;
+      isDemo?: boolean;
     };
   }): Project {
     Project.validate(input.props);
@@ -85,6 +89,8 @@ export class Project extends Entity<string> {
       reportingOfficerId: input.props.reportingOfficerId,
       status: "DRAFT",
       workspaceRootId: input.props.workspaceRootId,
+      archivedAt: undefined,
+      isDemo: input.props.isDemo ?? false,
     });
   }
 
@@ -134,6 +140,8 @@ export class Project extends Entity<string> {
   get reportingOfficerId(): string | undefined { return this.props.reportingOfficerId; }
   get status(): ProjectStatus { return this.props.status; }
   get workspaceRootId(): string | undefined { return this.props.workspaceRootId; }
+  get archivedAt(): Date | undefined { return this.props.archivedAt; }
+  get isDemo(): boolean { return this.props.isDemo; }
 
   activate(): void {
     if (this.props.status === "ARCHIVED") throw DomainError.invalidTransition("Cannot activate archived project");
@@ -155,13 +163,16 @@ export class Project extends Entity<string> {
   }
 
   archive(): void {
+    if (this.props.status === "ARCHIVED") throw DomainError.invalidTransition("Project is already archived");
     this.props.status = "ARCHIVED";
+    this.props.archivedAt = new Date();
     this.touch();
   }
 
   restore(): void {
     if (this.props.status !== "ARCHIVED") throw DomainError.invalidTransition("Only archived projects can be restored");
     this.props.status = "DRAFT";
+    this.props.archivedAt = undefined;
     this.touch();
   }
 

@@ -29,11 +29,32 @@ model Organization {
   /// Agent Memory (Phase 21) tenant self-service toggle. Effective state is
   /// this AND the platform AGENT_MEMORY_ENABLED flag.
   agentMemoryEnabled Boolean @default(false)
+  /// Set when a NonprofitVerification for this tenant is APPROVED (Phase 22 WS-G).
+  nonprofitVerifiedAt DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   users         User[]
   projects      Project[]
+}
+
+/// A tenant's submission for the verified nonprofit discount (Phase 22 WS-G).
+model NonprofitVerification {
+  id                  String    @id
+  tenantId            String
+  registrationNumber  String
+  documentUrl         String
+  /// PENDING | APPROVED | REJECTED
+  status              String    @default("PENDING")
+  submittedAt         DateTime  @default(now())
+  reviewedById        String?
+  reviewedAt          DateTime?
+  rejectionReason     String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
 }
 
 // Platform control-plane records. These are deliberately not tenant users and
@@ -222,6 +243,8 @@ model Project {
   reportingOfficerId    String?
   status                String   @default("DRAFT")
   workspaceRootId       String?
+  archivedAt            DateTime?
+  isDemo                Boolean  @default(false)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -242,6 +265,7 @@ model Project {
 
   @@unique([tenantId, projectCode])
   @@index([tenantId, id])
+  @@index([tenantId, isDemo])
 }
 
 model ProjectSetup {
@@ -1240,6 +1264,30 @@ model TrialIdentity {
   @@unique([emailFingerprint])
   @@index([domainFingerprint])
   @@index([tenantId])
+}
+
+/// A one-off AI-credit top-up purchase (Phase 22 WS-D). Plan-agnostic: draws
+/// down after the tenant's monthly plan allowance, oldest-first, and outlives
+/// the subscription that was active when it was purchased.
+model PurchasedCreditPack {
+  id              String    @id
+  tenantId        String
+  credits         Int
+  used            Int       @default(0)
+  /// ACTIVE | EXHAUSTED | REFUNDED | SUSPENDED (SUSPENDED: a GROWTH_STANDING_BALANCE
+  /// pack that stopped drawing down after a downgrade/cancellation away from GROWTH)
+  status          String    @default("ACTIVE")
+  /// TOPUP | GROWTH_STANDING_BALANCE — see PurchasedCreditPackSource
+  source          String    @default("TOPUP")
+  providerOrderId String?
+  purchasedAt     DateTime  @default(now())
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([providerOrderId])
+  @@index([tenantId, status])
+  @@index([tenantId, source, status])
 }
 
 // --------------------------------------------------------------------------- //

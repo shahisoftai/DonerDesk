@@ -19,7 +19,7 @@ export default async function ProjectSetupPage({ params }: { params: Promise<{ i
   const setup = result.value.setup;
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in" data-tour-id="project-setup-checklist">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-mono text-xs text-slate-500">Project setup</p>

@@ -67,6 +67,8 @@ export interface IPasswordResetRateLimiter {
 export interface IInvitationRepository {
   create(invitation: Invitation): Promise<Result<Invitation>>;
   findByToken(token: string): Promise<Result<Invitation | null>>;
+  /** Persists acceptance (acceptedAt). The aggregate guards single-use. */
+  update(invitation: Invitation): Promise<Result<Invitation>>;
 }
 
 export interface AuthenticatedUser {

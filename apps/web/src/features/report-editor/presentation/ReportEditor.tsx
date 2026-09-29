@@ -27,6 +27,7 @@ import { Drawer } from "@/components/feedback/Drawer";
 import { AiActivityPopup } from "@/components/feedback/AiActivityPopup";
 import { Button } from "@/components/ui/Button";
 import { DraftVersionsPanel, type DraftVersion } from "@/features/reporting/presentation/DraftVersionsPanel";
+import { HelpButton } from "@/features/tour/presentation/HelpButton";
 import type { ChartFigureIndicator } from "@/features/reporting/presentation/ChartFigure";
 import { buildEditorModel } from "../application/editor-model";
 import type { ReportCheck } from "../application/report-checks";
@@ -634,7 +635,10 @@ export function ReportEditor(props: ReportEditorProps) {
 
   const generationProgressKnown = generation.generating && model.sections.length > 0;
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in" data-tour-id="report-editor">
+      <div className="flex justify-end">
+        <HelpButton topic="report-editor" />
+      </div>
       <AiActivityPopup
         open={generation.starting || generation.generating}
         title="Writing your report"
