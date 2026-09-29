@@ -1,0 +1,31 @@
+{
+  "width": 1440,
+  "height": 900,
+  "shots": {
+    "dashboard-demo-project": null,
+    "project-setup": null,
+    "donor-template": {
+      "x": 0.18888888888888888,
+      "y": 0.29555555555555557,
+      "w": 0.7944444444444444,
+      "h": 0.33555555555555555
+    },
+    "logframe-indicators": null,
+    "evidence": null,
+    "reporting-period": {
+      "x": 0.18888888888888888,
+      "y": 0.29555555555555557,
+      "w": 0.7944444444444444,
+      "h": 0.24333333333333335
+    },
+    "ai-draft": {
+      "x": 0.6118055555555556,
+      "y": 0.6722222222222223,
+      "w": 0.0763888888888889,
+      "h": 0.06222222222222222
+    },
+    "report-editor": null,
+    "compliance": null,
+    "export": null
+  }
+}
