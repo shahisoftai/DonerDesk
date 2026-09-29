@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { ProductProofStrip } from "@/components/landing/ProductProofStrip";
+import { TourIntentLink } from "@/features/tour/presentation/TourIntentLink";
 
 const FEATURES = [
   {
@@ -301,6 +302,12 @@ export default function HomePage() {
             >
               See how it works
             </a>
+            <TourIntentLink
+              href="/signup"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-white/15 bg-white/5 px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition hover:bg-white/10 sm:w-auto"
+            >
+              Take the product tour
+            </TourIntentLink>
           </div>
           <p className="mt-4 text-sm text-slate-400">
             No credit card required · Set up in minutes · Human-reviewed AI

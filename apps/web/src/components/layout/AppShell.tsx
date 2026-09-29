@@ -10,6 +10,9 @@ import { SideNav } from "./SideNav";
 import { NotificationBell, type BellItem } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AcademyHeaderButton } from "@/features/tour/presentation/AcademyHeaderButton";
+import { useStartOrResumeTour } from "@/features/tour/presentation/useStartOrResumeTour";
+import { TOUR_INTENT_KEY } from "@/features/tour/presentation/TourIntentLink";
 
 const NAV_COLLAPSE_KEY = "donordesk:nav-collapsed";
 
@@ -37,6 +40,24 @@ export function AppShell({
   useEffect(() => {
     const stored = window.localStorage.getItem(NAV_COLLAPSE_KEY);
     if (stored === "1") setNavCollapsed(true);
+  }, []);
+
+  // A visitor who clicked "Take the product tour" on the marketing page before
+  // signing up: honor that intent the first time they reach the portal, then
+  // clear it so it never fires again for this browser.
+  const { startOrResumeTour } = useStartOrResumeTour();
+  useEffect(() => {
+    let intent: string | null = null;
+    try {
+      intent = window.localStorage.getItem(TOUR_INTENT_KEY);
+    } catch {
+      return;
+    }
+    if (intent === "1") {
+      window.localStorage.removeItem(TOUR_INTENT_KEY);
+      startOrResumeTour();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -129,12 +150,7 @@ export function AppShell({
             >
               <span aria-hidden="true">⌕</span> Search <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] dark:border-white/15">⌘K</kbd>
             </Link>
-            <Link
-              href="/dashboard"
-              className="hidden items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-brand-400 hover:text-brand-700 sm:flex dark:border-white/15 dark:text-slate-300"
-            >
-              Academy
-            </Link>
+            <AcademyHeaderButton />
             {canCreate && <CreateMenu />}
             <ThemeToggle />
             <NotificationBell items={bellItems} />

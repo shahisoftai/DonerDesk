@@ -8,7 +8,6 @@ import type { WorkItem } from "@/features/work-items/domain/work-item";
 import { InlineError, EmptyState } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { projectStatusTone } from "@/lib/shared/tone";
-import { StartTourCard } from "@/features/tour/presentation/StartTourCard";
 
 export const dynamic = "force-dynamic";
 
@@ -59,10 +58,6 @@ export default async function Dashboard() {
         </div>
         <Link className="btn-secondary" href="/my-work">Open My Work</Link>
       </header>
-
-      <section className="mt-6">
-        <StartTourCard hasExistingDemoProject={projects.some((p) => p.isDemo)} />
-      </section>
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <CountCard
