@@ -60,11 +60,9 @@ export default async function Dashboard() {
         <Link className="btn-secondary" href="/my-work">Open My Work</Link>
       </header>
 
-      {projects.every((p) => !p.isDemo) ? (
-        <section className="mt-6">
-          <StartTourCard />
-        </section>
-      ) : null}
+      <section className="mt-6">
+        <StartTourCard hasExistingDemoProject={projects.some((p) => p.isDemo)} />
+      </section>
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <CountCard

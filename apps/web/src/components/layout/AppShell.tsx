@@ -129,6 +129,12 @@ export function AppShell({
             >
               <span aria-hidden="true">⌕</span> Search <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] dark:border-white/15">⌘K</kbd>
             </Link>
+            <Link
+              href="/dashboard"
+              className="hidden items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:border-brand-400 hover:text-brand-700 sm:flex dark:border-white/15 dark:text-slate-300"
+            >
+              Academy
+            </Link>
             {canCreate && <CreateMenu />}
             <ThemeToggle />
             <NotificationBell items={bellItems} />

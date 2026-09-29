@@ -11,7 +11,7 @@ import { useToast } from "@/components/feedback/Toast";
  * Creates (or reuses) the tenant's demo project, then starts the tour and
  * navigates to it.
  */
-export function StartTourCard() {
+export function StartTourCard({ hasExistingDemoProject = false }: { hasExistingDemoProject?: boolean }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const { start } = useTourProgress();
@@ -39,9 +39,13 @@ export function StartTourCard() {
       data-tour-id="start-tour-card"
       className="rounded-xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-slate-800"
     >
-      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">New to DonorDesk?</h3>
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+        {hasExistingDemoProject ? "Continue learning DonorDesk" : "New to DonorDesk?"}
+      </h3>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-        Take a 10–15 minute guided tour through a sample project — from setup to a finished, exported report.
+        {hasExistingDemoProject
+          ? "Jump back into your sample project and pick up the guided tour where you left off."
+          : "Take a 10–15 minute guided tour through a sample project — from setup to a finished, exported report."}
       </p>
       {error ? <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">{error}</p> : null}
       <button
@@ -50,7 +54,7 @@ export function StartTourCard() {
         disabled={pending}
         className="mt-3 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
       >
-        {pending ? "Setting up..." : "Start the product tour"}
+        {pending ? "Setting up..." : hasExistingDemoProject ? "Resume the product tour" : "Start the product tour"}
       </button>
     </div>
   );
