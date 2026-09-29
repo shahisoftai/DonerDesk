@@ -126,7 +126,13 @@ export async function registerSuperAdminRoutes(app: FastifyInstance) {
     secured.get("/superadmin/tenants", () => service().listTenants());
     secured.post("/superadmin/tenants", req => service().createTenant(actor(req), TenantCreate.parse(req.body), meta(req)));
     secured.patch("/superadmin/tenants/:id", req => service().updateTenant(actor(req), (req.params as { id: string }).id, TenantUpdate.parse(req.body), meta(req)));
-    secured.delete("/superadmin/tenants/:id", async (req, reply) => { const body = z.object({ confirmation: z.string() }).parse(req.body); await service().deleteTenant(actor(req), (req.params as { id: string }).id, body.confirmation, meta(req)); return reply.status(204).send(); });
+    secured.get("/superadmin/tenants/:id/deletion-preview", req => service().previewTenantDeletion((req.params as { id: string }).id));
+    secured.delete("/superadmin/tenants/:id", async (req, reply) => {
+      const body = z.object({ confirmation: z.string(), force: z.boolean().optional(), categories: z.array(z.string()).optional() }).parse(req.body);
+      const id = (req.params as { id: string }).id;
+      if (body.force) return service().forceDeleteTenant(actor(req), id, body.confirmation, body.categories ?? [], meta(req));
+      await service().deleteTenant(actor(req), id, body.confirmation, meta(req)); return reply.status(204).send();
+    });
     secured.get("/superadmin/users", () => service().listUsers());
     secured.post("/superadmin/users", req => service().createUser(actor(req), UserCreate.parse(req.body), meta(req)));
     secured.patch("/superadmin/users/:id", req => service().updateUser(actor(req), (req.params as { id: string }).id, UserUpdate.parse(req.body), meta(req)));

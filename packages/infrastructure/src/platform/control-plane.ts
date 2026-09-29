@@ -217,7 +217,7 @@ export class PlatformControlPlane {
     // shows `N projects (M archived)` without pulling the whole billing read.
     return orgs.map((o) => ({ ...o, archivedProjects: usage.get(o.tenantId)?.archivedProjects ?? 0 }));
   }
-  listUsers() { return this.prisma.user.findMany({ select: { id: true, tenantId: true, email: true, name: true, role: true, status: true, lastLoginAt: true, createdAt: true }, orderBy: { createdAt: "desc" } }); }
+  listUsers() { return this.prisma.user.findMany({ where: { status: { not: "REMOVED" } }, select: { id: true, tenantId: true, email: true, name: true, role: true, status: true, lastLoginAt: true, createdAt: true }, orderBy: { createdAt: "desc" } }); }
 
   /**
    * Billing & tier overview for the SuperAdmin portal: one row per tenant with
@@ -934,6 +934,72 @@ export class PlatformControlPlane {
     if (old._count.users || old._count.projects) throw new Error("Tenant must have no users or projects before deletion");
     await this.prisma.organization.delete({ where: { id } }); await this.audit(actor, "tenant.deleted", "Organization", id, old, null, meta);
   }
+  /**
+   * Force-delete support. Tables are discovered from the live schema (every
+   * table with a "tenantId" column) so new tenant tables are never missed, then
+   * grouped into categories the operator can keep or delete individually.
+   */
+  private static readonly DELETION_CATEGORIES: Array<{ key: string; label: string; description: string; defaultDelete: boolean; tables: string[] }> = [
+    { key: "users", label: "Users, invitations & sessions", description: "All user accounts of the tenant, invitations, password-reset tokens and project memberships.", defaultDelete: true, tables: ["User", "Invitation", "PasswordResetToken", "ProjectMember"] },
+    { key: "evidence", label: "Evidence records & search index", description: "Evidence file records, extracted text chunks and embeddings. Files held in the tenant's own Google Drive / storage are NOT removed from there.", defaultDelete: true, tables: ["EvidenceFile", "EvidenceChunk", "EvidenceEmbedding"] },
+    { key: "llm", label: "AI run logs & feedback", description: "LLM run history and feedback for this tenant.", defaultDelete: true, tables: ["LlmRun", "LlmFeedback"] },
+    { key: "billing", label: "Billing, subscriptions & credits", description: "Subscription, entitlement grants, usage counters, credit packs and nonprofit verification. Keep for financial/tax records; cancel any Creem subscription separately.", defaultDelete: false, tables: ["BillingSubscription", "EntitlementGrant", "UsageCounter", "PurchasedCreditPack", "NonprofitVerification", "BillingEventInbox"] },
+    { key: "trial", label: "Trial-abuse fingerprints", description: "Kept by default so the same person cannot restart free trials by re-registering.", defaultDelete: false, tables: ["TrialIdentity"] },
+    { key: "audit", label: "Tenant audit trail", description: "Tenant-level audit events. Keep if you need a retention/compliance record.", defaultDelete: false, tables: ["AuditEvent"] },
+    { key: "config", label: "Tenant-scoped integrations & API keys", description: "Encrypted provider configurations (e.g. the tenant's own LLM key) scoped to this tenant.", defaultDelete: true, tables: ["PlatformConfiguration"] },
+    { key: "projects", label: "Projects, reports & all other tenant data", description: "Projects, logframes, indicators, reporting periods, drafts, sections, claims, exports, templates, comments, notifications, branding and any other tenant-scoped table.", defaultDelete: true, tables: [] },
+  ];
+  private static readonly TABLE_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
+  private async tenantTables() {
+    const rows = await this.query<{ table_name: string }>(`SELECT c.table_name FROM information_schema.columns c JOIN information_schema.tables t ON t.table_schema=c.table_schema AND t.table_name=c.table_name AND t.table_type='BASE TABLE' WHERE c.table_schema='public' AND c.column_name='tenantId' ORDER BY c.table_name`);
+    return rows.map(r => r.table_name).filter(n => PlatformControlPlane.TABLE_NAME.test(n) && n !== "Organization" && !n.startsWith("Platform") && !n.startsWith("_"));
+  }
+  private categoryOf(table: string) { return PlatformControlPlane.DELETION_CATEGORIES.find(c => c.tables.includes(table))?.key ?? "projects"; }
+  async previewTenantDeletion(id: string) {
+    const org = await this.prisma.organization.findUniqueOrThrow({ where: { id } });
+    const tables = await this.tenantTables();
+    const counted: Array<{ table: string; count: number }> = [];
+    for (const table of tables) { const r = await this.query<{ count: bigint }>(`SELECT COUNT(*)::bigint AS count FROM "${table}" WHERE "tenantId"=$1`, org.tenantId); counted.push({ table, count: Number(r[0]?.count ?? 0) }); }
+    const cfg = await this.query<{ count: bigint }>(`SELECT COUNT(*)::bigint AS count FROM "PlatformConfiguration" WHERE "scopeType"='TENANT' AND "scopeId" IN ($1,$2)`, org.tenantId, org.id);
+    counted.push({ table: "PlatformConfiguration", count: Number(cfg[0]?.count ?? 0) });
+    return {
+      tenant: { id: org.id, tenantId: org.tenantId, name: org.name },
+      categories: PlatformControlPlane.DELETION_CATEGORIES.map(c => {
+        const items = counted.filter(x => this.categoryOf(x.table) === c.key && x.count > 0);
+        return { key: c.key, label: c.label, description: c.description, defaultDelete: c.defaultDelete, total: items.reduce((n, x) => n + x.count, 0), tables: items };
+      }),
+      external: ["Files in the tenant's own Google Drive / object storage are never touched.", "Any active Creem subscription must be cancelled in the Creem dashboard."],
+    };
+  }
+  async forceDeleteTenant(actor: PlatformSession, id: string, confirmation: string, categories: string[], meta?: { ip?: string; userAgent?: string }) {
+    const org = await this.prisma.organization.findUniqueOrThrow({ where: { id } });
+    if (confirmation !== org.name) throw new Error("Tenant name confirmation does not match");
+    const chosen = new Set(categories);
+    const known = new Set(PlatformControlPlane.DELETION_CATEGORIES.map(c => c.key));
+    for (const key of chosen) if (!known.has(key)) throw new Error(`Unknown category: ${key}`);
+    const targets = (await this.tenantTables()).filter(t => chosen.has(this.categoryOf(t)));
+    const summary: Record<string, number> = {};
+    const deleteOrgRow = chosen.has("users") && chosen.has("projects");
+    await this.prisma.$transaction(async tx => {
+      await tx.$executeRawUnsafe(`SELECT set_config('app.current_tenant', $1, true)`, org.tenantId);
+      // Foreign keys dictate order: retry failed tables (rolled back to a savepoint) until no progress.
+      let pending = [...targets]; let lastError = "";
+      while (pending.length) {
+        const failed: string[] = [];
+        for (const table of pending) {
+          await tx.$executeRawUnsafe(`SAVEPOINT del_tbl`);
+          try { summary[table] = (summary[table] ?? 0) + Number(await tx.$executeRawUnsafe(`DELETE FROM "${table}" WHERE "tenantId"=$1`, org.tenantId)); await tx.$executeRawUnsafe(`RELEASE SAVEPOINT del_tbl`); }
+          catch (error) { await tx.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT del_tbl`); failed.push(table); lastError = `${table}: ${error instanceof Error ? error.message : String(error)}`; }
+        }
+        if (failed.length === pending.length) throw new Error(`Could not delete because of remaining references (${lastError.slice(0, 300)}). Nothing was changed.`);
+        pending = failed;
+      }
+      if (chosen.has("config")) summary.PlatformConfiguration = Number(await tx.$executeRawUnsafe(`DELETE FROM "PlatformConfiguration" WHERE "scopeType"='TENANT' AND "scopeId" IN ($1,$2)`, org.tenantId, org.id));
+      if (deleteOrgRow) { try { await tx.$executeRawUnsafe(`SAVEPOINT del_org`); await tx.$executeRawUnsafe(`DELETE FROM "Organization" WHERE "id"=$1`, id); await tx.$executeRawUnsafe(`RELEASE SAVEPOINT del_org`); summary.Organization = 1; } catch { await tx.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT del_org`); } }
+    }, { timeout: 120_000, maxWait: 10_000 });
+    await this.audit(actor, "tenant.force_deleted", "Organization", id, { name: org.name, tenantId: org.tenantId }, { deletedCategories: [...chosen], keptCategories: [...known].filter(k => !chosen.has(k)), rowsDeleted: summary }, meta);
+    return { deleted: summary, organizationRemoved: Boolean(summary.Organization) };
+  }
   async createUser(actor: PlatformSession, data: { tenantId: string; email: string; name: string; role: string; status: string; password: string }, meta?: { ip?: string; userAgent?: string }) {
     const created = await this.prisma.user.create({ data: { id: randomUUID(), tenantId: data.tenantId, email: data.email.toLowerCase(), name: data.name, role: data.role, status: data.status, passwordHash: await bcrypt.hash(data.password, 12) } });
     await this.audit(actor, "user.created", "User", created.id, null, { ...created, passwordHash: "[HASHED]" }, meta); return { ...created, passwordHash: undefined };
@@ -944,7 +1010,19 @@ export class PlatformControlPlane {
     await this.audit(actor, data.password ? "superadmin.password.reset" : "user.updated", "User", id, old, { name: data.name, status: data.status, role: data.role, password: data.password ? "[RESET]" : undefined, reason: data.reason }, meta);
     return updated;
   }
-  async deleteUser(actor: PlatformSession, id: string, meta?: { ip?: string; userAgent?: string }) { const old = await this.prisma.user.delete({ where: { id } }); await this.audit(actor, "user.deleted", "User", id, old, null, meta); }
+  async deleteUser(actor: PlatformSession, id: string, meta?: { ip?: string; userAgent?: string }) {
+    try {
+      const old = await this.prisma.user.delete({ where: { id } });
+      await this.audit(actor, "user.deleted", "User", id, old, null, meta);
+    } catch (error) {
+      // Users referenced by projects, audit rows etc. cannot be hard-deleted (FK P2003):
+      // retire the account instead — blocked from sign-in, email freed, hidden from the list.
+      if ((error as { code?: string }).code !== "P2003") throw error;
+      const old = await this.prisma.user.findUniqueOrThrow({ where: { id } });
+      await this.prisma.user.update({ where: { id }, data: { status: "REMOVED", email: `removed+${id}@removed.invalid`, passwordHash: "!" } });
+      await this.audit(actor, "user.removed", "User", id, { ...old, passwordHash: "[HASHED]" }, { status: "REMOVED" }, meta);
+    }
+  }
 
   async testConfiguration(actor: PlatformSession, id: string, meta?: { ip?: string; userAgent?: string }) {
     const row = (await this.query<ConfigurationRow>(`SELECT * FROM "PlatformConfiguration" WHERE "id"=$1`, id))[0];

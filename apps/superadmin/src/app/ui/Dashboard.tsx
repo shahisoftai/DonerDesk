@@ -40,7 +40,7 @@ const fields: Record<string, { config: string[]; secrets: string[] }> = {
 };
 
 async function api(path: string, init?: RequestInit) {
-  const response = await fetch(`/api/control/${path}`, { ...init, headers: { "content-type": "application/json", ...init?.headers } });
+  const response = await fetch(`/api/control/${path}`, { ...init, headers: { ...(init?.body ? { "content-type": "application/json" } : {}), ...init?.headers } });
   if (response.status === 401) { location.reload(); throw new Error("Session expired"); }
   const data = response.status === 204 ? null : await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data?.message || data?.title || "Request failed");
@@ -52,7 +52,7 @@ export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterpris
   const [data, setData] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ type: "ok" | "error"; text: string } | null>(null);
-  const [modal, setModal] = useState<null | { kind: "tenant" | "user" | "provider" | "tier" | "tierTenant" | "resetPassword" | "creditPacks"; row?: AnyRow }>(null);
+  const [modal, setModal] = useState<null | { kind: "tenant" | "user" | "provider" | "tier" | "tierTenant" | "resetPassword" | "creditPacks" | "tenantDelete"; row?: AnyRow }>(null);
   const [tenants, setTenants] = useState<AnyRow[]>([]);
   const [byoStatus, setByoStatus] = useState<AnyRow[]>([]);
 
@@ -92,7 +92,7 @@ export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterpris
       <header className="topbar"><div><h1>{navigation.find(x => x[0] === tab)?.[1]}</h1><p>DonorDesk global platform control plane</p></div><div className="top-actions"><div className="secure">● SECURE SESSION</div><button onClick={async()=>{await api("auth/logout",{method:"POST"});location.reload()}}>Sign out</button></div></header>
       {notice && <div className={`toast ${notice.type}`}>{notice.text}</div>}
       {tab === "overview" && <Overview data={data} onNavigate={changeTab} />}
-      {tab === "tenants" && <Tenants rows={Array.isArray(data) ? data : []} onAdd={() => setModal({ kind: "tenant" })} onEdit={(row: AnyRow) => setModal({ kind: "tenant", row })} onDelete={(row: AnyRow) => { const confirmation = prompt(`Type ${row.name} to permanently delete this empty tenant`); if (confirmation === null) return; void action(() => api(`tenants/${row.id}`, { method: "DELETE", body: JSON.stringify({ confirmation }) }), "Tenant deleted"); }} />}
+      {tab === "tenants" && <Tenants rows={Array.isArray(data) ? data : []} onAdd={() => setModal({ kind: "tenant" })} onEdit={(row: AnyRow) => setModal({ kind: "tenant", row })} onDelete={(row: AnyRow) => setModal({ kind: "tenantDelete", row })} />}
       {tab === "tiers" && <Tiers data={data || {}} onEditTier={(tier: AnyRow) => setModal({ kind: "tier", row: tier })} onResetTier={(tier: AnyRow) => confirm(`Revert ${tier.name} (${tier.planCode}) to the static catalog? Any global overrides are removed.`) && void action(() => api(`tiers/${tier.planCode}/reset`, { method: "POST" }), "Tier reset to catalog")} onManageTenant={(row: AnyRow) => setModal({ kind: "tierTenant", row })}       onProvisionEnterprise={(row: AnyRow) => {
         // Server-provided floor (from ENTERPRISE_PRICE_FLOOR_ANNUAL_USD via
         // the server page) so the client bundle never imports the domain pkg.
@@ -120,6 +120,7 @@ export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterpris
       {tab === "system" && <System data={data || {}} />}
     </main>
     {modal?.kind === "tenant" && <TenantModal row={modal.row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(modal.row ? `tenants/${modal.row.id}` : "tenants", { method: modal.row ? "PATCH" : "POST", body: JSON.stringify(value) }), modal.row ? "Tenant updated" : "Tenant created")} />}
+    {modal?.kind === "tenantDelete" && modal.row && <TenantDeleteModal row={modal.row} busy={busy} onClose={() => setModal(null)} onDelete={(body: AnyRow) => action(() => api(`tenants/${modal.row!.id}`, { method: "DELETE", body: JSON.stringify(body) }), "Tenant deleted")} />}
     {modal?.kind === "user" && <UserModal row={modal.row} tenants={tenants} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(modal.row ? `users/${modal.row.id}` : "users", { method: modal.row ? "PATCH" : "POST", body: JSON.stringify(value) }), modal.row ? "User updated" : "User created")} />}
     {modal?.kind === "resetPassword" && modal.row && <UserResetPasswordModal row={modal.row} busy={busy} onClose={() => setModal(null)} />}
     {modal?.kind === "provider" && <ProviderModal group={providerGroups[tab as keyof typeof providerGroups]} row={modal.row} tenants={tenants} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api("configurations", { method: "PUT", body: JSON.stringify(value) }), modal.row ? "Configuration updated and secrets rotated" : "Credentials encrypted and saved")} />}
@@ -279,7 +280,7 @@ function TierModal({ row, busy, onClose, onSave }: any) {
         aiCreditTopUp: form.aiCreditTopUp,
         byoLlmEnabled: form.byoLlmEnabled,
       },
-    })} label="Save tier" />;
+    })} label="Save tier" />
   </Modal>;
 }
 
@@ -406,6 +407,31 @@ function Empty({ text }: { text: string }) { return <div className="empty"><span
 function TenantModal({ row, busy, onClose, onSave }: any) {
   const [form, setForm] = useState({ name: row?.name || "", tenantId: row?.tenantId || "", organizationType: row?.organizationType || "NGO", country: row?.country || "", sectors: safeJson(row?.sectors, []).join(", "), contactName: row?.contactName || "", contactEmail: row?.contactEmail || "", website: row?.website || "", defaultLanguage: row?.defaultLanguage || "en", dataResidency: row?.dataResidency || "DEFAULT", aiEnabled: row?.aiEnabled ?? true });
   return <Modal title={row ? "Edit tenant" : "Create tenant"} subtitle="Organization profile and platform policy" onClose={onClose}><FormGrid>{input("Organization name", "name", form, setForm)}{input("Tenant ID", "tenantId", form, setForm, row ? { disabled: true } : { placeholder: "example-foundation" })}{select("Organization type", "organizationType", ["NGO", "INGO", "UN_AGENCY", "GOVERNMENT", "FOUNDATION", "OTHER"], form, setForm)}{input("Country", "country", form, setForm)}{input("Contact name", "contactName", form, setForm)}{input("Contact email", "contactEmail", form, setForm, { type: "email" })}{input("Website", "website", form, setForm, { type: "url" })}{select("Data residency", "dataResidency", ["DEFAULT", "EU", "US", "AFRICA", "ASIA"], form, setForm)}<label className="field full"><span>Sectors <em>comma separated</em></span><input value={form.sectors} onChange={e => setForm({ ...form, sectors: e.target.value })} /></label><label className="check full"><input type="checkbox" checked={form.aiEnabled} onChange={e => setForm({ ...form, aiEnabled: e.target.checked })} /> Enable AI features for this tenant</label></FormGrid><ModalActions busy={busy} onClose={onClose} onSave={() => onSave({ ...form, sectors: form.sectors.split(",").map((x: string) => x.trim()).filter(Boolean) })} label={row ? "Save changes" : "Create tenant"} /></Modal>;
+}
+
+function TenantDeleteModal({ row, busy, onClose, onDelete }: any) {
+  const [preview, setPreview] = useState<AnyRow | null>(null);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [confirmation, setConfirmation] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    api(`tenants/${row.id}/deletion-preview`).then((p: AnyRow) => { setPreview(p); setSelected(Object.fromEntries(p.categories.map((c: AnyRow) => [c.key, c.defaultDelete]))); }).catch((e: Error) => setError(e.message));
+  }, [row.id]);
+  const chosen = Object.keys(selected).filter(k => selected[k]);
+  const rows = preview ? preview.categories.filter((c: AnyRow) => c.total > 0 || c.key === "projects") : [];
+  return <Modal title={`Force delete — ${row.name}`} subtitle="Tick what to permanently delete; untick anything to keep. This cannot be undone." onClose={onClose} wide>
+    {error && <div className="test-result fail">{error}</div>}
+    {!preview && !error && <p className="help-note">Scanning tenant data…</p>}
+    {preview && <>
+      <div className="table-wrap"><table><thead><tr><th style={{ width: 40 }}>Delete</th><th>Data</th><th>Records</th></tr></thead><tbody>{rows.map((c: AnyRow) => <tr key={c.key}>
+        <td><input type="checkbox" checked={!!selected[c.key]} onChange={e => setSelected({ ...selected, [c.key]: e.target.checked })} /></td>
+        <td><strong>{c.label}</strong><small>{c.description}</small>{c.tables.length > 0 && <small>{c.tables.map((t: AnyRow) => `${t.table} (${t.count})`).join(" · ")}</small>}</td>
+        <td>{c.total}</td></tr>)}</tbody></table></div>
+      <div className="security-note">{preview.external.join(" ")} The organization record itself is removed only when both “Users” and “Projects & other data” are ticked.</div>
+      <FormGrid><label className="field full"><span>Type <strong>{row.name}</strong> to confirm</span><input value={confirmation} onChange={e => setConfirmation(e.target.value)} /></label></FormGrid>
+    </>}
+    <footer className="modal-actions"><button onClick={onClose}>Cancel</button><button className="primary" style={{ background: "var(--red)" }} disabled={busy || !preview || confirmation !== row.name || chosen.length === 0} onClick={() => onDelete({ confirmation, force: true, categories: chosen })}>{busy ? "Deleting…" : `Delete ${chosen.length} selected`}</button></footer>
+  </Modal>;
 }
 
 function UserModal({ row, tenants, busy, onClose, onSave }: any) {
