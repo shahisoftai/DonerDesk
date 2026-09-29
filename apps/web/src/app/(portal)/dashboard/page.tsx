@@ -8,6 +8,7 @@ import type { WorkItem } from "@/features/work-items/domain/work-item";
 import { InlineError, EmptyState } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { projectStatusTone } from "@/lib/shared/tone";
+import { StartTourCard } from "@/features/tour/presentation/StartTourCard";
 
 export const dynamic = "force-dynamic";
 
@@ -260,6 +261,7 @@ export default async function Dashboard() {
                 <div className="text-sm font-medium">Evidence storage</div>
                 <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{pendingEvidence === null ? "Review count unavailable" : `${pendingEvidence} file${pendingEvidence === 1 ? "" : "s"} pending review`}</div>
               </Link>
+              <StartTourCard hasExistingDemoProject={projects.some((p) => p.isDemo)} />
             </div>
           </div>
         </div>

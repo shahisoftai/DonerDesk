@@ -5,7 +5,6 @@ import { loadProjectSetupAction } from "@/lib/actions/setup";
 import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { SetupChecklistClient } from "./SetupChecklistClient";
-import { StartTourCard } from "@/features/tour/presentation/StartTourCard";
 
 export const dynamic = "force-dynamic";
 
@@ -70,7 +69,6 @@ export default async function ProjectSetupPage({ params }: { params: Promise<{ i
               </Link>
             </p>
           </section>
-          <StartTourCard />
         </aside>
       </div>
     </div>

@@ -3,31 +3,30 @@
 import { useStartOrResumeTour } from "./useStartOrResumeTour";
 
 /**
- * Compact entry point for the DonorDesk Academy guided tour (Feature 22),
- * placed in the project setup page's storage/workspace aside. Creates (or
- * reuses) the tenant's demo project, then starts the tour and navigates to
- * it.
+ * Product-tour tile for the dashboard's "Setup and storage" section
+ * (Feature 22), styled to match its sibling "Workspace setup" / "Evidence
+ * storage" link tiles. Creates (or reuses) the tenant's demo project, then
+ * starts the tour and navigates to it.
  */
 export function StartTourCard({ hasExistingDemoProject = false }: { hasExistingDemoProject?: boolean }) {
   const { startOrResumeTour, pending, error } = useStartOrResumeTour();
 
   return (
-    <section className="card" data-tour-id="start-tour-card">
-      <h3 className="font-medium">{hasExistingDemoProject ? "Continue learning DonorDesk" : "New to DonorDesk?"}</h3>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-        {hasExistingDemoProject
-          ? "Jump back into your sample project and pick up the guided tour where you left off."
-          : "Take a 10–15 minute guided tour through a sample project — from setup to a finished, exported report."}
-      </p>
-      {error ? <p className="mt-2 text-sm text-danger-600 dark:text-danger-400">{error}</p> : null}
-      <button
-        type="button"
-        onClick={startOrResumeTour}
-        disabled={pending}
-        className="btn-secondary mt-3 text-sm disabled:opacity-60"
-      >
-        {pending ? "Setting up..." : hasExistingDemoProject ? "Resume the product tour" : "Start the product tour"}
-      </button>
-    </section>
+    <button
+      type="button"
+      onClick={startOrResumeTour}
+      disabled={pending}
+      data-tour-id="start-tour-card"
+      className="rounded-lg border border-slate-200/70 bg-white p-4 text-left transition hover:border-brand-400/40 disabled:opacity-60 dark:border-white/10 dark:bg-white/[0.03]"
+    >
+      <div className="text-sm font-medium">
+        {pending ? "Setting up..." : hasExistingDemoProject ? "Resume the product tour" : "Take the product tour"}
+      </div>
+      <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {error ?? (hasExistingDemoProject
+          ? "Pick up your guided tour of the sample project where you left off."
+          : "A 10–15 minute guided tour through a sample project, from setup to export.")}
+      </div>
+    </button>
   );
 }
