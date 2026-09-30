@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { NOINDEX_METADATA } from "@/lib/seo";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { requireSession, hasCapability } from "@/lib/server/auth-context";
@@ -10,6 +11,7 @@ import { ToastProvider } from "@/components/feedback/Toast";
 import { TourOverlay } from "@/features/tour/presentation/TourOverlay";
 
 export const dynamic = "force-dynamic";
+export const metadata = NOINDEX_METADATA;
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const ctx = await requireSession();

@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+import { supportArticleMetadata } from "@/lib/seo";
+import { SupportJsonLd } from "@/components/support/SupportJsonLd";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -12,6 +15,7 @@ const FILE_MAP: Record<string, string> = {
   "understanding-projects": "basic-information/understanding-projects.md",
   "understanding-logframes": "basic-information/understanding-logframes.md",
   "indicators-and-targets": "basic-information-indicators-and-targets.md",
+  "understanding-activities": "basic-information-understanding-activities.md",
   "understanding-evidence": "basic-information/understanding-evidence.md",
   "understanding-reporting-periods": "basic-information/understanding-reporting-periods.md",
   "understanding-compliance-checklist": "basic-information/understanding-compliance-checklist.md",
@@ -35,6 +39,15 @@ export async function generateStaticParams() {
   return Object.keys(FILE_MAP).map((slug) => ({ article: slug }));
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ article: string }>;
+}): Promise<Metadata> {
+  const { article } = await params;
+  return supportArticleMetadata("getting-started", article);
+}
+
 export default async function GettingStartedArticlePage({
   params,
 }: {
@@ -53,6 +66,7 @@ export default async function GettingStartedArticlePage({
 
   return (
     <div className="landing-tech min-h-screen overflow-x-hidden bg-slate-950 text-slate-100">
+      <SupportJsonLd categorySlug="getting-started" article={article} title={title} />
       <WikiTopNav />
       <div className="border-b border-white/5 bg-slate-950/50 px-6 py-3">
         <div className="mx-auto flex max-w-7xl items-center gap-1.5 text-xs text-slate-400">

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -58,7 +59,7 @@ const CATEGORIES = [
       </svg>
     ),
     title: "Advanced Features",
-    description: "API, webhooks, automation, and integrations.",
+    description: "AI settings, imports, templates, roles, and compliance automation.",
     href: "/support/advanced-features",
     color: "from-violet-500/25 to-purple-500/15",
     borderColor: "hover:border-violet-400/50",
@@ -70,7 +71,7 @@ const CATEGORIES = [
       </svg>
     ),
     title: "Account & Billing",
-    description: "Plans, invoices, payment methods, and cancellations.",
+    description: "Plans, limits, invoices, and nonprofit discounts.",
     href: "/support/account-billing",
     color: "from-emerald-500/25 to-teal-500/15",
     borderColor: "hover:border-emerald-400/50",
@@ -90,21 +91,21 @@ const CATEGORIES = [
 ];
 
 const POPULAR_GUIDES = [
-  { title: "How to set up a new organisation", href: "/support/how-to/how-to-set-up-new-organisation", category: "How-To" },
+  { title: "Getting started with DonorDesk", href: "/support/getting-started/getting-started", category: "Getting Started" },
+  { title: "How to generate an AI report draft", href: "/support/how-to/generate-ai-report-draft", category: "How-To" },
+  { title: "How to upload a donor template", href: "/support/how-to/upload-donor-template", category: "How-To" },
+  { title: "How to use the report editor", href: "/support/how-to/use-the-report-editor", category: "How-To" },
   { title: "Understanding donor reporting requirements", href: "/support/reference-donor-reporting-guidelines", category: "Reference" },
-  { title: "Troubleshooting login issues", href: "/support/troubleshooting-login-issues", category: "Troubleshooting" },
-  { title: "How to export donor data", href: "/support/how-to/how-to-export-donor-data", category: "How-To" },
-  { title: "Setting up payment integrations", href: "/support/how-to/how-to-set-up-payment-integrations", category: "How-To" },
-  { title: "Advanced features: using the API", href: "/support/advanced-features/advanced-features-using-the-api", category: "Advanced" },
+  { title: "Troubleshooting login issues", href: "/support/troubleshooting/login-issues", category: "Troubleshooting" },
 ];
 
 const RECENT_GUIDES = [
-  { title: "Donor Reporting Guidelines Index", href: "/support/reference-donor-reporting-guidelines", category: "New" },
-  { title: "How to use the activity feed", href: "/support/how-to/how-to-use-the-activity-feed", category: "How-To" },
-  { title: "Troubleshooting failed payments", href: "/support/troubleshooting-payment-issues", category: "Troubleshooting" },
-  { title: "Security best practices", href: "/support/security-best-practices", category: "Security" },
-  { title: "Report Writing Fundamentals", href: "/support/report-writing-skills/fundamentals", category: "Report Writing" },
-  { title: "How to manage billing and subscription", href: "/support/how-to/how-to-manage-billing-subscription", category: "How-To" },
+  { title: "How to use the Academy tour and demo project", href: "/support/how-to/use-the-academy-tour", category: "New" },
+  { title: "AI Settings and AI Writing Style", href: "/support/advanced-features/ai-settings", category: "New" },
+  { title: "Plans and limits (updated pricing)", href: "/support/account-billing/plans-and-limits", category: "Billing" },
+  { title: "Tell the story and add report inputs", href: "/support/how-to/tell-the-story-and-add-inputs", category: "How-To" },
+  { title: "Troubleshooting export issues", href: "/support/troubleshooting/export-issues", category: "Troubleshooting" },
+  { title: "Security best practices", href: "/support/security-privacy/security-best-practices", category: "Security" },
 ];
 
 const DONOR_NAMES = [
@@ -142,6 +143,13 @@ const REPORT_SKILL_SUBCATS = [
     accent: "bg-yellow-500/15 border-yellow-400/30",
   },
 ];
+
+export const metadata: Metadata = {
+  title: "Support Center — Guides, How-tos and Donor Reporting Help",
+  description:
+    "Learn DonorDesk step by step: getting started, how-to guides, troubleshooting, and donor reporting guidance for UNHCR, USAID, DG ECHO, Global Fund, EU and more.",
+  alternates: { canonical: "/support" },
+};
 
 export default function SupportPage() {
   return (

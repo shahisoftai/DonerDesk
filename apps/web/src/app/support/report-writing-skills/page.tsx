@@ -1,6 +1,9 @@
+import { supportCategoryMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { WikiTopNav, CategoryNav } from "@/components/support/CategoryNav";
 import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
+
+export const metadata = supportCategoryMetadata("report-writing-skills");
 
 export default function ReportWritingSkillsPage() {
   const cat = WIKI_CATEGORIES.find((c) => c.slug === "report-writing-skills")!;

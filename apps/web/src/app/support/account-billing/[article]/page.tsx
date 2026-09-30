@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+import { supportArticleMetadata } from "@/lib/seo";
+import { SupportJsonLd } from "@/components/support/SupportJsonLd";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -13,6 +16,15 @@ const FILE_MAP: Record<string, string> = {
 
 export async function generateStaticParams() {
   return Object.keys(FILE_MAP).map((slug) => ({ article: slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ article: string }>;
+}): Promise<Metadata> {
+  const { article } = await params;
+  return supportArticleMetadata("account-billing", article);
 }
 
 export default async function AccountBillingArticlePage({
@@ -33,6 +45,7 @@ export default async function AccountBillingArticlePage({
 
   return (
     <div className="landing-tech min-h-screen overflow-x-hidden bg-slate-950 text-slate-100">
+      <SupportJsonLd categorySlug="account-billing" article={article} title={title} />
       <WikiTopNav />
       <div className="border-b border-white/5 bg-slate-950/50 px-6 py-3">
         <div className="mx-auto flex max-w-7xl items-center gap-1.5 text-xs text-slate-400">

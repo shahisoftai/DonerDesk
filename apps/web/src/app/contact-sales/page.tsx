@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ContactSalesForm } from "./ContactSalesForm";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/contact-sales" },
   title: "Talk to Sales",
   description: "Tell us about your organization and reporting needs — DonorDesk's Enterprise team will follow up.",
 };

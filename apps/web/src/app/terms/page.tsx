@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { LegalLayout } from "@/components/legal/LegalLayout";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/terms" },
   title: "Terms of Service",
   description:
     "The DonorDesk Terms of Service govern the use of the donordesk.online platform by organizations and their teams, including acceptable use, content ownership, AI-assisted features, liability, and dispute resolution.",

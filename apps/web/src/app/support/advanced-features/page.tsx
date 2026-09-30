@@ -1,6 +1,9 @@
+import { supportCategoryMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { WikiTopNav, CategoryNav } from "@/components/support/CategoryNav";
 import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
+
+export const metadata = supportCategoryMetadata("advanced-features");
 
 export default function AdvancedFeaturesPage() {
   const cat = WIKI_CATEGORIES[3]!;

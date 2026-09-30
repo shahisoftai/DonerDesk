@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { supportArticleMetadata } from "@/lib/seo";
-import { SupportJsonLd } from "@/components/support/SupportJsonLd";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -9,40 +7,14 @@ import { WikiTopNav, CategoryNav } from "@/components/support/CategoryNav";
 import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
 import { loadArticle } from "@/components/support/wikiUtils";
 
-const FILE_MAP: Record<string, string> = {
-  "log-in": "how-to/how-to-log-in.md",
-  "create-an-account": "how-to/how-to-create-an-account.md",
-  "change-your-password": "how-to/how-to-change-your-password.md",
-  "set-up-new-organisation": "how-to-set-up-new-organisation.md",
-  "create-a-project": "how-to/how-to-create-a-project.md",
-  "build-logframe": "how-to/how-to-build-logframe.md",
-  "upload-donor-template": "how-to/how-to-upload-donor-template.md",
-  "update-indicator-values": "how-to/how-to-update-indicator-values.md",
-  "log-activities": "how-to/how-to-log-activities.md",
-  "upload-evidence": "how-to/how-to-upload-evidence.md",
-  "use-the-dashboard": "how-to/how-to-use-the-dashboard.md",
-  "search-projects-and-evidence": "how-to/how-to-search-projects-and-evidence.md",
-  "invite-team-members": "how-to/how-to-invite-team-members.md",
-  "manage-team-roles-permissions": "how-to/how-to-manage-team-roles-permissions.md",
-  "manage-billing-subscription": "how-to/how-to-manage-billing-subscription.md",
-  "export-reports": "how-to/how-to-export-reports.md",
-  "generate-ai-report-draft": "how-to/how-to-generate-ai-report-draft.md",
-  "review-and-approve-reports": "how-to/how-to-review-and-approve-reports.md",
-  "use-the-audit-trail": "how-to-use-the-audit-trail.md",
-  "use-comments-feedback": "how-to-use-comments-feedback.md",
-  "use-the-notification-system": "how-to/how-to-use-the-notification-system.md",
-  "use-compliance-checklist": "how-to/how-to-use-compliance-checklist.md",
-  "use-bulk-actions": "how-to/how-to-use-bulk-actions.md",
-  "connect-google-drive": "how-to/how-to-connect-google-drive.md",
-  "import-from-google-sheets": "how-to/how-to-import-from-google-sheets.md",
-  "change-organisation-profile": "how-to/how-to-change-organisation-profile.md",
-  "archive-a-project": "how-to/how-to-archive-a-project.md",
-  "create-a-reporting-period": "how-to/how-to-create-a-reporting-period.md",
-  "tell-the-story-and-add-inputs": "how-to/how-to-tell-the-story-and-add-inputs.md",
-  "use-the-report-editor": "how-to/how-to-use-the-report-editor.md",
-  "use-the-academy-tour": "how-to/how-to-use-the-academy-tour.md",
-  "onboard-team-member": "how-to-onboard-team-member.md",
-  "prepare-for-donor-visit": "how-to-prepare-for-donor-visit.md",
+const FILE_MAP: Record<string, { file: string; title: string }> = {
+  contact: { file: "support-contact.md", title: "Contact Support" },
+  "reference-faq": { file: "reference-faq.md", title: "Frequently Asked Questions" },
+  "reference-glossary": { file: "reference-glossary.md", title: "Glossary" },
+  "reference-file-formats": { file: "reference-file-formats.md", title: "Supported File Formats and Size Limits" },
+  "reference-error-codes": { file: "reference-error-codes.md", title: "Common Messages and What to Do" },
+  "reference-keyboard-shortcuts": { file: "reference-keyboard-shortcuts.md", title: "Keyboard Shortcuts" },
+  "reference-donor-reporting-guidelines": { file: "reference-donor-reporting-guidelines.md", title: "Donor Reporting Guidelines Index" },
 };
 
 export async function generateStaticParams() {
@@ -55,34 +27,34 @@ export async function generateMetadata({
   params: Promise<{ article: string }>;
 }): Promise<Metadata> {
   const { article } = await params;
-  return supportArticleMetadata("how-to", article);
+  const entry = FILE_MAP[article];
+  if (!entry) return {};
+  return {
+    title: `${entry.title} — Support Center`,
+    alternates: { canonical: `/support/${article}` },
+  };
 }
 
-export default async function HowToArticlePage({
+export default async function SupportReferencePage({
   params,
 }: {
   params: Promise<{ article: string }>;
 }) {
   const { article } = await params;
-  const relPath = FILE_MAP[article];
-  if (!relPath) notFound();
+  const entry = FILE_MAP[article];
+  if (!entry) notFound();
 
-  const article_ = loadArticle(relPath);
+  const article_ = loadArticle(entry.file);
   if (!article_) notFound();
 
-  const cat = WIKI_CATEGORIES[1]!;
-  const artEntry = cat.articles.find((a) => a.href === `/support/how-to/${article}`);
-  const title = artEntry?.title ?? article_.title;
+  const title = entry.title;
 
   return (
     <div className="landing-tech min-h-screen overflow-x-hidden bg-slate-950 text-slate-100">
-      <SupportJsonLd categorySlug="how-to" article={article} title={title} />
       <WikiTopNav />
       <div className="border-b border-white/5 bg-slate-950/50 px-6 py-3">
         <div className="mx-auto flex max-w-7xl items-center gap-1.5 text-xs text-slate-400">
           <Link href="/support">Support Center</Link>
-          <span>›</span>
-          <Link href="/support/how-to">How-To Guides</Link>
           <span>›</span>
           <span className="text-slate-200">{title}</span>
         </div>
@@ -94,11 +66,6 @@ export default async function HowToArticlePage({
         <main className="min-w-0 flex-1 lg:px-8">
           <article className="prose prose-invert prose-slate max-w-none">
             <h1 className="text-3xl font-extrabold text-white mb-2">{title}</h1>
-            {artEntry?.description && (
-              <p className="text-slate-400 text-sm mb-6 border-l-2 border-cyan-500/40 pl-3">
-                {artEntry.description}
-              </p>
-            )}
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
@@ -109,10 +76,10 @@ export default async function HowToArticlePage({
                   ul: ({ children }) => <ul className="list-disc list-inside text-slate-300 space-y-1 mb-4">{children}</ul>,
                   ol: ({ children }) => <ol className="list-decimal list-inside text-slate-300 space-y-1 mb-4">{children}</ol>,
                   li: ({ children }) => <li className="text-slate-300">{children}</li>,
-                  a: ({ href, children }) => <a href={href} className="text-cyan-400 hover:text-cyan-300 underline" target="_blank" rel="noopener">{children}</a>,
+                  a: ({ href, children }) => <a href={href} className="text-amber-400 hover:text-amber-300 underline" target="_blank" rel="noopener">{children}</a>,
                   strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-                  code: ({ children }) => <code className="bg-white/5 text-cyan-300 px-1.5 py-0.5 rounded text-sm">{children}</code>,
-                  blockquote: ({ children }) => <blockquote className="border-l-4 border-cyan-500/40 pl-4 italic text-slate-400 my-4">{children}</blockquote>,
+                  code: ({ children }) => <code className="bg-white/5 text-amber-300 px-1.5 py-0.5 rounded text-sm">{children}</code>,
+                  blockquote: ({ children }) => <blockquote className="border-l-4 border-amber-500/40 pl-4 italic text-slate-400 my-4">{children}</blockquote>,
                   hr: () => <hr className="border-white/10 my-6" />,
                   table: ({ children }) => <table className="w-full border-collapse border border-white/10 text-sm my-4">{children}</table>,
                   th: ({ children }) => <th className="border border-white/10 bg-white/5 px-3 py-2 text-left text-slate-200 font-semibold">{children}</th>,
@@ -124,8 +91,8 @@ export default async function HowToArticlePage({
             </div>
             <div className="mt-8 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-4">
               <div />
-              <Link href="/support/how-to" className="text-sm text-cyan-400 hover:text-cyan-300 transition">
-                ← Back to How-To Guides
+              <Link href="/support" className="text-sm text-amber-400 hover:text-amber-300 transition">
+                ← Back to Support Center
               </Link>
               <div />
             </div>

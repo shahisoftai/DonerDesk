@@ -4,7 +4,8 @@ import Image from "next/image";
 import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 
 export const metadata: Metadata = {
-  title: "Plans & Pricing — DonorDesk",
+  alternates: { canonical: "/pricing" },
+  title: "Plans & Pricing",
   description:
     "DonorDesk plans and pricing: start free, upgrade when you grow. AI-assisted donor reporting, evidence management, and compliance for NGOs.",
 };

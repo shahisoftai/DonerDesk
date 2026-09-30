@@ -1,6 +1,9 @@
+import { supportCategoryMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { WikiTopNav, CategoryNav } from "@/components/support/CategoryNav";
 import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
+
+export const metadata = supportCategoryMetadata("troubleshooting");
 
 export default function TroubleshootingPage() {
   const cat = WIKI_CATEGORIES[2]!;

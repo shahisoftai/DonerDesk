@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { LegalLayout } from "@/components/legal/LegalLayout";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacy" },
   title: "Privacy Policy",
   description:
     "The DonorDesk Privacy Policy explains what data the platform collects, how it is used and protected, and the rights users have under data protection laws worldwide.",

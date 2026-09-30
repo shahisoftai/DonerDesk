@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/security" },
   title: "Security & Trust",
   description: "How DonorDesk isolates tenant data, which subprocessors we use, and how to request data export, deletion, or a DPA.",
 };

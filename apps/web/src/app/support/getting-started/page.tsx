@@ -1,8 +1,11 @@
+import { supportCategoryMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { WikiTopNav, CategoryNav } from "@/components/support/CategoryNav";
 import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
 
 const BREADCRUMBS = [{ label: "Getting Started", href: "/support/getting-started" }];
+
+export const metadata = supportCategoryMetadata("getting-started");
 
 export default function GettingStartedPage() {
   const cat = WIKI_CATEGORIES[0]!;

@@ -22,7 +22,9 @@ export function loadArticle(relPath: string): LoadedArticle | null {
         ?.replace(/^#+\s*/, "")
         .trim()
         .slice(0, 120) ?? "";
-    return { title, content: raw, description };
+    // The page template renders the title as the single <h1>; drop the markdown's own.
+    const content = titleLine ? raw.replace(titleLine, "").replace(/^\s+/, "") : raw;
+    return { title, content, description };
   } catch {
     return null;
   }

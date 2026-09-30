@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { PublicTour } from "@/features/tour/presentation/PublicTour";
 
 export const metadata: Metadata = {
-  title: "Product Tour — DonorDesk",
+  alternates: { canonical: "/tour" },
+  title: "Product Tour",
   description: "See how DonorDesk turns project data and evidence into donor-ready reports. No signup required.",
 };
 

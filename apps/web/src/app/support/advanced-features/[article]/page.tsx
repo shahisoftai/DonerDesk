@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+import { supportArticleMetadata } from "@/lib/seo";
+import { SupportJsonLd } from "@/components/support/SupportJsonLd";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -7,13 +10,10 @@ import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
 import { loadArticle } from "@/components/support/wikiUtils";
 
 const FILE_MAP: Record<string, string> = {
-  "using-the-api": "advanced-features-using-the-api.md",
   "data-import-export": "advanced-features-data-import-export.md",
   "multiple-donors": "advanced-features-multiple-donors.md",
   "ai-settings": "advanced-features-ai-settings.md",
   "compliance-automation": "advanced-features-compliance-automation.md",
-  "notification-settings": "advanced-features-notification-settings.md",
-  "project-templates": "advanced-features-project-templates.md",
   "roles-and-permissions": "advanced-features-roles-and-permissions.md",
   "team-management": "advanced-features-team-management.md",
   "imported-vs-linked-data": "advanced-features-imported-vs-linked-data.md",
@@ -23,6 +23,15 @@ const FILE_MAP: Record<string, string> = {
 
 export async function generateStaticParams() {
   return Object.keys(FILE_MAP).map((slug) => ({ article: slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ article: string }>;
+}): Promise<Metadata> {
+  const { article } = await params;
+  return supportArticleMetadata("advanced-features", article);
 }
 
 export default async function AdvancedFeaturesArticlePage({
@@ -43,6 +52,7 @@ export default async function AdvancedFeaturesArticlePage({
 
   return (
     <div className="landing-tech min-h-screen overflow-x-hidden bg-slate-950 text-slate-100">
+      <SupportJsonLd categorySlug="advanced-features" article={article} title={title} />
       <WikiTopNav />
       <div className="border-b border-white/5 bg-slate-950/50 px-6 py-3">
         <div className="mx-auto flex max-w-7xl items-center gap-1.5 text-xs text-slate-400">

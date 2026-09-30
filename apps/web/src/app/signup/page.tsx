@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import SignupForm from "./SignupForm";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Create your DonorDesk account",
+  description: "Start using DonorDesk to turn programme data and evidence into donor-ready reports.",
+  alternates: { canonical: "/signup" },
+};
 
 /** Validated plans a visitor may request at signup (Starter/Team/Growth). */
 const VALID_PLANS = ["starter", "team", "growth"] as const;
