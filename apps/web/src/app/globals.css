@@ -151,21 +151,27 @@
   width: 22rem;
   height: 22rem;
   border-radius: 999px;
-  filter: blur(80px);
+  /* Soft edge via gradient, not filter: blur(), so the animation doesn't repaint a blurred layer every frame. */
+  background-image: radial-gradient(closest-side, currentColor, transparent);
   opacity: 0.18;
+  will-change: transform;
   animation: tech-float 9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tech-orb { animation: none; }
 }
 
 .tech-orb-left {
   left: -12rem;
   top: 18rem;
-  background: #0c8de6;
+  color: #0c8de6;
 }
 
 .tech-orb-right {
   right: -11rem;
   top: 6rem;
-  background: #22d3ee;
+  color: #22d3ee;
   animation-delay: -4s;
 }
 

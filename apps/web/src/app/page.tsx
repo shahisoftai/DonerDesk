@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
+import { HomeFaq } from "@/components/landing/HomeFaq";
 import { ProductProofStrip } from "@/components/landing/ProductProofStrip";
 
 const FEATURES = [
@@ -220,6 +221,7 @@ export default function HomePage() {
               width={1653}
               height={589}
               className="h-9 w-auto object-contain"
+              sizes="128px"
             />
           </a>
           <div className="hidden items-center gap-7 text-sm font-medium text-slate-300 lg:flex">
@@ -273,6 +275,7 @@ export default function HomePage() {
             width={1653}
             height={589}
             className="mx-auto h-40 w-auto object-contain sm:h-48 md:h-56"
+            sizes="(min-width: 768px) 630px, (min-width: 640px) 540px, 450px"
             priority
           />
           <h1 className="mt-8 text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl md:text-7xl">
@@ -595,6 +598,9 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <HomeFaq />
+
       {/* Final CTA */}
       <section className="px-6 pb-24">
         <div className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl border border-brand-400/30 bg-gradient-to-br from-brand-600 via-brand-700 to-slate-900 px-6 py-16 text-center">
@@ -639,6 +645,7 @@ export default function HomePage() {
                   width={1653}
                   height={589}
                   className="h-8 w-auto object-contain"
+                  sizes="112px"
                 />
               </Link>
               <p className="text-sm leading-relaxed text-slate-400">
@@ -673,11 +680,11 @@ export default function HomePage() {
             <div>
               <h4 className="font-semibold text-amber-400">Report Writing Skills</h4>
               <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-                <li><Link href="/support/report-writing-skills/fundamentals" className="transition hover:text-white">Report Writing Fundamentals</Link></li>
+                <li><Link href="/support/report-writing-skills/report-writing-fundamentals" className="transition hover:text-white">Report Writing Fundamentals</Link></li>
                 <li><Link href="/support/reference-donor-reporting-guidelines" className="transition hover:text-white">Donor Requirements Index</Link></li>
-                <li><Link href="/support/report-writing-skills/tools" className="transition hover:text-white">Pre-Report Checklist</Link></li>
-                <li><Link href="/support/report-writing-skills/donor-specific" className="transition hover:text-white">Progress Report Guide</Link></li>
-                <li><Link href="/support/report-writing-skills/donor-specific" className="transition hover:text-white">Final Report Guide</Link></li>
+                <li><Link href="/support/report-writing-skills/pre-report-checklist" className="transition hover:text-white">Pre-Report Checklist</Link></li>
+                <li><Link href="/support/report-writing-skills/narrative-structure" className="transition hover:text-white">Progress Report Guide</Link></li>
+                <li><Link href="/support/report-writing-skills/donor-comparison" className="transition hover:text-white">Final Report Guide</Link></li>
               </ul>
             </div>
 
