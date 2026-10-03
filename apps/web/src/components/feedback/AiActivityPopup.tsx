@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { simulatedPercent } from "./ai-activity-progress";
 
 const STEP_INTERVAL_MS = 2800;
@@ -39,6 +40,10 @@ export function AiActivityPopup({ open, title, steps, progressPercent, estimated
   const [stepIndex, setStepIndex] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
   const startedAtRef = useRef<number | null>(null);
+  // Rendered under <body>: an ancestor with a CSS transform/animation (the page's fade-in) would otherwise
+  // become the containing block of `position: fixed` and pin the popup to the page's end instead of the screen.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) {
@@ -57,7 +62,7 @@ export function AiActivityPopup({ open, title, steps, progressPercent, estimated
     // eslint-disable-next-line react-hooks/exhaustive-deps -- steps.length only; a changing steps array shouldn't restart the cycle
   }, [open]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
   const percent = Math.max(0, Math.min(100, progressPercent ?? simulatedPercent(elapsedMs, estimatedMs)));
   const isReal = progressPercent !== undefined;
@@ -93,13 +98,14 @@ export function AiActivityPopup({ open, title, steps, progressPercent, estimated
   );
 
   if (variant === "corner") {
-    return <div className="fixed bottom-4 right-4 z-40 animate-fade-in">{card}</div>;
+    return createPortal(<div className="fixed bottom-4 right-4 z-40 animate-fade-in">{card}</div>, document.body);
   }
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4" role="presentation">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" aria-hidden="true" />
       <div className="relative animate-fade-in">{card}</div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
