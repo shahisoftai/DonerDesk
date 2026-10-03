@@ -1,6 +1,6 @@
 import type { Result, Project, ReportingPeriod, TemplateSection, VerifiedFinding } from "@donordesk/domain";
 import { DomainError, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
-import { resolvePeriodActivities } from "./period-activities.js";
+import { resolvePeriodActivities, scopeIndicatorData } from "./period-activities.js";
 import type { AuthenticatedContext } from "../context.js";
 import type {
   IReportingPeriodRepository,
@@ -170,14 +170,9 @@ export class ReportGenerationContextBuilder {
 
     const allUpdatesResult = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!allUpdatesResult.ok) return allUpdatesResult;
-    // An activity report speaks only about the indicators its own activities
-    // feed, not the project's whole results framework.
-    const activityIndicatorIds = new Set(activitiesResult.value.map((a) => a.indicatorId).filter((id): id is string => Boolean(id)));
-    const scopeToActivities = period.reportType === "ACTIVITY";
-    const verifiedFindings = scopeToActivities ? findingsResult.value.filter((f) => activityIndicatorIds.has(f.indicatorId)) : findingsResult.value;
-    const updatesResult = scopeToActivities
-      ? { ok: true as const, value: allUpdatesResult.value.filter((u) => activityIndicatorIds.has(u.indicatorId)) }
-      : allUpdatesResult;
+    const scoped = scopeIndicatorData(period.reportType, activitiesResult.value, findingsResult.value, allUpdatesResult.value);
+    const verifiedFindings = scoped.findings;
+    const updatesResult = { ok: true as const, value: scoped.updates };
 
     const evidenceIds = Array.from(new Set([
       ...updatesResult.value.flatMap((u) => u.attachedEvidenceIds),

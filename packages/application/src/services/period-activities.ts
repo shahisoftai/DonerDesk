@@ -28,3 +28,23 @@ export async function resolvePeriodActivities(
   if (!all.ok) return all;
   return { ok: true, value: all.value.filter((a) => wanted.has(a.id)).sort((a, b) => a.activityDate.getTime() - b.activityDate.getTime()) };
 }
+
+/**
+ * Which indicator data a report of this type may speak about. A cadence report
+ * covers the whole results framework. An activity report only the indicators
+ * its own activities feed. A situation report none: its window is too short for
+ * indicator results, and the empty findings read as "zero, down from last period".
+ */
+export function scopeIndicatorData<F extends { indicatorId: string }, U extends { indicatorId: string }>(
+  reportType: string,
+  activities: ReadonlyArray<{ indicatorId?: string }>,
+  findings: F[],
+  updates: U[],
+): { findings: F[]; updates: U[] } {
+  if (reportType === "SITUATION") return { findings: [], updates: [] };
+  if (reportType === "ACTIVITY") {
+    const ids = new Set(activities.map((a) => a.indicatorId).filter((id): id is string => Boolean(id)));
+    return { findings: findings.filter((f) => ids.has(f.indicatorId)), updates: updates.filter((u) => ids.has(u.indicatorId)) };
+  }
+  return { findings, updates };
+}

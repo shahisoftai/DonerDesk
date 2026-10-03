@@ -26,3 +26,15 @@ test("blueprint titles never trip the AI worker's executive-summary classifier",
     assert.ok(!titles.some((t) => /overview|abstract/i.test(t)), `${reportType}: ${titles.join(", ")}`);
   }
 });
+
+import { scopeIndicatorData } from "../dist/index.js";
+
+test("indicator data is scoped per report type", () => {
+  const findings = [{ indicatorId: "i1" }, { indicatorId: "i2" }];
+  const updates = [{ indicatorId: "i1" }, { indicatorId: "i2" }];
+  const acts = [{ indicatorId: "i2" }, {}];
+  assert.deepEqual(scopeIndicatorData("MONTHLY", acts, findings, updates), { findings, updates });
+  assert.deepEqual(scopeIndicatorData("ACTIVITY", acts, findings, updates), { findings: [{ indicatorId: "i2" }], updates: [{ indicatorId: "i2" }] });
+  assert.deepEqual(scopeIndicatorData("ACTIVITY", [{}], findings, updates), { findings: [], updates: [] });
+  assert.deepEqual(scopeIndicatorData("SITUATION", acts, findings, updates), { findings: [], updates: [] });
+});
