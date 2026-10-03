@@ -22,6 +22,25 @@ export interface ReportScope {
   title?: string;
   /** CUSTOM: what the report is for. */
   purpose?: string;
+  /** CUSTOM: the author's own section list (replaces the generic blueprint). */
+  sections?: ReportScopeSection[];
+  /** SITUATION (server-set): 1-based number of this report in the event's series. */
+  sequence?: number;
+  /** SITUATION (server-set): the previous report on the same event. */
+  previousPeriodId?: string;
+  /** SITUATION (server-set): ISO date the previous report was "as of". */
+  previousSituationDate?: string;
+}
+
+export interface ReportScopeSection {
+  title: string;
+  /** What the section should cover; sent to the writer. */
+  guidance?: string;
+}
+
+/** Same event across a series of situation reports (case/space-insensitive). */
+export function normalizeEventName(name: string | undefined): string {
+  return (name ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 /** Report types that cover the whole project for a fixed cadence. */
@@ -53,6 +72,20 @@ export function normalizeReportScope(raw: unknown): ReportScope {
   if (Array.isArray(r.activityIds)) {
     const ids = Array.from(new Set(r.activityIds.filter((x): x is string => typeof x === "string" && x.length > 0)));
     if (ids.length > 0) out.activityIds = ids;
+  }
+  if (Array.isArray(r.sections)) {
+    const sections = r.sections
+      .map((x) => (x && typeof x === "object" ? (x as Record<string, unknown>) : {}))
+      .map((x) => ({ title: trimmed(x.title, 200), guidance: trimmed(x.guidance, 1000) }))
+      .filter((x): x is { title: string; guidance: string | undefined } => Boolean(x.title))
+      .slice(0, 25)
+      .map((x) => (x.guidance ? { title: x.title, guidance: x.guidance } : { title: x.title }));
+    if (sections.length > 0) out.sections = sections;
+  }
+  if (typeof r.sequence === "number" && Number.isInteger(r.sequence) && r.sequence >= 1) out.sequence = r.sequence;
+  for (const key of ["previousPeriodId", "previousSituationDate"] as const) {
+    const v = trimmed(r[key], 80);
+    if (v) out[key] = v;
   }
   for (const key of ["eventName", "location", "situationDate", "summary", "title", "purpose"] as const) {
     const v = trimmed(r[key], key === "summary" || key === "purpose" ? 2000 : 300);
@@ -86,11 +119,16 @@ export function missingScopeFields(reportType: string, scope: ReportScope): Arra
 export function describeReportScope(reportType: string, scope: ReportScope, activityTitles: string[] = []): string {
   const parts: string[] = [];
   if (reportType === "ACTIVITY") {
-    if (activityTitles.length > 0) parts.push(`Activity report focused only on: ${activityTitles.join("; ")}. Do not report on other activities.`);
+    if (activityTitles.length > 0) {
+      parts.push(
+        `Activity report covering ${activityTitles.length === 1 ? "one activity" : `${activityTitles.length} activities`}: ${activityTitles.join("; ")}. Report only on these activities; do not report on other project work, and do not write project-wide summaries.`,
+      );
+    }
   } else if (reportType === "SITUATION") {
-    if (scope.eventName) parts.push(`Situation report on: ${scope.eventName}.`);
+    parts.push(`Situation report${scope.sequence ? ` #${scope.sequence}` : ""}${scope.eventName ? ` on: ${scope.eventName}` : ""}.`);
     if (scope.location) parts.push(`Location / affected area: ${scope.location}.`);
     if (scope.situationDate) parts.push(`Situation as of ${scope.situationDate}.`);
+    if (scope.previousSituationDate) parts.push(`The previous report on this event was as of ${scope.previousSituationDate}; emphasise what has changed since then.`);
     if (scope.summary) parts.push(`Context: ${scope.summary}`);
   } else if (reportType === "CUSTOM") {
     if (scope.title) parts.push(`Report title: ${scope.title}.`);

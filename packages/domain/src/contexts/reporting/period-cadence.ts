@@ -97,3 +97,14 @@ export function suggestDeadline(periodEnd: string | Date, offsetDays: number): s
   const end = periodEnd instanceof Date ? periodEnd : new Date(periodEnd);
   return toDateOnly(addUtcDays(end, offsetDays));
 }
+
+/**
+ * Default days between a period's end and its donor deadline for ad-hoc types:
+ * a situation update is due in days and an activity report within a week, not
+ * the 30 days a cadence report gets. Undefined for every other type.
+ */
+export function defaultDeadlineOffsetForType(reportType: string): number | undefined {
+  if (reportType === "SITUATION") return 3;
+  if (reportType === "ACTIVITY") return 7;
+  return undefined;
+}

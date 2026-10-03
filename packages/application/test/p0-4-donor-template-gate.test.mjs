@@ -48,18 +48,15 @@ test("P0-4 planner: valid template sections produce exactly those sections, in o
   assert.deepEqual(result.value.sections.map((s) => s.title), ["Executive Summary", "Indicator Progress"]);
 });
 
-test("P0-4 handler: blocks generation when no donor template is attached, creating no draft or sections", async () => {
-  let draftCreated = false;
-  let sectionCreated = false;
-
+function makeHandler({ reportType, onPlan = () => {}, onDraft = () => {}, onSection = () => {} }) {
   const handler = new GenerateReportDraftHandler(
     { generate: () => "id" },
     // periods
-    { findById: async () => okValue({ id: "period-1", projectId: "proj-1", donorTemplateId: undefined, reportType: "QUARTERLY", duration: { start: new Date(), end: new Date() }, deadline: new Date(), readinessScore: 0, daysUntilDeadline: () => 30 }) },
+    { findById: async () => okValue({ id: "period-1", projectId: "proj-1", donorTemplateId: undefined, reportType: reportType, scope: {}, duration: { start: new Date(), end: new Date() }, deadline: new Date(), readinessScore: 0, daysUntilDeadline: () => 30 }) },
     // drafts
-    { create: async () => { draftCreated = true; return okValue({}); }, findByReportingPeriod: async () => okValue([]), update: noop },
+    { create: async () => { onDraft(); return okValue({}); }, findByReportingPeriod: async () => okValue([]), update: noop },
     // sections
-    { create: async () => { sectionCreated = true; return okValue({}); }, findById: noop },
+    { create: async () => { onSection(); return okValue({}); }, findById: noop },
     // projects
     { findById: async () => okValue({ id: "proj-1", title: "P", projectCode: "P1", donorName: "D", implementingOrganization: "I", country: "C", sector: "S", duration: { start: new Date(), end: new Date() }, reportingFrequency: "QUARTERLY" }) },
     // organizations
@@ -68,9 +65,9 @@ test("P0-4 handler: blocks generation when no donor template is attached, creati
     { findById: noop },
     // indicatorUpdates / activities
     { findByReportingPeriod: async () => okValue([]) },
-    { findByReportingPeriod: async () => okValue([]) },
+    { findByReportingPeriod: async () => okValue([]), findByProject: async () => okValue([]) },
     // planner
-    { plan: async () => okValue({ sections: [] }) },
+    { plan: async (input) => { onPlan(input); return okValue({ sections: [] }); } },
     // requirementResolver
     { resolve: async () => okValue({ snapshot: [] }) },
     // analytics
@@ -93,14 +90,29 @@ test("P0-4 handler: blocks generation when no donor template is attached, creati
     { recordRun: noop, countAiReportDrafts: async () => okValue(0) },
   );
 
-  const result = await handler.handle(
-    { tenant: { tenantId: { toString: () => "tenant-a" }, userId: "user-1" }, requestId: "r" },
-    "period-1",
-  );
+  return handler;
+}
 
+const CTX = { tenant: { tenantId: { toString: () => "tenant-a" }, userId: "user-1" }, requestId: "r" };
+
+test("P0-4 handler: an unknown report type with no template is still blocked, creating no draft or sections", async () => {
+  let draftCreated = false;
+  let sectionCreated = false;
+  const handler = makeHandler({ reportType: "BOGUS", onDraft: () => { draftCreated = true; }, onSection: () => { sectionCreated = true; } });
+  const result = await handler.handle(CTX, "period-1");
   assert.ok(!result.ok);
   assert.equal(result.error.code, "REPORT_GATE_BLOCKED");
-  assert.match(result.error.message, /donor template/i);
-  assert.equal(draftCreated, false, "no draft must be created when the template requirement is unmet");
-  assert.equal(sectionCreated, false, "no sections must be created when the template requirement is unmet");
+  assert.equal(draftCreated, false);
+  assert.equal(sectionCreated, false);
+});
+
+test("report-type blueprint: a known type with no donor template is planned from its built-in structure", async () => {
+  for (const reportType of ["MONTHLY", "QUARTERLY", "ACTIVITY", "SITUATION", "CUSTOM"]) {
+    let planned = null;
+    const handler = makeHandler({ reportType, onPlan: (input) => { planned = input; } });
+    await handler.handle(CTX, "period-1");
+    assert.ok(planned, `${reportType}: planner was reached`);
+    assert.ok(planned.templateSections.length >= 3, `${reportType}: blueprint sections supplied`);
+    assert.ok(planned.templateSections.every((sec) => sec.id.startsWith("bp:")));
+  }
 });

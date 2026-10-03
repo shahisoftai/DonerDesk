@@ -1,5 +1,5 @@
 import type { Result, Project, ReportingPeriod, TemplateSection, VerifiedFinding } from "@donordesk/domain";
-import { DomainError, describeReportScope } from "@donordesk/domain";
+import { DomainError, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
 import { resolvePeriodActivities } from "./period-activities.js";
 import type { AuthenticatedContext } from "../context.js";
 import type {
@@ -124,7 +124,21 @@ export class ReportGenerationContextBuilder {
 
     const templateResult = await this.templateResolver.resolve(period, ctx.tenant.tenantId, templateMode);
     if (!templateResult.ok) return templateResult;
-    const template = templateResult.value;
+    // A donor template is optional. It structures the report only when attached
+    // and applicable (a short activity/situation report never takes a full-report
+    // template); otherwise the report type's built-in blueprint does.
+    const attached = templateResult.value;
+    const template = attached && templateAppliesToReportType(period.reportType, attached.reportType) ? attached : undefined;
+    let templateSections = template ? template.sections : [];
+    if (!template) {
+      const scoped = period.reportType === "ACTIVITY" ? await resolvePeriodActivities(this.activities, period, ctx.tenant.tenantId) : null;
+      if (scoped && !scoped.ok) return scoped;
+      templateSections = blueprintSectionsFor({
+        reportType: period.reportType,
+        scope: period.scope,
+        activities: scoped?.value.map((a) => ({ id: a.id, title: a.activityTitle, date: a.activityDate.toISOString().slice(0, 10), location: a.location })),
+      });
+    }
 
     return {
       ok: true,
@@ -136,7 +150,7 @@ export class ReportGenerationContextBuilder {
         chargeAiCredits,
         meterPlatformCredits: chargeAiCredits && !usesTenantProvider,
         template,
-        templateSections: template ? template.sections : [],
+        templateSections,
         templateVersion: template ? template.version : 1,
         reportingProfileSnapshot: parseProfileSnapshot(period.reportingProfileSnapshotJson),
       },
@@ -151,12 +165,19 @@ export class ReportGenerationContextBuilder {
       tenantId: ctx.tenant.tenantId,
     });
     if (!findingsResult.ok) return findingsResult;
-    const verifiedFindings = findingsResult.value;
-
-    const updatesResult = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
-    if (!updatesResult.ok) return updatesResult;
     const activitiesResult = await resolvePeriodActivities(this.activities, period, ctx.tenant.tenantId);
     if (!activitiesResult.ok) return activitiesResult;
+
+    const allUpdatesResult = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    if (!allUpdatesResult.ok) return allUpdatesResult;
+    // An activity report speaks only about the indicators its own activities
+    // feed, not the project's whole results framework.
+    const activityIndicatorIds = new Set(activitiesResult.value.map((a) => a.indicatorId).filter((id): id is string => Boolean(id)));
+    const scopeToActivities = period.reportType === "ACTIVITY";
+    const verifiedFindings = scopeToActivities ? findingsResult.value.filter((f) => activityIndicatorIds.has(f.indicatorId)) : findingsResult.value;
+    const updatesResult = scopeToActivities
+      ? { ok: true as const, value: allUpdatesResult.value.filter((u) => activityIndicatorIds.has(u.indicatorId)) }
+      : allUpdatesResult;
 
     const evidenceIds = Array.from(new Set([
       ...updatesResult.value.flatMap((u) => u.attachedEvidenceIds),

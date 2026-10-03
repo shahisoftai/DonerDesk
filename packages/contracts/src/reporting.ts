@@ -21,6 +21,7 @@ export const ReportScopeSchema = z.object({
   summary: z.string().trim().max(2000).optional(),
   title: z.string().trim().max(300).optional(),
   purpose: z.string().trim().max(2000).optional(),
+  sections: z.array(z.object({ title: z.string().trim().min(1).max(200), guidance: z.string().trim().max(1000).optional() })).max(25).optional(),
 });
 export type ReportScopeInput = z.infer<typeof ReportScopeSchema>;
 

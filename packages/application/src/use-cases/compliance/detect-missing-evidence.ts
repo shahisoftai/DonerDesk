@@ -108,7 +108,19 @@ export class DetectMissingEvidenceHandler {
             relatedEntityId: a.id as string | undefined,
           }))
       : [];
-    const combined = [...baseline, ...scopedActivityItems, ...suggestions, ...donorRules];
+    const unacceptedActivityItems = period.reportType === "ACTIVITY" && activitiesResult.ok
+      ? activitiesResult.value
+          .filter((a) => a.status !== "ACCEPTED")
+          .map((a) => ({
+            type: "MISSING_APPROVAL" as const,
+            title: `Activity record accepted: "${a.activityTitle}"`,
+            description: "An activity report should rest on accepted activity records. Review and accept this activity update before submitting.",
+            severity: "MEDIUM" as Severity,
+            relatedEntityType: "activity" as string | undefined,
+            relatedEntityId: a.id as string | undefined,
+          }))
+      : [];
+    const combined = [...baseline, ...scopedActivityItems, ...unacceptedActivityItems, ...suggestions, ...donorRules];
 
     // Dedupe: never create a second OPEN/IN_PROGRESS item for the same
     // (type, relatedEntityId) concern already tracked in this period.

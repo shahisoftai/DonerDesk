@@ -1,5 +1,5 @@
 import type { Result, DomainError, TenantId } from "@donordesk/domain";
-import { ReportingPeriod, DateRange, CADENCE_REPORT_TYPES, normalizeReportScope, missingScopeFields, DomainError as DE, ReportingPeriodCreated } from "@donordesk/domain";
+import { ReportingPeriod, DateRange, CADENCE_REPORT_TYPES, normalizeReportScope, missingScopeFields, normalizeEventName, templateAppliesToReportType, DomainError as DE, ReportingPeriodCreated } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
@@ -65,6 +65,8 @@ export class CreateReportingPeriodHandler {
     if (!profileResult.ok) return profileResult;
     const profile = profileResult.value;
 
+    // The profile's default template is for the project's regular reports; it is
+    // never silently applied to a short activity/situation report.
     let templateId = input.donorTemplateId ?? profile?.defaultTemplateId;
     let template = null;
     if (templateId) {
@@ -73,6 +75,16 @@ export class CreateReportingPeriodHandler {
       template = templateResult.value;
       if (!template || template.projectId !== input.projectId) {
         return { ok: false, error: DE.notFound("DonorTemplate", templateId) };
+      }
+      if (!templateAppliesToReportType(input.reportType, template.reportType)) {
+        if (input.donorTemplateId) {
+          return {
+            ok: false,
+            error: DE.validation(`This template is for ${template.reportType.toLowerCase()} reports and cannot structure a ${input.reportType.toLowerCase()} report. Choose a ${input.reportType.toLowerCase()} template or none.`),
+          };
+        }
+        templateId = undefined;
+        template = null;
       }
     }
 
@@ -92,6 +104,11 @@ export class CreateReportingPeriodHandler {
 
     // 4b. Scope: ACTIVITY/SITUATION/CUSTOM reports name what they cover.
     const scope = normalizeReportScope(input.scope);
+    // Server-owned scope fields: never trust the client for series numbering.
+    delete scope.sequence;
+    delete scope.previousPeriodId;
+    delete scope.previousSituationDate;
+    if (input.reportType !== "CUSTOM") delete scope.sections;
     if (missingScopeFields(input.reportType, scope).length > 0) {
       return { ok: false, error: DE.validation(`A ${input.reportType.toLowerCase()} report needs its scope (${missingScopeFields(input.reportType, scope).join(", ")})`) };
     }
@@ -108,6 +125,19 @@ export class CreateReportingPeriodHandler {
 
     const existingResult = await this.repo.findByProject(input.projectId, tenantId);
     if (!existingResult.ok) return existingResult;
+    // A situation report belongs to a series on the same event: number it and
+    // remember the previous one so the writer can describe what changed.
+    if (input.reportType === "SITUATION") {
+      const event = normalizeEventName(scope.eventName);
+      const series = existingResult.value
+        .filter((p) => p.reportType === "SITUATION" && normalizeEventName(p.scope.eventName) === event)
+        .sort((a, b) => b.duration.end.getTime() - a.duration.end.getTime());
+      scope.sequence = series.length + 1;
+      if (series[0]) {
+        scope.previousPeriodId = series[0].id;
+        scope.previousSituationDate = series[0].scope.situationDate ?? series[0].duration.end.toISOString().slice(0, 10);
+      }
+    }
     for (const existing of existingResult.value) {
       if (!enforceOverlap || !CADENCE_REPORT_TYPES.has(existing.reportType)) continue;
       if (existing.duration.overlaps(DateRange.create(start, end))) {

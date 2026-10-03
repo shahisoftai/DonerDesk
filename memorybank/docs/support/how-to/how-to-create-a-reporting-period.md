@@ -24,3 +24,5 @@ The period workspace opens with the four steps: **Update Project → Tell the St
 ## Period status
 
 Not started → In progress → Evidence collection → Draft generated → Under review → Approved → Submitted → Closed. See [Report statuses](/support/getting-started/report-statuses).
+
+**Report structure.** A donor template is optional. Without one, the report uses a ready-made structure for its type. Activity and Situation reports can only use a template of their own type. Activity dates come from the activities you tick, Situation dates continue from the previous report on the same event (reports are numbered #1, #2…), and their deadlines default to 7 and 3 days.

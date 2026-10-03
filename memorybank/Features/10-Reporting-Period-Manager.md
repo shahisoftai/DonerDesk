@@ -184,7 +184,40 @@ now stores a `ReportScope` (`packages/domain/src/contexts/reporting/report-scope
 - **Deploy invariant:** `ReportingPeriod.scopeJson` is in `REQUIRED_PRISMA_FIELDS` (`health.ts`).
 - **Tests:** `packages/domain/test/report-scope.test.mjs`; handler scope/overlap test in `packages/application/test/feature18-setup.test.mjs`.
 - **Known limits:** no dedicated checklist item types per report type (reuses `MISSING_EVIDENCE`/`MISSING_APPROVAL`); scope is
-  not editable after creation; indicator updates/findings for an ACTIVITY report are still period-based.
+  not editable after creation. (Indicator scoping for ACTIVITY and per-type structure are handled in the next section.)
+
+### Report-type blueprints & structure rules (2026-10-03, second pass)
+
+The first pass only recorded scope; the report still needed a full donor template. Now **structure is chosen per report type**:
+
+- **A donor template is optional.** If attached *and applicable* it structures the report; otherwise the type's built-in blueprint does
+  (`packages/domain/src/contexts/reporting/report-type-blueprints.ts`, `blueprintSectionsFor`; section ids `bp:<type>:<key>`).
+  Wired in `ReportGenerationContextBuilder.loadBase` (also used by section regenerate). The old "no template → blocked" gate now
+  applies only to an unknown report type.
+- **Applicability:** `templateAppliesToReportType` — ACTIVITY and SITUATION accept only a template of their *own* type; every other
+  combination is the author's choice. Enforced on create (explicit mismatched template → validation error; profile default template is
+  silently not applied), in the form picker (filtered) and at generation (mismatched/legacy template ignored → blueprint).
+- **Blueprints:** Monthly (6 sections), Quarterly / Semi-annual / Annual / Final (donor progress-report shape; financial section is
+  optional and forbids invented figures), **Activity** (Overview → Activity Details with **one level-2 sub-section per selected
+  activity**, Participants and Reach, Challenges and Lessons, Next Steps, Evidence Annex; ≤ 8 top-level sections, no executive
+  summary), **Situation** (Overview; *Background* for report #1 or *Developments Since the Last Report* for follow-ups; Affected
+  Population and Needs; Response to Date; Access/Security/Constraints; Coordination; Priority Needs and Next Steps), **Custom** (the
+  author's own `scope.sections`, else Background/Findings/Conclusions).
+- **Activity data scoping:** verified findings and indicator updates are limited to indicators the selected activities feed
+  (`ActivityUpdate.indicatorId`); the writer is told to report only on the selected activities. **Situation** reads activities dated
+  inside its window (any period). `resolvePeriodActivities` handles both.
+- **Situation series:** server-set `scope.sequence`, `previousPeriodId`, `previousSituationDate` (same event name, case/space-insensitive;
+  client values ignored) → "Situation Report #N… emphasise what changed since <date>".
+- **Smart defaults (form):** Activity dates = span of the picked activities; Situation dates = day after the previous report on the
+  event → as-of date; deadline default 3 days (Situation) / 7 days (Activity) via `defaultDeadlineOffsetForType`, after the template's own
+  offset, before the project profile's. Custom has a section-list editor (title + guidance, reorder).
+- **Checklist:** Activity adds a per-activity "record accepted" item (`ActivityUpdate.status` ≠ `ACCEPTED`) next to the evidence item.
+- **Tests:** `packages/domain/test/report-scope.test.mjs` (blueprints, template applicability, defaults), handler tests in
+  `feature18-setup.test.mjs` (situation series, template mismatch), `p0-4-donor-template-gate.test.mjs` (blueprint planning; unknown type
+  still blocked).
+- **No migration** (scope fields live in `scopeJson`). Worker unchanged since the first pass.
+- **Not done:** blueprint section text is English-only; per-activity participants *table* is written by the model from grounded
+  activity numbers, not built deterministically; scope still not editable after creation.
 
 ## Pending Enhancements
 

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 // A deep, package.json-whitelisted import, not the "@donordesk/domain" barrel:
 // the barrel re-exports domain-event.js, which uses node:crypto and cannot be
 // bundled for the browser (this form is a client component).
-import { suggestPeriodDates, suggestDeadline, DEFAULT_DEADLINE_OFFSET_DAYS } from "@donordesk/domain/contexts/reporting/period-cadence.js";
+import { suggestPeriodDates, suggestDeadline, defaultDeadlineOffsetForType, DEFAULT_DEADLINE_OFFSET_DAYS } from "@donordesk/domain/contexts/reporting/period-cadence.js";
 import { createReportingPeriodAction } from "@/lib/actions/reporting";
 import { useActionState } from "@/lib/client/action-state";
 import { validateReportDates } from "@/lib/shared/report-dates";
@@ -15,7 +15,7 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
-import { missingScopeFields, type ReportScope } from "@donordesk/domain/contexts/reporting/report-scope.js";
+import { missingScopeFields, normalizeEventName, type ReportScope } from "@donordesk/domain/contexts/reporting/report-scope.js";
 import { FormSummary } from "@/components/ui/FormSummary";
 import { REPORT_TYPE_LABEL, REPORT_TYPE_OPTIONS } from "@/lib/labels";
 import type { ProjectReadiness } from "@/lib/server/schemas";
@@ -49,16 +49,19 @@ export function NewReportingPeriodForm({
   projectId,
   templates,
   activities = [],
+  situationHistory = [],
   readiness,
   projectBounds = null,
   existingPeriodEnds = [],
   profileDeadlineOffsetDays,
 }: {
   projectId: string;
-  templates: Array<{ id: string; templateName: string; status?: string; deadlineOffsetDays?: number; deadlineRule?: string }>;
+  templates: Array<{ id: string; templateName: string; reportType?: string; status?: string; deadlineOffsetDays?: number; deadlineRule?: string }>;
   readiness: ProjectReadiness | null;
   /** The project's recorded activities, offered when creating an activity report. */
   activities?: Array<{ id: string; title: string; date: string; location?: string }>;
+  /** Earlier situation reports (event + as-of end date), so a new one continues the series. */
+  situationHistory?: Array<{ eventName?: string; endDate: string }>;
   /** The project's own start/end dates — bound every suggested period and are FINAL's own end date. */
   projectBounds?: { startDate: string; endDate: string } | null;
   /** End dates of this project's existing periods, so the next suggestion starts right after the latest one. */
@@ -80,15 +83,39 @@ export function NewReportingPeriodForm({
   // Both dates are auto-suggested from the report type and the project's own
   // dates until the user edits either one by hand.
   const [datesAuto, setDatesAuto] = useState(true);
-  const selectedTemplate = templates.find((t) => t.id === donorTemplateId);
-  const suggestedDates = useMemo(
-    () => (projectBounds ? suggestPeriodDates(reportType, projectBounds.startDate, projectBounds.endDate, existingPeriodEnds) : null),
-    [reportType, projectBounds, existingPeriodEnds],
-  );
+  // A short activity/situation report only takes a template of its own kind; a
+  // full-report donor template would force a full-report structure on it.
+  const usableTemplates = templates.filter((t) => (reportType === "ACTIVITY" || reportType === "SITUATION" ? t.reportType === reportType : true));
+  const selectedTemplate = usableTemplates.find((t) => t.id === donorTemplateId);
+  const suggestedDates = useMemo(() => {
+    // Activity report: exactly the span of the activities picked.
+    if (reportType === "ACTIVITY") {
+      const picked = activities.filter((a) => scope.activityIds?.includes(a.id)).map((a) => a.date.slice(0, 10)).sort();
+      return picked.length > 0 ? { startDate: picked[0]!, endDate: picked[picked.length - 1]! } : null;
+    }
+    // Situation report: from just after the previous report on this event up to the as-of date.
+    if (reportType === "SITUATION") {
+      if (!scope.situationDate) return null;
+      const event = normalizeEventName(scope.eventName);
+      const previous = situationHistory
+        .filter((h) => event && normalizeEventName(h.eventName) === event)
+        .map((h) => h.endDate.slice(0, 10))
+        .sort()
+        .pop();
+      let start = scope.situationDate;
+      if (previous && previous < scope.situationDate) {
+        const d = new Date(`${previous}T00:00:00Z`);
+        d.setUTCDate(d.getUTCDate() + 1);
+        start = d.toISOString().slice(0, 10);
+      }
+      return { startDate: start, endDate: scope.situationDate };
+    }
+    return projectBounds ? suggestPeriodDates(reportType, projectBounds.startDate, projectBounds.endDate, existingPeriodEnds) : null;
+  }, [reportType, projectBounds, existingPeriodEnds, activities, scope.activityIds, scope.situationDate, scope.eventName, situationHistory]);
 
   // Suggests Start/End from the report type + the project's dates, chained
-  // after the latest existing period. Types with no fixed cadence
-  // (Activity/Situation/Custom) get no suggestion and stay manual.
+  // after the latest existing period. Activity/Situation take their dates from
+  // the picked activities / the as-of date; Custom stays manual.
   useEffect(() => {
     if (!datesAuto) return;
     setStartDate(suggestedDates?.startDate ?? "");
@@ -100,9 +127,12 @@ export function NewReportingPeriodForm({
   // template's own (if extracted from the donor's document), else the
   // project's reporting-profile offset, else a 30-day default — so it is
   // never left pointing at whatever the user last typed for "end date".
-  const deadlineOffsetDays = selectedTemplate?.deadlineOffsetDays ?? profileDeadlineOffsetDays ?? DEFAULT_DEADLINE_OFFSET_DAYS;
+  const typeDeadlineOffset = defaultDeadlineOffsetForType(reportType);
+  const deadlineOffsetDays = selectedTemplate?.deadlineOffsetDays ?? typeDeadlineOffset ?? profileDeadlineOffsetDays ?? DEFAULT_DEADLINE_OFFSET_DAYS;
   const deadlineSource = selectedTemplate?.deadlineOffsetDays !== undefined
     ? (selectedTemplate.deadlineRule ? `From the template: ${selectedTemplate.deadlineRule}` : `From the template: ${deadlineOffsetDays} days after the period ends`)
+    : typeDeadlineOffset !== undefined
+      ? `Default for ${reportType.toLowerCase()} reports: ${deadlineOffsetDays} days after the period ends`
     : profileDeadlineOffsetDays !== undefined
       ? `From your reporting profile: ${deadlineOffsetDays} days after the period ends`
       : `Default: ${deadlineOffsetDays} days after the period ends`;
@@ -167,7 +197,7 @@ export function NewReportingPeriodForm({
       <FormSummary errors={fields} count={errorCount} />
 
       <Field label="Report type" htmlFor="reportType" error={fields.reportType?.[0]}>
-        <Select id="reportType" value={reportType} onChange={(e) => { setReportType(e.target.value); setScope({}); setLocalErrors({}); }}>
+        <Select id="reportType" value={reportType} onChange={(e) => { setReportType(e.target.value); setScope({}); setLocalErrors({}); setDonorTemplateId(""); setDatesAuto(true); }}>
           {REPORT_TYPE_OPTIONS.map((t) => (
             <option key={t} value={t}>{REPORT_TYPE_LABEL[t] ?? t.replace(/_/g, " ")}</option>
           ))}
@@ -245,6 +275,34 @@ export function NewReportingPeriodForm({
           <Field label="Purpose (optional)" htmlFor="scopePurpose" hint="What this report is for and who will read it.">
             <Textarea id="scopePurpose" rows={3} value={scope.purpose ?? ""} onChange={(e) => patchScope({ purpose: e.target.value })} />
           </Field>
+          <Field label="Sections (optional)" htmlFor="scopeSections" hint="List the sections you want. Leave empty for Background, Findings and Conclusions.">
+            <div id="scopeSections" className="space-y-2">
+              {(scope.sections ?? []).map((sec, i) => {
+                const secs = scope.sections ?? [];
+                const update = (patch: { title?: string; guidance?: string }) => patchScope({ sections: secs.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
+                const move = (to: number) => {
+                  const next = [...secs];
+                  const [item] = next.splice(i, 1);
+                  next.splice(to, 0, item!);
+                  patchScope({ sections: next });
+                };
+                return (
+                  <div key={i} className="rounded-xl border border-slate-300 p-2 dark:border-white/10">
+                    <div className="flex items-center gap-2">
+                      <Input aria-label={`Section ${i + 1} title`} placeholder={`Section ${i + 1} title`} value={sec.title} onChange={(e) => update({ title: e.target.value })} />
+                      <button type="button" className="text-xs text-slate-500 hover:underline disabled:opacity-40" disabled={i === 0} onClick={() => move(i - 1)} aria-label="Move section up">↑</button>
+                      <button type="button" className="text-xs text-slate-500 hover:underline disabled:opacity-40" disabled={i === secs.length - 1} onClick={() => move(i + 1)} aria-label="Move section down">↓</button>
+                      <button type="button" className="text-xs text-danger-700 hover:underline dark:text-danger-400" onClick={() => patchScope({ sections: secs.filter((_, j) => j !== i) })}>Remove</button>
+                    </div>
+                    <Input className="mt-2" aria-label={`Section ${i + 1} guidance`} placeholder="What should this section cover? (optional)" value={sec.guidance ?? ""} onChange={(e) => update({ guidance: e.target.value })} />
+                  </div>
+                );
+              })}
+              <button type="button" className="text-sm text-brand-600 hover:underline dark:text-brand-400" onClick={() => patchScope({ sections: [...(scope.sections ?? []), { title: "" }] })}>
+                + Add section
+              </button>
+            </div>
+          </Field>
         </div>
       )}
 
@@ -252,11 +310,11 @@ export function NewReportingPeriodForm({
         label="Donor template"
         htmlFor="donorTemplateId"
         error={fields.donorTemplateId?.[0]}
-        hint={templates.length === 0 ? "No templates yet. You can still create a period and attach a template later." : "Optional — attach a template to generate the report structure."}
+        hint={usableTemplates.length === 0 ? `No ${reportType === "ACTIVITY" || reportType === "SITUATION" ? reportType.toLowerCase() + " " : ""}templates. That is fine: a ready-made ${reportType.replace(/_/g, "-").toLowerCase()} report structure is used.` : "Optional. Without a template the report uses a ready-made structure for this report type."}
       >
         <Select id="donorTemplateId" value={donorTemplateId} onChange={(e) => setDonorTemplateId(e.target.value)}>
           <option value="">No template</option>
-          {templates.map((t) => (
+          {usableTemplates.map((t) => (
             <option key={t.id} value={t.id}>{t.templateName}{t.status && t.status !== "REVIEWED" ? " (not approved yet)" : ""}</option>
           ))}
         </Select>

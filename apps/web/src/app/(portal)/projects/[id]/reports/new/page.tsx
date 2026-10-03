@@ -37,6 +37,7 @@ export default async function NewReportingPeriodPage({ params }: { params: Promi
         templates={templatesResult.ok ? templatesResult.value.items.map((t) => ({
                 id: t.id,
                 templateName: t.templateName,
+                reportType: t.reportType,
                 status: t.status,
                 deadlineOffsetDays: t.requirements.submission.deadlineOffsetDays,
                 deadlineRule: t.requirements.submission.deadlineRule,
@@ -44,6 +45,7 @@ export default async function NewReportingPeriodPage({ params }: { params: Promi
         readiness={readiness}
         activities={activitiesResult.ok ? activitiesResult.value.items.map((a) => ({ id: a.id, title: a.activityTitle, date: a.activityDate, location: a.location })) : []}
         projectBounds={projectResult.ok ? { startDate: projectResult.value.startDate, endDate: projectResult.value.endDate } : null}
+        situationHistory={periodsResult.ok ? periodsResult.value.items.filter((p) => p.reportType === "SITUATION").map((p) => ({ eventName: p.scope?.eventName, endDate: p.endDate })) : []}
         existingPeriodEnds={periodsResult.ok ? periodsResult.value.items.map((p) => p.endDate) : []}
         profileDeadlineOffsetDays={profileResult.ok ? (profileResult.value.profile?.deadlineOffsetDays ?? undefined) : undefined}
       />

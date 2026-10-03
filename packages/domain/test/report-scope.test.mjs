@@ -25,3 +25,53 @@ test("describeReportScope names the focus; cadence reports have none", () => {
 test("situation checklist is stricter than baseline", () => {
   assert.ok(checklistTemplateForReportType("SITUATION").items.length > checklistTemplateForReportType("CUSTOM").items.length);
 });
+
+import { blueprintSectionsFor, templateAppliesToReportType, isSynthesisSection, validateSectionTree, defaultDeadlineOffsetForType, normalizeEventName } from "../dist/index.js";
+
+const TYPES = ["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL", "FINAL", "ACTIVITY", "SITUATION", "CUSTOM"];
+
+test("every report type has a valid built-in blueprint", () => {
+  for (const reportType of TYPES) {
+    const sections = blueprintSectionsFor({ reportType, scope: {}, activities: [{ id: "a1", title: "Water point repair" }] });
+    assert.ok(sections.length >= 3, reportType);
+    validateSectionTree(sections); // parents precede children, levels contiguous
+    assert.equal(new Set(sections.map((s) => s.id)).size, sections.length, `${reportType}: unique ids`);
+  }
+});
+
+test("activity blueprint: one sub-section per activity, no project-wide synthesis", () => {
+  const s = blueprintSectionsFor({ reportType: "ACTIVITY", scope: {}, activities: [{ id: "a1", title: "Training" }, { id: "a2", title: "Distribution" }] });
+  const items = s.filter((x) => x.level === 2);
+  assert.deepEqual(items.map((x) => x.title), ["Training", "Distribution"]);
+  assert.ok(items.every((x) => x.parentId === "bp:activity:details" && x.instructions.includes("Report only on")));
+  assert.ok(!s.some(isSynthesisSection));
+  assert.ok(s.length <= 8);
+});
+
+test("situation blueprint: first report has Background, follow-ups have Developments Since the Last Report", () => {
+  const first = blueprintSectionsFor({ reportType: "SITUATION", scope: { sequence: 1 } }).map((x) => x.title);
+  const next = blueprintSectionsFor({ reportType: "SITUATION", scope: { sequence: 2 } }).map((x) => x.title);
+  assert.ok(first.includes("Background") && !first.includes("Developments Since the Last Report"));
+  assert.ok(next.includes("Developments Since the Last Report") && !next.includes("Background"));
+  assert.ok(![...first, ...next].some((t) => isSynthesisSection({ title: t })));
+});
+
+test("custom blueprint uses the author's own sections", () => {
+  const s = blueprintSectionsFor({ reportType: "CUSTOM", scope: { sections: [{ title: "Donor visit", guidance: "Who came" }, { title: "Follow-ups" }] } });
+  assert.deepEqual(s.map((x) => x.title), ["Donor visit", "Follow-ups"]);
+});
+
+test("templates: short ad-hoc reports only take a template of their own kind", () => {
+  assert.equal(templateAppliesToReportType("ACTIVITY", "QUARTERLY"), false);
+  assert.equal(templateAppliesToReportType("ACTIVITY", "ACTIVITY"), true);
+  assert.equal(templateAppliesToReportType("SITUATION", undefined), false);
+  assert.equal(templateAppliesToReportType("MONTHLY", "QUARTERLY"), true);
+  assert.equal(templateAppliesToReportType("CUSTOM", "ANNUAL"), true);
+});
+
+test("ad-hoc deadline defaults and event-name matching", () => {
+  assert.equal(defaultDeadlineOffsetForType("SITUATION"), 3);
+  assert.equal(defaultDeadlineOffsetForType("ACTIVITY"), 7);
+  assert.equal(defaultDeadlineOffsetForType("QUARTERLY"), undefined);
+  assert.equal(normalizeEventName("  Flood   in SINDH "), "flood in sindh");
+});

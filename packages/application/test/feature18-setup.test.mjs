@@ -432,3 +432,63 @@ test("reporting-period gate: ad-hoc reports need a scope and may sit inside a ca
   assert.equal(ok.ok, true);
   assert.deepEqual(created.scope, { activityIds: ["act1"] });
 });
+
+function adHocHandler(extra = {}) {
+  const repos = makeRepos({
+    setup: ProjectSetup.create({ id: "s", tenantId: "tenant-a", projectId: "p1", status: "NOT_REQUIRED" }),
+    profile: ReportingProfile.create({ id: "rp", tenantId: "tenant-a", projectId: "p1", createdById: "u" }),
+    indicators: [reportableIndicator()],
+    ...extra.repos,
+  });
+  const readiness = new ProjectReadinessService(repos.projects, repos.setup, repos.profiles, repos.templates, repos.indicators, repos.users, repos.providerResolver);
+  const state = { created: null };
+  const periods = {
+    create: async (x) => { state.created = x; return { ok: true, value: x }; },
+    findByProject: async () => ({ ok: true, value: extra.existing ?? [] }),
+  };
+  const handler = new CreateReportingPeriodHandler(
+    { generate: () => "p" }, periods, repos.projects, repos.templates, repos.setup, repos.profiles, readiness,
+    { record: async () => {} }, { publish: async () => {} }, { findByProject: async () => ({ ok: true, value: [] }) },
+  );
+  return { handler, state };
+}
+
+test("situation reports are numbered as a series per event and remember the previous one", async () => {
+  const prev = {
+    id: "prev1", reportType: "SITUATION",
+    duration: DateRange.create(new Date("2026-05-01"), new Date("2026-05-03")),
+    scope: { eventName: "Flood in Sindh", situationDate: "2026-05-03" },
+  };
+  const other = {
+    id: "other", reportType: "SITUATION",
+    duration: DateRange.create(new Date("2026-05-10"), new Date("2026-05-11")),
+    scope: { eventName: "Earthquake" },
+  };
+  const { handler, state } = adHocHandler({ existing: [prev, other] });
+  const r = await handler.handle(ctx, {
+    projectId: "p1", reportType: "SITUATION",
+    startDate: new Date("2026-05-04").toISOString(), endDate: new Date("2026-05-06").toISOString(),
+    deadline: new Date("2026-05-09").toISOString(),
+    scope: { eventName: " flood in sindh ", situationDate: "2026-05-06", sequence: 99 },
+  });
+  assert.equal(r.ok, true);
+  assert.equal(state.created.scope.sequence, 2, "client-supplied sequence is ignored");
+  assert.equal(state.created.scope.previousPeriodId, "prev1");
+  assert.equal(state.created.scope.previousSituationDate, "2026-05-03");
+});
+
+test("a full-report template cannot be attached to an activity or situation report", async () => {
+  const quarterly = { id: "t1", projectId: "p1", reportType: "QUARTERLY", templateName: "QPR", sections: [{ id: "s1", required: true, reviewStatus: "REVIEWED" }], status: "REVIEWED", isReviewed: true };
+  const { handler, state } = adHocHandler({ repos: { templates: [quarterly] } });
+  const base = {
+    projectId: "p1", reportType: "SITUATION", donorTemplateId: "t1",
+    startDate: new Date("2026-05-04").toISOString(), endDate: new Date("2026-05-06").toISOString(),
+    deadline: new Date("2026-05-09").toISOString(),
+    scope: { eventName: "Flood", situationDate: "2026-05-06" },
+  };
+  const rejected = await handler.handle(ctx, base);
+  assert.equal(rejected.ok, false);
+  const none = await handler.handle(ctx, { ...base, donorTemplateId: undefined });
+  assert.equal(none.ok, true);
+  assert.equal(state.created.donorTemplateId, undefined);
+});
