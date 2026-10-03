@@ -77,7 +77,7 @@ export function EvidenceLinkManager({ evidenceId, targets }: { evidenceId: strin
             aria-label="Link this file to an activity or indicator"
             value={choice}
             onChange={(e) => setChoice(e.target.value)}
-            className="min-w-0 max-w-[16rem] flex-1 rounded-md border border-slate-300 bg-white px-1.5 py-1 dark:border-slate-700 dark:bg-slate-900"
+            className="w-0 min-w-0 flex-1 truncate rounded-md border border-slate-300 bg-white px-1.5 py-1 dark:border-slate-700 dark:bg-slate-900"
           >
             <option value="">Link to…</option>
             <optgroup label="Activities">

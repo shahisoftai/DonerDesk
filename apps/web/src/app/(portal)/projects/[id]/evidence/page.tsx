@@ -142,7 +142,7 @@ export default async function EvidencePage({
         </div>
       ) : (
         <>
-          <div className="table-shell mt-4">
+          <div className="table-shell mt-4 overflow-x-auto">
             <table className="w-full text-sm">
               <caption className="sr-only">Evidence files in this project</caption>
               <thead className="thead">
@@ -162,7 +162,7 @@ export default async function EvidencePage({
                       <Link href={`${baseUrl}/${e.id}`} className="font-medium text-brand-600 hover:underline dark:text-brand-400">
                         {e.title}
                       </Link>
-                      <span className="block text-xs text-slate-500 dark:text-slate-400">{e.fileName}</span>
+                      <span className="block break-all text-xs text-slate-500 dark:text-slate-400">{e.fileName}</span>
                     </td>
                     <td className="px-3 py-2">{EVIDENCE_TYPE_LABEL[e.evidenceType] ?? e.evidenceType.replace(/_/g, " ")}</td>
                     <td className="px-3 py-2">
@@ -172,13 +172,16 @@ export default async function EvidencePage({
                         periods={periodOptions}
                       />
                     </td>
-                    <td className="px-3 py-2">
-                      <EvidenceLinkManager evidenceId={e.id} targets={targetsFor(e.id)} />
-                      <div className="mt-1.5">
-                        <EvidenceLinkSuggestions
-                          evidenceId={e.id}
-                          alreadyLinked={Boolean(e.activityId || e.indicatorId) || targetsFor(e.id).some((t) => t.linked)}
-                        />
+                    <td className="px-3 py-2 align-top">
+                      {/* Fixed-width box: long activity/indicator names in the dropdown must not stretch the column. */}
+                      <div className="w-64 max-w-full">
+                        <EvidenceLinkManager evidenceId={e.id} targets={targetsFor(e.id)} />
+                        <div className="mt-1.5">
+                          <EvidenceLinkSuggestions
+                            evidenceId={e.id}
+                            alreadyLinked={Boolean(e.activityId || e.indicatorId) || targetsFor(e.id).some((t) => t.linked)}
+                          />
+                        </div>
                       </div>
                     </td>
                     <td className="px-3 py-2">
