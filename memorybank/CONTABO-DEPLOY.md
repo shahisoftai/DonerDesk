@@ -1,6 +1,21 @@
 # Deploy to Contabo — Fastest Path
 
-**Last deploy:** 2026-09-28 — `releaseId=20260928094857` (`SCOPE=both`, branch
+**Last deploy:** 2026-10-03 — `releaseId=20261003142133` (`SCOPE=both`, branch
+`0009-agent-memory`, commit `d1c649a`). **Report types & scope**: Activity /
+Situation / Custom reports name what they cover (`ReportingPeriod.scopeJson`),
+Semi-annual type offered, scoped writer prompts (legacy narrator + AI Reporter
+`ContextPeriod.scope`), per-type checklists. Bundled the pending AI Reporter
+provider pacing (`provider_limiter.py`). **One additive migration applied
+manually first:** `20261003100000_reporting_period_scope` (`scopeJson TEXT NOT
+NULL DEFAULT '{}'`), same `rsync --relative` + `prisma migrate deploy` as
+`donordesk_migrator` procedure; DB backed up to
+`/opt/donordesk/backups/db-pre-20261003-report-scope.dump`; no `rls.sql`
+change. `ReportingPeriod.scopeJson` added to `REQUIRED_PRISMA_FIELDS`. Gates:
+`pnpm -r typecheck` clean; domain/application/infrastructure/workers tests
+pass. Verified: api/web/workers active, `/ready` 200, worker health ok. Pre-deploy
+snapshot: `dd-app-pre-20261003142133.tgz`. Feature: Features/10 "Report types & scope".
+
+**Earlier:** (previous)  2026-09-28 — `releaseId=20260928094857` (`SCOPE=both`, branch
 `0009-agent-memory`, commit `9ebe213`). **DonorDesk Version 2.0 — Agent
 Memory** (Feature 21): lets the AI Reporter learn tenant/donor-specific
 narrative style and terminology from what reviewers change in AI-drafted
