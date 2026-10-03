@@ -25,7 +25,7 @@ import {
 
 export const PLATFORM_CATEGORIES = ["LLM", "EMAIL", "OBJECT_STORAGE", "BACKUP", "CONNECTOR"] as const;
 export const PLATFORM_PROVIDERS = {
-  LLM: ["openai", "anthropic", "gemini", "deepseek", "minimax"],
+  LLM: ["openai", "anthropic", "gemini", "deepseek", "minimax", "glm"],
   EMAIL: ["brevo", "postmark", "resend", "ses", "smtp"],
   OBJECT_STORAGE: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"],
   BACKUP: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"],
@@ -1067,10 +1067,10 @@ function verifyTotp(secret: string, code: string) { if (!/^\d{6}$/.test(code)) r
 async function testProvider(category: string, provider: string, config: Record<string, unknown>, secrets: Record<string, string>) {
   let url = "", headers: Record<string, string> = {};
   if (category === "LLM") {
-    const defaults: Record<string, string> = { openai: "https://api.openai.com/v1/models", anthropic: "https://api.anthropic.com/v1/models", gemini: "https://generativelanguage.googleapis.com/v1beta/openai/models", deepseek: "https://api.deepseek.com/models", minimax: "https://api.minimax.io/v1/models" };
+    const defaults: Record<string, string> = { openai: "https://api.openai.com/v1/models", anthropic: "https://api.anthropic.com/v1/models", gemini: "https://generativelanguage.googleapis.com/v1beta/openai/models", deepseek: "https://api.deepseek.com/models", minimax: "https://api.minimax.io/v1/models", glm: "https://api.z.ai/api/paas/v4/models" };
     // Test the configured base URL (not just the default) so a malformed or
     // unreachable baseUrl is caught here instead of failing at runtime.
-    const paths: Record<string, string> = { openai: "/models", anthropic: "/v1/models", gemini: "/models", deepseek: "/models", minimax: "/v1/models" };
+    const paths: Record<string, string> = { openai: "/models", anthropic: "/v1/models", gemini: "/models", deepseek: "/models", minimax: "/v1/models", glm: "/models" };
     // Normalise the configured base URL: strip trailing slashes AND a trailing
     // "/v1" segment so the provider-specific path (which already starts with
     // "/v1/models" or "/v1/messages" for anthropic/MiniMax) doesn't produce a

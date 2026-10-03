@@ -52,6 +52,7 @@ _DEFAULT_BASE_URLS: dict[str, str] = {
     "openai": "https://api.openai.com/v1",
     "deepseek": "https://api.deepseek.com",
     "minimax": "https://api.minimax.io/v1",
+    "glm": "https://api.z.ai/api/paas/v4",
     "gemini": "https://generativelanguage.googleapis.com/v1beta/openai",
 }
 # Providers whose OpenAI-compatible endpoint is not relied on for

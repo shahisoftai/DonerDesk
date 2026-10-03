@@ -25,7 +25,7 @@ export interface PlatformLlmConfigInput {
 }
 
 /** Providers a PlatformConfiguration LLM row may select. */
-export const PLATFORM_LLM_PROVIDERS = ["openai", "anthropic", "gemini", "deepseek", "minimax", "ollama"] as const;
+export const PLATFORM_LLM_PROVIDERS = ["openai", "anthropic", "gemini", "deepseek", "minimax", "glm", "ollama"] as const;
 
 export interface ResolvedLlmConfig extends LLMProviderConfig {
   /** TENANT = the tenant's own API configuration; GLOBAL = the platform default. */

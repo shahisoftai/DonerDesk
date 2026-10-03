@@ -9,7 +9,7 @@ const tierPlanCodes = ["STARTER", "TEAM", "GROWTH", "ENTERPRISE"];
 
 const roles = ["ADMIN", "PROJECT_MANAGER", "ME_OFFICER", "GRANTS_OFFICER", "FIELD_OFFICER", "COMPLIANCE_OFFICER", "VIEWER"];
 const providerGroups = {
-  ai: { category: "LLM", providers: ["anthropic", "gemini", "deepseek", "minimax", "openai"] },
+  ai: { category: "LLM", providers: ["anthropic", "gemini", "deepseek", "minimax", "glm", "openai"] },
   email: { category: "EMAIL", providers: ["brevo", "postmark", "resend", "ses", "smtp"] },
   storage: { category: "OBJECT_STORAGE", providers: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"] },
   backups: { category: "BACKUP", providers: ["cloudflare-r2", "backblaze-b2", "aws-s3", "s3-compatible"] },
@@ -22,6 +22,7 @@ const fields: Record<string, { config: string[]; secrets: string[] }> = {
   gemini: { config: ["model", "baseUrl"], secrets: ["apiKey"] },
   deepseek: { config: ["model", "baseUrl"], secrets: ["apiKey"] },
   minimax: { config: ["model", "baseUrl", "groupId"], secrets: ["apiKey"] },
+  glm: { config: ["model", "baseUrl"], secrets: ["apiKey"] },
   brevo: { config: ["senderEmail", "senderName"], secrets: ["apiKey"] },
   postmark: { config: ["senderEmail", "messageStream"], secrets: ["serverToken"] },
   resend: { config: ["senderEmail", "senderName"], secrets: ["apiKey"] },
@@ -531,7 +532,7 @@ function configurationPayload(row: AnyRow, patch: AnyRow) { return { id: row.id,
 function pretty(value: string) { return String(value || "").replace(/[._-]/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\b\w/g, x => x.toUpperCase()); }
 function date(value: any) { return value ? new Date(value).toLocaleString() : "Never"; }
 function bytes(value: any) { if (value == null || value === "" || value === "null") return "Unlimited"; const n = Number(value); if (!Number.isFinite(n) || n <= 0) return "0 B"; const units = ["B", "KB", "MB", "GB", "TB"]; let i = 0; let v = n; while (v >= 1024 && i < units.length - 1) { v /= 1024; i += 1; } return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`; }
-function providerIcon(provider: string) { return ({ openai: "◎", anthropic: "C", gemini: "G✦", deepseek: "D", minimax: "M", brevo: "B", postmark: "P", resend: "R", smtp: "✉", "cloudflare-r2": "☁", "backblaze-b2": "B2", "aws-s3": "S3",   kobotoolbox: "K", "odk-central": "O", "google-drive": "G", "google-drive-oauth": "GO", sharepoint: "S" } as AnyRow)[provider] || "◆"; }
+function providerIcon(provider: string) { return ({ openai: "◎", anthropic: "C", gemini: "G✦", deepseek: "D", minimax: "M", glm: "Z", brevo: "B", postmark: "P", resend: "R", smtp: "✉", "cloudflare-r2": "☁", "backblaze-b2": "B2", "aws-s3": "S3",   kobotoolbox: "K", "odk-central": "O", "google-drive": "G", "google-drive-oauth": "GO", sharepoint: "S" } as AnyRow)[provider] || "◆"; }
 // Model hints for the LLM form. Gemini IDs change often: run "Test connection"
 // to list the models the key can use.
 const MODEL_HINTS: Record<string, string> = {
@@ -539,6 +540,7 @@ const MODEL_HINTS: Record<string, string> = {
   gemini: "Required — e.g. a current gemini-*-flash model; Test connection lists them",
   deepseek: "Current model ID — Test connection lists them (deepseek-chat alias reportedly retired)",
   minimax: "e.g. MiniMax-M3",
+  glm: "glm-4.6 (default) · glm-4.5 · glm-4.5-air (cheaper) · glm-4.5-flash (free tier)",
   openai: "e.g. gpt-4o-mini",
 };
 function placeholder(name: string, provider?: string) { if (name === "model" && provider && MODEL_HINTS[provider]) return MODEL_HINTS[provider]; if (name === "effort") return "Optional: low · medium · high (Claude only; not Haiku 4.5)"; return ({ model: "Provider model name", baseUrl: "Optional custom API URL", senderEmail: "notifications@example.org", endpoint: "https://...", bucket: "Bucket name", region: "Region", prefix: "donordesk/", port: "587", schedule: "0 */6 * * *", tenantId: "Destination tenant" } as AnyRow)[name] || ""; }
