@@ -9,6 +9,8 @@ import type { DomainError, Result } from "@donordesk/domain";
 
 export interface AiReporterSectionBrief {
   title: string;
+  /** English title for section-role detection when `title` is translated (blueprint sections). */
+  canonicalTitle?: string;
   inputType?: string;
   minWords?: number;
   maxWords?: number;

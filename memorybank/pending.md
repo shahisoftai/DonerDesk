@@ -6,9 +6,9 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-03.
 
 - [ ] Dedicated checklist item types per report type (Situation/Activity currently reuse `MISSING_EVIDENCE` / `MISSING_APPROVAL`).
 - [ ] Edit a period's scope after creation (today it is set once, at creation).
-- [ ] Localise blueprint section titles (English only today).
-- [ ] Show the donor-visibility sentence once per short (Activity/Situation) report instead of at the start of several sections.
-- [ ] Make the workspace "Indicator values · n of n verified" panel scope-aware for Activity/Situation reports (it is project-wide).
+- [ ] Native-speaker review of the Arabic, Urdu and Pashto blueprint titles (`report-type-blueprint-i18n.ts`); French is done.
+- [ ] Right-to-left export: DOCX paragraphs need `bidirectional`/`rightToLeft` for ar/ur/ps, and the PDF needs an embedded Arabic-script font (e.g. Noto Naskh Arabic / Noto Nastaliq Urdu) instead of Helvetica — today Arabic-script body text does not render in PDF at all.
+- [ ] Translate the remaining fixed export strings (cover page "Project:", "Reporting period:", fallback section text) for non-English reports.
 
 ## Deadline reminders / auto-report audit (added 2026-09-28)
 

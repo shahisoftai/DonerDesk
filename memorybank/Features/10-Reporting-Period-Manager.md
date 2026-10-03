@@ -246,6 +246,32 @@ event). Defects found by that run, all fixed and re-verified:
 - **Known, not changed:** the EU visibility sentence repeats at the start of several sections of a short report (donor-visibility rule applies per
   section); the workspace "Indicator values · 6 of 6 verified" panel is project-wide even on an Activity report.
 
+### Follow-ups done (2026-10-03): attribution once, scoped inputs panel, translated titles
+
+- **Donor attribution in exactly one section.** Sections are drafted separately from one shared context, so "include once" put the
+  sentence in every section. `attributionSectionTitle` (domain `visibility-statement.ts`) picks the carrier: a dedicated
+  acknowledgement/visibility/disclaimer section, else the first top-level non-annex section. `visibilityPromptBlock(…, carrier)` names it
+  (the report-wide prefix stays byte-identical across sections), and `SectionGenerationService.draft` enforces it with
+  `placeAttribution` + `attributionSentences` (exact statement and quoted disclaimers removed from other sections; statement prepended
+  to the carrier if missing). Applies to every report type, template or blueprint.
+- **Inputs panel scoped and counted correctly.** `periodIndicatorScope` (`services/period-activities.ts`) is the one rule for the
+  indicators list (`ListPeriodIndicatorsHandler`, now also returns `reportType` + `scope.activityCount/acceptedActivityCount`), export
+  preflight, readiness and the missing-items scan: Activity = its activities' indicators, Situation = none. The panels
+  (`GenerateLaunchCard`, `ReportInputsCard`) take rows from `buildReportInputRows` (`report-editor/application/report-inputs.ts`):
+  counts come from *entered* values (an indicator with nothing entered was shown as "verified" on every report type — fixed), Activity
+  reports show "Activities · n selected · m accepted" and "Linked indicators", Situation reports "Activities in this window" and no
+  indicator row.
+- **Blueprint titles in the report language.** `report-type-blueprint-i18n.ts`: catalog for fr / ar / ur / ps (titles + participants
+  table headers), chosen from the period's reporting-profile language (`normalizeReportLanguage`, unknown → English). Each blueprint
+  section keeps its English `canonicalTitle` (TemplateSection → ReportPlanSection → AI Reporter brief, sent only when translated), and
+  every title-based role rule uses it: `classificationTitle`, `isSynthesisSection` (also recognises `bp:*:exec|conclusion` ids for
+  persisted sections), legacy narrator guidance, worker `outline.section_kind` and the annex-table validator. Activity sub-section
+  titles are the user's own words and are never translated. French is a reviewed translation; **Arabic, Urdu and Pashto titles are
+  first drafts that need native review.** The cadence finance section was renamed "Financial and Procurement Status" (it contained
+  "Overview").
+- **Not done — right-to-left export.** DOCX/PDF exporters have no RTL/bidi handling and the PDF uses Helvetica (no Arabic-script glyphs),
+  so Arabic/Urdu/Pashto *body text* already renders incorrectly in PDF, independent of the titles. Tracked in `pending.md`.
+
 ## Pending Enhancements
 
 - [ ] Automated status transitions based on deadlines

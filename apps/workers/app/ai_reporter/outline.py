@@ -38,7 +38,7 @@ def section_kind(brief: SectionBrief) -> str:
     if input_type == "INDICATOR_TABLE":
         return "INDICATOR_TABLE"
     for kind, pattern in _KIND_PATTERNS:
-        if pattern.search(brief.title or ""):
+        if pattern.search(brief.canonicalTitle or brief.title or ""):
             return kind
     if input_type in {"ANNEX", "COMPLIANCE"}:
         return input_type

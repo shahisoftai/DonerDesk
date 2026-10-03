@@ -10,7 +10,7 @@ import type {
   ILogger,
 } from "@donordesk/application";
 import type { ReportPlanSection, SourceReference, ClaimType } from "@donordesk/domain";
-import { attributionSectionTitle, isSynthesisSection, visibilityPromptBlock } from "@donordesk/domain";
+import { attributionSectionTitle, classificationTitle, isSynthesisSection, visibilityPromptBlock } from "@donordesk/domain";
 import { StubReportDraftGenerator } from "./report-draft-generator.js";
 import { createHash } from "node:crypto";
 
@@ -504,7 +504,7 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
  */
 export function buildSectionSpecificGuidance(section: ReportPlanSection, input: GenerateReportDraftInput): string[] {
 
-  const title = section.title.toLowerCase();
+  const title = classificationTitle(section).toLowerCase();
   const guidance: string[] = [];
   const period = input.reportContext?.period;
   if (title.includes("executive summary")) {
@@ -1192,7 +1192,7 @@ export class LlmReportDraftGenerator implements IReportDraftGenerator {
   ): Promise<GeneratedSectionResult> {
     const startedAt = Date.now();
     let promptHash = "";
-    const title = section.title.toLowerCase();
+    const title = classificationTitle(section).toLowerCase();
     const hasRequiredInput = title.includes("challenge")
       ? input.activities.some((a) => a.challenges.trim())
       : title.includes("lesson")

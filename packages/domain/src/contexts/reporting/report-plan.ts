@@ -9,6 +9,8 @@ import type { ProfileTone } from "../projects/reporting-profile.js";
 export interface ReportPlanSection {
   templateSectionId: string;
   title: string;
+  /** English title for role detection when `title` is translated (blueprint sections). */
+  canonicalTitle?: string;
   inputType: SectionInputType;
   required: boolean;
   wordLimit?: { min?: number; max?: number };
@@ -48,8 +50,16 @@ const SYNTHESIS_TITLE_RE = /executive summary|summary of (?:results|progress|ach
  * the report, so it must be drafted after the other sections and from their
  * drafted text — otherwise it can contradict or omit what they say.
  */
-export function isSynthesisSection(section: Pick<ReportPlanSection, "title">): boolean {
-  return SYNTHESIS_TITLE_RE.test(section.title);
+export function isSynthesisSection(section: { title: string; canonicalTitle?: string; templateSectionId?: string | null }): boolean {
+  return SYNTHESIS_TITLE_RE.test(classificationTitle(section)) || /^bp:[a-z_]+:(exec|conclusion)$/.test(section.templateSectionId ?? "");
+}
+
+/**
+ * The title that section-role rules match against: the English canonical title
+ * when the displayed title is a translation, else the title itself.
+ */
+export function classificationTitle(section: { title: string; canonicalTitle?: string }): string {
+  return section.canonicalTitle ?? section.title;
 }
 
 export interface ReportPlanStyle {

@@ -73,7 +73,7 @@ export class SectionGenerationService {
     }
     // Blueprint sections whose table comes from recorded data: append it after the
     // writer's prose (once), so the figures are exactly the recorded ones.
-    const table = deterministicBlueprintTable(planSection.templateSectionId, request.inputs.activities);
+    const table = deterministicBlueprintTable(planSection.templateSectionId, request.inputs.activities, request.reportingProfileSnapshot?.language);
     if (table && !generated.section.content.includes(table)) {
       generated.section.content = `${generated.section.content.trimEnd()}\n\n${table}\n`;
     }

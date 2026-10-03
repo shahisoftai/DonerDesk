@@ -53,3 +53,24 @@ test("section service keeps the donor attribution in exactly one section", async
   assert.equal(await write(plan.sections[1], "This project is funded by the European Union. Continue outreach."), "Continue outreach.");
   assert.equal(await write(plan.sections[0], "Two activities took place."), "This project is funded by the European Union.\n\nTwo activities took place.");
 });
+
+import { InferredReportPlanner } from "../dist/index.js";
+
+test("participants table headers follow the report language", () => {
+  const md = deterministicBlueprintTable("bp:activity:participants", [{ activityId: "a", activityTitle: "Formation", participantsTotal: 5 }], "fr");
+  assert.equal(md.split("\n")[0], "| Activité | Total | Hommes | Femmes | Enfants | Personnes handicapées |");
+});
+
+test("the planner carries a blueprint section's canonical title only when the title is translated", async () => {
+  const planner = new InferredReportPlanner({ generate: () => "plan" });
+  const plan = async (language) => (await planner.plan({
+    reportingPeriodId: "p", projectId: "x", tenantId: { toString: () => "t" },
+    templateSections: blueprintSectionsFor({ reportType: "MONTHLY", scope: {}, language }),
+    templateVersion: 1, profileVersion: 1,
+    reportingProfileSnapshot: { tone: "FORMAL", language: language ?? "en", formattingRules: [], sectionOverrides: {} },
+  })).value.sections;
+  assert.ok((await plan("en")).every((s) => s.canonicalTitle === undefined));
+  const fr = await plan("fr");
+  assert.equal(fr[0].title, "Le mois en bref");
+  assert.equal(fr[0].canonicalTitle, "This Month at a Glance");
+});

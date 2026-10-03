@@ -60,7 +60,12 @@ Agent guidance for coding on DonorDesk.
 - Report-type blueprints (`packages/domain/src/contexts/reporting/report-type-blueprints.ts`): with no applicable donor template a period is
   structured by its type's built-in blueprint (ACTIVITY/SITUATION accept only a template of their own type). **Never title a blueprint
   section "Overview"/"Abstract"** — worker `outline.py` treats those as Executive Summary. Scope (`ReportingPeriod.scopeJson`) drives
-  activity selection, indicator scoping (`scopeIndicatorData`) and the writer's `period.scope`.
+  activity selection, indicator scoping (`scopeIndicatorData` for generation, `periodIndicatorScope` for the indicators list,
+  preflight, readiness and the scan) and the writer's `period.scope`. Blueprint titles are translated to the profile language
+  but keep an English `canonicalTitle`; **any rule that recognises a section by its title must use `classificationTitle()`**
+  (TS) / `brief.canonicalTitle or brief.title` (worker), never the displayed title.
+- Donor attribution goes in exactly one section (`attributionSectionTitle`): the prompt names it and
+  `SectionGenerationService` enforces it (`placeAttribution`). Keep the visibility block identical across sections.
 - Numbers: tables, charts and deltas are built deterministically from verified
   findings (`artifact_builder.py`). The writer only writes prose. `grounding.py` /
   `number-grounding.ts` reject any number not in the inputs (a *written* date such as "20 April 2028" is grounded only by the

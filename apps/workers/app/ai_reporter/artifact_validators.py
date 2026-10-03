@@ -280,7 +280,7 @@ def assert_required_table_present(section: GeneratedSection, req: SectionDraftRe
     separator row); this deliberately does not require exact column counts,
     since indicator counts vary per project.
     """
-    title = req.section.title or ""
+    title = req.section.canonicalTitle or req.section.title or ""
     if not _INDICATOR_ANNEX_TITLE_RE.search(title):
         return _ok()
     if not (_INDICATOR_ANNEX_KIND_RE.search(title) or _EVIDENCE_ANNEX_KIND_RE.search(title)):

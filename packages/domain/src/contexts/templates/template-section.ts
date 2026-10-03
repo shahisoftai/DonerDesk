@@ -25,6 +25,12 @@ export interface TemplateSourceReference {
 export interface TemplateSection {
   id: string;
   title: string;
+  /**
+   * English title used to recognise the section's role (executive summary,
+   * challenges, annex …) when `title` is shown in another language. Set by the
+   * built-in report-type blueprints; absent for donor-template sections.
+   */
+  canonicalTitle?: string;
   /** Short human summary of the section's purpose. */
   description: string;
   inputType: SectionInputType;

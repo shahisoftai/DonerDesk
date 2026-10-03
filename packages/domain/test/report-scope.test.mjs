@@ -75,3 +75,51 @@ test("ad-hoc deadline defaults and event-name matching", () => {
   assert.equal(defaultDeadlineOffsetForType("QUARTERLY"), undefined);
   assert.equal(normalizeEventName("  Flood   in SINDH "), "flood in sindh");
 });
+
+import { BLUEPRINT_CATALOGS, translateBlueprintText, normalizeReportLanguage, classificationTitle } from "../dist/index.js";
+
+const ALL_TYPES = ["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL", "FINAL", "ACTIVITY", "SITUATION", "CUSTOM"];
+const englishTitles = () => {
+  const titles = new Set(["Activity", "Total", "Male", "Female", "Children", "People with disabilities"]);
+  for (const reportType of ALL_TYPES) for (const sequence of [1, 2]) {
+    for (const s of blueprintSectionsFor({ reportType, scope: { sequence }, activities: [{ id: "a1", title: "Water point repair" }] })) {
+      if (!s.id.includes(":item:")) titles.add(s.canonicalTitle ?? s.title);
+    }
+  }
+  return titles;
+};
+
+test("every blueprint title and table header is translated in every report language", () => {
+  for (const [lang, catalog] of Object.entries(BLUEPRINT_CATALOGS)) {
+    for (const title of englishTitles()) assert.ok(catalog[title], `${lang}: missing "${title}"`);
+  }
+});
+
+test("no canonical blueprint title trips the AI worker's executive-summary classifier", () => {
+  for (const t of englishTitles()) assert.ok(!/overview|abstract/i.test(t), t);
+});
+
+test("translated blueprint: display title translated, canonical title English, activity titles as written", () => {
+  const fr = blueprintSectionsFor({ reportType: "ACTIVITY", scope: {}, language: "fr", activities: [{ id: "a1", title: "Water point repair" }] });
+  assert.equal(fr[0].title, "Introduction");
+  assert.equal(fr.find((s) => s.id === "bp:activity:next").title, "Prochaines étapes");
+  assert.equal(fr.find((s) => s.id === "bp:activity:next").canonicalTitle, "Next Steps");
+  assert.equal(fr.find((s) => s.id === "bp:activity:item:a1").title, "Water point repair");
+  const ar = blueprintSectionsFor({ reportType: "QUARTERLY", scope: {}, language: "ar" });
+  const exec = ar.find((s) => s.id === "bp:quarterly:exec");
+  assert.equal(exec.title, "الملخص التنفيذي");
+  assert.equal(classificationTitle(exec), "Executive Summary");
+  assert.ok(isSynthesisSection(exec), "a translated executive summary is still drafted last");
+  assert.ok(isSynthesisSection({ title: "Résumé analytique", templateSectionId: "bp:annual:exec" }), "persisted sections are recognised by their blueprint id");
+  assert.ok(!isSynthesisSection({ title: "Prochaines étapes", templateSectionId: "bp:activity:next" }));
+});
+
+test("report language normalisation", () => {
+  assert.equal(normalizeReportLanguage("FR"), "fr");
+  assert.equal(normalizeReportLanguage("fr-FR"), "fr");
+  assert.equal(normalizeReportLanguage("Urdu"), "ur");
+  assert.equal(normalizeReportLanguage("de"), "en");
+  assert.equal(normalizeReportLanguage(undefined), "en");
+  assert.equal(translateBlueprintText("Next Steps", "ps"), "راتلونکي ګامونه");
+  assert.equal(translateBlueprintText("Not in catalog", "fr"), "Not in catalog");
+});

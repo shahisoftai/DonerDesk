@@ -357,3 +357,12 @@ def test_written_dates_are_grounded_against_iso_dates_in_inputs() -> None:
     assert ungrounded_numbers("It reached 20 people.", allowed) == ["20"]
     # Without any ISO date in the inputs nothing is stripped.
     assert ungrounded_numbers("On 20 April 2028 it reached 600.", {"600"}) == ["20", "2028"]
+
+
+def test_section_kind_uses_the_canonical_title_for_translated_sections() -> None:
+    from app.ai_reporter.models import SectionBrief
+    from app.ai_reporter.outline import section_kind
+
+    assert section_kind(SectionBrief(title="Difficultés et enseignements tirés", canonicalTitle="Challenges and Lessons Learned")) == "CHALLENGE"
+    assert section_kind(SectionBrief(title="Difficultés et enseignements tirés")) == "NARRATIVE"
+    assert section_kind(SectionBrief(title="Prochaines étapes", canonicalTitle="Next Steps")) == "NEXT_PERIOD"

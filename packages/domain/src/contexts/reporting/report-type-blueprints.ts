@@ -1,5 +1,6 @@
 import type { SectionInputType, TemplateSection } from "../templates/template-section.js";
 import type { ReportScope } from "./report-scope.js";
+import { translateBlueprintText } from "./report-type-blueprint-i18n.js";
 
 /**
  * Built-in report structure per report type, used whenever the period has no
@@ -25,6 +26,8 @@ export interface BlueprintInput {
   scope: ReportScope;
   /** The activities an ACTIVITY report covers (in date order). */
   activities?: ReadonlyArray<BlueprintActivity>;
+  /** Report language (reporting profile); section titles are shown in it. Defaults to English. */
+  language?: string;
 }
 
 interface Spec {
@@ -45,10 +48,12 @@ interface Spec {
 const NO_INVENTION =
   "Use only the supplied data; where the data does not cover something, say it was not reported rather than estimating.";
 
-function build(prefix: string, specs: Spec[]): TemplateSection[] {
+function build(prefix: string, specs: Spec[], language?: string): TemplateSection[] {
   return specs.map((sp, i) => ({
     id: `bp:${prefix}:${sp.key}`,
-    title: sp.title,
+    // Activity sub-section titles are the user's own words; everything else is translated.
+    title: sp.key.startsWith("item:") ? sp.title : translateBlueprintText(sp.title, language),
+    canonicalTitle: sp.title,
     description: sp.description,
     inputType: sp.inputType ?? "NARRATIVE",
     required: sp.required ?? true,
@@ -91,7 +96,8 @@ const PROGRESS_CORE = (cumulative: boolean): Spec[] => [
 
 const FINANCE: Spec = {
   key: "finance",
-  title: "Financial and Procurement Overview",
+  // Not "...Overview": the AI worker classes any title containing it as an Executive Summary.
+  title: "Financial and Procurement Status",
   description: "Spending and procurement status, if financial data was supplied.",
   required: false,
   instructions: "Only report financial or procurement figures that appear in the supplied data. If none were supplied, state briefly that financial data is reported separately. Never estimate amounts.",
@@ -259,5 +265,5 @@ export function templateAppliesToReportType(reportType: string, templateType: st
 export function blueprintSectionsFor(input: BlueprintInput): TemplateSection[] {
   const make = BLUEPRINTS[input.reportType];
   if (!make) return [];
-  return build(input.reportType.toLowerCase(), make(input));
+  return build(input.reportType.toLowerCase(), make(input), input.language);
 }

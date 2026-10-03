@@ -136,6 +136,7 @@ export class ReportGenerationContextBuilder {
       templateSections = blueprintSectionsFor({
         reportType: period.reportType,
         scope: period.scope,
+        language: parseProfileSnapshot(period.reportingProfileSnapshotJson).language,
         activities: scoped?.value.map((a) => ({ id: a.id, title: a.activityTitle, date: a.activityDate.toISOString().slice(0, 10), location: a.location })),
       });
     }

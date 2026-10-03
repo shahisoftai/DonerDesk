@@ -75,6 +75,7 @@ export function toPlanSection(s: TemplateSection, override?: { min?: number; max
   return {
     templateSectionId: s.id,
     title: s.title,
+    ...(s.canonicalTitle && s.canonicalTitle !== s.title ? { canonicalTitle: s.canonicalTitle } : {}),
     inputType: s.inputType,
     required: s.required,
     wordLimit: min !== undefined || max !== undefined ? { min, max } : undefined,

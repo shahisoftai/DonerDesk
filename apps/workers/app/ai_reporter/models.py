@@ -32,6 +32,9 @@ class SectionBrief(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     title: str
+    # English title for section-role detection when `title` is a translation
+    # (built-in report-type blueprints); absent for donor-template sections.
+    canonicalTitle: str | None = None
     inputType: str | None = None
     minWords: int | None = None
     maxWords: int | None = None

@@ -327,6 +327,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
     return {
       section: {
         title: section.title,
+        // Only for translated titles, so English briefs stay byte-identical.
+        ...(section.canonicalTitle && section.canonicalTitle !== section.title ? { canonicalTitle: section.canonicalTitle } : {}),
         inputType: section.inputType,
         minWords: section.wordLimit?.min,
         maxWords: section.wordLimit?.max,

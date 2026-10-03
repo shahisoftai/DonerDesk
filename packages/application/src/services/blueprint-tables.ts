@@ -1,3 +1,4 @@
+import { translateBlueprintText } from "@donordesk/domain";
 import type { ActivityGenerationContext } from "../ports/reporting.js";
 
 const cell = (v: number | undefined): string => (v === undefined || v === null ? "—" : String(v));
@@ -11,13 +12,16 @@ const esc = (v: string): string => v.replace(/\|/g, "\\|").replace(/\s+/g, " ").
 export function deterministicBlueprintTable(
   templateSectionId: string | undefined,
   activities: ReadonlyArray<ActivityGenerationContext>,
+  language?: string,
 ): string | undefined {
+  const t = (english: string) => esc(translateBlueprintText(english, language));
   if (templateSectionId === "bp:activity:participants" && activities.length > 0) {
     const rows = activities.map(
       (a) =>
         `| ${esc(a.activityTitle)} | ${cell(a.participantsTotal)} | ${cell(a.participantsMale)} | ${cell(a.participantsFemale)} | ${cell(a.participantsChildren)} | ${cell(a.participantsDisability)} |`,
     );
-    return ["| Activity | Total | Male | Female | Children | People with disabilities |", "| --- | --- | --- | --- | --- | --- |", ...rows].join("\n");
+    const header = `| ${["Activity", "Total", "Male", "Female", "Children", "People with disabilities"].map(t).join(" | ")} |`;
+    return [header, "| --- | --- | --- | --- | --- | --- |", ...rows].join("\n");
   }
   return undefined;
 }
