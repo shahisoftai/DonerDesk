@@ -8,6 +8,7 @@ import type {
   IReportDraftRepository,
   IReportSectionRepository,
 } from "../../ports/reporting.js";
+import { resolvePeriodActivities } from "../../services/period-activities.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
@@ -66,7 +67,7 @@ export class DetectMissingEvidenceHandler {
         : [];
     }
 
-    const activitiesResult = await this.activities.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    const activitiesResult = await resolvePeriodActivities(this.activities, period, ctx.tenant.tenantId);
     const activitiesCount = activitiesResult.ok ? activitiesResult.value.length : 0;
 
     const suggestions = await this.detector.detect({
@@ -94,7 +95,20 @@ export class DetectMissingEvidenceHandler {
       relatedEntityType: undefined as string | undefined,
       relatedEntityId: undefined as string | undefined,
     }));
-    const combined = [...baseline, ...suggestions, ...donorRules];
+    // An activity report covers named activities: each one must carry evidence.
+    const scopedActivityItems = period.reportType === "ACTIVITY" && activitiesResult.ok
+      ? activitiesResult.value
+          .filter((a) => a.attachedEvidenceIds.length === 0)
+          .map((a) => ({
+            type: "MISSING_EVIDENCE" as const,
+            title: `Evidence attached to "${a.activityTitle}"`,
+            description: "This activity is covered by the report but has no supporting evidence (photos, attendance sheets, field reports) attached.",
+            severity: "HIGH" as Severity,
+            relatedEntityType: "activity" as string | undefined,
+            relatedEntityId: a.id as string | undefined,
+          }))
+      : [];
+    const combined = [...baseline, ...scopedActivityItems, ...suggestions, ...donorRules];
 
     // Dedupe: never create a second OPEN/IN_PROGRESS item for the same
     // (type, relatedEntityId) concern already tracked in this period.

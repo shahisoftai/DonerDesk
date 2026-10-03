@@ -44,6 +44,19 @@ Agent guidance for coding on DonorDesk.
   `AI_REPORTER_HTTP_TIMEOUT_MS` (default 2 × draft + 30s), which must exceed the
   worker's section budget. On timeout, the section falls back to deterministic output
   and the rest of the draft continues.
+- Provider pacing (`apps/workers/app/ai_reporter/provider_limiter.py`): a process-wide slot
+  cap (`AI_REPORTER_MAX_CONCURRENCY`), optional `AI_REPORTER_RPM`, and a shared cooldown after
+  any 429. `run_with_section_timeout` takes the slot *before* its deadline starts and the call's
+  thread releases it; the HTTP timeout is capped at the draft timeout (`http_timeout_s`), so an
+  abandoned call cannot starve the queue. Never acquire a provider slot anywhere else.
+- Retry policy (`pipeline.py`): transient errors retry up to `AI_REPORTER_TRANSIENT_RETRIES`
+  with exponential backoff; any other error (incl. no-JSON reply) gets one plain retry; the
+  feedback retry runs only for integrity issues, `MISSING_QA` and `MISSING_TABLE`
+  (`AI_REPORTER_RETRY_ON_STYLE=1` also retries style issues). `draft()` makes exactly one call.
+- Prompt layout: `build_user_prompt_parts` returns (report-wide prefix, section suffix); the
+  prefix must stay byte-identical across a report's sections (provider prefix caching; Claude
+  gets a `cache_control` breakpoint). Put anything section-specific in `_section_prompt`.
+- GLM requests send `thinking: {type: disabled}` unless `AI_REPORTER_THINKING=enabled`.
 - Numbers: tables, charts and deltas are built deterministically from verified
   findings (`artifact_builder.py`). The writer only writes prose. `grounding.py` /
   `number-grounding.ts` reject any number not in the inputs; percent of target is the

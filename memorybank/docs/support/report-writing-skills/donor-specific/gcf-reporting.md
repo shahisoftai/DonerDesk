@@ -164,4 +164,4 @@ GCF requires **expenditure vs. budget** reporting by:
 5. **Co-financing not documented** — Any co-financing claimed must be evidenced
 6. **Indicator definitions changed** — Must use the exact indicator definitions from the funding proposal
 
-> **Next:** Read [FCDO and Bilateral Donors](/support/report-writing-skills/donor-specific/fcdo-bilateral) for guidance on UK Foreign, Commonwealth & Development Office funding.
+> **Next:** Read [FCDO and Bilateral Donors](/support/report-writing-skills/fcdo-bilateral) for guidance on UK Foreign, Commonwealth & Development Office funding.

@@ -1,105 +1,35 @@
-# How to Resolve Common Login Issues
+# Troubleshooting Login Issues
 
-## "Invalid email or password"
+## "Invalid credentials"
 
-This is the most common login issue.
+Your email or password is wrong.
 
-**Try these steps in order:**
+1. Check for typos, caps lock and extra spaces. Emails are matched to your account exactly.
+2. Reset it with **Forgot password** on the sign-in page. The reset link expires after **60 minutes**.
+3. If you were invited but never finished, use your invitation link to set a password.
 
-### Step 1: Check Your Email
+## I did not get the password reset email
 
-Make sure you are using the email address you registered with. Common mistakes:
-- Typo in the domain (e.g., @gmai.com instead of @gmail.com)
-- Using a personal email instead of your work email
-- Misspelling your name
+Email delivery from DonorDesk is not fully active yet, so reset emails may not arrive. Check spam, then email support@donordesk.online from the address on your account. We will help you regain access.
 
-### Step 2: Reset Your Password
+## The invitation link does not work
 
-1. Click **Forgot password** on the login page
-2. Enter your email address
-3. Check your inbox for the reset email (also check spam)
-4. Click the reset link
-5. Enter a new password
-6. Log in with the new password
+Invitation links are single-use and expire. If it says the link is invalid or expired, ask your Admin to send a new invitation. Admins share the link themselves because invitation emails are not sent automatically.
 
-### Step 3: Check Caps Lock
+## Google sign-in fails
 
-Make sure Caps Lock is not on — passwords are case-sensitive.
+- "Google Sign-In failed. Please try again or use your email and password." – retry, or use email and password.
+- "The sign-in link expired." – start again from the sign-in page.
+- Google sign-in only works for accounts that already exist in DonorDesk with the same email. New users should sign up or use an invitation.
 
-### Step 4: Try a Different Browser
+## I am signed in but pages are missing
 
-Clear your browser cache and cookies, then try again. Or try a different browser entirely.
+Your role decides what you see. For example **Team** and **Settings → Setup** are for Admins, and **Audit log** for Admin, Project Manager and Compliance Officer. See [User roles and permissions](/support/getting-started/user-roles-and-permissions).
 
-## "Your account has been suspended"
+## Signed out unexpectedly
 
-Your account has been suspended by an administrator.
+Sessions expire. Sign in again. If it happens constantly, clear cookies for donordesk.online, make sure cookies are allowed, and try another browser.
 
-**Contact the Owner** of your organisation workspace to restore your access.
+## Still stuck
 
-To find the Owner:
-1. Go to **Settings → Team**
-2. Look for the person marked as **Owner**
-
-## "Too many failed login attempts"
-
-After 5 failed login attempts, your account is locked for 15 minutes.
-
-**Wait 15 minutes** and try again, or use **Forgot password** to reset and log in immediately.
-
-## "Your session has expired"
-
-This happens after a period of inactivity for security.
-
-**Simply log in again.** You will return to wherever you were in the app.
-
-To avoid this, check the **Remember me** box when logging in on trusted devices.
-
-## Verification Email Problems
-
-### Not received
-
-1. Wait 5-10 minutes — delivery can take time
-2. Check your **spam/junk** folder
-3. Check **promotions** folder (Gmail)
-4. Make sure your inbox is not full
-5. Try **Resend verification email** on the login page
-
-### Link expired
-
-Verification links expire after 24 hours. Request a new one from the login page.
-
-## Google Sign-In Issues
-
-### "Account not found"
-
-Your Google account email does not match any DonorDesk account. Use the email/password login instead, or create a new DonorDesk account with that Google account.
-
-### "Access denied"
-
-You may have denied Google permissions. Go to your Google account settings and remove DonorDesk access, then try signing in again.
-
-## Browser Problems
-
-### Page does not load
-
-Try these steps:
-1. Clear browser cache and cookies
-2. Disable browser extensions temporarily
-3. Try a different browser
-4. Make sure JavaScript is enabled
-5. Check your internet connection
-
-### Still not working after clearing cache
-
-Try a **private/incognito window** — this avoids issues from cached data or extensions.
-
-## Locked Out Completely
-
-If you cannot log in and password reset is not working:
-
-**Contact DonorDesk support:**
-- Email: **support@donordesk.online**
-- Include your registered email address
-- Describe the issue
-
-Our team will verify your identity and help restore access.
+Email support@donordesk.online from your registered address with what you see (a screenshot helps). See [Contact support](/support/contact).

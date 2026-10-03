@@ -5,7 +5,7 @@ import type {
   IReportRevisionRepository,
   IReportSectionRepository,
 } from "@donordesk/application";
-import type { ReportPlanSection, TenantId } from "@donordesk/domain";
+import type { ReportPlanSection, ReportSection, ReportingPeriod, TenantId } from "@donordesk/domain";
 import type { AiReporterPriorNarrative } from "./ai-reporter-worker.js";
 
 /**
@@ -27,6 +27,14 @@ export interface IPriorPeriodService {
  * generation pipeline when no prior data exists or repositories are absent.
  */
 export class DeterministicPriorPeriodService implements IPriorPeriodService {
+  /**
+   * Previous periods' sections, loaded once per report plan. Every section of
+   * a draft shares one `ReportPlan` object, so this turns the per-section walk
+   * (periods → drafts → sections, ~7 queries) into one walk per draft. Keyed
+   * weakly, so it lives exactly as long as the generation run's plan.
+   */
+  private readonly history = new WeakMap<object, Promise<PriorPeriodSections[]>>();
+
   constructor(
     private readonly periods: IReportingPeriodRepository,
     private readonly drafts: IReportDraftRepository,
@@ -40,28 +48,22 @@ export class DeterministicPriorPeriodService implements IPriorPeriodService {
     section: ReportPlanSection,
   ): Promise<AiReporterPriorNarrative[]> {
     try {
-      const projectId = input.reportPlan.projectId;
-      const reportingPeriodId = input.reportPlan.reportingPeriodId;
       const tenantId = input.reportPlan.tenantId as unknown as TenantId;
-      if (!projectId || !reportingPeriodId || !tenantId) return [];
+      if (!input.reportPlan.projectId || !input.reportPlan.reportingPeriodId || !tenantId) return [];
 
-      const previous = await this.periods.findPreviousPeriods(projectId, reportingPeriodId, tenantId, this.limit);
-      if (!previous.ok) return [];
+      let history = this.history.get(input.reportPlan);
+      if (!history) {
+        history = this.loadHistory(input).catch(() => []);
+        this.history.set(input.reportPlan, history);
+      }
 
       const narratives: AiReporterPriorNarrative[] = [];
-      for (const period of previous.value) {
-        const drafts = await this.drafts.findByReportingPeriod(period.id, tenantId);
-        if (!drafts.ok) continue;
-        // Prefer the most recent approved/submitted draft for this period.
-        const approved = drafts.value.find((d) => d.status === "APPROVED" || d.status === "SUBMITTED");
-        const draft = approved ?? drafts.value[0];
-        if (!draft) continue;
-
-        const sections = await this.sections.findByReportDraft(draft.id, tenantId);
-        if (!sections.ok) continue;
-        const match = sections.value.find((s) => normalizeTitle(s.sectionTitle) === normalizeTitle(section.title));
+      for (const { period, sections } of await history) {
+        const match = sections.find((s) => normalizeTitle(s.sectionTitle) === normalizeTitle(section.title));
         if (!match) continue;
 
+        // The current revision is read per section: it is the one query that
+        // depends on the section being drafted.
         const revision = await this.revisions.findCurrentForSection(match.id, tenantId);
         if (!revision.ok || !revision.value) continue;
         const content = revision.value.content.trim();
@@ -79,7 +81,30 @@ export class DeterministicPriorPeriodService implements IPriorPeriodService {
       return [];
     }
   }
+
+  private async loadHistory(input: GenerateReportDraftInput): Promise<PriorPeriodSections[]> {
+    const tenantId = input.reportPlan.tenantId as unknown as TenantId;
+    const previous = await this.periods.findPreviousPeriods(input.reportPlan.projectId, input.reportPlan.reportingPeriodId, tenantId, this.limit);
+    if (!previous.ok) return [];
+
+    const history: PriorPeriodSections[] = [];
+    for (const period of previous.value) {
+      const drafts = await this.drafts.findByReportingPeriod(period.id, tenantId);
+      if (!drafts.ok) continue;
+      // Prefer the most recent approved/submitted draft for this period.
+      const approved = drafts.value.find((d) => d.status === "APPROVED" || d.status === "SUBMITTED");
+      const draft = approved ?? drafts.value[0];
+      if (!draft) continue;
+
+      const sections = await this.sections.findByReportDraft(draft.id, tenantId);
+      if (!sections.ok) continue;
+      history.push({ period, sections: sections.value });
+    }
+    return history;
+  }
 }
+
+type PriorPeriodSections = { period: ReportingPeriod; sections: ReportSection[] };
 
 function normalizeTitle(title: string): string {
   return title.toLowerCase().replace(/\s+/g, " ").trim();

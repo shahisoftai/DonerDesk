@@ -5,6 +5,7 @@ import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IIndicatorRepository } from "../../ports/logframe.js";
+import { resolvePeriodActivities } from "../../services/period-activities.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type {
@@ -37,6 +38,8 @@ export class CalculateReadinessHandler {
     ctx: AuthenticatedContext,
     reportingPeriodId: string,
   ): Promise<Result<ReadinessBreakdown & { reportingPeriodId: string; weights: typeof READINESS_WEIGHTS; dataQualityPenalty: number }, DomainError>> {
+    const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
+    const period = periodResult.ok ? periodResult.value : null;
     const draftsResult = await this.drafts.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!draftsResult.ok) return draftsResult;
     const draft = draftsResult.value[0];
@@ -83,7 +86,9 @@ export class CalculateReadinessHandler {
         for (const id of u.attachedEvidenceIds) evidenceIds.add(id);
       }
     }
-    const activityUpdates = await this.activities.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    const activityUpdates = period
+      ? await resolvePeriodActivities(this.activities, period, ctx.tenant.tenantId)
+      : await this.activities.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (activityUpdates.ok) {
       for (const a of activityUpdates.value) {
         for (const id of a.attachedEvidenceIds) evidenceIds.add(id);
@@ -103,8 +108,6 @@ export class CalculateReadinessHandler {
     // (authoritative), falling back to a baseline of one so the score stays
     // meaningful before a template is attached.
     let requiredEvidenceCount = 1;
-    const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
-    const period = periodResult.ok ? periodResult.value : null;
     if (period?.donorTemplateId) {
       const templateResult = await this.templates.findById(period.donorTemplateId, ctx.tenant.tenantId);
       if (templateResult.ok && templateResult.value) {

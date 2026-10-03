@@ -1,5 +1,6 @@
 import type { Result, Project, ReportingPeriod, TemplateSection, VerifiedFinding } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, describeReportScope } from "@donordesk/domain";
+import { resolvePeriodActivities } from "./period-activities.js";
 import type { AuthenticatedContext } from "../context.js";
 import type {
   IReportingPeriodRepository,
@@ -154,7 +155,7 @@ export class ReportGenerationContextBuilder {
 
     const updatesResult = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!updatesResult.ok) return updatesResult;
-    const activitiesResult = await this.activities.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    const activitiesResult = await resolvePeriodActivities(this.activities, period, ctx.tenant.tenantId);
     if (!activitiesResult.ok) return activitiesResult;
 
     const evidenceIds = Array.from(new Set([
@@ -208,7 +209,7 @@ export class ReportGenerationContextBuilder {
         evidencePackages,
         indicatorUpdates,
         activities,
-        reportContext: buildReportContext(project, period, base.template, period.storyContext),
+        reportContext: buildReportContext(project, period, base.template, period.storyContext, describeReportScope(period.reportType, period.scope, activitiesResult.value.map((a) => a.activityTitle))),
       },
     };
   }
@@ -219,6 +220,7 @@ export function buildReportContext(
   period: { reportType: string; duration: { start: Date; end: Date }; deadline: Date; internalReviewDeadline?: Date; readinessScore: number; daysUntilDeadline(): number },
   template?: PeriodTemplateSnapshot,
   storyContext?: { achievements?: string; challenges?: string; varianceExplanations?: string; adaptations?: string; lessons?: string },
+  scope?: string,
 ): ReportGenerationContext {
   return {
     project: {
@@ -246,6 +248,7 @@ export function buildReportContext(
       internalReviewDeadline: period.internalReviewDeadline?.toISOString(),
       readinessScore: period.readinessScore,
       daysUntilDeadline: period.daysUntilDeadline(),
+      ...(scope ? { scope } : {}),
     },
     template: template ? buildTemplateGenerationContext(template) : undefined,
     storyContext,

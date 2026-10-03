@@ -20,7 +20,7 @@ import { parseEditorUrlState } from "@/features/report-editor/application/url-st
 import { countStoryAnswers } from "@/features/reporting/application/reporting-steps";
 import { isReportEditorV2Enabled } from "@/lib/shared/feature-flags";
 import { formatDate } from "@/lib/shared/dates";
-import { REPORT_TYPE_LABEL } from "@/lib/labels";
+import { reportHeading } from "@/lib/labels";
 
 const WORKSPACE_VIEWS: readonly WorkspaceView[] = ["editor", "review", "check", "preview", "versions"];
 
@@ -70,7 +70,7 @@ export default async function ReportWorkspacePage({
       gatewayRequest(`/v1/projects/${projectId}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token),
     ]);
     const period = periodsResult.ok ? periodsResult.value.items.find((p) => p.id === periodId) : undefined;
-    const reportType = period ? (REPORT_TYPE_LABEL[period.reportType] ?? "Report") : "Report";
+    const reportType = period ? reportHeading(period.reportType, period.scope) : "Report";
     const eyebrow = [
       projectResult.ok ? projectResult.value.title : null,
       period ? `${formatDate(period.startDate)} – ${formatDate(period.endDate)}` : null,

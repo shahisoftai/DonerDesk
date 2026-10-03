@@ -5,6 +5,7 @@ import {
   ProjectDetailSchema,
   ReportingPeriodsResponseSchema,
   ReportingProfileResponseSchema,
+  ActivitiesResponseSchema,
   type ProjectReadiness,
 } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
@@ -16,12 +17,13 @@ export const dynamic = "force-dynamic";
 export default async function NewReportingPeriodPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const ctx = await requireSession();
-  const [templatesResult, setupResult, projectResult, periodsResult, profileResult] = await Promise.all([
+  const [templatesResult, setupResult, projectResult, periodsResult, profileResult, activitiesResult] = await Promise.all([
     gatewayRequest(`/v1/projects/${resolvedParams.id}/templates`, TemplatesResponseSchema, ctx.token),
     loadProjectSetupAction(resolvedParams.id),
     gatewayRequest(`/v1/projects/${resolvedParams.id}`, ProjectDetailSchema, ctx.token),
     gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token),
     gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-profile`, ReportingProfileResponseSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/activities`, ActivitiesResponseSchema, ctx.token),
   ]);
 
   const readiness: ProjectReadiness | null = setupResult.ok ? setupResult.value.setup.readiness : null;
@@ -40,6 +42,7 @@ export default async function NewReportingPeriodPage({ params }: { params: Promi
                 deadlineRule: t.requirements.submission.deadlineRule,
               })) : []}
         readiness={readiness}
+        activities={activitiesResult.ok ? activitiesResult.value.items.map((a) => ({ id: a.id, title: a.activityTitle, date: a.activityDate, location: a.location })) : []}
         projectBounds={projectResult.ok ? { startDate: projectResult.value.startDate, endDate: projectResult.value.endDate } : null}
         existingPeriodEnds={periodsResult.ok ? periodsResult.value.items.map((p) => p.endDate) : []}
         profileDeadlineOffsetDays={profileResult.ok ? (profileResult.value.profile?.deadlineOffsetDays ?? undefined) : undefined}

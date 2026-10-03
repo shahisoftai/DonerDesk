@@ -1,106 +1,28 @@
-# How to Archive a Project
+# How to Archive or Complete a Project
 
-Archiving a project moves it out of your active workspace while keeping all its data intact. Archived projects are read-only.
+Use **Projects → your project → Settings**. Editing project settings requires Admin or Project Manager rights.
 
-## Why Archive a Project?
+## Mark a project completed
 
-You might archive a project when:
-- The project has ended and the final report has been submitted
-- The project is paused for an extended period
-- You want to reduce clutter in your active workspace
-- You need to stay within your plan's project limit
+**Mark completed** moves the project to **Completed**. It prevents new reporting periods but keeps everything visible. Use it when the grant has ended.
 
-## What Happens When You Archive
+## Pause a project
 
-| Aspect | What happens |
-|--------|-------------|
-| **Data access** | All data is preserved (evidence, reports, activities, indicators) |
-| **Editing** | Archived projects become read-only |
-| **Active count** | Archived projects no longer count toward your plan's active project limit |
-| **Dashboard** | Project no longer shows in your main dashboard |
-| **Reports** | No new reports can be created for archived projects |
+Set the status to **Paused** to suppress reporting activity temporarily. Set it back to **Active** to resume.
 
-## Before You Archive
+## Archive a project
 
-**Make sure you have:**
-- Submitted all required donor reports
-- Exported all reports you need
-- Completed all compliance items
-- Informed your team that the project is being archived
+**Archive project** hides the project from active lists.
 
-## Step-by-Step
+- The project becomes **read-only**.
+- It **no longer counts** against your plan's active project limit.
+- Nothing is deleted. Evidence, reports and the audit trail remain and can be exported.
+- Files in your Google Drive folder are left in place.
 
-### Step 1: Open the Project
+## Restore
 
-1. Go to **Projects**
-2. Find the project you want to archive
-3. Click on it to open
+Open the archived project's Settings and click **Restore project** to make it editable again. Restoring counts toward your active project limit, so free a slot first if you are at the limit.
 
-### Step 2: Go to Settings
+## Deleting
 
-1. Click the **Settings** tab within the project
-2. Scroll to the bottom
-
-### Step 3: Change Status
-
-1. Find **Project Status** or **Change Status**
-2. Click the current status (e.g., "Active")
-3. Select **Archived**
-
-### Step 4: Confirm
-
-Click **Confirm Archive** or **Save**.
-
-The project status changes to "Archived".
-
-## Viewing Archived Projects
-
-To see your archived projects:
-
-1. Go to **Projects**
-2. Look for a filter or tab: **Active | Archived**
-3. Click **Archived** to see archived projects
-
-Archived projects are visible but greyed out and marked as archived.
-
-## Restoring an Archived Project
-
-If a project needs to become active again:
-
-1. Go to the archived project
-2. Go to **Settings**
-3. Change the status back to **Active** or **Draft**
-
-## Deleting vs Archiving
-
-| | Archive | Delete |
-|--|---------|--------|
-| **Data preserved** | Yes | No |
-| **Reversible** | Yes (restore) | No |
-| **Project count** | Removed from active count | Removed entirely |
-| **Reports accessible** | Yes (read-only) | No |
-| **Evidence accessible** | Yes (read-only) | No |
-
-**Recommendation:** Always archive before deleting. Archiving preserves all data while freeing up your active project count.
-
-## Archiving and Your Plan Limit
-
-If you are at your project limit (e.g., Starter plan with 1 active project):
-- Archiving an active project frees up that slot
-- You can then create a new project
-
-## Team Members and Archived Projects
-
-Team members who were assigned to the archived project:
-- Can still view the project (read-only)
-- Cannot make edits
-- Will see the project marked as archived
-
-## What About Ongoing Work?
-
-If a project is archived but has incomplete work:
-- The work is preserved as-is
-- No new activities or evidence can be added
-- The compliance checklist remains in its last state
-
-Consider completing or exporting any pending work before archiving.
+Regular projects cannot be deleted from the app; archive them instead. Only the Academy **demo project** can be deleted (from its own banner or the Academy card). If you need something permanently removed, contact support@donordesk.online.

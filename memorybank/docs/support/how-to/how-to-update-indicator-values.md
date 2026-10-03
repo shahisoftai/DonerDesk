@@ -1,153 +1,50 @@
 # How to Update Indicator Values
 
-Indicator values are updated for each reporting period. This is how you show progress over time to your donor.
+Indicator values are entered **per reporting period** in a spreadsheet-style grid. This is step **1. Update Project** of the reporting workspace.
 
-## Before You Start
+Who can enter values: Admin, Project Manager and M&E Officer. Who can verify: Admin, Project Manager and M&E Officer.
 
-Make sure:
-- Your project has a logframe with indicators
-- You have created a reporting period
-- You have data to enter (survey results, counts, observations, etc.)
+## Open the grid
 
-## Step-by-Step: Updating Indicators
+1. Go to **Projects → project → Reporting** and open the reporting period.
+2. Click **Update Project** (step 1) to open **Record indicator values for this reporting period**.
 
-### Step 1: Open the Reporting Period
+If there is no reporting period yet, create one first (see [Understanding reporting periods](/support/getting-started/understanding-reporting-periods)).
 
-1. Go to your project
-2. Click **Reports** tab
-3. Open the reporting period you want to update
+## Enter values
 
-### Step 2: Go to the Indicators Tab
+1. Each row is an indicator. Type the **Period achievement** and, where relevant, the **source of the figure** and a comment.
+2. If the indicator has a **disaggregation**, enter values by category (for example Female / Male); for Number and Currency indicators each dimension must add up to the total.
+3. Click **Save all**. Values are saved in one bulk operation. Each indicator has one value per period, so saving again updates it.
 
-Click **Indicators** in the reporting period menu.
+## Import instead of typing
 
-You will see a spreadsheet-style grid with:
-- One row per indicator
-- Columns for the current period's values
+- **Google Sheets:** click **Import from Google Sheets**, paste the sheet's URL. The sheet must be shared with the connected Google account and have a header row with the indicator code and period achievement (cumulative, comments and data source columns are optional). Values are applied to the grid; review them and press **Save all** to keep them. See [How to import from Google Sheets](/support/how-to/import-from-google-sheets).
+- **Spreadsheet or pasted CSV:** on the report's **Data & story inputs** page you can paste CSV such as `Indicator code,Period achievement` or upload a file, and DonorDesk proposes inputs that you confirm before they are saved.
 
-### Step 3: Enter Period Achievement
+## Verify
 
-For each indicator, enter:
-
-| Column | What to enter |
-|--------|--------------|
-| **Period achievement** | The value achieved *in this reporting period* |
-| **Cumulative achievement** | The total value *from project start to now* |
-| **Comments** | Any notes about this value (data source, methodology, etc.) |
-| **Data source** | Where the data came from |
-
-### Step 4: Submit or Save Draft
-
-**Save as draft** — Saves your entries but keeps them editable. Good if you are not done.
-
-**Submit** — Submits the row for verification. Submitted rows are locked and marked as "Submitted" status.
-
-### Step 5: Verify (Reviewer Only)
-
-If you are a reviewer (M&E Officer, Compliance Officer):
-
-1. Open the submitted row
-2. Check the values against source documents
-3. If correct: click **Verify** — the row is now locked
-4. If incorrect: click **Needs Correction** and add a note
-
-Verified rows cannot be edited without un-verifying them first.
-
-## Importing from Google Sheets
-
-If you track indicator data in Google Sheets:
-
-### Step 1: Click Import
-
-In the Indicators tab, click **Import from Google Sheets**.
-
-### Step 2: Connect Google Drive
-
-If not already connected, authorise DonorDesk to access your Google Drive.
-
-### Step 3: Select Your Spreadsheet
-
-1. Browse to your Google Drive
-2. Select the spreadsheet with your indicator data
-3. Click **Select**
-
-### Step 4: Map the Columns
-
-DonorDesk will show a preview. Map your columns:
-
-| DonorDesk field | Your spreadsheet column |
-|----------------|----------------------|
-| Indicator code | Find the column with codes like "OUT-1" |
-| Period achievement | The column with the current period value |
-| Cumulative achievement | (Optional) Column with cumulative total |
-| Comments | (Optional) Any notes column |
-
-### Step 5: Preview and Apply
-
-1. Review the preview table
-2. Make sure values look correct
-3. Click **Apply to Grid**
-
-Values are imported as drafts. Submit and verify as normal.
-
-## Indicator Update Statuses
+Each update moves through a **verification pipeline**:
 
 | Status | Meaning |
-|--------|---------|
-| **No data** | No value entered for this period |
-| **Draft** | Entered but not yet submitted |
-| **Submitted** | Submitted for verification |
-| **Verified** | Reviewed and confirmed correct |
-| **Needs Correction** | Reviewer found an error |
+|---|---|
+| Draft | Entered but not submitted. |
+| Submitted | Ready for a reviewer. |
+| Verified | Checked against evidence. Only verified values are treated as verified findings in reports. |
+| Needs correction | The reviewer asked for a fix (with a reason). |
+| Rejected | Not accepted. |
 
-## Viewing Indicator History
+Verify or request a correction from the grid or the indicator page. The report uses verified data to build tables, charts and comparisons, and unverified figures are marked in the report.
 
-To see how an indicator has changed over time:
+## Link evidence
 
-1. Click on an indicator row
-2. Look at the **History** tab
-3. You will see the value for each reporting period
+Attach evidence to the value so reviewers and the AI Reporter can cite it. See [How to upload evidence](/support/how-to/upload-evidence).
 
-This helps you track trends and show donors how progress has developed.
+## History
 
-## Tips for Good Data Entry
+Open an indicator to see the **history** of every update: value, who entered it, the verification decisions and comments.
 
-1. **Enter data regularly** — Do not wait until the end of the period
-2. **Always include data sources** — This helps reviewers verify
-3. **Add comments for unusual values** — If a number looks off, explain why
-4. **Verify before submitting** — Double-check against your source documents
-5. **Cumulative vs period** — Make sure you understand the difference:
-   - **Period achievement** = just this quarter/month
-   - **Cumulative** = running total from project start
+## Tips
 
-## Common Issues
-
-### "This field only accepts numbers"
-
-The field expects a number. Do not include units (%, women, etc.) — just the number. The unit is defined in the indicator setup.
-
-### "Indicator not found"
-
-The indicator code in your spreadsheet does not match any indicator in this project. Check for typos or spaces.
-
-### "Row is locked"
-
-This indicator has already been verified. To edit:
-1. Click **Unlock** (requires reviewer permission)
-2. Make your changes
-3. Re-submit and verify
-
-## Who Can Update Indicators
-
-These roles can update indicator values:
-- Owner
-- Admin
-- Project Manager
-- M&E Officer
-
-These roles can verify indicators:
-- M&E Officer
-- Compliance Officer
-- Project Manager
-- Admin
-- Owner
+- Enter the value for **this period** only; the calculation setting handles cumulative or summed totals.
+- Verified data that later changes becomes **stale**, and you are asked to re-verify.

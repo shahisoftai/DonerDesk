@@ -8,6 +8,7 @@ import { mergeExtractedSections } from "./merge-extracted-sections.js";
 export type ReportType =
   | "MONTHLY"
   | "QUARTERLY"
+  | "SEMI_ANNUAL"
   | "ANNUAL"
   | "FINAL"
   | "ACTIVITY"

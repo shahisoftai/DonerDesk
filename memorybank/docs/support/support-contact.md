@@ -1,88 +1,39 @@
 # How to Contact DonorDesk Support
 
-## Support Channels
+## Email
 
-### Email Support
+**support@donordesk.online** is the best channel for how-to questions, technical problems, billing and account access.
 
-**Primary:** **support@donordesk.online**
+Other addresses:
 
-This is the best channel for:
-- Billing and subscription questions
-- Technical issues
-- Security concerns
-- Data protection questions
+- **privacy@donordesk.online** – privacy, data requests, account deletion, DPAs
+- **legal@donordesk.online** – subprocessor list and legal questions
+- **[Contact sales](/contact-sales)** – Growth and Enterprise, custom needs
 
-**Response times:**
-| Plan | Response time |
-|------|-------------|
-| Starter | 2-3 business days |
-| Team | 1-2 business days |
-| Growth | 1 business day |
-| Enterprise | Within 4 hours (business hours) |
+Support levels follow your plan: community support on Starter, email support on Team, priority email support with an onboarding call on Growth, and an SLA with a dedicated contact on Enterprise.
 
-### In-App Support
+## What to include
 
-For non-urgent issues, email is preferred.
+1. The email address you sign in with and your organisation name
+2. What you expected and what happened (a screenshot helps)
+3. The project, reporting period and page
+4. The time it happened
+5. Any message shown, including a **Reference** ID if the page displays one
 
-## What to Include in Your Support Request
+## Before you write
 
-To get the fastest response, include:
+- Search these articles. Every screen has a Help link to related guides.
+- Try the [Troubleshooting](/support/troubleshooting) guides.
+- Take the [Academy tour](/tour) if you are new.
 
-1. **Your registered email address**
-2. **Your organisation name**
-3. **A clear description** of the issue
-4. **Steps to reproduce** (if it is a bug)
-5. **Screenshots** (if relevant)
-6. **Error codes** (if you see one)
+## Security issues
 
-## Common Issues and Where to Get Help
+Email support@donordesk.online with **URGENT – security** in the subject.
 
-| Issue | Best channel |
-|-------|-------------|
-| Login problems | Email with details of any error messages |
-| Billing and payments | Email billing questions |
-| Feature not working | Email with steps to reproduce |
-| Data export | Email with your requirements |
-| Account access | Email from the registered email address |
-| Nonprofit discount | Email with nonprofit registration details |
-| Security vulnerability | Email (mark URGENT) |
+## Feature requests
 
-## Support Topics We Help With
+Email support@donordesk.online with **Feature request** in the subject and describe the problem you want solved.
 
-✓ How to use DonorDesk features
-✓ Troubleshooting technical issues
-✓ Billing and subscription management
-✓ Account access and security
-✓ Data export and portability
-✓ Nonprofit discount applications
-✓ Security concerns
+## What we can't do
 
-## Topics We Cannot Help With
-
-✗ Writing your donor reports
-✗ Interpreting donor requirements
-✗ Direct data entry into your projects
-✗ Donor-specific compliance questions (check with your donor directly)
-
-## Feature Requests
-
-To suggest new features or improvements:
-- Email **support@donordesk.online** with "Feature Request" in the subject
-- Describe the feature and why it would help
-- We review feature requests regularly
-
-## Community Resources
-
-For peer support from other DonorDesk users:
-- Join the community forum (coming soon)
-- Check our documentation at the support portal
-
-## Enterprise Support
-
-Enterprise customers have:
-- Dedicated support contact
-- Priority response times
-- Quarterly check-in calls
-- SLA guarantee with uptime commitments
-
-Contact your Enterprise account manager for details.
+We cannot write your donor reports, interpret a donor's rules for you, or enter data on your behalf. For donor-specific compliance questions, ask your donor.

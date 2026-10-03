@@ -1,88 +1,33 @@
-# Understanding Your Invoice
+# Invoices, Payments and Receipts
 
-## How to Find Your Invoice
+DonorDesk subscriptions are billed through our payment partner **Creem**, which acts as the Merchant of Record. That means Creem takes the payment, calculates and remits sales tax or VAT, and issues your receipts and invoices.
 
-1. Go to **Settings → Billing**
-2. Click **Invoice History**
-3. Click on any invoice to view details or download PDF
+## Finding your invoices and receipts
 
-Invoices are also emailed to the Owner's email address automatically.
+1. Go to **Settings → Billing**. Only workspace Admins can open it.
+2. Click **Manage subscription**. This opens the Creem billing portal.
+3. In the portal you can see your payment history, download invoices or receipts, and update your card.
 
-## Invoice Contents
+Creem also emails a receipt to the billing email address after each successful payment.
 
-Each invoice includes:
+## Updating payment details
 
-| Field | What it shows |
-|-------|--------------|
-| **Invoice number** | Unique identifier (e.g., INV-2026-001) |
-| **Invoice date** | When the invoice was issued |
-| **Organisation name** | Your organisation as registered |
-| **Billing period** | The month or year being billed |
-| **Plan name** | Your current plan |
-| **Subtotal** | Cost before tax |
-| **Tax** | VAT or sales tax where applicable |
-| **Total** | Amount due |
-| **Payment status** | Paid, Pending, or Failed |
-
-## Understanding the Line Items
-
-### Monthly invoices show:
-
-| Item | Description |
-|------|-------------|
-| Plan subscription | Your plan name and the billing interval |
-| Additional users (if applicable) | Any seats beyond the base plan |
-| Storage overage (if applicable) | Extra storage if you went over quota |
-| Nonprofit discount (if applicable) | Applied discount code |
-
-### Annual invoices show:
-- Full year subscription at the annual rate
-- Any applicable discounts
-- Tax
+Use **Manage subscription** in **Settings → Billing** and update the card in the portal. The new card is used for future renewals.
 
 ## Tax
 
-Tax (VAT, GST, or sales tax) is added based on:
-- Your organisation's registered country
-- The billing address you provided
+Tax is calculated at checkout based on your billing country. If your organisation is tax exempt, or you need a VAT number on the invoice, contact support@donordesk.online before your next renewal.
 
-If your organisation is tax-exempt:
-1. Contact **support@donordesk.online**
-2. Provide your tax-exempt certificate
-3. We will apply the exemption to future invoices
+## AI credit packs and other purchases
 
-## Payment Methods
-
-Invoices are paid by credit or debit card via our payment processor (Creem).
-
-If you need to pay by bank transfer (for Enterprise plans):
-- Contact **support@donordesk.online** to arrange this
+Top-up packs (Team and Growth) and Growth standing balances are one-off purchases made through the same checkout and appear as separate receipts. See [Plans and limits](/support/account-billing/plans-and-limits).
 
 ## Refunds
 
-DonorDesk's refund policy:
-- **Monthly plans:** No refund for unused days in a billing period
-- **Annual plans:** Pro-rated refund for unused months if you cancel
-- **Failed payments:** If a payment fails and we cannot recover it, access may be suspended
+Refunds are handled case by case. Email support@donordesk.online with your registered email, the receipt number and the reason.
 
-To request a refund, contact **support@donordesk.online** with:
-- Your registered email
-- Invoice number
-- Reason for the refund request
+## Something looks wrong
 
-## Invoice Discrepancies
-
-If your invoice does not look right:
-
-1. Check your plan details in **Settings → Billing**
-2. Verify your billing address in **Settings → Billing → Billing Information**
-3. Contact **support@donordesk.online** with:
-   - Invoice number
-   - What appears incorrect
-   - Any supporting documentation
-
-## Nonprofit Discounts
-
-If your organisation qualifies for a nonprofit discount, a discount code is applied to your account. The discounted price appears as a line item on your invoice.
-
-To apply for a nonprofit discount, email **support@donordesk.online** with proof of your nonprofit registration.
+- **Wrong plan or amount:** check your plan and usage in **Settings → Billing**, then see [Troubleshooting billing issues](/support/troubleshooting/billing-issues).
+- **Nonprofit discount missing:** confirm your verification was approved (you will have received an email); discounted checkout only applies after approval.
+- **Payment failed:** the workspace keeps access during a short grace period while the payment is retried. Update your card in the billing portal to avoid a downgrade.

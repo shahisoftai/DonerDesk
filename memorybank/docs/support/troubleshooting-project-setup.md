@@ -1,157 +1,42 @@
 # Troubleshooting Project Setup
 
-## Cannot Create a Project
+## Where to look
 
-### "You have reached your project limit"
+Open the project's **Setup** page. It shows the status (Not started, In progress, Ready, Action required), a checklist and a **Blockers** list with **Fix** links.
 
-Your plan limits how many active projects you can have:
+## "New project" is blocked
 
-| Plan | Active Projects |
-|------|----------------|
-| Starter | 1 |
-| Team | 5 |
-| Growth | 20 |
-| Enterprise | Unlimited |
+- Only Admins can create projects.
+- You may be at your plan's active-project limit. Archive a finished project or upgrade ([Plans and limits](/support/account-billing/plans-and-limits)).
 
-**Solutions:**
-1. **Archive an existing project** — Archived projects do not count
-2. **Delete an old project** — Permanently removes it
-3. **Upgrade your plan** — More projects
+## I lost my wizard answers
 
-### "Project code already exists"
+Wizard progress is saved as a draft in your browser. Reopen **New project** on the same device and browser.
 
-Each project must have a unique code within your organisation.
+## Project workspace folder is pending or failed
 
-**Solutions:**
-1. Use a different project code
-2. Check if a project with that code already exists
-3. Add a suffix (e.g., `PROJECT-2026-A`)
+1. Make sure Google Drive is connected (**Settings → Setup**).
+2. On the project's Setup page click **Retry workspace**. If folders are partly there, click **Repair workspace**.
+3. If it still fails, reconnect Drive and retry, or email support@donordesk.online.
 
-## Project Details Not Saving
+## Setup stays "Action required"
 
-### Required Fields Missing
+Readiness is computed from live data. It reverts if something required is removed. Fix the listed blockers:
 
-When saving project details, these are required:
-- Project title
-- Donor name
-- Start date
-- End date
+- **Donor template** – needs at least one reviewed required section ([upload and approve one](/support/how-to/upload-donor-template)).
+- **Indicators** – at least one, and every quantitative indicator needs baseline, target, unit and frequency.
+- **Reporting profile** – create it on the profile page.
 
-### Changes Not Reflecting
+Team assignment is recommended but does not block.
 
-1. Make sure you clicked **Save** after editing
-2. Look for a "Saved" confirmation message
-3. Refresh the page and check again
+## I can't edit dates or budget
 
-If changes still do not save:
-1. Check your internet connection
-2. Try a different browser
-3. Contact support
+Use the project's **Settings** tab (Admin or Project Manager). Changing dates that would invalidate existing reporting periods is rejected.
 
-## Cannot Find My Project
+## Archived or completed projects
 
-### Check the Filter
+Completed projects cannot get new periods; archived projects are read-only. **Restore project** in Settings for archived ones.
 
-Go to **Projects** and check:
-- **Status filter** — Are you looking at "All" or "Active"?
-- **Search** — Use the search bar to find by name or code
+## Demo project problems
 
-### Access Issues
-
-If you cannot see a project:
-1. You may not have access — ask the project owner to add you
-2. The project may be in another organisation workspace
-3. Contact your admin
-
-## Reporting Period Not Creating
-
-### "End date must be after start date"
-
-The reporting period end date must be after the start date. Check your dates.
-
-### "This period overlaps with another"
-
-DonorDesk prevents overlapping reporting periods for the same project. Check:
-1. Your existing reporting periods
-2. The dates you entered
-
-### Missing Donor Template
-
-A donor template is optional when creating a reporting period. If you do not have one:
-1. Select **No template** or **Standard format**
-2. You can add a template later
-
-## Setup Checklist Not Completing
-
-### What is the Setup Checklist?
-
-When you create a new project, DonorDesk shows a checklist of setup tasks:
-- [ ] Upload donor template
-- [ ] Build logframe
-- [ ] Add indicators
-- [ ] Create first reporting period
-- [ ] Invite team members
-- [ ] Upload first evidence
-
-### Marking Items Complete
-
-Some checklist items auto-complete when you do the related action. For example:
-- Upload a template → "Upload donor template" auto-checks
-- Add indicators → "Add indicators" auto-checks
-
-If an item is stuck:
-1. Do the actual task (e.g., actually upload a template)
-2. Refresh the page
-3. The item should now be checked
-
-## Project Status Not Changing
-
-### Cannot Change to "Active"
-
-To change from Draft to Active:
-1. Go to **Settings** within the project
-2. Find **Status**
-3. Select **Active**
-4. Save
-
-If the status dropdown is greyed out:
-- You may not have permission (Admin or Owner only)
-- Contact your admin
-
-### Status Stuck on "Draft"
-
-This is normal. A project starts as Draft. You must manually change it to Active when you are ready to begin work.
-
-## Cannot Invite Team Members
-
-### "You do not have permission"
-
-Only Owner and Admin can invite team members. Ask your admin to give you the invitation right, or ask them to invite the person.
-
-### Invitation Email Not Received
-
-The invited person should check:
-1. Their spam folder
-2. The email address was entered correctly
-3. They accepted the invitation to the correct email
-
-To resend:
-1. Go to **Team** settings
-2. Find the pending invitation
-3. Click **Resend**
-
-## Google Drive Not Connecting
-
-1. Make sure you have a Google account
-2. Check that you authorised DonorDesk to access Drive
-3. Try disconnecting and reconnecting
-4. Check that your organisation is not blocking Google services
-
-## Project Workspace Not Creating
-
-The project workspace is the folder structure in Google Drive (if connected). If it fails to create:
-
-1. Check that Google Drive is connected in **Settings → Storage**
-2. Make sure the connected account has access to create folders
-3. Try reconnecting the Drive account
-4. Contact support if the problem persists
+The demo project cannot be counted against your plan. If the tour will not start or resume, refresh, or delete the demo project from its banner and start again.

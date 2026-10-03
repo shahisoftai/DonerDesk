@@ -22,6 +22,10 @@
       "types": "./dist/contexts/reporting/period-cadence.d.ts",
       "import": "./dist/contexts/reporting/period-cadence.js"
     },
+    "./contexts/reporting/report-scope.js": {
+      "types": "./dist/contexts/reporting/report-scope.d.ts",
+      "import": "./dist/contexts/reporting/report-scope.js"
+    },
     "./contexts/templates/template-diff.js": {
       "types": "./dist/contexts/templates/template-diff.d.ts",
       "import": "./dist/contexts/templates/template-diff.js"

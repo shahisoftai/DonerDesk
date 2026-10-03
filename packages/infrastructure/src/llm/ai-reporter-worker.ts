@@ -93,6 +93,8 @@ export interface AiReporterContextProject {
 
 export interface AiReporterContextPeriod {
   reportType?: string;
+  /** Focus of an activity/situation/custom report (absent for cadence reports). */
+  scope?: string;
   startDate?: string;
   endDate?: string;
   deadline?: string;

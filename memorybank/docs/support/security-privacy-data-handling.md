@@ -1,105 +1,38 @@
 # How DonorDesk Handles Your Data
 
-## Data We Collect
+## What we store
 
-### Account Information
-When you create a DonorDesk account, we collect:
-- Name and email address
-- Organisation name and type
-- Country and sector
-- Authentication credentials (hashed, never stored in plain text)
+- **Account data:** names, work emails, roles, hashed passwords.
+- **Organisation data:** profile, settings, plan and usage.
+- **Project data:** projects, logframes, indicators and values, activities, reporting periods, reports and their versions, comments, checklist items and templates.
+- **Evidence:** uploaded files (in your Google Drive or DonorDesk storage), their extracted text, tags and verification status.
+- **Audit records:** who did what and when.
+- **AI records:** which model and prompt version produced each generation, and usage for billing.
 
-### Project Data
-When you use DonorDesk, you create:
-- Project details (title, donor, dates, description)
-- Logframes and indicators
-- Activity records
-- Evidence files and metadata
-- Report drafts and comments
-- Team member information
+Your data belongs to your organisation. We do not sell it or use your workspace content for advertising.
 
-### Usage Data
-We collect basic usage information:
-- Pages visited and features used
-- Browser type and version
-- Approximate location (country-level)
-- Error reports
+## Where it lives
 
-This data helps us improve the service and fix bugs.
+Data is held per organisation with database-level isolation. Evidence is in your own Google Drive (link-first) or in DonorDesk-managed storage if you choose it. Your data-residency setting limits where your data may be written.
 
-## How We Use Your Data
+## Who can see it
 
-| Purpose | How your data is used |
-|---------|----------------------|
-| **Providing the service** | To run DonorDesk and its features |
-| **Improvement** | To understand how DonorDesk is used and make it better |
-| **Security** | To detect and prevent abuse or unauthorised access |
-| **Communications** | To send you important notices about your account |
-| **Support** | To help resolve issues you report |
+Only members of your workspace, according to their roles, and DonorDesk staff for support and operations under confidentiality obligations.
 
-## What We Do NOT Do
+## AI processing
 
-- ✗ We do NOT sell your data to third parties
-- ✗ We do NOT use your project data to train AI models
-- ✗ We do NOT share your data with advertisers
-- ✗ We do NOT access your data except when you ask us to (e.g., for support)
+When AI is enabled, the text needed to draft or rewrite a section is sent to the configured AI provider solely to produce that result. Turn AI off in **Settings** at any time. Sensitive and highly sensitive evidence is not sent to the drafting AI.
 
-## Data Retention
+## Exporting your data
 
-### Active Accounts
-Your data is retained as long as your account is active.
+You can export your projects, reports, indicator tables, checklists and evidence packs at any time. Downgrading or cancelling never deletes your data: you keep read, export and delete access on the free Starter tier.
 
-### Deleted Accounts
-When you delete your account:
-- Data is deleted within 30 days
-- After deletion, data may persist in backups for up to 90 days
-- Audit logs are retained per legal requirements
+## Deleting data
 
-### Project Data
-If a project is deleted, all associated data is permanently removed.
+- Archive projects you no longer need (they stay, read-only).
+- Delete evidence you no longer need (Admin).
+- To delete your whole account and workspace, email privacy@donordesk.online. We will confirm the request and delete or anonymise data in line with our [Privacy Policy](/privacy) and retention rules.
 
-## AI and Your Data
+## Retention
 
-When you use AI report generation:
-1. Your evidence content, activity narratives, and indicator data are sent to the AI service
-2. Data is used ONLY to generate the specific report you requested
-3. AI providers are selected with data sensitivity in mind
-4. Your project data is not used to train AI models
-
-If your donor requires that project data never leave a specific jurisdiction, contact DonorDesk to discuss configuration options.
-
-## Your Responsibilities
-
-As a user of DonorDesk, you are responsible for:
-- Keeping your login credentials secure
-- Ensuring your team follows these practices
-- Properly classifying evidence confidentiality levels
-- Obtaining necessary consents before uploading personal data about beneficiaries
-- Complying with applicable data protection laws in your country
-
-## Data Protection Laws
-
-DonorDesk is designed to comply with:
-- **GDPR** (EU General Data Protection Regulation) — for EU users
-- **UK GDPR** — for UK users
-- **Comparable frameworks** in other jurisdictions
-
-If you have questions about how DonorDesk handles data for your specific legal requirements, contact **support@donordesk.online**.
-
-## Your Rights
-
-Depending on your location, you may have the right to:
-- Access a copy of your personal data
-- Correct inaccurate data
-- Request deletion of your data
-- Export your data in a portable format
-- Object to certain processing
-
-To exercise any of these rights, contact **support@donordesk.online**.
-
-## Data Controller
-
-DonorDesk.Online acts as the data controller for your personal information and project data you upload to the platform.
-
-Contact: **support@donordesk.online**
-Website: **https://donordesk.online**
+Operational and audit data is kept while your workspace is active. After deletion, data is removed or irreversibly anonymised as described in the Privacy Policy, subject to legal obligations and backup cycles.

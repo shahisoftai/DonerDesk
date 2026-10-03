@@ -32,6 +32,7 @@ export class ListReportingPeriodsHandler {
           endDate: p.duration.end.toISOString(),
           daysUntilDeadline: p.daysUntilDeadline(),
           donorTemplateId: p.donorTemplateId,
+          scope: p.scope,
         };
       }),
     );

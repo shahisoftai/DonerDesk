@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ReportingPeriodsResponseSchema, EnsureAutoPeriodResponseSchema } from "@/lib/server/schemas";
-import { REPORT_TYPE_LABEL, REPORT_STATUS_LABEL } from "@/lib/labels";
+import { reportHeading, REPORT_STATUS_LABEL } from "@/lib/labels";
 import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { reportStatusTone } from "@/lib/shared/tone";
@@ -67,7 +67,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
                   <div key={p.id} className="card transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <div className="font-medium">{REPORT_TYPE_LABEL[p.reportType] ?? p.reportType}</div>
+                        <div className="font-medium">{reportHeading(p.reportType, p.scope)}</div>
                         <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                           Period {formatDate(p.startDate)} – {formatDate(p.endDate)} · Deadline {formatDate(p.deadline)}
                           {p.internalReviewDeadline && ` · Internal ${formatDate(p.internalReviewDeadline)}`}

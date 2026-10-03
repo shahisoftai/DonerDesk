@@ -9,6 +9,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "Organization", field: "storageProvider" },
   { model: "ReportingPeriod", field: "donorTemplateId" },
   { model: "ReportingPeriod", field: "storyContextJson" },
+  { model: "ReportingPeriod", field: "scopeJson" },
   { model: "ReportDraft", field: "supersededAt" },
   { model: "User", field: "passwordChangedAt" },
   { model: "PasswordResetToken", field: "tokenHash" },

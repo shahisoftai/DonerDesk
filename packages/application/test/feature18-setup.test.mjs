@@ -237,6 +237,7 @@ test("reporting-period gate: overlap rejected", async () => {
   });
   const readiness = new ProjectReadinessService(repos.projects, repos.setup, repos.profiles, repos.templates, repos.indicators, repos.users, repos.providerResolver);
   const existing = {
+    reportType: "QUARTERLY",
     duration: DateRange.create(new Date("2026-04-01"), new Date("2026-06-30")),
   };
   const periods = {
@@ -398,4 +399,36 @@ test("create-project without org defaults still succeeds (no profile seeded)", a
   });
   assert.equal(r.ok, true);
   assert.equal(createdProfile, null);
+});
+
+test("reporting-period gate: ad-hoc reports need a scope and may sit inside a cadence period", async () => {
+  const repos = makeRepos({
+    setup: ProjectSetup.create({ id: "s", tenantId: "tenant-a", projectId: "p1", status: "NOT_REQUIRED" }),
+    profile: ReportingProfile.create({ id: "rp", tenantId: "tenant-a", projectId: "p1", createdById: "u" }),
+    indicators: [reportableIndicator()],
+  });
+  const readiness = new ProjectReadinessService(repos.projects, repos.setup, repos.profiles, repos.templates, repos.indicators, repos.users, repos.providerResolver);
+  const existing = { reportType: "QUARTERLY", duration: DateRange.create(new Date("2026-04-01"), new Date("2026-06-30")) };
+  let created;
+  const periods = {
+    create: async (x) => { created = x; return { ok: true, value: x }; },
+    findByProject: async () => ({ ok: true, value: [existing] }),
+  };
+  const activities = { findByProject: async () => ({ ok: true, value: [{ id: "act1" }] }) };
+  const handler = new CreateReportingPeriodHandler(
+    { generate: () => "p" }, periods, repos.projects, repos.templates, repos.setup, repos.profiles, readiness,
+    { record: async () => {} }, { publish: async () => {} }, activities,
+  );
+  const base = {
+    projectId: "p1", reportType: "ACTIVITY",
+    startDate: new Date("2026-05-01").toISOString(), endDate: new Date("2026-05-31").toISOString(),
+    deadline: new Date("2026-06-15").toISOString(),
+  };
+  const noScope = await handler.handle(ctx, base);
+  assert.equal(noScope.ok, false);
+  const unknown = await handler.handle(ctx, { ...base, scope: { activityIds: ["nope"] } });
+  assert.equal(unknown.ok, false);
+  const ok = await handler.handle(ctx, { ...base, scope: { activityIds: ["act1"] } });
+  assert.equal(ok.ok, true);
+  assert.deepEqual(created.scope, { activityIds: ["act1"] });
 });

@@ -1,159 +1,36 @@
 # Understanding Report Statuses
 
-Each reporting period moves through a lifecycle of statuses. Understanding this helps you know where you are and what needs to happen next.
+DonorDesk tracks two things: the status of the **reporting period** and the status of the **report draft** inside it.
 
-## Status Lifecycle
+## Reporting period status
 
-```
-Not Started → In Progress → Evidence Collection → Draft Generated
-     ↓              ↓               ↓                    ↓
-[Reporting period created]    [Data entry phase]  [AI/manual draft]
-                                                              ↓
-                                                     Under Review
-                                                              ↓
-                                                     Approved / Needs Revision
-                                                              ↓
-                                                          Submitted
-                                                              ↓
-                                                           Closed
-```
+| Status | Meaning |
+|---|---|
+| Not started | The period exists but no work has begun. |
+| In progress | Data is being entered. |
+| Evidence collection | Evidence is being gathered. |
+| Draft generated | A report draft exists. |
+| Under review | The draft was submitted for review. |
+| Approved | The report was approved. |
+| Submitted | The report was submitted to the donor. |
+| Closed | The period is finished. |
 
-## Status Definitions
+## Report draft status
 
-### Not Started
-The reporting period has been created, but no work has begun.
-- No data entered
-- No evidence uploaded
-- No report draft started
+| Status | Meaning | What you can do |
+|---|---|---|
+| **Draft** | Being written and edited. | Edit, regenerate sections, decide on flagged statements, approve sections, submit for review. |
+| **Under review** | Submitted to a reviewer. | Reviewers with approval rights **Approve report** or **Request changes** (with a comment). Others see "Waiting for review". |
+| **Approved** | A specific version was approved. Sections are locked. | Export. Changes require reopening. |
+| **Exported** | An export was produced. | Download from the Export Center; submit to the donor. |
+| **Submitted** | Sent to the donor; the version is sealed as a snapshot. | Read only. |
 
-**What to do:** Start collecting data and uploading evidence.
+Each save creates a new version, and older versions are kept in **Version history**. If a newer draft supersedes an older one, older versions become read-only.
 
-### In Progress
-Work on the report has started.
-- Some data entered
-- Evidence being gathered
-- Activities logged
+## Section approval
 
-**What to do:** Continue data collection and evidence upload.
+Inside a draft each **section** can be approved on its own. Approved sections are locked for that version. Editing an approved section, or regenerating it, reopens it.
 
-### Evidence Collection
-Focused phase on gathering and verifying evidence.
-- Indicator values being updated
-- Evidence being uploaded and verified
-- Compliance items being resolved
+## Statement statuses
 
-**What to do:** Prioritise evidence and indicator updates.
-
-### Draft Generated
-A report draft exists (AI-generated or manual).
-- Sections have content
-- Some sections may still need work
-- Ready for review
-
-**What to do:** Review sections and make edits.
-
-### Under Review
-The report is being reviewed by the team.
-- Team members adding comments
-- Author making revisions
-- Final checks in progress
-
-**What to do:** Address comments and prepare for approval.
-
-### Approved
-The report has been internally approved.
-- All comments resolved
-- All compliance items addressed
-- Ready for donor submission
-
-**What to do:** Export and submit to the donor.
-
-### Needs Revision
-The report requires changes before approval.
-- Reviewer has requested changes
-- Specific sections flagged
-
-**What to do:** Make the requested changes and resubmit.
-
-### Submitted
-The report has been sent to the donor.
-- Donor has received the report
-- Awaiting donor feedback
-
-**What to do:** Track donor feedback if received.
-
-### Closed
-The reporting period is complete.
-- Donor has acknowledged or report period ended
-- No further changes expected
-- Archived for record
-
-**What to do:** The period is complete. Access for reference.
-
-## Who Can Change Status
-
-| Status transition | Who can do it |
-|------------------|---------------|
-| Not Started → In Progress | Anyone with edit access |
-| In Progress → Evidence Collection | Automatic when evidence is uploaded |
-| Evidence Collection → Draft Generated | When draft is created |
-| Draft Generated → Under Review | Author or manager |
-| Under Review → Approved | Reviewer/approver |
-| Under Review → Needs Revision | Reviewer |
-| Approved → Submitted | Author or manager |
-| Submitted → Closed | Admin or manager |
-
-## Status and Readiness
-
-The readiness score should guide your progress:
-
-| Readiness | Recommended status |
-|----------|------------------|
-| 0-30% | Not Started / In Progress |
-| 31-60% | Evidence Collection |
-| 61-80% | Draft Generated |
-| 81-95% | Under Review |
-| 96-100% | Approved |
-
-## Status Deadlines
-
-Set internal deadlines before donor deadlines:
-
-| Deadline type | When to set |
-|--------------|-------------|
-| Data entry deadline | 2 weeks before donor deadline |
-| Internal review deadline | 1 week before donor deadline |
-| Final approval deadline | 3 days before donor deadline |
-| Donor submission deadline | The actual donor deadline |
-
-## Moving Between Statuses
-
-### Starting Work
-
-Go to the reporting period and start:
-1. Updating indicators
-2. Uploading evidence
-3. Generating a draft
-
-Status should automatically move to In Progress.
-
-### Submitting for Review
-
-1. Make sure all sections are complete
-2. Click **Submit for Review**
-3. Select the reviewer
-4. Add any notes
-
-### Approving a Report
-
-1. Review all sections
-2. Resolve all comments
-3. Click **Approve Report**
-4. Confirm
-
-### Requesting Changes
-
-1. Add comments on specific issues
-2. Click **Request Revision**
-3. Explain what needs to change
-4. The report returns to Draft Generated status
+Factual statements in a section carry their own status: **Matches evidence**, **Needs a decision**, **Kept with a note**, **Left out**, and **Not checked (minor)**.

@@ -470,6 +470,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
       period: ctx?.period
         ? {
             reportType: ctx.period.reportType,
+            ...(ctx.period.scope ? { scope: ctx.period.scope } : {}),
             startDate: ctx.period.startDate,
             endDate: ctx.period.endDate,
             deadline: ctx.period.deadline,

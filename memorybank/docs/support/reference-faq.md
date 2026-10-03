@@ -1,151 +1,101 @@
-# Frequently Asked Questions (FAQ)
+# Frequently Asked Questions
 
 ## General
 
 ### What is DonorDesk?
+A platform that helps NGOs and grant-funded organisations prepare donor reports faster: it links your logframe, indicators, activities and evidence to an AI-assisted, fact-checked report you edit like a document. See [What is DonorDesk?](/support/getting-started/what-is-donordesk).
 
-DonorDesk is a cloud-based platform that helps NGOs, humanitarian programmes, and grant-funded projects manage donor reporting and evidence compliance. It connects logframes, evidence, activities, and indicators to generate AI-assisted donor reports.
+### Who is it for?
+Local and national NGOs, INGOs, UN implementing partners, consultancies and government programme units.
 
-### Who is DonorDesk for?
+### How much does it cost?
+Starter is free (1 project, 1 full seat plus 2 viewers, 1 GB, 5 AI drafts a month). Team is $129/month (5 projects, 5 seats, 25 GB, 20 drafts). Growth is $299/month (20 projects, 15 seats, 100 GB, 100 drafts, bring your own AI provider). Enterprise is contracted from $12,000/year. Annual billing is two months free, and verified nonprofits get 40% off. See [Pricing](/pricing).
 
-DonorDesk is designed for:
-- Local and national NGOs
-- International NGOs (INGOs)
-- UN implementing partners
-- Government grant-funded programmes
-- Research institutions
-- M&E teams and programme managers
+### Is there a free trial?
+Every workspace starts on the free Starter plan. There is no standard trial. The Academy demo project lets you explore without using your limits.
 
-### How much does DonorDesk cost?
+### Can it produce reports for any donor?
+Yes. You upload the donor's template (Word, PDF, text, Markdown, Excel or CSV); DonorDesk extracts the outline and rules, you review and approve them, and the report follows that structure. Donor-native Word output is available when you map the donor's own .docx.
 
-DonorDesk has four plans:
-- **Starter** — Free (1 project, 1 user, 5 AI drafts/month)
-- **Team** — $59/month (5 projects, 5 users, 100 AI drafts/month)
-- **Growth** — $149/month (20 projects, 15 users, 500 AI drafts/month)
-- **Enterprise** — Custom pricing (unlimited, with SLA)
+### Does AI invent numbers?
+No. Tables, charts and comparisons come from verified indicator data, and any figure in the AI's text that is not in your inputs is rejected. Every factual statement is checked against evidence. See [AI in DonorDesk](/support/getting-started/ai-in-donordesk).
 
-Annual billing saves 2 months. See our pricing page for full details.
+### Can I turn AI off?
+Yes, in **Settings → Settings**. You can always write reports manually.
 
-### Is my data secure?
-
-Yes. DonorDesk uses encryption in transit and at rest, multi-tenant isolation via Row-Level Security, immutable audit logs, and role-based access control. See our Privacy Policy for details.
-
-### Can DonorDesk produce reports for any donor?
-
-DonorDesk can produce reports for any donor. You upload your donor's template, and DonorDesk generates sections matching their format. The most common donors (EU, UNHCR, USAID, WFP, UNICEF, etc.) are well-supported.
-
-## Account and Access
+## Account and access
 
 ### How do I create an account?
+[Sign up](/support/how-to/create-an-account) with email and password or Google. You become the workspace Admin.
 
-Go to https://donordesk.online and click "Sign up." Enter your email, password, and organisation details. Verify your email, and you are ready to start.
+### What roles are there?
+Admin, Project Manager, M&E Officer, Grants Officer, Field Officer, Compliance Officer and Viewer. See [User roles and permissions](/support/getting-started/user-roles-and-permissions).
 
-### Can I use my Google account to sign in?
+### How do I invite my team?
+**Team → Invite member**, then send the acceptance link yourself (invitation emails are not sent automatically). See [How to invite team members](/support/how-to/invite-team-members).
 
-If your organisation uses Google Workspace, you can use Google Sign-In. This is configured by your admin.
+### Do you support two-factor authentication or SSO?
+Two-factor authentication is not available yet. SSO / SCIM directory integration is part of the Enterprise plan; talk to us through [contact sales](/contact-sales).
 
-### How do I invite team members?
+### How do I delete my account?
+Email privacy@donordesk.online. See [How DonorDesk handles your data](/support/security-privacy/data-handling).
 
-Go to **Settings → Team → Invite Team Member**. Enter their email and assign a role. They will receive an invitation email.
-
-### How many team members can I have?
-
-This depends on your plan:
-- Starter: 1 user
-- Team: 5 users
-- Growth: 15 users
-- Enterprise: Unlimited
-
-### I forgot my password. How do I reset it?
-
-Click **Forgot password** on the login page. Enter your email and check your inbox for the reset link.
-
-## Projects and Data
+## Projects and data
 
 ### How many projects can I have?
+Active projects: Starter 1, Team 5, Growth 20. Archived projects and the demo project do not count.
 
-| Plan | Active projects |
-|------|----------------|
-| Starter | 1 |
-| Team | 5 |
-| Growth | 20 |
-| Enterprise | Unlimited |
+### Can I import my logframe?
+Yes: Excel, CSV or TXT using the downloadable template. Indicators, activities and evidence records can be imported too. See [Data import and export](/support/advanced-features/data-import-export).
 
-### Can I import my existing logframe?
+### Can I use Google Drive?
+Yes, and it is the recommended option. Files stay in your Drive and use no DonorDesk quota. See [Storage](/support/getting-started/storage-file-management).
 
-Yes. Upload an Excel, CSV, or Word file and DonorDesk will read the structure and create the logframe hierarchy automatically.
-
-### What file formats can I upload as evidence?
-
-Accepted formats: PDF, DOCX, DOC, XLSX, CSV, JPG, JPEG, PNG, TXT.
-
-### Can I use Google Drive to store evidence?
-
-Yes. Connect your Google Drive in **Settings → Storage**, and you can link files from Drive instead of uploading them. Linked files do not use your DonorDesk storage quota.
-
-### What happens to my data if I cancel?
-
-Your data is preserved on the free Starter plan. You can export everything before cancelling.
+### What file types and sizes?
+Common documents, spreadsheets, images and text, up to 100 MB per file. See [File formats](/support/reference-file-formats).
 
 ## Reports
 
-### How does AI report generation work?
+### What does the report workflow look like?
+Update Project → Tell the Story → Generate Draft → Review & Submit. See [the reporting workflow](/support/getting-started/reporting-workflow).
 
-DonorDesk analyses your evidence content, activity narratives, and indicator data to generate a draft report. Every statement is linked to its source. All AI output must be reviewed by a human before submission.
+### How many AI drafts do I get?
+Starter 5, Team 20, Growth 100 a month; Enterprise is contracted. Fallback drafts and single-section regenerations do not use a draft. You can buy top-up packs on Team and Growth.
 
-### How many AI drafts can I generate?
+### Can I export to Word and PDF?
+Yes, plus Excel indicator tables and ZIP evidence packs. See [How to export reports](/support/how-to/export-reports).
 
-| Plan | AI drafts/month |
-|------|----------------|
-| Starter | 5 |
-| Team | 100 |
-| Growth | 500 |
-| Enterprise | Unlimited |
+### Can DonorDesk submit reports to donors directly?
+No. You export the approved report and send or upload it yourself. The donor submission export is sealed to the approved version.
 
-### Can I export to Word (DOCX)?
+### What is AI Writing Style?
+An optional feature that learns your team's wording preferences from edits, never numbers or facts. See [AI Settings](/support/advanced-features/ai-settings).
 
-Yes. You can export to PDF, Word (DOCX), Excel (XLSX), and ZIP (full evidence pack).
+## Billing
 
-### Can DonorDesk submit reports directly to donors?
+### How do I upgrade, downgrade or cancel?
+In **Settings → Billing** (Admin only). See [Manage billing](/support/how-to/manage-billing-subscription).
 
-No. DonorDesk generates and exports reports. You submit them to your donor through your own channels.
+### What payment methods are accepted?
+Cards through our payment partner Creem, which also handles tax. Enterprise customers can arrange other terms.
 
-## Billing and Payments
+### What happens to my data if I cancel?
+Nothing is deleted. You keep read, export and delete access on Starter.
 
-### How do I upgrade my plan?
-
-Go to **Settings → Billing → Upgrade Plan**. Select the plan and billing interval (monthly or annual). Payment is processed securely via Creem.
-
-### Can I cancel anytime?
-
-Yes. Cancel anytime — you keep access until the end of your billing period.
-
-### What payment methods do you accept?
-
-We accept major credit and debit cards via our payment processor (Creem).
-
-### Do you offer nonprofit discounts?
-
-Yes. Contact support@donordesk.online to request a nonprofit discount. Proof of nonprofit registration may be required.
-
-### How does annual billing work?
-
-Annual billing is paid upfront for a full year. It saves 2 months compared to monthly billing. You can cancel before the year ends and keep access until the paid period ends.
+### Do you offer a nonprofit discount?
+Yes, 40% off Team and Growth for verified nonprofits. Apply in **Settings → Billing**.
 
 ## Technical
 
-### What browsers does DonorDesk support?
+### What browsers are supported?
+Current versions of Chrome, Edge, Firefox and Safari.
 
-We support the latest versions of Chrome, Firefox, Edge, and Safari.
+### Does it work on mobile?
+The portal is responsive and works on phones and tablets, though report review is easiest on a larger screen.
 
-### Does DonorDesk work on mobile?
+### Can I connect other tools?
+Google Drive and Google Sheets are supported. There is no public API yet; ask about integrations via [contact sales](/contact-sales).
 
-DonorDesk is optimised for desktop and works on tablet browsers. Full mobile app support is planned for a future release.
+## Still stuck?
 
-### Can I connect DonorDesk to other tools?
-
-DonorDesk supports Google Sheets for indicator data import. API access is available on Enterprise plans.
-
-### My question is not answered here.
-
-Contact us at **support@donordesk.online** and we will get back to you within 1-2 business days.
+Email support@donordesk.online. See [Contact support](/support/contact).

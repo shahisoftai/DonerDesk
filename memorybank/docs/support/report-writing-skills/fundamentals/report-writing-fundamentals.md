@@ -133,15 +133,16 @@ Claim only what you can evidence. Words like "significant," "major," or "transfo
 | Vague language ("some beneficiaries," "many activities") | Undermines credibility | Use exact figures always |
 | Ignoring negative data | Creates a credibility gap | Report challenges honestly; it builds trust |
 | Mixing reporting periods | Confuses donors and auditors | Clearly state the exact period covered |
-| Forgetting to attach evidence references | Means nothing without proof | Reference evidence records by ID in DonorDesk |
+| Forgetting to attach evidence references | Means nothing without proof | Link evidence to indicators and activities in DonorDesk so sources are attached |
 
 ## How DonorDesk Helps
 
-DonorDesk is built to support every stage of report writing:
+DonorDesk supports every stage of report writing:
 
-- **Logframe tab** — Keep your objectives, outputs, and indicators always visible as you write
-- **Evidence tab** — Link each reported achievement to a verified evidence record
-- **Compliance checklist** — Automatically checks that all donor-required sections are present
-- **AI Report Draft** — Uses your uploaded evidence and indicator data to generate a structured first draft you can refine
+- **Donor template** — the report follows the donor's own structure, instructions, questions and word limits
+- **Logframe and indicators** — objectives, outputs and verified indicator values feed the report's tables and charts
+- **Evidence library** — link each result to verified evidence; sources are shown next to each section
+- **Compliance checklist and report checks** — show what is missing before you submit
+- **AI Reporter and report editor** — drafts each section from verified data, checks every statement against evidence, and lets you edit, decide and approve
 
 > **Next:** Read [Indicators & Evidence: Writing with Data](/support/report-writing-skills/indicators-evidence) to learn how to turn raw indicator values into compelling evidence narratives.

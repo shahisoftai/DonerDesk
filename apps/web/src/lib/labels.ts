@@ -158,6 +158,7 @@ export const ROLE_OPTIONS: readonly string[] = Object.keys(ROLE_LABEL);
 export const REPORT_TYPE_LABEL: Record<string, string> = {
   MONTHLY: "Monthly report",
   QUARTERLY: "Quarterly report",
+  SEMI_ANNUAL: "Semi-annual report",
   ANNUAL: "Annual report",
   FINAL: "Final report",
   ACTIVITY: "Activity report",
@@ -165,7 +166,17 @@ export const REPORT_TYPE_LABEL: Record<string, string> = {
   CUSTOM: "Custom report",
 };
 
-export const REPORT_TYPE_OPTIONS: readonly string[] = ["MONTHLY", "QUARTERLY", "ANNUAL", "FINAL", "ACTIVITY", "SITUATION", "CUSTOM"];
+/** Heading for a report: custom title / situation name when the scope gives one, else the type label. */
+export function reportHeading(
+  reportType: string,
+  scope?: { title?: string; eventName?: string } | null,
+): string {
+  if (reportType === "CUSTOM" && scope?.title) return scope.title;
+  if (reportType === "SITUATION" && scope?.eventName) return `Situation report: ${scope.eventName}`;
+  return REPORT_TYPE_LABEL[reportType] ?? "Report";
+}
+
+export const REPORT_TYPE_OPTIONS: readonly string[] = ["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL", "FINAL", "ACTIVITY", "SITUATION", "CUSTOM"];
 
 export const REPORT_STATUS_LABEL: Record<string, string> = {
   NOT_STARTED: "Not started",

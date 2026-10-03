@@ -1,138 +1,31 @@
-# Troubleshooting Compliance Checklist Issues
+# Troubleshooting the Compliance Checklist
 
-## Compliance Items Not Appearing
+## The checklist is empty
 
-### No Reporting Period Created
+Items are created from the donor template, logframe, activities and evidence. Make sure the project has a reviewed template and indicators, then in the report editor use **⋯ → Scan for missing items**.
 
-The compliance checklist generates when you create a reporting period. If you see no items:
-1. Create a reporting period first
-2. Go to the **Compliance** tab
-3. Click **Regenerate Checklist**
+## Items I resolved came back
 
-### Items Still Missing After Regeneration
+The checklist re-checks itself. Resolved items stay resolved unless the underlying problem recurs (for example evidence was deleted or an indicator became unverified).
 
-1. Wait a moment — generation takes a few seconds
-2. Make sure evidence and activities are linked
-3. Check if the donor template is uploaded (some items depend on it)
+## I can't resolve an item
 
-## Items Show Wrong Severity
+- You need checklist permission: Admin, Project Manager, M&E Officer, Grants Officer or Compliance Officer.
+- **Resolve** needs a note. **Accept risk** on a high-severity item asks you to confirm you have authority.
+- Some items only clear when you fix the source (upload the evidence, verify the indicator).
 
-### Severity Is Auto-Calculated
+## Bulk actions do nothing
 
-Severity (Low, Medium, High, Critical) is determined by:
-- How critical the missing item is to donor reporting
-- How close the deadline is
-- How much evidence is missing
+Click **Bulk actions**, tick items or **Select all**, choose the action and enter the shared note. Click **Exit bulk** when done.
 
-### How to Change Severity
+## A blocker is stopping approval or export
 
-1. Click on the compliance item
-2. Look for **Severity** field
-3. Manually adjust if needed
+Blocking items appear in **Report checks** in the editor. Clear them, or accept them with a reason if you have the authority. See [Troubleshooting export issues](/support/troubleshooting/export-issues).
 
-Note: Changing severity manually may be overwritten when the checklist regenerates.
+## Readiness score seems low
 
-## Cannot Resolve an Item
+Open the **Readiness explanation** on the Compliance page to see what drags it down: unverified indicators, missing evidence, unresolved items.
 
-### Item Is Locked
+## An item has no fix link
 
-Some items require specific actions to resolve:
-- **Missing evidence** — Upload and verify the evidence
-- **Unverified indicator** — Submit and verify the indicator
-- **Unreviewed AI section** — Review and approve the section
-
-Resolve the underlying issue, and the item will auto-resolve.
-
-### "Accept Risk" Not Working
-
-To accept risk on an item:
-1. Click on the item
-2. Click **Accept Risk**
-3. Enter a justification (required)
-4. Save
-
-Without a justification, the risk acceptance will not save.
-
-## Items Keep Reappearing
-
-### Checklist Regenerates
-
-The compliance checklist is regenerated when:
-- New evidence is uploaded
-- New activities are logged
-- New indicator updates are submitted
-- You manually click **Regenerate Checklist**
-
-If an item keeps appearing:
-1. The underlying issue may not be fully resolved
-2. For example, if evidence is uploaded but not verified, it will still flag as missing
-
-## Cannot Assign Items
-
-### Who Can Assign
-
-Only these roles can assign compliance items:
-- Owner
-- Admin
-- Project Manager
-
-### How to Assign
-
-1. Click on the compliance item
-2. Click **Assign to**
-3. Select the team member
-4. Save
-
-## False Positives
-
-### Evidence Is Linked but Still Flags as Missing
-
-1. Check that the evidence is linked to the **correct activity**
-2. Check that the activity is linked to the **correct output**
-3. Check that the evidence **verification status** is "Verified"
-
-Only verified evidence counts as resolved.
-
-### Indicator Shows as Unverified
-
-1. Check the indicator status in the **Indicators** tab
-2. Make sure it has been submitted and verified
-3. Check the reporting period — the indicator update must be for the correct period
-
-## Compliance Score Seems Wrong
-
-### How the Score Is Calculated
-
-The readiness score includes compliance at 20% weight:
-- Open Critical items: -10%
-- Open High items: -5%
-- Open Medium items: -2%
-- Open Low items: -1%
-- Items resolved or accepted: 0%
-
-### Why the Score Is Not 100%
-
-Even with all items resolved, you may not see 100% if:
-- Not all sections are reviewed
-- Not all indicators are verified
-- Approval has not been given
-
-The compliance score is only one component of the overall readiness.
-
-## Export Still Blocked Despite Resolving Items
-
-### Critical Items Still Open
-
-Even if you have resolved items, make sure:
-1. No items have status **Open** and severity **Critical**
-2. All **Critical** items are either **Resolved**, **Accepted Risk**, or **Not Applicable**
-
-### Refresh the Page
-
-After resolving critical items:
-1. Refresh the Compliance tab
-2. Try exporting again
-
-If it still blocks:
-1. Check each Critical item individually
-2. Look for any with status **Open**
+Some items must be resolved manually. Add a note describing what you did.

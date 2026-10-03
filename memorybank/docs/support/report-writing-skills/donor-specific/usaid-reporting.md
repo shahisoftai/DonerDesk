@@ -198,4 +198,4 @@ USAID's **Automated Directive System (ADS)** is the operational policy manual. K
 - **Standard Indicator Directory** — indicators.usaid.gov
 - **ADS** — public.usaid.gov (search ADS)
 
-> **Next:** Read [Global Fund Reporting](/support/report-writing-skills/donor-specific/global-fund) for guidance on Global Fund to Fight AIDS, Tuberculosis and Malaria funding.
+> **Next:** Read [Global Fund Reporting](/support/report-writing-skills/global-fund) for guidance on Global Fund to Fight AIDS, Tuberculosis and Malaria funding.

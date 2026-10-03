@@ -38,7 +38,7 @@ Each evidence record should capture the following fields:
 | **Indicators Supported** | Which logframe indicators this evidence supports | IND-1.2a, IND-2.1 |
 | **Collected By** | Name and role of person responsible | J. Okoth, M&E Officer |
 | **Reviewed By** | Name and role of quality reviewer | S. Amina, M&E Manager |
-| **File Reference** | DonorDesk file ID or Drive link | DD-EV-2026-Q2-001 |
+| **File Reference** | Drive link or DonorDesk evidence title | DD-EV-2026-Q2-001 |
 | **Limitations** | Known issues with data quality | Response rate 78%; recall bias possible |
 
 ### Optional Fields (Recommended)
@@ -149,13 +149,14 @@ Each evidence record should capture the following fields:
 
 ## Organising Evidence in DonorDesk
 
-DonorDesk's Evidence tab is designed around the inventory structure. For each piece of evidence:
+DonorDesk's Evidence library fits the inventory structure. For each piece of evidence:
 
-1. **Create the record** with all required fields before you need it — not at reporting time
-2. **Upload the file** directly to the evidence record (or link to your approved storage location)
-3. **Link the evidence** to the specific indicator(s) it supports in the Logframe tab
-4. **Reference the Evidence ID** in your narrative using the format: `[Evidence ID: EV-2026-Q2-001]`
-5. **Review and update** evidence records after each monitoring visit or data collection exercise
+1. **Upload the file** (or link it from your Google Drive) as soon as it exists, not at reporting time
+2. Set the **title, evidence type, reporting period and confidentiality**
+3. **Accept or edit the AI tag suggestions**
+4. **Link the evidence** to the indicators and activities it supports
+5. **Verify it** (a reviewer confirms it)
+6. **Review and update** records after each monitoring visit or data collection exercise
 
 ### Evidence File Naming Convention
 

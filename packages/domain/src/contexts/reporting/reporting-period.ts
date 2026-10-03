@@ -3,6 +3,7 @@ import { DomainError } from "../../core/domain-error.js";
 import { DateRange } from "../../value-objects/date-range.js";
 import { ReportStatus } from "../../value-objects/report-status.js";
 import type { ReportType } from "../templates/donor-template.js";
+import { parseReportScope, type ReportScope } from "./report-scope.js";
 
 /**
  * The "Tell the Story" inputs — the narrative context that indicators and
@@ -66,6 +67,8 @@ export interface ReportingPeriodProps {
   reportingProfileSnapshotJson: string;
   templateSnapshotJson: string;
   storyContextJson?: string;
+  /** JSON of {@link ReportScope}; "{}" for cadence reports. */
+  scopeJson?: string;
   /** Locked donor template version at period creation; feeds the generation snapshot. */
   donorTemplateVersion?: number;
   /** Locked donor template mapping id at period creation. */
@@ -96,6 +99,7 @@ export class ReportingPeriod extends Entity<string> {
     responsibleOfficerId?: string;
     reportingProfileSnapshotJson?: string;
     templateSnapshotJson?: string;
+    scopeJson?: string;
     donorTemplateVersion?: number;
     donorTemplateMappingId?: string;
   }): ReportingPeriod {
@@ -111,6 +115,7 @@ export class ReportingPeriod extends Entity<string> {
       responsibleOfficerId: input.responsibleOfficerId,
       reportingProfileSnapshotJson: input.reportingProfileSnapshotJson ?? "{}",
       templateSnapshotJson: input.templateSnapshotJson ?? "{}",
+      scopeJson: input.scopeJson ?? "{}",
       donorTemplateVersion: input.donorTemplateVersion,
       donorTemplateMappingId: input.donorTemplateMappingId,
     });
@@ -138,6 +143,8 @@ export class ReportingPeriod extends Entity<string> {
   get templateSnapshotJson(): string { return this.props.templateSnapshotJson; }
   get storyContextJson(): string { return this.props.storyContextJson ?? "{}"; }
   get storyContext(): StoryContext { return parseStoryContext(this.storyContextJson); }
+  get scopeJson(): string { return this.props.scopeJson ?? "{}"; }
+  get scope(): ReportScope { return parseReportScope(this.scopeJson); }
   get donorTemplateVersion(): number | undefined { return this.props.donorTemplateVersion; }
   get donorTemplateMappingId(): string | undefined { return this.props.donorTemplateMappingId; }
 

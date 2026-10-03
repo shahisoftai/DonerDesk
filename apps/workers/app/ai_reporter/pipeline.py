@@ -6,27 +6,36 @@ Flow per section:
      from verified findings (grounded by construction).
   3. `artifact_validators.run_all()` — number grounding, Q&A coverage, banned
      phrases, repetition, word limit, required tables, donor-voice warnings.
-  4. On hard issues: ONE retry through the same guarded `draft()` path (same
-     per-call timeout, same parser) with the previous draft + every issue and
-     warning as feedback. The better of the two attempts is kept.
+  4. On a *retryable* issue (an integrity issue, a missing mandatory answer or
+     a missing required table): ONE retry through the same guarded `draft()`
+     path with the previous draft + every issue and warning as feedback. The
+     better of the two attempts is kept. Style-only issues (banned phrase,
+     length, repetition) do not cost a second ~30s call: they are reported as
+     `qualityIssues` for the reviewer (`AI_REPORTER_RETRY_ON_STYLE=1` restores
+     the old retry).
   5. If the kept attempt still has an *integrity* issue (an ungrounded number),
      the response sets `usedFallback`/`fallbackReason=VALIDATOR_FAILED` so the
-     API substitutes the deterministic section. Style-only issues (banned
-     phrase, length, repetition, missing Q&A) keep the AI prose and are
-     reported as `qualityIssues` for the reviewer.
+     API substitutes the deterministic section.
 
-Worst case is 2 LLM calls per section, typical case 1.
+Provider errors: a transient error (429/5xx) is retried up to
+`AI_REPORTER_TRANSIENT_RETRIES` times (default 3) with exponential backoff
+honouring Retry-After, bounded by the section budget; these calls fail fast
+and do not use up the feedback retry. Any other error (including a reply with
+no JSON) gets one plain retry. Worst case is 2 completed LLM calls per section,
+typical case 1.
 """
 from __future__ import annotations
 
 import hashlib
+import os
+import random
 import time
 from typing import Any
 
 from . import artifact_builder
 from .artifact_validators import ValidationResult, run_all
 from .draft_writer import draft, pop_last_telemetry
-from .llm_gateway import TransientProviderError
+from .llm_gateway import ProviderQuotaError, TransientProviderError
 from .models import GeneratedSection, SectionDraftRequest, SectionDraftResponse
 from .outline import section_kind
 from .timeouts import SectionTimeoutError, TotalBudgetExceededError, TotalBudgetTracker
@@ -36,6 +45,34 @@ from .writer_contract import system_prompt
 # header — a provider misreporting a very long Retry-After must not stall a
 # request far beyond what the operator configured.
 _MAX_BACKOFF_S = 20.0
+_BASE_BACKOFF_S = 2.0
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return max(0, int(os.getenv(name, str(default))))
+    except ValueError:
+        return default
+
+
+# Issues a feedback retry can fix in the prose. Missing deltas and artifact
+# ordering come from the deterministic builder, so re-asking the writer cannot
+# fix them.
+_CONTENT_RETRY_PREFIXES: tuple[str, ...] = ("MISSING_QA", "MISSING_TABLE")
+
+
+def _needs_retry(result: ValidationResult) -> bool:
+    if result.ok:
+        return False
+    if os.getenv("AI_REPORTER_RETRY_ON_STYLE", "0") == "1":
+        return True
+    return bool(result.integrity_issues) or any(i.startswith(_CONTENT_RETRY_PREFIXES) for i in result.issues)
+
+
+def _backoff_s(exc: TransientProviderError, retry_index: int) -> float:
+    if exc.retry_after is not None:
+        return float(exc.retry_after)
+    return float(_BASE_BACKOFF_S * 2.0**retry_index * random.uniform(0.8, 1.2))
 
 
 def _response_for(section: GeneratedSection, telemetry: dict[str, Any]) -> SectionDraftResponse:
@@ -70,13 +107,19 @@ def run_pipeline(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, 
     feedback: list[str] | None = None
     previous: str | None = None
     last_err: Exception | None = None
+    transient_retries = 0
+    max_transient_retries = _env_int("AI_REPORTER_TRANSIENT_RETRIES", 3)
+    error_retry_used = False
 
-    for attempt in (1, 2):
+    while True:
         if attempts and budget.remaining_s() <= 0:
             break  # no time for the feedback retry; keep the first attempt
         budget.check()
         try:
-            written = draft(req) if feedback is None else draft(req, feedback=feedback, previous_content=previous)
+            if feedback is None:
+                written = draft(req, max_wait_s=budget.remaining_s())
+            else:
+                written = draft(req, feedback=feedback, previous_content=previous, max_wait_s=budget.remaining_s())
         except (TotalBudgetExceededError, SectionTimeoutError):
             # Never retry once the total budget is gone, and never re-run the
             # same slow call into the same deadline. A slow feedback retry
@@ -85,18 +128,23 @@ def run_pipeline(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, 
             if attempts:
                 break
             raise
+        except TransientProviderError as exc:
+            last_err = exc
+            if attempts or transient_retries >= max_transient_retries:
+                break  # keep the attempt we already have / give up
+            # An immediate retry into the same rate-limit window almost
+            # always fails again for nothing. Back off exponentially — but
+            # never past the remaining total budget.
+            delay = min(_backoff_s(exc, transient_retries), _MAX_BACKOFF_S, budget.remaining_s())
+            transient_retries += 1
+            if delay > 0:
+                time.sleep(delay)
+            continue
         except Exception as exc:  # noqa: BLE001
             last_err = exc
-            if attempts or attempt == 2:
+            if attempts or error_retry_used or isinstance(exc, ProviderQuotaError):
                 break  # keep the attempt we already have
-            if isinstance(exc, TransientProviderError):
-                # An immediate retry into the same rate-limit window almost
-                # always fails again for nothing. Back off — but never past
-                # the remaining total budget.
-                delay = exc.retry_after if exc.retry_after is not None else 2.0
-                delay = min(delay, _MAX_BACKOFF_S, budget.remaining_s())
-                if delay > 0:
-                    time.sleep(delay)
+            error_retry_used = True  # e.g. a reply with no JSON: one plain retry
             continue
         finally:
             call_telemetry = pop_last_telemetry()
@@ -106,7 +154,9 @@ def run_pipeline(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, 
         section = artifact_builder.attach(written, req, kind)
         result = run_all(section, req, prior_narrative_present=prior_present)
         attempts.append((section, result))
-        if result.ok:
+        # One feedback retry at most, and none after an error retry (keeps the
+        # worst case at two completed calls per section).
+        if len(attempts) >= 2 or error_retry_used or not _needs_retry(result):
             break
         feedback = list(result.issues) + list(result.warnings)
         previous = written.content

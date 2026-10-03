@@ -368,6 +368,14 @@ export class PrismaUsageCounterRepository implements IUsageCounterRepository {
       where: { tenantId_metric_periodStart: { tenantId, metric, periodStart } },
       data: { used: { increment: delta } },
     });
+    if (updated.used < 0n) {
+      // A release can race a self-heal reset and undershoot; the counter never goes below zero.
+      const clamped = await this.prisma.usageCounter.update({
+        where: { tenantId_metric_periodStart: { tenantId, metric, periodStart } },
+        data: { used: 0n },
+      });
+      return ok(this.toDomain(clamped));
+    }
     return ok(this.toDomain(updated));
   }
 
@@ -404,8 +412,8 @@ export class PrismaUsageCounterRepository implements IUsageCounterRepository {
     return UsageCounter.create({
       metric: row.metric as UsageMetric,
       periodStart: row.periodStart,
-      used: row.used,
-      reserved: row.reserved,
+      used: row.used < 0n ? 0n : row.used,
+      reserved: row.reserved < 0n ? 0n : row.reserved,
     });
   }
 }

@@ -94,6 +94,22 @@ const ACTIVITY_ITEMS: ChecklistTemplateItem[] = [
   },
 ];
 
+const SITUATION_ITEMS: ChecklistTemplateItem[] = [
+  ...BASELINE_ITEMS,
+  {
+    type: "MISSING_EVIDENCE",
+    title: "Situation sources attached",
+    description: "Attach the assessments, field reports, photos or official updates that the situation report relies on.",
+    severity: "HIGH",
+  },
+  {
+    type: "MISSING_APPROVAL",
+    title: "Situation figures verified and approved",
+    description: "Figures on affected people and needs change fast; confirm they are current and approved before release.",
+    severity: "HIGH",
+  },
+];
+
 export const REPORT_TYPE_CHECKLIST_TEMPLATES: Record<string, ChecklistTemplate> = {
   MONTHLY: { reportType: "MONTHLY", items: MONTHLY_ITEMS },
   QUARTERLY: { reportType: "QUARTERLY", items: QUARTERLY_ITEMS },
@@ -101,7 +117,7 @@ export const REPORT_TYPE_CHECKLIST_TEMPLATES: Record<string, ChecklistTemplate> 
   ANNUAL: { reportType: "ANNUAL", items: ANNUAL_ITEMS },
   FINAL: { reportType: "FINAL", items: FINAL_ITEMS },
   ACTIVITY: { reportType: "ACTIVITY", items: ACTIVITY_ITEMS },
-  SITUATION: { reportType: "SITUATION", items: BASELINE_ITEMS },
+  SITUATION: { reportType: "SITUATION", items: SITUATION_ITEMS },
   CUSTOM: { reportType: "CUSTOM", items: BASELINE_ITEMS },
 };
 

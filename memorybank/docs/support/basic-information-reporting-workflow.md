@@ -1,169 +1,34 @@
 # Understanding the Reporting Workflow
 
-This guide explains the end-to-end process of producing a donor report in DonorDesk.
+DonorDesk turns your project data into a donor-ready report in a repeatable cycle. This page shows the whole journey.
 
-## The Reporting Cycle
+## One-time project setup
 
-Reporting is not a one-time event — it is a cycle:
+1. **Create the project** with the guided wizard (identity → geography → reporting). Progress is saved as a draft if you leave.
+2. **Finish setup** on the project's Setup checklist: project workspace folder (Google Drive), **donor template** reviewed and approved, **logframe and indicators**, **reporting profile** (language, tone, rules) and team assignment (recommended).
+3. When every blocker is cleared the project is **ready for reporting** and you can create reporting periods.
 
-```
-Plan → Collect → Report → Submit → Learn → (back to Plan)
-```
+The [Academy tour](/tour) walks through this on a demo project.
 
-## Phase 1: Planning
+## Each reporting period
 
-### At Project Start
+Every reporting period has a workspace organised into four steps:
 
-1. **Review donor requirements**
-   - Reporting frequency (monthly, quarterly, etc.)
-   - Required templates and formats
-   - Deadlines and submission processes
-   - Evidence requirements
+| Step | What you do |
+|---|---|
+| **1. Update Project** | Enter indicator values in the period grid (or import from Excel/CSV or Google Sheets), log activities, upload and link evidence, verify data. |
+| **2. Tell the Story** | Answer the story questions: challenges, why targets were over/under achieved, what changed, and a lesson or story. You can also paste a field report or CSV and confirm the inputs DonorDesk proposes. |
+| **3. Generate Draft** | The AI Reporter writes the report section by section following the donor template. |
+| **4. Review & Submit** | Edit in the document-style report editor, decide on flagged statements, approve sections, clear the checks, submit for review, approve, and export. |
 
-2. **Set up the project in DonorDesk**
-   - Create the project
-   - Build the logframe with indicators
-   - Upload the donor template
-   - Configure reporting periods
+## The report editor
 
-3. **Assign responsibilities**
-   - Who enters indicator data
-   - Who uploads evidence
-   - Who reviews and approves
-   - Who exports and submits
+The editor shows one continuous document with an **outline** on the left (with a progress count), the **section inspector** on the right (Statements, Sources, Chart, Comments, History) and a **single primary button** that always shows the next step: *Generate report → Review n flagged statements → Approve n remaining sections → Finish remaining checks → Submit for review → Approve report → Export report*.
 
-### Before Each Reporting Period
+## Approval and export
 
-1. **Review upcoming deadline**
-2. **Check what data is needed**
-3. **Brief team on their tasks**
-4. **Set internal deadlines** (before donor deadline)
+The report moves through **Draft → Under review → Approved → Exported → Submitted**. Approval and export run through the same gate: unresolved blocking issues (unsupported material claims, numeric contradictions, confidentiality violations, stale verifications and similar) must be fixed or explicitly accepted by someone with the right authority. Exports come in two kinds: a **watermarked internal** copy and a **donor submission** copy bound to a sealed snapshot of the approved report.
 
-## Phase 2: Data Collection
+## Where the time goes
 
-### Throughout the Period
-
-1. **Log activities as they happen**
-   - Use field-friendly data entry
-   - Include participant numbers
-   - Link to outputs and indicators
-
-2. **Upload evidence promptly**
-   - Upload within days of activity
-   - Verify evidence quality
-   - Link to activities
-
-3. **Update indicators regularly**
-   - Enter data as it becomes available
-   - Submit and verify values
-   - Add comments for context
-
-### Two Weeks Before Deadline
-
-1. **Review compliance checklist**
-2. **Identify missing evidence**
-3. **Resolve critical items**
-4. **Prepare draft data**
-
-## Phase 3: Report Preparation
-
-### One Week Before Deadline
-
-1. **Generate AI draft report**
-   - Review all project data
-   - Generate draft sections
-   - Review and edit sections
-
-2. **Address compliance gaps**
-   - Upload missing evidence
-   - Accept risks where appropriate
-   - Verify all items
-
-3. **Prepare annexes**
-   - Indicator data table
-   - Evidence checklist
-   - Required supporting documents
-
-### Three Days Before Deadline
-
-1. **Submit for internal review**
-2. **Address reviewer comments**
-3. **Final approval**
-4. **Export final report**
-
-## Phase 4: Submission
-
-### Final Steps
-
-1. **Export report**
-   - Choose format (PDF, DOCX)
-   - Review pre-export warnings
-   - Download the file
-
-2. **Submit to donor**
-   - Follow donor's submission process
-   - Include required annexes
-   - Note any deviations from template
-
-3. **Record submission**
-   - Save copy in DonorDesk
-   - Note submission date
-   - Document donor acknowledgement
-
-## Phase 5: Learning
-
-### After Submission
-
-1. **Document lessons learned**
-   - What worked well?
-   - What was challenging?
-   - What would you do differently?
-
-2. **Incorporate feedback**
-   - Update processes for next period
-   - Adjust indicator targets if needed
-   - Improve data collection
-
-3. **Archive the period**
-   - Mark as submitted in DonorDesk
-   - Keep records accessible
-   - Prepare for next period
-
-## Timeline Example
-
-For a quarterly report with a donor deadline of October 15:
-
-```
-Sep 15  — Internal deadline for data entry
-Sep 22  — Generate draft, review compliance
-Sep 29  — Internal review and approval
-Oct 6   — Final edits, export
-Oct 12  — Submit to donor
-Oct 15  — Donor deadline
-```
-
-## Common Workflow Issues
-
-### Issue: Data Entry Backlog
-
-**Solution:** Log activities weekly, not monthly
-
-### Issue: Missing Evidence
-
-**Solution:** Upload evidence immediately after activities
-
-### Issue: Last-Minute Surprises
-
-**Solution:** Run compliance check 2 weeks before deadline
-
-### Issue: Approval Delays
-
-**Solution:** Submit for review 1 week before donor deadline
-
-## Workflow Automation (Coming Soon)
-
-Future DonorDesk features will include:
-- Automated deadline reminders
-- Compliance status notifications
-- Approval workflow triggers
-- Scheduled exports
+Setup happens once per project. After that, each period is: enter data, tell the story, generate, review, export.

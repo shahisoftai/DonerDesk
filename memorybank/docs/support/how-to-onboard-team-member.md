@@ -1,143 +1,30 @@
-# How to Onboard a New Team Member
+# How to Onboard a Team Member
 
-Onboarding a new team member to DonorDesk helps them get up to speed quickly and use the platform effectively.
+A short checklist for bringing a new colleague up to speed.
 
-## Step 1: Invite Them
+## Before they start
 
-Before they can join, you need to send an invitation.
+1. **Invite them** with the right role ([guide](/support/how-to/invite-team-members)). Share the acceptance link yourself.
+2. **Assign them to the projects** they will work on (project → **Team** → **Assign member**).
 
-1. Go to **Settings → Team → Invite Member**
-2. Enter their email address
-3. Assign a role (see role guide)
-4. Select which projects they need access to
-5. Click **Send Invitation**
+## First session
 
-They will receive an email with instructions.
+1. Sign in and look at **Home** (what needs attention) and **My Work** (items assigned to you).
+2. Start the **Academy** tour from the Help/Academy button. It walks through the real workflow on a demo project, so they can practise without touching live data.
+3. Read [Key concepts](/support/getting-started/key-concepts).
 
-## Step 2: They Create Their Account
+## By role
 
-The new member should:
-1. Check their email (including spam)
-2. Click the invitation link
-3. Set up their password
-4. Verify their email if required
+| Role | Start with |
+|---|---|
+| Field Officer | [Log activities](/support/how-to/log-activities), [Upload evidence](/support/how-to/upload-evidence) |
+| M&E Officer | [Build a logframe](/support/how-to/build-logframe), [Update indicator values](/support/how-to/update-indicator-values) |
+| Grants Officer | [Upload a donor template](/support/how-to/upload-donor-template), [Generate an AI draft](/support/how-to/generate-ai-report-draft) |
+| Project Manager | [Review and approve reports](/support/how-to/review-and-approve-reports), [Export reports](/support/how-to/export-reports) |
+| Compliance Officer | [Compliance checklist](/support/how-to/use-compliance-checklist), [Audit trail](/support/how-to/use-the-audit-trail) |
+| Viewer | [Export reports](/support/how-to/export-reports) |
 
-## Step 3: Initial Setup
+## After a week
 
-Help them complete their profile:
-1. Log in to DonorDesk
-2. Click their name → **Settings**
-3. Fill in their full name
-4. Upload a profile photo (optional)
-5. Set their timezone
-
-## Step 4: Show Them Around
-
-Give them a tour of DonorDesk:
-
-### For M&E Officers
-
-Show them:
-- The project they will work on
-- Where to find the Logframe and Indicators
-- How to upload evidence
-- How to log activities
-- The reporting period and how to update indicators
-
-### For Field Officers
-
-Show them:
-- How to log activities
-- How to upload evidence from their phone
-- What information to record for each activity
-- How to check if their evidence has been verified
-
-### For Project Managers
-
-Show them:
-- The project dashboard
-- How to review reports
-- The approval workflow
-- How to check team activity
-- The compliance checklist
-
-### For Admins
-
-Show them:
-- Team management
-- Organisation settings
-- Audit log
-- Billing (if appropriate)
-
-## Step 5: Assign Initial Work
-
-Give them a first task:
-
-| Role | Good first task |
-|------|----------------|
-| M&E Officer | Update indicators for the current period |
-| Field Officer | Log 3 recent activities |
-| Project Manager | Review the project setup checklist |
-| Compliance Officer | Review the compliance checklist |
-
-## Step 6: Share Resources
-
-Give them access to documentation:
-- Link to the DonorDesk support portal
-- Any organisation-specific guidelines
-- Reporting templates or examples
-- Key donor requirements
-
-## Step 7: Set Up Notifications
-
-Help them configure what they are notified about:
-1. Go to **Settings → Notifications**
-2. Enable relevant notifications
-3. Set frequency (immediate or daily digest)
-
-## Step 8: Check In
-
-After their first week:
-- Ask if they have questions
-- Review their initial work
-- Address any confusion
-- Provide feedback
-
-## Quick Reference Guide
-
-Create a one-page guide for new users:
-
-```
-DONORDESK QUICK START
-
-1. Log in at donordesk.online
-2. Find your project on the dashboard
-3. Main tabs: Logframe | Activities | Evidence | Reports
-4. To log an activity: Activities → Log Activity
-5. To upload evidence: Evidence → Upload
-6. To update indicators: Reports → [Period] → Indicators
-7. Need help? Contact [your name] or support@donordesk.online
-```
-
-## Common Questions to Address
-
-### "I can't find..."
-
-Check their project access. If they were invited to specific projects only, they may not see others.
-
-### "The numbers don't make sense..."
-
-Walk them through how indicators work — baseline, target, cumulative values.
-
-### "Who should I ask if I'm stuck?"
-
-Establish a clear escalation path:
-- Technical questions → IT support or DonorDesk support
-- Programme questions → Line manager
-- Donor-specific questions → Programme manager
-
-## Ongoing Support
-
-- Regular check-ins during the first month
-- Share tips and shortcuts as they come up
-- Keep them updated on changes to DonorDesk or donor requirements
+- Check their activity in the audit log if you need to.
+- Adjust their role if they need more or less access ([guide](/support/how-to/manage-team-roles-permissions)).

@@ -168,4 +168,4 @@ Your report should reference monitoring visits and note how findings were acted 
 5. **Generic protection language** — DG ECHO expects specific, evidence-based protection reporting
 6. **Missing gender marker** — Always include the gender marker score
 
-> **Next:** Read [USAID Reporting](/support/report-writing-skills/donor-specific/usaid-reporting) for guidance on United States Agency for International Development funding.
+> **Next:** Read [USAID Reporting](/support/report-writing-skills/usaid-reporting) for guidance on United States Agency for International Development funding.

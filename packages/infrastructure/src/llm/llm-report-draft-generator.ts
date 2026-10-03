@@ -130,6 +130,7 @@ function buildPeriodBlock(ctx: GenerateReportDraftInput["reportContext"]): strin
   return [
     `# Reporting Period`,
     `- Report Type: ${ctx.period.reportType}`,
+    ctx.period.scope ? `- Report Scope: ${ctx.period.scope}` : null,
     `- Period: ${ctx.period.startDate} to ${ctx.period.endDate}`,
     ctx.period.deadline ? `- Submission Deadline: ${ctx.period.deadline}` : null,
     ctx.period.internalReviewDeadline ? `- Internal Review Deadline: ${ctx.period.internalReviewDeadline}` : null,

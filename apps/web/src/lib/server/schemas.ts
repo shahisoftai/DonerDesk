@@ -534,6 +534,16 @@ export const ReportingPeriodItemSchema = z.object({
   internalReviewDeadline: z.string().nullable().optional(),
   daysUntilDeadline: z.number(),
   donorTemplateId: z.string().nullish(),
+  /** Focus of an activity / situation / custom report; empty for cadence reports. */
+  scope: z.object({
+    activityIds: z.array(z.string()).optional(),
+    eventName: z.string().optional(),
+    location: z.string().optional(),
+    situationDate: z.string().optional(),
+    summary: z.string().optional(),
+    title: z.string().optional(),
+    purpose: z.string().optional(),
+  }).optional(),
 });
 
 export const ReportingPeriodsResponseSchema = z.object({ items: z.array(ReportingPeriodItemSchema) });

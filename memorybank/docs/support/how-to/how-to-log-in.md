@@ -1,100 +1,34 @@
-# How to Log In to DonorDesk
+# How to Log In
 
-## Step-by-Step Login
+## Sign in with email and password
 
-### Step 1: Go to the Login Page
+1. Go to donordesk.online and click **Sign in**.
+2. Enter your **email** and **password**, then sign in. You land on **Home** (the dashboard).
 
-1. Open your browser
-2. Go to **https://donordesk.online**
-3. Click **Log in** in the top right corner
+## Sign in with Google
 
-### Step 2: Enter Your Credentials
+Click **Sign in with Google**. It works for accounts that already exist in DonorDesk with the same email address. If you see "Google Sign-In failed" or "The sign-in link expired", try again or use email and password.
 
-On the login page, enter:
+## Joining through an invitation
 
-- **Email** — Your registered email address (e.g., jane@yourorganisation.org)
-- **Password** — Your account password
+An Admin can invite you. You receive an **invitation link** (`/invite/accept?token=…`).
 
-### Step 3: Click Login
+1. Open the link. It shows **Join your workspace**.
+2. Enter your name and choose a password (at least 8 characters).
+3. Click **Accept invitation**, then sign in.
 
-Click the **Log in** button.
+Note: DonorDesk currently does not send invitation emails automatically. Your Admin shares the link with you directly. If a link stops working, ask them to invite you again.
 
-If your credentials are correct, you will be redirected to your **Dashboard**.
+## Forgot your password
 
-## Logging In with Google
+1. Click **Forgot password** on the sign-in page and enter your email.
+2. If an account exists, a reset link is created. It **expires after 60 minutes**.
+3. Open it, choose a new password and confirm.
 
-If your organisation has connected Google Workspace:
+If you do not receive the email, contact support@donordesk.online from the address on your account and we will help you regain access. Ask your Admin, too.
 
-1. On the login page, click **Continue with Google**
-2. Select your Google account
-3. You will be logged in directly (no password needed)
+## Staying signed in
 
-This only works if your Google account email matches the one registered in DonorDesk.
+Sessions are stored securely in your browser. Use **Log out** when using a shared computer.
 
-## Troubleshooting Login Issues
-
-### "Invalid email or password"
-
-This means either:
-- Your email address is incorrect, OR
-- Your password is incorrect
-
-**What to try:**
-1. Check your email for typos
-2. Use **Forgot password** to reset your password
-3. Make sure Caps Lock is not on
-
-### "Your account has been suspended"
-
-Your account has been suspended by an administrator. Contact the Owner of your organisation workspace to restore access.
-
-### "You need to verify your email first"
-
-You must verify your email before logging in. Check your inbox for the verification email. If you did not receive it, use **Resend verification email** on the login page.
-
-### "Too many failed login attempts"
-
-After 5 failed login attempts, your account is temporarily locked for 15 minutes. Wait and try again, or use **Forgot password** to reset.
-
-### Browser Issues
-
-If the page does not load correctly:
-
-1. Clear your browser cache
-2. Try a different browser (Chrome, Firefox, Edge, Safari)
-3. Disable browser extensions temporarily
-4. Make sure JavaScript is enabled
-
-### Session Expired
-
-If you see "Your session has expired":
-
-1. Log in again
-2. You will return to the page you were on
-
-Sessions expire after a period of inactivity for security reasons.
-
-## Setting Up Two-Factor Authentication (Coming Soon)
-
-Two-factor authentication (2FA) adds an extra layer of security. When enabled, you will also need a code from your phone in addition to your password to log in.
-
-To enable 2FA (when available):
-1. Go to **Settings → Security**
-2. Click **Enable Two-Factor Authentication**
-3. Scan the QR code with an authenticator app (Google Authenticator, Authy)
-4. Enter the code to confirm
-5. Save your backup codes in a safe place
-
-## Staying Logged In
-
-If you check the **Remember me** box on the login page, you stay logged in for 30 days instead of the usual session length.
-
-Only use this on devices you trust and do not share.
-
-## Logging Out
-
-To log out:
-1. Click your name or avatar in the top right corner
-2. Click **Log out**
-
-Always log out when using a shared or public device.
+See [Troubleshooting login issues](/support/troubleshooting/login-issues).

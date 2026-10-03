@@ -1,137 +1,74 @@
 # How to Generate an AI Report Draft
 
-The AI report draft generator creates a narrative donor report from all the data you have entered: evidence, activities, and indicators.
+DonorDesk's **AI Reporter** writes the narrative of a donor report from the data already in your project. Numbers, tables, charts and comparisons are built from your **verified** indicator data. The AI writes only the prose around them, and every figure it uses is checked against that data before you see it.
 
-## Before You Generate
+## Before you generate
 
-Make sure you have completed these steps first:
+Open the reporting period and check the four steps in the **Reporting workspace**:
 
-- [ ] Created your project
-- [ ] Built your logframe with indicators
-- [ ] Set up your reporting period
-- [ ] Uploaded and verified evidence
-- [ ] Logged activities for the reporting period
-- [ ] Updated indicator values for the reporting period
+1. **Update Project** – indicator values entered (and verified), activities logged, evidence uploaded and linked for the period.
+2. **Tell the Story** – answers to the four story questions: challenges, why targets were over- or under-achieved, what changed or was adapted, and (optionally) a lesson or story.
+3. **Generate Draft**
+4. **Review & Submit**
 
-The more data you have entered, the better your AI draft will be.
+You also need:
+- a **reviewed donor template** pinned to the period (see [How to upload a donor template](/support/how-to/upload-donor-template)), otherwise a standard outline is used and flagged;
+- a role that can generate reports (Admin, Project Manager, M&E Officer or Grants Officer);
+- AI drafts left on your plan (see [Plans and limits](/support/account-billing/plans-and-limits)), unless you use your own AI provider.
 
-## Step-by-Step
+## Generate the first draft
 
-### Step 1: Open Your Reporting Period
+1. Go to **Projects → your project → Reporting** and open the reporting period.
+2. In the report editor click **Generate report** (the single primary button at the top right). A launch card lists what will be used.
+3. Watch the progress. A short animated panel shows the AI working, and sections appear as they finish. Several sections are written in parallel, and the executive summary and conclusion are written last, from the other sections.
+4. If you leave the page, generation continues; come back and reopen the period.
 
-1. Go to your project
-2. Click **Reports** tab
-3. Open your reporting period (e.g., "Q3 2026 Progress Report")
+If a section takes too long or fails our fact checks, DonorDesk shows a plain-language reason and uses a **basic, deterministic version** for that section. The rest of the report carries on, and the fallback is never billed as an AI draft.
 
-### Step 2: Go to the Report Workspace
+## What you get
 
-Click **Open Report** on the reporting period dashboard.
+- A **hierarchical outline** that mirrors the donor template (numbered sections and sub-sections).
+- **Tables, charts and comparisons** built from verified findings: period values, targets, percent of target and change from the previous period.
+- **Statement checks:** each factual statement is compared with evidence and indicator data.
+- **Sources** for each section: evidence files, activities and indicator updates.
+- If **AI Writing Style** is turned on, approved style preferences are applied (see [AI Writing Style](/support/advanced-features/ai-settings)).
 
-### Step 3: Click Generate
+## Regenerate one section
 
-Click the **Generate Report Draft** button.
+1. Select the section in the outline.
+2. Click the **↻ Regenerate** button on the section.
+3. Optionally type an instruction ("shorter", "focus on the women's groups").
+4. Wait for the new text. If the writer falls back or times out, your previous text is kept.
 
-You will see a generation panel with options.
+Section regeneration does not use an AI draft credit but is limited to a set number per report per hour. Sections you have already approved are reopened when you regenerate them.
 
-### Step 4: Choose Your Options
+## Ask AI on a selection
 
-| Option | What it does |
-|--------|-------------|
-| **Generate all sections** | Creates draft text for every section at once |
-| **Generate selected sections** | Pick specific sections to generate |
-| **Include previous period comparison** | Adds a comparison with the last reporting period |
-| **Include evidence citations** | Shows which evidence supports each claim |
+Select text in the editor and use the **Ask AI** (✦) button to rewrite, shorten or change tone. You always choose whether to accept the result.
 
-### Step 5: Wait for Generation
+## Review what the AI wrote
 
-Generation usually takes **30-90 seconds**. Do not close the window.
+Work through the **flagged statements** (see [How to review and approve reports](/support/how-to/review-and-approve-reports)):
 
-You will see progress indicators for each section.
+- **Matches evidence** – no action needed.
+- **Needs a decision** – the wording does not match the evidence. Correct it, use the evidence value, keep it with a note, or leave it out.
+- **Kept with a note / Left out** – your decision. Left-out statements are removed from exports.
 
-### Step 6: Review Each Section
+The AI cannot invent numbers: any figure that is not in your verified inputs is rejected before you see it.
 
-After generation, you will see draft text in each section. For every section:
+## Credits
 
-1. **Read the text** carefully
-2. **Check the source references** — Click on them to verify the source
-3. **Edit** anything that is inaccurate or needs your voice
-4. **Mark as reviewed** — Click the checkmark when you are satisfied
+| Action | Uses an AI draft credit? |
+|---|---|
+| Successful full draft | Yes, 1 |
+| Fallback (basic) draft | No |
+| Failed generation | No (credit released) |
+| Regenerate one section | No (rate-limited) |
+| Using your own AI provider (Growth/Enterprise, set up by the DonorDesk team) | No |
+| AI evidence tagging | No |
 
-### Step 7: Address Warnings
+Check usage in **Settings → Billing**.
 
-If the compliance checklist flags any unreviewed AI content, review and approve those sections.
+## If generation does not work
 
-## Understanding Source References
-
-Every paragraph in an AI draft that comes from specific evidence or activities will show source chips:
-
-```
-"During Q3, 142 caregivers attended IYCF counselling sessions..."
-  ↳ Source: Activity #14 — IYCF counselling session (Aug 3)
-  ↳ Source: Attendance Sheet #22 — Aug 3 attendance
-  ↳ Source: Indicator OUT-1 update — Q3 value
-```
-
-Click any source to jump directly to the original data.
-
-## Regenerating Individual Sections
-
-If a section is not good enough:
-
-1. Hover over the section
-2. Click **Regenerate**
-3. Wait for the new version
-4. Review and accept
-
-Each regeneration uses one AI credit.
-
-## Using AI Editing Tools
-
-Within the report editor:
-
-| Action | When to use |
-|--------|-------------|
-| **AI Rewrite** | Rewrite a paragraph in different wording |
-| **AI Shorten** | Make a section more concise |
-| **Make Donor-Friendly** | Adjust tone for a specific donor's style |
-
-Select text, then click the AI tool. Each action uses one credit.
-
-## What the AI Cannot Do
-
-AI is a tool that helps you draft faster. It does not replace human judgment:
-
-- **It may make errors** — Always verify facts and figures
-- **It may sound generic** — Edit for your project's specific context
-- **It cannot verify evidence** — That is a human responsibility
-- **It needs good data** — The more complete your indicators and evidence, the better the draft
-
-## Monitoring AI Credit Usage
-
-To see how many AI credits you have used this month:
-
-1. Go to **Settings → Billing**
-2. Look at **Usage → AI Report Drafts**
-3. See your used/remaining credits
-
-## What Uses AI Credits
-
-| Action | Credits used |
-|--------|-------------|
-| Generate full report draft | 1 credit |
-| Generate single section | 1 credit per section |
-| AI Rewrite (per action) | 1 credit |
-| AI Shorten (per action) | 1 credit |
-| AI evidence tagging | 0 (free) |
-
-## Failed Generation
-
-If generation fails:
-- Your credit is released (not charged)
-- You will see an error message
-- Try again, or write the section manually
-- If the problem persists, contact support
-
-## When AI is Unavailable (Stub Mode)
-
-If the AI service is temporarily down, DonorDesk uses a "stub" response that provides a basic structure based on your data values. This is clearly marked and does not use credits. When AI comes back, regenerate for the full content.
+See [Troubleshooting AI report generation](/support/troubleshooting/ai-report-generation).

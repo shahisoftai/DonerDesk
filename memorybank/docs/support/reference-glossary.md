@@ -11,7 +11,7 @@ A specific task or event carried out as part of a project. Examples: training se
 A report section or full report generated automatically by DonorDesk's AI, based on your project data.
 
 **API (Application Programming Interface)**
-A way for developers to connect DonorDesk to other software systems.
+A way for software systems to talk to each other. DonorDesk does not currently offer a public API.
 
 **Approval Workflow**
 The process of submitting, reviewing, and approving a report before it goes to the donor.
@@ -130,3 +130,32 @@ The process of a reviewer confirming that evidence or indicator data is accurate
 
 **Workspace**
 Your organisation's private space in DonorDesk. Contains all your projects, team members, and settings. Completely isolated from other organisations' workspaces.
+
+## DonorDesk-specific terms
+
+**Academy**
+The guided product tour and sample demo project. See [How to use the Academy tour](/support/how-to/use-the-academy-tour).
+
+**AI Reporter**
+The report writer that drafts each section from verified findings, following the donor template.
+
+**AI Writing Style**
+Optional wording preferences learned from your team's edits. Style only, never numbers or facts.
+
+**Flagged statement**
+A statement in a report that the evidence does not fully support. Someone decides: use the evidence value, edit, keep with a note, or leave out.
+
+**Reporting profile**
+A project's language, tone, formatting rules and special requirements for its reports.
+
+**Report gate**
+The check run before approval, submission and export.
+
+**Snapshot**
+A sealed copy of the approved report used for donor submission exports.
+
+**Stale verification**
+A verification that no longer holds because the data or evidence changed afterwards.
+
+**Top-up pack**
+Extra AI report drafts bought on Team or Growth.

@@ -507,7 +507,7 @@ def test_run_pipeline_backs_off_and_recovers_from_transient_429(monkeypatch) -> 
     calls = {"n": 0}
     good_section = GeneratedSection(sectionId="s", title="Executive Summary", content="Real content.")
 
-    def fake_draft(req):
+    def fake_draft(req, **kw):
         calls["n"] += 1
         if calls["n"] == 1:
             raise TransientProviderError(429, 0.01, "rate limited")
@@ -533,7 +533,7 @@ def test_run_pipeline_does_not_back_off_on_non_transient_error(monkeypatch) -> N
     calls = {"n": 0}
     good_section = GeneratedSection(sectionId="s", title="Executive Summary", content="Real content.")
 
-    def fake_draft(req):
+    def fake_draft(req, **kw):
         calls["n"] += 1
         if calls["n"] == 1:
             raise RuntimeError("401 unauthorized")
@@ -556,7 +556,7 @@ def test_run_pipeline_gives_up_once_total_budget_exhausted(monkeypatch) -> None:
     from app.ai_reporter import pipeline, timeouts
     from app.ai_reporter.llm_gateway import TransientProviderError
 
-    def always_transient(req):
+    def always_transient(req, **kw):
         raise TransientProviderError(429, None, "rate limited")
 
     monkeypatch.setattr(pipeline, "draft", always_transient)
@@ -599,10 +599,11 @@ def test_extract_json_does_not_salvage_truncated_prose() -> None:
         extract_json(raw2)
 
 
-def test_draft_retries_once_when_model_returns_no_json(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pipeline_retries_once_when_model_returns_no_json(monkeypatch: pytest.MonkeyPatch) -> None:
     """Regression (live 2026-09-26): a reasoning model sometimes returns no JSON;
-    one retry avoids discarding the section."""
-    from app.ai_reporter import draft_writer
+    one retry avoids discarding the section. The retry is owned by the
+    pipeline (inside the section budget), not hidden inside `draft()`."""
+    from app.ai_reporter import draft_writer, pipeline
 
     replies = iter(
         [
@@ -611,8 +612,24 @@ def test_draft_retries_once_when_model_returns_no_json(monkeypatch: pytest.Monke
         ]
     )
     monkeypatch.setattr(draft_writer, "_chat", lambda *a, **k: next(replies))
-    section = draft_writer.draft(_request())
+    section, telemetry = pipeline.run_pipeline(_request())
     assert section.content == "Ok."
+    assert telemetry["inputTokens"] == 2  # both calls counted
+
+
+def test_draft_makes_exactly_one_provider_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.ai_reporter import draft_writer
+
+    calls = {"n": 0}
+
+    def fake_chat(*a, **k):
+        calls["n"] += 1
+        return "", {"inputTokens": 1, "outputTokens": 0, "latencyMs": 1, "parseOutcome": "VALID"}
+
+    monkeypatch.setattr(draft_writer, "_chat", fake_chat)
+    with pytest.raises(ValueError):
+        draft_writer.draft(_request())
+    assert calls["n"] == 1
 
 
 def test_draft_raises_when_model_never_returns_json(monkeypatch: pytest.MonkeyPatch) -> None:

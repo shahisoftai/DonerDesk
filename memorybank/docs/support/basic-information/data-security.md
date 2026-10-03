@@ -1,109 +1,51 @@
-# Data Security in DonorDesk
+# Data Security
 
-DonorDesk is built with security as a core requirement. This guide explains how your data is protected.
+How DonorDesk protects your organisation's data. The public [Security & trust](/security) page has the current summary.
 
-## Multi-Tenant Architecture
+## Tenant isolation
 
-DonorDesk uses a **multi-tenant** architecture. This means:
+Every organisation is a separate **tenant**. Each row of tenant data carries your organisation's ID, and the **database itself enforces row-level security**: a session scoped to one organisation cannot read or change another's rows, even if application code had a bug. The application's database role has no bypass.
 
-- All organisations share the same database server
-- But each organisation's data is completely isolated from others
-- A technical mechanism called **Row-Level Security (RLS)** enforces this isolation at the database level
-- No organisation can ever see, access, or modify another organisation's data
+## Access control
 
-Even if someone tried to bypass application-level controls, the database itself would block access to other tenants' data.
+- **Roles** control what each person can see and do (see [User roles and permissions](/support/getting-started/user-roles-and-permissions)).
+- **Project assignments** limit which projects a member works on.
+- Sessions use secure, httpOnly cookies that page scripts cannot read.
+- Passwords are stored hashed, never in plain text.
+- Sign in with email and password or with Google. DonorDesk does not currently offer two-factor authentication.
 
-## Data Encryption
+## Encryption
 
-| Data state | Protection |
-|------------|------------|
-| **In transit** | All data is encrypted using TLS when sent between your browser and DonorDesk servers |
-| **At rest** | Data stored on DonorDesk servers is encrypted at rest |
-| **In backups** | Backup data is also encrypted |
+Data is encrypted in transit (TLS). Data at rest is encrypted where supported by the storage infrastructure.
 
-## Server Infrastructure
+## Your files
 
-DonorDesk runs on secure cloud infrastructure:
-- Firewalls block unauthorized access
-- Regular security updates are applied to the operating system
-- Database access requires authentication
-- Sensitive services run in isolated network zones
+- **Google Drive (link-first):** evidence stays in your own Drive. DonorDesk keeps references and access, not a copy of the file.
+- **DonorDesk storage (optional):** managed object storage for organisations that choose it.
 
-## Authentication
+## Confidential evidence
 
-DonorDesk uses:
-- **Password hashing** — Your password is never stored in plain text. It is hashed using a strong algorithm before storage.
-- **JWT sessions** — Authentication uses short-lived JSON Web Tokens that expire automatically
-- **Secure cookies** — Session tokens use httpOnly cookies that cannot be read by JavaScript
+Files marked **Sensitive** or **Highly sensitive**:
+- are withheld from AI drafting;
+- trigger an export block if a report cites them, until an Admin or Grants Officer confirms;
+- are flagged in the compliance checklist.
 
-## Google Sign-In
+## AI and your data
 
-If your organisation uses Google Sign-In:
-- DonorDesk receives only your email and name from Google
-- DonorDesk does not access your Gmail, Google Drive (unless explicitly connected), or any other Google data
-- You can revoke DonorDesk's access at any time from your Google account settings
+AI providers receive only what is needed to draft the section you request, and are required to process it only for that purpose. Drafts are checked against your verified data, and prompts and model versions are recorded. You can turn AI off entirely in **Settings**, and Growth/Enterprise workspaces can use their own AI provider. AI Writing Style learns wording only, never facts or numbers.
 
-## Role-Based Access Control
+## Audit trail
 
-Access in DonorDesk is controlled at two levels:
+Actions are recorded in an audit log (Admin, Project Manager and Compliance Officer can view it). Records cannot be edited.
 
-1. **Organisation-wide roles** — Your role (Admin, Project Manager, etc.) determines what you can see across the organisation
-2. **Project-level permissions** — Within each project, you may have additional permissions or restrictions
+## Data residency
 
-You only see the projects and data that your role allows.
+Choose a data-residency setting when you sign up or in **Settings** (Platform default, EU, US, Africa, Asia). It restricts where your organisation's data may be written. Custom data residency is part of the Enterprise plan; contact us if you have a specific requirement.
 
-## Evidence and Sensitive Data
+## Subprocessors
 
-When handling evidence marked as Sensitive or Highly Sensitive:
-- DonorDesk warns you before including such evidence in exports
-- You can set file-level confidentiality levels
-- Sensitive evidence is excluded from public download links
-- Access to Highly Sensitive evidence may be restricted to specific roles
+Creem (payments), Google Drive (optional storage), Cloudflare R2 (optional managed storage) and AI providers configured for your workspace. No subprocessor is used for your content unless your configuration selects it. A full list is available from legal@donordesk.online.
 
-## Audit Logging
+## Report a concern
 
-Every significant action in DonorDesk is recorded:
-- Who did it (user identity)
-- What they did (action type)
-- When it happened (timestamp)
-- What data was affected (entity and ID)
-
-Audit logs are:
-- Stored immutably (cannot be deleted or altered)
-- Accessible to organisation admins and compliance officers
-- Retained for security and compliance purposes
-
-This means if something goes wrong, there is a complete record of what happened.
-
-## AI and Your Data
-
-When you use AI report generation:
-- Evidence text and activity data are sent to the AI service to generate your draft
-- Data is used only for the specific generation task requested
-- Your project data is not used to train AI models
-- AI providers are selected with data sensitivity in mind
-
-## No Data Selling
-
-DonorDesk does not sell, rent, or share your project data with third parties for marketing or advertising purposes.
-
-Your data is used only to provide the DonorDesk service to your organisation.
-
-## Your Responsibilities
-
-To keep your data safe:
-- Use a **strong, unique password**
-- **Never share** your login credentials
-- **Enable** two-factor authentication (when available)
-- Only invite people you **trust** to your workspace
-- Set **appropriate confidentiality levels** on evidence files
-- **Log out** when using shared devices
-- Report any suspicious activity to **support@donordesk.online** immediately
-
-## Data Residency
-
-By default, DonorDesk processes data on servers in Europe. If your organisation has specific data residency requirements (e.g., data must stay in your country), contact DonorDesk about custom data residency configurations.
-
-## Security Contact
-
-If you discover a security vulnerability or have a security concern, please contact **support@donordesk.online** with details. DonorDesk takes all security reports seriously and will respond promptly.
+Email privacy@donordesk.online. To request a Data Processing Agreement (Growth/Enterprise), email the same address or use the [sales contact form](/contact-sales).

@@ -1,129 +1,37 @@
 # Understanding Report Readiness
 
-The readiness score tells you how close you are to having a complete, submittable donor report. It is expressed as a percentage (0-100%).
+DonorDesk shows several readiness signals. They answer different questions.
 
-## What the Score Means
+## 1. Project setup readiness
 
-| Score | Meaning | Action needed |
-|-------|---------|---------------|
-| 0-30% | Major gaps | A lot of work needed |
-| 31-60% | Some gaps | Address high/critical items first |
-| 61-80% | Mostly ready | Only minor items remain |
-| 81-95% | Nearly ready | Fix remaining low items |
-| 96-100% | Fully ready | Can export and submit |
+On the project's **Setup** page: *Not started, In progress, Ready, Action required*. It is computed from live project data (nothing is stored), so it can change back to **Action required** if you later remove something required.
 
-## How the Score Is Calculated
+To be **Ready**, a project needs:
 
-The readiness score has five components:
+- its workspace folder provisioned (Google Drive tenants) or not required (other storage);
+- a donor template with at least one reviewed required section;
+- at least one indicator, and every quantitative indicator with a baseline, target, unit and frequency;
+- a reporting profile.
 
-| Component | Weight | What it measures |
-|-----------|--------|------------------|
-| Report sections | 25% | How many sections are written and reviewed |
-| Indicator updates | 20% | How many indicators are verified for this period |
-| Evidence completeness | 25% | How much required evidence is uploaded and verified |
-| Compliance checklist | 20% | How many compliance items are resolved |
-| Approval status | 10% | How far through the approval workflow |
+Team assignment is recommended but not blocking. Until the project is ready you cannot create a reporting period, but you can still work on evidence, activities, logframe, templates and team. The **readiness breakdown** lists each blocker with a **Fix** link. Click **Mark setup complete** once it is ready.
 
-## Reading the Readiness Breakdown
+## 2. Report readiness (in the editor)
 
-Click on the readiness score ring to see the breakdown:
+The top bar shows a percent-ready pill, for example **72% ready · 3 to do**, with previous/next arrows to jump between remaining items. It combines:
 
-```
-Overall Readiness: 72%
+- flagged statements that need a decision;
+- sections not yet approved;
+- blocking checks (checklist items, unverified indicator data, stale summaries, confidentiality confirmations).
 
-Sections:        85% ██████████░░
-Indicators:     60% ██████░░░░░░
-Evidence:       75% ███████░░░░░
-Compliance:     68% ██████░░░░░░
-Approval:       50% █████░░░░░░░
-```
+Click it to open the **Report checks** panel. Warnings never block; blocking items mirror the server-side approval gate, which stays authoritative.
 
-This shows exactly where the gaps are.
+## 3. Compliance readiness
 
-## What Makes Each Component
+The [compliance checklist](/support/getting-started/understanding-compliance-checklist) tracks required documents and annexes per project and period, with severity levels (Low to Critical).
 
-### Sections Score (25%)
-- How many report sections have content
-- How many sections have been reviewed
-- Status: Not Started → Drafted → Needs Review → Approved
+## Improving readiness
 
-### Indicators Score (20%)
-- How many logframe indicators have values for this period
-- How many are submitted and verified
-- Status: Draft → Submitted → Verified
-
-### Evidence Score (25%)
-- How much required evidence is uploaded
-- How much is linked to activities
-- How much is verified
-- Based on donor template requirements
-
-### Compliance Score (20%)
-- Number of open critical/high items
-- Number of resolved items
-- Items accepted as risk
-
-### Approval Score (10%)
-- Draft → Under Review → Approved → Submitted → Closed
-
-## How to Improve Your Score
-
-### If Sections Score Is Low
-
-1. Generate an AI draft
-2. Review and edit each section
-3. Mark sections as reviewed
-
-### If Indicators Score Is Low
-
-1. Go to the Indicators tab
-2. Enter values for all indicators
-3. Submit and verify each row
-
-### If Evidence Score Is Low
-
-1. Go to the Compliance tab
-2. See what evidence is missing
-3. Upload and link evidence
-4. Verify the evidence
-
-### If Compliance Score Is Low
-
-1. Look at open compliance items
-2. Resolve or accept each one
-3. Pay attention to High and Critical items
-
-### If Approval Score Is Low
-
-1. Submit the report for review
-2. Wait for reviewer feedback
-3. Make any requested changes
-4. Get final approval
-
-## Readiness vs Completeness
-
-A report can be 100% complete but still not ready to submit because:
-- Evidence may not be verified
-- Compliance items may be open
-- Approval workflow may not be complete
-
-The readiness score considers all these factors.
-
-## Deadline Warning
-
-The readiness score becomes more important as the deadline approaches:
-
-| Days until deadline | What to focus on |
-|-------------------|-----------------|
-| 30+ days | Sections and indicators |
-| 14-30 days | Evidence and compliance |
-| 7-14 days | Resolving critical items |
-| <7 days | Final review and approval |
-
-## Where to Find the Readiness Score
-
-The readiness score appears in:
-- Project dashboard
-- Reporting period overview
-- Reports list
-- Report workspace header
+1. Follow the primary button: it always points to the next most useful action.
+2. Verify indicator data and evidence.
+3. Resolve missing-evidence items (in bulk if needed).
+4. Approve each section.

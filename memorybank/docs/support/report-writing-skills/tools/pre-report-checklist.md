@@ -41,7 +41,7 @@ Use this checklist before every donor report submission. Work through each secti
 
 ## Section 4: Evidence Quality
 
-- [ ] Every indicator value has a corresponding evidence record in DonorDesk
+- [ ] Every indicator value has linked, verified evidence in DonorDesk
 - [ ] Evidence citations use the correct ID format (e.g., EV-2026-Q2-047)
 - [ ] Evidence is referenced in the narrative: "This result is evidenced by [Evidence ID]"
 - [ ] For surveys: methodology, sample size, dates, and instruments are described
@@ -148,7 +148,7 @@ Use this checklist before every donor report submission. Work through each secti
 - [ ] Submission deadline noted and met (account for time zone differences)
 - [ ] Submission method correct (portal, email, courier — per grant agreement)
 - [ ] Confirmation of receipt obtained (if no automated confirmation)
-- [ ] Copy of submitted report filed in DonorDesk / document management system
+- [ ] Copy of submitted report kept (DonorDesk export history / document management system)
 
 ---
 
@@ -169,7 +169,7 @@ Before submitting, confirm:
 ## Common Last-Minute Errors to Catch
 
 1. **Indicator table and narrative figures don't match** — Cross-check every number
-2. **Evidence ID is wrong** — Verify the ID exists in DonorDesk
+2. **Evidence reference is wrong** — Verify the file exists and is linked in DonorDesk
 3. **Old reporting period date in the header** — Update for every new report
 4. **Someone's name is misspelled** — Especially partner organisations and donors
 5. **File attachment is the wrong version** — Always label files with version and date

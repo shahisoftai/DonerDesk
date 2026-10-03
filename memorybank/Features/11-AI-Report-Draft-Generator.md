@@ -500,3 +500,8 @@ chunked and cited), and Activities (full narrative) — previously evidence was 
 titles/stub summaries and activities were only evidence-ID sources. See
 `../Fixes.md` ("AI report generation ignored evidence content and
 activity/indicator narratives").
+
+**Report scope (2026-10-03):** activity/situation/custom reports pass a one-paragraph focus (`period.scope`, built by
+`describeReportScope`) to both writers — the legacy narrator's "Reporting Period" block and the AI Reporter's `ContextPeriod`
+(report-wide prefix, so prefix caching is unaffected; omitted for cadence reports). Activity reports draft only from the selected
+activities. See Feature 10 "Report types & scope".

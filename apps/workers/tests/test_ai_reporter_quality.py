@@ -239,7 +239,7 @@ def test_pipeline_retries_with_feedback_and_keeps_fixed_draft(monkeypatch) -> No
 
     def fake_draft(req, **kw):
         calls.append(kw)
-        text = "The project reached 5,000 households." if not kw else "The project rehabilitated 96 centres, up from 60."
+        text = "The project reached 5,000 households." if "feedback" not in kw else "The project rehabilitated 96 centres, up from 60."
         return GeneratedSection(sectionId="s", title=req.section.title, content=text)
 
     monkeypatch.setattr(pipeline, "draft", fake_draft)

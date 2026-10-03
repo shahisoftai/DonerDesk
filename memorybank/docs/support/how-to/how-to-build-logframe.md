@@ -1,168 +1,52 @@
 # How to Build a Logframe
 
-Building a logframe in DonorDesk means creating the hierarchy of your project plan: Goal, Outcomes, Outputs, Activities, and their linked Indicators.
+The logframe (results framework) is the backbone of your reporting: goals, outcomes, outputs and activities, with indicators to measure them. Who can edit it: Admin, Project Manager and M&E Officer.
 
-## Before You Start
+Open **Projects → your project → Logframe**.
 
-Make sure you have:
-- Created your project
-- Reviewed your donor's logframe format (if they have one)
-- Identified the main Goal of your project
+## Option A: Import from Excel or CSV (fastest)
 
-## Three Ways to Build a Logframe
+1. On the Logframe page click **Download template** and fill in the **Logframe** sheet (one row per item with its code, level, title and parent code).
+2. Click **Import logframe from Excel** and upload the file (XLSX, CSV or TXT).
+3. **Review the parsed content** shown on screen, then create the records.
+4. Items are created with their parent links. Rows whose **code already exists are skipped**, so re-importing is safe.
+5. Fill in the **Indicators** sheet and use **Import indicators from Excel**. Each indicator's code must match a logframe item's code in this project.
 
-### Method 1: Import from a File (Recommended)
+## Option B: Build by hand
 
-If you already have a logframe in Excel, CSV, or Word format:
+1. Click to add a logframe item. Choose its **level** (Goal, Outcome, Output or Activity), give it a **code** and title, and pick its **parent** with the item picker.
+2. Add child items under each parent.
+3. Add indicators (see below).
 
-1. Go to your project → **Logframe** tab
-2. Click **Import Logframe**
-3. Upload your file (XLSX, CSV, DOCX, or TXT)
-4. DonorDesk analyses the file structure
-5. Preview the hierarchy it has detected
-6. Map columns if needed (Code → Level → Title → Description)
-7. Click **Import and Create**
+## Rearranging the hierarchy
 
-**Tip:** If your logframe has a standard format (e.g., rows with Goal/Outcome/Output/Activity labels), DonorDesk can usually detect it automatically.
+The **Logframe hierarchy** is a tree. Drag an item to reorder it or drop it under another item to change its parent. There is also a **Move to** menu (including "top level") for keyboard and touch use. The order you set is kept.
 
-### Method 2: Build Manually
+## Add an indicator
 
-#### Step 1: Add the Goal
+1. Click **New indicator** and pick the **logframe item** it measures.
+2. Enter the **indicator name** and type: Number, Percentage, Yes/No, Text, Ratio, Currency or Custom.
+3. Set **baseline**, **target**, **unit** and **frequency**. All four are required for a quantitative indicator before the project can be reporting-ready.
+4. Optionally add **data source** and **means of verification**.
+5. For percentage and ratio indicators you are taken to **set the calculation** (see below).
+6. **Disaggregation** (Sex, Age group, Disability, Location or Other): add a dimension with categories (for example Female/Male). Values can then be entered per category. For Number and Currency indicators each breakdown must add up to the period total.
 
-1. Click **Add item**
-2. Select **Goal** as the level
-3. Enter:
-   - **Code:** GOAL-1 (or your numbering system)
-   - **Title:** The overall project goal
-   - **Description:** Optional detail
-4. Click **Save**
+## Set how an indicator is calculated
 
-#### Step 2: Add Outcomes
+Open an indicator and use **Calculation**:
 
-1. Hover over the Goal
-2. Click the **+** icon that appears
-3. Select **Outcome**
-4. Fill in code and title
-5. Save
+- **Reporting basis:** *Reported directly (latest value)*, *Sum of period values* (counts that add up), *Average of values*, *Highest value*, *Lowest value*, or *Cumulative to date*.
+- **Percentage / ratio:** choose the **numerator** and **denominator** indicators. Until this is set, these indicators show as "Not calculable" in reports.
+- **Direction of progress:** Higher is better, Lower is better, or Neutral (descriptive only).
 
-#### Step 3: Add Outputs
+New drafts use the saved calculation.
 
-1. Hover over the Outcome
-2. Click **+**
-3. Select **Output**
-4. Fill in details
+## Indicator page
 
-#### Step 4: Add Activities
+Each indicator page shows a **progress card** (share of the distance from baseline to target, and the latest period breakdown), a **history** of updates, and the **verification pipeline**.
 
-1. Hover over the Output
-2. Click **+**
-3. Select **Activity**
-4. Fill in details
+## Tips
 
-The hierarchy builds up: Goal → Outcome → Output → Activity.
-
-### Method 3: Use AI to Structure Your Logframe
-
-If you have a written description of your project plan:
-
-1. Click **AI Structure Logframe**
-2. Paste your logframe text or description
-3. Click **Generate**
-4. AI will suggest the full hierarchy
-5. Review each item
-6. Accept or modify as needed
-7. Click **Save**
-
-## Adding Indicators to Logframe Items
-
-For each logframe item, you can add one or more indicators:
-
-### Step 1: Find the Item
-
-Navigate to the logframe and find the item you want to add an indicator to.
-
-### Step 2: Add Indicator
-
-Click **Add Indicator** on the right side of the item.
-
-### Step 3: Fill in Indicator Details
-
-| Field | What to enter | Example |
-|-------|--------------|---------|
-| **Code** | Short unique code | "OUT-IND-1" |
-| **Name** | Full indicator name | "Number of women receiving 4+ ANC visits" |
-| **Type** | How it is measured | "Number" |
-| **Baseline** | Starting value (often 0) | "0" |
-| **Target** | What you aim to achieve | "400" |
-| **Unit** | What you are counting | "women" |
-| **Means of Verification** | How it will be measured | "ANC register at health facilities" |
-| **Data Source** | Where the data comes from | "DHIS2" |
-
-### Step 4: Save
-
-Click **Save Indicator**.
-
-## Understanding Indicator Types
-
-| Type | When to use | Example |
-|------|-------------|---------|
-| **Number** | Counting discrete items | "50 children trained" |
-| **Percentage** | Proportions or rates | "75% of women delivered with SBA" |
-| **Yes/No** | Binary outcomes | "Community committee formed: Yes" |
-| **Text** | Descriptive information | "Quality rating: Good" |
-| **Ratio** | Comparing two values | "Male:female ratio: 1:2" |
-| **Currency** | Financial amounts | "USD 45,000 disbursed" |
-
-## Importing Indicators from a Spreadsheet
-
-If your logframe has many indicators in a spreadsheet:
-
-1. Go to **Logframe** tab
-2. Click **Import Indicators**
-3. Upload your XLSX or CSV file
-4. Map the columns (Code, Name, Type, Baseline, Target, Unit)
-5. Preview the data
-6. Click **Import**
-
-## Viewing the Logframe
-
-The logframe displays as a tree structure:
-
-- Click the **arrow** next to an item to expand it
-- Click **collapse all** to see just the top levels
-- Use the **zoom slider** to adjust the view
-- Click on any item to open its detail panel
-
-## Editing Logframe Items
-
-To edit an existing item:
-
-1. Click on the item in the logframe tree
-2. The detail panel opens on the right
-3. Edit the fields
-4. Click **Save**
-
-## Reordering Items
-
-To reorder items at the same level:
-1. Click and hold the **drag handle** (six-dot icon) on the left of an item
-2. Drag it up or down
-3. Release to drop it in the new position
-
-## Deleting Items
-
-To delete a logframe item:
-1. Click on the item
-2. Click **Delete** (trash icon)
-3. Confirm
-
-**Note:** Deleting an item also deletes all its children and linked indicators. Be careful.
-
-## Best Practices for Logframe Design
-
-1. **Start with the Goal** — Write the overall project goal first
-2. **Work downward** — Define outcomes, then outputs, then activities
-3. **One level per item** — Each item should belong to exactly one level
-4. **SMART indicators** — Make them Specific, Measurable, Achievable, Relevant, Time-bound
-5. **Keep it manageable** — 1 Goal, 3-5 Outcomes, 4-8 Outputs, 8-15 Activities is typical
-6. **Match donor format** — If your donor has a required logframe template, use it
+- Use short, stable codes (OUT-1, OC-2). They are used for imports.
+- Fix baselines and targets before entering values.
+- The project is not reporting-ready until it has at least one indicator and every quantitative one is complete. See [Understanding report readiness](/support/getting-started/report-readiness).

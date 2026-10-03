@@ -1,110 +1,53 @@
 # Troubleshooting AI Report Generation
 
-## "AI credits exhausted"
+DonorDesk always tries to give you a report. If the AI cannot write a section properly, it uses a **basic (deterministic) version** for that section and tells you why. The rest of the report continues.
 
-You have used all your monthly AI credits. Options:
+## Messages you may see and what to do
 
-1. **Wait until the 1st of next month** — credits reset automatically
-2. **Upgrade your plan** — Team has 100/month, Growth has 500/month
-3. **Write sections manually** — you do not have to use AI
+| Message | Meaning | What to do |
+|---|---|---|
+| AI writing is switched off for this workspace, so a basic version was used. | AI is disabled. | An Admin can enable **AI enabled** in **Settings → Settings**. |
+| AI writing is not set up for your organisation, so a basic version was used. | No AI provider is configured for your workspace. | Contact support@donordesk.online. |
+| The AI service took too long for this section… Try again. | The provider timed out. | Regenerate that section. |
+| The AI service returned no text / text we could not use… | Provider returned an empty or unusable answer. | Regenerate the section. |
+| The AI service could not be reached… Try again later. | Provider or network problem. | Wait and retry. |
+| The AI service refused this request because of personal data… | The content included personal data the provider rejects. | Remove personal details from the story or evidence text, then retry. |
+| The AI text did not pass our fact checks, so a basic version was used. | The draft contained numbers or claims not supported by your data. | Check that indicator values are entered and verified, then regenerate. |
 
-To check your credit usage: **Settings → Billing → AI Report Drafts**
+Fallback sections are not billed as AI drafts.
 
-## Generation Times Out or Fails
+## "Generate report" is missing or disabled
 
-### "Generation failed — please try again"
+- You need a role that can generate reports: Admin, Project Manager, M&E Officer or Grants Officer.
+- A **Reviewed** donor template must be pinned to the period. Approve the template first.
+- You may have reached your monthly AI drafts. Check **Settings → Billing**, buy a top-up pack (Team/Growth) or wait for the reset. You can still write manually.
+- If a generation is already running, wait for it to finish.
 
-**Solutions:**
-1. Try again — transient errors often resolve on retry
-2. Generate fewer sections at once (select individual sections)
-3. Check your internet connection
-4. If the problem persists, contact support
+## The draft is generic or thin
 
-### Takes longer than 2 minutes
+- Enter and **verify indicator values** for the period.
+- Upload evidence and **link** it to indicators and activities.
+- Fill in **Tell the Story**.
+- Make sure the donor template's sections have instructions and mandatory questions.
 
-Large reports with lots of data take longer. Wait up to 3 minutes. If it still does not complete, cancel and try generating a single section first.
+## Numbers look different from what I expected
 
-## AI Output is Wrong or Inaccurate
+Tables, charts and comparisons come from **verified** data, not from the AI. Fix or verify the indicator value and regenerate or re-check. Use **Use the evidence value** in the Statements tab for statements that disagree.
 
-AI generates content based on your project data. If the output is wrong:
+## Regenerate a section is blocked
 
-1. **Check your data** — The AI cannot correct inaccurate indicator values or evidence content
-2. **Edit the section** — You can always modify AI-generated text
-3. **Regenerate with more context** — Add more detail in the activity narratives and indicator comments
+| Message | Fix |
+|---|---|
+| Sections can only be regenerated while the report is a draft. | Reopen or use the current draft. |
+| This is an older version of the report. | Open the current version. |
+| The report is still being written. | Wait for generation to finish. |
+| This section is already being rewritten. | Wait a moment. |
+| You can regenerate up to N sections per hour for one report. | Try again later, or edit manually. |
 
-Remember: **You are responsible for the accuracy of your reports.** AI assists, but human review is always required.
+## Generation seems stuck
 
-## Sections Are Empty or Very Short
+Generation runs in the background; a full report can take several minutes. Reload the period page. If nothing changes after about ten minutes, email support@donordesk.online with the project and period.
 
-This happens when there is not enough data for the AI to work with.
+## Style suggestions do not appear
 
-**Solutions:**
-1. Add more activity narratives
-2. Update indicator values with comments
-3. Upload more evidence
-4. Link evidence to activities and indicators
-
-The more context you provide, the better the AI draft.
-
-## All Sections Show the Same Text
-
-This is a rare AI generation error.
-
-1. Click **Regenerate** on each section
-2. If the problem persists, contact support
-
-## Source References Are Wrong
-
-Source references are generated based on metadata. If a reference is wrong:
-
-1. Click on the source to verify the linked data
-2. Manually remove incorrect references
-3. Regenerate the section if the underlying data is wrong
-
-## "AI service temporarily unavailable"
-
-The AI service is down. DonorDesk will use a "stub" response that provides a basic structure.
-
-- No credits are charged for stub responses
-- Stub responses are clearly marked
-- Try generating again later when the service is restored
-
-## Report Sections Not Linked to Evidence
-
-AI can only cite evidence that is:
-1. Uploaded and verified
-2. Linked to activities or indicators
-3. Not marked as Highly Sensitive (these are excluded from AI context)
-
-If evidence is not being cited:
-1. Verify the evidence
-2. Link it to the relevant activity/output
-3. Regenerate the section
-
-## Cannot Regenerate a Single Section
-
-Regeneration is available for each section individually. Look for the **Regenerate** button (refresh icon) on each section.
-
-If the button is missing, you may not have edit permissions on that section. Ask your admin.
-
-## AI Credits Deducted but Generation Failed
-
-If generation failed but credits were deducted:
-- Credits are automatically released when generation fails
-- Wait a few minutes and check your balance
-- If credits were not released, contact support
-
-## Stub Response Instead of Real AI
-
-When the AI service is unavailable, DonorDesk generates a basic "stub" response using template text. This is clearly marked with a notice: "AI service unavailable — this is a placeholder."
-
-Stub responses do not use credits but are not adequate for donor submission. Generate real content when the service is restored.
-
-## Want Better AI Output? Tips
-
-1. **Write detailed activity narratives** — Include achievements, challenges, and participant numbers
-2. **Update all indicators** — Fill in period values and comments
-3. **Verify all evidence** — Verified evidence is included in AI context
-4. **Link everything** — Connect evidence to activities, activities to outputs
-5. **Add previous period data** — Helps AI write comparisons and trends
-6. **Include donor requirements** — Upload your donor template so AI knows what format is expected
+**AI Writing Style** must be enabled for your workspace and switched on in Settings, and learns only after your team edits AI-drafted sections. See [AI Settings](/support/advanced-features/ai-settings).

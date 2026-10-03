@@ -1,131 +1,51 @@
-# How to Create a Project in DonorDesk
+# How to Create a Project
 
-Creating a project is one of the first things you do after setting up your account. Each project in DonorDesk represents one donor-funded initiative.
+A **project** is one funded grant or programme with one donor and one reporting cycle. Only **Admins** can create projects. Check that you have a free project slot on your plan ([Plans and limits](/support/account-billing/plans-and-limits)); archived projects do not count.
 
-## Before You Start
+## Step 1: Start the wizard
 
-Make sure you have:
-- Completed the DonorDesk setup wizard
-- Have your project details ready (donor name, dates, sector, etc.)
-- Have the necessary permissions (Owner, Admin, or Project Manager role)
+Click **New project** on **Projects** (or use the Create menu in the top bar). The wizard has three steps plus a review screen. **Your progress is saved as a draft**, so you can leave and come back.
 
-## Step-by-Step
+### Identity
+- **Title** and **Project code** (required; codes should be unique in your workspace)
+- **Donor name**
+- **Implementing organization**
+- **Partner organization** (optional)
 
-### Step 1: Start a New Project
+### Geography and dates
+- **Country** (required), **Region** and **District** (optional)
+- **Sector** – Nutrition, Food security, WASH, Health, Protection, Education, Livelihoods, Shelter, Multi-sector or Other
+- **Start date** and **End date**
 
-**From the Dashboard:**
-1. Click **New Project** on the dashboard
+### Reporting
+- **Reporting frequency** – Monthly, Quarterly, Semi-annual, Annual, Final or Custom
+- **Budget amount** and **currency** (optional)
+- **Primary contact** (optional) and **Description**
 
-**From the Projects Page:**
-1. Go to **Projects** in the sidebar
-2. Click the **+** button or **Create Project**
+Review your answers and create the project.
 
-### Step 2: Enter Basic Information
+## Step 2: Finish setup
 
-Fill in the required fields:
+After creation you land on the project's **Setup** checklist. It tells you exactly what is still needed to start reporting:
 
-**Project Identity:**
-| Field | What to enter | Example |
-|-------|--------------|---------|
-| **Project title** | Full official name | "Integrated WASH Programme — Cox's Bazar 2026" |
-| **Project code** | Short internal code (optional) | "WASH-COX-26" |
-| **Donor name** | Funder's name | "UNICEF" |
-| **Implementing organisation** | Your organisation's name | "Hope Aid International" |
-| **Partner organisation** | Any partner (leave blank if none) | "Local Water Board" |
+1. **Project workspace folder** – created for you in Google Drive in the background (see [Connect Google Drive](/support/how-to/connect-google-drive)).
+2. **Donor template** – [upload and approve one](/support/how-to/upload-donor-template).
+3. **Logframe and indicators** – [build or import them](/support/how-to/build-logframe).
+4. **Reporting profile** – language, tone and rules for this project (defaults come from your organisation).
+5. **Team assignment** (recommended) – assign members on the project's Team tab.
 
-**Location:**
-| Field | What to enter |
-|-------|--------------|
-| **Country** | Select from dropdown |
-| **Region/District** | State, province, or district (optional) |
+Each item has a **Set up** button, and **Blockers** lists anything holding you back with a **Fix** link. When everything is green the status is **Ready** and you can **Mark setup complete** and [create a reporting period](/support/how-to/create-a-reporting-period).
 
-**Sector and Dates:**
-| Field | What to enter |
-|-------|--------------|
-| **Sector** | Select main sector (Nutrition, Health, WASH, etc.) |
-| **Start date** | Project start date |
-| **End date** | Project end date |
+You can keep working on evidence, activities and the logframe while setup is unfinished.
 
-**Reporting:**
-| Field | What to enter |
-|-------|--------------|
-| **Reporting frequency** | How often you report: Monthly, Quarterly, Semi-annual, Annual, Final report, or Custom |
-| **Description** | Brief description of the project (optional) |
+## Project pages
 
-### Step 3: Assign Team Leads (Optional)
+A project has these tabs: **Reporting**, **Overview**, **Logframe**, **Activities**, **Evidence**, **Templates**, **Team** and **Settings**.
 
-You can assign key roles now or later:
+## Edit or end a project
 
-- **Project Manager** — The overall lead
-- **M&E Officer** — Monitoring and evaluation contact
-- **Grants/Reporting Officer** — Person responsible for donor reports
+**Settings** lets you edit details, dates and budget and set the status (Active, Paused, Completed). See [How to archive a project](/support/how-to/archive-a-project).
 
-To assign: click the field and select from your existing team members.
+## Try it safely first
 
-### Step 4: Save the Project
-
-Click **Create Project** at the bottom of the form.
-
-Your project is created and you are taken to the project page.
-
-## What Happens Next
-
-After creating the project:
-
-1. **Project tabs appear** — Overview, Logframe, Activities, Evidence, Reports, Compliance, Team, Settings
-2. **Setup checklist** — You will see a checklist of things to set up (add logframe, upload template, etc.)
-3. **Create your first reporting period** — Go to the Reports tab and create your first reporting period
-
-## Completing the Setup Checklist
-
-After creating the project, work through the setup checklist:
-
-- [ ] Upload donor template (if you have one)
-- [ ] Build your logframe (Goal, Outcomes, Outputs, Activities)
-- [ ] Add indicators to your logframe
-- [ ] Create your first reporting period
-- [ ] Invite team members to the project
-- [ ] Start logging activities and uploading evidence
-
-## Editing Project Details
-
-To change project details later:
-
-1. Go to your project → **Settings** tab
-2. Edit the fields you need to change
-3. Click **Save Changes**
-
-You can change: title, code, donor, dates, sector, description, budget, status.
-
-## Project Status
-
-When you first create a project, its status is **Draft**. When you are ready to start implementation:
-
-1. Go to **Settings → Status**
-2. Change to **Active**
-
-Active projects count toward your plan's project limit.
-
-## Deleting a Project
-
-**This cannot be undone.** Before deleting:
-
-1. Export all reports you need
-2. Download all evidence files
-3. Make sure no one else needs the data
-
-To delete:
-1. Go to **Settings → Delete Project**
-2. Confirm by typing the project name
-3. Click **Delete permanently**
-
-## Project Limits by Plan
-
-| Plan | Active Projects |
-|------|----------------|
-| Starter | 1 |
-| Team | 5 |
-| Growth | 20 |
-| Enterprise | Unlimited |
-
-You can have more projects than your limit, but only up to your limit can be Active.
+The Academy **demo project** is a complete sample project that you can explore, and it does not count toward your limits. See [Academy tour](/support/how-to/use-the-academy-tour).

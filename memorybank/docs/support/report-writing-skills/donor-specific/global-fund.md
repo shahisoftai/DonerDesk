@@ -199,4 +199,4 @@ LFA reviews happen on-site. Your organisation may be visited by the LFA during t
 5. **Budget/expenditure mismatch** — Expenditure must match the approved budget structure exactly
 6. **Missing HSS reporting** — Health systems investments must be reported as separate programme areas
 
-> **Next:** Read [GCF Reporting](/support/report-writing-skills/donor-specific/gcf-reporting) for guidance on Green Climate Fund funding.
+> **Next:** Read [GCF Reporting](/support/report-writing-skills/gcf-reporting) for guidance on Green Climate Fund funding.

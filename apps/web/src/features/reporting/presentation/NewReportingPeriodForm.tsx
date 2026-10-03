@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { Textarea } from "@/components/ui/Textarea";
+import { missingScopeFields, type ReportScope } from "@donordesk/domain/contexts/reporting/report-scope.js";
 import { FormSummary } from "@/components/ui/FormSummary";
 import { REPORT_TYPE_LABEL, REPORT_TYPE_OPTIONS } from "@/lib/labels";
 import type { ProjectReadiness } from "@/lib/server/schemas";
@@ -46,6 +48,7 @@ function MissingSetupItems({ projectId, readiness }: { projectId: string; readin
 export function NewReportingPeriodForm({
   projectId,
   templates,
+  activities = [],
   readiness,
   projectBounds = null,
   existingPeriodEnds = [],
@@ -54,6 +57,8 @@ export function NewReportingPeriodForm({
   projectId: string;
   templates: Array<{ id: string; templateName: string; status?: string; deadlineOffsetDays?: number; deadlineRule?: string }>;
   readiness: ProjectReadiness | null;
+  /** The project's recorded activities, offered when creating an activity report. */
+  activities?: Array<{ id: string; title: string; date: string; location?: string }>;
   /** The project's own start/end dates — bound every suggested period and are FINAL's own end date. */
   projectBounds?: { startDate: string; endDate: string } | null;
   /** End dates of this project's existing periods, so the next suggestion starts right after the latest one. */
@@ -65,6 +70,9 @@ export function NewReportingPeriodForm({
   const actionState = useActionState();
   const [reportType, setReportType] = useState("MONTHLY");
   const [donorTemplateId, setDonorTemplateId] = useState("");
+  const [scope, setScope] = useState<ReportScope>({});
+  const patchScope = (patch: Partial<ReportScope>) => setScope((s) => ({ ...s, ...patch }));
+  const [activityFilter, setActivityFilter] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [deadline, setDeadline] = useState("");
@@ -117,14 +125,20 @@ export function NewReportingPeriodForm({
       setLocalErrors({ form: [readiness!.blockers[0]?.label ?? "Project setup is not complete."] });
       return;
     }
+    const scopeErrors: Record<string, string[]> = {};
+    const missing = missingScopeFields(reportType, scope);
+    if (missing.includes("activityIds")) scopeErrors.activityIds = ["Select at least one activity for an activity report."];
+    if (missing.includes("eventName")) scopeErrors.eventName = ["Name the event or situation."];
+    if (missing.includes("situationDate")) scopeErrors.situationDate = ["Enter the date the situation refers to."];
+    if (missing.includes("title")) scopeErrors.title = ["Give the report a title."];
     const dateErrors = validateReportDates({
       startDate,
       endDate,
       deadline,
       internalReviewDeadline: internalReviewDeadline || undefined,
     });
-    if (Object.keys(dateErrors).length > 0) {
-      setLocalErrors(dateErrors);
+    if (Object.keys(dateErrors).length > 0 || Object.keys(scopeErrors).length > 0) {
+      setLocalErrors({ ...dateErrors, ...scopeErrors });
       return;
     }
     setLocalErrors({});
@@ -134,6 +148,7 @@ export function NewReportingPeriodForm({
         projectId,
         reportType,
         donorTemplateId: donorTemplateId || undefined,
+        scope: reportType === "ACTIVITY" || reportType === "SITUATION" || reportType === "CUSTOM" ? scope : undefined,
         startDate: new Date(startDate).toISOString(),
         endDate: new Date(endDate).toISOString(),
         deadline: new Date(deadline).toISOString(),
@@ -152,12 +167,86 @@ export function NewReportingPeriodForm({
       <FormSummary errors={fields} count={errorCount} />
 
       <Field label="Report type" htmlFor="reportType" error={fields.reportType?.[0]}>
-        <Select id="reportType" value={reportType} onChange={(e) => setReportType(e.target.value)}>
+        <Select id="reportType" value={reportType} onChange={(e) => { setReportType(e.target.value); setScope({}); setLocalErrors({}); }}>
           {REPORT_TYPE_OPTIONS.map((t) => (
             <option key={t} value={t}>{REPORT_TYPE_LABEL[t] ?? t.replace(/_/g, " ")}</option>
           ))}
         </Select>
       </Field>
+
+
+      {reportType === "ACTIVITY" && (
+        <Field
+          label="Activities covered"
+          htmlFor="scopeActivities"
+          error={fields.activityIds?.[0] ?? fields.scope?.[0]}
+          hint={activities.length === 0 ? "No activities recorded yet. Add activity updates first, then create an activity report." : `${scope.activityIds?.length ?? 0} selected — the report covers only these activities.`}
+        >
+          <div id="scopeActivities" className="space-y-2">
+            {activities.length > 6 && (
+              <Input type="search" placeholder="Filter activities…" value={activityFilter} onChange={(e) => setActivityFilter(e.target.value)} aria-label="Filter activities" />
+            )}
+            <ul className="max-h-56 space-y-1 overflow-y-auto rounded-xl border border-slate-300 p-2 dark:border-white/10">
+              {activities
+                .filter((a) => a.title.toLowerCase().includes(activityFilter.trim().toLowerCase()))
+                .map((a) => {
+                  const checked = scope.activityIds?.includes(a.id) ?? false;
+                  return (
+                    <li key={a.id}>
+                      <label className="flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1 text-sm hover:bg-slate-50 dark:hover:bg-white/5">
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={checked}
+                          onChange={() => {
+                            const cur = scope.activityIds ?? [];
+                            patchScope({ activityIds: checked ? cur.filter((id) => id !== a.id) : [...cur, a.id] });
+                          }}
+                        />
+                        <span>
+                          <span className="font-medium">{a.title}</span>
+                          <span className="block text-xs text-slate-500 dark:text-slate-400">
+                            {a.date.slice(0, 10)}{a.location ? ` · ${a.location}` : ""}
+                          </span>
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+            </ul>
+          </div>
+        </Field>
+      )}
+
+      {reportType === "SITUATION" && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Event / situation" htmlFor="scopeEventName" error={fields.eventName?.[0]}>
+            <Input id="scopeEventName" value={scope.eventName ?? ""} onChange={(e) => patchScope({ eventName: e.target.value })} placeholder="e.g. Flooding in Sindh" invalid={Boolean(fields.eventName)} />
+          </Field>
+          <Field label="Situation date (as of)" htmlFor="scopeSituationDate" error={fields.situationDate?.[0]}>
+            <Input id="scopeSituationDate" type="date" value={scope.situationDate ?? ""} onChange={(e) => patchScope({ situationDate: e.target.value })} invalid={Boolean(fields.situationDate)} />
+          </Field>
+          <Field label="Location / affected area (optional)" htmlFor="scopeLocation">
+            <Input id="scopeLocation" value={scope.location ?? ""} onChange={(e) => patchScope({ location: e.target.value })} />
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Situation summary (optional)" htmlFor="scopeSummary" hint="A few lines of context the report should build on.">
+              <Textarea id="scopeSummary" rows={3} value={scope.summary ?? ""} onChange={(e) => patchScope({ summary: e.target.value })} />
+            </Field>
+          </div>
+        </div>
+      )}
+
+      {reportType === "CUSTOM" && (
+        <div className="space-y-4">
+          <Field label="Report title" htmlFor="scopeTitle" error={fields.title?.[0]}>
+            <Input id="scopeTitle" value={scope.title ?? ""} onChange={(e) => patchScope({ title: e.target.value })} invalid={Boolean(fields.title)} />
+          </Field>
+          <Field label="Purpose (optional)" htmlFor="scopePurpose" hint="What this report is for and who will read it.">
+            <Textarea id="scopePurpose" rows={3} value={scope.purpose ?? ""} onChange={(e) => patchScope({ purpose: e.target.value })} />
+          </Field>
+        </div>
+      )}
 
       <Field
         label="Donor template"

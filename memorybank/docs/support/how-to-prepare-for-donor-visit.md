@@ -2,6 +2,15 @@
 
 Donor visits require preparation to showcase your work effectively. Here is how to use DonorDesk to get ready.
 
+## Where DonorDesk helps
+
+- **Home and My Work** show deadlines, unverified items and compliance blockers.
+- **Compliance** lists what is missing across projects; use **Bulk actions** to clear items.
+- **Indicator grid** and each indicator's **progress card** show baseline, target and progress.
+- **Evidence library** filters by verification status and confidentiality.
+- **Export Center** produces the report, indicator table, evidence checklist and a ZIP evidence pack, and the **watermarked internal copy** is ideal for briefing colleagues.
+- Give the visiting donor liaison or auditor a **Viewer** account if they need read-only access. Check confidentiality labels first.
+
 ## Timeline for Preparation
 
 ### 4 Weeks Before
@@ -15,13 +24,13 @@ Donor visits require preparation to showcase your work effectively. Here is how 
 
 1. Update all indicator values
 2. Upload any pending evidence
-3. Generate draft reports
-4. Review compliance checklist
+3. Generate or refresh the draft report and clear flagged statements
+4. Review the compliance checklist
 
 ### 1 Week Before
 
 1. Complete data entry
-2. Verify all evidence
+2. Verify all evidence and indicator values
 3. Prepare site visit documentation
 4. Brief field staff
 

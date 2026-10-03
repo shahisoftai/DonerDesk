@@ -61,30 +61,51 @@ class TotalBudgetTracker:
             )
 
 
-def run_with_section_timeout(call: Callable[[], tuple[str, dict[str, Any]]]) -> tuple[str, dict[str, Any]]:
-    """Run a single draft call under an enforced wall-clock deadline.
+def run_with_section_timeout(
+    call: Callable[[], tuple[str, dict[str, Any]]],
+    *,
+    max_wait_s: float | None = None,
+) -> tuple[str, dict[str, Any]]:
+    """Run a single provider call under an enforced wall-clock deadline.
 
-    `call()` performs a blocking `urllib` request that cannot be interrupted
-    mid-flight, so it is run on a daemon thread. The caller's thread only
-    waits up to `DRAFT_TIMEOUT_MS`: if the deadline passes first, this raises
-    `SectionTimeoutError` immediately and abandons the still-running call
-    (the daemon thread is left to finish or die with the process) instead of
-    blocking for however long the HTTP call actually takes, as the previous
-    retroactive-check implementation did.
+    `call()` performs a blocking request that cannot be interrupted mid-flight,
+    so it is run on a daemon thread. The caller's thread only waits up to
+    `DRAFT_TIMEOUT_MS`: if the deadline passes first, this raises
+    `SectionTimeoutError` immediately and abandons the still-running call.
+
+    A provider slot (`provider_limiter`) is taken *before* the deadline starts,
+    so time spent queueing behind other sections never counts against this
+    call, and it is released by the call's own thread when the request really
+    ends. The HTTP timeout is capped at the draft timeout (`http_timeout_s`),
+    so an abandoned call frees its slot soon after its deadline instead of
+    holding it for the full provider timeout. `max_wait_s` bounds the queueing
+    (the pipeline passes its remaining section budget).
     """
+    from . import provider_limiter  # late import: limiter reads env at import
+
     deadline_s = DRAFT_TIMEOUT_MS / 1000.0
+    wait_s = deadline_s if max_wait_s is None else max(0.0, min(deadline_s, max_wait_s))
+    if not provider_limiter.acquire(wait_s):
+        raise SectionTimeoutError(f"no provider slot free within {int(wait_s * 1000)}ms")
+
     result: dict[str, Any] = {}
     error: dict[str, BaseException] = {}
-    start = time.time()
 
     def _run() -> None:
         try:
             result["value"] = call()
         except BaseException as exc:  # noqa: BLE001
             error["value"] = exc
+        finally:
+            provider_limiter.release()
 
-    thread = threading.Thread(target=_run, daemon=True)
-    thread.start()
+    start = time.time()
+    try:
+        thread = threading.Thread(target=_run, daemon=True)
+        thread.start()
+    except BaseException:
+        provider_limiter.release()
+        raise
     thread.join(deadline_s)
     elapsed_ms = int((time.time() - start) * 1000)
     if thread.is_alive():
@@ -96,3 +117,14 @@ def run_with_section_timeout(call: Callable[[], tuple[str, dict[str, Any]]]) -> 
     content, telemetry = result["value"]
     telemetry.setdefault("latencyMs", elapsed_ms)
     return content, telemetry
+
+
+def http_timeout_s() -> float:
+    """Socket timeout for one provider request: `AI_REPORTER_TIMEOUT`, never
+    longer than the per-call draft deadline (plus a small grace), so a call the
+    deadline abandoned cannot keep its provider slot for minutes."""
+    try:
+        configured = float(os.getenv("AI_REPORTER_TIMEOUT", "180"))
+    except ValueError:
+        configured = 180.0
+    return max(1.0, min(configured, DRAFT_TIMEOUT_MS / 1000.0 + 5.0))

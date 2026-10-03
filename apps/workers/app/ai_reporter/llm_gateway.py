@@ -9,6 +9,7 @@ fields.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import time
@@ -18,6 +19,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from . import provider_limiter
 from .models import (
     Artifact,
     ChartPayload,
@@ -31,6 +33,8 @@ from .models import (
 )
 
 _TRANSIENT_STATUS_CODES = {429, 500, 502, 503, 504}
+
+logger = logging.getLogger("ai_reporter.gateway")
 
 
 class TransientProviderError(RuntimeError):
@@ -46,6 +50,30 @@ class TransientProviderError(RuntimeError):
         super().__init__(message)
         self.status_code = status_code
         self.retry_after = retry_after
+
+
+class ProviderQuotaError(RuntimeError):
+    """The provider refused because the plan/balance is exhausted or not
+    entitled (e.g. Z.ai 1113/1308/1310). Waiting a few seconds cannot fix it, so
+    the pipeline does not retry it."""
+
+
+# Z.ai business codes returned with HTTP 429 that mean quota/plan, not pacing.
+_QUOTA_ERROR_CODES = {"1113", "1308", "1309", "1310", "1311", "1313", "1314", "1315"}
+
+
+def _provider_error_detail(exc: urllib.error.HTTPError) -> tuple[str, str]:
+    """(code, message) from a provider error body; empty strings if unreadable.
+    Bodies carry no credentials; they are cut to 300 chars."""
+    try:
+        raw = exc.read(2000).decode("utf-8", "replace")
+        body = json.loads(raw)
+        err = body.get("error", body) if isinstance(body, dict) else {}
+        if isinstance(err, dict):
+            return str(err.get("code") or ""), str(err.get("message") or "")[:300]
+        return "", str(err)[:300]
+    except Exception:  # noqa: BLE001
+        return "", ""
 
 
 _DEFAULT_BASE_URLS: dict[str, str] = {
@@ -64,6 +92,15 @@ DEFAULT_CLAUDE_MODEL = "claude-opus-5"
 _CLAUDE_FALLBACK_MODELS = {"claude-opus-5", "claude-fable-5-1"}
 # Adaptive thinking spends from max_tokens on current Claude models.
 _CLAUDE_MIN_MAX_TOKENS = 16000
+# Providers whose reasoning ("thinking") can be switched off per request. The
+# writer only turns verified findings into prose; hidden reasoning was ~85% of
+# the output tokens (live 2026-10-03: 8.6k completion tokens per section) and
+# most of the latency. `AI_REPORTER_THINKING=enabled` turns it back on.
+_THINKING_TOGGLE_PROVIDERS = {"glm"}
+
+
+def _thinking_enabled() -> bool:
+    return os.getenv("AI_REPORTER_THINKING", "disabled").strip().lower() == "enabled"
 
 
 def _resolve_llm(model: ModelConfig) -> tuple[str, str, str, str]:
@@ -121,7 +158,14 @@ def _chat(
     temperature: float = 0.3,
     max_tokens: int | None = None,
     json_mode: bool = True,
+    cache_prefix: str | None = None,
 ) -> tuple[str, dict[str, Any]]:
+    """One chat completion. `cache_prefix`, when `user` starts with it, marks the
+    part of the prompt shared by every section of a report: Claude gets an
+    explicit cache breakpoint there; OpenAI-compatible providers cache matching
+    prefixes automatically, so nothing changes in their request."""
+    from .timeouts import http_timeout_s  # late import: avoid an import cycle
+
     provider, model_name, base_url, api_key = _resolve_llm(model)
     if not model_name:
         raise RuntimeError(f"AI Reporter model is not configured for provider {provider}")
@@ -135,10 +179,12 @@ def _chat(
         max_tokens = int(os.getenv("AI_REPORTER_MAX_TOKENS", "16384"))
     if provider == "anthropic":
         return _chat_anthropic(system, user, model_name=model_name, base_url=base_url, api_key=api_key,
-                               max_tokens=max_tokens, effort=model.effort)
+                               max_tokens=max_tokens, effort=model.effort, cache_prefix=cache_prefix,
+                               timeout_s=http_timeout_s())
     return _chat_openai_compatible(
         system, user, provider=provider, model_name=model_name, base_url=base_url, api_key=api_key,
         temperature=temperature, max_tokens=max_tokens, json_mode=json_mode and provider not in _NO_JSON_MODE,
+        timeout_s=http_timeout_s(),
     )
 
 
@@ -153,6 +199,7 @@ def _chat_openai_compatible(
     temperature: float,
     max_tokens: int,
     json_mode: bool,
+    timeout_s: float = 180.0,
 ) -> tuple[str, dict[str, Any]]:
     url = f"{base_url}/chat/completions"
     headers = {"Content-Type": "application/json"}
@@ -166,13 +213,21 @@ def _chat_openai_compatible(
     }
     if json_mode:
         body["response_format"] = {"type": "json_object"}
+    if provider in _THINKING_TOGGLE_PROVIDERS and not _thinking_enabled():
+        body["thinking"] = {"type": "disabled"}
 
     req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), headers=headers, method="POST")
     start = time.time()
     try:
-        with urllib.request.urlopen(req, timeout=float(os.getenv("AI_REPORTER_TIMEOUT", "180"))) as resp:  # noqa: S310
+        with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # noqa: S310
             data = json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
+        code, detail = _provider_error_detail(exc)
+        suffix = f" (code {code}: {detail})" if code or detail else ""
+        # One line per provider error so journald shows *why* (1302 pacing vs 1308/1310 quota).
+        logger.warning("%s HTTP %s%s", provider, exc.code, suffix)
+        if code in _QUOTA_ERROR_CODES:
+            raise ProviderQuotaError(f"{provider} refused the request{suffix}") from exc
         if exc.code in _TRANSIENT_STATUS_CODES:
             retry_after: float | None = None
             header_value = exc.headers.get("Retry-After") if exc.headers else None
@@ -181,9 +236,13 @@ def _chat_openai_compatible(
                     retry_after = float(header_value)
                 except ValueError:
                     retry_after = None
+            if exc.code == 429:
+                provider_limiter.note_rate_limited(retry_after)
             raise TransientProviderError(
-                exc.code, retry_after, f"{provider} returned transient HTTP {exc.code}"
+                exc.code, retry_after, f"{provider} returned transient HTTP {exc.code}{suffix}"
             ) from exc
+        if exc.code in {401, 402, 403}:
+            raise ProviderQuotaError(f"{provider} rejected the request: HTTP {exc.code}{suffix}") from exc
         raise
     latency_ms = int((time.time() - start) * 1000)
 
@@ -202,6 +261,19 @@ def _chat_openai_compatible(
     return content, telemetry
 
 
+def _claude_user_content(user: str, cache_prefix: str | None) -> Any:
+    """Plain string, or two text blocks with a cache breakpoint after the
+    shared prefix (system prompt + report-wide inputs) so sections 2..N of a
+    report reuse it. A prefix below the model's cache minimum is simply not
+    cached; the request is otherwise identical."""
+    if not cache_prefix or not user.startswith(cache_prefix) or len(cache_prefix) == len(user):
+        return user
+    return [
+        {"type": "text", "text": cache_prefix, "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": user[len(cache_prefix):]},
+    ]
+
+
 def _retry_after_seconds(value: str | None) -> float | None:
     try:
         return float(value) if value else None
@@ -218,6 +290,8 @@ def _chat_anthropic(
     api_key: str,
     max_tokens: int,
     effort: str | None,
+    cache_prefix: str | None = None,
+    timeout_s: float = 180.0,
 ) -> tuple[str, dict[str, Any]]:
     """Claude via the official Anthropic SDK.
 
@@ -233,14 +307,14 @@ def _chat_anthropic(
     client = anthropic.Anthropic(
         api_key=api_key,
         base_url=base_url or None,
-        timeout=float(os.getenv("AI_REPORTER_TIMEOUT", "180")),
+        timeout=timeout_s,
         max_retries=0,  # the pipeline owns retry/backoff and the time budget
     )
     kwargs: dict[str, Any] = {
         "model": model_name,
         "max_tokens": max(max_tokens, _CLAUDE_MIN_MAX_TOKENS),
         "system": system,
-        "messages": [{"role": "user", "content": user}],
+        "messages": [{"role": "user", "content": _claude_user_content(user, cache_prefix)}],
     }
     if effort:
         kwargs["output_config"] = {"effort": effort}
@@ -251,7 +325,9 @@ def _chat_anthropic(
     try:
         response = client.beta.messages.create(**kwargs)
     except anthropic.RateLimitError as exc:
-        raise TransientProviderError(429, _retry_after_seconds(exc.response.headers.get("retry-after")), "anthropic rate limited") from exc
+        retry_after = _retry_after_seconds(exc.response.headers.get("retry-after"))
+        provider_limiter.note_rate_limited(retry_after)
+        raise TransientProviderError(429, retry_after, "anthropic rate limited") from exc
     except anthropic.APIStatusError as exc:
         if exc.status_code >= 500:  # includes 529 overloaded
             raise TransientProviderError(exc.status_code, None, f"anthropic returned transient HTTP {exc.status_code}") from exc
@@ -263,8 +339,12 @@ def _chat_anthropic(
         raise RuntimeError(f"anthropic refusal{f' ({category})' if category else ''}")
     content = "".join(block.text for block in response.content if block.type == "text")
     telemetry = {
-        "inputTokens": int(response.usage.input_tokens or 0),
+        # `input_tokens` excludes prompt-cache reads and writes; count all of them.
+        "inputTokens": int(response.usage.input_tokens or 0)
+        + int(getattr(response.usage, "cache_read_input_tokens", 0) or 0)
+        + int(getattr(response.usage, "cache_creation_input_tokens", 0) or 0),
         "outputTokens": int(response.usage.output_tokens or 0),
+        "cacheReadTokens": int(getattr(response.usage, "cache_read_input_tokens", 0) or 0),
         "latencyMs": int((time.time() - start) * 1000),
         "parseOutcome": "VALID",
     }

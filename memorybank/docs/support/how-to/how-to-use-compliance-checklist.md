@@ -1,157 +1,42 @@
 # How to Use the Compliance Checklist
 
-The compliance checklist automatically identifies what is missing from your reporting before you submit to your donor. This guide shows how to work through it.
+The compliance checklist lists what is missing or weak before a report can go out: missing evidence, unverified indicators, unsupported claims, missing annexes and so on. Open it from **Compliance** in the main menu (all projects) or the project's compliance page.
 
-## Before You Start
+Roles that can manage checklist items: Admin, Project Manager, M&E Officer, Grants Officer and Compliance Officer.
 
-The compliance checklist is automatically generated when you create a reporting period. Make sure you have:
-- Created a reporting period
-- Uploaded evidence
-- Logged activities
-- Updated indicator values
+## Read the page
 
-## Accessing the Compliance Checklist
+- **Reporting period** – choose the period you are working on.
+- **Report readiness** and its **Readiness explanation** – what is dragging the score down.
+- **Checklist** items with severity (Low, Medium, High, Critical), status and links to the related activity, indicator or evidence.
+- **Indicators** – indicator verification state for the period.
+- **Resolved items** – what is already done.
 
-1. Go to your project
-2. Click **Compliance** tab
-3. You will see all open compliance items
+## Where items come from
 
-## Understanding the Checklist Items
+DonorDesk builds the checklist from your donor template's requirements, your logframe's means of verification, activities and uploaded evidence. It **re-checks automatically** as data changes, and regenerating it does not create duplicates or overwrite decisions you already recorded. In the report editor, **⋯ → Scan for missing items** refreshes it on demand.
 
-Each item in the checklist shows:
+## Statuses
 
-- **Type** — What kind of gap it is (Missing evidence, Unverified indicator, etc.)
-- **Title** — A short description of the gap
-- **Severity** — Low, Medium, High, or Critical
-- **Status** — Open, In Progress, Resolved, Accepted Risk, or Not Applicable
-- **Assigned to** — Who is responsible for resolving it
+| Status | Meaning |
+|---|---|
+| Open | Needs attention. |
+| In progress | Someone is working on it (a note is optional). |
+| Resolved | Fixed, with a **required note** describing how. |
+| Accepted risk | You knowingly proceed. High-severity items ask you to confirm you have the authority. |
+| Not applicable | Does not apply to this report. |
 
-## Resolving Items by Uploading Evidence
+## Resolve an item
 
-Most compliance items are resolved by providing the missing evidence:
+1. Open the item and use **Start work**, **Resolve**, **Accept risk** or **Not applicable**.
+2. Write the note when asked. The note is kept in the audit trail.
 
-### Step 1: Open the Item
+For example, if the item is "missing attendance sheet", upload the file, link it to the activity and then resolve the item. Some items resolve themselves when you add the missing evidence.
 
-Click on any compliance item to see its details.
+## Resolve many at once
 
-### Step 2: Read What is Missing
+Click **Bulk actions**, tick items (or **Select all**), choose the action and add one shared note, then apply. Click **Exit bulk** to leave.
 
-The detail view explains what evidence is required and why it is flagged.
+## How it affects the report
 
-### Step 3: Upload the Evidence
-
-Click **Upload Evidence** within the item.
-
-Upload and fill in the metadata as normal.
-
-### Step 4: Verify
-
-After uploading, mark the item as verified (if you have verification permissions).
-
-The item automatically moves to **Resolved** status.
-
-## Resolving Items by Updating Indicators
-
-If an item is flagged because an indicator has not been updated:
-
-1. Open the indicator from the item detail
-2. Enter the period values
-3. Submit and verify
-
-The compliance item resolves automatically.
-
-## Resolving Items by Reviewing AI Content
-
-If an item says "Unreviewed AI content in Section X":
-
-1. Go to the Reports tab
-2. Open the report draft
-3. Find and read Section X
-4. Mark the section as reviewed in the editor
-
-The compliance item resolves.
-
-## Accepting a Risk
-
-If you cannot resolve an item (e.g., donor waived a requirement verbally):
-
-1. Open the compliance item
-2. Click **Accept Risk**
-3. Write a justification (e.g., "Donor confirmed by email on 15 Aug that this annex is not required")
-4. Save
-
-The item moves to **Accepted Risk** status. This is visible in the pre-export summary.
-
-## Marking as Not Applicable
-
-If an item does not apply to your project:
-
-1. Open the item
-2. Click **Not Applicable**
-3. Add a brief explanation
-4. Save
-
-## Assigning Items to Team Members
-
-To delegate an item:
-
-1. Open the item
-2. Click **Assign to**
-3. Select the team member
-4. Set a due date (optional)
-5. Save
-
-They will receive a notification about the assignment.
-
-## Filtering the Checklist
-
-Use filters to focus on what matters:
-
-| Filter | Use when |
-|--------|---------|
-| **Severity = Critical** | You want to address the most important gaps first |
-| **Status = Open** | You want to see everything that still needs work |
-| **Assigned to me** | You want to see your personal to-do list |
-| **Type = Missing evidence** | You want to focus on uploading files |
-
-## The Readiness Score
-
-At the top of the Compliance tab, you see the **readiness score** (0-100%).
-
-This score includes the compliance checklist as 20% of the overall calculation.
-
-As you resolve items, the readiness score increases.
-
-## Pre-Export Warning Summary
-
-Before exporting a report, DonorDesk shows:
-
-- Number of open Critical items
-- Number of open High items
-- Number of unverified indicators
-- Number of unreviewed AI sections
-- Sensitive evidence that will be included
-
-You must acknowledge this summary before exporting.
-
-## Bulk Actions
-
-To work faster on many items:
-
-1. Check the boxes next to multiple items
-2. Click **Bulk Actions**
-3. Choose: Assign, Change severity, Mark as resolved, or Mark as N/A
-
-## What Does NOT Block Export
-
-These items do not prevent you from exporting, but they are shown in the warning summary:
-- Accepted Risk items
-- Not Applicable items
-- Low severity items
-
-## What DOES Block Export
-
-Only one thing blocks export:
-- If you have Critical items that are **Open** (not resolved or accepted)
-
-This is a donor-facing safeguard to prevent incomplete submissions.
+Blocking checklist items appear in the report's **Report checks** and must be cleared, or explicitly accepted, before approval and export.

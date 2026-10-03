@@ -1,156 +1,48 @@
-# Troubleshooting Report Generation Issues
+# Troubleshooting Report Creation and Editing
 
-## Report Generation Failed
+## I can't create a reporting period
 
-### "Generation failed — please try again"
+Creating a period is blocked until the project is **Ready**. Open the project's **Setup** page and clear each blocker:
 
-1. Check your internet connection
-2. Try again in a few minutes
-3. Try generating fewer sections at once
-4. If it keeps failing, try during off-peak hours
+| Blocker | Fix |
+|---|---|
+| Workspace pending or failed | Wait for the folder to be created, or use **Retry workspace** / **Repair workspace**. Check Google Drive is connected. |
+| Reporting profile missing | Create it on **Setup → Reporting profile**. |
+| Template has no reviewed required sections | Open the template, review sections and **Approve template**. |
+| No reportable indicators / indicator configuration incomplete | Add an indicator and set baseline, target, unit and frequency on every quantitative one. |
 
-### "No data available"
+Other reasons: the project is **Completed** or **Archived**, the dates overlap an existing period, or dates fall outside the project dates.
 
-AI needs data to generate a report. You need:
-- At least one reporting period created
-- Logframe with at least one indicator
-- Some evidence uploaded
-- Some activities logged
+## The report editor looks empty
 
-If you see this error, go back and complete the setup before generating.
+You have not generated a draft yet. Use **Generate report** on the launch card. If you cannot see the button, your role may not allow it (a report writer or programme manager must generate it).
 
-## Generated Report Has Wrong Information
+## My changes are not saving
 
-### Check Your Source Data
+- Look at the top bar: it shows "All changes saved" when done.
+- If you are told a newer version exists, someone else saved. Reload to see their changes, then redo yours.
+- Only drafts can be edited. Approved or submitted reports are locked; **Request changes** or reopen as needed.
 
-AI generates content based on what you have entered. If the report is wrong:
-1. Check that indicator values are correct
-2. Check that activity narratives are accurate
-3. Check that evidence is linked to the right activities
-4. Check that the correct reporting period is selected
+## "Waiting for review" and no approve button
 
-### Regenerate Specific Sections
+Only Admins and Project Managers can approve. Ask one of them.
 
-Instead of regenerating the whole report:
-1. Find the section that is wrong
-2. Click **Regenerate** on that section
-3. Wait for the new version
-4. Review and edit if needed
+## The primary button says "Review n flagged statements"
 
-## Sections Are Empty or Very Short
+Open the **Statements** tab and decide on each: use the evidence value, edit, keep with a note, or leave out.
 
-### Not Enough Data
+## "Finish n remaining checks"
 
-AI needs sufficient data to write meaningful content. If sections are empty:
-1. Add more activity narratives with details
-2. Upload and link more evidence
-3. Update indicator values with comments
-4. Fill in the donor template requirements
+Open **Report checks**. Typical items: verify indicator data, resolve checklist items, re-check sections after inputs changed, confirm confidential files.
 
-The more context you give, the better the output.
+## Sections are out of order or missing
 
-## Report Shows Wrong Period
+Use **Reorder** and **+ Add** in the outline. Sections follow the donor template; guidance-only sections are intentionally excluded.
 
-### Check Reporting Period Selection
+## The AI wrote something odd
 
-Before generating, confirm:
-1. You are on the correct reporting period
-2. The dates match the period you want to report on
-3. The indicator values are entered for this specific period
+See [Troubleshooting AI report generation](/support/troubleshooting/ai-report-generation).
 
-If you generated for the wrong period:
-1. Go to the correct reporting period
-2. Generate again
+## Export is blocked
 
-## AI Citations Are Wrong
-
-### Source References May Be Approximate
-
-AI-generated citations are based on metadata matching. They are not always precise.
-
-**To verify a citation:**
-1. Click on the source reference in the report
-2. You will be taken to the source data
-3. Verify the information is accurate
-
-**To fix wrong citations:**
-1. Manually edit the section
-2. Remove incorrect citations
-3. Add correct ones if applicable
-
-## Report Format Does Not Match Donor Template
-
-### Template May Not Be Linked
-
-When creating the reporting period, make sure:
-1. You selected the correct donor template
-2. The template was uploaded successfully
-
-If no template was selected:
-1. Edit the reporting period
-2. Link the donor template
-3. Regenerate the report
-
-### Sections Not Matching Template
-
-If your report sections do not match the donor format:
-1. Go to **Templates** tab
-2. Check the template structure
-3. Edit the section names to match
-4. Regenerate the report
-
-## "AI credits exhausted" Error
-
-### You Have Used All Monthly Credits
-
-| Plan | AI Credits/Month |
-|------|-----------------|
-| Starter | 5 |
-| Team | 100 |
-| Growth | 500 |
-| Enterprise | Unlimited |
-
-**Solutions:**
-1. Wait until the 1st of next month for credits to reset
-2. Upgrade to a plan with more credits
-3. Write sections manually instead of using AI
-
-To check your usage: **Settings → Billing → AI Report Drafts**
-
-## Report Generation Times Out
-
-### Large Reports Take Time
-
-If generation takes more than 2-3 minutes:
-1. Try generating fewer sections at once
-2. Break the report into multiple generations
-3. Try during off-peak hours
-
-If it consistently times out:
-1. Check your internet speed
-2. Try a different browser
-3. Contact support
-
-## Cannot Edit Generated Section
-
-### Section Is Locked
-
-After generating, sections may be temporarily locked while saving. Wait a moment and try again.
-
-### Permission Issue
-
-Only users with edit permissions can modify sections. Ask your admin if you need edit access.
-
-## Report Still in "Draft" Status After Generation
-
-### Generation Creates a Draft
-
-When you generate a report, it creates a draft. The status changes to "Draft Generated" or similar.
-
-To change the status:
-1. Review each section
-2. Mark sections as reviewed
-3. Submit for approval
-4. Get it approved
-
-Only after approval does the status change to "Approved".
+See [Troubleshooting export issues](/support/troubleshooting/export-issues).

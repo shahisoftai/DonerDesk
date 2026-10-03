@@ -145,10 +145,11 @@ Your reports should reference monitoring activities conducted:
 
 DonorDesk helps you meet UNHCR standards:
 
-- **Disaggregation** — Record beneficiary data by sex, age, disability, and location at point of entry
-- **Protection incidents** — Log protection incidents with categories matching UNHCR standards
-- **Indicator tracking** — Set UNHCR-standard output indicators with baselines and targets
-- **Evidence linking** — Attach monitoring visit reports directly to output records
-- **AI Report Draft** — Uses your evidence to draft sections aligned to UNHCR output structure
+- **Disaggregation** — Record indicator values by sex, age group, disability and location
+- **Donor template** — Upload the UNHCR reporting format and review the extracted outline
+- **Indicator tracking** — Set output and outcome indicators with baselines and targets, and verify values each period
+- **Evidence linking** — Link monitoring visit reports to the indicators and activities they support
+- **AI Reporter** — Drafts sections aligned to the template structure from your verified data
+- **Confidentiality labels** — Mark protection-related files as Sensitive or Highly sensitive so they are kept out of AI drafting
 
-> **Next:** Read [DG ECHO Reporting](/support/report-writing-skills/donor-specific/dg-echo) for guidance on European Civil Protection and Humanitarian Aid funding.
+> **Next:** Read [DG ECHO Reporting](/support/report-writing-skills/dg-echo) for guidance on European Civil Protection and Humanitarian Aid funding.

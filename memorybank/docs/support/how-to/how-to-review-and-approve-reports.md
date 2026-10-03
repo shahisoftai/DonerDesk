@@ -1,135 +1,62 @@
 # How to Review and Approve Reports
 
-The review and approval workflow ensures that all reports are checked before submission to donors.
+Review happens in the document-style **report editor**. This guide covers the author's steps, then the reviewer's.
 
-## Understanding the Workflow
+## Who can do what
 
-Every report goes through these stages:
+| Action | Roles |
+|---|---|
+| Generate and edit | Admin, Project Manager, M&E Officer, Grants Officer |
+| Decide on flagged statements | Admin, Project Manager (report managers) |
+| Approve sections and approve the report | Admin, Project Manager |
+| Export | Admin, Project Manager, Grants Officer, Viewer |
+| Override a confidentiality issue | Admin, Grants Officer |
+| Comment | Everyone except Viewer |
 
-```
-Draft → Under Review → Approved → Submitted
-         (with possible: Needs Revision)
-```
+## Author: get the draft ready
 
-## Roles in the Review Process
+1. Open **Projects → project → Reporting → the period**.
+2. Follow the **primary button** at the top right. It always shows the next step:
 
-| Role | Can review | Can approve |
-|------|-----------|-------------|
-| Project Manager | ✓ | ✓ |
-| Grants Officer | ✓ | ✓ |
-| Compliance Officer | ✓ | ✓ |
-| M&E Officer | ✓ (their scope) | |
-| Admin | ✓ | ✓ |
-| Owner | ✓ | ✓ |
+| Button | What it means |
+|---|---|
+| Generate report | No draft yet. |
+| Review *n* flagged statements | The AI wrote something the evidence does not support. Jumps to the first one. |
+| Approve *n* remaining sections | Read each section and approve it. Approved sections are locked for this version. |
+| Finish *n* remaining checks | Open the **Report checks** panel (unverified indicator data, checklist items, stale summary, confidential files to confirm). |
+| Submit for review | Everything is clear. |
 
-## Step-by-Step Review
+3. Use **j / k** to move between sections and **n** for the next issue (press **?** to see all shortcuts).
 
-### Step 1: Open the Report Draft
+### Flagged statements
 
-1. Go to your project → **Reports** tab
-2. Open the reporting period
-3. Click **Open Report**
+Open a section and the **Statements** tab. For each statement flagged **Needs a decision**, choose:
 
-### Step 2: Review Each Section
+- **Use the evidence value** (applies the verified value to the text),
+- **Edit the wording** yourself,
+- **Keep with a note** (say why it is acceptable), or
+- **Leave out** (removed from exports).
 
-For each section of the report:
+Minor statements are marked **Not checked (minor)**. You can resolve many at once with bulk resolution.
 
-1. **Read the content** carefully
-2. **Check source references** — Click each one to verify the evidence
-3. **Look for errors** — Factual mistakes, spelling, tone
-4. **Verify the data** — Does the reported number match your records?
+### After edits
 
-### Step 3: Add Comments
+Editing text or changing data can make earlier checks stale. DonorDesk re-checks the affected sections; an **Inputs changed** banner offers to re-check or regenerate. A summary section shows a warning if other sections changed a lot after it was written.
 
-If you find something that needs correction:
+## Submit for review
 
-1. Select the text or click the **comment** icon
-2. Write your comment
-3. Click **Add comment**
+Click **Submit for review**. The report status becomes **Under review** and reviewers are notified.
 
-The person who wrote the section will be notified.
+## Reviewer: approve or request changes
 
-### Step 4: Mark as Reviewed
+1. Open the report from **My Work** or **Reports**.
+2. Read the sections; add comments in the section **Comments** tab.
+3. Choose:
+   - **Approve report** – confirm the approval of this version. If blocking issues remain you are warned and can only approve anyway if you have the authority.
+   - **Request changes** – write what needs fixing. The report returns to the author (**Report returned** notification).
 
-Once a section is reviewed and satisfactory:
+Users who cannot approve see "Waiting for review".
 
-Click the **checkmark** on the section.
+## After approval
 
-The section status changes from "Reviewed" to "Approved" (or you can mark it at any point).
-
-## Adding General Comments
-
-To add a comment on the whole report:
-
-1. In the report workspace, click **Add general comment**
-2. Write your feedback
-3. Submit
-
-## Submitting for Approval
-
-If you are the report author and have finished:
-
-1. Click **Submit for Review**
-2. Select who should review it
-3. Add a note if needed
-4. Submit
-
-The reviewer will be notified.
-
-## Approving a Report
-
-If you are a reviewer/approver:
-
-1. Open the submitted report
-2. Review each section (as above)
-3. When satisfied, click **Approve Report**
-4. Confirm
-
-The report status changes to **Approved**.
-
-## Requesting Revisions
-
-If the report needs changes:
-
-1. Add comments on the specific issues
-2. Click **Request Revision**
-3. Add a note explaining what needs to be changed
-4. Submit
-
-The report goes back to **Draft** status.
-
-## Submitting to the Donor
-
-After approval:
-
-1. Make sure all sections are approved
-2. Resolve any remaining compliance checklist items
-3. Click **Submit to Donor**
-4. Confirm
-5. Attach the exported file (PDF or Word)
-
-The report status changes to **Submitted**.
-
-## Closing a Reporting Period
-
-After the donor acknowledges receipt:
-
-1. Go to the reporting period
-2. Click **Close Period**
-3. Confirm
-
-This marks the period as complete and locks it from further edits (unless reopened by an Admin).
-
-## Pre-Approval Summary
-
-Before you approve, DonorDesk shows a summary:
-- All sections reviewed?
-- All compliance items resolved?
-- All indicators verified?
-- Any open comments?
-
-This helps ensure nothing is missed.
-
-## Export After Approval
-
-Once approved, the report is ready to export. Go to **Export** and download the final version.
+The approved version is locked. Use **Export report** to open the export wizard. See [How to export reports](/support/how-to/export-reports). Every approval, decision and export is recorded in the [audit trail](/support/how-to/use-the-audit-trail).

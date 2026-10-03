@@ -135,24 +135,24 @@ Always disaggregate by sex at minimum. Other disaggregation dimensions:
 
 Maintain an evidence inventory throughout the project — not just at reporting time. For each piece of evidence, record:
 
-- Evidence ID (used in DonorDesk)
+- Evidence title and reference (a consistent code helps)
 - Date of collection
 - Type and methodology
 - Indicator(s) it supports
 - Person responsible for data quality
-- Storage location (DonorDesk file reference or Drive link)
+- Storage location (Google Drive link or DonorDesk-managed file)
 
 This practice makes report writing fast, accurate, and auditable.
 
 ## Linking Evidence to Narratives in DonorDesk
 
-DonorDesk's Evidence tab lets you attach documents, photos, and data files to your project. When writing your narrative:
+In DonorDesk you do not have to type evidence references by hand. You build the chain from claim to proof by linking data:
 
-1. Reference the indicator value in the Logframe tab
-2. Upload the supporting evidence to the Evidence tab
-3. In your narrative, cite the evidence: *"This result is evidenced by [Evidence ID: EV-2026-Q2-047]"*
+1. Enter and **verify** the indicator value for the period (Update Project).
+2. Upload the supporting file to the **Evidence** library and **link** it to the indicator or activity it proves.
+3. Generate the draft. Each section shows its **Sources** (evidence files, activities, indicator updates), and every factual statement is checked against them.
 
-This creates a traceable chain from claim → data → supporting document that auditors love and donors trust.
+This creates a traceable chain from claim → data → supporting document that auditors love and donors trust. If your donor also wants explicit references in the text, add them yourself (for example the evidence's title or your own code) when you edit the section.
 
 ## Checklist Before Submitting
 
@@ -161,7 +161,7 @@ This creates a traceable chain from claim → data → supporting document that 
 - [ ] Figures are disaggregated by sex and at least one other dimension
 - [ ] Missed targets are explained with specific reasons
 - [ ] Comparison with previous periods is included where data is available
-- [ ] Evidence citations use the correct ID format from DonorDesk
+- [ ] Evidence is linked to the indicators it supports and every flagged statement has a decision
 - [ ] Methodology is described for all surveys or assessments cited
 - [ ] Quotes are attributed (with consent) and contextualised
 

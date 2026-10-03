@@ -1,177 +1,38 @@
 # Understanding Report Sections
 
-A donor report is made up of sections. Each section covers a specific topic. This guide explains the common sections and what to put in each.
+A DonorDesk report is a set of **sections**. The list comes from the donor template pinned to the reporting period, so your report follows the donor's structure.
 
-## Standard Report Sections
+## Sections follow the donor template
 
-### 1. Executive Summary
+- Section titles keep the donor's numbering (for example *3.2 Progress against outputs*).
+- Sections can be nested up to several levels (Heading 2–5 in exports). The **outline** on the left of the editor shows the hierarchy.
+- The template can mark a section as **guidance only** (instructions the donor gave, not something to write), and those are left out of the report.
+- Each section carries the donor's instructions, mandatory questions, evidence needed, required tables and page limit, and the AI Reporter follows them.
 
-**Purpose:** Brief overview for busy readers
+If a period has no reviewed template, a standard outline is used and flagged.
 
-**What to include:**
-- Project name and donor
-- Reporting period
-- Key achievements (2-3 bullet points)
-- Main challenges
-- Summary of next steps
+## Section types
 
-**Length:** 1 page maximum
+| Type | What goes in it |
+|---|---|
+| Narrative | Written text, with optional chart. |
+| Table | Built from verified data. |
+| Indicator table | Indicators with values, targets and progress. |
+| Annex | Attachments and lists. |
+| Compliance | Checklist-related content. |
 
-### 2. Project Overview
+## Editing sections
 
-**Purpose:** Context for the report
+- The editor is a **rich-text document**. You can use paragraphs, headings (`###`, `####`), bulleted and numbered lists, quotes, tables, bold, italic, code and links. These are the constructs every export format renders, so what you see is what is exported. Pasted content is cleaned up to that set.
+- Add a section with **+ Add** in the outline, reorder with **Reorder**, and delete sections you don't need.
+- Changes autosave, and the top bar shows the version and "All changes saved". If someone else saved a newer version, you are told and no work is silently overwritten.
+- Each section has its own **inspector**: Statements, Sources, Chart, Comments and History.
+- **Charts**: add a chart to a section (bar, line, pie, area, radar or gauge). The exported image matches what you finalise.
 
-**What to include:**
-- Project title and code
-- Implementing organisation
-- Donor and grant number
-- Project start and end dates
-- Reporting period dates
-- Target beneficiaries
-- Total budget
+## Generated content
 
-### 3. Progress Against Targets
+The AI writes prose only. Tables, charts, deltas from the previous period, Q&A blocks and lists are assembled from verified findings. See [How to generate an AI report draft](/support/how-to/generate-ai-report-draft).
 
-**Purpose:** Show what was achieved vs. what was planned
+## Section approval
 
-**What to include:**
-- Summary table of indicators
-- Targets vs. actual achievements
-- Percentage progress
-- Analysis of why targets were or were not met
-
-### 4. Activities Completed
-
-**Purpose:** What you did during the period
-
-**What to include:**
-- List of activities with dates
-- Location of activities
-- Number of participants
-- Comparison with planned activities
-- Any deviations from plan and why
-
-### 5. Indicator Achievement Details
-
-**Purpose:** Detailed evidence of results
-
-**What to include:**
-- Each indicator with baseline, target, and actual
-- Progress charts where helpful
-- Explanation of trends
-- Data quality notes
-
-### 6. Evidence of Results
-
-**Purpose:** Proof of achievements
-
-**What to include:**
-- Summary of evidence collected
-- Key evidence items referenced
-- Evidence quality notes
-- Link to full evidence pack
-
-### 7. Challenges and Mitigation
-
-**Purpose:** Be honest about problems
-
-**What to include:**
-- Specific challenges faced
-- How challenges were addressed
-- Impact on delivery
-- Lessons learned
-
-### 8. Lessons Learned
-
-**Purpose:** Share knowledge for improvement
-
-**What to include:**
-- What worked well and why
-- What did not work and why
-- Recommendations for future projects
-- Changes planned for next period
-
-### 9. Plan for Next Period
-
-**Purpose:** Looking ahead
-
-**What to include:**
-- Key activities planned
-- Expected outputs
-- Any planned adjustments to strategy
-- Support needed from donor
-
-## Annexes
-
-These are supporting documents attached to the report:
-
-| Annex | What to include |
-|-------|----------------|
-| A | Indicator data table |
-| B | Evidence checklist |
-| C | Attendance sheets |
-| D | Photos with captions |
-| E | Training materials |
-| F | Procurement documents |
-| G | Financial report |
-
-## Section Status in DonorDesk
-
-Each section has a status in DonorDesk:
-
-| Status | Meaning |
-|--------|---------|
-| **Not Started** | No content yet |
-| **Drafted** | Content written |
-| **Needs Review** | Content ready for review |
-| **Approved** | Reviewed and approved |
-
-## AI and Sections
-
-When you generate an AI draft:
-- Each section gets initial content
-- Content is based on your project data
-- You review and edit before approval
-
-## Writing Tips
-
-### Be Specific
-
-**Bad:** "We conducted training activities."
-
-**Good:** "We conducted 5-day ANC screening training for 20 community health workers in District X, reaching 18 women and 2 men."
-
-### Use Numbers
-
-Include actual figures, not vague claims:
-- "Trained 20 CHWs" not "Several trainings"
-- "Reached 450 beneficiaries" not "Many people"
-
-### Link Evidence
-
-Every factual claim should have a source. In DonorDesk, link:
-- Claims to indicator updates
-- Activities to evidence files
-- Achievements to verification status
-
-### Be Honest About Challenges
-
-Donors appreciate honesty about challenges. It shows:
-- Realistic planning
-- Adaptive management
-- Learning culture
-
-### Tone
-
-Write for your donor audience:
-- Formal language for EU, UN agencies
-- Technical language for research funders
-- Accessible language for community funders
-
-## Common Mistakes
-
-- **Too long** — Donors have many reports to read
-- **Too vague** — "Activities were conducted as planned"
-- **Missing evidence** — Claims not backed by files
-- **No challenges** — Seems unrealistic
-- **Spelling/grammar errors** — Proofread before export
+Approve each section once you have read it. Approved sections are locked for that version; editing or regenerating reopens them.

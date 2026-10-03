@@ -1,124 +1,33 @@
-# Troubleshooting Account and Access Issues
+# Troubleshooting Account Access
 
-## Cannot Log In
+## I can't see a project
 
-### "Invalid email or password"
+Access follows your role and your project assignments. Ask an Admin or Project Manager to add you on the project's **Team** tab (**Assign member**).
 
-1. Check your email for typos
-2. Use the "Forgot password" link
-3. Make sure Caps Lock is off
-4. Try copying and pasting your password
+## I can't do something I could before
 
-### "Account suspended"
+Your role may have changed. Ask an Admin to check **Team**. The role list is in [User roles and permissions](/support/getting-started/user-roles-and-permissions).
 
-Contact the workspace Owner to restore your account.
+## I can't open Billing, Team or Setup
 
-### "Email not verified"
+These are Admin pages: Billing and Team need the Admin role, and **Settings → Setup** needs permission to create projects (Admin).
 
-Check your inbox for the verification email. If not received, use "Resend verification email" on the login page.
+## I need to change my role or email
 
-## Cannot Access a Project
+Roles are changed by an Admin on the **Team** page. To change your email, contact support@donordesk.online.
 
-### "Access denied"
+## Someone left the organisation
 
-You are not a member of this project. Ask the project owner or admin to add you.
+Ask an Admin to review the Team page and change their role or project assignments. To remove someone entirely, contact support@donordesk.online.
 
-### Project not visible
+## Seats are full
 
-1. Check if you are filtering by a specific status
-2. Make sure the project has not been archived
-3. Ask an admin if your access was removed
+Full seats are limited by plan (Starter 1, Team 5, Growth 15). Read-only **Viewers** are counted separately. Free a seat or upgrade. See [Plans and limits](/support/account-billing/plans-and-limits).
 
-## Cannot Perform an Action
+## The Admin is unavailable
 
-### "Permission denied"
+If nobody with the Admin role can sign in, email support@donordesk.online from the original signup address to prove ownership.
 
-Your role does not allow this action. Ask an admin to either:
-- Give you a higher role
-- Perform the action on your behalf
+## Account security concerns
 
-### Missing button or option
-
-The option may be in a different location. Try:
-- Refreshing the page
-- Looking in related tabs
-- Checking if the feature requires a higher role
-
-## Two-Factor Authentication Issues
-
-### Lost access to 2FA device
-
-Contact the workspace Owner. They can help restore your access through identity verification.
-
-### Authenticator app codes not working
-
-1. Check the time on your phone — codes are time-based
-2. Try syncing time in authenticator app settings
-3. As a last resort, ask admin to reset 2FA
-
-## Session Issues
-
-### "Session expired" repeatedly
-
-1. Check if your browser is blocking cookies
-2. Try a different browser
-3. Clear cache and cookies
-4. Make sure JavaScript is enabled
-
-### Cannot stay logged in
-
-1. Check "Remember me" on login
-2. Check browser cookie settings
-3. Disable browser extensions that clear cookies
-
-## Transferring Ownership
-
-### Current owner leaving
-
-1. Go to **Settings → Team**
-2. Find the person who should become owner
-3. Click **Transfer Ownership**
-4. Confirm the transfer
-
-The new owner can then remove your access if needed.
-
-## Recovering a Deleted Account
-
-### Account deleted by mistake
-
-Contact **support@donordesk.online** immediately. Recovery is not guaranteed but may be possible within a short window.
-
-## Access Issues After Organisation Change
-
-### Organisation merged or restructured
-
-Contact **support@donordesk.online** to discuss options for migrating data or combining workspaces.
-
-## Password Reset Not Working
-
-### No email received
-
-1. Check spam/junk folder
-2. Check the email address you entered
-3. Wait 5-10 minutes
-4. Contact support if still not working
-
-### Reset link expired
-
-Request a new password reset. Links expire after 24 hours.
-
-## Suspicious Activity
-
-### Notice unfamiliar actions in audit log
-
-1. Change your password immediately
-2. Contact an admin
-3. Review recent actions
-4. Report to **support@donordesk.online**
-
-### Someone else accessed your account
-
-1. Change your password immediately
-2. Check and revoke sessions if possible
-3. Contact support
-4. Review audit log for any changes made
+Change your password in **Settings → Security** and read [Security best practices](/support/security-privacy/security-best-practices).

@@ -1,11 +1,12 @@
 import type { Result, DomainError, TenantId } from "@donordesk/domain";
-import { ReportingPeriod, DateRange, DomainError as DE, ReportingPeriodCreated } from "@donordesk/domain";
+import { ReportingPeriod, DateRange, CADENCE_REPORT_TYPES, normalizeReportScope, missingScopeFields, DomainError as DE, ReportingPeriodCreated } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IProjectSetupRepository, IReportingProfileRepository } from "../../ports/setup.js";
 import type { IProjectReadinessService } from "../../ports/projects.js";
+import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { CreateReportingPeriodInput } from "@donordesk/contracts";
 import { serializeTemplateSnapshot } from "../../services/template-snapshot.js";
@@ -27,6 +28,7 @@ export class CreateReportingPeriodHandler {
     private readonly readiness: IProjectReadinessService,
     private readonly audit: IAuditLogger,
     private readonly events: IEventBus,
+    private readonly activities: IActivityUpdateRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateReportingPeriodInput): Promise<Result<{ id: string }, DomainError>> {
@@ -88,9 +90,26 @@ export class CreateReportingPeriodHandler {
       };
     }
 
+    // 4b. Scope: ACTIVITY/SITUATION/CUSTOM reports name what they cover.
+    const scope = normalizeReportScope(input.scope);
+    if (missingScopeFields(input.reportType, scope).length > 0) {
+      return { ok: false, error: DE.validation(`A ${input.reportType.toLowerCase()} report needs its scope (${missingScopeFields(input.reportType, scope).join(", ")})`) };
+    }
+    if (input.reportType === "ACTIVITY") {
+      const projectActivities = await this.activities.findByProject(input.projectId, tenantId);
+      if (!projectActivities.ok) return projectActivities;
+      const known = new Set(projectActivities.value.map((a) => a.id));
+      const unknown = (scope.activityIds ?? []).filter((id) => !known.has(id));
+      if (unknown.length > 0) return { ok: false, error: DE.notFound("ActivityUpdate", unknown[0]!) };
+    }
+    // Ad-hoc reports (activity/situation/custom) may sit inside a cadence
+    // period, so overlap is only enforced between cadence periods.
+    const enforceOverlap = CADENCE_REPORT_TYPES.has(input.reportType);
+
     const existingResult = await this.repo.findByProject(input.projectId, tenantId);
     if (!existingResult.ok) return existingResult;
     for (const existing of existingResult.value) {
+      if (!enforceOverlap || !CADENCE_REPORT_TYPES.has(existing.reportType)) continue;
       if (existing.duration.overlaps(DateRange.create(start, end))) {
         return {
           ok: false,
@@ -133,6 +152,7 @@ export class CreateReportingPeriodHandler {
       responsibleOfficerId: input.responsibleOfficerId,
       reportingProfileSnapshotJson,
       templateSnapshotJson,
+      scopeJson: JSON.stringify(scope),
     });
     const saved = await this.repo.create(period);
     if (!saved.ok) return saved;
@@ -143,7 +163,7 @@ export class CreateReportingPeriodHandler {
       entityType: "reporting_period",
       entityId: id,
       projectId: input.projectId,
-      newValue: JSON.stringify({ reportType: input.reportType, startDate: input.startDate, endDate: input.endDate, templateId: templateId ?? null }),
+      newValue: JSON.stringify({ reportType: input.reportType, startDate: input.startDate, endDate: input.endDate, templateId: templateId ?? null, scope }),
     });
     await this.events.publish([new ReportingPeriodCreated(tenantId, id, input.projectId)]);
     return { ok: true, value: { id } };

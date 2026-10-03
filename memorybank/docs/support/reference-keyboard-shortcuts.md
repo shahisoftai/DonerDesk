@@ -1,74 +1,33 @@
 # Keyboard Shortcuts
 
-Speed up your work in DonorDesk with these keyboard shortcuts.
+## Report editor
 
-## Global Shortcuts
+Single-key shortcuts work when you are not typing in a field or the editor. They are ignored if Ctrl, Cmd or Alt is held.
 
-| Shortcut | Action |
-|---------|--------|
-| `Ctrl + K` or `Cmd + K` | Open project search |
-| `Ctrl + /` or `Cmd + /` | Show all shortcuts |
-| `Esc` | Close dialogs and panels |
-| `Ctrl + Enter` or `Cmd + Enter` | Submit/save current form |
-| `Tab` | Move to next field |
-| `Shift + Tab` | Move to previous field |
+| Key | Action |
+|---|---|
+| **j** | Next section |
+| **k** | Previous section |
+| **n** | Next issue |
+| **Shift + N** | Previous issue |
+| **e** | Edit the selected section |
+| **a** | Approve the selected section |
+| **?** | Show the shortcut list |
 
-## Navigation
+While editing text, standard formatting shortcuts apply | Shortcut | Action |
+|---|---|
+| Ctrl + B | Bold |
+| Ctrl + I | Italic |
+| Ctrl + E | Inline code |
+| Ctrl + K | Add or edit a link |
+| Ctrl + Shift + 8 | Bulleted list |
+| Ctrl + Shift + 7 | Numbered list |
+| Ctrl + Z / Ctrl + Shift + Z | Undo / redo |
 
-| Shortcut | Action |
-|---------|--------|
-| `G then D` | Go to Dashboard |
-| `G then P` | Go to Projects |
-| `G then S` | Go to Settings |
-| `G then T` | Go to Team |
+(Use Cmd instead of Ctrl on Mac.)
 
-*(Press G, then press the second key quickly)*
+## Portal
 
-## Report Editor
-
-| Shortcut | Action |
-|---------|--------|
-| `Ctrl + S` or `Cmd + S` | Save current section |
-| `Ctrl + B` or `Cmd + B` | Bold selected text |
-| `Ctrl + I` or `Cmd + I` | Italic selected text |
-| `Ctrl + Shift + R` or `Cmd + Shift + R` | Regenerate section with AI |
-| `Ctrl + Z` or `Cmd + Z` | Undo |
-| `Ctrl + Shift + Z` or `Cmd + Shift + Z` | Redo |
-
-## Compliance Checklist
-
-| Shortcut | Action |
-|---------|--------|
-| `J` | Next item |
-| `K` | Previous item |
-| `Enter` | Open selected item |
-| `R` | Mark as resolved |
-| `A` | Accept risk |
-| `N` | Mark as not applicable |
-
-## Evidence Library
-
-| Shortcut | Action |
-|---------|--------|
-| `U` | Upload new evidence |
-| `L` | Link from Google Drive |
-| `Ctrl + F` or `Cmd + F` | Search evidence |
-| `Delete` | Delete selected evidence |
-
-## Indicator Grid
-
-| Shortcut | Action |
-|---------|--------|
-| `Enter` | Edit selected cell |
-| `Tab` | Next cell |
-| `Shift + Tab` | Previous cell |
-| `Ctrl + S` or `Cmd + S` | Save all changes |
-| `I` | Import from Google Sheets |
-
-## Universal
-
-| Shortcut | Action |
-|---------|--------|
-| `?` | Show keyboard shortcuts |
-| `Ctrl + ,` or `Cmd + ,` | Open Settings |
-| `Ctrl + .` or `Cmd + .` | Toggle dark/light mode |
+| Key | Action |
+|---|---|
+| **Ctrl / Cmd + K** | Jump to Search in the side navigation |

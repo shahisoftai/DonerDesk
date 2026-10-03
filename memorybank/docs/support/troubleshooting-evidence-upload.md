@@ -1,108 +1,40 @@
-# Troubleshooting Evidence Upload Issues
+# Troubleshooting Evidence Upload
 
-## File Upload Fails
+## The Upload button is missing
 
-### "File too large"
+Uploading needs one of these roles: Admin, Project Manager, M&E Officer, Grants Officer, Field Officer or Compliance Officer. Viewers cannot upload.
 
-Your file exceeds the maximum size limit. Check your plan's limits:
+## An upload fails
 
-| Plan | Max file size |
-|------|--------------|
-| Starter | 50 MB |
-| Team | 100 MB |
-| Growth | 200 MB |
-| Enterprise | Custom |
+- Files up to **100 MB** are accepted. Compress or split larger files, or link them from Google Drive.
+- Keep the tab open until the **Upload queue** finishes; upload fewer files at once if your connection is slow.
+- Make sure you filled in the required fields (title and type).
+- If you use DonorDesk-managed storage you may be at your storage limit. Check **Settings → Billing**, delete files you no longer need, or link from Drive instead.
 
-**Solutions:**
-- Compress the file (use ZIP for multiple files)
-- Split large documents into smaller parts
-- Upload to Google Drive and link instead
+## Google Drive upload or link problems
 
-### "Unsupported file type"
+- "Enter a valid Google Drive share link or file ID." – paste the file's share link (`https://drive.google.com/file/d/…/view`) or its ID.
+- Check that Drive is connected (**Settings → Setup**) and that the project's storage folder exists (project **Setup** page; use **Retry workspace** or **Repair workspace**).
+- The Google account you connected must be able to open the file.
 
-DonorDesk accepts: PDF, DOCX, DOC, XLSX, CSV, JPG, JPEG, PNG, TXT
+## Text was not extracted / the AI can't cite it
 
-**Solutions:**
-- Convert your file to a supported format
-- Save a scanned image as JPG or PNG instead of a special format
+Scanned images and photos have no text. Add a summary in the evidence title/notes, or upload a text-based version. AI report drafts can cite only linked evidence with readable text.
 
-### Upload hangs or times out
+## I can't link evidence to an indicator or activity
 
-1. Check your internet connection
-2. Try a smaller file first
-3. Try a different browser
-4. Clear your browser cache
+Open the file and use **Link this file to an activity or indicator** or **Suggest links**. You need upload or edit permission.
 
-### "Upload failed — please try again"
+## The file can't be verified
 
-**Solutions:**
-1. Refresh the page and try again
-2. Try a different browser
-3. Check if your storage quota is full (go to Settings → Billing → Storage)
-4. If the issue persists, contact support
+Verification is done by Admin, Project Manager, M&E Officer or Compliance Officer. If it says *Needs correction* read the reviewer's reason and re-upload or fix the metadata.
 
-## AI Tags Not Appearing
+## Evidence disappeared from a report
 
-After uploading, AI tags may take a moment to appear (usually within a minute).
+- **Sensitive** and **Highly sensitive** files are withheld from AI drafting.
+- Check the evidence's reporting period; evidence outside the period is not used.
+- Check it was not deleted (see the audit log).
 
-**If tags never appear:**
-1. The file may not have readable text (scanned PDFs, images)
-2. The file may be corrupted
-3. Try re-uploading
+## Tags look wrong
 
-Note: AI tagging is automatic and free — it does not use AI credits.
-
-## Metadata Cannot Be Saved
-
-### Required fields missing
-
-Make sure you have filled in:
-- Title
-- Evidence type
-- Confidentiality level
-
-These are required fields.
-
-### "Related activity not found"
-
-The activity you selected has been deleted or the project changed. Select a different activity or leave blank.
-
-## File Preview Not Working
-
-DonorDesk can preview: PDF, DOCX, XLSX, JPG, PNG, TXT
-
-**If preview shows an error:**
-- The file may be corrupted — try opening it in its original application
-- Some PDF files with advanced features may not preview
-- Try downloading the file directly
-
-## Cannot Delete Evidence
-
-Only these roles can delete evidence:
-- Owner
-- Admin
-- Project Manager
-
-If you do not see the delete option, your role does not have permission.
-
-## Linked Drive File Shows as Unavailable
-
-1. Check that the Google account still has access to the file
-2. Go to **Settings → Storage**
-3. Reconnect Google Drive if needed
-4. The linked file may have been moved or deleted in Google Drive — update the link
-
-## Verification Status Not Changing
-
-Only users with verification permissions can change status to "Verified".
-
-If you cannot verify:
-- Ask your admin to give you M&E Officer, Compliance Officer, or similar role
-- Or ask someone with those permissions to verify the evidence
-
-## Upload Works But File Not Appearing
-
-1. Refresh the Evidence page
-2. Check if it appears under a different project
-3. Check the filters (make sure "All" is selected)
-4. If still missing, contact support with the file name and project
+AI tag suggestions are only suggestions. Open the tag review and edit or reject them.

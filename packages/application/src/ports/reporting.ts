@@ -178,6 +178,8 @@ export interface PeriodGenerationContext {
   internalReviewDeadline?: string;
   readinessScore?: number;
   daysUntilDeadline?: number;
+  /** What an activity/situation/custom report covers, as one paragraph for the writer (absent for cadence reports). */
+  scope?: string;
 }
 
 /**

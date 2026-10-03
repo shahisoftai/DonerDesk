@@ -108,6 +108,12 @@ Each activity update can have multiple evidence files attached.
 | AI Polishing | Stub | InMemoryJobQueue |
 | Review Workflow | Implemented | Needs revision/Accepted/Rejected |
 
+## Activity reports (2026-10-03)
+
+An `ACTIVITY` reporting period selects which activity updates it covers (`ReportingPeriod.scopeJson.activityIds`); the
+activities need not belong to the period itself. Generation, readiness and the missing-evidence check read exactly those
+activities. See Feature 10 "Report types & scope".
+
 ## Pending Enhancements
 
 - [ ] Wire real LLM provider for AI polishing

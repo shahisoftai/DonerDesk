@@ -12,6 +12,18 @@ export const ReportStatusSchema = z.enum([
   "CLOSED",
 ]);
 
+/** What an ACTIVITY / SITUATION / CUSTOM report covers (see domain `ReportScope`). */
+export const ReportScopeSchema = z.object({
+  activityIds: z.array(z.string().min(1)).max(200).optional(),
+  eventName: z.string().trim().max(300).optional(),
+  location: z.string().trim().max(300).optional(),
+  situationDate: z.string().trim().max(40).optional(),
+  summary: z.string().trim().max(2000).optional(),
+  title: z.string().trim().max(300).optional(),
+  purpose: z.string().trim().max(2000).optional(),
+});
+export type ReportScopeInput = z.infer<typeof ReportScopeSchema>;
+
 export const CreateReportingPeriodSchema = z
   .object({
     projectId: z.string().min(1),
@@ -22,10 +34,23 @@ export const CreateReportingPeriodSchema = z
     deadline: z.string().datetime(),
     internalReviewDeadline: z.string().datetime().optional(),
     responsibleOfficerId: z.string().optional(),
+    scope: ReportScopeSchema.optional(),
   })
-  .refine((d) => new Date(d.endDate).getTime() >= new Date(d.startDate).getTime(), {
-    message: "endDate must be on or after startDate",
-    path: ["endDate"],
+  .superRefine((d, ctx) => {
+    if (new Date(d.endDate).getTime() < new Date(d.startDate).getTime()) {
+      ctx.addIssue({ code: "custom", message: "endDate must be on or after startDate", path: ["endDate"] });
+    }
+    const scope = d.scope ?? {};
+    if (d.reportType === "ACTIVITY" && !scope.activityIds?.length) {
+      ctx.addIssue({ code: "custom", message: "Select at least one activity for an activity report", path: ["scope", "activityIds"] });
+    }
+    if (d.reportType === "SITUATION") {
+      if (!scope.eventName?.trim()) ctx.addIssue({ code: "custom", message: "Name the event or situation", path: ["scope", "eventName"] });
+      if (!scope.situationDate?.trim()) ctx.addIssue({ code: "custom", message: "Enter the situation date", path: ["scope", "situationDate"] });
+    }
+    if (d.reportType === "CUSTOM" && !scope.title?.trim()) {
+      ctx.addIssue({ code: "custom", message: "Give the report a title", path: ["scope", "title"] });
+    }
   });
 export type CreateReportingPeriodInput = z.infer<typeof CreateReportingPeriodSchema>;
 

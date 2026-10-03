@@ -1,144 +1,50 @@
 # How to Export Reports
 
-When your report is ready, DonorDesk can export it in multiple formats for your donor.
+Exports produce the files you send to the donor. They come from the approved report and go through the same quality gate as approval.
 
-## Before You Export
+## Where to export
 
-Make sure:
-- All report sections are complete
-- AI sections have been reviewed
-- All indicators are verified
-- Compliance checklist items are resolved or accepted
-- You have the appropriate role (Owner, Admin, Project Manager, Grants Officer, or Compliance Officer)
+- From the report editor, click the primary button **Export report** (once the report is approved), or
+- open the period's **Export Center** (⋯ menu → Export center) to see all exports and history.
 
-## Step-by-Step Export
+## Export types
 
-### Step 1: Open the Reporting Period
+| Type | Format | Notes |
+|---|---|---|
+| Report | Word (DOCX) and PDF | Follows the donor template's structure and formatting. Includes charts, tables and figures. |
+| Indicator table | Excel | All indicators with values for the period. |
+| Evidence checklist | Excel/document | Every checklist item and its status. |
+| Evidence pack | ZIP | Report, indicator table, checklist and selected evidence files in a numbered folder structure. |
 
-1. Go to your project
-2. Click **Reports** tab
-3. Open your reporting period
+If the donor supplied a Word template, the report can be rendered into it (donor-native rendering); otherwise a standard DonorDesk layout is used.
 
-### Step 2: Go to Export
+## Two kinds of export
 
-Click **Export Report** button.
+- **Internal copy** – watermarked, for review and circulation inside your team.
+- **Donor submission** – bound to a sealed snapshot of the approved report. Only available when the gate passes.
 
-### Step 3: Choose Your Format
+## The export wizard and the gate
 
-Select one of the export formats:
+1. Click **Export report**. The wizard runs a **preflight** check.
+2. If something blocks the export you see **Export is blocked** with an expandable list. Typical items:
+   - Unsupported material claims
+   - Numeric contradictions
+   - Stale verifications
+   - Evidence hash mismatches
+   - Confidentiality violations (confidential/highly sensitive sources)
+   - Unsatisfied donor requirements
+   - Assertion coverage gaps
+3. Each item links to where you fix it. You can also resolve some inline: **Exclude claim**, or **Accept with limitation** with a reason. Confidential sources need an Admin or Grants Officer override.
+4. Choose the export type and confirm. A notification tells you when it is ready (**Export**).
 
-| Format | Best for | What it includes |
-|--------|---------|-----------------|
-| **PDF** | Final donor submission | Full report with charts, formatted text |
-| **Word (DOCX)** | Draft review, internal editing | Full report, editable text |
-| **Excel** | Indicator data tables | Indicator values, targets, actuals |
-| **Evidence Pack (ZIP)** | Full documentation submission | Report + all evidence files + checklist |
+Statements you **left out** are omitted from the files.
 
-### Step 4: Review Pre-Export Warnings
+## Download and history
 
-Before exporting, DonorDesk shows a summary of any open compliance items. Read and acknowledge the warnings.
+Each export is stored with its type, who ran it, when, the report version and the files included. Find it in the Export Center and download it again at any time.
 
-If there are Critical items still open, you will need to either:
-- Resolve them first, or
-- Accept the risk and acknowledge the warning
+## Tips
 
-### Step 5: Download
-
-Click **Download [your format]**.
-
-Your file will download to your device.
-
-## What Each Format Contains
-
-### PDF Export
-
-- All approved report sections
-- Indicator progress table
-- Charts (if you selected them)
-- Page numbers and header/footer
-- Professional formatting ready for donor submission
-
-### Word Export (DOCX)
-
-- All approved report sections
-- Same content as PDF, but in editable format
-- You can make final edits in Word before submission
-
-### Excel Export (XLSX)
-
-- One sheet per logframe level (Goal, Outcomes, Outputs, Activities)
-- Columns: Code, Indicator, Baseline, Target, Period Value, Cumulative Value, Unit
-- Compliance checklist summary
-
-### Evidence Pack (ZIP)
-
-A structured folder containing:
-```
-ProjectName_ReportingPeriod/
-  01_Final_Report/
-    Report.pdf
-  02_Indicator_Table/
-    Indicators.xlsx
-  03_Compliance_Checklist/
-    Checklist.pdf
-  04_Evidence/
-    Attendance_Sheets/
-    Photos/
-    Training_Records/
-    ...
-```
-
-## Export History
-
-Every time you export, it is recorded:
-
-1. Go to **Reports → Export History**
-2. See the date, format, who exported, and what was included
-3. You can re-download any previous export
-
-This is useful if you need to retrieve an earlier version.
-
-## Scheduled Exports (Coming Soon)
-
-In the future, you will be able to set up automatic exports when a reporting period closes.
-
-## Export Permissions
-
-Only these roles can export:
-- Owner
-- Admin
-- Project Manager
-- Grants Officer
-- Compliance Officer
-
-## What Happens to Sensitive Evidence
-
-If your evidence pack includes files marked as **Sensitive** or **Highly Sensitive**, DonorDesk shows a warning before export. You can:
-- Include them anyway
-- Remove sensitive files from the export
-- Consult your organisation's data handling policy
-
-## Export to Google Drive
-
-If you have connected Google Drive:
-
-1. In the export options, select **Save to Google Drive**
-2. Choose the folder
-3. The export will be saved to your Drive instead of downloading
-
-## Troubleshooting Export Issues
-
-### "Export blocked — critical compliance items open"
-
-You must resolve or accept the critical items before exporting. Open the Compliance tab to address them.
-
-### "File is corrupted"
-
-Try exporting again. If the problem persists, contact support with your project and period details.
-
-### "Export times out"
-
-Large evidence packs can take a while. If it times out, try:
-- Exporting just the report (PDF) first
-- Exporting the evidence pack separately
-- Checking your internet connection
+- Verify indicator data and evidence first; that removes most blockers.
+- If donor-template rendering fails, check that the template is **Reviewed** (see [How to upload a donor template](/support/how-to/upload-donor-template)).
+- See [Troubleshooting export issues](/support/troubleshooting/export-issues).

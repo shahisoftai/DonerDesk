@@ -98,6 +98,7 @@ class ContextProject(BaseModel):
 class ContextPeriod(BaseModel):
     model_config = ConfigDict(extra="forbid")
     reportType: str | None = None
+    scope: str | None = None
     startDate: str | None = None
     endDate: str | None = None
     deadline: str | None = None

@@ -46,6 +46,7 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         reportingProfileSnapshotJson: p.reportingProfileSnapshotJson,
         templateSnapshotJson: p.templateSnapshotJson,
         storyContextJson: p.storyContextJson,
+        scopeJson: p.scopeJson,
       },
     });
     return ok(p);
@@ -107,6 +108,7 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
     reportingProfileSnapshotJson: string;
     templateSnapshotJson: string;
     storyContextJson: string;
+    scopeJson: string;
     createdAt: Date;
   }): ReportingPeriod {
     return ReportingPeriod.rehydrate({
@@ -128,6 +130,7 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         reportingProfileSnapshotJson: row.reportingProfileSnapshotJson,
         templateSnapshotJson: row.templateSnapshotJson,
         storyContextJson: row.storyContextJson,
+        scopeJson: row.scopeJson,
       },
     });
   }

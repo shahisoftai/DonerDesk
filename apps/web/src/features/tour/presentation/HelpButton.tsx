@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 const HELP_TOPICS = {
-  templates: { href: "/support/how-to", label: "How donor templates work" },
-  "report-editor": { href: "/support/report-writing-skills", label: "Report writing tips" },
-  compliance: { href: "/support/how-to", label: "How compliance checks work" },
+  templates: { href: "/support/how-to/upload-donor-template", label: "How donor templates work" },
+  "report-editor": { href: "/support/how-to/use-the-report-editor", label: "How the report editor works" },
+  compliance: { href: "/support/how-to/use-compliance-checklist", label: "How compliance checks work" },
 } as const;
 
 export type HelpTopic = keyof typeof HELP_TOPICS;

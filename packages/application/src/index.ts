@@ -20,6 +20,7 @@ export * from "./ports/demo.js";
 export * from "./services/entitlement-service.js";
 export * from "./services/indicator-analytics-service.js";
 export * from "./services/report-planner.js";
+export * from "./services/period-activities.js";
 export * from "./services/report-revision-service.js";
 export * from "./services/report-assurance-service.js";
 

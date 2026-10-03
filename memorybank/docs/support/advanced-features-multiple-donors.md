@@ -1,171 +1,26 @@
-# How to Manage Multiple Donors
+# Managing Multiple Donors
 
-Many organisations work with multiple donors simultaneously. Here is how to manage multiple donor requirements in DonorDesk.
+## One project per grant
 
-## Project per Donor vs. Project per Programme
+Each project has one donor, one donor template and one reporting cycle. If several donors fund the same programme with different formats, create **one project per donor** so each has its own template, indicators and deadlines.
 
-### Option 1: One Project Per Donor
+## Reuse
 
-Best when:
-- Each donor funds a distinct project
-- Reporting requirements differ significantly
-- Separate tracking is needed
+- Donor templates can be **saved to the template library** and copied into other projects, so a second grant from the same donor starts from the same structure.
+- Indicators can be imported from Excel to copy a common set quickly.
+- The organisation's **default reporting profile** (language, tone, rules) applies to every new project and can be overridden per project.
+- **AI Writing Style** preferences can apply to all reports, one template or one section type, so a donor's preferred wording carries forward.
 
-**Example:**
-- Project A: UNHCR funded, quarterly reports
-- Project B: EU funded, semi-annual reports
-- Project C: USAID funded, annual reports
+## Keep evidence organised
 
-### Option 2: One Programme with Multiple Donors
+Set the **reporting period** and links on each evidence file. The same file can be linked to several activities and indicators, so one attendance sheet can support more than one report.
 
-Best when:
-- Multiple donors fund the same programme
-- Shared activities across donors
-- Joint reporting is possible
+## Cross-project views
 
-**Example:**
-- Nutrition Programme (single logframe)
-- Funded by: UNHCR, EU, SIDA
-- One set of activities, separate donor reports
+**Reports**, **Evidence**, **Compliance** and **My Work** in the main menu show everything across projects, with deadlines on **Home**.
 
-## Managing Separate Projects
+## Plan limits
 
-### When to Use
+Only **active** projects count toward your plan; archive finished ones.
 
-Each donor has their own project with its own:
-- Logframe (may be similar but separate)
-- Evidence library
-- Reporting periods
-- Templates
-
-### Benefits
-
-- Clean separation of donor requirements
-- Clear budget tracking per donor
-- Independent reporting timelines
-
-### Challenges
-
-- Duplicate data entry for shared activities
-- More projects to manage
-- Potential for confusion on shared outputs
-
-## Managing Shared Activities
-
-### Linking Evidence Across Projects
-
-If the same activity is funded by multiple donors:
-
-1. Upload evidence to one project
-2. Note in the evidence title that it relates to multiple donors
-3. In the other project, document that evidence is shared
-4. Keep records of which donor funded what
-
-### Shared Logframe with Donor Annotations
-
-If donors share a logframe:
-1. Create one project with the shared logframe
-2. In indicator notes, note which donor funds which targets
-3. For each donor report, show only the relevant indicators
-
-## Donor-Specific Templates
-
-### Creating Donor Templates
-
-1. Upload each donor's template to the relevant project
-2. Name clearly: "UNHCR Q3 Report Template 2026"
-3. Link the correct template when creating reporting periods
-
-### Managing Template Versions
-
-Donors update templates. Keep track:
-- UNHCR updated their template in April 2026
-- Old periods use old template
-- New periods use new template
-
-## Reporting Calendars
-
-### Tracking Multiple Deadlines
-
-| Donor | Report | Due Date | Status |
-|-------|--------|----------|--------|
-| UNHCR | Q3 2026 | Oct 15 | In Progress |
-| EU | Annual 2025 | Nov 30 | Not Started |
-| USAID | Semi-annual | Dec 15 | Not Started |
-
-Create a master calendar:
-1. Note all donor deadlines
-2. Work backward to plan data collection
-3. Set internal review deadlines before donor deadlines
-
-### Avoiding Deadline Conflicts
-
-If multiple reports are due at once:
-- Start data collection early
-- Use AI to draft sections simultaneously
-- Share evidence across reports where appropriate
-
-## Consolidating for Multiple Donors
-
-### Single Evidence Library
-
-Evidence can be referenced in multiple reports:
-1. Upload once to the project
-2. Link to activities in the shared logframe
-3. Reference in each donor report
-
-### Unified Indicator Framework
-
-Create indicators that satisfy multiple donors:
-- Find common measurement standards
-- Note which donor requires which indicator
-- Ensure all requirements are met
-
-## Cost Allocation Considerations
-
-If multiple donors fund the same activities:
-
-### Direct Attribution
-
-If Activity A is 100% funded by Donor X:
-- All evidence for Activity A is for Donor X
-- Report Activity A in Donor X reports
-
-### Proportional Allocation
-
-If one activity serves multiple donors:
-- Document what percentage of cost each donor covers
-- Attribute evidence proportionally
-- Be transparent about allocation methodology
-
-## Common Scenarios
-
-### Scenario 1: Same Activity, Two Donors
-
-A training session is funded by both UNHCR and EU.
-
-**Approach:**
-1. Document which donor funds what portion
-2. Upload evidence once
-3. Note allocation in both reports
-4. Ensure no double-counting of beneficiaries
-
-### Scenario 2: One Report Satisfies Another
-
-EU and SIDA accept the same narrative format.
-
-**Approach:**
-1. Create one template that satisfies both
-2. Generate one report
-3. Export with both donor cover pages
-4. Or create two exports with the same content
-
-### Scenario 3: Conflicting Requirements
-
-UNHCR requires Annex A, EU prohibits it.
-
-**Approach:**
-1. Create separate section configurations
-2. Export what each donor requires
-3. Do not include excluded content
-4. Document any such conflicts
+See [Understanding projects](/support/getting-started/understanding-projects).

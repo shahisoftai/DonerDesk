@@ -1,100 +1,45 @@
-# Troubleshooting Report Export Issues
+# Troubleshooting Export Issues
 
-## "Export blocked — critical compliance items open"
+## "Export is blocked"
 
-You cannot export until critical compliance items are resolved.
+The export wizard runs the same gate as approval. Expand the list and fix each item. Each links to where you can resolve it.
 
-**To fix:**
-1. Go to **Compliance** tab
-2. Find all **Critical** items with status **Open**
-3. Resolve each one (upload evidence, update indicators, or accept risk)
-4. Return to export
+| Issue | What it means | Fix |
+|---|---|---|
+| Unsupported material claims | A statement is not backed by evidence. | Correct, keep with a note, or leave it out (**Exclude claim**). |
+| Numeric contradictions | A number disagrees with verified data. | Use the evidence value or edit the text. |
+| Stale verifications | Data or evidence changed after it was verified. | Verify it again, then re-check the report. |
+| Evidence hash mismatches | An evidence file was replaced after verification. | Re-verify the file. |
+| Confidentiality violations | The report cites a Sensitive or Highly sensitive file. | Remove the claim, or have an Admin or Grants Officer confirm it may be shared. |
+| Unsatisfied requirements | A donor requirement is unmet (for example a required table or section). | Add the missing content or resolve the checklist item. |
+| Assertion coverage gaps | Part of the report was not checked. | Run **Re-check now** from Report checks. |
 
-If you believe a critical item is wrong, use **Accept Risk** with a justification.
+You can **Accept with limitation** (with a reason) where allowed. High-risk and confidential items need the right authority.
 
-## Export Takes Too Long
+## I can't find the Export button
 
-Large reports with many evidence files can take several minutes.
+- The report must be **Approved** first.
+- Your role must be allowed to export: Admin, Project Manager, Grants Officer or Viewer.
 
-**Solutions:**
-- Wait and do not close the window
-- Try exporting just the report (PDF) first, then the evidence separately
-- Try during off-peak hours if many people use your network
+## The donor-native Word output did not apply
 
-## Download Does Not Start
+- The template must be **Reviewed**, and the mapping **approved** with the original .docx.
+- Mapping must be locked to the reporting period. See [How to upload a donor template](/support/how-to/upload-donor-template).
 
-1. Check your browser's download folder
-2. Check if a popup blocker prevented the download — allow popups for donordesk.online
-3. Try right-clicking the download button and selecting "Save link as"
-4. Refresh the page and try again
+## Charts are missing
 
-## Exported PDF Looks Different from the Screen
+Charts appear if you saved one on the section. Check the **Chart** tab for that section and re-export.
 
-PDF rendering can differ slightly from screen display.
+## Statements I left out still appear
 
-**Before submitting to donor:**
-1. Download and open the PDF
-2. Check all sections, charts, and formatting
-3. If something looks wrong, export as Word (DOCX) instead and make final edits there
+Left-out statements are removed from exports. Re-run the export after making the decision, and make sure you exported the current version.
 
-## Charts Missing from Export
+## The file will not open or is incomplete
 
-Charts are only included if:
-1. You selected a chart type for the section
-2. You saved the chart configuration
+Try the export again from the Export Center. If it repeats, email support@donordesk.online with the export time and type.
 
-**To add charts:**
-1. Open the section in the report editor
-2. Click the chart icon
-3. Select chart type (bar, line, pie, etc.)
-4. Save
-5. Export again
+## Need a copy for internal review
 
-## Evidence Pack ZIP Is Empty or Incomplete
+Use the watermarked **internal** export. The **donor submission** export is only available when the gate passes.
 
-1. Refresh and try exporting again
-2. Check your internet connection
-3. Large evidence packs may timeout — try exporting evidence separately
-
-## Sensitive Evidence Included When You Want It Excluded
-
-Before exporting:
-1. Check the **Sensitive Evidence Warning** shown before export
-2. Review the list of files that will be included
-3. If sensitive files should be excluded:
-   - Change their confidentiality level to "Sensitive" or "Highly Sensitive" before exporting
-   - Or remove them from the export list manually
-
-## Exported Report Shows Wrong Period Data
-
-The export pulls data from the selected reporting period.
-
-If you are seeing wrong data:
-1. Check that the correct reporting period is selected
-2. Verify that indicator values are updated for this period
-3. Check that the correct donor template is linked
-
-## "You do not have permission to export"
-
-Only these roles can export:
-- Owner
-- Admin
-- Project Manager
-- Grants Officer
-- Compliance Officer
-
-Ask your admin to give you one of these roles.
-
-## Export History Is Empty
-
-The export history is recorded automatically. If you do not see previous exports:
-1. Make sure you are in the same organisation workspace
-2. Check if exports were done by other team members (they see their own history)
-3. Contact your admin if you need records of exports done by others
-
-## Word Document Cannot Be Opened
-
-1. Try downloading again
-2. Try a different browser
-3. Export as PDF instead
-4. If the file is corrupt, contact support with the project and period details
+See [How to export reports](/support/how-to/export-reports).

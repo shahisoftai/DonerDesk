@@ -1,6 +1,6 @@
 # DonorDesk MemoryBank Index
 
-**Last updated:** 2026-09-27
+**Last updated:** 2026-10-03
 
 Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to search within files.
 
@@ -27,6 +27,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **Frontend portal status** | [`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`](imp/FRONTEND-UX-INTEGRATION-AUDIT.md) (latest audit) and [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 | **AI report-generation audit + fixes (provider auth, docxtpl donor-template rendering, entailment/backoff)** | [`Fixes.md`](Fixes.md) §"AI Reporter completely non-functional on production" and §"Systematic fix of the 8 AI-report-generation audit findings" (2026-09-17/18) — live outage root-caused and fixed (corrupted token, duplicate env keys, missing timeout, missing trailing newline in env files); full donor-template docxtpl rendering feature built end-to-end (previously data-model-only); shared lexical scorer + entailment bug fix; LLM 429 backoff + total-budget enforcement. |
 | **AI Reporter latency rework (single-call pipeline + parallel sections)** | [`Fixes.md`](Fixes.md) §"AI Reporter latency rework — single-call pipeline + parallel sections (2026-09-18)" and [`Features/20-report-gen.md`](Features/20-report-gen.md) §21 — closes out the sequential-generation performance rework deferred by the audit above; collapses draft→critique→refine to one LLM call/section, adds real (thread-cancelled) per-section timeouts, drafts sections with bounded concurrency (default 3) instead of one at a time, and raises the UI's poll-window safety ceiling accordingly. Not yet verified against a live provider or in the browser. |
+| **Report types & scope — Activity / Situation / Custom reports name what they cover (2026-10-03)** | [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-Period-Manager.md) §"Report types & scope"; [`Features/12-Missing-Evidence-And-Compliance-Checklist.md`](Features/12-Missing-Evidence-And-Compliance-Checklist.md); [`Features/11-AI-Report-Draft-Generator.md`](Features/11-AI-Report-Draft-Generator.md); [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) (last deploy). `ReportingPeriod.scopeJson`, Semi-annual type, scoped writer prompts, per-type checklists. |
 | **Production issues & fixes** | [`Fixes.md`](Fixes.md) |
 | **What still needs doing** | [`pending.md`](pending.md) |
 | **Contabo host operations** | [`contabo-ops.md`](contabo-ops.md) (live-host inventory, ports, services, db, ops rules) |

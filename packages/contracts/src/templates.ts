@@ -4,6 +4,7 @@ import { ReportingFrequencySchema } from "./projects.js";
 export const ReportTypeSchema = z.enum([
   "MONTHLY",
   "QUARTERLY",
+  "SEMI_ANNUAL",
   "ANNUAL",
   "FINAL",
   "ACTIVITY",

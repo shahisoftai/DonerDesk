@@ -1,115 +1,54 @@
 # How to Log Activities
 
-Logging activities keeps a record of what your team has done. This data feeds into reports and helps generate AI drafts.
+Activities are the field updates that tell the story behind your indicators: trainings held, distributions made, visits completed. Roles that can create activities: Admin, Project Manager, M&E Officer and Field Officer. Admin and Project Manager can approve them.
 
-## What is an Activity?
+Open **Projects → your project → Activities**.
 
-An activity is a specific task or event that your project carries out. Examples:
-- "Conducted community health awareness session on 3 August"
-- "Distributed nutritional supplements to 50 households"
-- "Held quarterly review meeting with partners"
+## Add an activity
 
-## Step-by-Step: Log an Activity
+1. Click **New activity**.
+2. Fill in:
+   - **Activity title** and **Activity date**
+   - **Reporting period** – the report this activity should feed
+   - **Location**
+   - **Summary** of what happened
+   - **Total participants**, with **Female**, **Male**, **Children** and **Participants with disability** where relevant
+   - **Achievements**, **Challenges**, **Lessons learned** and **Next steps**
+3. Click **Submit activity**.
 
-### Step 1: Go to Activities
+Everything you write here can be used by the AI Reporter, so include specifics: numbers, places, what changed.
 
-1. Open your project
-2. Click the **Activities** tab
+## Get help polishing the text
 
-### Step 2: Click Log Activity
+On an activity, use the **Suggested narrative** panel to have AI turn your summary into a cleaner narrative. You see your original next to the suggestion and can copy it. Nothing changes until you choose to use it.
 
-Click **Log Activity** at the top right.
+## Attach evidence
 
-### Step 3: Fill in the Activity Details
+Open the activity and use **Attached evidence** to see files linked to it. Upload evidence and link it to the activity from the [Evidence library](/support/how-to/upload-evidence). Activities with evidence make stronger reports.
 
-**Basic Information:**
-| Field | What to enter | Required? |
-|-------|--------------|-----------|
-| **Title** | Short name for the activity | Yes |
-| **Description** | What happened, how it was done | Recommended |
-| **Date** | When the activity took place | Yes |
-| **Location** | Where it happened | Recommended |
+## Review
 
-**Participation:**
-| Field | What to enter |
-|-------|--------------|
-| **Number of participants** | Total attendees |
-| **Male / Female / Children** | Disaggregation by group |
-| **Beneficiary type** | Who benefited |
-
-**Achievements and Challenges:**
-| Field | What to enter |
-|-------|--------------|
-| **Achievements** | What was accomplished |
-| **Challenges** | Any problems encountered |
-| **Lessons Learned** | What you would do differently |
-| **Next Steps** | Follow-up actions needed |
-
-### Step 4: Link to Logframe Items
-
-In the **Links** section:
-
-- **Output** — Select the logframe output this activity relates to
-- **Indicators** — Link any indicators this activity affects
-
-This helps connect activities to your logframe and compliance checklist.
-
-### Step 5: Attach Evidence
-
-In the **Evidence** section:
-- Upload or link files that prove the activity happened
-- Attendance sheets, photos, meeting notes, etc.
-
-### Step 6: Save
-
-Click **Save Activity**.
-
-## Activity Statuses
+Submitted activities go to a reviewer with approval rights.
 
 | Status | Meaning |
-|--------|---------|
-| **Draft** | Saved but not submitted |
-| **Submitted** | Sent for review |
-| **Verified** | Reviewed and confirmed |
-| **Needs Correction** | Reviewer found an issue |
+|---|---|
+| Draft | Not submitted. |
+| Submitted | Waiting for review. |
+| Needs revision | The reviewer sent it back with a required note. |
+| Accepted | Approved. |
+| Rejected | Permanently rejected (a note is required; this cannot be undone). |
 
-## Editing and Deleting Activities
+Reviewers use **Send revision request** or **Reject activity** and must explain why. Every decision is recorded in the audit trail.
 
-To edit:
-1. Click on the activity in the list
-2. Click **Edit**
-3. Make your changes
-4. Save
+## Import many activities at once
 
-To delete:
-1. Click on the activity
-2. Click **Delete**
-3. Confirm
+1. On the Activities page click **Download template** and fill it in.
+2. Click **Import activities from Excel** and upload it (XLSX, CSV or TXT).
+3. Pick the **reporting period**; all imported activities are attached to it.
+4. **Review the parsed content**, then create the records. Output and indicator codes are matched to your logframe. Rows whose titles already exist in the project are skipped.
 
-## Filtering and Searching Activities
+## Tips
 
-Use the filters to find specific activities:
-- By date range
-- By status
-- By linked output/indicator
-- By logged by (who created it)
-
-Use the search bar to find activities by title or description.
-
-## Bulk Import Activities
-
-If you have many activities in a spreadsheet:
-
-1. Click **Import Activities**
-2. Upload your file (XLSX or CSV)
-3. Map the columns
-4. Preview and confirm
-
-## How Activities Feed Into Reports
-
-When you generate an AI report draft, the activity narratives are used to populate:
-- Activities completed sections
-- Achievements and challenges sections
-- Evidence summaries
-
-Logged activities also help the compliance checklist verify that evidence exists for each activity.
+- Log activities as they happen; do not wait for report time.
+- Field Officers can log activities without needing access to reports.
+- See [Key concepts](/support/getting-started/key-concepts) for how activities, evidence and indicators fit together.

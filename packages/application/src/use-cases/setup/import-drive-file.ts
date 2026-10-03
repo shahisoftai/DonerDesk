@@ -23,7 +23,7 @@ export type DriveImportResult =
     };
 
 const REPORT_TYPES: ReadonlySet<string> = new Set([
-  "MONTHLY", "QUARTERLY", "ANNUAL", "FINAL", "ACTIVITY", "SITUATION", "CUSTOM",
+  "MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL", "FINAL", "ACTIVITY", "SITUATION", "CUSTOM",
 ]);
 
 /**

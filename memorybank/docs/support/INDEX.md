@@ -1,105 +1,36 @@
 # DonorDesk Support Documentation Index
 
-Welcome to the DonorDesk support documentation. Use this index to find the guide you need.
+Source files for the public Support Center at donordesk.online/support. Each file is routed from `apps/web/src/app/support/<category>/[article]/page.tsx` (see `FILE_MAP`) and listed in `apps/web/src/components/support/wikiCategories.tsx`. **When you add, rename or remove an article, update both.** Last full refresh: 2026-09-29.
 
-## Quick Links
+## Ground truth to check when editing
 
-- [Getting Started](basic-information/getting-started-overview.md) — New to DonorDesk? Start here
-- [How to Create an Account](how-to/how-to-create-an-account.md) — Set up your DonorDesk account
-- [Troubleshooting Login Issues](troubleshooting-login-issues.md) — Can't log in? Find solutions
-- [Support Contact](support-contact.md) — Contact our support team
+- Plans and limits: `packages/domain/src/contexts/billing/plan.ts` (Starter $0, Team $129, Growth $299, Enterprise contracted; AI drafts 5 / 20 / 100)
+- Roles and permissions: `packages/domain/src/policies/permissions.ts`
+- Labels and statuses: `apps/web/src/lib/labels.ts`
+- Report editor: `apps/web/src/features/report-editor/`
+- Email delivery is not active in production, so invitations are shared as links and notifications are in-app only.
+- There is no public API, two-factor authentication, donation/CRM module, custom fields or in-app account deletion. Do not document them.
 
----
+## Getting Started (`basic-information/` and `basic-information-*.md`)
+what-is-donordesk, getting-started-overview, key-concepts, understanding-projects, understanding-logframes, logframe hierarchy, indicators and targets, understanding-evidence, evidence verification, understanding-activities, reporting periods, compliance checklist, report sections / statuses / readiness / workflow, audit logs, donor templates, storage and file management, AI in DonorDesk, data security, user roles and permissions, pricing plans.
 
-## Basic Information
-
-- [Getting Started Overview](basic-information/getting-started-overview.md)
-- [Understanding Your Dashboard](basic-information/understanding-your-dashboard.md)
-- [Data Security](basic-information/data-security.md)
-- [Understanding Audit Logs](basic-information/understanding-audit-logs.md)
-- [About DonorDesk](basic-information/about-donordesk.md)
-- [Key Concepts and Terminology](basic-information/key-concepts-terminology.md)
-- [Supported Countries and Currencies](basic-information/supported-countries-currencies.md)
-- [Data Backup and Recovery](basic-information/data-backup-recovery.md)
-- [System Status Page](basic-information/system-status-page.md)
-- [Accessibility Statement](basic-information/accessibility-statement.md)
-
-## How-To Guides
-
-### Account & Settings
-- [How to Create an Account](how-to/how-to-create-an-account.md)
-- [How to Change Your Password](how-to/how-to-change-your-password.md)
-- [How to Delete Your Account](how-to/how-to-delete-your-account.md)
-- [How to Manage Team Roles and Permissions](how-to/how-to-manage-team-roles-permissions.md)
-
-### Donors & Donations
-- [How to Manage Donors](how-to/how-to-manage-donors.md)
-- [How to Record Offline Donations](how-to/how-to-record-offline-donations.md)
-- [How to Manage Recurring Donations](how-to/how-to-manage-recurring-donations.md)
-- [How to Process Refunds](how-to/how-to-process-refunds.md)
-- [How to Handle Failed Payments](how-to/how-to-handle-failed-payments.md)
-
-### Organisation
-- [How to Set Up New Organisation](how-to/how-to-set-up-new-organisation.md)
-- [How to Onboard a Team Member](how-to/how-to-onboard-team-member.md)
-- [How to Manage Billing and Subscription](how-to/how-to-manage-billing-subscription.md)
-
-### Tools & Features
-- [How to Use Tags and Filters](how-to/how-to-use-tags-and-filters.md)
-- [How to Export Donor Data](how-to/how-to-export-donor-data.md)
-- [How to Set Up Payment Integrations](how-to/how-to-set-up-payment-integrations.md)
-- [How to Use the Notification System](how-to/how-to-use-the-notification-system.md)
-- [How to Set Up Custom Fields](how-to/how-to-set-up-custom-fields.md)
-- [How to Use Search Functionality](how-to/how-to-use-search-functionality.md)
-- [How to Manage Donation Tiers](how-to/how-to-manage-donation-tiers.md)
-- [How to Use Bulk Actions](how-to/how-to-use-bulk-actions.md)
-- [How to Set Up Automated Receipts](how-to/how-to-set-up-automated-receipts.md)
-- [How to Manage Currency Settings](how-to/how-to-manage-currency-settings.md)
-- [How to Use the Activity Feed](how-to/how-to-use-the-activity-feed.md)
+## How-To (`how-to/`)
+Accounts: log-in, create-an-account, change-your-password, set-up-new-organisation, change-organisation-profile, invite-team-members, manage-team-roles-permissions, onboard-team-member.
+Projects: create-a-project, archive-a-project, build-logframe, upload-donor-template, connect-google-drive.
+Reporting: create-a-reporting-period, update-indicator-values, import-from-google-sheets, log-activities, upload-evidence, tell-the-story-and-add-inputs, generate-ai-report-draft, use-the-report-editor, review-and-approve-reports, export-reports, use-compliance-checklist, use-bulk-actions, use-comments-feedback, use-the-audit-trail, prepare-for-donor-visit.
+Navigation: use-the-dashboard, search-projects-and-evidence, use-the-notification-system, use-the-academy-tour, manage-billing-subscription.
 
 ## Troubleshooting
-
-- [Troubleshooting Login Issues](troubleshooting-login-issues.md)
-- [Troubleshooting Account Access](troubleshooting-account-access.md)
-- [Troubleshooting Billing Issues](troubleshooting-billing-issues.md)
-- [Troubleshooting Browser Performance](troubleshooting-browser-performance.md)
-- [Troubleshooting Data Recovery](troubleshooting-data-recovery.md)
-- [Troubleshooting Email Delivery](troubleshooting-email-delivery.md)
-- [Troubleshooting Payment Issues](troubleshooting-payment-issues.md)
+login, account access, billing, browser performance, data recovery, project setup, logframe, indicator data, evidence upload, report generation, AI report generation, export, storage, dashboard, compliance checklist.
 
 ## Advanced Features
+ai-settings (AI + AI Writing Style), data-import-export, multiple-donors, compliance-automation, roles-and-permissions, team-management, imported-vs-linked-data, templates.
 
-- [Advanced Features Overview](advanced-features/advanced-features-overview.md)
-- [Advanced Features Using the API](advanced-features/advanced-features-using-the-api.md)
-- [Advanced Features Data Import Export](advanced-features/advanced-features-data-import-export.md)
-- [Advanced Features Webhooks](advanced-features/advanced-features-webhooks.md)
-- [Advanced Features Automation Rules](advanced-features/advanced-features-automation-rules.md)
-- [Advanced Features Custom Integrations](advanced-features/advanced-features-custom-integrations.md)
-- [Advanced Features Analytics](advanced-features/advanced-features-analytics.md)
+## Account & Billing / Security & Privacy
+plans-and-limits, invoices; security-best-practices, data-handling, gdpr-compliance.
 
-## Reference
+## Reference (`/support/<slug>`)
+contact, reference-faq, reference-glossary, reference-file-formats, reference-error-codes, reference-keyboard-shortcuts, reference-donor-reporting-guidelines.
 
-- [Reference FAQ](reference-faq.md)
-- [Reference Glossary](reference-glossary.md)
-- [Reference Keyboard Shortcuts](reference-keyboard-shortcuts.md)
-- [Reference API Rate Limits](reference-api-rate-limits.md)
-- [Reference Third-Party Integrations](reference-third-party-integrations.md)
-
-## Account & Billing
-
-- [Account Billing Overview](account-billing-invoices.md)
-- [Account Billing How to Update Payment Method](account-billing-how-to-update-payment-method.md)
-
-## Security & Privacy
-
-- [Security Best Practices](security-best-practices.md)
-- [Security Privacy Data Handling](security-privacy-data-handling.md)
-- [Security Privacy GDPR Compliance](security-privacy-gdpr-compliance.md)
-
-## Support
-
-- [Support Contact Information](support-contact.md)
-
----
-
-*For additional help, contact support@donordesk.online*
+## Report Writing Skills (`report-writing-skills/`)
+Fundamentals, donor-specific guides (UNHCR, DG ECHO, USAID, Global Fund, GCF, FCDO, EU, Gates) and tools. These are donor-craft guidance and mention DonorDesk only where a feature is relevant.

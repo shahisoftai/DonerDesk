@@ -68,7 +68,69 @@ def _json_block(title: str, rows: list[Any]) -> str:
     return f"# {title} (JSON):\n" + json.dumps([r.model_dump(exclude_none=True) for r in rows], ensure_ascii=False)
 
 
+def build_user_prompt_parts(req: SectionDraftRequest) -> tuple[str, str]:
+    """(report-wide prefix, section-specific suffix) of the user prompt.
+
+    The prefix (profile, project/period/template context, story, verified
+    findings, indicator updates, activity records) is byte-identical for every
+    section of a report, so it comes first: providers with prefix caching
+    (DeepSeek, GLM, OpenAI automatically; Claude via `cache_prefix`) reuse it
+    for sections 2..N instead of re-reading ~10k tokens each time.
+    """
+    return _shared_prompt(req), _section_prompt(req)
+
+
 def build_user_prompt(req: SectionDraftRequest) -> str:
+    shared, specific = build_user_prompt_parts(req)
+    return shared + "\n\n" + specific if shared else specific
+
+
+def _shared_prompt(req: SectionDraftRequest) -> str:
+    """Report-wide part: identical for every section of one report."""
+    parts: list[str] = []
+    ctx = req.context
+    profile = ctx.profile
+    if profile and profile.tone:
+        parts.append(f"# Tone: {_TONE.get(profile.tone.upper(), _TONE['FORMAL'])}")
+    if profile and profile.language:
+        parts.append(f"# Language: write in {profile.language}")
+    if profile and profile.formattingRules:
+        parts.append(_bullets("Formatting rules:", profile.formattingRules))
+    if ctx.visibility:
+        parts.append("\n".join(ctx.visibility))
+    if ctx.project:
+        parts.append(_bullets("Project context:", [f"{k}: {v}" for k, v in ctx.project.model_dump(exclude_none=True).items()]))
+    if ctx.period:
+        parts.append(_bullets("Reporting period:", [f"{k}: {v}" for k, v in ctx.period.model_dump(exclude_none=True).items()]))
+    if ctx.template:
+        template_lists = {
+            "generalInstructions": "Donor's report-wide instructions (MUST be honoured):",
+            "formattingRules": "Donor formatting rules:",
+            "submissionInstructions": "Donor submission instructions (for awareness; do not restate unless asked):",
+            "complianceRequirements": "Donor compliance requirements (the report must not contradict these):",
+            "indicatorRequirements": "Donor indicator reporting requirements:",
+        }
+        info = ctx.template.model_dump(exclude_none=True)
+        parts.append(_bullets("Donor template:", [f"{k}: {v}" for k, v in info.items() if k not in template_lists]))
+        for key, title in template_lists.items():
+            items = info.get(key)
+            if items:
+                parts.append(_bullets(title, items))
+    if ctx.story:
+        story = [f"{_STORY_LABELS[k]}: {v.strip()}" for k, v in ctx.story.model_dump(exclude_none=True).items() if v and v.strip()]
+        if story:
+            parts.append(
+                _bullets("Tell the Story (officer's narrative context — the ONLY permitted source of explanations beyond activity records):", story)
+            )
+
+    parts.append(_json_block("Verified findings", req.verifiedFindings))
+    parts.append(_json_block("Indicator updates", req.indicatorUpdates))
+    parts.append(_json_block("Activity records", req.activities))
+    return "\n\n".join(parts)
+
+
+def _section_prompt(req: SectionDraftRequest) -> str:
+    """Section-specific part: the brief, its retrieved evidence and the schema."""
     s = req.section
     kind = section_kind(s)
     parts: list[str] = [
@@ -143,44 +205,6 @@ def build_user_prompt(req: SectionDraftRequest) -> str:
             + json.dumps([r.model_dump(exclude_none=True) for r in s.numericTable], ensure_ascii=False)
         )
 
-    ctx = req.context
-    profile = ctx.profile
-    if profile and profile.tone:
-        parts.append(f"# Tone: {_TONE.get(profile.tone.upper(), _TONE['FORMAL'])}")
-    if profile and profile.language:
-        parts.append(f"# Language: write in {profile.language}")
-    if profile and profile.formattingRules:
-        parts.append(_bullets("Formatting rules:", profile.formattingRules))
-    if ctx.visibility:
-        parts.append("\n".join(ctx.visibility))
-    if ctx.project:
-        parts.append(_bullets("Project context:", [f"{k}: {v}" for k, v in ctx.project.model_dump(exclude_none=True).items()]))
-    if ctx.period:
-        parts.append(_bullets("Reporting period:", [f"{k}: {v}" for k, v in ctx.period.model_dump(exclude_none=True).items()]))
-    if ctx.template:
-        template_lists = {
-            "generalInstructions": "Donor's report-wide instructions (MUST be honoured):",
-            "formattingRules": "Donor formatting rules:",
-            "submissionInstructions": "Donor submission instructions (for awareness; do not restate unless asked):",
-            "complianceRequirements": "Donor compliance requirements (the report must not contradict these):",
-            "indicatorRequirements": "Donor indicator reporting requirements:",
-        }
-        info = ctx.template.model_dump(exclude_none=True)
-        parts.append(_bullets("Donor template:", [f"{k}: {v}" for k, v in info.items() if k not in template_lists]))
-        for key, title in template_lists.items():
-            items = info.get(key)
-            if items:
-                parts.append(_bullets(title, items))
-    if ctx.story:
-        story = [f"{_STORY_LABELS[k]}: {v.strip()}" for k, v in ctx.story.model_dump(exclude_none=True).items() if v and v.strip()]
-        if story:
-            parts.append(
-                _bullets("Tell the Story (officer's narrative context — the ONLY permitted source of explanations beyond activity records):", story)
-            )
-
-    parts.append(_json_block("Verified findings", req.verifiedFindings))
-    parts.append(_json_block("Indicator updates", req.indicatorUpdates))
-    parts.append(_json_block("Activity records", req.activities))
     parts.append(_json_block("Evidence chunks", req.retrievedEvidence))
     if req.priorNarrative:
         parts.append(_json_block("Prior approved narrative (for consistency)", req.priorNarrative))
@@ -205,17 +229,24 @@ def draft(
     *,
     feedback: list[str] | None = None,
     previous_content: str | None = None,
+    max_wait_s: float | None = None,
 ) -> GeneratedSection:
-    """Run one draft pass and return the coerced GeneratedSection.
+    """Run one draft pass (exactly one provider call) and return the coerced
+    GeneratedSection.
 
     With `feedback`, this is the validator retry: the previous draft and every
     issue are shown so the model makes targeted corrections instead of
     rewriting from scratch (which tends to trade one defect for another).
+
+    A reply with no JSON raises `ValueError`; the pipeline owns the retry, so
+    it stays inside the section's time budget and call cap. `max_wait_s`
+    bounds how long the call may queue for a provider slot.
     """
     from . import timeouts  # late import to avoid cycles
 
     system = system_prompt(req.writerContractVersion)
-    user = build_user_prompt(req)
+    shared, specific = build_user_prompt_parts(req)
+    user = shared + "\n\n" + specific if shared else specific
     temperature = _temperature()
     if feedback:
         user += (
@@ -227,19 +258,11 @@ def draft(
         temperature = min(temperature, 0.1)
 
     def _call() -> tuple[str, dict[str, Any]]:
-        return _chat(system, user, model=req.model, temperature=temperature)
+        return _chat(system, user, model=req.model, temperature=temperature, cache_prefix=shared or None)
 
-    content, telemetry = timeouts.run_with_section_timeout(_call)
+    content, telemetry = timeouts.run_with_section_timeout(_call, max_wait_s=max_wait_s)
     _local.telemetry = telemetry
-    try:
-        raw = extract_json(content)
-    except ValueError:
-        # Reasoning models occasionally answer with no JSON at all (empty
-        # content or prose only). That is transient, so retry once before the
-        # whole section falls back to deterministic text.
-        content, telemetry = timeouts.run_with_section_timeout(_call)
-        _local.telemetry = telemetry
-        raw = extract_json(content)
+    raw = extract_json(content)
     sections = raw.get("sections") if isinstance(raw, dict) and isinstance(raw.get("sections"), list) else None
     obj = sections[0] if sections else raw
     if not isinstance(obj, dict):

@@ -1,136 +1,35 @@
-# How to Use the Dashboard
+# How to Use the Dashboard and My Work
 
-The DonorDesk dashboard is your home page — the first thing you see after logging in. It gives you an overview of everything that matters across all your projects.
+## Home (the dashboard)
 
-## Accessing the Dashboard
+**Home** is your operational overview. What you see depends on your role and projects.
 
-1. Log in to DonorDesk
-2. You are automatically taken to the dashboard
-3. To return from anywhere: click the **DonorDesk logo** or **Dashboard** in the left sidebar
+- **What needs attention** – urgent work items: reports awaiting review, evidence to verify, compliance blockers, activity updates.
+- **Deadline overview** – upcoming reporting deadlines, with a band for items **due within 3 days**.
+- **Readiness snapshot** – average report readiness and per-project readiness.
+- **Recent projects** – project cards with progress toward their deadlines.
+- **Notifications** – your latest unread notifications.
+- **Setup and storage** – reminders if workspace setup or Google Drive storage is unfinished, with a shortcut to setup and (if you have not tried it) the **Take the product tour** card.
 
-## What the Dashboard Shows
+If you have no projects yet you will see **Create your first project**.
 
-### At a Glance Cards
+## My Work
 
-The top of the dashboard shows key numbers:
+**My Work** in the main menu is your personal queue across all projects: reports, compliance items, evidence, activities and notifications. Filter by type (All types, Reports, Compliance, Evidence, Activities, Notifications) and by urgency (for example within 3 days). Each row links straight to the thing to do.
 
-| Card | What it shows |
-|------|-------------|
-| **Active Projects** | How many of your projects are currently active |
-| **Reports Due** | How many reports are approaching their deadline |
-| **Indicators On Track** | How many indicators are meeting their targets |
-| **Evidence** | How much evidence you have uploaded |
+## Cross-project pages
 
-### Readiness Score Ring
+The main menu also has:
 
-A circular chart showing your overall report readiness (0-100%):
-- Shows how complete your current reporting period is
-- Based on sections, indicators, evidence, compliance, and approvals
-- Click to see a breakdown of what is missing
+- **Projects** – your portfolio with search and filters ([guide](/support/how-to/search-projects-and-evidence)).
+- **Reports** – reports across all projects.
+- **Evidence** – evidence across all projects.
+- **Compliance** – checklist items across all projects.
+- **Team** and **Settings** – for roles that can manage them.
 
-### My Work Section
+The sidebar can be collapsed for more room. Light and dark themes are available with the theme toggle.
 
-A personal to-do list showing:
-- Reports you need to review or approve
-- Evidence waiting for your verification
-- Compliance items assigned to you
-- Activities that need logging
+## Tips
 
-### Project Cards
-
-Each project has a card showing:
-- Project name and donor
-- Current status (Draft, Active, Paused, Completed)
-- Days remaining until next deadline
-- A progress bar for the current reporting period
-
-### Deadline Overview
-
-A timeline showing upcoming report deadlines:
-- Report name and due date
-- Days remaining
-- Readiness percentage for each report
-
-### Notification Feed
-
-A live feed of recent activity:
-- New evidence uploaded by your team
-- Reports generated or approved
-- Team members who joined or made changes
-- Compliance items resolved
-
-## Filtering Dashboard Content
-
-### By Project
-
-Click **All Projects** and select a specific project to see only its data.
-
-### By Status
-
-Use the filter tabs:
-- **All** — Everything
-- **Active** — Only active projects
-- **Due Soon** — Reports due within 30 days
-
-### Date Range
-
-Set a date range to focus on specific periods.
-
-## Customising the Dashboard
-
-### Rearranging Cards
-
-Drag and drop cards to reorder them.
-
-### Minimising Sections
-
-Click the **collapse** icon on any section to minimise it.
-
-### Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| `G then D` | Go to Dashboard |
-| `Ctrl + K` | Search projects |
-
-## Dashboard for Different Roles
-
-### For Project Managers
-Focus on:
-- My Work section for approvals pending
-- Project cards for status overview
-- Deadline overview for timeline
-
-### For M&E Officers
-Focus on:
-- Evidence section for files awaiting verification
-- Compliance items assigned to you
-- Indicators on Track card
-
-### For Admins
-Focus on:
-- All projects overview
-- Team activity in the notification feed
-- Audit log for security monitoring
-
-## Troubleshooting Dashboard Issues
-
-### Cards Not Loading
-
-1. Refresh the page
-2. Check your internet connection
-3. Make sure you have the right permissions
-
-### Numbers Look Wrong
-
-The dashboard updates in real-time. If numbers seem outdated:
-1. Refresh the page
-2. Check when data was last updated
-3. Contact your admin if the problem persists
-
-### Missing Projects
-
-If you cannot see a project:
-1. Make sure you have access to that project
-2. Ask the project owner to add you
-3. Check that the project is not archived
+- Start each day at My Work.
+- Use the readiness snapshot to decide which project to work on first.

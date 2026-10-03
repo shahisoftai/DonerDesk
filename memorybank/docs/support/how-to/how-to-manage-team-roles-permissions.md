@@ -1,71 +1,24 @@
-# How to Manage Team Roles and Permissions
+# How to Change a Team Member's Role
 
-DonorDesk's role-based access control ensures team members only see and modify what they need for their responsibilities.
+Only **Admins** can change roles.
 
-## Default Roles
+## Steps
 
-- **Owner** — full access including billing and deletion
-- **Admin** — full access except billing management and organisation deletion
-- **Manager** — can manage donors, donations, campaigns, and view reports
-- **Member** — can view and update donor records, log interactions
-- **Viewer** — read-only access to donors and donations
-- **Billing** — can manage subscriptions and payment methods only
+1. Open **Team** in the main menu. Search by name or email, or filter by role.
+2. In the person's row, choose **New role**.
+3. DonorDesk shows what they **Will gain** and **Will lose**. Review it.
+4. Click **Confirm change**.
 
-## Viewing Your Role
+The change applies the next time the person loads a page. It is recorded in the audit log.
 
-Check your role by clicking your avatar in the top right corner and selecting **Profile**.
+## Project-level assignments
 
-## Changing a Team Member's Role
+A role is workspace-wide. To control *which projects* someone works on, use the project's **Team** tab: **Assign member**, set the **Project role**, or **Remove member**.
 
-1. Go to **Settings > Team**
-2. Find the team member
-3. Click the role dropdown next to their name
-4. Select the new role
-5. The change takes effect immediately
+## Tips
 
-## Custom Permissions
+- Give people the least role they need. Field staff usually need **Field Officer** only.
+- Use **Viewer** for board members, donors and auditors: it is read-only and does not use a paid seat.
+- Keep at least two Admins so someone can always manage billing and the team.
 
-For Enterprise plans, you can create custom roles with granular permissions:
-1. Go to **Settings > Roles & Permissions**
-2. Click **Create Custom Role**
-3. Name the role (e.g., "Donor Communications")
-4. Toggle individual permissions:
-   - View donors
-   - Edit donors
-   - Delete donors
-   - View donations
-   - Issue refunds
-   - Manage campaigns
-   - View reports
-   - Manage team
-   - Access billing
-5. Save the custom role
-
-## Inviting Team Members
-
-1. Go to **Settings > Team**
-2. Click **Invite Member**
-3. Enter their email address
-4. Select their role
-5. Click **Send Invitation**
-
-They'll receive an email with a link to join your organisation.
-
-## Removing Team Members
-
-1. Go to **Settings > Team**
-2. Find the team member
-3. Click the three-dot menu
-4. Select **Remove from Organisation**
-5. Confirm the action
-
-All their session tokens are invalidated immediately. Historical actions remain in the audit log.
-
-## Two-Factor Authentication
-
-Require 2FA for all team members:
-1. Go to **Settings > Security**
-2. Toggle **Require 2FA for all team members**
-3. Team members will be prompted to set up 2FA on their next login
-
-For help with team management, contact support@donordesk.online.
+See the full matrix in [User roles and permissions](/support/getting-started/user-roles-and-permissions).

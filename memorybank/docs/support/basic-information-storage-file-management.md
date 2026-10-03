@@ -1,161 +1,38 @@
-# Understanding Storage and File Management
+# Storage and File Management
 
-DonorDesk stores your evidence files and manages your storage space. Here is how it works.
+DonorDesk stores evidence in one of two places, chosen in **Settings → Setup**.
 
-## Two Ways to Store Files
+## Google Drive (link-first, recommended)
 
-### 1. Upload to DonorDesk (Local Storage)
+- You connect your organisation's Google account.
+- DonorDesk creates a folder tree for each project (including an **Evidence** folder).
+- Uploads go straight into your Drive. You can also **link a file that is already in Drive** by pasting its share link or ID.
+- DonorDesk keeps a reference and reads what it needs (for example text for AI drafting). It does not keep a copy of the file.
+- Files in Drive **do not count** against your DonorDesk storage quota.
 
-Files are stored on DonorDesk's servers.
+Set up: [How to connect Google Drive](/support/how-to/connect-google-drive).
 
-**Pros:**
-- Files are managed and backed up
-- Easy access from anywhere
-- Simple workflow
+## DonorDesk storage (optional)
 
-**Cons:**
-- Uses your storage quota
-- Larger files may be slow to download
+- Files are stored by DonorDesk in managed object storage.
+- They **count toward your plan's storage**: Starter 1 GB, Team 25 GB, Growth 100 GB, Enterprise contracted.
 
-### 2. Link from Google Drive
+## File types and size
 
-Files stay in your Google Drive; DonorDesk stores only a link.
+Evidence accepts common documents, spreadsheets, images and text, up to **100 MB per file**. Donor templates accept Word, PDF, text, Markdown, Excel or CSV up to 20 MB. See [File formats](/support/reference-file-formats).
 
-**Pros:**
-- No storage quota used
-- Files stay under your control
-- Access your Drive files from anywhere
+## Generated files
 
-**Cons:**
-- Requires Google Drive connection
-- File access depends on Drive permissions
-- DonorDesk cannot back up Drive files
+Exports (Word, PDF, Excel, ZIP evidence packs) are stored with the reporting period and can be downloaded from the Export Center. Original donor template files are kept with the template.
 
-## Storage Quotas
+## Deleting
 
-Your plan sets a limit on DonorDesk-managed storage:
+Admins can delete evidence. If a file lives in your Google Drive, check the Drive copy separately: deleting the DonorDesk record does not replace your own retention decisions.
 
-| Plan | Storage Included |
-|------|-----------------|
-| Starter | 1 GB |
-| Team | 25 GB |
-| Growth | 100 GB |
-| Enterprise | Custom |
+## Tips
 
-**Note:** Files linked from Google Drive do NOT count toward this quota.
+- Keep original files in Drive under your own retention rules.
+- Name files clearly and set the reporting period on upload.
+- Mark sensitive material correctly.
 
-## Checking Your Storage
-
-1. Go to **Settings → Billing**
-2. Look for **Storage Used**
-3. See a breakdown by project
-
-## What Counts Toward Storage
-
-| File type | Counts toward quota? |
-|-----------|---------------------|
-| Uploaded evidence files | Yes |
-| Linked Google Drive files | No |
-| Report exports (PDF, DOCX) | Yes (temporarily) |
-| Deleted files | No (after deletion) |
-
-## Managing Storage
-
-### When Storage Is Running Low
-
-1. **Delete old files** — Remove unused evidence
-2. **Link from Drive** — Move files to Drive and link instead
-3. **Compress files** — Reduce file sizes before uploading
-4. **Upgrade plan** — Get more storage
-
-### Compressing Files
-
-**Images:**
-- Save at 80% quality instead of 100%
-- Use JPG for photos, PNG for graphics
-- Tools: Squoosh.app, TinyPNG
-
-**PDFs:**
-- Remove unnecessary pages
-- Use "Save as" not "Print to PDF"
-- Compress using Adobe or online tools
-
-**Documents:**
-- Remove embedded images if not needed
-- Use smaller font files
-
-## File Organisation
-
-### In DonorDesk
-
-Organise evidence by:
-- Project
-- Reporting period
-- Activity
-- Evidence type
-
-This makes exports and audits easier.
-
-### In Google Drive
-
-If using Drive linking:
-- Create a clear folder structure
-- Example:
-  ```
-  DonorDesk Evidence/
-    Project A/
-      Q1 2026/
-        Attendance/
-        Photos/
-        Reports/
-      Q2 2026/
-        ...
-  ```
-
-## File Access and Permissions
-
-### DonorDesk Permissions
-
-Who can see and download evidence depends on:
-- Their role in DonorDesk
-- Whether they have project access
-- The evidence's confidentiality level
-
-### Google Drive Permissions
-
-For linked files:
-- The link sharer must have Drive access
-- If Drive permissions are removed, the link breaks
-- Check that linked files remain accessible
-
-## File Retention
-
-### How Long Are Files Kept?
-
-- Evidence files are kept as long as the project is active
-- Archived projects retain their evidence
-- Deleted projects have files removed
-
-### Deleting Files
-
-Before deleting evidence:
-1. Check it is not needed for any active reports
-2. Ensure compliance items are resolved without it
-3. Consider archiving rather than deleting
-
-## Storage for Evidence vs Reports
-
-| Data type | Storage impact |
-|-----------|----------------|
-| Uploaded evidence | Uses quota |
-| Linked Drive files | No quota impact |
-| Report exports | Small, temporary |
-| Audit logs | Minimal |
-
-## Storage Best Practices
-
-1. **Link from Drive** for most files — saves quota
-2. **Upload only critical files** — things you need quick access to
-3. **Delete old exports** — clean up download folder
-4. **Compress before uploading** — smaller files use less quota
-5. **Use appropriate formats** — JPG for photos, PDF for documents
+See [Troubleshooting storage issues](/support/troubleshooting/storage-issues).

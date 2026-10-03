@@ -30,3 +30,4 @@ export * from "./numeric-correction.js";
 export * from "./section-freshness.js";
 export * from "./section-regeneration.js";
 export * from "./statement-span.js";
+export * from "./report-scope.js";

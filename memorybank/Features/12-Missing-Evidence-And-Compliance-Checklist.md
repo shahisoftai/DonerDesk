@@ -134,6 +134,13 @@ this feature:
   + its activity updates (the same set the generation run consumes), so the
   "Evidence" readiness component reflects what actually supports the report.
 
+## Per-report-type checklists (2026-10-03)
+
+`checklist-template.ts` now gives `SITUATION` its own template (baseline + "Situation sources attached" + "Situation figures
+verified and approved"). For `ACTIVITY` periods `DetectMissingEvidenceHandler` adds one `MISSING_EVIDENCE` item per scoped
+activity with no attached evidence (`relatedEntityType: "activity"`, `relatedEntityId` = activity id, so dedupe is per activity).
+Activity counts for readiness/detection come from `resolvePeriodActivities`. See Feature 10 "Report types & scope".
+
 ## Pending Enhancements
 
 - [ ] Wire real LLM provider for detection

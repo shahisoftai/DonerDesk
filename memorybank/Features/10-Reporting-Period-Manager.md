@@ -9,7 +9,7 @@ Manages reporting periods for projects with deadlines, templates, and status tra
 ### Create Reporting Period
 Fields:
 - Project
-- Report type
+- Report type (+ scope for Activity / Situation / Custom)
 - Start date
 - End date
 - Report deadline
@@ -59,6 +59,7 @@ Displays:
 - `projectId: string`
 - `donorTemplateId: string | null`
 - `reportType: ReportType`
+- `scopeJson: string` — `ReportScope` for ACTIVITY/SITUATION/CUSTOM (see "Report types & scope")
 - `startDate: Date`
 - `endDate: Date`
 - `deadline: Date`
@@ -151,6 +152,40 @@ See `../imp/RECOVERY-PLAN-IMPLEMENTATION.md`:
 | Officer Assignment | Implemented | Responsible officer |
 | Deadline Tracking | Implemented | Visual indicators |
 
+## Report types & scope (2026-10-03)
+
+Report types: `MONTHLY`, `QUARTERLY`, `SEMI_ANNUAL` (new in the form), `ANNUAL`, `FINAL` (cadence — whole project, date
+suggestions via `period-cadence.ts`) and `ACTIVITY`, `SITUATION`, `CUSTOM` (ad-hoc — manual dates, **scoped**).
+
+Before this change the ad-hoc types were only a label: no way to say *which* activity/event, and generation used the type
+just for the title. `ReportingPeriod.scopeJson` (migration `20261003100000_reporting_period_scope`, `TEXT NOT NULL DEFAULT '{}'`)
+now stores a `ReportScope` (`packages/domain/src/contexts/reporting/report-scope.ts`):
+
+| Type | Scope fields | Required |
+|---|---|---|
+| ACTIVITY | `activityIds[]` — project `ActivityUpdate` ids (any period) | ≥ 1 |
+| SITUATION | `eventName`, `situationDate`, `location?`, `summary?` | eventName + situationDate |
+| CUSTOM | `title`, `purpose?` | title |
+| cadence types | — | — |
+
+- **Validation:** `CreateReportingPeriodSchema` (`superRefine`, contracts) + `CreateReportingPeriodHandler` (`missingScopeFields`;
+  ACTIVITY ids must belong to the project → `NOT_FOUND` otherwise). The handler takes an `IActivityUpdateRepository` (10th ctor arg).
+- **Overlap rule:** enforced only between *cadence* periods (`CADENCE_REPORT_TYPES`); ad-hoc reports may sit inside a cadence period.
+- **Activity resolution:** `resolvePeriodActivities` (`packages/application/src/services/period-activities.ts`) — ACTIVITY with a
+  scope returns exactly the selected activities; everything else returns the period's own activity updates. Used by
+  generation context, readiness evidence count and missing-evidence detection.
+- **Writer:** `describeReportScope` → `PeriodGenerationContext.scope` (string) → legacy narrator (`- Report Scope:` line) and AI
+  Reporter (`ContextPeriod.scope`, Python `models.py`; absent for cadence reports, so v2–v4 prompts stay byte-stable).
+- **Checklist:** `SITUATION` has its own template (baseline + sources attached + figures approved); ACTIVITY gets a per-activity
+  `MISSING_EVIDENCE` item (`relatedEntityType: "activity"`) for selected activities with no attached evidence.
+- **UI:** `NewReportingPeriodForm` shows type-specific scope fields (activity checklist with filter / situation fields / custom
+  title+purpose; scope resets on type change). `reportHeading()` (`apps/web/src/lib/labels.ts`) shows the custom title or
+  "Situation report: <event>" in the reports list and editor heading. List API returns `scope`.
+- **Deploy invariant:** `ReportingPeriod.scopeJson` is in `REQUIRED_PRISMA_FIELDS` (`health.ts`).
+- **Tests:** `packages/domain/test/report-scope.test.mjs`; handler scope/overlap test in `packages/application/test/feature18-setup.test.mjs`.
+- **Known limits:** no dedicated checklist item types per report type (reuses `MISSING_EVIDENCE`/`MISSING_APPROVAL`); scope is
+  not editable after creation; indicator updates/findings for an ACTIVITY report are still period-based.
+
 ## Pending Enhancements
 
 - [ ] Automated status transitions based on deadlines
@@ -160,6 +195,7 @@ See `../imp/RECOVERY-PLAN-IMPLEMENTATION.md`:
 - [ ] Notification on approaching deadlines
 - [ ] Reporting calendar view across all projects
 - [ ] Bulk period creation for quarterly/annual schedules
+- [ ] Edit a period's scope after creation; scope-aware indicator findings for ACTIVITY reports
 
 ## Notes
 

@@ -6,7 +6,7 @@ The European Union funds humanitarian aid through DG ECHO (civil protection and 
 
 ### For Humanitarian Aid
 
-- **DG ECHO** — See [DG ECHO Reporting](/support/report-writing-skills/donor-specific/dg-echo) guide
+- **DG ECHO** — See [DG ECHO Reporting](/support/report-writing-skills/dg-echo) guide
 - Funding under the **Humanitarian Aid Regulation (Council Regulation 1257/96)**
 
 ### For Development Cooperation
@@ -195,4 +195,4 @@ EU development policy is guided by a **Human Rights-based Approach (HRBA)**:
 - **PRAG** — Practical Guide to EU External Aid Contract Procedures (for procurement rules)
 - **EU DEVCO Library** — for INTPA-funded projects
 
-> **Next:** Read [Gates Foundation Reporting](/support/report-writing-skills/donor-specific/gates-foundation) for guidance on private foundation funding.
+> **Next:** Read [Gates Foundation Reporting](/support/report-writing-skills/gates-foundation) for guidance on private foundation funding.

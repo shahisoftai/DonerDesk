@@ -120,7 +120,7 @@ Your reports must include:
 - Detailed **ADS (Automated Directive System)** compliance required
 - **Branding and marking** requirements are very specific
 - **Cost allowability** rules are strict (FAR / CFR compliance)
-- See full USAID guide in [USAID Reporting](/support/report-writing-skills/donor-specific/usaid-reporting)
+- See full USAID guide in [USAID Reporting](/support/report-writing-skills/usaid-reporting)
 
 ### GAC (Global Affairs Canada)
 - Similar logframe approach to FCDO
@@ -159,4 +159,4 @@ Regardless of which bilateral donor you work with:
 4. **Evidence is mandatory** — Every result claim needs a documented evidence source
 5. **Challenging context is expected** — Include it honestly; donors fund organisations that manage reality well
 
-> **Next:** Read [EU Grants Reporting](/support/report-writing-skills/donor-specific/eu-grants) for guidance on European Union funding mechanisms.
+> **Next:** Read [EU Grants Reporting](/support/report-writing-skills/eu-grants) for guidance on European Union funding mechanisms.

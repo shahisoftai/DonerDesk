@@ -1,143 +1,43 @@
-# Troubleshooting Indicator Data Issues
+# Troubleshooting Indicator Data
 
-## Indicator Shows Wrong Value
+## I can't enter values
 
-### Check the Reporting Period
+- You need permission: Admin, Project Manager or M&E Officer.
+- The period must exist. Open the reporting period, then **Update Project**.
+- If the report is already approved, values are locked for that version.
 
-Indicators are updated **per reporting period**. Make sure you are looking at the correct period.
+## "Could not save indicator data"
 
-1. Go to the **Reports** tab
-2. Confirm the reporting period name and dates
-3. Go to **Indicators** for that specific period
+Check every row for the required fields and valid numbers (a percentage should be a number, a Yes/No indicator a yes or no). Fix the marked rows and press **Save all** again.
 
-### Check If Value Was Submitted
+## Disaggregation errors
 
-1. Find the indicator in the grid
-2. Look at the status badge:
-   - **Draft** — Value entered but not submitted
-   - **Submitted** — Submitted for review
-   - **Verified** — Reviewed and confirmed
-   - **Needs Correction** — Reviewer found an error
+For **Number** and **Currency** indicators, each dimension (for example Female + Male) must add up to the period value. Correct the categories or the total. Percentage indicators do not need to add up.
 
-### How to Fix
+## Google Sheets import failed
 
-**If the value is in Draft:**
-1. Click on the row
-2. Check the value
-3. Submit and verify
+- "Could not read the spreadsheet" – share the sheet with the connected Google account and check the URL.
+- The sheet needs a header row with an **indicator code** and **period achievement** column; codes must match DonorDesk exactly.
+- Imported values are only applied to the grid. Press **Save all** to keep them.
 
-**If the value needs correction:**
-1. Contact the person who verified it
-2. Ask them to unlock the row
-3. Make corrections
-4. Re-submit and verify
+## "Not calculable" for a percentage or ratio
 
-## Cannot Enter a Value
+Set the numerator and denominator indicators on the indicator page and **Save calculation**.
 
-### "This field only accepts numbers"
+## A verified value went back to unverified or "stale"
 
-The indicator type requires a number. Do not add units or text:
-- **Correct:** `450`
-- **Incorrect:** `450 women`
+Verification is tied to the value and evidence at the time. If either changed, DonorDesk asks you to verify again. Verify from the grid or the indicator's **Verification pipeline**.
 
-The unit is stored separately in the indicator definition.
+## My value was sent back ("Needs correction")
 
-### "This field is locked"
+The reviewer left a reason. Fix the value or attach better evidence and resubmit.
 
-The row is verified and locked. To edit:
-1. Click **Unlock** (requires reviewer permission)
-2. Make your changes
-3. Re-submit
+## Progress looks wrong
 
-### "No indicator found"
+- Check baseline and target are numbers (progress cannot be drawn otherwise).
+- Check **Reporting basis** and **Direction of progress**.
+- Check the **History** for earlier entries.
 
-The indicator code in your import file does not match DonorDesk codes. Check for:
-- Typos
-- Extra spaces
-- Case differences (e.g., `OUT-1` vs `out-1`)
+## Reports show different numbers from the grid
 
-## Indicator Total Does Not Match Expected
-
-### Cumulative vs Period Achievement
-
-DonorDesk tracks two values:
-
-| Value | What it means |
-|-------|--------------|
-| **Period achievement** | Just this reporting period |
-| **Cumulative achievement** | Total from project start to now |
-
-If your total is wrong, check which value is being displayed.
-
-### How Values Are Calculated
-
-The cumulative value is entered manually — DonorDesk does not auto-calculate it. If you entered period values and expected them to sum automatically, you need to update the cumulative field manually or use the import feature with cumulative data.
-
-## Import from Google Sheets Not Working
-
-### Codes Not Matching
-
-The most common issue. Your spreadsheet codes must match DonorDesk exactly.
-
-**To fix:**
-1. Go to **Logframe** tab
-2. Note the exact code for each indicator (e.g., `OUT-1`)
-3. Make sure your spreadsheet has the same codes
-4. Try importing again
-
-### Empty Cells
-
-If a cell is empty in your spreadsheet, DonorDesk may skip that row. Make sure all indicator rows have values.
-
-### Wrong Column Mapping
-
-When importing, make sure you map:
-- Indicator code column → Indicator code
-- Period value column → Period achievement
-- Cumulative column → Cumulative achievement
-
-## Indicator Shows 0 But Should Have a Value
-
-1. Check if data was entered for this period
-2. Check if the entry was saved (look for "Saved" confirmation)
-3. Check if the entry was submitted and verified
-4. Verify the indicator has a baseline and target set up
-
-## Duplicate Indicator Entries
-
-Each indicator should have **one entry per reporting period**. If you see duplicates:
-
-This usually happens when:
-- The indicator was updated twice
-- An import was run twice
-
-**To fix:**
-1. Note which entry is correct
-2. Delete the duplicate
-3. Verify the correct entry
-
-Duplicate entries may cause incorrect calculations in reports.
-
-## Indicator Target Not Being Met
-
-The indicator shows current achievement, but the target seems wrong:
-
-1. Go to **Logframe** tab
-2. Find the indicator
-3. Click on it to see details
-4. Check if **Target** is set correctly
-5. If the target is wrong, an Admin can edit it
-
-Note: Changing the target does not change past performance data.
-
-## Who Can Update Indicators?
-
-| Role | Can update | Can verify |
-|------|-----------|-----------|
-| Owner | ✓ | ✓ |
-| Admin | ✓ | ✓ |
-| Project Manager | ✓ | ✓ |
-| M&E Officer | ✓ | ✓ |
-| Field Officer | ✗ | ✗ |
-| Grants Officer | ✗ | ✗ |
-| Compliance Officer | ✗ | ✗ |
+Reports use **verified** data. Verify the latest values, then re-check the report ("Inputs changed" banner).
