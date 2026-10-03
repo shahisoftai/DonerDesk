@@ -6,7 +6,9 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-03.
 
 - [ ] Dedicated checklist item types per report type (Situation/Activity currently reuse `MISSING_EVIDENCE` / `MISSING_APPROVAL`).
 - [ ] Edit a period's scope after creation (today it is set once, at creation).
-- [ ] Deterministic participants table for Activity reports (today the model writes it from grounded activity numbers); localise blueprint section titles.
+- [ ] Localise blueprint section titles (English only today).
+- [ ] Show the donor-visibility sentence once per short (Activity/Situation) report instead of at the start of several sections.
+- [ ] Make the workspace "Indicator values · n of n verified" panel scope-aware for Activity/Situation reports (it is project-wide).
 
 ## Deadline reminders / auto-report audit (added 2026-09-28)
 

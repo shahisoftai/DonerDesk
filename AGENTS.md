@@ -57,9 +57,14 @@ Agent guidance for coding on DonorDesk.
   prefix must stay byte-identical across a report's sections (provider prefix caching; Claude
   gets a `cache_control` breakpoint). Put anything section-specific in `_section_prompt`.
 - GLM requests send `thinking: {type: disabled}` unless `AI_REPORTER_THINKING=enabled`.
+- Report-type blueprints (`packages/domain/src/contexts/reporting/report-type-blueprints.ts`): with no applicable donor template a period is
+  structured by its type's built-in blueprint (ACTIVITY/SITUATION accept only a template of their own type). **Never title a blueprint
+  section "Overview"/"Abstract"** — worker `outline.py` treats those as Executive Summary. Scope (`ReportingPeriod.scopeJson`) drives
+  activity selection, indicator scoping (`scopeIndicatorData`) and the writer's `period.scope`.
 - Numbers: tables, charts and deltas are built deterministically from verified
   findings (`artifact_builder.py`). The writer only writes prose. `grounding.py` /
-  `number-grounding.ts` reject any number not in the inputs; percent of target is the
+  `number-grounding.ts` reject any number not in the inputs (a *written* date such as "20 April 2028" is grounded only by the
+  same ISO date in the inputs); percent of target is the
   only derived figure allowed. An ungrounded number that survives the retry gives
   `VALIDATOR_FAILED`, and the API uses the deterministic section.
 - Synthesis sections (`isSynthesisSection`: executive summary, conclusion) are

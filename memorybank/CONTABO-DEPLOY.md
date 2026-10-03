@@ -1,6 +1,21 @@
 # Deploy to Contabo — Fastest Path
 
-**Last deploy:** 2026-10-03 — `releaseId=20261003142133` (`SCOPE=both`, branch
+**Last deploy:** 2026-10-03 — `releaseId=20261003164154` (`SCOPE=web`, branch
+`0009-agent-memory`). AI progress popup portalled to `document.body` so it stays
+floating on screen. **Same-day series (all `deploy-fast.sh`, no further migration
+after the first):** `20261003142133` report scope (`scopeJson` migration
+`20261003100000_reporting_period_scope`, DB dump
+`/opt/donordesk/backups/db-pre-20261003-report-scope.dump`; also bundled the
+pending AI Reporter provider pacing), `20261003152523` per-type report blueprints /
+optional templates / situation series, `20261003160235` blueprint titles + deterministic
+activity participants table, `20261003162152` date-aware number grounding (worker) +
+situation indicator scoping. Each verified by `/ready` 200, worker health ok, and a
+visible-browser run on production (Activity report; Situation #1 and #2). The three
+verification periods were then removed from production in one guarded transaction
+(`LlmRun` and audit left intact). Features/10 "Report types & scope" and "Production
+verification & fixes".
+
+**Earlier:** (previous) **Last deploy:** 2026-10-03 — `releaseId=20261003142133` (`SCOPE=both`, branch
 `0009-agent-memory`, commit `d1c649a`). **Report types & scope**: Activity /
 Situation / Custom reports name what they cover (`ReportingPeriod.scopeJson`),
 Semi-annual type offered, scoped writer prompts (legacy narrator + AI Reporter

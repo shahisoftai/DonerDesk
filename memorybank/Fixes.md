@@ -1409,3 +1409,21 @@ The api's boot backfill provisions env + restarts services on **first api boot**
 - Test connection: ✅ SUCCESS for DeepSeek and MiniMax after the `/v1` fix.
 
 **No regressions:** domain **108** ✓ · application **84** ✓ (later 86 with new tests) · infrastructure **165+** ✓ · api/web typecheck clean.
+
+---
+
+## Report-type blueprints — production verification findings (2026-10-03)
+
+Found by driving Activity and Situation reports through a visible browser on production after the first blueprint release (`20261003152523`).
+Full detail: [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-Period-Manager.md) §"Production verification & fixes".
+
+| Symptom | Root cause | Fix |
+|---|---|---|
+| Activity/Situation opener "Written without AI" | Worker `outline.py` classifies any title containing "overview" as `EXECUTIVE_SUMMARY` → delta/project-wide validation fails → deterministic fallback | Titles renamed (Introduction / Situation at a Glance / This Month at a Glance); test pins no `overview|abstract` titles |
+| Section fell back with `UNGROUNDED_NUMBER: 20` | Writer wrote "20 April 2028"; inputs hold `2028-04-20`; grounding didn't connect them | Date-aware grounding in `grounding.py` + `number-grounding.ts` (exact-date match only) |
+| Situation draft: "all indicators zero, down from 5,200" | Project-wide indicator findings computed for an empty one-week window | `scopeIndicatorData`: Situation = no findings; Activity = only its activities' indicators |
+| Activity "Participants and Reach" had no table; annex said "the donor template requires…" | Table asked of the model; evidence-need hints leaked | Deterministic table (`blueprint-tables.ts`); hints removed |
+| AI progress popup sat at the page bottom and scrolled away | Fade-in wrapper's lingering CSS transform became the containing block of `position: fixed` | `createPortal` to `document.body` in `AiActivityPopup` |
+
+**Operational note:** `pkill -f "<pattern>"` run from the same shell matches the shell's own command line (exit 144) — kill by pid instead.
+

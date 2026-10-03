@@ -505,3 +505,9 @@ activity/indicator narratives").
 `describeReportScope`) to both writers — the legacy narrator's "Reporting Period" block and the AI Reporter's `ContextPeriod`
 (report-wide prefix, so prefix caching is unaffected; omitted for cadence reports). Activity reports draft only from the selected
 activities. See Feature 10 "Report types & scope".
+
+**Date-aware number grounding (2026-10-03):** `grounding.py` and its TS mirror `number-grounding.ts` accept a *written* date ("20 April 2028",
+"April 20th, 2028", "12 March") only when that exact date appears as an ISO date (`2028-04-20`) in the inputs; the day/year are then not separate
+numeric claims. Bare numbers are unchanged. Before this, a section naturally restating an activity date was rejected as `UNGROUNDED_NUMBER` and
+fell back to deterministic text. Also: never title a section "Overview" (worker `outline.py` treats it as an Executive Summary) — see Feature 10.
+

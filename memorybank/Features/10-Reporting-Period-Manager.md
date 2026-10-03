@@ -197,10 +197,10 @@ The first pass only recorded scope; the report still needed a full donor templat
 - **Applicability:** `templateAppliesToReportType` — ACTIVITY and SITUATION accept only a template of their *own* type; every other
   combination is the author's choice. Enforced on create (explicit mismatched template → validation error; profile default template is
   silently not applied), in the form picker (filtered) and at generation (mismatched/legacy template ignored → blueprint).
-- **Blueprints:** Monthly (6 sections), Quarterly / Semi-annual / Annual / Final (donor progress-report shape; financial section is
-  optional and forbids invented figures), **Activity** (Overview → Activity Details with **one level-2 sub-section per selected
+- **Blueprints:** Monthly (6 sections: "This Month at a Glance", …), Quarterly / Semi-annual / Annual / Final (donor progress-report shape; financial section is
+  optional and forbids invented figures), **Activity** (Introduction → Activity Details with **one level-2 sub-section per selected
   activity**, Participants and Reach, Challenges and Lessons, Next Steps, Evidence Annex; ≤ 8 top-level sections, no executive
-  summary), **Situation** (Overview; *Background* for report #1 or *Developments Since the Last Report* for follow-ups; Affected
+  summary), **Situation** (Situation at a Glance; *Background* for report #1 or *Developments Since the Last Report* for follow-ups; Affected
   Population and Needs; Response to Date; Access/Security/Constraints; Coordination; Priority Needs and Next Steps), **Custom** (the
   author's own `scope.sections`, else Background/Findings/Conclusions).
 - **Activity data scoping:** verified findings and indicator updates are limited to indicators the selected activities feed
@@ -216,8 +216,35 @@ The first pass only recorded scope; the report still needed a full donor templat
   `feature18-setup.test.mjs` (situation series, template mismatch), `p0-4-donor-template-gate.test.mjs` (blueprint planning; unknown type
   still blocked).
 - **No migration** (scope fields live in `scopeJson`). Worker unchanged since the first pass.
-- **Not done:** blueprint section text is English-only; per-activity participants *table* is written by the model from grounded
-  activity numbers, not built deterministically; scope still not editable after creation.
+- **Not done:** blueprint section text is English-only; scope still not editable after creation.
+
+### Production verification & fixes (2026-10-03, releases `20261003152523` → `20261003164154`)
+
+Verified end to end in a visible browser on production (EU nutrition project: Activity report over two activities; Situation #1 and #2 on one
+event). Defects found by that run, all fixed and re-verified:
+
+- **Never title a blueprint section "Overview".** The AI worker's `outline.py` classes any title matching `executive summary|summary of
+  (results|progress)|overview|abstract` as `EXECUTIVE_SUMMARY` (period-on-period delta, project-wide rules) → the opener of an activity/situation report
+  failed validation and fell back to non-AI text. Titles are now *Introduction* / *Situation at a Glance* / *This Month at a Glance*;
+  `blueprint-tables.test.mjs` asserts no blueprint title matches `overview|abstract`.
+- **Written dates are grounded against ISO dates in the inputs.** Activity dates are stored `2028-04-20`; a draft saying "20 April 2028" failed
+  `UNGROUNDED_NUMBER: 20`. `grounding.py` (+ TS mirror `number-grounding.ts`) record `date:YYYY-MM-DD` markers and blank out a written date
+  ("20 April 2028", "April 20th, 2028", "12 March") **only if that exact date is in the inputs**; bare numbers are still checked.
+- **Situation reports carry no indicator findings** (`scopeIndicatorData`, `services/period-activities.ts`): an empty short window made the writer say
+  "all six indicators registered zero, down from 5,200". Activity reports keep only the indicators their activities feed.
+- **Activity participants table is deterministic** (`services/blueprint-tables.ts`, `bp:activity:participants`, appended in
+  `SectionGenerationService.draft`): exact recorded numbers, no `requiredTables` asked of the model. The blueprint also dropped evidence-need hints
+  (they leaked as "the donor template requires…") and the invented Situation affected-population table.
+- **AI progress popup is portalled to `document.body`** (`AiActivityPopup.tsx`): the page's fade-in wrapper keeps a CSS transform while generating,
+  which made `position: fixed` relative to the page (popup at y=1268 on an 854px viewport, scrolling away). Verified fixed on screen at top, scrolled
+  and scrolled back.
+- Verified OK: type list incl. Semi-annual; scope validation; Activity dates from picked activities (+7-day deadline); Situation dates continue the series
+  (+3-day deadline), series numbering is case/space-insensitive and server-owned; ad-hoc reports may overlap a cadence period; Activity checklist adds
+  per-activity "evidence attached" and "record accepted" items (after *Scan for missing items*).
+- **Cleanup:** the three verification periods (and their drafts/sections/claims/revisions/checklist items) were deleted from production in one guarded
+  transaction; `LlmRun` (AI usage ledger) and audit events were deliberately kept.
+- **Known, not changed:** the EU visibility sentence repeats at the start of several sections of a short report (donor-visibility rule applies per
+  section); the workspace "Indicator values · 6 of 6 verified" panel is project-wide even on an Activity report.
 
 ## Pending Enhancements
 
