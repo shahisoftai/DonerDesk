@@ -168,3 +168,12 @@ test("v4: contract version and prompt state the enforced number rule", () => {
   assert.match(systemPrompt(4), /percent of target/);
   assert.match(systemPrompt(3), /dramatically, permanent, fully achieved/);
 });
+
+test("number grounding: a written date is grounded against an ISO date in the inputs (TS mirror)", async () => {
+  const { allowedNumbers, ungroundedNumbers } = await import("../dist/ai/number-grounding.js");
+  const allowed = allowedNumbers({ activities: [{ date: "2028-04-20", total: 600 }, { date: "2028-03-12" }] });
+  assert.deepEqual(ungroundedNumbers("Held on 20 April 2028 and April 20th, 2028 and 12 March.", allowed), []);
+  assert.deepEqual(ungroundedNumbers("Held on 21 April 2028.", allowed), ["21"]);
+  assert.deepEqual(ungroundedNumbers("It reached 20 people.", allowed), ["20"]);
+  assert.deepEqual(ungroundedNumbers("On 20 April 2028 it reached 600.", allowedNumbers({ total: 600 })), ["20", "2028"]);
+});

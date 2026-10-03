@@ -10,6 +10,17 @@
  */
 
 const NUMBER_RE = /(?<![\w\-:/.])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?!\w)/g;
+const ISO_DATE_RE = /(?<![\d-])(\d{4})-(\d{2})-(\d{2})(?![\d-])/g;
+const MONTH_NAMES = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+const MONTH_ALT = Array.from(new Set([...MONTH_NAMES, ...MONTH_NAMES.map((m) => m.slice(0, 3)), "sept"]))
+  .sort((a, b) => b.length - a.length)
+  .join("|");
+// "20 April 2028", "20th April", "April 20, 2028": grounded only as a whole, against an ISO date in the inputs.
+const WRITTEN_DATE_RE = new RegExp(
+  `\\b(?:(\\d{1,2})(?!\\d)(?:st|nd|rd|th)?\\s+(${MONTH_ALT})\\.?(?:,?\\s+(\\d{4}))?|(${MONTH_ALT})\\.?\\s+(\\d{1,2})(?!\\d)(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?)\\b`,
+  "gi",
+);
+const DATE_PREFIX = "date:";
 const LIST_MARKER_RE = /^(\s*(?:#+\s*)?)\d+[.)](?=\s)/gm;
 
 export function normaliseNumber(token: string): string {
@@ -18,6 +29,29 @@ export function normaliseNumber(token: string): string {
   s = s.replace(/^0+/, "") || "0";
   if (s.startsWith(".")) s = `0${s}`;
   return s;
+}
+
+function monthNumber(name: string): number {
+  let n = name.toLowerCase().replace(/\.$/, "");
+  if (n === "sept") n = "sep";
+  const i = MONTH_NAMES.findIndex((full) => full === n || full.slice(0, 3) === n);
+  return i + 1;
+}
+
+/** Blank out written dates ("20 April 2028") that match an ISO date in the inputs. */
+function stripGroundedDates(text: string, allowed: ReadonlySet<string>): string {
+  const dates = Array.from(allowed).filter((a) => a.startsWith(DATE_PREFIX)).map((a) => a.slice(DATE_PREFIX.length));
+  if (dates.length === 0) return text;
+  return text.replace(WRITTEN_DATE_RE, (whole, d1, m1, y1, m2, d2, y2) => {
+    const day = Number(d1 ?? d2);
+    const month = monthNumber(String(m1 ?? m2));
+    const year = (y1 ?? y2) as string | undefined;
+    const ok = dates.some((iso) => {
+      const [y, m, d] = iso.split("-");
+      return Number(m) === month && Number(d) === day && (!year || y === year);
+    });
+    return ok ? " " : whole;
+  });
 }
 
 export function extractNumbers(text: string): string[] {
@@ -74,7 +108,10 @@ export function allowedNumbers(sources: unknown, findings: ReadonlyArray<Groundi
   const texts: string[] = [];
   walk(sources, texts);
   const allowed = new Set<string>();
-  for (const t of texts) for (const n of extractNumbers(t)) allowed.add(normaliseNumber(n));
+  for (const t of texts) {
+    for (const n of extractNumbers(t)) allowed.add(normaliseNumber(n));
+    for (const m of t.matchAll(ISO_DATE_RE)) allowed.add(`${DATE_PREFIX}${m[1]}-${m[2]}-${m[3]}`);
+  }
   for (const f of findings) {
     for (const raw of [f.value, f.baseline, f.target, f.comparisonValue]) {
       const n = toFloat(raw);
@@ -93,7 +130,7 @@ export function allowedNumbers(sources: unknown, findings: ReadonlyArray<Groundi
 export function ungroundedNumbers(text: string, allowed: ReadonlySet<string>): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const raw of extractNumbers(text)) {
+  for (const raw of extractNumbers(stripGroundedDates(text, allowed))) {
     const norm = normaliseNumber(raw);
     if (allowed.has(norm) || seen.has(norm)) continue;
     seen.add(norm);

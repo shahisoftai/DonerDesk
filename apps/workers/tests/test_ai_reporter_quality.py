@@ -343,3 +343,17 @@ def test_prompt_is_unchanged_when_template_guidance_is_absent() -> None:
     prompt = build_user_prompt(_req())
     for marker in ("Donor instructions", "Tables the donor requires", "Organisation guidance", "Page limit set by the donor", "report-wide instructions"):
         assert marker not in prompt
+
+
+def test_written_dates_are_grounded_against_iso_dates_in_inputs() -> None:
+    from app.ai_reporter.grounding import ungrounded_numbers
+
+    allowed = {"600", "2028", "date:2028-04-20", "date:2028-03-12"}
+    # Same date written differently is grounded; its day/year are not separate claims.
+    assert ungrounded_numbers("The workshop took place on 20 April 2028.", allowed) == []
+    assert ungrounded_numbers("It was held on April 20th, 2028 and on 12 March.", allowed) == []
+    # A date that is not in the inputs, and a bare number that merely equals a day, are still flagged.
+    assert ungrounded_numbers("It took place on 21 April 2028.", allowed) == ["21"]
+    assert ungrounded_numbers("It reached 20 people.", allowed) == ["20"]
+    # Without any ISO date in the inputs nothing is stripped.
+    assert ungrounded_numbers("On 20 April 2028 it reached 600.", {"600"}) == ["20", "2028"]
