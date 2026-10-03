@@ -101,6 +101,8 @@ export class PlatformLlmConfigResolver {
     // so a bad stored value falls back to the provider's default instead of
     // silently failing every LLM call.
     let baseUrl = typeof config.baseUrl === "string" && config.baseUrl.trim() ? config.baseUrl.trim() : undefined;
+    // Admins often paste the full endpoint; the adapters append the path themselves.
+    if (baseUrl) baseUrl = baseUrl.replace(/\/+$/, "").replace(/\/(chat\/completions|models)$/, "");
     if (baseUrl) {
       try {
         const parsed = new URL(baseUrl);

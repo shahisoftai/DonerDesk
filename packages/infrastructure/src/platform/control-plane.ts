@@ -1076,7 +1076,7 @@ async function testProvider(category: string, provider: string, config: Record<s
     // "/v1/models" or "/v1/messages" for anthropic/MiniMax) doesn't produce a
     // double "/v1" like ".../v1/v1/models" → 404.
     const baseUrl = typeof config.baseUrl === "string" && config.baseUrl.trim()
-      ? config.baseUrl.trim().replace(/\/(v1)\/?$/, "").replace(/\/+$/, "")
+      ? config.baseUrl.trim().replace(/\/+$/, "").replace(/\/(chat\/completions|models)$/, "").replace(/\/(v1)\/?$/, "").replace(/\/+$/, "")
       : "";
     url = String(config.testUrl || (baseUrl ? `${baseUrl}${paths[provider] ?? ""}` : defaults[provider] || ""));
     const key = secrets.apiKey;
