@@ -12,6 +12,7 @@ import type {
 import type { IIdGenerator, IAuditLogger } from "../ports/core.js";
 import type { ILlmUsageRepository } from "../ports/billing.js";
 import type { GenerationInputs } from "./report-generation-context.js";
+import { deterministicBlueprintTable } from "./blueprint-tables.js";
 
 export interface SectionDraftRequest {
   ctx: AuthenticatedContext;
@@ -57,6 +58,12 @@ export class SectionGenerationService {
       },
       planSection,
     );
+    // Blueprint sections whose table comes from recorded data: append it after the
+    // writer's prose (once), so the figures are exactly the recorded ones.
+    const table = deterministicBlueprintTable(planSection.templateSectionId, request.inputs.activities);
+    if (table && !generated.section.content.includes(table)) {
+      generated.section.content = `${generated.section.content.trimEnd()}\n\n${table}\n`;
+    }
     if (generated.telemetry) {
       const t = generated.telemetry;
       const status = generated.deterministicReason

@@ -70,7 +70,7 @@ const PARTICIPANT_COLUMNS = ["Group", "Total", "Male", "Female", "Children", "Pe
 // ─── cadence reports ────────────────────────────────────────────────────────
 
 const MONTHLY: Spec[] = [
-  { key: "overview", title: "Monthly Overview", description: "A short account of what the project did this month and where it stands.", maxWords: 250 },
+  { key: "overview", title: "This Month at a Glance", description: "A short account of what the project did this month and where it stands.", maxWords: 250 },
   { key: "activities", title: "Activities Implemented", description: "The activities carried out this month, with dates, locations and results.", evidence: ["Activity reports", "Photos", "Attendance sheets"] },
   { key: "indicators", title: "Progress Against Indicators", description: "Indicator results for the month against targets.", inputType: "INDICATOR_TABLE" },
   { key: "beneficiaries", title: "Beneficiaries Reached", description: "People reached this month, disaggregated.", tables: [{ title: "Beneficiaries reached", columns: PARTICIPANT_COLUMNS }] },
@@ -150,7 +150,8 @@ function activityBlueprint(input: BlueprintInput): Spec[] {
   const specs: Spec[] = [
     {
       key: "overview",
-      title: "Overview",
+      // Not "Overview": the AI worker classes any title containing it as an Executive Summary.
+      title: "Introduction",
       description: "What this report covers: the activity or activities, when and where.",
       maxWords: 200,
       instructions: `Introduce the report and the activities it covers (dates, locations, the output or indicator each supports). Do not summarise the wider project. ${NO_INVENTION}`,
@@ -168,7 +169,6 @@ function activityBlueprint(input: BlueprintInput): Spec[] {
       maxWords: 400,
       instructions: `Report only on the activity "${a.title}" (activity id ${a.id}). Cover what was implemented, who took part, what was achieved, any challenges and the next steps, using only this activity's record. ${NO_INVENTION}`,
       questions: ["What was implemented?", "Who took part?", "What was achieved?", "What challenges arose?", "What are the next steps?"],
-      evidence: ["Photos", "Attendance sheet", "Field report"],
     });
   }
   specs.push(
@@ -176,13 +176,19 @@ function activityBlueprint(input: BlueprintInput): Spec[] {
       key: "participants",
       title: "Participants and Reach",
       description: "Everyone reached across the covered activities, disaggregated.",
-      tables: [{ title: "Participants by activity", columns: ["Activity", ...PARTICIPANT_COLUMNS.slice(1)] }],
       maxWords: 200,
-      instructions: `Give the participant totals per activity and overall, with the sex, age and disability breakdown where recorded. Never infer a breakdown that was not recorded. ${NO_INVENTION}`,
+      instructions: `Comment briefly on who was reached across the activities, using the recorded sex, age and disability breakdown. A table of participants per activity is added automatically below your text, so do not write a table yourself. Never infer a breakdown that was not recorded. ${NO_INVENTION}`,
     },
     { key: "challenges", title: "Challenges and Lessons Learned", description: "Challenges across the activities and what was learned.", maxWords: 300 },
     { key: "next", title: "Next Steps", description: "Follow-up actions arising from the activities.", maxWords: 200 },
-    { key: "annex", title: "Evidence Annex", description: "The photos, attendance sheets and field reports that support this report.", inputType: "ANNEX", required: false },
+    {
+      key: "annex",
+      title: "Evidence Annex",
+      description: "The photos, attendance sheets and field reports that support this report.",
+      inputType: "ANNEX",
+      required: false,
+      instructions: "List the evidence files attached to the covered activities, if any. If none are attached, say so in one sentence. There is no donor template for this report; never refer to one.",
+    },
   );
   return specs;
 }
@@ -192,7 +198,7 @@ function situationBlueprint(input: BlueprintInput): Spec[] {
   return [
     {
       key: "overview",
-      title: "Situation Overview",
+      title: "Situation at a Glance",
       description: "The headline of the situation as of the report date.",
       maxWords: 200,
       instructions: `Open with the situation as of the report date in a few plain sentences. This is a situation report, not a project summary. ${NO_INVENTION}`,
@@ -200,7 +206,7 @@ function situationBlueprint(input: BlueprintInput): Spec[] {
     followUp
       ? { key: "changes", title: "Developments Since the Last Report", description: "What has changed since the previous situation report.", maxWords: 300, instructions: `Describe only what changed since the previous report; do not repeat unchanged background. ${NO_INVENTION}` }
       : { key: "background", title: "Background", description: "How the situation arose and the context needed to read this report.", maxWords: 250 },
-    { key: "needs", title: "Affected Population and Needs", description: "Who is affected, how many, and what they need.", maxWords: 300, tables: [{ title: "Affected population", columns: ["Group", "Number", "Source"] }], instructions: `State the affected population and needs with the source of each figure. ${NO_INVENTION}` },
+    { key: "needs", title: "Affected Population and Needs", description: "Who is affected, how many, and what they need.", maxWords: 300, instructions: `State the affected population and needs, with the source of each figure. If the supplied data gives no affected-population figures, say they were not reported; never estimate. ${NO_INVENTION}` },
     { key: "response", title: "Response to Date", description: "What the organisation has done so far and who it reached.", maxWords: 300, evidence: ["Activity reports", "Distribution records"] },
     { key: "constraints", title: "Access, Security and Constraints", description: "What limits access or delivery.", maxWords: 200 },
     { key: "coordination", title: "Coordination", description: "Coordination with authorities, clusters and partners.", maxWords: 150, required: false },
