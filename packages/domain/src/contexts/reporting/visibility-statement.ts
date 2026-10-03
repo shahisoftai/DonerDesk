@@ -122,8 +122,14 @@ export function buildVisibilityStatement(donorName: string, implementingOrganiza
 /**
  * Prompt block for narrators: exact sentence plus usage rules. Empty array
  * when no donor name is known (callers append nothing).
+ *
+ * Sections are drafted one at a time from the same report-wide context, so
+ * "include it once" alone made every section include it. When
+ * `attributionSection` is given (the title from `attributionSectionTitle`),
+ * the block names the one section that carries it; the block stays identical
+ * for every section of the report (provider prefix caching).
  */
-export function visibilityPromptBlock(donorName: string, implementingOrganization?: string): string[] {
+export function visibilityPromptBlock(donorName: string, implementingOrganization?: string, attributionSection?: string): string[] {
   const donor = (donorName ?? "").trim();
   if (!donor) return [];
   const resolved = resolveVisibilityStatement(donor);
@@ -131,8 +137,65 @@ export function visibilityPromptBlock(donorName: string, implementingOrganizatio
     `# Attribution and visibility (mandatory)`,
     `- Include this attribution sentence exactly once, word for word: "${renderStatement(resolved.statement, donor, implementingOrganization)}"`,
     ...resolved.rules.map((r) => `- ${renderStatement(r, donor, implementingOrganization)}`),
-    `- Place the attribution in this report's opening narrative or acknowledgement section; never inside a table or a list item.`,
+    attributionSection
+      ? `- The attribution belongs only in the section titled "${attributionSection}". When writing any other section, do not include the attribution sentence or any disclaimer.`
+      : `- Place the attribution in this report's opening narrative or acknowledgement section; never inside a table or a list item.`,
     ``,
   ];
 }
 
+const ATTRIBUTION_TITLE_RE = /acknowledg|visibility|disclaimer|attribution|donor recognition/i;
+
+/**
+ * The one section that carries the donor attribution: a section made for it
+ * (acknowledgements, visibility, disclaimer) when the report has one, else the
+ * first top-level section that is not an annex.
+ */
+export function attributionSectionTitle(
+  sections: ReadonlyArray<{ title: string; level?: number; inputType?: string }>,
+): string | undefined {
+  const dedicated = sections.find((s) => ATTRIBUTION_TITLE_RE.test(s.title));
+  if (dedicated) return dedicated.title;
+  return (sections.find((s) => (s.level ?? 1) === 1 && s.inputType !== "ANNEX") ?? sections[0])?.title;
+}
+
+/**
+ * The exact sentences of a donor's attribution: the statement first, then any
+ * full sentence quoted in its rules (disclaimers such as the EU "Views and
+ * opinions expressed…" line). Short quoted tokens ('EU') are not sentences.
+ */
+export function attributionSentences(donorName: string, implementingOrganization?: string): string[] {
+  const donor = (donorName ?? "").trim();
+  if (!donor) return [];
+  const resolved = resolveVisibilityStatement(donor);
+  const quoted = resolved.rules.flatMap((r) =>
+    Array.from(renderStatement(r, donor, implementingOrganization).matchAll(/'([^']+)'/g), (m) => m[1]!.trim()),
+  );
+  return [
+    renderStatement(resolved.statement, donor, implementingOrganization),
+    ...quoted.filter((q) => q.split(/\s+/).length >= 6 && /[.!]$/.test(q)),
+  ];
+}
+
+/**
+ * Keeps the attribution in exactly one section. Outside the attribution
+ * section every exact attribution/disclaimer sentence is removed; inside it,
+ * the statement is added at the top when the writer left it out.
+ */
+export function placeAttribution(content: string, sentences: readonly string[], isAttributionSection: boolean): string {
+  if (sentences.length === 0 || !content) return content;
+  if (isAttributionSection) {
+    return content.includes(sentences[0]!) ? content : `${sentences[0]}\n\n${content.trimStart()}`;
+  }
+  let out = content;
+  for (const sentence of sentences) {
+    out = out.split(sentence).join("");
+  }
+  if (out === content) return content;
+  return out
+    .split("\n")
+    .map((line) => line.replace(/[ \t]{2,}/g, " ").replace(/^[ \t]+(?=\S)/, "").replace(/[ \t]+$/, ""))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}

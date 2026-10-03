@@ -4,6 +4,8 @@ import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import { toIndicatorUpdateView, type IndicatorUpdateView } from "./indicator-update-view.js";
+import type { IActivityUpdateRepository } from "../../ports/activities.js";
+import { periodIndicatorScope, inIndicatorScope } from "../../services/period-activities.js";
 
 export interface PeriodIndicatorRow {
   id: string;
@@ -28,15 +30,25 @@ export interface PeriodIndicatorRow {
   update: IndicatorUpdateView | null;
 }
 
+/** Activity/situation reports: the activities the report covers (absent for other types). */
+export interface PeriodScopeSummary {
+  activityCount: number;
+  acceptedActivityCount: number;
+}
+
 export class ListPeriodIndicatorsHandler {
   constructor(
     private readonly periods: IReportingPeriodRepository,
     private readonly logframe: ILogframeRepository,
     private readonly indicators: IIndicatorRepository,
     private readonly updates: IIndicatorUpdateRepository,
+    private readonly activities?: IActivityUpdateRepository,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<{ periodId: string; projectId: string; indicators: PeriodIndicatorRow[] }, DomainError>> {
+  async handle(
+    ctx: AuthenticatedContext,
+    reportingPeriodId: string,
+  ): Promise<Result<{ periodId: string; projectId: string; reportType: string; indicators: PeriodIndicatorRow[]; scope?: PeriodScopeSummary }, DomainError>> {
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", reportingPeriodId) };
@@ -51,10 +63,14 @@ export class ListPeriodIndicatorsHandler {
     if (!indicatorsResult.ok) return indicatorsResult;
     if (!updatesResult.ok) return updatesResult;
 
+    const scopeResult = await periodIndicatorScope(this.activities, period, ctx.tenant.tenantId);
+    if (!scopeResult.ok) return scopeResult;
+    const scope = scopeResult.value;
+
     const itemsById = new Map(itemsResult.value.map((item) => [item.id, item]));
     const updatesByIndicator = new Map(updatesResult.value.map((u) => [u.indicatorId, u]));
 
-    const rows: PeriodIndicatorRow[] = indicatorsResult.value.map((ind) => {
+    const rows: PeriodIndicatorRow[] = indicatorsResult.value.filter((ind) => inIndicatorScope(scope, ind.id)).map((ind) => {
       const item = ind.logframeItemId ? itemsById.get(ind.logframeItemId) : undefined;
       const update = updatesByIndicator.get(ind.id);
       const requiresDenominator =
@@ -83,6 +99,17 @@ export class ListPeriodIndicatorsHandler {
       };
     });
 
-    return { ok: true, value: { periodId: period.id, projectId: period.projectId, indicators: rows } };
+    return {
+      ok: true,
+      value: {
+        periodId: period.id,
+        projectId: period.projectId,
+        reportType: period.reportType,
+        indicators: rows,
+        ...(scope.activities
+          ? { scope: { activityCount: scope.activities.length, acceptedActivityCount: scope.activities.filter((a) => a.status === "ACCEPTED").length } }
+          : {}),
+      },
+    };
   }
 }

@@ -18,7 +18,7 @@ import type {
   ILogger,
 } from "@donordesk/application";
 import type { ReportPlanSection, SourceReference } from "@donordesk/domain";
-import { isSynthesisSection, visibilityPromptBlock } from "@donordesk/domain";
+import { attributionSectionTitle, isSynthesisSection, visibilityPromptBlock } from "@donordesk/domain";
 import type { StubReportDraftGenerator } from "./report-draft-generator.js";
 import { DeterministicEvidenceRetriever } from "./evidence-retriever.js";
 import { buildSectionSpecificGuidance } from "./llm-report-draft-generator.js";
@@ -509,7 +509,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         : undefined,
       visibility: (() => {
         const donorName = ctx?.template?.donorName ?? ctx?.project?.donorName;
-        return donorName ? visibilityPromptBlock(donorName, ctx?.project?.implementingOrganization) : [];
+        return donorName ? visibilityPromptBlock(donorName, ctx?.project?.implementingOrganization, attributionSectionTitle(input.reportPlan.sections)) : [];
       })(),
     };
   }

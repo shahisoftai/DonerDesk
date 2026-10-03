@@ -8,7 +8,7 @@ import type {
   IReportDraftRepository,
   IReportSectionRepository,
 } from "../../ports/reporting.js";
-import { resolvePeriodActivities } from "../../services/period-activities.js";
+import { resolvePeriodActivities, periodIndicatorScope, inIndicatorScope } from "../../services/period-activities.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
@@ -45,8 +45,11 @@ export class DetectMissingEvidenceHandler {
       }
     }
 
-    const updates = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
-    if (!updates.ok) return updates;
+    const allUpdates = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    if (!allUpdates.ok) return allUpdates;
+    const indicatorScope = await periodIndicatorScope(this.activities, period, ctx.tenant.tenantId);
+    if (!indicatorScope.ok) return indicatorScope;
+    const updates = { ok: true as const, value: allUpdates.value.filter((u) => inIndicatorScope(indicatorScope.value, u.indicatorId)) };
     const verified = updates.value.filter((u) => u.verificationStatus === "VERIFIED").length;
 
     const ev = await this.evidence.search({ projectId: period.projectId, reportingPeriodId, pageSize: 200 }, ctx.tenant.tenantId);

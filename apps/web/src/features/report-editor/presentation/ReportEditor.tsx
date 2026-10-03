@@ -30,6 +30,7 @@ import { DraftVersionsPanel, type DraftVersion } from "@/features/reporting/pres
 import { HelpButton } from "@/features/tour/presentation/HelpButton";
 import type { ChartFigureIndicator } from "@/features/reporting/presentation/ChartFigure";
 import { buildEditorModel } from "../application/editor-model";
+import { buildReportInputRows, type ReportScopeInfo } from "../application/report-inputs";
 import type { ReportCheck } from "../application/report-checks";
 import { serializeEditorUrlState, type EditorUrlState, type InspectorPanel } from "../application/url-state";
 import { anchorClaims, type Anchor } from "../application/claim-anchors";
@@ -101,6 +102,8 @@ export type ReportEditorProps = {
   claims: InspectorClaim[];
   versions: DraftVersion[];
   indicators: IndicatorRow[];
+  /** Activity/situation reports: what the report covers (drives the input panels). */
+  reportScope?: ReportScopeInfo;
   readinessPercent: number;
   checklist: Array<{ id: string; title: string; severity: string; status: string }>;
   unverifiedIndicatorCount: number;
@@ -335,6 +338,14 @@ export function ReportEditor(props: ReportEditorProps) {
   const canRegenerate = canAuthor && caps.canGenerate;
   const base = `/projects/${projectId}/reports/${periodId}`;
   const inputsHref = `${base}/inputs`;
+  const inputRows = buildReportInputRows({
+    indicators: props.indicators,
+    scope: props.reportScope,
+    storyAnswered: props.storyAnsweredCount,
+    evidenceCount: props.evidenceCount,
+    inputsHref,
+    activitiesHref: `/projects/${projectId}/activities`,
+  });
 
   const issues = useMemo(() => {
     const open = props.claims
@@ -722,11 +733,7 @@ export function ReportEditor(props: ReportEditorProps) {
       {!hasDocument ? (
         <div className="mt-6 rounded-xl border border-slate-200 bg-white px-6 py-8 dark:border-white/10 dark:bg-slate-900/40">
           <GenerateLaunchCard
-            indicatorCount={props.indicators.length}
-            unverifiedIndicatorCount={props.unverifiedIndicatorCount}
-            storyAnswered={props.storyAnsweredCount}
-            evidenceCount={props.evidenceCount}
-            inputsHref={inputsHref}
+            rows={inputRows}
             canGenerate={caps.canGenerate}
             starting={generation.starting}
             onGenerate={() => void generation.generate()}
@@ -750,13 +757,7 @@ export function ReportEditor(props: ReportEditorProps) {
                 approvingAll={busy === "approve-all"}
                 onApproveAllClean={canAuthor && caps.canApproveSection ? () => void approveAllClean() : undefined}
                 footer={
-                  <ReportInputsCard
-                    inputsHref={inputsHref}
-                    indicatorCount={props.indicators.length}
-                    unverifiedIndicatorCount={props.unverifiedIndicatorCount}
-                    storyAnswered={props.storyAnsweredCount}
-                    evidenceCount={props.evidenceCount}
-                  />
+                  <ReportInputsCard inputsHref={inputsHref} rows={inputRows} />
                 }
               />
             </div>

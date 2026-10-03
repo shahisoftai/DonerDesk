@@ -5,7 +5,7 @@ import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IIndicatorRepository } from "../../ports/logframe.js";
-import { resolvePeriodActivities } from "../../services/period-activities.js";
+import { resolvePeriodActivities, periodIndicatorScope, inIndicatorScope } from "../../services/period-activities.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type {
@@ -66,7 +66,13 @@ export class CalculateReadinessHandler {
       }
     }
 
-    const indUpdates = await this.updates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    const allIndUpdates = await this.updates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    // Only the indicators this report speaks about count (an activity report: its
+    // activities' indicators; a situation report: none).
+    const indicatorScope = period ? await periodIndicatorScope(this.activities, period, ctx.tenant.tenantId) : null;
+    const indUpdates = allIndUpdates.ok && indicatorScope?.ok
+      ? { ok: true as const, value: allIndUpdates.value.filter((u) => inIndicatorScope(indicatorScope.value, u.indicatorId)) }
+      : allIndUpdates;
     if (indUpdates.ok) {
       totalIndicators = indUpdates.value.length;
       verifiedIndicators = indUpdates.value.filter((u) => u.verificationStatus === "VERIFIED").length;

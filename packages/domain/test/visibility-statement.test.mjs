@@ -58,3 +58,36 @@ test("every catalog entry is well-formed (SRP: data integrity is owned here)", (
   }
   assert.equal(GENERIC_VISIBILITY_STATEMENT.aliases.length, 0);
 });
+
+import { attributionSectionTitle, attributionSentences, placeAttribution } from "../dist/index.js";
+
+test("attribution goes to a dedicated section, else the first top-level non-annex section", () => {
+  assert.equal(attributionSectionTitle([{ title: "Introduction", level: 1 }, { title: "Acknowledgements", level: 1 }]), "Acknowledgements");
+  assert.equal(attributionSectionTitle([{ title: "Annex A", level: 1, inputType: "ANNEX" }, { title: "Introduction", level: 1 }]), "Introduction");
+  assert.equal(attributionSectionTitle([]), undefined);
+});
+
+test("prompt block names the one section that carries the attribution", () => {
+  const block = visibilityPromptBlock("European Union", "ReliefWorks", "Introduction");
+  assert.ok(block.some((l) => l.includes('only in the section titled "Introduction"')));
+  assert.ok(!block.some((l) => l.includes("opening narrative")));
+});
+
+test("attribution sentences include full quoted disclaimers but not short quoted tokens", () => {
+  const eu = attributionSentences("European Union");
+  assert.equal(eu[0], "This project is funded by the European Union.");
+  assert.ok(eu.some((s) => s.startsWith("Views and opinions expressed")));
+  assert.ok(!eu.includes("EU"));
+  const usaid = attributionSentences("USAID", "ReliefWorks");
+  assert.ok(usaid.some((s) => s.includes("The contents are the responsibility of ReliefWorks")));
+  assert.deepEqual(attributionSentences(""), []);
+});
+
+test("placeAttribution keeps the attribution in exactly one section", () => {
+  const sentences = attributionSentences("European Union");
+  const repeated = `This project is funded by the European Union. In March, 600 people took part.\n\n${sentences[1]}\n\nNext steps follow.`;
+  assert.equal(placeAttribution(repeated, sentences, false), "In March, 600 people took part.\n\nNext steps follow.");
+  assert.equal(placeAttribution("In March, 600 people took part.", sentences, true), "This project is funded by the European Union.\n\nIn March, 600 people took part.");
+  assert.equal(placeAttribution(repeated, sentences, true), repeated);
+  assert.equal(placeAttribution("No attribution here.", sentences, false), "No attribution here.");
+});

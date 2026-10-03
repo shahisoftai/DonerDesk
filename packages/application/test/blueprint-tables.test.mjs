@@ -38,3 +38,18 @@ test("indicator data is scoped per report type", () => {
   assert.deepEqual(scopeIndicatorData("ACTIVITY", [{}], findings, updates), { findings: [], updates: [] });
   assert.deepEqual(scopeIndicatorData("SITUATION", acts, findings, updates), { findings: [], updates: [] });
 });
+
+import { SectionGenerationService } from "../dist/index.js";
+
+test("section service keeps the donor attribution in exactly one section", async () => {
+  const service = new SectionGenerationService({ generate: () => "id" }, { recordRun: async () => ({ ok: true }) }, {}, {}, { record: async () => {} });
+  const plan = { sections: [{ templateSectionId: "bp:activity:overview", title: "Introduction", level: 1, inputType: "NARRATIVE" }, { templateSectionId: "bp:activity:next", title: "Next Steps", level: 1, inputType: "NARRATIVE" }] };
+  const reportContext = { project: { donorName: "European Union (DG INTPA)", implementingOrganization: "Sahel Health" } };
+  const write = async (planSection, content) => {
+    const generator = { model: { modelId: "m" }, generateSection: async () => ({ section: { content }, usedFallback: false }) };
+    const out = await service.draft({ ctx: {}, runId: "r", plan, inputs: { activities: [], reportContext }, reportingProfileSnapshot: {}, generator, draftedSections: [] }, "s", planSection);
+    return out.section.content;
+  };
+  assert.equal(await write(plan.sections[1], "This project is funded by the European Union. Continue outreach."), "Continue outreach.");
+  assert.equal(await write(plan.sections[0], "Two activities took place."), "This project is funded by the European Union.\n\nTwo activities took place.");
+});

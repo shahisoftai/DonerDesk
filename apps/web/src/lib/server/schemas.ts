@@ -382,7 +382,10 @@ export type PeriodIndicatorRow = z.infer<typeof PeriodIndicatorRowSchema>;
 export const PeriodIndicatorsResponseSchema = z.object({
   periodId: z.string(),
   projectId: z.string(),
+  /** Rows are scoped to the report: an activity report lists its activities' indicators, a situation report none. */
+  reportType: z.string().optional(),
   indicators: z.array(PeriodIndicatorRowSchema),
+  scope: z.object({ activityCount: z.number(), acceptedActivityCount: z.number() }).optional(),
 });
 
 export const IndicatorUpdateHistoryRowSchema = PeriodIndicatorUpdateSchema.extend({

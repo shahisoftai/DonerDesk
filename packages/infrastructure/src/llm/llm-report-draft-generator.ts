@@ -10,7 +10,7 @@ import type {
   ILogger,
 } from "@donordesk/application";
 import type { ReportPlanSection, SourceReference, ClaimType } from "@donordesk/domain";
-import { isSynthesisSection, visibilityPromptBlock } from "@donordesk/domain";
+import { attributionSectionTitle, isSynthesisSection, visibilityPromptBlock } from "@donordesk/domain";
 import { StubReportDraftGenerator } from "./report-draft-generator.js";
 import { createHash } from "node:crypto";
 
@@ -205,10 +205,11 @@ function buildStoryContextBlock(ctx: GenerateReportDraftInput["reportContext"]):
  * pure domain catalog so wording is exact and donor-keyed. Empty when the
  * donor is unknown (no fabricated attributions).
  */
-function buildVisibilityLines(ctx: GenerateReportDraftInput["reportContext"]): string[] {
+function buildVisibilityLines(input: GenerateReportDraftInput): string[] {
+  const ctx = input.reportContext;
   const donorName = ctx?.template?.donorName ?? ctx?.project?.donorName;
   if (!donorName) return [];
-  return visibilityPromptBlock(donorName, ctx?.project?.implementingOrganization);
+  return visibilityPromptBlock(donorName, ctx?.project?.implementingOrganization, attributionSectionTitle(input.reportPlan.sections));
 }
 
 /**
@@ -466,7 +467,7 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
     ...projectBlock,
     ...periodBlock,
     ...templateBlock,
-    ...buildVisibilityLines(ctx),
+    ...buildVisibilityLines(input),
     ...buildStoryContextBlock(ctx),
     `# Section Guidance`,
     sectionGuidance,
@@ -647,7 +648,7 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
     ...projectBlock,
     ...periodBlock,
     ...templateBlock,
-    ...buildVisibilityLines(ctx),
+    ...buildVisibilityLines(input),
     ...buildStoryContextBlock(ctx),
     `# Section Guidance`,
     sectionGuidance,

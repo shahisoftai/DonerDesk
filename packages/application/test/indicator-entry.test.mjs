@@ -247,3 +247,31 @@ test("bulk save rejects a breakdown that does not add up, before writing anythin
   assert.equal(good.ok, true);
   assert.deepEqual(written[0].disaggregation.map((e) => e.category), ["Female", "Male"]);
 });
+
+test("list period indicators is scoped to the report: activity → its activities' indicators, situation → none", async () => {
+  const logframe = { findByProject: async () => ({ ok: true, value: [] }) };
+  const updates = { findByReportingPeriod: async () => ({ ok: true, value: [] }) };
+  const indicators = indicatorRepo([makeIndicator("ind-1", "IND-1"), makeIndicator("ind-2", "IND-2")]);
+  const acts = [
+    { id: "a1", indicatorId: "ind-2", status: "ACCEPTED", activityDate: new Date("2026-08-10T00:00:00Z") },
+    { id: "a2", indicatorId: undefined, status: "SUBMITTED", activityDate: new Date("2026-08-12T00:00:00Z") },
+  ];
+  const activities = { findByProject: async () => ({ ok: true, value: acts }), findByReportingPeriod: async () => ({ ok: true, value: [] }) };
+  const make = (reportType, scopeJson) =>
+    ReportingPeriod.create({
+      id: "period-1", tenantId: "tenant-a", projectId: "proj-1", reportType, scopeJson,
+      startDate: new Date("2026-08-01T00:00:00Z"), endDate: new Date("2026-08-31T00:00:00Z"), deadline: new Date("2026-09-15T00:00:00Z"),
+    });
+
+  const activity = await new ListPeriodIndicatorsHandler(periodRepo(make("ACTIVITY", JSON.stringify({ activityIds: ["a1", "a2"] }))), logframe, indicators, updates, activities).handle(ctx, "period-1");
+  assert.deepEqual(activity.value.indicators.map((r) => r.id), ["ind-2"]);
+  assert.deepEqual(activity.value.scope, { activityCount: 2, acceptedActivityCount: 1 });
+
+  const situation = await new ListPeriodIndicatorsHandler(periodRepo(make("SITUATION", JSON.stringify({ eventName: "Flood", situationDate: "2026-08-31" }))), logframe, indicators, updates, activities).handle(ctx, "period-1");
+  assert.equal(situation.value.indicators.length, 0);
+  assert.equal(situation.value.scope.activityCount, 2);
+
+  const monthly = await new ListPeriodIndicatorsHandler(periodRepo(make("MONTHLY")), logframe, indicators, updates, activities).handle(ctx, "period-1");
+  assert.equal(monthly.value.indicators.length, 2);
+  assert.equal(monthly.value.scope, undefined);
+});

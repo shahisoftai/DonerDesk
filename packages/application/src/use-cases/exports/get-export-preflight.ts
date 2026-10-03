@@ -10,6 +10,8 @@ import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { ApproveReportHandler } from "../reporting/approve-report.js";
+import type { IActivityUpdateRepository } from "../../ports/activities.js";
+import { periodIndicatorScope, inIndicatorScope } from "../../services/period-activities.js";
 
 export const EXPORT_TYPES = [
   "WORD",
@@ -72,13 +74,15 @@ export class GetExportPreflightHandler {
     private readonly checklist: IChecklistRepository,
     private readonly evidence: IEvidenceRepository,
     private readonly gate: ApproveReportHandler,
+    private readonly activities?: IActivityUpdateRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<unknown, DomainError>> {
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", reportingPeriodId) };
-    const projectId = periodResult.value.projectId;
+    const period = periodResult.value;
+    const projectId = period.projectId;
 
     const draftsResult = await this.drafts.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!draftsResult.ok) return draftsResult;
@@ -124,8 +128,9 @@ export class GetExportPreflightHandler {
 
     let unverifiedIndicatorCount = 0;
     const updatesResult = await this.updates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
-    if (updatesResult.ok) {
-      unverifiedIndicatorCount = updatesResult.value.filter((u) => u.verificationStatus !== "VERIFIED").length;
+    const indicatorScope = await periodIndicatorScope(this.activities, period, ctx.tenant.tenantId);
+    if (updatesResult.ok && indicatorScope.ok) {
+      unverifiedIndicatorCount = updatesResult.value.filter((u) => inIndicatorScope(indicatorScope.value, u.indicatorId) && u.verificationStatus !== "VERIFIED").length;
     }
 
     let openCriticalCount = 0;

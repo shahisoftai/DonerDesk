@@ -48,3 +48,37 @@ export function scopeIndicatorData<F extends { indicatorId: string }, U extends 
   }
   return { findings, updates };
 }
+
+export interface PeriodIndicatorScope {
+  /** True when every project indicator is in scope (cadence and custom reports). */
+  all: boolean;
+  /** In-scope indicator ids when `all` is false. */
+  ids: ReadonlySet<string>;
+  /** Activity/situation reports: the activities the report covers. */
+  activities?: ActivityUpdate[];
+}
+
+/**
+ * The indicators a period's report speaks about — the same rule generation uses
+ * (`scopeIndicatorData`), for the views and checks that count indicator values:
+ * the workspace panel, export preflight, readiness and the missing-items scan.
+ * Without an activity repository (legacy wiring) everything is in scope.
+ */
+export async function periodIndicatorScope(
+  activities: IActivityUpdateRepository | undefined,
+  period: Pick<ReportingPeriod, "id" | "reportType" | "scope" | "projectId" | "duration">,
+  tenantId: TenantId,
+): Promise<Result<PeriodIndicatorScope>> {
+  if (period.reportType !== "ACTIVITY" && period.reportType !== "SITUATION") return { ok: true, value: { all: true, ids: new Set() } };
+  if (!activities) return { ok: true, value: { all: true, ids: new Set() } };
+  const covered = await resolvePeriodActivities(activities, period, tenantId);
+  if (!covered.ok) return covered;
+  const ids = period.reportType === "ACTIVITY"
+    ? new Set(covered.value.map((a) => a.indicatorId).filter((id): id is string => Boolean(id)))
+    : new Set<string>();
+  return { ok: true, value: { all: false, ids, activities: covered.value } };
+}
+
+export function inIndicatorScope(scope: PeriodIndicatorScope, indicatorId: string): boolean {
+  return scope.all || scope.ids.has(indicatorId);
+}

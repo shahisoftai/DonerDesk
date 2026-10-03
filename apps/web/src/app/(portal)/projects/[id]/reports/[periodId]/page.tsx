@@ -93,6 +93,7 @@ export default async function ReportWorkspacePage({
           claims={draftValue?.claims ?? []}
           versions={draftValue?.versions ?? []}
           indicators={indicatorsResult.ok ? indicatorsResult.value.indicators : []}
+          reportScope={indicatorsResult.ok && indicatorsResult.value.reportType ? { reportType: indicatorsResult.value.reportType, ...indicatorsResult.value.scope } : undefined}
           readinessPercent={readinessResult.value.overall}
           checklist={checklistResult.ok ? checklistResult.value.items : []}
           unverifiedIndicatorCount={unverifiedIndicatorCount}

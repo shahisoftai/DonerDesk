@@ -1,5 +1,5 @@
 import type { Result, ReportPlan, ReportPlanSection, ReportSection, ChangeOrigin } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, attributionSectionTitle, attributionSentences, placeAttribution } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../context.js";
 import type {
   IReportDraftGenerator,
@@ -58,6 +58,19 @@ export class SectionGenerationService {
       },
       planSection,
     );
+    // The donor attribution belongs in exactly one section. The writer is told
+    // which one; this enforces it for exact sentences (removed elsewhere, added
+    // there if missing), whatever the model or the fallback produced.
+    const ctx = request.inputs.reportContext;
+    const donorName = ctx?.template?.donorName ?? ctx?.project?.donorName;
+    if (donorName && generated.section.content) {
+      const carrier = attributionSectionTitle(request.plan.sections);
+      generated.section.content = placeAttribution(
+        generated.section.content,
+        attributionSentences(donorName, ctx?.project?.implementingOrganization),
+        carrier === planSection.title,
+      );
+    }
     // Blueprint sections whose table comes from recorded data: append it after the
     // writer's prose (once), so the figures are exactly the recorded ones.
     const table = deterministicBlueprintTable(planSection.templateSectionId, request.inputs.activities);
