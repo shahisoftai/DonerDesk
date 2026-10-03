@@ -91,3 +91,10 @@ test("placeAttribution keeps the attribution in exactly one section", () => {
   assert.equal(placeAttribution(repeated, sentences, true), repeated);
   assert.equal(placeAttribution("No attribution here.", sentences, false), "No attribution here.");
 });
+
+test("placeAttribution does not add the English sentence to a non-English report's carrier section", () => {
+  const sentences = attributionSentences("European Union");
+  const fr = "Ce projet est financé par l'Union européenne. Deux activités ont eu lieu.";
+  assert.equal(placeAttribution(fr, sentences, true, false), fr);
+  assert.equal(placeAttribution(`This project is funded by the European Union. ${fr}`, sentences, false, false), fr);
+});

@@ -74,3 +74,12 @@ test("the planner carries a blueprint section's canonical title only when the ti
   assert.equal(fr[0].title, "Le mois en bref");
   assert.equal(fr[0].canonicalTitle, "This Month at a Glance");
 });
+
+test("section service: a French report's carrier section keeps the writer's French attribution only", async () => {
+  const service = new SectionGenerationService({ generate: () => "id" }, { recordRun: async () => ({ ok: true }) }, {}, {}, { record: async () => {} });
+  const plan = { sections: [{ templateSectionId: "bp:activity:overview", title: "Introduction", level: 1, inputType: "NARRATIVE" }] };
+  const content = "Ce projet est financé par l'Union européenne. Deux activités ont eu lieu.";
+  const generator = { model: { modelId: "m" }, generateSection: async () => ({ section: { content }, usedFallback: false }) };
+  const out = await service.draft({ ctx: {}, runId: "r", plan, inputs: { activities: [], reportContext: { project: { donorName: "European Union" } } }, reportingProfileSnapshot: { language: "fr" }, generator, draftedSections: [] }, "s", plan.sections[0]);
+  assert.equal(out.section.content, content);
+});

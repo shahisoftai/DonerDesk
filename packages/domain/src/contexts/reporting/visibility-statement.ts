@@ -180,12 +180,15 @@ export function attributionSentences(donorName: string, implementingOrganization
 /**
  * Keeps the attribution in exactly one section. Outside the attribution
  * section every exact attribution/disclaimer sentence is removed; inside it,
- * the statement is added at the top when the writer left it out.
+ * the statement is added at the top when the writer left it out — only when
+ * `ensure` is set (English reports): in another language the writer renders
+ * the attribution in that language, and adding the English sentence would
+ * duplicate it.
  */
-export function placeAttribution(content: string, sentences: readonly string[], isAttributionSection: boolean): string {
+export function placeAttribution(content: string, sentences: readonly string[], isAttributionSection: boolean, ensure = true): string {
   if (sentences.length === 0 || !content) return content;
   if (isAttributionSection) {
-    return content.includes(sentences[0]!) ? content : `${sentences[0]}\n\n${content.trimStart()}`;
+    return !ensure || content.includes(sentences[0]!) ? content : `${sentences[0]}\n\n${content.trimStart()}`;
   }
   let out = content;
   for (const sentence of sentences) {

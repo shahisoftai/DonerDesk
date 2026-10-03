@@ -1,5 +1,5 @@
 import type { Result, ReportPlan, ReportPlanSection, ReportSection, ChangeOrigin } from "@donordesk/domain";
-import { DomainError, attributionSectionTitle, attributionSentences, placeAttribution } from "@donordesk/domain";
+import { DomainError, attributionSectionTitle, attributionSentences, normalizeReportLanguage, placeAttribution } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../context.js";
 import type {
   IReportDraftGenerator,
@@ -69,6 +69,7 @@ export class SectionGenerationService {
         generated.section.content,
         attributionSentences(donorName, ctx?.project?.implementingOrganization),
         carrier === planSection.title,
+        normalizeReportLanguage(request.reportingProfileSnapshot?.language) === "en",
       );
     }
     // Blueprint sections whose table comes from recorded data: append it after the
