@@ -1,6 +1,16 @@
 # Deploy to Contabo — Fastest Path
 
-**Last deploy:** 2026-10-03 — `releaseId=20261003174505` (`SCOPE=api`): non-English reports no longer get the English
+**Last deploy:** 2026-10-04 — `releaseId=20261004052515` (`SCOPE=both`, branch `0009-agent-memory`, commit `5322e2c`). **Report-type quality gaps**
+(Features/10 §"Report-type quality gaps closed"): same-kind history, life-of-project (cumulative) findings, per-section cadence guidance, finance data
+(per-project mode, verified-only per-period figures), situation figures + previous-report table, editable scope, new checklist item types.
+**One additive migration applied manually first:** `20261004100000_period_finance` (`ReportingProfile.financeDataMode`, new `PeriodFinancialSummary` table),
+shipped with `rsync --relative` (migration dir + `schema.prisma` + `infra/postgres/rls.sql`), `prisma migrate deploy` as `donordesk_migrator`, then
+`sudo -u postgres psql -d donordesk -f rls.sql` (RLS forced `t/t` on the new table; `donordesk_app` INSERT granted; `financeDataMode` defaults `'DISABLED'`).
+DB backup before: `/opt/donordesk/backups/db-pre-20261004-report-type.dump`. Gates: typecheck + build clean, all test suites green. Verified: api/web/workers
+active, `/ready` 200 (`prismaClient` ok, new fields present), worker health ok, web 200 on `127.0.0.1:3002`. Finance is **off for every project** (default
+`DISABLED`) until a project's reporting profile turns it on; existing reports are unchanged. Not browser-verified yet — see `pending.md`.
+
+**Earlier:** (previous) **Last deploy:** 2026-10-03 — `releaseId=20261003174505` (`SCOPE=api`): non-English reports no longer get the English
 attribution prepended. Preceded by `20261003172259` (`SCOPE=both`): donor attribution in exactly one section, report-inputs
 panel scoped and counted from entered values, blueprint titles in the report language with English `canonicalTitle`
 (worker `SectionBrief.canonicalTitle`). Both verified `/ready` 200 + worker ok and in a visible browser (see Features/10

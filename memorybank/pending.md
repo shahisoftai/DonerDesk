@@ -5,7 +5,7 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-04.
 ## Report types & scope — follow-ups (added 2026-10-03)
 
 - [x] Dedicated checklist item types per report type and editable scope — done 2026-10-04 (see `Features/10-Reporting-Period-Manager.md` §"Report-type quality gaps closed").
-- [ ] Deploy + browser-verify the 2026-10-04 report-type work: apply migration `20261004100000_period_finance`, re-run `infra/postgres/rls.sql`, check `/ready`, then drive Annual/Final (cumulative table), Situation #2 (figures + previous), finance (typed + import + verify) and scope edit on production.
+- [ ] Browser-verify the 2026-10-04 report-type work (deployed as `20261004052515`, migration + RLS applied, `/ready` green): drive Annual/Final (cumulative table), Situation #2 (figures + previous), finance (typed + import + verify) and scope edit on production.
 - [ ] Native-speaker review of the new finance/situation table headers in ar/ur/ps (`report-type-blueprint-i18n.ts`).
 - [ ] Re-check a French report after release `20261003174505`: the attribution should appear once, in French only (verification was stopped before this run finished).
 - [ ] Clean up the verification reports left on production in the EU nutrition project (`445e8a22…`): Activity `c0292aee-3684-4cd7-8a7c-d1d74595f5ec`, Activity (fr snapshot) `8c670920-cb9e-4a2c-802a-9da0cd7e2820`, Situation "QA panel check flood" `506681c8-96ff-4053-8c1b-21e0ab256540` — same guarded transaction as the earlier cleanup (keep `LlmRun` and audit rows).
