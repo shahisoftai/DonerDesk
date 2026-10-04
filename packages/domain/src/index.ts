@@ -19,4 +19,5 @@ export * from "./contexts/audit/index.js";
 export * from "./contexts/ai/index.js";
 export * from "./contexts/billing/index.js";
 export * from "./contexts/memory/index.js";
+export * from "./contexts/finance/index.js";
 export * from "./policies/index.js";

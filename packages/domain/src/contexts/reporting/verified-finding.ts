@@ -1,5 +1,6 @@
 import type { IndicatorType } from "../logframe/indicator.js";
 import type { AggregationMethod, IndicatorSemantics, PerformanceDirection } from "../logframe/indicator-semantics.js";
+import type { LifeOfProjectValue } from "./life-of-project.js";
 
 export type FindingQualityFlag =
   | "LOW_COVERAGE"
@@ -61,6 +62,8 @@ export interface VerifiedFinding {
   cumulativeValue?: string;
   /** Cumulative achievement before this period (cumulative − period value); SUM indicators only. */
   priorCumulativeValue?: string;
+  /** Progress since the project started (semi-annual, annual and final reports only). */
+  lifeOfProject?: LifeOfProjectValue;
   unit?: string;
   calculationMethod: string;
   /** Resolved semantics snapshot consumed to produce this finding. */

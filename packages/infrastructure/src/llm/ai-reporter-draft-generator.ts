@@ -364,6 +364,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         performanceEvaluation: f.performanceEvaluation ? { type: f.performanceEvaluation.type } : null,
         qualityFlags: f.qualityFlags,
         comparisonValue: f.comparisonValue ?? null,
+        // Only on reports that state progress since the project started; absent otherwise so other requests are unchanged.
+        ...(f.lifeOfProject ? { lifeOfProject: f.lifeOfProject } : {}),
       })),
       indicatorUpdates: input.indicatorUpdates.map((u) => ({
         indicatorCode: u.indicatorCode,
@@ -513,6 +515,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         const donorName = ctx?.template?.donorName ?? ctx?.project?.donorName;
         return donorName ? visibilityPromptBlock(donorName, ctx?.project?.implementingOrganization, attributionSectionTitle(input.reportPlan.sections)) : [];
       })(),
+      // Report-wide (identical for every section, so the cached prompt prefix stays byte-stable).
+      ...(input.finance ? { finance: input.finance } : {}),
     };
   }
 }

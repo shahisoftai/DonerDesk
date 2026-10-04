@@ -5,6 +5,7 @@ import type {
   IReportRevisionRepository,
   IReportSectionRepository,
 } from "@donordesk/application";
+import { comparableReportTypes, periodComparability, sectionMatchKeys, sectionPredecessorKeys, selectComparablePeriods } from "@donordesk/domain";
 import type { ReportPlanSection, ReportSection, ReportingPeriod, TenantId } from "@donordesk/domain";
 import type { AiReporterPriorNarrative } from "./ai-reporter-worker.js";
 
@@ -59,7 +60,7 @@ export class DeterministicPriorPeriodService implements IPriorPeriodService {
 
       const narratives: AiReporterPriorNarrative[] = [];
       for (const { period, sections } of await history) {
-        const match = sections.find((s) => normalizeTitle(s.sectionTitle) === normalizeTitle(section.title));
+        const match = findMatchingSection(sections, section);
         if (!match) continue;
 
         // The current revision is read per section: it is the one query that
@@ -70,7 +71,7 @@ export class DeterministicPriorPeriodService implements IPriorPeriodService {
         if (!content) continue;
 
         narratives.push({
-          periodLabel: period.reportType ?? "previous period",
+          periodLabel: periodLabel(period),
           content,
           sourceSectionTitle: match.sectionTitle,
         });
@@ -84,11 +85,24 @@ export class DeterministicPriorPeriodService implements IPriorPeriodService {
 
   private async loadHistory(input: GenerateReportDraftInput): Promise<PriorPeriodSections[]> {
     const tenantId = input.reportPlan.tenantId as unknown as TenantId;
-    const previous = await this.periods.findPreviousPeriods(input.reportPlan.projectId, input.reportPlan.reportingPeriodId, tenantId, this.limit);
+    const current = await this.periods.findById(input.reportPlan.reportingPeriodId, tenantId);
+    if (!current.ok || !current.value) return [];
+
+    // Only reports of a comparable kind: never an activity/situation report inside a quarter.
+    const comparability = periodComparability(current.value.reportType, current.value.scope);
+    if (!comparability) return [];
+
+    const previous = await this.periods.findPreviousPeriods(
+      input.reportPlan.projectId,
+      input.reportPlan.reportingPeriodId,
+      tenantId,
+      CANDIDATE_WINDOW,
+      { reportTypes: comparableReportTypes(comparability), ...(comparability.eventKey ? { eventKey: comparability.eventKey } : {}) },
+    );
     if (!previous.ok) return [];
 
     const history: PriorPeriodSections[] = [];
-    for (const period of previous.value) {
+    for (const period of selectComparablePeriods(previous.value, comparability, this.limit)) {
       const drafts = await this.drafts.findByReportingPeriod(period.id, tenantId);
       if (!drafts.ok) continue;
       // Prefer the most recent approved/submitted draft for this period.
@@ -104,8 +118,22 @@ export class DeterministicPriorPeriodService implements IPriorPeriodService {
   }
 }
 
-type PriorPeriodSections = { period: ReportingPeriod; sections: ReportSection[] };
+/** Candidate periods read before choosing the comparable ones. */
+const CANDIDATE_WINDOW = 20;
 
-function normalizeTitle(title: string): string {
-  return title.toLowerCase().replace(/\s+/g, " ").trim();
+/** The first prior section with the same stable key (blueprint key, template id) or title. */
+function findMatchingSection(sections: ReportSection[], target: ReportPlanSection): ReportSection | undefined {
+  for (const key of sectionPredecessorKeys(target)) {
+    const hit = sections.find((s) => sectionMatchKeys(s).includes(key));
+    if (hit) return hit;
+  }
+  return undefined;
 }
+
+/** "QUARTERLY 2028-01-01 – 2028-03-31": what the writer sees as the prior report's name. */
+function periodLabel(period: ReportingPeriod): string {
+  const day = (d: Date) => d.toISOString().slice(0, 10);
+  return `${period.reportType} ${day(period.duration.start)} – ${day(period.duration.end)}`;
+}
+
+type PriorPeriodSections = { period: ReportingPeriod; sections: ReportSection[] };

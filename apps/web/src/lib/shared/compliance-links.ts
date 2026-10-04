@@ -15,7 +15,12 @@ export type ComplianceType =
   | "LATE_ACTIVITY_UPDATE"
   | "SENSITIVE_DATA_WARNING"
   | "UNREVIEWED_AI_OUTPUT"
-  | "DONOR_REQUIREMENT";
+  | "DONOR_REQUIREMENT"
+  | "AFFECTED_FIGURES_CONFIRMED"
+  | "ACTIVITY_RECORD_ACCEPTED"
+  | "CUMULATIVE_DATA_COMPLETE"
+  | "PRIOR_REPORT_LINKED"
+  | "FINANCE_FIGURES_PROVIDED";
 
 /**
  * Maps a checklist item to the most direct place to resolve it, based on its
@@ -54,6 +59,14 @@ export function complianceFixLink(input: {
     case "MISSING_ANNEX":
     case "UNREVIEWED_AI_OUTPUT":
       return { label: "Open report workspace", href: `/projects/${project}/reports/${period}` };
+    case "CUMULATIVE_DATA_COMPLETE":
+    case "FINANCE_FIGURES_PROVIDED":
+    case "AFFECTED_FIGURES_CONFIRMED":
+      return { label: "Open report inputs", href: `/projects/${project}/reports/${period}/inputs` };
+    case "ACTIVITY_RECORD_ACCEPTED":
+      return { label: "Review activities", href: `/projects/${project}/activities` };
+    case "PRIOR_REPORT_LINKED":
+      return { label: "Open reports", href: `/projects/${project}/reports` };
     case "DONOR_REQUIREMENT":
       return { label: "Check the report", href: `/projects/${project}/reports/${period}` };
     case "MISSING_APPROVAL":

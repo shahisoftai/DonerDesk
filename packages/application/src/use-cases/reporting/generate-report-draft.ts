@@ -30,6 +30,7 @@ import type { PurchasedCreditPack } from "@donordesk/domain";
 import type { EntitlementService } from "../../services/entitlement-service.js";
 import { resolveEntitlementEnforcementMode } from "../../services/entitlement-service.js";
 import { monthStartUtc, USAGE_METRIC_AI_CREDITS } from "../billing/_usage.js";
+import type { IFinanceInputs } from "../../services/finance-inputs.js";
 import { ReportGenerationContextBuilder, type GenerationInputs } from "../../services/report-generation-context.js";
 import { SectionGenerationService } from "../../services/section-generation-service.js";
 import { fireAndForget, type BackgroundRunner } from "../../services/background-runner.js";
@@ -75,8 +76,10 @@ export class GenerateReportDraftHandler {
     private readonly runInBackground: BackgroundRunner = fireAndForget,
     /** Active top-up packs draw down after the plan's monthly AI-credit quota. */
     private readonly packs?: IPurchasedCreditPackRepository,
+    /** Verified financial figures for reports (absent: reports are written without them). */
+    finance?: IFinanceInputs,
   ) {
-    this.context = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, analytics, evidencePackages, getGenerator);
+    this.context = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, analytics, evidencePackages, getGenerator, finance);
     this.sectionGeneration = new SectionGenerationService(ids, llmRuns, revisionService, assuranceService, audit, reportArtifacts);
   }
 

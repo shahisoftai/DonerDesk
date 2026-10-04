@@ -4,6 +4,12 @@ export const IdResponseSchema = z.object({ id: z.string() });
 
 export const OkResponseSchema = z.object({ ok: z.boolean() });
 
+export const ScopeUpdateResponseSchema = z.object({
+  scope: z.record(z.string(), z.unknown()),
+  changed: z.boolean(),
+  staleSections: z.number().int(),
+});
+
 export const UploadResponseSchema = z.object({ id: z.string(), fileUrl: z.string() });
 
 export const PolishActivityResponseSchema = z.object({
@@ -206,3 +212,45 @@ export const EvidenceLinkSuggestionsResponseSchema = z.object({
     }),
   ),
 });
+
+export const FinanceLineSchema = z.object({
+  budgetLine: z.string(),
+  budget: z.string(),
+  expenditure: z.string(),
+  committed: z.string().optional(),
+});
+export type FinanceLineShape = z.infer<typeof FinanceLineSchema>;
+
+export const PeriodFinanceResponseSchema = z.object({
+  mode: z.enum(["DISABLED", "TYPED", "IMPORT"]),
+  appliesToReportType: z.boolean(),
+  defaultCurrency: z.string(),
+  summary: z
+    .object({
+      source: z.enum(["TYPED", "IMPORT"]),
+      sourceNote: z.string().optional(),
+      verified: z.boolean(),
+      verifiedAt: z.string().optional(),
+      verifiedById: z.string().optional(),
+      updatedAt: z.string(),
+      figures: z.object({ lines: z.array(FinanceLineSchema), budget: z.string(), expenditure: z.string(), committed: z.string().optional() }),
+      view: z.object({
+        currency: z.string(),
+        budget: z.string(),
+        expenditure: z.string(),
+        committed: z.string().optional(),
+        balance: z.string(),
+        burnRatePercent: z.string().optional(),
+        lines: z.array(FinanceLineSchema.extend({ balance: z.string(), burnRatePercent: z.string().optional() })),
+      }),
+    })
+    .nullable(),
+});
+export type PeriodFinanceShape = z.infer<typeof PeriodFinanceResponseSchema>;
+
+export const FinanceImportPreviewResponseSchema = z.object({
+  readyCount: z.number(),
+  errorCount: z.number(),
+  rows: z.array(z.object({ rowIndex: z.number(), line: FinanceLineSchema.optional(), error: z.string().optional() })),
+});
+export type FinanceImportPreviewShape = z.infer<typeof FinanceImportPreviewResponseSchema>;

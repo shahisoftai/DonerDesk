@@ -300,6 +300,8 @@ model ReportingProfile {
   sectionOverridesJson     String   @default("{}")
   deadlineOffsetDays       Int?
   autoPeriodCreation       Boolean  @default(false)
+  /// DISABLED | TYPED | IMPORT: how this project's reports get their financial figures.
+  financeDataMode          String   @default("DISABLED")
   version                  Int      @default(1)
   createdById              String
   updatedById              String
@@ -1359,3 +1361,31 @@ model AgentMemory {
   @@index([tenantId, scope, scopeId, status])
 }
 
+/// Budget and expenditure for one reporting period (finance data mode TYPED or IMPORT).
+/// Amounts are decimal strings; only a VERIFIED summary is ever sent to a report writer.
+model PeriodFinancialSummary {
+  id                 String    @id
+  tenantId           String
+  projectId          String
+  reportingPeriodId  String    @unique
+  currency           String
+  budget             String
+  expenditure        String
+  committed          String?
+  /// FinanceLine[] as JSON: { budgetLine, budget, expenditure, committed? }
+  linesJson          String    @default("[]")
+  /// TYPED | IMPORT
+  source             String
+  sourceNote         String?
+  /// DRAFT | VERIFIED
+  verificationStatus String    @default("DRAFT")
+  verifiedById       String?
+  verifiedAt         DateTime?
+  createdById        String
+  updatedById        String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([projectId])
+}

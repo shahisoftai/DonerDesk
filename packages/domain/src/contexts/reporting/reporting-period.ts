@@ -188,6 +188,12 @@ export class ReportingPeriod extends Entity<string> {
     this.touch();
   }
 
+  /** Replaces what an activity/situation/custom report covers. Validated by the caller (`ReportScopeResolver`). */
+  setScope(scope: ReportScope): void {
+    this.props.scopeJson = JSON.stringify(scope);
+    this.touch();
+  }
+
   /** Records the structured "Tell the Story" narrative context for this period. */
   setStoryContext(context: StoryContext): void {
     this.props.storyContextJson = JSON.stringify(context);

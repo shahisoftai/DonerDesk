@@ -1,6 +1,6 @@
 "use server";
 
-import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, UpdateReportingPeriodStorySchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, SavePeriodFinanceSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -31,6 +31,11 @@ import {
   SectionRevisionsResponseSchema,
   ReassessSectionResponseSchema,
   ResolveClaimResponseSchema,
+  ScopeUpdateResponseSchema,
+  PeriodFinanceResponseSchema,
+  FinanceImportPreviewResponseSchema,
+  type PeriodFinanceShape,
+  type FinanceImportPreviewShape,
 } from "./_schemas";
 
 export type CreateReportingPeriodResult = Result<{ id: string }, AppError>;
@@ -112,6 +117,40 @@ export async function updateReportingPeriodStoryAction(periodId: string, storyCo
     method: "PUT",
     body: parsed.data,
   });
+}
+
+export type UpdateScopeResult = Result<{ changed: boolean; staleSections: number }, AppError>;
+
+/** Changes what an activity / situation / custom report covers; the server re-validates it. */
+export async function updateReportingPeriodScopeAction(periodId: string, scope: unknown): Promise<UpdateScopeResult> {
+  const context = await requireSession();
+  const parsed = UpdateReportingPeriodScopeSchema.safeParse({ scope });
+  if (!parsed.success) {
+    return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) } };
+  }
+  const result = await gatewayRequest(`/v1/reporting-periods/${periodId}/scope`, ScopeUpdateResponseSchema, context.token, { method: "PUT", body: parsed.data });
+  return result.ok ? { ok: true, value: { changed: result.value.changed, staleSections: result.value.staleSections } } : result;
+}
+
+export type PeriodFinanceResult = Result<PeriodFinanceShape, AppError>;
+
+export async function savePeriodFinanceAction(periodId: string, input: unknown): Promise<PeriodFinanceResult> {
+  const context = await requireSession();
+  const parsed = SavePeriodFinanceSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) } };
+  }
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/finance`, PeriodFinanceResponseSchema, context.token, { method: "PUT", body: parsed.data });
+}
+
+export async function previewFinanceImportAction(periodId: string, rows: string[][]): Promise<Result<FinanceImportPreviewShape, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/finance/import-preview`, FinanceImportPreviewResponseSchema, context.token, { method: "POST", body: { rows } });
+}
+
+export async function verifyPeriodFinanceAction(periodId: string): Promise<PeriodFinanceResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/finance/verify`, PeriodFinanceResponseSchema, context.token, { method: "POST", body: {} });
 }
 
 export type CreateReportSectionResult = Result<{ id: string }, AppError>;

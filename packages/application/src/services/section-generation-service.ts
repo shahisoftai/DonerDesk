@@ -12,7 +12,7 @@ import type {
 import type { IIdGenerator, IAuditLogger } from "../ports/core.js";
 import type { ILlmUsageRepository } from "../ports/billing.js";
 import type { GenerationInputs } from "./report-generation-context.js";
-import { deterministicBlueprintTable } from "./blueprint-tables.js";
+import { deterministicBlueprintTable, financeTable, isDonorFinanceSection } from "./blueprint-tables.js";
 
 export interface SectionDraftRequest {
   ctx: AuthenticatedContext;
@@ -54,6 +54,7 @@ export class SectionGenerationService {
         generationRunId: request.runId,
         reportContext: request.inputs.reportContext,
         draftedSections: [...request.draftedSections],
+        ...(request.inputs.finance ? { finance: request.inputs.finance } : {}),
         ...(request.sectionInstruction ? { sectionInstruction: request.sectionInstruction } : {}),
       },
       planSection,
@@ -74,7 +75,11 @@ export class SectionGenerationService {
     }
     // Blueprint sections whose table comes from recorded data: append it after the
     // writer's prose (once), so the figures are exactly the recorded ones.
-    const table = deterministicBlueprintTable(planSection.templateSectionId, request.inputs.activities, request.reportingProfileSnapshot?.language);
+    const language = request.reportingProfileSnapshot?.language;
+    const table =
+      deterministicBlueprintTable(planSection.templateSectionId, request.inputs.activities, language, request.inputs.situation, request.inputs.finance) ??
+      // A donor template's own financial narrative gets the same verified table.
+      (request.inputs.finance && isDonorFinanceSection(planSection) ? financeTable(request.inputs.finance, language) : undefined);
     if (table && !generated.section.content.includes(table)) {
       generated.section.content = `${generated.section.content.trimEnd()}\n\n${table}\n`;
     }

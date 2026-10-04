@@ -1,5 +1,6 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ChecklistItem, checklistTemplateForReportType, type Severity, type TemplateRequirements } from "@donordesk/domain";
+import type { ActivityUpdate, ReportingPeriod } from "@donordesk/domain";
+import { DomainError, ChecklistItem, LIFE_OF_PROJECT_REPORT_TYPES, checklistTemplateForReportType, comparableReportTypes, periodComparability, type Severity, type TemplateRequirements } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IChecklistRepository, IChecklistDetector } from "../../ports/compliance.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -13,6 +14,9 @@ import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
+import type { IIndicatorAnalyticsService } from "../../ports/reporting.js";
+import type { IFinanceInputs } from "../../services/finance-inputs.js";
+import { activityEvidenceItems, activityRecordAcceptedItems, cumulativeDataItems, financeItems, priorReportItem, type ChecklistSuggestion, type PriorPeriodStatus } from "../../services/report-type-checklist.js";
 
 export class DetectMissingEvidenceHandler {
   constructor(
@@ -27,6 +31,9 @@ export class DetectMissingEvidenceHandler {
     private readonly activities: IActivityUpdateRepository,
     private readonly evidence: IEvidenceRepository,
     private readonly audit: IAuditLogger,
+    private readonly analytics: IIndicatorAnalyticsService,
+    /** Absent when the deployment has no finance support: no finance items are raised. */
+    private readonly finance?: IFinanceInputs,
   ) {}
 
   async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<{ created: number }, DomainError>> {
@@ -98,32 +105,9 @@ export class DetectMissingEvidenceHandler {
       relatedEntityType: undefined as string | undefined,
       relatedEntityId: undefined as string | undefined,
     }));
-    // An activity report covers named activities: each one must carry evidence.
-    const scopedActivityItems = period.reportType === "ACTIVITY" && activitiesResult.ok
-      ? activitiesResult.value
-          .filter((a) => a.attachedEvidenceIds.length === 0)
-          .map((a) => ({
-            type: "MISSING_EVIDENCE" as const,
-            title: `Evidence attached to "${a.activityTitle}"`,
-            description: "This activity is covered by the report but has no supporting evidence (photos, attendance sheets, field reports) attached.",
-            severity: "HIGH" as Severity,
-            relatedEntityType: "activity" as string | undefined,
-            relatedEntityId: a.id as string | undefined,
-          }))
-      : [];
-    const unacceptedActivityItems = period.reportType === "ACTIVITY" && activitiesResult.ok
-      ? activitiesResult.value
-          .filter((a) => a.status !== "ACCEPTED")
-          .map((a) => ({
-            type: "MISSING_APPROVAL" as const,
-            title: `Activity record accepted: "${a.activityTitle}"`,
-            description: "An activity report should rest on accepted activity records. Review and accept this activity update before submitting.",
-            severity: "MEDIUM" as Severity,
-            relatedEntityType: "activity" as string | undefined,
-            relatedEntityId: a.id as string | undefined,
-          }))
-      : [];
-    const combined = [...baseline, ...scopedActivityItems, ...unacceptedActivityItems, ...suggestions, ...donorRules];
+    const typeItems = await this.reportTypeItems(ctx, period, activitiesResult.ok ? activitiesResult.value : []);
+    if (!typeItems.ok) return typeItems;
+    const combined: ChecklistSuggestion[] = [...baseline, ...typeItems.value, ...suggestions, ...donorRules];
 
     // Dedupe: never create a second OPEN/IN_PROGRESS item for the same
     // (type, relatedEntityId) concern already tracked in this period.
@@ -134,12 +118,15 @@ export class DetectMissingEvidenceHandler {
         .filter((i) => i.status === "OPEN" || i.status === "IN_PROGRESS")
         .map((i) => `${i.type}:${i.relatedEntityId ?? ""}`),
     );
+    // Items raised before these concerns had their own type are still the same concern.
+    const alreadyTracked = (type: string, entityId: string | undefined): boolean =>
+      existingActiveKeys.has(`${type}:${entityId ?? ""}`) || (LEGACY_TYPE[type] !== undefined && existingActiveKeys.has(`${LEGACY_TYPE[type]}:${entityId ?? ""}`));
     const seenKeys = new Set<string>();
 
     let created = 0;
     for (const s of combined) {
       const key = `${s.type}:${s.relatedEntityId ?? ""}`;
-      if (existingActiveKeys.has(key)) continue;
+      if (alreadyTracked(s.type, s.relatedEntityId)) continue;
       if (seenKeys.has(key)) continue;
       seenKeys.add(key);
       const id = this.ids.generate();
@@ -171,7 +158,54 @@ export class DetectMissingEvidenceHandler {
 
     return { ok: true, value: { created } };
   }
+
+  /** The items that follow from the kind of report (what it covers and builds on). */
+  private async reportTypeItems(ctx: AuthenticatedContext, period: ReportingPeriod, activities: ActivityUpdate[]): Promise<Result<ChecklistSuggestion[], DomainError>> {
+    const items: ChecklistSuggestion[] = [];
+    if (period.reportType === "ACTIVITY") {
+      items.push(...activityEvidenceItems(activities), ...activityRecordAcceptedItems(activities));
+    }
+    if (LIFE_OF_PROJECT_REPORT_TYPES.has(period.reportType)) {
+      const findings = await this.analytics.computeFindings({ reportingPeriodId: period.id, projectId: period.projectId, tenantId: ctx.tenant.tenantId });
+      if (!findings.ok) return findings;
+      items.push(...cumulativeDataItems(findings.value, period.reportType));
+    }
+    if (this.finance) {
+      const status = await this.finance.statusFor(period, ctx.tenant.tenantId);
+      if (!status.ok) return status;
+      items.push(...financeItems(status.value));
+    }
+    const prior = await this.priorReportStatuses(ctx, period);
+    if (!prior.ok) return prior;
+    const priorItem = priorReportItem(period, prior.value);
+    if (priorItem) items.push(priorItem);
+    return { ok: true, value: items };
+  }
+
+  /** Earlier reports this one may be compared with, newest first, and whether each is finished. */
+  private async priorReportStatuses(ctx: AuthenticatedContext, period: ReportingPeriod): Promise<Result<PriorPeriodStatus[], DomainError>> {
+    const comparability = periodComparability(period.reportType, period.scope);
+    if (!comparability) return { ok: true, value: [] };
+    const previous = await this.periods.findPreviousPeriods(period.projectId, period.id, ctx.tenant.tenantId, 20, {
+      reportTypes: comparableReportTypes(comparability),
+      ...(comparability.eventKey ? { eventKey: comparability.eventKey } : {}),
+    });
+    if (!previous.ok) return previous;
+    const statuses: PriorPeriodStatus[] = [];
+    for (const p of previous.value) {
+      const drafts = await this.drafts.findByReportingPeriod(p.id, ctx.tenant.tenantId);
+      if (!drafts.ok) return drafts;
+      statuses.push({ period: p, finished: drafts.value.some((d) => d.status === "APPROVED" || d.status === "EXPORTED" || d.status === "SUBMITTED") });
+    }
+    return { ok: true, value: statuses };
+  }
 }
+
+/** New item type → the generic type the same concern was raised as before it had its own. */
+const LEGACY_TYPE: Readonly<Record<string, string>> = {
+  ACTIVITY_RECORD_ACCEPTED: "MISSING_APPROVAL",
+  AFFECTED_FIGURES_CONFIRMED: "MISSING_APPROVAL",
+};
 
 type DonorRuleItem = {
   type: "DONOR_REQUIREMENT";

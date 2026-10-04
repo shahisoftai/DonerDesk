@@ -1,5 +1,6 @@
 import { Entity } from "../../core/entity.js";
 import { DomainError } from "../../core/domain-error.js";
+import { isFinanceDataMode, type FinanceDataMode } from "../finance/finance-data-mode.js";
 
 export type ProfileTone = "FORMAL" | "CONCISE" | "NARRATIVE" | "TECHNICAL";
 
@@ -22,6 +23,8 @@ export interface ReportingProfileProps {
   sectionOverrides: Record<string, WordCountOverride>;
   deadlineOffsetDays?: number;
   autoPeriodCreation: boolean;
+  /** How this project's reports get financial figures; DISABLED unless switched on. */
+  financeDataMode: FinanceDataMode;
   version: number;
   createdById: string;
   updatedById: string;
@@ -52,9 +55,11 @@ export class ReportingProfile extends Entity<string> {
     sectionOverrides?: Record<string, WordCountOverride>;
     deadlineOffsetDays?: number;
     autoPeriodCreation?: boolean;
+    financeDataMode?: FinanceDataMode;
     createdById: string;
   }): ReportingProfile {
     ReportingProfile.validateTone(input.tone);
+    ReportingProfile.validateFinanceMode(input.financeDataMode);
     ReportingProfile.validateOverrides(input.sectionOverrides);
     return new ReportingProfile(input.id, input.tenantId, input.projectId, {
       defaultTemplateId: input.defaultTemplateId,
@@ -67,6 +72,7 @@ export class ReportingProfile extends Entity<string> {
       sectionOverrides: input.sectionOverrides ?? {},
       deadlineOffsetDays: input.deadlineOffsetDays,
       autoPeriodCreation: input.autoPeriodCreation ?? false,
+      financeDataMode: input.financeDataMode ?? "DISABLED",
       version: 1,
       createdById: input.createdById,
       updatedById: input.createdById,
@@ -86,6 +92,12 @@ export class ReportingProfile extends Entity<string> {
   private static validateTone(tone: ProfileTone | undefined): void {
     if (tone !== undefined && !PROFILE_TONES.includes(tone)) {
       throw DomainError.validation("Invalid reporting tone");
+    }
+  }
+
+  private static validateFinanceMode(mode: FinanceDataMode | undefined): void {
+    if (mode !== undefined && !isFinanceDataMode(mode)) {
+      throw DomainError.validation("Invalid finance data mode");
     }
   }
 
@@ -145,6 +157,10 @@ export class ReportingProfile extends Entity<string> {
     return this.props.autoPeriodCreation;
   }
 
+  get financeDataMode(): FinanceDataMode {
+    return this.props.financeDataMode;
+  }
+
   get version(): number {
     return this.props.version;
   }
@@ -169,9 +185,11 @@ export class ReportingProfile extends Entity<string> {
     sectionOverrides?: Record<string, WordCountOverride>;
     deadlineOffsetDays?: number;
     autoPeriodCreation?: boolean;
+    financeDataMode?: FinanceDataMode;
     updatedById: string;
   }): void {
     ReportingProfile.validateTone(input.tone);
+    ReportingProfile.validateFinanceMode(input.financeDataMode);
     ReportingProfile.validateOverrides(input.sectionOverrides);
     if (input.defaultTemplateId !== undefined) this.props.defaultTemplateId = input.defaultTemplateId;
     if (input.language !== undefined) this.props.language = input.language;
@@ -183,6 +201,7 @@ export class ReportingProfile extends Entity<string> {
     if (input.sectionOverrides !== undefined) this.props.sectionOverrides = { ...input.sectionOverrides };
     if (input.deadlineOffsetDays !== undefined) this.props.deadlineOffsetDays = input.deadlineOffsetDays;
     if (input.autoPeriodCreation !== undefined) this.props.autoPeriodCreation = input.autoPeriodCreation;
+    if (input.financeDataMode !== undefined) this.props.financeDataMode = input.financeDataMode;
     this.props.updatedById = input.updatedById;
     this.props.version += 1;
     this.touch();

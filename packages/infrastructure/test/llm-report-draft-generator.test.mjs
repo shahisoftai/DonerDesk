@@ -220,3 +220,39 @@ test("buildSectionSpecificGuidance: distinguishes indicator-performance annexes 
     "evidence-checklist annex must NOT be told to reproduce the indicator findings table (this was the production bug)",
   );
 });
+
+import { reportTypeGuidance, buildFinanceBlock } from "../dist/llm/llm-report-draft-generator.js";
+
+test("reportTypeGuidance: tone and scope rules follow the kind of report", () => {
+  assert.match(reportTypeGuidance("MONTHLY").join(" "), /short, factual/);
+  assert.match(reportTypeGuidance("ANNUAL").join(" "), /progress since the project started/);
+  assert.match(reportTypeGuidance("SEMI_ANNUAL").join(" "), /previous report/);
+  assert.match(reportTypeGuidance("FINAL").join(" "), /retrospectively/);
+  for (const t of ["QUARTERLY", "ACTIVITY", "SITUATION", "CUSTOM", undefined]) assert.deepEqual(reportTypeGuidance(t), []);
+});
+
+test("section guidance carries the report-type rules; cumulative guidance only with life-of-project findings", () => {
+  const section = { title: "Cumulative Progress Against Project Targets" };
+  const base = { reportContext: { period: { reportType: "ANNUAL", startDate: "2028-01-01", endDate: "2028-12-31" } }, verifiedFindings: [] };
+  assert.match(buildSectionSpecificGuidance(section, base).join("\n"), /longer period/);
+  assert.doesNotMatch(buildSectionSpecificGuidance(section, base).join("\n"), /lifeOfProject/);
+  const withLife = { ...base, verifiedFindings: [{ lifeOfProject: { value: "7000" } }] };
+  assert.match(buildSectionSpecificGuidance(section, withLife).join("\n"), /lifeOfProject\.value/);
+});
+
+test("buildFinanceBlock: only when verified figures were supplied, so other prompts stay byte-identical", () => {
+  assert.deepEqual(buildFinanceBlock({}), []);
+  const block = buildFinanceBlock({ finance: { currency: "USD", budget: "100", expenditure: "40", balance: "60", burnRatePercent: "40", lines: [] } });
+  assert.match(block[0], /Financial Figures \(verified.*USD/);
+  assert.match(block[1], /"burnRatePercent":"40"/);
+});
+
+test("a donor template's financial section is told a verified table is added; blueprint sections rely on their own instructions", () => {
+  const finance = { currency: "USD", budget: "100", expenditure: "40", balance: "60", burnRatePercent: "40", lines: [] };
+  const input = { reportContext: {}, verifiedFindings: [], finance };
+  const donor = buildSectionSpecificGuidance({ title: "3. Financial Report" }, input).join("\n");
+  assert.match(donor, /added automatically below your text/);
+  assert.doesNotMatch(buildSectionSpecificGuidance({ title: "3. Financial Report", templateSectionId: "bp:quarterly:finance" }, input).join("\n"), /added automatically below your text/);
+  assert.doesNotMatch(buildSectionSpecificGuidance({ title: "3. Financial Report" }, { ...input, finance: undefined }).join("\n"), /added automatically below your text/);
+  assert.doesNotMatch(buildSectionSpecificGuidance({ title: "Lessons Learned" }, input).join("\n"), /added automatically below your text/);
+});

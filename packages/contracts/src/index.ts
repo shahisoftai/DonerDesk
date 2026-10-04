@@ -15,3 +15,4 @@ export * from "./reporting-profile.js";
 export * from "./billing.js";
 export * from "./agent-memory.js";
 export * from "./sales.js";
+export * from "./finance.js";

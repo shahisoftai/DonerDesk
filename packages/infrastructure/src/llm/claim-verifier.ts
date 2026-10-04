@@ -1,4 +1,4 @@
-import { DomainError, extractNumericAtoms, classifyNumericAtomRoles, indicatorLabelRanges, type VerifiedFinding, type VerificationReasonCode, type Result } from "@donordesk/domain";
+import { DomainError, extractNumericAtoms, classifyNumericAtomRoles, indicatorLabelRanges, type FinanceSummaryView, type VerifiedFinding, type VerificationReasonCode, type Result } from "@donordesk/domain";
 import type { IClaimVerifier, ClaimVerification, EvidencePackage, ReportClaimDraft, EntailmentResult, IEvidenceIntegrityVerifier } from "@donordesk/application";
 import { NumericAssertionVerifier, DeterministicEntailmentVerifier, CausalReviewPolicy } from "./verifier-strategies.js";
 import { DeterministicEvidenceIntegrityVerifier } from "./evidence-integrity-verifier.js";
@@ -33,6 +33,7 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
     claim: ReportClaimDraft;
     findings: VerifiedFinding[];
     evidencePackages: EvidencePackage[];
+    finance?: FinanceSummaryView;
   }): Promise<Result<ClaimVerification, DomainError>> {
     const claim = input.claim;
 
@@ -67,7 +68,7 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
             (a) => !labelRanges.some(([s, e]) => a.charStart >= s && a.charEnd <= e),
           ),
         );
-        const result = this.numeric.verify({ atoms, findings: input.findings });
+        const result = this.numeric.verify({ atoms, findings: input.findings, ...(input.finance ? { finance: input.finance } : {}) });
         return {
           ok: true,
           value: {

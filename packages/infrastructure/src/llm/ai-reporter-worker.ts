@@ -136,6 +136,18 @@ export interface AiReporterContext {
   story?: AiReporterContextStory;
   /** Quality v4 — exact donor attribution lines from the domain visibility catalog. */
   visibility?: string[];
+  /** Verified financial figures (balance and burn rate already computed); absent unless the project uses them. */
+  finance?: AiReporterContextFinance;
+}
+
+export interface AiReporterContextFinance {
+  currency: string;
+  budget: string;
+  expenditure: string;
+  committed?: string;
+  balance: string;
+  burnRatePercent?: string;
+  lines: Array<{ budgetLine: string; budget: string; expenditure: string; committed?: string; balance: string; burnRatePercent?: string }>;
 }
 
 export interface AiReporterFinding {
@@ -152,6 +164,8 @@ export interface AiReporterFinding {
   performanceEvaluation?: { type: string } | null;
   qualityFlags: string[];
   comparisonValue?: string | number | null;
+  /** Progress since the project started; present for semi-annual, annual and final reports. */
+  lifeOfProject?: { value: string; basis: string; periodsCovered?: number; asOf?: string } | null;
 }
 
 export interface AiReporterIndicatorUpdate {

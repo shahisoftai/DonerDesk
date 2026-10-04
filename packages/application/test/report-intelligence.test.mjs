@@ -126,3 +126,64 @@ test("IndicatorAnalyticsService respects conservative inference when semantics a
   assert.equal(finding?.indicatorCode, "IND-2");
   assert.equal(finding?.value, "200");
 });
+
+function periodOf(id, reportType, start, end) {
+  return ReportingPeriod.create({
+    id,
+    tenantId: "tenant-a",
+    projectId: "proj-1",
+    reportType,
+    startDate: new Date(start),
+    endDate: new Date(end),
+    deadline: new Date(new Date(end).getTime() + 7 * 24 * 60 * 60 * 1000),
+  });
+}
+
+function lifeOfProjectService({ current, periods, updatesByIndicator }) {
+  const indicator = makeIndicator();
+  const periodsRepo = {
+    findById: async () => ({ ok: true, value: current }),
+    findByProject: async () => ({ ok: true, value: periods }),
+    findPreviousPeriods: async () => ({ ok: true, value: [] }),
+  };
+  const updatesRepo = {
+    findByReportingPeriod: async (id) => ({ ok: true, value: (updatesByIndicator["ind-1"] ?? []).filter((u) => u.reportingPeriodId === id) }),
+    findByIndicator: async (id) => ({ ok: true, value: updatesByIndicator[id] ?? [] }),
+  };
+  return new IndicatorAnalyticsService(periodsRepo, { findByProject: async () => ({ ok: true, value: [indicator] }) }, updatesRepo);
+}
+
+test("annual findings carry life-of-project progress from cadence periods up to the report", async () => {
+  const q1 = periodOf("q1", "QUARTERLY", "2028-01-01", "2028-03-31");
+  const q2 = periodOf("q2", "QUARTERLY", "2028-04-01", "2028-06-30");
+  const annual = periodOf("a1", "ANNUAL", "2028-07-01", "2028-12-31");
+  const later = periodOf("q9", "QUARTERLY", "2029-01-01", "2029-03-31");
+  const adhoc = periodOf("act", "ACTIVITY", "2028-02-01", "2028-02-07");
+  const service = lifeOfProjectService({
+    current: annual,
+    periods: [q1, q2, annual, later, adhoc],
+    updatesByIndicator: {
+      "ind-1": [
+        verifiedUpdate("u1", "ind-1", "q1", "100"),
+        verifiedUpdate("u2", "ind-1", "q2", "50"),
+        verifiedUpdate("u3", "ind-1", "q9", "999"),
+        verifiedUpdate("u4", "ind-1", "act", "777"),
+      ],
+    },
+  });
+  const result = await service.computeFindings({ reportingPeriodId: "a1", projectId: "proj-1", tenantId: tenant });
+  assert.equal(result.ok, true);
+  const finding = result.value[0];
+  assert.equal(finding.lifeOfProject?.periodsCovered, 2);
+  assert.equal(finding.lifeOfProject?.asOf, "2028-06-30");
+  assert.equal(finding.lifeOfProject?.value, "50"); // the recorded cumulative of the latest period (here equal to its period value)
+});
+
+test("quarterly findings do not read life-of-project data", async () => {
+  const q1 = periodOf("q1", "QUARTERLY", "2028-01-01", "2028-03-31");
+  const service = lifeOfProjectService({ current: q1, periods: [q1], updatesByIndicator: {} });
+  service.updates.findByIndicator = async () => { throw new Error("must not be called"); };
+  const result = await service.computeFindings({ reportingPeriodId: "q1", projectId: "proj-1", tenantId: tenant });
+  assert.equal(result.ok, true);
+  assert.equal(result.value[0].lifeOfProject, undefined);
+});

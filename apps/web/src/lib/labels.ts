@@ -321,6 +321,11 @@ export const CHECKLIST_ITEM_TYPE_LABEL: Record<string, string> = {
   SENSITIVE_DATA_WARNING: "Sensitive data warning",
   UNREVIEWED_AI_OUTPUT: "Unreviewed AI output",
   DONOR_REQUIREMENT: "Donor requirement",
+  AFFECTED_FIGURES_CONFIRMED: "Affected-population figures to confirm",
+  ACTIVITY_RECORD_ACCEPTED: "Activity record to accept",
+  CUMULATIVE_DATA_COMPLETE: "Cumulative data incomplete",
+  PRIOR_REPORT_LINKED: "Previous report not approved",
+  FINANCE_FIGURES_PROVIDED: "Financial figures missing",
 };
 
 /**
@@ -341,6 +346,11 @@ export const CHECKLIST_ITEM_TYPE_HINT: Record<string, string> = {
   SENSITIVE_DATA_WARNING: "This item may contain sensitive information — confirm its confidentiality level is set correctly.",
   UNREVIEWED_AI_OUTPUT: "An AI-drafted section still needs a human review before it can be approved.",
   DONOR_REQUIREMENT: "A rule from the donor's template. Confirm the report and its annexes meet it, then resolve this item.",
+  AFFECTED_FIGURES_CONFIRMED: "Figures on affected people and needs change fast — confirm they are current and from a named source before release.",
+  ACTIVITY_RECORD_ACCEPTED: "An activity report should rest on accepted activity records — review and accept this activity update.",
+  CUMULATIVE_DATA_COMPLETE: "Enter or verify the baseline, target and cumulative value for this indicator so progress since the project started can be reported.",
+  PRIOR_REPORT_LINKED: "The report this one builds on is not approved yet — approve or submit it so the comparison rests on a finished report.",
+  FINANCE_FIGURES_PROVIDED: "Enter or import this period's budget and expenditure so the financial section can report real figures.",
 };
 
 export const CHECKLIST_STATUS_LABEL: Record<string, string> = {

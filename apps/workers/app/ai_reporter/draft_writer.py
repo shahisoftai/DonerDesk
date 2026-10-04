@@ -68,6 +68,10 @@ def _json_block(title: str, rows: list[Any]) -> str:
     return f"# {title} (JSON):\n" + json.dumps([r.model_dump(exclude_none=True) for r in rows], ensure_ascii=False)
 
 
+def _object_block(title: str, obj: Any) -> str:
+    return f"# {title} (JSON):\n" + json.dumps(obj.model_dump(exclude_none=True), ensure_ascii=False)
+
+
 def build_user_prompt_parts(req: SectionDraftRequest) -> tuple[str, str]:
     """(report-wide prefix, section-specific suffix) of the user prompt.
 
@@ -122,6 +126,11 @@ def _shared_prompt(req: SectionDraftRequest) -> str:
             parts.append(
                 _bullets("Tell the Story (officer's narrative context — the ONLY permitted source of explanations beyond activity records):", story)
             )
+
+    if ctx.finance:
+        parts.append(
+            _object_block("Financial figures (verified; the only financial numbers you may quote)", ctx.finance)
+        )
 
     parts.append(_json_block("Verified findings", req.verifiedFindings))
     parts.append(_json_block("Indicator updates", req.indicatorUpdates))

@@ -103,7 +103,7 @@ const SITUATION_ITEMS: ChecklistTemplateItem[] = [
     severity: "HIGH",
   },
   {
-    type: "MISSING_APPROVAL",
+    type: "AFFECTED_FIGURES_CONFIRMED",
     title: "Situation figures verified and approved",
     description: "Figures on affected people and needs change fast; confirm they are current and approved before release.",
     severity: "HIGH",

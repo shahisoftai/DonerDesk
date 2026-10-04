@@ -19,6 +19,11 @@ export const ReportScopeSchema = z.object({
   location: z.string().trim().max(300).optional(),
   situationDate: z.string().trim().max(40).optional(),
   summary: z.string().trim().max(2000).optional(),
+  affectedPopulation: z
+    .array(z.object({ group: z.string().trim().min(1).max(100), figure: z.string().trim().min(1).max(40), source: z.string().trim().max(200).optional(), asOf: z.string().trim().max(40).optional() }))
+    .max(20)
+    .optional(),
+  needs: z.array(z.string().trim().min(1).max(200)).max(15).optional(),
   title: z.string().trim().max(300).optional(),
   purpose: z.string().trim().max(2000).optional(),
   sections: z.array(z.object({ title: z.string().trim().min(1).max(200), guidance: z.string().trim().max(1000).optional() })).max(25).optional(),
@@ -54,6 +59,10 @@ export const CreateReportingPeriodSchema = z
     }
   });
 export type CreateReportingPeriodInput = z.infer<typeof CreateReportingPeriodSchema>;
+
+/** Replaces the scope of an activity / situation / custom report (the server re-validates it). */
+export const UpdateReportingPeriodScopeSchema = z.object({ scope: ReportScopeSchema });
+export type UpdateReportingPeriodScopeInput = z.infer<typeof UpdateReportingPeriodScopeSchema>;
 
 export const StoryContextFieldSchema = z.enum(["achievements", "challenges", "varianceExplanations", "adaptations", "lessons"]);
 

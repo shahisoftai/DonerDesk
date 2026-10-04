@@ -146,6 +146,14 @@ def allowed_numbers(req: SectionDraftRequest) -> set[str]:
             pct = percent_of_target(f.value, f.target)
             if pct is not None:
                 allowed.update(_rounded_variants(pct))
+        if f.lifeOfProject is not None:
+            # Cumulative-to-date and its percent of the project target.
+            num = _to_float(f.lifeOfProject.value)
+            if num is not None:
+                allowed.update(_rounded_variants(num))
+            life_pct = percent_of_target(f.lifeOfProject.value, f.target)
+            if life_pct is not None:
+                allowed.update(_rounded_variants(life_pct))
     return allowed
 
 

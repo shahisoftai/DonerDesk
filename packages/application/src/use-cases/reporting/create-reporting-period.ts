@@ -1,5 +1,5 @@
 import type { Result, DomainError, TenantId } from "@donordesk/domain";
-import { ReportingPeriod, DateRange, CADENCE_REPORT_TYPES, normalizeReportScope, missingScopeFields, normalizeEventName, templateAppliesToReportType, DomainError as DE, ReportingPeriodCreated } from "@donordesk/domain";
+import { ReportingPeriod, DateRange, CADENCE_REPORT_TYPES, templateAppliesToReportType, DomainError as DE, ReportingPeriodCreated } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
@@ -10,6 +10,7 @@ import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { CreateReportingPeriodInput } from "@donordesk/contracts";
 import { serializeTemplateSnapshot } from "../../services/template-snapshot.js";
+import { ReportScopeResolver } from "../../services/report-scope-resolver.js";
 
 /**
  * Authoritative reporting-period creation. The period is the first step of the
@@ -28,8 +29,12 @@ export class CreateReportingPeriodHandler {
     private readonly readiness: IProjectReadinessService,
     private readonly audit: IAuditLogger,
     private readonly events: IEventBus,
-    private readonly activities: IActivityUpdateRepository,
-  ) {}
+    activities: IActivityUpdateRepository,
+  ) {
+    this.scopes = new ReportScopeResolver(repo, activities);
+  }
+
+  private readonly scopes: ReportScopeResolver;
 
   async handle(ctx: AuthenticatedContext, input: CreateReportingPeriodInput): Promise<Result<{ id: string }, DomainError>> {
     const tenantId: TenantId = ctx.tenant.tenantId;
@@ -102,42 +107,23 @@ export class CreateReportingPeriodHandler {
       };
     }
 
-    // 4b. Scope: ACTIVITY/SITUATION/CUSTOM reports name what they cover.
-    const scope = normalizeReportScope(input.scope);
-    // Server-owned scope fields: never trust the client for series numbering.
-    delete scope.sequence;
-    delete scope.previousPeriodId;
-    delete scope.previousSituationDate;
-    if (input.reportType !== "CUSTOM") delete scope.sections;
-    if (missingScopeFields(input.reportType, scope).length > 0) {
-      return { ok: false, error: DE.validation(`A ${input.reportType.toLowerCase()} report needs its scope (${missingScopeFields(input.reportType, scope).join(", ")})`) };
-    }
-    if (input.reportType === "ACTIVITY") {
-      const projectActivities = await this.activities.findByProject(input.projectId, tenantId);
-      if (!projectActivities.ok) return projectActivities;
-      const known = new Set(projectActivities.value.map((a) => a.id));
-      const unknown = (scope.activityIds ?? []).filter((id) => !known.has(id));
-      if (unknown.length > 0) return { ok: false, error: DE.notFound("ActivityUpdate", unknown[0]!) };
-    }
+    // 4b. Scope: ACTIVITY/SITUATION/CUSTOM reports name what they cover. Loaded once for
+    // the scope's series numbering and the overlap check below.
+    const existingResult = await this.repo.findByProject(input.projectId, tenantId);
+    if (!existingResult.ok) return existingResult;
+    const scopeResult = await this.scopes.resolve({
+      reportType: input.reportType,
+      scope: input.scope,
+      projectId: input.projectId,
+      tenantId,
+      projectPeriods: existingResult.value,
+    });
+    if (!scopeResult.ok) return scopeResult;
+    const scope = scopeResult.value;
     // Ad-hoc reports (activity/situation/custom) may sit inside a cadence
     // period, so overlap is only enforced between cadence periods.
     const enforceOverlap = CADENCE_REPORT_TYPES.has(input.reportType);
 
-    const existingResult = await this.repo.findByProject(input.projectId, tenantId);
-    if (!existingResult.ok) return existingResult;
-    // A situation report belongs to a series on the same event: number it and
-    // remember the previous one so the writer can describe what changed.
-    if (input.reportType === "SITUATION") {
-      const event = normalizeEventName(scope.eventName);
-      const series = existingResult.value
-        .filter((p) => p.reportType === "SITUATION" && normalizeEventName(p.scope.eventName) === event)
-        .sort((a, b) => b.duration.end.getTime() - a.duration.end.getTime());
-      scope.sequence = series.length + 1;
-      if (series[0]) {
-        scope.previousPeriodId = series[0].id;
-        scope.previousSituationDate = series[0].scope.situationDate ?? series[0].duration.end.toISOString().slice(0, 10);
-      }
-    }
     for (const existing of existingResult.value) {
       if (!enforceOverlap || !CADENCE_REPORT_TYPES.has(existing.reportType)) continue;
       if (existing.duration.overlaps(DateRange.create(start, end))) {

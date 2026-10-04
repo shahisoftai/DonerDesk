@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import {
   ProjectSetup,
   ReportingProfile,
+  normalizeFinanceDataMode,
   type ProjectSetupProps,
   type ReportingProfileProps,
   type WorkspaceProvisionStatus,
@@ -138,6 +139,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
           sectionOverridesJson: JSON.stringify(p.sectionOverrides),
           deadlineOffsetDays: p.deadlineOffsetDays,
           autoPeriodCreation: p.autoPeriodCreation,
+          financeDataMode: p.financeDataMode,
           version: p.version,
           createdById: p.createdById,
           updatedById: p.updatedById,
@@ -164,6 +166,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
           sectionOverridesJson: JSON.stringify(p.sectionOverrides),
           deadlineOffsetDays: p.deadlineOffsetDays,
           autoPeriodCreation: p.autoPeriodCreation,
+          financeDataMode: p.financeDataMode,
           version: p.version,
           updatedById: p.updatedById,
         },
@@ -196,6 +199,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
     sectionOverridesJson: string;
     deadlineOffsetDays: number | null;
     autoPeriodCreation: boolean;
+    financeDataMode: string;
     version: number;
     createdById: string;
     updatedById: string;
@@ -212,6 +216,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
       sectionOverrides: JSON.parse(row.sectionOverridesJson) as Record<string, { min?: number; max?: number }>,
       deadlineOffsetDays: row.deadlineOffsetDays ?? undefined,
       autoPeriodCreation: row.autoPeriodCreation,
+      financeDataMode: normalizeFinanceDataMode(row.financeDataMode),
       version: row.version,
       createdById: row.createdById,
       updatedById: row.updatedById,

@@ -1,5 +1,5 @@
 import { DomainError, parseDecimal, decimalCompare, decimalMultiply, decimalDivide, decimalRound, scoreSimilarity, type VerifiedFinding, type Decimal } from "@donordesk/domain";
-import type { NumericAtom, VerificationReasonCode } from "@donordesk/domain";
+import type { FinanceSummaryView, NumericAtom, VerificationReasonCode } from "@donordesk/domain";
 import type { IEntailmentVerifier, ICausalReviewPolicy, EntailmentResult, EntailmentVerdict, RetrievedEvidence } from "@donordesk/application";
 import type { AssertionType } from "@donordesk/domain";
 
@@ -21,7 +21,7 @@ function describeAtomFailure(atom: NumericAtom, findings: VerifiedFinding[]): st
   const value = parseDecimal(atom.value);
   if (value === null) return `${atom.value} could not be read as a number`;
   const exact = findings.filter((f) =>
-    [f.value, f.cumulativeValue].some((t) => t !== undefined && parseDecimal(t) !== null && decimalCompare(parseDecimal(t)!, value) === 0),
+    [f.value, f.cumulativeValue, f.lifeOfProject?.value].some((t) => t !== undefined && parseDecimal(t) !== null && decimalCompare(parseDecimal(t)!, value) === 0),
   );
   if (exact.length > 0) {
     const codes = [...new Set(exact.map((f) => f.indicatorCode))].join(", ");
@@ -38,6 +38,18 @@ function describeAtomFailure(atom: NumericAtom, findings: VerifiedFinding[]): st
   return `${atom.value} matches no verified indicator value this period`;
 }
 
+const atomValue = (atom: NumericAtom): Decimal | null => parseDecimal(atom.value);
+
+/** Whether `number` equals (in absolute value, so an overspend may be written as a positive amount) a figure of the verified financial summary. */
+function matchesFinanceFigure(number: Decimal | null, finance: FinanceSummaryView): boolean {
+  if (number === null) return false;
+  const figures = [finance, ...finance.lines].flatMap((f) => [f.budget, f.expenditure, f.committed, f.balance, f.burnRatePercent]);
+  return figures.some((text) => {
+    const parsed = text === undefined ? null : parseDecimal(text.replace(/^-/, ""));
+    return parsed !== null && decimalCompare(parsed, number) === 0;
+  });
+}
+
 /**
  * Numeric verification strategy. Every numeric atom in an assertion is bound
  * to indicator, unit, period, entity, and semantic role before it can pass;
@@ -50,6 +62,8 @@ export class NumericAssertionVerifier {
   verify(input: {
     atoms: NumericAtom[];
     findings: VerifiedFinding[];
+    /** Verified financial figures of the period; a number that equals one of them is grounded. */
+    finance?: FinanceSummaryView;
   }): { result: "PASSED" | "FAILED"; detail: string; reasonCodes: VerificationReasonCode[]; matchedFinding?: VerifiedFinding } {
     if (input.atoms.length === 0) {
       return {
@@ -74,6 +88,8 @@ export class NumericAssertionVerifier {
 
     for (const atom of atoms) {
       const matched = this.matchAtom(atom, input.findings);
+      // A figure from the verified financial summary (budget, expenditure, balance, burn rate, per line).
+      if (!matched && input.finance && matchesFinanceFigure(atomValue(atom), input.finance)) continue;
       if (!matched && matchedFinding !== undefined) {
         // Tolerate normal professional prose: once a sentence carries a value
         // that binds to a verified finding, target/baseline figures quoted
@@ -136,7 +152,7 @@ export class NumericAssertionVerifier {
       const parsed = parseDecimal(text);
       return parsed !== null && decimalCompare(parsed, value) === 0;
     };
-    let candidates = findings.filter((f) => equalsValue(f.value) || equalsValue(f.cumulativeValue));
+    let candidates = findings.filter((f) => equalsValue(f.value) || equalsValue(f.cumulativeValue) || equalsValue(f.lifeOfProject?.value));
 
     let derived = false;
     if (candidates.length === 0 && atom.role === "PERCENT") {
@@ -171,18 +187,21 @@ export class NumericAssertionVerifier {
     // Accept both 1- and 2-decimal rounding so "6.7%" and "6.67%" both match
     // the same 8/120 derivation (professional prose is not uniform).
     for (const finding of findings) {
-      const value = parseDecimal(finding.value);
-      if (value === null) continue;
-      for (const baseText of [finding.target, finding.baseline]) {
-        if (!baseText) continue;
-        const base = parseDecimal(baseText);
-        if (base === null) continue;
-        const ratio = decimalDivide(value, base, 6);
-        if (ratio === null) continue;
-        const raw = decimalMultiply(ratio, parseDecimal("100")!);
-        const rounded1 = decimalRound(raw, 1);
-        const rounded2 = decimalRound(raw, 2);
-        if (decimalCompare(rounded1, percentValue) === 0 || decimalCompare(rounded2, percentValue) === 0) return finding;
+      // This period's value, and progress since the project started (semi-annual, annual, final reports).
+      for (const numerator of [finding.value, finding.lifeOfProject?.value]) {
+        const value = numerator === undefined ? null : parseDecimal(numerator);
+        if (value === null) continue;
+        for (const baseText of [finding.target, finding.baseline]) {
+          if (!baseText) continue;
+          const base = parseDecimal(baseText);
+          if (base === null) continue;
+          const ratio = decimalDivide(value, base, 6);
+          if (ratio === null) continue;
+          const raw = decimalMultiply(ratio, parseDecimal("100")!);
+          const rounded1 = decimalRound(raw, 1);
+          const rounded2 = decimalRound(raw, 2);
+          if (decimalCompare(rounded1, percentValue) === 0 || decimalCompare(rounded2, percentValue) === 0) return finding;
+        }
       }
     }
     return null;

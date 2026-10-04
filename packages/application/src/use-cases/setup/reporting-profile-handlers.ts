@@ -20,6 +20,7 @@ export interface ReportingProfileDto {
   sectionOverrides: Record<string, { min?: number; max?: number }>;
   deadlineOffsetDays?: number;
   autoPeriodCreation: boolean;
+  financeDataMode: string;
   version: number;
   createdAt: string;
 }
@@ -39,6 +40,7 @@ export function toReportingProfileDto(p: ReportingProfile): ReportingProfileDto 
     sectionOverrides: p.sectionOverrides,
     deadlineOffsetDays: p.deadlineOffsetDays,
     autoPeriodCreation: p.autoPeriodCreation,
+    financeDataMode: p.financeDataMode,
     version: p.version,
     createdAt: p.createdAt.toISOString(),
   };
@@ -98,6 +100,7 @@ export class UpsertReportingProfileHandler {
         sectionOverrides: input.sectionOverrides,
         deadlineOffsetDays: input.deadlineOffsetDays,
         autoPeriodCreation: input.autoPeriodCreation,
+        financeDataMode: input.financeDataMode,
         updatedById: ctx.tenant.userId,
       });
       const saved = await this.profiles.update(existing);
@@ -109,7 +112,7 @@ export class UpsertReportingProfileHandler {
         entityType: "reporting_profile",
         entityId: existing.id,
         projectId,
-        newValue: JSON.stringify({ version: existing.version, tone: existing.tone, language: existing.language }),
+        newValue: JSON.stringify({ version: existing.version, tone: existing.tone, language: existing.language, financeDataMode: existing.financeDataMode }),
       });
       return { ok: true, value: { profile: toReportingProfileDto(existing), created: false } };
     }
@@ -128,6 +131,7 @@ export class UpsertReportingProfileHandler {
       sectionOverrides: input.sectionOverrides,
       deadlineOffsetDays: input.deadlineOffsetDays,
       autoPeriodCreation: input.autoPeriodCreation,
+      financeDataMode: input.financeDataMode,
       createdById: ctx.tenant.userId,
     });
     const saved = await this.profiles.create(profile);

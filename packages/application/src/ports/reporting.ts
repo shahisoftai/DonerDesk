@@ -26,7 +26,7 @@ import type {
   ResolvedReportingRequirements,
   ReportingRequirement,
 } from "@donordesk/domain";
-import type { ReportingPeriod, ReportDraft, ReportSection } from "@donordesk/domain";
+import type { FinanceSummaryView, ReportingPeriod, ReportDraft, ReportSection } from "@donordesk/domain";
 
 export interface IReportingPeriodRepository {
   create(p: ReportingPeriod): Promise<Result<ReportingPeriod>>;
@@ -37,7 +37,15 @@ export interface IReportingPeriodRepository {
    * Adjacent reporting periods that started before the given period, newest
    * first. The deterministic analyst uses these for period-on-period deltas.
    */
-  findPreviousPeriods(projectId: string, beforeReportingPeriodId: string, tenantId: TenantId, limit?: number): Promise<Result<ReportingPeriod[]>>;
+  findPreviousPeriods(projectId: string, beforeReportingPeriodId: string, tenantId: TenantId, limit?: number, filter?: PreviousPeriodFilter): Promise<Result<ReportingPeriod[]>>;
+}
+
+/** Narrows `findPreviousPeriods` to periods a report may be compared with. */
+export interface PreviousPeriodFilter {
+  /** Only periods of these report types. */
+  reportTypes?: readonly string[];
+  /** Only situation periods on this event (normalised name). */
+  eventKey?: string;
 }
 
 export interface IReportDraftRepository {
@@ -240,6 +248,12 @@ export interface GenerateReportDraftInput {
    * drafts stay byte-identical.
    */
   sectionInstruction?: string;
+  /**
+   * Verified financial figures (balance and burn rate already computed). Present
+   * only when the project uses finance data and the period's figures are verified;
+   * generators mention finance only when it is present.
+   */
+  finance?: FinanceSummaryView;
 }
 
 export interface ReportClaimDraft {
@@ -528,6 +542,8 @@ export interface IClaimVerifier {
     claim: ReportClaimDraft;
     findings: VerifiedFinding[];
     evidencePackages: EvidencePackage[];
+    /** Verified financial figures of the period; numbers equal to one of them are grounded. */
+    finance?: FinanceSummaryView;
   }): Promise<Result<ClaimVerification, DomainError>>;
 }
 

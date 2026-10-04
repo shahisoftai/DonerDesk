@@ -546,6 +546,9 @@ export const ReportingPeriodItemSchema = z.object({
     summary: z.string().optional(),
     title: z.string().optional(),
     purpose: z.string().optional(),
+    affectedPopulation: z.array(z.object({ group: z.string(), figure: z.string(), source: z.string().optional(), asOf: z.string().optional() })).optional(),
+    needs: z.array(z.string()).optional(),
+    sections: z.array(z.object({ title: z.string(), guidance: z.string().optional() })).optional(),
   }).optional(),
 });
 
@@ -953,6 +956,7 @@ export const ReportingProfileSchema = z.object({
   sectionOverrides: z.record(z.object({ min: z.number().optional(), max: z.number().optional() })).default({}),
   deadlineOffsetDays: z.number().nullable().optional(),
   autoPeriodCreation: z.boolean().default(false),
+  financeDataMode: z.enum(["DISABLED", "TYPED", "IMPORT"]).default("DISABLED"),
   version: z.number(),
   createdAt: z.string(),
 });

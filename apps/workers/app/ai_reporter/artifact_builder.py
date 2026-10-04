@@ -15,6 +15,7 @@ The writer only writes prose; `attach` merges these onto its section.
 """
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from . import chart_suggester
@@ -63,6 +64,11 @@ def _status_cell(f: Finding) -> str:
     return _STATUS_LABEL.get(str(kind), "—")
 
 
+_LIFE_COLUMNS = [
+    ("cumulative", "Cumulative to date"),
+    ("pctLife", "% of project target"),
+]
+
 _COLUMNS = [
     ("code", "Code"),
     ("indicator", "Indicator"),
@@ -77,10 +83,27 @@ _COLUMNS = [
 ]
 
 
+def _life_value(f: Finding) -> str:
+    return "—" if f.lifeOfProject is None else _cell(f.lifeOfProject.value)
+
+
+def _life_pct_cell(f: Finding) -> str:
+    if f.lifeOfProject is None:
+        return "—"
+    pct = percent_of_target(f.lifeOfProject.value, f.target)
+    return "—" if pct is None else f"{normalise_number(f'{pct:.1f}')}%"
+
+
+def _has_life_of_project(req: SectionDraftRequest) -> bool:
+    return any(f.lifeOfProject is not None for f in req.verifiedFindings)
+
+
 def indicator_table(req: SectionDraftRequest) -> tuple[Artifact, str] | None:
     findings = req.verifiedFindings
     if not findings:
         return None
+    life = _has_life_of_project(req)
+    columns = [*_COLUMNS[:-2], *_LIFE_COLUMNS, *_COLUMNS[-2:]] if life else _COLUMNS
     sources = {u.indicatorCode: u.dataSource for u in req.indicatorUpdates if u.dataSource}
     rows: list[dict[str, Any]] = []
     md_rows: list[str] = []
@@ -94,6 +117,7 @@ def indicator_table(req: SectionDraftRequest) -> tuple[Artifact, str] | None:
             "Not calculable" if _not_calculable(f) else _cell(f.value),
             _cell(f.comparisonValue),
             _pct_cell(f),
+            *([_life_value(f), _life_pct_cell(f)] if life else []),
             _status_cell(f),
             sources.get(f.indicatorCode) or "Project records",
         ]
@@ -103,12 +127,66 @@ def indicator_table(req: SectionDraftRequest) -> tuple[Artifact, str] | None:
         kind="TABLE",
         caption="Indicator performance (verified findings)",
         ordinal=0,
-        payload={"columns": [{"key": k, "label": label} for k, label in _COLUMNS], "rows": rows},
+        payload={"columns": [{"key": k, "label": label} for k, label in columns], "rows": rows},
         sourceReferences=[_ref(f) for f in findings],
     )
-    header = "| " + " | ".join(label for _, label in _COLUMNS) + " |"
-    separator = "| " + " | ".join("---" for _ in _COLUMNS) + " |"
+    header = "| " + " | ".join(label for _, label in columns) + " |"
+    separator = "| " + " | ".join("---" for _ in columns) + " |"
     return artifact, "\n".join([header, separator, *md_rows])
+
+
+_CUMULATIVE_COLUMNS = [
+    ("code", "Code"),
+    ("indicator", "Indicator"),
+    ("unit", "Unit"),
+    ("baseline", "Baseline"),
+    ("target", "Project target"),
+    ("cumulative", "Cumulative to date"),
+    ("pctLife", "% of project target"),
+    ("asOf", "As of"),
+]
+
+
+def cumulative_table(req: SectionDraftRequest) -> tuple[Artifact, str] | None:
+    """Life-of-project progress table (only indicators with a cumulative figure)."""
+    findings = [f for f in req.verifiedFindings if f.lifeOfProject is not None]
+    if not findings:
+        return None
+    rows: list[dict[str, Any]] = []
+    md_rows: list[str] = []
+    for f in findings:
+        cells = [
+            f.indicatorCode,
+            f.indicatorName or "—",
+            _cell(f.unit),
+            _cell(f.baseline),
+            _cell(f.target),
+            _life_value(f),
+            _life_pct_cell(f),
+            _cell(f.lifeOfProject.asOf if f.lifeOfProject else None),
+        ]
+        rows.append({"cells": cells, "sourceReferences": [_ref(f).model_dump()]})
+        md_rows.append("| " + " | ".join(c.replace("|", "/") for c in cells) + " |")
+    artifact = Artifact(
+        kind="TABLE",
+        caption="Cumulative progress against project targets (verified findings)",
+        ordinal=0,
+        payload={"columns": [{"key": k, "label": label} for k, label in _CUMULATIVE_COLUMNS], "rows": rows},
+        sourceReferences=[_ref(f) for f in findings],
+    )
+    header = "| " + " | ".join(label for _, label in _CUMULATIVE_COLUMNS) + " |"
+    separator = "| " + " | ".join("---" for _ in _CUMULATIVE_COLUMNS) + " |"
+    return artifact, "\n".join([header, separator, *md_rows])
+
+
+_CUMULATIVE_TITLE_RE = re.compile(r"cumulative|life[- ]of[- ]project", re.I)
+
+
+def is_cumulative_section(req: SectionDraftRequest, kind: str) -> bool:
+    """A narrative results section about progress since the project started."""
+    if kind != "ACHIEVEMENT" or not _has_life_of_project(req):
+        return False
+    return bool(_CUMULATIVE_TITLE_RE.search(req.section.canonicalTitle or req.section.title))
 
 
 def indicator_chart(req: SectionDraftRequest) -> Artifact | None:
@@ -164,6 +242,13 @@ def attach(section: GeneratedSection, req: SectionDraftRequest, kind: str) -> Ge
             artifacts.insert(0, table)
             # The verified table is authoritative: drop any table the writer
             # typed itself (it can only be a paraphrase) and append ours.
+            prose = "\n".join(line for line in content.splitlines() if not line.lstrip().startswith("|")).strip()
+            content = f"{markdown}\n\n{prose}".strip() if prose else markdown
+    if is_cumulative_section(req, kind):
+        built_cumulative = cumulative_table(req)
+        if built_cumulative is not None:
+            table, markdown = built_cumulative
+            artifacts.insert(0, table)
             prose = "\n".join(line for line in content.splitlines() if not line.lstrip().startswith("|")).strip()
             content = f"{markdown}\n\n{prose}".strip() if prose else markdown
     chart = None

@@ -108,6 +108,12 @@ import {
   ResolveReportClaimHandler,
   BulkResolveReportClaimHandler,
   UpdateReportingPeriodStoryHandler,
+  UpdateReportingPeriodScopeHandler,
+  FinanceInputsService,
+  GetPeriodFinanceHandler,
+  SavePeriodFinanceHandler,
+  PreviewPeriodFinanceImportHandler,
+  VerifyPeriodFinanceHandler,
   ImportPeriodIndicatorValuesHandler,
   ProposeFieldReportExtractionHandler,
   ApplyFieldReportExtractionHandler,
@@ -210,6 +216,7 @@ import {
   PrismaProjectSetupRepository,
   PrismaReportingProfileRepository,
 } from "./repositories/setup.js";
+import { PrismaPeriodFinancialRepository } from "./repositories/finance.js";
 import {
   PrismaBillingSubscriptionRepository,
   PrismaEntitlementGrantRepository,
@@ -486,6 +493,11 @@ export interface Container {
     createReportingPeriod: CreateReportingPeriodHandler;
     ensureAutoPeriod: EnsureAutoPeriodHandler;
     updateReportingPeriodStory: UpdateReportingPeriodStoryHandler;
+    updateReportingPeriodScope: UpdateReportingPeriodScopeHandler;
+    getPeriodFinance: GetPeriodFinanceHandler;
+    savePeriodFinance: SavePeriodFinanceHandler;
+    previewPeriodFinanceImport: PreviewPeriodFinanceImportHandler;
+    verifyPeriodFinance: VerifyPeriodFinanceHandler;
     importPeriodIndicatorValues: ImportPeriodIndicatorValuesHandler;
     proposeFieldReportExtraction: ProposeFieldReportExtractionHandler;
     applyFieldReportExtraction: ApplyFieldReportExtractionHandler;
@@ -985,6 +997,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const exportBuilder = new DefaultExportBuilder(storage, donorTemplateRenderer);
 
   const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates);
+  const periodFinancials = new PrismaPeriodFinancialRepository(prisma);
+  const financeInputs = new FinanceInputsService(reportingProfiles, periodFinancials);
   const reportPlanner = new InferredReportPlanner(ids);
   const evidencePackageBuilder = new EvidencePackageBuilder(evidence);
   const claimVerifier = new DeterministicClaimVerifier();
@@ -1000,7 +1014,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     backgroundTasks.add(running);
   };
   const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);
-  const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector);
+  const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector, financeInputs);
 
   // Agent Memory (Phase 21) — this handler has zero knowledge of the feature
   // beyond invoking an injected hook after a MANUAL_EDIT revision commits
@@ -1024,7 +1038,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const requirementResolver = new DeterministicRequirementResolver(ids, periods, requirementPacks, awardOverrides, reportPlans, resolvedRequirements);
 
   const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics);
-  const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits);
+  const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits, indicatorAnalytics, financeInputs);
 
   if (jobRegistrar?.register) {
     jobRegistrar.register(
@@ -1167,6 +1181,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createReportingPeriod: createReportingPeriodHandler,
     ensureAutoPeriod: ensureAutoPeriodHandler,
     updateReportingPeriodStory: new UpdateReportingPeriodStoryHandler(periods, audits),
+    updateReportingPeriodScope: new UpdateReportingPeriodScopeHandler(periods, drafts, sections, reportRevisions, activities, audits),
+    getPeriodFinance: new GetPeriodFinanceHandler(periods, financeInputs, projects, periodFinancials),
+    savePeriodFinance: new SavePeriodFinanceHandler(ids, periods, financeInputs, projects, periodFinancials, drafts, audits),
+    previewPeriodFinanceImport: new PreviewPeriodFinanceImportHandler(periods, financeInputs, projects),
+    verifyPeriodFinance: new VerifyPeriodFinanceHandler(periods, financeInputs, projects, periodFinancials, audits),
     importPeriodIndicatorValues: new ImportPeriodIndicatorValuesHandler(ids, indicators, indicatorUpdates, audits),
     proposeFieldReportExtraction: new ProposeFieldReportExtractionHandler(),
     applyFieldReportExtraction: new ApplyFieldReportExtractionHandler(ids, indicators, indicatorUpdates, activities, periods, audits),
@@ -1175,7 +1194,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       ids, periods, drafts, sections, projects, organizations, templates, indicatorUpdates, activities,
       reportPlanner, requirementResolver, indicatorAnalytics, evidencePackageBuilder, generationRuns, reportPlans,
       revisionService, assuranceService,
-      getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage, reportArtifacts, runInBackground, purchasedCreditPacks,
+      getReportDraftGenerator, audits, entitlements, usageCounters, llmUsage, reportArtifacts, runInBackground, purchasedCreditPacks, financeInputs,
     ),
     getReportDraft: new GetReportDraftHandler(drafts, sections, reportClaims, reportRevisions, reportPlans, reportArtifacts, {
       evidenceDirectory: new PrismaEvidenceDirectory(prisma),
@@ -1205,7 +1224,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     reassessReportRevision: new ReassessReportRevisionHandler(sections, reportRevisions, assuranceService, audits),
     regenerateReportSection: new RegenerateReportSectionHandler(
       ids, drafts, sections, reportPlans, generationRuns,
-      new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator),
+      new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs),
       new SectionGenerationService(ids, llmUsage, revisionService, assuranceService, audits, reportArtifacts),
       sectionRegenerationTracker, audits, runInBackground,
     ),

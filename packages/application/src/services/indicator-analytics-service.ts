@@ -1,8 +1,11 @@
-import type { Result, VerifiedFinding, IndicatorUpdate, TenantId } from "@donordesk/domain";
-import { DomainError, computeIndicator, inferIndicatorSemantics } from "@donordesk/domain";
+import type { Result, VerifiedFinding, IndicatorUpdate, ReportingPeriod, TenantId } from "@donordesk/domain";
+import { CADENCE_REPORT_TYPES, DomainError, LIFE_OF_PROJECT_REPORT_TYPES, comparableReportTypes, computeLifeOfProject, computeIndicator, inferIndicatorSemantics, periodComparability, selectComparablePeriods } from "@donordesk/domain";
 import type { IIndicatorAnalyticsService } from "../ports/reporting.js";
 import type { IReportingPeriodRepository } from "../ports/reporting.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../ports/logframe.js";
+
+/** Candidate periods read before choosing the comparable ones. */
+const PREVIOUS_PERIOD_WINDOW = 20;
 
 /**
  * Deterministic indicator analytics. The sole authority over indicator
@@ -34,11 +37,21 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
     const currentUpdatesResult = await this.updates.findByReportingPeriod(input.reportingPeriodId, input.tenantId);
     if (!currentUpdatesResult.ok) return currentUpdatesResult;
 
-    const previousPeriodsResult = await this.periods.findPreviousPeriods(input.projectId, input.reportingPeriodId, input.tenantId, 4);
+    // Deltas are against reports of the same kind (a quarter is not compared with a
+    // monthly or activity report inside it); types without a comparison keep all history.
+    const comparability = periodComparability(periodResult.value.reportType, periodResult.value.scope);
+    const previousPeriodsResult = await this.periods.findPreviousPeriods(
+      input.projectId,
+      input.reportingPeriodId,
+      input.tenantId,
+      comparability ? PREVIOUS_PERIOD_WINDOW : 4,
+      comparability ? { reportTypes: comparableReportTypes(comparability) } : undefined,
+    );
     if (!previousPeriodsResult.ok) return previousPeriodsResult;
+    const previousPeriods = comparability ? selectComparablePeriods(previousPeriodsResult.value, comparability, 4) : previousPeriodsResult.value;
 
     const previousUpdatesByPeriod = new Map<string, IndicatorUpdate[]>();
-    for (const prev of previousPeriodsResult.value) {
+    for (const prev of previousPeriods) {
       const result = await this.updates.findByReportingPeriod(prev.id, input.tenantId);
       if (result.ok) previousUpdatesByPeriod.set(prev.id, result.value);
     }
@@ -109,6 +122,50 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
       findings.push({ ...finding, reportingPeriodId: input.reportingPeriodId });
     }
 
+    if (LIFE_OF_PROJECT_REPORT_TYPES.has(periodResult.value.reportType)) {
+      return this.addLifeOfProject(findings, periodResult.value, input);
+    }
+
     return { ok: true, value: findings };
+  }
+
+  /**
+   * Adds progress since the project started to each finding: aggregated over the
+   * project's cadence periods up to the end of this one (ad-hoc reports may
+   * overlap cadence periods, so their updates are never counted twice).
+   */
+  private async addLifeOfProject(
+    findings: VerifiedFinding[],
+    current: ReportingPeriod,
+    input: { projectId: string; tenantId: TenantId },
+  ): Promise<Result<VerifiedFinding[], DomainError>> {
+    const projectPeriods = await this.periods.findByProject(input.projectId, input.tenantId);
+    if (!projectPeriods.ok) return projectPeriods;
+    const periodEnd = new Map<string, Date>();
+    for (const p of projectPeriods.value) {
+      if (CADENCE_REPORT_TYPES.has(p.reportType) && p.duration.end.getTime() <= current.duration.end.getTime()) periodEnd.set(p.id, p.duration.end);
+    }
+
+    const enriched: VerifiedFinding[] = [];
+    for (const finding of findings) {
+      const semantics = finding.semantics;
+      if (!semantics) {
+        enriched.push(finding);
+        continue;
+      }
+      const updates = await this.updates.findByIndicator(finding.indicatorId, input.tenantId);
+      if (!updates.ok) return updates;
+      const lifeOfProject = computeLifeOfProject(
+        semantics,
+        updates.value.flatMap((u) => {
+          const end = periodEnd.get(u.reportingPeriodId);
+          return end
+            ? [{ periodId: u.reportingPeriodId, periodEnd: end, periodAchievement: u.periodAchievement, cumulativeAchievement: u.cumulativeAchievement, verificationStatus: u.verificationStatus }]
+            : [];
+        }),
+      );
+      enriched.push(lifeOfProject ? { ...finding, lifeOfProject } : finding);
+    }
+    return { ok: true, value: enriched };
   }
 }

@@ -7,6 +7,18 @@
  * - SITUATION → the event/emergency, where, and the situation date
  * - CUSTOM    → a title and the purpose of the report
  */
+/** One affected-population figure of a situation report, as reported by the author. */
+export interface AffectedFigure {
+  /** Who the figure counts ("Displaced households", "Children under five"). */
+  group: string;
+  /** The number as written ("1,200"); never computed. */
+  figure: string;
+  /** Where it comes from (assessment, authority, cluster update). */
+  source?: string;
+  /** ISO date the figure refers to. */
+  asOf?: string;
+}
+
 export interface ReportScope {
   /** ACTIVITY: the project's activity-update ids this report covers. */
   activityIds?: string[];
@@ -18,6 +30,10 @@ export interface ReportScope {
   situationDate?: string;
   /** SITUATION: optional short description of the situation. */
   summary?: string;
+  /** SITUATION: affected-population figures, quoted verbatim in the report. */
+  affectedPopulation?: AffectedFigure[];
+  /** SITUATION: the main needs reported (one short line each). */
+  needs?: string[];
   /** CUSTOM: report title. */
   title?: string;
   /** CUSTOM: what the report is for. */
@@ -82,6 +98,19 @@ export function normalizeReportScope(raw: unknown): ReportScope {
       .map((x) => (x.guidance ? { title: x.title, guidance: x.guidance } : { title: x.title }));
     if (sections.length > 0) out.sections = sections;
   }
+  if (Array.isArray(r.affectedPopulation)) {
+    const figures = r.affectedPopulation
+      .map((x) => (x && typeof x === "object" ? (x as Record<string, unknown>) : {}))
+      .map((x) => ({ group: trimmed(x.group, 100), figure: trimmed(x.figure, 40), source: trimmed(x.source, 200), asOf: trimmed(x.asOf, 40) }))
+      .filter((x): x is { group: string; figure: string; source: string | undefined; asOf: string | undefined } => Boolean(x.group && x.figure))
+      .slice(0, 20)
+      .map((x): AffectedFigure => ({ group: x.group, figure: x.figure, ...(x.source ? { source: x.source } : {}), ...(x.asOf ? { asOf: x.asOf } : {}) }));
+    if (figures.length > 0) out.affectedPopulation = figures;
+  }
+  if (Array.isArray(r.needs)) {
+    const needs = r.needs.map((x) => trimmed(x, 200)).filter((x): x is string => Boolean(x)).slice(0, 15);
+    if (needs.length > 0) out.needs = needs;
+  }
   if (typeof r.sequence === "number" && Number.isInteger(r.sequence) && r.sequence >= 1) out.sequence = r.sequence;
   for (const key of ["previousPeriodId", "previousSituationDate"] as const) {
     const v = trimmed(r[key], 80);
@@ -116,7 +145,7 @@ export function missingScopeFields(reportType: string, scope: ReportScope): Arra
  * One-paragraph statement of the focus for the writer prompt (empty when the
  * scope has nothing to say). `activityTitles` resolves ids → titles.
  */
-export function describeReportScope(reportType: string, scope: ReportScope, activityTitles: string[] = []): string {
+export function describeReportScope(reportType: string, scope: ReportScope, activityTitles: string[] = [], previousScope?: ReportScope): string {
   const parts: string[] = [];
   if (reportType === "ACTIVITY") {
     if (activityTitles.length > 0) {
@@ -130,9 +159,19 @@ export function describeReportScope(reportType: string, scope: ReportScope, acti
     if (scope.situationDate) parts.push(`Situation as of ${scope.situationDate}.`);
     if (scope.previousSituationDate) parts.push(`The previous report on this event was as of ${scope.previousSituationDate}; emphasise what has changed since then.`);
     if (scope.summary) parts.push(`Context: ${scope.summary}`);
+    if (scope.affectedPopulation?.length) parts.push(`Affected population as reported: ${scope.affectedPopulation.map(describeFigure).join("; ")}.`);
+    if (scope.needs?.length) parts.push(`Needs reported: ${scope.needs.join("; ")}.`);
+    if (previousScope?.affectedPopulation?.length) {
+      parts.push(`Affected population in the previous report${previousScope.situationDate ? ` (as of ${previousScope.situationDate})` : ""}: ${previousScope.affectedPopulation.map(describeFigure).join("; ")}. Compare only matching groups, quoting both figures verbatim.`);
+    }
   } else if (reportType === "CUSTOM") {
     if (scope.title) parts.push(`Report title: ${scope.title}.`);
     if (scope.purpose) parts.push(`Purpose: ${scope.purpose}`);
   }
   return parts.join(" ");
+}
+
+function describeFigure(f: AffectedFigure): string {
+  const detail = [f.source ? `source: ${f.source}` : undefined, f.asOf ? `as of ${f.asOf}` : undefined].filter(Boolean).join(", ");
+  return `${f.group}: ${f.figure}${detail ? ` (${detail})` : ""}`;
 }

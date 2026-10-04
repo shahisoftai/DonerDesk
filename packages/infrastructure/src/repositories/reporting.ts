@@ -8,6 +8,7 @@ import {
   DateRange,
   ReportStatus,
   parseChartConfig,
+  normalizeEventName,
   type Result,
   type ReportType,
   type ReportDraftStatus,
@@ -16,6 +17,7 @@ import {
 } from "@donordesk/domain";
 import type {
   IReportingPeriodRepository,
+  PreviousPeriodFilter,
   IReportDraftRepository,
   IReportSectionRepository,
 } from "@donordesk/application";
@@ -64,6 +66,7 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         storyContextJson: p.storyContextJson,
         reportingProfileSnapshotJson: p.reportingProfileSnapshotJson,
         templateSnapshotJson: p.templateSnapshotJson,
+        scopeJson: p.scopeJson,
       },
     });
     return ok(p);
@@ -77,18 +80,28 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
     const rows = await this.prisma.reportingPeriod.findMany({ where: { projectId, tenantId: tenantId.toString() }, orderBy: { startDate: "desc" } });
     return ok(rows.map((r) => this.toDomain(r)));
   }
-  async findPreviousPeriods(projectId: string, beforeReportingPeriodId: string, tenantId: TenantId, limit = 4): Promise<Result<ReportingPeriod[], DomainError>> {
+  async findPreviousPeriods(projectId: string, beforeReportingPeriodId: string, tenantId: TenantId, limit = 4, filter: PreviousPeriodFilter = {}): Promise<Result<ReportingPeriod[], DomainError>> {
     const current = await this.prisma.reportingPeriod.findFirst({
       where: { id: beforeReportingPeriodId, projectId, tenantId: tenantId.toString() },
       select: { startDate: true },
     });
     if (!current) return ok([]);
+    const wanted = Math.max(1, Math.min(20, limit));
+    // The event lives in scopeJson, so an event filter reads a wider window and narrows it here.
+    const take = filter.eventKey ? 200 : wanted;
     const rows = await this.prisma.reportingPeriod.findMany({
-      where: { projectId, tenantId: tenantId.toString(), startDate: { lt: current.startDate } },
+      where: {
+        projectId,
+        tenantId: tenantId.toString(),
+        startDate: { lt: current.startDate },
+        ...(filter.reportTypes ? { reportType: { in: [...filter.reportTypes] } } : {}),
+      },
       orderBy: { startDate: "desc" },
-      take: Math.max(1, Math.min(20, limit)),
+      take,
     });
-    return ok(rows.map((r) => this.toDomain(r)));
+    const periods = rows.map((r) => this.toDomain(r));
+    const matching = filter.eventKey ? periods.filter((p) => normalizeEventName(p.scope.eventName) === filter.eventKey) : periods;
+    return ok(matching.slice(0, wanted));
   }
   private toDomain(row: {
     id: string;

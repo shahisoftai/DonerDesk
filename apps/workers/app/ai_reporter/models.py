@@ -143,6 +143,33 @@ class ContextStory(BaseModel):
     lessons: str | None = None
 
 
+class FinanceLine(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    budgetLine: str
+    budget: str
+    expenditure: str
+    committed: str | None = None
+    balance: str
+    burnRatePercent: str | None = None
+
+
+class ContextFinance(BaseModel):
+    """Verified financial figures for the period (amounts are decimal strings).
+
+    Balance and burn rate are computed by the API, never by the writer, so every
+    number in here is an input the writer may quote.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    currency: str
+    budget: str
+    expenditure: str
+    committed: str | None = None
+    balance: str
+    burnRatePercent: str | None = None
+    lines: list[FinanceLine] = Field(default_factory=list)
+
+
 class Context(BaseModel):
     project: ContextProject | None = None
     period: ContextPeriod | None = None
@@ -152,6 +179,18 @@ class Context(BaseModel):
     # (rendered from the domain visibility catalog on the TS side).
     story: ContextStory | None = None
     visibility: list[str] = Field(default_factory=list)
+    # Verified financial figures; absent unless the project uses them and they are verified.
+    finance: ContextFinance | None = None
+
+
+class LifeOfProject(BaseModel):
+    """Progress since the project started (semi-annual, annual and final reports)."""
+
+    model_config = ConfigDict(extra="forbid")
+    value: str
+    basis: str  # REPORTED_CUMULATIVE | COMPUTED
+    periodsCovered: int | None = None
+    asOf: str | None = None
 
 
 class Finding(BaseModel):
@@ -169,6 +208,7 @@ class Finding(BaseModel):
     performanceEvaluation: dict[str, Any] | None = None
     qualityFlags: list[str] = Field(default_factory=list)
     comparisonValue: str | float | None = None
+    lifeOfProject: LifeOfProject | None = None
 
 
 class IndicatorUpdate(BaseModel):

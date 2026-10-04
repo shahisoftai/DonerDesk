@@ -13,6 +13,8 @@ export const WordCountOverrideSchema = z
     }
   });
 
+export const FinanceDataModeSchema = z.enum(["DISABLED", "TYPED", "IMPORT"]);
+
 export const UpsertReportingProfileSchema = z.object({
   defaultTemplateId: z.string().min(1).optional(),
   language: z.string().min(2).max(10).default("en"),
@@ -24,6 +26,8 @@ export const UpsertReportingProfileSchema = z.object({
   sectionOverrides: z.record(WordCountOverrideSchema).default({}),
   deadlineOffsetDays: z.number().int().min(0).max(365).optional(),
   autoPeriodCreation: z.boolean().optional(),
+  /** How reports get financial figures; omitted leaves it unchanged. */
+  financeDataMode: FinanceDataModeSchema.optional(),
   expectedVersion: z.number().int().positive().optional(),
 });
 export type UpsertReportingProfileInput = z.infer<typeof UpsertReportingProfileSchema>;

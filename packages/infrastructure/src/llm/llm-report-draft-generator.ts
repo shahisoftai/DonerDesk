@@ -11,6 +11,7 @@ import type {
 } from "@donordesk/application";
 import type { ReportPlanSection, SourceReference, ClaimType } from "@donordesk/domain";
 import { attributionSectionTitle, classificationTitle, isSynthesisSection, visibilityPromptBlock } from "@donordesk/domain";
+import { isDonorFinanceSection } from "@donordesk/application";
 import { StubReportDraftGenerator } from "./report-draft-generator.js";
 import { createHash } from "node:crypto";
 
@@ -234,6 +235,20 @@ export function buildRequirementGuidanceBlock(
   return lines;
 }
 
+/**
+ * Verified financial figures (balance and burn rate computed by the API). Emitted
+ * only when the project uses finance data and the period's figures are verified,
+ * so every other prompt stays byte-identical.
+ */
+export function buildFinanceBlock(input: GenerateReportDraftInput): string[] {
+  if (!input.finance) return [];
+  return [
+    `# Financial Figures (verified; the only financial numbers you may quote; amounts in ${input.finance.currency})`,
+    JSON.stringify(input.finance),
+    ``,
+  ];
+}
+
 function buildFindingsJson(input: GenerateReportDraftInput): string {
   return JSON.stringify(
     input.verifiedFindings.map((f) => ({
@@ -263,6 +278,7 @@ function buildFindingsJson(input: GenerateReportDraftInput): string {
       qualityFlags: f.qualityFlags,
       reportingPeriodId: f.reportingPeriodId,
       comparisonPeriodId: f.comparisonPeriodId ?? null,
+      ...(f.lifeOfProject ? { lifeOfProject: f.lifeOfProject } : {}),
     })),
     null,
   );
@@ -469,6 +485,7 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
     ...templateBlock,
     ...buildVisibilityLines(input),
     ...buildStoryContextBlock(ctx),
+    ...buildFinanceBlock(input),
     `# Section Guidance`,
     sectionGuidance,
     ``,
@@ -502,11 +519,31 @@ function buildNarratorUserPrompt(input: GenerateReportDraftInput): string {
  * WS4 adds cross-cutting (protection/gender/AAP/environment) and financial
  * narrative discipline. Exported pure for deterministic tests.
  */
+/**
+ * Tone and scope rules that follow from the kind of report (applied to every
+ * section of it). Short ad-hoc reports (activity, situation) carry theirs in the
+ * blueprint instructions instead.
+ */
+export function reportTypeGuidance(reportType: string | undefined): string[] {
+  switch (reportType) {
+    case "MONTHLY":
+      return ["This is a monthly report: keep every section short, factual and specific to this month. Do not restate the project background."];
+    case "SEMI_ANNUAL":
+    case "ANNUAL":
+      return ["This report covers a longer period: give both the period result and progress since the project started where cumulative figures exist, and note what changed compared with the previous report only when a previous value or previous report text is supplied."];
+    case "FINAL":
+      return ["This is the final report: write retrospectively about the whole project, not just its last period. Judge results against life-of-project targets and keep outputs and outcomes apart."];
+    default:
+      return [];
+  }
+}
+
 export function buildSectionSpecificGuidance(section: ReportPlanSection, input: GenerateReportDraftInput): string[] {
 
   const title = classificationTitle(section).toLowerCase();
   const guidance: string[] = [];
   const period = input.reportContext?.period;
+  guidance.push(...reportTypeGuidance(period?.reportType));
   if (title.includes("executive summary")) {
     guidance.push(
       "Write 2-3 flowing paragraphs (target 180-260 words). NO bullet lists, NO tables, NO headings.",
@@ -514,6 +551,19 @@ export function buildSectionSpecificGuidance(section: ReportPlanSection, input: 
       "Paragraph 2 - performance synthesis: name the strongest verified results and any below-expectation results, quoting values, targets, and previous-period values verbatim. Name any indicators that could not be calculated instead of guessing percentages.",
       "Paragraph 3 - delivery: total participants engaged across recorded activities if counts exist; one recorded challenge (verbatim from activity updates); and a one-sentence outlook drawn from recorded next steps.",
       "Every number must come from the provided findings, updates, or activity records.",
+    );
+  }
+  if (/cumulative|life[- ]of[- ]project|achievement of objectives|results by outcome|results against targets/.test(title) && (input.verifiedFindings ?? []).some((f) => f.lifeOfProject)) {
+    guidance.push(
+      "Report progress since the project started from each finding's lifeOfProject (cumulative to date) against its life-of-project target; quote lifeOfProject.value, the target and the asOf date verbatim.",
+      "State a percent of the project target only as lifeOfProject.value / target x 100 (at most one decimal). Name indicators with no lifeOfProject figure instead of estimating one.",
+      "Say whether the project is on track only when performanceEvaluation permits evaluative wording; otherwise describe the figures.",
+    );
+  }
+  if (input.finance && !section.templateSectionId?.startsWith("bp:") && isDonorFinanceSection(section)) {
+    guidance.push(
+      "A table of the verified financial figures (budget, expenditure, committed, balance, burn rate) is added automatically below your text: do not write a table yourself.",
+      "Quote the figures exactly as supplied in the stated currency; never total, estimate or restate them differently.",
     );
   }
   if (title.includes("indicator")) {
@@ -650,6 +700,7 @@ function buildSectionNarratorUserPrompt(input: GenerateReportDraftInput, section
     ...templateBlock,
     ...buildVisibilityLines(input),
     ...buildStoryContextBlock(ctx),
+    ...buildFinanceBlock(input),
     `# Section Guidance`,
     sectionGuidance,
     ``,

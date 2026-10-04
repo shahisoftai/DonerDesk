@@ -35,6 +35,8 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "PurchasedCreditPack", field: "source" },
   { model: "Organization", field: "nonprofitVerifiedAt" },
   { model: "NonprofitVerification", field: "status" },
+  { model: "ReportingProfile", field: "financeDataMode" },
+  { model: "PeriodFinancialSummary", field: "verificationStatus" },
 ] as const;
 
 type RuntimeDataModel = {

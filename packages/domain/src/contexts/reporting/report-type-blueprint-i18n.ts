@@ -82,6 +82,17 @@ const FR: Catalog = {
   "Female": "Femmes",
   "Children": "Enfants",
   "People with disabilities": "Personnes handicapées",
+  "Budget line": "Ligne budgétaire",
+  "Budget": "Budget",
+  "Expenditure": "Dépenses",
+  "Committed": "Engagé",
+  "Balance": "Solde",
+  "Burn rate": "Taux de consommation",
+  "Group": "Groupe",
+  "Figure": "Chiffre",
+  "Previously reported": "Précédemment signalé",
+  "Source": "Source",
+  "As of": "En date du",
 };
 
 const AR: Catalog = {
@@ -140,6 +151,17 @@ const AR: Catalog = {
   "Female": "إناث",
   "Children": "أطفال",
   "People with disabilities": "الأشخاص ذوو الإعاقة",
+  "Budget line": "بند الميزانية",
+  "Budget": "الميزانية",
+  "Expenditure": "النفقات",
+  "Committed": "الملتزم به",
+  "Balance": "الرصيد",
+  "Burn rate": "معدل الإنفاق",
+  "Group": "الفئة",
+  "Figure": "الرقم",
+  "Previously reported": "المُبلَّغ سابقاً",
+  "Source": "المصدر",
+  "As of": "بتاريخ",
 };
 
 const UR: Catalog = {
@@ -198,6 +220,17 @@ const UR: Catalog = {
   "Female": "خواتین",
   "Children": "بچے",
   "People with disabilities": "معذور افراد",
+  "Budget line": "بجٹ لائن",
+  "Budget": "بجٹ",
+  "Expenditure": "اخراجات",
+  "Committed": "مختص شدہ",
+  "Balance": "بقایا",
+  "Burn rate": "خرچ کی شرح",
+  "Group": "گروہ",
+  "Figure": "تعداد",
+  "Previously reported": "پہلے رپورٹ کیا گیا",
+  "Source": "ماخذ",
+  "As of": "بتاریخ",
 };
 
 const PS: Catalog = {
@@ -256,6 +289,17 @@ const PS: Catalog = {
   "Female": "ښځینه",
   "Children": "ماشومان",
   "People with disabilities": "معلولیت لرونکي کسان",
+  "Budget line": "د بودیجې کرښه",
+  "Budget": "بودیجه",
+  "Expenditure": "لګښت",
+  "Committed": "ژمنه شوی",
+  "Balance": "پاتې",
+  "Burn rate": "د لګښت کچه",
+  "Group": "ډله",
+  "Figure": "شمېره",
+  "Previously reported": "مخکې راپور شوی",
+  "Source": "سرچینه",
+  "As of": "تر نېټې",
 };
 
 export const BLUEPRINT_CATALOGS: Readonly<Record<Exclude<BlueprintLanguage, "en">, Catalog>> = { fr: FR, ar: AR, ur: UR, ps: PS };

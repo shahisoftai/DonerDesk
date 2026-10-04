@@ -97,6 +97,8 @@ export interface GroundingFinding {
   comparisonValue?: unknown;
   qualityFlags?: ReadonlyArray<string>;
   valueStatus?: string;
+  /** Progress since the project started (semi-annual, annual, final). */
+  lifeOfProject?: { value: string } | null;
 }
 
 /**
@@ -121,6 +123,12 @@ export function allowedNumbers(sources: unknown, findings: ReadonlyArray<Groundi
     if (!notCalculable) {
       const pct = percentOfTarget(f.value, f.target);
       if (pct !== null) for (const v of roundedVariants(pct)) allowed.add(v);
+    }
+    if (f.lifeOfProject) {
+      const cumulative = toFloat(f.lifeOfProject.value);
+      if (cumulative !== null) for (const v of roundedVariants(cumulative)) allowed.add(v);
+      const lifePct = percentOfTarget(f.lifeOfProject.value, f.target);
+      if (lifePct !== null) for (const v of roundedVariants(lifePct)) allowed.add(v);
     }
   }
   return allowed;

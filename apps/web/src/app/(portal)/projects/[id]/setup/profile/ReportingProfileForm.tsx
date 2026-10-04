@@ -11,6 +11,13 @@ import { Textarea } from "@/components/ui/Textarea";
 
 const TONES = ["FORMAL", "CONCISE", "NARRATIVE", "TECHNICAL"] as const;
 
+const FINANCE_MODES = [
+  { value: "DISABLED", label: "Off", hint: "Reports say financial figures are reported separately. Nothing to enter." },
+  { value: "TYPED", label: "Type them in", hint: "Enter budget and expenditure for each quarterly, half-year, annual and final report." },
+  { value: "IMPORT", label: "Import a spreadsheet", hint: "Paste budget lines from your finance spreadsheet and confirm them." },
+] as const;
+type FinanceMode = (typeof FINANCE_MODES)[number]["value"];
+
 export function ReportingProfileForm({
   projectId,
   initialProfile,
@@ -27,6 +34,7 @@ export function ReportingProfileForm({
   const [specialRequirements, setSpecialRequirements] = useState((initialProfile?.specialRequirements ?? []).join("\n"));
   const [deadlineOffsetDays, setDeadlineOffsetDays] = useState(initialProfile?.deadlineOffsetDays?.toString() ?? "");
   const [autoPeriodCreation, setAutoPeriodCreation] = useState(initialProfile?.autoPeriodCreation ?? false);
+  const [financeDataMode, setFinanceDataMode] = useState<FinanceMode>(initialProfile?.financeDataMode ?? "DISABLED");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +53,7 @@ export function ReportingProfileForm({
           sectionOverrides: {},
           deadlineOffsetDays: deadlineOffsetDays ? Number(deadlineOffsetDays) : undefined,
           autoPeriodCreation,
+          financeDataMode,
           expectedVersion: initialProfile?.version,
         };
     const result = await upsertReportingProfileAction(projectId, body);
@@ -117,6 +126,17 @@ export function ReportingProfileForm({
             custom reporting frequency.
           </p>
         </div>
+      </div>
+
+      <div>
+        <label className="label" htmlFor="financeDataMode">Financial figures in reports</label>
+        <Select id="financeDataMode" value={financeDataMode} onChange={(e) => setFinanceDataMode(e.target.value as FinanceMode)}>
+          {FINANCE_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+        </Select>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          {FINANCE_MODES.find((m) => m.value === financeDataMode)?.hint} Figures are only used in a report once someone with approval
+          rights has verified them. Switching this off keeps any figures already entered.
+        </p>
       </div>
 
       {error && <InlineAlert tone="danger" title={error} />}

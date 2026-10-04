@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeReportScope, missingScopeFields, describeReportScope, parseReportScope, checklistTemplateForReportType } from "../dist/index.js";
+import { periodComparability, comparableReportTypes, selectComparablePeriods, sectionMatchKeys, normalizeReportScope, missingScopeFields, describeReportScope, parseReportScope, checklistTemplateForReportType } from "../dist/index.js";
 
 test("normalizeReportScope keeps only known non-empty fields and dedupes ids", () => {
   const s = normalizeReportScope({ activityIds: ["a", "a", "b", ""], eventName: "  Flood ", title: "", junk: 1 });
@@ -122,4 +122,86 @@ test("report language normalisation", () => {
   assert.equal(normalizeReportLanguage(undefined), "en");
   assert.equal(translateBlueprintText("Next Steps", "ps"), "راتلونکي ګامونه");
   assert.equal(translateBlueprintText("Not in catalog", "fr"), "Not in catalog");
+});
+
+test("periodComparability: a report is only compared with its own kind", () => {
+  assert.deepEqual(periodComparability("QUARTERLY", {})?.primary, ["QUARTERLY"]);
+  assert.equal(periodComparability("ACTIVITY", {}), null);
+  assert.equal(periodComparability("CUSTOM", {}), null);
+  assert.equal(periodComparability("SITUATION", { eventName: " Flood  X " })?.eventKey, "flood x");
+  assert.deepEqual(comparableReportTypes(periodComparability("SEMI_ANNUAL", {})), ["SEMI_ANNUAL", "QUARTERLY"]);
+});
+
+test("selectComparablePeriods: primary wins, fallback is capped", () => {
+  const c = periodComparability("SEMI_ANNUAL", {});
+  const q = (id) => ({ id, reportType: "QUARTERLY" });
+  assert.deepEqual(selectComparablePeriods([q("a"), q("b"), q("c")], c, 4).map((p) => p.id), ["a", "b"]);
+  assert.deepEqual(selectComparablePeriods([q("a"), { id: "h", reportType: "SEMI_ANNUAL" }], c, 4).map((p) => p.id), ["h"]);
+  assert.deepEqual(selectComparablePeriods([{ id: "m", reportType: "MONTHLY" }], c, 4), []);
+});
+
+test("sectionMatchKeys: blueprint key is language- and type-independent", () => {
+  assert.deepEqual(sectionMatchKeys({ templateSectionId: "bp:quarterly:exec", title: "Résumé" }), ["bp:exec", "title:résumé"]);
+  assert.deepEqual(sectionMatchKeys({ templateSectionId: "bp:semi_annual:exec", canonicalTitle: "Executive Summary", title: "Résumé" }).slice(0, 1), ["bp:exec"]);
+  assert.deepEqual(sectionMatchKeys({ templateSectionId: "tpl-9", sectionTitle: "2.1  Results" }), ["id:tpl-9", "title:results"]);
+});
+
+test("every cadence blueprint section tells the writer what to do", () => {
+  for (const reportType of ["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL", "FINAL"]) {
+    const sections = blueprintSectionsFor({ reportType, scope: {} });
+    assert.ok(sections.length >= 6, reportType);
+    for (const s of sections) {
+      if (s.inputType === "ANNEX") continue;
+      assert.notEqual(s.instructions, s.description, `${reportType}/${s.title} only has a description`);
+      assert.match(s.instructions ?? "", /not reported|supplied|recorded|Never estimate/i, `${reportType}/${s.title} lacks a no-invention rule`);
+    }
+    assert.ok(!sections.some((s) => /overview|abstract/i.test(s.title)), `${reportType} has a title the worker reads as an executive summary`);
+  }
+});
+
+test("narrative cadence sections ask the writer to answer questions; tables and annexes do not", () => {
+  const annual = blueprintSectionsFor({ reportType: "ANNUAL", scope: {} });
+  const by = (id) => annual.find((s) => s.id === `bp:annual:${id}`);
+  assert.ok(by("cumulative").mandatoryQuestions.length > 0);
+  assert.equal(by("results").mandatoryQuestions.length, 0);
+  assert.equal(by("annexes").mandatoryQuestions.length, 0);
+});
+
+test("annual and final blueprints ask for cumulative figures; quarterly does not", () => {
+  const text = (type) => blueprintSectionsFor({ reportType: type, scope: {} }).map((s) => s.instructions).join(" ");
+  assert.match(text("ANNUAL"), /cumulative/i);
+  assert.match(text("FINAL"), /life-of-project/i);
+  assert.doesNotMatch(text("QUARTERLY"), /life-of-project/i);
+});
+
+import { sectionPredecessorKeys } from "../dist/index.js";
+
+test("normalizeReportScope keeps valid affected-population figures and needs, trimmed and capped", () => {
+  const s = normalizeReportScope({
+    affectedPopulation: [
+      { group: " Displaced households ", figure: " 1,200 ", source: "OCHA", asOf: "2028-05-06", junk: 1 },
+      { group: "no figure" },
+      { figure: "5" },
+      "x",
+    ],
+    needs: [" Clean water ", "", 5],
+  });
+  assert.deepEqual(s.affectedPopulation, [{ group: "Displaced households", figure: "1,200", source: "OCHA", asOf: "2028-05-06" }]);
+  assert.deepEqual(s.needs, ["Clean water"]);
+  assert.deepEqual(normalizeReportScope({ affectedPopulation: [], needs: [] }), {});
+});
+
+test("describeReportScope quotes the figures and the previous report's for comparison", () => {
+  const scope = { eventName: "Flood", situationDate: "2028-05-06", sequence: 2, affectedPopulation: [{ group: "Households", figure: "1,500", source: "OCHA" }], needs: ["Water", "Shelter"] };
+  const previous = { situationDate: "2028-05-01", affectedPopulation: [{ group: "Households", figure: "1,200" }] };
+  const text = describeReportScope("SITUATION", scope, [], previous);
+  assert.match(text, /Households: 1,500 \(source: OCHA\)/);
+  assert.match(text, /Needs reported: Water; Shelter/);
+  assert.match(text, /previous report \(as of 2028-05-01\): Households: 1,200/);
+  assert.doesNotMatch(describeReportScope("SITUATION", { eventName: "Flood" }), /Affected population/);
+});
+
+test("a follow-up's 'changes' section looks for the previous report's at-a-glance, and not the reverse", () => {
+  assert.deepEqual(sectionPredecessorKeys({ templateSectionId: "bp:situation:changes", title: "Developments" }), ["bp:changes", "bp:overview", "title:developments"]);
+  assert.deepEqual(sectionPredecessorKeys({ templateSectionId: "bp:situation:overview", title: "At a Glance" }), ["bp:overview", "title:at a glance"]);
 });

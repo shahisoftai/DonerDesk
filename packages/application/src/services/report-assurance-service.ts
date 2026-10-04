@@ -1,4 +1,5 @@
 import type {
+  FinanceSummaryView,
   Result,
   TenantId,
   VerifiedFinding,
@@ -21,6 +22,7 @@ import type {
 } from "../ports/reporting.js";
 import type { IIdGenerator } from "../ports/core.js";
 import type { IUnsupportedClaimProjector } from "../ports/compliance.js";
+import type { IFinanceInputs } from "./finance-inputs.js";
 import type { ClaimType } from "@donordesk/domain";
 
 export function assertionToClaimType(type: string): ClaimType {
@@ -71,6 +73,8 @@ export class ReportAssuranceService implements IReportAssuranceService {
     private readonly analytics: IIndicatorAnalyticsService,
     private readonly evidencePackages: IEvidencePackageBuilder,
     private readonly projector?: IUnsupportedClaimProjector,
+    /** Absent when the deployment has no finance support: financial figures are not grounded. */
+    private readonly finance?: IFinanceInputs,
   ) {}
 
   async assessRevision(input: {
@@ -109,6 +113,14 @@ export class ReportAssuranceService implements IReportAssuranceService {
       });
       if (!findingsResult.ok) return findingsResult;
       findings = findingsResult.value;
+    }
+
+    // Verified financial figures ground the numbers a financial section quotes.
+    let financeView: FinanceSummaryView | undefined;
+    if (this.finance) {
+      const finance = await this.finance.verifiedForPeriod(draft.reportingPeriodId, draft.projectId, tenantId);
+      if (!finance.ok) return finance;
+      financeView = finance.value;
     }
 
     const writerClaims = input.writerClaims ?? [];
@@ -173,6 +185,7 @@ export class ReportAssuranceService implements IReportAssuranceService {
         },
         findings,
         evidencePackages: packages,
+        ...(financeView ? { finance: financeView } : {}),
       });
       if (!verification.ok) return verification;
       const v = verification.value;

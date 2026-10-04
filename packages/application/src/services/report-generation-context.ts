@@ -1,6 +1,6 @@
-import type { Result, Project, ReportingPeriod, TemplateSection, VerifiedFinding } from "@donordesk/domain";
+import type { FinanceSummaryView, Result, Project, ReportingPeriod, ReportScope, TemplateSection, VerifiedFinding } from "@donordesk/domain";
 import { DomainError, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
-import { resolvePeriodActivities, scopeIndicatorData } from "./period-activities.js";
+import { resolveGenerationActivities, resolvePeriodActivities, scopeIndicatorData } from "./period-activities.js";
 import type { AuthenticatedContext } from "../context.js";
 import type {
   IReportingPeriodRepository,
@@ -20,6 +20,7 @@ import type { IActivityUpdateRepository } from "../ports/activities.js";
 import type { PeriodTemplateSnapshot } from "./template-snapshot.js";
 import type { PeriodTemplateResolver } from "./period-template-resolver.js";
 import type { IOrganizationRepository } from "../ports/identity.js";
+import type { IFinanceInputs } from "./finance-inputs.js";
 
 /** Who/what a generation run writes with, and the donor structure it follows. */
 export interface GenerationBase {
@@ -48,6 +49,10 @@ export interface GenerationInputs {
   indicatorUpdates: IndicatorUpdateGenerationContext[];
   activities: ActivityGenerationContext[];
   reportContext: ReportGenerationContext;
+  /** Verified financial figures, when the project uses them and this kind of report has a financial section. */
+  finance?: FinanceSummaryView;
+  /** Situation reports: this report's scope and the previous report on the same event, for the figures table. */
+  situation?: { current: ReportScope; previous?: ReportScope };
 }
 
 const DEFAULT_PROFILE: ReportingProfileSnapshot = { tone: "FORMAL", language: "en", formattingRules: [], sectionOverrides: {} };
@@ -91,6 +96,8 @@ export class ReportGenerationContextBuilder {
     private readonly analytics: IIndicatorAnalyticsService,
     private readonly evidencePackages: IEvidencePackageBuilder,
     private readonly getGenerator: (tenantId?: string) => Promise<IReportDraftGenerator>,
+    /** Absent when the deployment has no finance support: reports are written without financial figures. */
+    private readonly finance?: IFinanceInputs,
   ) {}
 
   /**
@@ -133,8 +140,11 @@ export class ReportGenerationContextBuilder {
     if (!template) {
       const scoped = period.reportType === "ACTIVITY" ? await resolvePeriodActivities(this.activities, period, ctx.tenant.tenantId) : null;
       if (scoped && !scoped.ok) return scoped;
+      const finance = await this.verifiedFinance(period, ctx.tenant.tenantId);
+      if (!finance.ok) return finance;
       templateSections = blueprintSectionsFor({
         reportType: period.reportType,
+        financeAvailable: finance.value !== undefined,
         scope: period.scope,
         language: parseProfileSnapshot(period.reportingProfileSnapshotJson).language,
         activities: scoped?.value.map((a) => ({ id: a.id, title: a.activityTitle, date: a.activityDate.toISOString().slice(0, 10), location: a.location })),
@@ -166,8 +176,12 @@ export class ReportGenerationContextBuilder {
       tenantId: ctx.tenant.tenantId,
     });
     if (!findingsResult.ok) return findingsResult;
-    const activitiesResult = await resolvePeriodActivities(this.activities, period, ctx.tenant.tenantId);
+    const activitiesResult = await resolveGenerationActivities(this.activities, period, ctx.tenant.tenantId);
     if (!activitiesResult.ok) return activitiesResult;
+    const previousScope = await this.loadPreviousSituationScope(period, ctx.tenant.tenantId);
+    if (!previousScope.ok) return previousScope;
+    const finance = await this.verifiedFinance(period, ctx.tenant.tenantId);
+    if (!finance.ok) return finance;
 
     const allUpdatesResult = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!allUpdatesResult.ok) return allUpdatesResult;
@@ -226,9 +240,25 @@ export class ReportGenerationContextBuilder {
         evidencePackages,
         indicatorUpdates,
         activities,
-        reportContext: buildReportContext(project, period, base.template, period.storyContext, describeReportScope(period.reportType, period.scope, activitiesResult.value.map((a) => a.activityTitle))),
+        ...(finance.value ? { finance: finance.value } : {}),
+        ...(period.reportType === "SITUATION" ? { situation: { current: period.scope, ...(previousScope.value ? { previous: previousScope.value } : {}) } } : {}),
+        reportContext: buildReportContext(project, period, base.template, period.storyContext, describeReportScope(period.reportType, period.scope, activitiesResult.value.map((a) => a.activityTitle), previousScope.value)),
       },
     };
+  }
+  /** The period's verified financial figures; undefined when finance is off, not applicable or not verified. */
+  private async verifiedFinance(period: ReportingPeriod, tenantId: AuthenticatedContext["tenant"]["tenantId"]): Promise<Result<FinanceSummaryView | undefined, DomainError>> {
+    if (!this.finance) return { ok: true, value: undefined };
+    return this.finance.verifiedFor(period, tenantId);
+  }
+
+  /** The previous report on the same event (situation follow-ups only); absent for the first report or when it is gone. */
+  private async loadPreviousSituationScope(period: ReportingPeriod, tenantId: AuthenticatedContext["tenant"]["tenantId"]): Promise<Result<ReportScope | undefined, DomainError>> {
+    const previousId = period.reportType === "SITUATION" ? period.scope.previousPeriodId : undefined;
+    if (!previousId) return { ok: true, value: undefined };
+    const previous = await this.periods.findById(previousId, tenantId);
+    if (!previous.ok) return previous;
+    return { ok: true, value: previous.value?.scope };
   }
 }
 

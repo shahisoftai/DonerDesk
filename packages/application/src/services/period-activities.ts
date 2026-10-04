@@ -82,3 +82,28 @@ export async function periodIndicatorScope(
 export function inIndicatorScope(scope: PeriodIndicatorScope, indicatorId: string): boolean {
   return scope.all || scope.ids.has(indicatorId);
 }
+
+/** A final report reports on the project's whole life; this caps the activity records sent to the writer. */
+export const FINAL_REPORT_ACTIVITY_CAP = 60;
+
+/**
+ * The activity records a report is *written from*. Same as `resolvePeriodActivities`,
+ * except a FINAL report also draws on the project's accepted activities from every
+ * period (the most recent `FINAL_REPORT_ACTIVITY_CAP`, oldest first), since it
+ * reports on the project's whole life and not just its last period.
+ */
+export async function resolveGenerationActivities(
+  activities: IActivityUpdateRepository,
+  period: Pick<ReportingPeriod, "id" | "reportType" | "scope" | "projectId" | "duration">,
+  tenantId: TenantId,
+): Promise<Result<ActivityUpdate[]>> {
+  const own = await resolvePeriodActivities(activities, period, tenantId);
+  if (!own.ok || period.reportType !== "FINAL") return own;
+  const all = await activities.findByProject(period.projectId, tenantId);
+  if (!all.ok) return all;
+  const byId = new Map<string, ActivityUpdate>();
+  for (const a of own.value) byId.set(a.id, a);
+  for (const a of all.value) if (a.status === "ACCEPTED") byId.set(a.id, a);
+  const newest = [...byId.values()].sort((a, b) => b.activityDate.getTime() - a.activityDate.getTime()).slice(0, FINAL_REPORT_ACTIVITY_CAP);
+  return { ok: true, value: newest.sort((a, b) => a.activityDate.getTime() - b.activityDate.getTime()) };
+}
