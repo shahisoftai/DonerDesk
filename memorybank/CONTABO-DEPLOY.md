@@ -1,6 +1,12 @@
 # Deploy to Contabo — Fastest Path
 
-**Last deploy:** 2026-10-03 — `releaseId=20261003164154` (`SCOPE=web`, branch
+**Last deploy:** 2026-10-03 — `releaseId=20261003174505` (`SCOPE=api`): non-English reports no longer get the English
+attribution prepended. Preceded by `20261003172259` (`SCOPE=both`): donor attribution in exactly one section, report-inputs
+panel scoped and counted from entered values, blueprint titles in the report language with English `canonicalTitle`
+(worker `SectionBrief.canonicalTitle`). Both verified `/ready` 200 + worker ok and in a visible browser (see Features/10
+"Follow-ups done"). Three verification reports were left on production — see `pending.md`.
+
+**Earlier same day:** `releaseId=20261003164154` (`SCOPE=web`, branch
 `0009-agent-memory`). AI progress popup portalled to `document.body` so it stays
 floating on screen. **Same-day series (all `deploy-fast.sh`, no further migration
 after the first):** `20261003142133` report scope (`scopeJson` migration

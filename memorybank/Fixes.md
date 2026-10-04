@@ -1434,4 +1434,5 @@ Full detail: [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-P
 | Donor attribution sentence at the start of several sections | Per-section drafting from one shared context; each section obeyed "include once" | Carrier section named in the prompt + `placeAttribution` enforcement in `SectionGenerationService` |
 | "Indicator values · 6 of 6 verified" with nothing entered (all report types) | Panel compared *all project indicators* with *unverified entered values* | Counts from entered values (`buildReportInputRows`); one scoping rule `periodIndicatorScope` for list/preflight/readiness/scan |
 | Blueprint headings English in fr/ar/ur/ps reports | No catalog | `report-type-blueprint-i18n.ts` + `canonicalTitle` so role detection (exec summary last, worker kinds) keeps working |
+| French report carried the attribution twice (English + French) in its first section | Safety net prepended the English sentence when it didn't find it, but the writer had written it in French | "Add if missing" only for English reports (`placeAttribution` `ensure` flag); duplicate removal unchanged |
 

@@ -1,11 +1,15 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-03.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-04.
 
 ## Report types & scope — follow-ups (added 2026-10-03)
 
-- [ ] Dedicated checklist item types per report type (Situation/Activity currently reuse `MISSING_EVIDENCE` / `MISSING_APPROVAL`).
-- [ ] Edit a period's scope after creation (today it is set once, at creation).
+- [x] Dedicated checklist item types per report type and editable scope — done 2026-10-04 (see `Features/10-Reporting-Period-Manager.md` §"Report-type quality gaps closed").
+- [ ] Deploy + browser-verify the 2026-10-04 report-type work: apply migration `20261004100000_period_finance`, re-run `infra/postgres/rls.sql`, check `/ready`, then drive Annual/Final (cumulative table), Situation #2 (figures + previous), finance (typed + import + verify) and scope edit on production.
+- [ ] Native-speaker review of the new finance/situation table headers in ar/ur/ps (`report-type-blueprint-i18n.ts`).
+- [ ] Re-check a French report after release `20261003174505`: the attribution should appear once, in French only (verification was stopped before this run finished).
+- [ ] Clean up the verification reports left on production in the EU nutrition project (`445e8a22…`): Activity `c0292aee-3684-4cd7-8a7c-d1d74595f5ec`, Activity (fr snapshot) `8c670920-cb9e-4a2c-802a-9da0cd7e2820`, Situation "QA panel check flood" `506681c8-96ff-4053-8c1b-21e0ab256540` — same guarded transaction as the earlier cleanup (keep `LlmRun` and audit rows).
+- [ ] Official non-English attribution wording (e.g. the EU's French sentence) in the visibility catalog; today it is English-only and the writer translates it.
 - [ ] Native-speaker review of the Arabic, Urdu and Pashto blueprint titles (`report-type-blueprint-i18n.ts`); French is done.
 - [ ] Right-to-left export: DOCX paragraphs need `bidirectional`/`rightToLeft` for ar/ur/ps, and the PDF needs an embedded Arabic-script font (e.g. Noto Naskh Arabic / Noto Nastaliq Urdu) instead of Helvetica — today Arabic-script body text does not render in PDF at all.
 - [ ] Translate the remaining fixed export strings (cover page "Project:", "Reporting period:", fallback section text) for non-English reports.

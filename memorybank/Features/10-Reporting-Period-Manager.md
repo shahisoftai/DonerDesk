@@ -269,8 +269,63 @@ event). Defects found by that run, all fixed and re-verified:
   titles are the user's own words and are never translated. French is a reviewed translation; **Arabic, Urdu and Pashto titles are
   first drafts that need native review.** The cadence finance section was renamed "Financial and Procurement Status" (it contained
   "Overview").
+- **Non-English attribution.** In a French report the writer renders the attribution in French; the safety net, not finding the English
+  sentence, used to prepend it as well ("This project is funded…" + "Ce projet est financé…"). `placeAttribution(…, ensure)` now adds the
+  missing sentence only for English reports (`normalizeReportLanguage(profile.language) === "en"`); removing exact duplicates from other
+  sections still applies to every language. The visibility catalog itself is English-only.
+- **Verified on production** (releases `20261003172259`, `20261003174505`, visible browser):
+  - English Activity report: attribution exactly once (Introduction), no non-AI fallbacks; launch panel and side panel show
+    "Activities · 2 selected · 0 accepted" and "Linked indicators · none linked" (no more "6 of 6 verified").
+  - Situation report panel: "Activities in this window · 0", no indicator row.
+  - French Activity report (report snapshot language set to `fr`): French section titles, French participants table header
+    ("Activité | Total | Hommes | Femmes | Enfants | Personnes handicapées"), French body, no non-AI fallbacks; the duplicate English
+    attribution was found here and fixed in `20261003174505`. **The regeneration after that fix was stopped before it could be checked.**
 - **Not done — right-to-left export.** DOCX/PDF exporters have no RTL/bidi handling and the PDF uses Helvetica (no Arabic-script glyphs),
   so Arabic/Urdu/Pashto *body text* already renders incorrectly in PDF, independent of the titles. Tracked in `pending.md`.
+
+## Report-type quality gaps closed (2026-10-04)
+
+Plan: [`imp/REPORT-TYPE-QUALITY-GAPS-IMPLEMENTATION-PLAN.md`](../imp/REPORT-TYPE-QUALITY-GAPS-IMPLEMENTATION-PLAN.md). Code state only; not deployed/verified in a browser yet.
+
+- **Comparable history (G1).** `periodComparability` / `selectComparablePeriods` (`packages/domain/.../period-comparability.ts`): a report is only compared
+  with its own kind (Quarterly↔Quarterly, Monthly↔Monthly, Annual↔Annual, Situation↔same event; Semi-annual falls back to at most 2 Quarterlies, Final to
+  Annual then ≤ 2 Semi-annual/Quarterly; Activity/Custom have no history). `findPreviousPeriods` takes a `PreviousPeriodFilter` (`reportTypes`, `eventKey`).
+  Used by prior-narrative (`prior-period.ts`), indicator deltas (`IndicatorAnalyticsService`) and the "previous report approved" checklist item. Sections
+  match across reports/languages by blueprint key (`bp:<type>:<key>` → `sectionMatchKeys`), then donor template id, then title (leading numbering ignored);
+  a follow-up's "Developments Since the Last Report" looks for the previous report's "at a glance" (`sectionPredecessorKeys`, one-way alias).
+- **Life-of-project data (G2).** `computeLifeOfProject` (domain): recorded cumulative of the latest verified period is authoritative for SUM / CUMULATIVE-basis
+  indicators, otherwise aggregated from verified period values by the indicator's existing `aggregation` (no schema change was needed); ratios/percentages
+  have none. `IndicatorAnalyticsService` adds `finding.lifeOfProject` for SEMI_ANNUAL / ANNUAL / FINAL (cadence periods up to the report's end only).
+  Worker: `Finding.lifeOfProject`, cumulative columns in the indicator table, a deterministic cumulative table for the "Cumulative Progress…" section
+  (`artifact_builder.cumulative_table`), grounding of the cumulative value and its percent of the project target (Python + `number-grounding.ts`).
+  FINAL reports also read the project's accepted activities (cap 60, `resolveGenerationActivities`).
+- **Cadence writer guidance (G4).** Every Monthly→Final section has `instructions` (+ `mandatoryQuestions` on narrative sections); `reportTypeGuidance`
+  (`llm-report-draft-generator.ts`) adds report-type tone/scope rules to the one guidance SSOT used by both writers.
+- **Finance (G3).** `ReportingProfile.financeDataMode` = `DISABLED` (default) | `TYPED` | `IMPORT`, set in the project's reporting profile form. One per-period
+  `PeriodFinancialSummary` (migration `20261004100000_period_finance`; RLS list in `infra/postgres/rls.sql`; `/ready` field checks): totals or budget lines
+  (totals = sum of lines), currency, source, verification. Any edit drops the verification; **only a VERIFIED summary reaches a writer**
+  (`FinanceInputsService.verifiedFor`). Balance and burn rate are computed in the domain (`summarizeFinance`), sent as inputs (so they are grounded) and shown
+  in a deterministic table appended to the `bp:*:finance` section, and to a donor template's own financial narrative section (`isDonorFinanceSection`: plain narrative
+  with no donor-prescribed table shape). The financial section becomes required only when verified figures exist
+  (`BlueprintInput.financeAvailable`). Routes: `GET/PUT /v1/reporting-periods/:id/finance`, `POST …/finance/import-preview`, `POST …/finance/verify`
+  (enter = `report.edit`, verify = `report.approve`). Import = pasted CSV/TSV (`parseDelimited`, quotes/tabs aware) → preview → "use ready lines".
+  Switching the mode off never deletes stored figures. Web: "Finance" tab on the report inputs page.
+- **Situation (G5).** `ReportScope.affectedPopulation[]` (group, figure, source?, asOf?) and `needs[]`; quoted in the writer's scope paragraph with the previous
+  report's figures for comparison; a deterministic "Affected population" table in `bp:situation:needs` (with a "Previously reported" column on follow-ups).
+  No figures entered → the section says they were not reported (nothing invented).
+- **Editable scope (G6).** `UpdateReportingPeriodScopeHandler` (`PUT /v1/reporting-periods/:id/scope`) re-validates through the shared `ReportScopeResolver`
+  (also used by creation), keeps a situation's series position unless the event changes, is blocked once the draft is under review/approved/exported/submitted,
+  and marks drafted sections' assurance STALE (blocks approval until re-checked; nothing is regenerated automatically — AI credits, manual edits).
+  Web: "Covers" tab on the report inputs page (`ScopeInputs`, shared `ReportScopeFields`).
+- **Checklist (G7).** New item types `ACTIVITY_RECORD_ACCEPTED`, `AFFECTED_FIGURES_CONFIRMED`, `CUMULATIVE_DATA_COMPLETE` (per indicator), `PRIOR_REPORT_LINKED`,
+  `FINANCE_FIGURES_PROVIDED` (`entry` / `verification`); built by `services/report-type-checklist.ts`; legacy open `MISSING_APPROVAL` items are not duplicated.
+- **Claim verification.** `NumericAssertionVerifier` also grounds numbers equal to a finding's `lifeOfProject.value` (and its percent of the project target) and to the
+  verified finance figures (`IClaimVerifier.verify({ finance })`, fed by `ReportAssuranceService` through `IFinanceInputs.verifiedForPeriod`), otherwise cumulative or
+  financial prose would fail assurance and block approval.
+- **Verified:** unit/integration suites (domain 295, application ~265, infrastructure ~275, workers 162, web unit 199) plus a scripted end-to-end run through the real handlers,
+  Prisma repositories and generation pipeline on a scratch Postgres (stub writer): life-of-project value, same-type deltas, finance unverified→verified table, situation
+  series + previous figures, scope edit persistence + STALE marking, checklist items; migration + RLS applied to a scratch DB.
+- **Not done:** native-speaker review of ar/ur/ps strings (new table headers included); browser (UI) verification and a run against a real LLM; deploy needs the migration + `rls.sql`.
 
 ## Pending Enhancements
 
@@ -281,7 +336,6 @@ event). Defects found by that run, all fixed and re-verified:
 - [ ] Notification on approaching deadlines
 - [ ] Reporting calendar view across all projects
 - [ ] Bulk period creation for quarterly/annual schedules
-- [ ] Edit a period's scope after creation; scope-aware indicator findings for ACTIVITY reports
 
 ## Notes
 

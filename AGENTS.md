@@ -190,3 +190,16 @@ in-process default), stub LLM (dev default), pino logs, console email.
   `20260928120000_report_section_hierarchy`), set by `planHierarchy` in `GenerateReportDraftHandler`. The
   parent is implicit (nearest earlier section one level up). The workspace outline (`outline-tree.ts`,
   `OutlineNav`) and exports (Heading 2–5) render it; `sectionTitle` still starts with the donor numbering.
+
+## Report-type invariants (2026-10-04)
+- A report is only compared with reports of its own kind: use `periodComparability` / `selectComparablePeriods` (`packages/domain/.../period-comparability.ts`) and the
+  `PreviousPeriodFilter` of `findPreviousPeriods`; never take "the previous period" of any type. Match sections across reports by `sectionMatchKeys` (blueprint key,
+  template id, title), not by the displayed title.
+- Semi-annual / annual / final findings carry `lifeOfProject` (cumulative to date, from the indicator's own `aggregation`). Any new place that checks or grounds numbers
+  (Python `grounding.py`, `number-grounding.ts`, `NumericAssertionVerifier`) must accept it, and finance figures, or assurance blocks approval.
+- Finance: `ReportingProfile.financeDataMode` is DISABLED by default. **Only a VERIFIED `PeriodFinancialSummary` reaches a writer** (`FinanceInputsService.verifiedFor`);
+  balance and burn rate are computed in the domain (`summarizeFinance`), never by the writer; any edit drops the verification; switching the mode off keeps stored figures.
+- A report's scope is validated in one place, `ReportScopeResolver` (create and edit). Editing it marks drafted sections' assurance STALE and never regenerates.
+- `ReportingPeriodRepository.update` must persist every mutable period field (it silently dropped `scopeJson` once): add new mutable fields there and to its test.
+- Never run `prisma format` on `schema.prisma` (it rewrites the whole file); edit by hand.
+
