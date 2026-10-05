@@ -101,3 +101,25 @@ export function evidenceLabelCopy(
   const match = sourceReferences?.find((r) => r.id === evidenceId && r.label);
   return match?.label ?? "Evidence file";
 }
+
+export type FlagClassName = "REPORT_ERROR" | "NEEDS_DECISION" | "UNCONFIRMED";
+
+const FLAG_CLASS_COPY: Record<FlagClassName, { title: string; hint: string }> = {
+  REPORT_ERROR: {
+    title: "Needs fixing",
+    hint: "A figure in the report does not match your verified data or evidence. Correct the text or the data.",
+  },
+  NEEDS_DECISION: {
+    title: "Needs your decision",
+    hint: "Something about the evidence or its confidentiality needs a person to decide.",
+  },
+  UNCONFIRMED: {
+    title: "We could not confirm",
+    hint: "Interpretive statements our checker could not tie to a source. They are not necessarily wrong: read them, then accept them with one note.",
+  },
+};
+
+/** Heading and one-line explanation for a flag class; unknown classes read as a decision, never as a checker limit. */
+export function flagClassCopy(flagClass: string | undefined | null): { title: string; hint: string } {
+  return FLAG_CLASS_COPY[(flagClass as FlagClassName) ?? "NEEDS_DECISION"] ?? FLAG_CLASS_COPY.NEEDS_DECISION;
+}

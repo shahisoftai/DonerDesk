@@ -162,6 +162,21 @@ export function SetupChecklistClient({
         )}
       </section>
 
+      {(readiness.warnings ?? []).length > 0 && (
+        <section className="card" aria-label="Things to review">
+          <h3 className="font-medium">Worth reviewing</h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">These do not stop you reporting, but they change what the report can say.</p>
+          <ul className="mt-3 space-y-2">
+            {(readiness.warnings ?? []).map((w) => (
+              <li key={w.code} className="flex items-start justify-between gap-3 text-sm">
+                <p className="text-slate-700 dark:text-slate-200">{w.label}</p>
+                {w.href && canManage && <Link className="btn-secondary text-sm shrink-0" href={blockerHref(projectId, w.href)}>Review</Link>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {canManage && (
         <div className="flex flex-wrap gap-3">
           {ready && !acknowledged && (

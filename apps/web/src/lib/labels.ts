@@ -326,6 +326,7 @@ export const CHECKLIST_ITEM_TYPE_LABEL: Record<string, string> = {
   CUMULATIVE_DATA_COMPLETE: "Cumulative data incomplete",
   PRIOR_REPORT_LINKED: "Previous report not approved",
   FINANCE_FIGURES_PROVIDED: "Financial figures missing",
+  INDICATOR_SEMANTICS_UNREVIEWED: "Indicator calculation to confirm",
 };
 
 /**
@@ -351,6 +352,7 @@ export const CHECKLIST_ITEM_TYPE_HINT: Record<string, string> = {
   CUMULATIVE_DATA_COMPLETE: "Enter or verify the baseline, target and cumulative value for this indicator so progress since the project started can be reported.",
   PRIOR_REPORT_LINKED: "The report this one builds on is not approved yet — approve or submit it so the comparison rests on a finished report.",
   FINANCE_FIGURES_PROVIDED: "Enter or import this period's budget and expenditure so the financial section can report real figures.",
+  INDICATOR_SEMANTICS_UNREVIEWED: "Confirm how this indicator is calculated (summed, latest value, rate…) so the report can say whether it is on track.",
 };
 
 export const CHECKLIST_STATUS_LABEL: Record<string, string> = {

@@ -1,6 +1,6 @@
-import type { ActivityUpdate, ChecklistItemType, ReportingPeriod, Severity, VerifiedFinding } from "@donordesk/domain";
+import type { ActivityUpdate, Indicator, ChecklistItemType, ReportingPeriod, Severity, VerifiedFinding } from "@donordesk/domain";
 import type { FinanceStatus } from "./finance-inputs.js";
-import { comparableReportTypes, periodComparability, selectComparablePeriods } from "@donordesk/domain";
+import { effectiveIndicatorSemantics, missingCumulativeFields, comparableReportTypes, periodComparability, selectComparablePeriods } from "@donordesk/domain";
 
 /** A checklist item the detector proposes for a reporting period. */
 export interface ChecklistSuggestion {
@@ -52,10 +52,7 @@ export function cumulativeDataItems(findings: ReadonlyArray<VerifiedFinding>, re
   for (const f of findings) {
     const aggregation = f.semantics?.aggregation;
     if (aggregation === "RATIO" || aggregation === "PERCENTAGE") continue;
-    const missing: string[] = [];
-    if (f.baseline === undefined || f.baseline === "") missing.push("baseline");
-    if (f.target === undefined || f.target === "") missing.push("project target");
-    if (!f.lifeOfProject) missing.push("verified cumulative value");
+    const missing = missingCumulativeFields({ baseline: f.baseline, target: f.target, hasVerifiedCumulative: Boolean(f.lifeOfProject) });
     if (missing.length === 0) continue;
     items.push({
       type: "CUMULATIVE_DATA_COMPLETE",
@@ -130,4 +127,27 @@ export function financeItems(status: FinanceStatus): ChecklistSuggestion[] {
     }];
   }
   return [];
+}
+
+/**
+ * An indicator whose calculation is still only a suggestion ("requires review") makes the report
+ * describe it without saying whether it is on track. One item per indicator; it is closed again
+ * once the calculation is confirmed (see `confirmedSemanticsIndicatorIds`).
+ */
+export function semanticsReviewItems(indicators: ReadonlyArray<Pick<Indicator, "id" | "code" | "name" | "type" | "unit" | "semantics">>): ChecklistSuggestion[] {
+  return indicators
+    .filter((i) => effectiveIndicatorSemantics(i).status === "REQUIRES_REVIEW")
+    .map((i) => ({
+      type: "INDICATOR_SEMANTICS_UNREVIEWED" as const,
+      title: `Confirm how ${i.code} is calculated`,
+      description: `${i.code}${i.name ? ` (${i.name})` : ""} uses a suggested calculation that nobody has confirmed. Confirm it, or choose another, so the report can say whether the indicator is on track.`,
+      severity: "MEDIUM" as const,
+      relatedEntityType: "indicator",
+      relatedEntityId: i.id,
+    }));
+}
+
+/** Ids of indicators whose calculation is confirmed (or inferred with confidence): their open review items are stale. */
+export function confirmedSemanticsIndicatorIds(indicators: ReadonlyArray<Pick<Indicator, "id" | "name" | "type" | "unit" | "semantics">>): Set<string> {
+  return new Set(indicators.filter((i) => effectiveIndicatorSemantics(i).status !== "REQUIRES_REVIEW").map((i) => i.id));
 }

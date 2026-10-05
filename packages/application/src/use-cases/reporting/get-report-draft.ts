@@ -1,4 +1,5 @@
 import type { Result, Role } from "@donordesk/domain";
+import { flagClassOf } from "../../services/flag-class.js";
 import { DomainError, Permissions, staleSynthesisSectionIds } from "@donordesk/domain";
 import type { ReportDraft, ReportSection, ReportClaim } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
@@ -132,6 +133,7 @@ export class GetReportDraftHandler {
           verificationDetail: c.verificationDetail,
           verificationReasonCode: c.verificationReasonCode,
           materiality: c.materiality,
+          flagClass: flagClassOf(c),
           charStart: c.charStart,
           charEnd: c.charEnd,
           resolutionNotes: c.resolutionNotes,

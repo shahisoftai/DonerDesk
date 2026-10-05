@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ReportingPeriodsResponseSchema, EvidenceResponseSchema } from "@/lib/server/schemas";
+import { ReportingPeriodsResponseSchema, EvidenceResponseSchema, LogframeResponseSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
 import { NewActivityForm } from "@/features/activities/presentation/NewActivityForm";
 
@@ -11,12 +11,13 @@ export default async function NewActivityPage({ params }: { params: Promise<{ id
   const resolvedParams = await params;
   const ctx = await requireSession();
 
-  const [periodsResult, evidenceResult] = await Promise.all([
+  const [periodsResult, evidenceResult, logframeResult] = await Promise.all([
     gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token),
     gatewayRequest(`/v1/evidence/search`, EvidenceResponseSchema, ctx.token, {
       method: "POST",
       body: { projectId: resolvedParams.id, pageSize: 100 },
     }),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/logframe`, LogframeResponseSchema, ctx.token),
   ]);
 
   if (!periodsResult.ok) {
@@ -52,6 +53,7 @@ export default async function NewActivityPage({ params }: { params: Promise<{ id
         projectId={resolvedParams.id}
         reportingPeriods={periods.map((p) => ({ id: p.id, label: p.reportType }))}
         evidenceOptions={evidence.map((e) => ({ id: e.id, label: e.title }))}
+        logframeItems={logframeResult.ok ? logframeResult.value.items : []}
       />
     </div>
   );

@@ -20,7 +20,8 @@ export type ComplianceType =
   | "ACTIVITY_RECORD_ACCEPTED"
   | "CUMULATIVE_DATA_COMPLETE"
   | "PRIOR_REPORT_LINKED"
-  | "FINANCE_FIGURES_PROVIDED";
+  | "FINANCE_FIGURES_PROVIDED"
+  | "INDICATOR_SEMANTICS_UNREVIEWED";
 
 /**
  * Maps a checklist item to the most direct place to resolve it, based on its
@@ -63,6 +64,8 @@ export function complianceFixLink(input: {
     case "FINANCE_FIGURES_PROVIDED":
     case "AFFECTED_FIGURES_CONFIRMED":
       return { label: "Open report inputs", href: `/projects/${project}/reports/${period}/inputs` };
+    case "INDICATOR_SEMANTICS_UNREVIEWED":
+      return { label: "Confirm calculations", href: `/projects/${project}/logframe` };
     case "ACTIVITY_RECORD_ACCEPTED":
       return { label: "Review activities", href: `/projects/${project}/activities` };
     case "PRIOR_REPORT_LINKED":

@@ -26,6 +26,14 @@
       "types": "./dist/contexts/reporting/report-scope.d.ts",
       "import": "./dist/contexts/reporting/report-scope.js"
     },
+    "./contexts/logframe/participants-consistency.js": {
+      "types": "./dist/contexts/logframe/participants-consistency.d.ts",
+      "import": "./dist/contexts/logframe/participants-consistency.js"
+    },
+    "./contexts/projects/project-lifecycle.js": {
+      "types": "./dist/contexts/projects/project-lifecycle.d.ts",
+      "import": "./dist/contexts/projects/project-lifecycle.js"
+    },
     "./contexts/templates/template-diff.js": {
       "types": "./dist/contexts/templates/template-diff.d.ts",
       "import": "./dist/contexts/templates/template-diff.js"

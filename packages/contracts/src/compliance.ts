@@ -18,6 +18,7 @@ export const ChecklistItemTypeSchema = z.enum([
   "CUMULATIVE_DATA_COMPLETE",
   "PRIOR_REPORT_LINKED",
   "FINANCE_FIGURES_PROVIDED",
+  "INDICATOR_SEMANTICS_UNREVIEWED",
 ]);
 
 export const SeveritySchema = z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]);

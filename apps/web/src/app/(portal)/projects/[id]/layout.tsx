@@ -5,6 +5,7 @@ import { getProject } from "@/lib/server/project-queries";
 import { Breadcrumbs } from "@/components/data/Breadcrumbs";
 import { Tabs } from "@/components/data/Tabs";
 import { InlineError } from "@/components/feedback/PageState";
+import { ProjectLifecycleBanner } from "@/features/projects/presentation/ProjectLifecycleBanner";
 import { formatDate } from "@/lib/shared/dates";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +50,7 @@ export default async function ProjectLayout({ params, children }: { params: Prom
         </div>
         <span className="tag tag-blue">{project.status.replace(/_/g, " ")}</span>
       </div>
+      <ProjectLifecycleBanner projectId={project.id} status={project.status} canEdit={ctx.capabilities.has("project.edit")} />
       <div className="mt-4">
         <Tabs items={tabs} label="Project sections" />
       </div>

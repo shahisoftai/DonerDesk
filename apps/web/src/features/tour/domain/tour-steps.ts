@@ -1,3 +1,5 @@
+import { ruleForStep } from "./workflow-rules.ts";
+
 /**
  * DonorDesk Academy guided tour (Feature 22). Steps mirror the real reporting
  * workflow in the order a user naturally hits it (see
@@ -17,9 +19,11 @@ export type TourStep = {
   title: string;
   body: string;
   optional?: boolean;
+  /** A rule worth knowing at this step, from `workflow-rules.ts` (single source of the wording). */
+  rule?: { title: string; body: string };
 };
 
-export const TOUR_STEPS: readonly TourStep[] = [
+const BASE_STEPS: readonly TourStep[] = [
   {
     id: "dashboard-demo-project",
     route: "/projects/{projectId}",
@@ -39,6 +43,13 @@ export const TOUR_STEPS: readonly TourStep[] = [
       "with indicators, and a reporting profile.",
   },
   {
+    id: "logframe-indicators",
+    route: "/projects/{projectId}/logframe",
+    targetSelector: '[data-tour-id="logframe-indicator-list"]',
+    title: "Logframe and indicators",
+    body: "Define what success looks like: goals, outcomes, outputs, and the indicators that measure them.",
+  },
+  {
     id: "donor-template",
     route: "/projects/{projectId}/templates",
     targetSelector: '[data-tour-id="donor-template-review"]',
@@ -48,11 +59,11 @@ export const TOUR_STEPS: readonly TourStep[] = [
       "section here — this becomes the skeleton of every report you generate.",
   },
   {
-    id: "logframe-indicators",
-    route: "/projects/{projectId}/logframe",
-    targetSelector: '[data-tour-id="logframe-indicator-list"]',
-    title: "Logframe and indicators",
-    body: "Define what success looks like: goals, outcomes, outputs, and the indicators that measure them.",
+    id: "reporting-period",
+    route: "/projects/{projectId}/reports",
+    targetSelector: '[data-tour-id="reporting-period-list"]',
+    title: "Reporting periods",
+    body: "Once a project is ready, open a reporting period to start entering data and generating a report.",
   },
   {
     id: "evidence",
@@ -60,13 +71,6 @@ export const TOUR_STEPS: readonly TourStep[] = [
     targetSelector: '[data-tour-id="evidence-upload"]',
     title: "Evidence library",
     body: "Upload photos, receipts, and documents. DonorDesk tags and links them to your indicators automatically.",
-  },
-  {
-    id: "reporting-period",
-    route: "/projects/{projectId}/reports",
-    targetSelector: '[data-tour-id="reporting-period-list"]',
-    title: "Reporting periods",
-    body: "Once a project is ready, open a reporting period to start entering data and generating a report.",
   },
   {
     id: "ai-draft",
@@ -98,6 +102,16 @@ export const TOUR_STEPS: readonly TourStep[] = [
     body: "Export a watermarked internal copy any time, or a final donor-ready submission once the report is approved.",
   },
 ];
+
+/** Attaches each step's rule (if any) from the shared rules module. */
+function withRules(steps: readonly TourStep[]): readonly TourStep[] {
+  return steps.map((s) => {
+    const rule = ruleForStep(s.id);
+    return rule ? { ...s, rule: { title: rule.title, body: rule.body } } : s;
+  });
+}
+
+export const TOUR_STEPS: readonly TourStep[] = withRules(BASE_STEPS);
 
 export function tourStepIds(): string[] {
   return TOUR_STEPS.map((s) => s.id);

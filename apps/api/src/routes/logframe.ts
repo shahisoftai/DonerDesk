@@ -6,6 +6,8 @@ import {
   ImportIndicatorsTextSchema,
   CreateIndicatorSchema,
   UpdateIndicatorSemanticsSchema,
+  ConfirmIndicatorSemanticsSchema,
+  VerifyPeriodIndicatorUpdatesSchema,
   CreateIndicatorUpdateSchema,
   BulkUpsertIndicatorUpdatesSchema,
   ParseIndicatorSheetSchema,
@@ -86,6 +88,23 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const body = UpdateIndicatorSemanticsSchema.parse({ ...(req.body as object), indicatorId: id });
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.updateIndicatorSemantics.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/indicators/semantics/confirm", async (req) => {
+    const body = ConfirmIndicatorSemanticsSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.confirmIndicatorSemantics.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/reporting-periods/:id/indicator-updates/verify-all", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = VerifyPeriodIndicatorUpdatesSchema.parse({ ...((req.body as object | undefined) ?? {}), reportingPeriodId: id });
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.verifyPeriodIndicatorUpdates.handle(ctx, body);
     if (!r.ok) throw r.error;
     return r.value;
   });

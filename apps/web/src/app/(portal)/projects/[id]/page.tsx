@@ -7,6 +7,7 @@ import { ReadinessGauge } from "@/components/data/ReadinessGauge";
 import { ReadinessBreakdownList } from "@/features/projects/presentation/ReadinessBreakdownList";
 import { PeriodSwitcher } from "@/features/projects/presentation/PeriodSwitcher";
 import { projectStatusTone, severityTone } from "@/lib/shared/tone";
+import { readinessHeadline } from "@/features/projects/application/readiness-view";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import { DeleteDemoProjectButton } from "@/features/tour/presentation/DeleteDemoProjectButton";
 
@@ -82,7 +83,7 @@ export default async function ProjectDetail({
         <section className="mt-8 grid gap-6 lg:grid-cols-2">
           <div className="card">
             <h2 className="font-medium">Report readiness</h2>
-            <div className="mt-4"><ReadinessGauge value={readiness.overall} label={`${REPORT_TYPE_LABEL[periods.find((p) => p.id === activePeriodId)?.reportType ?? ""] ?? "Report"}`} /></div>
+            <div className="mt-4"><ReadinessGauge value={readiness.overall} label={`${REPORT_TYPE_LABEL[periods.find((p) => p.id === activePeriodId)?.reportType ?? ""] ?? "Report"} · ${readinessHeadline(readiness.overall, readiness.stage, (readiness.totalSections ?? 1) > 0)}`} /></div>
             {activePeriodId && <ReadinessBreakdownList readiness={readiness} projectId={project.id} periodId={activePeriodId} />}
             <Link className="mt-4 inline-block text-sm text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${project.id}/reports/${activePeriodId ?? ""}`}>
               Open report workspace →

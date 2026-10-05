@@ -5,7 +5,15 @@ import type { IIndicatorUpdateRepository, IIndicatorRepository } from "../../por
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { BulkUpsertIndicatorUpdatesInput } from "@donordesk/contracts";
+import type { IEvidenceLinker } from "../../ports/evidence-linker.js";
 import { upsertIndicatorUpdate } from "./upsert-indicator-update.js";
+
+export interface BulkUpsertOutcome {
+  saved: number;
+  skipped: number;
+  /** One entry per accepted row, so callers can verify without a second lookup. */
+  updates: Array<{ indicatorId: string; updateId: string; changed: boolean }>;
+}
 
 export class BulkUpsertIndicatorUpdatesHandler {
   constructor(
@@ -14,9 +22,10 @@ export class BulkUpsertIndicatorUpdatesHandler {
     private readonly indicators: IIndicatorRepository,
     private readonly periods: IReportingPeriodRepository,
     private readonly audit: IAuditLogger,
+    private readonly linker?: IEvidenceLinker,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, input: BulkUpsertIndicatorUpdatesInput): Promise<Result<{ saved: number; skipped: number }, DomainError>> {
+  async handle(ctx: AuthenticatedContext, input: BulkUpsertIndicatorUpdatesInput): Promise<Result<BulkUpsertOutcome, DomainError>> {
     const periodResult = await this.periods.findById(input.reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", input.reportingPeriodId) };
@@ -49,6 +58,7 @@ export class BulkUpsertIndicatorUpdatesHandler {
 
     let saved = 0;
     let skipped = 0;
+    const updates: BulkUpsertOutcome["updates"] = [];
     for (const row of rows) {
       const result = await upsertIndicatorUpdate(
         this.ids,
@@ -57,8 +67,10 @@ export class BulkUpsertIndicatorUpdatesHandler {
         ctx.tenant.userId,
         input.reportingPeriodId,
         row,
+        this.linker ? (u) => this.linker!.attachPendingFor(ctx, u) : undefined,
       );
       if (!result.ok) return result;
+      updates.push({ indicatorId: row.indicatorId, updateId: result.value.id, changed: result.value.changed });
       if (result.value.changed) saved += 1;
       else skipped += 1;
       await this.audit.record({
@@ -71,6 +83,6 @@ export class BulkUpsertIndicatorUpdatesHandler {
       });
     }
 
-    return { ok: true, value: { saved, skipped } };
+    return { ok: true, value: { saved, skipped, updates } };
   }
 }

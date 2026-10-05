@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateIndicatorSemanticsAction } from "@/lib/actions/logframe";
+import { SemanticsBadge, type SemanticsSummary } from "./SemanticsBadge";
+import { ConfirmSemanticsButton } from "./ConfirmSemanticsButton";
 
 type Semantics = {
   aggregation: string;
@@ -37,15 +39,18 @@ const DIRECTIONS = [
 export function IndicatorSemanticsCard({
   indicatorId,
   current,
+  description,
   candidates,
 }: {
   indicatorId: string;
   current: Semantics | null;
+  /** What the report currently does with this indicator (server-computed from the effective semantics). */
+  description?: (SemanticsSummary & { reasons: string[] }) | null;
   candidates: Array<{ id: string; label: string }>;
 }) {
   const router = useRouter();
   const [aggregation, setAggregation] = useState(current?.aggregation ?? "LATEST");
-  const [direction, setDirection] = useState(current?.direction ?? "HIGHER_IS_BETTER");
+  const [direction, setDirection] = useState(current?.direction ?? "NEUTRAL");
   const [basis, setBasis] = useState(current?.reportingBasis ?? "PERIOD");
   const [numerator, setNumerator] = useState(current?.numeratorIndicatorId ?? "");
   const [denominator, setDenominator] = useState(current?.denominatorIndicatorId ?? "");
@@ -82,9 +87,16 @@ export function IndicatorSemanticsCard({
       <h3 id="semantics-heading" className="font-medium">How this value is calculated</h3>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
         {current?.status === "CONFIGURED"
-          ? "Configured. Reports treat this indicator according to the settings below."
-          : "Not configured yet. Percentage and ratio indicators show as “Not calculable” in reports until this is set."}
+          ? "Confirmed. Reports treat this indicator according to the settings below."
+          : "Not confirmed yet. Reports use the suggestion below and only describe this indicator — they will not say whether it is on track."}
       </p>
+      {description && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm dark:border-white/10 dark:bg-white/5">
+          <SemanticsBadge description={description} />
+          <span className="min-w-0 flex-1 text-slate-700 dark:text-slate-200">{description.summary}</span>
+          {description.needsReview && <ConfirmSemanticsButton indicatorIds={[indicatorId]} label="Confirm as suggested" />}
+        </div>
+      )}
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="text-sm">
           <span className="font-medium">Calculation</span>

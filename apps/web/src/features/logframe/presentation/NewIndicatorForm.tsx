@@ -11,6 +11,9 @@ import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { INDICATOR_TYPE_OPTIONS, INDICATOR_TYPE_LABEL } from "@/lib/labels";
 import type { OutlineSource } from "@/features/logframe/domain/logframe-outline";
 import { LogframeItemSelect } from "./LogframeItemSelect";
+import { SemanticsBadge } from "./SemanticsBadge";
+import { ConfirmSemanticsButton } from "./ConfirmSemanticsButton";
+import Link from "next/link";
 
 /** Types whose value is usually calculated from two other indicators, so the calculation must be configured. */
 const CALCULATED_TYPES = new Set(["PERCENTAGE", "RATIO"]);
@@ -37,6 +40,7 @@ export function NewIndicatorForm({
   const [frequency, setFrequency] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [created, setCreated] = useState<{ id: string; summary: string; needsReview: boolean } | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,13 +63,33 @@ export function NewIndicatorForm({
         setError(result.error.message);
         return;
       }
-      router.push(
-        CALCULATED_TYPES.has(type)
-          ? `/projects/${projectId}/indicators/${encodeURIComponent(result.value.id)}#semantics-heading`
-          : `/projects/${projectId}/logframe`,
-      );
+      const description = result.value.semanticsDescription;
+      if (description) {
+        // Show how reports will treat it right away, with a one-click confirm, instead of leaving it to be found later.
+        setCreated({ id: result.value.id, summary: description.summary, needsReview: description.needsReview });
+        router.refresh();
+        return;
+      }
+      router.push(`/projects/${projectId}/logframe`);
       router.refresh();
     } finally { setBusy(false); }
+  }
+
+  if (created) {
+    return (
+      <section className="card mt-6 space-y-4" aria-live="polite">
+        <h2 className="font-semibold">Indicator saved</h2>
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <SemanticsBadge description={{ summary: created.summary, needsReview: created.needsReview }} />
+          <span>{created.summary}</span>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {created.needsReview && <ConfirmSemanticsButton indicatorIds={[created.id]} label="Confirm as suggested" size="md" />}
+          <Link className="btn-secondary" href={`/projects/${projectId}/indicators/${encodeURIComponent(created.id)}#semantics-heading`}>Change calculation</Link>
+          <Link className="btn-secondary" href={`/projects/${projectId}/logframe`}>Done</Link>
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -85,7 +109,7 @@ export function NewIndicatorForm({
       </div>
       {CALCULATED_TYPES.has(type) && (
         <InlineAlert tone="info" title="You'll set how this rate is calculated next">
-          After saving, choose whether it is reported directly (e.g. a survey result) or calculated from a numerator and denominator indicator. Until then reports show it as “Not calculable”.
+          After saving you can confirm that it is reported directly (e.g. a survey result), or choose a numerator and denominator indicator to calculate it from.
         </InlineAlert>
       )}
       <Field label="Indicator name" htmlFor="name">

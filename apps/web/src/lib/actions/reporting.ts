@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, SavePeriodFinanceSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, SavePeriodFinanceSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -450,6 +450,29 @@ export async function bulkResolveReportClaimsAction(input: {
   });
 }
 
+const ResolveSectionFlagsResponseSchema = z.object({
+  resolved: z.number(),
+  approved: z.boolean(),
+  remaining: z.array(z.object({ claimId: z.string(), flagClass: z.string(), text: z.string() })),
+});
+export type ResolveSectionFlagsResult = Result<z.infer<typeof ResolveSectionFlagsResponseSchema>, AppError>;
+
+/** Accepts a section's "could not confirm" statements with one explained decision, optionally approving the section. */
+export async function resolveSectionFlagsAction(input: { sectionId: string; note: string; approve?: boolean }): Promise<ResolveSectionFlagsResult> {
+  const context = await requireSession();
+  const parsed = ResolveSectionFlagsSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: { kind: "validation", message: "Explain your decision in at least 10 characters.", fields: flattenZodFields(parsed.error) },
+    };
+  }
+  return gatewayRequest(`/v1/report-sections/${encodeURIComponent(parsed.data.sectionId)}/resolve-flags`, ResolveSectionFlagsResponseSchema, context.token, {
+    method: "POST",
+    body: { note: parsed.data.note, approve: parsed.data.approve },
+  });
+}
+
 export type CancelReportGenerationResult = Result<{ cancelled: boolean }, AppError>;
 
 /**
@@ -598,4 +621,12 @@ export async function rewriteSelectionPreviewAction(
     // Same latency profile as a whole-section rewrite.
     timeoutMs: 180_000,
   });
+}
+
+export type StartClosingReportResult = Result<{ id: string }, AppError>;
+
+/** Starts the closing (final) report over the suggested closing dates. */
+export async function startClosingReportAction(projectId: string): Promise<StartClosingReportResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/closing-report/start`, IdResponseSchema, context.token, { method: "POST" });
 }

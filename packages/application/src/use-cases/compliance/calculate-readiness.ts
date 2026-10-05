@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, lintReportContradictions, toLintFindingData, calculateReadiness, READINESS_WEIGHTS, DATA_QUALITY_PENALTY, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
+import { DomainError, lintReportContradictions, toLintFindingData, calculateReadiness, readinessStageFor, rankReadinessBlockers, DATA_QUALITY_PENALTY, type ReadinessBlocker, type ReadinessWeights, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILintGrounding } from "../../services/lint-grounding.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
@@ -40,7 +40,7 @@ export class CalculateReadinessHandler {
   async handle(
     ctx: AuthenticatedContext,
     reportingPeriodId: string,
-  ): Promise<Result<ReadinessBreakdown & { reportingPeriodId: string; weights: typeof READINESS_WEIGHTS; dataQualityPenalty: number }, DomainError>> {
+  ): Promise<Result<ReadinessBreakdown & { reportingPeriodId: string; weights: ReadinessWeights; dataQualityPenalty: number; topBlockers: ReadinessBlocker[]; totalSections: number }, DomainError>> {
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     const period = periodResult.ok ? periodResult.value : null;
     const draftsResult = await this.drafts.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
@@ -54,12 +54,14 @@ export class CalculateReadinessHandler {
     let totalChecklistItems = 0;
     let resolvedOrAcceptedItems = 0;
     let approvalProgress = 0;
+    let cleanSections = 0;
 
     if (draft) {
       const s = await this.sections.findByReportDraft(draft.id, ctx.tenant.tenantId);
       if (s.ok) {
         totalSections = s.value.length;
         approvedSections = s.value.filter((sec) => sec.status === "APPROVED").length;
+        cleanSections = s.value.filter((sec) => sec.status === "APPROVED" || sec.unsupportedClaims.length === 0).length;
       }
       if (draft.status === "UNDER_REVIEW") {
         approvalProgress = 50;
@@ -157,9 +159,12 @@ export class CalculateReadinessHandler {
       }
     }
 
-    const breakdown = calculateReadiness({
+    const stage = readinessStageFor(draft?.status);
+    const input = {
       totalSections,
       approvedSections,
+      cleanSections,
+      stage,
       totalIndicators,
       verifiedIndicators,
       requiredEvidenceCount,
@@ -168,8 +173,24 @@ export class CalculateReadinessHandler {
       resolvedOrAcceptedItems,
       approvalProgress,
       dataQualityBlockers,
+    };
+    const breakdown = calculateReadiness(input);
+    const uncappedOverall = (dataQualityBlockers ?? 0) > 0 ? calculateReadiness({ ...input, dataQualityBlockers: undefined }).overall : breakdown.overall;
+
+    const openChecklist = cl.ok
+      ? cl.value.filter((i) => i.status === "OPEN" || i.status === "IN_PROGRESS")
+      : [];
+    const topBlockers = rankReadinessBlockers(breakdown, {
+      totalSections,
+      sectionsNeedingAttention: Math.max(0, totalSections - (stage === "DRAFTING" ? cleanSections : approvedSections)),
+      unverifiedIndicators: Math.max(0, totalIndicators - verifiedIndicators),
+      unconfirmedCalculations: openChecklist.filter((i) => i.type === "INDICATOR_SEMANTICS_UNREVIEWED").length,
+      openChecklistItems: openChecklist.length,
+      evidenceShortfall: Math.max(0, requiredEvidenceCount - attachedEvidenceCount),
+      openContradictions: dataQualityBlockers ?? 0,
+      uncappedOverall,
     });
 
-    return { ok: true, value: { ...breakdown, reportingPeriodId, weights: READINESS_WEIGHTS, dataQualityPenalty: DATA_QUALITY_PENALTY } };
+    return { ok: true, value: { ...breakdown, reportingPeriodId, dataQualityPenalty: DATA_QUALITY_PENALTY, topBlockers, totalSections } };
   }
 }

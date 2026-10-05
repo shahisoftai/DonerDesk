@@ -1,6 +1,6 @@
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { OrganizationSchema } from "@/lib/server/schemas";
+import { ActivitiesResponseSchema, LogframeResponseSchema, OrganizationSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
 import { EvidenceUploadQueue } from "@/features/evidence/presentation/EvidenceUploadQueue";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,12 @@ export const dynamic = "force-dynamic";
 export default async function NewEvidencePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const ctx = await requireSession();
-  const orgResult = await gatewayRequest("/v1/organization", OrganizationSchema, ctx.token);
+  const [orgResult, activitiesResult, logframeResult, periodsResult] = await Promise.all([
+    gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/activities`, ActivitiesResponseSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/logframe`, LogframeResponseSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token),
+  ]);
   const storageProvider = orgResult.ok ? orgResult.value.storageProvider : "LOCAL";
   const driveMode = storageProvider === "GOOGLE_DRIVE";
 
@@ -20,7 +25,13 @@ export default async function NewEvidencePage({ params }: { params: Promise<{ id
           ? "Add one or more files — each is saved into your project's Google Drive folder. You can also link a file that is already in your Drive."
           : "Add one or more files. Each file is uploaded separately; AI tagging runs after upload where enabled."}
       </p>
-      <EvidenceUploadQueue projectId={resolvedParams.id} storageProvider={storageProvider} />
+      <EvidenceUploadQueue
+        projectId={resolvedParams.id}
+        storageProvider={storageProvider}
+        activities={activitiesResult.ok ? activitiesResult.value.items.map((a) => ({ id: a.id, label: a.activityTitle })) : []}
+        indicators={logframeResult.ok ? logframeResult.value.indicators.map((i) => ({ id: i.id, label: `${i.code} — ${i.name}` })) : []}
+        periods={periodsResult.ok ? periodsResult.value.items.map((p) => ({ id: p.id, label: `${p.reportType.toLowerCase().replace(/_/g, " ")} · ${p.startDate.slice(0, 10)} → ${p.endDate.slice(0, 10)}` })) : []}
+      />
     </div>
   );
 }

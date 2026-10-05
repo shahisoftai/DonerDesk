@@ -92,6 +92,12 @@ function StepCard({ index, last, onBack, onNext }: { index: number; last: boolea
       <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400">Step {index + 1} of {TOUR_STEPS.length}</p>
       <h2 className="mt-1 text-lg font-semibold">{step.title}</h2>
       <p className="mt-2 text-sm text-slate-300">{step.body}</p>
+      {step.rule && (
+        <div className="mt-2 rounded-md bg-white/10 p-2 text-xs text-slate-200">
+          <p className="font-semibold">Good to know: {step.rule.title}</p>
+          <p className="mt-0.5">{step.rule.body}</p>
+        </div>
+      )}
       <div className="mt-4 flex items-center justify-between gap-3">
         <button type="button" disabled={index === 0} onClick={onBack} className="rounded-lg border border-white/15 px-3 py-1.5 text-sm disabled:opacity-40">Back</button>
         {last ? (

@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, disaggregationMustSum } from "@donordesk/domain";
+import { DomainError, disaggregationMustSum, indicatorParticipantHint } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -28,6 +28,8 @@ export interface PeriodIndicatorRow {
   logframeCode: string | null;
   logframeTitle: string | null;
   update: IndicatorUpdateView | null;
+  /** A non-blocking prompt when linked activities record a different head-count than the indicator reports. */
+  participantsHint?: string;
 }
 
 /** Activity/situation reports: the activities the report covers (absent for other types). */
@@ -70,6 +72,15 @@ export class ListPeriodIndicatorsHandler {
     const itemsById = new Map(itemsResult.value.map((item) => [item.id, item]));
     const updatesByIndicator = new Map(updatesResult.value.map((u) => [u.indicatorId, u]));
 
+    // Accepted activity records of this period, by the indicator they feed (people may attend several, so this is only a hint).
+    const periodActivities = this.activities ? await this.activities.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId) : null;
+    if (periodActivities && !periodActivities.ok) return periodActivities;
+    const totalsByIndicator = new Map<string, Array<number | undefined>>();
+    for (const a of periodActivities?.value ?? []) {
+      if (a.status !== "ACCEPTED" || !a.indicatorId) continue;
+      totalsByIndicator.set(a.indicatorId, [...(totalsByIndicator.get(a.indicatorId) ?? []), a.participantsTotal]);
+    }
+
     const rows: PeriodIndicatorRow[] = indicatorsResult.value.filter((ind) => inIndicatorScope(scope, ind.id)).map((ind) => {
       const item = ind.logframeItemId ? itemsById.get(ind.logframeItemId) : undefined;
       const update = updatesByIndicator.get(ind.id);
@@ -78,6 +89,11 @@ export class ListPeriodIndicatorsHandler {
         !Boolean(ind.semantics?.denominatorIndicatorId) &&
         // A configured directly-reported rate (not calculated from counts) needs no denominator.
         !(ind.semantics?.status === "CONFIGURED" && ind.semantics.aggregation !== "PERCENTAGE" && ind.semantics.aggregation !== "RATIO");
+      const hint = indicatorParticipantHint({
+        indicator: { name: ind.name, unit: ind.unit, type: ind.type },
+        reportedValue: update?.periodAchievement,
+        activityTotals: totalsByIndicator.get(ind.id) ?? [],
+      });
       return {
         id: ind.id,
         logframeItemId: ind.logframeItemId,
@@ -96,6 +112,7 @@ export class ListPeriodIndicatorsHandler {
         logframeCode: item?.code ?? null,
         logframeTitle: item?.title ?? null,
         update: update ? toIndicatorUpdateView(update) : null,
+        ...(hint ? { participantsHint: hint.message } : {}),
       };
     });
 

@@ -6,6 +6,8 @@ import type { IEvidenceStorageResolver } from "../../ports/infrastructure.js";
 import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { LinkEvidenceInput } from "@donordesk/contracts";
 
+import type { IEvidenceLinker } from "../../ports/evidence-linker.js";
+
 /**
  * Links an existing Google Drive file as evidence without copying bytes. The
  * file stays in the tenant's Drive; the resolver grants DonorDesk read access
@@ -18,6 +20,8 @@ export class LinkGoogleDriveEvidenceHandler {
     private readonly storageResolver: IEvidenceStorageResolver,
     private readonly events: IEventBus,
     private readonly audit: IAuditLogger,
+    /** Absent in legacy wiring: the file is then only tagged. */
+    private readonly linker?: IEvidenceLinker,
   ) {}
 
   async handle(ctx: AuthenticatedContext, cmd: LinkEvidenceInput): Promise<Result<{ id: string; fileUrl: string }, DomainError>> {
@@ -65,6 +69,10 @@ export class LinkGoogleDriveEvidenceHandler {
 
     const saved = await this.repo.create(ev);
     if (!saved.ok) return saved;
+    if (this.linker && (ev.activityId || ev.indicatorId)) {
+      const linked = await this.linker.linkOnUpload(ctx, ev);
+      if (!linked.ok) return linked;
+    }
 
     await this.audit.record({
       tenantId: ctx.tenant.tenantId,

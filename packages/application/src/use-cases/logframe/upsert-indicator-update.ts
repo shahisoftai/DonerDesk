@@ -23,6 +23,8 @@ export async function upsertIndicatorUpdate(
   userId: string,
   reportingPeriodId: string,
   input: UpsertIndicatorUpdateInput,
+  /** Runs once, right after a value is first created (e.g. to attach evidence already tagged to it). */
+  afterCreate?: (update: IndicatorUpdate) => Promise<Result<unknown, DomainError>>,
 ): Promise<Result<UpsertOutcome, DomainError>> {
   const existingResult = await repo.findByIndicatorAndPeriod(input.indicatorId, reportingPeriodId, tenantId);
   if (!existingResult.ok) return existingResult;
@@ -59,5 +61,9 @@ export async function upsertIndicatorUpdate(
   });
   const saved = await repo.create(update);
   if (!saved.ok) return saved;
+  if (afterCreate) {
+    const after = await afterCreate(update);
+    if (!after.ok) return after;
+  }
   return { ok: true, value: { id, created: true, changed: true } };
 }

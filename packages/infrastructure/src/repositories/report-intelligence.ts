@@ -210,6 +210,21 @@ export class PrismaReportClaimRepository implements IReportClaimRepository {
     return ok(rows.map((r) => this.toDomain(r)));
   }
 
+  async findCitingEvidence(projectId: string, evidenceIds: string[], tenantId: { toString(): string }): Promise<Result<ReportClaim[], DomainError>> {
+    if (evidenceIds.length === 0) return ok([]);
+    // Sources are stored as JSON text; a quoted-key match avoids hits on other fields.
+    const rows = await this.prisma.reportClaim.findMany({
+      where: {
+        tenantId: tenantId.toString(),
+        projectId,
+        OR: evidenceIds.map((id) => ({ sourcesJson: { contains: `"evidenceId":${JSON.stringify(id)}` } })),
+      },
+      orderBy: { createdAt: "desc" },
+      take: 500,
+    });
+    return ok(rows.map((r) => this.toDomain(r)));
+  }
+
   async deleteBySection(sectionId: string, tenantId: { toString(): string }): Promise<Result<void, DomainError>> {
     await this.prisma.reportClaim.deleteMany({ where: { sectionId, tenantId: tenantId.toString() } });
     return ok(undefined);

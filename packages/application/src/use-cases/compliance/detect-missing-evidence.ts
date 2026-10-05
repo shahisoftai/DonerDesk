@@ -13,10 +13,10 @@ import { resolvePeriodActivities, periodIndicatorScope, inIndicatorScope } from 
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
-import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
+import type { IIndicatorUpdateRepository, IIndicatorRepository } from "../../ports/logframe.js";
 import type { IIndicatorAnalyticsService } from "../../ports/reporting.js";
 import type { IFinanceInputs } from "../../services/finance-inputs.js";
-import { activityEvidenceItems, activityRecordAcceptedItems, cumulativeDataItems, financeItems, priorReportItem, type ChecklistSuggestion, type PriorPeriodStatus } from "../../services/report-type-checklist.js";
+import { semanticsReviewItems, confirmedSemanticsIndicatorIds, activityEvidenceItems, activityRecordAcceptedItems, cumulativeDataItems, financeItems, priorReportItem, type ChecklistSuggestion, type PriorPeriodStatus } from "../../services/report-type-checklist.js";
 
 export class DetectMissingEvidenceHandler {
   constructor(
@@ -34,6 +34,8 @@ export class DetectMissingEvidenceHandler {
     private readonly analytics: IIndicatorAnalyticsService,
     /** Absent when the deployment has no finance support: no finance items are raised. */
     private readonly finance?: IFinanceInputs,
+    /** Absent in legacy wiring: no "confirm this calculation" items are raised. */
+    private readonly indicators?: IIndicatorRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<{ created: number }, DomainError>> {
@@ -159,6 +161,20 @@ export class DetectMissingEvidenceHandler {
       }
     }
 
+    // Likewise a "confirm this calculation" item stops being true once the indicator's calculation is confirmed.
+    if (this.indicators) {
+      const all = await this.indicators.findByProject(period.projectId, ctx.tenant.tenantId);
+      if (all.ok) {
+        const confirmed = confirmedSemanticsIndicatorIds(all.value);
+        for (const item of existingResult.value) {
+          if (item.type !== "INDICATOR_SEMANTICS_UNREVIEWED" || (item.status !== "OPEN" && item.status !== "IN_PROGRESS")) continue;
+          if (!item.relatedEntityId || !confirmed.has(item.relatedEntityId)) continue;
+          item.resolve("Closed automatically: the indicator's calculation is now confirmed.");
+          await this.checklist.update(item);
+        }
+      }
+    }
+
     await this.audit.record({
       tenantId: ctx.tenant.tenantId,
       actorId: ctx.tenant.userId,
@@ -192,6 +208,13 @@ export class DetectMissingEvidenceHandler {
     if (!prior.ok) return prior;
     const priorItem = priorReportItem(period, prior.value);
     if (priorItem) items.push(priorItem);
+    if (this.indicators) {
+      const all = await this.indicators.findByProject(period.projectId, ctx.tenant.tenantId);
+      if (!all.ok) return all;
+      const scope = await periodIndicatorScope(this.activities, period, ctx.tenant.tenantId);
+      if (!scope.ok) return scope;
+      items.push(...semanticsReviewItems(all.value.filter((i) => inIndicatorScope(scope.value, i.id))));
+    }
     return { ok: true, value: items };
   }
 

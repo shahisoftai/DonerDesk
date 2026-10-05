@@ -54,10 +54,20 @@ export interface SetupBlocker {
   retryable?: boolean;
 }
 
+/** Something worth knowing before reporting that does not stop a project from being ready. */
+export interface SetupWarning {
+  code: "INDICATOR_SEMANTICS_UNREVIEWED";
+  label: string;
+  href?: string;
+  count: number;
+}
+
 export interface ProjectReadiness {
   ready: boolean;
   status: ProjectSetupStatus;
   blockers: SetupBlocker[];
+  /** Non-blocking: never affects `ready`, so existing projects stay reportable. */
+  warnings?: SetupWarning[];
   nextAction?: SetupBlocker;
 }
 

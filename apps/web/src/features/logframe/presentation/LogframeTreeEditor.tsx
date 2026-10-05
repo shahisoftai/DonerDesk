@@ -32,6 +32,7 @@ export interface LogframeTreeItem {
   level: string;
   code?: string;
   title: string;
+  delivery?: { recordedCount: number; acceptedCount: number; lastActivityDate: string | null; participantsTotal: number };
 }
 
 const END_OF_SIBLINGS = 10_000;
@@ -169,6 +170,13 @@ function Node({ node, depth, projectId, indicatorCounts, editable, busy, renderM
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs">
           {count > 0 && <span className="text-slate-500 dark:text-slate-400">{count} indicator{count === 1 ? "" : "s"}</span>}
+          {node.delivery && (
+            <span className={node.delivery.recordedCount === 0 ? "text-warning-700 dark:text-warning-400" : "text-slate-500 dark:text-slate-400"}>
+              {node.delivery.recordedCount === 0
+                ? "Not delivered yet"
+                : `${node.delivery.recordedCount} recorded · ${node.delivery.acceptedCount} accepted${node.delivery.participantsTotal > 0 ? ` · ${node.delivery.participantsTotal} participants` : ""}`}
+            </span>
+          )}
           {editable && renderMoveTo(item)}
           {node.level !== "ACTIVITY" && (
             <Link className="text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${projectId}/logframe/new?parentId=${encodeURIComponent(node.id)}`}>

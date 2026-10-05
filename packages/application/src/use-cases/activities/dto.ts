@@ -8,6 +8,7 @@ export interface ActivityUpdateDto {
   activityDate: string;
   location?: string;
   outputId?: string;
+  logframeActivityId?: string;
   indicatorId?: string;
   participantsTotal?: number;
   participantsMale?: number;
@@ -36,6 +37,7 @@ export function toActivityUpdateDto(a: ActivityUpdate): ActivityUpdateDto {
     activityDate: a.activityDate.toISOString(),
     location: a.location,
     outputId: a.outputId,
+    logframeActivityId: a.logframeActivityId,
     indicatorId: a.indicatorId,
     participantsTotal: a.participantsTotal,
     participantsMale: a.participantsMale,

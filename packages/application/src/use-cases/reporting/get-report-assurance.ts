@@ -1,4 +1,5 @@
 import type { Result } from "@donordesk/domain";
+import { flagClassOf } from "../../services/flag-class.js";
 import { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
@@ -74,6 +75,7 @@ export class GetReportAssuranceHandler {
           verificationReasonCode: c.verificationReasonCode,
           verificationDetail: c.verificationDetail,
           materiality: c.materiality,
+          flagClass: flagClassOf(c),
           resolvedById: c.resolvedById,
           resolutionNotes: c.resolutionNotes,
         })),

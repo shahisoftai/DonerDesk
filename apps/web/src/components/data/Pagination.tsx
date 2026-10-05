@@ -19,7 +19,7 @@ export function Pagination({
   return (
     <nav aria-label="Pagination" className="flex items-center justify-between gap-3 text-sm">
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Page {page} of {totalPages}
+        {total > 0 ? `${(page - 1) * pageSize + 1}–${Math.min(total, page * pageSize)} of ${total}` : "No results"} · Page {page} of {totalPages}
       </p>
       <div className="flex gap-2">
         {prevHref ? (

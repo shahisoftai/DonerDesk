@@ -303,6 +303,10 @@ export const LogframeItemSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   sortOrder: z.number().int().optional(),
+  /** ACTIVITY nodes only: what recorded activities have delivered against this node. */
+  delivery: z
+    .object({ recordedCount: z.number(), acceptedCount: z.number(), lastActivityDate: z.string().nullable(), participantsTotal: z.number() })
+    .optional(),
 });
 
 export const IndicatorItemSchema = z.object({
@@ -328,6 +332,10 @@ export const IndicatorItemSchema = z.object({
       status: z.string(),
     })
     .nullish(),
+  /** How the report treats this indicator, in plain language (server-computed from the effective semantics). */
+  semanticsDescription: z
+    .object({ aggregationLabel: z.string(), evaluationLabel: z.string(), summary: z.string(), needsReview: z.boolean(), reasons: z.array(z.string()) })
+    .optional(),
 });
 
 export const IndicatorUpdateItemSchema = z.object({
@@ -372,6 +380,7 @@ export const PeriodIndicatorRowSchema = z.object({
   disaggregationRequired: z.boolean(),
   breakdownMustSum: z.boolean().optional(),
   requiresDenominator: z.boolean(),
+  participantsHint: z.string().optional(),
   logframeLevel: z.string().nullable(),
   logframeCode: z.string().nullable(),
   logframeTitle: z.string().nullable(),
@@ -421,6 +430,31 @@ export const ParseIndicatorSheetResponseSchema = z.object({
 export const BulkUpsertResponseSchema = z.object({
   saved: z.number(),
   skipped: z.number(),
+  /** One entry per accepted row, so a caller can verify without a second lookup. */
+  updates: z.array(z.object({ indicatorId: z.string(), updateId: z.string(), changed: z.boolean() })).default([]),
+});
+
+export const SemanticsDescriptionSchema = z.object({
+  aggregationLabel: z.string(),
+  evaluationLabel: z.string(),
+  summary: z.string(),
+  needsReview: z.boolean(),
+  reasons: z.array(z.string()),
+});
+
+export const CreateIndicatorResponseSchema = z.object({
+  id: z.string(),
+  semanticsDescription: SemanticsDescriptionSchema.optional(),
+});
+
+export const ConfirmSemanticsResponseSchema = z.object({
+  confirmed: z.array(z.string()),
+  failed: z.array(z.object({ indicatorId: z.string(), code: z.string().optional(), message: z.string() })),
+});
+
+export const VerifyAllResponseSchema = z.object({
+  verified: z.number(),
+  failed: z.array(z.object({ updateId: z.string(), indicatorCode: z.string(), message: z.string() })),
 });
 
 export const ActivityItemSchema = z.object({
@@ -429,6 +463,7 @@ export const ActivityItemSchema = z.object({
   activityDate: z.string(),
   location: z.string().optional(),
   participantsTotal: z.number().optional(),
+  logframeActivityId: z.string().optional(),
   status: z.string(),
   attachedEvidenceIds: z.array(z.string()).optional(),
 });
@@ -469,6 +504,7 @@ export const EvidenceItemSchema = z.object({
   reportingPeriodId: z.string().nullable().optional(),
   activityId: z.string().nullable().optional(),
   indicatorId: z.string().nullable().optional(),
+  indicatorUpdateId: z.string().nullable().optional(),
   fileName: z.string(),
   title: z.string(),
   evidenceType: z.string(),
@@ -619,6 +655,8 @@ export const ReportClaimSchema = z.object({
   verificationReasonCode: z.string().nullable().optional(),
   /** MATERIAL claims gate approval; NOT_MATERIAL ones never do. */
   materiality: z.string().nullable().optional(),
+  /** "Your report is wrong" (REPORT_ERROR) vs "our checker could not confirm" (UNCONFIRMED); presentation only. */
+  flagClass: z.enum(["REPORT_ERROR", "NEEDS_DECISION", "UNCONFIRMED"]).optional(),
   /** Span of the statement in the section markdown when it was checked. */
   charStart: z.number().int().nonnegative().nullable().optional(),
   charEnd: z.number().int().nonnegative().nullable().optional(),
@@ -690,6 +728,11 @@ export const ReadinessSchema = z.object({
   qualityScore: z.number().optional(),
   dataQualityBlockers: z.number().optional(),
   dataQualityPenalty: z.number().optional(),
+  stage: z.enum(["DRAFTING", "IN_REVIEW", "SUBMISSION"]).optional(),
+  totalSections: z.number().optional(),
+  topBlockers: z
+    .array(z.object({ key: z.string(), label: z.string(), detail: z.string(), points: z.number(), action: z.object({ kind: z.string(), label: z.string() }) }))
+    .optional(),
   weights: z
     .object({ sections: z.number(), indicators: z.number(), evidence: z.number(), checklist: z.number(), approval: z.number() })
     .optional(),
@@ -792,6 +835,7 @@ export const ProjectReadinessSchema = z.object({
   ready: z.boolean(),
   status: z.enum(["NOT_STARTED", "IN_PROGRESS", "READY", "ACTION_REQUIRED"]),
   blockers: z.array(SetupBlockerSchema),
+  warnings: z.array(z.object({ code: z.string(), label: z.string(), href: z.string().optional(), count: z.number() })).optional(),
   nextAction: SetupBlockerSchema.optional(),
 });
 
@@ -967,3 +1011,54 @@ export type ReportingProfile = z.infer<typeof ReportingProfileSchema>;
 export const ReportingProfileResponseSchema = z.object({
   profile: ReportingProfileSchema.nullable(),
 });
+
+/** Files that support an activity or indicator, and the report statements citing each. */
+export const EvidenceSupportResponseSchema = z.object({
+  files: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      fileName: z.string(),
+      verificationStatus: z.string(),
+      attached: z.boolean(),
+      citedBy: z.array(z.object({ claimId: z.string(), sectionId: z.string(), sectionTitle: z.string(), text: z.string() })),
+    }),
+  ),
+});
+export type EvidenceSupport = z.infer<typeof EvidenceSupportResponseSchema>;
+
+/** The "what you can create" catalog for a project's reporting periods. */
+export const PeriodOptionsResponseSchema = z.object({
+  projectStatus: z.string(),
+  types: z.array(
+    z.object({
+      type: z.string(),
+      label: z.string(),
+      what: z.string(),
+      available: z.boolean(),
+      why: z.string().optional(),
+      nextAction: z.string().optional(),
+      financeAvailable: z.boolean(),
+      suggestedDates: z.object({ startDate: z.string(), endDate: z.string() }).optional(),
+    }),
+  ),
+});
+
+/** The guided path to a project's closing report. */
+export const ClosingPlanSchema = z.object({
+  canStart: z.boolean(),
+  blockedReason: z.string().optional(),
+  existingFinalId: z.string().optional(),
+  suggestedPeriod: z.object({ startDate: z.string(), endDate: z.string() }).optional(),
+  todoCount: z.number(),
+  steps: z.array(
+    z.object({
+      key: z.string(),
+      label: z.string(),
+      status: z.string(),
+      detail: z.string(),
+      action: z.object({ kind: z.string(), label: z.string() }).optional(),
+    }),
+  ),
+});
+export type ClosingPlan = z.infer<typeof ClosingPlanSchema>;

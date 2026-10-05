@@ -802,6 +802,8 @@ export interface IReportClaimRepository {
   findById(id: string, tenantId: TenantId): Promise<Result<ReportClaim | null>>;
   findByDraft(draftId: string, tenantId: TenantId): Promise<Result<ReportClaim[]>>;
   findBySection(sectionId: string, tenantId: TenantId): Promise<Result<ReportClaim[]>>;
+  /** Claims of a project whose sources cite any of the evidence files (newest first, capped). */
+  findCitingEvidence(projectId: string, evidenceIds: string[], tenantId: TenantId): Promise<Result<ReportClaim[]>>;
   /** Removes all claims bound to a section (used when a new revision supersedes them). */
   deleteBySection(sectionId: string, tenantId: TenantId): Promise<Result<void>>;
 }

@@ -26,6 +26,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
         activityDate: a.activityDate,
         location: a.location,
         outputId: a.outputId,
+        logframeActivityId: a.logframeActivityId,
         indicatorId: a.indicatorId,
         participantsTotal: a.participantsTotal,
         participantsMale: a.participantsMale,
@@ -55,6 +56,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
         activityDate: a.activityDate,
         location: a.location,
         outputId: a.outputId,
+        logframeActivityId: a.logframeActivityId,
         indicatorId: a.indicatorId,
         participantsTotal: a.participantsTotal,
         participantsMale: a.participantsMale,
@@ -100,6 +102,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
     activityDate: Date;
     location: string | null;
     outputId: string | null;
+    logframeActivityId: string | null;
     indicatorId: string | null;
     participantsTotal: number | null;
     participantsMale: number | null;
@@ -129,6 +132,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
         activityDate: row.activityDate,
         location: row.location ?? undefined,
         outputId: row.outputId ?? undefined,
+        logframeActivityId: row.logframeActivityId ?? undefined,
         indicatorId: row.indicatorId ?? undefined,
         participantsTotal: row.participantsTotal ?? undefined,
         participantsMale: row.participantsMale ?? undefined,

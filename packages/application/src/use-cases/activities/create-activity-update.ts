@@ -3,12 +3,17 @@ import { DomainError, ActivityUpdate } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
+import type { ActivityLinkResolver } from "../../services/activity-link-resolver.js";
 import type { CreateActivityUpdateInput } from "@donordesk/contracts";
 
 export class CreateActivityUpdateHandler {
-  constructor(private readonly ids: IIdGenerator, private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger) {}
+  constructor(private readonly ids: IIdGenerator, private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger, private readonly links?: ActivityLinkResolver) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateActivityUpdateInput): Promise<Result<{ id: string }, DomainError>> {
+    const link = this.links
+      ? await this.links.resolve(ctx, input.projectId, { logframeActivityId: input.logframeActivityId, outputId: input.outputId })
+      : ({ ok: true, value: { outputId: input.outputId, logframeActivityId: input.logframeActivityId } } as const);
+    if (!link.ok) return link;
     const id = this.ids.generate();
     const a = ActivityUpdate.create({
       id,
@@ -18,7 +23,8 @@ export class CreateActivityUpdateHandler {
       activityTitle: input.activityTitle,
       activityDate: new Date(input.activityDate),
       location: input.location,
-      outputId: input.outputId,
+      outputId: link.value.outputId,
+      logframeActivityId: link.value.logframeActivityId,
       indicatorId: input.indicatorId,
       participantsTotal: input.participantsTotal,
       participantsMale: input.participantsMale,

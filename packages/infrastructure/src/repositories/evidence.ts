@@ -38,6 +38,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         evidenceType: e.evidenceType,
         activityId: e.activityId,
         indicatorId: e.indicatorId,
+        indicatorUpdateId: e.indicatorUpdateId,
         location: e.location,
         activityDate: e.activityDate,
         uploadedById: e.uploadedById,
@@ -62,6 +63,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         reportingPeriodId: e.reportingPeriodId,
         activityId: e.activityId,
         indicatorId: e.indicatorId,
+        indicatorUpdateId: e.indicatorUpdateId,
         location: e.location,
         activityDate: e.activityDate,
         verificationStatus: e.verificationStatus,
@@ -89,6 +91,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
     if (filter.reportingPeriodId) where.reportingPeriodId = filter.reportingPeriodId;
     if (filter.activityId) where.activityId = filter.activityId;
     if (filter.indicatorId) where.indicatorId = filter.indicatorId;
+    if (filter.indicatorUpdateId) where.indicatorUpdateId = filter.indicatorUpdateId;
     if (filter.evidenceType) where.evidenceType = filter.evidenceType;
     if (filter.location) where.location = { contains: filter.location };
     if (filter.uploadedById) where.uploadedById = filter.uploadedById;
@@ -157,6 +160,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
     evidenceType: string;
     activityId: string | null;
     indicatorId: string | null;
+    indicatorUpdateId: string | null;
     location: string | null;
     activityDate: Date | null;
     uploadedById: string;
@@ -188,6 +192,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         reportingPeriodId: row.reportingPeriodId ?? undefined,
         activityId: row.activityId ?? undefined,
         indicatorId: row.indicatorId ?? undefined,
+        indicatorUpdateId: row.indicatorUpdateId ?? undefined,
         location: row.location ?? undefined,
         activityDate: row.activityDate ?? undefined,
         uploadedById: row.uploadedById,

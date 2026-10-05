@@ -59,6 +59,15 @@ import {
   ImportIndicatorsHandler,
   CreateIndicatorHandler,
   UpdateIndicatorSemanticsHandler,
+  EvidenceLinkService,
+  ActivityLinkResolver,
+  GetPeriodOptionsHandler,
+  PlanClosingReportHandler,
+  StartClosingReportHandler,
+  GetEvidenceSupportHandler,
+  ResolveSectionFlagsHandler,
+  ConfirmIndicatorSemanticsHandler,
+  VerifyPeriodIndicatorUpdatesHandler,
   CreateIndicatorUpdateHandler,
   BulkUpsertIndicatorUpdatesHandler,
   ListPeriodIndicatorsHandler,
@@ -465,6 +474,8 @@ export interface Container {
     importIndicators: ImportIndicatorsHandler;
     createIndicator: CreateIndicatorHandler;
     updateIndicatorSemantics: UpdateIndicatorSemanticsHandler;
+    confirmIndicatorSemantics: ConfirmIndicatorSemanticsHandler;
+    verifyPeriodIndicatorUpdates: VerifyPeriodIndicatorUpdatesHandler;
     createIndicatorUpdate: CreateIndicatorUpdateHandler;
     bulkUpsertIndicatorUpdates: BulkUpsertIndicatorUpdatesHandler;
     listPeriodIndicators: ListPeriodIndicatorsHandler;
@@ -492,6 +503,10 @@ export interface Container {
     getActivity: GetActivityHandler;
     updateActivity: UpdateActivityHandler;
     attachEvidence: AttachEvidenceHandler;
+    getPeriodOptions: GetPeriodOptionsHandler;
+    planClosingReport: PlanClosingReportHandler;
+    startClosingReport: StartClosingReportHandler;
+    getEvidenceSupport: GetEvidenceSupportHandler;
     suggestEvidenceLinks: SuggestEvidenceLinksHandler;
     detachEvidence: DetachEvidenceHandler;
     createReportingPeriod: CreateReportingPeriodHandler;
@@ -524,6 +539,7 @@ export interface Container {
     rejectReport: RejectReportHandler;
     resolveReportClaim: ResolveReportClaimHandler;
     bulkResolveReportClaims: BulkResolveReportClaimHandler;
+    resolveSectionFlags: ResolveSectionFlagsHandler;
     reassessReportRevision: ReassessReportRevisionHandler;
     regenerateReportSection: RegenerateReportSectionHandler;
     reopenReportClaim: ReopenReportClaimHandler;
@@ -1002,6 +1018,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const donorTemplateRenderer = new HttpDonorTemplateWorkerClient();
   const exportBuilder = new DefaultExportBuilder(storage, donorTemplateRenderer);
 
+  const activityLinks = new ActivityLinkResolver(logframe);
+  const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits);
   const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates);
   const periodFinancials = new PrismaPeriodFinancialRepository(prisma);
   const financeInputs = new FinanceInputsService(reportingProfiles, periodFinancials);
@@ -1046,7 +1064,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const requirementResolver = new DeterministicRequirementResolver(ids, periods, requirementPacks, awardOverrides, reportPlans, resolvedRequirements);
 
   const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics, lintGrounding);
-  const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits, indicatorAnalytics, financeInputs);
+  const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits, indicatorAnalytics, financeInputs, indicators);
 
   if (jobRegistrar?.register) {
     jobRegistrar.register(
@@ -1078,6 +1096,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const approveTemplateMappingHandler = new ApproveTemplateMappingHandler(donorTemplateMappings, donorTemplateRenderer, storage, audits);
   const lockTemplateMappingHandler = new LockTemplateMappingHandler(periods, donorTemplateMappings, audits);
   const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding);
+  const closingPlanHandler = new PlanClosingReportHandler(projects, periods, drafts, indicators, indicatorUpdates, activities, reportingProfiles, templates, financeInputs);
   const createReportingPeriodHandler = new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events, activities);
   const ensureAutoPeriodHandler = new EnsureAutoPeriodHandler(projects, reportingProfiles, periods, createReportingPeriodHandler);
 
@@ -1107,7 +1126,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       async (tenantId, refreshToken) => googleDriveCredentials.save(tenantId, refreshToken),
       audits,
     ),
-    linkGoogleDriveEvidence: new LinkGoogleDriveEvidenceHandler(ids, evidence, evidenceStorage, events, audits),
+    linkGoogleDriveEvidence: new LinkGoogleDriveEvidenceHandler(ids, evidence, evidenceStorage, events, audits, evidenceLinker),
     listUsers: new ListUsersHandler(users),
     createProject: new CreateProjectHandler(ids, projects, projectSetup, reportingProfiles, organizations, projectWorkspace, events, audits, entitlements),
     createDemoProject: new CreateDemoProjectHandler(ids, projects, projectSetup, reportingProfiles, logframe, indicators, templates, audits),
@@ -1157,18 +1176,20 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     importIndicators: new ImportIndicatorsHandler(ids, logframe, indicators, audits),
     createIndicator: new CreateIndicatorHandler(ids, indicators, audits),
     updateIndicatorSemantics: new UpdateIndicatorSemanticsHandler(indicators, audits),
-    createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits),
-    bulkUpsertIndicatorUpdates: new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits),
+    confirmIndicatorSemantics: new ConfirmIndicatorSemanticsHandler(indicators, audits),
+    verifyPeriodIndicatorUpdates: new VerifyPeriodIndicatorUpdatesHandler(indicatorUpdates, indicators, periods, activities, audits),
+    createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits, evidenceLinker),
+    bulkUpsertIndicatorUpdates: new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker),
     listPeriodIndicators: new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates, activities),
     parseIndicatorSheet: new ParseIndicatorSheetHandler(periods, indicators, sheetReader),
     verifyIndicatorUpdate: new VerifyIndicatorUpdateHandler(indicatorUpdates, audits),
     requestIndicatorUpdateCorrection: new RequestIndicatorUpdateCorrectionHandler(indicatorUpdates, audits),
     rejectIndicatorUpdate: new RejectIndicatorUpdateHandler(indicatorUpdates, audits),
     listIndicatorUpdates: new ListIndicatorUpdatesHandler(indicators, indicatorUpdates, periods),
-    listLogframe: new ListLogframeHandler(logframe, indicators),
+    listLogframe: new ListLogframeHandler(logframe, indicators, activities),
     listIndicators: new ListIndicatorsHandler(indicators),
-    uploadEvidence: new UploadEvidenceHandler(ids, evidence, evidenceStorage, events, audits, usageCounters, entitlements),
-    importEvidence: new ImportEvidenceHandler(ids, evidence, activities, indicators, audits),
+    uploadEvidence: new UploadEvidenceHandler(ids, evidence, evidenceStorage, events, audits, usageCounters, entitlements, evidenceLinker),
+    importEvidence: new ImportEvidenceHandler(ids, evidence, activities, indicators, audits, evidenceLinker),
     suggestEvidenceTags: new SuggestEvidenceTagsHandler(evidence, evidenceTagger),
     acceptEvidenceTags: new AcceptEvidenceTagsHandler(evidence, audits),
     setEvidencePeriod: new SetEvidencePeriodHandler(evidence, periods, audits),
@@ -1176,17 +1197,21 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     verifyEvidence: new VerifyEvidenceHandler(evidence, audits),
     searchEvidence: new SearchEvidenceHandler(evidence),
     getEvidence: new GetEvidenceHandler(evidence),
-    createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits),
+    createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks),
     importActivities: new ImportActivitiesHandler(ids, activities, logframe, indicators, audits),
     polishActivity: new PolishActivityHandler(activities, activityPolisher),
     reviewActivity: new ReviewActivityHandler(activities, audits),
     listActivities: new ListActivitiesHandler(activities),
     getActivity: new GetActivityHandler(activities),
-    updateActivity: new UpdateActivityHandler(activities, evidence, audits),
-    attachEvidence: new AttachEvidenceHandler(evidence, activities, indicatorUpdates, audits),
+    updateActivity: new UpdateActivityHandler(activities, evidence, audits, activityLinks),
+    attachEvidence: new AttachEvidenceHandler(evidenceLinker),
+    getPeriodOptions: new GetPeriodOptionsHandler(projects, periods, activities),
+    getEvidenceSupport: new GetEvidenceSupportHandler(evidence, activities, indicators, indicatorUpdates, reportClaims, sections),
     suggestEvidenceLinks: new SuggestEvidenceLinksHandler(evidence, activities, indicators, indicatorUpdates),
-    detachEvidence: new DetachEvidenceHandler(evidence, activities, indicatorUpdates, audits),
+    detachEvidence: new DetachEvidenceHandler(evidenceLinker),
     createReportingPeriod: createReportingPeriodHandler,
+    planClosingReport: closingPlanHandler,
+    startClosingReport: new StartClosingReportHandler(closingPlanHandler, createReportingPeriodHandler, reportingProfiles, detectMissingEvidenceHandler),
     ensureAutoPeriod: ensureAutoPeriodHandler,
     updateReportingPeriodStory: new UpdateReportingPeriodStoryHandler(periods, audits),
     updateReportingPeriodScope: new UpdateReportingPeriodScopeHandler(periods, drafts, sections, reportRevisions, activities, audits),
@@ -1229,6 +1254,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     approveReport: approveReportHandler,
     rejectReport: new RejectReportHandler(drafts, audits),
     resolveReportClaim: new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService),
+    resolveSectionFlags: new ResolveSectionFlagsHandler(sections, reportClaims, new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService), new ApproveReportSectionHandler(sections, reportClaims, reportRevisions, audits), audits),
     bulkResolveReportClaims: new BulkResolveReportClaimHandler(new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService)),
     reassessReportRevision: new ReassessReportRevisionHandler(sections, reportRevisions, assuranceService, audits),
     regenerateReportSection: new RegenerateReportSectionHandler(

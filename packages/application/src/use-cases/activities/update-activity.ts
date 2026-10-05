@@ -4,6 +4,7 @@ import type { AuthenticatedContext } from "../../context.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IAuditLogger } from "../../ports/core.js";
+import type { ActivityLinkResolver } from "../../services/activity-link-resolver.js";
 import { toActivityUpdateDto, type ActivityUpdateDto } from "./dto.js";
 
 export interface UpdateActivityInput {
@@ -17,6 +18,7 @@ export interface UpdateActivityInput {
     location?: string;
     indicatorId?: string;
     outputId?: string;
+    logframeActivityId?: string;
   };
   attachEvidenceIds?: string[];
   detachEvidenceIds?: string[];
@@ -27,6 +29,7 @@ export class UpdateActivityHandler {
     private readonly activityRepo: IActivityUpdateRepository,
     private readonly evidenceRepo: IEvidenceRepository,
     private readonly audit: IAuditLogger,
+    private readonly links?: ActivityLinkResolver,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: UpdateActivityInput): Promise<Result<ActivityUpdateDto, DomainError>> {
@@ -38,7 +41,18 @@ export class UpdateActivityHandler {
     const activity = activityResult.value;
 
     if (input.patch) {
-      activity.edit(input.patch);
+      const patch = { ...input.patch };
+      if (this.links && (patch.logframeActivityId !== undefined || patch.outputId !== undefined)) {
+        // Changing either end re-checks the pair, so an activity can never point at a node under another output.
+        const link = await this.links.resolve(ctx, activity.projectId, {
+          logframeActivityId: patch.logframeActivityId ?? activity.logframeActivityId,
+          outputId: patch.outputId ?? (patch.logframeActivityId !== undefined ? undefined : activity.outputId),
+        });
+        if (!link.ok) return link;
+        patch.logframeActivityId = link.value.logframeActivityId;
+        patch.outputId = link.value.outputId;
+      }
+      activity.edit(patch);
     }
 
     if (input.attachEvidenceIds && input.attachEvidenceIds.length > 0) {

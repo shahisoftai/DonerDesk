@@ -4,6 +4,7 @@ import multipart from "@fastify/multipart";
 import { randomUUID } from "node:crypto";
 import { createContainer, RuntimeProvisioner, provisionExistingGlobalLlmConfigs } from "@donordesk/infrastructure";
 import { ZodError } from "zod";
+import { validationTitle } from "./validation-problem.js";
 import { TenantId, DomainError, type Role } from "@donordesk/domain";
 
 import { authMiddleware } from "./middleware/auth.js";
@@ -108,7 +109,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     if (error instanceof ZodError) {
       return reply.status(400).send({
         type: "https://donordesk/problems/validation",
-        title: "Validation failed",
+        title: validationTitle(error),
         status: 400,
         errors: error.errors,
         requestId: req.id,

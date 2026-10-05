@@ -12,11 +12,14 @@ import {
   PeriodIndicatorsResponseSchema,
   ParseIndicatorSheetResponseSchema,
   BulkUpsertResponseSchema,
+  CreateIndicatorResponseSchema,
+  ConfirmSemanticsResponseSchema,
+  VerifyAllResponseSchema,
   ImportIndicatorsResponseSchema,
   type ImportIndicatorsResponse,
 } from "@/lib/server/schemas";
 
-export type CreateIndicatorResult = Result<{ id: string }, AppError>;
+export type CreateIndicatorResult = Result<import("zod").infer<typeof CreateIndicatorResponseSchema>, AppError>;
 
 export async function createIndicatorAction(input: unknown): Promise<CreateIndicatorResult> {
   const context = await requireSession();
@@ -31,7 +34,7 @@ export async function createIndicatorAction(input: unknown): Promise<CreateIndic
       },
     };
   }
-  return gatewayRequest("/v1/indicators", IdResponseSchema, context.token, {
+  return gatewayRequest("/v1/indicators", CreateIndicatorResponseSchema, context.token, {
     method: "POST",
     body: parsed.data,
   });
@@ -80,7 +83,7 @@ export async function createIndicatorUpdateAction(input: unknown): Promise<Resul
 
 export type BulkSaveRow = UpsertIndicatorUpdateInput;
 
-export type BulkSaveIndicatorUpdatesResult = Result<{ saved: number; skipped: number }, AppError>;
+export type BulkSaveIndicatorUpdatesResult = Result<import("zod").infer<typeof BulkUpsertResponseSchema>, AppError>;
 
 export async function bulkSaveIndicatorUpdatesAction(
   reportingPeriodId: string,
@@ -168,4 +171,29 @@ export async function reviewIndicatorUpdateAction(
   });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
+}
+
+export type ConfirmSemanticsResult = Result<import("zod").infer<typeof ConfirmSemanticsResponseSchema>, AppError>;
+
+/** One-click "this calculation is right" for one or more indicators. */
+export async function confirmIndicatorSemanticsAction(indicatorIds: string[]): Promise<ConfirmSemanticsResult> {
+  const context = await requireSession();
+  if (indicatorIds.length === 0) {
+    return { ok: false, error: { kind: "validation", message: "Choose at least one indicator.", fields: {} } };
+  }
+  return gatewayRequest("/v1/indicators/semantics/confirm", ConfirmSemanticsResponseSchema, context.token, {
+    method: "POST",
+    body: { indicatorIds },
+  });
+}
+
+export type VerifyAllResult = Result<import("zod").infer<typeof VerifyAllResponseSchema>, AppError>;
+
+/** Verifies every unverified indicator value of a period (or just the given updates). */
+export async function verifyAllIndicatorUpdatesAction(reportingPeriodId: string, updateIds?: string[]): Promise<VerifyAllResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/indicator-updates/verify-all`, VerifyAllResponseSchema, context.token, {
+    method: "POST",
+    body: updateIds ? { updateIds } : {},
+  });
 }

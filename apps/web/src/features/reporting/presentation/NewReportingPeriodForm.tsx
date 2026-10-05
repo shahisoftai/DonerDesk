@@ -17,6 +17,7 @@ import { Select } from "@/components/ui/Select";
 import { missingScopeFields, normalizeEventName, type ReportScope } from "@donordesk/domain/contexts/reporting/report-scope.js";
 import { FormSummary } from "@/components/ui/FormSummary";
 import { ReportScopeFields, cleanScope } from "./ReportScopeFields";
+import { PeriodTypeGuide, type PeriodTypeOptionView } from "./PeriodTypeGuide";
 import { REPORT_TYPE_LABEL, REPORT_TYPE_OPTIONS } from "@/lib/labels";
 import type { ProjectReadiness } from "@/lib/server/schemas";
 import { blockerHref } from "@/lib/shared/readiness-links";
@@ -51,6 +52,7 @@ export function NewReportingPeriodForm({
   activities = [],
   situationHistory = [],
   readiness,
+  periodOptions,
   projectBounds = null,
   existingPeriodEnds = [],
   profileDeadlineOffsetDays,
@@ -58,6 +60,8 @@ export function NewReportingPeriodForm({
   projectId: string;
   templates: Array<{ id: string; templateName: string; reportType?: string; status?: string; deadlineOffsetDays?: number; deadlineRule?: string }>;
   readiness: ProjectReadiness | null;
+  /** What may be created now per type, computed by the server from the same rules that refuse a bad period. */
+  periodOptions?: PeriodTypeOptionView[];
   /** The project's recorded activities, offered when creating an activity report. */
   activities?: Array<{ id: string; title: string; date: string; location?: string }>;
   /** Earlier situation reports (event + as-of end date), so a new one continues the series. */
@@ -109,8 +113,11 @@ export function NewReportingPeriodForm({
       }
       return { startDate: start, endDate: scope.situationDate };
     }
+    // Regular reports: the server already worked out where the next period sits (it ignores one-off reports).
+    const serverOption = periodOptions?.find((o) => o.type === reportType);
+    if (serverOption) return serverOption.suggestedDates ?? null;
     return projectBounds ? suggestPeriodDates(reportType, projectBounds.startDate, projectBounds.endDate, existingPeriodEnds) : null;
-  }, [reportType, projectBounds, existingPeriodEnds, activities, scope.activityIds, scope.situationDate, scope.eventName, situationHistory]);
+  }, [reportType, periodOptions, projectBounds, existingPeriodEnds, activities, scope.activityIds, scope.situationDate, scope.eventName, situationHistory]);
 
   // Suggests Start/End from the report type + the project's dates, chained
   // after the latest existing period. Activity/Situation take their dates from
@@ -192,15 +199,21 @@ export function NewReportingPeriodForm({
   return (
     <div>
       {notReady && readiness && <MissingSetupItems projectId={projectId} readiness={readiness} />}
+      {periodOptions && <div className="mt-6"><PeriodTypeGuide options={periodOptions} selected={reportType} projectId={projectId} /></div>}
       <form onSubmit={submit} className="card mt-6 max-w-2xl space-y-4" noValidate>
       <FormSummary errors={fields} count={errorCount} />
 
       <Field label="Report type" htmlFor="reportType" error={fields.reportType?.[0]}>
         <Select id="reportType" value={reportType} onChange={(e) => { setReportType(e.target.value); setScope({}); setLocalErrors({}); setDonorTemplateId(""); setDatesAuto(true); }}>
           {REPORT_TYPE_OPTIONS.map((t) => (
-            <option key={t} value={t}>{REPORT_TYPE_LABEL[t] ?? t.replace(/_/g, " ")}</option>
+            <option key={t} value={t}>{REPORT_TYPE_LABEL[t] ?? t.replace(/_/g, " ")}{periodOptions?.find((o) => o.type === t)?.available === false ? " (not available)" : ""}</option>
           ))}
         </Select>
+        {periodOptions?.find((o) => o.type === reportType)?.available === false && (
+          <p role="status" className="mt-1 text-xs text-warning-800 dark:text-warning-300">
+            {periodOptions.find((o) => o.type === reportType)?.why} {periodOptions.find((o) => o.type === reportType)?.nextAction}
+          </p>
+        )}
       </Field>
 
 

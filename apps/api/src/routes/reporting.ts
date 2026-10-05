@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -315,6 +315,39 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const body = ApplyClaimSuggestionSchema.parse(req.body ?? {});
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.applyClaimSuggestion.handle(ctx, id, body.expectedVersion);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/closing-report/plan", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.planClosingReport.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/projects/:projectId/closing-report/start", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.startClosingReport.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/period-options", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getPeriodOptions.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-sections/:id/resolve-flags", async (req) => {
+    const sectionId = (req.params as { id: string }).id;
+    const body = ResolveSectionFlagsSchema.parse({ ...(req.body as object), sectionId });
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.resolveSectionFlags.handle(ctx, body);
     if (!r.ok) throw r.error;
     return r.value;
   });

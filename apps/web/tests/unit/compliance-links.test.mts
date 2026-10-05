@@ -43,3 +43,8 @@ test("unknown type returns null", () => {
   const target = complianceFixLink({ ...base, type: "SOMETHING_ELSE" });
   assert.equal(target, null);
 });
+
+test("an unconfirmed indicator calculation links to the logframe", () => {
+  const target = complianceFixLink({ ...base, type: "INDICATOR_SEMANTICS_UNREVIEWED" });
+  assert.equal(target?.href, "/projects/p1/logframe");
+});

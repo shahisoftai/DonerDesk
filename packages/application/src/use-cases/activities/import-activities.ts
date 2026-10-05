@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ActivityUpdate, parseActivityText } from "@donordesk/domain";
+import { DomainError, ActivityUpdate, parseActivityText, resolveActivityNodeLink } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { ILogframeRepository, IIndicatorRepository } from "../../ports/logframe.js";
@@ -65,6 +65,7 @@ export class ImportActivitiesHandler {
       if (!item.code) continue;
       itemByCode.set(item.code.trim().toLowerCase(), item.id);
     }
+    const logframeNodes = logframeResult.value.map((i) => ({ id: i.id, parentId: i.parentId, level: i.level, title: i.title }));
 
     const indicatorResult = await this.indicators.findByProject(input.projectId, ctx.tenant.tenantId);
     if (!indicatorResult.ok) return indicatorResult;
@@ -88,8 +89,15 @@ export class ImportActivitiesHandler {
         continue;
       }
 
-      const outputId = row.outputCode ? itemByCode.get(row.outputCode.trim().toLowerCase()) : undefined;
-      if (row.outputCode && !outputId) {
+      // The code column may name an Output or a logframe Activity; an Activity also gives its output.
+      const codedId = row.outputCode ? itemByCode.get(row.outputCode.trim().toLowerCase()) : undefined;
+      const coded = codedId ? logframeNodes.find((n) => n.id === codedId) : undefined;
+      const linked = coded?.level === "ACTIVITY"
+        ? resolveActivityNodeLink(logframeNodes, { logframeActivityId: coded.id })
+        : { ok: true as const, value: { outputId: codedId } };
+      const outputId = linked.ok ? linked.value.outputId : undefined;
+      const logframeActivityId = linked.ok && "logframeActivityId" in linked.value ? linked.value.logframeActivityId : undefined;
+      if (row.outputCode && !codedId) {
         importWarnings.push(`Activity "${row.activityTitle}": output code "${row.outputCode}" does not match any logframe item; left unlinked.`);
       }
       const indicatorId = row.indicatorCode ? indicatorByCode.get(row.indicatorCode.trim().toLowerCase()) : undefined;
@@ -107,6 +115,7 @@ export class ImportActivitiesHandler {
         activityDate: new Date(row.activityDate),
         location: row.location,
         outputId,
+        logframeActivityId,
         indicatorId,
         participantsTotal: row.participantsTotal,
         participantsMale: row.participantsMale,

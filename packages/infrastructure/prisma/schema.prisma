@@ -487,7 +487,10 @@ model EvidenceFile {
   storageKey          String?
   evidenceType        String
   activityId          String?
+  /// The indicator this file is about (never an indicator-update id: see indicatorUpdateId).
   indicatorId         String?
+  /// The indicator update (one indicator's value for one period) this file is attached to as proof.
+  indicatorUpdateId   String?
   location            String?
   activityDate        DateTime?
   uploadedById        String
@@ -508,6 +511,7 @@ model EvidenceFile {
   @@index([projectId])
   @@index([reportingPeriodId])
   @@index([indicatorId])
+  @@index([indicatorUpdateId])
   @@index([evidenceType])
 }
 
@@ -520,6 +524,8 @@ model ActivityUpdate {
   activityDate          DateTime
   location              String?
   outputId              String?
+  /// The logframe's own ACTIVITY node this record delivers (outputId is its parent output).
+  logframeActivityId    String?
   indicatorId           String?
   participantsTotal     Int?
   participantsMale      Int?
@@ -545,6 +551,7 @@ model ActivityUpdate {
   @@index([tenantId])
   @@index([projectId])
   @@index([reportingPeriodId])
+  @@index([logframeActivityId])
 }
 
 model ReportDraft {

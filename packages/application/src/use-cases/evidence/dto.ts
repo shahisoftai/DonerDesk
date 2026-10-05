@@ -6,6 +6,7 @@ export interface EvidenceDto {
   reportingPeriodId?: string;
   activityId?: string;
   indicatorId?: string;
+  indicatorUpdateId?: string;
   fileName: string;
   title: string;
   fileUrl: string;
@@ -34,6 +35,7 @@ export function toEvidenceDto(e: EvidenceFile): EvidenceDto {
     reportingPeriodId: e.reportingPeriodId,
     activityId: e.activityId,
     indicatorId: e.indicatorId,
+    indicatorUpdateId: e.indicatorUpdateId,
     fileName: e.fileName,
     title: e.title,
     fileUrl: e.fileUrl,

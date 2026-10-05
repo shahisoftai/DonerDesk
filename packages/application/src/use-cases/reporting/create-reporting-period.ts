@@ -1,5 +1,5 @@
 import type { Result, DomainError, TenantId } from "@donordesk/domain";
-import { ReportingPeriod, DateRange, CADENCE_REPORT_TYPES, templateAppliesToReportType, DomainError as DE, ReportingPeriodCreated } from "@donordesk/domain";
+import { ReportingPeriod, templateAppliesToReportType, findCadenceOverlap, periodOverlapMessage, DomainError as DE, ReportingPeriodCreated } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
@@ -11,15 +11,6 @@ import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js"
 import type { CreateReportingPeriodInput } from "@donordesk/contracts";
 import { serializeTemplateSnapshot } from "../../services/template-snapshot.js";
 import { ReportScopeResolver } from "../../services/report-scope-resolver.js";
-
-const ROLL_UP_TYPES: ReadonlySet<string> = new Set(["SEMI_ANNUAL", "ANNUAL", "FINAL"]);
-
-/** Says what to do instead: a roll-up report is the closing period of the cadence, not a second report over the same dates. */
-function overlapMessage(reportType: string): string {
-  const base = "Reporting period overlaps an existing period for this project";
-  if (!ROLL_UP_TYPES.has(reportType)) return base;
-  return `${base}. A ${reportType.toLowerCase().replace(/_/g, "-")} report is a period of its own in your reporting cadence: it states progress since the project started, using every earlier period, so create it for the closing period (for example the last month) instead of one that spans periods already created. For a one-off report over dates that already have periods, use a Custom report.`;
-}
 
 /**
  * Authoritative reporting-period creation. The period is the first step of the
@@ -129,20 +120,15 @@ export class CreateReportingPeriodHandler {
     });
     if (!scopeResult.ok) return scopeResult;
     const scope = scopeResult.value;
-    // Ad-hoc reports (activity/situation/custom) may sit inside a cadence
-    // period, so overlap is only enforced between cadence periods.
-    const enforceOverlap = CADENCE_REPORT_TYPES.has(input.reportType);
-
-    for (const existing of existingResult.value) {
-      if (!enforceOverlap || !CADENCE_REPORT_TYPES.has(existing.reportType)) continue;
-      if (existing.duration.overlaps(DateRange.create(start, end))) {
-        return {
-          ok: false,
-          error: DE.conflict(overlapMessage(input.reportType), {
-            existingPeriodId: existing.id,
-          }),
-        };
-      }
+    // Ad-hoc reports (activity/situation/custom) may sit inside a cadence period; only cadence
+    // periods are kept from overlapping (the rule, and its explanation, live in period-type-rules).
+    const overlapping = findCadenceOverlap(
+      input.reportType,
+      { start, end },
+      existingResult.value.map((p) => ({ id: p.id, reportType: p.reportType, start: p.duration.start, end: p.duration.end })),
+    );
+    if (overlapping) {
+      return { ok: false, error: DE.conflict(periodOverlapMessage(input.reportType), { existingPeriodId: overlapping.id }) };
     }
 
     // 5. Build the immutable effective snapshots.

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ActivityDetailSchema, EvidenceResponseSchema } from "@/lib/server/schemas";
+import { ActivityDetailSchema, EvidenceResponseSchema, EvidenceSupportResponseSchema } from "@/lib/server/schemas";
 import { hasCapability } from "@/lib/server/auth-context";
 import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
@@ -11,6 +11,7 @@ import { ACTIVITY_STATUS_LABEL } from "@/lib/labels";
 import { formatDate } from "@/lib/shared/dates";
 import { ActivityPolishPanel } from "@/features/activities/presentation/ActivityPolishPanel";
 import { ActivityReviewPanel } from "@/features/activities/presentation/ActivityReviewPanel";
+import { EvidenceSupportPanel } from "@/features/evidence/presentation/EvidenceSupportPanel";
 import { ActivityEvidencePanel } from "@/features/activities/presentation/ActivityEvidencePanel";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,8 @@ export default async function ActivityDetailPage({
         checked: attachedEvidenceIds.includes(e.id),
       }))
     : [];
+
+  const support = await gatewayRequest(`/v1/activities/${resolvedParams.activityId}/evidence-support`, EvidenceSupportResponseSchema, ctx.token);
 
   const canReview = hasCapability(ctx, "activity.review") && activity.status === "SUBMITTED";
   const canPolish = hasCapability(ctx, "activity.create");
@@ -96,6 +99,8 @@ export default async function ActivityDetailPage({
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{activity.nextSteps}</p>
         </section>
       )}
+
+      {support.ok && <EvidenceSupportPanel support={support.value} projectId={resolvedParams.id} />}
 
       {canManageEvidence && availableEvidence.length > 0 && (
         <ActivityEvidencePanel

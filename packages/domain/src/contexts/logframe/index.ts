@@ -7,3 +7,7 @@ export * from "./indicator-parser.js";
 export * from "./events.js";
 export * from "./logframe-move.js";
 export * from "./indicator-disaggregation.js";
+export * from "./indicator-semantics-description.js";
+export * from "./activity-node-link.js";
+export * from "./participants-consistency.js";
+export * from "./activity-delivery.js";

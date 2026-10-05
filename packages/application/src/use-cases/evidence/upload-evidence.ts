@@ -6,6 +6,7 @@ import type { IEvidenceStorageResolver } from "../../ports/infrastructure.js";
 import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { CreateEvidenceInput } from "@donordesk/contracts";
 import type { IUsageCounterRepository } from "../../ports/billing.js";
+import type { IEvidenceLinker } from "../../ports/evidence-linker.js";
 import type { EntitlementService } from "../../services/entitlement-service.js";
 import { applyEntitlementLimit } from "../../services/entitlement-service.js";
 import { monthStartUtc, USAGE_METRIC_STORAGE } from "../billing/_usage.js";
@@ -27,6 +28,8 @@ export class UploadEvidenceHandler {
     private readonly audit: IAuditLogger,
     private readonly usage: IUsageCounterRepository,
     private readonly entitlements: EntitlementService,
+    /** Absent in legacy wiring: the file is then only tagged. */
+    private readonly linker?: IEvidenceLinker,
   ) {}
 
   async handle(ctx: AuthenticatedContext, cmd: UploadEvidenceCommand): Promise<Result<{ id: string; fileUrl: string }, DomainError>> {
@@ -121,6 +124,13 @@ export class UploadEvidenceHandler {
       projectId: cmd.projectId,
       newValue: cmd.fileName,
     });
+
+    // A file uploaded against an activity or indicator is attached at once (an indicator without a value
+    // for the period yet stays tagged and is attached when the value is first saved).
+    if (this.linker && (ev.activityId || ev.indicatorId)) {
+      const linked = await this.linker.linkOnUpload(ctx, ev);
+      if (!linked.ok) return linked;
+    }
 
     await this.events.publish([new EvidenceUploaded(ctx.tenant.tenantId, id, cmd.projectId, ctx.tenant.userId)]);
 

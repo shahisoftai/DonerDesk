@@ -11,6 +11,8 @@ export interface ActivityUpdateProps {
   activityDate: Date;
   location?: string;
   outputId?: string;
+  /** The logframe ACTIVITY node this record delivers. */
+  logframeActivityId?: string;
   indicatorId?: string;
   participantsTotal?: number;
   participantsMale?: number;
@@ -49,6 +51,7 @@ export class ActivityUpdate extends Entity<string> {
     activityDate: Date;
     location?: string;
     outputId?: string;
+    logframeActivityId?: string;
     indicatorId?: string;
     participantsTotal?: number;
     participantsMale?: number;
@@ -91,6 +94,7 @@ export class ActivityUpdate extends Entity<string> {
   get activityDate(): Date { return new Date(this.props.activityDate.getTime()); }
   get location(): string | undefined { return this.props.location; }
   get outputId(): string | undefined { return this.props.outputId; }
+  get logframeActivityId(): string | undefined { return this.props.logframeActivityId; }
   get indicatorId(): string | undefined { return this.props.indicatorId; }
   get participantsTotal(): number | undefined { return this.props.participantsTotal; }
   get participantsMale(): number | undefined { return this.props.participantsMale; }
@@ -167,6 +171,7 @@ export class ActivityUpdate extends Entity<string> {
         | "participantsOther"
         | "indicatorId"
         | "outputId"
+        | "logframeActivityId"
       >
     >,
   ): void {

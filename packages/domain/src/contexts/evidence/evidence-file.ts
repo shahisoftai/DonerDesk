@@ -86,6 +86,8 @@ export interface EvidenceFileProps {
   reportingPeriodId?: string;
   activityId?: string;
   indicatorId?: string;
+  /** The indicator update (one value for one period) this file is attached to as proof. */
+  indicatorUpdateId?: string;
   location?: string;
   activityDate?: Date;
   uploadedById: string;
@@ -126,6 +128,7 @@ export class EvidenceFile extends Entity<string> {
     reportingPeriodId?: string;
     activityId?: string;
     indicatorId?: string;
+    indicatorUpdateId?: string;
     location?: string;
     activityDate?: Date;
     uploadedById: string;
@@ -151,6 +154,7 @@ export class EvidenceFile extends Entity<string> {
       reportingPeriodId: input.reportingPeriodId,
       activityId: input.activityId,
       indicatorId: input.indicatorId,
+      indicatorUpdateId: input.indicatorUpdateId,
       location: input.location,
       activityDate: input.activityDate,
       uploadedById: input.uploadedById,
@@ -184,6 +188,7 @@ export class EvidenceFile extends Entity<string> {
   get reportingPeriodId(): string | undefined { return this.props.reportingPeriodId; }
   get activityId(): string | undefined { return this.props.activityId; }
   get indicatorId(): string | undefined { return this.props.indicatorId; }
+  get indicatorUpdateId(): string | undefined { return this.props.indicatorUpdateId; }
   get location(): string | undefined { return this.props.location; }
   get activityDate(): Date | undefined { return this.props.activityDate; }
   get uploadedById(): string { return this.props.uploadedById; }

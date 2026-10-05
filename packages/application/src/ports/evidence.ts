@@ -6,6 +6,7 @@ export interface EvidenceFilter {
   reportingPeriodId?: string;
   activityId?: string;
   indicatorId?: string;
+  indicatorUpdateId?: string;
   evidenceType?: EvidenceType;
   location?: string;
   uploadedById?: string;

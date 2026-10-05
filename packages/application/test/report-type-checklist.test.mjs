@@ -150,3 +150,20 @@ test("an evidence-shortfall item is closed once the evidence is on file", async 
   assert.match(shortfall.note, /automatically/);
   assert.deepEqual(updated, [shortfall]);
 });
+
+import { semanticsReviewItems, confirmedSemanticsIndicatorIds } from "../dist/index.js";
+import { Indicator as Phase23Indicator } from "@donordesk/domain";
+
+function phase23Ind(id, over = {}) {
+  return Phase23Indicator.create({ id, tenantId: "t", projectId: "p", logframeItemId: "o", code: id.toUpperCase(), name: "Widgets", type: "NUMBER", baseline: "0", target: "5", ...over });
+}
+
+test("semantics review items are raised only for unconfirmed indicators and clear once confirmed", () => {
+  const unconfirmed = phase23Ind("i-1");
+  const inferred = phase23Ind("i-2", { name: "Children enrolled" });
+  assert.deepEqual(semanticsReviewItems([unconfirmed, inferred]).map((i) => [i.type, i.relatedEntityId]), [["INDICATOR_SEMANTICS_UNREVIEWED", "i-1"]]);
+  assert.deepEqual([...confirmedSemanticsIndicatorIds([unconfirmed, inferred])], ["i-2"]);
+  unconfirmed.update({ semanticsJson: JSON.stringify({ aggregation: "SUM", direction: "NEUTRAL", reportingBasis: "PERIOD", status: "CONFIGURED" }) });
+  assert.deepEqual(semanticsReviewItems([unconfirmed]), []);
+  assert.equal(confirmedSemanticsIndicatorIds([unconfirmed]).has("i-1"), true);
+});

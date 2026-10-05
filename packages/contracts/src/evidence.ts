@@ -69,6 +69,7 @@ export const EvidenceSearchSchema = z.object({
   reportingPeriodId: z.string().optional(),
   activityId: z.string().optional(),
   indicatorId: z.string().optional(),
+  indicatorUpdateId: z.string().optional(),
   evidenceType: EvidenceTypeSchema.optional(),
   location: z.string().optional(),
   uploadedById: z.string().optional(),

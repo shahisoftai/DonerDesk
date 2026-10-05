@@ -7,6 +7,7 @@ import {
   bulkSaveIndicatorUpdatesAction,
   parseIndicatorSheetAction,
   verifyIndicatorUpdateAction,
+  verifyAllIndicatorUpdatesAction,
   type BulkSaveRow,
 } from "@/lib/actions/indicators";
 import type { PeriodIndicatorRow } from "@/lib/server/schemas";
@@ -99,10 +100,42 @@ export function IndicatorEntryGrid({
     return row.update?.verificationStatus === "VERIFIED";
   }
 
-  async function saveAll() {
-    if (dirtyCount === 0 || saving) return;
+  /** Rows that hold a value but are not verified yet (what "Verify all" would act on). */
+  const unverifiedCount = rows.filter((row) => row.update && row.update.verificationStatus !== "VERIFIED").length;
+  const [verifyingAll, setVerifyingAll] = useState(false);
+
+  async function verifyAll(updateIds?: string[]) {
+    setVerifyingAll(true);
+    try {
+      const result = await verifyAllIndicatorUpdatesAction(periodId, updateIds);
+      if (!result.ok) {
+        toast.push({ title: "Could not verify", description: result.error.message, tone: "danger" });
+        return;
+      }
+      const { verified, failed } = result.value;
+      if (failed.length > 0) {
+        toast.push({
+          title: `${verified} verified, ${failed.length} could not be verified`,
+          description: failed.map((f) => `${f.indicatorCode}: ${f.message}`).join(" · "),
+          tone: "warning",
+        });
+      } else {
+        toast.push({ title: `${verified} indicator value${verified === 1 ? "" : "s"} verified`, tone: "success" });
+      }
+      router.refresh();
+    } finally {
+      setVerifyingAll(false);
+    }
+  }
+
+  async function saveAll(thenVerify = false) {
+    if ((dirtyCount === 0 && !thenVerify) || saving) return;
     setSaving(true);
     try {
+      if (dirtyCount === 0) {
+        await verifyAll();
+        return;
+      }
       const payload: BulkSaveRow[] = rows
         .filter((row) => dirty.has(row.id))
         .map((row) => {
@@ -129,6 +162,11 @@ export function IndicatorEntryGrid({
         tone: "success",
       });
       setDirty(new Set());
+      if (thenVerify) {
+        // Every unverified value of the period, including the rows just written (their ids came back with the save).
+        await verifyAll();
+        return;
+      }
       router.refresh();
     } finally {
       setSaving(false);
@@ -217,8 +255,19 @@ export function IndicatorEntryGrid({
             </Button>
           )}
           {canEdit && (
-            <Button size="sm" onClick={saveAll} pending={saving} disabled={dirtyCount === 0}>
+            <Button size="sm" onClick={() => void saveAll()} pending={saving} disabled={dirtyCount === 0}>
               Save all
+            </Button>
+          )}
+          {canEdit && canVerify && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => void saveAll(true)}
+              pending={saving || verifyingAll}
+              disabled={dirtyCount === 0 && unverifiedCount === 0}
+            >
+              {dirtyCount > 0 ? "Save & verify all" : `Verify all (${unverifiedCount})`}
             </Button>
           )}
           <Button variant="secondary" size="sm" onClick={() => router.push(`/projects/${projectId}/reports/${periodId}`)}>
@@ -402,6 +451,7 @@ function LevelGroupRows({
               <td className="min-w-[200px] px-3 py-2">
                 <span className="font-medium">{row.name}</span>
                 {row.logframeTitle && <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{row.logframeTitle}</span>}
+                {row.participantsHint && <span role="status" className="mt-1 block text-xs text-slate-600 dark:text-slate-300">{row.participantsHint}</span>}
                 {row.requiresDenominator && (
                   <span className="mt-1 block text-xs text-warning-700 dark:text-warning-400">
                     This percentage/ratio indicator has no denominator indicator configured, so its result cannot be independently verified in the report.

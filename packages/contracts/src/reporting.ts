@@ -225,6 +225,13 @@ export const BulkResolveReportClaimSchema = z.object({
 });
 export type BulkResolveReportClaimInput = z.infer<typeof BulkResolveReportClaimSchema>;
 
+export const ResolveSectionFlagsSchema = z.object({
+  sectionId: z.string().min(1),
+  note: z.string().trim().min(10).max(2000),
+  approve: z.boolean().optional(),
+});
+export type ResolveSectionFlagsInputBody = z.infer<typeof ResolveSectionFlagsSchema>;
+
 export const GenerateReportRunSchema = z.object({
   draftId: z.string().min(1),
 });

@@ -9,6 +9,8 @@ import type { ImportEvidenceTextInput } from "@donordesk/contracts";
 
 const MAX_IMPORT_ROWS = 1000;
 
+import type { IEvidenceLinker } from "../../ports/evidence-linker.js";
+
 export interface ImportedEvidence {
   id: string;
   title: string;
@@ -65,6 +67,8 @@ export class ImportEvidenceHandler {
     private readonly activities: IActivityUpdateRepository,
     private readonly indicators: IIndicatorRepository,
     private readonly audit: IAuditLogger,
+    /** Absent in legacy wiring: files are then only tagged. */
+    private readonly linker?: IEvidenceLinker,
   ) {}
 
   async handle(
@@ -149,6 +153,10 @@ export class ImportEvidenceHandler {
       });
       const saved = await this.evidence.create(file);
       if (!saved.ok) return saved;
+      if (this.linker && (file.activityId || file.indicatorId)) {
+        const linked = await this.linker.linkOnUpload(ctx, file);
+        if (!linked.ok) return linked;
+      }
 
       created.push({
         id,

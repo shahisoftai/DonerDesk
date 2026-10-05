@@ -4,13 +4,14 @@ import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { CreateIndicatorUpdateInput } from "@donordesk/contracts";
+import type { IEvidenceLinker } from "../../ports/evidence-linker.js";
 import { upsertIndicatorUpdate } from "./upsert-indicator-update.js";
 
 export class CreateIndicatorUpdateHandler {
-  constructor(private readonly ids: IIdGenerator, private readonly repo: IIndicatorUpdateRepository, private readonly audit: IAuditLogger) {}
+  constructor(private readonly ids: IIdGenerator, private readonly repo: IIndicatorUpdateRepository, private readonly audit: IAuditLogger, private readonly linker?: IEvidenceLinker) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateIndicatorUpdateInput): Promise<Result<{ id: string }, DomainError>> {
-    const saved = await upsertIndicatorUpdate(this.ids, this.repo, ctx.tenant.tenantId, ctx.tenant.userId, input.reportingPeriodId, input);
+    const saved = await upsertIndicatorUpdate(this.ids, this.repo, ctx.tenant.tenantId, ctx.tenant.userId, input.reportingPeriodId, input, this.linker ? (u) => this.linker!.attachPendingFor(ctx, u) : undefined);
     if (!saved.ok) return saved;
     await this.audit.record({
       tenantId: ctx.tenant.tenantId,

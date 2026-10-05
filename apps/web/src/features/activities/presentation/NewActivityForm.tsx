@@ -12,6 +12,9 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { FormSummary } from "@/components/ui/FormSummary";
+import { recordParticipantHints } from "@donordesk/domain/contexts/logframe/participants-consistency.js";
+import { LogframeItemSelect } from "@/features/logframe/presentation/LogframeItemSelect";
+import type { OutlineSource } from "@/features/logframe/domain/logframe-outline";
 
 type PeriodOption = { id: string; label: string };
 type EvidenceOption = { id: string; label: string };
@@ -20,10 +23,13 @@ export function NewActivityForm({
   projectId,
   reportingPeriods,
   evidenceOptions,
+  logframeItems = [],
 }: {
   projectId: string;
   reportingPeriods: PeriodOption[];
   evidenceOptions: EvidenceOption[];
+  /** The project's logframe, so a record can point at the Activity it delivers. */
+  logframeItems?: OutlineSource[];
 }) {
   const router = useRouter();
   const actionState = useActionState();
@@ -37,6 +43,7 @@ export function NewActivityForm({
   const [participantsFemale, setParticipantsFemale] = useState("");
   const [participantsChildren, setParticipantsChildren] = useState("");
   const [participantsDisability, setParticipantsDisability] = useState("");
+  const [logframeActivityId, setLogframeActivityId] = useState("");
   const [summary, setSummary] = useState("");
   const [achievements, setAchievements] = useState("");
   const [challenges, setChallenges] = useState("");
@@ -75,6 +82,7 @@ export function NewActivityForm({
         activityTitle,
         activityDate: dateValue ?? new Date().toISOString(),
         location: location || undefined,
+        logframeActivityId: logframeActivityId || undefined,
         participantsTotal: participantsTotal ? Number(participantsTotal) : undefined,
         participantsMale: participantsMale ? Number(participantsMale) : undefined,
         participantsFemale: participantsFemale ? Number(participantsFemale) : undefined,
@@ -93,6 +101,15 @@ export function NewActivityForm({
       router.refresh();
     }
   }
+
+  // Hints, never errors: the blocking rules (a part may not exceed the total) are validated on submit.
+  const participantHints = recordParticipantHints({
+    participantsTotal: participantsTotal ? Number(participantsTotal) : undefined,
+    participantsMale: participantsMale ? Number(participantsMale) : undefined,
+    participantsFemale: participantsFemale ? Number(participantsFemale) : undefined,
+    participantsChildren: participantsChildren ? Number(participantsChildren) : undefined,
+    participantsDisability: participantsDisability ? Number(participantsDisability) : undefined,
+  }).filter((h) => h.code === "SEX_SPLIT_BELOW_TOTAL");
 
   const errorCount = Object.keys(fields).reduce((sum, key) => sum + (fields[key]?.length ?? 0), 0);
 
@@ -128,6 +145,23 @@ export function NewActivityForm({
           maxLength={300}
         />
       </Field>
+
+      {logframeItems.some((i) => i.level === "ACTIVITY") && (
+        <Field
+          label="Logframe activity (optional)"
+          htmlFor="logframeActivityId"
+          error={fields.logframeActivityId?.[0]}
+          hint="The planned activity this record delivers. The logframe then shows what has been delivered, and the output is filled in for you."
+        >
+          <LogframeItemSelect
+            id="logframeActivityId"
+            items={logframeItems}
+            value={logframeActivityId}
+            onChange={setLogframeActivityId}
+            emptyLabel="Not linked to a planned activity"
+          />
+        </Field>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Activity date" htmlFor="activityDate" error={fields.activityDate?.[0]}>
@@ -221,6 +255,11 @@ export function NewActivityForm({
             />
           </Field>
         </div>
+        {participantHints.length > 0 && (
+          <ul role="status" className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300">
+            {participantHints.map((h) => <li key={h.code}>{h.message}</li>)}
+          </ul>
+        )}
       </fieldset>
 
       <Field label="Summary" htmlFor="summary" error={fields.summary?.[0]}>

@@ -7,6 +7,8 @@ export const CreateActivityUpdateSchema = z.object({
   activityDate: z.string().datetime(),
   location: z.string().max(200).optional(),
   outputId: z.string().optional(),
+  /** The logframe Activity-level item this record delivers; the output is derived from it. */
+  logframeActivityId: z.string().optional(),
   indicatorId: z.string().optional(),
   participantsTotal: z.number().int().nonnegative().optional(),
   participantsMale: z.number().int().nonnegative().optional(),
@@ -42,6 +44,7 @@ export const PatchActivitySchema = z.object({
   location: z.string().max(200).optional(),
   indicatorId: z.string().optional(),
   outputId: z.string().optional(),
+  logframeActivityId: z.string().optional(),
 });
 
 export const UpdateActivitySchema = z.object({

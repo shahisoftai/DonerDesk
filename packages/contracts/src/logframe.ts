@@ -64,6 +64,19 @@ export const UpdateIndicatorSemanticsSchema = z.object({
 });
 export type UpdateIndicatorSemanticsInput = z.infer<typeof UpdateIndicatorSemanticsSchema>;
 
+/** Confirms the suggested (effective) calculation of one or more indicators in a single action. */
+export const ConfirmIndicatorSemanticsSchema = z.object({
+  indicatorIds: z.array(z.string().min(1)).min(1).max(200),
+});
+export type ConfirmIndicatorSemanticsInput = z.infer<typeof ConfirmIndicatorSemanticsSchema>;
+
+/** Verifies every (or the listed) unverified indicator value of a reporting period. */
+export const VerifyPeriodIndicatorUpdatesSchema = z.object({
+  reportingPeriodId: z.string().min(1),
+  updateIds: z.array(z.string().min(1)).max(500).optional(),
+});
+export type VerifyPeriodIndicatorUpdatesInput = z.infer<typeof VerifyPeriodIndicatorUpdatesSchema>;
+
 export const CreateIndicatorUpdateSchema = z.object({
   indicatorId: z.string().min(1),
   reportingPeriodId: z.string().min(1),

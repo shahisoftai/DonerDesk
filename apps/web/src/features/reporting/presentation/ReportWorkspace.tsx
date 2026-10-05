@@ -789,6 +789,7 @@ export function ReportWorkspace({
                   claims={claims}
                   sections={liveSections}
                   canResolveClaim={canResolveClaim}
+                  canApproveSection={canApproveSection}
                   canOverrideConfidential={canOverrideConfidential}
                   onResolved={() => router.refresh()}
                 />

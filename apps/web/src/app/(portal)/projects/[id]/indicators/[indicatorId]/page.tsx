@@ -2,12 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { IndicatorUpdateHistoryResponseSchema, LogframeResponseSchema } from "@/lib/server/schemas";
+import { EvidenceSupportResponseSchema, IndicatorUpdateHistoryResponseSchema, LogframeResponseSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { IndicatorSemanticsCard } from "@/features/logframe/presentation/IndicatorSemanticsCard";
 import { IndicatorProgressCard } from "@/features/logframe/presentation/IndicatorProgressCard";
 import { IndicatorVerificationPipeline } from "@/features/logframe/presentation/IndicatorVerificationPipeline";
+import { EvidenceSupportPanel } from "@/features/evidence/presentation/EvidenceSupportPanel";
 import { IndicatorHistoryPanel } from "@/features/logframe/presentation/IndicatorHistoryPanel";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +16,10 @@ export const dynamic = "force-dynamic";
 export default async function IndicatorDetailPage({ params }: { params: Promise<{ id: string; indicatorId: string }> }) {
   const { id, indicatorId } = await params;
   const ctx = await requireSession();
-  const [result, history] = await Promise.all([
+  const [result, history, support] = await Promise.all([
     gatewayRequest(`/v1/projects/${id}/logframe`, LogframeResponseSchema, ctx.token),
     gatewayRequest(`/v1/indicators/${encodeURIComponent(indicatorId)}/updates`, IndicatorUpdateHistoryResponseSchema, ctx.token),
+    gatewayRequest(`/v1/indicators/${encodeURIComponent(indicatorId)}/evidence-support`, EvidenceSupportResponseSchema, ctx.token),
   ]);
   if (!result.ok) return <InlineError title={result.error.message} referenceId={result.error.referenceId} />;
   const indicator = result.value.indicators.find((item) => item.id === indicatorId);
@@ -30,8 +32,10 @@ export default async function IndicatorDetailPage({ params }: { params: Promise<
     <IndicatorSemanticsCard
       indicatorId={indicator.id}
       current={indicator.semantics ?? null}
+      description={indicator.semanticsDescription ?? null}
       candidates={result.value.indicators.filter((item) => item.id !== indicator.id).map((item) => ({ id: item.id, label: `${item.code} — ${item.name}` }))}
     />
+    {support.ok && <EvidenceSupportPanel support={support.value} projectId={id} />}
     <IndicatorProgressCard baseline={indicator.baseline} target={indicator.target} unit={indicator.unit ?? undefined} latest={latest} />
     {history.ok ? <>
       <IndicatorVerificationPipeline statuses={updates.map((u) => u.verificationStatus)} />

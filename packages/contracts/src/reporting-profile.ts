@@ -33,6 +33,6 @@ export const UpsertReportingProfileSchema = z.object({
 export type UpsertReportingProfileInput = z.infer<typeof UpsertReportingProfileSchema>;
 
 export const AcknowledgeProjectSetupSchema = z.object({
-  acknowledged: z.literal(true),
+  acknowledged: z.literal(true, { errorMap: () => ({ message: 'Send {"acknowledged": true} to confirm the setup.' }) }),
 });
 export type AcknowledgeProjectSetupInput = z.infer<typeof AcknowledgeProjectSetupSchema>;

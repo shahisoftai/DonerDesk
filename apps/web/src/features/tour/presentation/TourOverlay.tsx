@@ -99,6 +99,12 @@ export function TourOverlay() {
         </p>
         <h3 className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-50">{step.title}</h3>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{step.body}</p>
+        {step.rule && (
+          <div className="mt-2 rounded-md bg-slate-100 p-2 text-xs text-slate-700 dark:bg-white/10 dark:text-slate-200">
+            <p className="font-semibold">Good to know: {step.rule.title}</p>
+            <p className="mt-0.5">{step.rule.body}</p>
+          </div>
+        )}
         <div className="mt-3 flex items-center justify-between">
           <button
             type="button"

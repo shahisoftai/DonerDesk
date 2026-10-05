@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, Indicator } from "@donordesk/domain";
+import { DomainError, Indicator, describeSemantics, effectiveIndicatorSemantics, type IndicatorSemantics, type SemanticsDescription } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorRepository } from "../../ports/logframe.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -8,7 +8,7 @@ import type { CreateIndicatorInput } from "@donordesk/contracts";
 export class CreateIndicatorHandler {
   constructor(private readonly ids: IIdGenerator, private readonly repo: IIndicatorRepository, private readonly audit: IAuditLogger) {}
 
-  async handle(ctx: AuthenticatedContext, input: CreateIndicatorInput): Promise<Result<{ id: string }, DomainError>> {
+  async handle(ctx: AuthenticatedContext, input: CreateIndicatorInput): Promise<Result<{ id: string; semantics: IndicatorSemantics; semanticsDescription: SemanticsDescription }, DomainError>> {
     const id = this.ids.generate();
     const ind = Indicator.create({
       id,
@@ -38,6 +38,7 @@ export class CreateIndicatorHandler {
       projectId: input.projectId,
       newValue: input.code,
     });
-    return { ok: true, value: { id } };
+    const semantics = effectiveIndicatorSemantics(ind);
+    return { ok: true, value: { id, semantics, semanticsDescription: describeSemantics(semantics, ind.type) } };
   }
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 const HELP_TOPICS = {
+  "how-it-works": { href: "/help/how-it-works", label: "How DonorDesk works" },
   templates: { href: "/support/how-to/upload-donor-template", label: "How donor templates work" },
   "report-editor": { href: "/support/how-to/use-the-report-editor", label: "How the report editor works" },
   compliance: { href: "/support/how-to/use-compliance-checklist", label: "How compliance checks work" },

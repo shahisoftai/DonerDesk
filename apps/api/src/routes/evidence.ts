@@ -90,6 +90,14 @@ export async function registerEvidenceRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.get("/v1/:kind(activities|indicators)/:id/evidence-support", async (req) => {
+    const { kind, id } = req.params as { kind: "activities" | "indicators"; id: string };
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getEvidenceSupport.handle(ctx, { type: kind === "activities" ? "activity" : "indicator", id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.get("/v1/evidence/:id/suggest-links", async (req) => {
     const id = (req.params as { id: string }).id;
     const ctx = { tenant: req.tenant, requestId: req.id };

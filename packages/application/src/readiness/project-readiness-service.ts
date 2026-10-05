@@ -1,5 +1,5 @@
-import type { Result, DomainError, TenantId } from "@donordesk/domain";
-import type { IProjectRepository, IProjectReadinessService, ProjectReadiness, ProjectReadinessSnapshot } from "../ports/projects.js";
+import { effectiveIndicatorSemantics, type Result, type DomainError, type TenantId } from "@donordesk/domain";
+import type { IProjectRepository, IProjectReadinessService, ProjectReadiness, ProjectReadinessSnapshot, SetupWarning } from "../ports/projects.js";
 import type { IProjectSetupRepository, IReportingProfileRepository } from "../ports/setup.js";
 import type { IDonorTemplateRepository } from "../ports/templates.js";
 import type { IIndicatorRepository } from "../ports/logframe.js";
@@ -119,13 +119,25 @@ export class ProjectReadinessService implements IProjectReadinessService {
       });
     }
 
+    // Warnings: knowable before reporting, never a reason to refuse it.
+    const warnings: SetupWarning[] = [];
+    const unreviewed = projectIndicators.filter((ind) => effectiveIndicatorSemantics(ind).status === "REQUIRES_REVIEW").length;
+    if (unreviewed > 0) {
+      warnings.push({
+        code: "INDICATOR_SEMANTICS_UNREVIEWED",
+        label: `${unreviewed} indicator${unreviewed === 1 ? " needs" : "s need"} their calculation confirmed`,
+        href: "/logframe",
+        count: unreviewed,
+      });
+    }
+
     const ready = blockers.length === 0;
     const status = this.deriveStatus(ready, Boolean(setup?.acknowledgedAt), provisionStatus);
     const nextAction = ready ? undefined : blockers[0];
 
     return {
       ok: true,
-      value: { ready, status, blockers, nextAction },
+      value: { ready, status, blockers, warnings, nextAction },
     };
   }
 

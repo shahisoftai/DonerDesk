@@ -81,3 +81,30 @@ test("evidence label uses the source reference title, never the id", () => {
   assert.equal(evidenceLabelCopy("ev-other", refs), "Evidence file");
   assert.equal(evidenceLabelCopy("ev-123456789", undefined), "Evidence file");
 });
+
+import { flagClassCopy } from "../../src/lib/reporting-copy.ts";
+
+const ALL_REASON_CODES = [
+  "SOURCE_MISSING", "SOURCE_NOT_FOUND", "CHUNK_NOT_FOUND", "SOURCE_TEXT_MISMATCH", "EVIDENCE_HASH_MISMATCH", "EVIDENCE_UNVERIFIED",
+  "CONFIDENTIALITY_RESTRICTED", "VALUE_MISMATCH", "UNIT_MISMATCH", "PERIOD_MISMATCH", "ENTITY_MISMATCH", "DERIVATION_INVALID",
+  "ENTAILMENT_FAILED", "ENTAILMENT_UNCERTAIN", "CAUSAL_REVIEW_REQUIRED", "COVERAGE_GAP", "REQUIREMENT_UNSATISFIED",
+];
+
+test("every verification reason code has its own plain-language phrase (a new code without copy fails here)", () => {
+  const generic = verificationReasonCopy("NOT_A_REAL_CODE");
+  for (const code of ALL_REASON_CODES) {
+    const phrase = verificationReasonCopy(code);
+    assert.notEqual(phrase, generic, `${code} has no copy`);
+    assert.doesNotMatch(phrase, /[A-Z]{2,}_[A-Z]/);
+  }
+});
+
+test("flag class copy is plain and unknown classes fail safe to a decision", () => {
+  for (const c of ["REPORT_ERROR", "NEEDS_DECISION", "UNCONFIRMED", undefined, "WHATEVER"]) {
+    const copy = flagClassCopy(c);
+    assert.ok(copy.title && copy.hint);
+    assert.doesNotMatch(copy.title + copy.hint, /[A-Z]{2,}_[A-Z]/);
+  }
+  assert.equal(flagClassCopy("WHATEVER").title, "Needs your decision");
+  assert.equal(flagClassCopy("UNCONFIRMED").title, "We could not confirm");
+});

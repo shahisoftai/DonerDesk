@@ -5,6 +5,8 @@ import { LogframeResponseSchema, OrganizationSchema } from "@/lib/server/schemas
 import { InlineError } from "@/components/feedback/PageState";
 import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
 import { LogframeTreeEditor } from "@/features/logframe/presentation/LogframeTreeEditor";
+import { SemanticsBadge } from "@/features/logframe/presentation/SemanticsBadge";
+import { ConfirmSemanticsButton } from "@/features/logframe/presentation/ConfirmSemanticsButton";
 import { isLogframeReorderEnabled } from "@/lib/shared/feature-flags";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +35,8 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
   for (const ind of data.indicators) {
     if (ind.logframeItemId) indicatorCounts[ind.logframeItemId] = (indicatorCounts[ind.logframeItemId] ?? 0) + 1;
   }
+  const needReview = data.indicators.filter((i) => i.semanticsDescription?.needsReview).map((i) => i.id);
+  const canConfirm = ctx.capabilities.has("logframe.edit");
   const canReorder = isLogframeReorderEnabled() && ctx.capabilities.has("logframe.edit");
 
   return (
@@ -67,6 +71,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
         <div className="flex items-center justify-between">
           <h2 className="font-medium">Indicators</h2>
           <div className="flex gap-2">
+            {canConfirm && <ConfirmSemanticsButton indicatorIds={needReview} />}
             <ImportIndicatorsButton projectId={resolvedParams.id} />
             <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/logframe/new-indicator`}>
               Add indicator
@@ -83,11 +88,12 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
                 <th className="px-3 py-2 text-left">Type</th>
                 <th className="px-3 py-2 text-left">Baseline</th>
                 <th className="px-3 py-2 text-left">Target</th>
+                <th className="px-3 py-2 text-left">Calculation</th>
               </tr>
             </thead>
             <tbody>
               {data.indicators.length === 0 && (
-                <tr><td colSpan={5} className="px-3 py-3 text-slate-500 dark:text-slate-400">No indicators yet.</td></tr>
+                <tr><td colSpan={6} className="px-3 py-3 text-slate-500 dark:text-slate-400">No indicators yet.</td></tr>
               )}
               {data.indicators.map((i) => (
                 <tr key={i.id} className="trow">
@@ -96,6 +102,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
                   <td className="px-3 py-2">{i.type?.toLowerCase().replace("_", " ") ?? "—"}</td>
                   <td className="px-3 py-2">{i.baseline || "—"}</td>
                   <td className="px-3 py-2">{i.target}{i.unit ? ` ${i.unit}` : ""}</td>
+                  <td className="px-3 py-2"><SemanticsBadge description={i.semanticsDescription} /></td>
                 </tr>
               ))}
             </tbody>

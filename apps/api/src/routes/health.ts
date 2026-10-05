@@ -31,6 +31,8 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "AgentMemory", field: "provenanceJson" },
   { model: "Project", field: "archivedAt" },
   { model: "Project", field: "isDemo" },
+  { model: "EvidenceFile", field: "indicatorUpdateId" },
+  { model: "ActivityUpdate", field: "logframeActivityId" },
   { model: "PurchasedCreditPack", field: "providerOrderId" },
   { model: "PurchasedCreditPack", field: "source" },
   { model: "Organization", field: "nonprofitVerifiedAt" },

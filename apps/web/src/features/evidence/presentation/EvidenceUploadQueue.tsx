@@ -23,9 +23,16 @@ import {
 export function EvidenceUploadQueue({
   projectId,
   storageProvider = "LOCAL",
+  activities = [],
+  indicators = [],
+  periods = [],
 }: {
   projectId: string;
   storageProvider?: string;
+  /** What a file can be attached to. Attaching on upload makes the file count as proof straight away. */
+  activities?: Array<{ id: string; label: string }>;
+  indicators?: Array<{ id: string; label: string }>;
+  periods?: Array<{ id: string; label: string }>;
 }) {
   const router = useRouter();
   const [items, dispatch] = useReducer(uploadReducer, [] as UploadItem[]);
@@ -34,6 +41,9 @@ export function EvidenceUploadQueue({
   const [confidentialityLevel, setConfidentialityLevel] = useState("INTERNAL");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
+  const [activityId, setActivityId] = useState("");
+  const [indicatorId, setIndicatorId] = useState("");
+  const [reportingPeriodId, setReportingPeriodId] = useState("");
   const [driveLink, setDriveLink] = useState("");
   const [driveLinkError, setDriveLinkError] = useState<string | null>(null);
 
@@ -74,6 +84,9 @@ export function EvidenceUploadQueue({
       confidentialityLevel: confidentialityLevel as "PUBLIC" | "INTERNAL" | "SENSITIVE" | "HIGHLY_SENSITIVE",
       location: location || undefined,
       notes: notes || undefined,
+      activityId: activityId || undefined,
+      indicatorId: indicatorId || undefined,
+      reportingPeriodId: reportingPeriodId || undefined,
     };
 
     const result = item.driveFileId
@@ -134,6 +147,41 @@ export function EvidenceUploadQueue({
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
         </Field>
       </div>
+
+      {(activities.length > 0 || indicators.length > 0) && (
+        <fieldset className="space-y-2 rounded-lg border border-slate-200 p-3 dark:border-white/10">
+          <legend className="px-1 text-xs font-medium text-slate-600 dark:text-slate-300">Use as proof for (optional)</legend>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Choosing an activity or indicator attaches the file to it, so reports use it as evidence. You can change this later.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {activities.length > 0 && (
+              <Field label="Activity">
+                <Select value={activityId} onChange={(e) => setActivityId(e.target.value)}>
+                  <option value="">None</option>
+                  {activities.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
+                </Select>
+              </Field>
+            )}
+            {indicators.length > 0 && (
+              <Field label="Indicator">
+                <Select value={indicatorId} onChange={(e) => setIndicatorId(e.target.value)}>
+                  <option value="">None</option>
+                  {indicators.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
+                </Select>
+              </Field>
+            )}
+            {indicatorId && periods.length > 0 && (
+              <Field label="For reporting period">
+                <Select value={reportingPeriodId} onChange={(e) => setReportingPeriodId(e.target.value)}>
+                  <option value="">Choose a period…</option>
+                  {periods.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+                </Select>
+              </Field>
+            )}
+          </div>
+        </fieldset>
+      )}
 
       <FileDropzone
         onFiles={addFiles}
@@ -233,6 +281,9 @@ function buildFormData(
     confidentialityLevel: string;
     location?: string;
     notes?: string;
+    activityId?: string;
+    indicatorId?: string;
+    reportingPeriodId?: string;
   },
 ): FormData {
   const fd = new FormData();
@@ -242,6 +293,9 @@ function buildFormData(
   fd.append("confidentialityLevel", common.confidentialityLevel);
   if (common.location) fd.append("location", common.location);
   if (common.notes) fd.append("notes", common.notes);
+  if (common.activityId) fd.append("activityId", common.activityId);
+  if (common.indicatorId) fd.append("indicatorId", common.indicatorId);
+  if (common.reportingPeriodId) fd.append("reportingPeriodId", common.reportingPeriodId);
   if (item.file) fd.append("file", item.file);
   return fd;
 }
