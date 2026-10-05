@@ -149,6 +149,7 @@ export function Inspector({
           <ReportChartPanel
             key={`chart-${sectionData.id}`}
             sectionId={sectionData.id}
+            sectionTitle={section.title}
             initialConfig={sectionData.chartConfig ?? null}
             expectedVersion={sectionData.updatedAt}
             indicators={chartIndicators}

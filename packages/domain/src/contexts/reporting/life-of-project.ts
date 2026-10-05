@@ -1,4 +1,5 @@
 import type { IndicatorSemantics } from "../logframe/indicator-semantics.js";
+import type { DisaggregationEntry } from "../logframe/indicator-disaggregation.js";
 import { decimalAdd, decimalCompare, decimalDivide, formatDecimal, parseDecimal, type Decimal } from "./indicator-calculator.js";
 
 /**
@@ -17,6 +18,12 @@ export interface LifeOfProjectValue {
   periodsCovered: number;
   /** ISO date (end of the latest contributing period). */
   asOf: string;
+  /**
+   * Recorded breakdown (sex, age, ...) of THIS value: categories added across the contributing periods for a
+   * SUM indicator, the latest period's otherwise. A finding's own `disaggregation` describes only its current
+   * period, so a roll-up report must quote this one beside the life-of-project total.
+   */
+  disaggregation?: DisaggregationEntry[];
 }
 
 /** Report types that state progress since the project started. */
@@ -29,6 +36,26 @@ export interface LifeOfProjectUpdate {
   periodAchievement: string;
   cumulativeAchievement: string;
   verificationStatus: string;
+  /** Recorded breakdown of this update, when there is one. */
+  disaggregation?: DisaggregationEntry[];
+}
+
+/** SUM indicators add each category across the verified updates; any other aggregation takes the latest update's. */
+function lifeBreakdown(ordered: ReadonlyArray<LifeOfProjectUpdate>, aggregation: IndicatorSemantics["aggregation"]): DisaggregationEntry[] {
+  const withEntries = ordered.filter((u) => (u.disaggregation ?? []).length > 0);
+  if (withEntries.length === 0) return [];
+  if (aggregation !== "SUM") return (withEntries[withEntries.length - 1]!.disaggregation ?? []).map((e) => ({ ...e }));
+  const totals = new Map<string, { entry: DisaggregationEntry; sum: Decimal }>();
+  for (const update of withEntries) {
+    for (const entry of update.disaggregation ?? []) {
+      const value = parseDecimal(entry.value);
+      if (!value) continue;
+      const key = `${entry.dimension}:${entry.category.toLowerCase()}`;
+      const existing = totals.get(key);
+      totals.set(key, { entry: existing?.entry ?? { dimension: entry.dimension, category: entry.category, value: "" }, sum: existing ? decimalAdd(existing.sum, value) : value });
+    }
+  }
+  return [...totals.values()].map(({ entry, sum }) => ({ ...entry, value: formatDecimal(sum, 6) }));
 }
 
 const isoDay = (d: Date): string => d.toISOString().slice(0, 10);
@@ -50,6 +77,8 @@ export function computeLifeOfProject(semantics: IndicatorSemantics, updates: Rea
   const latest = ordered[ordered.length - 1]!;
   const asOf = isoDay(latest.periodEnd);
 
+  const breakdown = lifeBreakdown(ordered, semantics.aggregation);
+  const withBreakdown = breakdown.length > 0 ? { disaggregation: breakdown } : {};
   const reported = [...ordered].reverse().find((u) => numeric(u.cumulativeAchievement) !== null);
   // A recorded cumulative is authoritative for totals; it is the headline value for CUMULATIVE-basis indicators.
   if (reported && (semantics.aggregation === "SUM" || semantics.reportingBasis === "CUMULATIVE")) {
@@ -58,6 +87,7 @@ export function computeLifeOfProject(semantics: IndicatorSemantics, updates: Rea
       basis: "REPORTED_CUMULATIVE",
       periodsCovered: new Set(ordered.map((u) => u.periodId)).size,
       asOf: isoDay(reported.periodEnd),
+      ...withBreakdown,
     };
   }
 
@@ -93,5 +123,6 @@ export function computeLifeOfProject(semantics: IndicatorSemantics, updates: Rea
     basis: "COMPUTED",
     periodsCovered: new Set(withValue.map((x) => x.u.periodId)).size,
     asOf,
+    ...withBreakdown,
   };
 }

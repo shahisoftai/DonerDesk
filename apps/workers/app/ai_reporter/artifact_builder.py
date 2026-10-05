@@ -8,7 +8,8 @@ functions of the verified findings, so they are grounded by construction:
   - `indicator_table`  → TABLE artifact + the same table as markdown, which is
     appended to INDICATOR_TABLE section content so the editor, preview, and
     DOCX/PDF export all show the exact verified figures.
-  - `indicator_chart`  → CHART artifact via the existing `chart_suggester`.
+  - charts are NOT built here: the API derives one chart per table of the final section text
+    (`@donordesk/domain` `chartsForSection`), so a chart always sits beside the table it shows.
   - `period_delta`     → DELTA from the first finding with a comparisonValue.
 
 The writer only writes prose; `attach` merges these onto its section.
@@ -18,11 +19,9 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from . import chart_suggester
 from .grounding import _to_float, normalise_number, percent_of_target
 from .models import (
     Artifact,
-    ChartPayload,
     DeltaPayload,
     Finding,
     GeneratedSection,
@@ -189,28 +188,6 @@ def is_cumulative_section(req: SectionDraftRequest, kind: str) -> bool:
     return bool(_CUMULATIVE_TITLE_RE.search(req.section.canonicalTitle or req.section.title))
 
 
-def indicator_chart(req: SectionDraftRequest) -> Artifact | None:
-    usable = [f for f in req.verifiedFindings if not _not_calculable(f)]
-    if not usable:
-        return None
-    spec = chart_suggester.suggest(
-        {
-            "indicators": [
-                {"code": f.indicatorCode, "baseline": f.baseline, "target": f.target, "value": f.value, "unit": f.unit}
-                for f in usable
-            ],
-            "priorValues": {f.indicatorCode: f.comparisonValue for f in usable if f.comparisonValue is not None},
-        }
-    )
-    if spec is None:
-        return None
-    refs = [_ref(f) for f in usable]
-    for series in spec.series:
-        series.sourceReferences = refs
-    spec.sourceReferences = refs
-    return Artifact(kind="CHART", caption=spec.caption, ordinal=0, payload=spec.model_dump(), sourceReferences=refs)
-
-
 def period_delta(req: SectionDraftRequest) -> DeltaPayload | None:
     for f in req.verifiedFindings:
         if _not_calculable(f) or f.comparisonValue is None:
@@ -251,11 +228,6 @@ def attach(section: GeneratedSection, req: SectionDraftRequest, kind: str) -> Ge
             artifacts.insert(0, table)
             prose = "\n".join(line for line in content.splitlines() if not line.lstrip().startswith("|")).strip()
             content = f"{markdown}\n\n{prose}".strip() if prose else markdown
-    chart = None
-    if kind in _RESULT_KINDS:
-        chart = indicator_chart(req)
-        if chart is not None:
-            artifacts.append(chart)
     delta = period_delta(req) if kind in DELTA_KINDS else None
     if delta is not None:
         artifacts.append(
@@ -267,7 +239,7 @@ def attach(section: GeneratedSection, req: SectionDraftRequest, kind: str) -> Ge
         update={
             "content": content,
             "artifacts": artifacts,
-            "chartSpec": ChartPayload.model_validate(chart.payload) if chart is not None else None,
+            "chartSpec": None,
             "deltaFromPrior": delta,
         }
     )

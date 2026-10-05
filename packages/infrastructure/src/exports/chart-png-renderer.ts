@@ -1,14 +1,19 @@
 import * as echarts from "echarts";
 import sharp from "sharp";
 import { createHash } from "node:crypto";
-import { buildChartOption, resolveChartData, type ChartConfig, type ChartIndicatorInput } from "@donordesk/domain";
+import { buildChartOption, optionFromResolved, resolveChartData, type ChartConfig, type ChartIndicatorInput, type ResolvedChartData } from "@donordesk/domain";
 
-export interface RenderChartPngInput {
-  config: ChartConfig;
-  indicators: ChartIndicatorInput[];
+/** A chart is either already resolved (drawn from a table) or a configuration over the report's indicator rows. */
+export type ChartSource = { resolved: ResolvedChartData } | { config: ChartConfig; indicators: ChartIndicatorInput[] };
+
+export type RenderChartPngInput = ChartSource & {
   width?: number;
   height?: number;
   backgroundColor?: string;
+};
+
+function optionFor(input: ChartSource): Record<string, unknown> {
+  return "resolved" in input ? optionFromResolved(input.resolved, input.resolved.type) : buildChartOption(input.indicators, input.config);
 }
 
 /**
@@ -20,7 +25,7 @@ export interface RenderChartPngInput {
 export async function renderChartPng(input: RenderChartPngInput): Promise<Buffer> {
   const width = input.width ?? 720;
   const height = input.height ?? 420;
-  const option = buildChartOption(input.indicators, input.config);
+  const option = optionFor(input);
 
   const chart = echarts.init(null, null, {
     renderer: "svg",
@@ -43,8 +48,8 @@ export async function renderChartPng(input: RenderChartPngInput): Promise<Buffer
  * Deterministic content hash for the PNG cache. Any change to the config, the
  * indicator data, or the canvas size produces a new cache key.
  */
-export function chartCacheKey(config: ChartConfig, indicators: ChartIndicatorInput[], width?: number, height?: number): string {
-  const payload = JSON.stringify({ config, indicators, width: width ?? 720, height: height ?? 420 });
+export function chartCacheKey(source: ChartSource, width?: number, height?: number): string {
+  const payload = JSON.stringify({ source, width: width ?? 720, height: height ?? 420 });
   return createHash("sha256").update(payload).digest("hex").slice(0, 24);
 }
 
@@ -57,7 +62,7 @@ const PNG_CACHE_MAX = 128;
  * of the same finalized report are fast.
  */
 export async function renderChartPngCached(input: RenderChartPngInput): Promise<Buffer> {
-  const key = chartCacheKey(input.config, input.indicators, input.width, input.height);
+  const key = chartCacheKey("resolved" in input ? { resolved: input.resolved } : { config: input.config, indicators: input.indicators }, input.width, input.height);
   const hit = pngCache.get(key);
   if (hit) return hit;
   const png = await renderChartPng(input);
@@ -69,8 +74,9 @@ export async function renderChartPngCached(input: RenderChartPngInput): Promise<
   return png;
 }
 
-export function chartHasData(indicators: ChartIndicatorInput[], config: ChartConfig): boolean {
-  const resolved = resolveChartData(indicators, config);
+/** Whether there is anything to draw: at least one value that is present and not zero. */
+export function chartHasData(source: ChartSource): boolean {
+  const resolved = "resolved" in source ? source.resolved : resolveChartData(source.indicators, source.config);
   if (resolved.series.length === 0) return false;
   return resolved.series.some((s) => s.data.some((d) => d !== null && Number(d) !== 0));
 }

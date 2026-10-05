@@ -71,7 +71,7 @@ export const UpdateSectionChartResponseSchema = z.object({
   chartConfig: z
     .object({
       type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
-      dataBinding: z.enum(["INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),
+      dataBinding: z.enum(["INDICATOR_PROGRESS", "INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),
       options: z.record(z.string(), z.unknown()).optional(),
     })
     .nullable(),

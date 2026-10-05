@@ -1,4 +1,6 @@
 import type { ReportArtifact } from "@/lib/server/schemas";
+import type { ResolvedChartData } from "@donordesk/domain/contexts/reporting/chart-config.js";
+import { ResolvedChartFigure } from "./ChartFigure";
 
 /**
  * Shared renderers for report content: markdown-table block splitting, the
@@ -89,16 +91,24 @@ function ArtifactView({ artifact }: { artifact: ReportArtifact }) {
       return <PreviewTable header={columns} rows={rows} caption={artifact.caption} />;
     }
     case "CHART": {
-      // Chart data as a compact table; the interactive chart lives in the
-      // section chart panel. Every value comes from verified findings.
+      // A real chart of the table it sits beside, with its numbers one click away. Every value is read from that table.
       const categories = asArray(p.categories).map(asText);
       const series = asArray(p.series).map((s) => ({ name: asText((s as { name?: unknown }).name), data: asArray((s as { data?: unknown }).data) }));
+      const resolved = payloadToResolved(p, categories, series);
+      const truncated = p.truncated as { shown?: number; total?: number } | undefined;
       return (
-        <PreviewTable
-          caption={artifact.caption ?? asText(p.title)}
-          header={["", ...categories]}
-          rows={series.map((s) => [s.name, ...s.data.map((d) => (d === null ? null : asText(d)))])}
-        />
+        <div>
+          {resolved && <ResolvedChartFigure resolved={resolved} caption={artifact.caption ?? asText(p.title)} />}
+          {truncated?.total ? <p className="-mt-2 mb-2 text-xs text-slate-500 dark:text-slate-400">Showing the first {truncated.shown} of {truncated.total}; the table has them all.</p> : null}
+          <details className="text-xs">
+            <summary className="cursor-pointer text-slate-500 dark:text-slate-400">Chart data</summary>
+            <PreviewTable
+              caption={artifact.caption ?? asText(p.title)}
+              header={["", ...categories]}
+              rows={series.map((s) => [s.name, ...s.data.map((d) => (d === null ? null : asText(d)))])}
+            />
+          </details>
+        </div>
       );
     }
     case "DELTA": {
@@ -145,4 +155,22 @@ function QaItem({ question, answer }: { question: string; answer: string }) {
       <p className="text-slate-700 dark:text-slate-300">{answer}</p>
     </div>
   );
+}
+
+const CHART_TYPES = ["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"] as const;
+
+/** A stored chart payload as the dataset the figure draws (null when it has nothing to draw). */
+function payloadToResolved(p: Record<string, unknown>, categories: string[], series: Array<{ name: string; data: unknown[] }>): ResolvedChartData | null {
+  if (categories.length === 0 || series.length === 0) return null;
+  const type = CHART_TYPES.find((t) => t === p.type) ?? "BAR";
+  return {
+    type,
+    dataBinding: (p.dataBinding as ResolvedChartData["dataBinding"]) ?? "INDICATOR_PROGRESS",
+    categories,
+    series: series.map((s) => ({ name: s.name, data: s.data.map((d) => (typeof d === "number" && Number.isFinite(d) ? d : null)) })),
+    ...(typeof p.unit === "string" && p.unit ? { unit: p.unit } : {}),
+    title: asText(p.title),
+    ...(p.stacked === true ? { stacked: true } : {}),
+    ...(p.referenceLine ? { referenceLine: p.referenceLine as { name: string; value: number } } : {}),
+  };
 }

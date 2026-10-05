@@ -1,4 +1,4 @@
-import type { Result } from "@donordesk/domain";
+import type { Result, ReportingPeriod } from "@donordesk/domain";
 import { DomainError, type GateKind } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
@@ -77,6 +77,45 @@ export class GetExportPreflightHandler {
     private readonly activities?: IActivityUpdateRepository,
   ) {}
 
+  /** Evidence on file for the period, how much of it is sensitive, unverified indicator values and annex gaps. */
+  private async loadInputCounts(
+    ctx: AuthenticatedContext,
+    period: ReportingPeriod,
+  ): Promise<{
+    evidenceRows: Array<{ id: string; title: string; confidentialityLevel: string; verificationStatus: string; defaultIncluded: boolean }>;
+    sensitiveCount: number;
+    unverifiedIndicatorCount: number;
+    annexGapCount: number;
+  }> {
+    const evidenceRows: Array<{ id: string; title: string; confidentialityLevel: string; verificationStatus: string; defaultIncluded: boolean }> = [];
+    let sensitiveCount = 0;
+    const evidenceResult = await this.evidence.search({ reportingPeriodId: period.id, pageSize: 500 }, ctx.tenant.tenantId);
+    if (evidenceResult.ok) {
+      for (const e of evidenceResult.value.items) {
+        const isSensitive = e.confidentialityLevel === "SENSITIVE" || e.confidentialityLevel === "HIGHLY_SENSITIVE";
+        if (isSensitive) sensitiveCount += 1;
+        evidenceRows.push({ id: e.id, title: e.title, confidentialityLevel: e.confidentialityLevel, verificationStatus: e.verificationStatus, defaultIncluded: !isSensitive });
+      }
+    }
+
+    let unverifiedIndicatorCount = 0;
+    const updatesResult = await this.updates.findByReportingPeriod(period.id, ctx.tenant.tenantId);
+    const indicatorScope = await periodIndicatorScope(this.activities, period, ctx.tenant.tenantId);
+    if (updatesResult.ok && indicatorScope.ok) {
+      unverifiedIndicatorCount = updatesResult.value.filter((u) => inIndicatorScope(indicatorScope.value, u.indicatorId) && u.verificationStatus !== "VERIFIED").length;
+    }
+
+    let annexGapCount = 0;
+    const checklistResult = await this.checklist.findByReportingPeriod(period.id, ctx.tenant.tenantId);
+    if (checklistResult.ok) {
+      for (const item of checklistResult.value) {
+        const open = item.status !== "RESOLVED" && item.status !== "ACCEPTED_RISK" && item.status !== "NOT_APPLICABLE";
+        if (open && item.type === "MISSING_ANNEX") annexGapCount += 1;
+      }
+    }
+    return { evidenceRows, sensitiveCount, unverifiedIndicatorCount, annexGapCount };
+  }
+
   async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<unknown, DomainError>> {
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
@@ -101,6 +140,8 @@ export class GetExportPreflightHandler {
         navigateTo: `/projects/${projectId}/reports/${reportingPeriodId}`,
         resolution: "NONE",
       });
+      // The inputs panel before the first draft still needs the real counts (evidence on file, unverified values).
+      const inputs = await this.loadInputCounts(ctx, period);
       return {
         ok: true,
         value: {
@@ -109,10 +150,10 @@ export class GetExportPreflightHandler {
           blocking,
           blockingItems,
           warnings: [],
-          evidence: [],
-          sensitiveCount: 0,
-          annexGapCount: 0,
-          unverifiedIndicatorCount: 0,
+          evidence: inputs.evidenceRows,
+          sensitiveCount: inputs.sensitiveCount,
+          annexGapCount: inputs.annexGapCount,
+          unverifiedIndicatorCount: inputs.unverifiedIndicatorCount,
         },
       };
     }
@@ -238,7 +279,10 @@ export class GetExportPreflightHandler {
         overridable: true,
       });
       // Per-row items for the open checklist so the wizard can deep-link each one.
+      const alreadyListed = new Set(blockingItems.map((b) => b.message));
       for (const item of openCriticalItems) {
+        // The submission gate already lists these (as unsatisfied requirements); listing them twice doubles every one.
+        if (alreadyListed.has(`Open ${item.severity.toLowerCase()} checklist item: ${item.title}`)) continue;
         blockingItems.push({
           id: `checklist:${item.id}`,
           kind: "REQUIREMENT_UNSATISFIED",

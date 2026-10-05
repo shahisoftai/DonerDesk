@@ -1,6 +1,53 @@
 # Fixes
 
-Record of fixes applied to DonorDesk. Last updated: 2026-09-28 (Donor Template Manager verification demos).
+Record of fixes applied to DonorDesk. Last updated: 2026-10-05 (Education demo: disaggregation and attendance findings).
+
+## Report charts did not match their section or data (2026-10-05, audit + rebuild)
+
+Audit findings (14) and the rebuild, deployed with the release in `CONTABO-DEPLOY.md`:
+- **Charts are now derived from the TABLES of a section** (`packages/domain/src/contexts/reporting/table-charts.ts`, `chartsForSection`): one chart per table that has something to chart (indicator
+  table → progress in % of target, finance table → budget vs expenditure per line, participants table → stacked sex split), each tied to its table (`tableIndex`, caption), redrawn whenever the text is
+  regenerated or edited (`SectionChartService`, `RefreshSectionChartsHandler`, `POST /v1/report-sections/:id/refresh-charts`). Annexes get none; identical charts are not repeated. The worker no
+  longer draws its own indicator chart (it was added to every "results" section, including Activities and Annex A).
+- **One source:** the chart artifacts are drawn as real charts in the editor (`ResolvedChartFigure`) and exported to Word/PDF (several per section, numbered captions) from the same dataset; the export's
+  default "first section called indicator/progress" chart is gone.
+- **Data:** a roll-up report plots the cumulative figure against the project target (`chartAchievement`); indicators with different units are drawn as % of their own target with a 100% line, never on
+  one raw axis; a missing value is left out, not drawn as 0; at most 12 categories (with a note).
+- **Types:** `CHART_BINDING_TYPES` — pie only for status, no line/area over unrelated indicators, radar only for % progress (all series, fitted axis), gauge only for a single indicator; stored invalid
+  types render as a bar and the API rejects them. A section's hand-made chart must fit it (`bindingsForSection`: none for finance, annex or evidence sections); the export applies the same rule.
+- Rendering: the 100% label, wrapped category names and legend spacing no longer clip or skip labels.
+- Known remaining: hand-made charts (Chart tab) are indicator-only and are not refreshed from tables; they can duplicate a derived chart.
+
+## Education demo: wrong "not recorded" / "not calculable", unsupported-by-evidence flags, roll-up report evaluation (2026-10-05, verification demo 3)
+
+Fourteen deploys `20261005054216` … `20261005091500`, no migration. Full account and before/after numbers: `memorybank/demo/verification-demo-3.md`.
+
+- **`MISSING_DISAGGREGATION` was unconditional** (flagged whenever a breakdown was *required*, recorded or not) and the writer never got the values. Now: required and not recorded;
+  `VerifiedFinding.disaggregation` (this period) and `lifeOfProject.disaggregation` (the whole value, categories summed across periods) go to the AI Reporter and the narrator.
+- **Verification only checked factual claims against evidence-file chunks.** Statements grounded in the project's own records were "unsupported". New `RecordChunkBuilder`
+  (`packages/application/src/services/record-chunk-builder.ts`) turns activity records, project details, the story, verified findings, finance and the evidence log into short statements
+  the claim verifier checks against; standalone figures in them ground numbers; `isDisclosureOrMeta` stops honest "not recorded" disclosures and document-meta sentences being
+  verified as claims; long synthesis sentences are supported when the best chunks cover ≥ 85% of their content words; evidence UUIDs cited in prose are no longer numbers; a percent
+  of target may be written to the whole percent. Never cite a record as evidence (`record:` ids).
+- **Roll-up reports judged the wrong number:** a FINAL report evaluated its last period against the project target ("below expectation"). Evaluation now uses the life-of-project value;
+  a value exactly on target is POSITIVE.
+- **Directly reported percentages** (no numerator/denominator) now report the latest verified rate and stay `REQUIRES_REVIEW` instead of "not calculable".
+- **Verifier order bug:** "from a baseline of 62% to 86%" failed because the reference was read before the binding value.
+- **Evidence tagged to a period/activity but not attached never reached the writer**; verified tagged evidence now does. `attach-evidence` accepts `indicatorUpdateId`
+  (`indicatorId` kept as an alias; attaching overwrites `evidence.indicatorId` with the update id).
+- **Export preflight returned no evidence/unverified counts before the first draft** (the inputs panel read "Evidence · 0 files").
+- FINAL/ANNUAL overlap error now explains the closing-period flow; writer guidance forbids "N% above target"; the stale forgot-password e2e now checks the real reset form.
+- **A draft can always be downloaded.** The export wizard blocked any report with open issues although only a *donor submission* needs a clean one; "Download draft anyway" (blocked panel) and
+  "Download draft" (editor menu) create a watermarked `INTERNAL_REVIEW` export (header on every Word page, banner on every PDF page).
+- **Re-assessment verified against no evidence** (only generation passed the evidence packages), so claims got weaker after any edit; it now loads the period's evidence.
+- **Contradiction lint false positives** (life-of-project totals, breakdowns, finance, budget, record counts, ages, evidence-id fragments, generic "female/target" divergence) fixed via
+  `toLintFindingData` + `LintGrounding`; stale "Unsupported claim" and evidence-shortfall checklist items now close themselves; a roll-up report counts the project's evidence; blockers listed once.
+- **Downloaded exports were saved as "download" with no extension** (and served as `application/octet-stream`): the BFF `/api/files/[...key]` route named a file from an optional `?name=` and
+  the export links never passed one. It now names the file from the stored key (`<id>.docx`/`.pdf`) and sets the content type by extension; the API's `/v1/files/:key` does the same
+  (`contentTypeForKey`). Verified in the browser: Word 2007+ and PDF (8 pages). Downloads are then named by `exportFileName` (`<project>-<kind>-<start>-to-<end>-v<n>[-draft].<ext>`), returned by
+  `POST /v1/exports` and the history list and passed as `?name=`.
+- Recommendations/forecasts are verified only for the figures they state; derived statements ("all indicators at target", "within budget") are record chunks; writer must not conclude compliance the records do not state.
+- Lesson: package tests run against `dist/`; build every package in dependency order and gate deploys on a fresh run (one deploy went out with four stale-dist failures).
 
 ## PDF donor-template uploads completely broken (2026-09-27, found while building a WASH demo script)
 

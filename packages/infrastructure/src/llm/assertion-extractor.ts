@@ -34,6 +34,8 @@ const BULLET_LABEL_RE = /^[-*•]\s*(evidence|annex|reference)\s*:/i;
 
 const CAUSAL_RE = /\b(caused|led to|resulted in|due to|owing to|because of|has driven|contributed to|as a result of|impact on|effect on)\b/i;
 const COMPLIANCE_RE = /\b(complies?|in accordance with|in line with|safeguarding|psea|protection from sexual|do no harm|per (the|our) policy|mandatory|obligation|incident|complaint|fraud|breach|budget|expenditure|underspend|overspend|value for money|commitment|covenant|declaration|visibility requirement)\b/i;
+// Words that make a sentence a statement of compliance whatever else it says ("complies", "in accordance with", "obligation").
+const COMPLIANCE_DECLARATION_VERB_RE = /\b(complies?|complied|in accordance with|in compliance|obligation|covenant|breach|fraud)\b/i;
 const FORECAST_RE = /\b(expected to|will reach|projected to|is projected|forecast(ed)? to|is anticipated to)\b/i;
 const RECOMMENDATION_RE = /\b(recommend(s|ed)?|should ensure|should strengthen|suggest(s|ed)?)\b/i;
 const DATE_RE = /\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|jun(e)?|jul(y)?|aug(ust)?|sep(tember)?|oct(ober)?|nov(ember)?|dec(ember)?)\s+\d{1,2}(\s*,?\s*\d{4})?\b/i;
@@ -70,6 +72,9 @@ function splitSentences(text: string): Sentence[] {
 function classifyAssertionType(text: string, hasNumbers: boolean): AssertionType {
   if (hasNumbers) return "NUMERIC";
   if (CAUSAL_RE.test(text)) return "CAUSAL";
+  // A proposal stays a proposal when it mentions a budget or an incident: "recommends ... the budget approach" is not a declaration.
+  if (RECOMMENDATION_RE.test(text) && !COMPLIANCE_DECLARATION_VERB_RE.test(text)) return "RECOMMENDATION";
+  if (FORECAST_RE.test(text) && !COMPLIANCE_DECLARATION_VERB_RE.test(text)) return "FORECAST";
   if (COMPLIANCE_RE.test(text) || TARGET_PERFORMANCE_RE.test(text)) return "COMPLIANCE_DECLARATION";
   if (FORECAST_RE.test(text)) return "FORECAST";
   if (RECOMMENDATION_RE.test(text)) return "RECOMMENDATION";
@@ -99,6 +104,26 @@ function isNonClaimSentence(sentence: string): boolean {
   return PROVENANCE_RE.test(sentence) || BULLET_LABEL_RE.test(sentence);
 }
 
+// A sentence that only discloses a gap in the report's own inputs ("The inputs record no expenditure
+// figure", "No variance explanation was recorded in the activity records") asserts nothing about the
+// project, so there is nothing to verify; flagging an honest gap as "unsupported" would punish the
+// behaviour the writer is told to follow. It must name its scope (inputs, records, evidence ...) and be a
+// negation about recording: "No incident occurred" stays a claim.
+const GAP_SCOPE_RE = /\b(inputs?|records?|recorded inputs|reporting officer|story context|narrative context|evidence (?:base|files?|chunks?|record)|activity (?:records?|updates?)|project records|supplied|provided)\b/i;
+const GAP_NEGATION_RE = /\b(no|not|none|without|neither|nor|lacks?|lacking|absent|missing|silent|cannot|could not|unable)\b/i;
+const GAP_RECORDING_RE = /\b(record(?:ed|s)?|includes?|included|contains?|contained|provid(?:e|ed|es)|attach(?:ed)?|document(?:ed|s)?|supplied|available|exists?|reported|silent|stated|states?)\b/i;
+// A sentence about the document itself ("This section interprets it in brief", "The donor template asks ...").
+const DOCUMENT_META_RE = /^(this|the) (section|report|annex|table|donor template|template|section guidance|guidance)\s+(asks?|requires?|requests?|interprets?|draws?|summari[sz]es?|presents?|sets? out|lists?|follows?|refers?|is organi[sz]ed|is structured|uses?|cites?|quotes?|describes?|explains?|reproduces?)\b/i;
+
+/** True for a sentence that discloses missing inputs or describes the document: not a claim about the project. */
+export function isDisclosureOrMeta(sentence: string): boolean {
+  if (DOCUMENT_META_RE.test(sentence)) return true;
+  // A number other than a year or date makes it a quantitative statement, which is always verified.
+  const withoutDates = sentence.replace(/\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b|\b(?:19|20)\d{2}\b/g, "");
+  if (/\d/.test(withoutDates)) return false;
+  return sentence.length <= 500 && GAP_SCOPE_RE.test(sentence) && GAP_NEGATION_RE.test(sentence) && GAP_RECORDING_RE.test(sentence);
+}
+
 /**
  * Deterministic assertion extractor. Splits the final normalized content into
  * sentences, classifies each as a typed assertion, extracts numeric atoms with
@@ -113,7 +138,7 @@ export class DeterministicAssertionExtractor implements IAssertionExtractor {
     try {
       const content = input.content ?? "";
       const sentences = splitSentences(content).filter(
-        (s) => !isSkippableSentence(s.text) && !isNonClaimSentence(s.text),
+        (s) => !isSkippableSentence(s.text) && !isNonClaimSentence(s.text) && !isDisclosureOrMeta(s.text),
       );
       const assertions: Assertion[] = [];
 
@@ -161,7 +186,7 @@ export class DeterministicAssertionExtractor implements IAssertionExtractor {
       const normalizedContent = content.replace(/\s+/g, " ").trim().toLowerCase();
       for (const claim of input.writerClaims) {
         const fingerprint = stableFingerprint(claim.text);
-        if (matched.has(fingerprint)) continue;
+        if (matched.has(fingerprint) || isDisclosureOrMeta(claim.text)) continue;
         const index = normalizedContent.indexOf(claim.text.replace(/\s+/g, " ").trim().toLowerCase());
         if (index === -1) continue;
         const start = index;

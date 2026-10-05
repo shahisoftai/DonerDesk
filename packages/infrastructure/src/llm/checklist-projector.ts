@@ -60,4 +60,19 @@ export class ChecklistUnsupportedClaimProjector implements IUnsupportedClaimProj
     }
     return { ok: true, value: undefined };
   }
+
+  async reconcile(input: { tenantId: TenantId; periodId: string; activeKeys: string[] }): Promise<Result<void>> {
+    const existing = await this.checklist.findByReportingPeriod(input.periodId, input.tenantId);
+    if (!existing.ok) return existing;
+    const active = new Set(input.activeKeys.map((k) => stableFingerprint(k)));
+    for (const item of existing.value) {
+      if (item.type !== "UNSUPPORTED_REPORT_CLAIM") continue;
+      if (item.status === "RESOLVED" || item.status === "ACCEPTED_RISK" || item.status === "NOT_APPLICABLE") continue;
+      if (item.relatedEntityId && active.has(item.relatedEntityId)) continue;
+      item.resolve("Closed automatically: this statement was rewritten, decided on, or now passes verification.");
+      const saved = await this.checklist.update(item);
+      if (!saved.ok) return saved;
+    }
+    return { ok: true, value: undefined };
+  }
 }

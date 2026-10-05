@@ -1,5 +1,5 @@
 import type { Result, VerifiedFinding, IndicatorUpdate, ReportingPeriod, TenantId } from "@donordesk/domain";
-import { CADENCE_REPORT_TYPES, DomainError, LIFE_OF_PROJECT_REPORT_TYPES, comparableReportTypes, computeLifeOfProject, computeIndicator, inferIndicatorSemantics, periodComparability, selectComparablePeriods } from "@donordesk/domain";
+import { CADENCE_REPORT_TYPES, DomainError, LIFE_OF_PROJECT_REPORT_TYPES, comparableReportTypes, computeLifeOfProject, computeIndicator, evaluatePerformance, inferIndicatorSemantics, periodComparability, selectComparablePeriods } from "@donordesk/domain";
 import type { IIndicatorAnalyticsService } from "../ports/reporting.js";
 import type { IReportingPeriodRepository } from "../ports/reporting.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../ports/logframe.js";
@@ -160,11 +160,18 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
         updates.value.flatMap((u) => {
           const end = periodEnd.get(u.reportingPeriodId);
           return end
-            ? [{ periodId: u.reportingPeriodId, periodEnd: end, periodAchievement: u.periodAchievement, cumulativeAchievement: u.cumulativeAchievement, verificationStatus: u.verificationStatus }]
+            ? [{ periodId: u.reportingPeriodId, periodEnd: end, periodAchievement: u.periodAchievement, cumulativeAchievement: u.cumulativeAchievement, verificationStatus: u.verificationStatus, disaggregation: u.disaggregation }]
             : [];
         }),
       );
-      enriched.push(lifeOfProject ? { ...finding, lifeOfProject } : finding);
+      // A roll-up report judges progress against the project's targets, so it is the life-of-project figure
+      // that is evaluated: this period's value alone (the last month of a final report) is not what the
+      // target measures, and would read "below expectation" for an indicator that met its target.
+      enriched.push(
+        lifeOfProject
+          ? { ...finding, lifeOfProject, performanceEvaluation: evaluatePerformance({ value: lifeOfProject.value, baseline: finding.baseline, target: finding.target, semantics }) }
+          : finding,
+      );
     }
     return { ok: true, value: enriched };
   }

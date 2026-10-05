@@ -1,4 +1,4 @@
-import { DomainError, parseDecimal, decimalCompare, decimalMultiply, decimalDivide, decimalRound, scoreSimilarity, type VerifiedFinding, type Decimal } from "@donordesk/domain";
+import { DomainError, parseDecimal, decimalCompare, decimalMultiply, decimalDivide, decimalRound, scoreSimilarity, scoreCoverage, selectCoveringChunks, contentTokenCount, type VerifiedFinding, type Decimal } from "@donordesk/domain";
 import type { FinanceSummaryView, NumericAtom, VerificationReasonCode } from "@donordesk/domain";
 import type { IEntailmentVerifier, ICausalReviewPolicy, EntailmentResult, EntailmentVerdict, RetrievedEvidence } from "@donordesk/application";
 import type { AssertionType } from "@donordesk/domain";
@@ -21,7 +21,7 @@ function describeAtomFailure(atom: NumericAtom, findings: VerifiedFinding[]): st
   const value = parseDecimal(atom.value);
   if (value === null) return `${atom.value} could not be read as a number`;
   const exact = findings.filter((f) =>
-    [f.value, f.cumulativeValue, f.lifeOfProject?.value].some((t) => t !== undefined && parseDecimal(t) !== null && decimalCompare(parseDecimal(t)!, value) === 0),
+    [f.value, f.cumulativeValue, f.lifeOfProject?.value, ...(f.disaggregation ?? []).map((e) => e.value), ...(f.lifeOfProject?.disaggregation ?? []).map((e) => e.value)].some((t) => t !== undefined && parseDecimal(t) !== null && decimalCompare(parseDecimal(t)!, value) === 0),
   );
   if (exact.length > 0) {
     const codes = [...new Set(exact.map((f) => f.indicatorCode))].join(", ");
@@ -64,6 +64,8 @@ export class NumericAssertionVerifier {
     findings: VerifiedFinding[];
     /** Verified financial figures of the period; a number that equals one of them is grounded. */
     finance?: FinanceSummaryView;
+    /** Figures stated in the project's own records (activity participant counts, record counts, budget): grounded. */
+    recordFigures?: Decimal[];
   }): { result: "PASSED" | "FAILED"; detail: string; reasonCodes: VerificationReasonCode[]; matchedFinding?: VerifiedFinding } {
     if (input.atoms.length === 0) {
       return {
@@ -85,12 +87,17 @@ export class NumericAssertionVerifier {
     let matchedFinding: VerifiedFinding | undefined;
     const failures: VerificationReasonCode[] = [];
     const explanations: string[] = [];
+    // Whether the sentence binds a real value anywhere: baseline/target figures quoted beside it are
+    // references whatever their position ("from a baseline of 62% to 86%").
+    const bindsAValue = atoms.some((a) => this.matchAtom(a, input.findings) !== null);
 
     for (const atom of atoms) {
       const matched = this.matchAtom(atom, input.findings);
       // A figure from the verified financial summary (budget, expenditure, balance, burn rate, per line).
       if (!matched && input.finance && matchesFinanceFigure(atomValue(atom), input.finance)) continue;
-      if (!matched && matchedFinding !== undefined) {
+      // A figure the project's own records state (a participant count in an activity record, the budget).
+      if (!matched && input.recordFigures && atomValue(atom) !== null && input.recordFigures.some((f) => decimalCompare(f, atomValue(atom)!) === 0)) continue;
+      if (!matched && bindsAValue) {
         // Tolerate normal professional prose: once a sentence carries a value
         // that binds to a verified finding, target/baseline figures quoted
         // alongside it ("8 of the 120-centre target") are legitimate
@@ -152,7 +159,10 @@ export class NumericAssertionVerifier {
       const parsed = parseDecimal(text);
       return parsed !== null && decimalCompare(parsed, value) === 0;
     };
-    let candidates = findings.filter((f) => equalsValue(f.value) || equalsValue(f.cumulativeValue) || equalsValue(f.lifeOfProject?.value));
+    // A recorded breakdown figure ("655 female") is as verified as the value it breaks down.
+    let candidates = findings.filter(
+      (f) => equalsValue(f.value) || equalsValue(f.cumulativeValue) || equalsValue(f.lifeOfProject?.value) || (f.disaggregation ?? []).some((e) => equalsValue(e.value)) || (f.lifeOfProject?.disaggregation ?? []).some((e) => equalsValue(e.value)),
+    );
 
     let derived = false;
     if (candidates.length === 0 && atom.role === "PERCENT") {
@@ -198,9 +208,10 @@ export class NumericAssertionVerifier {
           const ratio = decimalDivide(value, base, 6);
           if (ratio === null) continue;
           const raw = decimalMultiply(ratio, parseDecimal("100")!);
+          const rounded0 = decimalRound(raw, 0);
           const rounded1 = decimalRound(raw, 1);
           const rounded2 = decimalRound(raw, 2);
-          if (decimalCompare(rounded1, percentValue) === 0 || decimalCompare(rounded2, percentValue) === 0) return finding;
+          if ([rounded0, rounded1, rounded2].some((r) => decimalCompare(r, percentValue) === 0)) return finding;
         }
       }
     }
@@ -231,6 +242,17 @@ export class NumericAssertionVerifier {
  * assertion and cited chunks and returns SUPPORTED/CONTRADICTED/INSUFFICIENT/
  * UNCERTAIN with cited spans and confidence. It never approves a report.
  */
+const COVERAGE_CHUNKS = 8;
+
+/** Drops the parts of a sentence that only point at another section. */
+export function stripCrossReferences(text: string): string {
+  return text
+    .replace(/\((?:see|cf\.?|refer to)[^)]*\)/gi, " ")
+    .replace(/\bas (?:set out|described|stated|shown|summari[sz]ed|reported|detailed) in [^,.;]+/gi, " ");
+}
+const COVERAGE_MIN_TOKENS = 5;
+const COVERAGE_MIN_BEST = 0.15;
+const COVERAGE_SUPPORT = 0.85;
 const CONTRADICTION_RE = /(no evidence|did not|was not|wasn't|contradicts|cannot be confirmed|unable to confirm|not supported)/i;
 
 export class DeterministicEntailmentVerifier implements IEntailmentVerifier {
@@ -255,8 +277,19 @@ export class DeterministicEntailmentVerifier implements IEntailmentVerifier {
       }
     }
 
+    // A sentence that synthesises several records scores low against each one on its own. It is supported when
+    // the few chunks that together cover it contain nearly all of its content words (figures included) and at
+    // least one of them is genuinely about it; nothing weaker than that lifts a claim above "uncertain".
+    // Cross-references ("as set out in Results", "(see Financial Summary)") point elsewhere and are not content.
+    const substance = stripCrossReferences(input.assertionText);
+    const covering = selectCoveringChunks(substance, input.evidence.map((c) => c.chunkText), COVERAGE_CHUNKS);
+    const covered =
+      contentTokenCount(substance) >= COVERAGE_MIN_TOKENS &&
+      bestScore >= COVERAGE_MIN_BEST &&
+      scoreCoverage(substance, covering.map((i) => input.evidence[i]!.chunkText)) >= COVERAGE_SUPPORT;
+
     const verdict: EntailmentVerdict =
-      bestScore >= this.supportThreshold ? "SUPPORTED"
+      bestScore >= this.supportThreshold || covered ? "SUPPORTED"
         : bestScore >= this.uncertainThreshold ? "UNCERTAIN"
           : "INSUFFICIENT";
 

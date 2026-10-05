@@ -172,13 +172,18 @@ export function atomsEqual(a: NumericAtom, b: NumericAtom): boolean {
  *   "Stage-2") are not extracted; a leading minus is only a sign at a token
  *   boundary, never part of an identifier.
  */
+const UUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
 export function extractNumericAtoms(text: string): NumericAtom[] {
   const atoms: NumericAtom[] = [];
+  // An identifier cited in prose ("evidence: 14141986-6483-...") is not a figure, even when its first group is all digits.
+  const identifiers = [...text.matchAll(UUID_RE)].map((m) => [m.index ?? 0, (m.index ?? 0) + m[0].length] as const);
   const re = /-?\d+(?:[.,]\d+)*/g;
   let match: RegExpExecArray | null;
   while ((match = re.exec(text)) !== null) {
     const start = match.index;
     const end = start + match[0].length;
+    if (identifiers.some(([s, e]) => start >= s && end <= e)) continue;
     if (isEmbeddedNumber(text, start, end)) continue;
     const value = normalizeNumberToken(match[0]);
     if (value === null || parseDecimal(value) === null) continue;

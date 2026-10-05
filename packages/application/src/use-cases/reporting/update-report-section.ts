@@ -1,6 +1,7 @@
 import type { Result, ChangeOrigin, TenantId } from "@donordesk/domain";
 import { DomainError, normalizeSectionMarkdown, SECTION_MARKDOWN_MAX_LENGTH } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
+import type { ISectionChartService } from "../../services/section-chart-service.js";
 import type { IReportSectionRepository, IReportDraftRepository, IReportRevisionService, IReportAssuranceService } from "../../ports/reporting.js";
 import type { IAuditLogger } from "../../ports/core.js";
 import type { SourceReference } from "@donordesk/domain";
@@ -51,6 +52,8 @@ export class UpdateReportSectionHandler {
      */
     private readonly onManualEditCommitted?: (input: { tenantId: TenantId; sectionId: string; revisionId: string }) => Promise<void>,
     private readonly runInBackground: BackgroundRunner = fireAndForget,
+    /** Rebuilds the section's charts from its edited tables. Absent: charts keep the text they were made from. */
+    private readonly charts?: ISectionChartService,
   ) {}
 
   async handle(ctx: AuthenticatedContext, sectionId: string, input: UpdateSectionInput): Promise<Result<{ version: string; revisionId: string; assuranceState: string }, DomainError>> {
@@ -116,6 +119,9 @@ export class UpdateReportSectionHandler {
       revisionId: committed.value.id,
     });
     if (!assessed.ok) return assessed;
+
+    // A chart follows its table: an edited table redraws its chart (best-effort; the text is already saved).
+    if (this.charts) await this.charts.refresh({ tenantId: ctx.tenant.tenantId, sectionId, revisionId: committed.value.id, title: sec.sectionTitle, content });
 
     if (reopened) {
       await this.audit.record({

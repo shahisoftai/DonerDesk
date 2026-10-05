@@ -1,3 +1,4 @@
+import { chartArtifactsForSection } from "./section-chart-service.js";
 import type { Result, ReportPlan, ReportPlanSection, ReportSection, ChangeOrigin } from "@donordesk/domain";
 import { DomainError, attributionSectionTitle, attributionSentences, normalizeReportLanguage, placeAttribution } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../context.js";
@@ -161,7 +162,10 @@ export class SectionGenerationService {
     // a failed persistence does not abort the section (prose is already
     // committed and assured). A regenerated section always replaces them, so
     // tables of the old text never outlive it.
-    const artifacts = generated.section.artifacts ?? [];
+    // Charts are derived from the tables in the final text (the worker no longer draws its own), so each one sits beside the
+    // table it shows, whoever wrote that table.
+    const written = (generated.section.artifacts ?? []).filter((a) => a.kind !== "CHART");
+    const artifacts = [...written, ...chartArtifactsForSection({ title: section.sectionTitle, content: generated.section.content }, written.length)];
     if (this.reportArtifacts && (artifacts.length > 0 || input.changeOrigin === "REGENERATION")) {
       const persisted = await this.reportArtifacts.replaceForSection({
         tenantId: ctx.tenant.tenantId,

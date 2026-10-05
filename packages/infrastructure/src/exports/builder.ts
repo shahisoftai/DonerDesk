@@ -1,9 +1,9 @@
 import type { IExportBuilder, ExportArtifacts, ExportChartInput, IStorage, IDonorTemplateRenderer } from "@donordesk/application";
-import { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType, TextRun, ImageRun, PageBreak, TableOfContents } from "docx";
+import { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType, TextRun, ImageRun, PageBreak, TableOfContents, Header } from "docx";
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
-import { renderChartPngCached, chartHasData } from "./chart-png-renderer.js";
+import { renderChartPngCached, chartHasData, type ChartSource } from "./chart-png-renderer.js";
 import { parseMarkdownBlocks, renderDocxBlocks, renderPdfBlocks } from "./markdown-renderer.js";
 
 /** Report section depth (1 = section, 2-4 = sub-sections); absent on legacy data. */
@@ -26,6 +26,27 @@ function escapeCsv(value: string): string {
 
 function textRuns(s: string): TextRun[] {
   return [new TextRun({ text: s })];
+}
+
+/** The charts of each section as images, in reading order: every chart of a section (one per table it charts, plus any hand-made one). */
+async function renderSectionCharts(charts: Parameters<IExportBuilder["build"]>[0]["charts"]): Promise<Map<string, Array<{ png: Buffer; caption: string }>>> {
+  const bySection = new Map<string, Array<{ png: Buffer; caption: string }>>();
+  let figure = 0;
+  for (const c of charts ?? []) {
+    const source: ChartSource = "resolved" in c ? { resolved: c.resolved } : { config: c.config, indicators: c.indicators };
+    if (!chartHasData(source)) continue;
+    try {
+      const png = await renderChartPngCached({ ...source, width: 720, height: 420 });
+      figure += 1;
+      const list = bySection.get(c.sectionTitle) ?? [];
+      const caption = c.caption ?? ("resolved" in c ? c.resolved.title : c.sectionTitle);
+      list.push({ png, caption: `Figure ${figure}. ${caption}` });
+      bySection.set(c.sectionTitle, list);
+    } catch {
+      // Chart rendering must never break an export; skip the image.
+    }
+  }
+  return bySection;
 }
 
 export class DefaultExportBuilder implements IExportBuilder {
@@ -70,18 +91,7 @@ export class DefaultExportBuilder implements IExportBuilder {
 
   private async buildWord(input: Parameters<IExportBuilder["build"]>[0]): Promise<ExportArtifacts> {
     const sections: Array<Paragraph | Table> = [];
-    const chartImages = new Map<string, { png: Buffer; caption: string }>();
-    if (input.charts && input.charts.length > 0) {
-      for (const c of input.charts) {
-        if (!chartHasData(c.indicators, c.config)) continue;
-        try {
-          const png = await renderChartPngCached({ config: c.config, indicators: c.indicators, width: 720, height: 420 });
-          chartImages.set(c.sectionTitle, { png, caption: c.sectionTitle });
-        } catch {
-          // Chart rendering must never break an export; skip the image.
-        }
-      }
-    }
+    const chartImages = await renderSectionCharts(input.charts);
     for (const s of input.sections) {
       sections.push(
         new Paragraph({
@@ -93,8 +103,7 @@ export class DefaultExportBuilder implements IExportBuilder {
       // emphasis, and real tables (previously one flat Paragraph of raw
       // markdown text shipped to the donor).
       sections.push(...renderDocxBlocks(parseMarkdownBlocks(s.content)));
-      const chart = chartImages.get(s.title);
-      if (chart) {
+      for (const chart of chartImages.get(s.title) ?? []) {
         sections.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "png", data: chart.png, transformation: { width: 540, height: 315 } })] }));
         sections.push(new Paragraph({ alignment: AlignmentType.CENTER, children: textRuns(chart.caption) }));
       }
@@ -125,12 +134,19 @@ export class DefaultExportBuilder implements IExportBuilder {
       sections: [
         {
           properties: {},
+          // An internal-review copy says so at the top of every page, not once at the end.
+          ...(this.watermarkText(input)
+            ? { headers: { default: new Header({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: this.watermarkText(input), bold: true, color: "B91C1C", size: 18 })] })] }) } }
+            : {}),
           children: [
             // Cover page.
             new Paragraph({ heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER, spacing: { before: 2400 }, children: textRuns(input.reportTitle) }),
             new Paragraph({ alignment: AlignmentType.CENTER, children: textRuns(`Project: ${input.projectName}`) }),
             new Paragraph({ alignment: AlignmentType.CENTER, children: textRuns(`Reporting period: ${input.reportingPeriodLabel}`) }),
             new Paragraph({ alignment: AlignmentType.CENTER, children: textRuns("Prepared with DonorDesk") }),
+            ...(this.watermarkText(input)
+              ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 400 }, children: [new TextRun({ text: this.watermarkText(input), bold: true, color: "B91C1C", size: 28 })] })]
+              : []),
             new Paragraph({ children: [new PageBreak()] }),
             // Word populates this on open (features.updateFields).
             new TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-3" }),
@@ -161,6 +177,17 @@ export class DefaultExportBuilder implements IExportBuilder {
     const doc = new PDFDocument({ margin: 50, info: { Title: input.reportTitle, Author: "DonorDesk" } });
     doc.on("data", (c) => chunks.push(c as Buffer));
     const done = new Promise<void>((resolve) => doc.on("end", () => resolve()));
+    // An internal-review copy says so at the top of every page, not once at the end.
+    const banner = this.watermarkText(input);
+    const printBanner = (): void => {
+      if (!banner) return;
+      const { x, y } = doc;
+      doc.save().fontSize(8).fillColor("#B91C1C").font("Helvetica-Bold").text(banner, 50, 24, { align: "center", width: doc.page.width - 100, lineBreak: false }).restore();
+      doc.x = x;
+      doc.y = Math.max(y, 50);
+    };
+    printBanner();
+    doc.on("pageAdded", printBanner);
     // Cover page.
     doc.fontSize(22).text(input.reportTitle, { align: "center" });
     doc.moveDown(0.5);
@@ -168,18 +195,7 @@ export class DefaultExportBuilder implements IExportBuilder {
     doc.text(`Reporting period: ${input.reportingPeriodLabel}`, { align: "center" });
     doc.text("Prepared with DonorDesk", { align: "center" });
     doc.moveDown();
-    const chartImages = new Map<string, Buffer>();
-    if (input.charts && input.charts.length > 0) {
-      for (const c of input.charts) {
-        if (!chartHasData(c.indicators, c.config)) continue;
-        try {
-          const png = await renderChartPngCached({ config: c.config, indicators: c.indicators, width: 720, height: 420 });
-          chartImages.set(c.sectionTitle, png);
-        } catch {
-          // Chart rendering must never break an export; skip the image.
-        }
-      }
-    }
+    const chartImages = await renderSectionCharts(input.charts);
     // Contents (section list; PDFKit has no page-number pass, so entries are
     // listed in reading order without page references).
     doc.fontSize(14).text("Contents");
@@ -195,11 +211,13 @@ export class DefaultExportBuilder implements IExportBuilder {
       // Render the section's markdown natively instead of printing raw
       // pipes/dashes: headings, bullets, emphasis, and ruled tables.
       renderPdfBlocks(doc, parseMarkdownBlocks(s.content));
-      const chart = chartImages.get(s.title);
-      if (chart) {
+      for (const chart of chartImages.get(s.title) ?? []) {
         doc.moveDown();
         try {
-          doc.image(chart, { fit: [480, 280], align: "center" });
+          doc.image(chart.png, { fit: [480, 280], align: "center" });
+          doc.moveDown(0.3);
+          doc.fontSize(9).text(chart.caption, { align: "center" });
+          doc.fontSize(10);
         } catch {
           // Unsupported image stream; skip.
         }

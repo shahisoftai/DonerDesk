@@ -187,3 +187,35 @@ test("quarterly findings do not read life-of-project data", async () => {
   assert.equal(result.ok, true);
   assert.equal(result.value[0].lifeOfProject, undefined);
 });
+
+test("a final report judges the life-of-project figure against the target, not its own last period", async () => {
+  const earlier = makePeriod("period-1", "2026-07-01");
+  const final = ReportingPeriod.create({
+    id: "period-2", tenantId: "tenant-a", projectId: "proj-1", reportType: "FINAL",
+    startDate: new Date("2026-08-01"), endDate: new Date("2026-08-31"), deadline: new Date("2026-09-30"),
+  });
+  const indicator = Indicator.rehydrate({
+    id: "ind-1", tenantId: "tenant-a", projectId: "proj-1", createdAt: new Date("2026-03-01"),
+    props: {
+      logframeItemId: "item-1", code: "IND-1", name: "Number of people trained", type: "NUMBER", baseline: "0", target: "100", unit: "people", disaggregationRequired: false,
+      semanticsJson: JSON.stringify({ aggregation: "SUM", direction: "HIGHER_IS_BETTER", reportingBasis: "PERIOD", status: "CONFIGURED" }),
+    },
+  });
+  const u1 = verifiedUpdate("u1", "ind-1", "period-1", "60");
+  // Updates record a running total in cumulativeAchievement: 60 + 40 = 100 by the end of the final period.
+  const u2 = IndicatorUpdate.create({ id: "u2", tenantId: "tenant-a", indicatorId: "ind-1", reportingPeriodId: "period-2", periodAchievement: "40", cumulativeAchievement: "100", createdById: "user-1" });
+  u2.submit();
+  u2.verify("user-1");
+  const byPeriod = { "period-1": [u1], "period-2": [u2] };
+  const service = new IndicatorAnalyticsService(
+    { findById: async () => ({ ok: true, value: final }), findPreviousPeriods: async () => ({ ok: true, value: [] }), findByProject: async () => ({ ok: true, value: [earlier, final] }) },
+    { findByProject: async () => ({ ok: true, value: [indicator] }) },
+    { findByReportingPeriod: async (id) => ({ ok: true, value: byPeriod[id] ?? [] }), findByIndicator: async () => ({ ok: true, value: [u1, u2] }) },
+  );
+  const result = await service.computeFindings({ reportingPeriodId: "period-2", projectId: "proj-1", tenantId: tenant });
+  assert.equal(result.ok, true);
+  const finding = result.value[0];
+  assert.equal(finding.value, "40", "this period's own value is still reported");
+  assert.equal(finding.lifeOfProject.value, "100");
+  assert.equal(finding.performanceEvaluation.type, "POSITIVE", "100 of 100 over the project, not 40 of 100");
+});

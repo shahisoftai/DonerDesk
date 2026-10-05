@@ -50,4 +50,9 @@ export interface IUnsupportedClaimProjector {
     projectId: string;
     gaps: Array<{ key: string; title: string; description: string }>;
   }): Promise<Result<void>>;
+  /**
+   * Closes the open unsupported-claim items whose statement is no longer a failing material claim (it was rewritten,
+   * resolved, or now passes). `activeKeys` are the texts of the claims that still fail across the whole draft.
+   */
+  reconcile(input: { tenantId: TenantId; periodId: string; activeKeys: string[] }): Promise<Result<void>>;
 }

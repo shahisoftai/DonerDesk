@@ -89,7 +89,11 @@ export function inferIndicatorSemantics(input: {
     if (hasNumerator && hasDenominator) {
       return { ...base, status: "INFERRED" };
     }
-    return base;
+    // No numerator/denominator: the value is a rate the field team reported directly (an attendance rate
+    // from registers). PERCENTAGE aggregation has nothing to divide, so it would read "not calculable"
+    // beside a verified value; the latest verified rate is reported as recorded instead (no averaging, no
+    // invented maths) and the indicator stays REQUIRES_REVIEW until someone confirms how it aggregates.
+    return { ...base, aggregation: "LATEST" };
   }
 
   if (input.type === "RATIO") {

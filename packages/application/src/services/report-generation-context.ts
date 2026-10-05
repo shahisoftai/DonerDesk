@@ -1,5 +1,6 @@
 import type { FinanceSummaryView, Result, Project, ReportingPeriod, ReportScope, TemplateSection, VerifiedFinding } from "@donordesk/domain";
 import { DomainError, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
+import { taggedEvidenceIds } from "./period-evidence.js";
 import { resolveGenerationActivities, resolvePeriodActivities, scopeIndicatorData } from "./period-activities.js";
 import type { AuthenticatedContext } from "../context.js";
 import type {
@@ -21,6 +22,7 @@ import type { PeriodTemplateSnapshot } from "./template-snapshot.js";
 import type { PeriodTemplateResolver } from "./period-template-resolver.js";
 import type { IOrganizationRepository } from "../ports/identity.js";
 import type { IFinanceInputs } from "./finance-inputs.js";
+import type { IEvidenceRepository } from "../ports/evidence.js";
 
 /** Who/what a generation run writes with, and the donor structure it follows. */
 export interface GenerationBase {
@@ -98,6 +100,8 @@ export class ReportGenerationContextBuilder {
     private readonly getGenerator: (tenantId?: string) => Promise<IReportDraftGenerator>,
     /** Absent when the deployment has no finance support: reports are written without financial figures. */
     private readonly finance?: IFinanceInputs,
+    /** Absent: only evidence attached to an activity or indicator update reaches the writer. */
+    private readonly evidenceFiles?: IEvidenceRepository,
   ) {}
 
   /**
@@ -189,9 +193,15 @@ export class ReportGenerationContextBuilder {
     const verifiedFindings = scoped.findings;
     const updatesResult = { ok: true as const, value: scoped.updates };
 
+    // Evidence that is attached to a record, plus verified evidence tagged to this period or to one of its
+    // activities: uploading a file with those tags is how most evidence arrives, and a file the reporter has
+    // verified for this period should not be invisible to the writer because nobody attached it as well.
+    const taggedIds = await taggedEvidenceIds(this.evidenceFiles, period, activitiesResult.value.map((a) => a.id), ctx.tenant.tenantId);
+    if (!taggedIds.ok) return taggedIds;
     const evidenceIds = Array.from(new Set([
       ...updatesResult.value.flatMap((u) => u.attachedEvidenceIds),
       ...activitiesResult.value.flatMap((a) => a.attachedEvidenceIds),
+      ...taggedIds.value,
     ]));
     const evidencePackagesResult = await this.evidencePackages.build({ tenantId: ctx.tenant.tenantId, evidenceIds });
     if (!evidencePackagesResult.ok) return evidencePackagesResult;

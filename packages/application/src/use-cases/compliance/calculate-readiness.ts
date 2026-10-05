@@ -1,6 +1,7 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, lintReportContradictions, calculateReadiness, READINESS_WEIGHTS, DATA_QUALITY_PENALTY, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
+import { DomainError, lintReportContradictions, toLintFindingData, calculateReadiness, READINESS_WEIGHTS, DATA_QUALITY_PENALTY, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
+import type { ILintGrounding } from "../../services/lint-grounding.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
@@ -32,6 +33,8 @@ export class CalculateReadinessHandler {
      * `overall`. Absent for legacy callers, whose scores are unchanged.
      */
     private readonly analytics?: IIndicatorAnalyticsService,
+    /** Figures the project's own records state, so the quality lint does not flag them. */
+    private readonly lintGrounding?: ILintGrounding,
   ) {}
 
   async handle(
@@ -134,22 +137,19 @@ export class CalculateReadinessHandler {
           projectId: draft.projectId,
           tenantId: ctx.tenant.tenantId,
         });
+        let groundedFigures: string[] = [];
         if (computed.ok) {
-          lintFindingsData = computed.value.map((f) => ({
-            indicatorCode: f.indicatorCode,
-            value: f.value,
-            unit: f.unit,
-            baseline: f.baseline,
-            target: f.target,
-            comparisonValue: f.comparisonValue,
-            qualityFlags: f.qualityFlags,
-          }));
+          lintFindingsData = computed.value.map((f) => toLintFindingData(f));
+          if (this.lintGrounding) {
+            groundedFigures = await this.lintGrounding.figures({ tenantId: ctx.tenant.tenantId, projectId: draft.projectId, reportingPeriodId, findings: computed.value });
+          }
         }
         const lintPeriod = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
         const lintPeriodValue = lintPeriod.ok ? lintPeriod.value : null;
         const lint = lintReportContradictions({
           sections: s.value.map((sec) => ({ id: sec.id, title: sec.sectionTitle, content: sec.content })),
           findings: lintFindingsData,
+          groundedFigures,
           periodStart: lintPeriodValue?.duration?.start?.toISOString(),
           periodEnd: lintPeriodValue?.duration?.end?.toISOString(),
         });

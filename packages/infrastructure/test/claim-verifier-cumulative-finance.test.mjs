@@ -39,3 +39,19 @@ test("the claim verifier passes the finance figures through to the numeric check
   const withoutFinance = await v.verify({ claim, findings: [], evidencePackages: [] });
   assert.equal(withoutFinance.value.result, "FAILED");
 });
+
+test("a recorded breakdown figure is verified, an unrecorded split is not", () => {
+  const f = finding({ value: "1260", target: "1200", disaggregation: [{ dimension: "SEX", category: "Female", value: "655" }, { dimension: "SEX", category: "Male", value: "605" }] });
+  assert.equal(verifier.verify({ atoms: [atom("1260"), atom("655"), atom("605")], findings: [f] }).result, "PASSED");
+  assert.equal(verifier.verify({ atoms: [atom("1260"), atom("700")], findings: [f] }).result, "FAILED", "700 was never recorded");
+  const noBreakdown = finding({ value: "1260", target: "1200" });
+  assert.equal(verifier.verify({ atoms: [atom("1260"), atom("655")], findings: [noBreakdown] }).result, "FAILED", "no recorded breakdown, nothing grounds 655");
+});
+
+test("a baseline quoted before the value that binds the sentence is a reference, not a mismatch", () => {
+  const f = finding({ indicatorCode: "IND-6", value: "86", baseline: "62", target: "85", unit: "%" });
+  const rose = verifier.verify({ atoms: [atom("62", "PERCENT"), atom("86", "PERCENT")], findings: [f] });
+  assert.equal(rose.result, "PASSED", "from a baseline of 62% to 86%");
+  assert.equal(verifier.verify({ atoms: [atom("62", "PERCENT")], findings: [f] }).result, "FAILED", "a baseline alone binds nothing");
+  assert.equal(verifier.verify({ atoms: [atom("63", "PERCENT"), atom("86", "PERCENT")], findings: [f] }).result, "FAILED", "63 is neither value, baseline nor target");
+});

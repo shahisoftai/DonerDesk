@@ -74,6 +74,26 @@ export interface EvidenceChunkPackage {
   chunkIndex: number;
 }
 
+/**
+ * One short statement taken from a structured record the writer was given (project details,
+ * an activity record, an indicator update comment, the story). Not an evidence file: it
+ * grounds a factual claim only for verification, and is never cited as a source.
+ */
+export interface RecordChunk {
+  /** Always starts with `record:` so it can never be mistaken for an evidence id. */
+  chunkId: string;
+  /** Where it came from, e.g. "Activity record: A1.1 …". */
+  label: string;
+  text: string;
+}
+
+/** Builds the record chunks of a reporting period. */
+export interface IRecordChunkBuilder {
+  build(input: { tenantId: TenantId; projectId: string; reportingPeriodId: string }): Promise<Result<RecordChunk[], DomainError>>;
+  /** The evidence files behind a period (attached to its records, or verified and tagged to it): what a re-assessment verifies against. */
+  evidenceIds(input: { tenantId: TenantId; projectId: string; reportingPeriodId: string }): Promise<Result<string[], DomainError>>;
+}
+
 export interface EvidencePackage {
   evidenceId: string;
   title: string;
@@ -259,6 +279,8 @@ export interface GenerateReportDraftInput {
 export interface ReportClaimDraft {
   text: string;
   type: ClaimType;
+  /** The extractor's finer type; a RECOMMENDATION or FORECAST is a proposal, so only the figures in it are verified. */
+  assertionType?: AssertionType;
   proposedSources: Array<{ evidenceId: string; chunkId: string; sourceText: string }>;
 }
 
@@ -309,13 +331,19 @@ export interface GeneratedTablePayload {
 
 export interface GeneratedChartSpec {
   type: "BAR" | "LINE" | "PIE" | "AREA" | "RADAR" | "GAUGE";
-  dataBinding: "INDICATOR_COMPARISON" | "INDICATOR_ACHIEVEMENT" | "STATUS_DISTRIBUTION";
+  dataBinding: "INDICATOR_PROGRESS" | "INDICATOR_COMPARISON" | "INDICATOR_ACHIEVEMENT" | "STATUS_DISTRIBUTION" | "TABLE_INDICATOR_PROGRESS" | "TABLE_FINANCE_BY_LINE" | "TABLE_ACTIVITY_PARTICIPANTS";
   unit?: string;
   title: string;
   caption: string;
   categories: string[];
   series: Array<{ name: string; data: Array<string | number | null>; sourceReferences: SourceReference[] }>;
   sourceReferences: SourceReference[];
+  /** Charts derived from a table of the section: which table (0-based, in reading order) and what it is called. */
+  tableIndex?: number;
+  tableCaption?: string;
+  stacked?: boolean;
+  referenceLine?: { name: string; value: number };
+  truncated?: { shown: number; total: number };
 }
 
 export interface GeneratedListPayload {
@@ -542,6 +570,8 @@ export interface IClaimVerifier {
     claim: ReportClaimDraft;
     findings: VerifiedFinding[];
     evidencePackages: EvidencePackage[];
+    /** The project's own records (activity records, project details, story): a factual claim they state is supported by them. */
+    records?: RecordChunk[];
     /** Verified financial figures of the period; numbers equal to one of them are grounded. */
     finance?: FinanceSummaryView;
   }): Promise<Result<ClaimVerification, DomainError>>;

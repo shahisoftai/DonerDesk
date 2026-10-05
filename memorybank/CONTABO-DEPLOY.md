@@ -1,6 +1,11 @@
 # Deploy to Contabo — Fastest Path
 
-**Last deploy:** 2026-10-04 — `releaseId=20261004052515` (`SCOPE=both`, branch `0009-agent-memory`, commit `5322e2c`). **Report-type quality gaps**
+**Last deploy:** 2026-10-05 — `releaseId=20261005095940` (`SCOPE=both`: downloads get a readable `.docx`/`.pdf` name and the right content type), the last of sixteen same-day deploys (`both`: `20261005054216`, `20261005074239`, `20261005080930` (web: Download draft); `api`: the rest up to `20261005090450`). No migration. Verification demo 3: disaggregation reaches the writer and the verifier, record-grounded claim verification (activity records, project
+details, story, findings, finance, evidence log), roll-up reports judged on the life-of-project value with its own breakdown, tagged evidence reaches the writer, preflight counts before the first
+draft (Fixes.md; `demo/verification-demo-3.md`). `20261005055544` shipped with four guidance tests failing because the package tests had run against a stale `dist/` (build every package in
+dependency order first); `20261005061903` replaced it ~4 minutes later. Verified each time: `/ready` 200, worker ok; final report regenerated in a visible browser.
+
+**Earlier:** (previous) **Last deploy:** 2026-10-04 — `releaseId=20261004052515` (`SCOPE=both`, branch `0009-agent-memory`, commit `5322e2c`). **Report-type quality gaps**
 (Features/10 §"Report-type quality gaps closed"): same-kind history, life-of-project (cumulative) findings, per-section cadence guidance, finance data
 (per-project mode, verified-only per-period figures), situation figures + previous-report table, editable scope, new checklist item types.
 **One additive migration applied manually first:** `20261004100000_period_finance` (`ReportingProfile.financeDataMode`, new `PeriodFinancialSummary` table),

@@ -21,3 +21,11 @@ test("authentication contracts normalize valid email input", () => {
   const parsed = LoginSchema.parse({ email: "admin@example.org", password: "password123" });
   assert.equal(parsed.email, "admin@example.org");
 });
+
+import { AttachEvidenceSchema } from "../dist/index.js";
+
+test("attach-evidence accepts the clear indicatorUpdateId name and the legacy indicatorId alias", () => {
+  assert.deepEqual(AttachEvidenceSchema.parse({ evidenceId: "e1", indicatorUpdateId: "u1" }), { evidenceId: "e1", indicatorId: "u1" });
+  assert.deepEqual(AttachEvidenceSchema.parse({ evidenceId: "e1", indicatorId: "u1" }), { evidenceId: "e1", indicatorId: "u1" });
+  assert.deepEqual(AttachEvidenceSchema.parse({ evidenceId: "e1", activityId: "a1" }), { evidenceId: "e1", activityId: "a1", indicatorId: undefined });
+});

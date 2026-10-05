@@ -186,14 +186,14 @@ def test_attach_builds_verified_indicator_table_and_replaces_model_table() -> No
     assert artifact_validators.run_all(section, req).ok, artifact_validators.run_all(section, req).issues
 
 
-def test_attach_adds_grounded_chart_and_delta_for_results_sections() -> None:
+def test_attach_adds_the_delta_but_no_chart_for_results_sections() -> None:
+    # Charts are derived by the API from the tables of the final text (one per table), so the worker draws none.
     req = _req()
     section = artifact_builder.attach(GeneratedSection(sectionId="s", title="Results", content="x"), req, "ACHIEVEMENT")
     kinds = [a.kind for a in section.artifacts]
-    assert kinds == ["CHART", "DELTA"]
-    assert [a.ordinal for a in section.artifacts] == [0, 1]
+    assert kinds == ["DELTA"]
+    assert section.chartSpec is None
     assert section.deltaFromPrior is not None and section.deltaFromPrior.direction == "UP"
-    assert artifact_validators.assert_chart_data_grounding(section, grounding.allowed_numbers(req)).ok
 
 
 # --------------------------------------------------------------------------- #

@@ -84,6 +84,7 @@ const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/report-sections\/[^/]+\/regenerate$/, permission: "report.generate" },
   { method: "GET", route: /^\/v1\/report-sections\/[^/]+\/revisions$/, permission: "report.edit" },
   { method: "PATCH", route: /^\/v1\/report-sections\/[^/]+\/chart$/, permission: "report.edit" },
+  { method: "POST", route: /^\/v1\/report-sections\/[^/]+\/refresh-charts$/, permission: "report.edit" },
   { method: "PUT", route: /^\/v1\/report-drafts\/[^/]+\/sections-order$/, permission: "report.edit" },
   { method: "POST", route: /^\/v1\/report-drafts\/[^/]+\/activate$/, permission: "report.edit" },
   { method: "POST", route: /^\/v1\/report-drafts\/[^/]+\/reject$/, permission: "report.approve" },

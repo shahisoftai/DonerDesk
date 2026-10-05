@@ -13,10 +13,11 @@ test.beforeEach(async ({ context }) => {
   ]);
 });
 
-test("forgot-password page gives honest support guidance and no simulated email form", async ({ page }) => {
+test("forgot-password page offers the self-service reset form and a way back to log in", async ({ page }) => {
   await page.goto("/forgot-password");
   await expect(page.getByRole("heading", { name: "Reset your password" })).toBeVisible();
-  await expect(page.getByText(/Self-service reset is not available yet/)).toBeVisible();
+  await expect(page.getByLabel("Email")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Send reset link" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Back to log in" })).toBeVisible();
 });
 

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
+import { bindingsForSection, type ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import { Badge } from "@/components/data/Badge";
 import { Button } from "@/components/ui/Button";
 import { sectionStatusTone } from "@/lib/shared/tone";
@@ -322,7 +322,7 @@ export function DocumentSection({
         <EvidencePeek claim={peekClaim} anchor={peek.element} projectId={projectId} onHoverChange={(hovering) => showPeek(hovering ? peek.claimId : null, hovering ? peek.element : null)} />
       )}
 
-      {section.chartConfig && !editing && (
+      {section.chartConfig && !editing && bindingsForSection(section.sectionTitle).includes(section.chartConfig.dataBinding) && (
         <ChartFigure config={section.chartConfig} indicators={chartIndicators} caption={`Figure · ${vm.title}`} />
       )}
       {!editing && <SectionArtifacts artifacts={artifacts} contentHasTable={/^\s*\|.*\|\s*$/m.test(content)} />}

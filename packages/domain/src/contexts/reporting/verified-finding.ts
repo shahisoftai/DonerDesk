@@ -1,5 +1,6 @@
 import type { IndicatorType } from "../logframe/indicator.js";
 import type { AggregationMethod, IndicatorSemantics, PerformanceDirection } from "../logframe/indicator-semantics.js";
+import type { DisaggregationEntry } from "../logframe/indicator-disaggregation.js";
 import type { LifeOfProjectValue } from "./life-of-project.js";
 
 export type FindingQualityFlag =
@@ -64,6 +65,11 @@ export interface VerifiedFinding {
   priorCumulativeValue?: string;
   /** Progress since the project started (semi-annual, annual and final reports only). */
   lifeOfProject?: LifeOfProjectValue;
+  /**
+   * Recorded breakdown (sex, age, ...) of the verified updates behind `value`, e.g. SEX / Female / 655.
+   * Absent when none was recorded; that, and only that, is what `MISSING_DISAGGREGATION` means.
+   */
+  disaggregation?: DisaggregationEntry[];
   unit?: string;
   calculationMethod: string;
   /** Resolved semantics snapshot consumed to produce this finding. */

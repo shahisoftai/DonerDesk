@@ -1,6 +1,7 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, evaluateReportGate, gateKindForReason, canApproveAssurance, lintReportContradictions, type GateKind, type ReportGateInput, type ContradictionLintFindingData } from "@donordesk/domain";
+import { DomainError, evaluateReportGate, gateKindForReason, canApproveAssurance, lintReportContradictions, toLintFindingData, type GateKind, type ReportGateInput, type ContradictionLintFindingData } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
+import type { ILintGrounding } from "../../services/lint-grounding.js";
 import type {
   IReportDraftRepository,
   IReportingPeriodRepository,
@@ -36,6 +37,8 @@ export class ApproveReportHandler {
      * content-only lint checks (divergence, dates, disaggregation).
      */
     private readonly analytics?: IIndicatorAnalyticsService,
+    /** Figures the project's own records state (budget, counts, life-of-project totals) so the lint does not flag them. */
+    private readonly lintGrounding?: ILintGrounding,
   ) {}
 
   async handle(ctx: AuthenticatedContext, draftId: string): Promise<Result<void, DomainError>> {
@@ -218,6 +221,7 @@ export class ApproveReportHandler {
     // claims, so they cannot be closed with an ACCEPTED_WITH_LIMITATION note —
     // only by correcting the report text.
     const lintFindingsData: ContradictionLintFindingData[] = [];
+    let groundedFigures: string[] = [];
     if (this.analytics) {
       const draftResult = await this.drafts.findById(draftId, ctx.tenant.tenantId);
       const draftRecord = draftResult.ok ? draftResult.value : null;
@@ -228,16 +232,9 @@ export class ApproveReportHandler {
           tenantId: ctx.tenant.tenantId,
         });
         if (computed.ok) {
-          for (const f of computed.value) {
-            lintFindingsData.push({
-              indicatorCode: f.indicatorCode,
-              value: f.value,
-              unit: f.unit,
-              baseline: f.baseline,
-              target: f.target,
-              comparisonValue: f.comparisonValue,
-              qualityFlags: f.qualityFlags,
-            });
+          for (const f of computed.value) lintFindingsData.push(toLintFindingData(f));
+          if (this.lintGrounding) {
+            groundedFigures = await this.lintGrounding.figures({ tenantId: ctx.tenant.tenantId, projectId: draftRecord.projectId, reportingPeriodId, findings: computed.value });
           }
         }
       }
@@ -249,6 +246,7 @@ export class ApproveReportHandler {
     const lint = lintReportContradictions({
       sections: sectionsResult.value.map((s) => ({ id: s.id, title: s.sectionTitle, content: s.content })),
       findings: lintFindingsData,
+      groundedFigures,
       periodStart: lintPeriodValue?.duration?.start?.toISOString(),
       periodEnd: lintPeriodValue?.duration?.end?.toISOString(),
     });

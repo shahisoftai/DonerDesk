@@ -165,7 +165,9 @@ export interface AiReporterFinding {
   qualityFlags: string[];
   comparisonValue?: string | number | null;
   /** Progress since the project started; present for semi-annual, annual and final reports. */
-  lifeOfProject?: { value: string; basis: string; periodsCovered?: number; asOf?: string } | null;
+  lifeOfProject?: { value: string; basis: string; periodsCovered?: number; asOf?: string; disaggregation?: Array<{ dimension: string; category: string; value: string }> } | null;
+  /** Recorded breakdown (sex, age, ...) behind the value; absent when none was recorded. */
+  disaggregation?: Array<{ dimension: string; category: string; value: string }>;
 }
 
 export interface AiReporterIndicatorUpdate {

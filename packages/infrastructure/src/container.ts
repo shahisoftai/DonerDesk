@@ -99,6 +99,8 @@ import {
   DeleteReportSectionHandler,
   ReorderReportSectionsHandler,
   UpdateReportSectionChartHandler,
+  RefreshSectionChartsHandler,
+  SectionChartService,
   ApproveReportSectionHandler,
   SubmitReportForReviewHandler,
   CancelReportGenerationHandler,
@@ -177,6 +179,8 @@ import {
   BillingSubscriptionSynchronizer,
   ReportRevisionService,
   ReportAssuranceService,
+  RecordChunkBuilder,
+  LintGrounding,
   GetReportAssuranceHandler,
   ReassessReportRevisionHandler,
   ResolveEffectiveRequirementsHandler,
@@ -513,6 +517,7 @@ export interface Container {
     deleteReportSection: DeleteReportSectionHandler;
     reorderReportSections: ReorderReportSectionsHandler;
     updateReportSectionChart: UpdateReportSectionChartHandler;
+    refreshSectionCharts: RefreshSectionChartsHandler;
     approveReportSection: ApproveReportSectionHandler;
     submitReportForReview: SubmitReportForReviewHandler;
     approveReport: ApproveReportHandler;
@@ -709,6 +714,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const generationRuns = new PrismaReportGenerationRunRepository(prisma);
   const reportRevisions = new PrismaReportRevisionRepository(prisma);
   const reportArtifacts = new PrismaReportArtifactRepository(prisma);
+  const sectionChartService = new SectionChartService(reportArtifacts);
   const agentMemory = new PrismaAgentMemoryRepository(prisma);
   const submissionSnapshots = new PrismaSubmissionSnapshotRepository(prisma);
   const requirementPacks = new PrismaRequirementPackRepository(prisma);
@@ -1014,7 +1020,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     backgroundTasks.add(running);
   };
   const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);
-  const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector, financeInputs);
+  const recordChunkBuilder = new RecordChunkBuilder(periods, projects, activities, indicators, indicatorUpdates, evidence);
+  const lintGrounding = new LintGrounding(recordChunkBuilder, evidencePackageBuilder, financeInputs);
+  const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector, financeInputs, recordChunkBuilder);
 
   // Agent Memory (Phase 21) — this handler has zero knowledge of the feature
   // beyond invoking an injected hook after a MANUAL_EDIT revision commits
@@ -1033,11 +1041,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
         }
       }
     : undefined;
-  const updateReportSectionHandler = new UpdateReportSectionHandler(sections, drafts, revisionService, assuranceService, audits, onManualEditCommitted, runInBackground);
+  const updateReportSectionHandler = new UpdateReportSectionHandler(sections, drafts, revisionService, assuranceService, audits, onManualEditCommitted, runInBackground, sectionChartService);
   const claimSuggestionHandler = new GetClaimSuggestionHandler(reportClaims, drafts, indicatorAnalytics);
   const requirementResolver = new DeterministicRequirementResolver(ids, periods, requirementPacks, awardOverrides, reportPlans, resolvedRequirements);
 
-  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics);
+  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics, lintGrounding);
   const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits, indicatorAnalytics, financeInputs);
 
   if (jobRegistrar?.register) {
@@ -1060,7 +1068,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     );
   }
 
-  const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, submissionSnapshots, exportBuilder, storage, audits, donorTemplateMappings, templates, reportClaims);
+  const createExportHandler = new CreateExportHandler(ids, exports, projects, periods, drafts, sections, indicators, indicatorUpdates, activities, checklist, evidence, submissionSnapshots, exportBuilder, storage, audits, donorTemplateMappings, templates, reportClaims, reportArtifacts);
   const templateExtractionRunner = new TemplateExtractionRunner(templates, templateExtraction, templateFiles, structuredParser, audits);
   const uploadTemplateHandler = new UploadTemplateHandler(ids, templates, templateFiles, templateExtractionRunner, runInBackground, audits);
   const parseTemplateFileHandler = new ParseTemplateFileHandler(structuredParser, templateFiles);
@@ -1069,7 +1077,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const updateTemplateMappingHandler = new UpdateTemplateMappingHandler(donorTemplateMappings, audits);
   const approveTemplateMappingHandler = new ApproveTemplateMappingHandler(donorTemplateMappings, donorTemplateRenderer, storage, audits);
   const lockTemplateMappingHandler = new LockTemplateMappingHandler(periods, donorTemplateMappings, audits);
-  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics);
+  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding);
   const createReportingPeriodHandler = new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events, activities);
   const ensureAutoPeriodHandler = new EnsureAutoPeriodHandler(projects, reportingProfiles, periods, createReportingPeriodHandler);
 
@@ -1211,6 +1219,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     deleteReportSection: new DeleteReportSectionHandler(drafts, sections, reportClaims, reportRevisions, audits),
     reorderReportSections: new ReorderReportSectionsHandler(drafts, sections, audits),
     updateReportSectionChart: new UpdateReportSectionChartHandler(sections, audits),
+    refreshSectionCharts: new RefreshSectionChartsHandler(sections, sectionChartService, audits),
     rewriteReportSection: new RewriteReportSectionHandler(
       ids, drafts, sections, periods, indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder,
       getReportDraftGenerator, revisionService, assuranceService, generationRuns, audits, reportArtifacts,
@@ -1224,7 +1233,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     reassessReportRevision: new ReassessReportRevisionHandler(sections, reportRevisions, assuranceService, audits),
     regenerateReportSection: new RegenerateReportSectionHandler(
       ids, drafts, sections, reportPlans, generationRuns,
-      new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs),
+      new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence),
       new SectionGenerationService(ids, llmUsage, revisionService, assuranceService, audits, reportArtifacts),
       sectionRegenerationTracker, audits, runInBackground,
     ),

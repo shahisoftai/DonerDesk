@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
+import { chartAchievement, type ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import {
   activateReportDraftAction,
   approveReportAction,
@@ -78,7 +78,9 @@ type IndicatorRow = {
   baseline: string;
   target: string;
   unit?: string;
-  update: { periodAchievement: string; verificationStatus: string } | null;
+  /** NUMBER, PERCENTAGE, ...: a rate is never charted as a cumulative figure. */
+  type?: string;
+  update: { periodAchievement: string; cumulativeAchievement?: string; verificationStatus: string } | null;
 };
 
 type SmartReviewItem = {
@@ -361,16 +363,19 @@ export function ReportEditor(props: ReportEditorProps) {
 
   const chartIndicators = useMemo<ChartFigureIndicator[]>(
     () =>
-      props.indicators.map((i) => ({
-        code: i.code,
-        name: i.name,
-        baseline: i.baseline,
-        target: i.target,
-        unit: i.unit,
-        achievement: i.update?.periodAchievement ?? "0",
-        status: i.update?.verificationStatus ?? "DRAFT",
-      })),
-    [props.indicators],
+      // Only indicators that have a value are charted (a missing one is not "0"); a roll-up report plots the cumulative figure.
+      props.indicators
+        .filter((i) => i.update)
+        .map((i) => ({
+          code: i.code,
+          name: i.name,
+          baseline: i.baseline,
+          target: i.target,
+          unit: i.unit,
+          achievement: chartAchievement({ reportType: props.reportScope?.reportType, indicatorType: i.type, periodValue: i.update?.periodAchievement, cumulativeValue: i.update?.cumulativeAchievement }),
+          status: i.update?.verificationStatus ?? "DRAFT",
+        })),
+    [props.indicators, props.reportScope?.reportType],
   );
 
   // URL is updated with history.replaceState: selection changes must not
@@ -595,6 +600,11 @@ export function ReportEditor(props: ReportEditorProps) {
   if (hasDocument) {
     menuItems.push({ label: "Show evidence marks", hint: "Underline every statement that matches the evidence", checked: showEvidenceMarks, onSelect: toggleEvidenceMarks });
     menuItems.push({ label: "Keyboard shortcuts", hint: "Press ? at any time", onSelect: () => setShortcutsOpen(true) });
+  }
+  // A draft can always be downloaded as a watermarked internal-review copy, whatever its open issues; the
+  // primary "Export report" action only appears once approved, so the menu is the way in for a draft.
+  if (hasDocument && can(props.capabilities, "export.create")) {
+    menuItems.push({ label: "Download draft", hint: "Word or PDF, watermarked for internal review", onSelect: () => setExportOpen(true) });
   }
   menuItems.push({ label: "Export center", hint: "Past exports and downloads", href: `${base}/export` });
   menuItems.push({ label: "Switch to classic view", hint: "The previous workspace layout", href: `${base}?editor=classic` });

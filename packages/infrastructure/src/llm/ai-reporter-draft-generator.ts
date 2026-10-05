@@ -366,6 +366,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         comparisonValue: f.comparisonValue ?? null,
         // Only on reports that state progress since the project started; absent otherwise so other requests are unchanged.
         ...(f.lifeOfProject ? { lifeOfProject: f.lifeOfProject } : {}),
+        // Only when a breakdown was recorded, so requests for findings without one are unchanged on the wire.
+        ...(f.disaggregation?.length ? { disaggregation: f.disaggregation } : {}),
       })),
       indicatorUpdates: input.indicatorUpdates.map((u) => ({
         indicatorCode: u.indicatorCode,

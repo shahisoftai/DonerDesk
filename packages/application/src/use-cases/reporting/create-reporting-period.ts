@@ -12,6 +12,15 @@ import type { CreateReportingPeriodInput } from "@donordesk/contracts";
 import { serializeTemplateSnapshot } from "../../services/template-snapshot.js";
 import { ReportScopeResolver } from "../../services/report-scope-resolver.js";
 
+const ROLL_UP_TYPES: ReadonlySet<string> = new Set(["SEMI_ANNUAL", "ANNUAL", "FINAL"]);
+
+/** Says what to do instead: a roll-up report is the closing period of the cadence, not a second report over the same dates. */
+function overlapMessage(reportType: string): string {
+  const base = "Reporting period overlaps an existing period for this project";
+  if (!ROLL_UP_TYPES.has(reportType)) return base;
+  return `${base}. A ${reportType.toLowerCase().replace(/_/g, "-")} report is a period of its own in your reporting cadence: it states progress since the project started, using every earlier period, so create it for the closing period (for example the last month) instead of one that spans periods already created. For a one-off report over dates that already have periods, use a Custom report.`;
+}
+
 /**
  * Authoritative reporting-period creation. The period is the first step of the
  * reporting engine, so this handler is the single gate that enforces setup
@@ -129,7 +138,7 @@ export class CreateReportingPeriodHandler {
       if (existing.duration.overlaps(DateRange.create(start, end))) {
         return {
           ok: false,
-          error: DE.conflict("Reporting period overlaps an existing period for this project", {
+          error: DE.conflict(overlapMessage(input.reportType), {
             existingPeriodId: existing.id,
           }),
         };

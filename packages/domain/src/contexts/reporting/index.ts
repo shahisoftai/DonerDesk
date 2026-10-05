@@ -14,6 +14,7 @@ export * from "./gate-rules.js";
 export * from "./contradiction-lint.js";
 export * from "./indicator-calculator.js";
 export * from "./chart-config.js";
+export * from "./table-charts.js";
 export * from "./events.js";
 export * from "./assurance.js";
 export * from "./verification-reason.js";

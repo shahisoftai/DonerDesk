@@ -1,6 +1,6 @@
 import type { Result } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
-import { createChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
+import { createChartConfig, allowedChartTypes, bindingsForSection } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportSectionRepository } from "../../ports/reporting.js";
 import type { IAuditLogger } from "../../ports/core.js";
@@ -27,6 +27,18 @@ export class UpdateReportSectionChartHandler {
           "This section was changed by someone else. Reload to see the latest version before saving.",
         ),
       };
+    }
+
+    // A chart must be able to show its data and belong in its section: no pie of baseline/target/achievement, and no indicator
+    // chart on a financial section (its chart comes from its own finance table).
+    if (input.chartConfig) {
+      const { type, dataBinding } = input.chartConfig;
+      if (!allowedChartTypes(dataBinding).includes(type)) {
+        return { ok: false, error: DomainError.validation(`A ${type.toLowerCase()} chart cannot show this data. Choose ${allowedChartTypes(dataBinding).map((t) => t.toLowerCase()).join(" or ")}.`) };
+      }
+      if (!bindingsForSection(sec.sectionTitle).includes(dataBinding)) {
+        return { ok: false, error: DomainError.validation("This section has no indicator data to chart. Charts for its tables are drawn automatically.") };
+      }
     }
 
     sec.setChartConfig(

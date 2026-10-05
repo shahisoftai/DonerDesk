@@ -51,8 +51,12 @@ function normalizeText(text: string): string {
 }
 
 /** Tokenize, drop stopwords/very-short tokens, and stem each remaining token. */
+const NUMBER_WORDS: Record<string, string> = { zero: "0", one: "1", two: "2", three: "3", four: "4", five: "5", six: "6", seven: "7", eight: "8", nine: "9", ten: "10", eleven: "11", twelve: "12" };
+
 export function scoreTokens(text: string): string[] {
+  // "six" and "6" are the same figure; both then fall below the minimum token length, so neither counts for or against a match.
   return normalizeText(text)
+    .replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/gi, (w) => NUMBER_WORDS[w.toLowerCase()]!)
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length >= 3 && !STOPWORDS.has(t))
     .map(stem);
@@ -90,6 +94,57 @@ export function scoreSimilarity(a: string, b: string): number {
   const denominator = totalA + totalB;
   if (denominator === 0) return 0;
   return Math.min(1, (2 * sharedWeight) / denominator);
+}
+
+/**
+ * How much of `claim` (by token weight) is found across `chunks` together: 1 when every content word of the
+ * claim appears somewhere in them. A long sentence that synthesises several records scores low on pairwise
+ * similarity with each one, yet is fully covered by them; numbers are tokens too, so a figure no chunk
+ * states keeps the coverage down.
+ */
+export function scoreCoverage(claim: string, chunks: ReadonlyArray<string>): number {
+  const claimTokens = new Set(scoreTokens(claim));
+  if (claimTokens.size === 0) return 0;
+  const available = new Set(chunks.flatMap((c) => scoreTokens(c)));
+  let total = 0;
+  let covered = 0;
+  for (const token of claimTokens) {
+    const weight = tokenWeight(token);
+    total += weight;
+    if (available.has(token)) covered += weight;
+  }
+  return total === 0 ? 0 : covered / total;
+}
+
+/**
+ * Greedy cover: the chunks (by index, at most `max`) that together add the most of the claim's token weight, each
+ * adding at least `minGain`. Picking by how much a chunk ADDS, not by how alike it is on its own, finds the several
+ * short records a synthesising sentence draws on.
+ */
+export function selectCoveringChunks(claim: string, chunks: ReadonlyArray<string>, max: number, minGain = 1): number[] {
+  const claimTokens = [...new Set(scoreTokens(claim))];
+  const chunkTokens = chunks.map((c) => new Set(scoreTokens(c)));
+  const uncovered = new Set(claimTokens);
+  const picked: number[] = [];
+  while (picked.length < max && uncovered.size > 0) {
+    let bestIndex = -1;
+    let bestGain = 0;
+    chunkTokens.forEach((tokens, i) => {
+      if (picked.includes(i)) return;
+      let gain = 0;
+      for (const t of uncovered) if (tokens.has(t)) gain += tokenWeight(t);
+      if (gain > bestGain) { bestGain = gain; bestIndex = i; }
+    });
+    if (bestIndex < 0 || bestGain < minGain) break;
+    picked.push(bestIndex);
+    for (const t of chunkTokens[bestIndex]!) uncovered.delete(t);
+  }
+  return picked;
+}
+
+/** Number of distinct content tokens in a text (how much a coverage score is worth). */
+export function contentTokenCount(text: string): number {
+  return new Set(scoreTokens(text)).size;
 }
 
 export interface SimilarityCandidate {

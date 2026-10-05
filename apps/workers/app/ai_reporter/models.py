@@ -191,6 +191,8 @@ class LifeOfProject(BaseModel):
     basis: str  # REPORTED_CUMULATIVE | COMPUTED
     periodsCovered: int | None = None
     asOf: str | None = None
+    # Breakdown (sex, age, ...) of this life-of-project value; the finding's own `disaggregation` is this period's.
+    disaggregation: list[dict[str, Any]] | None = None
 
 
 class Finding(BaseModel):
@@ -209,6 +211,8 @@ class Finding(BaseModel):
     qualityFlags: list[str] = Field(default_factory=list)
     comparisonValue: str | float | None = None
     lifeOfProject: LifeOfProject | None = None
+    # Recorded breakdown (sex, age, ...) behind the value; absent when none was recorded.
+    disaggregation: list[dict[str, Any]] | None = None
 
 
 class IndicatorUpdate(BaseModel):

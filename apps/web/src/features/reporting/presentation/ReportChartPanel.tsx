@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type * as echarts from "echarts";
-import { buildChartOption, type ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
-import { updateReportSectionChartAction } from "@/lib/actions/reporting";
+import { allowedChartTypes, bindingsForSection, buildChartOption, coerceChartType, resolveChartData, type ChartConfig, type ChartDataBinding, type ChartType } from "@donordesk/domain/contexts/reporting/chart-config.js";
+import { refreshSectionChartsAction, updateReportSectionChartAction } from "@/lib/actions/reporting";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Field } from "@/components/ui/Field";
@@ -28,14 +28,16 @@ const CHART_TYPES = [
   ["GAUGE", "Gauge"],
 ] as const;
 
-const BINDINGS = [
-  ["INDICATOR_COMPARISON", "Baseline vs target vs achievement"],
-  ["INDICATOR_ACHIEVEMENT", "Achievement vs target"],
-  ["STATUS_DISTRIBUTION", "Status distribution"],
-] as const;
+const BINDING_LABELS: Record<ChartDataBinding, string> = {
+  INDICATOR_PROGRESS: "Progress against target (% of target)",
+  INDICATOR_COMPARISON: "Baseline vs target vs achievement",
+  INDICATOR_ACHIEVEMENT: "Achievement vs target",
+  STATUS_DISTRIBUTION: "Verification status",
+};
 
 export function ReportChartPanel({
   sectionId,
+  sectionTitle,
   initialConfig,
   expectedVersion,
   indicators,
@@ -43,6 +45,8 @@ export function ReportChartPanel({
   onReload,
 }: {
   sectionId: string;
+  /** What the section is about decides which indicator charts make sense for it. */
+  sectionTitle: string;
   initialConfig: ChartConfig | null;
   expectedVersion: string;
   indicators: ChartIndicator[];
@@ -90,6 +94,25 @@ export function ReportChartPanel({
     }
   }, [config, indicators]);
 
+  const bindings = bindingsForSection(sectionTitle);
+  const categoryCount = config ? resolveChartData(indicators, config).categories.length : indicators.length;
+  const typesFor = (binding: ChartDataBinding): ChartType[] => allowedChartTypes(binding, categoryCount);
+  const [refreshNote, setRefreshNote] = useState<string | null>(null);
+
+  async function rebuildFromTables() {
+    if (readOnly || saving) return;
+    setSaving(true);
+    try {
+      const r = await actionState.run(() => refreshSectionChartsAction(sectionId));
+      if (r !== undefined) {
+        setRefreshNote(r.charts === 0 ? "No table in this section has a chart to draw." : `${r.charts} chart${r.charts === 1 ? "" : "s"} rebuilt from the tables.`);
+        onReload();
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function persist(next: ChartConfig) {
     if (readOnly || saving) return;
     setSaving(true);
@@ -103,15 +126,13 @@ export function ReportChartPanel({
   }
 
   function setType(type: ChartConfig["type"]) {
-    if (!config) {
-      void persist({ type, dataBinding: "INDICATOR_COMPARISON" });
-      return;
-    }
-    void persist({ ...config, type });
+    const dataBinding = config?.dataBinding ?? bindings[0];
+    if (!dataBinding) return;
+    void persist({ type: coerceChartType(dataBinding, type, categoryCount), dataBinding, options: config?.options ?? {} });
   }
 
   function setBinding(dataBinding: ChartConfig["dataBinding"]) {
-    void persist({ ...(config ?? { type: "BAR" }), dataBinding });
+    void persist({ type: coerceChartType(dataBinding, config?.type ?? "BAR", categoryCount), dataBinding, options: config?.options ?? {} });
   }
 
   function removeChart() {
@@ -124,17 +145,40 @@ export function ReportChartPanel({
     });
   }
 
+  const tablesNote = (
+    <div className="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-600 dark:border-white/10 dark:text-slate-300">
+      <p>Charts for the tables in this section (indicators, finance, participants) are drawn automatically beside each table and follow it when you edit it.</p>
+      {!readOnly && (
+        <Button size="sm" variant="secondary" className="mt-2" disabled={saving} onClick={() => void rebuildFromTables()}>
+          Rebuild charts from tables
+        </Button>
+      )}
+      {refreshNote && <p role="status" className="mt-1.5 text-slate-500 dark:text-slate-400">{refreshNote}</p>}
+      {actionState.error && <p role="alert" className="mt-1.5 font-medium text-danger-700 dark:text-danger-400">{actionState.error}</p>}
+    </div>
+  );
+
+  if (bindings.length === 0) {
+    return (
+      <div className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
+        <p className="text-xs font-medium text-slate-600 dark:text-slate-300">This section has no indicator data to chart by hand.</p>
+        {tablesNote}
+      </div>
+    );
+  }
+
   if (!config) {
     return (
       <div className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
-        <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">Visualise this section with a chart</p>
+        <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">Add an indicator chart to this section</p>
         <div className="flex flex-wrap gap-2">
-          {CHART_TYPES.map(([type, label]) => (
+          {typesFor(bindings[0]!).map((type) => (
             <Button key={type} size="sm" variant="secondary" disabled={readOnly || saving} onClick={() => setType(type)}>
-              {label}
+              {CHART_TYPES.find(([t]) => t === type)?.[1]}
             </Button>
           ))}
         </div>
+        {tablesNote}
       </div>
     );
   }
@@ -144,7 +188,7 @@ export function ReportChartPanel({
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex gap-1" role="tablist" aria-label="Chart type">
-            {CHART_TYPES.map(([type, label]) => (
+            {CHART_TYPES.filter(([type]) => typesFor(config.dataBinding).includes(type)).map(([type, label]) => (
               <button
                 key={type}
                 type="button"
@@ -164,8 +208,8 @@ export function ReportChartPanel({
           </div>
           <Field label="Data" htmlFor={`binding-${sectionId}`}>
             <Select id={`binding-${sectionId}`} value={config.dataBinding} disabled={readOnly || saving} onChange={(e) => setBinding(e.target.value as ChartConfig["dataBinding"])}>
-              {BINDINGS.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
+              {bindings.map((value) => (
+                <option key={value} value={value}>{BINDING_LABELS[value]}</option>
               ))}
             </Select>
           </Field>
@@ -180,6 +224,7 @@ export function ReportChartPanel({
         </div>
       </div>
       <div ref={chartRef} className="h-72 w-full" aria-label="Report chart" />
+      {tablesNote}
     </div>
   );
 }

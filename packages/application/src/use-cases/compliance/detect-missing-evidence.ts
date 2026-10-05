@@ -59,7 +59,10 @@ export class DetectMissingEvidenceHandler {
     const updates = { ok: true as const, value: allUpdates.value.filter((u) => inIndicatorScope(indicatorScope.value, u.indicatorId)) };
     const verified = updates.value.filter((u) => u.verificationStatus === "VERIFIED").length;
 
-    const ev = await this.evidence.search({ projectId: period.projectId, reportingPeriodId, pageSize: 200 }, ctx.tenant.tenantId);
+    // A roll-up report (semi-annual, annual, final) reports on the project's life, so its evidence is the project's;
+    // counting only the closing period's files would flag a well-evidenced project as short of evidence.
+    const evidenceFilter = LIFE_OF_PROJECT_REPORT_TYPES.has(period.reportType) ? { projectId: period.projectId } : { projectId: period.projectId, reportingPeriodId };
+    const ev = await this.evidence.search({ ...evidenceFilter, pageSize: 200 }, ctx.tenant.tenantId);
     if (!ev.ok) return ev;
     const evidenceCount = ev.value.total;
 
@@ -144,6 +147,16 @@ export class DetectMissingEvidenceHandler {
       });
       const saved = await this.checklist.create(item);
       if (saved.ok) created++;
+    }
+
+    // An evidence-shortfall item stops being true once the evidence is there: close it instead of leaving a stale blocker.
+    const requiredEvidenceCount = requiredAnnexes.length * 2 + 5;
+    if (evidenceCount >= requiredEvidenceCount) {
+      for (const item of existingResult.value) {
+        if (item.type !== "MISSING_EVIDENCE" || (item.status !== "OPEN" && item.status !== "IN_PROGRESS")) continue;
+        item.resolve(`Closed automatically: ${evidenceCount} evidence files are now on file (about ${requiredEvidenceCount} were required).`);
+        await this.checklist.update(item);
+      }
     }
 
     await this.audit.record({

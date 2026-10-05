@@ -279,6 +279,7 @@ function buildFindingsJson(input: GenerateReportDraftInput): string {
       reportingPeriodId: f.reportingPeriodId,
       comparisonPeriodId: f.comparisonPeriodId ?? null,
       ...(f.lifeOfProject ? { lifeOfProject: f.lifeOfProject } : {}),
+      ...(f.disaggregation?.length ? { disaggregation: f.disaggregation } : {}),
     })),
     null,
   );
@@ -443,7 +444,7 @@ function buildInstructionTail(): string[] {
     `Quality flags on findings should be noted as caveats in the narrative:`,
     `- LOW_COVERAGE: use qualifying language such as "based on partial records" or "preliminary data".`,
     `- MISSING_DENOMINATOR: note that the denominator could not be established.`,
-    `- MISSING_DISAGGREGATION: note that disaggregated data was not recorded.`,
+    `- MISSING_DISAGGREGATION: note that disaggregated data was not recorded. A finding that carries a disaggregation list HAS recorded breakdowns: quote its categories verbatim (e.g. "655 female and 605 male") and never say they were not recorded.`,
     `- STALE: note that the underlying records predate the reporting period.`,
     `- UNIT_MISMATCH: note inconsistent units across source records.`,
     `- NEEDS_REVIEW: flag the item as requiring verification before finalization.`,
@@ -566,6 +567,20 @@ export function buildSectionSpecificGuidance(section: ReportPlanSection, input: 
       "Quote the figures exactly as supplied in the stated currency; never total, estimate or restate them differently.",
     );
   }
+  // The only derived figure a report may state is percent of target; "5% above target" is a second derivation
+  // that no verified value supports, so the writer is told to say "105% of target" instead.
+  if (input.verifiedFindings?.some((f) => f.target)) {
+    guidance.push(
+      "Express progress against a target only as percent of target (e.g. '105% of target') or as the two figures side by side; never as a difference such as '5% above target' or '200 more than planned'.",
+    );
+  }
+  // Only when a breakdown was recorded, so sections of projects without one keep their guidance unchanged.
+  if (input.verifiedFindings?.some((f) => f.disaggregation?.length || f.lifeOfProject?.disaggregation?.length)) {
+    guidance.push(
+      "Where a finding carries a disaggregation list, quote its recorded categories verbatim (e.g. '655 female and 605 male'); never invent a breakdown for a finding without one, and never say breakdowns were not recorded for a finding that has them.",
+      "A finding's disaggregation is the breakdown of THIS period's value; lifeOfProject.disaggregation is the breakdown of the life-of-project value. Quote each only beside its own total (never the period's split beside the project total), and say which it is.",
+    );
+  }
   if (title.includes("indicator")) {
     guidance.push(
       "Do NOT reproduce the full indicator table - it already exists in Annex A. Write a short narrative synthesis and, if helpful, a SMALL highlights table of at most 6 rows (columns: Code, Indicator, This period, Previous, Direction).",
@@ -622,6 +637,7 @@ export function buildSectionSpecificGuidance(section: ReportPlanSection, input: 
       "Synthesize this section by theme (e.g. protection mainstreaming, gender, environment, accountability to affected populations) rather than activity-by-activity.",
       'Quote recorded participant disaggregation per activity verbatim (e.g. "45 women and 30 men"); never total, merge, or re-aggregate recorded counts.',
       "Where sex/age/disability breakdowns were not recorded for an activity, state that disaggregated data was not recorded for that activity.",
+      "Never state or imply that safeguarding, protection, gender or visibility requirements were met, mainstreamed or demonstrated unless a recorded statement or evidence file says so; otherwise say no compliance record was supplied. Do not conclude beyond the records.",
       "Describe complaints, feedback, and response mechanisms only as recorded in activities or evidence.",
     );
   }

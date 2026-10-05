@@ -25,6 +25,11 @@ export * from "./services/period-activities.js";
 export * from "./services/blueprint-tables.js";
 export * from "./services/report-revision-service.js";
 export * from "./services/report-assurance-service.js";
+export * from "./services/record-chunk-builder.js";
+export * from "./services/lint-grounding.js";
+export * from "./services/export-file-name.js";
+export * from "./services/section-chart-service.js";
+export * from "./use-cases/reporting/refresh-section-charts.js";
 
 export * from "./use-cases/identity/sign-up.js";
 export * from "./use-cases/identity/login.js";

@@ -54,7 +54,9 @@ export function ExportWizard({
   const [exportType, setExportType] = useState<string>("");
   const [included, setIncluded] = useState<string[]>([]);
   const [includeSensitive, setIncludeSensitive] = useState(false);
-  const [result, setResult] = useState<{ id: string; fileUrl: string } | null>(null);
+  const [result, setResult] = useState<{ id: string; fileUrl: string; fileName?: string } | null>(null);
+  // A report with open issues can still be downloaded as a watermarked internal-review draft; only a donor submission needs it clean.
+  const [draftAnyway, setDraftAnyway] = useState(false);
 
   async function refreshPreflight() {
     const r = await getExportPreflightAction(periodId);
@@ -95,7 +97,8 @@ export function ExportWizard({
     return <div className="card text-sm text-slate-500 dark:text-slate-400">Loading export details…</div>;
   }
 
-  if (preflight.blocking.length > 0) {
+  const openIssues = preflight.blocking.length > 0;
+  if (openIssues && !draftAnyway) {
     return (
       <ExportBlockedView
         items={preflight.blockingItems}
@@ -104,6 +107,7 @@ export function ExportWizard({
         canOverrideConfidential={canOverrideConfidential}
         onClose={onClose}
         onResolved={refreshPreflight}
+        onDownloadDraft={preflight.draft ? () => setDraftAnyway(true) : undefined}
       />
     );
   }
@@ -118,6 +122,7 @@ export function ExportWizard({
         projectId,
         reportingPeriodId: periodId,
         exportType,
+        exportIntent: "INTERNAL_REVIEW",
         includeEvidenceIds: included,
         includeSensitive,
       }),
@@ -141,6 +146,12 @@ export function ExportWizard({
       {preflight.draft && (
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           Report version {preflight.draft.version} · {preflight.draft.status.replace(/_/g, " ")}
+        </p>
+      )}
+      {openIssues && (
+        <p role="note" className="mt-2 rounded-md border border-warning-200 bg-warning-50 px-3 py-2 text-xs text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-200">
+          Draft download: {preflight.blockingItems.length > 0 ? `${preflight.blockingItems.length} open ${preflight.blockingItems.length === 1 ? "issue" : "issues"}` : "open issues"} remain. The file is watermarked for internal review and cannot be submitted to a donor.{" "}
+          <button type="button" className="underline" onClick={() => { setDraftAnyway(false); setStep("type"); }}>Review the issues</button>
         </p>
       )}
 
@@ -202,10 +213,16 @@ export function ExportWizard({
 
       {step === "warnings" && (
         <div className="mt-4 space-y-3">
-          {preflight.warnings.length === 0 ? (
+          {preflight.warnings.length === 0 && !openIssues ? (
             <p className="text-sm text-success-700 dark:text-success-400">No warnings. Proceed with the export.</p>
           ) : (
             <ul className="space-y-1.5">
+              {openIssues && preflight.blocking.map((b) => (
+                <li key={`${b.code}:${b.message}`} className="flex gap-2 text-sm">
+                  <Badge tone="warning">Open issue</Badge>
+                  <span className="text-slate-700 dark:text-slate-200">{b.message}</span>
+                </li>
+              ))}
               {preflight.warnings.map((w) => (
                 <li key={w.code} className="flex gap-2 text-sm">
                   <Badge tone="warning">Warning</Badge>
@@ -229,7 +246,7 @@ export function ExportWizard({
       {step === "result" && result && (
         <div className="mt-4 space-y-3">
           <p className="text-sm text-success-700 dark:text-success-400">Export created.</p>
-          <a className="btn" href={protectedFileDownloadHref(result.fileUrl)}>
+          <a className="btn" href={protectedFileDownloadHref(result.fileUrl, result.fileName)}>
             Download
           </a>
           <Button size="sm" variant="secondary" onClick={onClose}>Done</Button>
@@ -259,6 +276,7 @@ function ExportBlockedView({
   canOverrideConfidential,
   onClose,
   onResolved,
+  onDownloadDraft,
 }: {
   items: ExportPreflightItem[];
   headline: Array<{ code: string; message: string }>;
@@ -266,6 +284,8 @@ function ExportBlockedView({
   canOverrideConfidential: boolean;
   onClose: () => void;
   onResolved: () => Promise<void>;
+  /** Present when a draft exists: lets the user download it as a watermarked internal-review copy despite the issues. */
+  onDownloadDraft?: () => void;
 }) {
   // Group items by kind so the user can collapse/expand each category.
   const groups = useMemo(() => {
@@ -285,9 +305,10 @@ function ExportBlockedView({
 
   return (
     <div className="card">
-      <h3 className="text-sm font-medium text-slate-800 dark:text-slate-100">Export is blocked</h3>
+      <h3 className="text-sm font-medium text-slate-800 dark:text-slate-100">{onDownloadDraft ? "Open issues before a donor submission" : "Export is blocked"}</h3>
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         {headline.length} blocking {headline.length === 1 ? "category" : "categories"} · {items.length} specific {items.length === 1 ? "issue" : "issues"} to resolve or fix.
+        {onDownloadDraft && " You can still download the current draft for internal review."}
       </p>
 
       <ul className="mt-3 space-y-2">
@@ -353,9 +374,15 @@ function ExportBlockedView({
         })}
       </ul>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {onDownloadDraft && <Button size="sm" onClick={onDownloadDraft}>Download draft anyway</Button>}
         <Button size="sm" variant="secondary" onClick={onClose}>Close</Button>
       </div>
+      {onDownloadDraft && (
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          A draft download is a watermarked internal-review copy of the current version. It is not valid for donor submission.
+        </p>
+      )}
     </div>
   );
 }

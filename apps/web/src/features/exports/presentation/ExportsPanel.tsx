@@ -11,6 +11,7 @@ export type ExportHistoryItem = {
   id: string;
   exportType: string;
   fileUrl: string;
+  fileName?: string;
   version?: number;
   exportedById?: string;
   includedFiles?: string[];
@@ -77,7 +78,7 @@ export function ExportsPanel({
                   Version {e.version ?? "—"} · {e.includedFiles?.length ?? 0} file(s) · {formatDateTime(e.createdAt)}
                 </div>
               </div>
-              <a className="btn-secondary py-1 text-xs" href={protectedFileDownloadHref(e.fileUrl)}>Download</a>
+              <a className="btn-secondary py-1 text-xs" href={protectedFileDownloadHref(e.fileUrl, e.fileName)}>Download</a>
             </li>
           ))}
         </ul>

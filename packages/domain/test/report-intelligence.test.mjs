@@ -421,3 +421,128 @@ test("numeric atom classifier treats dates, durations and record counts as metad
   assert.equal(roles("4500 kits were distributed")[0], "4500:OTHER");
   assert.deepEqual(roles("1 performed favourably, 7 performed unfavourably, and 0 could not be assessed"), ["1:COUNT", "7:COUNT", "0:COUNT"]);
 });
+
+// ---------------------------------------------------------------------------
+// Disaggregation: MISSING_DISAGGREGATION means "required and not recorded" (verified-finding.ts)
+// ---------------------------------------------------------------------------
+
+const sexEntries = (f, m) => [
+  { dimension: "SEX", category: "Female", value: String(f) },
+  { dimension: "SEX", category: "Male", value: String(m) },
+];
+const sumSemantics = { aggregation: "SUM", direction: "HIGHER_IS_BETTER", reportingBasis: "PERIOD", status: "CONFIGURED" };
+const disBase = { indicatorId: "ind-d", indicatorCode: "IND-D", indicatorType: "NUMBER", semantics: sumSemantics, disaggregationRequired: true };
+
+test("computeIndicator does not flag MISSING_DISAGGREGATION when a breakdown was recorded, and exposes it", () => {
+  const finding = computeIndicator({
+    ...disBase,
+    updates: [{ id: "d1", periodAchievement: "150", cumulativeAchievement: "150", verificationStatus: "VERIFIED", updatedAt: new Date(), disaggregation: sexEntries(78, 72) }],
+  });
+  assert.ok(!finding.qualityFlags.includes("MISSING_DISAGGREGATION"));
+  assert.deepEqual(finding.disaggregation, sexEntries(78, 72));
+});
+
+test("computeIndicator still flags MISSING_DISAGGREGATION when it is required and nothing was recorded", () => {
+  const finding = computeIndicator({
+    ...disBase,
+    updates: [{ id: "d1", periodAchievement: "150", cumulativeAchievement: "150", verificationStatus: "VERIFIED", updatedAt: new Date(), disaggregation: [] }],
+  });
+  assert.ok(finding.qualityFlags.includes("MISSING_DISAGGREGATION"));
+  assert.equal(finding.disaggregation, undefined);
+});
+
+test("computeIndicator ignores a breakdown that sits on an unverified update", () => {
+  const finding = computeIndicator({
+    ...disBase,
+    updates: [{ id: "d1", periodAchievement: "150", cumulativeAchievement: "150", verificationStatus: "DRAFT", updatedAt: new Date(), disaggregation: sexEntries(78, 72) }],
+  });
+  assert.ok(finding.qualityFlags.includes("MISSING_DISAGGREGATION"));
+  assert.equal(finding.disaggregation, undefined);
+});
+
+test("computeIndicator adds a SUM indicator's breakdown across verified updates", () => {
+  const finding = computeIndicator({
+    ...disBase,
+    updates: [
+      { id: "d1", periodAchievement: "150", cumulativeAchievement: "150", verificationStatus: "VERIFIED", updatedAt: new Date("2026-03-31"), disaggregation: sexEntries(78, 72) },
+      { id: "d2", periodAchievement: "180", cumulativeAchievement: "330", verificationStatus: "VERIFIED", updatedAt: new Date("2026-04-30"), disaggregation: sexEntries(94, 86) },
+    ],
+  });
+  assert.equal(finding.value, "330");
+  assert.deepEqual(finding.disaggregation, sexEntries(172, 158));
+});
+
+test("computeIndicator takes the latest verified breakdown for a non-SUM indicator", () => {
+  const finding = computeIndicator({
+    ...disBase,
+    semantics: { aggregation: "LATEST", direction: "NEUTRAL", reportingBasis: "PERIOD", status: "CONFIGURED" },
+    updates: [
+      { id: "d1", periodAchievement: "60", cumulativeAchievement: "60", verificationStatus: "VERIFIED", updatedAt: new Date("2026-03-31"), disaggregation: sexEntries(30, 30) },
+      { id: "d2", periodAchievement: "70", cumulativeAchievement: "70", verificationStatus: "VERIFIED", updatedAt: new Date("2026-04-30"), disaggregation: sexEntries(36, 34) },
+    ],
+  });
+  assert.deepEqual(finding.disaggregation, sexEntries(36, 34));
+});
+
+test("computeIndicator exposes a breakdown even when it is not required", () => {
+  const finding = computeIndicator({
+    ...disBase,
+    disaggregationRequired: false,
+    updates: [{ id: "d1", periodAchievement: "150", cumulativeAchievement: "150", verificationStatus: "VERIFIED", updatedAt: new Date(), disaggregation: sexEntries(78, 72) }],
+  });
+  assert.ok(!finding.qualityFlags.includes("MISSING_DISAGGREGATION"));
+  assert.deepEqual(finding.disaggregation, sexEntries(78, 72));
+});
+
+test("a percentage with no numerator/denominator reports its latest verified rate instead of 'not calculable'", () => {
+  const semantics = inferIndicatorSemantics({ type: "PERCENTAGE", name: "Average attendance rate" });
+  assert.equal(semantics.aggregation, "LATEST");
+  assert.equal(semantics.status, "REQUIRES_REVIEW", "still needs a human to confirm how it aggregates");
+  const finding = computeIndicator({
+    indicatorId: "ind-r", indicatorCode: "IND-R", indicatorType: "PERCENTAGE", baseline: "62", target: "85", semantics, disaggregationRequired: false,
+    updates: [
+      { id: "r1", periodAchievement: "79", cumulativeAchievement: "79", verificationStatus: "VERIFIED", updatedAt: new Date("2026-06-30") },
+      { id: "r2", periodAchievement: "86", cumulativeAchievement: "86", verificationStatus: "VERIFIED", updatedAt: new Date("2026-08-31") },
+    ],
+  });
+  assert.equal(finding.value, "86");
+  assert.ok(!finding.qualityFlags.includes("MISSING_DENOMINATOR"));
+  assert.ok(finding.qualityFlags.includes("NEEDS_REVIEW"));
+  // With a numerator and denominator configured it is still a computed percentage.
+  const computed = inferIndicatorSemantics({ type: "PERCENTAGE", name: "Pass rate", numeratorIndicatorId: "n", denominatorIndicatorId: "d" });
+  assert.equal(computed.aggregation, "PERCENTAGE");
+});
+
+test("a value exactly on its target is a target met; exactly on a baseline is no change", () => {
+  const sem = { aggregation: "SUM", direction: "HIGHER_IS_BETTER", reportingBasis: "PERIOD", status: "CONFIGURED" };
+  assert.equal(evaluatePerformance({ value: "60", target: "60", baseline: "0", semantics: sem }).type, "POSITIVE");
+  assert.equal(evaluatePerformance({ value: "245", target: "245", semantics: { ...sem, direction: "LOWER_IS_BETTER" } }).type, "POSITIVE");
+  assert.equal(evaluatePerformance({ value: "40", baseline: "40", semantics: sem }).type, "NEUTRAL");
+  assert.equal(evaluatePerformance({ value: "60", target: "60", semantics: { ...sem, direction: "NEUTRAL" } }).type, "NEUTRAL");
+  assert.equal(evaluatePerformance({ value: "60", target: "60", semantics: { ...sem, status: "REQUIRES_REVIEW" } }).type, "NEUTRAL");
+});
+
+import { computeLifeOfProject } from "../dist/index.js";
+
+test("life-of-project value carries the breakdown of the whole value, not of its last period", () => {
+  const sum = { aggregation: "SUM", direction: "HIGHER_IS_BETTER", reportingBasis: "PERIOD", status: "CONFIGURED" };
+  const sex = (f, m) => [{ dimension: "SEX", category: "Female", value: String(f) }, { dimension: "SEX", category: "Male", value: String(m) }];
+  const update = (periodId, end, period, cumulative, disaggregation) => ({ periodId, periodEnd: new Date(end), periodAchievement: String(period), cumulativeAchievement: String(cumulative), verificationStatus: "VERIFIED", disaggregation });
+  const life = computeLifeOfProject(sum, [
+    update("p1", "2026-03-31", 150, 150, sex(78, 72)),
+    update("p2", "2026-04-30", 180, 330, sex(94, 86)),
+    update("p3", "2026-05-31", 240, 570, sex(125, 115)),
+  ]);
+  assert.equal(life.value, "570");
+  assert.deepEqual(life.disaggregation, sex(297, 273), "78+94+125 and 72+86+115, not the last period's 125 / 115");
+  const none = computeLifeOfProject(sum, [update("p1", "2026-03-31", 150, 150, undefined)]);
+  assert.equal(none.disaggregation, undefined);
+  const latest = computeLifeOfProject({ ...sum, aggregation: "LATEST" }, [update("p1", "2026-03-31", 60, 60, sex(30, 30)), update("p2", "2026-04-30", 70, 70, sex(36, 34))]);
+  assert.deepEqual(latest.disaggregation, sex(36, 34));
+});
+
+import { scoreSimilarity } from "../dist/index.js";
+
+test("number words and digits are the same figure for similarity", () => {
+  assert.equal(scoreSimilarity("All six indicators met their targets", "All 6 indicators met their targets"), 1);
+});

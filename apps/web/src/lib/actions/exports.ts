@@ -10,7 +10,9 @@ import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { UploadResponseSchema } from "./_schemas";
 
-export type CreateExportResult = Result<{ id: string; fileUrl: string }, AppError>;
+const CreatedExportSchema = UploadResponseSchema.extend({ fileName: z.string().optional() });
+
+export type CreateExportResult = Result<{ id: string; fileUrl: string; fileName?: string }, AppError>;
 
 export async function createExportAction(input: unknown): Promise<CreateExportResult> {
   const context = await requireSession();
@@ -21,7 +23,7 @@ export async function createExportAction(input: unknown): Promise<CreateExportRe
       error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
     };
   }
-  return gatewayRequest("/v1/exports", UploadResponseSchema, context.token, {
+  return gatewayRequest("/v1/exports", CreatedExportSchema, context.token, {
     method: "POST",
     body: parsed.data,
   });

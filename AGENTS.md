@@ -203,3 +203,18 @@ in-process default), stub LLM (dev default), pino logs, console email.
 - `ReportingPeriodRepository.update` must persist every mutable period field (it silently dropped `scopeJson` once): add new mutable fields there and to its test.
 - Never run `prisma format` on `schema.prisma` (it rewrites the whole file); edit by hand.
 
+## Claim verification and roll-up reports (2026-10-05)
+- A factual/qualitative claim is verified against evidence chunks **and** the project's own records (`RecordChunkBuilder`, `recordChunksFromFindings/Finance/Evidence` in
+  `packages/application/src/services/record-chunk-builder.ts`; loaded once per revision by `ReportAssuranceService`). Record chunks have `record:` ids and are **never cited as evidence**.
+  New kinds of statement a report may restate (a new input to the writer) should get a record chunk, or they fail as "unsupported".
+- Sentences that only disclose a gap in the report's own inputs, or describe the document, are not claims (`isDisclosureOrMeta`, `assertion-extractor.ts`); one carrying a figure always is.
+- `VerifiedFinding.disaggregation` is the breakdown of **this period's** value, `lifeOfProject.disaggregation` of the life-of-project value: quote each only beside its own total.
+  `MISSING_DISAGGREGATION` means required **and** not recorded. Roll-up reports (SEMI_ANNUAL/ANNUAL/FINAL) evaluate `performanceEvaluation` on the life-of-project value.
+- A FINAL report is the closing period of the cadence (cadence types may not overlap; finance exists only for non-monthly, non-custom reports).
+- Package tests run against `dist/`: build contracts → domain → application → infrastructure before testing, and gate deploys on a fresh green run.
+- Export: only a **donor submission** needs a clean, sealed report; any draft can be downloaded as an `INTERNAL_REVIEW` export (watermark header/banner on every page). Never gate the wizard's draft path on
+  preflight blockers. A re-assessment must verify against the period's evidence (`RecordChunkBuilder.evidenceIds`), not only the sources a writer cited.
+- The contradiction lint accepts figures the records state (`LintGrounding`, `toLintFindingData`); a new kind of figure a report may legitimately quote must be added there, or it is a blocker nobody can clear with a note.
+- Charts are derived from the tables in a section's final text (`chartsForSection`), one per table, never from "all indicators": a new kind of table that should be charted needs a classifier and builder in
+  `packages/domain/src/contexts/reporting/table-charts.ts` (and a `DerivedChartBinding` + allowed types in `chart-config.ts`). Never plot a missing value as 0 or put different units on one raw axis;
+  a roll-up report charts cumulative-to-date against the project target. The worker does not draw charts.

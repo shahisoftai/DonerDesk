@@ -258,6 +258,37 @@ test("reporting-period gate: overlap rejected", async () => {
   assert.equal(r.error.code, "CONFLICT");
 });
 
+test("reporting-period gate: a roll-up report that overlaps explains the closing-period flow", async () => {
+  const repos = makeRepos({
+    setup: ProjectSetup.create({ id: "s", tenantId: "tenant-a", projectId: "p1", status: "NOT_REQUIRED" }),
+    profile: ReportingProfile.create({ id: "rp", tenantId: "tenant-a", projectId: "p1", createdById: "u" }),
+    indicators: [reportableIndicator()],
+  });
+  const readiness = new ProjectReadinessService(repos.projects, repos.setup, repos.profiles, repos.templates, repos.indicators, repos.users, repos.providerResolver);
+  const existing = {
+    reportType: "MONTHLY",
+    duration: DateRange.create(new Date("2026-04-01"), new Date("2026-06-30")),
+  };
+  const periods = {
+    create: async (x) => ({ ok: true, value: x }),
+    findByProject: async () => ({ ok: true, value: [existing] }),
+  };
+  const handler = new CreateReportingPeriodHandler(
+    { generate: () => "p" }, periods, repos.projects, repos.templates, repos.setup, repos.profiles, readiness,
+    { record: async () => {} },
+    { publish: async () => {} },
+  );
+  const r = await handler.handle(ctx, {
+    projectId: "p1", reportType: "FINAL",
+    startDate: new Date("2026-05-01").toISOString(), endDate: new Date("2026-07-31").toISOString(),
+    deadline: new Date("2026-08-15").toISOString(),
+  });
+  assert.equal(r.ok, false);
+  assert.equal(r.error.code, "CONFLICT");
+  assert.match(r.error.message, /closing period/);
+  assert.match(r.error.message, /Custom report/);
+});
+
 test("reporting-period gate: completed project rejected", async () => {
   const completed = makeProject();
   completed.complete();

@@ -17,12 +17,15 @@ import type {
   IClaimVerifier,
   IIndicatorAnalyticsService,
   IEvidencePackageBuilder,
+  IRecordChunkBuilder,
+  RecordChunk,
   EvidencePackage,
   ReportClaimDraft,
 } from "../ports/reporting.js";
 import type { IIdGenerator } from "../ports/core.js";
 import type { IUnsupportedClaimProjector } from "../ports/compliance.js";
 import type { IFinanceInputs } from "./finance-inputs.js";
+import { recordChunksFromEvidence, recordChunksFromFinance, recordChunksFromFindings } from "./record-chunk-builder.js";
 import type { ClaimType } from "@donordesk/domain";
 
 export function assertionToClaimType(type: string): ClaimType {
@@ -75,6 +78,8 @@ export class ReportAssuranceService implements IReportAssuranceService {
     private readonly projector?: IUnsupportedClaimProjector,
     /** Absent when the deployment has no finance support: financial figures are not grounded. */
     private readonly finance?: IFinanceInputs,
+    /** Absent: factual claims are checked against evidence files only. */
+    private readonly records?: IRecordChunkBuilder,
   ) {}
 
   async assessRevision(input: {
@@ -123,17 +128,36 @@ export class ReportAssuranceService implements IReportAssuranceService {
       financeView = finance.value;
     }
 
+    // The project's own records ground factual claims that restate them; loaded once per revision.
+    let recordChunks: RecordChunk[] = [];
+    if (this.records) {
+      const built = await this.records.build({ tenantId, projectId: draft.projectId, reportingPeriodId: draft.reportingPeriodId });
+      if (built.ok) recordChunks = built.value;
+    }
+    // The verified findings and finance are records too: a sentence restating one is supported by it.
+    recordChunks = [...recordChunks, ...recordChunksFromFindings(findings), ...(financeView ? recordChunksFromFinance(financeView) : [])];
+
     const writerClaims = input.writerClaims ?? [];
     const evidenceIds = new Set<string>();
+    const cited = new Set<string>();
     for (const c of writerClaims) {
-      for (const s of c.proposedSources) evidenceIds.add(s.evidenceId);
+      for (const s of c.proposedSources) { evidenceIds.add(s.evidenceId); cited.add(s.evidenceId); }
     }
     let packages = input.evidencePackages;
     if (!packages) {
+      // Only generation hands over the period's evidence. A re-assessment (an edit, a resolved statement, "reassess")
+      // has no writer claims, so without this it would verify against nothing and every claim would get weaker.
+      if (this.records) {
+        const periodEvidence = await this.records.evidenceIds({ tenantId, projectId: draft.projectId, reportingPeriodId: draft.reportingPeriodId });
+        if (periodEvidence.ok) for (const id of periodEvidence.value) evidenceIds.add(id);
+      }
       const packagesResult = await this.evidencePackages.build({ tenantId, evidenceIds: [...evidenceIds] });
       if (!packagesResult.ok) return packagesResult;
-      packages = packagesResult.value;
+      // Restricted files never support a statement unless the writer cited one (integrity then rejects it).
+      packages = packagesResult.value.filter((p) => cited.has(p.evidenceId) || (p.confidentialityLevel !== "SENSITIVE" && p.confidentialityLevel !== "HIGHLY_SENSITIVE"));
     }
+    // The evidence log restates the files on record (title, type, status, classification).
+    recordChunks = [...recordChunks, ...recordChunksFromEvidence(packages)];
 
     const extraction = await this.extractor.extract({ content: revision.content, writerClaims });
     if (!extraction.ok) return extraction;
@@ -181,10 +205,12 @@ export class ReportAssuranceService implements IReportAssuranceService {
         claim: {
           text: assertion.text,
           type: claimType,
+          assertionType: assertion.type,
           proposedSources: assertion.sources,
         },
         findings,
         evidencePackages: packages,
+        ...(recordChunks.length > 0 ? { records: recordChunks } : {}),
         ...(financeView ? { finance: financeView } : {}),
       });
       if (!verification.ok) return verification;
@@ -254,6 +280,18 @@ export class ReportAssuranceService implements IReportAssuranceService {
           gaps,
         });
         if (!projected.ok) return { ok: false, error: projected.error };
+      }
+    }
+
+    // Items projected from earlier versions or earlier wording no longer describe a failing statement: close them.
+    if (this.projector) {
+      const everyClaim = await this.claims.findByDraft(draft.id, tenantId);
+      if (everyClaim.ok) {
+        const activeKeys = everyClaim.value
+          .filter((c) => (c.materiality ?? "MATERIAL") === "MATERIAL" && c.verificationResult === "FAILED" && c.resolvedById === undefined)
+          .map((c) => c.text);
+        const reconciled = await this.projector.reconcile({ tenantId, periodId: draft.reportingPeriodId, activeKeys });
+        if (!reconciled.ok) return { ok: false, error: reconciled.error };
       }
     }
 

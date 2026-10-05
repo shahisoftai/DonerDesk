@@ -1,10 +1,11 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ExportPackage, createChartConfig, omitExcludedStatements, type ChartConfig } from "@donordesk/domain";
+import { DomainError, ExportPackage, bindingsForSection, chartAchievement, omitExcludedStatements, type ChartConfig } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IExportRepository, IExportBuilder, ExportIntent } from "../../ports/exports.js";
+import type { IExportRepository, IExportBuilder, ExportIntent, ExportChartInput } from "../../ports/exports.js";
 import type { IStorage } from "../../ports/infrastructure.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
-import type { IReportingPeriodRepository, IReportDraftRepository, IReportSectionRepository, ISubmissionSnapshotRepository, IDonorTemplateMappingRepository, IReportClaimRepository } from "../../ports/reporting.js";
+import type { IReportingPeriodRepository, IReportDraftRepository, IReportSectionRepository, ISubmissionSnapshotRepository, IDonorTemplateMappingRepository, IReportClaimRepository, IReportArtifactRepository } from "../../ports/reporting.js";
+import { chartPayloadToResolved } from "../../services/section-chart-service.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
@@ -12,6 +13,7 @@ import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { CreateExportInput } from "@donordesk/contracts";
+import { exportFileName } from "../../services/export-file-name.js";
 
 export class CreateExportHandler {
   constructor(
@@ -33,9 +35,11 @@ export class CreateExportHandler {
     private readonly donorTemplateMappings?: IDonorTemplateMappingRepository,
     private readonly donorTemplates?: IDonorTemplateRepository,
     private readonly claims?: IReportClaimRepository,
+    /** The charts drawn from each section's tables; absent: only hand-configured charts are exported. */
+    private readonly reportArtifacts?: IReportArtifactRepository,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, input: CreateExportInput): Promise<Result<{ id: string; fileUrl: string }, DomainError>> {
+  async handle(ctx: AuthenticatedContext, input: CreateExportInput): Promise<Result<{ id: string; fileUrl: string; fileName: string }, DomainError>> {
     const intent: ExportIntent = input.exportIntent ?? "INTERNAL_REVIEW";
     if (intent === "DONOR_SUBMISSION" && !input.submissionSnapshotId) {
       return {
@@ -71,6 +75,8 @@ export class CreateExportHandler {
 
     let sectionsArr: Array<{ title: string; content: string; status: string; level: number }> = [];
     let sectionChartConfigs: Array<{ title: string; chartConfig: ChartConfig | null }> = [];
+    // The charts drawn from each section's own tables: the same ones the editor shows, so the file matches the screen.
+    const tableCharts: ExportChartInput[] = [];
     if (draft) {
       const s = await this.sections.findByReportDraft(draft.id, ctx.tenant.tenantId);
       if (s.ok) {
@@ -85,6 +91,16 @@ export class CreateExportHandler {
           level: sec.level,
         }));
         sectionChartConfigs = sorted.map((sec) => ({ title: sec.sectionTitle, chartConfig: sec.chartConfig }));
+        if (this.reportArtifacts) {
+          for (const sec of sorted) {
+            const stored = await this.reportArtifacts.findBySection(sec.id, ctx.tenant.tenantId);
+            if (!stored.ok) continue;
+            for (const a of stored.value.filter((x) => x.kind === "CHART")) {
+              const resolved = chartPayloadToResolved(a.payload);
+              if (resolved) tableCharts.push({ sectionTitle: sec.sectionTitle, caption: a.caption ?? resolved.title, resolved });
+            }
+          }
+        }
       }
     }
 
@@ -106,30 +122,23 @@ export class CreateExportHandler {
       }
     }
 
-    let charts = sectionChartConfigs
+    // Hand-configured charts plot the report's own indicators: the cumulative figure for a roll-up report, only indicators
+    // that have a value (a missing one is not "0"), never the whole project's.
+    const reportType = period.value.reportType;
+    const chartRows = (inds.ok && ups.ok ? inds.value : [])
+      .map((ind) => {
+        const u = ups.ok ? ups.value.find((x) => x.indicatorId === ind.id) : undefined;
+        return u
+          ? { code: ind.code, name: ind.name, baseline: ind.baseline, target: ind.target, unit: ind.unit, achievement: chartAchievement({ reportType, indicatorType: ind.type, periodValue: u.periodAchievement, cumulativeValue: u.cumulativeAchievement }), status: u.verificationStatus }
+          : undefined;
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== undefined);
+    const manualCharts: ExportChartInput[] = sectionChartConfigs
       .filter((c): c is { title: string; chartConfig: ChartConfig } => c.chartConfig !== null)
-      .map((c) => ({
-        sectionTitle: c.title,
-        config: c.chartConfig,
-        indicators: indicatorRows,
-      }));
-
-    // Default chart: a report with numeric indicators but no user-configured
-    // section chart still ships with a comparison visual (the EERP Q2 export
-    // carried zero charts while the rendering pipeline existed unused).
-    if (charts.length === 0 && indicatorRows.length >= 2 && sectionsArr.length > 0) {
-      const chartSection =
-        sectionsArr.find((s) => /indicator|progress/i.test(s.title)) ?? sectionsArr[0];
-      if (chartSection) {
-        charts = [
-          {
-            sectionTitle: chartSection.title,
-            config: createChartConfig({ type: "BAR", dataBinding: "INDICATOR_COMPARISON" }),
-            indicators: indicatorRows,
-          },
-        ];
-      }
-    }
+      // A hand-made indicator chart that does not belong in its section (a financial one) is not shipped, as it is not shown.
+      .filter((c) => bindingsForSection(c.title).includes(c.chartConfig.dataBinding))
+      .map((c) => ({ sectionTitle: c.title, config: c.chartConfig, indicators: chartRows }));
+    const charts: ExportChartInput[] = [...tableCharts, ...manualCharts];
 
     const acts = await this.activities.findByReportingPeriod(input.reportingPeriodId, ctx.tenant.tenantId);
     const activityRows: Array<{ title: string; date: string; location?: string; participants: number }> = [];
@@ -257,6 +266,15 @@ export class CreateExportHandler {
       newValue: input.exportType,
     });
 
-    return { ok: true, value: { id, fileUrl: stored.url } };
+    const fileName = exportFileName({
+      projectTitle: project.value.title,
+      reportType: period.value.reportType,
+      periodStart: period.value.duration.start,
+      periodEnd: period.value.duration.end,
+      version: draft?.version,
+      exportType: input.exportType,
+      intent,
+    });
+    return { ok: true, value: { id, fileUrl: stored.url, fileName } };
   }
 }

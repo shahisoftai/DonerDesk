@@ -558,7 +558,7 @@ export const EnsureAutoPeriodResponseSchema = z.object({ created: z.boolean(), p
 
 export const ChartConfigSchema = z.object({
   type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
-  dataBinding: z.enum(["INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),
+  dataBinding: z.enum(["INDICATOR_PROGRESS", "INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),
   options: z.record(z.string(), z.unknown()).optional(),
 });
 export type ChartConfig = z.infer<typeof ChartConfigSchema>;
@@ -716,6 +716,8 @@ export const ExportItemSchema = z.object({
   id: z.string(),
   exportType: z.string(),
   fileUrl: z.string(),
+  /** Readable download name (project, report kind, period, version); absent for old rows the API cannot name. */
+  fileName: z.string().optional(),
   version: z.number().optional(),
   exportedById: z.string().optional(),
   includedFiles: z.array(z.string()).optional(),

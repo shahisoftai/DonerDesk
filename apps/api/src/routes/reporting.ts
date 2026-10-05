@@ -205,6 +205,14 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.post("/v1/report-sections/:id/refresh-charts", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.refreshSectionCharts.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.post("/v1/report-sections/:id/rewrite", async (req) => {
     const id = (req.params as { id: string }).id;
     const body = RewriteSectionSchema.parse(req.body ?? {});

@@ -13,13 +13,22 @@ const indicators = [
   { code: "IND-3", name: "Referral rate", baseline: "5", target: "10", unit: "%", achievement: "", status: "NEEDS_REVIEW" },
 ];
 
-test("resolveChartData builds INDICATOR_COMPARISON series", () => {
+test("resolveChartData builds INDICATOR_COMPARISON series (units differ, so % of target; IND-3 has no value and is left out)", () => {
   const data = resolveChartData(indicators, createChartConfig({ type: "BAR", dataBinding: "INDICATOR_COMPARISON" }));
-  assert.deepEqual(data.categories, ["IND-1", "IND-2", "IND-3"]);
-  assert.equal(data.series.length, 3);
-  assert.equal(data.series[0].name, "Baseline");
-  assert.equal(data.series[2].name, "Achievement");
-  assert.deepEqual(data.series[2].data, [25, 420, null]);
+  assert.deepEqual(data.categories, ["IND-1", "IND-2"]);
+  assert.equal(data.series.length, 2);
+  assert.equal(data.series[0].name, "Baseline (% of target)");
+  assert.equal(data.series[1].name, "Achievement (% of target)");
+  assert.deepEqual(data.series[1].data, [83.3, 84]);
+  assert.equal(data.unit, "%");
+});
+
+test("a single unit keeps the raw baseline / target / achievement", () => {
+  const same = indicators.slice(0, 1).concat({ ...indicators[1], unit: "sessions" });
+  const data = resolveChartData(same, createChartConfig({ type: "BAR", dataBinding: "INDICATOR_COMPARISON" }));
+  assert.deepEqual(data.series.map((s) => s.name), ["Baseline", "Target", "Achievement"]);
+  assert.deepEqual(data.series[2].data, [25, 420]);
+  assert.equal(data.unit, "sessions");
 });
 
 test("resolveChartData builds STATUS_DISTRIBUTION counts", () => {
@@ -31,25 +40,15 @@ test("resolveChartData builds STATUS_DISTRIBUTION counts", () => {
   assert.equal(verified.data[0], 2);
 });
 
-test("buildChartOption emits an ECharts option for each type", () => {
-  for (const type of ["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]) {
-    const option = buildChartOption(indicators, createChartConfig({ type, dataBinding: "INDICATOR_COMPARISON" }));
-    assert.ok(option, `option for ${type}`);
-    const series = option.series;
-    assert.ok(Array.isArray(series) && series.length > 0, `series for ${type}`);
-    const first = series[0];
-    if (type === "GAUGE") {
-      assert.equal(first.type, "gauge");
-    } else if (type === "PIE") {
-      assert.equal(first.type, "pie");
-    } else if (type === "RADAR") {
-      assert.equal(first.type, "radar");
-    } else if (type === "LINE" || type === "AREA") {
-      assert.equal(first.type, "line");
-    } else {
-      assert.equal(first.type, "bar");
-    }
-  }
+test("buildChartOption draws each type the binding allows, and coerces the rest to a bar", () => {
+  const draw = (type, dataBinding) => buildChartOption(indicators, createChartConfig({ type, dataBinding })).series[0].type;
+  assert.equal(draw("BAR", "INDICATOR_PROGRESS"), "bar");
+  assert.equal(draw("RADAR", "INDICATOR_PROGRESS"), "radar");
+  assert.equal(draw("GAUGE", "INDICATOR_PROGRESS"), "bar", "two indicators: a gauge would show only one");
+  assert.equal(draw("PIE", "STATUS_DISTRIBUTION"), "pie");
+  for (const type of ["LINE", "AREA", "PIE", "RADAR", "GAUGE"]) assert.equal(draw(type, "INDICATOR_COMPARISON"), "bar", `${type} over indicator comparison`);
+  const one = buildChartOption(indicators.slice(0, 1), createChartConfig({ type: "GAUGE", dataBinding: "INDICATOR_PROGRESS" }));
+  assert.equal(one.series[0].type, "gauge");
 });
 
 test("parseChartConfig round-trips and rejects invalid input", () => {

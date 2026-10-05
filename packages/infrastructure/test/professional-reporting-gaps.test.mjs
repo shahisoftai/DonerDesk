@@ -4,6 +4,7 @@ import { NumericAssertionVerifier } from "../dist/llm/verifier-strategies.js";
 import { DeterministicEvidenceRetriever } from "../dist/llm/evidence-retriever.js";
 import { DeterministicRequirementEvaluator } from "../dist/llm/requirement-evaluator.js";
 import { ChecklistUnsupportedClaimProjector } from "../dist/llm/checklist-projector.js";
+import { stableFingerprint } from "@donordesk/domain";
 
 function finding(overrides = {}) {
   return {
@@ -286,4 +287,25 @@ test("numeric verifier ignores date and count atoms but still checks achievement
     findings: [f],
   });
   assert.equal(wrong.result, "FAILED");
+});
+
+test("checklist projector closes open items whose statement no longer fails, and keeps those that still do", async () => {
+  const mk = (key, status = "OPEN") => {
+    const item = { type: "UNSUPPORTED_REPORT_CLAIM", status, relatedEntityId: stableFingerprint(key), resolved: undefined, resolve(note) { this.status = "RESOLVED"; this.resolved = note; } };
+    return item;
+  };
+  const stale = mk("Old wording that was rewritten");
+  const still = mk("Still failing statement");
+  const done = mk("Already resolved", "RESOLVED");
+  const other = { type: "MISSING_EVIDENCE", status: "OPEN", relatedEntityId: undefined, resolve() { throw new Error("must not touch"); } };
+  const updated = [];
+  const checklist = { findByReportingPeriod: async () => ({ ok: true, value: [stale, still, done, other] }), update: async (i) => (updated.push(i), { ok: true, value: i }) };
+  const projector = new ChecklistUnsupportedClaimProjector({ generate: () => "x" }, checklist);
+  const r = await projector.reconcile({ tenantId: { toString: () => "t" }, periodId: "p1", activeKeys: ["Still failing statement"] });
+  assert.ok(r.ok);
+  assert.equal(stale.status, "RESOLVED");
+  assert.match(stale.resolved, /automatically/);
+  assert.equal(still.status, "OPEN");
+  assert.equal(done.status, "RESOLVED");
+  assert.deepEqual(updated, [stale]);
 });

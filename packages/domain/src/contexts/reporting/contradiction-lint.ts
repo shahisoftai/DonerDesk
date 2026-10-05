@@ -67,6 +67,40 @@ export interface ContradictionLintFindingData {
   target?: string;
   comparisonValue?: string;
   qualityFlags: readonly string[];
+  /** Life-of-project and cumulative figures, and every recorded breakdown value (period and life-of-project). */
+  cumulativeValue?: string;
+  priorCumulativeValue?: string;
+  lifeValue?: string;
+  breakdownValues?: readonly string[];
+}
+
+/** The lint's view of a verified finding, from the finding itself. */
+export function toLintFindingData(f: {
+  indicatorCode: string;
+  value: string;
+  unit?: string;
+  baseline?: string;
+  target?: string;
+  comparisonValue?: string;
+  qualityFlags: readonly string[];
+  cumulativeValue?: string;
+  priorCumulativeValue?: string;
+  lifeOfProject?: { value: string; disaggregation?: ReadonlyArray<{ value: string }> } | null;
+  disaggregation?: ReadonlyArray<{ value: string }>;
+}): ContradictionLintFindingData {
+  return {
+    indicatorCode: f.indicatorCode,
+    value: f.value,
+    unit: f.unit,
+    baseline: f.baseline,
+    target: f.target,
+    comparisonValue: f.comparisonValue,
+    qualityFlags: f.qualityFlags,
+    cumulativeValue: f.cumulativeValue,
+    priorCumulativeValue: f.priorCumulativeValue,
+    lifeValue: f.lifeOfProject?.value,
+    breakdownValues: [...(f.disaggregation ?? []), ...(f.lifeOfProject?.disaggregation ?? [])].map((e) => e.value),
+  };
 }
 
 /** Verbatim recorded update strings per indicator (period/cumulative/comments). */
@@ -87,6 +121,11 @@ export interface ContradictionLintInput {
   findings?: readonly ContradictionLintFindingData[];
   recordedValues?: readonly ContradictionLintRecordedValues[];
   activities?: readonly ContradictionLintActivityContext[];
+  /**
+   * Figures the project's own records state (activity participant counts, record and evidence counts, the project
+   * budget, verified finance, life-of-project totals): each is a real figure a report may quote, plain or as a percent.
+   */
+  groundedFigures?: readonly string[];
   /** ISO dates bounding the reporting period; enables the date-window check. */
   periodStart?: string;
   periodEnd?: string;
@@ -126,6 +165,8 @@ const DATE_PATTERNS: RegExp[] = [
   new RegExp(`\\b\\d{1,2}(?:st|nd|rd|th)?\\s+(?:${MONTH_NAMES})[a-z]*\\.?,?\\s+\\d{4}\\b`, "gi"),
   /\b\d{4}-\d{2}-\d{2}\b/g,
 ];
+// Words that name a category, not a metric: "35 female" (caregivers) and "656 female" (enrolment) are different metrics.
+const GENERIC_METRIC_NOUNS = new Set(["female", "males", "male", "females", "women", "woman", "men", "man", "girls", "girl", "boys", "boy", "target", "targets", "baseline", "total", "percent", "usd", "female male"]);
 const NUMBER_RE = /\d[\d,]*(?:\.\d+)?/g;
 const STOPWORDS = new Set([
   "of", "the", "a", "an", "to", "in", "on", "and", "with", "for", "from",
@@ -182,6 +223,16 @@ function exemptRanges(text: string): Array<[number, number]> {
   let cm: RegExpExecArray | null;
   while ((cm = codeRe.exec(text)) !== null) {
     if (/[0-9]/.test(cm[0])) ranges.push([cm.index, cm.index + cm[0].length]);
+  }
+  // Ages are descriptions, not achievements: "children aged 6-14", "6 to 14 years", "ages 5-17", "10 years old".
+  const ageRe = /\b(?:aged?|ages|between the ages of)\s+\d{1,2}(?:\s*(?:-|–|to|and)\s*\d{1,2})?\b|\b\d{1,2}\s*(?:-|–|to)\s*\d{1,2}\s*(?:years?|yrs?)(?:\s*old)?\b|\b\d{1,2}\s*(?:years?|yrs?)\s*old\b/gi;
+  let am: RegExpExecArray | null;
+  while ((am = ageRe.exec(text)) !== null) ranges.push([am.index, am.index + am[0].length]);
+  // Identifiers cited in prose (evidence ids) carry digits that are not figures.
+  const idRe = /\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b|\b[0-9a-f]{8}\b(?=[^0-9a-f]|$)/gi;
+  let im: RegExpExecArray | null;
+  while ((im = idRe.exec(text)) !== null) {
+    if (/[0-9]/.test(im[0]) && /[a-f]/i.test(im[0])) ranges.push([im.index, im.index + im[0].length]);
   }
   try {
     for (const [start, end] of indicatorLabelRanges(text)) ranges.push([start, end]);
@@ -265,6 +316,14 @@ class AcceptedNumbers {
     this.percent.add(normalizeKey(round1(pct)));
   }
 
+  /** A figure from the records: legitimate plain, and as a percentage (a burn rate of 97 is "97%"). */
+  addFigure(text: string): void {
+    const n = parseDecimalSafe(text);
+    if (n === null) return;
+    this.addNumber(n);
+    this.percent.add(normalizeKey(n));
+  }
+
   hasPlain(n: number): boolean {
     return this.plain.has(normalizeKey(n));
   }
@@ -289,7 +348,12 @@ export function lintReportContradictions(input: ContradictionLintInput): Contrad
     accepted.addText(f.target);
     accepted.addText(f.comparisonValue);
     accepted.addRatio(parseDecimalSafe(f.value ?? ""), parseDecimalSafe(f.target ?? ""));
+    for (const extra of [f.cumulativeValue, f.priorCumulativeValue, f.lifeValue, ...(f.breakdownValues ?? [])]) accepted.addText(extra);
+    // Progress against the project target: cumulative to date, and the life-of-project total.
+    accepted.addRatio(parseDecimalSafe(f.cumulativeValue ?? ""), parseDecimalSafe(f.target ?? ""));
+    accepted.addRatio(parseDecimalSafe(f.lifeValue ?? ""), parseDecimalSafe(f.target ?? ""));
   }
+  for (const figure of input.groundedFigures ?? []) accepted.addFigure(figure);
   for (const r of input.recordedValues ?? []) {
     for (const t of r.texts) accepted.addText(t);
   }
@@ -358,7 +422,8 @@ export function lintReportContradictions(input: ContradictionLintInput): Contrad
       // Same-metric divergence model.
       if (!sentence.quoted && !DELTA_CONTEXT_RE.test(text) && p.value >= 5) {
         const noun = followingNounPhrase(text, p.end);
-        if (noun.length >= 3) {
+        const genericOnly = noun.split(" ").every((w) => GENERIC_METRIC_NOUNS.has(w));
+        if (noun.length >= 3 && !genericOnly) {
           const bucket = metricValues.get(noun) ?? new Map<string, { value: number; section: string; excerpt: string }>();
           if (!bucket.has(normalizeKey(p.value))) {
             bucket.set(normalizeKey(p.value), { value: p.value, section: sentence.sectionTitle, excerpt: clip(text) });

@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, SavePeriodFinanceSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -300,7 +301,7 @@ export async function updateReportSectionAction(
 
 export type ChartConfigInput = {
   type: "BAR" | "LINE" | "PIE" | "AREA" | "RADAR" | "GAUGE";
-  dataBinding: "INDICATOR_COMPARISON" | "INDICATOR_ACHIEVEMENT" | "STATUS_DISTRIBUTION";
+  dataBinding: "INDICATOR_PROGRESS" | "INDICATOR_COMPARISON" | "INDICATOR_ACHIEVEMENT" | "STATUS_DISTRIBUTION";
   options?: Record<string, unknown>;
 };
 
@@ -316,6 +317,14 @@ export async function updateReportSectionChartAction(
     method: "PATCH",
     body: { chartConfig, expectedVersion },
   });
+}
+
+export type RefreshSectionChartsResult = Result<{ charts: number }, AppError>;
+
+/** Rebuilds a section's charts from the tables currently in its text. */
+export async function refreshSectionChartsAction(sectionId: string): Promise<RefreshSectionChartsResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-sections/${sectionId}/refresh-charts`, z.object({ charts: z.number() }), context.token, { method: "POST" });
 }
 
 export type SubmitForReviewResult = Result<undefined, AppError>;

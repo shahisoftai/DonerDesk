@@ -289,15 +289,18 @@ export function ReportWorkspace({
   // section's chart panel.
   const chartIndicators = useMemo<ChartIndicator[]>(
     () =>
-      indicators.map((i) => ({
-        code: i.code,
-        name: i.name,
-        baseline: i.baseline,
-        target: i.target,
-        unit: i.unit,
-        achievement: i.update?.periodAchievement ?? "0",
-        status: i.update?.verificationStatus ?? "DRAFT",
-      })),
+      // Only indicators with a value are charted (a missing one is not "0").
+      indicators
+        .filter((i) => i.update)
+        .map((i) => ({
+          code: i.code,
+          name: i.name,
+          baseline: i.baseline,
+          target: i.target,
+          unit: i.unit,
+          achievement: (i.update?.periodAchievement ?? "").trim(),
+          status: i.update?.verificationStatus ?? "DRAFT",
+        })),
     [indicators],
   );
 
@@ -841,6 +844,7 @@ export function ReportWorkspace({
                   <ReportChartPanel
                     key={`chart-${selected.id}`}
                     sectionId={selected.id}
+                    sectionTitle={selected.sectionTitle}
                     initialConfig={selected.chartConfig ?? null}
                     expectedVersion={selected.updatedAt}
                     indicators={chartIndicators}

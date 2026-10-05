@@ -1,5 +1,6 @@
-import { DomainError, extractNumericAtoms, classifyNumericAtomRoles, indicatorLabelRanges, type FinanceSummaryView, type VerifiedFinding, type VerificationReasonCode, type Result } from "@donordesk/domain";
-import type { IClaimVerifier, ClaimVerification, EvidencePackage, ReportClaimDraft, EntailmentResult, IEvidenceIntegrityVerifier } from "@donordesk/application";
+import { DomainError, parseDecimal, extractNumericAtoms, classifyNumericAtomRoles, indicatorLabelRanges, type FinanceSummaryView, type VerifiedFinding, type VerificationReasonCode, type Result } from "@donordesk/domain";
+import type { IClaimVerifier, ClaimVerification, EvidencePackage, RecordChunk, ReportClaimDraft, EntailmentResult, IEvidenceIntegrityVerifier } from "@donordesk/application";
+import { figuresInRecords } from "@donordesk/application";
 import { NumericAssertionVerifier, DeterministicEntailmentVerifier, CausalReviewPolicy } from "./verifier-strategies.js";
 import { DeterministicEvidenceIntegrityVerifier } from "./evidence-integrity-verifier.js";
 
@@ -33,9 +34,11 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
     claim: ReportClaimDraft;
     findings: VerifiedFinding[];
     evidencePackages: EvidencePackage[];
+    records?: RecordChunk[];
     finance?: FinanceSummaryView;
   }): Promise<Result<ClaimVerification, DomainError>> {
     const claim = input.claim;
+    const records = input.records ?? [];
 
     const integrity = await this.integrity.verify({
       sources: claim.proposedSources,
@@ -56,6 +59,19 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
       };
     }
 
+    // A recommendation or forecast proposes; it states no fact an evidence file could support. What it does state
+    // as a figure ("a balance of 12600 USD") is still verified, and a proposal without figures has nothing to verify.
+    if (claim.assertionType === "RECOMMENDATION" || claim.assertionType === "FORECAST") {
+      const labelRanges = indicatorLabelRanges(claim.text);
+      const atoms = classifyNumericAtomRoles(claim.text, extractNumericAtoms(claim.text).filter((a) => !labelRanges.some(([s, e]) => a.charStart >= s && a.charEnd <= e)));
+      if (atoms.length === 0) {
+        return { ok: true, value: { claimId: "", result: "PASSED", detail: "A recommendation or forecast is a proposal, not a statement of fact", tierUsed: 4, reasonCodes: [] } };
+      }
+      const recordFigures = figuresInRecords(records).flatMap((t) => { const d = parseDecimal(t); return d ? [d] : []; });
+      const figures = this.numeric.verify({ atoms, findings: input.findings, ...(input.finance ? { finance: input.finance } : {}), ...(recordFigures.length > 0 ? { recordFigures } : {}) });
+      return { ok: true, value: { claimId: "", result: figures.result, detail: figures.result === "PASSED" ? "A proposal whose figures match the verified records" : figures.detail, matchedFinding: figures.matchedFinding, tierUsed: figures.result === "PASSED" ? 1 : 2, reasonCodes: figures.reasonCodes, numericAtoms: atoms } };
+    }
+
     switch (claim.type) {
       case "NUMERIC": {
         // Apply the same eligibility masking as the extractor (indicator-name
@@ -68,7 +84,8 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
             (a) => !labelRanges.some(([s, e]) => a.charStart >= s && a.charEnd <= e),
           ),
         );
-        const result = this.numeric.verify({ atoms, findings: input.findings, ...(input.finance ? { finance: input.finance } : {}) });
+        const recordFigures = figuresInRecords(records).flatMap((t) => { const d = parseDecimal(t); return d ? [d] : []; });
+        const result = this.numeric.verify({ atoms, findings: input.findings, ...(input.finance ? { finance: input.finance } : {}), ...(recordFigures.length > 0 ? { recordFigures } : {}) });
         return {
           ok: true,
           value: {
@@ -84,7 +101,7 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
       }
       case "FACTUAL":
       case "QUALITATIVE": {
-        const evidence = this.retrieveEvidence(claim, input.evidencePackages);
+        const evidence = this.retrieveEvidence(claim, input.evidencePackages, records);
         const entailment = await this.entailment.verify({
           assertionText: claim.text,
           assertionType: claim.type,
@@ -94,7 +111,7 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
         return this.entailmentResult(claim, entailment.value, 4);
       }
       case "CAUSAL": {
-        const evidence = this.retrieveEvidence(claim, input.evidencePackages);
+        const evidence = this.retrieveEvidence(claim, input.evidencePackages, records);
         const entailment = await this.entailment.verify({
           assertionText: claim.text,
           assertionType: claim.type,
@@ -143,7 +160,9 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
           value: {
             claimId: "",
             result: "PASSED",
-            detail: `Assertion supported by cited evidence (confidence ${Math.round(entailment.confidence * 100)}%)`,
+            detail: entailment.citedSpans.length > 0 && entailment.citedSpans.every((c) => c.evidenceId.startsWith("record:"))
+              ? `Assertion supported by the project's own records (confidence ${Math.round(entailment.confidence * 100)}%)`
+              : `Assertion supported by cited evidence (confidence ${Math.round(entailment.confidence * 100)}%)`,
             tierUsed: tier,
             reasonCodes: [],
             entailment,
@@ -188,7 +207,7 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
     }
   }
 
-  private retrieveEvidence(claim: ReportClaimDraft, packages: EvidencePackage[]) {
+  private retrieveEvidence(claim: ReportClaimDraft, packages: EvidencePackage[], records: RecordChunk[] = []) {
     const ranked = new Map<string, { evidenceId: string; chunkId: string; chunkText: string; score: number }>();
     const claimTokens = this.tokenize(claim.text);
 
@@ -216,7 +235,16 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
       }
     }
 
-    return [...ranked.values()].sort((a, b) => b.score - a.score).slice(0, 8);
+    // The project's own records (activity records, project details, story) ground a claim that restates them.
+    for (const record of records) {
+      const recordTokens = this.tokenize(record.text);
+      let overlap = 0;
+      for (const token of claimTokens) if (recordTokens.has(token)) overlap++;
+      const score = claimTokens.size === 0 ? 0 : overlap / claimTokens.size;
+      if (score > 0) ranked.set(record.chunkId, { evidenceId: record.chunkId, chunkId: record.chunkId, chunkText: record.text, score });
+    }
+
+    return [...ranked.values()].sort((a, b) => b.score - a.score).slice(0, 14);
   }
 
   private tokenize(text: string): Set<string> {

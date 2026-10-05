@@ -1,5 +1,5 @@
 import type { Result, TenantId } from "@donordesk/domain";
-import type { ExportPackage, ChartConfig } from "@donordesk/domain";
+import type { ExportPackage, ChartConfig, ResolvedChartData } from "@donordesk/domain";
 
 export interface IExportRepository {
   create(e: ExportPackage): Promise<Result<ExportPackage>>;
@@ -13,20 +13,29 @@ export interface ExportArtifacts {
   fileName: string;
 }
 
-export interface ExportChartInput {
-  /** Section title this chart belongs to (used as its caption). */
+/**
+ * One chart of an export. Either already resolved (a chart drawn from a table of its section) or a hand-configured chart over the
+ * report's indicator rows. `caption` is printed under it.
+ */
+export type ExportChartInput = {
+  /** Section title this chart belongs to. */
   sectionTitle: string;
-  config: ChartConfig;
-  indicators: Array<{
-    code: string;
-    name: string;
-    baseline: string;
-    target: string;
-    unit?: string;
-    achievement: string;
-    status: string;
-  }>;
-}
+  caption?: string;
+} & (
+  | { resolved: ResolvedChartData }
+  | {
+      config: ChartConfig;
+      indicators: Array<{
+        code: string;
+        name: string;
+        baseline: string;
+        target: string;
+        unit?: string;
+        achievement: string;
+        status: string;
+      }>;
+    }
+);
 
 export type ExportIntent = "INTERNAL_REVIEW" | "DONOR_SUBMISSION";
 

@@ -1,5 +1,6 @@
 import type { IndicatorType } from "../logframe/indicator.js";
 import type { IndicatorSemantics } from "../logframe/indicator-semantics.js";
+import type { DisaggregationEntry } from "../logframe/indicator-disaggregation.js";
 import type { FindingQualityFlag, PerformanceEvaluation, VerifiedFinding } from "./verified-finding.js";
 import { buildCalculationMethod } from "./verified-finding.js";
 
@@ -111,6 +112,8 @@ export interface IndicatorUpdateRecord {
   cumulativeAchievement: string;
   verificationStatus: string;
   updatedAt: Date;
+  /** Recorded breakdown of this update (sex, age, ...); empty/absent when none. */
+  disaggregation?: DisaggregationEntry[];
 }
 
 export interface IndicatorCalculationInput {
@@ -141,6 +144,31 @@ function isNumeric(text: string): boolean {
 }
 
 /**
+ * The breakdown behind a finding's value. SUM indicators add each category across the verified
+ * updates (their breakdowns sum to the period values); any other aggregation quotes the latest
+ * verified update's breakdown, because a sum of rates or latest values would be meaningless.
+ */
+function aggregateDisaggregation(verified: IndicatorUpdateRecord[], aggregation: IndicatorSemantics["aggregation"]): DisaggregationEntry[] {
+  const withEntries = verified.filter((u) => (u.disaggregation ?? []).length > 0);
+  if (withEntries.length === 0) return [];
+  if (aggregation !== "SUM") {
+    const latest = [...withEntries].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0] as IndicatorUpdateRecord;
+    return (latest.disaggregation ?? []).map((e) => ({ ...e }));
+  }
+  const totals = new Map<string, { entry: DisaggregationEntry; sum: Decimal }>();
+  for (const update of withEntries) {
+    for (const entry of update.disaggregation ?? []) {
+      const value = parseDecimal(entry.value);
+      if (!value) continue;
+      const key = `${entry.dimension}:${entry.category.toLowerCase()}`;
+      const existing = totals.get(key);
+      totals.set(key, { entry: existing?.entry ?? { dimension: entry.dimension, category: entry.category, value: "" }, sum: existing ? decimalAdd(existing.sum, value) : value });
+    }
+  }
+  return [...totals.values()].map(({ entry, sum }) => ({ ...entry, value: formatDecimal(sum, 6) }));
+}
+
+/**
  * Pure, deterministic indicator computation. Produces a VerifiedFinding with
  * the value as a decimal string. Never evaluates performance; it only
  * aggregates and records quality flags.
@@ -153,7 +181,8 @@ export function computeIndicator(input: IndicatorCalculationInput): VerifiedFind
   if (input.semantics.status === "REQUIRES_REVIEW") {
     qualityFlags.push("NEEDS_REVIEW");
   }
-  if (input.disaggregationRequired) {
+  const disaggregation = aggregateDisaggregation(verified, input.semantics.aggregation);
+  if (input.disaggregationRequired && disaggregation.length === 0) {
     qualityFlags.push("MISSING_DISAGGREGATION");
   }
 
@@ -293,6 +322,7 @@ export function computeIndicator(input: IndicatorCalculationInput): VerifiedFind
     reportingPeriodId: "",
     comparisonPeriodId: input.comparisonPeriodId,
     sourceRecordIds,
+    ...(disaggregation.length ? { disaggregation } : {}),
     qualityFlags: Array.from(new Set(qualityFlags)),
     computedAt: new Date(),
   };
@@ -337,5 +367,9 @@ export function evaluatePerformance(input: {
 
   if (isPositive) return { type: "POSITIVE", detail: "Value compares favorably against the reference" };
   if (isNegative) return { type: "NEGATIVE", detail: "Value compares unfavorably against the reference" };
+  // Exactly on a target is a target met, which a report may say plainly; exactly on a baseline is no change.
+  if (target !== null) {
+    return { type: "POSITIVE", detail: "Value meets the target" };
+  }
   return { type: "NEUTRAL", detail: "Value is in line with the reference" };
 }

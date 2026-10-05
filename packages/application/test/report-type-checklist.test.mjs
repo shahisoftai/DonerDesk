@@ -103,3 +103,50 @@ test("a quarterly report never reads life-of-project findings", async () => {
   await h.handle(ctx, "p1");
   assert.equal(created.filter((i) => i.type === "CUMULATIVE_DATA_COMPLETE").length, 0);
 });
+
+test("evidence for a roll-up report is counted across the project, for a monthly one across its period", async () => {
+  const filters = [];
+  const handlerWith = (period) => new DetectMissingEvidenceHandler(
+    { generate: () => "id" },
+    { findByReportingPeriod: async () => ({ ok: true, value: [] }), create: async (i) => ({ ok: true, value: i }) },
+    { detect: async () => [] },
+    { findById: async () => ({ ok: true, value: period }), findPreviousPeriods: async () => ({ ok: true, value: [] }) },
+    { findByReportingPeriod: async () => ({ ok: true, value: [] }) },
+    { findById: async () => ({ ok: true, value: null }) },
+    { findByReportingPeriod: async () => ({ ok: true, value: [] }) },
+    { findByReportDraft: async () => ({ ok: true, value: [] }) },
+    { findByReportingPeriod: async () => ({ ok: true, value: [] }), findByProject: async () => ({ ok: true, value: [] }) },
+    { search: async (f) => (filters.push(f), { ok: true, value: { total: 0 } }) },
+    { record: async () => undefined },
+    { computeFindings: async () => ({ ok: true, value: [] }) },
+  );
+  await handlerWith(makePeriod("FINAL")).handle(ctx, "p1");
+  await handlerWith(makePeriod("MONTHLY")).handle(ctx, "p1");
+  assert.equal(filters[0].reportingPeriodId, undefined, "final: the whole project's evidence");
+  assert.equal(filters[1].reportingPeriodId, "p1", "monthly: its own period's evidence");
+});
+
+test("an evidence-shortfall item is closed once the evidence is on file", async () => {
+  const shortfall = { type: "MISSING_EVIDENCE", status: "OPEN", relatedEntityId: undefined, note: undefined, resolve(n) { this.status = "RESOLVED"; this.note = n; } };
+  const updated = [];
+  const build = (total) => new DetectMissingEvidenceHandler(
+    { generate: () => "id" },
+    { findByReportingPeriod: async () => ({ ok: true, value: [shortfall] }), create: async (i) => ({ ok: true, value: i }), update: async (i) => (updated.push(i), { ok: true, value: i }) },
+    { detect: async () => [] },
+    { findById: async () => ({ ok: true, value: makePeriod("MONTHLY") }), findPreviousPeriods: async () => ({ ok: true, value: [] }) },
+    { findByReportingPeriod: async () => ({ ok: true, value: [] }) },
+    { findById: async () => ({ ok: true, value: null }) },
+    { findByReportingPeriod: async () => ({ ok: true, value: [] }) },
+    { findByReportDraft: async () => ({ ok: true, value: [] }) },
+    { findByReportingPeriod: async () => ({ ok: true, value: [] }), findByProject: async () => ({ ok: true, value: [] }) },
+    { search: async () => ({ ok: true, value: { total } }) },
+    { record: async () => undefined },
+    { computeFindings: async () => ({ ok: true, value: [] }) },
+  );
+  await build(2).handle(ctx, "p1");
+  assert.equal(shortfall.status, "OPEN", "still short: stays open");
+  await build(12).handle(ctx, "p1");
+  assert.equal(shortfall.status, "RESOLVED");
+  assert.match(shortfall.note, /automatically/);
+  assert.deepEqual(updated, [shortfall]);
+});

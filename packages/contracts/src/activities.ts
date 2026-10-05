@@ -52,11 +52,20 @@ export const UpdateActivitySchema = z.object({
 });
 export type UpdateActivityInput = z.infer<typeof UpdateActivitySchema>;
 
-export const AttachEvidenceSchema = z.object({
-  evidenceId: z.string().min(1),
-  activityId: z.string().min(1).optional(),
-  indicatorId: z.string().min(1).optional(),
-});
+/**
+ * Attach an evidence file to an activity and/or an indicator UPDATE (one indicator's value for one reporting
+ * period). `indicatorId` has always meant the update's id, which is easy to mistake for the indicator's own
+ * id, so `indicatorUpdateId` is the clear name; `indicatorId` is still accepted for existing callers.
+ */
+export const AttachEvidenceSchema = z
+  .object({
+    evidenceId: z.string().min(1),
+    activityId: z.string().min(1).optional(),
+    indicatorUpdateId: z.string().min(1).optional(),
+    /** Deprecated alias of `indicatorUpdateId`. */
+    indicatorId: z.string().min(1).optional(),
+  })
+  .transform(({ indicatorUpdateId, indicatorId, ...rest }) => ({ ...rest, indicatorId: indicatorUpdateId ?? indicatorId }));
 export type AttachEvidenceInput = z.infer<typeof AttachEvidenceSchema>;
 
 /** Bulk-import activity content as text (Excel/CSV/plain) and auto-create records. */

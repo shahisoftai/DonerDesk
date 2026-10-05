@@ -231,7 +231,7 @@ export const GenerateReportRunSchema = z.object({
 
 export const ChartConfigSchema = z.object({
   type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
-  dataBinding: z.enum(["INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),
+  dataBinding: z.enum(["INDICATOR_PROGRESS", "INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),
   options: z.record(z.string(), z.unknown()).optional(),
 });
 export type ChartConfigInput = z.infer<typeof ChartConfigSchema>;
@@ -371,7 +371,12 @@ const ChartSeriesSchema = z.object({
 
 const ChartPayloadSchema = z.object({
   type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
-  dataBinding: z.enum(["INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION"]),
+  dataBinding: z.enum(["INDICATOR_PROGRESS", "INDICATOR_COMPARISON", "INDICATOR_ACHIEVEMENT", "STATUS_DISTRIBUTION", "TABLE_INDICATOR_PROGRESS", "TABLE_FINANCE_BY_LINE", "TABLE_ACTIVITY_PARTICIPANTS"]),
+  tableIndex: z.number().int().nonnegative().optional(),
+  tableCaption: z.string().optional(),
+  stacked: z.boolean().optional(),
+  referenceLine: z.object({ name: z.string(), value: z.number() }).optional(),
+  truncated: z.object({ shown: z.number(), total: z.number() }).optional(),
   unit: z.string().optional(),
   title: z.string().min(1),
   caption: z.string().min(1),

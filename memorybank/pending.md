@@ -1,6 +1,31 @@
 # Pending
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-04.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-05.
+
+## Charts (2026-10-05)
+
+- [x] Section- and table-aware charts, unit-safe data, constrained types, exports include charts (see `Fixes.md`).
+- [ ] Add chart sources beyond the three table kinds (disaggregation table, previous-report comparison, activities per month) when the pipeline produces such tables.
+- [ ] A hand-made chart is indicator-only; consider offering "choose a table of this section" instead, and hiding it when a derived chart already shows the same table.
+
+## Education demo (verification demo 3) — follow-ups (updated 2026-10-05)
+
+- [x] Disaggregation / attendance / "below expectation" / evidence-reaching-the-writer / record-grounded verification / preflight counts / overlap message / forgot-password e2e — done, see `Fixes.md` and `demo/verification-demo-3.md`.
+- [x] Export blocked by open issues, 97 red issues in the wizard (lint false positives, stale checklist items, re-assessment without evidence) — fixed 2026-10-05 (round 3 in `demo/verification-demo-3.md`).
+- [ ] **What stays flagged on the demo final report is genuine:** the writer's overreaching safeguarding sentence (regenerate to apply the new guidance, or exclude it), and four attestations a person
+  must make (*Final report sign-off obtained*, *Sensitive data handling confirmed*, *Final procurement and expenditure records available*, *Confirm child-safeguarding compliance and donor visibility*).
+  Causal claims always need a human decision (by design); a few long interpretive sentences stay `ENTAILMENT_UNCERTAIN` (non-material).
+- [ ] Sensitive-data attestation is reported as a **confidentiality violation** in the gate; consider a distinct kind so a checklist attestation is not read as a leak.
+- [x] Exports download with a readable name (`<project>-<kind>-<start>-to-<end>-v<n>[-draft].<ext>`), 2026-10-05.
+- [ ] `apps/api` tests for billing/RBAC/internal routes need a local Postgres (they fail with "database credentials for `test` are not valid" without one); not part of the deploy gate today.
+- [ ] A watermark is a header/banner only: a donor-submission-style export from an unapproved draft is still impossible (needs a sealed snapshot), which is intended.
+- [ ] **Roll-up reports that overlap their periods** (e.g. a donor quarterly alongside monthly internal reports) are not supported: cadence types may not overlap and nothing rolls a finer period
+  up into a coarser one. A FINAL report works as the closing period; a Custom report overlaps but has no finance or cumulative figures. A real roll-up (derive findings from contained periods,
+  no double counting in `lifeOfProject`) touches ~7 readers of period updates; decide whether it is wanted.
+- [ ] `attach-evidence` still overwrites `evidence.indicatorId` with the update id (the field then holds two meanings); uploading with tags does not attach. Consider separating the columns.
+- [ ] A percentage indicator with no numerator/denominator now reports its latest rate but still reads "needs review"; add a one-click "reported as a rate" in the indicator editor.
+- [ ] Clean up on production: `[DEMO] Learning Recovery for Displaced Children` (`3eef42c9-71fe-4eee-a333-219df707df87`, the current demo) and the two archived earlier builds
+  (`42859390-ade2-42d6-b8d8-a45acd5e8400`, `52476c07-3cb7-417b-a362-3277e0e8c606`).
 
 ## Report types & scope — follow-ups (added 2026-10-03)
 
