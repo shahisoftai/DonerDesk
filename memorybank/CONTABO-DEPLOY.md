@@ -1,6 +1,15 @@
 # Deploy to Contabo — Fastest Path
 
-**Last deploy:** 2026-10-05 — `releaseId=20261005095940` (`SCOPE=both`: downloads get a readable `.docx`/`.pdf` name and the right content type), the last of sixteen same-day deploys (`both`: `20261005054216`, `20261005074239`, `20261005080930` (web: Download draft); `api`: the rest up to `20261005090450`). No migration. Verification demo 3: disaggregation reaches the writer and the verifier, record-grounded claim verification (activity records, project
+**Last deploy:** 2026-10-05 — `releaseId=20261005123155` (`SCOPE=both`, branch `0009-agent-memory`, commit `dd78aba`). **Phase 23 user-friendliness** (`imp/PHSE23-userfriendliness.md`):
+indicator-calculation confirm + setup warnings, verify-all, staged readiness + top-3, flag classes + one-note section decision, one evidence linker + support panel,
+"what you can create" / lifecycle banner / readable validation errors, guided closing report, activity→logframe link, shared workflow rules.
+**Two additive migrations applied manually first:** `20261006100000_evidence_indicator_update_link` (`EvidenceFile.indicatorUpdateId` + backfill of legacy update ids out of `indicatorId`) and
+`20261006110000_activity_logframe_activity_link` (`ActivityUpdate.logframeActivityId`), shipped with `rsync --relative` (migration dirs + `schema.prisma`) and `prisma migrate deploy` as
+`donordesk_migrator`. No `rls.sql` change (no new tables). DB backup before: `/opt/donordesk/backups/db-pre-20261006-phase23.dump` (written by root; `pg_dump` as `postgres` cannot write there).
+Verified: api/web/worker active, `/ready` 200 (new `REQUIRED_PRISMA_FIELDS` present), new route 401 unauthenticated, both columns present, no API errors after restart.
+Not browser-verified in production; locally the lifecycle banner, confirm-calculation, period guide and closing stepper were checked in a real browser (see Features notes in the plan doc).
+
+**Earlier:** (previous) **Last deploy:** 2026-10-05 — `releaseId=20261005095940` (`SCOPE=both`: downloads get a readable `.docx`/`.pdf` name and the right content type), the last of sixteen same-day deploys (`both`: `20261005054216`, `20261005074239`, `20261005080930` (web: Download draft); `api`: the rest up to `20261005090450`). No migration. Verification demo 3: disaggregation reaches the writer and the verifier, record-grounded claim verification (activity records, project
 details, story, findings, finance, evidence log), roll-up reports judged on the life-of-project value with its own breakdown, tagged evidence reaches the writer, preflight counts before the first
 draft (Fixes.md; `demo/verification-demo-3.md`). `20261005055544` shipped with four guidance tests failing because the package tests had run against a stale `dist/` (build every package in
 dependency order first); `20261005061903` replaced it ~4 minutes later. Verified each time: `/ready` 200, worker ok; final report regenerated in a visible browser.
