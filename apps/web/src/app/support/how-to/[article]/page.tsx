@@ -38,6 +38,7 @@ const FILE_MAP: Record<string, string> = {
   "change-organisation-profile": "how-to/how-to-change-organisation-profile.md",
   "archive-a-project": "how-to/how-to-archive-a-project.md",
   "create-a-reporting-period": "how-to/how-to-create-a-reporting-period.md",
+  "create-the-closing-report": "how-to/how-to-create-the-closing-report.md",
   "tell-the-story-and-add-inputs": "how-to/how-to-tell-the-story-and-add-inputs.md",
   "use-the-report-editor": "how-to/how-to-use-the-report-editor.md",
   "use-the-academy-tour": "how-to/how-to-use-the-academy-tour.md",

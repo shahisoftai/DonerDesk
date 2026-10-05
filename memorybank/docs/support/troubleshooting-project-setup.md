@@ -9,6 +9,14 @@ Open the project's **Setup** page. It shows the status (Not started, In progress
 - Only Admins can create projects.
 - You may be at your plan's active-project limit. Archive a finished project or upgrade ([Plans and limits](/support/account-billing/plans-and-limits)).
 
+## The project says "Draft — activate to report"
+
+New projects start as drafts. Click **Activate project** in the banner at the top of the project (you need permission to edit the project). A paused project shows **Resume project** and an archived one **Restore project**.
+
+## A setup request fails with "Validation failed"
+
+The message now names the field and what is expected, for example *acknowledged: Send {"acknowledged": true} to confirm the setup.* Fix the named field and try again.
+
 ## I lost my wizard answers
 
 Wizard progress is saved as a draft in your browser. Reopen **New project** on the same device and browser.

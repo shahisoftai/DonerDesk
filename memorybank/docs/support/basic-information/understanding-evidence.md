@@ -15,7 +15,7 @@ Title, type, reporting period, confidentiality, location, and links to activitie
 
 1. **Upload** or link from Drive; text is read from documents.
 2. **AI tag suggestions** (type, related activity/indicator, period, summary, sensitivity warnings). You accept, edit or reject.
-3. **Link** it to activities and indicators.
+3. **Link** it to activities and indicators. A file is **attached** (used as proof in reports) as soon as you choose what it supports at upload, or when you link it later. Each activity and indicator lists its files and the report statements that cite them.
 4. **Verify** it (Admin, Project Manager, M&E Officer or Compliance Officer).
 5. It is **cited** in reports and counted by the compliance checklist.
 

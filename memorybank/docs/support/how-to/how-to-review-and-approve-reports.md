@@ -39,6 +39,14 @@ Open a section and the **Statements** tab. For each statement flagged **Needs a 
 
 Minor statements are marked **Not checked (minor)**. You can resolve many at once with bulk resolution.
 
+The review panel groups flagged statements by what kind of problem they are:
+
+- **Needs fixing:** a figure disagrees with your verified data or evidence. Correct the text or the data. These always block approval.
+- **Needs your decision:** something about the evidence (for example confidentiality or a changed file) needs a person to decide.
+- **We could not confirm:** interpretive statements the checker could not tie to a source. They are not necessarily wrong. Read them, then use **Accept the *n* unconfirmed statements and approve** on that section: write one short reason (at least 10 characters), which is recorded with every statement accepted, and the section is approved if nothing else blocks it. Figure errors are never accepted this way.
+
+Technical reason codes are never shown; each flag gives its reason in plain words.
+
 ### After edits
 
 Editing text or changing data can make earlier checks stale. DonorDesk re-checks the affected sections; an **Inputs changed** banner offers to re-check or regenerate. A summary section shows a warning if other sections changed a lot after it was written.

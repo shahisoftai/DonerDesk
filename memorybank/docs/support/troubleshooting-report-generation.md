@@ -11,7 +11,7 @@ Creating a period is blocked until the project is **Ready**. Open the project's 
 | Template has no reviewed required sections | Open the template, review sections and **Approve template**. |
 | No reportable indicators / indicator configuration incomplete | Add an indicator and set baseline, target, unit and frequency on every quantitative one. |
 
-Other reasons: the project is **Completed** or **Archived**, the dates overlap an existing period, or dates fall outside the project dates.
+Other reasons: the project is **Completed** or **Archived**, the dates overlap an existing period, or dates fall outside the project dates. The **What you can create** panel on the New reporting period page tells you, for each report type, whether it is available and why not. Typical cases: a **Final** report already closes your cycle (use a **Custom** report for a one-off), or a Final report was requested over periods that already exist (create it for the closing period, or use the guided [closing report](/support/how-to/create-the-closing-report)).
 
 ## The report editor looks empty
 

@@ -9,13 +9,13 @@ The project must be **Ready** on its Setup page (workspace folder, reviewed dono
 ## Steps
 
 1. Open **Projects → project → Reporting** and click to add a new period.
-2. Choose the **Report type**: Monthly, Quarterly, Semi-annual, Annual, Final, Activity, Situation or Custom. Activity, Situation and Custom reports ask what they cover: **Activity** — tick the activities the report is about; **Situation** — the event, the "as of" date, and optionally location and summary; **Custom** — a title and optional purpose. These reports can sit inside a Monthly or Quarterly period.
+2. Read the **What you can create** panel at the top: it shows which report types are available now and, for the others, why and what to do instead. Then choose the **Report type**: Monthly, Quarterly, Semi-annual, Annual, Final, Activity, Situation or Custom. Activity, Situation and Custom reports ask what they cover: **Activity** — tick the activities the report is about; **Situation** — the event, the "as of" date, and optionally location and summary; **Custom** — a title and optional purpose. These reports can sit inside a Monthly or Quarterly period.
 3. Pick the **Donor template** (only reviewed templates are recommended; unapproved ones are marked "not approved yet"). It is pinned to the period.
 4. **Start date** and **End date** are suggested from the report type and the project's dates. Each new period is chained after the previous one and clipped to the project's end date. Adjust if the donor uses different cut-offs.
 5. **Donor deadline** is calculated from the template's deadline setting where it has one. Add an **Internal review deadline** (optional) earlier than the donor's.
 6. Save.
 
-Periods must not overlap and must fall inside the project dates.
+Regular periods (Monthly to Annual and Final) must not overlap each other and must fall inside the project dates. A **Final** report closes the cycle: create it for the closing period (for example the last month), not over periods that already exist; the guided [closing report](/support/how-to/create-the-closing-report) does this for you. For a one-off report over dates that already have periods, use a **Custom** report.
 
 ## After creating it
 

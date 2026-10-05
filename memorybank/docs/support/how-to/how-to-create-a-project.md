@@ -38,6 +38,8 @@ Each item has a **Set up** button, and **Blockers** lists anything holding you b
 
 You can keep working on evidence, activities and the logframe while setup is unfinished.
 
+**Draft and Active.** A new project starts as a **Draft**, and a banner at the top of the project says **Draft — activate to report**. Click **Activate project** when its set-up is done and you are ready to report (people without edit rights see the same message and are asked to contact an owner). A paused project shows **Resume project**; an archived one shows **Restore project**.
+
 ## Project pages
 
 A project has these tabs: **Reporting**, **Overview**, **Logframe**, **Activities**, **Evidence**, **Templates**, **Team** and **Settings**.

@@ -17,7 +17,7 @@ what-is-donordesk, getting-started-overview, key-concepts, understanding-project
 ## How-To (`how-to/`)
 Accounts: log-in, create-an-account, change-your-password, set-up-new-organisation, change-organisation-profile, invite-team-members, manage-team-roles-permissions, onboard-team-member.
 Projects: create-a-project, archive-a-project, build-logframe, upload-donor-template, connect-google-drive.
-Reporting: create-a-reporting-period, update-indicator-values, import-from-google-sheets, log-activities, upload-evidence, tell-the-story-and-add-inputs, generate-ai-report-draft, use-the-report-editor, review-and-approve-reports, export-reports, use-compliance-checklist, use-bulk-actions, use-comments-feedback, use-the-audit-trail, prepare-for-donor-visit.
+Reporting: create-a-reporting-period, create-the-closing-report, update-indicator-values, import-from-google-sheets, log-activities, upload-evidence, tell-the-story-and-add-inputs, generate-ai-report-draft, use-the-report-editor, review-and-approve-reports, export-reports, use-compliance-checklist, use-bulk-actions, use-comments-feedback, use-the-audit-trail, prepare-for-donor-visit.
 Navigation: use-the-dashboard, search-projects-and-evidence, use-the-notification-system, use-the-academy-tour, manage-billing-subscription.
 
 ## Troubleshooting

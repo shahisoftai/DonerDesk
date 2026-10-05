@@ -21,6 +21,7 @@ Your workspace stores evidence in one of two places (chosen in **Settings → Se
    - **Reporting period** (so it is used for the right report)
    - **Confidentiality** – Public, Internal, Sensitive or Highly sensitive
    - **Location** (optional)
+   - **Use as proof for** (optional): choose the **activity** and/or **indicator** the file supports. For an indicator, also choose the reporting period. The file is attached straight away, so reports use it as proof; you do not need a second step. If the indicator has no value for that period yet, the file is attached automatically when the value is first saved.
 4. Save. Text is read from documents so the AI Reporter can cite them.
 
 ### Link a file already in Google Drive
@@ -33,7 +34,11 @@ After upload DonorDesk suggests tags (evidence type, related activity or indicat
 
 ## Link evidence to activities and indicators
 
-Open a file and use **Link this file to an activity or indicator**. A file can be linked to several. Click **Suggest links** to see likely matches based on titles and confirm the ones you want. Linked evidence is what supports numbers in reports and what the checklist counts.
+A file counts as **proof** in reports once it is **attached** to an activity or to an indicator value. Choosing "Use as proof for" at upload attaches it at once; you can also open a file later and use **Link this file to an activity or indicator**. A file can be linked to several.
+
+Each activity and indicator page has a **Supporting evidence** panel. It lists its files, marks each **Used in reports** (attached) or **Tagged only**, and shows which report statements cite it. Click **Suggest links** to see likely matches based on titles and confirm the ones you want. Linked evidence is what supports numbers in reports and what the checklist counts.
+
+The evidence list shows how many files match (for example *21–40 of 133*) and pages through them.
 
 ## Verify evidence
 

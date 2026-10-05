@@ -15,6 +15,17 @@ A **reporting period** is one report cycle for a project, for example a quarterl
 
 The project must be **Ready** (see [Report readiness](/support/getting-started/report-readiness)). Periods cannot overlap or fall outside the project's dates, and completed or archived projects cannot get new ones. See [How to create a reporting period](/support/how-to/create-a-reporting-period).
 
+## What you can create
+
+The **New reporting period** page opens with a **What you can create** panel. It lists every report type, what it is for, and, when a type is not available, why and what to do:
+
+- **Monthly, Quarterly, Semi-annual and Annual** reports are your regular cycle. They follow one another without gaps or overlaps.
+- A **Final** report closes the cycle and covers the project's whole life. Once it exists no further regular periods can be added.
+- **Finance** can be reported on Quarterly, Semi-annual, Annual and Final reports (when finance is switched on in the reporting profile).
+- **Activity**, **Situation** and **Custom** reports are one-offs. They may sit inside a regular period; a Custom report is the way to report over dates that already have periods.
+
+For the project's last report, use the guided [closing report](/support/how-to/create-the-closing-report).
+
 ## The four-step workspace
 
 1. **Update Project** – indicators, activities, evidence

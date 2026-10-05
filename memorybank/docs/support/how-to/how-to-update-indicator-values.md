@@ -16,6 +16,11 @@ If there is no reporting period yet, create one first (see [Understanding report
 1. Each row is an indicator. Type the **Period achievement** and, where relevant, the **source of the figure** and a comment.
 2. If the indicator has a **disaggregation**, enter values by category (for example Female / Male); for Number and Currency indicators each dimension must add up to the total.
 3. Click **Save all**. Values are saved in one bulk operation. Each indicator has one value per period, so saving again updates it.
+4. If you may verify values, click **Save & verify all** to save and verify everything in the period in one step. When nothing is unsaved the button reads **Verify all (n)**. Rows that cannot be verified are listed with the indicator code and the reason; the others are still verified.
+
+Under each indicator the badge shows whether its **calculation is confirmed**. See [Understanding indicators and targets](/support/getting-started/indicators-and-targets).
+
+If a note appears under a row such as *Linked activities record 412 participants; the indicator says 380*, it is only a prompt to check: people may attend more than one activity, so the figures can legitimately differ.
 
 ## Import instead of typing
 
@@ -34,7 +39,7 @@ Each update moves through a **verification pipeline**:
 | Needs correction | The reviewer asked for a fix (with a reason). |
 | Rejected | Not accepted. |
 
-Verify or request a correction from the grid or the indicator page. The report uses verified data to build tables, charts and comparisons, and unverified figures are marked in the report.
+Verify one value, or use **Verify all**, from the grid; request a correction from the grid or the indicator page. The report uses verified data to build tables, charts and comparisons, and unverified figures are marked in the report.
 
 ## Link evidence
 

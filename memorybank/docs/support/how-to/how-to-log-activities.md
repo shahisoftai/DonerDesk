@@ -11,10 +11,13 @@ Open **Projects → your project → Activities**.
    - **Activity title** and **Activity date**
    - **Reporting period** – the report this activity should feed
    - **Location**
+   - **Logframe activity** (optional): the planned activity this record delivers. The logframe then shows what has been delivered against it (records, accepted records and participants), and the output is filled in for you.
    - **Summary** of what happened
    - **Total participants**, with **Female**, **Male**, **Children** and **Participants with disability** where relevant
    - **Achievements**, **Challenges**, **Lessons learned** and **Next steps**
 3. Click **Submit activity**.
+
+If Female plus Male is below the total, a small note appears; it is only a prompt (some participants may not be counted by sex). A part larger than the total is an error you must fix.
 
 Everything you write here can be used by the AI Reporter, so include specifics: numbers, places, what changed.
 
@@ -24,7 +27,7 @@ On an activity, use the **Suggested narrative** panel to have AI turn your summa
 
 ## Attach evidence
 
-Open the activity and use **Attached evidence** to see files linked to it. Upload evidence and link it to the activity from the [Evidence library](/support/how-to/upload-evidence). Activities with evidence make stronger reports.
+Open the activity and use **Attached evidence** to see files linked to it. Upload evidence and choose this activity under **Use as proof for** (or link it later) from the [Evidence library](/support/how-to/upload-evidence). The activity page also lists its **Supporting evidence** and the report statements that cite each file. Activities with evidence make stronger reports.
 
 ## Review
 

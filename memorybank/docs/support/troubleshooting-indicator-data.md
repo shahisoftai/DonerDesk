@@ -20,6 +20,10 @@ For **Number** and **Currency** indicators, each dimension (for example Female +
 - The sheet needs a header row with an **indicator code** and **period achievement** column; codes must match DonorDesk exactly.
 - Imported values are only applied to the grid. Press **Save all** to keep them.
 
+## The report only "describes" an indicator and never says if it is on track
+
+Its calculation is not confirmed. Look for **Calculation needs review** on the logframe page and click **Confirm calculation** (or **Confirm all**). A calculated rate with no numerator and denominator cannot be confirmed as suggested: either choose both indicators, or choose **latest reported value** if your team reports the rate directly.
+
 ## "Not calculable" for a percentage or ratio
 
 Set the numerator and denominator indicators on the indicator page and **Save calculation**.

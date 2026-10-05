@@ -25,6 +25,20 @@ The top bar shows a percent-ready pill, for example **72% ready · 3 to do**, wi
 
 Click it to open the **Report checks** panel. Warnings never block; blocking items mirror the server-side approval gate, which stays authoritative.
 
+## The readiness score on the project page
+
+The **Overview** page shows one readiness percentage for the active period, with a stage in front of it, for example **Drafting · 82%**:
+
+| Stage | When | What is counted |
+|---|---|---|
+| **Drafting** | No draft yet, or a draft not yet sent to review | Verified indicator data, evidence, the checklist, and sections that are drafted with no open issue. Approval is **not** counted yet. |
+| **In review** | The report is under review | Everything, including approved sections and approval. |
+| **Ready to submit** | The report is approved | Everything; this is the full score. |
+
+So a correct first draft is not shown as 0%. If there is no draft yet the card says **Generate a draft to start**. A contradiction between the report text and your verified data still caps the score at any stage.
+
+Above the breakdown, **Top things to do** lists the (up to three) biggest gaps, largest first, each with how many points it would add and a button that goes straight to the place to fix it, for example *Verify indicator values*, *Attach supporting evidence* or *Clear the checklist*.
+
 ## 3. Compliance readiness
 
 The [compliance checklist](/support/getting-started/understanding-compliance-checklist) tracks required documents and annexes per project and period, with severity levels (Low to Critical).

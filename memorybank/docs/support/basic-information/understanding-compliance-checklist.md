@@ -13,6 +13,7 @@ The compliance checklist is a live list of what is missing or weak before a repo
 - Sensitive data warnings
 - Unreviewed AI output
 - Donor requirements from the template
+- Indicator calculations still waiting to be confirmed (they close themselves once you confirm)
 
 ## Severity and status
 
