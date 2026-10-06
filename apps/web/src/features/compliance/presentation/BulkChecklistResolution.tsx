@@ -7,6 +7,7 @@ import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
+import { agree, countOf } from "@donordesk/domain/core/plural.js";
 
 type Decision = "RESOLVE" | "ACCEPT_RISK" | "NOT_APPLICABLE" | "START";
 
@@ -23,7 +24,7 @@ export function BulkChecklistResolution({
   const actionState = useActionState();
   const [decision, setDecision] = useState<Decision | null>(null);
   const [notes, setNotes] = useState("");
-  const [confirming, setConfirming] = useState(false);
+  const [outcome, setOutcome] = useState<string | null>(null);
 
   async function submit() {
     if (!decision) return;
@@ -33,7 +34,8 @@ export function BulkChecklistResolution({
     if (result !== undefined) {
       setDecision(null);
       setNotes("");
-      setConfirming(false);
+      const refused = result.notPermitted ?? 0;
+      setOutcome(`${countOf(result.resolved, "item")} updated${refused > 0 ? `. ${countOf(refused, "item")} ${agree(refused, "needs", "need")} a person to decide ${agree(refused, "it", "them")} one by one: only an administrator or project manager can attest to several at once.` : "."}`);
       onDone();
       router.refresh();
     }
@@ -66,22 +68,16 @@ export function BulkChecklistResolution({
               rows={2}
             />
           </Field>
-          {!confirming ? (
-            <Button size="sm" onClick={() => setConfirming(true)}>Confirm</Button>
-          ) : (
-            <div className="rounded-lg border border-warning-500/30 bg-warning-500/5 p-3">
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                Apply "{decision.replace(/_/g, " ").toLowerCase()}" to all {itemIds.length} selected item(s)?
-              </p>
-              <div className="mt-2 flex gap-2">
-                <Button size="sm" variant="danger" onClick={submit} pending={actionState.busy}>Confirm</Button>
-                <Button size="sm" variant="secondary" onClick={() => setConfirming(false)}>Cancel</Button>
-              </div>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <Button size="sm" onClick={submit} pending={actionState.busy}>
+              Apply "{decision.replace(/_/g, " ").toLowerCase()}" to {countOf(itemIds.length, "item")}
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => setDecision(null)}>Cancel</Button>
+          </div>
         </div>
       )}
 
+      {outcome && <p role="status" className="mt-2 text-sm">{outcome}</p>}
       {actionState.error && (
         <p role="alert" className="mt-2 text-sm font-medium text-danger-700 dark:text-danger-400">
           {actionState.error}

@@ -291,9 +291,19 @@ _WRITER_RULES_V4: list[str] = [
 ]
 
 
+# Contract v5: v4 plus these rules (v2-v4 prompts stay byte-stable). Mirrored in contract.ts.
+_WRITER_RULES_V5_ADDITIONS: list[str] = [
+    "State a cumulative or derived percentage only when it is given in the inputs or is a finding's percent of target (of its value, its recorded cumulative value or its life-of-project value); never calculate any other percentage or total.",
+    "Never count indicators or records (\"17 indicators\") unless that exact number appears in the inputs.",
+    "Quote lifeOfProject values only in a semi-annual, annual or final report.",
+    "Use only the section titles and indicator or outcome codes listed under \"Report structure\"; never invent labels (such as IR1, IR2) or refer to a section that is not listed.",
+    "An indicator listed under \"Not measured this period\" has no figure: say it was not measured this period and give no value for it.",
+]
+
+
 def system_prompt(version: int = WRITER_CONTRACT_VERSION) -> str:
     """Deterministic system prompt for a given contract version."""
-    rules = _WRITER_RULES_V4 if version >= 4 else _WRITER_RULES
+    rules = _WRITER_RULES_V4 + _WRITER_RULES_V5_ADDITIONS if version >= 5 else _WRITER_RULES_V4 if version >= 4 else _WRITER_RULES
     base = "\n".join(f"- {r}" for r in rules)
     craft = ""
     if version >= 3:

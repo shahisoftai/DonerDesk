@@ -1,24 +1,26 @@
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ReportingPeriodsResponseSchema, EvidenceResponseSchema, LogframeResponseSchema } from "@/lib/server/schemas";
+import { ReportingPeriodsResponseSchema, EvidenceResponseSchema, LogframeResponseSchema, ActivitiesResponseSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
 import { periodOptionLabel, recentFirst } from "@/lib/shared/option-labels";
 import { NewActivityForm } from "@/features/activities/presentation/NewActivityForm";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewActivityPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function NewActivityPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ node?: string }> }) {
   const resolvedParams = await params;
+  const { node: initialNodeId } = await searchParams;
   const ctx = await requireSession();
 
-  const [periodsResult, evidenceResult, logframeResult] = await Promise.all([
+  const [periodsResult, evidenceResult, logframeResult, earlierResult] = await Promise.all([
     gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token),
     gatewayRequest(`/v1/evidence/search`, EvidenceResponseSchema, ctx.token, {
       method: "POST",
       body: { projectId: resolvedParams.id, pageSize: 100 },
     }),
     gatewayRequest(`/v1/projects/${resolvedParams.id}/logframe`, LogframeResponseSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/activities`, ActivitiesResponseSchema, ctx.token),
   ]);
 
   if (!periodsResult.ok) {
@@ -55,6 +57,9 @@ export default async function NewActivityPage({ params }: { params: Promise<{ id
         reportingPeriods={recentFirst(periods, (p) => p.startDate).map((p) => ({ id: p.id, label: periodOptionLabel(p), reportType: p.reportType, startDate: p.startDate, endDate: p.endDate }))}
         evidenceOptions={evidence.map((e) => ({ id: e.id, label: e.title }))}
         logframeItems={logframeResult.ok ? logframeResult.value.items : []}
+        initialLogframeActivityId={initialNodeId}
+        earlierRecords={earlierResult.ok ? recentFirst(earlierResult.value.items.filter((a) => !a.supersededById), (a) => a.activityDate).slice(0, 30).map((a) => ({ id: a.id, title: a.activityTitle, location: a.location, logframeActivityId: a.logframeActivityId })) : []}
+        indicators={logframeResult.ok ? logframeResult.value.indicators.map((i) => ({ id: i.id, label: `${i.code} ${i.name}`.trim(), logframeItemId: i.logframeItemId })) : []}
       />
     </div>
   );

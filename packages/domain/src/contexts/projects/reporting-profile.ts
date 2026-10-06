@@ -25,6 +25,12 @@ export interface ReportingProfileProps {
   autoPeriodCreation: boolean;
   /** How this project's reports get financial figures; DISABLED unless switched on. */
   financeDataMode: FinanceDataMode;
+  /** Report type -> the template a new period of that type starts from (an explicit choice per type). */
+  defaultTemplateByType?: Record<string, string>;
+  /** When on, the author of a report cannot approve it (a second person must). Off for a team of one. */
+  requireSecondApprover?: boolean;
+  /** Statements that hold for every period (branding policy, waste procedure), by compliance section key. */
+  standingStatements?: Record<string, string>;
   version: number;
   createdById: string;
   updatedById: string;
@@ -213,6 +219,40 @@ export class ReportingProfile extends Entity<string> {
    * `update()` treats `undefined` as "leave unchanged" and so cannot express
    * clearing the field — this method always applies exactly the given value.
    */
+  get defaultTemplateByType(): Record<string, string> { return { ...(this.props.defaultTemplateByType ?? {}) }; }
+  get requireSecondApprover(): boolean { return this.props.requireSecondApprover ?? false; }
+  get standingStatements(): Record<string, string> { return { ...(this.props.standingStatements ?? {}) }; }
+
+  /** Makes a template the default for one report type (or, with undefined, removes that type's default). */
+  setDefaultTemplateForType(reportType: string, templateId: string | undefined, updatedById: string): void {
+    const next = { ...(this.props.defaultTemplateByType ?? {}) };
+    if (templateId) next[reportType] = templateId;
+    else delete next[reportType];
+    this.props.defaultTemplateByType = next;
+    this.bump(updatedById);
+  }
+
+  setRequireSecondApprover(value: boolean, updatedById: string): void {
+    this.props.requireSecondApprover = value;
+    this.bump(updatedById);
+  }
+
+  /** Sets (or removes, with empty text) one standing statement. */
+  setStandingStatement(key: string, text: string, updatedById: string): void {
+    const next = { ...(this.props.standingStatements ?? {}) };
+    const trimmed = text.trim().slice(0, 4000);
+    if (trimmed) next[key] = trimmed;
+    else delete next[key];
+    this.props.standingStatements = next;
+    this.bump(updatedById);
+  }
+
+  private bump(updatedById: string): void {
+    this.props.updatedById = updatedById;
+    this.props.version += 1;
+    this.touch();
+  }
+
   setDefaultTemplateId(templateId: string | undefined, updatedById: string): void {
     this.props.defaultTemplateId = templateId;
     this.props.updatedById = updatedById;

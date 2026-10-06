@@ -35,3 +35,11 @@ test("nothing to pick, a deleted default and no candidates give none", () => {
   assert.deepEqual(pickDefaultTemplate({ reportType: "MONTHLY", candidates: [] }), { source: "NONE" });
   assert.deepEqual(pickDefaultTemplate({ reportType: "MONTHLY", profileDefaultId: "gone", candidates: [] }), { source: "NONE" });
 });
+
+test("an explicit default for a type wins; another type's default never leaks across (25.5)", () => {
+  const candidates = [t("a", "MONTHLY", "REVIEWED", 1), t("b", "MONTHLY", "REVIEWED", 9), t("f", "FINAL", "REVIEWED", 3)];
+  assert.deepEqual(pickDefaultTemplate({ reportType: "MONTHLY", explicitByType: { MONTHLY: "a" }, candidates }), { templateId: "a", source: "EXPLICIT" });
+  assert.equal(pickDefaultTemplate({ reportType: "FINAL", explicitByType: { MONTHLY: "a" }, candidates }).templateId, "f", "the monthly choice does not decide the final report");
+  assert.equal(pickDefaultTemplate({ reportType: "MONTHLY", explicitByType: { MONTHLY: "gone" }, candidates }).templateId, "b", "a deleted default falls back to the newest");
+  assert.equal(pickDefaultTemplate({ reportType: "ACTIVITY", explicitByType: { ACTIVITY: "a" }, candidates }).source, "NONE", "a template that cannot structure the type is ignored");
+});

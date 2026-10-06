@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { sectionStatusTone } from "@/lib/shared/tone";
 import { SECTION_STATUS_LABEL } from "@/lib/labels";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { markSummaryCurrentAction } from "@/lib/actions/reporting";
 import { fallbackBannerCopy } from "@/lib/reporting-copy";
 import { RECORDED_FIGURES_ONLY_INSTRUCTION } from "@donordesk/domain/contexts/reporting/generation-fallback.js";
 import type { ReportArtifact } from "@/lib/server/schemas";
@@ -23,6 +25,7 @@ import type { InspectorClaim } from "../inspector/StatementsTab";
 import { StaticSectionView } from "./StaticSectionView";
 import { AiRewritePanel } from "./AiRewritePanel";
 import { RegeneratePopover } from "./RegeneratePopover";
+import { RegenerationNotice } from "./RegenerationNotice";
 import { EvidencePeek } from "./EvidencePeek";
 
 /** Sub-sections read as sub-headings of their parent in the document. */
@@ -168,6 +171,14 @@ export function DocumentSection({
         : (SECTION_STATUS_LABEL[vm.status] ?? "Draft");
   const statusTone = vm.regenerating ? "ai" : (vm.openStatements > 0 || vm.needsRecheck) && !vm.isApproved ? "warning" : sectionStatusTone(vm.status);
   const busy = vm.regenerating || regenerationPending;
+  const router = useRouter();
+  const [markingCurrent, setMarkingCurrent] = useState(false);
+  async function markCurrent() {
+    setMarkingCurrent(true);
+    const result = await markSummaryCurrentAction(vm.id);
+    setMarkingCurrent(false);
+    if (result.ok) router.refresh();
+  }
   const peekClaim = peek ? claims.find((c) => c.id === peek.claimId) : undefined;
 
   if (vm.isWriting) {
@@ -242,6 +253,8 @@ export function DocumentSection({
         </button>
       </h2>
 
+      {busy && content.trim() && <RegenerationNotice />}
+
       {section.generatedWithAi === false && content.trim() && !busy && (
         <div role="status" className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning-500/30 bg-warning-50 px-3 py-2 text-sm text-warning-700 dark:bg-warning-500/10 dark:text-warning-400">
           {section.generationFallback ? (
@@ -268,9 +281,14 @@ export function DocumentSection({
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
           <span>May be out of date — other sections changed after this summary was written.</span>
           {canRegenerate && (
-            <Button size="sm" variant="secondary" pending={regenerationPending} onClick={() => void onRegenerate("")}>
-              Regenerate summary
-            </Button>
+            <span className="flex gap-2">
+              <Button size="sm" variant="ghost" pending={markingCurrent} onClick={() => void markCurrent()}>
+                Mark summary as current
+              </Button>
+              <Button size="sm" variant="secondary" pending={regenerationPending} onClick={() => void onRegenerate("")}>
+                Regenerate summary
+              </Button>
+            </span>
           )}
         </div>
       )}

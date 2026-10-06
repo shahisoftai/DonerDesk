@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, isAttestation } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IAuditLogger } from "../../ports/core.js";
@@ -33,6 +33,10 @@ export class ResolveChecklistItemHandler {
       case "REOPEN":
         item.reopen();
         break;
+    }
+    // An attestation is a person's statement: the item names who made it.
+    if (isAttestation(item.type) && (input.decision === "RESOLVE" || input.decision === "ACCEPT_RISK" || input.decision === "NOT_APPLICABLE")) {
+      item.recordAttestation(ctx.tenant.userId);
     }
     const saved = await this.repo.update(item);
     if (!saved.ok) return saved;

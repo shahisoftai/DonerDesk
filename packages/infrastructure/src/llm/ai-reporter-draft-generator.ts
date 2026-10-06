@@ -29,6 +29,7 @@ import {
   visibilityPromptBlock,
 } from "@donordesk/domain";
 import type { StubReportDraftGenerator } from "./report-draft-generator.js";
+import { sectionOfficerNote } from "./section-note.js";
 import { DeterministicEvidenceRetriever } from "./evidence-retriever.js";
 import { buildSectionSpecificGuidance } from "./llm-report-draft-generator.js";
 import type { IEmbeddingGenerator, IEmbeddingStore } from "./embedding.js";
@@ -404,6 +405,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         // Report Editor B7 — only sent when the author gave one (single-section
         // regenerate), so full-draft requests are unchanged on the wire.
         ...(input.sectionInstruction?.trim() ? { userInstruction: input.sectionInstruction.trim() } : {}),
+        ...(sectionOfficerNote(input, section) ? { officerNote: sectionOfficerNote(input, section) } : {}),
         ...donorBriefFields(section),
       },
       context: this.buildContext(input),
@@ -575,6 +577,13 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
       })(),
       // Report-wide (identical for every section, so the cached prompt prefix stays byte-stable).
       ...(input.finance ? { finance: input.finance } : {}),
+      // Contract v5 only: older contracts get the same bytes as before.
+      ...(this.writerContractVersion >= 5
+        ? {
+            structure: { sectionTitles: input.reportPlan.sections.map((s) => s.title), indicatorCodes: input.verifiedFindings.map((f) => f.indicatorCode) },
+            ...(input.notMeasured?.length ? { notMeasured: [...input.notMeasured] } : {}),
+          }
+        : {}),
     };
   }
 }

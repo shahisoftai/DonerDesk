@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, isAttestation, canBulkAttest } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IAuditLogger } from "../../ports/core.js";
@@ -16,9 +16,12 @@ export class BulkResolveChecklistHandler {
     private readonly audit: IAuditLogger,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, input: BulkResolveChecklistInput): Promise<Result<{ resolved: number; skipped: number }, DomainError>> {
+  async handle(ctx: AuthenticatedContext, input: BulkResolveChecklistInput): Promise<Result<{ resolved: number; skipped: number; notPermitted: number }, DomainError>> {
     let resolved = 0;
     let skipped = 0;
+    // Attestations (sign-off, sensitive data, procurement...) are a person's statement: only an administrator or a project
+    // manager may attest in bulk; everyone else decides them one by one.
+    let notPermitted = 0;
 
     for (const itemId of input.itemIds) {
       const r = await this.repo.findById(itemId, ctx.tenant.tenantId);
@@ -28,6 +31,14 @@ export class BulkResolveChecklistHandler {
         continue;
       }
       const item = r.value;
+      const decides = input.decision === "RESOLVE" || input.decision === "ACCEPT_RISK" || input.decision === "NOT_APPLICABLE";
+      if (decides && isAttestation(item.type)) {
+        if (!canBulkAttest(ctx.tenant.role)) {
+          notPermitted++;
+          continue;
+        }
+        item.recordAttestation(ctx.tenant.userId);
+      }
       switch (input.decision) {
         case "RESOLVE":
           item.resolve(input.notes);
@@ -56,6 +67,6 @@ export class BulkResolveChecklistHandler {
       resolved++;
     }
 
-    return { ok: true, value: { resolved, skipped } };
+    return { ok: true, value: { resolved, skipped, notPermitted } };
   }
 }

@@ -62,6 +62,8 @@ export interface ChecklistItemProps {
   dueDate?: Date;
   status: ChecklistStatus;
   resolutionNotes?: string;
+  /** The person who attested to this item (set when an attestation is decided; each item names its own person). */
+  attestedById?: string;
 }
 
 export class ChecklistItem extends Entity<string> {
@@ -119,6 +121,13 @@ export class ChecklistItem extends Entity<string> {
   get dueDate(): Date | undefined { return this.props.dueDate ? new Date(this.props.dueDate.getTime()) : undefined; }
   get status(): ChecklistStatus { return this.props.status; }
   get resolutionNotes(): string | undefined { return this.props.resolutionNotes; }
+  get attestedById(): string | undefined { return this.props.attestedById; }
+
+  /** Records who stood behind this decision: an attestation is a statement by a person, not a shared note. */
+  recordAttestation(userId: string): void {
+    this.props.attestedById = userId;
+    this.touch();
+  }
 
   start(): void {
     if (this.props.status === "RESOLVED" || this.props.status === "ACCEPTED_RISK") {
@@ -135,6 +144,7 @@ export class ChecklistItem extends Entity<string> {
     }
     this.props.status = "OPEN";
     this.props.resolutionNotes = undefined;
+    this.props.attestedById = undefined;
     this.touch();
   }
 

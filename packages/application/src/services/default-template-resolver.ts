@@ -25,7 +25,7 @@ export class DefaultTemplateResolver implements IDefaultTemplateResolver {
     const candidates = templates.value.map((t) => ({ id: t.id, reportType: t.reportType, status: t.status, updatedAt: t.updatedAt }));
     const out: Record<string, ResolvedDefaultTemplate> = {};
     for (const reportType of reportTypes) {
-      const picked = pickDefaultTemplate({ reportType, profileDefaultId: profile.value?.defaultTemplateId, candidates });
+      const picked = pickDefaultTemplate({ reportType, profileDefaultId: profile.value?.defaultTemplateId, explicitByType: profile.value?.defaultTemplateByType, candidates });
       const template = picked.templateId ? templates.value.find((t) => t.id === picked.templateId) : undefined;
       out[reportType] = { source: picked.source, ...(template ? { templateId: template.id, templateName: template.templateName, status: template.status } : {}) };
     }

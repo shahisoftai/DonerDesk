@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, evaluateReportGate, gateKindForReason, canApproveAssurance, lintReportContradictions, toLintFindingData, type GateKind, type ReportGateInput, type ContradictionLintFindingData } from "@donordesk/domain";
+import { DomainError, checkApprover, signOffRoles, evaluateReportGate, gateKindForReason, canApproveAssurance, lintReportContradictions, toLintFindingData, type GateKind, type ReportGateInput, type ContradictionLintFindingData } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILintGrounding } from "../../services/lint-grounding.js";
 import type {
@@ -12,6 +12,9 @@ import type {
   IIndicatorAnalyticsService,
 } from "../../ports/reporting.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
+import type { IReportingProfileRepository } from "../../ports/setup.js";
+import type { IProjectRepository } from "../../ports/projects.js";
+import type { IProjectMemberRepository } from "../../ports/project-members.js";
 import type { IAuditLogger } from "../../ports/core.js";
 
 /**
@@ -39,6 +42,8 @@ export class ApproveReportHandler {
     private readonly analytics?: IIndicatorAnalyticsService,
     /** Figures the project's own records state (budget, counts, life-of-project totals) so the lint does not flag them. */
     private readonly lintGrounding?: ILintGrounding,
+    /** With these, the project's second-approver rule is enforced and a self sign-off is recorded. */
+    private readonly signOff?: { profiles: IReportingProfileRepository; projects: IProjectRepository; members: IProjectMemberRepository },
   ) {}
 
   async handle(ctx: AuthenticatedContext, draftId: string): Promise<Result<void, DomainError>> {
@@ -60,6 +65,9 @@ export class ApproveReportHandler {
       };
     }
 
+    const approver = await this.checkApprover(ctx, draft.projectId, draft.createdById);
+    if (!approver.ok) return approver;
+
     draft.approve(ctx.tenant.userId);
     const savedDraft = await this.drafts.update(draft);
     if (!savedDraft.ok) return savedDraft;
@@ -79,7 +87,46 @@ export class ApproveReportHandler {
       entityId: draftId,
       projectId: draft.projectId,
     });
+    // Working alone is allowed, but openly: the author approved their own report.
+    if (approver.value.selfApproval) {
+      await this.audit.record({
+        tenantId: ctx.tenant.tenantId,
+        actorId: ctx.tenant.userId,
+        eventType: "signoff.self",
+        entityType: "report_draft",
+        entityId: draftId,
+        projectId: draft.projectId,
+      });
+    }
     return { ok: true, value: undefined };
+  }
+
+  /** The project's second-approver rule: who may approve this report, from the same sign-off roles the closing plan reads. */
+  private async checkApprover(ctx: AuthenticatedContext, projectId: string, authorId: string | undefined): Promise<Result<{ selfApproval: boolean }, DomainError>> {
+    if (!this.signOff) return { ok: true, value: { selfApproval: false } };
+    const tenantId = ctx.tenant.tenantId;
+    const [profile, project, members] = await Promise.all([
+      this.signOff.profiles.findByProject(projectId, tenantId),
+      this.signOff.projects.findById(projectId, tenantId),
+      this.signOff.members.findByProject(projectId, tenantId),
+    ]);
+    if (!profile.ok) return profile;
+    if (!project.ok) return project;
+    if (!members.ok) return members;
+    const roles = signOffRoles({
+      projectManagerId: project.value?.projectManagerId,
+      meOfficerId: project.value?.meOfficerId,
+      reportingOfficerId: project.value?.reportingOfficerId,
+      members: members.value.map((m) => ({ userId: m.userId, role: m.role, status: m.status })),
+    });
+    const check = checkApprover({
+      requireSecondApprover: profile.value?.requireSecondApprover ?? false,
+      authorId,
+      approverId: ctx.tenant.userId,
+      otherApproverCount: roles.approverIds.filter((id) => id !== ctx.tenant.userId).length,
+    });
+    if (!check.ok) return { ok: false, error: DomainError.forbidden(check.reason) };
+    return { ok: true, value: { selfApproval: check.selfApproval } };
   }
 
   async evaluateGate(ctx: AuthenticatedContext, reportingPeriodId: string, draftId: string): Promise<Result<{

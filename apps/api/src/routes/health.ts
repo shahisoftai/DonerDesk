@@ -15,6 +15,11 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "ReportingPeriod", field: "cancelledAt" },
   { model: "ReportingPeriod", field: "cancelReason" },
   { model: "RequestIdempotency", field: "responseJson" },
+  { model: "ReportSection", field: "summaryCurrentAt" },
+  { model: "ReportingProfile", field: "defaultTemplateByTypeJson" },
+  { model: "ReportingProfile", field: "requireSecondApprover" },
+  { model: "ReportingProfile", field: "standingStatementsJson" },
+  { model: "ChecklistItem", field: "attestedById" },
   { model: "ReportDraft", field: "supersededAt" },
   { model: "User", field: "passwordChangedAt" },
   { model: "PasswordResetToken", field: "tokenHash" },
@@ -88,6 +93,8 @@ export async function registerHealthRoutes(app: FastifyInstance) {
       });
     }
     checks.prismaClient = "ok";
+    // The AI writer is a warning, never a reason to stop serving: reports fall back to a labelled basic version without it.
+    if (process.env.AI_REPORTER_ENABLED === "1") checks.aiWorker = await aiWorkerStatus();
     return { status: "ready", checks };
   });
   app.get("/metrics", async (_req, reply) => {
@@ -99,4 +106,15 @@ export async function registerHealthRoutes(app: FastifyInstance) {
     reply.header("x-tenant-id", tenantId);
     return { pong: true, service: "donordesk-api", tenantId, ts: new Date().toISOString() };
   });
+}
+
+/** "ok" when the AI worker answers its health check within a few seconds, otherwise "unavailable" (non-blocking). */
+async function aiWorkerStatus(): Promise<"ok" | "unavailable"> {
+  const base = (process.env.AI_REPORTER_URL ?? "http://127.0.0.1:8092").replace(/\/+$/, "");
+  try {
+    const response = await fetch(`${base}/v1/ai-reporter/health`, { signal: AbortSignal.timeout(3000) });
+    return response.ok ? "ok" : "unavailable";
+  } catch {
+    return "unavailable";
+  }
 }

@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+/** Verify many files at once (one result per file). */
+export const BulkVerifyEvidenceSchema = z.object({ evidenceIds: z.array(z.string().min(1)).min(1).max(100) });
+export type BulkVerifyEvidenceInput = z.infer<typeof BulkVerifyEvidenceSchema>;
+
 export const EvidenceTypeSchema = z.enum([
   "ATTENDANCE_SHEET",
   "PHOTO",

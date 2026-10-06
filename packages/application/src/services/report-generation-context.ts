@@ -1,5 +1,5 @@
 import type { FinanceSummaryView, Result, Project, ReportingPeriod, ReportScope, TemplateSection, VerifiedFinding } from "@donordesk/domain";
-import { DomainError, isReportedFinding, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
+import { DomainError, partitionFindings, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
 import { taggedEvidenceIds } from "./period-evidence.js";
 import { resolveGenerationActivities, resolvePeriodActivities, scopeIndicatorData } from "./period-activities.js";
 import type { AuthenticatedContext } from "../context.js";
@@ -55,6 +55,8 @@ export interface GenerationInputs {
   finance?: FinanceSummaryView;
   /** Situation reports: this report's scope and the previous report on the same event, for the figures table. */
   situation?: { current: ReportScope; previous?: ReportScope };
+  /** Indicators of this report with no figure: told to the writer as "not measured", never given a value. */
+  notMeasured: Array<{ indicatorCode: string; indicatorName?: string; frequency?: string }>;
 }
 
 const DEFAULT_PROFILE: ReportingProfileSnapshot = { tone: "FORMAL", language: "en", formattingRules: [], sectionOverrides: {} };
@@ -191,7 +193,7 @@ export class ReportGenerationContextBuilder {
     if (!allUpdatesResult.ok) return allUpdatesResult;
     // An indicator with no figure for this period (a quarterly survey in a monthly report, or values nobody has verified)
     // was not measured: its calculator value is a placeholder a writer would quote as a result. Only REPORTED findings go on.
-    const reported = findingsResult.value.filter(isReportedFinding);
+    const { reported, withoutFigure } = partitionFindings(findingsResult.value);
     const scoped = scopeIndicatorData(period.reportType, activitiesResult.value, reported, allUpdatesResult.value);
     const verifiedFindings = scoped.findings;
     const updatesResult = { ok: true as const, value: scoped.updates };
@@ -247,6 +249,7 @@ export class ReportGenerationContextBuilder {
       ok: true,
       value: {
         verifiedFindings,
+        notMeasured: scopeNotMeasured(withoutFigure, scoped.findings),
         indicatorUpdateIds: updatesResult.value.map((u) => u.id),
         activityIds: activitiesResult.value.map((a) => a.id),
         evidenceIds,
@@ -279,7 +282,7 @@ export function buildReportContext(
   project: { title: string; projectCode: string; donorName: string; implementingOrganization: string; partnerOrganization?: string; country: string; region?: string; district?: string; sector: string; duration: { start: Date; end: Date }; budget?: { amount: number; currency: string } | null; reportingFrequency: string; description?: string },
   period: { reportType: string; duration: { start: Date; end: Date }; deadline: Date; internalReviewDeadline?: Date; readinessScore: number; daysUntilDeadline(): number },
   template?: PeriodTemplateSnapshot,
-  storyContext?: { achievements?: string; challenges?: string; varianceExplanations?: string; adaptations?: string; lessons?: string },
+  storyContext?: { achievements?: string; challenges?: string; varianceExplanations?: string; adaptations?: string; lessons?: string; sectionNotes?: Record<string, string> },
   scope?: string,
 ): ReportGenerationContext {
   return {
@@ -343,4 +346,15 @@ export function buildTemplateGenerationContext(template: PeriodTemplateSnapshot)
     ...(nonEmpty(compliance) ? { complianceRequirements: compliance } : {}),
     ...(nonEmpty(indicators) ? { indicatorRequirements: indicators } : {}),
   };
+}
+
+/** The in-scope indicators that have no figure, for the writer's "not measured" line (those already reported are excluded). */
+function scopeNotMeasured(
+  withoutFigure: ReadonlyArray<VerifiedFinding>,
+  reported: ReadonlyArray<VerifiedFinding>,
+): Array<{ indicatorCode: string; indicatorName?: string; frequency?: string }> {
+  const reportedIds = new Set(reported.map((f) => f.indicatorId));
+  return withoutFigure
+    .filter((f) => !reportedIds.has(f.indicatorId))
+    .map((f) => ({ indicatorCode: f.indicatorCode, ...(f.indicatorName ? { indicatorName: f.indicatorName } : {}) }));
 }

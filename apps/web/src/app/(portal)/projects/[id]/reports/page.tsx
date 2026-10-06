@@ -46,14 +46,14 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
   const items = allItems.filter((p) => !p.cancelled);
   const cancelledItems = allItems.filter((p) => p.cancelled);
   const canManage = ctx.capabilities.has("project.edit");
-  // The offers come from the rules the server enforces; the report's own status stands in for its draft statuses.
+  // The offers come from the rules the server enforces; whether a report was released comes from the list.
   const facts = items.map((p) => ({ id: p.id, reportType: p.reportType, start: new Date(p.startDate), end: new Date(p.endDate) }));
   const offersFor = (p: (typeof items)[number]): PeriodLifecycleOffer[] => {
     if (!canManage) return [];
     const offers: PeriodLifecycleOffer[] = [];
-    if (checkCancelPeriod({ cancelled: false, draftStatuses: [p.status] }).ok) offers.push("cancel");
+    if (checkCancelPeriod({ cancelled: false, draftStatuses: p.releasedReport ? ["APPROVED"] : [] }).ok) offers.push("cancel");
     const self = facts.find((f) => f.id === p.id);
-    if (self && checkConvertToFinal({ period: self, cancelled: false, others: facts.filter((f) => f.id !== p.id), draftStatuses: [p.status] }).ok) offers.push("convert");
+    if (self && checkConvertToFinal({ period: self, cancelled: false, others: facts.filter((f) => f.id !== p.id), draftStatuses: p.releasedReport ? ["APPROVED"] : [] }).ok) offers.push("convert");
     return offers;
   };
 

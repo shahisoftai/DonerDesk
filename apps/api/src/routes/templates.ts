@@ -8,6 +8,7 @@ import {
   UpdateTemplateMetadataSchema,
   UpdateTemplateRequirementsSchema,
   UpdateTemplateSectionsSchema,
+  SetTemplateDefaultForTypeSchema,
 } from "@donordesk/contracts";
 import { DomainError } from "@donordesk/domain";
 import {
@@ -173,6 +174,15 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
     const body = SetTemplateDefaultSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.setTemplateDefault.handle(ctx, id, body.isDefault);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.put("/v1/templates/:id/default-for-type", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = SetTemplateDefaultForTypeSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.setTemplateDefaultForType.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return { ok: true };
   });

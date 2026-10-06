@@ -65,6 +65,8 @@ class SectionBrief(BaseModel):
     # Absent for full drafts, and the prompt only mentions it when present, so
     # full-draft prompts stay byte-stable.
     userInstruction: str | None = Field(default=None, max_length=500)
+    # A compliance section's only source: the reporting officer's own statement (absent for every other section).
+    officerNote: str | None = Field(default=None, max_length=4000)
     # Template Manager v2 — what the donor template itself asks of this section
     # (verbatim instructions and required table shapes) and the organisation's
     # own standing guidance. Mirrors the TS `AiReporterSectionBrief`; only sent
@@ -170,6 +172,21 @@ class ContextFinance(BaseModel):
     lines: list[FinanceLine] = Field(default_factory=list)
 
 
+class ContextStructure(BaseModel):
+    """Contract v5: the report's own section titles and indicator codes, so the writer never invents labels."""
+
+    sectionTitles: list[str] = Field(default_factory=list)
+    indicatorCodes: list[str] = Field(default_factory=list)
+
+
+class NotMeasured(BaseModel):
+    """Contract v5: an indicator with no figure this period (not due, nothing recorded, or nothing verified)."""
+
+    indicatorCode: str
+    indicatorName: str | None = None
+    frequency: str | None = None
+
+
 class Context(BaseModel):
     project: ContextProject | None = None
     period: ContextPeriod | None = None
@@ -181,6 +198,9 @@ class Context(BaseModel):
     visibility: list[str] = Field(default_factory=list)
     # Verified financial figures; absent unless the project uses them and they are verified.
     finance: ContextFinance | None = None
+    # Contract v5 only (absent otherwise, so v2-v4 prompts are byte-stable).
+    structure: ContextStructure | None = None
+    notMeasured: list[NotMeasured] = Field(default_factory=list)
 
 
 class LifeOfProject(BaseModel):

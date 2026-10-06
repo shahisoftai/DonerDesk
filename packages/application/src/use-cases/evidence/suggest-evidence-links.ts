@@ -1,25 +1,25 @@
 import type { Result, TenantId } from "@donordesk/domain";
-import { DomainError, scoreSimilarity } from "@donordesk/domain";
+import { DomainError, suggestEvidenceLinks } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 
+const MAX_SUGGESTIONS = 5;
+
 export interface EvidenceLinkSuggestion {
   evidenceId: string;
   targetType: "activity" | "indicator";
-  /** ActivityUpdate id for "activity", IndicatorUpdate id for "indicator" — matches AttachEvidenceInput's activityId/indicatorId shape. */
+  /** ActivityUpdate id for "activity", IndicatorUpdate id for "indicator" - matches AttachEvidenceInput's activityId/indicatorId shape. */
   targetId: string;
   targetLabel: string;
   score: number;
+  /** Why it is suggested, in words ("same activity node in the logframe"). */
+  reason: string;
 }
 
 /**
- * Below this lexical-similarity score a match is more likely coincidental
- * token overlap than a real relationship — never suggest it.
- */
-const SUGGESTION_THRESHOLD = 0.2;
-const MAX_SUGGESTIONS = 5;
+
 
 /**
  * Suggests, but never applies, links between an evidence file and the
@@ -52,37 +52,32 @@ export class SuggestEvidenceLinksHandler {
     if (!activitiesResult.ok) return activitiesResult;
     if (!indicatorsResult.ok) return indicatorsResult;
 
+    const ranked = suggestEvidenceLinks({
+      evidence: { title: evidence.title, fileName: evidence.fileName, notes: evidence.notes, extractedText: evidence.extractedText, activityId: evidence.activityId },
+      activities: activitiesResult.value.map((a) => ({
+        id: a.id,
+        title: a.activityTitle,
+        logframeActivityId: a.logframeActivityId,
+        indicatorId: a.indicatorId,
+        alreadyAttached: a.attachedEvidenceIds.includes(evidenceId),
+      })),
+      indicators: indicatorsResult.value.map((i) => ({ id: i.id, code: i.code, name: i.name, logframeItemId: i.logframeItemId })),
+      limit: MAX_SUGGESTIONS,
+    });
+
+    // An indicator is proved through one of its period values: map the suggestion to its updates (the file's period first).
     const suggestions: EvidenceLinkSuggestion[] = [];
-
-    for (const activity of activitiesResult.value) {
-      if (activity.attachedEvidenceIds.includes(evidenceId)) continue;
-      const score = scoreSimilarity(evidence.title, activity.activityTitle);
-      if (score >= SUGGESTION_THRESHOLD) {
-        suggestions.push({
-          evidenceId,
-          targetType: "activity",
-          targetId: activity.id,
-          targetLabel: activity.activityTitle,
-          score,
-        });
+    for (const r of ranked) {
+      if (r.targetType === "activity") {
+        suggestions.push({ evidenceId, targetType: "activity", targetId: r.targetId, targetLabel: r.label, score: r.score, reason: r.reason });
+        continue;
       }
-    }
-
-    for (const indicator of indicatorsResult.value) {
-      const indicatorScore = scoreSimilarity(evidence.title, `${indicator.code} ${indicator.name}`);
-      if (indicatorScore < SUGGESTION_THRESHOLD) continue;
-
-      const updatesResult = await this.indicatorUpdateRepo.findByIndicator(indicator.id, ctx.tenant.tenantId as TenantId);
+      const updatesResult = await this.indicatorUpdateRepo.findByIndicator(r.targetId, ctx.tenant.tenantId as TenantId);
       if (!updatesResult.ok) continue;
-      for (const update of updatesResult.value) {
-        if (update.attachedEvidenceIds.includes(evidenceId)) continue;
-        suggestions.push({
-          evidenceId,
-          targetType: "indicator",
-          targetId: update.id,
-          targetLabel: `${indicator.code} — ${indicator.name}`,
-          score: indicatorScore,
-        });
+      const open = updatesResult.value.filter((u) => !u.attachedEvidenceIds.includes(evidenceId));
+      const inPeriod = open.filter((u) => evidence.reportingPeriodId !== undefined && u.reportingPeriodId === evidence.reportingPeriodId);
+      for (const update of inPeriod.length > 0 ? inPeriod : open) {
+        suggestions.push({ evidenceId, targetType: "indicator", targetId: update.id, targetLabel: r.label, score: r.score, reason: r.reason });
       }
     }
 

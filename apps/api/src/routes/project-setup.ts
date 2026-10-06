@@ -1,11 +1,29 @@
 import type { FastifyInstance } from "fastify";
-import { UpsertReportingProfileSchema, AcknowledgeProjectSetupSchema } from "@donordesk/contracts";
+import { UpsertReportingProfileSchema, AcknowledgeProjectSetupSchema, SetStandingStatementSchema, SetRequireSecondApproverSchema } from "@donordesk/contracts";
 
 /**
  * Feature 18 project setup + reporting profile routes. Registered inside the
  * tenant-auth plugin so every route is authenticated and tenant-scoped.
  */
 export async function registerProjectSetupRoutes(app: FastifyInstance) {
+  app.put("/v1/projects/:projectId/standing-statements", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const body = SetStandingStatementSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.setStandingStatement.handle(ctx, projectId, body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.put("/v1/projects/:projectId/second-approver", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const body = SetRequireSecondApproverSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.setRequireSecondApprover.handle(ctx, projectId, body.value);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
   // Derived setup checklist + blockers.
   app.get("/v1/projects/:projectId/setup", async (req) => {
     const projectId = (req.params as { projectId: string }).projectId;

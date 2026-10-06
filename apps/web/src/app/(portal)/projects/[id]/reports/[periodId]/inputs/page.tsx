@@ -8,6 +8,8 @@ import { loadPeriodIndicatorsAction } from "@/lib/actions/indicators";
 import { InlineError } from "@/components/feedback/PageState";
 import { IndicatorEntryGrid } from "@/features/reporting/presentation/IndicatorEntryGrid";
 import { StoryInputs } from "@/features/report-editor/presentation/inputs/StoryInputs";
+import { getComplianceNotesAction } from "@/lib/actions/reporting";
+import { ComplianceNotes } from "@/features/report-editor/presentation/inputs/ComplianceNotes";
 import { ImportInputs } from "@/features/report-editor/presentation/inputs/ImportInputs";
 import { ScopeInputs } from "@/features/report-editor/presentation/inputs/ScopeInputs";
 import { PeriodTemplateCard } from "@/features/reporting/presentation/PeriodTemplateCard";
@@ -36,7 +38,7 @@ export default async function ReportInputsPage({
   const { tab: tabParam } = await searchParams;
   const ctx = await requireSession();
 
-  const [indicatorsResult, storyResult, preflightResult, projectResult, periodsResult, financeResult, templatesResult, templateDraftResult] = await Promise.all([
+  const [indicatorsResult, storyResult, preflightResult, projectResult, periodsResult, financeResult, templatesResult, templateDraftResult, complianceNotesResult] = await Promise.all([
     loadPeriodIndicatorsAction(periodId),
     gatewayRequest(`/v1/reporting-periods/${periodId}/story`, StoryContextResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${periodId}/export-preflight`, ExportPreflightSchema, ctx.token),
@@ -45,6 +47,7 @@ export default async function ReportInputsPage({
     gatewayRequest(`/v1/reporting-periods/${periodId}/finance`, PeriodFinanceResponseSchema, ctx.token),
     gatewayRequest(`/v1/projects/${projectId}/templates`, TemplatesResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${periodId}/draft`, ReportDraftResponseSchema, ctx.token),
+    getComplianceNotesAction(periodId),
   ]);
   if (!indicatorsResult.ok && indicatorsResult.error.kind === "not_found") notFound();
 
@@ -77,7 +80,7 @@ export default async function ReportInputsPage({
 
   const tabs: Array<{ id: Tab; label: string; count: string }> = [
     { id: "indicators", label: "Indicators", count: indicators.length > 0 ? `${verified}/${indicators.length} verified` : "none yet" },
-    { id: "story", label: "Story", count: `${countStoryAnswers(story)}/5 answered` },
+    { id: "story", label: "Story", count: `${countStoryAnswers(story)}/5 answered${complianceNotesResult.ok && complianceNotesResult.value.missingCount > 0 ? ` · ${complianceNotesResult.value.missingCount} to do` : ""}` },
     { id: "import", label: "Import", count: `${evidenceCount} evidence file${evidenceCount === 1 ? "" : "s"}` },
     ...(hasScope ? [{ id: "scope" as const, label: "Covers", count: "what it is about" }] : []),
     ...(finance
@@ -142,7 +145,10 @@ export default async function ReportInputsPage({
 
       {tab === "story" &&
         (storyResult.ok ? (
-          <StoryInputs periodId={periodId} initialStory={story} canEdit={ctx.capabilities.has("reporting.edit")} />
+          <div className="space-y-4">
+            <StoryInputs periodId={periodId} initialStory={story} canEdit={ctx.capabilities.has("reporting.edit")} />
+            {complianceNotesResult.ok && <ComplianceNotes periodId={periodId} projectId={projectId} initial={complianceNotesResult.value} canEdit={ctx.capabilities.has("reporting.edit")} />}
+          </div>
         ) : (
           <InlineError title={storyResult.error.message} />
         ))}

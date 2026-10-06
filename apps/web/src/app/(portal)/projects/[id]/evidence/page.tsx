@@ -23,6 +23,7 @@ import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPa
 import { periodOptionLabel, recentFirst } from "@/lib/shared/option-labels";
 import { EvidencePeriodPicker } from "@/features/evidence/presentation/EvidencePeriodPicker";
 import { EvidenceLinkSuggestions } from "@/features/evidence/presentation/EvidenceLinkSuggestions";
+import { EvidenceBulkBar, EvidenceSelectBox, EvidenceSelectionProvider } from "@/features/evidence/presentation/EvidenceBulkVerify";
 import { EvidenceLinkManager, type LinkTarget } from "@/features/evidence/presentation/EvidenceLinkManager";
 
 export const dynamic = "force-dynamic";
@@ -142,12 +143,14 @@ export default async function EvidencePage({
           )}
         </div>
       ) : (
-        <>
+        <EvidenceSelectionProvider>
+          <EvidenceBulkBar pendingIds={items.filter((e) => e.verificationStatus !== "VERIFIED").map((e) => e.id)} canVerify={ctx.capabilities.has("evidence.verify")} />
           <div className="table-shell mt-4 overflow-x-auto">
             <table className="w-full text-sm">
               <caption className="sr-only">Evidence files in this project</caption>
               <thead className="thead">
                 <tr>
+                  <th className="px-3 py-2 text-left"><span className="sr-only">Select</span></th>
                   <th className="px-3 py-2 text-left">File</th>
                   <th className="px-3 py-2 text-left">Type</th>
                   <th className="px-3 py-2 text-left">Reporting period</th>
@@ -159,6 +162,7 @@ export default async function EvidencePage({
               <tbody>
                 {items.map((e) => (
                   <tr key={e.id} className="trow">
+                    <td className="px-3 py-2 align-top">{e.verificationStatus !== "VERIFIED" && <EvidenceSelectBox id={e.id} title={e.title} />}</td>
                     <td className="px-3 py-2">
                       <Link href={`${baseUrl}/${e.id}`} className="font-medium text-brand-600 hover:underline dark:text-brand-400">
                         {e.title}
@@ -206,7 +210,7 @@ export default async function EvidencePage({
               <Pagination page={page} pageSize={PAGE_SIZE} total={total} basePath={pageBasePath} />
             </div>
           )}
-        </>
+        </EvidenceSelectionProvider>
       )}
 
       {driveConnected && (

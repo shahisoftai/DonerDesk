@@ -28,7 +28,7 @@ export interface RecordSources {
     description?: string;
   };
   period: { reportType: string; duration: { start: Date; end: Date } };
-  story?: { achievements?: string; challenges?: string; varianceExplanations?: string; adaptations?: string; lessons?: string };
+  story?: { achievements?: string; challenges?: string; varianceExplanations?: string; adaptations?: string; lessons?: string; sectionNotes?: Record<string, string> };
   activities: Array<{
     id: string;
     activityTitle: string;
@@ -92,7 +92,10 @@ export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
   const s = sources.story;
   if (s) {
     const STORY_LABEL: Record<string, string> = { achievements: "the achievements", challenges: "the challenges", varianceExplanations: "the reason for any variance or unspent balance", adaptations: "the adaptations made", lessons: "the lessons learned" };
-    for (const [field, text] of Object.entries(s) as Array<[string, string | undefined]>) {
+    for (const [index, text] of Object.values(s.sectionNotes ?? {}).entries()) {
+      add("story", `sectionNote${index}`, "Reporting officer's statement for a compliance section", recordSentences(text).map((sentence) => `The reporting officer recorded: ${sentence}`));
+    }
+    for (const [field, text] of Object.entries(s).filter(([k]) => k !== "sectionNotes") as Array<[string, string | undefined]>) {
       add("story", field, `Reporting officer's story: ${field}`, recordSentences(text).map((sentence) => `The reporting officer recorded ${STORY_LABEL[field] ?? field}: ${sentence}`));
     }
   }

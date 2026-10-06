@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { EvidenceSearchSchema, AcceptEvidenceTagsSchema, ImportEvidenceTextSchema, SetEvidencePeriodSchema } from "@donordesk/contracts";
+import { EvidenceSearchSchema, AcceptEvidenceTagsSchema, ImportEvidenceTextSchema, SetEvidencePeriodSchema, BulkVerifyEvidenceSchema } from "@donordesk/contracts";
 import { buildEvidenceTemplate, EVIDENCE_TEMPLATE_FILENAME } from "@donordesk/infrastructure";
 
 export async function registerEvidenceRoutes(app: FastifyInstance) {
@@ -113,6 +113,12 @@ export async function registerEvidenceRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.acceptEvidenceTags.handle(ctx, id, body.indices);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  app.post("/v1/evidence/bulk-verify", async (req) => {
+    const body = BulkVerifyEvidenceSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    return req.container.handlers.bulkVerifyEvidence.handle(ctx, body);
   });
 
   app.post("/v1/evidence/:id/verify", async (req) => {

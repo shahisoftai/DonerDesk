@@ -42,6 +42,14 @@
       "types": "./dist/core/plural.d.ts",
       "import": "./dist/core/plural.js"
     },
+    "./contexts/reporting/default-template.js": {
+      "types": "./dist/contexts/reporting/default-template.d.ts",
+      "import": "./dist/contexts/reporting/default-template.js"
+    },
+    "./contexts/reporting/report-type-blueprints.js": {
+      "types": "./dist/contexts/reporting/report-type-blueprints.d.ts",
+      "import": "./dist/contexts/reporting/report-type-blueprints.js"
+    },
     "./contexts/reporting/verification-reason.js": {
       "types": "./dist/contexts/reporting/verification-reason.d.ts",
       "import": "./dist/contexts/reporting/verification-reason.js"

@@ -47,3 +47,4 @@ export * from "./generation-fallback.js";
 export * from "./section-kind.js";
 export * from "./period-lifecycle.js";
 export * from "./ai-run-summary.js";
+export * from "./section-notes.js";

@@ -187,7 +187,7 @@ function buildStoryContextBlock(ctx: GenerateReportDraftInput["reportContext"]):
   };
   let any = false;
   for (const [key, label] of Object.entries(labels)) {
-    const value = story[key as keyof typeof story];
+    const value = story[key as Exclude<keyof typeof story, "sectionNotes">];
     if (value && value.trim()) {
       rows.push(`- ${label}: ${value.trim()}`);
       any = true;

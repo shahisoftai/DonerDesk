@@ -135,14 +135,14 @@ export class CreateExportHandler {
     const charts: ExportChartInput[] = [...tableCharts, ...manualCharts];
 
     const acts = await this.activities.findByReportingPeriod(input.reportingPeriodId, ctx.tenant.tenantId);
-    const activityRows: Array<{ title: string; date: string; location?: string; participants: number }> = [];
+    const activityRows: Array<{ title: string; date: string; location?: string; participants?: number }> = [];
     if (acts.ok) {
       for (const a of acts.value) {
         activityRows.push({
           title: a.activityTitle,
           date: a.activityDate.toISOString(),
           location: a.location,
-          participants: a.participantsTotal ?? 0,
+          ...(a.participantsTotal !== undefined ? { participants: a.participantsTotal } : {}),
         });
       }
     }

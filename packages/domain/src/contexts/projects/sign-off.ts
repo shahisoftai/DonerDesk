@@ -40,3 +40,28 @@ export function signOffRoles(facts: SignOffFacts): SignOffRoles {
     approverIds: [...new Set([...pm, ...me])],
   };
 }
+
+export type ApproverCheck = { ok: true; selfApproval: boolean } | { ok: false; reason: string };
+
+/**
+ * May this person approve the report? When the project requires a second approver, the author cannot (and the message
+ * says who can). Otherwise anyone with the right may, and approving your own report is flagged so it is recorded
+ * (`selfApproval`): a team of one signs off as both, openly.
+ */
+export function checkApprover(input: { requireSecondApprover: boolean; authorId: string | undefined; approverId: string; otherApproverCount: number }): ApproverCheck {
+  const self = input.authorId !== undefined && input.authorId === input.approverId;
+  if (!self) return { ok: true, selfApproval: false };
+  if (!input.requireSecondApprover) return { ok: true, selfApproval: true };
+  return {
+    ok: false,
+    reason:
+      input.otherApproverCount > 0
+        ? "This project needs a second person to approve: you wrote this report, so a project manager or M&E officer other than you has to approve it."
+        : "This project needs a second person to approve, and nobody else is assigned as a project manager or M&E officer yet. Assign one under Team, or switch the second-approver rule off in the project settings if you work alone.",
+  };
+}
+
+/** Only an administrator or a project manager may attest to many items at once; everyone else decides them one by one. */
+export function canBulkAttest(role: string | undefined): boolean {
+  return role === "ADMIN" || role === "PROJECT_MANAGER";
+}

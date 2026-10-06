@@ -31,7 +31,7 @@ export async function resolveChecklistItemAction(
   return { ok: true, value: undefined };
 }
 
-export type BulkResolveChecklistResult = Result<{ resolved: number; skipped: number }, AppError>;
+export type BulkResolveChecklistResult = Result<{ resolved: number; skipped: number; notPermitted?: number }, AppError>;
 
 export async function bulkResolveChecklistAction(
   periodId: string,

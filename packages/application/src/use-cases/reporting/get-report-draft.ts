@@ -146,7 +146,7 @@ export class GetReportDraftHandler {
         versions: allDrafts.map(serializeDraftVersion),
         regeneratingSectionIds: this.extras.regenerationTracker?.runningAmong(sectionIds) ?? [],
         summaryStaleSectionIds: staleSynthesisSectionIds(
-          sorted.map((s) => ({ id: s.id, title: s.sectionTitle, currentRevisionId: s.currentRevisionId })),
+          sorted.map((s) => ({ id: s.id, title: s.sectionTitle, currentRevisionId: s.currentRevisionId, ...(s.summaryCurrentAt ? { summaryCurrentAt: s.summaryCurrentAt } : {}) })),
           revisions.map((rev) => ({
             id: rev.id,
             sectionId: rev.sectionId,

@@ -44,7 +44,8 @@ export class CreateAllPeriodsHandler {
     if (!reportType) {
       return { ok: true, value: { reportType: null, plan: { periods: [], closing: null }, note: "This project's reporting frequency has no fixed monthly or quarterly cadence, so periods are created one at a time." } };
     }
-    const existing = await this.periods.findByProject(projectId, ctx.tenant.tenantId);
+    // Cancelled periods keep their dates: "create all" does not bring back a month somebody cancelled.
+    const existing = await this.periods.findByProject(projectId, ctx.tenant.tenantId, { includeCancelled: true });
     if (!existing.ok) return existing;
     const plan = planCadencePeriods(reportType, project.value.duration.start, project.value.duration.end, existing.value.map((p) => p.duration.end));
     return { ok: true, value: { reportType, plan } };

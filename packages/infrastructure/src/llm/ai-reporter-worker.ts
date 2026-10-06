@@ -51,6 +51,8 @@ export interface AiReporterSectionBrief {
    * full drafts (prompts then stay byte-stable).
    */
   userInstruction?: string;
+  /** A compliance section's only source: the reporting officer's statement. Mirrors Python `SectionBrief.officerNote`. */
+  officerNote?: string;
   /**
    * Template Manager v2 — the donor template's own guidance for this section,
    * required table shapes, and the organisation's standing guidance. Mirror
@@ -137,6 +139,10 @@ export interface AiReporterContext {
   visibility?: string[];
   /** Verified financial figures (balance and burn rate already computed); absent unless the project uses them. */
   finance?: AiReporterContextFinance;
+  /** Contract v5: the report's own section titles and indicator codes (the only labels the writer may name). */
+  structure?: { sectionTitles: string[]; indicatorCodes: string[] };
+  /** Contract v5: indicators with no figure this period. */
+  notMeasured?: Array<{ indicatorCode: string; indicatorName?: string; frequency?: string }>;
 }
 
 export interface AiReporterContextFinance {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { Project, ReportingProfile, TenantId, DEFAULT_DEADLINE_OFFSET_DAYS } from "@donordesk/domain";
+import { Project, ReportingPeriod, ReportingProfile, TenantId, DEFAULT_DEADLINE_OFFSET_DAYS } from "@donordesk/domain";
 import { CreateReportingPeriodHandler, EnsureAutoPeriodHandler } from "../dist/index.js";
 
 const tenantId = TenantId.create("tenant-a");
@@ -41,7 +41,7 @@ function fakePeriodsRepo(initial = []) {
     create: async (p) => { store.set(p.id, p); return { ok: true, value: p }; },
     update: async (p) => { store.set(p.id, p); return { ok: true, value: p }; },
     findById: async (id) => ({ ok: true, value: store.get(id) ?? null }),
-    findByProject: async (projectId) => ({ ok: true, value: [...store.values()].filter((p) => p.projectId === projectId) }),
+    findByProject: async (projectId, _t, opts = {}) => ({ ok: true, value: [...store.values()].filter((p) => p.projectId === projectId && (opts.includeCancelled || !p.isCancelled)) }),
     findPreviousPeriods: async () => ({ ok: true, value: [] }),
     all: () => [...store.values()],
   };
@@ -128,4 +128,15 @@ test("EnsureAutoPeriodHandler: the last block of the project belongs to the clos
   assert.ok(r.ok);
   assert.equal(r.value.created, false, "December reaches the project's end: it is the closing report's period");
   assert.equal(periodsRepo.all().length, 1);
+});
+
+test("EnsureAutoPeriodHandler: a cancelled month is not created again on the next page load (browser check, 25.6)", async () => {
+  const jan = ReportingPeriod.create({ id: "jan", tenantId: tenantId.toString(), projectId: "proj-1", reportType: "MONTHLY", startDate: new Date("2020-01-01"), endDate: new Date("2020-01-31"), deadline: new Date("2020-02-10") });
+  jan.cancel("by mistake", new Date());
+  const { handler, periodsRepo } = build({ existingPeriods: [jan] });
+  const r = await handler.handle(ctx, "proj-1");
+  assert.ok(r.ok);
+  const created = periodsRepo.all().filter((p) => p.id !== "jan");
+  assert.equal(created.length, 1);
+  assert.equal(created[0].duration.start.toISOString().slice(0, 10), "2020-02-01", "the next month, not the cancelled one");
 });

@@ -37,6 +37,8 @@ export interface ReportSectionProps {
   currentRevisionId?: string;
   /** Why the current text was not written by the AI; absent when it was, or when a person wrote it. */
   generationFallback?: GenerationFallback;
+  /** When a person confirmed the summary still matches the report; later changes make it stale again. */
+  summaryCurrentAt?: Date;
 }
 
 export class ReportSection extends Entity<string> {
@@ -111,6 +113,14 @@ export class ReportSection extends Entity<string> {
 
   /** Why the current text is not AI-written, or undefined (a written-by-AI or hand-written text clears it). */
   get generationFallback(): GenerationFallback | undefined { return this.props.generationFallback ? { ...this.props.generationFallback } : undefined; }
+
+  get summaryCurrentAt(): Date | undefined { return this.props.summaryCurrentAt; }
+
+  /** "This summary still matches the report": clears the out-of-date notice until the sections change again. */
+  markSummaryCurrent(at: Date): void {
+    this.props.summaryCurrentAt = at;
+    this.touch();
+  }
 
   /** Records the outcome of the latest write: pass nothing when the AI wrote it or a person did. */
   recordGenerationFallback(fallback: GenerationFallback | null | undefined): void {

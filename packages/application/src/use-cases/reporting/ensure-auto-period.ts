@@ -53,7 +53,8 @@ export class EnsureAutoPeriodHandler {
     const reportType = AUTO_CREATE_REPORT_TYPE[project.reportingFrequency];
     if (!reportType) return { ok: true, value: { created: false } };
 
-    const existingResult = await this.periods.findByProject(projectId, tenantId);
+    // A cancelled period still occupies its dates: cancelling a month must not make the next page load create it again.
+    const existingResult = await this.periods.findByProject(projectId, tenantId, { includeCancelled: true });
     if (!existingResult.ok) return existingResult;
     const existingEnds = existingResult.value.map((p) => p.duration.end);
 

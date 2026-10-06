@@ -129,8 +129,17 @@ export const LANGUAGE_CRAFT_RULES: readonly string[] = [
   "Never use the future tense for completed work; never use the present tense for finished delivery.",
 ];
 
+/** Contract v5: v4 plus these rules (mirror of writer_contract.py _WRITER_RULES_V5_ADDITIONS). */
+export const WRITER_RULES_V5_ADDITIONS: readonly string[] = [
+  "State a cumulative or derived percentage only when it is given in the inputs or is a finding's percent of target (of its value, its recorded cumulative value or its life-of-project value); never calculate any other percentage or total.",
+  "Never count indicators or records (\"17 indicators\") unless that exact number appears in the inputs.",
+  "Quote lifeOfProject values only in a semi-annual, annual or final report.",
+  "Use only the section titles and indicator or outcome codes listed under \"Report structure\"; never invent labels (such as IR1, IR2) or refer to a section that is not listed.",
+  "An indicator listed under \"Not measured this period\" has no figure: say it was not measured this period and give no value for it.",
+];
+
 export function systemPrompt(version: number = WRITER_CONTRACT_VERSION): string {
-  const rules = version >= 4 ? WRITER_RULES_V4 : WRITER_RULES;
+  const rules = version >= 5 ? [...WRITER_RULES_V4, ...WRITER_RULES_V5_ADDITIONS] : version >= 4 ? WRITER_RULES_V4 : WRITER_RULES;
   const base = rules.map((r) => `- ${r}`).join("\n");
   const craft =
     version >= 3

@@ -20,6 +20,8 @@ export interface FreshnessSection {
   id: string;
   title: string;
   currentRevisionId?: string;
+  /** A person confirmed the summary is current at this time: changes before it no longer make it stale. */
+  summaryCurrentAt?: Date;
 }
 
 /** Share of changed words above which a manual edit counts as substantial. */
@@ -69,8 +71,10 @@ export function staleSynthesisSectionIds(sections: ReadonlyArray<FreshnessSectio
   const stale: string[] = [];
   for (const summary of sections) {
     if (!isSynthesisSection(summary) || !summary.currentRevisionId) continue;
-    const written = byId.get(summary.currentRevisionId);
-    if (!written) continue;
+    const writtenRevision = byId.get(summary.currentRevisionId);
+    if (!writtenRevision) continue;
+    // Confirming the summary counts as having re-read it: only changes after that make it stale again.
+    const written = summary.summaryCurrentAt && summary.summaryCurrentAt > writtenRevision.createdAt ? { ...writtenRevision, createdAt: summary.summaryCurrentAt } : writtenRevision;
     const changedSince = sections.some((other) => {
       if (other.id === summary.id || isSynthesisSection(other) || !other.currentRevisionId) return false;
       const current = byId.get(other.currentRevisionId);

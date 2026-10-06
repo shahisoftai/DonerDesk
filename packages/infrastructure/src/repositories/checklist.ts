@@ -34,6 +34,7 @@ export class PrismaChecklistRepository implements IChecklistRepository {
         dueDate: c.dueDate,
         status: c.status,
         resolutionNotes: c.resolutionNotes,
+        attestedById: c.attestedById ?? null,
       },
     });
     return ok(c);
@@ -53,6 +54,7 @@ export class PrismaChecklistRepository implements IChecklistRepository {
         dueDate: c.dueDate,
         status: c.status,
         resolutionNotes: c.resolutionNotes,
+        attestedById: c.attestedById ?? null,
       },
     });
     return ok(c);
@@ -106,6 +108,7 @@ export class PrismaChecklistRepository implements IChecklistRepository {
     dueDate: Date | null;
     status: string;
     resolutionNotes: string | null;
+    attestedById?: string | null;
     createdAt: Date;
   }): ChecklistItem {
     return ChecklistItem.rehydrate({
@@ -125,6 +128,7 @@ export class PrismaChecklistRepository implements IChecklistRepository {
         dueDate: row.dueDate ?? undefined,
         status: row.status as ChecklistStatus,
         resolutionNotes: row.resolutionNotes ?? undefined,
+        ...(row.attestedById ? { attestedById: row.attestedById } : {}),
       },
     });
   }

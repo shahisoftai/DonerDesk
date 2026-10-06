@@ -78,6 +78,7 @@ export function EvidenceLinkSuggestions({ evidenceId, alreadyLinked }: { evidenc
           <div key={key} className="flex items-center gap-2 text-xs">
             <span className="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-300" title={s.targetLabel}>
               {s.targetType === "activity" ? "Activity" : "Indicator"}: {s.targetLabel}
+              {s.reason && <span className="block truncate text-xs text-slate-500 dark:text-slate-400">Because {s.reason}</span>}
             </span>
             <span className="shrink-0 text-slate-400">{Math.round(s.score * 100)}% match</span>
             <button

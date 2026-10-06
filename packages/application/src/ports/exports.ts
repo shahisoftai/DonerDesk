@@ -52,7 +52,7 @@ export interface IExportBuilder {
     /** Roll-up reports (semi-annual, annual, final) also carry the period value, the life-of-project value and the percentage of target. */
     indicators: Array<{ code: string; name: string; baseline: string; target: string; achievement: string; unit?: string; status: string; periodValue?: string; lifeOfProjectValue?: string; percentOfTarget?: string }>;
     charts?: ExportChartInput[];
-    activities: Array<{ title: string; date: string; location?: string; participants: number }>;
+    activities: Array<{ title: string; date: string; location?: string; participants?: number }>;
     checklist: Array<{ title: string; severity: string; status: string; resolutionNotes?: string }>;
     evidenceItems: Array<{
       id: string;

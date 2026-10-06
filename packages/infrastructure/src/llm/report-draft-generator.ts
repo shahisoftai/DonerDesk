@@ -1,6 +1,7 @@
 import type { IReportDraftGenerator, GeneratedSection, GeneratedSectionResult, ReportClaimDraft, ActivityGenerationContext } from "@donordesk/application";
 import type { ReportPlanSection, SectionKind, SourceReference, VerifiedFinding } from "@donordesk/domain";
 import { sectionKind } from "@donordesk/domain";
+import { sectionOfficerNote } from "./section-note.js";
 
 /**
  * Heuristic, deterministic draft generator (no LLM). Narrates verified
@@ -53,9 +54,10 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
   }
 
   private recordsNarrative(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], planSection: ReportPlanSection): GeneratedSection {
+    const statement = sectionOfficerNote(input, planSection);
     const story = this.storyContextBlock(input);
     const activities = input.activities.slice(0, 5).map((a) => `- ${a.activityTitle}: ${a.summary || a.achievements}`.trimEnd()).filter((line) => !line.endsWith(":"));
-    const parts = [story, activities.length > 0 ? `Activity records for the period:\n${activities.join("\n")}` : ""].filter(Boolean);
+    const parts = [statement ? `Statement by the reporting officer: ${statement}` : "", story, activities.length > 0 ? `Activity records for the period:\n${activities.join("\n")}` : ""].filter(Boolean);
     return {
       sectionId: planSection.templateSectionId,
       title: planSection.title,
@@ -696,7 +698,7 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     };
     const rows: string[] = [];
     for (const [key, label] of Object.entries(labels)) {
-      const value = story[key as keyof typeof story];
+      const value = story[key as Exclude<keyof typeof story, "sectionNotes">];
       if (value && value.trim()) rows.push(`- ${label}: ${value.trim()}`);
     }
     return rows.length > 0 ? `Context recorded by the reporting officer:\n${rows.join("\n")}` : "";

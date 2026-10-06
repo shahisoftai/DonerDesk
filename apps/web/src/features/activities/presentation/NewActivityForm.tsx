@@ -17,7 +17,8 @@ import { recordParticipantHints } from "@donordesk/domain/contexts/logframe/part
 import { LogframeItemSelect } from "@/features/logframe/presentation/LogframeItemSelect";
 import { periodContainingDate } from "@/lib/shared/option-labels";
 import { FileDropzone } from "@/components/editor/FileDropzone";
-import { activityEvidenceFormData, failedUploads, type FileUploadOutcome } from "@/features/activities/domain/activity-evidence";
+import { activityEvidenceFormData, defaultFileSettings, defaultIndicatorForActivity, failedUploads, type FileSettings, type FileUploadOutcome } from "@/features/activities/domain/activity-evidence";
+import { EVIDENCE_TYPE_LABEL, EVIDENCE_TYPE_OPTIONS, CONFIDENTIALITY_LABEL, CONFIDENTIALITY_OPTIONS } from "@/lib/labels";
 import type { OutlineSource } from "@/features/logframe/domain/logframe-outline";
 
 type PeriodOption = { id: string; label: string; reportType: string; startDate: string; endDate: string };
@@ -28,12 +29,21 @@ export function NewActivityForm({
   reportingPeriods,
   evidenceOptions,
   logframeItems = [],
+  indicators = [],
+  initialLogframeActivityId,
+  earlierRecords = [],
 }: {
   projectId: string;
   reportingPeriods: PeriodOption[];
   evidenceOptions: EvidenceOption[];
   /** The project's logframe, so a record can point at the Activity it delivers. */
   logframeItems?: OutlineSource[];
+  /** The project's indicators: a file can be marked as proof of one (preselected when the activity has exactly one). */
+  indicators?: Array<{ id: string; label: string; logframeItemId?: string | null }>;
+  /** Opened from "Add activity" on a logframe node: that node is already chosen. */
+  initialLogframeActivityId?: string;
+  /** Earlier records the new one can start from (title, place and node are copied; numbers and text are not). */
+  earlierRecords?: Array<{ id: string; title: string; location?: string | undefined; logframeActivityId?: string | undefined }>;
 }) {
   const router = useRouter();
   const actionState = useActionState();
@@ -48,7 +58,7 @@ export function NewActivityForm({
   const [participantsFemale, setParticipantsFemale] = useState("");
   const [participantsChildren, setParticipantsChildren] = useState("");
   const [participantsDisability, setParticipantsDisability] = useState("");
-  const [logframeActivityId, setLogframeActivityId] = useState("");
+  const [logframeActivityId, setLogframeActivityId] = useState(initialLogframeActivityId && logframeItems.some((i) => i.id === initialLogframeActivityId) ? initialLogframeActivityId : "");
   const [summary, setSummary] = useState("");
   const [achievements, setAchievements] = useState("");
   const [challenges, setChallenges] = useState("");
@@ -58,6 +68,7 @@ export function NewActivityForm({
   const [localErrors, setLocalErrors] = useState<Record<string, string[]>>({});
   // Files dropped on the form are uploaded against the new activity, which they inherit their period from.
   const [files, setFiles] = useState<File[]>([]);
+  const [fileSettings, setFileSettings] = useState<Record<string, FileSettings>>({});
   const [createdActivityId, setCreatedActivityId] = useState<string | null>(null);
   const [uploadedNames, setUploadedNames] = useState<string[]>([]);
   const [uploadFailures, setUploadFailures] = useState<FileUploadOutcome[]>([]);
@@ -65,6 +76,29 @@ export function NewActivityForm({
   const [leaving, setLeaving] = useState(false);
 
   const fields = actionState.fields ?? localErrors;
+
+  const activityIndicator = defaultIndicatorForActivity(logframeActivityId, indicators);
+  /** What was chosen for a file; a file nobody touched gets the suggestion for its name and the activity's own indicator. */
+  function settingsFor(file: File): FileSettings {
+    return fileSettings[file.name] ?? defaultFileSettings(file, activityIndicator);
+  }
+  function setSettings(file: File, patch: Partial<FileSettings>) {
+    setFileSettings((prev) => ({ ...prev, [file.name]: { ...settingsFor(file), ...patch } }));
+  }
+
+  /** Starts from an earlier record: what repeats (title, place, node) is copied; counts and narrative stay blank to be entered. */
+  function startFrom(recordId: string) {
+    const record = earlierRecords.find((r) => r.id === recordId);
+    if (!record) return;
+    setActivityTitle(record.title);
+    setLocation(record.location ?? "");
+    setLogframeActivityId(record.logframeActivityId ?? "");
+    setParticipantsTotal("");
+    setParticipantsMale("");
+    setParticipantsFemale("");
+    setParticipantsChildren("");
+    setParticipantsDisability("");
+  }
 
   function toggleEvidence(id: string) {
     setSelectedEvidence((prev) => (prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]));
@@ -122,13 +156,11 @@ export function NewActivityForm({
       const outcomes: FileUploadOutcome[] = [];
       for (const file of remaining) {
         const result = await uploadEvidenceAction(
-          activityEvidenceFormData(file, {
-            projectId,
-            activityId,
-            reportingPeriodId,
-            activityDate: dateValue,
-            location: location || undefined,
-          }),
+          activityEvidenceFormData(
+            file,
+            { projectId, activityId, reportingPeriodId, activityDate: dateValue, location: location || undefined },
+            settingsFor(file),
+          ),
         );
         outcomes.push(result.ok ? { name: file.name, ok: true } : { name: file.name, ok: false, error: result.error.message });
       }
@@ -157,6 +189,14 @@ export function NewActivityForm({
 
   return (
     <form onSubmit={submit} className="card mt-6 grid max-w-3xl gap-4" noValidate>
+      {earlierRecords.length > 0 && (
+        <Field label="Start from an earlier record (optional)" htmlFor="start-from">
+          <Select id="start-from" defaultValue="" onChange={(e) => startFrom(e.target.value)}>
+            <option value="">Blank record</option>
+            {earlierRecords.map((r) => <option key={r.id} value={r.id}>{r.title}{r.location ? ` (${r.location})` : ""}</option>)}
+          </Select>
+        </Field>
+      )}
       <FormSummary errors={fields} count={errorCount} />
 
       <Field label="Reporting period" htmlFor="reportingPeriodId" error={fields.reportingPeriodId?.[0]}>
@@ -408,8 +448,24 @@ export function NewActivityForm({
               const failure = uploadFailures.find((o) => o.name === f.name);
               const done = uploadedNames.includes(f.name);
               return (
-                <li key={f.name} className="flex items-center justify-between gap-2">
-                  <span className="truncate">{f.name}</span>
+                <li key={f.name} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                  {!done && !createdActivityId && (
+                    <span className="flex flex-wrap gap-2">
+                      <Select aria-label={`Type of ${f.name}`} value={settingsFor(f).evidenceType} onChange={(e) => setSettings(f, { evidenceType: e.target.value as FileSettings["evidenceType"] })}>
+                        {EVIDENCE_TYPE_OPTIONS.map((t) => <option key={t} value={t}>{EVIDENCE_TYPE_LABEL[t] ?? t}</option>)}
+                      </Select>
+                      <Select aria-label={`Confidentiality of ${f.name}`} value={settingsFor(f).confidentialityLevel} onChange={(e) => setSettings(f, { confidentialityLevel: e.target.value as FileSettings["confidentialityLevel"] })}>
+                        {CONFIDENTIALITY_OPTIONS.map((c) => <option key={c} value={c}>{CONFIDENTIALITY_LABEL[c] ?? c}</option>)}
+                      </Select>
+                      {indicators.length > 0 && (
+                        <Select aria-label={`Indicator proved by ${f.name}`} value={settingsFor(f).indicatorId} onChange={(e) => setSettings(f, { indicatorId: e.target.value })}>
+                          <option value="">No indicator</option>
+                          {indicators.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
+                        </Select>
+                      )}
+                    </span>
+                  )}
                   <span className="shrink-0 text-xs">
                     {done ? "Uploaded" : failure ? <span className="text-danger-700 dark:text-danger-400">Failed: {failure.error}</span> : "Waiting"}
                     {!done && !uploading && !createdActivityId ? (

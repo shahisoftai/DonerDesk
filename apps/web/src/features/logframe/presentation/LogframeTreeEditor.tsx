@@ -183,6 +183,11 @@ function Node({ node, depth, projectId, indicatorCounts, editable, busy, renderM
               Add child
             </Link>
           )}
+          {node.level === "ACTIVITY" && (
+            <Link className="text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${projectId}/activities/new?node=${encodeURIComponent(node.id)}`}>
+              Add activity
+            </Link>
+          )}
           <Link className="text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${projectId}/logframe/new-indicator?itemId=${encodeURIComponent(node.id)}`}>
             Add indicator
           </Link>

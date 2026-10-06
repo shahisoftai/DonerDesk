@@ -243,7 +243,10 @@ export interface ReportGenerationContext {
   period: PeriodGenerationContext;
   template?: TemplateGenerationContext;
   /** Structured "Tell the Story" narrative context for the reporting period. */
-  storyContext?: Partial<Record<"achievements" | "challenges" | "varianceExplanations" | "adaptations" | "lessons", string>>;
+  storyContext?: Partial<Record<"achievements" | "challenges" | "varianceExplanations" | "adaptations" | "lessons", string>> & {
+    /** The reporting officer's statement per compliance section (key = template section id). */
+    sectionNotes?: Record<string, string>;
+  };
 }
 
 export interface GenerateReportDraftInput {
@@ -276,6 +279,8 @@ export interface GenerateReportDraftInput {
    * generators mention finance only when it is present.
    */
   finance?: FinanceSummaryView;
+  /** Indicators with no figure this period (not due, nothing recorded or nothing verified); sent to writer contract v5 only. */
+  notMeasured?: ReadonlyArray<{ indicatorCode: string; indicatorName?: string; frequency?: string }>;
 }
 
 export interface ReportClaimDraft {

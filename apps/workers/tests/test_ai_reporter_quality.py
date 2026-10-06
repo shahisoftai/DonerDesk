@@ -311,7 +311,7 @@ def test_ts_contract_mirror_is_string_identical() -> None:
 
     ts = (pathlib.Path(__file__).resolve().parents[3] / "packages/infrastructure/src/llm/ai-reporter/contract.ts").read_text()
     assert f"WRITER_CONTRACT_VERSION = {writer_contract.WRITER_CONTRACT_VERSION} as const" in ts
-    for items in (writer_contract._WRITER_RULES_V4, writer_contract.BANNED_PHRASES, writer_contract.LANGUAGE_CRAFT_RULES, writer_contract.WRITER_EXCLUDED_PERIOD_KEYS, writer_contract.WORKFLOW_VOCABULARY):
+    for items in (writer_contract._WRITER_RULES_V4, writer_contract._WRITER_RULES_V5_ADDITIONS, writer_contract.BANNED_PHRASES, writer_contract.LANGUAGE_CRAFT_RULES, writer_contract.WRITER_EXCLUDED_PERIOD_KEYS, writer_contract.WORKFLOW_VOCABULARY):
         for item in items:
             assert json.dumps(item, ensure_ascii=False) in ts, item
 
@@ -469,3 +469,30 @@ def test_a_synthesis_section_still_over_after_the_retry_keeps_the_prose_and_repo
     assert section.content == _LONG
     assert "usedFallback" not in telemetry, "length alone never swaps in the stub"
     assert any(i.startswith("WORD_LIMIT") and "> maxWords=20" in i for i in telemetry["validatorIssues"])
+
+
+def test_contract_v5_adds_rules_and_leaves_v4_byte_stable() -> None:
+    v4, v5 = writer_contract.system_prompt(4), writer_contract.system_prompt(5)
+    assert v4.replace("contract v4", "contract v5") != v5
+    assert "writer contract v5" in v5 and "Not measured this period" in v5 and "never invent labels" in v5
+    assert not any(r in v4 for r in writer_contract._WRITER_RULES_V5_ADDITIONS), "v4 is unchanged"
+    assert all(r in v5 for r in writer_contract._WRITER_RULES_V4 + writer_contract._WRITER_RULES_V5_ADDITIONS)
+
+
+def test_v5_prompt_blocks_appear_only_when_sent() -> None:
+    from app.ai_reporter.models import ContextStructure, NotMeasured
+
+    plain = build_user_prompt(_req())
+    assert "Report structure" not in plain and "Not measured this period" not in plain
+    req = _req()
+    req.context.structure = ContextStructure(sectionTitles=["Results", "Challenges"], indicatorCodes=["OUT-1"])
+    req.context.notMeasured = [NotMeasured(indicatorCode="HL-OC2a", indicatorName="Quarterly survey", frequency="quarterly")]
+    prompt = build_user_prompt(req)
+    assert "Report structure" in prompt and "Challenges" in prompt
+    assert "- HL-OC2a (Quarterly survey), measured quarterly" in prompt
+
+
+def test_officer_note_is_a_compliance_sections_only_source() -> None:
+    assert "Reporting officer's statement" not in build_user_prompt(_req())
+    prompt = build_user_prompt(_req(title="Environmental Compliance", officerNote="  Waste was sorted at all three sites.  "))
+    assert "ONLY source" in prompt and "Waste was sorted at all three sites." in prompt

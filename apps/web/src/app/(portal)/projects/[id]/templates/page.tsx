@@ -2,12 +2,14 @@ import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { TemplatesResponseSchema, OrganizationSchema, ReportingProfileResponseSchema } from "@/lib/server/schemas";
-import { REPORT_TYPE_LABEL } from "@/lib/labels";
+import { REPORT_TYPE_LABEL, REPORT_TYPE_OPTIONS } from "@/lib/labels";
 import { InlineError } from "@/components/feedback/PageState";
 import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
 import { ExtractionMethodBadge, TemplateStatusBadge } from "@/features/templates/presentation/TemplateStatusBadge";
 import { LibraryPicker } from "@/features/templates/presentation/LibraryPicker";
-import { SetDefaultTemplateButton } from "@/features/templates/presentation/SetDefaultTemplateButton";
+import { TemplateTypeDefaults } from "@/features/templates/presentation/TemplateTypeDefaults";
+import { pickDefaultTemplate } from "@donordesk/domain/contexts/reporting/default-template.js";
+import { templateAppliesToReportType } from "@donordesk/domain/contexts/reporting/report-type-blueprints.js";
 import { HelpButton } from "@/features/tour/presentation/HelpButton";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +27,7 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
   // (ProjectReadinessService / CreateReportingPeriodHandler fall back this
   // way too) — shown as read-only "Default" until there is a real choice.
   const defaultTemplateId = profileResult.ok ? profileResult.value.profile?.defaultTemplateId : undefined;
+  const explicitByType = profileResult.ok ? profileResult.value.profile?.defaultTemplateByType ?? {} : {};
   const driveConnected = orgResult.ok && orgResult.value.storageProvider === "GOOGLE_DRIVE";
   const header = (
     <header className="flex flex-wrap items-center justify-between gap-3">
@@ -59,7 +62,10 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
         {items.map((t, index) => {
           const reportable = t.sections.filter((s) => s.includeInReport);
           const pending = t.sections.filter((s) => s.reviewStatus !== "REVIEWED").length;
-          const isDefault = defaultTemplateId ? t.id === defaultTemplateId : index === 0;
+          const candidates = items.map((c) => ({ id: c.id, reportType: c.reportType, status: c.status, updatedAt: new Date(c.updatedAt ?? 0) }));
+          // "Used for": the report types a new period of which starts from this template, by the one rule period creation uses.
+          const typesHere = REPORT_TYPE_OPTIONS.filter((type) => templateAppliesToReportType(type, t.reportType));
+          const usedFor = REPORT_TYPE_OPTIONS.filter((type) => pickDefaultTemplate({ reportType: type, profileDefaultId: defaultTemplateId, explicitByType, candidates }).templateId === t.id);
           return (
             <div
               key={t.id}
@@ -70,7 +76,11 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
                   {t.templateName}
                   <TemplateStatusBadge status={t.status} />
                   <ExtractionMethodBadge method={t.extractionMeta?.method} />
-                  {isDefault && items.length === 1 && <span className="rounded-full border border-success-500/50 px-2 py-0.5 text-[11px] font-medium text-success-700 dark:text-success-400">Default</span>}
+                  {usedFor.length > 0 && (
+                    <span className="rounded-full border border-success-500/50 px-2 py-0.5 text-[11px] font-medium text-success-700 dark:text-success-400">
+                      Used for: {usedFor.map((type) => REPORT_TYPE_LABEL[type] ?? type).join(", ")}
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   {t.donorName} · {REPORT_TYPE_LABEL[t.reportType] ?? t.reportType} · {reportable.length} report section(s)
@@ -78,7 +88,11 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
                 </div>
               </Link>
               <div className="flex shrink-0 items-center gap-2">
-                {items.length > 1 && <SetDefaultTemplateButton templateId={t.id} isDefault={isDefault} />}
+                <TemplateTypeDefaults
+                  templateId={t.id}
+                  canEdit={ctx.capabilities.has("template.edit")}
+                  types={typesHere.map((type) => ({ type, label: REPORT_TYPE_LABEL[type] ?? type, isDefault: explicitByType[type] === t.id }))}
+                />
                 <Link href={`/projects/${id}/templates/${t.id}`} className="text-sm text-brand-600 hover:underline dark:text-brand-400">Open</Link>
               </div>
             </div>

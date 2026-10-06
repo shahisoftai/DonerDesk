@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Children, cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from "react";
 
 export function Field({
   label,
@@ -15,6 +15,14 @@ export function Field({
   hint?: string;
   children: ReactNode;
 }) {
+  // A control with no id of its own would leave the label unattached (a screen reader announces "combo box" and nothing
+  // else): the field names its single child itself.
+  const generatedId = useId();
+  const only = Children.count(children) === 1 ? (Children.toArray(children)[0] as ReactNode) : null;
+  const child = isValidElement(only) ? (only as ReactElement<{ id?: string }>) : null;
+  const controlId = htmlFor ?? child?.props.id ?? (child ? generatedId : undefined);
+  htmlFor = controlId;
+  const control = child && child.props.id === undefined && controlId ? cloneElement(child, { id: controlId }) : children;
   const hasError = Boolean(error);
   const describedBy = [description ? `${htmlFor}-desc` : "", error ? `${htmlFor}-error` : "", hint ? `${htmlFor}-hint` : ""]
     .filter(Boolean)
@@ -31,7 +39,7 @@ export function Field({
         </p>
       )}
       <div aria-describedby={describedBy} aria-invalid={hasError || undefined}>
-        {children}
+        {control}
       </div>
       {error && (
         <p id={htmlFor ? `${htmlFor}-error` : undefined} className="mt-1 text-xs font-medium text-danger-700 dark:text-danger-500">

@@ -89,7 +89,7 @@ export function ActivityBulkList({ projectId, items, canReview }: { projectId: s
           <Link href={`/projects/${projectId}/activities/${a.id}`} className="flex min-w-0 flex-1 items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="truncate font-medium">{a.activityTitle}</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">{a.activityDate.slice(0, 10)} · {a.location ?? "—"} · {a.participantsTotal ?? 0} participants</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">{a.activityDate.slice(0, 10)} · {a.location ?? "—"}{a.participantsTotal !== undefined ? ` · ${a.participantsTotal} participants` : ""}</div>
             </div>
             <Badge tone={activityStatusTone(a.status)}>{ACTIVITY_STATUS_LABEL[a.status] ?? a.status.replace(/_/g, " ")}</Badge>
           </Link>

@@ -26,7 +26,8 @@ export class UpdateReportingPeriodStoryHandler {
     const period = r.value;
     if (!period) return { ok: false, error: DomainError.notFound("ReportingPeriod", periodId) };
 
-    period.setStoryContext(input.storyContext);
+    // The five story answers are saved on their own: the per-section compliance statements are kept as they are.
+    period.setStoryContext({ ...input.storyContext, ...(period.storyContext.sectionNotes ? { sectionNotes: period.storyContext.sectionNotes } : {}) });
     const saved = await this.periods.update(period);
     if (!saved.ok) return saved;
 

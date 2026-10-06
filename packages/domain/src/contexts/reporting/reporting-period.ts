@@ -38,6 +38,27 @@ export interface StoryContext {
   adaptations?: string;
   /** Any important lesson or story? (optional) */
   lessons?: string;
+  /**
+   * One statement per compliance section of the donor's template (environmental, branding, safeguarding...), by
+   * section key (`sectionNoteKey`). The writer receives it as that section's only source, as the reporting officer's statement.
+   */
+  sectionNotes?: Record<string, string>;
+}
+
+export const MAX_SECTION_NOTES = 40;
+export const MAX_SECTION_NOTE_LENGTH = 4000;
+
+/** Keeps only well-formed notes: a short key, a non-empty text, a bounded number of both. */
+export function sanitizeSectionNotes(raw: unknown): Record<string, string> {
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (Object.keys(out).length >= MAX_SECTION_NOTES) break;
+    if (typeof value !== "string" || !key || key.length > 120) continue;
+    const text = value.trim().slice(0, MAX_SECTION_NOTE_LENGTH);
+    if (text) out[key] = text;
+  }
+  return out;
 }
 
 export function parseStoryContext(json: string): StoryContext {
@@ -49,6 +70,8 @@ export function parseStoryContext(json: string): StoryContext {
       const v = raw[key];
       if (typeof v === "string") out[key] = v;
     }
+    const notes = sanitizeSectionNotes((raw as StoryContext).sectionNotes);
+    if (Object.keys(notes).length > 0) out.sectionNotes = notes;
     return out;
   } catch {
     return {};
@@ -234,9 +257,19 @@ export class ReportingPeriod extends Entity<string> {
     this.touch();
   }
 
+  /** Sets (or, with an empty text, removes) the statement for one compliance section; every other note is kept. */
+  setSectionNote(key: string, note: string): void {
+    const notes = { ...(this.storyContext.sectionNotes ?? {}) };
+    if (note.trim()) notes[key] = note;
+    else delete notes[key];
+    this.setStoryContext({ ...this.storyContext, sectionNotes: sanitizeSectionNotes(notes) });
+  }
+
   /** Records the structured "Tell the Story" narrative context for this period. */
   setStoryContext(context: StoryContext): void {
-    this.props.storyContextJson = JSON.stringify(context);
+    const sectionNotes = sanitizeSectionNotes(context.sectionNotes);
+    const { sectionNotes: _drop, ...rest } = context;
+    this.props.storyContextJson = JSON.stringify(Object.keys(sectionNotes).length > 0 ? { ...rest, sectionNotes } : rest);
     this.touch();
   }
 }

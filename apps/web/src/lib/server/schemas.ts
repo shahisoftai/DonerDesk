@@ -591,6 +591,8 @@ export const ReportingPeriodItemSchema = z.object({
   daysUntilDeadline: z.number(),
   donorTemplateId: z.string().nullish(),
   /** A cancelled period keeps its data but is out of the calendar; it is listed apart so it can be restored. */
+  /** An approved, exported or sent report exists: the period cannot be cancelled or converted. */
+  releasedReport: z.boolean().optional(),
   cancelled: z.boolean().optional(),
   cancelledAt: z.string().nullish(),
   cancelReason: z.string().nullish(),
@@ -1040,6 +1042,10 @@ export const ReportingProfileSchema = z.object({
   deadlineOffsetDays: z.number().nullable().optional(),
   autoPeriodCreation: z.boolean().default(false),
   financeDataMode: z.enum(["DISABLED", "TYPED", "IMPORT"]).default("DISABLED"),
+  /** The template explicitly made the default for each report type. */
+  defaultTemplateByType: z.record(z.string()).default({}),
+  requireSecondApprover: z.boolean().default(false),
+  standingStatements: z.record(z.string()).default({}),
   version: z.number(),
   createdAt: z.string(),
 });

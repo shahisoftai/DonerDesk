@@ -1,6 +1,7 @@
 import type { IExportBuilder, ExportArtifacts, ExportChartInput, IStorage, IDonorTemplateRenderer } from "@donordesk/application";
 import { Document, Packer, Paragraph, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType, TextRun, ImageRun, PageBreak, TableOfContents, Header } from "docx";
 import PDFDocument from "pdfkit";
+import { toPdfSafeText } from "./pdf-text.js";
 import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
 import { renderChartPngCached, chartHasData, type ChartSource } from "./chart-png-renderer.js";
@@ -178,6 +179,9 @@ export class DefaultExportBuilder implements IExportBuilder {
     const doc = new PDFDocument({ margin: 50, info: { Title: input.reportTitle, Author: "DonorDesk" } });
     doc.on("data", (c) => chunks.push(c as Buffer));
     const done = new Promise<void>((resolve) => doc.on("end", () => resolve()));
+    // Helvetica draws WinAnsi only: every string goes through one filter instead of garbling arrows, "≥" and emoji.
+    const drawText = doc.text.bind(doc) as (text: unknown, ...rest: unknown[]) => PDFKit.PDFDocument;
+    doc.text = ((text: unknown, ...rest: unknown[]) => drawText(typeof text === "string" ? toPdfSafeText(text) : text, ...rest)) as typeof doc.text;
     // An internal-review copy says so at the top of every page, not once at the end.
     const banner = this.watermarkText(input);
     const printBanner = (): void => {

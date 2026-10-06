@@ -4,6 +4,7 @@ import { requireSession } from "@/lib/server/auth-context";
 import { loadReportingProfileAction } from "@/lib/actions/setup";
 import { InlineError } from "@/components/feedback/PageState";
 import { ReportingProfileForm } from "./ReportingProfileForm";
+import { SecondApproverToggle } from "./SecondApproverToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,8 @@ export default async function ProjectReportingProfilePage({ params }: { params: 
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
         How DonorDesk writes your donor reports: language, tone, formatting rules, and word-count guidance.
       </p>
-      <div className="mt-6">
+      <div className="mt-6 space-y-6">
+        <SecondApproverToggle projectId={id} initial={result.value.profile?.requireSecondApprover ?? false} />
         <ReportingProfileForm projectId={id} initialProfile={result.value.profile} />
       </div>
     </div>

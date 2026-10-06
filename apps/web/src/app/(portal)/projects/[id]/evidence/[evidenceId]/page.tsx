@@ -14,6 +14,9 @@ import {
 } from "@/lib/labels";
 import { formatDate, formatFileSize } from "@/lib/shared/dates";
 import { protectedFileDownloadHref, isByteStoredEvidence } from "@/lib/shared/downloads";
+import { EvidenceLinkPanel } from "@/features/evidence/presentation/EvidenceLinkPanel";
+import { ActivitiesResponseSchema, LogframeResponseSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
+import { activityOptionLabel, periodOptionLabel, recentFirst } from "@/lib/shared/option-labels";
 import { EvidenceTagReview } from "@/features/evidence/presentation/EvidenceTagReview";
 import { EvidenceVerificationPanel } from "@/features/evidence/presentation/EvidenceVerificationPanel";
 import { CommentsThread } from "@/features/comments/presentation/CommentsThread";
@@ -28,13 +31,16 @@ export default async function EvidenceDetailPage({
   const resolvedParams = await params;
   const ctx = await requireSession();
 
-  const [detailResult, commentsResult] = await Promise.all([
+  const [detailResult, commentsResult, activitiesResult, logframeResult, periodsResult] = await Promise.all([
     gatewayRequest(`/v1/evidence/${resolvedParams.evidenceId}`, EvidenceDetailSchema, ctx.token),
     gatewayRequest(
       `/v1/comments?entityType=evidence&entityId=${resolvedParams.evidenceId}`,
       CommentsResponseSchema,
       ctx.token,
     ),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/activities`, ActivitiesResponseSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/logframe`, LogframeResponseSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token),
   ]);
 
   if (!detailResult.ok) {
@@ -135,6 +141,15 @@ export default async function EvidenceDetailPage({
           <p className="text-sm text-warning-700 dark:text-warning-400">{evidence.sensitivityWarning}</p>
         </div>
       )}
+
+      <EvidenceLinkPanel
+        evidenceId={evidence.id}
+        current={{ activityId: evidence.activityId, indicatorId: evidence.indicatorId, reportingPeriodId: evidence.reportingPeriodId }}
+        activities={activitiesResult.ok ? recentFirst(activitiesResult.value.items, (a) => a.activityDate).map((a) => ({ id: a.id, label: activityOptionLabel(a) })) : []}
+        indicators={logframeResult.ok ? logframeResult.value.indicators.map((i) => ({ id: i.id, label: `${i.code} — ${i.name}` })) : []}
+        periods={periodsResult.ok ? recentFirst(periodsResult.value.items, (p) => p.startDate).map((p) => ({ id: p.id, label: periodOptionLabel(p) })) : []}
+        canEdit={hasCapability(ctx, "evidence.upload")}
+      />
 
       <EvidenceTagReview evidenceId={evidence.id} tags={evidence.aiSuggestedTags ?? []} demoMode={demoMode} />
 

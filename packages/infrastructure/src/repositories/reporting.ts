@@ -267,6 +267,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         currentRevisionId: s.currentRevisionId,
         generationFallbackReason: s.generationFallback?.reason ?? null,
         generationFallbackDetail: s.generationFallback?.detail ?? null,
+        summaryCurrentAt: s.summaryCurrentAt ?? null,
         updatedAt: s.updatedAt,
       },
     });
@@ -290,6 +291,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         // Prisma `update` ignores undefined: null is what clears a stored reason.
         generationFallbackReason: s.generationFallback?.reason ?? null,
         generationFallbackDetail: s.generationFallback?.detail ?? null,
+        summaryCurrentAt: s.summaryCurrentAt ?? null,
         updatedAt: s.updatedAt,
       },
     });
@@ -325,6 +327,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
     currentRevisionId: string | null;
     generationFallbackReason?: string | null;
     generationFallbackDetail?: string | null;
+    summaryCurrentAt?: Date | null;
     createdAt: Date;
     updatedAt: Date;
   }): ReportSection {
@@ -346,6 +349,7 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         status: row.status as SectionStatus,
         chartConfig: parseChartConfig(row.chartConfigJson),
         currentRevisionId: row.currentRevisionId ?? undefined,
+        ...(row.summaryCurrentAt ? { summaryCurrentAt: row.summaryCurrentAt } : {}),
         ...(isGenerationFallbackReason(row.generationFallbackReason)
           ? { generationFallback: { reason: row.generationFallbackReason, ...(row.generationFallbackDetail ? { detail: row.generationFallbackDetail } : {}) } }
           : {}),

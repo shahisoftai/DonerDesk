@@ -21,6 +21,9 @@ export interface ReportingProfileDto {
   deadlineOffsetDays?: number;
   autoPeriodCreation: boolean;
   financeDataMode: string;
+  defaultTemplateByType: Record<string, string>;
+  requireSecondApprover: boolean;
+  standingStatements: Record<string, string>;
   version: number;
   createdAt: string;
 }
@@ -41,6 +44,9 @@ export function toReportingProfileDto(p: ReportingProfile): ReportingProfileDto 
     deadlineOffsetDays: p.deadlineOffsetDays,
     autoPeriodCreation: p.autoPeriodCreation,
     financeDataMode: p.financeDataMode,
+    defaultTemplateByType: p.defaultTemplateByType,
+    requireSecondApprover: p.requireSecondApprover,
+    standingStatements: p.standingStatements,
     version: p.version,
     createdAt: p.createdAt.toISOString(),
   };

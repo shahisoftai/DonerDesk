@@ -112,3 +112,37 @@ test("timeout wording", () => {
   for (const m of ["The operation was aborted due to timeout", "request timed out", "AI Reporter returned 504 for x", "AI Reporter returned 408 for x"]) assert.equal(isTimeoutError(m), true, m);
   for (const m of ["AI Reporter returned 500 for x", "AI Reporter returned 5040 for x", "connect ECONNREFUSED"]) assert.equal(isTimeoutError(m), false, m);
 });
+
+test("contract v5 sends the report structure and the not-measured list; v4 sends neither (byte-stable)", async () => {
+  const mk = (version) => new AiReporterDraftGenerator(scripted(good), new StubReportDraftGenerator(), undefined, undefined, undefined, undefined, version, { provider: "openai", model: "m" });
+  const withNotMeasured = input({ notMeasured: [{ indicatorCode: "HL-OC2a", indicatorName: "Quarterly survey" }] });
+  for (const [version, expectSent] of [[4, false], [5, true]]) {
+    const worker = scripted(good);
+    const g = new AiReporterDraftGenerator(worker, new StubReportDraftGenerator(), undefined, undefined, undefined, undefined, version, { provider: "openai", model: "m" });
+    await g.generateSection(withNotMeasured, sec("Progress"));
+    const ctx = worker.calls[0].context;
+    assert.equal(ctx.structure !== undefined, expectSent, `v${version} structure`);
+    assert.equal(ctx.notMeasured !== undefined, expectSent, `v${version} notMeasured`);
+    if (expectSent) {
+      assert.deepEqual(ctx.structure.sectionTitles, ["Progress"]);
+      assert.deepEqual(ctx.notMeasured, [{ indicatorCode: "HL-OC2a", indicatorName: "Quarterly survey" }]);
+    }
+  }
+  assert.ok(mk);
+});
+
+test("a compliance section's statement reaches the writer as officerNote, only for that section (25.4)", async () => {
+  const worker = scripted(good);
+  const g = new AiReporterDraftGenerator(worker, new StubReportDraftGenerator(), undefined, undefined, undefined, undefined, 4, { provider: "openai", model: "m" });
+  const ctx = { project: {}, period: {}, storyContext: { sectionNotes: { env: "  Waste was sorted at all three sites.  " } } };
+  await g.generateSection(input({ reportContext: ctx }), { ...sec("Environmental Compliance"), templateSectionId: "env" });
+  assert.equal(worker.calls[0].section.officerNote, "Waste was sorted at all three sites.");
+  await g.generateSection(input({ reportContext: ctx }), { ...sec("Results"), templateSectionId: "res" });
+  assert.equal(worker.calls[1].section.officerNote, undefined);
+});
+
+test("the stub writes a compliance section from the officer's statement", async () => {
+  const stub = new StubReportDraftGenerator();
+  const r = await stub.generateSection(input({ reportContext: { project: {}, period: {}, storyContext: { sectionNotes: { env: "Waste was sorted." } } } }), { ...sec("Environmental Compliance"), templateSectionId: "env" });
+  assert.match(r.section.content, /^Statement by the reporting officer: Waste was sorted\./);
+});

@@ -302,6 +302,12 @@ model ReportingProfile {
   autoPeriodCreation       Boolean  @default(false)
   /// DISABLED | TYPED | IMPORT: how this project's reports get their financial figures.
   financeDataMode          String   @default("DISABLED")
+  /// JSON {reportType: templateId}: the template a new period of that type starts from.
+  defaultTemplateByTypeJson String  @default("{}")
+  /// When on, the author of a report cannot approve it.
+  requireSecondApprover    Boolean  @default(false)
+  /// JSON {key: text}: statements that hold for every period (branding policy, waste procedure).
+  standingStatementsJson   String   @default("{}")
   version                  Int      @default(1)
   createdById              String
   updatedById              String
@@ -606,6 +612,8 @@ model ReportSection {
   generationFallbackReason String?
   /// Short, user-safe detail for the reason ("figure not in your data: 33.3%").
   generationFallbackDetail String?
+  /// When a person confirmed the summary still matches the report (clears the "may be out of date" notice).
+  summaryCurrentAt DateTime?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -815,6 +823,8 @@ model ChecklistItem {
   relatedEntityType String?
   relatedEntityId   String?
   assignedToId      String?
+  /// The person who attested to this item (set when an attestation is resolved).
+  attestedById      String?
   dueDate           DateTime?
   status            String   @default("OPEN")
   resolutionNotes   String?

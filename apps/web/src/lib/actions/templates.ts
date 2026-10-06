@@ -119,6 +119,14 @@ export async function setTemplateDefaultAction(templateId: string, isDefault: bo
   return { ok: true, value: undefined };
 }
 
+/** Makes a template the default for ONE report type (or stops it being); other types are never affected. */
+export async function setTemplateDefaultForTypeAction(templateId: string, reportType: string, isDefault: boolean): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/templates/${encodeURIComponent(templateId)}/default-for-type`, OkResponseSchema, context.token, { method: "PUT", body: { reportType, isDefault } });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
 export async function cloneTemplateAction(templateId: string, projectId: string): Promise<Result<{ id: string }, AppError>> {
   const context = await requireSession();
   const parsed = CloneTemplateSchema.safeParse({ projectId });

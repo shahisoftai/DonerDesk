@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { AcceptEvidenceTagsSchema, ImportEvidenceTextSchema, SetEvidencePeriodSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -98,6 +99,7 @@ export type EvidenceLinkSuggestion = {
   targetId: string;
   targetLabel: string;
   score: number;
+  reason?: string;
 };
 
 export type SuggestEvidenceLinksResult = Result<EvidenceLinkSuggestion[], AppError>;
@@ -122,6 +124,19 @@ export type SetEvidencePeriodResult = Result<undefined, AppError>;
  * the period's readiness "Evidence" score and generation evidence packages
  * include it.
  */
+export type BulkVerifyEvidenceResult = Result<{ succeeded: number; failed: number; results: Array<{ evidenceId: string; ok: boolean; error?: string }> }, AppError>;
+
+/** Verifies many files at once; one result per file. */
+export async function bulkVerifyEvidenceAction(evidenceIds: string[]): Promise<BulkVerifyEvidenceResult> {
+  const context = await requireSession();
+  const schema = z.object({
+    succeeded: z.number(),
+    failed: z.number(),
+    results: z.array(z.object({ evidenceId: z.string(), ok: z.boolean(), error: z.string().optional() })),
+  });
+  return gatewayRequest("/v1/evidence/bulk-verify", schema, context.token, { method: "POST", body: { evidenceIds } });
+}
+
 export async function setEvidencePeriodAction(evidenceId: string, reportingPeriodId: string | null): Promise<SetEvidencePeriodResult> {
   const context = await requireSession();
   const parsed = SetEvidencePeriodSchema.safeParse({ reportingPeriodId });

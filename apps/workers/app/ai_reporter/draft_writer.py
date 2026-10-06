@@ -132,6 +132,11 @@ def _shared_prompt(req: SectionDraftRequest) -> str:
             _object_block("Financial figures (verified; the only financial numbers you may quote)", ctx.finance)
         )
 
+    if ctx.structure and (ctx.structure.sectionTitles or ctx.structure.indicatorCodes):
+        parts.append(_object_block("Report structure (the only section titles and codes you may name)", ctx.structure))
+    if ctx.notMeasured:
+        parts.append(_bullets("Not measured this period (give no figure for these):", [f"{n.indicatorCode}" + (f" ({n.indicatorName})" if n.indicatorName else "") + (f", measured {n.frequency}" if n.frequency else "") for n in ctx.notMeasured]))
+
     parts.append(_json_block("Verified findings", req.verifiedFindings))
     parts.append(_json_block("Indicator updates", req.indicatorUpdates))
     parts.append(_json_block("Activity records", req.activities))
@@ -201,6 +206,12 @@ def _section_prompt(req: SectionDraftRequest) -> str:
         parts.append(
             "# Author's instruction for this section (follow it unless it conflicts with the rules; "
             "never invent facts or numbers):\n" + s.userInstruction.strip()
+        )
+
+    if s.officerNote and s.officerNote.strip():
+        parts.append(
+            "# Reporting officer's statement for this section (the ONLY source for what this section says: write it up as "
+            "the reporting officer's statement, add no facts, figures or claims beyond it):\n" + s.officerNote.strip()
         )
 
     attached = _ATTACHED_BY_KIND.get(kind)

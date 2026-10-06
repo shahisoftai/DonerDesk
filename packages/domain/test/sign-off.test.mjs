@@ -35,3 +35,20 @@ test("any active member means the team is assigned, even without a sign-off role
   assert.equal(signOffRoles({ members: [member("u3", "FIELD_OFFICER")] }).anyoneAssigned, true);
   assert.equal(signOffRoles({ reportingOfficerId: "r", members: [] }).anyoneAssigned, true);
 });
+
+import { checkApprover } from "../dist/index.js";
+
+test("approving: anyone may when no second approver is required; your own report is recorded as a self sign-off (25.8)", () => {
+  assert.deepEqual(checkApprover({ requireSecondApprover: false, authorId: "u1", approverId: "u2", otherApproverCount: 1 }), { ok: true, selfApproval: false });
+  assert.deepEqual(checkApprover({ requireSecondApprover: false, authorId: "u1", approverId: "u1", otherApproverCount: 0 }), { ok: true, selfApproval: true });
+  assert.deepEqual(checkApprover({ requireSecondApprover: true, authorId: "u1", approverId: "u2", otherApproverCount: 1 }), { ok: true, selfApproval: false });
+});
+
+test("with a second approver required, the author cannot approve and is told who can or what to do", () => {
+  const withOthers = checkApprover({ requireSecondApprover: true, authorId: "u1", approverId: "u1", otherApproverCount: 2 });
+  assert.equal(withOthers.ok, false);
+  assert.match(withOthers.reason, /other than you/);
+  const alone = checkApprover({ requireSecondApprover: true, authorId: "u1", approverId: "u1", otherApproverCount: 0 });
+  assert.match(alone.reason, /nobody else is assigned/);
+  assert.equal(checkApprover({ requireSecondApprover: true, authorId: undefined, approverId: "u1", otherApproverCount: 0 }).ok, true, "an unknown author is not blocked");
+});

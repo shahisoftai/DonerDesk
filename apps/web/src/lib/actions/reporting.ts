@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, CancelReportingPeriodSchema, SavePeriodFinanceSchema, ChangePeriodTemplateSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, CancelReportingPeriodSchema, SaveSectionNoteSchema, SavePeriodFinanceSchema, ChangePeriodTemplateSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -158,6 +158,39 @@ export async function restoreReportingPeriodAction(periodId: string): Promise<Pe
 export async function convertPeriodToFinalAction(periodId: string): Promise<PeriodLifecycleActionResult> {
   const context = await requireSession();
   return gatewayRequest(`/v1/reporting-periods/${periodId}/convert-to-final`, PeriodLifecycleResponseSchema, context.token, { method: "POST", body: {} });
+}
+
+export type ComplianceNotesShape = { sections: Array<{ key: string; title: string; note: string; previousNote?: string; standingStatement?: string }>; missingCount: number };
+const ComplianceNotesSchema = z.object({
+  sections: z.array(z.object({ key: z.string(), title: z.string(), note: z.string(), previousNote: z.string().optional(), standingStatement: z.string().optional() })),
+  missingCount: z.number(),
+});
+
+/** The compliance sections of the period's donor template with their statements and last month's. */
+export async function getComplianceNotesAction(periodId: string): Promise<Result<ComplianceNotesShape, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(periodId)}/compliance-notes`, ComplianceNotesSchema, context.token);
+}
+
+/** Saves a statement as the project's standing statement for a compliance section (empty removes it). */
+export async function setStandingStatementAction(projectId: string, key: string, text: string): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/standing-statements`, z.object({ ok: z.boolean() }), context.token, { method: "PUT", body: { key, text } });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+
+/** Saves one compliance statement (empty removes it). */
+export async function saveSectionNoteAction(periodId: string, key: string, note: string): Promise<Result<{ missingCount: number }, AppError>> {
+  const context = await requireSession();
+  const parsed = SaveSectionNoteSchema.safeParse({ key, note });
+  if (!parsed.success) return { ok: false, error: { kind: "validation", message: "The statement is too long.", fields: flattenZodFields(parsed.error) } };
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(periodId)}/section-notes`, z.object({ missingCount: z.number() }), context.token, { method: "PUT", body: parsed.data });
+}
+
+/** "This summary still matches the report": clears the out-of-date notice until the sections change again. */
+export async function markSummaryCurrentAction(sectionId: string): Promise<Result<{ summaryCurrentAt: string }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-sections/${encodeURIComponent(sectionId)}/mark-summary-current`, z.object({ summaryCurrentAt: z.string() }), context.token, { method: "POST", body: {} });
 }
 
 export type ChangeTemplateResult = Result<{ changed: boolean; regenerateNeeded: boolean }, AppError>;

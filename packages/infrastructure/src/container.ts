@@ -135,6 +135,13 @@ import {
   UpdateReportingPeriodStoryHandler,
   UpdateReportingPeriodScopeHandler,
   CancelReportingPeriodHandler,
+  MarkSummaryCurrentHandler,
+  SetStandingStatementHandler,
+  SetTemplateDefaultForTypeHandler,
+  SetRequireSecondApproverHandler,
+  BulkVerifyEvidenceHandler,
+  GetComplianceNotesHandler,
+  SaveSectionNoteHandler,
   RestoreReportingPeriodHandler,
   ConvertPeriodToFinalHandler,
   FinanceInputsService,
@@ -546,6 +553,13 @@ export interface Container {
     updateReportingPeriodStory: UpdateReportingPeriodStoryHandler;
     updateReportingPeriodScope: UpdateReportingPeriodScopeHandler;
     cancelReportingPeriod: CancelReportingPeriodHandler;
+    markSummaryCurrent: MarkSummaryCurrentHandler;
+    setStandingStatement: SetStandingStatementHandler;
+    setTemplateDefaultForType: SetTemplateDefaultForTypeHandler;
+    setRequireSecondApprover: SetRequireSecondApproverHandler;
+    bulkVerifyEvidence: BulkVerifyEvidenceHandler;
+    getComplianceNotes: GetComplianceNotesHandler;
+    saveSectionNote: SaveSectionNoteHandler;
     restoreReportingPeriod: RestoreReportingPeriodHandler;
     convertPeriodToFinal: ConvertPeriodToFinalHandler;
     changePeriodTemplate: ChangePeriodTemplateHandler;
@@ -1139,12 +1153,13 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const updateTemplateMappingHandler = new UpdateTemplateMappingHandler(donorTemplateMappings, audits);
   const approveTemplateMappingHandler = new ApproveTemplateMappingHandler(donorTemplateMappings, donorTemplateRenderer, storage, audits);
   const lockTemplateMappingHandler = new LockTemplateMappingHandler(periods, donorTemplateMappings, audits);
-  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding);
+  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding, { profiles: reportingProfiles, projects, members: projectMembers });
   const defaultTemplateResolver = new DefaultTemplateResolver(templates, reportingProfiles);
   const closingPlanHandler = new PlanClosingReportHandler(projects, periods, drafts, indicators, indicatorUpdates, activities, reportingProfiles, templates, financeInputs, defaultTemplateResolver, projectMembers);
   const createReportingPeriodHandler = new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events, activities, defaultTemplateResolver);
   const ensureAutoPeriodHandler = new EnsureAutoPeriodHandler(projects, reportingProfiles, periods, createReportingPeriodHandler);
 
+  const periodContextBuilder = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence);
   const handlers: Container["handlers"] = {
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
     login: new LoginHandler(users, auth, audits),
@@ -1245,6 +1260,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     setEvidencePeriod: new SetEvidencePeriodHandler(evidence, periods, audits),
     persistEvidenceTags: new PersistEvidenceTagsHandler(evidence, audits, idempotency),
     verifyEvidence: new VerifyEvidenceHandler(evidence, audits),
+    bulkVerifyEvidence: new BulkVerifyEvidenceHandler(new VerifyEvidenceHandler(evidence, audits)),
     searchEvidence: new SearchEvidenceHandler(evidence),
     getEvidence: new GetEvidenceHandler(evidence),
     createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks),
@@ -1270,6 +1286,12 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     updateReportingPeriodStory: new UpdateReportingPeriodStoryHandler(periods, audits),
     updateReportingPeriodScope: new UpdateReportingPeriodScopeHandler(periods, drafts, sections, reportRevisions, activities, audits),
     cancelReportingPeriod: new CancelReportingPeriodHandler(periods, drafts, audits),
+    markSummaryCurrent: new MarkSummaryCurrentHandler(sections, drafts, audits),
+    setStandingStatement: new SetStandingStatementHandler(ids, reportingProfiles, audits),
+    setTemplateDefaultForType: new SetTemplateDefaultForTypeHandler(ids, reportingProfiles, templates, audits),
+    setRequireSecondApprover: new SetRequireSecondApproverHandler(ids, reportingProfiles, audits),
+    getComplianceNotes: new GetComplianceNotesHandler(periodContextBuilder, periods, reportingProfiles),
+    saveSectionNote: new SaveSectionNoteHandler(periodContextBuilder, periods, audits),
     restoreReportingPeriod: new RestoreReportingPeriodHandler(periods, drafts, audits),
     convertPeriodToFinal: new ConvertPeriodToFinalHandler(periods, drafts, audits),
     changePeriodTemplate: new ChangePeriodTemplateHandler(periods, drafts, templates, audits),
@@ -1282,7 +1304,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     importPeriodIndicatorValues: new ImportPeriodIndicatorValuesHandler(ids, indicators, indicatorUpdates, audits),
     proposeFieldReportExtraction: new ProposeFieldReportExtractionHandler(),
     applyFieldReportExtraction: new ApplyFieldReportExtractionHandler(ids, indicators, indicatorUpdates, activities, periods, audits),
-    listReportingPeriods: new ListReportingPeriodsHandler(periods, calculateReadinessHandler),
+    listReportingPeriods: new ListReportingPeriodsHandler(periods, calculateReadinessHandler, drafts),
     generateReportDraft: new GenerateReportDraftHandler(
       ids, periods, drafts, sections, projects, organizations, templates, indicatorUpdates, activities,
       reportPlanner, requirementResolver, indicatorAnalytics, evidencePackageBuilder, generationRuns, reportPlans,

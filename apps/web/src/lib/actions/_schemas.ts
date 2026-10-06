@@ -62,7 +62,7 @@ export const DraftPollResponseSchema = z.object({
 
 export const DetectMissingResponseSchema = z.object({ created: z.number().int().nonnegative() });
 
-export const BulkResolveResponseSchema = z.object({ resolved: z.number().int().nonnegative(), skipped: z.number().int().nonnegative() });
+export const BulkResolveResponseSchema = z.object({ resolved: z.number().int().nonnegative(), skipped: z.number().int().nonnegative(), notPermitted: z.number().int().nonnegative().optional() });
 
 export const UpdateSectionResponseSchema = z.object({ version: z.string() });
 export const CancelGenerationResponseSchema = z.object({ cancelled: z.boolean() });
@@ -209,6 +209,8 @@ export const EvidenceLinkSuggestionsResponseSchema = z.object({
       targetId: z.string(),
       targetLabel: z.string(),
       score: z.number(),
+      /** Why it is suggested, in words. */
+      reason: z.string().optional(),
     }),
   ),
 });

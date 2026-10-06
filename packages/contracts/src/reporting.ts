@@ -85,6 +85,10 @@ export const StoryContextSchema = z
     lessons: z.string().max(5000).optional(),
   })
   .partial();
+/** One compliance section's statement; an empty text removes it. */
+export const SaveSectionNoteSchema = z.object({ key: z.string().min(1).max(120), note: z.string().max(4000) });
+export type SaveSectionNoteInput = z.infer<typeof SaveSectionNoteSchema>;
+
 export type StoryContextInput = z.infer<typeof StoryContextSchema>;
 
 export const UpdateReportingPeriodStorySchema = z.object({

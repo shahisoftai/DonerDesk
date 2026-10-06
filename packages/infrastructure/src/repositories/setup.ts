@@ -140,6 +140,9 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
           deadlineOffsetDays: p.deadlineOffsetDays,
           autoPeriodCreation: p.autoPeriodCreation,
           financeDataMode: p.financeDataMode,
+          defaultTemplateByTypeJson: JSON.stringify(p.defaultTemplateByType),
+          requireSecondApprover: p.requireSecondApprover,
+          standingStatementsJson: JSON.stringify(p.standingStatements),
           version: p.version,
           createdById: p.createdById,
           updatedById: p.updatedById,
@@ -167,6 +170,9 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
           deadlineOffsetDays: p.deadlineOffsetDays,
           autoPeriodCreation: p.autoPeriodCreation,
           financeDataMode: p.financeDataMode,
+          defaultTemplateByTypeJson: JSON.stringify(p.defaultTemplateByType),
+          requireSecondApprover: p.requireSecondApprover,
+          standingStatementsJson: JSON.stringify(p.standingStatements),
           version: p.version,
           updatedById: p.updatedById,
         },
@@ -200,6 +206,9 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
     deadlineOffsetDays: number | null;
     autoPeriodCreation: boolean;
     financeDataMode: string;
+    defaultTemplateByTypeJson?: string | null;
+    requireSecondApprover?: boolean | null;
+    standingStatementsJson?: string | null;
     version: number;
     createdById: string;
     updatedById: string;
@@ -217,6 +226,9 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
       deadlineOffsetDays: row.deadlineOffsetDays ?? undefined,
       autoPeriodCreation: row.autoPeriodCreation,
       financeDataMode: normalizeFinanceDataMode(row.financeDataMode),
+      defaultTemplateByType: parseStringMap(row.defaultTemplateByTypeJson),
+      requireSecondApprover: row.requireSecondApprover ?? false,
+      standingStatements: parseStringMap(row.standingStatementsJson),
       version: row.version,
       createdById: row.createdById,
       updatedById: row.updatedById,
@@ -233,3 +245,15 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
 
 // Kept for interface parity (the application only uses create/update/find).
 export type { UpsertReportingProfileResult };
+
+/** A stored JSON object of strings; anything else reads as empty. */
+function parseStringMap(json: string | null | undefined): Record<string, string> {
+  if (!json) return {};
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return Object.fromEntries(Object.entries(parsed as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === "string"));
+  } catch {
+    return {};
+  }
+}
