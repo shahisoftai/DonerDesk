@@ -10,7 +10,11 @@ DonorDesk keeps the compliance checklist current automatically, so you spend tim
 - **Assurance pass** – every save re-checks the report's statements against evidence and verified indicator data. Numbers, dates, units, periods and entities are compared, and evidence integrity (hash) is checked.
 - **Export gate** – approval, submission and export share one gate, so a report cannot leave with unresolved blocking issues unless someone with the right authority accepts the limitation and gives a reason.
 
+- **Self-closing data items** – items that describe your data (activities submitted, finance verified, breakdowns entered, indicators verified, calculations confirmed) close when the data satisfies them and are not raised when it already does.
+
 ## What stays with people
+
+- **Confirmations**: "AI-generated content reviewed", "Sensitive data handling confirmed" and sign-offs. Data never closes them, and once you decide one, a re-scan does not raise it again.
 
 - Deciding whether a statement is acceptable.
 - Verifying indicators and evidence.

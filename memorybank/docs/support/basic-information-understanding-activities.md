@@ -22,7 +22,8 @@ The **logframe** describes planned activities as part of the results framework. 
 | Submitted | Waiting for review. |
 | Needs revision | Sent back with a note. |
 | Accepted | Confirmed. |
-| Rejected | Not accepted (note required). |
+| Rejected | Closed for good (note required). |
+| Withdrawn | Left out of reports: a duplicate, a mistake or a replaced record. A reviewer can restore it. |
 
 ## How activities feed reports
 
@@ -30,7 +31,11 @@ The AI Reporter uses submitted activities for the period: narratives, participan
 
 ## Compliance
 
-The checklist flags late activity updates and activities without supporting evidence.
+The checklist flags late activity updates and activities without supporting evidence. These items close by themselves once you submit an update or attach the proof.
+
+## Reviewing
+
+A record that needs changes is **sent back with a note**; the writer fixes it on the same page and resubmits. Reviewers can accept several records in one action. See [How to review and accept activities](/support/how-to/review-and-accept-activities).
 
 ## Tips
 

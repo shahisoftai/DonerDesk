@@ -10,7 +10,7 @@ Open **Projects → your project → Logframe**.
 2. Click **Import logframe from Excel** and upload the file (XLSX, CSV or TXT).
 3. **Review the parsed content** shown on screen, then create the records.
 4. Items are created with their parent links. Rows whose **code already exists are skipped**, so re-importing is safe.
-5. Fill in the **Indicators** sheet and use **Import indicators from Excel**. Each indicator's code must match a logframe item's code in this project.
+5. Fill in the **Indicators** sheet and use **Import indicators from Excel**. By default an indicator's code must match a logframe item's code in this project. To put **several indicators under one item**, fill the optional **Logframe Code** column (the last column of the template) with the item's code; the indicator's own code can then be anything unique.
 
 ## Option B: Build by hand
 
@@ -29,7 +29,9 @@ The **Logframe hierarchy** is a tree. Drag an item to reorder it or drop it unde
 3. Set **baseline**, **target**, **unit** and **frequency**. All four are required for a quantitative indicator before the project can be reporting-ready.
 4. Optionally add **data source** and **means of verification**.
 5. For percentage and ratio indicators you are taken to **set the calculation** (see below).
-6. **Disaggregation** (Sex, Age group, Disability, Location or Other): add a dimension with categories (for example Female/Male). Values can then be entered per category. For Number and Currency indicators each breakdown must add up to the period total.
+6. **Record a breakdown**: tick it to enter results split by sex, age group and disability. It is ticked for you when the unit counts people (people, households, children, participants…); untick it if you do not need it. The values grid then shows a **Breakdown** button. For Number and Currency indicators each breakdown must add up to the period total.
+
+When you save, the page confirms where it went, for example *Indicator saved under Output 2.2*. Check that line: it is the quickest way to spot a wrong parent.
 
 ## Set how an indicator is calculated
 
@@ -40,6 +42,10 @@ Open an indicator and use **Calculation**:
 - **Direction of progress:** Higher is better, Lower is better, or Neutral (descriptive only).
 
 New drafts use the saved calculation.
+
+## Fix a mistake without rebuilding
+
+Wrong parent, typo in the target, breakdown missing, indicator no longer needed? Open the indicator and use **Edit indicator**: edit the fields, **Move indicator** to another logframe item, or **Remove indicator** (deleted if it has no values, archived if it has). See [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator).
 
 ## Indicator page
 

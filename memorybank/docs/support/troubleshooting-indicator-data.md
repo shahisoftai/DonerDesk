@@ -10,6 +10,16 @@
 
 Check every row for the required fields and valid numbers (a percentage should be a number, a Yes/No indicator a yes or no). Fix the marked rows and press **Save all** again.
 
+## The Breakdown button is missing for an indicator
+
+The breakdown is a setting of the indicator. Open the indicator, tick **Record a breakdown by sex, age group and disability** under **Edit indicator** and save. It is on by default for indicators that count people.
+
+## I can't change an indicator's type, move it or remove it
+
+- The **type** is locked once a value is recorded. Archive the indicator and add a new one.
+- **Move** and **Remove** are refused when the indicator was used in an **approved** report. Ask a reviewer to send the report back with **Request changes**.
+- See [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator).
+
 ## Disaggregation errors
 
 For **Number** and **Currency** indicators, each dimension (for example Female + Male) must add up to the period value. Correct the categories or the total. Percentage indicators do not need to add up.

@@ -35,9 +35,11 @@ On the project's **Setup** page clear each item:
 - Upload and link **evidence** ([guide](/support/how-to/upload-evidence)).
 - Enter and verify **indicator values** ([guide](/support/how-to/update-indicator-values)).
 
-## 6. Create a reporting period
+## 6. Create the reporting periods
 
-Once the project is Ready ([guide](/support/how-to/create-a-reporting-period)).
+Once the project is Ready, create the whole monthly or quarterly calendar in one click ([guide](/support/how-to/create-a-reporting-period)).
+
+For the whole monthly routine on one page, see [How to run a reporting month](/support/how-to/run-a-reporting-month).
 
 ## 7. Write the report
 

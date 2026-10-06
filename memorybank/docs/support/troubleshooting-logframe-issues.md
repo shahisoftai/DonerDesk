@@ -15,6 +15,14 @@
 
 Drag-and-drop needs edit permission (Admin, Project Manager or M&E Officer). Use the **Move to** menu (including **top level**) as an alternative.
 
+## Two indicators for one logframe item won't import
+
+By default an indicator's code must equal its logframe item's code, so each item can carry one. Add the optional **Logframe Code** column (last column of the template) with the item's code. See [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator).
+
+## I attached an indicator to the wrong item
+
+Open the indicator and use **Move indicator**. No need to delete anything.
+
 ## I can't add an indicator
 
 You must choose the logframe item it measures first. Create the item, then add the indicator.

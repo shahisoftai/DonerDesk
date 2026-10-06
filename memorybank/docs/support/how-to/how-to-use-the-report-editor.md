@@ -23,6 +23,8 @@ It always shows the next thing to do: *Generate report → Review n flagged stat
 - Changes save automatically; the top bar confirms. Every save creates a version.
 - Paste from Word or the web: formatting is cleaned to the set that all exports support.
 - **Ask AI** (✦) on a selection: **Rewrite**, **Shorten**, **Expand**, or **Make donor-friendly**. You see the suggested text and choose whether to accept. It never adds numbers.
+- **Rewrite with AI** on a whole section has an optional **Specific change** box, for example "replace *beneficiaries* with *people reached*". Leave it empty for a general rewrite. The old text stays in History.
+- **Approved already, but need a one-word fix?** Click **Edit (reopens section)** on the approved section, change it and save. The section goes back to review and you approve it again. You do not need to regenerate. A summary section is flagged if other sections changed after it was written.
 - **↻ Regenerate** rewrites a whole section (optionally with your instruction). If the AI cannot produce a valid version, your existing text is kept.
 
 ## Checking statements

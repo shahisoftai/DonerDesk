@@ -19,7 +19,7 @@ The basics are in [How to upload a donor template](/support/how-to/upload-donor-
 
 ## Versions and defaults
 
-Each edit is a new version (see **Version history**). A reporting period keeps the version it was created with. Set a **project default** template so new periods pick it automatically, and **save it to the library** to reuse in other projects.
+Each edit is a new version (see **Version history**). A reporting period keeps the version it was created with. New periods pick the right template for their type automatically (an approved template for exactly that type first, then your **project default**, then the built-in structure), and you can change a report's template later ([how](/support/how-to/change-a-reports-template)). Set a **project default** template for your regular reports, and **save it to the library** to reuse in other projects.
 
 ## Donor-native output
 

@@ -14,7 +14,7 @@ If there is no reporting period yet, create one first (see [Understanding report
 ## Enter values
 
 1. Each row is an indicator. Type the **Period achievement** and, where relevant, the **source of the figure** and a comment.
-2. If the indicator has a **disaggregation**, enter values by category (for example Female / Male); for Number and Currency indicators each dimension must add up to the total.
+2. If the indicator has a **breakdown** (the **Breakdown** button shows on its row), enter values by category (for example Female / Male); for Number and Currency indicators each dimension must add up to the total.
 3. Click **Save all**. Values are saved in one bulk operation. Each indicator has one value per period, so saving again updates it.
 4. If you may verify values, click **Save & verify all** to save and verify everything in the period in one step. When nothing is unsaved the button reads **Verify all (n)**. Rows that cannot be verified are listed with the indicator code and the reason; the others are still verified.
 

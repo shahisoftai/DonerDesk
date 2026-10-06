@@ -14,9 +14,15 @@ An **indicator** is how you measure a result. A **target** is the value you plan
 | Unit | For example people, %, USD. |
 | Frequency | How often it is measured. |
 | Data source / Means of verification | Optional; where the figure comes from and how it is proven. |
-| Disaggregation | Optional breakdown by sex, age group, disability, location or other. |
+| Record a breakdown | Optional. Enter results split by sex, age group and disability. On by default for indicators that count people. |
 
 Baseline, target, unit and frequency are required for quantitative indicators before a project is reporting-ready.
+
+## Changing an indicator later
+
+An indicator can be edited, moved to another logframe item or removed at any time (see [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator)). Its type is locked once a value is recorded. An indicator with recorded values is **archived**, not erased, so earlier reports keep their history; one used in an approved report cannot be removed or moved until the report is sent back for changes.
+
+Several indicators can measure the same logframe item.
 
 ## Period values
 

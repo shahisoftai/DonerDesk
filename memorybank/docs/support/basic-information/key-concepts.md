@@ -16,7 +16,10 @@
 | **Evidence** | A file that proves something: attendance sheets, photos, reports. |
 | **Verification** | A person's confirmation that evidence or an indicator value is right. |
 | **Confidentiality** | Public, Internal, Sensitive or Highly sensitive label on evidence. |
-| **Compliance checklist** | Live list of missing or weak items before a report can go out. |
+| **Compliance checklist** | Live list of missing or weak items before a report can go out. Data items close by themselves; confirmations need a person. |
+| **Withdrawn activity** | A record left out of reports (duplicate, mistake or replaced). Can be restored. |
+| **Archived indicator** | A removed indicator that had values; hidden but its history is kept. |
+| **Life of project** | The total since the project started, shown on final, annual and semi-annual reports. |
 | **AI Reporter** | The writer that drafts each report section from verified data. |
 | **Statement / claim** | A factual sentence in the report that DonorDesk checks against data. |
 | **Flagged statement** | A statement the evidence does not support; someone must decide on it. |

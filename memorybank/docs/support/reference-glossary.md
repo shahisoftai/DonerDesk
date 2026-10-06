@@ -142,8 +142,23 @@ The report writer that drafts each section from verified findings, following the
 **AI Writing Style**
 Optional wording preferences learned from your team's edits. Style only, never numbers or facts.
 
+**Archived indicator**
+An indicator that has recorded values and was removed. It is hidden from the logframe, grids and new reports but its history is kept, so earlier reports stay correct.
+
+**Closing report**
+The Final report that covers the whole life of the project. Created from its own guided page. See [How to create the closing report](/support/how-to/create-the-closing-report).
+
+**Confirmation (checklist)**
+A checklist item only a person can close, such as "AI-generated content reviewed" or "Sensitive data handling confirmed". Data never closes it, and once you decide it, it stays decided.
+
+**Data item (checklist)**
+A checklist item that describes your data, such as "No activity updates submitted". It closes by itself when the data is right.
+
 **Flagged statement**
 A statement in a report that the evidence does not fully support. Someone decides: use the evidence value, edit, keep with a note, or leave out.
+
+**Life of project**
+The total since the project started (cumulative to date). Final, annual and semi-annual reports show it next to the value for the period and the percentage of target.
 
 **Reporting profile**
 A project's language, tone, formatting rules and special requirements for its reports.
@@ -156,6 +171,9 @@ A sealed copy of the approved report used for donor submission exports.
 
 **Stale verification**
 A verification that no longer holds because the data or evidence changed afterwards.
+
+**Withdrawn (activity)**
+An activity record left out of reports because it was a duplicate, a mistake or was replaced by another record. It can be restored. See [How to review and accept activities](/support/how-to/review-and-accept-activities).
 
 **Top-up pack**
 Extra AI report drafts bought on Team or Growth.

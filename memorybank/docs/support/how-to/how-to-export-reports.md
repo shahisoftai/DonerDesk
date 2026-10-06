@@ -12,9 +12,9 @@ Exports produce the files you send to the donor. They come from the approved rep
 | Type | Format | Notes |
 |---|---|---|
 | Report | Word (DOCX) and PDF | Follows the donor template's structure and formatting. Includes charts, tables and figures. |
-| Indicator table | Excel | All indicators with values for the period. |
+| Indicator table | Excel | All indicators with values for the period. For **final, annual and semi-annual** reports it also shows **This period**, **Life of project to date** and **% of target**, so the file matches the report's own table. A value that was never recorded is left empty, not shown as 0. |
 | Evidence checklist | Excel/document | Every checklist item and its status. |
-| Evidence pack | ZIP | Report, indicator table, checklist and selected evidence files in a numbered folder structure. |
+| Evidence pack | ZIP | Report, indicator table, checklist and selected evidence files in a numbered folder structure. For final, annual and semi-annual reports it offers **all of the project's evidence**; for others, the files of the period and its activities. Sensitive files are left out unless you include them. |
 
 If the donor supplied a Word template, the report can be rendered into it (donor-native rendering); otherwise a standard DonorDesk layout is used.
 
@@ -26,6 +26,7 @@ If the donor supplied a Word template, the report can be rendered into it (donor
 ## The export wizard and the gate
 
 1. Click **Export report**. The wizard runs a **preflight** check.
+   The wizard shows **Checked at hh:mm** with a **Re-check** link. The checks are read from the report as it is now; if you fixed something in another tab, click **Re-check**.
 2. If something blocks the export you see **Export is blocked** with an expandable list. Typical items:
    - Unsupported material claims
    - Numeric contradictions

@@ -14,11 +14,15 @@ Each step shows **Done**, **To do** or **After you start**, a sentence about wha
 2. **Earlier reports approved:** your regular reports (Monthly to Annual) are approved or submitted. Activity, Situation and Custom reports never block this.
 3. **Project-wide figures complete:** each indicator that adds up over time has a baseline, a target and a verified cumulative value. Rates and ratios are not reported cumulatively.
 4. **Finance reported:** if finance is switched on, enter and verify the final figures. This step reads **After you start**, because finance is entered on the report itself.
-5. **Activities accepted:** the closing report rolls up accepted activity records.
-6. **Donor template approved:** or the built-in closing structure is used.
-7. **Sign-offs assigned:** a project manager and an M&E officer are assigned to review and approve.
+5. **Activities accepted:** the closing report rolls up accepted activity records. Records you **withdrew** (duplicates or replaced records) do not count here. A record sent back for revision shows up here until its writer resubmits it and a reviewer accepts it. See [How to review and accept activities](/support/how-to/review-and-accept-activities).
+6. **Donor template approved:** the page names the template it will use, for example *The approved template "GWHF Final Project Report" will structure the closing report.* If you have none, the built-in closing structure is used.
+7. **Sign-offs assigned:** a project manager and an M&E officer are assigned to review and approve. These are two different people, so if you work alone, invite a colleague under **Team** first.
 
 Steps still to do do not stop you starting; you can start and finish them as you go.
+
+## What the closing report uses
+
+It states progress since the project started, so it uses **all of the project's verified evidence** and each indicator's **life-of-project** value. The Excel indicator table shows both: **This period**, **Life of project to date** and **% of target**.
 
 ## Start it
 

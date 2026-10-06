@@ -19,6 +19,10 @@ The compliance checklist is a live list of what is missing or weak before a repo
 
 Severity: **Low, Medium, High, Critical**. Status: **Open, In progress, Resolved, Accepted risk, Not applicable**. Resolving needs a note; accepting a high-severity risk needs authority.
 
+## Data items and confirmations
+
+Some items describe your **data** (activities submitted, financial figures verified, breakdowns entered). They close by themselves when the data is right, and are not raised when it already is. Others are **confirmations** that only a person can make ("AI-generated content reviewed", "Sensitive data handling confirmed", sign-offs). Once you decide a confirmation it stays decided.
+
 ## Automatic
 
 The list is generated from your template, logframe, activities and evidence and refreshes as data changes. Coverage gaps in a report create items without duplicating or overwriting your earlier decisions.

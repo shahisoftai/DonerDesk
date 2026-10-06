@@ -9,13 +9,16 @@ Open **Projects → your project → Activities**.
 1. Click **New activity**.
 2. Fill in:
    - **Activity title** and **Activity date**
-   - **Reporting period** – the report this activity should feed
+   - **Reporting period** – the report this activity should feed. The choices read like *Monthly · Mar 2026*, newest first. When you pick the date, DonorDesk selects the period that contains it for you; change it only if you need to.
    - **Location**
    - **Logframe activity** (optional): the planned activity this record delivers. The logframe then shows what has been delivered against it (records, accepted records and participants), and the output is filled in for you.
    - **Summary** of what happened
    - **Total participants**, with **Female**, **Male**, **Children** and **Participants with disability** where relevant
    - **Achievements**, **Challenges**, **Lessons learned** and **Next steps**
+   - **Upload evidence (optional)**: drop the proof files (photos, registers, attendance sheets) on the form, or choose them from your computer.
 3. Click **Submit activity**.
+
+The activity is saved first, then each file is uploaded and attached to it. The files take the activity's reporting period automatically, so there is no separate step to link them. You see **Uploaded** next to each file. If a file fails, the record is still saved: the button changes to **Retry failed uploads**, or choose **Finish without these files** and add them later.
 
 If Female plus Male is below the total, a small note appears; it is only a prompt (some participants may not be counted by sex). A part larger than the total is an error you must fix.
 
@@ -27,7 +30,7 @@ On an activity, use the **Suggested narrative** panel to have AI turn your summa
 
 ## Attach evidence
 
-Open the activity and use **Attached evidence** to see files linked to it. Upload evidence and choose this activity under **Use as proof for** (or link it later) from the [Evidence library](/support/how-to/upload-evidence). The activity page also lists its **Supporting evidence** and the report statements that cite each file. Activities with evidence make stronger reports.
+On any activity, click **Add evidence**. The upload form opens with this activity already chosen, and shows the reporting period it takes from the activity. You can also link files already in the [Evidence library](/support/how-to/upload-evidence). The activity page also lists its **Supporting evidence** and the report statements that cite each file. Activities with evidence make stronger reports.
 
 ## Review
 
@@ -37,11 +40,12 @@ Submitted activities go to a reviewer with approval rights.
 |---|---|
 | Draft | Not submitted. |
 | Submitted | Waiting for review. |
-| Needs revision | The reviewer sent it back with a required note. |
-| Accepted | Approved. |
-| Rejected | Permanently rejected (a note is required; this cannot be undone). |
+| Needs revision | The reviewer sent it back with a note. Edit it and **Resubmit for review**. |
+| Accepted | Approved. Counts in reports. |
+| Rejected | Closed for good (a note is required). |
+| Withdrawn | Left out of reports (a duplicate, a mistake or a replaced record). Can be restored. |
 
-Reviewers use **Send revision request** or **Reject activity** and must explain why. Every decision is recorded in the audit trail.
+If yours is **Needs revision**, the reviewer's note is shown next to the text. Fix the record on the same page and click **Resubmit for review**; you do not need to create a new one. Reviewers can accept many records at once and withdraw duplicates. See [How to review and accept activities](/support/how-to/review-and-accept-activities). Every decision is recorded in the audit trail.
 
 ## Import many activities at once
 

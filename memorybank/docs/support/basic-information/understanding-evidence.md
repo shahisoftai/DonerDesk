@@ -15,11 +15,15 @@ Title, type, reporting period, confidentiality, location, and links to activitie
 
 1. **Upload** or link from Drive; text is read from documents.
 2. **AI tag suggestions** (type, related activity/indicator, period, summary, sensitivity warnings). You accept, edit or reject.
-3. **Link** it to activities and indicators. A file is **attached** (used as proof in reports) as soon as you choose what it supports at upload, or when you link it later. Each activity and indicator lists its files and the report statements that cite them.
+3. **Link** it to activities and indicators. A file linked to an activity takes that activity's reporting period automatically. A file is **attached** (used as proof in reports) as soon as you choose what it supports at upload, or when you link it later. Each activity and indicator lists its files and the report statements that cite them.
 4. **Verify** it (Admin, Project Manager, M&E Officer or Compliance Officer).
 5. It is **cited** in reports and counted by the compliance checklist.
 
 Statuses: Uploaded, AI tagged, Pending review, Verified, Needs correction, Rejected, Archived, Unverified. See [Evidence verification](/support/getting-started/evidence-verification).
+
+## Which reports use a file
+
+Monthly and quarterly reports use the files of their own period and of their activities. Final, annual and semi-annual reports use all of the project's verified evidence. Sensitive files are left out of AI drafting and, by default, out of exports.
 
 ## Confidentiality
 

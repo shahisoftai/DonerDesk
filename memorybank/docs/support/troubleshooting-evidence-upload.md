@@ -32,8 +32,13 @@ Verification is done by Admin, Project Manager, M&E Officer or Compliance Office
 ## Evidence disappeared from a report
 
 - **Sensitive** and **Highly sensitive** files are withheld from AI drafting.
-- Check the evidence's reporting period; evidence outside the period is not used.
+- A monthly or quarterly report uses files tagged to its period or to one of its activities. Link the file to an activity (open the file → **Link this file to an activity or indicator**) and it takes the activity's period. Final, annual and semi-annual reports use all of the project's verified evidence.
+- Check the file is **Verified**: a file that is only tagged to a period or activity counts once it is verified.
 - Check it was not deleted (see the audit log).
+
+## A report says "0 evidence files" although I uploaded many
+
+Older files uploaded against an activity but without a period have been fixed automatically. For a new file, open it and link it to the activity (or choose a period). Then reopen the report inputs page.
 
 ## Tags look wrong
 

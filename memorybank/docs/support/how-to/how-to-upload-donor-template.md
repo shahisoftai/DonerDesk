@@ -35,7 +35,7 @@ Then click **Approve template**. The status becomes **Reviewed**.
 
 ## Step 4: Use it
 
-- New reporting periods use the project's **default template**. Use **Use this template as the project default** to set or clear it.
+- New reporting periods use the right template for their type automatically: an approved template written for exactly that type first, then your project's **default template** (set or clear it with **Use this template as the project default**), then the built-in structure. So an approved *Final report* template is used for the Final report without any extra step. To change it later, see [How to change a report's template](/support/how-to/change-a-reports-template).
 - A full draft requires a **Reviewed** template. It is pinned to the reporting period, so later edits do not change reports already written.
 - **Save to template library** lets you copy a template into other projects.
 

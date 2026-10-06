@@ -6,7 +6,15 @@ Items are created from the donor template, logframe, activities and evidence. Ma
 
 ## Items I resolved came back
 
-The checklist re-checks itself. Resolved items stay resolved unless the underlying problem recurs (for example evidence was deleted or an indicator became unverified).
+Confirmations ("AI content reviewed", "Sensitive data handling confirmed", sign-offs) stay resolved once you decide them. A **data item** (for example "No activity updates submitted") can come back only if the data goes wrong again, such as evidence being removed or a value becoming unverified; fix the data and it closes again by itself. If a confirmation reappears with a different title, it is a new thing to check.
+
+## An item is still open although the data is fine
+
+Data items close the next time the checklist re-checks (open the report, or use **⋯ → Scan for missing items**). Confirmations never close by themselves; resolve them with a note.
+
+## I resolved an item by mistake
+
+Click **Undo** in the message that appears right after you resolve it. After the message is gone, contact support; every decision is in the audit trail.
 
 ## I can't resolve an item
 

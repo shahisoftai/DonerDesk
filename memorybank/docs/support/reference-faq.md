@@ -51,10 +51,31 @@ Yes: Excel, CSV or TXT using the downloadable template. Indicators, activities a
 ### Can I use Google Drive?
 Yes, and it is the recommended option. Files stay in your Drive and use no DonorDesk quota. See [Storage](/support/getting-started/storage-file-management).
 
+### I picked the wrong parent for an indicator. Do I have to start over?
+No. Open the indicator and use **Move indicator**, or edit or remove it. See [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator).
+
+### A duplicate or mistaken activity is counted as "not accepted". What do I do?
+Withdraw it. A withdrawn record is left out of reports and no longer blocks the closing report. See [How to review and accept activities](/support/how-to/review-and-accept-activities).
+
+### Can I accept all my activities at once?
+Yes. On the Activities list click **Select all waiting**, then **Accept n selected**.
+
+### Why did my evidence not count for the report?
+A monthly or quarterly report uses the files of its own period and its activities; link the file to its activity and it follows. Final, annual and semi-annual reports use all of the project's verified evidence. See [How to upload evidence](/support/how-to/upload-evidence).
+
 ### What file types and sizes?
 Common documents, spreadsheets, images and text, up to 100 MB per file. See [File formats](/support/reference-file-formats).
 
 ## Reports
+
+### Can I change a report's template after creating it?
+Yes, on the report's **Report inputs** page, until the report is approved. See [How to change a report's template](/support/how-to/change-a-reports-template).
+
+### Can I fix one word in an approved section?
+Yes. Click **Edit (reopens section)**, change it, save, and approve the section again. No regeneration needed.
+
+### Is there one page that shows the whole monthly routine?
+Yes: [How to run a reporting month](/support/how-to/run-a-reporting-month).
 
 ### What does the report workflow look like?
 Update Project → Tell the Story → Generate Draft → Review & Submit. See [the reporting workflow](/support/getting-started/reporting-workflow).

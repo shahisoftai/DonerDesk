@@ -7,7 +7,7 @@ A **reporting period** is one report cycle for a project, for example a quarterl
 - **Report type:** Monthly, Quarterly, Semi-annual, Annual, Final, Activity, Situation or Custom. Activity, Situation and Custom reports also record what they cover (the activities, the event, or a title and purpose)
 - **Start and end dates** (suggested from the type and project dates, chained after the previous period)
 - **Donor deadline** and optional **internal review deadline**
-- A **pinned donor template**, so later template edits do not change the report
+- A **pinned donor template** (chosen automatically for the report type, and changeable), so later edits to the template do not change the report
 - Indicator values, activities, evidence links and the story
 - The report draft, its versions, checks and exports
 
@@ -25,6 +25,10 @@ The **New reporting period** page opens with a **What you can create** panel. It
 - **Activity**, **Situation** and **Custom** reports are one-offs. They may sit inside a regular period; a Custom report is the way to report over dates that already have periods.
 
 For the project's last report, use the guided [closing report](/support/how-to/create-the-closing-report).
+
+## Create them all at once
+
+On the **Reporting** page, **Create all periods** sets up the whole monthly or quarterly calendar in one click and leaves the last block to the closing report. See [How to create a reporting period](/support/how-to/create-a-reporting-period).
 
 ## The four-step workspace
 

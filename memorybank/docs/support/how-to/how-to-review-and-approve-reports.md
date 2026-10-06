@@ -47,6 +47,10 @@ The review panel groups flagged statements by what kind of problem they are:
 
 Technical reason codes are never shown; each flag gives its reason in plain words.
 
+### Fixing an approved section
+
+An approved section can still be edited: click **Edit (reopens section)**. Saving reopens that one section for review, records it in the audit trail and keeps the earlier text in History. Approve it again when you are happy. A report that is already **Approved** as a whole is locked: a reviewer sends it back with **Request changes**.
+
 ### After edits
 
 Editing text or changing data can make earlier checks stale. DonorDesk re-checks the affected sections; an **Inputs changed** banner offers to re-check or regenerate. A summary section shows a warning if other sections changed a lot after it was written.

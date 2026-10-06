@@ -14,11 +14,11 @@ Your workspace stores evidence in one of two places (chosen in **Settings → Se
 ## Upload files
 
 1. Click **Upload evidence**.
-2. Drop files onto the upload area or click to browse. You can select **several files at once**; each is uploaded separately in the **Upload queue**.
+2. Drop files onto the upload area or click to browse. You can select **several files at once**; each is uploaded separately in the **Upload queue**. Opening the form from an activity's **Add evidence** button (or from the activity form itself) has the activity already chosen.
 3. For each file set:
    - **Evidence title**
    - **Evidence type** – Attendance sheet, Photo, Distribution list, Training record, Field visit report, Monitoring report, Kobo/ODK export, Procurement document, Approval document, Beneficiary list, Meeting minutes, Case study, Financial document, Supplier document, Donor communication or Other
-   - **Reporting period** (so it is used for the right report)
+   - **Reporting period**: you usually do not need to set it. When you choose an activity, the file takes **that activity's period** and the form says so ("taken from the activity"). Choose a period yourself only for a file that belongs to no activity.
    - **Confidentiality** – Public, Internal, Sensitive or Highly sensitive
    - **Location** (optional)
    - **Use as proof for** (optional): choose the **activity** and/or **indicator** the file supports. For an indicator, also choose the reporting period. The file is attached straight away, so reports use it as proof; you do not need a second step. If the indicator has no value for that period yet, the file is attached automatically when the value is first saved.
@@ -37,6 +37,8 @@ After upload DonorDesk suggests tags (evidence type, related activity or indicat
 A file counts as **proof** in reports once it is **attached** to an activity or to an indicator value. Choosing "Use as proof for" at upload attaches it at once; you can also open a file later and use **Link this file to an activity or indicator**. A file can be linked to several.
 
 Each activity and indicator page has a **Supporting evidence** panel. It lists its files, marks each **Used in reports** (attached) or **Tagged only**, and shows which report statements cite it. Click **Suggest links** to see likely matches based on titles and confirm the ones you want. Linked evidence is what supports numbers in reports and what the checklist counts.
+
+**Which reports use a file?** A monthly or quarterly report uses the files of its own period and of its activities. A **final, annual or semi-annual** report states progress since the project started, so it uses **all of the project's verified evidence**. The report inputs panel, the export wizard and the AI draft all use the same rule, so the numbers agree. On the file's own page you see **Uploaded** (the day it was added) and, if you gave one, **Date of activity**.
 
 The evidence list shows how many files match (for example *21–40 of 133*) and pages through them.
 
