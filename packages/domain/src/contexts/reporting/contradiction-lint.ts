@@ -242,6 +242,10 @@ function exemptRanges(text: string): Array<[number, number]> {
   const awardRe = /\b(?=[A-Z0-9]*[0-9])(?=[A-Z0-9]*[A-Z])[A-Z0-9]{8,}\b/g;
   let wm: RegExpExecArray | null;
   while ((wm = awardRe.exec(text)) !== null) ranges.push([wm.index, wm.index + wm[0].length]);
+  // Labels with a letter prefix ("P25", "Q3", "H1N1") name something; their digits are not a count.
+  const labelRe = /\b[A-Za-z]+[0-9]+[A-Za-z0-9]*\b/g;
+  let lm: RegExpExecArray | null;
+  while ((lm = labelRe.exec(text)) !== null) ranges.push([lm.index, lm.index + lm[0].length]);
   // Identifiers cited in prose (evidence ids) carry digits that are not figures.
   const idRe = /\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b|\b[0-9a-f]{8}\b(?=[^0-9a-f]|$)/gi;
   let im: RegExpExecArray | null;

@@ -307,3 +307,11 @@ test("an award number is an identifier, not a figure (demo 6: Introduction block
   });
   assert.equal(stray.blockers, 1);
 });
+
+test("a label such as P25 in an activity title is not a figure (demo 6)", () => {
+  const result = lintReportContradictions({
+    sections: sections(["Activity", "The P25 CHECK mentorship visit took place in Lodwar."]),
+    findings,
+  });
+  assert.equal(result.blockers, 0, JSON.stringify(result.findings));
+});
