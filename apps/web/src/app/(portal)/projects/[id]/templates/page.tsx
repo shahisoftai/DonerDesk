@@ -9,7 +9,6 @@ import { ExtractionMethodBadge, TemplateStatusBadge } from "@/features/templates
 import { LibraryPicker } from "@/features/templates/presentation/LibraryPicker";
 import { TemplateTypeDefaults } from "@/features/templates/presentation/TemplateTypeDefaults";
 import { pickDefaultTemplate } from "@donordesk/domain/contexts/reporting/default-template.js";
-import { templateAppliesToReportType } from "@donordesk/domain/contexts/reporting/report-type-blueprints.js";
 import { HelpButton } from "@/features/tour/presentation/HelpButton";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +63,8 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
           const pending = t.sections.filter((s) => s.reviewStatus !== "REVIEWED").length;
           const candidates = items.map((c) => ({ id: c.id, reportType: c.reportType, status: c.status, updatedAt: new Date(c.updatedAt ?? 0) }));
           // "Used for": the report types a new period of which starts from this template, by the one rule period creation uses.
-          const typesHere = REPORT_TYPE_OPTIONS.filter((type) => templateAppliesToReportType(type, t.reportType));
+          // Offer the template's own type, plus any type it is already the explicit default for (so it can be undone).
+          const typesHere = REPORT_TYPE_OPTIONS.filter((type) => type === t.reportType || explicitByType[type] === t.id);
           const usedFor = REPORT_TYPE_OPTIONS.filter((type) => pickDefaultTemplate({ reportType: type, profileDefaultId: defaultTemplateId, explicitByType, candidates }).templateId === t.id);
           return (
             <div

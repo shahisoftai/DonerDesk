@@ -112,7 +112,8 @@ export async function registerHealthRoutes(app: FastifyInstance) {
 async function aiWorkerStatus(): Promise<"ok" | "unavailable"> {
   const base = (process.env.AI_REPORTER_URL ?? "http://127.0.0.1:8092").replace(/\/+$/, "");
   try {
-    const response = await fetch(`${base}/v1/ai-reporter/health`, { signal: AbortSignal.timeout(3000) });
+    const token = process.env.INTERNAL_TOKEN;
+    const response = await fetch(`${base}/v1/ai-reporter/health`, { signal: AbortSignal.timeout(3000), ...(token ? { headers: { "X-Internal-Token": token } } : {}) });
     return response.ok ? "ok" : "unavailable";
   } catch {
     return "unavailable";
