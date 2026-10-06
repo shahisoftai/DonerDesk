@@ -1,12 +1,14 @@
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ActivitiesResponseSchema, LogframeResponseSchema, OrganizationSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
+import { activityOptionLabel, periodOptionLabel, recentFirst } from "@/lib/shared/option-labels";
 import { EvidenceUploadQueue } from "@/features/evidence/presentation/EvidenceUploadQueue";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewEvidencePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function NewEvidencePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ activityId?: string }> }) {
   const resolvedParams = await params;
+  const { activityId: initialActivityId } = await searchParams;
   const ctx = await requireSession();
   const [orgResult, activitiesResult, logframeResult, periodsResult] = await Promise.all([
     gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
@@ -16,6 +18,7 @@ export default async function NewEvidencePage({ params }: { params: Promise<{ id
   ]);
   const storageProvider = orgResult.ok ? orgResult.value.storageProvider : "LOCAL";
   const driveMode = storageProvider === "GOOGLE_DRIVE";
+  const periodLabelById = new Map((periodsResult.ok ? periodsResult.value.items : []).map((p) => [p.id, periodOptionLabel(p)]));
 
   return (
     <div className="animate-fade-in">
@@ -28,9 +31,10 @@ export default async function NewEvidencePage({ params }: { params: Promise<{ id
       <EvidenceUploadQueue
         projectId={resolvedParams.id}
         storageProvider={storageProvider}
-        activities={activitiesResult.ok ? activitiesResult.value.items.map((a) => ({ id: a.id, label: a.activityTitle })) : []}
+        initialActivityId={initialActivityId}
+        activities={activitiesResult.ok ? recentFirst(activitiesResult.value.items, (a) => a.activityDate).map((a) => ({ id: a.id, label: activityOptionLabel(a), periodLabel: a.reportingPeriodId ? periodLabelById.get(a.reportingPeriodId) : undefined })) : []}
         indicators={logframeResult.ok ? logframeResult.value.indicators.map((i) => ({ id: i.id, label: `${i.code} — ${i.name}` })) : []}
-        periods={periodsResult.ok ? periodsResult.value.items.map((p) => ({ id: p.id, label: `${p.reportType.toLowerCase().replace(/_/g, " ")} · ${p.startDate.slice(0, 10)} → ${p.endDate.slice(0, 10)}` })) : []}
+        periods={periodsResult.ok ? recentFirst(periodsResult.value.items, (p) => p.startDate).map((p) => ({ id: p.id, label: periodOptionLabel(p) })) : []}
       />
     </div>
   );

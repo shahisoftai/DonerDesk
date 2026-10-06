@@ -94,7 +94,31 @@ test("attach is idempotent and audits each call", async () => {
   await h.handle(ctx, { evidenceId: "e-1", activityId: "a-1" });
   await h.handle(ctx, { evidenceId: "e-1", activityId: "a-1" });
   assert.deepEqual(w.A.get("a-1").attachedEvidenceIds, ["e-1"]);
-  assert.equal(w.audit.events.every((x) => x.eventType === "evidence.attached_to_activity"), true);
+  assert.equal(w.audit.events.filter((x) => x.eventType === "evidence.attached_to_activity").length, 2);
+  assert.equal(w.audit.events.filter((x) => x.eventType === "evidence.period_derived").length, 1);
+});
+
+test("a file linked to an activity inherits the activity's period", async () => {
+  const e = evidence("e-1", { activityId: "a-1" });
+  const w = world({ ev: [e], acts: [activity("a-1")] });
+  await w.linker.linkOnUpload(ctx, e);
+  assert.equal(e.reportingPeriodId, "rp-1");
+  assert.equal(w.audit.events.some((x) => x.eventType === "evidence.period_derived"), true);
+});
+
+test("an explicit period wins over the activity's", async () => {
+  const e = evidence("e-1", { activityId: "a-1", reportingPeriodId: "rp-9" });
+  const w = world({ ev: [e], acts: [activity("a-1")] });
+  await w.linker.linkOnUpload(ctx, e);
+  assert.equal(e.reportingPeriodId, "rp-9");
+  assert.equal(w.audit.events.some((x) => x.eventType === "evidence.period_derived"), false);
+});
+
+test("an indicator tag on a file with only an activity resolves the value through the derived period", async () => {
+  const e = evidence("e-1", { activityId: "a-1", indicatorId: "ind-1" });
+  const w = world({ ev: [e], acts: [activity("a-1")], ups: [iUpdate("u-1")] });
+  const r = await w.linker.linkOnUpload(ctx, e);
+  assert.equal(r.value.indicator, "ATTACHED");
 });
 
 test("detach clears the proof link but keeps the indicator tag", async () => {

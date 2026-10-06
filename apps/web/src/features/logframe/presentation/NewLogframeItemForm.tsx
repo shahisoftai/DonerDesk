@@ -48,6 +48,7 @@ export function NewLogframeItemForm({
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError(null);
     const result = await createLogframeItemAction({
@@ -58,11 +59,12 @@ export function NewLogframeItemForm({
       title,
       description: description || undefined,
     });
-    setBusy(false);
     if (!result.ok) {
+      setBusy(false);
       setError(result.error.message);
       return;
     }
+    // Stay locked while leaving the page: re-enabling the button during the route change allowed a second save.
     router.push(`/projects/${projectId}/logframe`);
     router.refresh();
   }

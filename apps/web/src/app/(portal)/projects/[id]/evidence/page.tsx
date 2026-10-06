@@ -20,6 +20,7 @@ import { verificationStatusTone, confidentialityTone } from "@/lib/shared/tone";
 import { EVIDENCE_TYPE_LABEL, EVIDENCE_VERIFICATION_LABEL, CONFIDENTIALITY_LABEL } from "@/lib/labels";
 import { EvidenceFilterBar } from "@/features/evidence/presentation/EvidenceFilterBar";
 import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
+import { periodOptionLabel, recentFirst } from "@/lib/shared/option-labels";
 import { EvidencePeriodPicker } from "@/features/evidence/presentation/EvidencePeriodPicker";
 import { EvidenceLinkSuggestions } from "@/features/evidence/presentation/EvidenceLinkSuggestions";
 import { EvidenceLinkManager, type LinkTarget } from "@/features/evidence/presentation/EvidenceLinkManager";
@@ -62,9 +63,9 @@ export default async function EvidencePage({
     gatewayRequest(`/v1/projects/${resolvedParams.id}/activities`, ActivitiesResponseSchema, ctx.token),
   ]);
   const driveConnected = orgResult.ok && orgResult.value.storageProvider === "GOOGLE_DRIVE";
-  const periodOptions = (periodsResult.ok ? periodsResult.value.items : []).map((p) => ({
+  const periodOptions = recentFirst(periodsResult.ok ? periodsResult.value.items : [], (p) => p.startDate).map((p) => ({
     id: p.id,
-    label: `${p.reportType.replace(/_/g, " ")} (${new Date(p.startDate).toLocaleDateString()} – ${new Date(p.endDate).toLocaleDateString()})`,
+    label: periodOptionLabel(p),
   }));
 
   // Link targets: every activity update and every recorded indicator update

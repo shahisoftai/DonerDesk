@@ -4,7 +4,7 @@ import { GetExportPreflightHandler } from "../dist/index.js";
 
 const ok = (value) => ({ ok: true, value });
 const period = { id: "p1", projectId: "pr1", reportType: "MONTHLY", scope: {}, duration: { start: new Date("2026-03-01"), end: new Date("2026-03-31") } };
-const file = (id, level = "INTERNAL") => ({ id, title: `File ${id}`, confidentialityLevel: level, verificationStatus: "VERIFIED" });
+const file = (id, level = "INTERNAL", extra = { reportingPeriodId: "p1" }) => ({ id, title: `File ${id}`, confidentialityLevel: level, verificationStatus: "VERIFIED", ...extra });
 
 test("before the first draft the preflight still reports the evidence on file and the unverified values", async () => {
   const handler = new GetExportPreflightHandler(
@@ -40,4 +40,29 @@ test("an open critical checklist item is listed once, not once by the gate and a
   const result = await handler.handle({ tenant: { tenantId: "t1" } }, "p1");
   assert.equal(result.ok, true);
   assert.equal(result.value.blockingItems.filter((i) => /sign-off/i.test(i.message)).length, 1);
+});
+
+function handlerWith(periodRow, files) {
+  return new GetExportPreflightHandler(
+    { findById: async () => ok(periodRow) },
+    { findByReportingPeriod: async () => ok([]) },
+    {},
+    { findByReportingPeriod: async () => ok([]) },
+    { findByReportingPeriod: async () => ok([]) },
+    { search: async () => ok({ items: files, total: files.length, page: 1, pageSize: 200 }) },
+    {},
+    { findByReportingPeriod: async () => ok([{ id: "a1" }]), findByProject: async () => ok([]) },
+  );
+}
+
+test("a monthly report lists its own period's files and its activities' files, not other periods'", async () => {
+  const files = [file("e1"), file("e2", "INTERNAL", { reportingPeriodId: "p2", activityId: "a1" }), file("e3", "INTERNAL", { reportingPeriodId: "p2" })];
+  const result = await handlerWith(period, files).handle({ tenant: { tenantId: "t1" } }, "p1");
+  assert.deepEqual(result.value.evidence.map((e) => e.id).sort(), ["e1", "e2"]);
+});
+
+test("a final report lists all of the project's evidence", async () => {
+  const files = [file("e1"), file("e2", "INTERNAL", { reportingPeriodId: "p2" }), file("e3", "INTERNAL", { reportingPeriodId: undefined })];
+  const result = await handlerWith({ ...period, reportType: "FINAL" }, files).handle({ tenant: { tenantId: "t1" } }, "p1");
+  assert.deepEqual(result.value.evidence.map((e) => e.id).sort(), ["e1", "e2", "e3"]);
 });

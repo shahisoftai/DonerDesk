@@ -1,5 +1,5 @@
 import type { Result, EvidenceFile, IndicatorUpdate, ActivityUpdate } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, resolveEvidencePeriod } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../context.js";
 import type { IEvidenceRepository } from "../ports/evidence.js";
 import type { IActivityUpdateRepository } from "../ports/activities.js";
@@ -32,10 +32,24 @@ export class EvidenceLinkService implements IEvidenceLinker {
       const saved = await this.activities.update(activity);
       if (!saved.ok) return saved;
     }
-    if (evidence.activityId !== activity.id) {
-      evidence.updateMetadata({ activityId: activity.id });
+    // A file inherits the period of the activity it documents unless one was given explicitly.
+    const period = resolveEvidencePeriod(evidence.reportingPeriodId, activity.reportingPeriodId);
+    const derivePeriod = period.source === "activity";
+    if (evidence.activityId !== activity.id || derivePeriod) {
+      evidence.updateMetadata({ activityId: activity.id, ...(derivePeriod ? { reportingPeriodId: period.periodId } : {}) });
       const saved = await this.evidence.update(evidence);
       if (!saved.ok) return saved;
+    }
+    if (derivePeriod) {
+      await this.audit.record({
+        tenantId: ctx.tenant.tenantId,
+        actorId: ctx.tenant.userId,
+        eventType: "evidence.period_derived",
+        entityType: "evidence_file",
+        entityId: evidence.id,
+        projectId: evidence.projectId,
+        systemNote: `Period ${period.periodId} taken from activity ${activity.id}`,
+      });
     }
     await this.audit.record({
       tenantId: ctx.tenant.tenantId,

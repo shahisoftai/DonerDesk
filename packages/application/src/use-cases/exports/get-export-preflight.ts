@@ -1,4 +1,4 @@
-import type { Result, ReportingPeriod } from "@donordesk/domain";
+import type { Result, ReportingPeriod, EvidenceFile } from "@donordesk/domain";
 import { DomainError, type GateKind } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
@@ -11,7 +11,8 @@ import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { ApproveReportHandler } from "../reporting/approve-report.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
-import { periodIndicatorScope, inIndicatorScope } from "../../services/period-activities.js";
+import { periodIndicatorScope, inIndicatorScope, resolvePeriodActivities } from "../../services/period-activities.js";
+import { PeriodEvidenceScope } from "../../services/period-evidence-scope-service.js";
 
 export const EXPORT_TYPES = [
   "WORD",
@@ -77,6 +78,13 @@ export class GetExportPreflightHandler {
     private readonly activities?: IActivityUpdateRepository,
   ) {}
 
+  /** The evidence the report covers (the shared scope rule), so this list agrees with generation and readiness. */
+  private async periodEvidence(ctx: AuthenticatedContext, period: ReportingPeriod): Promise<Result<EvidenceFile[]>> {
+    const activities = this.activities ? await resolvePeriodActivities(this.activities, period, ctx.tenant.tenantId) : null;
+    if (activities && !activities.ok) return activities;
+    return new PeriodEvidenceScope(this.evidence).filesFor(ctx.tenant.tenantId, period, activities ? activities.value.map((a) => a.id) : []);
+  }
+
   /** Evidence on file for the period, how much of it is sensitive, unverified indicator values and annex gaps. */
   private async loadInputCounts(
     ctx: AuthenticatedContext,
@@ -89,9 +97,9 @@ export class GetExportPreflightHandler {
   }> {
     const evidenceRows: Array<{ id: string; title: string; confidentialityLevel: string; verificationStatus: string; defaultIncluded: boolean }> = [];
     let sensitiveCount = 0;
-    const evidenceResult = await this.evidence.search({ reportingPeriodId: period.id, pageSize: 500 }, ctx.tenant.tenantId);
+    const evidenceResult = await this.periodEvidence(ctx, period);
     if (evidenceResult.ok) {
-      for (const e of evidenceResult.value.items) {
+      for (const e of evidenceResult.value) {
         const isSensitive = e.confidentialityLevel === "SENSITIVE" || e.confidentialityLevel === "HIGHLY_SENSITIVE";
         if (isSensitive) sensitiveCount += 1;
         evidenceRows.push({ id: e.id, title: e.title, confidentialityLevel: e.confidentialityLevel, verificationStatus: e.verificationStatus, defaultIncluded: !isSensitive });
@@ -198,9 +206,9 @@ export class GetExportPreflightHandler {
       defaultIncluded: boolean;
     }> = [];
     let sensitiveCount = 0;
-    const evidenceResult = await this.evidence.search({ reportingPeriodId, pageSize: 500 }, ctx.tenant.tenantId);
+    const evidenceResult = await this.periodEvidence(ctx, period);
     if (evidenceResult.ok) {
-      for (const e of evidenceResult.value.items) {
+      for (const e of evidenceResult.value) {
         const isSensitive = e.confidentialityLevel === "SENSITIVE" || e.confidentialityLevel === "HIGHLY_SENSITIVE";
         if (isSensitive) sensitiveCount += 1;
         const defaultIncluded = !(e.confidentialityLevel === "HIGHLY_SENSITIVE" || e.confidentialityLevel === "SENSITIVE");

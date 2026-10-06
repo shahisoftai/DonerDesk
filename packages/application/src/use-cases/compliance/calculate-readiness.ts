@@ -1,3 +1,4 @@
+import { PeriodEvidenceScope } from "../../services/period-evidence-scope-service.js";
 import type { Result } from "@donordesk/domain";
 import { DomainError, lintReportContradictions, toLintFindingData, calculateReadiness, readinessStageFor, rankReadinessBlockers, DATA_QUALITY_PENALTY, type ReadinessBlocker, type ReadinessWeights, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
@@ -88,10 +89,6 @@ export class CalculateReadinessHandler {
     // period's indicator updates and activity updates counts as well, matching
     // the evidence set the generation run actually consumes.
     const evidenceIds = new Set<string>();
-    const periodTagged = await this.evidence.search({ reportingPeriodId, pageSize: 500 }, ctx.tenant.tenantId);
-    if (periodTagged.ok) {
-      for (const item of periodTagged.value.items) evidenceIds.add(item.id);
-    }
     if (indUpdates.ok) {
       for (const u of indUpdates.value) {
         for (const id of u.attachedEvidenceIds) evidenceIds.add(id);
@@ -104,6 +101,17 @@ export class CalculateReadinessHandler {
       for (const a of activityUpdates.value) {
         for (const id of a.attachedEvidenceIds) evidenceIds.add(id);
       }
+    }
+    if (period) {
+      const scoped = await new PeriodEvidenceScope(this.evidence).filesFor(
+        ctx.tenant.tenantId,
+        period,
+        activityUpdates.ok ? activityUpdates.value.map((a) => a.id) : [],
+      );
+      if (scoped.ok) for (const item of scoped.value) evidenceIds.add(item.id);
+    } else {
+      const periodTagged = await this.evidence.search({ reportingPeriodId, pageSize: 500 }, ctx.tenant.tenantId);
+      if (periodTagged.ok) for (const item of periodTagged.value.items) evidenceIds.add(item.id);
     }
     attachedEvidenceCount = evidenceIds.size;
 

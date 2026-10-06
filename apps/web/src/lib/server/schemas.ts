@@ -459,6 +459,7 @@ export const VerifyAllResponseSchema = z.object({
 
 export const ActivityItemSchema = z.object({
   id: z.string(),
+  reportingPeriodId: z.string().optional(),
   activityTitle: z.string(),
   activityDate: z.string(),
   location: z.string().optional(),
@@ -538,6 +539,7 @@ export const EvidenceDetailSchema = z.object({
   evidenceType: z.string(),
   location: z.string().optional(),
   activityDate: z.string().optional(),
+  uploadedAt: z.string().optional(),
   uploadedById: z.string().optional(),
   verificationStatus: z.string(),
   confidentialityLevel: z.string(),

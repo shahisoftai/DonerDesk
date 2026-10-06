@@ -65,9 +65,16 @@ export default async function ActivityDetailPage({
             {activity.location ? ` · ${activity.location}` : ""}
           </p>
         </div>
-        <Badge tone={activityStatusTone(activity.status)}>
-          {ACTIVITY_STATUS_LABEL[activity.status] ?? activity.status.replace(/_/g, " ")}
-        </Badge>
+        <div className="flex items-center gap-3">
+          {canManageEvidence && (
+            <Link className="btn-secondary" href={`/projects/${activity.projectId}/evidence/new?activityId=${activity.id}`}>
+              Add evidence
+            </Link>
+          )}
+          <Badge tone={activityStatusTone(activity.status)}>
+            {ACTIVITY_STATUS_LABEL[activity.status] ?? activity.status.replace(/_/g, " ")}
+          </Badge>
+        </div>
       </header>
 
       <section className="card" aria-label="Activity summary">

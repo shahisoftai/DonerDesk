@@ -26,11 +26,14 @@ export function EvidenceUploadQueue({
   activities = [],
   indicators = [],
   periods = [],
+  initialActivityId,
 }: {
   projectId: string;
   storageProvider?: string;
   /** What a file can be attached to. Attaching on upload makes the file count as proof straight away. */
-  activities?: Array<{ id: string; label: string }>;
+  activities?: Array<{ id: string; label: string; periodLabel?: string }>;
+  /** Set when the form is opened from an activity ("Add evidence"), so the link is already chosen. */
+  initialActivityId?: string;
   indicators?: Array<{ id: string; label: string }>;
   periods?: Array<{ id: string; label: string }>;
 }) {
@@ -41,7 +44,7 @@ export function EvidenceUploadQueue({
   const [confidentialityLevel, setConfidentialityLevel] = useState("INTERNAL");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
-  const [activityId, setActivityId] = useState("");
+  const [activityId, setActivityId] = useState(initialActivityId && activities.some((a) => a.id === initialActivityId) ? initialActivityId : "");
   const [indicatorId, setIndicatorId] = useState("");
   const [reportingPeriodId, setReportingPeriodId] = useState("");
   const [driveLink, setDriveLink] = useState("");
@@ -171,7 +174,7 @@ export function EvidenceUploadQueue({
                 </Select>
               </Field>
             )}
-            {indicatorId && periods.length > 0 && (
+            {indicatorId && !activityId && periods.length > 0 && (
               <Field label="For reporting period">
                 <Select value={reportingPeriodId} onChange={(e) => setReportingPeriodId(e.target.value)}>
                   <option value="">Choose a period…</option>
@@ -180,6 +183,11 @@ export function EvidenceUploadQueue({
               </Field>
             )}
           </div>
+          {activityId && activities.find((a) => a.id === activityId)?.periodLabel && (
+            <p role="status" className="text-xs text-slate-600 dark:text-slate-300">
+              Reporting period: {activities.find((a) => a.id === activityId)?.periodLabel} (taken from the activity)
+            </p>
+          )}
         </fieldset>
       )}
 

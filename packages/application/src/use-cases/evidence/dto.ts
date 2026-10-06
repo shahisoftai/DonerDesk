@@ -18,6 +18,8 @@ export interface EvidenceDto {
   evidenceType: string;
   location?: string;
   activityDate?: string;
+  /** When the file was uploaded (not the date of the activity it documents). */
+  uploadedAt: string;
   uploadedById: string;
   verificationStatus: string;
   confidentialityLevel: string;
@@ -47,6 +49,7 @@ export function toEvidenceDto(e: EvidenceFile): EvidenceDto {
     evidenceType: e.evidenceType,
     location: e.location,
     activityDate: e.activityDate?.toISOString(),
+    uploadedAt: e.createdAt.toISOString(),
     uploadedById: e.uploadedById,
     verificationStatus: e.verificationStatus,
     confidentialityLevel: e.confidentialityLevel,

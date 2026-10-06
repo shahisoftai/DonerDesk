@@ -94,8 +94,14 @@ export default async function EvidenceDetailPage({
           </div>
           <div>
             <dt className="text-xs text-slate-500 dark:text-slate-400">Uploaded</dt>
-            <dd className="font-medium">{evidence.activityDate ? formatDate(evidence.activityDate) : "—"}</dd>
+            <dd className="font-medium">{evidence.uploadedAt ? formatDate(evidence.uploadedAt) : "—"}</dd>
           </div>
+          {evidence.activityDate ? (
+            <div>
+              <dt className="text-xs text-slate-500 dark:text-slate-400">Date of activity</dt>
+              <dd className="font-medium">{formatDate(evidence.activityDate)}</dd>
+            </div>
+          ) : null}
           <div>
             <dt className="text-xs text-slate-500 dark:text-slate-400">Location</dt>
             <dd className="font-medium">{evidence.location ?? "—"}</dd>

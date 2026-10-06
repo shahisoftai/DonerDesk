@@ -44,7 +44,10 @@ export function NewIndicatorForm({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true); setError(null);
+    // Stay locked while leaving the page: re-enabling the button during the route change allowed a second save.
+    let leaving = false;
     try {
       const result = await createIndicatorAction({
         projectId,
@@ -70,9 +73,10 @@ export function NewIndicatorForm({
         router.refresh();
         return;
       }
+      leaving = true;
       router.push(`/projects/${projectId}/logframe`);
       router.refresh();
-    } finally { setBusy(false); }
+    } finally { if (!leaving) setBusy(false); }
   }
 
   if (created) {

@@ -3,6 +3,7 @@ import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ReportingPeriodsResponseSchema, EvidenceResponseSchema, LogframeResponseSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
+import { periodOptionLabel, recentFirst } from "@/lib/shared/option-labels";
 import { NewActivityForm } from "@/features/activities/presentation/NewActivityForm";
 
 export const dynamic = "force-dynamic";
@@ -51,7 +52,7 @@ export default async function NewActivityPage({ params }: { params: Promise<{ id
       </p>
       <NewActivityForm
         projectId={resolvedParams.id}
-        reportingPeriods={periods.map((p) => ({ id: p.id, label: p.reportType }))}
+        reportingPeriods={recentFirst(periods, (p) => p.startDate).map((p) => ({ id: p.id, label: periodOptionLabel(p), reportType: p.reportType, startDate: p.startDate, endDate: p.endDate }))}
         evidenceOptions={evidence.map((e) => ({ id: e.id, label: e.title }))}
         logframeItems={logframeResult.ok ? logframeResult.value.items : []}
       />
