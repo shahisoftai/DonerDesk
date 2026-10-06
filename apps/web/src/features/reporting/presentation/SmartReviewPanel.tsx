@@ -9,6 +9,7 @@ function deepLink(projectId: string, periodId: string, item: SmartReviewSummaryS
   switch (item.action.type) {
     case "add-evidence":
     case "review-evidence":
+    case "review-confidentiality":
       return item.evidenceId ? `/projects/${projectId}/evidence/${item.evidenceId}` : `/projects/${projectId}/evidence`;
     default:
       // Section-scoped items open the workspace on that section's editor,

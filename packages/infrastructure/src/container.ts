@@ -1122,7 +1122,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits, indicatorAnalytics, financeInputs, indicators);
   // Reading the checklist or a period's readiness closes the items the data already satisfies: no manual scan needed.
   const checklistReconciler = new ChecklistReconciler(detectMissingEvidenceHandler);
-  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics, lintGrounding, checklistReconciler);
+  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics, lintGrounding, checklistReconciler, audits);
 
   if (jobRegistrar?.register) {
     jobRegistrar.register(

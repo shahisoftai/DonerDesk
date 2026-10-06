@@ -60,6 +60,7 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
         {items.length === 0 && <div className="card text-sm text-slate-600 dark:text-slate-300">No templates yet. Upload the donor&rsquo;s template or start from your library.</div>}
         {items.map((t, index) => {
           const reportable = t.sections.filter((s) => s.includeInReport);
+          const limited = reportable.filter((s) => s.maxWords !== undefined).length;
           const pending = t.sections.filter((s) => s.reviewStatus !== "REVIEWED").length;
           const candidates = items.map((c) => ({ id: c.id, reportType: c.reportType, status: c.status, updatedAt: new Date(c.updatedAt ?? 0) }));
           // "Used for": the report types a new period of which starts from this template, by the one rule period creation uses.
@@ -83,7 +84,7 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
                   )}
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400">
-                  {t.donorName} · {REPORT_TYPE_LABEL[t.reportType] ?? t.reportType} · {reportable.length} report section(s)
+                  {t.donorName} · {REPORT_TYPE_LABEL[t.reportType] ?? t.reportType} · {reportable.length} report section(s){limited > 0 ? ` · ${limited} with a word limit` : ""}
                   {pending > 0 ? ` · ${pending} to review` : ""} · {t.requirements.annexes.length} annex(es) · v{t.version ?? 1}
                 </div>
               </Link>

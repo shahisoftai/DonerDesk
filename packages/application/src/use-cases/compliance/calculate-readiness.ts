@@ -1,9 +1,10 @@
 import { PeriodEvidenceScope } from "../../services/period-evidence-scope-service.js";
 import type { Result } from "@donordesk/domain";
-import { DomainError, lintReportContradictions, toLintFindingData, calculateReadiness, readinessStageFor, rankReadinessBlockers, DATA_QUALITY_PENALTY, type ReadinessBlocker, type ReadinessWeights, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
+import { DomainError, describeReadinessChanges, lintReportContradictions, toLintFindingData, calculateReadiness, readinessStageFor, rankReadinessBlockers, DATA_QUALITY_PENALTY, type ReadinessBlocker, type ReadinessWeights, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILintGrounding } from "../../services/lint-grounding.js";
 import type { IChecklistRepository, IChecklistReconciler } from "../../ports/compliance.js";
+import type { IAuditRepository } from "../../ports/support.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IIndicatorRepository } from "../../ports/logframe.js";
@@ -38,13 +39,15 @@ export class CalculateReadinessHandler {
     private readonly lintGrounding?: ILintGrounding,
     /** Closes the checklist items the data now satisfies before they are counted (single-period reads only). */
     private readonly reconciler?: IChecklistReconciler,
+    /** With it, a single-period read says what changed recently (from the audit trail). */
+    private readonly audits?: IAuditRepository,
   ) {}
 
   async handle(
     ctx: AuthenticatedContext,
     reportingPeriodId: string,
     options: { reconcile?: boolean } = {},
-  ): Promise<Result<ReadinessBreakdown & { reportingPeriodId: string; weights: ReadinessWeights; dataQualityPenalty: number; topBlockers: ReadinessBlocker[]; totalSections: number }, DomainError>> {
+  ): Promise<Result<ReadinessBreakdown & { reportingPeriodId: string; weights: ReadinessWeights; dataQualityPenalty: number; topBlockers: ReadinessBlocker[]; totalSections: number; recentChanges?: string[] }, DomainError>> {
     if (options.reconcile) await this.reconciler?.reconcile(ctx, reportingPeriodId);
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     const period = periodResult.ok ? periodResult.value : null;
@@ -203,6 +206,11 @@ export class CalculateReadinessHandler {
       uncappedOverall,
     });
 
-    return { ok: true, value: { ...breakdown, reportingPeriodId, dataQualityPenalty: DATA_QUALITY_PENALTY, topBlockers, totalSections } };
+    let recentChanges: string[] | undefined;
+    if (options.reconcile && this.audits && period) {
+      const events = await this.audits.listByTenant(ctx.tenant.tenantId, { projectId: period.projectId, limit: 100 });
+      if (events.ok) recentChanges = describeReadinessChanges(events.value, new Date());
+    }
+    return { ok: true, value: { ...breakdown, reportingPeriodId, dataQualityPenalty: DATA_QUALITY_PENALTY, topBlockers, totalSections, ...(recentChanges && recentChanges.length > 0 ? { recentChanges } : {}) } };
   }
 }

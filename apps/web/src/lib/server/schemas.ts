@@ -769,6 +769,8 @@ export const ReadinessSchema = z.object({
   dataQualityPenalty: z.number().optional(),
   stage: z.enum(["DRAFTING", "IN_REVIEW", "SUBMISSION"]).optional(),
   totalSections: z.number().optional(),
+  /** What changed in the last day that moves this score, in words. */
+  recentChanges: z.array(z.string()).optional(),
   topBlockers: z
     .array(z.object({ key: z.string(), label: z.string(), detail: z.string(), points: z.number(), action: z.object({ kind: z.string(), label: z.string() }) }))
     .optional(),
@@ -814,6 +816,8 @@ export const ExportPreflightEvidenceSchema = z.object({
   confidentialityLevel: z.string(),
   verificationStatus: z.string(),
   defaultIncluded: z.boolean(),
+  /** Bytes; absent from older API responses. */
+  fileSize: z.number().optional(),
 });
 
 export const ExportPreflightItemSchema = z.object({
@@ -1109,6 +1113,7 @@ export type ClosingPlan = z.infer<typeof ClosingPlanSchema>;
 /** An administrator's view of the AI writer's recent section runs. */
 export const AiSectionRunsResponseSchema = z.object({
   counts: z.object({ WRITTEN: z.number(), RECOVERED: z.number(), STUB: z.number(), NO_INPUT: z.number() }),
+  alert: z.object({ stubs: z.number(), runs: z.number(), reason: z.string() }).nullable().optional(),
   runs: z.array(
     z.object({
       id: z.string(),

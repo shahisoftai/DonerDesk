@@ -1,5 +1,5 @@
 import type { Result, AiRunSummary, AiRunOutcome } from "@donordesk/domain";
-import { summarizeAiRun, countAiRunOutcomes } from "@donordesk/domain";
+import { summarizeAiRun, countAiRunOutcomes, aiStubAlert, type AiStubAlert } from "@donordesk/domain";
 import type { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILlmUsageRepository } from "../../ports/billing.js";
@@ -9,6 +9,8 @@ export const AI_SECTION_RUN_LIMIT = 50;
 export interface AiSectionRunsView {
   runs: AiRunSummary[];
   counts: Record<AiRunOutcome, number>;
+  /** Raised when the writer is failing often (a streak or a high rate); null when healthy. */
+  alert: AiStubAlert | null;
 }
 
 /**
@@ -22,6 +24,6 @@ export class ListAiSectionRunsHandler {
     const found = await this.runs.listRecent(ctx.tenant.tenantId.toString(), "REPORT_SECTION", limit);
     if (!found.ok) return found;
     const runs = found.value.map(summarizeAiRun);
-    return { ok: true, value: { runs, counts: countAiRunOutcomes(runs) } };
+    return { ok: true, value: { runs, counts: countAiRunOutcomes(runs), alert: aiStubAlert(runs, new Date()) } };
   }
 }

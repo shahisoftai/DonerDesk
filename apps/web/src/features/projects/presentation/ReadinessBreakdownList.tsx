@@ -37,8 +37,17 @@ export function ReadinessBreakdownList({
 }) {
   const blockers = readiness.dataQualityBlockers ?? 0;
   const top = readiness.topBlockers ?? [];
+  const changes = readiness.recentChanges ?? [];
   return (
     <>
+      {changes.length > 0 && (
+        <section className="mt-6" aria-label="What changed">
+          <h3 className="text-sm font-medium">What changed in the last day</h3>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
+            {changes.map((c) => <li key={c}>{c}</li>)}
+          </ul>
+        </section>
+      )}
       {top.length > 0 && (
         <section className="mt-6" aria-label="Top things to do">
           <h3 className="text-sm font-medium">Top {top.length === 1 ? "thing" : `${top.length} things`} to do</h3>

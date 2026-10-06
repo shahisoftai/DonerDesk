@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createExportAction, getExportPreflightAction } from "@/lib/actions/exports";
 import { resolveReportClaimAction } from "@/lib/actions/reporting";
+import { countOf } from "@donordesk/domain/core/plural.js";
+import { formatFileSize } from "@/lib/shared/dates";
 import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -210,6 +212,14 @@ export function ExportWizard({
           <p className="text-sm text-slate-700 dark:text-slate-200">
             Choose which evidence files to include. Sensitive files are excluded by default.
           </p>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <Button size="sm" variant="ghost" onClick={() => setIncluded(preflight.evidence.filter((e) => includeSensitive || !isSensitiveLevel(e.confidentialityLevel)).map((e) => e.id))}>Select all</Button>
+            <Button size="sm" variant="ghost" onClick={() => setIncluded(preflight.evidence.filter((e) => e.verificationStatus === "VERIFIED" && (includeSensitive || !isSensitiveLevel(e.confidentialityLevel))).map((e) => e.id))}>Select all verified</Button>
+            <Button size="sm" variant="ghost" onClick={() => setIncluded([])}>Select none</Button>
+            <span role="status" className="text-slate-600 dark:text-slate-300">
+              {countOf(included.length, "file")} selected, {formatFileSize(preflight.evidence.filter((e) => included.includes(e.id)).reduce((sum, e) => sum + (e.fileSize ?? 0), 0))} in the evidence pack
+            </span>
+          </div>
           <ul className="max-h-56 space-y-1 overflow-y-auto">
             {preflight.evidence.map((e) => {
               const isSensitive = e.confidentialityLevel === "SENSITIVE" || e.confidentialityLevel === "HIGHLY_SENSITIVE";
@@ -224,6 +234,7 @@ export function ExportWizard({
                     onChange={() => toggleIncluded(e.id)}
                   />
                   <span className="min-w-0 flex-1 break-words leading-5">{e.title}</span>
+                  {e.fileSize !== undefined && <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{formatFileSize(e.fileSize)}</span>}
                   {isSensitive && <Badge tone="danger">Sensitive</Badge>}
                 </li>
               );
@@ -282,7 +293,10 @@ export function ExportWizard({
 
       {step === "result" && result && (
         <div className="mt-4 space-y-3">
-          <p className="text-sm text-success-700 dark:text-success-400">Export created.</p>
+          <p className="text-sm text-success-700 dark:text-success-400">
+            Export created: {effectiveCopy === "donor" ? "the final copy for the donor (sealed, no internal-review mark)." : "an internal-review copy (watermarked; not for the donor)."}
+          </p>
+          <p className="break-all text-xs text-slate-500 dark:text-slate-400">{result.fileName}</p>
           <a className="btn" href={protectedFileDownloadHref(result.fileUrl, result.fileName)}>
             Download
           </a>
@@ -544,3 +558,5 @@ function ExportIssueRow({
     </li>
   );
 }
+
+const isSensitiveLevel = (level: string): boolean => level === "SENSITIVE" || level === "HIGHLY_SENSITIVE";

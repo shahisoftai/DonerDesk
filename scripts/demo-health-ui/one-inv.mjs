@@ -1,0 +1,11 @@
+import { attach, BASE } from "./lib.mjs";
+const { page, browser } = await attach();
+await page.goto(`${BASE}/onboarding/team`); await page.waitForLoadState("networkidle");
+await page.getByRole("button", { name: "Invite member" }).click(); await page.waitForTimeout(800);
+await page.getByLabel("Email").fill("amara.okafor.demo@example.org");
+await page.getByLabel("Role").last().selectOption({ label: "Project Manager" });
+const nm = page.getByLabel(/name/i); if (await nm.count()) await nm.first().fill("Amara Okafor");
+await page.getByRole("button", { name: /send invite/i }).click(); await page.waitForTimeout(3500);
+console.log((await page.locator("body").innerText()).slice(0,2500));
+await page.screenshot({path:"inv-result.png"});
+await browser.close(); process.exit(0);

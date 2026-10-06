@@ -8,6 +8,8 @@ import type { WorkItem } from "@/features/work-items/domain/work-item";
 import { InlineError, EmptyState } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { projectStatusTone } from "@/lib/shared/tone";
+import { gatewayRequest } from "@/lib/server/api-gateway";
+import { AiSectionRunsResponseSchema } from "@/lib/server/schemas";
 import { StartTourCard } from "@/features/tour/presentation/StartTourCard";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +27,10 @@ export default async function Dashboard() {
     loadDashboard(ctx.token),
     loadWorkItems(ctx.token),
   ]);
+
+  // Administrators are told when the AI writer is failing often; everyone else never sees this call.
+  const aiRuns = ctx.capabilities.has("org.manage") ? await gatewayRequest("/v1/ai/section-runs", AiSectionRunsResponseSchema, ctx.token) : null;
+  const aiAlert = aiRuns?.ok ? aiRuns.value.alert : null;
 
   const projects = snapshot.projects.ok ? snapshot.projects.value ?? [] : [];
   const notifications = snapshot.notifications.ok ? snapshot.notifications.value ?? [] : [];
@@ -49,6 +55,12 @@ export default async function Dashboard() {
 
   return (
     <div className="animate-fade-in">
+      {aiAlert && (
+        <p role="alert" className="mb-4 rounded-lg border border-warning-500/40 bg-warning-50 px-3 py-2 text-sm text-warning-800 dark:bg-warning-500/10 dark:text-warning-300">
+          The AI writer needs attention: {aiAlert.reason}{" "}
+          <Link className="font-medium underline" href="/settings/ai-usage">See why</Link>
+        </p>
+      )}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">Operational home</p>

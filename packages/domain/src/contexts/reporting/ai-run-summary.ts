@@ -77,3 +77,36 @@ export function countAiRunOutcomes(runs: ReadonlyArray<AiRunSummary>): Record<Ai
   for (const run of runs) counts[run.outcome] += 1;
   return counts;
 }
+
+export interface AiStubAlert {
+  /** Sections written with a basic version in the window. */
+  stubs: number;
+  runs: number;
+  /** Why it is raised, in words. */
+  reason: string;
+}
+
+export const STUB_ALERT_WINDOW_MS = 24 * 60 * 60 * 1000;
+export const STUB_ALERT_MIN_RUNS = 4;
+export const STUB_ALERT_RATE = 0.3;
+export const STUB_ALERT_STREAK = 3;
+
+/**
+ * Raises an alert when the AI writer is failing often enough that people are getting basic versions without knowing why:
+ * a third of the sections in a day (from four or more runs), or three failures in a row. Newest run first.
+ */
+export function aiStubAlert(runs: ReadonlyArray<AiRunSummary>, now: Date): AiStubAlert | null {
+  const recent = runs.filter((r) => now.getTime() - r.at.getTime() <= STUB_ALERT_WINDOW_MS && r.outcome !== "NO_INPUT");
+  if (recent.length === 0) return null;
+  const stubs = recent.filter((r) => r.outcome === "STUB").length;
+  let streak = 0;
+  for (const r of recent) {
+    if (r.outcome !== "STUB") break;
+    streak += 1;
+  }
+  if (streak >= STUB_ALERT_STREAK) return { stubs, runs: recent.length, reason: `The last ${streak} sections in a row were written with a basic version.` };
+  if (recent.length >= STUB_ALERT_MIN_RUNS && stubs / recent.length >= STUB_ALERT_RATE) {
+    return { stubs, runs: recent.length, reason: `${stubs} of ${recent.length} sections in the last day were written with a basic version.` };
+  }
+  return null;
+}

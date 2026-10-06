@@ -20,6 +20,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
     if (!result.ok) throw result.error;
     return {
       counts: result.value.counts,
+      alert: result.value.alert,
       runs: result.value.runs.map((r) => ({ ...r, at: r.at.toISOString() })),
     };
   });

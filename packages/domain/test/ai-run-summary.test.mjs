@@ -35,3 +35,19 @@ test("counts per outcome", () => {
   const runs = [run({ responseText: diag({}) }), run({ responseText: diag({ attempts: 2 }) }), run({ status: "error", errorMessage: "PROVIDER_TIMEOUT" })].map(summarizeAiRun);
   assert.deepEqual(countAiRunOutcomes(runs), { WRITTEN: 1, RECOVERED: 1, STUB: 1, NO_INPUT: 0 });
 });
+
+import { aiStubAlert } from "../dist/index.js";
+
+const mk = (hoursAgo, outcome) => ({ id: `${hoursAgo}${outcome}`, at: new Date(new Date("2026-10-06T12:00:00Z").getTime() - hoursAgo * 3600_000), sectionTitle: null, outcome, reason: null, detail: null, attempts: 1, latencyMs: 1, tokens: 1 });
+const now = new Date("2026-10-06T12:00:00Z");
+
+test("the stub alert fires on a streak or a high rate, never on a quiet or healthy day (25.9)", () => {
+  assert.equal(aiStubAlert([], now), null);
+  assert.equal(aiStubAlert([mk(1, "WRITTEN"), mk(2, "WRITTEN"), mk(3, "STUB"), mk(4, "WRITTEN"), mk(5, "WRITTEN")], now), null, "1 of 5 is healthy");
+  assert.match(aiStubAlert([mk(1, "STUB"), mk(2, "STUB"), mk(3, "STUB"), mk(4, "WRITTEN")], now).reason, /last 3 sections in a row/);
+  const rate = aiStubAlert([mk(1, "STUB"), mk(2, "WRITTEN"), mk(3, "STUB"), mk(4, "WRITTEN"), mk(5, "WRITTEN")], now);
+  assert.match(rate.reason, /2 of 5 sections/);
+  assert.equal(aiStubAlert([mk(1, "STUB"), mk(2, "WRITTEN"), mk(3, "STUB")], now), null, "too few runs for a rate");
+  assert.equal(aiStubAlert([mk(30, "STUB"), mk(31, "STUB"), mk(32, "STUB")], now), null, "older than a day");
+  assert.equal(aiStubAlert([mk(1, "NO_INPUT"), mk(2, "NO_INPUT")], now), null, "no-input runs do not count");
+});

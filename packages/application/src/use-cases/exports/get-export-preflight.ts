@@ -90,19 +90,19 @@ export class GetExportPreflightHandler {
     ctx: AuthenticatedContext,
     period: ReportingPeriod,
   ): Promise<{
-    evidenceRows: Array<{ id: string; title: string; confidentialityLevel: string; verificationStatus: string; defaultIncluded: boolean }>;
+    evidenceRows: Array<{ id: string; title: string; confidentialityLevel: string; verificationStatus: string; defaultIncluded: boolean; fileSize: number }>;
     sensitiveCount: number;
     unverifiedIndicatorCount: number;
     annexGapCount: number;
   }> {
-    const evidenceRows: Array<{ id: string; title: string; confidentialityLevel: string; verificationStatus: string; defaultIncluded: boolean }> = [];
+    const evidenceRows: Array<{ id: string; title: string; confidentialityLevel: string; verificationStatus: string; defaultIncluded: boolean; fileSize: number }> = [];
     let sensitiveCount = 0;
     const evidenceResult = await this.periodEvidence(ctx, period);
     if (evidenceResult.ok) {
       for (const e of evidenceResult.value) {
         const isSensitive = e.confidentialityLevel === "SENSITIVE" || e.confidentialityLevel === "HIGHLY_SENSITIVE";
         if (isSensitive) sensitiveCount += 1;
-        evidenceRows.push({ id: e.id, title: e.title, confidentialityLevel: e.confidentialityLevel, verificationStatus: e.verificationStatus, defaultIncluded: !isSensitive });
+        evidenceRows.push({ id: e.id, title: e.title, confidentialityLevel: e.confidentialityLevel, verificationStatus: e.verificationStatus, defaultIncluded: !isSensitive, fileSize: e.fileSize });
       }
     }
 
@@ -204,6 +204,7 @@ export class GetExportPreflightHandler {
       confidentialityLevel: string;
       verificationStatus: string;
       defaultIncluded: boolean;
+      fileSize: number;
     }> = [];
     let sensitiveCount = 0;
     const evidenceResult = await this.periodEvidence(ctx, period);
@@ -218,6 +219,7 @@ export class GetExportPreflightHandler {
           confidentialityLevel: e.confidentialityLevel,
           verificationStatus: e.verificationStatus,
           defaultIncluded,
+          fileSize: e.fileSize,
         });
       }
     }

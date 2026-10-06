@@ -21,7 +21,8 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
   // Best-effort: creates the next due period when the reporting profile has
   // auto-creation on. Never blocks the page — a failure here just means one
   // fewer period than expected, not a broken Reports page.
-  await gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-periods/ensure-auto`, EnsureAutoPeriodResponseSchema, ctx.token, { method: "POST", body: {} });
+  const autoCreated = await gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-periods/ensure-auto`, EnsureAutoPeriodResponseSchema, ctx.token, { method: "POST", body: {} });
+  const createdAutomatically = autoCreated.ok && autoCreated.value.created ? autoCreated.value.periodId : undefined;
   const result = await gatewayRequest(
     `/v1/projects/${resolvedParams.id}/reporting-periods`,
     ReportingPeriodsResponseSchema,
@@ -69,6 +70,12 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
         <h1 className="text-xl font-semibold tracking-tight">Reports</h1>
         <Link className="btn" href={`/projects/${resolvedParams.id}/reports/new`}>Create reporting period</Link>
       </header>
+
+      {createdAutomatically && (
+        <p role="status" className="mt-4 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200">
+          A new period was created automatically because it came due ({items.find((p) => p.id === createdAutomatically) ? reportHeading(items.find((p) => p.id === createdAutomatically)!.reportType, items.find((p) => p.id === createdAutomatically)!.scope) : "monthly report"}). You can turn this off in the project's reporting profile, or cancel the period below if it is not wanted.
+        </p>
+      )}
 
       {planResult.ok && ctx.capabilities.has("reporting.edit") && (
         <CreateAllPeriodsPanel projectId={resolvedParams.id} plan={planResult.value.plan} note={planResult.value.note} />

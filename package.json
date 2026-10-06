@@ -15,7 +15,8 @@
     "test": "pnpm -r test",
     "db:migrate": "pnpm --filter @donordesk/infrastructure db:migrate",
     "db:seed": "pnpm --filter @donordesk/infrastructure db:seed",
-    "db:studio": "pnpm --filter @donordesk/infrastructure db:studio"
+    "db:studio": "pnpm --filter @donordesk/infrastructure db:studio",
+    "journey": "pnpm --filter @donordesk/infrastructure test:journey"
   },
   "devDependencies": {
     "typescript": "5.6.3",
