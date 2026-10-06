@@ -5,7 +5,8 @@ import { Badge } from "@/components/data/Badge";
 import { Button } from "@/components/ui/Button";
 import type { ReportClaim } from "@/lib/server/schemas";
 import type { Tone } from "@/lib/shared/tone";
-import { getClaimSuggestionAction } from "@/lib/actions/reporting";
+import { useRouter } from "next/navigation";
+import { confirmClaimMatchesIndicatorAction, getClaimSuggestionAction } from "@/lib/actions/reporting";
 import { verificationDetailCopy } from "@/lib/reporting-copy";
 import { statementState, type StatementState } from "../../application/statements";
 import type { Anchor } from "../../application/claim-anchors";
@@ -148,6 +149,9 @@ function StatementCard({
   const [decision, setDecision] = useState<StatementDecision | null>(null);
   const [notes, setNotes] = useState("");
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
+  const router = useRouter();
+  const [matching, setMatching] = useState(false);
+  const [matchError, setMatchError] = useState<string | null>(null);
 
   // B3: ask for a one-click correction only for number mismatches.
   useEffect(() => {
@@ -164,6 +168,15 @@ function StatementCard({
   const detail = isOpen ? verificationDetailCopy(claim.verificationDetail) : "";
   const titles = Array.from(new Set((claim.sources ?? []).map((s) => s.evidenceTitle ?? "Evidence file")));
   const confidential = claim.verificationReasonCode === "CONFIDENTIALITY_RESTRICTED";
+
+  async function confirmMatch() {
+    setMatching(true);
+    setMatchError(null);
+    const result = await confirmClaimMatchesIndicatorAction(claim.id);
+    setMatching(false);
+    if (!result.ok) return setMatchError(result.error.message);
+    router.refresh();
+  }
 
   async function submit() {
     if (!decision) return;
@@ -210,6 +223,11 @@ function StatementCard({
           )}
           {canResolve && (
             <>
+              {/\d/.test(claim.text) && !confidential && (
+                <Button size="sm" variant="secondary" disabled={busy || matching} pending={matching} onClick={() => void confirmMatch()}>
+                  This matches a verified indicator
+                </Button>
+              )}
               <Button size="sm" variant="secondary" disabled={busy} onClick={() => setDecision("keep")}>
                 Keep with a note
               </Button>
@@ -218,6 +236,7 @@ function StatementCard({
               </Button>
             </>
           )}
+          {matchError && <p role="alert" className="w-full text-xs text-danger-700 dark:text-danger-400">{matchError}</p>}
           {!canResolve && !suggestion && <p className="text-xs text-slate-500 dark:text-slate-400">A report manager decides on flagged statements.</p>}
           {suggestion && !canCorrect && correctBlockedReason && <p className="w-full text-xs text-slate-500 dark:text-slate-400">{correctBlockedReason}</p>}
         </div>

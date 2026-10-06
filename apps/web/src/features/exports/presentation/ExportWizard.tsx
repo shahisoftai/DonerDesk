@@ -7,6 +7,7 @@ import { resolveReportClaimAction } from "@/lib/actions/reporting";
 import { countOf } from "@donordesk/domain/core/plural.js";
 import { formatFileSize } from "@/lib/shared/dates";
 import { useActionState } from "@/lib/client/action-state";
+import { newIdempotencyKey } from "@/lib/shared/create-retry";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/data/Badge";
@@ -142,7 +143,10 @@ export function ExportWizard({
   const effectiveCopy = copyKind ?? (canDonorCopy ? "donor" : "internal");
 
   async function create() {
-    const r = await actionState.run(() =>
+    // One key per click: a save that timed out is repeated with the same key (so it never produces two files), while a
+    // later click, after the report changed, is always a new export and never replays an older file.
+    const exportKey = newIdempotencyKey();
+    const r = await actionState.runCreate(() =>
       createExportAction(
         {
           projectId,
@@ -153,6 +157,7 @@ export function ExportWizard({
           includeSensitive,
         },
         effectiveCopy === "donor" ? preflight!.draft?.id : undefined,
+        { idempotencyKey: exportKey },
       ),
     );
     if (r) {

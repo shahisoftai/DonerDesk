@@ -32,10 +32,55 @@ export interface ProposedStoryContext {
   certainty: ExtractionCertainty;
 }
 
+/** A compliance section's statement found in the pasted report, under that section's own heading. */
+export interface ProposedSectionNote {
+  key: string;
+  title: string;
+  text: string;
+}
+
 export interface FieldReportExtraction {
   indicatorAchievements: ProposedIndicatorValue[];
   activities: ProposedActivity[];
   story: ProposedStoryContext[];
+  /** Present only when the period's template has compliance sections; one entry per section that had text. */
+  sectionNotes?: ProposedSectionNote[];
+}
+
+const HEADING_NOISE = /^[\s#*_>\-\d.)(:]+|[\s*_:.\-]+$/g;
+const normaliseHeading = (line: string): string => line.replace(HEADING_NOISE, "").replace(/\s+/g, " ").toLowerCase();
+
+/**
+ * Splits a pasted report by the compliance sections' own headings: a line that is (or starts with) a section's title
+ * opens that section, and its text runs to the next heading of any listed section. Text before the first heading, and
+ * sections with no text, are left out; nothing is guessed from prose without a heading.
+ */
+export function splitReportBySections(text: string, sections: ReadonlyArray<{ key: string; title: string }>): ProposedSectionNote[] {
+  const titles = sections.map((s) => ({ ...s, norm: normaliseHeading(s.title) })).filter((s) => s.norm.length > 0);
+  const matchHeading = (line: string) => {
+    const norm = normaliseHeading(line);
+    if (!norm) return undefined;
+    return titles.find((t) => norm === t.norm || (norm.startsWith(t.norm) && norm.length <= t.norm.length + 40 && line.trim().length <= t.title.length + 60));
+  };
+  const out: ProposedSectionNote[] = [];
+  let current: { key: string; title: string; lines: string[] } | undefined;
+  const close = () => {
+    const body = current?.lines.join("\n").trim();
+    if (current && body) out.push({ key: current.key, title: current.title, text: body.slice(0, 4000) });
+  };
+  for (const line of text.split(/\r?\n/)) {
+    const heading = matchHeading(line);
+    if (heading) {
+      close();
+      // "Environmental Compliance: waste is sorted." keeps the text after the colon.
+      const rest = line.includes(":") ? line.slice(line.indexOf(":") + 1).trim() : "";
+      current = { key: heading.key, title: heading.title, lines: rest ? [rest] : [] };
+    } else if (current) {
+      current.lines.push(line);
+    }
+  }
+  close();
+  return out;
 }
 
 const CODE_RE = /\b(OUT|O|IND|G|OC)[-\s]?(\d+)\b/i;
@@ -56,7 +101,7 @@ function clean(s: string): string {
  * FOUND; activities require a date and/or participant count; story requires an
  * explicit cue. Everything ambiguous is omitted (never guessed).
  */
-export function proposeFieldReportExtraction(text: string): FieldReportExtraction {
+export function proposeFieldReportExtraction(text: string, complianceSections: ReadonlyArray<{ key: string; title: string }> = []): FieldReportExtraction {
   const indicatorAchievements: ProposedIndicatorValue[] = [];
   const activities: ProposedActivity[] = [];
   const story: ProposedStoryContext[] = [];
@@ -112,5 +157,6 @@ export function proposeFieldReportExtraction(text: string): FieldReportExtractio
     }
   }
 
-  return { indicatorAchievements, activities, story };
+  const sectionNotes = complianceSections.length > 0 ? splitReportBySections(text, complianceSections) : [];
+  return { indicatorAchievements, activities, story, ...(sectionNotes.length > 0 ? { sectionNotes } : {}) };
 }

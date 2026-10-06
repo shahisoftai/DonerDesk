@@ -43,7 +43,7 @@ export function FlexibleInputsPanel({
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [report, setReport] = useState("");
-  const [proposal, setProposal] = useState<{ indicatorAchievements: Array<{ indicatorCode: string; value: string }>; story: Array<{ field: string; text: string }> } | null>(null);
+  const [proposal, setProposal] = useState<{ indicatorAchievements: Array<{ indicatorCode: string; value: string }>; story: Array<{ field: string; text: string }>; sectionNotes: Array<{ key: string; title: string; text: string }> } | null>(null);
 
   const rows = useMemo(() => (csv ? csvToRows(csv) : []), [csv]);
 
@@ -75,8 +75,8 @@ export function FlexibleInputsPanel({
     const r = await proposeFieldReportAction(projectId, periodId, report);
     setBusy(false);
     if (r.ok) {
-      setProposal({ indicatorAchievements: r.value.indicatorAchievements, story: r.value.story });
-      setStatus(`Found ${r.value.indicatorAchievements.length} indicator value(s) and ${r.value.story.length} context note(s).`);
+      setProposal({ indicatorAchievements: r.value.indicatorAchievements, story: r.value.story, sectionNotes: r.value.sectionNotes ?? [] });
+      setStatus(`Found ${r.value.indicatorAchievements.length} indicator value(s), ${r.value.story.length} context note(s) and ${(r.value.sectionNotes ?? []).length} compliance statement(s).`);
     } else setStatus(r.error.message);
   }
 
@@ -86,6 +86,7 @@ export function FlexibleInputsPanel({
     const r = await applyFieldReportAction(projectId, periodId, {
       indicatorAchievements: proposal.indicatorAchievements,
       story: Object.fromEntries(proposal.story.map((s) => [s.field, s.text])),
+      sectionNotes: proposal.sectionNotes.map((n) => ({ key: n.key, text: n.text })),
     });
     setBusy(false);
     if (r.ok) {
@@ -140,6 +141,14 @@ export function FlexibleInputsPanel({
                   <p className="font-medium text-slate-600 dark:text-slate-300">Proposed context</p>
                   {proposal.story.map((s, i) => (
                     <div key={i} className="text-slate-600 dark:text-slate-300">[{s.field}] {s.text}</div>
+                  ))}
+                </div>
+              )}
+              {proposal.sectionNotes.length > 0 && (
+                <div>
+                  <p className="font-medium text-slate-600 dark:text-slate-300">Compliance statements (from each section's own heading)</p>
+                  {proposal.sectionNotes.map((n) => (
+                    <div key={n.key} className="text-slate-600 dark:text-slate-300"><span className="font-medium">{n.title}:</span> {n.text.slice(0, 200)}{n.text.length > 200 ? "…" : ""}</div>
                   ))}
                 </div>
               )}

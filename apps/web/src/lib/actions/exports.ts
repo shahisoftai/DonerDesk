@@ -1,5 +1,6 @@
 "use server";
 
+import { idempotency, type CreateOptions } from "./_idempotency";
 import { z } from "zod";
 import { CreateExportSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
@@ -20,10 +21,10 @@ export type CreateExportResult = Result<{ id: string; fileUrl: string; fileName?
  * runs there) and the export is bound to it, so the file carries no "internal preview" mark. Without it the export is
  * the watermarked internal copy.
  */
-export async function createExportAction(input: unknown, donorDraftId?: string): Promise<CreateExportResult> {
+export async function createExportAction(input: unknown, donorDraftId?: string, options: CreateOptions = {}): Promise<CreateExportResult> {
   const context = await requireSession();
   if (donorDraftId) {
-    const sealed = await gatewayRequest(`/v1/report-drafts/${donorDraftId}/submission-snapshot`, SnapshotCreatedSchema, context.token, { method: "POST", body: {} });
+    const sealed = await gatewayRequest(`/v1/report-drafts/${donorDraftId}/submission-snapshot`, SnapshotCreatedSchema, context.token, { method: "POST", body: {}, ...(options.idempotencyKey ? { idempotencyKey: `${options.idempotencyKey}:seal` } : {}) });
     if (!sealed.ok) return sealed;
     input = { ...(input as Record<string, unknown>), exportIntent: "DONOR_SUBMISSION", submissionSnapshotId: sealed.value.id };
   }
@@ -37,6 +38,7 @@ export async function createExportAction(input: unknown, donorDraftId?: string):
   return gatewayRequest("/v1/exports", CreatedExportSchema, context.token, {
     method: "POST",
     body: parsed.data,
+    ...idempotency(options),
   });
 }
 

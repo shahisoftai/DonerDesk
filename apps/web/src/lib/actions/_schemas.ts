@@ -191,6 +191,7 @@ export const FieldReportExtractionResponseSchema = z.object({
   indicatorAchievements: z.array(z.object({ indicatorCode: z.string(), value: z.string(), certainty: z.enum(["FOUND", "SUGGESTED"]), excerpt: z.string() })),
   activities: z.array(z.object({ title: z.string(), date: z.string().optional(), certainty: z.enum(["FOUND", "SUGGESTED"]) })),
   story: z.array(z.object({ field: z.string(), text: z.string(), certainty: z.enum(["FOUND", "SUGGESTED"]) })),
+  sectionNotes: z.array(z.object({ key: z.string(), title: z.string(), text: z.string() })).optional(),
 });
 
 export const PeriodValueConfirmResponseSchema = z.object({
@@ -199,7 +200,14 @@ export const PeriodValueConfirmResponseSchema = z.object({
   errors: z.array(z.string()),
 });
 
-export const FieldReportApplyResponseSchema = z.object({ ok: z.boolean() });
+/** What the apply step returns (it used to be read as `{ ok }`, which made every save fail with "unexpected response shape"). */
+export const FieldReportApplyResponseSchema = z.object({
+  indicatorsCreated: z.number(),
+  indicatorsUpdated: z.number(),
+  activitiesCreated: z.number(),
+  sectionNotesSaved: z.number().default(0),
+  errors: z.array(z.string()).default([]),
+});
 
 export const EvidenceLinkSuggestionsResponseSchema = z.object({
   suggestions: z.array(

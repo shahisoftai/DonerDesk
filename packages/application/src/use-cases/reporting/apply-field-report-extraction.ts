@@ -23,12 +23,15 @@ export interface ConfirmedExtractionItem {
   indicatorAchievements?: Array<{ indicatorCode: string; value: string }>;
   activities?: Array<{ title: string; date?: string; participants?: string }>;
   story?: Partial<StoryContext>;
+  /** Confirmed compliance statements (key = template section id). */
+  sectionNotes?: Array<{ key: string; text: string }>;
 }
 
 export interface ApplyExtractionResult {
   indicatorsCreated: number;
   indicatorsUpdated: number;
   activitiesCreated: number;
+  sectionNotesSaved: number;
   errors: string[];
 }
 
@@ -48,6 +51,7 @@ export class ApplyFieldReportExtractionHandler {
     let indicatorsCreated = 0;
     let indicatorsUpdated = 0;
     let activitiesCreated = 0;
+    let sectionNotesSaved = 0;
 
     // Indicator achievements → upsert IndicatorUpdate.
     if (input.indicatorAchievements && input.indicatorAchievements.length > 0) {
@@ -150,6 +154,21 @@ export class ApplyFieldReportExtractionHandler {
       newValue: JSON.stringify({ indicatorsCreated, indicatorsUpdated, activitiesCreated, errors: errors.length }),
     });
 
-    return { ok: true, value: { indicatorsCreated, indicatorsUpdated, activitiesCreated, errors } };
+    if (input.sectionNotes && input.sectionNotes.length > 0) {
+      const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
+      if (!periodResult.ok) return periodResult;
+      const period = periodResult.value;
+      if (period) {
+        for (const note of input.sectionNotes) {
+          if (!note.key || !note.text.trim()) continue;
+          period.setSectionNote(note.key, note.text);
+          sectionNotesSaved++;
+        }
+        const saved = await this.periods.update(period);
+        if (!saved.ok) return saved;
+      }
+    }
+
+    return { ok: true, value: { indicatorsCreated, indicatorsUpdated, activitiesCreated, sectionNotesSaved, errors } };
   }
 }

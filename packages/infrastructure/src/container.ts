@@ -136,6 +136,7 @@ import {
   UpdateReportingPeriodScopeHandler,
   CancelReportingPeriodHandler,
   MarkSummaryCurrentHandler,
+  ConfirmClaimMatchesIndicatorHandler,
   SetStandingStatementHandler,
   SetTemplateDefaultForTypeHandler,
   SetRequireSecondApproverHandler,
@@ -554,6 +555,7 @@ export interface Container {
     updateReportingPeriodScope: UpdateReportingPeriodScopeHandler;
     cancelReportingPeriod: CancelReportingPeriodHandler;
     markSummaryCurrent: MarkSummaryCurrentHandler;
+    confirmClaimMatchesIndicator: ConfirmClaimMatchesIndicatorHandler;
     setStandingStatement: SetStandingStatementHandler;
     setTemplateDefaultForType: SetTemplateDefaultForTypeHandler;
     setRequireSecondApprover: SetRequireSecondApproverHandler;
@@ -1287,6 +1289,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     updateReportingPeriodScope: new UpdateReportingPeriodScopeHandler(periods, drafts, sections, reportRevisions, activities, audits),
     cancelReportingPeriod: new CancelReportingPeriodHandler(periods, drafts, audits),
     markSummaryCurrent: new MarkSummaryCurrentHandler(sections, drafts, audits),
+    confirmClaimMatchesIndicator: new ConfirmClaimMatchesIndicatorHandler(reportClaims, sections, drafts, indicatorAnalytics, new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService)),
     setStandingStatement: new SetStandingStatementHandler(ids, reportingProfiles, audits),
     setTemplateDefaultForType: new SetTemplateDefaultForTypeHandler(ids, reportingProfiles, templates, audits),
     setRequireSecondApprover: new SetRequireSecondApproverHandler(ids, reportingProfiles, audits),
@@ -1302,7 +1305,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     previewPeriodFinanceImport: new PreviewPeriodFinanceImportHandler(periods, financeInputs, projects),
     verifyPeriodFinance: new VerifyPeriodFinanceHandler(periods, financeInputs, projects, periodFinancials, audits),
     importPeriodIndicatorValues: new ImportPeriodIndicatorValuesHandler(ids, indicators, indicatorUpdates, audits),
-    proposeFieldReportExtraction: new ProposeFieldReportExtractionHandler(),
+    proposeFieldReportExtraction: new ProposeFieldReportExtractionHandler(periodContextBuilder),
     applyFieldReportExtraction: new ApplyFieldReportExtractionHandler(ids, indicators, indicatorUpdates, activities, periods, audits),
     listReportingPeriods: new ListReportingPeriodsHandler(periods, calculateReadinessHandler, drafts),
     generateReportDraft: new GenerateReportDraftHandler(

@@ -184,7 +184,7 @@ export async function registerReportingRoutes(app: FastifyInstance) {
   app.post("/v1/reporting-periods/field-report/propose", async (req) => {
     const body = ProposeFieldReportExtractionSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
-    const r = await req.container.handlers.proposeFieldReportExtraction.handle(ctx, body.text);
+    const r = await req.container.handlers.proposeFieldReportExtraction.handle(ctx, body.text, body.reportingPeriodId);
     if (!r.ok) throw r.error;
     return r.value;
   });
@@ -351,6 +351,14 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.resolveReportClaim.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return { ok: true, claimId: r.value.claimId };
+  });
+
+  app.post("/v1/report-claims/:id/confirm-indicator", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.confirmClaimMatchesIndicator.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return { ok: true, claimId: r.value.claimId, indicators: r.value.indicators };
   });
 
   app.post("/v1/report-claims/:id/reopen", async (req) => {

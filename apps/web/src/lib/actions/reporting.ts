@@ -94,14 +94,15 @@ export async function confirmPeriodValuesAction(projectId: string, reportingPeri
   return gatewayRequest(`/v1/reporting-periods/period-values/confirm`, PeriodValueConfirmResponseSchema, context.token, { method: "POST", body: { projectId, reportingPeriodId, items } });
 }
 
-export async function proposeFieldReportAction(projectId: string, reportingPeriodId: string, text: string): Promise<Result<{ indicatorAchievements: Array<{ indicatorCode: string; value: string; certainty: string }>; activities: Array<{ title: string; certainty: string }>; story: Array<{ field: string; text: string }> }, AppError>> {
+export async function proposeFieldReportAction(projectId: string, reportingPeriodId: string, text: string): Promise<Result<{ indicatorAchievements: Array<{ indicatorCode: string; value: string; certainty: string }>; activities: Array<{ title: string; certainty: string }>; story: Array<{ field: string; text: string }>; sectionNotes?: Array<{ key: string; title: string; text: string }> }, AppError>> {
   const context = await requireSession();
   return gatewayRequest(`/v1/reporting-periods/field-report/propose`, FieldReportExtractionResponseSchema, context.token, { method: "POST", body: { projectId, reportingPeriodId, text } });
 }
 
-export async function applyFieldReportAction(projectId: string, reportingPeriodId: string, payload: { indicatorAchievements?: Array<{ indicatorCode: string; value: string }>; activities?: Array<{ title: string }>; story?: StoryContextShape }): Promise<Result<{ ok: boolean }, AppError>> {
+export async function applyFieldReportAction(projectId: string, reportingPeriodId: string, payload: { indicatorAchievements?: Array<{ indicatorCode: string; value: string }>; activities?: Array<{ title: string }>; story?: StoryContextShape; sectionNotes?: Array<{ key: string; text: string }> }): Promise<Result<{ ok: boolean; sectionNotesSaved: number }, AppError>> {
   const context = await requireSession();
-  return gatewayRequest(`/v1/reporting-periods/field-report/apply`, FieldReportApplyResponseSchema, context.token, { method: "POST", body: { projectId, reportingPeriodId, ...payload } });
+  const result = await gatewayRequest(`/v1/reporting-periods/field-report/apply`, FieldReportApplyResponseSchema, context.token, { method: "POST", body: { projectId, reportingPeriodId, ...payload } });
+  return result.ok ? { ok: true, value: { ok: true, sectionNotesSaved: result.value.sectionNotesSaved } } : result;
 }
 
 export type StoryResult = Result<{ ok: boolean } | { storyContext?: StoryContextShape }, AppError>;
@@ -185,6 +186,12 @@ export async function saveSectionNoteAction(periodId: string, key: string, note:
   const parsed = SaveSectionNoteSchema.safeParse({ key, note });
   if (!parsed.success) return { ok: false, error: { kind: "validation", message: "The statement is too long.", fields: flattenZodFields(parsed.error) } };
   return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(periodId)}/section-notes`, z.object({ missingCount: z.number() }), context.token, { method: "PUT", body: parsed.data });
+}
+
+/** One click for a figure flag on a number a verified indicator carries; refuses (with the reason) when any figure is not one. */
+export async function confirmClaimMatchesIndicatorAction(claimId: string): Promise<Result<{ indicators: string[] }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/report-claims/${encodeURIComponent(claimId)}/confirm-indicator`, z.object({ indicators: z.array(z.string()) }), context.token, { method: "POST", body: {} });
 }
 
 /** "This summary still matches the report": clears the out-of-date notice until the sections change again. */

@@ -32,3 +32,28 @@ test("a period keeps notes through story saves, sets and clears one note, and pa
   p.setStoryContext({ achievements: "x" });
   assert.equal(p.storyContext.sectionNotes, undefined, "setStoryContext replaces; the story handler re-supplies the notes");
 });
+
+import { splitReportBySections, proposeFieldReportExtraction } from "../dist/index.js";
+
+test("a pasted field report is split under each compliance section's own heading (25.4)", () => {
+  const sections = [{ key: "env", title: "Environmental Compliance" }, { key: "brand", title: "Branding and Marking" }];
+  const text = [
+    "Monthly field report, March", "We trained 40 volunteers.", "",
+    "## Environmental Compliance", "Waste was sorted at all three sites.", "No spills were reported.", "",
+    "3. Branding and Marking:", "USAID logo displayed on all signage.", "",
+    "Challenges", "Flooding delayed access.",
+  ].join("\n");
+  const notes = splitReportBySections(text, sections);
+  assert.deepEqual(notes.map((n) => n.key), ["env", "brand"]);
+  assert.match(notes[0].text, /^Waste was sorted at all three sites\.\nNo spills were reported\./);
+  assert.equal(notes[1].text.startsWith("USAID logo displayed"), true);
+  assert.deepEqual(splitReportBySections("no headings here", sections), []);
+  assert.deepEqual(splitReportBySections(text, []), []);
+  assert.equal(splitReportBySections("Environmental Compliance: waste is sorted.", sections)[0].text, "waste is sorted.");
+});
+
+test("the proposal carries section statements only when the template has compliance sections", () => {
+  const text = "Environmental Compliance\nWaste sorted.";
+  assert.equal(proposeFieldReportExtraction(text).sectionNotes, undefined);
+  assert.equal(proposeFieldReportExtraction(text, [{ key: "env", title: "Environmental Compliance" }]).sectionNotes[0].key, "env");
+});

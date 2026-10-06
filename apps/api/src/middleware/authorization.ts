@@ -124,6 +124,7 @@ const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/report-sections$/, permission: "report.edit" },
   { method: "DELETE", route: /^\/v1\/report-sections\/[^/]+$/, permission: "report.edit" },
   { method: "POST", route: /^\/v1\/report-sections\/[^/]+\/approve$/, permission: "report.approve" },
+  { method: "POST", route: /^\/v1\/report-claims\/[^/]+\/confirm-indicator$/, permission: "report.resolve-claim" },
   { method: "POST", route: /^\/v1\/report-claims\/[^/]+\/resolve$/, permission: "report.resolve-claim" },
   { method: "POST", route: /^\/v1\/report-drafts\/[^/]+\/submit-for-review$/, permission: "report.edit" },
   { method: "POST", route: /^\/v1\/report-drafts\/[^/]+\/approve$/, permission: "report.approve" },

@@ -157,6 +157,7 @@ export const ApplyFieldReportExtractionSchema = z.object({
     adaptations: z.string().optional(),
     lessons: z.string().optional(),
   }).optional(),
+  sectionNotes: z.array(z.object({ key: z.string().min(1).max(120), text: z.string().max(4000) })).optional(),
 });
 
 export const GenerateDraftSchema = z

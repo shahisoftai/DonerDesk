@@ -254,6 +254,7 @@ export * from "./services/finance-inputs.js";
 export * from "./use-cases/finance/period-finance-handlers.js";
 export * from "./use-cases/reporting/period-lifecycle-handlers.js";
 export * from "./use-cases/reporting/mark-summary-current.js";
+export * from "./use-cases/reporting/confirm-claim-matches-indicator.js";
 export * from "./use-cases/reporting/compliance-notes.js";
 export * from "./use-cases/billing/list-ai-section-runs.js";
 export * from "./services/request-idempotency-service.js";
