@@ -272,3 +272,23 @@ Code review of the first draft found: (a) finding 3 is three competing definitio
 **Findings while building (not in demo 4):** the checklist scan created a fresh item for a concern a person had already decided, and re-created state items it then closed (churn); the checklist note was dropped; an activity's reviewer note stayed inside the summary text that reports read.
 
 **Known test status.** Package tests: domain 426, application 376, infrastructure 310, contracts 10, web 230+, worker 172. `apps/api` tests need a local Postgres; with one, two tests still fail for reasons older than this phase (`foundation` expects 403 for a VIEWER exporting while the policy gives VIEWER `report.export`; the billing webhook test).
+
+## 10. Implementation notes (short)
+
+**Where things live**
+- Domain rules (pure, table-tested): `reporting/period-evidence-scope.ts`, `default-template.ts`, `export-indicator-columns.ts`, `period-cadence.ts` (`planCadencePeriods`), `logframe/indicator-change-rules.ts`, `activities/activity-transitions.ts`, `compliance/checklist-state-rules.ts`, `reporting/verification-reason.ts` (plain reasons), `contradiction-lint.ts` (basis + written dates).
+- Application: `PeriodEvidenceScope`, `DefaultTemplateResolver`, `IndicatorApprovalGuard` (services); handlers `Update/Move/Archive/RestoreIndicator`, `ChangePeriodTemplate`, `GetDefaultTemplates`, `CreateAllPeriods`, `ResubmitActivity`, `Withdraw/RestoreActivity`, `BulkReviewActivities`. `DetectMissingEvidenceHandler` now computes facts first, skips satisfied state concerns, then closes satisfied open ones.
+- API routes (all in `middleware/authorization.ts`): `PATCH /v1/indicators/:id`, `POST …/move|archive|restore`, `PUT /v1/reporting-periods/:id/template`, `GET /v1/projects/:id/default-templates|periods-plan`, `POST /v1/projects/:id/periods/create-all`, `POST /v1/activities/review-bulk`, `POST /v1/activities/:id/resubmit|withdraw|restore`.
+- Web: `option-labels.ts`, `IndicatorManageCard`, `PeriodTemplateCard`, `ActivityResubmitPanel`, `ActivityLifecyclePanel`, `ActivityBulkList`, `CreateAllPeriodsPanel`, upload drop zone in `NewActivityForm`, Undo toast in `ChecklistResolution`, freshness row in `ExportWizard`.
+
+**Decisions that differ from a first reading**
+- Reuse beat new code: approved-section editing already reopened and audited in `UpdateReportSectionHandler`; Rewrite already accepted `instructions`; `IdempotencyRecord` table already exists. Only the UI was missing.
+- Composition, not duplication: bulk accept repeats the single review; create-all repeats the single period create; the closing plan and period creation share one template resolver.
+- Additive only: optional constructor params and optional DTO fields keep old callers working; no route, column or status was removed.
+
+**Traps to remember**
+- Prisma `update` ignores `undefined`; write `?? null` for clearable fields (period template, `supersededById`).
+- Never `pkill -f` / `pgrep -f` with text from your own command line (kills the shell); use `fuser -k <port>/tcp`.
+- Web can import only domain subpaths listed in `packages/domain/package.json` `exports`; add one when a web file needs a new pure domain module.
+- Package tests run against `dist/`: build contracts → domain → application → infrastructure before testing.
+- Deploy order that worked: backup → `rsync --relative` migrations + `schema.prisma` → `prisma migrate deploy` as `donordesk_migrator` → `deploy-fast.sh`.
