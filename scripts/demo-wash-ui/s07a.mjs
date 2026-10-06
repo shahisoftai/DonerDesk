@@ -1,0 +1,14 @@
+import { attach, BASE, dump } from "./lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt", "utf8").trim(); const { page, browser } = await attach();
+const F = process.argv[2], name = process.argv[3], type = process.argv[4];
+await page.goto(`${BASE}/projects/${P}/templates/new`); await page.waitForLoadState("networkidle");
+await page.getByLabel("Template name").fill(name);
+await page.locator("#donorName").fill("Global Water & Health Fund");
+await page.getByLabel("Report type").selectOption({ label: type });
+await page.locator('input[type=file]').setInputFiles(F);
+await page.getByRole("button", { name: "Extract and review" }).click();
+await page.waitForURL(/templates\/[0-9a-f-]{36}/, { timeout: 120000 });
+await page.waitForTimeout(8000); await page.waitForLoadState("networkidle");
+console.log(page.url()); console.log((await page.locator("main").innerText()).slice(0, 3000));
+console.log((await dump(page)).filter(l=>/button/.test(l)).join("\n"));
+await browser.close(); process.exit(0);

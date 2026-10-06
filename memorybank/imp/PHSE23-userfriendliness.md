@@ -1,6 +1,6 @@
 # Phase 23 — User-friendliness: implementation plan
 
-**Status (2026-10-05): R1–R9 implemented in code (Phases 23.1–23.5), tests green; not yet deployed or browser-verified. R10 (23.6) is a research protocol: [`../demo/usability-test-protocol.md`](../demo/usability-test-protocol.md). See "Implementation notes" at the end for where the build differs from this plan.**
+**Status (2026-10-06): R1–R9 implemented, deployed (release `20261005123155`) and browser-verified in a UI-driven six-month WASH run — see ["Verification outcome (demo 4)"](#verification-outcome-demo-4-2026-10-05) and the follow-up plan ["Phase 24 recommendations"](#phase-24--recommendations-from-the-demo-4-findings) at the end of this file. R10 (23.6) is a research protocol: [`../demo/usability-test-protocol.md`](../demo/usability-test-protocol.md). See "Implementation notes" for where the build differs from this plan.**
 Source: the ten recommendations at the end of [`demo/verification-demo-3.md`](../demo/verification-demo-3.md) ("Appendix — a user's-eye review").
 Goal: lift "overall ease of use for a non-technical officer" from **3.0** toward 4.0+ by removing hidden rules, dangerous defaults and opaque scores, **without** weakening any
 assurance guarantee (grounding, verification, gates, RLS, audit).
@@ -229,7 +229,7 @@ Cannot be performed by the engineering agent; this plan produces the instrument 
 - **Protocol** (new `memorybank/demo/usability-test-protocol.md`): 3 officers (non-engineers, one per role: M&E, programme, finance); 6 tasks drawn from the journey table (create project + activate; define indicator and read its calculation; create the closing report; attach evidence to an activity; clear flags on one section; download the report); think-aloud, no coaching; record time-to-complete, errors, wrong turns, SUS + one-line "what surprised you".
 - **Success bar**: ≥ 5/6 tasks completed unaided per participant; median SUS ≥ 75; no task with the same failure for 2+ users (that becomes a P1 fix).
 - **Instrumentation** (optional, privacy-safe): none beyond existing audit; no new telemetry is added by this plan.
-- **Output**: findings appended to a new `demo/verification-demo-4.md`; scores in the same 1–5 rubric so they compare with demo 3.
+- **Output**: findings appended to a new `demo/verification-demo-5.md` (`verification-demo-4.md` is the UI-driven WASH run, see "Verification outcome" below); scores in the same 1–5 rubric so they compare with demo 3.
 
 ---
 
@@ -285,3 +285,36 @@ What was built, and the deliberate differences from the plan above.
 New invariants (also in `AGENTS.md`): a period rule is written once and called by both the refusing handler and the explaining panel; flag classification is presentation only and fails safe to "needs a decision"; `IEvidenceLinker` is the only code that links a file to an activity / indicator update; readiness SUBMISSION scores equal the pre-Phase-23 formula.
 
 Deploy notes: apply migrations `20261006100000_evidence_indicator_update_link` and `20261006110000_activity_logframe_activity_link` (additive, nullable); re-run `infra/postgres/rls.sql` per the runbook; `/ready` now also requires `EvidenceFile.indicatorUpdateId` and `ActivityUpdate.logframeActivityId`.
+
+---
+
+## Verification outcome (demo 4, 2026-10-05)
+
+Full notes, numbers and the 19 findings: [`../demo/verification-demo-4.md`](../demo/verification-demo-4.md). Files: `../demo/verification-demo-4-artifacts/`; scripts: `scripts/demo-wash-ui/`.
+
+**What was done.** A six-month WASH project ("[DEMO] Safe Water & Sanitation…", tenant GEC, production) was built **only through the web UI** in one visible browser: project, imported logframe and indicators, two donor
+templates, five monthly periods and a FINAL period from the closing-report stepper, 48 verified indicator values with sex breakdowns, 37 activity records, 59 verified evidence files, verified finance, then one AI final report
+(12 sections) that was reviewed, approved section by section and downloaded as Word, PDF, spreadsheet and checklist.
+
+**Phase 23 items now verified in a browser:**
+
+| Rec | Result |
+|---|---|
+| R1 semantics | Rates showed "Calculation needs review"; "Confirm all (2)" cleared them; "Reported directly (latest value)" offered. Minor: the indicator page says "Not confirmed yet" under a "Calculation confirmed" badge |
+| R8 verify-all | One click verified a whole period (8 values) six times; grid shows ids and status |
+| R3 rules up front | Lifecycle banner and Activate worked; "What you can create" panel listed every type with a reason; the closing-report stepper created the FINAL period with no overlap/finance refusal |
+| R6 closing report | Stepper worked, but it **dropped the approved Final donor template** (finding 2) and its "Earlier reports approved / Activities accepted" steps cannot be cleared by a single-user tenant or a superseded record |
+| R5 flag review | Flagged statements grouped as "needs a decision"; *Keep with a note* worked; "Approve all clean sections" worked. Raw reason codes still leak in checklist text |
+| R4 readiness | "Things to finish" panel with links worked; the score fell 70% → 40% after one section was regenerated with no explanation |
+| R2 evidence | Upload with "Use as proof for" attached to the activity immediately; **but the period link is still manual** (finding 3) |
+| R7 activity ↔ node | Node picker derived output and indicator; **not exercised:** delivery counts on logframe nodes and the participants-vs-indicator hint |
+| Not exercised | Evidence-support panel ("cited by n statements"), R9 tour |
+
+**Result in one line:** the rules are now explained, but linking is still done *after* the fact in separate screens, and several flows still end in dead ends. The 19 findings are mapped to fixes below.
+
+---
+
+## Phase 24 — Recommendations from the demo 4 findings
+
+Moved to its own plan: **[`Phase24-user-simplicity.md`](Phase24-user-simplicity.md)** (R11–R19: link at creation, editable indicator model, template inheritance, writer guard and reopen, activity review, live checks, exports, shorter journey; with
+design, touch points, tests, acceptance and a finding → recommendation mapping).

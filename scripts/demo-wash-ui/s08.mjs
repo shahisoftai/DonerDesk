@@ -1,0 +1,16 @@
+import { attach, BASE } from "./lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt", "utf8").trim(); const { page, browser } = await attach();
+await page.goto(`${BASE}/projects/${P}/setup/profile`); await page.waitForLoadState("networkidle");
+await page.getByLabel("Tone").selectOption({ label: "Formal" });
+await page.getByLabel("Writing style (optional)").fill("Plain, factual and concise; short paragraphs; report only verified figures.");
+await page.getByLabel("Audience notes (optional)").fill("Donor programme officers and WASH technical advisers; assume sector knowledge, not project detail.");
+await page.getByLabel("Formatting rules (one per line)").fill("Use tables for indicator data\nState units with every figure");
+await page.getByLabel("Special requirements (one per line)").fill("Disaggregate people reached by sex\nState the donor's contribution in the executive summary");
+await page.getByLabel("Auto-create reporting periods").uncheck();
+await page.getByLabel("Financial figures in reports").selectOption({ label: "Type them in" });
+await page.getByRole("button", { name: "Save profile" }).click(); await page.waitForTimeout(2500);
+await page.screenshot({ path: "profile.png" });
+console.log((await page.locator("main").innerText()).split("\n").filter(l=>/saved|Saved|updated|error/i.test(l)).join(" | "));
+await page.goto(`${BASE}/projects/${P}/setup`); await page.waitForLoadState("networkidle");
+console.log((await page.locator("main").innerText()).split("Setup status")[1]?.slice(0,900));
+await browser.close(); process.exit(0);

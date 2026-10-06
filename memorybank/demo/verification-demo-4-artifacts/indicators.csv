@@ -1,0 +1,9 @@
+Code,Name,Type,Baseline,Target,Unit,Means of Verification,Data Source,Frequency,Disaggregation Required
+O1,Number of people with access to safe drinking water,Number,0,14000,people,Household registers and water-point user counts,Community registers,Monthly,yes
+O2,Percentage of surveyed households with a handwashing station with soap,Percentage,28,75,%,Household spot-check survey,Monthly spot-check survey,Monthly,no
+1.1,Number of water points rehabilitated and functional,Number,0,24,water points,Completion certificates and functionality checks,Engineer inspection reports,Monthly,no
+1.2,Number of water user committees formed and trained,Number,0,12,committees,Training attendance sheets and committee minutes,Training records,Monthly,no
+1.3,Percentage of tested water samples meeting residual chlorine standard (0.2-0.5 mg/L),Percentage,55,90,%,Field water-quality test logs,Monthly water-quality testing,Monthly,no
+2.1,Number of household latrines constructed and in use,Number,0,300,latrines,Completion checklists and household spot-checks,Site engineer records,Monthly,no
+2.2,Number of schools with gender-separated WASH blocks completed,Number,0,6,schools,Handover certificates,Engineer inspection reports,Monthly,no
+2.3,Number of people reached with hygiene promotion,Number,0,12000,people,Session attendance sheets,Hygiene promoters' registers,Monthly,yes
