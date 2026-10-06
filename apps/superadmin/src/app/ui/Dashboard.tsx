@@ -85,7 +85,7 @@ export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterpris
 
   return <div className="app-shell">
     <aside className="sidebar">
-      <div className="logo"><span className="logo-mark">D</span><div>DonorDesk<small>SUPERADMIN</small></div></div>
+      <div className="logo"><img className="logo-mark" src="/donordesk-logo.png" alt="DonorDesk" /><div>DonorDesk<small>SUPERADMIN</small></div></div>
       <nav>{navigation.map(([id, label, icon]) => <button key={id} className={tab === id ? "selected" : ""} onClick={() => changeTab(id)}><span>{icon}</span>{label}</button>)}</nav>
       <div className="identity"><span className="avatar">MP</span><div><strong>Platform owner</strong><small>mnpiracha@gmail.com</small></div></div>
     </aside>

@@ -182,8 +182,8 @@ export default function PricingPage() {
             <Image
               src="/brand/donordesk-logo.png"
               alt="DonorDesk"
-              width={1653}
-              height={589}
+              width={552}
+              height={600}
               className="h-9 w-auto object-contain"
             />
           </Link>
@@ -373,8 +373,8 @@ export default function PricingPage() {
                 <Image
                   src="/brand/donordesk-logo.png"
                   alt="DonorDesk"
-                  width={1653}
-                  height={589}
+                  width={552}
+                  height={600}
                   className="h-8 w-auto object-contain"
                 />
               </Link>

@@ -131,8 +131,8 @@ export function AppShell({
               <Image
                 src="/brand/donordesk-logo.png"
                 alt="DonorDesk"
-                width={1653}
-                height={589}
+                width={552}
+                height={600}
                 className="h-9 w-auto shrink-0 object-contain"
               />
               <span className="min-w-0">

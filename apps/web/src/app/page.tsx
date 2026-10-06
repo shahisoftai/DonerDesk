@@ -218,8 +218,8 @@ export default function HomePage() {
             <Image
               src="/brand/donordesk-logo.png"
               alt="DonorDesk"
-              width={1653}
-              height={589}
+              width={552}
+              height={600}
               className="h-9 w-auto object-contain"
               sizes="128px"
             />
@@ -272,8 +272,8 @@ export default function HomePage() {
           <Image
             src="/brand/donordesk-logo.png"
             alt="DonorDesk"
-            width={1653}
-            height={589}
+            width={552}
+            height={600}
             className="mx-auto h-40 w-auto object-contain sm:h-48 md:h-56"
             sizes="(min-width: 768px) 630px, (min-width: 640px) 540px, 450px"
             priority
@@ -642,8 +642,8 @@ export default function HomePage() {
                 <Image
                   src="/brand/donordesk-logo.png"
                   alt="DonorDesk"
-                  width={1653}
-                  height={589}
+                  width={552}
+                  height={600}
                   className="h-8 w-auto object-contain"
                   sizes="112px"
                 />

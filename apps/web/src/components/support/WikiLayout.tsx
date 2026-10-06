@@ -55,7 +55,7 @@ export function WikiLayout({
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/85 shadow-[0_10px_40px_rgba(2,6,23,0.35)] backdrop-blur-2xl supports-[backdrop-filter]:bg-slate-950/70">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center">
-            <Image src="/brand/donordesk-logo.png" alt="DonorDesk" width={1653} height={589} className="h-9 w-auto object-contain" />
+            <Image src="/brand/donordesk-logo.png" alt="DonorDesk" width={552} height={600} className="h-9 w-auto object-contain" />
           </Link>
           <div className="hidden items-center gap-7 text-sm font-medium text-slate-300 lg:flex">
             <Link href="/" className="transition hover:text-white">Home</Link>

@@ -66,8 +66,8 @@ const structuredData = {
       logo: {
         "@type": "ImageObject",
         url: "https://donordesk.online/brand/donordesk-logo.png",
-        width: 1653,
-        height: 589,
+        width: 552,
+        height: 600,
       },
       description:
         "AI-assisted grant and donor reporting for humanitarian, development, and other evidence-heavy funded programmes.",

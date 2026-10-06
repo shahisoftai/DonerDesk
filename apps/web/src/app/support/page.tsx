@@ -161,8 +161,8 @@ export default function SupportPage() {
             <Image
               src="/brand/donordesk-logo.png"
               alt="DonorDesk"
-              width={1653}
-              height={589}
+              width={552}
+              height={600}
               className="h-9 w-auto object-contain"
             />
             <span className="ml-3 text-sm font-medium text-slate-400">Support Center</span>
@@ -422,8 +422,8 @@ export default function SupportPage() {
               <Image
                 src="/brand/donordesk-logo.png"
                 alt="DonorDesk"
-                width={1653}
-                height={589}
+                width={552}
+                height={600}
                 className="h-[50px] w-auto object-contain"
               />
             </Link>

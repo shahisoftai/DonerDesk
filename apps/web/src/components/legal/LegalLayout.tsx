@@ -25,8 +25,8 @@ export function LegalLayout({
             <Image
               src="/brand/donordesk-logo.png"
               alt="DonorDesk"
-              width={1653}
-              height={589}
+              width={552}
+              height={600}
               className="h-9 w-auto object-contain"
             />
           </Link>
@@ -83,8 +83,8 @@ export function LegalLayout({
           <Image
             src="/brand/donordesk-logo.png"
             alt="DonorDesk"
-            width={1653}
-            height={589}
+            width={552}
+            height={600}
             className="h-9 w-auto object-contain"
           />
           <p>© {new Date().getFullYear()} DonorDesk. All rights reserved.</p>
