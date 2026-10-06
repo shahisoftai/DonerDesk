@@ -1,0 +1,250 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity
+
+KEN-MNCH-TUR-MUWAPRQO · USAID · Kenya · HEALTH
+
+Mar 1, 2026 – Aug 31, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity · Apr 1, 2026 – Apr 30, 2026 · due May 10, 2026
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity — monthly report
+Draft
+Version 1
+84% ready
+· 4 to do
+8 issues
+Review 8 flagged statements
+OUTLINE
+0 of 8 approved
+Approve all clean sections (4)
+1
+Executive Summary
+Draft
+2
+Progress Against the Work Plan
+Draft
+3
+Gender Equality and Women's Empowerment
+1
+flagged statement
+4
+Environmental Compliance
+2
+flagged statements
+5
+Collaboration, Learning and Adaptation
+3
+flagged statements
+6
+Implementation Challenges and Actions Taken
+2
+flagged statements
+7
+Priorities for Next Month
+Draft
+8
+Branding and Marking Compliance
+Draft
++ Add section
+Reorder
+REPORT INPUTS
+Edit
+Indicator values
+16 of 16 verified · 1 not entered
+Story answers
+5 of 5 answered
+Evidence
+16 files
+
+[DEMO-5] TURKANA MATERNAL, NEWBORN & CHILD HEALTH STRENGTHENING ACTIVITY · APR 1, 2026 – APR 30, 2026 · DUE MAY 10, 2026
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity — monthly report
+
+Drafted
+Rewrite with AI
+Regenerate
+Edit
+Approve section
+1 Executive Summary
+May be out of date — other sections changed after this summary was written.
+Regenerate summary
+
+This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID). The contents are the responsibility of GEC and do not necessarily reflect the views of USAID or the United States Government.
+
+In April 2026, the USAID-funded Turkana Maternal, Newborn and Child Health (MNCH) Strengthening Activity, implemented by GEC with the Lodwar Community Health Alliance (LOCHA) across 14 facilities in Turkana Central, Turkana South and Loima sub-counties, delivered a full month of activity. The month produced 8 activity records and 16 verified indicator results. Community health education reached 2600 people (1612 female, 988 male) against a life-of-activity target of 18000, up from 1800 in the previous period, and 60 community health volunteers (38 female, 22 male) were trained and kitted.
+
+Performance remained below the activity's targets across the indicator set. The project trained 26 health workers in Emergency Obstetric and Newborn Care (EmONC), Integrated Management of Childhood Illness (IMCI) and essential newborn care (15 female, 11 male) against a target of 120, and made 14 clinical mentorship visits against a target of 84. First antenatal visits rose to 640 (target 4200), skilled deliveries to 280 (target 2100), and DTP3/Penta3 immunisation to 420 children (target 3300); ANC4+ coverage stood at 32% against a 45% target. Three of 14 facilities received essential MNCH equipment kits. USAID branding and marking requirements were met, and 72% of facilities submitted Kenya Health Information System (KHIS) reports on time.
+
+Long-rains flooding on the Turkwel and Kerio rivers cut the Kalokol and Lowarengak roads for nine days and a national Penta vaccine shortage lasted one week; outreach routes were re-planned and children missed during the stock-out were recalled. In May the project will continue training cohorts, deliver the next equipment batch, and continue outreach and community activities.
+
+Change from previous period: HL-OC1a (Percentage of pregnant women with four or more ANC visits (ANC4+) at supported facilities) 29 → 32 ▲
+
+2 Progress Against the Work Plan
+
+Progress by Intermediate Result (IR), April 2026.
+
+IR1: Health worker capacity and facility systems. Project clinical trainers and nurse mentors trained 26 health workers (15 female, 11 male) in EmONC, IMCI and essential newborn care at Kalokol Health Centre on 9 April 2026 and completed 14 facility clinical mentorship visits across the 14 supported facilities. The logistics team delivered and installed essential MNCH equipment kits at 3 facilities on 14 April, with handover certificates signed by facility in-charges. A monthly data review and KHIS data quality audit at Lodwar on 25 April brought together 28 facility in-charges and records officers, and 72 % of supported facilities submitted KHIS monthly reports on time.
+
+IR2: Service delivery. Supported facilities recorded 640 first ANC visits, 280 skilled deliveries and 22 women referred for emergency obstetric care through the transport voucher scheme, alongside 28 outreach immunization sessions that delivered DTP3/Penta3 to 420 children under one year (210 female, 210 male). ANC4+ coverage reached 32 %, skilled delivery coverage 46 % and DTP3/Penta3 coverage 66 %. These services were delivered with county health staff, facility teams and community health volunteers at facilities in Turkana Central, Turkana South and Loima sub-counties, including Kerio and Lowarengak health centres.
+
+IR3: Community engagement and data systems. The project trained and kitted 60 CHVs (38 female, 22 male) on the community health package, iCCM, MUAC screening and danger-sign counselling. CHVs and community mobilisers reached 2600 people (1612 female, 988 male) with health education through dialogue days, household visits and radio sessions, screened 1300 children aged 6-59 months for acute malnutrition using MUAC (663 female, 637 male) and referred 90 children with acute malnutrition to treatment.
+
+Indicator performance table
+
+Indicator	Month result	Cumulative result	Life-of-activity target	Percent of target
+ANC4+ coverage (HL-OC1a)	32 %	32 %	45 %	71.1 %
+Skilled birth attendant coverage (HL-OC1b)	46 %	46 %	60 %	76.7 %
+DTP3/Penta3 coverage under 1 year (HL-OC1c)	66 %	66 %	80 %	82.5 %
+Health workers trained in EmONC, IMCI or essential newborn care (HL-1.1a)	26	40	120	21.7 %
+Facility clinical mentorship visits (HL-1.1b)	14	22	84	16.7 %
+Facilities equipped with essential MNCH kit (HL-1.2a)	3	3	14	21.4 %
+First ANC visits (HL-1.3a)	640	1020	4200	15.2 %
+Skilled deliveries (HL-1.3b)	280	440	2100	13.3 %
+Emergency obstetric care transport voucher referrals (HL-1.3c)	22	32	180	12.2 %
+Children under 1 year receiving DTP3/Penta3 (HL-1.4a)	420	710	3300	12.7 %
+Outreach immunization sessions (HL-1.4b)	28	46	180	15.6 %
+Facilities submitting KHIS reports on time (HL-1.5a)	72 %	72 %	90 %	80 %
+CHVs trained and kitted (HL-2.1a)	60	100	220	27.3 %
+People reached with community health education (HL-2.2a)	2600	4400	18000	14.4 %
+Children 6-59 months screened with MUAC (HL-2.3a)	1300	2200	9000	14.4 %
+Children with acute malnutrition referred to treatment (HL-2.3b)	90	150	650	13.8 %
+
+Indicators behind plan and corrective action. All indicators remain below their life-of-activity targets. The project records that some counts, such as skilled deliveries, are still behind their planned monthly share because roads were cut during the rains and two outreach sites were missed: long-rains flooding on the Turkwel and Kerio rivers cut the Kalokol and Lowarengak roads for nine days, and a national Penta vaccine shortage lasted one week. Corrective actions recorded for April were the re-planning of outreach routes around the flooded roads and the recall of children missed during the stock-out for vaccination in the following weeks. Intermittent internet and power outages delayed KHIS uploads at remote facilities; the project will follow up on late-reporting facilities through the monthly data review.
+
+Rationale. The April plan prioritised training, mentorship, equipment delivery and community-level services, and the recorded results show delivery at pace: trainings and mentorship ran at full pace, the first equipment kits reached three facilities, and immunization and antenatal numbers rose above March (640 first ANC visits up from 380; 420 children vaccinated with DTP3/Penta3 up from 290). The fixed outreach calendar shared with community health volunteers helped caregivers find outreach sessions even when routes changed, which the project notes as a lesson for the next period.
+
+Planned activities for the next reporting period. The project will continue training cohorts of health workers and hold monthly mentorship visits, deliver the next batch of essential MNCH equipment kits to the remaining facilities, continue outreach ANC clinics and voucher reimbursements to transporters, continue outreach immunization sessions and monthly cold-chain checks, train the next CHV cohort and supervise those already trained, continue dialogue days and radio messages, continue monthly MUAC screening and track referral completion, and follow up on late-reporting facilities through the monthly KHIS data review.
+
+3 Gender Equality and Women's Empowerment
+
+Sex-disaggregated results were recorded for the April people-level indicators and activities. The project trained 26 health workers (15 female, 11 male) in EmONC, IMCI and essential newborn care, and made 14 mentorship visits. It trained and kitted 60 CHVs (38 female, 22 male); women CHVs formed the majority of the second CHV cohort. Community health education reached 2600 people (1612 female, 988 male). Immunization reached 420 children under one year (210 female, 210 male). MUAC screening covered 1300 children aged 6 to 59 months (663 female, 637 male). First antenatal visits totalled 640 women (640 female, 0 male).
+
+Actions this month addressed gender gaps in access to services. The transport voucher scheme supported 22 women referred for emergency obstetric care in April, and transport vouchers were prioritised for women with danger signs during the road closures caused by flooding. Community dialogues were timed to market days and water-point visits, which the activity records note reached more men.
+
+No gender assessment or safeguarding compliance record was supplied for this month, so compliance cannot be stated from the records.
+
+4 Environmental Compliance
+
+The project remained compliant with the Initial Environmental Examination (IEE) mitigation measures in April 2026, with one recorded incident that was corrected within the month.
+
+Health care waste management (sharps, placenta pits, incinerators). The project carried out waste management follow-up visits to all 14 supported facilities in April. Sharps boxes were collected and incinerated at Lodwar Sub-County Hospital by the county incinerator team. The project checked placenta pits at the six facilities that conduct deliveries.
+
+Any environmental incidents or unexpected impacts. Flooding washed out one placenta pit at Kalokol. The project rebuilt it on higher ground. No other incidents were recorded.
+
+No remediation steps are required, as the single recorded incident was corrected during the same month and no non-compliance was recorded.
+
+5 Collaboration, Learning and Adaptation
+
+Collaboration with county structures shaped the month's delivery. The team attended the County health sector coordination meeting, the nutrition technical working group and the cold chain meeting, and shared flood updates with the county disaster management committee. The county incinerator team collected and incinerated sharps from the supported facilities at Lodwar Sub-County Hospital, as recorded in the Environmental Compliance section. The monthly data review with sub-county health records officers reviewed data quality in all 14 facilities, and 28 facility in-charges and records officers took part.
+
+Observation. Long-rains flooding on the Turkwel and Kerio rivers cut the Kalokol and Lowarengak roads for nine days, leaving two outreach sites unreachable. A national Penta vaccine shortage lasted one week. Outreach session logs and immunization tallies record these gaps, and facility ANC registers note the two sites unreachable for nine days.
+
+Implication (what was learned). Caregivers still found outreach sessions when routes changed because a fixed outreach calendar had been shared with community health volunteers. Peer supervision by experienced CHVs keeps newly trained volunteers active, and on-site mentorship after classroom training improves use of partographs and neonatal resuscitation. Pre-agreed kit lists with the county pharmacist avoid duplicate supplies; some kit items arrived in partial shipments from Nairobi because of delays on the Kitale road.
+
+Action (what changed as a result). The team re-planned outreach routes around the flooded roads and recalled children missed during the vaccine stock-out for vaccination in the following weeks. Transport vouchers were prioritised for women with danger signs during the road closures, and women CHVs formed the majority of the second CHV cohort (38 female, 22 male of 60 trained and kitted in April). The project will continue training cohorts and monthly mentorship visits, deliver the next batch of equipment kits, continue dialogue days and radio messages, and follow up on late-reporting facilities.
+
+Coordination with the County Department of Health and other partners. The records show attendance at the County health sector coordination meeting, the nutrition technical working group and the cold chain meeting, flood updates shared with the county disaster management committee, sharps incineration by the county incinerator team, the monthly data review and data quality audit with sub-county health records officers, and the partner organization Lodwar Community Health Alliance (LOCHA) delivering field activities. The records do not name any additional partners for April.
+
+What evidence led to a change in approach? The fixed outreach calendar shared with CHVs, recorded in the outreach session log, is the lesson the officer reports: it helped caregivers find sessions even when flood-disrupted routes changed, supporting its continued use. Flood access records showing two missed outreach sites led to re-planned routes and recall of children missed during the stock-out.
+
+6 Implementation Challenges and Actions Taken
+
+Long-rains flooding was the month's main access challenge. Flooding on the Turkwel and Kerio rivers cut the Kalokol and Lowarengak roads for nine days, and two outreach sites could not be visited, as recorded in the outreach session log and mentorship visit log (evidence 74b2b5d6-4d1b-415c-9dc7-411a2f2b6b49 and acefc4bb-1709-4590-b11a-477d1cf11426). The project re-planned outreach routes around the flooded roads, prioritised transport vouchers for women with danger signs during the road closures, and shared flood updates with the county disaster management committee. Supply chain issues also materialised: a national Penta vaccine shortage lasted one week, and the project recalled children missed during the stock-out for vaccination in the following weeks (evidence d654056e-73a6-49a8-9b33-e9ee44cdf848). Equipment items arrived in partial shipments from Nairobi because of delays on the Kitale road. Workforce constraints were minor: a few community health volunteers missed training sessions because of livestock movements and long distances, and intermittent internet and power outages delayed KHIS uploads at remote facilities during the monthly data review (evidence fcaf938d-4175-4bd6-8b3d-66a2cf334b3a). These access and supply issues explain why some counts, such as skilled deliveries, remain behind their planned monthly share. The lesson recorded is that a fixed outreach calendar shared with community health volunteers helps caregivers find outreach sessions even when routes change. No security incidents were recorded in April. The records contain no request for USAID support for the month.
+
+7 Priorities for Next Month
+
+May priorities carry forward the April work plan. The project will continue training cohorts of health workers and hold monthly clinical mentorship visits, following the 26 health workers trained and 14 mentorship visits recorded in April. It will deliver the next batch of essential MNCH equipment kits to the remaining facilities, after three of 14 facilities received kits in April. The project will train the next community health volunteer cohort and supervise those already trained; 60 CHVs were trained and kitted in April. Community dialogue days, household visits and radio messages will continue, as will outreach antenatal care clinics and voucher reimbursements to transporters. Immunization outreach sessions and monthly cold-chain checks will continue, and the project will recall children who missed Penta3 doses during the one-week national vaccine shortage for vaccination in the following weeks. CHVs will continue monthly MUAC screening of children aged 6 to 59 months, and the project will track referral completion. The monthly data review will continue, with follow-up on late-reporting facilities. The team will apply the April lessons, including sharing a fixed outreach calendar with community health volunteers so caregivers can find sessions even when routes change.
+
+8 Branding and Marking Compliance
+
+The project met USAID branding and marking requirements in April 2026. USAID marking was applied to the first three essential maternal, newborn and child health (MNCH) equipment kits delivered to facilities and to the solar refrigerators included in those kits, as recorded in the handover records for the deliveries described in the activity results above. The marking plan approved by the Agreement Officer's Representative (AOR) was followed for these items. The compliance status for the month is compliant, and no remediation steps are required.
+
+Section 1
+
+Executive Summary
+Statements
+Sources · 10
+Chart
+Comments
+History
+
+Nothing to decide — all 12 statements are backed by evidence or decided.
+
+Not checked (minor)
+
+“This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID).”
+
+Not checked (minor)
+
+“The contents are the responsibility of GEC and do not necessarily reflect the views of USAID or the United States Government.”
+
+Not checked (minor)
+
+“Performance remained below the activity's targets across the indicator set.”
+
+Not checked (minor)
+
+“USAID branding and marking requirements were met, and 72% of facilities submitted Kenya Health Information System (KHIS) reports on time.”
+
+Not checked (minor)
+
+“In May the project will continue training cohorts, deliver the next equipment batch, and continue outreach and community activities.”
+
+Matches evidence
+
+“In April 2026, the USAID-funded Turkana Maternal, Newborn and Child Health (MNCH) Strengthening Activity, implemented by GEC with the Lodwar Community Health Alliance (LOCHA) across 14 facilities in Turkana Central, Turkana South and Loima sub-counties, delivered a full month of activity.”
+
+Matches evidence
+
+“The month produced 8 activity records and 16 verified indicator results.”
+
+Matches evidence
+
+“Community health education reached 2600 people (1612 female, 988 male) against a life-of-activity target of 18000, up from 1800 in the previous period, and 60 community health volunteers (38 female, 22 male) were trained and kitted.”
+
+Matches evidence
+
+“The project trained 26 health workers in Emergency Obstetric and Newborn Care (EmONC), Integrated Management of Childhood Illness (IMCI) and essential newborn care (15 female, 11 male) against a target of 120, and made 14 clinical mentorship visits against a target of 84.”
+
+Matches evidence
+
+“First antenatal visits rose to 640 (target 4200), skilled deliveries to 280 (target 2100), and DTP3/Penta3 immunisation to 420 children (target 3300); ANC4+ coverage stood at 32% against a 45% target.”
+
+Matches evidence
+
+“Three of 14 facilities received essential MNCH equipment kits.”
+
+Matches evidence
+
+“Long-rains flooding on the Turkwel and Kerio rivers cut the Kalokol and Lowarengak roads for nine days and a national Penta vaccine shortage lasted one week; outreach routes were re-planned and children missed during the stock-out were recalled.”

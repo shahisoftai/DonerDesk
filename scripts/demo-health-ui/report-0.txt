@@ -1,0 +1,254 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity
+
+KEN-MNCH-TUR-MUWAPRQO · USAID · Kenya · HEALTH
+
+Mar 1, 2026 – Aug 31, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity · Mar 1, 2026 – Mar 31, 2026 · due Apr 10, 2026
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity — monthly report
+Draft
+Version 1
+100% ready
+· 2 to do
+Approve 8 remaining sections
+OUTLINE
+0 of 8 approved
+Approve all clean sections (8)
+1
+Executive Summary
+Draft
+2
+Progress Against the Work Plan
+Draft
+3
+Gender Equality and Women's Empowerment
+Draft
+4
+Environmental Compliance
+Draft
+5
+Collaboration, Learning and Adaptation
+Draft
+6
+Implementation Challenges and Actions Taken
+Draft
+7
+Priorities for Next Month
+Draft
+8
+Branding and Marking Compliance
+Draft
++ Add section
+Reorder
+REPORT INPUTS
+Edit
+Indicator values
+16 of 16 verified · 1 not entered
+Story answers
+5 of 5 answered
+Evidence
+15 files
+
+[DEMO-5] TURKANA MATERNAL, NEWBORN & CHILD HEALTH STRENGTHENING ACTIVITY · MAR 1, 2026 – MAR 31, 2026 · DUE APR 10, 2026
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity — monthly report
+
+Drafted
+Rewrite with AI
+Regenerate
+Edit
+Approve section
+1 Executive Summary
+May be out of date — other sections changed after this summary was written.
+Regenerate summary
+
+This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID). The contents are the responsibility of GEC and do not necessarily reflect the views of USAID or the United States Government.
+
+In its first month, the USAID-funded Turkana Maternal, Newborn and Child Health (MNCH) Strengthening Activity, implemented by GEC with the Lodwar Community Health Alliance (LOCHA) across 14 facilities in Turkana County, trained its first health worker cohort and began community-level delivery. March 2026 produced 8 activity records covering training, services, community outreach and data quality.
+
+March was a start-up month, and most results sat below their monthly share of targets. The project trained 14 health workers in Emergency Obstetric and Newborn Care (EmONC), Integrated Management of Childhood Illness (IMCI) and essential newborn care (8 female, 6 male) against a life-of-activity target of 120. It completed 8 mentorship visits against a target of 84, and trained and kitted 40 community health volunteers against a target of 220. Service delivery began: 380 first antenatal care visits (target 4200), 160 skilled deliveries (target 2100) and 290 children under one receiving DTP3/Penta3 (target 3300). Some 66% of facilities submitted Kenya Health Information System (KHIS) monthly reports on time. Four or more antenatal care visits stood at 29% against a 45% target, below expectation, up from the 28 baseline. No equipment kits were delivered; the needs assessment and first tender were completed.
+
+Recruitment of nurse mentors and the first procurement round took longer than planned, so services were only partly covered in early weeks. The project compressed the training calendar to recover the missed days. In April it will continue training cohorts, deliver the next equipment batch, and expand outreach and community activities.
+
+2 Progress Against the Work Plan
+
+March was a start-up month, and most results sat below their monthly share of targets across the Intermediate Results (IRs) because training, equipment and community structures were still being put in place.
+
+IR1: Health worker capacity and facility systems. The project trained the first cohort of 14 health workers in Emergency Obstetric and Newborn Care (EmONC), Integrated Management of Childhood Illness (IMCI) and essential newborn care at Kanamkemer Health Centre (8 female, 6 male) and completed 8 facility clinical mentorship visits across the 14 supported facilities in Turkana County, with mentors deployed from the second week of March. No facilities received the essential Maternal, Newborn and Child Health (MNCH) equipment kit: the project completed the needs assessment for all 14 facilities and issued the first tender, but United States Agency for International Development (USAID) procurement rules requiring three quotations delayed delivery.
+
+IR2: Service delivery. At the 14 supported facilities in Turkana Central, Turkana South and Loima sub-counties, the project recorded 380 first antenatal care visits, 160 skilled deliveries and 10 women referred for emergency obstetric care through the transport voucher scheme. Immunization services, including 18 outreach sessions, delivered DTP3/Penta3 to 290 children under one year (145 girls, 145 boys). The project delivered these services with county health staff and facility teams; start-up delays left services only partly covered in the first weeks.
+
+IR3: Community engagement and data systems. The project trained and kitted 40 community health volunteers (26 women, 14 men), reached 1800 people with community health education (1116 women and girls, 684 men and boys), screened 900 children aged 6-59 months for acute malnutrition with mid-upper arm circumference (MUAC) tapes (459 girls, 441 boys) and referred 60 children with acute malnutrition to treatment. The project held a monthly data review with 28 facility in-charges and records officers; 66 % of supported facilities submitted their Kenya Health Information System (KHIS) monthly reports on time.
+
+Indicator performance table
+
+Indicator	Month result	Cumulative result	Life-of-activity target	Percent of target
+ANC4+ coverage (HL-OC1a)	29 %	29 %	45 %	64.4 %
+Skilled birth attendant coverage (HL-OC1b)	42 %	42 %	60 %	70 %
+DTP3/Penta3 coverage under 1 year (HL-OC1c)	63 %	63 %	80 %	78.8 %
+Caregivers naming three danger signs (HL-OC2a)	0 %	0 %	60 %	0 %
+Health workers trained in EmONC, IMCI or essential newborn care (HL-1.1a)	14	14	120	11.7 %
+Facility clinical mentorship visits (HL-1.1b)	8	8	84	9.5 %
+Facilities equipped with essential MNCH kit (HL-1.2a)	0	0	14	0 %
+First ANC visits (HL-1.3a)	380	380	4,200	9 %
+Skilled deliveries (HL-1.3b)	160	160	2,100	7.6 %
+Emergency obstetric care transport voucher referrals (HL-1.3c)	10	10	180	5.6 %
+Children under 1 year receiving DTP3/Penta3 (HL-1.4a)	290	290	3,300	8.8 %
+Outreach immunization sessions (HL-1.4b)	18	18	180	10 %
+Facilities submitting KHIS reports on time (HL-1.5a)	66 %	66 %	90 %	73.3 %
+CHVs trained and kitted (HL-2.1a)	40	40	220	18.2 %
+People reached with community health education (HL-2.2a)	1,800	1,800	18,000	10 %
+Children 6-59 months screened with MUAC (HL-2.3a)	900	900	9,000	10 %
+Children with acute malnutrition referred to treatment (HL-2.3b)	60	60	650	9.2 %
+
+The caregiver danger-signs figure (0 % against a 60 % target) is based on partial records.
+
+Behind-plan indicators and corrective action. Most indicators are below their monthly share of the target because March was a start-up month: training, equipment and community structures were still being put in place. Mentor recruitment and the first procurement round took longer than planned, so services were only partly covered in the first weeks and no facilities received equipment kits. The project deployed mentors in the second week instead of the first and compressed the training calendar so missed days are recovered in April.
+
+Planned activities for the next reporting period. The project will continue training cohorts of health workers and hold monthly mentorship visits, recover the missed training days in April under the compressed calendar, deliver the next batch of equipment kits to the remaining facilities, continue outreach antenatal clinics and voucher reimbursements to transporters, continue outreach immunization sessions with monthly cold-chain checks, train the next CHV cohort and supervise those already trained, continue dialogue days and radio messages, continue monthly MUAC screening and track referral completion, and follow up on late-reporting facilities through the monthly KHIS data review.
+
+3 Gender Equality and Women's Empowerment
+
+Sex-disaggregated results were recorded for the March people-level indicators and activities. The project trained 14 health workers (8 female, 6 male) in EmONC, IMCI and essential newborn care. It trained and kitted 40 CHVs (26 female, 14 male). Community health education reached 1800 people (1116 female, 684 male). Immunization reached 290 children under one year (145 female, 145 male). MUAC screening covered 900 children aged 6 to 59 months (459 female, 441 male). First antenatal visits totalled 380 women (380 female, 0 male).
+
+Actions this month addressed gender gaps in access to services. The project recruited two female nurse mentors among the five mentors deployed to the 14 facilities, and set training schedules to finish before 3 pm so that women health workers could travel home in daylight. Community dialogues were timed to market days and water-point visits, which the activity records note reached more men. The transport voucher scheme supported 10 women referred for emergency obstetric care in March.
+
+No gender assessment or safeguarding compliance record was supplied for this month, so compliance cannot be stated from the records.
+
+4 Environmental Compliance
+
+The activity remained compliant with the Initial Environmental Examination (IEE) mitigation measures in March 2026, with no environmental incidents or unexpected impacts recorded. The project visited all 14 supported facilities with the health care waste checklist during the first weeks of the month.
+
+Health care waste management (sharps, placenta pits, incinerators). Sharps containers and safety boxes were in place in 12 of the 14 facilities. The two facilities lacking them, Nakwamekwi and Napuu dispensaries, received replacement sharps boxes, and a placenta pit was dug at Napuu. Segregated waste bins were distributed to the maternity wings during the visits. The records supplied do not document incinerator status for March.
+
+Any environmental incidents or unexpected impacts. No environmental incidents or unexpected impacts were reported in March.
+
+No remediation steps are required for this month, as no non-compliance was recorded; the gaps found at Nakwamekwi and Napuu were corrected during the same checklist visits.
+
+5 Collaboration, Learning and Adaptation
+
+The project worked with the Turkana County health system in March, completing the facility equipment needs assessment jointly with the county pharmacist and holding the monthly data review with the sub-county health records officers, attended by 28 facility in-charges and records officers. Nurse mentors reached all 14 facilities from the second week of the month, pairing classroom training in Emergency Obstetric and Newborn Care (EmONC), Integrated Management of Childhood Illness (IMCI) and essential newborn care with on-site mentorship. Community health volunteers (CHVs) trained at the nearest facility recorded what attendance costs elsewhere: some CHVs walked more than 15 km to reach the March training venue.
+
+Two lessons emerged from the month's records. First, pairing a classroom course with an on-site mentorship visit within two weeks lets health workers apply new skills straight away; mentors observed improved use of partographs and neonatal resuscitation after training. Second, outreach tailored to where communities already gather reaches more people: dialogues timed to market days and water-point visits reached more men, screening at water points found more children than house-to-house visits during drought, and fixed outreach calendars shared with CHVs increased turnout at immunization sessions.
+
+The project acted on these observations in March. It compressed the training calendar so the days missed during start-up were recovered in April. It plans to hold the next CHV training at the nearest facility to reduce absenteeism, to use pre-agreed kit lists with the county pharmacist to avoid duplicate supplies, and to print the Kenya Health Information System (KHIS) reporting-rate dashboard for review meetings so late-reporting facilities act.
+
+Coordination with the County Department of Health and other partners. The records show collaboration with the county pharmacist on the equipment needs assessment, and with the sub-county health records officers on the monthly data review and KHIS data quality audit. The records do not name any other partners or coordination forums for March.
+
+What evidence led to a change in approach? Mentor visit reports recorded improved partograph use and neonatal resuscitation after on-site mentorship within two weeks of classroom training, supporting the paired training-and-mentorship model. CHV attendance records showing walks of more than 15 km led to siting future training at the nearest facility. Observations that market-day and water-point outreach reached more people led to the recorded next steps of continuing dialogue days and fixed outreach calendars. Duplicate-supply risks identified with the county pharmacist led to the pre-agreed kit lists.
+
+6 Implementation Challenges and Actions Taken
+
+Start-up delays affected service coverage in the first weeks of March. Recruitment of the two nurse mentors and the first procurement round took longer than planned, so services at supported facilities were only partly covered early in the month. Mentorship visits consequently began in the second week rather than the first, contributing to the 8 visits recorded against a target of 84. The equipment lot faced a supply chain delay: USAID rules required three quotations for each equipment lot, which took three weeks, so the tender was issued but no kits were delivered in March (see 'Progress Against the Work Plan').
+
+The project took mitigation steps for each issue. It compressed the training calendar so the missed days will be recovered in April, and deployed mentors to all 14 facilities from the second week. For equipment, the team completed the joint needs assessment with the county pharmacist and issued the first tender. On workforce issues, some community health volunteers walked more than 15 km to reach the training venue; the project recorded the lesson that holding training at the nearest facility reduces absenteeism. Some facilities also still enter data late after staff rotations; the project held the monthly data review with sub-county records officers and will follow up on late-reporting facilities.
+
+No security or access incidents were recorded in March, and the records contain no request for USAID support for the month.
+
+7 Priorities for Next Month
+
+April priorities follow directly from the March activity records. The project will continue training cohorts of health workers and hold monthly mentorship visits, building on the 14 health workers trained and 8 mentorship visits recorded in March. It will deliver the next batch of equipment kits to the remaining facilities, following the needs assessment and tender completed in March that equipped no facilities yet. It will train the next community health volunteer (CHV) cohort and supervise those already trained. Community dialogue days and radio messages will continue, as will outreach antenatal care (ANC) clinics and voucher reimbursements to transporters. Immunization outreach sessions and monthly cold-chain checks will continue. CHVs will continue monthly mid-upper arm circumference (MUAC) screening, and the project will track referral completion for the 60 children referred in March. The monthly data review will continue, with follow-up on late-reporting facilities. The team will also apply the March lessons: scheduling training at the nearest facility, timing dialogues to market days and water points, sharing fixed outreach calendars with CHVs, screening at water points, and printing the Kenya Health Information System (KHIS) reporting-rate dashboard for the review meeting.
+
+8 Branding and Marking Compliance
+
+The activity met USAID branding and marking requirements in March 2026. The USAID identity was applied to the training banners, community health volunteer (CHV) training kits and the sign-in sheets used during the month's events. No equipment was delivered in March, so no equipment marking was required. The field report of the LOCHA programme team for March 2026 records this compliance. No remediation steps are needed for the month.
+
+Section 1
+
+Executive Summary
+Statements
+Sources · 12
+Chart
+Comments
+History
+
+Nothing to decide — all 14 statements are backed by evidence or decided.
+
+Not checked (minor)
+
+“This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID).”
+
+Not checked (minor)
+
+“The contents are the responsibility of GEC and do not necessarily reflect the views of USAID or the United States Government.”
+
+Not checked (minor)
+
+“March 2026 produced 8 activity records covering training, services, community outreach and data quality.”
+
+Not checked (minor)
+
+“March was a start-up month, and most results sat below their monthly share of targets.”
+
+Not checked (minor)
+
+“In April it will continue training cohorts, deliver the next equipment batch, and expand outreach and community activities.”
+
+Matches evidence
+
+“In its first month, the USAID-funded Turkana Maternal, Newborn and Child Health (MNCH) Strengthening Activity, implemented by GEC with the Lodwar Community Health Alliance (LOCHA) across 14 facilities in Turkana County, trained its first health worker cohort and began community-level delivery.”
+
+Matches evidence
+
+“The project trained 14 health workers in Emergency Obstetric and Newborn Care (EmONC), Integrated Management of Childhood Illness (IMCI) and essential newborn care (8 female, 6 male) against a life-of-activity target of 120.”
+
+Matches evidence
+
+“It completed 8 mentorship visits against a target of 84, and trained and kitted 40 community health volunteers against a target of 220.”
+
+Matches evidence
+
+“Service delivery began: 380 first antenatal care visits (target 4200), 160 skilled deliveries (target 2100) and 290 children under one receiving DTP3/Penta3 (target 3300).”
+
+Matches evidence
+
+“Some 66% of facilities submitted Kenya Health Information System (KHIS) monthly reports on time.”
+
+Matches evidence
+
+“Four or more antenatal care visits stood at 29% against a 45% target, below expectation, up from the 28 baseline.”
+
+Matches evidence
+
+“No equipment kits were delivered; the needs assessment and first tender were completed.”
+
+Matches evidence
+
+“Recruitment of nurse mentors and the first procurement round took longer than planned, so services were only partly covered in early weeks.”
+
+Matches evidence
+
+“The project compressed the training calendar to recover the missed days.”

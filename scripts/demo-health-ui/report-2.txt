@@ -1,0 +1,234 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity
+
+KEN-MNCH-TUR-MUWAPRQO · USAID · Kenya · HEALTH
+
+Mar 1, 2026 – Aug 31, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity · May 1, 2026 – May 31, 2026 · due Jun 10, 2026
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity — monthly report
+Draft
+Version 1
+85% ready
+· 1 to do
+Finish 1 remaining check
+OUTLINE
+8 of 8 approved
+1
+Executive Summary
+Approved
+2
+Progress Against the Work Plan
+Approved
+3
+Gender Equality and Women's Empowerment
+Approved
+4
+Environmental Compliance
+Approved
+5
+Collaboration, Learning and Adaptation
+Approved
+6
+Implementation Challenges and Actions Taken
+Approved
+7
+Priorities for Next Month
+Approved
+8
+Branding and Marking Compliance
+Approved
++ Add section
+Reorder
+REPORT INPUTS
+Edit
+Indicator values
+17 of 17 verified
+Story answers
+5 of 5 answered
+Evidence
+17 files
+
+[DEMO-5] TURKANA MATERNAL, NEWBORN & CHILD HEALTH STRENGTHENING ACTIVITY · MAY 1, 2026 – MAY 31, 2026 · DUE JUN 10, 2026
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity — monthly report
+
+Approved
+Rewrite with AI
+Regenerate
+Edit (reopens section)
+1 Executive Summary
+
+This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID). The contents are the responsibility of GEC and do not necessarily reflect the views of USAID or the United States Government.
+
+In May 2026, the USAID-funded Turkana Maternal, Newborn and Child Health (MNCH) Strengthening Activity, implemented by GEC with the Lodwar Community Health Alliance (LOCHA) across 14 facilities in Turkana County, Kenya, delivered 8 activity records and 16 verified indicator results. Community health education reached 3100 people (1922 female, 1178 male), the largest dialogue days so far, and facilities recorded 720 first antenatal care visits and 330 skilled deliveries.
+
+Delivery rose across services: DTP3/Penta3 coverage reached 70 percent against a target of 80, up from 66; ANC4+ stood at 36 percent against a 45 percent target, up from 32; skilled delivery was 50 percent against 60, up from 46; and 79 percent of facilities submitted Kenya Health Information System (KHIS) reports on time against a 90 percent target. The project trained 24 health workers (14 female, 10 male) in Emergency Obstetric and Newborn Care (EmONC), Integrated Management of Childhood Illness (IMCI) and essential newborn care, and kitted 4 facilities.
+
+A twelve-day county nurses' industrial action reduced clinic hours at five facilities; project clinical officers ran mobile antenatal and immunization clinics, and weekly calls with the sub-county health management team continued. In June, the project will continue training cohorts, mentorship visits and outreach, and deliver the next equipment kits.
+
+Change from previous period: HL-OC1a (Percentage of pregnant women with four or more ANC visits (ANC4+) at supported facilities) 32 → 36 ▲
+
+2 Progress Against the Work Plan
+
+Progress by Intermediate Result (IR), May 2026.
+
+IR1: Health worker capacity and facility systems. Project clinical trainers and nurse mentors trained 24 health workers (14 female, 10 male) in Emergency Obstetric and Newborn Care (EmONC), Integrated Management of Childhood Illness (IMCI) and essential newborn care at Katilu Health Centre on 9 May 2026, and completed 14 facility clinical mentorship visits across the 14 supported facilities. The logistics team delivered and installed essential Maternal, Newborn and Child Health (MNCH) equipment kits at 4 facilities on 14 May, with handover certificates signed by facility in-charges. A monthly data review and KHIS data quality audit at Lodwar on 25 May brought together 28 facility in-charges and records officers, and 79 percent of supported facilities submitted their Kenya Health Information System (KHIS) monthly reports on time.
+
+IR2: Service delivery. Supported facilities recorded 720 first antenatal care visits, 330 deliveries attended by skilled birth attendants and 30 women referred for emergency obstetric care using the transport voucher scheme, alongside 30 outreach immunization sessions that delivered DTP3/Penta3 to 520 children under one year (260 female, 260 male). ANC4+ coverage reached 36 percent (up from 32), skilled delivery coverage 50 percent (up from 46) and DTP3/Penta3 coverage 70 percent (up from 66); the mobile clinics maintained coverage during the nurses' strike. The project delivered these services with county health staff, facility teams and community health volunteers in Turkana County.
+
+IR3: Community engagement and data systems. The project trained and kitted 50 community health volunteers (32 female, 18 male) on the community health package, iCCM, MUAC screening and danger-sign counselling. CHVs and community mobilisers reached 3100 people (1922 women and girls, 1178 men and boys) with health education, screened 1550 children aged 6-59 months for acute malnutrition using MUAC (791 female, 759 male) and referred 110 children with acute malnutrition to treatment. The quarterly CHV-led KAP spot survey (n=420) found 44 percent of caregivers could name at least three child danger signs.
+
+Indicator performance table
+
+Indicator	Month result	Cumulative result	Life-of-activity target	Percent of target
+ANC4+ coverage (HL-OC1a)	36 %	36 %	45 %	80 %
+Skilled birth attendant coverage (HL-OC1b)	50 %	50 %	60 %	83.3 %
+DTP3/Penta3 coverage under 1 year (HL-OC1c)	70 %	70 %	80 %	87.5 %
+Caregivers naming three danger signs (HL-OC2a)	44 %	44 %	60 %	73.3 %
+Health workers trained in EmONC, IMCI or essential newborn care (HL-1.1a)	24	64	120	20 %
+Facility clinical mentorship visits (HL-1.1b)	14	36	84	16.7 %
+Facilities equipped with essential MNCH kit (HL-1.2a)	4	7	14	28.6 %
+First ANC visits (HL-1.3a)	720	1740	4200	17.1 %
+Skilled deliveries (HL-1.3b)	330	770	2100	15.7 %
+Emergency obstetric care transport voucher referrals (HL-1.3c)	30	62	180	16.7 %
+Children under 1 year receiving DTP3/Penta3 (HL-1.4a)	520	1230	3300	15.8 %
+Outreach immunization sessions (HL-1.4b)	30	76	180	16.7 %
+Facilities submitting KHIS reports on time (HL-1.5a)	79 %	79 %	90 %	87.8 %
+CHVs trained and kitted (HL-2.1a)	50	150	220	22.7 %
+People reached with community health education (HL-2.2a)	3100	7500	18000	17.2 %
+Children 6-59 months screened with MUAC (HL-2.3a)	1550	3750	9000	17.2 %
+Children with acute malnutrition referred to treatment (HL-2.3b)	110	260	650	16.9 %
+
+Indicators behind plan and corrective action. All indicators remain below their life-of-activity targets. A county nurses' industrial action lasted twelve days and reduced routine clinic hours at five facilities; facility maternity registers record that the industrial action reduced deliveries at five sites. The project adapted by running mobile antenatal and immunization clinics at the affected facilities for the duration of the strike, with project-supported clinical officers covering for striking colleagues without replacing the county's own staff. Community dialogue days were the largest so far, which pushed the number of people reached above plan for the month. The project will follow up on late-reporting facilities through the monthly KHIS data review, where intermittent internet and power outages delayed uploads at remote facilities.
+
+Rationale. The May plan prioritised training, mentorship, equipment delivery, service continuity and community-level prevention. Results rose on every service-delivery coverage measure compared with April: 720 first ANC visits up from 640, 330 skilled deliveries up from 280, and 520 children vaccinated with DTP3/Penta3 up from 420. Service numbers held up despite the strike because project-supported clinical officers ran mobile clinics, and having these officers available kept services open throughout the twelve days.
+
+Planned activities for the next reporting period. The project will continue training cohorts of health workers and hold monthly mentorship visits, deliver the next batch of essential MNCH equipment kits to the remaining facilities, continue outreach ANC clinics and voucher reimbursements to transporters, continue outreach immunization sessions and monthly cold-chain checks, train the next CHV cohort and supervise those already trained, continue dialogue days and radio messages, continue monthly MUAC screening and track referral completion, and follow up on late-reporting facilities through the monthly KHIS data review.
+
+3 Gender Equality and Women's Empowerment
+
+Sex-disaggregated results were recorded for the May people-level indicators and activities. The project trained 24 health workers (14 female, 10 male) in EmONC, IMCI and essential newborn care. It trained and kitted 50 CHVs (32 female, 18 male). Community health education reached 3100 people (1922 female, 1178 male). Immunization reached 520 children under one year (260 female, 260 male). MUAC screening covered 1550 children aged 6 to 59 months (791 female, 759 male). First antenatal visits totalled 720 women (720 female, 0 male).
+
+Actions this month addressed gender gaps in access to services. The transport voucher scheme supported 30 women referred for emergency obstetric care in May, up from 22 in the previous period. Mobile antenatal clinics were staffed by women clinical officers where possible, and the KAP spot survey enumerators were balanced by sex. Community dialogues were timed to market days and water-point visits, which the activity records note reached more men.
+
+No gender assessment or safeguarding compliance record was supplied for this month, so compliance cannot be stated from the records.
+
+4 Environmental Compliance
+
+The project remained compliant with the Initial Environmental Examination (IEE) mitigation measures in May 2026, and the project recorded no environmental incidents or unexpected impacts in the month.
+
+Health care waste management (sharps, placenta pits, incinerators). The project carried out waste management checks at all 14 supported facilities in May. During the twelve-day county nurses' industrial action, the incinerator team collected and burned sharps waste at Lodwar Sub-County Hospital and Lokichar Health Centre so that waste did not accumulate while the strike reduced clinic hours at five facilities.
+
+Any environmental incidents or unexpected impacts. The project recorded no environmental incidents or unexpected impacts in May.
+
+The project required no remediation steps this month, as the records show no non-compliance.
+
+5 Collaboration, Learning and Adaptation
+
+Weekly calls with the sub-county health management team continued throughout the twelve-day county nurses' industrial action, and the project agreed mobile clinic schedules with the County Director of Health. The monthly data review and Kenya Health Information System (KHIS) data quality audit with sub-county health records officers covered all 14 facilities, with 28 facility in-charges and records officers taking part; 79 percent of supported facilities submitted monthly reports on time in May. The partner organization Lodwar Community Health Alliance (LOCHA) delivered the field activities.
+
+Observation. The industrial action reduced routine clinic hours at five facilities. Results nonetheless held up: project-supported clinical officers ran mobile antenatal and immunization clinics at the affected facilities, and community dialogue days were the largest so far, reaching 3,100 people, above plan. On-site mentorship records note improved use of partographs and neonatal resuscitation after classroom training, and peer supervision by experienced community health volunteers (CHVs) kept newly trained volunteers active despite the twelve-day supervision gap. In screening, household visits found children who would otherwise be missed and kept referral slips linked to the village register.
+
+Implication (what was learned). Having project clinical officers able to cover for striking colleagues kept services open without replacing the county's own staff. Lessons recorded in May's activity logs include: on-site mentorship after classroom training improves use of partographs and neonatal resuscitation; peer supervision by experienced CHVs keeps newly trained volunteers active; pre-agreed kit lists with the county pharmacist avoid duplicate supplies; dialogues timed to market days and water-point visits reach more men; fixed outreach calendars shared with CHVs increase turnout; screening during routine CHV household visits finds otherwise-missed children; and printing the reporting-rate dashboard for the review meeting makes late facilities act.
+
+Action (what changed as a result). Mobile antenatal and immunization clinics were run at the five affected facilities for the duration of the strike. Mobile antenatal clinics were staffed by women clinical officers where possible, and the knowledge, attitude and practice (KAP) spot survey enumerators were balanced by sex. The project will continue training cohorts and monthly mentorship visits, deliver the next batch of equipment kits to the remaining facilities, continue dialogue days and radio messages, train the next CHV cohort, and follow up on late-reporting facilities.
+
+Coordination with the County Department of Health and other partners. The records show weekly calls with the sub-county health management team during the strike, agreement of mobile clinic schedules with the County Director of Health, pre-agreed kit lists with the county pharmacist, the monthly data review and KHIS data quality audit with sub-county health records officers, and delivery of field activities by LOCHA. The records do not name any additional partners for May.
+
+What evidence led to a change in approach? Activity records of reduced clinic hours at five facilities during the industrial action led to the mobile antenatal and immunization clinics. The lesson that fixed outreach calendars shared with CHVs increase turnout, drawn from the outreach session records, supports their continued use. The reporting-rate dashboard, showing 79 percent on-time submission, led to the recorded next step of printing it for review meetings, and the finding that peer supervision keeps CHVs active supports recruiting experienced CHVs as peer supervisors for the next cohort.
+
+6 Implementation Challenges and Actions Taken
+
+A twelve-day county nurses' industrial action was the month's main workforce challenge. It reduced routine clinic hours at five facilities, as recorded in the mentorship visit log (evidence 16b3da31-bf4c-42fe-a46b-301872304023) and the outreach session log (evidence 96245166-d716-4208-a8f9-2c4a5a472963). Community health volunteers in strike-affected sub-counties could not be supervised by facility staff during the same period (evidence 14a64081-549f-481b-a7bb-750e2036ff1b). The project responded by running mobile antenatal and immunization clinics at the affected facilities for the duration of the strike. It also held weekly calls with the sub-county health management team and agreed mobile clinic schedules with the County Director of Health. The lesson recorded is that project-supported clinical officers could cover for striking colleagues without replacing county staff. Peer supervision by experienced CHVs keeps newly trained volunteers active.
+
+Supply chain delays also materialised. Some equipment kit items arrived in partial shipments from Nairobi because of delays on the Kitale road, as recorded in activity A1.2. The logistics team delivered and installed full kits at 4 facilities with handover certificates. Pre-agreed kit lists with the county pharmacist were recorded as the lesson to avoid duplicate supplies.
+
+Workforce-adjacent data issues continued. Intermittent internet and power outages delayed uploads at remote facilities during the monthly data review (evidence 19e763bc-21e4-4fdd-8630-21d5d5abbb62). That review recorded 79 percent of supported facilities submitting KHIS monthly reports on time. The project held the monthly data review with 28 participants and sub-county records officers and will follow up on late-reporting facilities.
+
+On security, access, supply chain and workforce issues: the strike, the Kitale road supply delays, the CHV supervision gap and the connectivity outages were the issues recorded for May. No security incidents were noted in the monthly records. The records contain no request for USAID support for the month.
+
+7 Priorities for Next Month
+
+June priorities follow from the May activity records and the prior approved work plan. The project will continue training cohorts of health workers and hold monthly clinical mentorship visits, following the 24 health workers trained and 14 mentorship visits recorded in May. It will deliver the next batch of essential MNCH equipment kits to the remaining facilities, after 4 facilities received kits in May. The project will train the next community health volunteer cohort and supervise those already trained; 50 CHVs were trained and kitted in May. Community dialogue days, household visits and radio messages will continue, as will outreach antenatal care clinics and voucher reimbursements to transporters, which served 30 women in May. Immunization outreach sessions and monthly cold-chain checks will continue. CHVs will continue monthly MUAC screening of children aged 6 to 59 months, and the project will track referral completion. The monthly data review and KHIS data quality audit will continue, with follow-up on late-reporting facilities. The team will apply the May lessons, including peer supervision by experienced CHVs and on-site mentorship after classroom training to support use of partographs and neonatal resuscitation. Where the nurses' industrial action continues, the project will keep running mobile antenatal and immunization clinics at affected facilities, as agreed with the County Director of Health.
+
+8 Branding and Marking Compliance
+
+The project met USAID branding and marking requirements in May 2026 and is compliant for the month. All four essential maternal, newborn and child health (MNCH) equipment kits delivered in May carried USAID marking, and the handover certificates signed by facility in-charges recorded it. Radio scripts for the community messages acknowledged USAID. No events or materials required remediation, and no corrective steps are needed.
+
+Section 1
+
+Executive Summary
+Statements
+Sources · 14
+Chart
+Comments
+History
+
+Nothing to decide — all 8 statements are backed by evidence or decided.
+
+Kept with a note
+
+“Delivery rose across services: DTP3/Penta3 coverage reached 70 percent against a target of 80, up from 66; ANC4+ stood at 36 percent against a 45 percent target, up from 32; skilled delivery was 50 percent against 60, up from 46; and 79 percent of facilities submitted Kenya Health Information System (KHIS) reports on time against a 90 percent target.”
+
+Note: Documented in the activity records and the mentorship visit logs; the causal link is the programme team's own finding.
+
+Not checked (minor)
+
+“This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID).”
+
+Not checked (minor)
+
+“The contents are the responsibility of GEC and do not necessarily reflect the views of USAID or the United States Government.”
+
+Matches evidence
+
+“In May 2026, the USAID-funded Turkana Maternal, Newborn and Child Health (MNCH) Strengthening Activity, implemented by GEC with the Lodwar Community Health Alliance (LOCHA) across 14 facilities in Turkana County, Kenya, delivered 8 activity records and 16 verified indicator results.”
+
+Matches evidence
+
+“Community health education reached 3100 people (1922 female, 1178 male), the largest dialogue days so far, and facilities recorded 720 first antenatal care visits and 330 skilled deliveries.”
+
+Matches evidence
+
+“The project trained 24 health workers (14 female, 10 male) in Emergency Obstetric and Newborn Care (EmONC), Integrated Management of Childhood Illness (IMCI) and essential newborn care, and kitted 4 facilities.”
+
+Matches evidence
+
+“A twelve-day county nurses' industrial action reduced clinic hours at five facilities; project clinical officers ran mobile antenatal and immunization clinics, and weekly calls with the sub-county health management team continued.”
+
+Matches evidence
+
+“In June, the project will continue training cohorts, mentorship visits and outreach, and deliver the next equipment kits.”

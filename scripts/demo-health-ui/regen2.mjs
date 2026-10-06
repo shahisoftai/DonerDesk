@@ -1,0 +1,14 @@
+import { attach, BASE, dump } from "./lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const per = readFileSync("periods.txt","utf8").trim().split("\n"); const id = process.argv[2].length > 2 ? process.argv[2] : per[Number(process.argv[2])];
+const title = process.argv[3]; const instr = process.argv[4] ?? "";
+const { page, browser } = await attach();
+page.on("response", r => { if (/regenerate|ai-reporter|sections/.test(r.url()) && r.request().method() !== "GET") console.log("  net", r.request().method(), r.status(), r.url().slice(-70)); });
+await page.goto(`${BASE}/projects/${P}/reports/${id}`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(2500);
+const h = page.getByRole("heading", { name: new RegExp(title) }).first(); await h.scrollIntoViewIfNeeded(); await h.click(); await page.waitForTimeout(800);
+await page.getByRole("button", { name: "Regenerate", exact: true }).first().click(); await page.waitForTimeout(1200);
+if (instr) await page.getByRole("textbox", { name: /^Regenerate/ }).fill(instr);
+await page.screenshot({ path: "regen-a.png" });
+const btns = page.getByRole("button", { name: "Regenerate", exact: true }); console.log("regenerate buttons", await btns.count());
+await btns.last().click(); await page.waitForTimeout(Number(process.env.WAITMS ?? 20000));
+console.log((await page.locator("body").innerText()).split("\n").filter(l=>/being written|Regenerat|without AI|kept|could not|failed/i.test(l)).slice(0,8).join("\n"));
+await browser.close(); process.exit(0);

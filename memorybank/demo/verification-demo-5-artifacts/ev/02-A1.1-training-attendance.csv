@@ -1,0 +1,27 @@
+participant_id,sex,cadre,facility,course,dates,signed
+HW-02-001,F,Nurse-midwife,Kanamkemer HC,EmONC,2026-04-09,yes
+HW-02-002,F,Clinical officer,Nakwamekwi Disp,IMCI,2026-04-09,yes
+HW-02-003,F,Nurse,Lodwar SCH,Essential newborn care,2026-04-09,yes
+HW-02-004,F,Medical officer,Kalokol HC,EmONC,2026-04-09,yes
+HW-02-005,F,Pharmaceutical tech,Lowarengak Disp,IMCI,2026-04-09,yes
+HW-02-006,F,Nurse-midwife,Kerio HC,Essential newborn care,2026-04-09,yes
+HW-02-007,F,Clinical officer,Katilu HC,EmONC,2026-04-09,yes
+HW-02-008,F,Nurse,Lokori HC,IMCI,2026-04-09,yes
+HW-02-009,F,Medical officer,Lokichar HC,Essential newborn care,2026-04-09,yes
+HW-02-010,F,Pharmaceutical tech,Kainuk Disp,EmONC,2026-04-09,yes
+HW-02-011,F,Nurse-midwife,Lorugum HC,IMCI,2026-04-09,yes
+HW-02-012,F,Clinical officer,Napuu Disp,Essential newborn care,2026-04-09,yes
+HW-02-013,F,Nurse,Lokitaung HC,EmONC,2026-04-09,yes
+HW-02-014,F,Medical officer,Kakuma Mission HC,IMCI,2026-04-09,yes
+HW-02-015,F,Pharmaceutical tech,Kanamkemer HC,Essential newborn care,2026-04-09,yes
+HW-02-016,M,Nurse-midwife,Nakwamekwi Disp,EmONC,2026-04-09,yes
+HW-02-017,M,Clinical officer,Lodwar SCH,IMCI,2026-04-09,yes
+HW-02-018,M,Nurse,Kalokol HC,Essential newborn care,2026-04-09,yes
+HW-02-019,M,Medical officer,Lowarengak Disp,EmONC,2026-04-09,yes
+HW-02-020,M,Pharmaceutical tech,Kerio HC,IMCI,2026-04-09,yes
+HW-02-021,M,Nurse-midwife,Katilu HC,Essential newborn care,2026-04-09,yes
+HW-02-022,M,Clinical officer,Lokori HC,EmONC,2026-04-09,yes
+HW-02-023,M,Nurse,Lokichar HC,IMCI,2026-04-09,yes
+HW-02-024,M,Medical officer,Kainuk Disp,Essential newborn care,2026-04-09,yes
+HW-02-025,M,Pharmaceutical tech,Lorugum HC,EmONC,2026-04-09,yes
+HW-02-026,M,Nurse-midwife,Napuu Disp,IMCI,2026-04-09,yes

@@ -1,0 +1,14 @@
+import { attach, BASE } from "./lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const { page, browser } = await attach();
+await page.goto(`${BASE}/projects/${P}/logframe/new-indicator`); await page.waitForLoadState("networkidle");
+const sel = page.getByLabel("Measures"); const opts = await sel.locator("option").allInnerTexts();
+await sel.selectOption({ label: opts.find(o => /^\s*Output 2\.3 —/.test(o)) });
+await page.getByLabel("Code", { exact: true }).fill("HL-2.3b");
+await page.getByLabel("Indicator name").fill("Number of children with acute malnutrition referred to treatment");
+await page.getByLabel("Baseline").fill("0"); await page.getByLabel("Target").fill("650"); await page.getByLabel("Unit (optional)").fill("children");
+const cb = page.getByLabel("Break results down by sex, age group and disability"); console.log("breakdown default", await cb.isChecked()); await cb.uncheck();
+await page.getByLabel("Means of verification (optional)").fill("Referral slips and CMAM site registers");
+await page.getByLabel("Data source (optional)").fill("CHV referral slips"); await page.getByLabel("Frequency (optional)").fill("Monthly");
+await page.getByRole("button", { name: "Save indicator" }).click(); await page.waitForTimeout(5000);
+console.log(page.url()); const t = await page.locator("main").innerText(); console.log(t.split("Settings")[1].slice(0,1800));
+await browser.close(); process.exit(0);

@@ -1,0 +1,13 @@
+import { attach, BASE, dump } from "./lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const { page, browser } = await attach();
+await page.goto(`${BASE}/projects/${P}/logframe/new`); await page.waitForLoadState("networkidle");
+await page.getByLabel("Code (optional)").fill("G1");
+await page.getByLabel("Title").fill("Improved health and survival of women, newborns and children under five in Turkana County");
+await page.getByLabel("Description (optional)").fill("Contribution to USAID/Kenya DO on improved health outcomes (CDCS)");
+await page.getByRole("button", { name: "Save item" }).click();
+await page.waitForFunction(() => !location.pathname.endsWith("/new"), null, { timeout: 15000 }).catch(() => console.log("(no redirect)"));
+await page.waitForTimeout(1500); console.log(page.url());
+console.log((await page.locator("main").innerText()).slice(0,900));
+await page.goto(`${BASE}/projects/${P}/logframe/import`); await page.waitForLoadState("networkidle");
+console.log((await page.locator("main").innerText()).slice(0,1200)); console.log((await dump(page)).filter(l=>!/^a /.test(l)).join("\n"));
+await browser.close(); process.exit(0);

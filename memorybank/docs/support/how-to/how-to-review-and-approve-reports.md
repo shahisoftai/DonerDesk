@@ -69,6 +69,10 @@ Click **Submit for review**. The report status becomes **Under review** and revi
 
 Users who cannot approve see "Waiting for review".
 
+## Second approver
+
+In **Setup → Reporting profile → Approval**, "A second person must approve reports" stops the person who wrote a report from approving it; the message names what to do (assign a project manager or M&E officer under **Team**). It is off by default: if you work alone you may approve your own report, and the audit log records it as a self sign-off.
+
 ## After approval
 
 The approved version is locked. Use **Export report** to open the export wizard. See [How to export reports](/support/how-to/export-reports). Every approval, decision and export is recorded in the [audit trail](/support/how-to/use-the-audit-trail).

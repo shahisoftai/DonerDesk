@@ -49,6 +49,10 @@ Your note is saved with the item and recorded in the audit trail.
 
 For example, if the item is "missing attendance sheet", upload the file, link it to the activity and then resolve the item. Some items resolve themselves when you add the missing evidence.
 
+## Who attested
+
+An item that needs a person (sign-off, sensitive data, procurement records, AI content reviewed) records the person who decided it. Only an Admin or a project manager can attest to several at once; for anyone else the bulk action leaves those items and tells you how many, and you decide them one by one. Bulk resolve now has one step: choose, add the note, and press the button that says what will happen.
+
 ## Resolve many at once
 
 Click **Bulk actions**, tick items (or **Select all**), choose the action and add one shared note, then apply. Click **Exit bulk** to leave.

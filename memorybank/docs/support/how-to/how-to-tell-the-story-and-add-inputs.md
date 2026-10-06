@@ -16,6 +16,13 @@ Changes save automatically. If you leave with unsaved changes you are warned.
 
 Tip: the draft can only describe what it is given. A donor template that asks for compliance statements (environmental mitigation, branding and marking, gender actions, coordination with the county) has no question of its own, so write those facts into **What went well?** or **What changed or was adapted?**; the matching sections then state them instead of "no record".
 
+## Compliance statements
+
+When the donor's template has compliance sections (for example environmental compliance, branding and marking, gender, coordination or safeguarding), the **Story** tab also shows one box per section, titled with the donor's wording. These sections have no indicator or activity behind them, so **what you write is what the report says**, written up as the reporting officer's statement; the AI adds nothing beyond it. A section with no statement is marked **To do** and counted on the tab (for example "2 to do").
+
+- **Same as last month** copies the previous report's statement for that section.
+- **Save as standing statement** keeps a statement on the project (a branding policy, a waste-management procedure); **Use the standing statement** offers it again in any period.
+
 ## Other inputs on the same page
 
 - **Indicator values** – edit or import them ([guide](/support/how-to/update-indicator-values)).

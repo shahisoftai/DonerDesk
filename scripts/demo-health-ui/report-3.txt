@@ -1,0 +1,269 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity
+
+KEN-MNCH-TUR-MUWAPRQO · USAID · Kenya · HEALTH
+
+Mar 1, 2026 – Aug 31, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity · Jun 1, 2026 – Jun 30, 2026 · due Jul 10, 2026
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity — monthly report
+Draft
+Version 1
+85% ready
+· 2 to do
+Finish 1 remaining check
+OUTLINE
+8 of 8 approved
+1
+Executive Summary
+Approved
+2
+Progress Against the Work Plan
+Approved
+3
+Gender Equality and Women's Empowerment
+Approved
+4
+Environmental Compliance
+Approved
+5
+Collaboration, Learning and Adaptation
+Approved
+6
+Implementation Challenges and Actions Taken
+Approved
+7
+Priorities for Next Month
+Approved
+8
+Branding and Marking Compliance
+Approved
++ Add section
+Reorder
+REPORT INPUTS
+Edit
+Indicator values
+16 of 16 verified · 1 not entered
+Story answers
+5 of 5 answered
+Evidence
+17 files
+
+[DEMO-5] TURKANA MATERNAL, NEWBORN & CHILD HEALTH STRENGTHENING ACTIVITY · JUN 1, 2026 – JUN 30, 2026 · DUE JUL 10, 2026
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity — monthly report
+
+Approved
+Rewrite with AI
+Regenerate
+Edit (reopens section)
+1 Executive Summary
+
+This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID). The contents are the responsibility of GEC and do not necessarily reflect the views of USAID or the United States Government.
+
+Skilled delivery coverage rose to 54 percent, up from 50. Kenya Health Information System (KHIS) on-time reporting reached 84 percent, up from 79. In June 2026, the USAID-funded Turkana Maternal, Newborn and Child Health (MNCH) Strengthening Activity produced 8 activity records and 15 verified indicator results. GEC implemented the activity with the Lodwar Community Health Alliance (LOCHA) across 14 facilities in Turkana Central, Turkana South and Loima sub-counties, Kenya.
+
+All verified findings remained below their life-of-activity targets. Supported facilities recorded 760 first antenatal care visits against a target of 4200 (18.1% of target, up from 720). They recorded 350 skilled deliveries against 2100, and 560 children under one year received DTP3/Penta3 against 3300 through 32 outreach sessions (280 female, 280 male). ANC4+ coverage stood at 40 percent against a 45 percent target. DTP3/Penta3 coverage stood at 74 percent against 80. The project trained 22 health workers (13 female, 9 male). It delivered equipment kits to 4 facilities, taking the total to 11 of 14, and completed 14 mentorship visits.
+
+Solar refrigerators failed at two facilities and insecurity suspended outreach near Lorugum for a week. Vaccines were moved to the nearest working cold chain. Both refrigerators were repaired within eight days, and outreach resumed with an escort arranged by the Sub-County Commander. In July, the project will continue training cohorts and monthly mentorship visits, deliver the next equipment batch to the remaining facilities, and sustain outreach, screening and data reviews.
+
+Change from previous period: HL-OC1a (Percentage of pregnant women with four or more ANC visits (ANC4+) at supported facilities) 36 → 40 ▲
+
+2 Progress Against the Work Plan
+
+Progress by Intermediate Result (IR), June 2026.
+
+IR1: Health worker capacity and facility systems. Project clinical trainers and nurse mentors trained 22 health workers (13 female, 9 male) in EmONC, IMCI and essential newborn care at Lokichar Health Centre on 9 June 2026 and completed 14 facility clinical mentorship visits across the 14 supported facilities. The logistics team delivered and installed essential MNCH equipment kits at 4 facilities on 14 June, with handover certificates signed by facility in-charges, taking the cumulative total to 11. A monthly data review and KHIS data quality audit at Lodwar on 25 June brought together 28 facility in-charges and records officers, and 84 percent of supported facilities submitted their KHIS monthly reports on time, up from 79.
+
+IR2: Service delivery. Supported facilities recorded 760 first antenatal care visits, 350 deliveries attended by skilled birth attendants and 34 women referred for emergency obstetric care using the transport voucher scheme, alongside 32 outreach immunization sessions that delivered DTP3/Penta3 to 560 children under one year (280 female, 280 male). ANC4+ coverage reached 40 percent (up from 36), skilled delivery coverage 54 percent (up from 50) and DTP3/Penta3 coverage 74 percent (up from 70). The project delivered these services with county health staff, facility teams and community health volunteers in Turkana County.
+
+IR3: Community engagement and data systems. The project trained and kitted 40 CHVs (26 female, 14 male) on the community health package, iCCM, MUAC screening and danger-sign counselling. CHVs and community mobilisers reached 3400 people (2108 female, 1292 male) with health education, screened 1700 children aged 6-59 months for acute malnutrition using MUAC (867 female, 833 male) and referred 120 children with acute malnutrition to treatment.
+
+Indicator performance table
+
+Indicator	Month result	Cumulative result	Life-of-activity target	Percent of target
+ANC4+ coverage (HL-OC1a)	40 %	40 %	45 %	88.9 %
+Skilled birth attendant coverage (HL-OC1b)	54 %	54 %	60 %	90 %
+DTP3/Penta3 coverage under 1 year (HL-OC1c)	74 %	74 %	80 %	92.5 %
+Health workers trained in EmONC, IMCI or essential newborn care (HL-1.1a)	22	86	120	18.3 %
+Facility clinical mentorship visits (HL-1.1b)	14	50	84	16.7 %
+Facilities equipped with essential MNCH kit (HL-1.2a)	4	11	14	28.6 %
+First ANC visits (HL-1.3a)	760	2500	4200	18.1 %
+Skilled deliveries (HL-1.3b)	350	1120	2100	16.7 %
+Emergency obstetric care transport voucher referrals (HL-1.3c)	34	96	180	18.9 %
+Children under 1 year receiving DTP3/Penta3 (HL-1.4a)	560	1790	3300	17.0 %
+Outreach immunization sessions (HL-1.4b)	32	108	180	17.8 %
+Facilities submitting KHIS reports on time (HL-1.5a)	84 %	84 %	90 %	93.3 %
+CHVs trained and kitted (HL-2.1a)	40	190	220	18.2 %
+People reached with community health education (HL-2.2a)	3400	10900	18000	18.9 %
+Children 6-59 months screened with MUAC (HL-2.3a)	1700	5450	9000	18.9 %
+Children with acute malnutrition referred to treatment (HL-2.3b)	120	380	650	18.5 %
+
+Indicators behind plan and corrective action. All indicators remain below their life-of-activity targets. Immunization numbers dipped slightly against plan because solar refrigerators failed at two facilities and cattle-raid insecurity near Lorugum suspended outreach there for a week. The project moved the vaccines temporarily to the nearest working cold chain, repaired both refrigerators within eight days, and resumed outreach with an escort arranged by the Sub-County Commander. The project recorded that a weekly cold-chain temperature check shared by phone with the sub-county cold-chain officer catches failures before vaccines are lost, and it will continue monthly cold-chain checks and follow up on late-reporting facilities through the monthly KHIS data review.
+
+Rationale. The June plan prioritised continued training, mentorship, equipment delivery, service delivery and community-level prevention, and mentorship visits and community education remained on plan. Equipment kits reached four more facilities, taking the total to eleven, and skilled delivery rose to more than half of deliveries at supported facilities. KHIS reporting became timelier. Field report, June 2026 (LOCHA programme team).
+
+Planned activities for the next reporting period. The project will continue training cohorts of health workers and hold monthly mentorship visits, deliver the next batch of essential MNCH equipment kits to the remaining facilities, continue outreach ANC clinics and voucher reimbursements to transporters, continue outreach immunization sessions and monthly cold-chain checks, train the next CHV cohort and supervise those already trained, continue dialogue days and radio messages, continue monthly MUAC screening and track referral completion, and follow up on late-reporting facilities through the monthly KHIS data review.
+
+3 Gender Equality and Women's Empowerment
+
+Sex-disaggregated results were recorded for the June people-level indicators and activities. The project trained 22 health workers (13 female, 9 male) in EmONC, IMCI and essential newborn care. It trained and kitted 40 CHVs (26 female, 14 male). Community health education reached 3400 people (2108 female, 1292 male). Immunization reached 560 children under one year (280 female, 280 male). MUAC screening covered 1700 children aged 6 to 59 months (867 female, 833 male). First antenatal visits totalled 760 women (760 female, 0 male).
+
+Actions this month addressed gender gaps in access to services. Women attendants accompanied the outreach teams for deliveries and family planning counselling. The transport voucher scheme supported 34 women referred for emergency obstetric care in June, up from 30 in the previous period. Community dialogues were timed to market days and water-point visits, which the activity records note reached more men. The maternal death notification was reported through the MPDSR channel with no identifying details recorded.
+
+No gender assessment or safeguarding compliance record was supplied for this month, so compliance cannot be stated from the records.
+
+4 Environmental Compliance
+
+The project remained compliant with the Initial Environmental Examination (IEE) mitigation measures in June 2026, and it recorded no environmental incidents or unexpected impacts in the month.
+
+Health care waste management (sharps, placenta pits, incinerators). The project completed waste management checks at all 14 supported facilities under the IEE in June. The project repaired two solar refrigerators that failed and returned the failed batteries to the supplier for recycling rather than discarding them. USAID marking was applied to the repaired refrigerators, to the four new equipment kits delivered in June, and the project replaced one health worker training banner after weather damage.
+
+Any environmental incidents or unexpected impacts. The project recorded no environmental incidents or unexpected impacts in June. The cold-chain failures at two facilities were equipment faults that the team corrected within the month, with vaccines temporarily moved to the nearest working cold chain and the refrigerators repaired within eight days.
+
+The project required no remediation steps this month, as the records show no non-compliance with the IEE mitigation measures.
+
+5 Collaboration, Learning and Adaptation
+
+The project coordinated closely with county structures in June 2026 and adapted its outreach and cold-chain arrangements after two solar refrigerators failed and insecurity suspended outreach near Lorugum for a week.
+
+Observation. The team briefed the Sub-County Commander on the security situation near Lorugum and agreed an escort for outreach, and the county cold chain officer joined the repair planning for the failed refrigerators. The monthly data review and Kenya Health Information System (KHIS) data quality audit with sub-county health records officers covered all 14 facilities, and 84 percent of supported facilities submitted their monthly reports on time. The partner organization Lodwar Community Health Alliance (LOCHA) delivered the field activities. Activity records note that on-site mentorship after classroom training improves use of partographs and neonatal resuscitation, peer supervision by experienced community health volunteers (CHVs) keeps newly trained volunteers active, pre-agreed kit lists with the county pharmacist avoid duplicate supplies, dialogues timed to market days and water-point visits reach more men, fixed outreach calendars shared with CHVs increase turnout, screening during routine CHV household visits finds children who would otherwise be missed, and printing the reporting-rate dashboard for the review meeting makes late facilities act.
+
+Implication (what was learned). The month's key lesson, recorded by the field team, is that a weekly cold-chain temperature check shared by phone with the sub-county cold-chain officer catches failures before vaccines are lost. The repairs were completed within eight days, and immunization numbers dipped slightly against plan because of the cold-chain failures and the suspended outreach; mentorship visits and community education remained on plan.
+
+Action (what changed as a result). Vaccines were temporarily moved to the nearest working cold chain, the two refrigerators were repaired within eight days, and outreach resumed with an escort arranged by the sub-county commander. Women attendants accompanied the outreach teams for deliveries and family planning counselling. The project will continue training cohorts and monthly mentorship visits, deliver the next batch of equipment kits to the remaining facilities, continue dialogue days and radio messages, train the next CHV cohort, continue monthly cold-chain checks, and follow up on late-reporting facilities.
+
+Coordination with the County Department of Health and other partners. The records show the briefing to the Sub-County Commander and the agreed escort for outreach, the county cold chain officer joining repair planning, the monthly data review and KHIS data quality audit with sub-county health records officers, pre-agreed kit lists with the county pharmacist, and delivery of field activities by LOCHA. The records do not name any additional partners for June.
+
+What evidence led to a change in approach? The cold-chain failures at two facilities, recorded in the facility and outreach immunization registers and the mentorship visit and field reports, led to the temporary relocation of vaccines, the repair of the refrigerators within eight days, and the adoption of the weekly cold-chain temperature check shared by phone with the sub-county cold-chain officer. The suspended outreach near Lorugum, recorded in the outreach session log, led to the escort arrangement with the Sub-County Commander, and the KHIS reporting-rate dashboard, showing 84 percent on-time submission, supports the recorded next step of following up on late-reporting facilities.
+
+6 Implementation Challenges and Actions Taken
+
+Cold-chain failure and insecurity were June's main challenges. Solar refrigerators failed at two facilities, and cattle-raid insecurity near Lorugum suspended immunization outreach there for one week, as recorded in the outreach session log (evidence c02c23be-ab42-42bd-a2a1-958e8e9542ec) and the mentorship visit log (evidence 87c8bc34-4a30-493c-82f2-6cf6bc90a422). The project responded immediately: staff moved the vaccines to the nearest working cold chain, repaired both refrigerators within eight days, and resumed outreach with an escort arranged by the Sub-County Commander. The county cold chain officer joined the repair planning. The lesson recorded is that a weekly cold-chain temperature check shared by phone with the sub-county cold-chain officer catches failures before vaccines are lost. The suspended week and the cold-chain failures explain the slight dip in immunization numbers against plan; other programme areas, including mentorship visits and community education, remained on plan.
+
+Supply chain issues also materialised. Some equipment kit items arrived in partial shipments from Nairobi because of delays on the Kitale road, but the project delivered and installed full kits at 4 facilities with signed handover certificates, taking the total to 11 of a target of 14. The project also recorded minor workforce constraints: a few community health volunteers missed training sessions because of livestock movements and long distances, and some facilities still enter data late after staff rotations. The project continued monthly mentorship to all 14 facilities and held the monthly data review with 28 participants, following up on late-reporting facilities.
+
+On security, access, supply chain and workforce issues: the cold-chain failures, the one-week suspension of outreach near Lorugum, the Kitale road shipment delays, and the CHV training and data-entry constraints were the issues recorded for June. The records contain no request for USAID support for the month.
+
+7 Priorities for Next Month
+
+July priorities carry forward the June activity records and the lessons recorded this month. The project will continue training cohorts of health workers and hold monthly clinical mentorship visits, following the 22 health workers trained and 14 mentorship visits completed in June. It will deliver the next batch of essential MNCH equipment kits to the remaining facilities, after 4 facilities received and signed for kits in June, taking the total to 11 of the 14 targeted. The project will train the next community health volunteer (CHV) cohort and supervise those already trained, following 40 CHVs trained and kitted in June. Community dialogue days, household visits and radio messages will continue, as will outreach antenatal care (ANC) clinics and voucher reimbursements to transporters, which served 34 women in June. Immunization outreach sessions and monthly cold-chain checks will continue; the team will apply the June lesson that a weekly cold-chain temperature check shared by phone with the sub-county cold-chain officer catches failures before vaccines are lost, and outreach will proceed with the escort agreed with the Sub-County Commander. CHVs will continue monthly MUAC screening of children aged 6 to 59 months, and the project will track referral completion for the 120 children referred in June. The monthly data review and Kenya Health Information System (KHIS) data quality audit will continue, with follow-up on facilities that still enter data late after staff rotations. The team will apply the June lessons, including on-site mentorship after classroom training to support use of partographs and neonatal resuscitation, peer supervision by experienced CHVs, fixed outreach calendars shared with CHVs, and printing the reporting-rate dashboard for the review meeting.
+
+8 Branding and Marking Compliance
+
+The project met USAID branding and marking requirements in June 2026 and is compliant for the month. USAID marking was applied to the two repaired solar refrigerators and to the 4 essential maternal, newborn and child health (MNCH) equipment kits delivered in June, which brought the total to 11 of the 14 targeted facilities. One health worker training banner damaged by weather was replaced with a marked banner. No events or materials required remediation, and no corrective steps are needed.
+
+Section 1
+
+Executive Summary
+Statements
+Sources · 20
+Chart
+Comments
+History
+
+Nothing to decide — all 17 statements are backed by evidence or decided.
+
+Kept with a note
+
+“Kenya Health Information System (KHIS) on-time reporting reached 84 percent, up from 79.”
+
+Note: Figures agree with the verified indicator values entered for this month and the activity records; the wording restates recorded results.
+
+Kept with a note
+
+“Supported facilities recorded 760 first antenatal care visits against a target of 4200 (18.1% of target, up from 720).”
+
+Note: Figures agree with the verified indicator values entered for this month and the activity records; the wording restates recorded results.
+
+Not checked (minor)
+
+“This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID).”
+
+Not checked (minor)
+
+“The contents are the responsibility of GEC and do not necessarily reflect the views of USAID or the United States Government.”
+
+Not checked (minor)
+
+“All verified findings remained below their life-of-activity targets.”
+
+Matches evidence
+
+“Skilled delivery coverage rose to 54 percent, up from 50.”
+
+Matches evidence
+
+“In June 2026, the USAID-funded Turkana Maternal, Newborn and Child Health (MNCH) Strengthening Activity produced 8 activity records and 15 verified indicator results.”
+
+Matches evidence
+
+“GEC implemented the activity with the Lodwar Community Health Alliance (LOCHA) across 14 facilities in Turkana Central, Turkana South and Loima sub-counties, Kenya.”
+
+Matches evidence
+
+“They recorded 350 skilled deliveries against 2100, and 560 children under one year received DTP3/Penta3 against 3300 through 32 outreach sessions (280 female, 280 male).”
+
+Matches evidence
+
+“ANC4+ coverage stood at 40 percent against a 45 percent target.”
+
+Matches evidence
+
+“DTP3/Penta3 coverage stood at 74 percent against 80.”
+
+Matches evidence
+
+“The project trained 22 health workers (13 female, 9 male).”
+
+Matches evidence
+
+“It delivered equipment kits to 4 facilities, taking the total to 11 of 14, and completed 14 mentorship visits.”
+
+Matches evidence
+
+“Solar refrigerators failed at two facilities and insecurity suspended outreach near Lorugum for a week.”
+
+Matches evidence
+
+“Vaccines were moved to the nearest working cold chain.”
+
+Matches evidence
+
+“Both refrigerators were repaired within eight days, and outreach resumed with an escort arranged by the Sub-County Commander.”
+
+Matches evidence
+
+“In July, the project will continue training cohorts and monthly mentorship visits, deliver the next equipment batch to the remaining facilities, and sustain outreach, screening and data reviews.”

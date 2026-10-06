@@ -1,0 +1,18 @@
+import { attach, BASE } from "./lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const { page, browser } = await attach();
+await page.goto(`${BASE}/projects/${P}/setup/profile`); await page.waitForLoadState("networkidle");
+await page.getByLabel("Tone").selectOption({ label: "Formal" });
+await page.getByLabel("Writing style (optional)").fill("Plain, factual and concise; short paragraphs; active voice; define acronyms on first use; report only verified figures and state the unit with every figure.");
+await page.getByLabel("Audience notes (optional)").fill("USAID/Kenya Agreement Officer's Representative and health office technical advisers; they know the sector and the Performance Management Plan, not the field detail.");
+await page.getByLabel("Formatting rules (one per line)").fill("Use tables for indicator data\nAcknowledge USAID funding in the executive summary\nSpell out MNCH, EmONC, IMCI and KHIS on first use");
+await page.getByLabel("Special requirements (one per line)").fill("Disaggregate people-level results by sex\nExplain every indicator below 80 percent of its pro-rata target\nDo not report individual patient information");
+await page.getByLabel("Deadline offset (days, optional)").fill("10");
+await page.getByLabel("Financial figures in reports").selectOption({ label: "Type them in" });
+await page.getByLabel("Auto-create reporting periods").uncheck();
+await page.getByRole("button", { name: "Save profile" }).click(); await page.waitForTimeout(3000);
+console.log((await page.locator("main").innerText()).split("\n").filter(l=>/saved|Saved|updated|error/i.test(l)).join(" | "));
+await page.goto(`${BASE}/projects/${P}/setup`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(1500);
+console.log((await page.locator("main").innerText()).split("Setup status")[1]?.slice(0,900));
+await page.goto(`${BASE}/projects/${P}/team`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(1500);
+console.log((await page.locator("main").innerText()).split("Settings")[1]?.slice(0,1500));
+await browser.close(); process.exit(0);

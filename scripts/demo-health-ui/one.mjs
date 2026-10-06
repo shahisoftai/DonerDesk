@@ -1,0 +1,11 @@
+import { attach, BASE } from "./lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const { page, browser } = await attach();
+await page.goto(`${BASE}/projects/${P}/evidence/new`); await page.waitForLoadState("networkidle");
+const sels = page.locator("main select");
+await sels.nth(0).selectOption({ label: "Procurement document" }); await sels.nth(1).selectOption({ label: "Internal" });
+await page.locator("main input:not([type=file]):not([type=checkbox]):not([type=radio])").first().fill("Lodwar, Turkana County");
+await page.locator("main textarea").first().fill("Final procurement and expenditure register for close-out: three-quotation records, POs and AOR consents.");
+const aopts = await sels.nth(2).locator("option").allInnerTexts(); await sels.nth(2).selectOption({ label: aopts.find(o => o.includes(" A1.2 —") && o.includes("Aug 2026 ·")) });
+await page.locator("input[type=file]").setInputFiles("/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/memorybank/demo/verification-demo-5-artifacts/ev/06-A1.2-final-procurement-register.pdf"); await page.waitForTimeout(800);
+await page.getByRole("button", { name: /^(Upload|Save|Submit)/ }).last().click(); await page.waitForTimeout(8000); console.log(page.url());
+await browser.close(); process.exit(0);

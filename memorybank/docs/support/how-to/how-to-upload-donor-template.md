@@ -39,6 +39,10 @@ Then click **Approve template**. The status becomes **Reviewed**.
 - A full draft requires a **Reviewed** template. It is pinned to the reporting period, so later edits do not change reports already written.
 - **Save to template library** lets you copy a template into other projects.
 
+## Which template a report starts from
+
+Each report type has its own default. On a template card, **Make default for Monthly** (or Final, Quarterly...) sets it for that type only, and the **Used for** label shows where the template applies. Uploading or approving a template never changes any default. Editing a template's instructions keeps its approval; adding a section reopens review.
+
 ## Versions
 
 Every edit creates a new version. Open **Version history** to see and compare earlier versions. Deleting a template removes it and its history, but reporting periods keep the copy they were generated with.

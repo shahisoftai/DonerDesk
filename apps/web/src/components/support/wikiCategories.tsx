@@ -83,6 +83,7 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
       { title: "How to Set Up a New Organisation", description: "Configure your workspace from scratch.", href: "/support/how-to/set-up-new-organisation" },
       { title: "How to Create a Project", description: "Build a new project in your workspace.", href: "/support/how-to/create-a-project" },
       { title: "How to Create a Reporting Period", description: "Start a report cycle for a ready project.", href: "/support/how-to/create-a-reporting-period" },
+      { title: "Project Walkthrough: Creation to Closing", description: "Every step of a project in order, with who does it and a link to the detailed article.", href: "/support/how-to/project-walkthrough" },
       { title: "How to Run a Reporting Month", description: "The whole routine on one page, from activities to export, with links to every step.", href: "/support/how-to/run-a-reporting-month" },
       { title: "How to Create the Closing Report", description: "Guided final report: what is ready, what is left, and one button to start.", href: "/support/how-to/create-the-closing-report" },
       { title: "How to Review and Accept Activities", description: "Accept one or many, ask for changes, resubmit, and withdraw duplicates.", href: "/support/how-to/review-and-accept-activities" },

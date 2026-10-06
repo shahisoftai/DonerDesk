@@ -1,0 +1,380 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity
+
+KEN-MNCH-TUR-MUWAPRQO · USAID · Kenya · HEALTH
+
+Mar 1, 2026 – Aug 31, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity · Aug 1, 2026 – Aug 31, 2026 · due Sep 10, 2026
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity — final report
+Draft
+Version 1
+70% ready
+· 8 to do
+15 issues
+Review 15 flagged statements
+OUTLINE
+0 of 14 approved
+Collapse sub-sections
+Approve all clean sections (6)
+1
+Executive Summary
+1
+flagged statement
+2
+Background and Context
+2
+flagged statements
+3
+Final Performance Against Indicators
+Draft
+4
+Key Achievements by Intermediate Result
+2
+flagged statements
+4.1
+Intermediate Result 1: Quality Facility-Based MNCH Services
+1
+flagged statement
+4.2
+Intermediate Result 2: Community Health System and Household Practices
+Draft
+5
+Gender Equality and Social Inclusion
+2
+flagged statements
+6
+Environmental Compliance
+Draft
+7
+Collaboration, Learning and Adaptation
+Draft
+8
+Sustainability and Transition
+1
+flagged statement
+9
+Challenges and Lessons Learned
+3
+flagged statements
+10
+Recommendations for Future Programming
+Draft
+11
+Financial Summary
+3
+flagged statements
+12
+Branding and Marking Compliance
+Draft
++ Add section
+Reorder
+REPORT INPUTS
+Edit
+Indicator values
+17 of 17 verified
+Story answers
+5 of 5 answered
+Evidence
+98 files
+
+[DEMO-5] TURKANA MATERNAL, NEWBORN & CHILD HEALTH STRENGTHENING ACTIVITY · AUG 1, 2026 – AUG 31, 2026 · DUE SEP 10, 2026
+
+[DEMO-5] Turkana Maternal, Newborn & Child Health Strengthening Activity — final report
+
+Needs a decision
+Rewrite with AI
+Regenerate
+Edit
+Decide on the flagged statement first.
+1 Executive Summary
+
+This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID). The contents are the responsibility of GEC and do not necessarily reflect the views of USAID or the United States Government.
+
+The Turkana Maternal, Newborn & Child Health Strengthening Activity was a six-month USAID-funded cooperative agreement implemented by GEC with partner Lodwar Community Health Alliance (LOCHA) in Turkana County, Kenya. It closed with all four maternal, newborn and child health (MNCH) coverage indicators above target. Antenatal care four or more visits (ANC4+) reached 46% against a 45% target, up from a baseline of 28. Skilled delivery reached 61% against 60%, up from 41. DTP3/Penta3 coverage reached 81% against 80%, and 61% of caregivers could name three child danger signs against a 60% target. Over the life of the Activity, the project trained 122 health workers in Emergency Obstetric and Neonatal Care (EmONC), Integrated Management of Childhood Illness (IMCI) or essential newborn care against a target of 120. It equipped all 14 facilities with the essential MNCH kit and trained and kitted 220 community health volunteers (CHVs) against a target of 220.
+
+Some service-count results fell below expectation. The Activity recorded 3,940 first antenatal visits against a 4,200 target (93.8% of target), 2,890 children receiving DTP3/Penta3 against 3,300 (87.6%), and 78 clinical mentorship visits against 84 (92.9%). On-time Kenya Health Information System (KHIS) monthly reporting reached 92% of facilities against a 90% target, up from a baseline of 64. The Activity closed under budget: expenditure was 1102500 USD against a budget of 1150000 USD, a 95.9% burn rate.
+
+Some count targets were missed because of the floods, the nurses' strike and the cold-chain failures earlier in the project. The sub-county health management team signed the final asset handover certificates. Recorded next steps included handing mentorship tools, audit tools and the CHV supervision checklist to county structures in the final month.
+
+2 Background and Context
+
+The Turkana Maternal, Newborn & Child Health Strengthening Activity worked in Turkana County, Kenya, in Turkana Central, Turkana South and Loima sub-counties. The Activity partnered with 14 health facilities and their Community Health Units, where maternal, newborn and child health (MNCH) services faced gaps in antenatal care, skilled delivery, routine immunization and child nutrition screening. It was a six-month USAID-funded cooperative agreement (illustrative award no. 72061526CA00012), implemented by GEC with partner Lodwar Community Health Alliance (LOCHA), under a budget of 1150000 USD.
+
+The Activity design combined five strands. It trained and mentored health workers in EmONC (Emergency Obstetric and Newborn Care), IMCI (Integrated Management of Childhood Illness) and essential newborn care; it equipped facilities with essential MNCH kits including solar refrigerators; it expanded antenatal care, skilled delivery and routine immunization through outreach; it strengthened facility data quality in KHIS (Kenya Health Information System)/DHIS2; and it trained community health volunteers to deliver health education and malnutrition screening using MUAC (mid-upper arm circumference). Results were disaggregated by sex and, where relevant, age, and the Activity contributed to USAID/Kenya's health development objective.
+
+The needs were evident in the verified baselines: at the start of the Activity, 28 percent of pregnant women at supported facilities made four or more antenatal visits, 41 percent of deliveries were attended by a skilled birth attendant, 62 percent of children under one year received DTP3/Penta3, 31 percent of caregivers could name at least three child danger signs, and 64 percent of supported facilities submitted KHIS monthly reports on time. Over the life of the Activity, the final recorded values rose to 46 percent, 61 percent, 81 percent, 61 percent and 92 percent respectively, against targets of 45 percent, 60 percent, 80 percent, 60 percent and 90 percent. Delivery of immunization services is documented in the monthly outreach session logs, which record sessions conducted each month of implementation. These figures show that the service gaps the Activity was designed to address were the gaps it went on to close, with all five coverage and system indicators ending above their targets. The Activity also trained 122 health workers against a target of 120 and equipped all 14 facilities with the essential MNCH equipment kit.
+
+3 Final Performance Against Indicators
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Cumulative to date	% of project target	Status	Data source
+HL-OC1a	Percentage of pregnant women with four or more ANC visits (ANC4+) at supported facilities	%	28	45	46	—	102.2%	46	102.2%	On track	Facility ANC registers via KHIS
+HL-OC1b	Percentage of deliveries attended by a skilled birth attendant at supported facilities	%	41	60	61	—	101.7%	61	101.7%	On track	Facility maternity registers via KHIS
+HL-OC1c	Percentage of children under 1 year who received DTP3/Penta3 at supported facilities	%	62	80	81	—	101.2%	81	101.2%	On track	Facility immunization registers via KHIS
+HL-OC2a	Percentage of caregivers of children under five who can name at least three child danger signs	%	31	60	61	—	101.7%	61	101.7%	On track	Quarterly CHV-led KAP spot survey
+HL-1.1a	Number of health workers trained in EmONC, IMCI or essential newborn care	health workers	0	120	16	—	13.3%	122	101.7%	On track	Training registers
+HL-1.1b	Number of facility clinical mentorship visits conducted	visits	0	84	14	—	16.7%	78	92.9%	Below expectation	Mentor visit reports
+HL-1.2a	Number of health facilities equipped with the essential MNCH equipment kit	facilities	0	14	1	—	7.1%	14	100%	On track	Procurement and handover records
+HL-1.3a	Number of pregnant women making a first ANC visit at supported facilities	women	0	4200	700	—	16.7%	3940	93.8%	Below expectation	Facility ANC registers
+HL-1.3b	Number of deliveries attended by a skilled birth attendant at supported facilities	deliveries	0	2100	340	—	16.2%	1800	85.7%	Below expectation	Facility maternity registers
+HL-1.3c	Number of women referred for emergency obstetric care using the transport voucher scheme	women	0	180	34	—	18.9%	162	90%	Below expectation	Voucher register
+HL-1.4a	Number of children under 1 year who received DTP3/Penta3	children	0	3300	540	—	16.4%	2890	87.6%	Below expectation	Facility and outreach immunization registers
+HL-1.4b	Number of outreach immunization sessions conducted	sessions	0	180	34	—	18.9%	174	96.7%	Below expectation	Outreach session records
+HL-1.5a	Percentage of supported facilities submitting KHIS monthly reports on time	%	64	90	92	—	102.2%	92	102.2%	On track	KHIS reporting-rate dashboard
+HL-2.1a	Number of community health volunteers (CHVs) trained and kitted	CHVs	0	220	10	—	4.5%	220	100%	On track	CHV training records
+HL-2.2a	Number of people reached with community health education	people	0	18000	3200	—	17.8%	17500	97.2%	Below expectation	CHV and community dialogue registers
+HL-2.3a	Number of children 6-59 months screened for acute malnutrition using MUAC	children	0	9000	1650	—	18.3%	8800	97.8%	Below expectation	CHV MUAC registers
+HL-2.3b	Number of children with acute malnutrition referred to treatment	children	0	650	120	—	18.5%	625	96.2%	Below expectation	CHV referral slips
+
+The Activity closed with all four outcome coverage indicators above target: ANC4+ reached 46% against a 45% target (baseline 28%), skilled delivery 61% against 60% (baseline 41%), Penta3 coverage 81% against 80% (baseline 62%), and caregivers naming three child danger signs 61% against 60% (baseline 31%); timely KHIS (Kenya Health Information System) reporting reached 92% against a 90% target (baseline 64%). Output targets were met or nearly met at life-of-activity level: 122 health workers trained in EmONC (emergency obstetric and neonatal care), IMCI (Integrated Management of Childhood Illness) or essential newborn care (101.7% of the 120 target, 71 female and 51 male), all 14 facilities equipped with MNCH (maternal, newborn and child health) kits (100% of target), and 220 CHVs trained and kitted (100% of target, 141 female and 79 male).
+
+Results below expectation: 78 mentorship visits against a target of 84 (92.9% of target); 3,940 first ANC visits against 4,200 (93.8%); 1,800 skilled deliveries against 2,100 (85.7%); 162 emergency obstetric care voucher referrals against 180 (90%); 2,890 children receiving DTP3/Penta3 against 3,300 (87.6%, 1,445 female and 1,445 male); 174 outreach sessions against 180 (96.7%); 17,500 people reached with health education against 18,000 (97.2%, 10,850 female and 6,650 male); 8,800 children screened with MUAC against 9,000 (97.8%, 4,489 female and 4,311 male); and 625 malnourished children referred to treatment against 650 (96.2%). The officer's narrative attributes the missed count targets to earlier floods, the nurses' strike and cold-chain failures; coverage rates still reached or exceeded their targets. No indicator was flagged as not calculable.
+
+Highlights (life-of-activity):
+
+Sex disaggregation of life-of-activity people-level results: health workers trained 71 female, 51 male; CHVs trained 141 female, 79 male; children immunized with DTP3/Penta3 1,445 female, 1,445 male; people reached with health education 10,850 female, 6,650 male; children screened with MUAC 4,489 female, 4,311 male. First ANC visits are recorded as 3,940 female and 0 male. Skilled deliveries, voucher referrals, outreach sessions and malnutrition referrals carry no sex breakdown in the verified findings.
+
+Data quality notes: No indicator findings carried quality flags. The HL-OC2a caregiver-knowledge result comes from a KAP spot survey with n=420 and covers two reporting periods; the officer noted low turnout in two villages during a week of hot weather, and those villages were revisited. Timey-reporting figures are drawn from the KHIS reporting-rate dashboard.
+
+Progress to date against project targets
+
+Showing the first 12 of 17; the table has them all.
+
+Chart data
+4 Key Achievements by Intermediate Result
+
+Over the life of the Activity, all four coverage targets were met or exceeded, and most service-count targets were met or approached. Some count targets were slightly missed — for example immunization and first antenatal visits — because of the floods, the nurses' strike and the cold-chain failures earlier in the project. Coverage rates reached or exceeded their targets.
+
+Intermediate Result 1: Quality of facility MNCH services strengthened. ANC4+ coverage closed at 46% against a 45% target, 102.2% of target, up from a baseline of 28. Skilled delivery coverage closed at 61% against a 60% target, 101.7% of target, up from 41. DTP3/Penta3 coverage closed at 81% against an 80% target, up from 62. On-time KHIS (Kenya Health Information System) monthly reporting reached 92% of facilities against a 90% target, 102.2% of target, up from a baseline of 64. Count results were lower. The Activity trained 122 health workers in EmONC (Emergency Obstetric and Neonatal Care), IMCI (Integrated Management of Childhood Illness) or essential newborn care against a target of 120, 101.7% of target; the life-of-project breakdown records 71 female and 51 male. The Activity conducted 78 clinical mentorship visits against a target of 84, 92.9% of target. All 14 facilities received the essential MNCH (Maternal, Newborn and Child Health) equipment kit, meeting the target of 14.
+
+Intermediate Result 2: Service utilisation increased. The Activity recorded 3940 first ANC visits against a target of 4200, 93.8% of target. It recorded 1800 skilled deliveries against a target of 2100, 85.7% of target. The transport voucher scheme referred 162 women for emergency obstetric care against a target of 180, 90% of target. The Activity immunized 2890 children under one year with DTP3/Penta3 against a target of 3300, 87.6% of target; the life-of-project breakdown records 1445 female and 1445 male. It conducted 174 outreach sessions against a target of 180, 96.7% of target. The outreach immunization results are grounded in the verified monthly outreach session logs (e.g. 06-A1.4-outreach-session-log).
+
+Intermediate Result 3: Community health capacity expanded. The Activity trained and kitted all 220 community health volunteers against a target of 220, 100% of target; the life-of-project breakdown records 141 female and 79 male. The final KAP survey found 61% of caregivers could name at least three child danger signs against a 60% target, 101.7% of target, up from a baseline of 31. The endline KAP spot survey had a sample of n=420. The Activity reached 17500 people with community health education against a target of 18000, 97.2% of target; the life-of-project breakdown records 10850 female and 6650 male. CHVs screened 8800 children aged 6–59 months for acute malnutrition with MUAC against a target of 9000, 97.8% of target; the life-of-project breakdown records 4489 female and 4311 male. They referred 625 children with acute malnutrition to treatment against a target of 650, 96.2% of target.
+
+One data-quality caveat applies. The final KAP survey fell in a week of hot weather with low turnout in two villages, and the two villages were revisited. Count results for the final month alone were smaller because the month closed training, equipment and CHV activity.
+
+4.1 Intermediate Result 1: Quality Facility-Based MNCH Services
+
+Caregiver-facing service quality at the 14 supported facilities rose across every coverage measure, and the project trained 122 health workers against a target of 120 (102% of target).
+
+Clinical training and mentorship. Across the life of the Activity, project clinical trainers and nurse mentors trained 122 health workers in Emergency Obstetric and Neonatal Care (EmONC), Integrated Management of Childhood Illness (IMCI) and essential newborn care, against a target of 120; the life-of-project breakdown records 71 female and 51 male. The final August cohort alone trained 16 health workers (9 female, 7 male). Mentorship reached 78 facility visits against a target of 84 (93% of target), a shortfall concentrated in the early months when recruitment of nurse mentors and the first procurement round took longer than planned. On-site mentorship after classroom training improved use of partographs and neonatal resuscitation.
+
+Equipment. All 14 facilities received the essential maternal, newborn and child health (MNCH) equipment kit, meeting the target of 14. The final kit went to Lokitaung Health Centre in August, with handover certificates signed by facility in-charges.
+
+Antenatal care and skilled delivery. Facilities recorded 3940 first antenatal care (ANC) visits against a target of 4200 (94% of target; life-of-project breakdown 3940 female, 0 male), and 1800 deliveries attended by a skilled birth attendant against a target of 2100 (86% of target). The officer's narrative attributes the missed count targets to the floods, the nurses' strike and the cold-chain failures earlier in the project. The transport voucher scheme referred 162 women for emergency obstetric care against a target of 180 (90% of target). Coverage outcomes exceeded their targets: ANC4+ reached 46 percent against a 45 percent target, up from a baseline of 28, and skilled delivery reached 61 percent against a 60 percent target, up from a baseline of 41.
+
+Immunization. Facilities and outreach teams immunized 2890 children under one year with DTP3/Penta3 against a target of 3300 (88% of target; life-of-project breakdown 1445 female and 1445 male), through 174 outreach immunization sessions against a target of 180 (97% of target). DTP3/Penta3 coverage at supported facilities reached 81 percent against an 80 percent target, up from a baseline of 62.
+
+Facility data quality. The share of supported facilities submitting Kenya Health Information System (KHIS) monthly reports on time closed at 92 percent against a 90 percent target, up from a baseline of 64, following monthly data reviews and register-to-KHIS audits in all 14 facilities.
+
+In sum, service use shifted decisively toward facility-based care: every coverage indicator finished at or above target while three count targets (first ANC visits, skilled deliveries, immunization doses) finished slightly below, for the reasons recorded above. Outreach session logs from the monthly immunization activities (evidence ids 4cf3e302, 74b2b5d6, 96245166, c02c23be, 89930bcf, 544b39f3) ground the immunization figures.
+
+4.2 Intermediate Result 2: Community Health System and Household Practices
+
+Community health capability reached its targets: the project trained and kitted 220 community health volunteers (CHVs) against a target of 220 (100% of target) and reached 17500 people with community health education against a target of 18000 (97.2% of target). The final KAP survey recorded 61% of caregivers of children under five naming at least three child danger signs, up from a baseline of 31% and above the 60% target. CHVs also screened 8800 children aged 6-59 months for acute malnutrition using MUAC (mid-upper arm circumference) against a target of 9000 (97.8% of target) and referred 625 children with acute malnutrition to treatment against a target of 650 (96.2% of target).
+
+Training and kitting followed a monthly cohort model, ending with a final refresher of 10 CHVs in August (6 female, 4 male). Education activity paired CHV household visits with community dialogue days and radio sessions on antenatal care, facility delivery, immunization, child danger signs and nutrition; the August sessions alone reached 3200 people (1984 women and girls, 1216 men and boys). Screening volumes rose sharply in the later months as drought deepened across Turkana South: CHVs screened 1700 children in June (867 girls, 833 boys), 1700 in July (867 girls, 833 boys) and 1650 in August (842 girls, 808 boys), referring 120, 125 and 120 children respectively to CMAM sites. Screening days moved to water points and market days, a shift the activity records note found more children than house-to-house visits during drought. Women made up most CHVs and most people reached: of the 220 CHVs trained over the life of the activity, 141 were female and 79 male, and of the 17500 people reached, 10850 were female and 6650 male. Peer supervision by experienced CHVs kept newly trained volunteers active, and handing tools and registers to the county proved smoother because the sub-county team had joined the monthly data review from the start.
+
+All counts above are life-of-activity results from CHV registers, community dialogue registers and referral slips; no data-quality flags were recorded against these findings. The sex breakdowns quoted are the recorded life-of-project splits for each indicator total.
+
+5 Gender Equality and Social Inclusion
+
+Women and girls made up the majority of participants across the Activity's life-of-project results. Of the 122 health workers trained in EmONC, IMCI or essential newborn care over the six months, 71 were female and 51 were male. Of the 220 community health volunteers (CHVs) trained and kitted, 141 were female and 79 were male, so women made up most CHVs, as the handover team recorded in the final field report. Of the 17500 people reached with community health education, 10850 were female and 6650 were male. Among children under 1 year who received DTP3/Penta3 over the life of the Activity, the split was even: 1445 female and 1445 male. Malnutrition screening reached 4489 female and 4311 male children aged 6-59 months out of 8800 screened, and the 625 children referred for acute malnutrition treatment carry no recorded sex breakdown. First antenatal care visits were recorded only for women, consistent with the service: 3940 female and 0 male over the life of the Activity.
+
+Monthly training records show women formed the majority in every cohort; for example, the March CHV training recorded 26 women and 14 men, and the August cohort recorded 6 women and 4 men. Equipment delivery activities (A1.2) did not record participant sex or disability breakdowns; disaggregated data was not recorded for that activity. No disability-disaggregated data was recorded for any indicator or activity, so the Activity cannot report results for people with disabilities. No compliance record on gender mainstreaming or safeguarding was supplied beyond the recorded sex disaggregation and the handover of sex-disaggregated registers to the county.
+
+The recorded gap pattern is consistent across results: women outnumbered men among trained CHVs and among people reached with health education, while immunization screening reached girls and boys in equal recorded numbers. The officer's narrative attributes this pattern to the composition of CHV cohorts and community outreach attendance; the records do not document any additional analysis of why these gaps exist, and none is inferred here.
+
+6 Environmental Compliance
+
+The Activity completed its environmental mitigation obligations under the initial environmental examination (IEE) and recorded no environmental incidents during the life of the project. A final waste management audit covered all 14 supported facilities. The audit found all sharps containers in place and the placenta pits in good condition. The project's waste management checklist was handed to the sub-county public health officers, supporting continued county oversight of clinical waste after the award closed. Field report, August 2026 (LOCHA programme team). No remediation steps were required, as the final audit identified no non-compliance. No separate environmental monitoring evidence files were supplied for this section; the compliance status above rests on the recorded audit findings and the officer's closing report.
+
+7 Collaboration, Learning and Adaptation
+
+The Activity worked throughout with county and sub-county health structures, and this collaboration shaped how delivery adapted. Facility in-charges and records officers met monthly with the sub-county health records officers for data review and KHIS (Kenya Health Information System) audits in all 14 facilities; timely reporting rose from 66 percent of facilities in March to 92 percent in August against a 90 percent target (102.2% of target at endline). Sub-county teams joined delivery directly: the sub-county commander arranged a police escort for outreach after insecurity near Lorugum, the county pharmacist co-signed pre-agreed equipment kit lists, and the sub-county health management team signed the final asset handover certificates.
+
+Monthly mentorship after classroom training changed practice. The project recorded that on-site mentorship after training improves use of partographs and neonatal resuscitation, so trainers paired every training cohort with on-site mentorship visits to the 14 facilities. Peer supervision by experienced CHVs (community health volunteers) kept newly trained volunteers active, and linking CHV pregnancy registers to facility ANC registers helped women return for the fourth visit.
+
+The project adapted its community delivery methods to local conditions. Dialogues timed to market days and water-point visits reached more men. During drought, screening at water points found more children than house-to-house visits, and CHV screening days moved to water points and market days. Fixed outreach calendars shared with CHVs increased turnout at outreach sessions. When flooding cut the Kalokol and Lowarengak roads, routes were re-planned and children missed during a national Penta vaccine stock-out were recalled in following weeks. When two solar refrigerators failed, vaccines moved temporarily to the nearest working cold chain and the units were repaired within eight days.
+
+The project also adapted its handover approach. Handing tools and registers to the county in the final month is smoother when the sub-county team has joined the monthly data review since the start; the August handover nevertheless needed more signatures than expected, and the sub-county health management team signed the asset handover certificates. The final KAP survey fell in a week of hot weather with low turnout in two villages; the project revisited the two villages to complete the survey.
+
+What would you do differently? The records point to two adjustments: start-up procurement and nurse-mentor recruitment took longer than planned and partly covered facility services in the first weeks, so earlier recruitment and pre-agreed procurement would have allowed full service support from month one; and handover preparation, including signatures for solar fridges and registers, would be built into monthly joint reviews from the start rather than concentrated in the final month.
+
+8 Sustainability and Transition
+
+The Activity closed with all equipment, community health systems and supervision responsibilities handed to the County Government of Turkana, so the gains described in 'Key Achievements by Intermediate Result' rest on county-owned assets and structures.
+
+Assets transferred. The project delivered and installed the full essential MNCH equipment kit — delivery sets, neonatal resuscitation equipment, weighing scales, fetal dopplers and solar refrigerators where needed — at all 14 supported facilities, meeting the target of 14 (100% of target). The final kit went to Lokitaung Health Centre in August 2026, and facility in-charges signed handover certificates for each delivery. The sub-county health management team signed the asset handover certificates for the solar refrigerators and registers in the final month, completing the transfer even though the process required more signatures than expected.
+
+Systems transferred. The project handed the voucher register and transporter agreements for the emergency obstetric transport scheme to the county, the MUAC registers and referral slips to the county nutrition coordinator, the outreach schedules and final cold-chain inventory to the county, and the CHV supervision checklist after the final refresher. The waste management checklist went to the sub-county public health officers, and the audit tools for Kenya Health Information System (KHIS) data quality went to the sub-county records officers. Sex-disaggregated registers are included in the handover tools.
+
+Responsibilities transferred. Mentorship tools passed to the sub-county health management team, which had joined the monthly data review since the start of the Activity. The officer's close-out observation records that handover ran more smoothly because of that early, continuous engagement; the handover meeting itself brought together the County Executive Committee Member for Health, the Director of Health, the sub-county health management teams and the USAID Agreement Officer's Representative.
+
+Sustainability of the service results themselves — the coverage levels reported in 'Final Performance Against Indicators' and the community results in 'Intermediate Result 2: Community Health System and Household Practices' — now depends on the county operating these transferred assets, registers and supervision routines. The final waste management audit and the marking audit, described in 'Environmental Compliance', support continued county oversight after the award closed.
+
+9 Challenges and Lessons Learned
+
+The Activity faced recurring external disruptions across its six months, and each shaped whether service-count targets were reached. Some count targets were slightly missed — for example immunization and first antenatal visits — because of the floods, the nurses' strike and the cold-chain failures earlier in the project; coverage rates reached or exceeded their targets.
+
+Flooding and access. In April, long-rains flooding on the Turkwel and Kerio rivers cut the Kalokol and Lowarengak roads for nine days, two outreach sites were not reached, and a national Penta vaccine stock shortage lasted one week (activity record, April A1.4). The project re-planned outreach routes around the flooded roads and recalled children missed during the stock-out in the following weeks. The outreach session logs for April record these months' field constraints (74b2b5d6-4d1b-415c-9dc7-411a2f2b6b49; 4cf3e302-656e-49ae-8b92-91274ebd5eeb). Life-of-activity results against these indicators are reported in Final Performance Against Indicators.
+
+Staff industrial action. In May, a county nurses' industrial action lasted twelve days and reduced routine clinic hours at five facilities. Project-supported clinical officers ran mobile antenatal and immunization clinics at the affected facilities, and CHVs in strike-affected sub-counties could not be supervised by facility staff for those twelve days.
+
+Cold chain and insecurity. In June, solar refrigerators failed at two facilities and cattle-raid insecurity near Lorugum suspended outreach for a week. The project moved vaccines temporarily to the nearest working cold chain, repaired the two refrigerators within eight days, and resumed outreach with a police escort arranged by the sub-county commander. The June and August outreach session logs record the cold-chain and access constraints behind the immunization counts (96245166-d716-4208-a8f9-2c4a5a472963; 544b39f3-d99b-4597-a458-3e4552c2490f).
+
+Drought and distances. From July, drought deepened across Turkana South and malnutrition screening numbers rose sharply; some caregivers walked long distances to reach screening points. The project moved CHV screening days to water points and market days and organised referral transport for SAM cases with the county. Earlier, some CHVs missed training sessions because of livestock movements and long distances; some CHVs walked more than 15 km to reach the March training venue.
+
+Procurement and start-up. Recruitment of the nurse mentors and the first procurement round took longer than planned, and services at supported facilities were only partly covered in the first weeks. Procurement approvals under USAID rules required three quotations and took three weeks, and some equipment items arrived in partial shipments from Nairobi because of delays on the Kitale road.
+
+Data reporting. Intermittent internet and power outages delayed uploads at remote facilities, and some facilities still entered data late after staff rotations; timely KHIS reporting nonetheless rose from 66 percent of facilities in March to 92 percent in August.
+
+Close-out. Handover of the project's solar fridges and registers to the county needed more signatures than expected, and the final KAP survey fell in a week of hot weather with low turnout in two villages. The sub-county health management team signed the asset handover certificates, and the two villages were revisited to complete the survey.
+
+Lessons for future programming. On-site mentorship after classroom training improves use of partographs and neonatal resuscitation. Peer supervision by experienced CHVs keeps newly trained volunteers active, and holding training at the nearest facility reduces absenteeism. Dialogues timed to market days and water-point visits reach more men. Linking CHV pregnancy registers to facility ANC registers helps women return for the fourth visit. Fixed outreach calendars shared with CHVs increase turnout at outreach sessions. Screening at water points finds more children than house-to-house visits during drought, and screening during routine CHV household visits keeps referral slips linked to the village register. Pre-agreed kit lists with the county pharmacist avoid duplicate supplies. Printing the reporting-rate dashboard for the monthly review meeting makes late facilities act. Handing tools and registers to the county in the final month is smoother when the sub-county team has been joining the monthly data review since the start.
+
+10 Recommendations for Future Programming
+
+The Activity closed with all four coverage indicators above target: ANC4+ at 46% against a 45% target (102.2% of target), skilled delivery at 61% against 60%, DTP3/Penta3 coverage at 81% against 80%, and 61% of caregivers naming three child danger signs against a 60% target. Most count targets were approached but some were slightly missed: 2890 children received DTP3/Penta3 against a target of 3300 (87.6% of target), 3940 women made a first ANC visit against a target of 4200 (93.8% of target), and 174 outreach immunization sessions were conducted against a target of 180 (96.7% of target). The officer's close-out field report attributes the missed counts to the floods, the nurses' strike and the cold-chain failures earlier in the project.
+
+Observation. Two practices stood out over the life of the Activity. First, involving the sub-county health management team in monthly data review from the start made the final handover of tools and registers to the county smoother; the sub-county team signed the asset handover certificates and the handover was completed in the final month. Second, location mattered for participation: on-site mentorship after classroom training improved use of partographs and neonatal resuscitation, and screening and dialogue at water points and market days reached more children and more men than house-to-house visits during drought. Count-based targets that depended on outreach were the ones most exposed to external disruption.
+
+Implication. Future activities should treat service coverage as achievable even under shocks when community platforms are already functioning, but should plan larger buffers for count-based targets in flood-prone and strike-affected periods. Continuity depends on county ownership from the first month, not only at close-out: holding training at the nearest facility reduced CHV absenteeism, and pre-agreed kit lists with the county pharmacist avoided duplicate supplies.
+
+Action. For USAID, the following priorities are recommended. First, design future MNCH awards so that handover obligations (assets, registers, checklists) are built into routine monthly coordination with sub-county teams from month one, replicating the practice that made this handover smooth. Second, allow adaptive outreach calendars — fixed schedules shared with CHVs and screening at water points and market days — as standard practice, since these adaptations raised turnout during the drought and after insecurity. Third, provide contingency for cold-chain repair and outreach rescheduling, given the refrigeration failures and road flooding the Activity experienced.
+
+For the County Government of Turkana, the priorities are as follows. First, sustain the monthly data review and KHIS audit practice in all 14 facilities, which lifted timely KHIS reporting to 92% against a 90% target (102.2% of target), using the reporting-rate dashboard and audit tools handed to the sub-county records officers. Second, maintain on-site mentorship using the mentorship tools handed to the sub-county health management team, since mentorship visits supported the coverage gains recorded in this report. Third, continue CHV peer supervision with the supervision checklist handed over at close-out, and keep CHV screening days at water points and market days during dry seasons.
+
+11 Financial Summary
+
+The Activity expended 1102500 USD of its 1150000 USD budget over the life of the project. It closed with a balance of 47500 USD and a burn rate of 95.9 percent. Spending stayed within a narrow margin of plan on every budget line, and no line shows a variance above ten percent. The largest single-line burn rates were 98.7 percent for indirect costs (NICRA 10 percent) and 97.6 percent for equipment and commodities (MNCH kits, solar refrigerators).
+
+Budget line	Budget	Expended	Balance
+Personnel and fringe benefits	450000	428000	22000
+Travel, transport and referral vouchers	95000	91200	3800
+Equipment and commodities (MNCH kits, solar refrigerators)	230000	224500	5500
+Training and clinical mentorship	120000	114300	5700
+Community health activities (CHV kits, dialogues, radio)	85000	79800	5200
+Subaward to LOCHA	70000	66000	4000
+Indirect costs (NICRA 10 percent)	100000	98700	1300
+
+These figures come from the Activity's verified financial summary for the full award period. The delivery described in 'Final Performance Against Indicators' and 'Key Achievements by Intermediate Result' rests on this expenditure pattern, including the 224500 USD spent on equipment and commodities that equipped all 14 facilities.
+
+No budget line recorded a variance above ten percent, so no line-level variance explanation was required. The inputs do not record an explanation for the remaining balance of 47500 USD; no variance explanation was recorded. The table shows funds obligated, expended and unspent in full. The inputs do not report a cost share figure in SF-425 style, and this section therefore records cost share as not reported.
+
+12 Branding and Marking Compliance
+
+The Activity met USAID branding and marking requirements throughout its life, and the final marking audit found all required items marked. The audit covered equipment, the 14 solar and kit installations, and training materials. The audit sheet is held with the handover certificates. No remediation steps were required. Evidence: Field report, August 2026 (LOCHA programme team), as recorded in the officer's handover narrative and the asset handover certificates described in 'Sustainability and Transition'.
+
+Section 1
+
+Executive Summary
+Statements · 1
+Sources · 11
+Chart
+Comments
+History
+
+1 of 16 statements needs your decision.
+
+Needs a decision
+
+“Some count targets were missed because of the floods, the nurses' strike and the cold-chain failures earlier in the project.”
+
+Causal claim requires an authorized human decision
+
+Keep with a note
+Leave out
+Not checked (minor)
+
+“This document is made possible by the generous support of the American people through the United States Agency for International Development (USAID).”
+
+Not checked (minor)
+
+“The contents are the responsibility of GEC and do not necessarily reflect the views of USAID or the United States Government.”
+
+Not checked (minor)
+
+“It closed with all four maternal, newborn and child health (MNCH) coverage indicators above target.”
+
+Not checked (minor)
+
+“Some service-count results fell below expectation.”
+
+Not checked (minor)
+
+“Recorded next steps included handing mentorship tools, audit tools and the CHV supervision checklist to county structures in the final month.”
+
+Matches evidence
+
+“The Turkana Maternal, Newborn & Child Health Strengthening Activity was a six-month USAID-funded cooperative agreement implemented by GEC with partner Lodwar Community Health Alliance (LOCHA) in Turkana County, Kenya.”
+
+Matches evidence
+
+“Antenatal care four or more visits (ANC4+) reached 46% against a 45% target, up from a baseline of 28.”
+
+Matches evidence
+
+“Skilled delivery reached 61% against 60%, up from 41.”
+
+Matches evidence
+
+“DTP3/Penta3 coverage reached 81% against 80%, and 61% of caregivers could name three child danger signs against a 60% target.”
+
+Matches evidence
+
+“Over the life of the Activity, the project trained 122 health workers in Emergency Obstetric and Neonatal Care (EmONC), Integrated Management of Childhood Illness (IMCI) or essential newborn care against a target of 120.”
+
+Matches evidence
+
+“It equipped all 14 facilities with the essential MNCH kit and trained and kitted 220 community health volunteers (CHVs) against a target of 220.”
+
+Matches evidence
+
+“The Activity recorded 3,940 first antenatal visits against a 4,200 target (93.8% of target), 2,890 children receiving DTP3/Penta3 against 3,300 (87.6%), and 78 clinical mentorship visits against 84 (92.9%).”
+
+Matches evidence
+
+“On-time Kenya Health Information System (KHIS) monthly reporting reached 92% of facilities against a 90% target, up from a baseline of 64.”
+
+Matches evidence
+
+“The Activity closed under budget: expenditure was 1102500 USD against a budget of 1150000 USD, a 95.9% burn rate.”
+
+Matches evidence
+
+“The sub-county health management team signed the final asset handover certificates.”

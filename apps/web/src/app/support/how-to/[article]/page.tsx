@@ -40,6 +40,7 @@ const FILE_MAP: Record<string, string> = {
   "create-a-reporting-period": "how-to/how-to-create-a-reporting-period.md",
   "create-the-closing-report": "how-to/how-to-create-the-closing-report.md",
   "run-a-reporting-month": "how-to/how-to-run-a-reporting-month.md",
+  "project-walkthrough": "how-to/how-to-project-walkthrough.md",
   "review-and-accept-activities": "how-to/how-to-review-and-accept-activities.md",
   "fix-or-remove-an-indicator": "how-to/how-to-fix-or-remove-an-indicator.md",
   "change-a-reports-template": "how-to/how-to-change-a-reports-template.md",

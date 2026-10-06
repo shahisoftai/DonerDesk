@@ -42,6 +42,18 @@ Each activity and indicator page has a **Supporting evidence** panel. It lists i
 
 The evidence list shows how many files match (for example *21–40 of 133*) and pages through them.
 
+## Why a file is suggested for a link
+
+**Suggest links** now says why: "the file name or title mentions 'mentorship visits'", "same activity node in the logframe", or "the activity this file belongs to records this indicator". Nothing is linked until you confirm.
+
+## Link or change what a file proves
+
+Open a file to see **Supports**: the activity it belongs to and the indicator value (indicator and reporting period) it proves. Link or remove either there; the same rule applies as on the upload form.
+
+## Verify many files at once
+
+On the Evidence list, tick files (or **Select all awaiting verification on this page**) and press **Verify selected**. Each file gets its own result, so one that cannot be verified is named instead of hiding in a total.
+
 ## Verify evidence
 
 Reviewers (Admin, Project Manager, M&E Officer, Compliance Officer) open the file and change its status. See [Evidence verification](/support/getting-started/evidence-verification).

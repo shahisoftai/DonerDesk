@@ -1,0 +1,11 @@
+import { attach, BASE, dump } from "./lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const per = readFileSync("periods.txt","utf8").trim().split("\n"); const id = process.argv[2].length > 2 ? process.argv[2] : per[Number(process.argv[2])];
+const { page, browser } = await attach();
+await page.goto(`${BASE}/projects/${P}/reports/${id}`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(2500);
+await page.getByRole("button", { name: "Approve report" }).click(); await page.waitForTimeout(2000);
+console.log((await dump(page)).filter(l=>/button|textarea|checkbox/.test(l) && !/^a /.test(l)).slice(-6).join("\n"));
+const t = await page.locator("body").innerText(); console.log(t.slice(t.indexOf("Approve report"), t.indexOf("Approve report") + 700).replace(/\n+/g, " | "));
+const c = page.getByRole("button", { name: /^(Confirm|Approve)/ }).last(); console.log(await c.innerText()); await c.click(); await page.waitForTimeout(5000);
+const t2 = await page.locator("body").innerText(); const i = t2.indexOf("% ready"); console.log(t2.slice(Math.max(0,i-30), i+160).replace(/\n+/g," | "));
+console.log((await dump(page)).filter(l=>/button/.test(l) && /(Approve|Submit|Export|Request)/i.test(l)).join("\n"));
+await browser.close(); process.exit(0);

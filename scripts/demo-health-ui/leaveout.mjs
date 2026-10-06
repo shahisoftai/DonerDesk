@@ -1,0 +1,11 @@
+import { attach, BASE, dump } from "./lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const per = readFileSync("periods.txt","utf8").trim().split("\n");
+const { page, browser } = await attach();
+await page.goto(`${BASE}/projects/${P}/reports/${per[Number(process.argv[2])]}`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(3000);
+const h = page.getByRole("heading", { name: new RegExp(process.argv[3]) }).first(); await h.scrollIntoViewIfNeeded(); await h.locator("button").click(); await page.waitForTimeout(1000);
+const card = page.locator("div", { hasText: process.argv[4] }).filter({ has: page.getByRole("button", { name: "Leave out" }) }).last();
+await card.getByRole("button", { name: "Leave out" }).click(); await page.waitForTimeout(1200);
+console.log((await dump(page)).filter(l=>/button|textarea/.test(l)&&/(Leave|Confirm|Cancel|reason|note)/i.test(l)).slice(-5).join("\n"));
+const ta = page.locator("textarea").last(); if (await ta.count()) await ta.fill("Internal evidence identifiers do not belong in a donor report."); 
+const c = page.getByRole("button", { name: /^(Leave out$|Confirm)/ }); console.log(await c.allInnerTexts()); await c.last().click(); await page.waitForTimeout(2500);
+await browser.close(); process.exit(0);

@@ -24,6 +24,14 @@ If Female plus Male is below the total, a small note appears; it is only a promp
 
 Everything you write here can be used by the AI Reporter, so include specifics: numbers, places, what changed.
 
+## Files on the activity form
+
+Each dropped file has its own **type** (suggested from the file name: an attendance register becomes an attendance sheet, a mentorship log a monitoring report), **confidentiality** and optional **indicator**. When the activity points at a logframe Activity that has exactly one indicator, that indicator is already chosen.
+
+## Start from an earlier record, or from the logframe
+
+**Start from an earlier record** copies the title, place and logframe Activity (counts and text stay blank). On the Logframe page every Activity node has **Add activity**, which opens the form with that node chosen. Participants you did not enter show as blank, not "0".
+
 ## Get help polishing the text
 
 On an activity, use the **Suggested narrative** panel to have AI turn your summary into a cleaner narrative. You see your original next to the suggestion and can copy it. Nothing changes until you choose to use it.

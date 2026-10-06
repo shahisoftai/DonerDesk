@@ -1,0 +1,35 @@
+voucher_id,date,from_facility,to_facility,transporter,claim_usd,status
+TV-04-001,2026-06-18,Kanamkemer HC,Lodwar CRH,Transporter 1,25,reimbursed
+TV-04-002,2026-06-18,Nakwamekwi Disp,Lodwar CRH,Transporter 2,30,reimbursed
+TV-04-003,2026-06-18,Lodwar SCH,Lodwar CRH,Transporter 3,35,reimbursed
+TV-04-004,2026-06-18,Kalokol HC,Lodwar CRH,Transporter 4,40,reimbursed
+TV-04-005,2026-06-18,Lowarengak Disp,Lodwar CRH,Transporter 5,45,reimbursed
+TV-04-006,2026-06-18,Kerio HC,Lodwar CRH,Transporter 6,25,reimbursed
+TV-04-007,2026-06-18,Katilu HC,Lodwar CRH,Transporter 7,30,reimbursed
+TV-04-008,2026-06-18,Lokori HC,Lodwar CRH,Transporter 8,35,reimbursed
+TV-04-009,2026-06-18,Lokichar HC,Lodwar CRH,Transporter 9,40,reimbursed
+TV-04-010,2026-06-18,Kainuk Disp,Lodwar CRH,Transporter 1,45,reimbursed
+TV-04-011,2026-06-18,Lorugum HC,Lodwar CRH,Transporter 2,25,reimbursed
+TV-04-012,2026-06-18,Napuu Disp,Lodwar CRH,Transporter 3,30,reimbursed
+TV-04-013,2026-06-18,Lokitaung HC,Lodwar CRH,Transporter 4,35,reimbursed
+TV-04-014,2026-06-18,Kakuma Mission HC,Lodwar CRH,Transporter 5,40,reimbursed
+TV-04-015,2026-06-18,Kanamkemer HC,Lodwar CRH,Transporter 6,45,reimbursed
+TV-04-016,2026-06-18,Nakwamekwi Disp,Lodwar CRH,Transporter 7,25,reimbursed
+TV-04-017,2026-06-18,Lodwar SCH,Lodwar CRH,Transporter 8,30,reimbursed
+TV-04-018,2026-06-18,Kalokol HC,Lodwar CRH,Transporter 9,35,reimbursed
+TV-04-019,2026-06-18,Lowarengak Disp,Lodwar CRH,Transporter 1,40,reimbursed
+TV-04-020,2026-06-18,Kerio HC,Lodwar CRH,Transporter 2,45,reimbursed
+TV-04-021,2026-06-18,Katilu HC,Lodwar CRH,Transporter 3,25,reimbursed
+TV-04-022,2026-06-18,Lokori HC,Lodwar CRH,Transporter 4,30,reimbursed
+TV-04-023,2026-06-18,Lokichar HC,Lodwar CRH,Transporter 5,35,reimbursed
+TV-04-024,2026-06-18,Kainuk Disp,Lodwar CRH,Transporter 6,40,reimbursed
+TV-04-025,2026-06-18,Lorugum HC,Lodwar CRH,Transporter 7,45,reimbursed
+TV-04-026,2026-06-18,Napuu Disp,Lodwar CRH,Transporter 8,25,reimbursed
+TV-04-027,2026-06-18,Lokitaung HC,Lodwar CRH,Transporter 9,30,reimbursed
+TV-04-028,2026-06-18,Kakuma Mission HC,Lodwar CRH,Transporter 1,35,reimbursed
+TV-04-029,2026-06-18,Kanamkemer HC,Lodwar CRH,Transporter 2,40,reimbursed
+TV-04-030,2026-06-18,Nakwamekwi Disp,Lodwar CRH,Transporter 3,45,reimbursed
+TV-04-031,2026-06-18,Lodwar SCH,Lodwar CRH,Transporter 4,25,reimbursed
+TV-04-032,2026-06-18,Kalokol HC,Lodwar CRH,Transporter 5,30,reimbursed
+TV-04-033,2026-06-18,Lowarengak Disp,Lodwar CRH,Transporter 6,35,reimbursed
+TV-04-034,2026-06-18,Kerio HC,Lodwar CRH,Transporter 7,40,reimbursed

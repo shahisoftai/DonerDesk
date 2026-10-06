@@ -1,0 +1,17 @@
+Code,Name,Type,Baseline,Target,Unit,Means of Verification,Data Source,Frequency,Disaggregation Required,Logframe Code
+HL-OC1a,"Percentage of pregnant women with four or more ANC visits (ANC4+) at supported facilities",Percentage,28,45,"%","KHIS/DHIS2 MOH 405 ANC register extract","Facility ANC registers via KHIS",Monthly,no,O1
+HL-OC1b,"Percentage of deliveries attended by a skilled birth attendant at supported facilities",Percentage,41,60,"%","KHIS/DHIS2 MOH 333 maternity register extract","Facility maternity registers via KHIS",Monthly,no,O1
+HL-OC1c,"Percentage of children under 1 year who received DTP3/Penta3 at supported facilities",Percentage,62,80,"%","KHIS/DHIS2 MOH 710 immunization summary","Facility immunization registers via KHIS",Monthly,no,O1
+HL-OC2a,"Percentage of caregivers of children under five who can name at least three child danger signs",Percentage,31,60,"%","Community KAP spot survey report","Quarterly CHV-led KAP spot survey",Quarterly,no,O2
+HL-1.1a,"Number of health workers trained in EmONC, IMCI or essential newborn care",Number,0,120,"health workers","Training attendance sheets and certificates","Training registers",Monthly,yes,1.1
+HL-1.1b,"Number of facility clinical mentorship visits conducted",Number,0,84,"visits","Signed mentorship visit logs","Mentor visit reports",Monthly,no,1.1
+HL-1.2a,"Number of health facilities equipped with the essential MNCH equipment kit",Number,0,14,"facilities","Equipment handover certificates","Procurement and handover records",Monthly,no,1.2
+HL-1.3a,"Number of pregnant women making a first ANC visit at supported facilities",Number,0,4200,"women","MOH 405 ANC register extracts","Facility ANC registers",Monthly,yes,1.3
+HL-1.3b,"Number of deliveries attended by a skilled birth attendant at supported facilities",Number,0,2100,"deliveries","MOH 333 maternity register extracts","Facility maternity registers",Monthly,no,1.3
+HL-1.3c,"Number of women referred for emergency obstetric care using the transport voucher scheme",Number,0,180,"women","Voucher claim forms and referral slips","Voucher register",Monthly,no,1.3
+HL-1.4a,"Number of children under 1 year who received DTP3/Penta3",Number,0,3300,"children","MOH 710 immunization tally sheets","Facility and outreach immunization registers",Monthly,yes,1.4
+HL-1.4b,"Number of outreach immunization sessions conducted",Number,0,180,"sessions","Outreach session logs","Outreach session records",Monthly,no,1.4
+HL-1.5a,"Percentage of supported facilities submitting KHIS monthly reports on time",Percentage,64,90,"%","KHIS reporting-rate dashboard export","KHIS reporting-rate dashboard",Monthly,no,1.5
+HL-2.1a,"Number of community health volunteers (CHVs) trained and kitted",Number,0,220,"CHVs","CHV training registers","CHV training records",Monthly,yes,2.1
+HL-2.2a,"Number of people reached with community health education",Number,0,18000,"people","Community dialogue attendance sheets","CHV and community dialogue registers",Monthly,yes,2.2
+HL-2.3a,"Number of children 6-59 months screened for acute malnutrition using MUAC",Number,0,9000,"children","CHV MUAC screening logs","CHV MUAC registers",Monthly,yes,2.3

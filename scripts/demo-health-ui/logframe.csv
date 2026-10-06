@@ -1,0 +1,20 @@
+Level,Code,Title,Description
+Goal,G1,"Improved health and survival of women, newborns and children under five in Turkana County",Contribution to USAID/Kenya DO on improved health outcomes (CDCS)
+Outcome,O1,"Increased use of quality maternal, newborn and child health (MNCH) services in 14 supported facilities",Intermediate Result 1
+Outcome,O2,Strengthened community health system and improved household care practices,Intermediate Result 2
+Output,1.1,"Health workers competent in emergency obstetric and newborn care, IMCI and essential newborn care",Clinical training and on-site mentorship
+Output,1.2,Facilities equipped with essential MNCH equipment and commodities,"Equipment kits, delivery sets, solar refrigerators"
+Output,1.3,Antenatal care and skilled delivery services expanded,"Facility services, outreach and emergency transport vouchers"
+Output,1.4,Routine immunization services strengthened,"Facility and outreach sessions, cold chain"
+Output,1.5,Facility health data quality and use strengthened,KHIS/DHIS2 reporting and monthly data review
+Output,2.1,"Community health volunteers trained, kitted and supervised",CHVs linked to Community Health Units
+Output,2.2,"Community education on maternal, newborn and child health delivered","Dialogue days, household visits and radio messages"
+Output,2.3,Child malnutrition screening and referral strengthened,MUAC screening and referral to CMAM sites
+Activity,A1.1,"Conduct EmONC, IMCI and essential newborn care training and clinical mentorship",
+Activity,A1.2,Procure and deliver essential MNCH equipment kits and commodities to facilities,
+Activity,A1.3,"Run ANC and delivery services, outreach clinics and the emergency transport voucher scheme",
+Activity,A1.4,Conduct outreach immunization sessions and maintain the cold chain,
+Activity,A1.5,Hold monthly facility data review meetings and data quality audits,
+Activity,A2.1,"Train, kit and supervise community health volunteers",
+Activity,A2.2,"Hold community dialogue days, household visits and radio sessions on MNCH",
+Activity,A2.3,Conduct MUAC screening campaigns and refer malnourished children,
