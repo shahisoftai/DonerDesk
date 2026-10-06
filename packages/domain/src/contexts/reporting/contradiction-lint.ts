@@ -238,6 +238,10 @@ function exemptRanges(text: string): Array<[number, number]> {
   const ageRe = /\b(?:aged?|ages|between the ages of)\s+\d{1,2}(?:\s*(?:-|–|to|and)\s*\d{1,2})?\b|\b\d{1,2}\s*(?:-|–|to)\s*\d{1,2}\s*(?:years?|yrs?)(?:\s*old)?\b|\b\d{1,2}\s*(?:years?|yrs?)\s*old\b/gi;
   let am: RegExpExecArray | null;
   while ((am = ageRe.exec(text)) !== null) ranges.push([am.index, am.index + am[0].length]);
+  // Award and agreement numbers ("72061526CA00012", "AID-OAA-A-17-00012" is covered above) mix capitals and digits without a hyphen.
+  const awardRe = /\b(?=[A-Z0-9]*[0-9])(?=[A-Z0-9]*[A-Z])[A-Z0-9]{8,}\b/g;
+  let wm: RegExpExecArray | null;
+  while ((wm = awardRe.exec(text)) !== null) ranges.push([wm.index, wm.index + wm[0].length]);
   // Identifiers cited in prose (evidence ids) carry digits that are not figures.
   const idRe = /\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b|\b[0-9a-f]{8}\b(?=[^0-9a-f]|$)/gi;
   let im: RegExpExecArray | null;

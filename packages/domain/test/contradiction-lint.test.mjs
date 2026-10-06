@@ -294,3 +294,16 @@ test("a figure followed by a comma is read without the comma", () => {
   const r = lintReportContradictions({ sections: [{ id: "a", title: "Summary", content: "The project built 24 water points, which serve every village." }], findings: [], groundedFigures: ["24"] });
   assert.deepEqual(r.findings, []);
 });
+
+test("an award number is an identifier, not a figure (demo 6: Introduction blocked approval)", () => {
+  const result = lintReportContradictions({
+    sections: sections(["Introduction", "This report covers a USAID-funded cooperative agreement (award no. 72061526CA00012) in Turkana."]),
+    findings,
+  });
+  assert.equal(result.blockers, 0, JSON.stringify(result.findings));
+  const stray = lintReportContradictions({
+    sections: sections(["Overview", "A total of 5,600 children were attending regularly."]),
+    findings,
+  });
+  assert.equal(stray.blockers, 1);
+});
