@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { LogframeResponseSchema, OrganizationSchema } from "@/lib/server/schemas";
+import { LogframeResponseSchema, OrganizationSchema, ArchivedIndicatorsResponseSchema } from "@/lib/server/schemas";
+import { ArchivedIndicatorsPanel } from "@/features/logframe/presentation/ArchivedIndicatorsPanel";
 import { InlineError } from "@/components/feedback/PageState";
 import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
 import { LogframeTreeEditor } from "@/features/logframe/presentation/LogframeTreeEditor";
@@ -37,6 +38,10 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
   }
   const needReview = data.indicators.filter((i) => i.semanticsDescription?.needsReview).map((i) => i.id);
   const canConfirm = ctx.capabilities.has("logframe.edit");
+  const archivedResult = canConfirm
+    ? await gatewayRequest(`/v1/projects/${resolvedParams.id}/indicators/archived`, ArchivedIndicatorsResponseSchema, ctx.token)
+    : null;
+  const archived = archivedResult?.ok ? archivedResult.value.items : [];
   const canReorder = isLogframeReorderEnabled() && ctx.capabilities.has("logframe.edit");
 
   return (
@@ -109,6 +114,8 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
           </table>
         </div>
       </section>
+
+      {archived.length > 0 && <ArchivedIndicatorsPanel items={archived} />}
 
       {driveConnected && (
         <div className="mt-6">

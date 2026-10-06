@@ -63,6 +63,7 @@ import {
   MoveIndicatorHandler,
   ArchiveIndicatorHandler,
   RestoreIndicatorHandler,
+  ListArchivedIndicatorsHandler,
   IndicatorApprovalGuard,
   DefaultTemplateResolver,
   ChangePeriodTemplateHandler,
@@ -491,6 +492,7 @@ export interface Container {
     moveIndicator: MoveIndicatorHandler;
     archiveIndicator: ArchiveIndicatorHandler;
     restoreIndicator: RestoreIndicatorHandler;
+    listArchivedIndicators: ListArchivedIndicatorsHandler;
     confirmIndicatorSemantics: ConfirmIndicatorSemanticsHandler;
     verifyPeriodIndicatorUpdates: VerifyPeriodIndicatorUpdatesHandler;
     createIndicatorUpdate: CreateIndicatorUpdateHandler;
@@ -1206,6 +1208,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     moveIndicator: new MoveIndicatorHandler(indicators, logframe, indicatorApprovalGuard, audits),
     archiveIndicator: new ArchiveIndicatorHandler(indicators, indicatorUpdates, indicatorApprovalGuard, audits),
     restoreIndicator: new RestoreIndicatorHandler(indicators, audits),
+    listArchivedIndicators: new ListArchivedIndicatorsHandler(indicators),
     confirmIndicatorSemantics: new ConfirmIndicatorSemanticsHandler(indicators, audits),
     verifyPeriodIndicatorUpdates: new VerifyPeriodIndicatorUpdatesHandler(indicatorUpdates, indicators, periods, activities, audits),
     createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits, evidenceLinker),

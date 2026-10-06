@@ -143,7 +143,7 @@ The report writer that drafts each section from verified findings, following the
 Optional wording preferences learned from your team's edits. Style only, never numbers or facts.
 
 **Archived indicator**
-An indicator that has recorded values and was removed. It is hidden from the logframe, grids and new reports but its history is kept, so earlier reports stay correct.
+An indicator that has recorded values and was removed. It is hidden from the logframe, grids and new reports but its history is kept, so earlier reports stay correct. Restore it from **Archived indicators** on the Logframe page.
 
 **Closing report**
 The Final report that covers the whole life of the project. Created from its own guided page. See [How to create the closing report](/support/how-to/create-the-closing-report).

@@ -19,6 +19,7 @@ function world({ indicators = [indicator()], items = [item("item-act"), item("it
   const repo = {
     async findById(id) { return { ok: true, value: I.get(id) ?? null }; },
     async update(i) { I.set(i.id, i); return { ok: true, value: i }; },
+    async findByProject() { return { ok: true, value: [...I.values()].filter((i) => !i.isArchived) }; },
     async delete(id) { deleted.push(id); I.delete(id); return { ok: true, value: undefined }; },
   };
   const updates = { async findByIndicator(id) { return { ok: true, value: values.filter((v) => v.indicatorId === id) }; } };
@@ -138,4 +139,34 @@ test("the approval guard is true only when a period with a value has an approved
   assert.equal((await new IndicatorApprovalGuard({ async findByIndicator() { return { ok: true, value: [] }; } }, draftsBy({})).isUsedInApprovedReport(tenantId, "i-1")).value, false);
   const failing = await new IndicatorApprovalGuard(updates, { async findByReportingPeriod() { return { ok: false, error: new Error("db") }; } }).isUsedInApprovedReport(tenantId, "i-1");
   assert.equal(failing.ok, false);
+});
+
+test("restore is refused while an active indicator uses the same code; a different code restores", async () => {
+  const { ListArchivedIndicatorsHandler } = await import("../dist/index.js");
+  const archived = indicator({ id: "old", code: "IND1" });
+  archived.archive(new Date("2026-10-01"));
+  const active = indicator({ id: "new", code: "ind1" });
+  const w = world({ indicators: [archived, active] });
+  const repo = { ...w.repo, findByProject: async () => ({ ok: true, value: [...w.I.values()].filter((i) => !i.isArchived) }) };
+  const refused = await new RestoreIndicatorHandler(repo, w.audit).handle(ctx, "old");
+  assert.equal(refused.ok, false);
+  assert.match(refused.error.message, /IND1/);
+  assert.equal(w.I.get("old").isArchived, true);
+
+  const other = world({ indicators: [archived, indicator({ id: "new2", code: "IND9" })] });
+  const repo2 = { ...other.repo, findByProject: async () => ({ ok: true, value: [...other.I.values()].filter((i) => !i.isArchived) }) };
+  assert.equal((await new RestoreIndicatorHandler(repo2, other.audit).handle(ctx, "old")).ok, true);
+  assert.equal(other.I.get("old").isArchived, false);
+});
+
+test("the archived list holds only archived indicators, newest first", async () => {
+  const { ListArchivedIndicatorsHandler } = await import("../dist/index.js");
+  const a = indicator({ id: "a", code: "A" }); a.archive(new Date("2026-10-01"));
+  const b = indicator({ id: "b", code: "B" }); b.archive(new Date("2026-10-05"));
+  const c = indicator({ id: "c", code: "C" });
+  const seen = [];
+  const repo = { findByProject: async (_p, _t, options) => (seen.push(options), { ok: true, value: [a, b, c] }) };
+  const r = await new ListArchivedIndicatorsHandler(repo).handle(ctx, "p-1");
+  assert.deepEqual(r.value.items.map((i) => i.id), ["b", "a"]);
+  assert.deepEqual(seen[0], { includeArchived: true });
 });

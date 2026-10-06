@@ -267,7 +267,7 @@ Code review of the first draft found: (a) finding 3 is three competing definitio
 | R17 | `indicatorExportColumns` / `indicatorExportRow`: final/annual/semi-annual tables show this period, life of project and % of target (sheet, Word, PDF); the pack uses the shared evidence scope | Size preview deferred |
 | R19 | `planCadencePeriods` + `CreateAllPeriodsHandler` + reports-page panel; the closing block is left to the closing report | Next-best-action, ZIP import, copy-last-month stay deferred (§6) |
 
-**Deferred (unchanged from §6, plus):** readiness-change explanation (R16.6), evidence-pack size preview, "Add activity" on every logframe node, idempotency store. `IdempotencyRecord` already exists as a table; reuse it if a server-side key is ever needed.
+**Deferred (unchanged from §6, plus):** readiness-change explanation (R16.6), evidence-pack size preview, "Add activity" on every logframe node, idempotency store. (The archived-indicator **Restore** screen, first deferred, was built afterwards: `ListArchivedIndicatorsHandler`, `GET /v1/projects/:id/indicators/archived`, `ArchivedIndicatorsPanel`; restore is refused while an active indicator has the same code.) `IdempotencyRecord` already exists as a table; reuse it if a server-side key is ever needed.
 
 **Findings while building (not in demo 4):** the checklist scan created a fresh item for a concern a person had already decided, and re-created state items it then closed (churn); the checklist note was dropped; an activity's reviewer note stayed inside the summary text that reports read.
 
@@ -292,3 +292,4 @@ Code review of the first draft found: (a) finding 3 is three competing definitio
 - Web can import only domain subpaths listed in `packages/domain/package.json` `exports`; add one when a web file needs a new pure domain module.
 - Package tests run against `dist/`: build contracts → domain → application → infrastructure before testing.
 - Deploy order that worked: backup → `rsync --relative` migrations + `schema.prisma` → `prisma migrate deploy` as `donordesk_migrator` → `deploy-fast.sh`.
+- Help Center articles live in `memorybank/docs/support/` (how-tos in `how-to/`, routing in `apps/web/src/app/support/*/[article]/page.tsx` `FILE_MAP`, navigation in `apps/web/src/components/support/wikiCategories.tsx`, index in `INDEX.md`). They are read at **web build time**, so a docs change reaches the site only after a web deploy.

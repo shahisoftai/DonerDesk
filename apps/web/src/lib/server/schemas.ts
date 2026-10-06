@@ -345,6 +345,10 @@ export const IndicatorItemSchema = z.object({
     .optional(),
 });
 
+export const ArchivedIndicatorsResponseSchema = z.object({
+  items: z.array(z.object({ id: z.string(), code: z.string(), name: z.string(), logframeItemId: z.string(), archivedAt: z.string() })),
+});
+
 export const IndicatorUpdateItemSchema = z.object({
   id: z.string(),
   indicatorId: z.string(),

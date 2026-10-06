@@ -50,6 +50,7 @@ const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/indicators\/parse-file$/, permission: "logframe.manage" },
   { method: "PUT", route: /^\/v1\/indicators\/[^/]+\/semantics$/, permission: "logframe.manage" },
   { method: "PATCH", route: /^\/v1\/indicators\/[^/]+$/, permission: "logframe.manage" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/indicators\/archived$/, permission: "logframe.manage" },
   { method: "POST", route: /^\/v1\/indicators\/[^/]+\/(move|archive|restore)$/, permission: "logframe.manage" },
   { method: "POST", route: /^\/v1\/indicators\/semantics\/confirm$/, permission: "logframe.manage" },
   { method: "POST", route: /^\/v1\/reporting-periods\/[^/]+\/indicator-updates\/verify-all$/, permission: "indicator.verify" },

@@ -118,6 +118,7 @@ export * from "./use-cases/logframe/update-indicator.js";
 export * from "./use-cases/logframe/move-indicator.js";
 export * from "./use-cases/logframe/archive-indicator.js";
 export * from "./use-cases/logframe/restore-indicator.js";
+export * from "./use-cases/logframe/list-archived-indicators.js";
 export * from "./services/indicator-approval-guard.js";
 export * from "./services/default-template-resolver.js";
 export * from "./ports/default-template-resolver.js";

@@ -37,7 +37,14 @@ Click **Remove indicator** and confirm.
 | Values recorded | It is **archived**: hidden from the logframe, grids and new reports, but its history is kept. |
 | Values used in an **approved** report | It cannot be removed. Ask a reviewer to send the report back with **Request changes** first. |
 
-An archived indicator is hidden, not lost. If you need one back, [contact support](/support/contact) and we will restore it.
+## Bring an archived indicator back
+
+An archived indicator is hidden, not lost.
+
+1. Open **Logframe**. Below the indicators table, **Archived indicators (n)** lists each one with the date it was archived. (The list only appears when there is something archived.)
+2. Click **Restore** next to the indicator.
+
+It returns to the logframe, the values grid and new reports with all its values and history. If another indicator now uses the same **code**, the restore is refused and tells you which code; change one of the codes first, then restore.
 
 ## Several indicators under one logframe item
 

@@ -20,6 +20,10 @@ The breakdown is a setting of the indicator. Open the indicator, tick **Record a
 - **Move** and **Remove** are refused when the indicator was used in an **approved** report. Ask a reviewer to send the report back with **Request changes**.
 - See [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator).
 
+## An indicator disappeared
+
+It was probably removed and archived (it had values). Open **Logframe** and look under **Archived indicators**; click **Restore** to bring it back. If the restore says another indicator uses the same code, change one of the codes first.
+
 ## Disaggregation errors
 
 For **Number** and **Currency** indicators, each dimension (for example Female + Male) must add up to the period value. Correct the categories or the total. Percentage indicators do not need to add up.

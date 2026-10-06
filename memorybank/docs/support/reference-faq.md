@@ -54,6 +54,9 @@ Yes, and it is the recommended option. Files stay in your Drive and use no Donor
 ### I picked the wrong parent for an indicator. Do I have to start over?
 No. Open the indicator and use **Move indicator**, or edit or remove it. See [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator).
 
+### I removed an indicator by mistake. Can I get it back?
+If it had values it was archived, not deleted: open **Logframe → Archived indicators** and click **Restore**. See [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator).
+
 ### A duplicate or mistaken activity is counted as "not accepted". What do I do?
 Withdraw it. A withdrawn record is left out of reports and no longer blocks the closing report. See [How to review and accept activities](/support/how-to/review-and-accept-activities).
 

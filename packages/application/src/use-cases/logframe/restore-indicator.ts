@@ -14,6 +14,12 @@ export class RestoreIndicatorHandler {
     const indicator = found.value;
     if (!indicator) return { ok: false, error: DomainError.notFound("Indicator", indicatorId) };
     if (!indicator.isArchived) return { ok: true, value: { id: indicator.id } };
+    // A code identifies an indicator in imports and reports: it cannot be restored beside an active one with the same code.
+    const active = await this.indicators.findByProject(indicator.projectId, ctx.tenant.tenantId);
+    if (!active.ok) return active;
+    if (active.value.some((i) => i.id !== indicator.id && i.code.trim().toLowerCase() === indicator.code.trim().toLowerCase())) {
+      return { ok: false, error: DomainError.conflict(`Another indicator already uses the code ${indicator.code}. Change that code first, then restore this one.`) };
+    }
     indicator.restore();
     const saved = await this.indicators.update(indicator);
     if (!saved.ok) return saved;

@@ -45,7 +45,7 @@ New drafts use the saved calculation.
 
 ## Fix a mistake without rebuilding
 
-Wrong parent, typo in the target, breakdown missing, indicator no longer needed? Open the indicator and use **Edit indicator**: edit the fields, **Move indicator** to another logframe item, or **Remove indicator** (deleted if it has no values, archived if it has). See [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator).
+Wrong parent, typo in the target, breakdown missing, indicator no longer needed? Open the indicator and use **Edit indicator**: edit the fields, **Move indicator** to another logframe item, or **Remove indicator** (deleted if it has no values, archived if it has; archived ones can be restored from the Logframe page). See [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator).
 
 ## Indicator page
 
