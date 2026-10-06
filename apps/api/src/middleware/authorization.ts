@@ -82,6 +82,8 @@ const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/closing-report\/start$/, permission: "report.edit" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/period-options$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/default-templates$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/periods-plan$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/periods\/create-all$/, permission: "report.edit" },
   { method: "POST", route: /^\/v1\/reporting-periods$/, permission: "report.edit" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/reporting-periods$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/reporting-periods\/[^/]+\/generate-draft$/, permission: "report.generate" },

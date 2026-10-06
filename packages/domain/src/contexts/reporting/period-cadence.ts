@@ -108,3 +108,41 @@ export function defaultDeadlineOffsetForType(reportType: string): number | undef
   if (reportType === "ACTIVITY") return 7;
   return undefined;
 }
+
+export interface PlannedPeriod {
+  startDate: string;
+  endDate: string;
+}
+
+export interface CadencePlan {
+  /** The periods to create now, in order. */
+  periods: PlannedPeriod[];
+  /** The last block of the project: it is the closing (final) report's period, created through the closing-report steps. */
+  closing: PlannedPeriod | null;
+}
+
+/**
+ * Every period a project's cadence still needs, from its own dates (the one date arithmetic the new-period form and
+ * auto-creation already use). The last block, the one that reaches the project's end, belongs to the closing report,
+ * so it is shown but not created here. Types with no fixed cadence plan nothing.
+ */
+export function planCadencePeriods(
+  reportType: string,
+  projectStart: string | Date,
+  projectEnd: string | Date,
+  existingPeriodEnds: ReadonlyArray<string | Date> = [],
+): CadencePlan {
+  const end = projectEnd instanceof Date ? projectEnd : new Date(projectEnd);
+  const blocks: PlannedPeriod[] = [];
+  const ends: Array<string | Date> = [...existingPeriodEnds];
+  for (let guard = 0; guard < 120; guard += 1) {
+    const next = suggestPeriodDates(reportType, projectStart, projectEnd, ends);
+    if (!next) break;
+    blocks.push(next);
+    ends.push(next.endDate);
+  }
+  const reachesEnd = (p: PlannedPeriod) => !Number.isNaN(end.getTime()) && new Date(p.endDate).getTime() === end.getTime();
+  const last = blocks[blocks.length - 1];
+  if (last && reachesEnd(last)) return { periods: blocks.slice(0, -1), closing: last };
+  return { periods: blocks, closing: null };
+}

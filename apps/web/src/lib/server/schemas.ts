@@ -601,6 +601,17 @@ export const ReportingPeriodItemSchema = z.object({
 
 export const ReportingPeriodsResponseSchema = z.object({ items: z.array(ReportingPeriodItemSchema) });
 
+const PlannedPeriodSchema = z.object({ startDate: z.string(), endDate: z.string() });
+export const PeriodsPlanSchema = z.object({
+  reportType: z.string().nullable(),
+  plan: z.object({ periods: z.array(PlannedPeriodSchema), closing: PlannedPeriodSchema.nullable() }),
+  note: z.string().optional(),
+});
+export const CreateAllPeriodsResponseSchema = z.object({
+  created: z.array(z.object({ id: z.string(), startDate: z.string(), endDate: z.string() })),
+  failed: z.array(z.object({ startDate: z.string(), endDate: z.string(), error: z.string() })),
+});
+
 export const EnsureAutoPeriodResponseSchema = z.object({ created: z.boolean(), periodId: z.string().optional() });
 
 export const ChartConfigSchema = z.object({

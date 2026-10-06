@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ReportingPeriodsResponseSchema, EnsureAutoPeriodResponseSchema } from "@/lib/server/schemas";
+import { ReportingPeriodsResponseSchema, EnsureAutoPeriodResponseSchema, PeriodsPlanSchema } from "@/lib/server/schemas";
+import { CreateAllPeriodsPanel } from "@/features/reporting/presentation/CreateAllPeriodsPanel";
 import { reportHeading, REPORT_STATUS_LABEL } from "@/lib/labels";
 import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
@@ -24,6 +25,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
     ReportingPeriodsResponseSchema,
     ctx.token,
   );
+  const planResult = await gatewayRequest(`/v1/projects/${resolvedParams.id}/periods-plan`, PeriodsPlanSchema, ctx.token);
   if (!result.ok) {
     return (
       <div className="animate-fade-in">
@@ -52,6 +54,10 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
         <h1 className="text-xl font-semibold tracking-tight">Reports</h1>
         <Link className="btn" href={`/projects/${resolvedParams.id}/reports/new`}>Create reporting period</Link>
       </header>
+
+      {planResult.ok && ctx.capabilities.has("reporting.edit") && (
+        <CreateAllPeriodsPanel projectId={resolvedParams.id} plan={planResult.value.plan} note={planResult.value.note} />
+      )}
 
       {!hasItems ? (
         <div className="card mt-6 text-sm text-slate-600 dark:text-slate-300">

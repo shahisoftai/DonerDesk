@@ -126,6 +126,7 @@ export * from "./use-cases/reporting/get-period-options.js";
 export * from "./use-cases/reporting/closing-report.js";
 export * from "./use-cases/reporting/change-period-template.js";
 export * from "./use-cases/reporting/get-default-templates.js";
+export * from "./use-cases/reporting/create-all-periods.js";
 export * from "./use-cases/reporting/resolve-section-flags.js";
 export * from "./use-cases/logframe/confirm-indicator-semantics.js";
 export * from "./use-cases/logframe/verify-period-indicator-updates.js";

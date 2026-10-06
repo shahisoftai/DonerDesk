@@ -71,6 +71,7 @@ import {
   RestoreActivityHandler,
   BulkReviewActivitiesHandler,
   GetDefaultTemplatesHandler,
+  CreateAllPeriodsHandler,
   EvidenceLinkService,
   ActivityLinkResolver,
   GetPeriodOptionsHandler,
@@ -535,6 +536,7 @@ export interface Container {
     updateReportingPeriodScope: UpdateReportingPeriodScopeHandler;
     changePeriodTemplate: ChangePeriodTemplateHandler;
     getDefaultTemplates: GetDefaultTemplatesHandler;
+    createAllPeriods: CreateAllPeriodsHandler;
     getPeriodFinance: GetPeriodFinanceHandler;
     savePeriodFinance: SavePeriodFinanceHandler;
     previewPeriodFinanceImport: PreviewPeriodFinanceImportHandler;
@@ -1249,6 +1251,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     updateReportingPeriodScope: new UpdateReportingPeriodScopeHandler(periods, drafts, sections, reportRevisions, activities, audits),
     changePeriodTemplate: new ChangePeriodTemplateHandler(periods, drafts, templates, audits),
     getDefaultTemplates: new GetDefaultTemplatesHandler(defaultTemplateResolver),
+    createAllPeriods: new CreateAllPeriodsHandler(projects, reportingProfiles, periods, createReportingPeriodHandler),
     getPeriodFinance: new GetPeriodFinanceHandler(periods, financeInputs, projects, periodFinancials),
     savePeriodFinance: new SavePeriodFinanceHandler(ids, periods, financeInputs, projects, periodFinancials, drafts, audits),
     previewPeriodFinanceImport: new PreviewPeriodFinanceImportHandler(periods, financeInputs, projects),

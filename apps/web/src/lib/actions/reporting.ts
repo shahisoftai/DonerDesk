@@ -7,6 +7,7 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
+import { CreateAllPeriodsResponseSchema } from "@/lib/server/schemas";
 import {
   DetectMissingResponseSchema,
   DraftPollResponseSchema,
@@ -143,6 +144,14 @@ export async function changePeriodTemplateAction(periodId: string, donorTemplate
     return { ok: false, error: { kind: "validation", message: "Please choose a template.", fields: flattenZodFields(parsed.error) } };
   }
   return gatewayRequest(`/v1/reporting-periods/${periodId}/template`, z.object({ changed: z.boolean(), regenerateNeeded: z.boolean() }), context.token, { method: "PUT", body: parsed.data });
+}
+
+export type CreateAllPeriodsResult = Result<z.infer<typeof CreateAllPeriodsResponseSchema>, AppError>;
+
+/** Creates every cadence period the project still needs (the last block is left for the closing report). */
+export async function createAllPeriodsAction(projectId: string): Promise<CreateAllPeriodsResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/periods/create-all`, CreateAllPeriodsResponseSchema, context.token, { method: "POST", body: {}, timeoutMs: 60_000 });
 }
 
 export type PeriodFinanceResult = Result<PeriodFinanceShape, AppError>;

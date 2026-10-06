@@ -344,6 +344,22 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.get("/v1/projects/:projectId/periods-plan", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.createAllPeriods.preview(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/projects/:projectId/periods/create-all", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.createAllPeriods.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.get("/v1/projects/:projectId/default-templates", async (req) => {
     const projectId = (req.params as { projectId: string }).projectId;
     const ctx = { tenant: req.tenant, requestId: req.id };
