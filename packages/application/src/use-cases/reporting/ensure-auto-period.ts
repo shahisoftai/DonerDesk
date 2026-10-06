@@ -60,6 +60,12 @@ export class EnsureAutoPeriodHandler {
     const suggestion = suggestPeriodDates(reportType, project.duration.start, project.duration.end, existingEnds);
     if (!suggestion) return { ok: true, value: { created: false } };
     if (new Date(suggestion.endDate) > new Date()) return { ok: true, value: { created: false } };
+    // The block that reaches the project's end is the closing (final) report's period: it is created through the
+    // closing-report steps (`planCadencePeriods` shows it as "closing"). Auto-creating it as a regular period would
+    // leave no room for the closing report.
+    if (reportType !== "FINAL" && new Date(suggestion.endDate).getTime() === new Date(project.duration.end).getTime()) {
+      return { ok: true, value: { created: false } };
+    }
 
     const offset = profile.deadlineOffsetDays ?? DEFAULT_DEADLINE_OFFSET_DAYS;
     const isoDate = (dateOnly: string) => new Date(`${dateOnly}T00:00:00.000Z`).toISOString();

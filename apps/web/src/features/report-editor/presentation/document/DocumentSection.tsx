@@ -240,7 +240,7 @@ export function DocumentSection({
 
       {section.generatedWithAi === false && content.trim() && !busy && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning-500/30 bg-warning-50 px-3 py-2 text-sm text-warning-700 dark:bg-warning-500/10 dark:text-warning-400">
-          <span>Written without AI — the AI service was unavailable or this section was written by hand. Please check the wording.</span>
+          <span>Written without AI — the AI writer timed out, was unavailable, or used a figure that is not in your verified data, so a basic version was used (or you wrote it by hand). Check the wording. Try AI again opens the rewrite box: a short instruction such as “quote only recorded figures” often helps.</span>
           {canRegenerate && (
             <Button size="sm" variant="secondary" onClick={() => setRegenerateOpen(true)}>
               Try AI again

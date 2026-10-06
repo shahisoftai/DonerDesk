@@ -37,7 +37,9 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     if (titleLower.includes("methodolog") || titleLower.includes("data quality")) {
       return this.methodologyNote(input, planSection.title);
     }
-    if (titleLower.includes("indicator")) {
+    // "Progress Against the Work Plan" reports results: it must not fall into the next-period-plan branch below
+    // just because it contains "work plan".
+    if (titleLower.includes("indicator") || titleLower.includes("progress") || titleLower.includes("performance")) {
       return this.indicatorProgress(input, planSection.title);
     }
     if (titleLower.includes("activit")) {
@@ -49,10 +51,10 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     if (titleLower.includes("challenge")) {
       return this.challenges(input, planSection.title);
     }
-    if (titleLower.includes("lesson")) {
+    if (titleLower.includes("lesson") || titleLower.includes("learning") || titleLower.includes("adaptation")) {
       return this.lessons(input, planSection.title);
     }
-    if (titleLower.includes("next period") || titleLower.includes("work plan")) {
+    if (titleLower.includes("next period") || titleLower.includes("next month") || titleLower.includes("next quarter") || titleLower.includes("priorities") || titleLower.includes("work plan")) {
       return this.nextPeriodPlan(input, planSection.title);
     }
     if (titleLower.includes("voice") || titleLower.includes("testimonial") || titleLower.includes("quote")) {

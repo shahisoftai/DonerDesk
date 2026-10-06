@@ -60,6 +60,8 @@ export function ExportWizard({
   // The checks are read from the report as it is now; this shows when, and lets the user read them again.
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
   const [rechecking, setRechecking] = useState(false);
+  // "donor" seals the approved report and exports the final copy; "internal" is the watermarked review copy. Chosen on the first step.
+  const [copyKind, setCopyKind] = useState<"donor" | "internal" | null>(null);
 
   async function refreshPreflight() {
     setRechecking(true);
@@ -134,16 +136,22 @@ export function ExportWizard({
     setIncluded((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
+  const canDonorCopy = !openIssues && !!preflight.draft && ["APPROVED", "EXPORTED", "SUBMITTED"].includes(preflight.draft.status);
+  const effectiveCopy = copyKind ?? (canDonorCopy ? "donor" : "internal");
+
   async function create() {
     const r = await actionState.run(() =>
-      createExportAction({
-        projectId,
-        reportingPeriodId: periodId,
-        exportType,
-        exportIntent: "INTERNAL_REVIEW",
-        includeEvidenceIds: included,
-        includeSensitive,
-      }),
+      createExportAction(
+        {
+          projectId,
+          reportingPeriodId: periodId,
+          exportType,
+          exportIntent: "INTERNAL_REVIEW",
+          includeEvidenceIds: included,
+          includeSensitive,
+        },
+        effectiveCopy === "donor" ? preflight!.draft?.id : undefined,
+      ),
     );
     if (r) {
       setResult(r);
@@ -184,6 +192,15 @@ export function ExportWizard({
               ))}
             </Select>
           </div>
+          {canDonorCopy && (
+            <div>
+              <label className="label" htmlFor="export-copy">Copy</label>
+              <Select id="export-copy" value={effectiveCopy} onChange={(e) => setCopyKind(e.target.value as "donor" | "internal")}>
+                <option value="donor">Final copy for the donor (seals this version)</option>
+                <option value="internal">Internal copy (watermarked, not for the donor)</option>
+              </Select>
+            </div>
+          )}
           <Button size="sm" onClick={() => setStep("inclusions")}>Next: files</Button>
         </div>
       )}
@@ -252,6 +269,7 @@ export function ExportWizard({
           )}
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Exports are immutable snapshots of the selected report version and files.
+            {effectiveCopy === "donor" ? " This is the final copy for the donor: it is sealed and carries no internal-review mark." : " This copy is watermarked for internal review and cannot be sent to the donor."}
           </p>
           <div className="flex gap-2">
             <Button size="sm" variant="secondary" onClick={() => setStep("inclusions")}>Back</Button>

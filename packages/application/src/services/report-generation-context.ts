@@ -189,7 +189,10 @@ export class ReportGenerationContextBuilder {
 
     const allUpdatesResult = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!allUpdatesResult.ok) return allUpdatesResult;
-    const scoped = scopeIndicatorData(period.reportType, activitiesResult.value, findingsResult.value, allUpdatesResult.value);
+    // An indicator with no value for this period (a quarterly survey in a monthly report) was not measured: its finding
+    // is computed as "0", which a writer would quote as a result. Leave it out unless a life-of-project figure exists.
+    const reported = findingsResult.value.filter((f) => f.lifeOfProject !== undefined || allUpdatesResult.value.some((u) => u.indicatorId === f.indicatorId));
+    const scoped = scopeIndicatorData(period.reportType, activitiesResult.value, reported, allUpdatesResult.value);
     const verifiedFindings = scoped.findings;
     const updatesResult = { ok: true as const, value: scoped.updates };
 

@@ -11,11 +11,22 @@ import type { AppError } from "@/lib/shared/app-error";
 import { UploadResponseSchema } from "./_schemas";
 
 const CreatedExportSchema = UploadResponseSchema.extend({ fileName: z.string().optional() });
+const SnapshotCreatedSchema = z.object({ id: z.string() });
 
 export type CreateExportResult = Result<{ id: string; fileUrl: string; fileName?: string }, AppError>;
 
-export async function createExportAction(input: unknown): Promise<CreateExportResult> {
+/**
+ * `donorDraftId` asks for the final copy for the donor: the report's submission snapshot is sealed first (the gate
+ * runs there) and the export is bound to it, so the file carries no "internal preview" mark. Without it the export is
+ * the watermarked internal copy.
+ */
+export async function createExportAction(input: unknown, donorDraftId?: string): Promise<CreateExportResult> {
   const context = await requireSession();
+  if (donorDraftId) {
+    const sealed = await gatewayRequest(`/v1/report-drafts/${donorDraftId}/submission-snapshot`, SnapshotCreatedSchema, context.token, { method: "POST", body: {} });
+    if (!sealed.ok) return sealed;
+    input = { ...(input as Record<string, unknown>), exportIntent: "DONOR_SUBMISSION", submissionSnapshotId: sealed.value.id };
+  }
   const parsed = CreateExportSchema.safeParse(input);
   if (!parsed.success) {
     return {

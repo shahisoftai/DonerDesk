@@ -120,3 +120,12 @@ test("EnsureAutoPeriodHandler: at most one period is created per call (chained, 
   const feb = periodsRepo.all().find((p) => p.id === "auto-period-2");
   assert.equal(feb.duration.start.toISOString().slice(0, 10), "2020-02-01");
 });
+
+test("EnsureAutoPeriodHandler: the last block of the project belongs to the closing report and is never auto-created as a regular period", async () => {
+  const existing = { id: "p11", projectId: "proj-1", duration: { end: new Date("2020-11-30") } };
+  const { handler, periodsRepo } = build({ existingPeriods: [existing] });
+  const r = await handler.handle(ctx, "proj-1");
+  assert.ok(r.ok);
+  assert.equal(r.value.created, false, "December reaches the project's end: it is the closing report's period");
+  assert.equal(periodsRepo.all().length, 1);
+});
