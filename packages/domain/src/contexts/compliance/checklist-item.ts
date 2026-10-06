@@ -128,6 +128,16 @@ export class ChecklistItem extends Entity<string> {
     this.touch();
   }
 
+  /** Undoes a decision: the item is open again and the note that justified the decision goes with it. */
+  reopen(): void {
+    if (this.props.status !== "RESOLVED" && this.props.status !== "ACCEPTED_RISK" && this.props.status !== "NOT_APPLICABLE") {
+      throw DomainError.invalidTransition("Only a resolved item can be reopened");
+    }
+    this.props.status = "OPEN";
+    this.props.resolutionNotes = undefined;
+    this.touch();
+  }
+
   resolve(notes?: string): void {
     this.props.status = "RESOLVED";
     if (notes) this.props.resolutionNotes = notes;

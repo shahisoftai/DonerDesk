@@ -5,6 +5,7 @@ import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
 import { renderChartPngCached, chartHasData, type ChartSource } from "./chart-png-renderer.js";
 import { parseMarkdownBlocks, renderDocxBlocks, renderPdfBlocks } from "./markdown-renderer.js";
+import { indicatorExportColumns, indicatorExportCell, isRollUpIndicatorTable } from "@donordesk/domain";
 
 /** Report section depth (1 = section, 2-4 = sub-sections); absent on legacy data. */
 function sectionLevel(level: number | undefined): number {
@@ -113,14 +114,14 @@ export class DefaultExportBuilder implements IExportBuilder {
       rows: [
         new TableRow({
           tableHeader: true,
-          children: ["Code", "Indicator", "Baseline", "Target", "Achievement", "Unit", "Status"].map(
+          children: indicatorExportColumns(input.indicators).map((c) => c.header).map(
             (h) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })] }),
           ),
         }),
         ...input.indicators.map(
           (i) =>
             new TableRow({
-              children: [i.code, i.name, i.baseline, i.target, i.achievement, i.unit ?? "", i.status].map(
+              children: indicatorExportColumns(input.indicators).map((c) => indicatorExportCell(i, c.key)).map(
                 (v) => new TableCell({ children: [new Paragraph({ children: textRuns(v) })] }),
               ),
             }),
@@ -228,7 +229,11 @@ export class DefaultExportBuilder implements IExportBuilder {
     doc.fontSize(14).font("Helvetica-Bold").text("Indicator Progress");
     doc.font("Helvetica").fontSize(10);
     for (const i of input.indicators) {
-      doc.text(`${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, achievement ${i.achievement}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`);
+      doc.text(
+        isRollUpIndicatorTable(input.indicators)
+          ? `${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, this period ${i.periodValue || "—"}, life of project to date ${i.lifeOfProjectValue || "—"}${i.percentOfTarget ? `, ${i.percentOfTarget} of target` : ""}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`
+          : `${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, achievement ${i.achievement}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`,
+      );
     }
     doc.moveDown();
     doc.fontSize(14).text("Compliance Checklist");
@@ -259,17 +264,10 @@ export class DefaultExportBuilder implements IExportBuilder {
     const wb = new ExcelJS.Workbook();
     wb.creator = "DonorDesk";
     const sheet = wb.addWorksheet("Indicators");
-    sheet.columns = [
-      { header: "Code", key: "code", width: 14 },
-      { header: "Indicator", key: "name", width: 32 },
-      { header: "Baseline", key: "baseline", width: 12 },
-      { header: "Target", key: "target", width: 12 },
-      { header: "Achievement", key: "achievement", width: 14 },
-      { header: "Unit", key: "unit", width: 10 },
-      { header: "Status", key: "status", width: 12 },
-    ];
+    const columns = indicatorExportColumns(input.indicators);
+    sheet.columns = columns.map((c) => ({ header: c.header, key: c.key, width: c.width }));
     for (const i of input.indicators) {
-      sheet.addRow({ code: i.code, name: i.name, baseline: i.baseline, target: i.target, achievement: i.achievement, unit: i.unit ?? "", status: i.status });
+      sheet.addRow(Object.fromEntries(columns.map((c) => [c.key, indicatorExportCell(i, c.key)])));
     }
     const act = wb.addWorksheet("Activities");
     act.columns = [

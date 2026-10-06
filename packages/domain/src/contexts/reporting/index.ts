@@ -40,4 +40,5 @@ export * from "./flag-classification.js";
 export * from "./period-type-rules.js";
 export * from "./period-evidence-scope.js";
 export * from "./default-template.js";
+export * from "./export-indicator-columns.js";
 export * from "./closing-report-plan.js";

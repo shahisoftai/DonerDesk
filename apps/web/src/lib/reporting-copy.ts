@@ -1,3 +1,4 @@
+import { VERIFICATION_REASON_PLAIN, plainVerificationReason } from "@donordesk/domain/contexts/reporting/verification-reason.js";
 /**
  * Plain-language copy for the reporting workspace.
  *
@@ -42,29 +43,12 @@ export function verificationResultCopy(result: string): string {
   return VERIFICATION_RESULT_COPY[result] ?? "Not checked yet";
 }
 
-const REASON_COPY: Record<string, string> = {
-  SOURCE_MISSING: "no source was given",
-  SOURCE_NOT_FOUND: "the source could not be found",
-  CHUNK_NOT_FOUND: "the quoted passage could not be found in the source",
-  SOURCE_TEXT_MISMATCH: "the source says something different",
-  EVIDENCE_HASH_MISMATCH: "the evidence file changed after it was checked",
-  EVIDENCE_UNVERIFIED: "the evidence has not been verified yet",
-  CONFIDENTIALITY_RESTRICTED: "the evidence is confidential",
-  VALUE_MISMATCH: "the number does not match the evidence",
-  UNIT_MISMATCH: "the unit does not match the evidence",
-  PERIOD_MISMATCH: "the figure is from a different period",
-  ENTITY_MISMATCH: "the figure refers to something else in the evidence",
-  DERIVATION_INVALID: "the calculation does not add up",
-  ENTAILMENT_FAILED: "the evidence does not support this statement",
-  ENTAILMENT_UNCERTAIN: "the evidence only partly supports this statement",
-  CAUSAL_REVIEW_REQUIRED: "it claims a cause and effect that needs a human check",
-  COVERAGE_GAP: "no evidence covers this statement",
-  REQUIREMENT_UNSATISFIED: "a donor requirement is not met",
-};
+/** The plain-language reasons live in the domain, so the checklist and this screen can never explain one differently. */
+const REASON_COPY: Record<string, string> = VERIFICATION_REASON_PLAIN;
 
 /** Plain-language explanation for one verification reason code. */
 export function verificationReasonCopy(code: string): string {
-  return REASON_COPY[code] ?? "it could not be checked against the evidence";
+  return plainVerificationReason(code);
 }
 
 const CODE_RE = /\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/g;

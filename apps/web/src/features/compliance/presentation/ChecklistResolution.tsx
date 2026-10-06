@@ -7,6 +7,7 @@ import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
+import { useToast } from "@/components/feedback/Toast";
 
 type Decision = "RESOLVE" | "ACCEPT_RISK" | "NOT_APPLICABLE" | "START";
 
@@ -15,15 +16,14 @@ export function ChecklistResolution({ itemId, severity }: { itemId: string; seve
   const actionState = useActionState();
   const [decision, setDecision] = useState<Decision | null>(null);
   const [notes, setNotes] = useState("");
-  const [confirming, setConfirming] = useState(false);
   const [localNoteError, setLocalNoteError] = useState<string | undefined>();
+  const toast = useToast();
 
   const highRisk = severity === "HIGH" || severity === "CRITICAL";
 
   function begin(d: Decision) {
     setDecision(d);
     setNotes("");
-    setConfirming(false);
     setLocalNoteError(undefined);
   }
 
@@ -35,10 +35,27 @@ export function ChecklistResolution({ itemId, severity }: { itemId: string; seve
       return;
     }
     setLocalNoteError(undefined);
-    const result = await actionState.run(() => resolveChecklistItemAction(itemId, decision));
+    const result = await actionState.run(() => resolveChecklistItemAction(itemId, decision, trimmed || undefined));
     if (result !== undefined) {
       setDecision(null);
       router.refresh();
+      // One step, and reversible: the decision can be taken back from the toast.
+      if (decision !== "START") {
+        toast.push({
+          title: decision === "RESOLVE" ? "Resolved" : decision === "ACCEPT_RISK" ? "Risk accepted" : "Marked not applicable",
+          tone: "success",
+          durationMs: 12_000,
+          action: {
+            label: "Undo",
+            onAction: () => {
+              void resolveChecklistItemAction(itemId, "REOPEN").then((undone) => {
+                if (!undone.ok) toast.push({ title: "Could not undo", description: undone.error.message, tone: "danger" });
+                router.refresh();
+              });
+            },
+          },
+        });
+      }
     }
   }
 
@@ -71,26 +88,16 @@ export function ChecklistResolution({ itemId, severity }: { itemId: string; seve
             />
           </Field>
 
-          {decision !== "START" && !confirming && (
-            <Button size="sm" variant={decision === "ACCEPT_RISK" ? "secondary" : "primary"} onClick={() => setConfirming(true)}>
-              Confirm
-            </Button>
-          )}
-
-          {decision !== "START" && confirming && (
-            <div className="rounded-lg border border-warning-500/30 bg-warning-500/5 p-3">
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                {decision === "ACCEPT_RISK" && highRisk
-                  ? "This permanently accepts a high-severity risk. Confirm you have the authority to do so."
-                  : decision === "ACCEPT_RISK"
-                    ? "This records the item as an accepted risk."
-                    : decision === "NOT_APPLICABLE"
-                      ? "This marks the item as not applicable to this report."
-                      : "This marks the item as resolved."}
-              </p>
-              <div className="mt-2 flex gap-2">
-                <Button size="sm" variant="danger" onClick={submit} pending={actionState.busy}>Confirm</Button>
-                <Button size="sm" variant="secondary" onClick={() => setConfirming(false)}>Cancel</Button>
+          {decision !== "START" && (
+            <div className="space-y-2">
+              {decision === "ACCEPT_RISK" && highRisk && (
+                <p className="text-sm text-slate-700 dark:text-slate-200">This accepts a high-severity risk. Confirm you have the authority to do so.</p>
+              )}
+              <div className="flex gap-2">
+                <Button size="sm" variant={decision === "ACCEPT_RISK" ? "secondary" : "primary"} onClick={submit} pending={actionState.busy}>
+                  Confirm
+                </Button>
+                <Button size="sm" variant="secondary" onClick={() => setDecision(null)} disabled={actionState.busy}>Cancel</Button>
               </div>
             </div>
           )}

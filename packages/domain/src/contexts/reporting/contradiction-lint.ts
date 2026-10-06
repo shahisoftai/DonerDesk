@@ -164,7 +164,17 @@ const DATE_PATTERNS: RegExp[] = [
   new RegExp(`\\b(?:${MONTH_NAMES})[a-z]*\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?,?\\s+\\d{4}\\b`, "gi"),
   new RegExp(`\\b\\d{1,2}(?:st|nd|rd|th)?\\s+(?:${MONTH_NAMES})[a-z]*\\.?,?\\s+\\d{4}\\b`, "gi"),
   /\b\d{4}-\d{2}-\d{2}\b/g,
+  // A day without a year ("as of August 31", "by 31 August") is still a date, not a figure.
+  new RegExp(`\\b(?:${MONTH_NAMES})[a-z]*\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?\\b`, "gi"),
+  new RegExp(`\\b\\d{1,2}(?:st|nd|rd|th)?\\s+(?:${MONTH_NAMES})[a-z]*\\b`, "gi"),
 ];
+
+/**
+ * A figure quoted for the life of the project ("to date", "since the start", "in total") is a different quantity
+ * from the same metric quoted for the month: they are compared only with figures of their own basis.
+ */
+const LIFE_BASIS_RE =
+  /\b(to date|cumulative(?:ly)?|since (?:the )?(?:start|beginning|inception|launch|project)|over the (?:life|course|duration) of the project|life of (?:the )?project|life-of-project|overall|in total|altogether|across the project|throughout the project|by the end of the project|project-wide|so far)\b/i;
 // Words that name a category, not a metric: "35 female" (caregivers) and "656 female" (enrolment) are different metrics.
 const GENERIC_METRIC_NOUNS = new Set(["female", "males", "male", "females", "women", "woman", "men", "man", "girls", "girl", "boys", "boy", "target", "targets", "baseline", "total", "percent", "usd", "female male"]);
 const NUMBER_RE = /\d[\d,]*(?:\.\d+)?/g;
@@ -266,7 +276,8 @@ function extractProseNumbers(text: string): ProseNumber[] {
   NUMBER_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = NUMBER_RE.exec(text)) !== null) {
-    const raw = m[0];
+    // "August 31, 2026" must not yield the figure "31,": a trailing comma is punctuation, not part of the number.
+    const raw = m[0].replace(/,+$/, "");
     const value = parseDecimalSafe(raw);
     if (value === null) continue;
     const start = m.index;
@@ -421,9 +432,11 @@ export function lintReportContradictions(input: ContradictionLintInput): Contrad
 
       // Same-metric divergence model.
       if (!sentence.quoted && !DELTA_CONTEXT_RE.test(text) && p.value >= 5) {
-        const noun = followingNounPhrase(text, p.end);
-        const genericOnly = noun.split(" ").every((w) => GENERIC_METRIC_NOUNS.has(w));
-        if (noun.length >= 3 && !genericOnly) {
+        const basis = LIFE_BASIS_RE.test(text) ? "life of project" : "period";
+        const noun = `${followingNounPhrase(text, p.end)}|${basis}`;
+        const phrase = followingNounPhrase(text, p.end);
+        const genericOnly = phrase.split(" ").every((w) => GENERIC_METRIC_NOUNS.has(w));
+        if (phrase.length >= 3 && !genericOnly) {
           const bucket = metricValues.get(noun) ?? new Map<string, { value: number; section: string; excerpt: string }>();
           if (!bucket.has(normalizeKey(p.value))) {
             bucket.set(normalizeKey(p.value), { value: p.value, section: sentence.sectionTitle, excerpt: clip(text) });
@@ -467,8 +480,9 @@ export function lintReportContradictions(input: ContradictionLintInput): Contrad
     }
   }
 
-  for (const [noun, bucket] of metricValues) {
+  for (const [key, bucket] of metricValues) {
     if (bucket.size < 2) continue;
+    const [noun = "", basis = "period"] = key.split("|");
     const values = [...bucket.values()].sort((a, b) => a.value - b.value);
     const distinctSections = [...new Set(values.map((v) => v.section))];
     const severity: ContradictionSeverity = bucket.size >= 3 ? "BLOCKER" : "WARNING";
@@ -478,7 +492,7 @@ export function lintReportContradictions(input: ContradictionLintInput): Contrad
       sectionId: input.sections[0]?.id ?? "",
       sectionTitle: distinctSections.join(", "),
       excerpt: values.map((v) => `${formatNumber(v.value)} (${v.section})`).join(" vs "),
-      detail: `The report uses different figures for "${noun}": ${values
+      detail: `The report uses different figures for "${noun}"${basis === "life of project" ? " (for the life of the project)" : ""}: ${values
         .map((v) => `${formatNumber(v.value)} in "${v.section}"`)
         .join("; ")}. Confirm which figure is correct and use it consistently across all sections.`,
     });

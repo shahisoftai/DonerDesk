@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ExportPackage, bindingsForSection, chartAchievement, omitExcludedStatements, type ChartConfig } from "@donordesk/domain";
+import { DomainError, ExportPackage, bindingsForSection, chartAchievement, indicatorExportRow, omitExcludedStatements, type ChartConfig, type ExportIndicatorRow } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IExportRepository, IExportBuilder, ExportIntent, ExportChartInput } from "../../ports/exports.js";
 import type { IStorage } from "../../ports/infrastructure.js";
@@ -13,6 +13,8 @@ import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { CreateExportInput } from "@donordesk/contracts";
+import { resolvePeriodActivities } from "../../services/period-activities.js";
+import { PeriodEvidenceScope } from "../../services/period-evidence-scope-service.js";
 import { exportFileName } from "../../services/export-file-name.js";
 
 export class CreateExportHandler {
@@ -106,19 +108,11 @@ export class CreateExportHandler {
 
     const inds = await this.indicators.findByProject(input.projectId, ctx.tenant.tenantId);
     const ups = await this.updates.findByReportingPeriod(input.reportingPeriodId, ctx.tenant.tenantId);
-    const indicatorRows: Array<{ code: string; name: string; baseline: string; target: string; achievement: string; unit?: string; status: string }> = [];
+    const indicatorRows: ExportIndicatorRow[] = [];
     if (inds.ok && ups.ok) {
       for (const ind of inds.value) {
         const u = ups.value.find((x) => x.indicatorId === ind.id);
-        indicatorRows.push({
-          code: ind.code,
-          name: ind.name,
-          baseline: ind.baseline,
-          target: ind.target,
-          achievement: u?.periodAchievement ?? "0",
-          unit: ind.unit,
-          status: u?.verificationStatus ?? "DRAFT",
-        });
+        indicatorRows.push(indicatorExportRow({ reportType: period.value.reportType, indicator: ind, update: u }));
       }
     }
 
@@ -166,11 +160,16 @@ export class CreateExportHandler {
       }
     }
 
-    const ev = await this.evidence.search({ reportingPeriodId: input.reportingPeriodId, pageSize: 500 }, ctx.tenant.tenantId);
+    // The evidence a report covers is decided in one place (a roll-up report covers the project's), so the pack
+    // lists what the wizard offered and what generation used.
+    const periodActivities = await resolvePeriodActivities(this.activities, period.value, ctx.tenant.tenantId);
+    const ev = periodActivities.ok
+      ? await new PeriodEvidenceScope(this.evidence).filesFor(ctx.tenant.tenantId, period.value, periodActivities.value.map((a) => a.id))
+      : periodActivities;
     const evidenceRows: Array<{ id: string; fileName: string; title: string; type: string; verificationStatus: string; confidentiality: string }> = [];
     const includeIds = new Set(input.includeEvidenceIds);
     if (ev.ok) {
-      for (const e of ev.value.items) {
+      for (const e of ev.value) {
         if (e.confidentialityLevel === "HIGHLY_SENSITIVE" && !input.includeSensitive) continue;
         if (e.confidentialityLevel === "SENSITIVE" && !input.includeSensitive && !includeIds.has(e.id)) continue;
         evidenceRows.push({

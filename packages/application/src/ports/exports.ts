@@ -49,7 +49,8 @@ export interface IExportBuilder {
     reportTitle: string;
     /** `level`: 1 = section, 2-4 = sub-sections (heading depth in the export). */
     sections: Array<{ title: string; content: string; status: string; level?: number }>;
-    indicators: Array<{ code: string; name: string; baseline: string; target: string; achievement: string; unit?: string; status: string }>;
+    /** Roll-up reports (semi-annual, annual, final) also carry the period value, the life-of-project value and the percentage of target. */
+    indicators: Array<{ code: string; name: string; baseline: string; target: string; achievement: string; unit?: string; status: string; periodValue?: string; lifeOfProjectValue?: string; percentOfTarget?: string }>;
     charts?: ExportChartInput[];
     activities: Array<{ title: string; date: string; location?: string; participants: number }>;
     checklist: Array<{ title: string; severity: string; status: string; resolutionNotes?: string }>;

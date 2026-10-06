@@ -241,3 +241,56 @@ test("an age range is a description of the children, not an achievement", () => 
   const real = lintReportContradictions({ sections: [{ id: "s", title: "Results", content: "The project enrolled 6000 children." }] });
   assert.ok(real.findings.some((f) => f.kind === "PROSE_VALUE_NOT_IN_VERIFIED_DATA"), "a real unsupported figure is still caught");
 });
+
+test("a month's figure and the life-of-project figure for the same quantity are not a divergence (demo 4)", () => {
+  const grounded = ["2800", "14000"];
+  const r = lintReportContradictions({
+    sections: [
+      { id: "a", title: "Results", content: "In August, 2,800 people reached safe water this month." },
+      { id: "b", title: "Summary", content: "Over the life of the project, 14,000 people reached safe water." },
+    ],
+    findings: [],
+    groundedFigures: grounded,
+  });
+  assert.equal(r.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
+});
+
+test("two different life-of-project figures for the same quantity still diverge, and two month figures too", () => {
+  const life = lintReportContradictions({
+    sections: [
+      { id: "a", title: "Results", content: "In total, 14,000 people reached safe water." },
+      { id: "b", title: "Summary", content: "To date, 12,000 people reached safe water." },
+    ],
+    findings: [],
+    groundedFigures: ["14000", "12000"],
+  });
+  const diverged = life.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE");
+  assert.equal(diverged.length, 1);
+  assert.match(diverged[0].detail, /life of the project/);
+  const month = lintReportContradictions({
+    sections: [
+      { id: "a", title: "Results", content: "This month 2,800 people reached safe water." },
+      { id: "b", title: "Summary", content: "This month 2,500 people reached safe water." },
+    ],
+    findings: [],
+    groundedFigures: ["2800", "2500"],
+  });
+  assert.equal(month.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 1);
+});
+
+test("a written date is never read as a figure: no '31,' from 'August 31, 2026' or 'as of August 31'", () => {
+  for (const text of [
+    "The final round of testing was completed on August 31, 2026 across all sites.",
+    "As of August 31, the project had reached every committee.",
+    "Handover took place on 31 August with all committees present.",
+    "The work was signed off by 31 August.",
+  ]) {
+    const r = lintReportContradictions({ sections: [{ id: "a", title: "Summary", content: text }], findings: [] });
+    assert.deepEqual(r.findings.filter((f) => f.kind === "PROSE_VALUE_NOT_IN_VERIFIED_DATA"), [], text);
+  }
+});
+
+test("a figure followed by a comma is read without the comma", () => {
+  const r = lintReportContradictions({ sections: [{ id: "a", title: "Summary", content: "The project built 24 water points, which serve every village." }], findings: [], groundedFigures: ["24"] });
+  assert.deepEqual(r.findings, []);
+});

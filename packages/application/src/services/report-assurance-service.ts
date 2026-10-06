@@ -5,7 +5,7 @@ import type {
   VerifiedFinding,
   ClaimSource,
 } from "@donordesk/domain";
-import { DomainError, ReportClaim, computeCoverageMetrics } from "@donordesk/domain";
+import { DomainError, ReportClaim, computeCoverageMetrics, plainVerificationReason } from "@donordesk/domain";
 import type {
   IReportAssuranceService,
   AssessRevisionResult,
@@ -271,7 +271,7 @@ export class ReportAssuranceService implements IReportAssuranceService {
           .map((c) => ({
             key: c.text,
             title: `Unsupported claim: ${c.text.slice(0, 80)}`,
-            description: `Material assertion failed verification (${c.verificationReasonCode ?? "UNASSESSED"}). Resolve, exclude, or accept with a limitation.`,
+            description: `This statement could not be confirmed: ${plainVerificationReason(c.verificationReasonCode)}. Resolve it, exclude it, or accept it with a limitation.`,
           }));
         const projected = await this.projector.project({
           tenantId,

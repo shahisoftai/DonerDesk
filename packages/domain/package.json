@@ -26,6 +26,10 @@
       "types": "./dist/contexts/reporting/report-scope.d.ts",
       "import": "./dist/contexts/reporting/report-scope.js"
     },
+    "./contexts/reporting/verification-reason.js": {
+      "types": "./dist/contexts/reporting/verification-reason.d.ts",
+      "import": "./dist/contexts/reporting/verification-reason.js"
+    },
     "./contexts/activities/activity-transitions.js": {
       "types": "./dist/contexts/activities/activity-transitions.d.ts",
       "import": "./dist/contexts/activities/activity-transitions.js"

@@ -39,6 +39,7 @@ export const CreateChecklistItemSchema = z.object({
 export type CreateChecklistItemInput = z.infer<typeof CreateChecklistItemSchema>;
 
 export const ResolveChecklistItemSchema = z.object({
-  decision: z.enum(["RESOLVE", "ACCEPT_RISK", "NOT_APPLICABLE", "START"]),
+  /** REOPEN is the undo of a decision. */
+  decision: z.enum(["RESOLVE", "ACCEPT_RISK", "NOT_APPLICABLE", "START", "REOPEN"]),
   notes: z.string().max(2000).optional(),
 });

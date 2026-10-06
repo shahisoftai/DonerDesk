@@ -1,6 +1,6 @@
 import type { Result } from "@donordesk/domain";
 import type { ActivityUpdate, ReportingPeriod } from "@donordesk/domain";
-import { DomainError, ChecklistItem, LIFE_OF_PROJECT_REPORT_TYPES, checklistTemplateForReportType, comparableReportTypes, periodComparability, type Severity, type TemplateRequirements } from "@donordesk/domain";
+import { DomainError, ChecklistItem, LIFE_OF_PROJECT_REPORT_TYPES, checklistTemplateForReportType, comparableReportTypes, periodComparability, isConcernTracked, isSatisfiedByFacts, stateItemsToClose, type ChecklistFacts, type Severity, type TemplateRequirements } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IChecklistRepository, IChecklistDetector } from "../../ports/compliance.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -112,8 +112,28 @@ export class DetectMissingEvidenceHandler {
     }));
     const typeItems = await this.reportTypeItems(ctx, period, activitiesResult.ok ? activitiesResult.value : []);
     if (!typeItems.ok) return typeItems;
-    const combined: ChecklistSuggestion[] = [...baseline, ...typeItems.value, ...suggestions, ...donorRules];
+    const combined: ChecklistSuggestion[] = [...baseline, ...typeItems.value.items, ...suggestions, ...donorRules];
 
+    // What the data says right now. A state concern the data already satisfies is not raised, and an open one is closed;
+    // attestations are never touched by data, only a person decides those.
+    const facts: ChecklistFacts = {
+      evidenceCount,
+      requiredEvidenceCount: requiredAnnexes.length * 2 + 5,
+      activityCount: activitiesCount,
+      verifiedIndicatorCount: verified,
+      totalIndicatorCount: updates.value.length,
+      ...(activitiesResult.ok ? { activityStatusById: new Map(activitiesResult.value.map((a) => [a.id, a.status])) } : {}),
+      ...typeItems.value.facts,
+    };
+    if (this.indicators) {
+      const all = await this.indicators.findByProject(period.projectId, ctx.tenant.tenantId);
+      if (all.ok) {
+        facts.confirmedSemanticsIds = confirmedSemanticsIndicatorIds(all.value);
+        const scoped = all.value.filter((i) => i.disaggregationRequired && inIndicatorScope(indicatorScope.value, i.id));
+        const withBreakdown = new Set(updates.value.filter((u) => u.disaggregation.length > 0).map((u) => u.indicatorId));
+        facts.missingBreakdownCount = scoped.filter((i) => !withBreakdown.has(i.id)).length;
+      }
+    }
     // Dedupe: never create a second OPEN/IN_PROGRESS item for the same
     // (type, relatedEntityId) concern already tracked in this period.
     const existingResult = await this.checklist.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
@@ -124,14 +144,18 @@ export class DetectMissingEvidenceHandler {
         .map((i) => `${i.type}:${i.relatedEntityId ?? ""}`),
     );
     // Items raised before these concerns had their own type are still the same concern.
-    const alreadyTracked = (type: string, entityId: string | undefined): boolean =>
-      existingActiveKeys.has(`${type}:${entityId ?? ""}`) || (LEGACY_TYPE[type] !== undefined && existingActiveKeys.has(`${LEGACY_TYPE[type]}:${entityId ?? ""}`));
+    const alreadyTracked = (suggestion: ChecklistSuggestion): boolean =>
+      existingActiveKeys.has(`${suggestion.type}:${suggestion.relatedEntityId ?? ""}`) ||
+      (LEGACY_TYPE[suggestion.type] !== undefined && existingActiveKeys.has(`${LEGACY_TYPE[suggestion.type]}:${suggestion.relatedEntityId ?? ""}`)) ||
+      // A person's decision on an attestation stands until a new cause (a different item) is raised.
+      isConcernTracked(existingResult.value, suggestion);
     const seenKeys = new Set<string>();
 
     let created = 0;
     for (const s of combined) {
       const key = `${s.type}:${s.relatedEntityId ?? ""}`;
-      if (alreadyTracked(s.type, s.relatedEntityId)) continue;
+      if (isSatisfiedByFacts(s.type, facts, s.relatedEntityId)) continue;
+      if (alreadyTracked(s)) continue;
       if (seenKeys.has(key)) continue;
       seenKeys.add(key);
       const id = this.ids.generate();
@@ -151,28 +175,9 @@ export class DetectMissingEvidenceHandler {
       if (saved.ok) created++;
     }
 
-    // An evidence-shortfall item stops being true once the evidence is there: close it instead of leaving a stale blocker.
-    const requiredEvidenceCount = requiredAnnexes.length * 2 + 5;
-    if (evidenceCount >= requiredEvidenceCount) {
-      for (const item of existingResult.value) {
-        if (item.type !== "MISSING_EVIDENCE" || (item.status !== "OPEN" && item.status !== "IN_PROGRESS")) continue;
-        item.resolve(`Closed automatically: ${evidenceCount} evidence files are now on file (about ${requiredEvidenceCount} were required).`);
-        await this.checklist.update(item);
-      }
-    }
-
-    // Likewise a "confirm this calculation" item stops being true once the indicator's calculation is confirmed.
-    if (this.indicators) {
-      const all = await this.indicators.findByProject(period.projectId, ctx.tenant.tenantId);
-      if (all.ok) {
-        const confirmed = confirmedSemanticsIndicatorIds(all.value);
-        for (const item of existingResult.value) {
-          if (item.type !== "INDICATOR_SEMANTICS_UNREVIEWED" || (item.status !== "OPEN" && item.status !== "IN_PROGRESS")) continue;
-          if (!item.relatedEntityId || !confirmed.has(item.relatedEntityId)) continue;
-          item.resolve("Closed automatically: the indicator's calculation is now confirmed.");
-          await this.checklist.update(item);
-        }
-      }
+    for (const { item, reason } of stateItemsToClose(existingResult.value, facts)) {
+      item.resolve(reason);
+      await this.checklist.update(item);
     }
 
     await this.audit.record({
@@ -189,25 +194,30 @@ export class DetectMissingEvidenceHandler {
   }
 
   /** The items that follow from the kind of report (what it covers and builds on). */
-  private async reportTypeItems(ctx: AuthenticatedContext, period: ReportingPeriod, activities: ActivityUpdate[]): Promise<Result<ChecklistSuggestion[], DomainError>> {
+  private async reportTypeItems(ctx: AuthenticatedContext, period: ReportingPeriod, activities: ActivityUpdate[]): Promise<Result<{ items: ChecklistSuggestion[]; facts: ChecklistFacts }, DomainError>> {
     const items: ChecklistSuggestion[] = [];
+    const facts: ChecklistFacts = {};
     if (period.reportType === "ACTIVITY") {
       items.push(...activityEvidenceItems(activities), ...activityRecordAcceptedItems(activities));
     }
     if (LIFE_OF_PROJECT_REPORT_TYPES.has(period.reportType)) {
       const findings = await this.analytics.computeFindings({ reportingPeriodId: period.id, projectId: period.projectId, tenantId: ctx.tenant.tenantId });
       if (!findings.ok) return findings;
-      items.push(...cumulativeDataItems(findings.value, period.reportType));
+      const gaps = cumulativeDataItems(findings.value, period.reportType);
+      items.push(...gaps);
+      facts.cumulativeGapIds = new Set(gaps.flatMap((g) => (g.relatedEntityId ? [g.relatedEntityId] : [])));
     }
     if (this.finance) {
       const status = await this.finance.statusFor(period, ctx.tenant.tenantId);
       if (!status.ok) return status;
       items.push(...financeItems(status.value));
+      facts.financeStatus = status.value;
     }
     const prior = await this.priorReportStatuses(ctx, period);
     if (!prior.ok) return prior;
     const priorItem = priorReportItem(period, prior.value);
     if (priorItem) items.push(priorItem);
+    facts.priorReportLinked = priorItem === undefined;
     if (this.indicators) {
       const all = await this.indicators.findByProject(period.projectId, ctx.tenant.tenantId);
       if (!all.ok) return all;
@@ -215,7 +225,7 @@ export class DetectMissingEvidenceHandler {
       if (!scope.ok) return scope;
       items.push(...semanticsReviewItems(all.value.filter((i) => inIndicatorScope(scope.value, i.id))));
     }
-    return { ok: true, value: items };
+    return { ok: true, value: { items, facts } };
   }
 
   /** Earlier reports this one may be compared with, newest first, and whether each is finished. */

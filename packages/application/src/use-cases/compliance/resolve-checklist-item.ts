@@ -5,7 +5,7 @@ import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IAuditLogger } from "../../ports/core.js";
 
 export interface ResolveChecklistInput {
-  decision: "RESOLVE" | "ACCEPT_RISK" | "NOT_APPLICABLE" | "START";
+  decision: "RESOLVE" | "ACCEPT_RISK" | "NOT_APPLICABLE" | "START" | "REOPEN";
   notes?: string;
 }
 
@@ -30,6 +30,9 @@ export class ResolveChecklistItemHandler {
       case "START":
         item.start();
         break;
+      case "REOPEN":
+        item.reopen();
+        break;
     }
     const saved = await this.repo.update(item);
     if (!saved.ok) return saved;
@@ -39,6 +42,8 @@ export class ResolveChecklistItemHandler {
       eventType: `compliance.checklist.${input.decision.toLowerCase()}`,
       entityType: "checklist_item",
       entityId: itemId,
+      projectId: item.projectId,
+      newValue: input.notes,
     });
     return { ok: true, value: undefined };
   }

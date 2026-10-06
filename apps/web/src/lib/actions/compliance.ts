@@ -12,10 +12,11 @@ export type ResolveChecklistItemResult = Result<undefined, AppError>;
 
 export async function resolveChecklistItemAction(
   itemId: string,
-  decision: "RESOLVE" | "ACCEPT_RISK" | "NOT_APPLICABLE" | "START",
+  decision: "RESOLVE" | "ACCEPT_RISK" | "NOT_APPLICABLE" | "START" | "REOPEN",
+  notes?: string,
 ): Promise<ResolveChecklistItemResult> {
   const context = await requireSession();
-  const parsed = ResolveChecklistItemSchema.safeParse({ decision });
+  const parsed = ResolveChecklistItemSchema.safeParse({ decision, ...(notes ? { notes } : {}) });
   if (!parsed.success) {
     return {
       ok: false,

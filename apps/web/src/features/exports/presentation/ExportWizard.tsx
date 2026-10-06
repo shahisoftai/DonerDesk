@@ -57,14 +57,20 @@ export function ExportWizard({
   const [result, setResult] = useState<{ id: string; fileUrl: string; fileName?: string } | null>(null);
   // A report with open issues can still be downloaded as a watermarked internal-review draft; only a donor submission needs it clean.
   const [draftAnyway, setDraftAnyway] = useState(false);
+  // The checks are read from the report as it is now; this shows when, and lets the user read them again.
+  const [checkedAt, setCheckedAt] = useState<Date | null>(null);
+  const [rechecking, setRechecking] = useState(false);
 
   async function refreshPreflight() {
+    setRechecking(true);
     const r = await getExportPreflightAction(periodId);
+    setRechecking(false);
     if (!r.ok) {
       setLoadError(r.error.message);
       return;
     }
     setPreflight(r.value);
+    setCheckedAt(new Date());
   }
 
   useEffect(() => {
@@ -77,6 +83,7 @@ export function ExportWizard({
         return;
       }
       setPreflight(r.value);
+      setCheckedAt(new Date());
       setExportType(r.value.exportTypes[0] ?? "");
       setIncluded(r.value.evidence.filter((e) => e.defaultIncluded).map((e) => e.id));
     })();
@@ -98,8 +105,18 @@ export function ExportWizard({
   }
 
   const openIssues = preflight.blocking.length > 0;
+  const freshness = (
+    <p className="mb-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400" role="status">
+      {checkedAt ? `Checked at ${checkedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Checking…"}
+      <button type="button" className="underline disabled:opacity-60" onClick={() => void refreshPreflight()} disabled={rechecking}>
+        {rechecking ? "Re-checking…" : "Re-check"}
+      </button>
+    </p>
+  );
   if (openIssues && !draftAnyway) {
     return (
+      <>
+      {freshness}
       <ExportBlockedView
         items={preflight.blockingItems}
         headline={preflight.blocking}
@@ -109,6 +126,7 @@ export function ExportWizard({
         onResolved={refreshPreflight}
         onDownloadDraft={preflight.draft ? () => setDraftAnyway(true) : undefined}
       />
+      </>
     );
   }
 
@@ -143,6 +161,7 @@ export function ExportWizard({
         <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
       </div>
 
+      <div className="mt-1">{freshness}</div>
       {preflight.draft && (
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           Report version {preflight.draft.version} · {preflight.draft.status.replace(/_/g, " ")}
