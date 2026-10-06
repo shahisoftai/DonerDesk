@@ -1,6 +1,14 @@
 # Deploy to Contabo — Fastest Path
 
-**Last deploy:** 2026-10-05 — `releaseId=20261005123155` (`SCOPE=both`, branch `0009-agent-memory`, commit `dd78aba`). **Phase 23 user-friendliness** (`imp/PHSE23-userfriendliness.md`):
+**Last deploy:** 2026-10-06 (UTC) — `releaseId=20261006045737` (`SCOPE=both`, branch `0009-agent-memory`). **Phase 24 user simplicity** (`imp/Phase24-user-simplicity.md` §9): one evidence-scope rule, evidence inherits its activity's period,
+editable/movable/archivable indicators, template defaults per report type, writers no longer see the readiness score, activity resubmit/withdraw/bulk accept, self-closing checklist state items + one-step resolve with Undo,
+roll-up exports with life-of-project columns, create-all periods. **Three additive migrations applied manually first** (`rsync --relative` + `prisma migrate deploy` as `donordesk_migrator`):
+`20261007100000_evidence_period_from_activity` (data backfill only), `20261007110000_indicator_archive` (`Indicator.archivedAt`), `20261007120000_activity_superseded` (`ActivityUpdate.supersededById`). No `rls.sql` change.
+DB backup before: `/opt/donordesk/backups/db-pre-20261007-phase24.dump`. `REQUIRED_PRISMA_FIELDS` gained both columns; `/ready` 200, worker ok, api/web active.
+Browser-verified on production with a real login (read-only): reviewer note shown beside an activity's text with Resubmit and Withdraw panels, the closing plan names "GWHF Final Project Report", the new-period form preselects the reviewed template per type,
+the indicator page has Edit / Move / Remove, evidence detail shows the upload date. The create-all, bulk-accept and one-step-resolve writes were covered by tests and a local scratch run, not clicked on production.
+
+**Earlier:** 2026-10-05 — `releaseId=20261005123155` (`SCOPE=both`, branch `0009-agent-memory`, commit `dd78aba`). **Phase 23 user-friendliness** (`imp/PHSE23-userfriendliness.md`):
 indicator-calculation confirm + setup warnings, verify-all, staged readiness + top-3, flag classes + one-note section decision, one evidence linker + support panel,
 "what you can create" / lifecycle banner / readable validation errors, guided closing report, activity→logframe link, shared workflow rules.
 **Two additive migrations applied manually first:** `20261006100000_evidence_indicator_update_link` (`EvidenceFile.indicatorUpdateId` + backfill of legacy update ids out of `indicatorId`) and
