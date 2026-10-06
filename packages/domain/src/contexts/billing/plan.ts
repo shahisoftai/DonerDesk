@@ -223,6 +223,27 @@ export function mergePartialLimits(
   ) as unknown as PlanLimitsJson;
 }
 
+/**
+ * Read a grant's stored override JSON as a complete `PlanLimits`. Keys the stored
+ * object lacks (written before a bucket existed) keep the plan's own value, so a
+ * boundary never sees `undefined`; malformed JSON yields `undefined` (use the plan).
+ */
+export function parseStoredLimitsOverride(raw: string | null | undefined, base: PlanLimits): PlanLimits | undefined {
+  if (!raw) return undefined;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
+  try {
+    return planLimitsFromJson(mergePartialLimits(parsed as Partial<PlanLimitsJson>, planLimitsToJson(base)));
+  } catch {
+    return undefined;
+  }
+}
+
 export function planCatalogOverrideToJson(override: PlanCatalogOverride | null | undefined): PlanCatalogOverrideJson | null {
   if (!override) return null;
   const base = planLimitsToJson(resolvePlanLimits(override.planCode));

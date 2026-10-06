@@ -58,8 +58,15 @@ export function indicatorExportColumns(rows: ReadonlyArray<ExportIndicatorRow>):
   return isRollUpIndicatorTable(rows) ? ROLL_UP_COLUMNS : BASE_COLUMNS;
 }
 
-export function indicatorExportCell(row: ExportIndicatorRow, key: IndicatorColumnKey): string {
-  return String(row[key] ?? "");
+/** The columns that hold a measured figure: an empty one means the indicator was not measured. */
+const VALUE_COLUMNS: ReadonlySet<IndicatorColumnKey> = new Set(["achievement", "periodValue", "lifeOfProjectValue"]);
+
+/** Plain text a document shows where a figure was not recorded (the workbook leaves the cell empty instead). */
+export const NOT_MEASURED_LABEL = "Not measured";
+
+export function indicatorExportCell(row: ExportIndicatorRow, key: IndicatorColumnKey, options: { notMeasured?: string } = {}): string {
+  const text = String(row[key] ?? "");
+  return text === "" && options.notMeasured !== undefined && VALUE_COLUMNS.has(key) ? options.notMeasured : text;
 }
 
 const parseNumber = (value: string | undefined): number | null => {
@@ -79,7 +86,7 @@ export function percentOfTarget(value: string | undefined, target: string | unde
 /**
  * One indicator's row. Monthly (cadence) reports are exactly as before. For a roll-up report the life-of-project value is
  * the recorded cumulative figure; a rate (percentage, ratio) is not cumulative, so its own value stands for the life of the
- * project. A missing value stays empty rather than becoming 0.
+ * project. A missing value stays empty rather than becoming 0 (documents label it "Not measured").
  */
 export function indicatorExportRow(input: {
   reportType: string;
@@ -95,7 +102,7 @@ export function indicatorExportRow(input: {
     unit: indicator.unit,
     status: update?.verificationStatus ?? "DRAFT",
   };
-  if (!ROLL_UP_REPORT_TYPES.has(input.reportType)) return { ...base, achievement: update?.periodAchievement ?? "0" };
+  if (!ROLL_UP_REPORT_TYPES.has(input.reportType)) return { ...base, achievement: (update?.periodAchievement ?? "").trim() };
 
   const rate = indicator.type === "PERCENTAGE" || indicator.type === "RATIO";
   const period = (update?.periodAchievement ?? "").trim();

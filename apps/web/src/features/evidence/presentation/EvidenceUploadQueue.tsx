@@ -1,9 +1,10 @@
 "use client";
 
-import { useReducer, useState } from "react";
+import { useReducer, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { uploadEvidenceAction } from "@/lib/actions/evidence";
 import { linkDriveEvidenceAction } from "@/lib/actions/drive";
+import { fileIdempotencyKey, newIdempotencyKey, retryWhileUnavailable } from "@/lib/shared/create-retry";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
@@ -38,6 +39,8 @@ export function EvidenceUploadQueue({
   periods?: Array<{ id: string; label: string }>;
 }) {
   const router = useRouter();
+  // Scopes the per-file keys to this visit: adding the same file again later is a new upload.
+  const sessionKey = useRef(newIdempotencyKey());
   const [items, dispatch] = useReducer(uploadReducer, [] as UploadItem[]);
 
   const [evidenceType, setEvidenceType] = useState("OTHER");
@@ -102,7 +105,9 @@ export function EvidenceUploadQueue({
           driveWebLink: item.driveWebLink,
           ...common,
         })
-      : await uploadEvidenceAction(buildFormData(item, projectId, common));
+      : // Each file has its own key, kept across the retries below and a manual "Retry": a file that timed out but was
+        // saved is answered from the first save instead of being stored twice.
+        await retryWhileUnavailable(() => uploadEvidenceAction(buildFormData(item, projectId, common), { idempotencyKey: fileIdempotencyKey(sessionKey.current, item.key) }));
 
     if (!result.ok) {
       dispatch({ type: "fail", key: item.key, error: result.error.message });

@@ -197,8 +197,9 @@ export class NumericAssertionVerifier {
     // Accept both 1- and 2-decimal rounding so "6.7%" and "6.67%" both match
     // the same 8/120 derivation (professional prose is not uniform).
     for (const finding of findings) {
-      // This period's value, and progress since the project started (semi-annual, annual, final reports).
-      for (const numerator of [finding.value, finding.lifeOfProject?.value]) {
+      // This period's value, and progress since the project started (semi-annual, annual, final reports)
+      // ... and its recorded cumulative-to-date figure ("7,000, 87.5% of the target" on a monthly report).
+      for (const numerator of [finding.value, finding.cumulativeValue, finding.lifeOfProject?.value]) {
         const value = numerator === undefined ? null : parseDecimal(numerator);
         if (value === null) continue;
         for (const baseText of [finding.target, finding.baseline]) {

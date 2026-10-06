@@ -14,6 +14,7 @@ import {
   type ReportDraftStatus,
   type SectionStatus,
   type SourceReference,
+  isGenerationFallbackReason,
 } from "@donordesk/domain";
 import type {
   IReportingPeriodRepository,
@@ -61,6 +62,7 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         donorTemplateId: p.donorTemplateId ?? null,
         donorTemplateVersion: p.donorTemplateVersion ?? null,
         donorTemplateMappingId: p.donorTemplateMappingId ?? null,
+        reportType: p.reportType,
         status: p.status.toString(),
         readinessScore: p.readinessScore,
         responsibleOfficerId: p.responsibleOfficerId,
@@ -68,6 +70,9 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         reportingProfileSnapshotJson: p.reportingProfileSnapshotJson,
         templateSnapshotJson: p.templateSnapshotJson,
         scopeJson: p.scopeJson,
+        // null (not undefined) so that restoring a period really clears the stored values
+        cancelledAt: p.cancelledAt ?? null,
+        cancelReason: p.cancelReason ?? null,
       },
     });
     return ok(p);
@@ -77,8 +82,11 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
     if (!row) return ok(null);
     return ok(this.toDomain(row));
   }
-  async findByProject(projectId: string, tenantId: TenantId): Promise<Result<ReportingPeriod[], DomainError>> {
-    const rows = await this.prisma.reportingPeriod.findMany({ where: { projectId, tenantId: tenantId.toString() }, orderBy: { startDate: "desc" } });
+  async findByProject(projectId: string, tenantId: TenantId, options: { includeCancelled?: boolean } = {}): Promise<Result<ReportingPeriod[], DomainError>> {
+    const rows = await this.prisma.reportingPeriod.findMany({
+      where: { projectId, tenantId: tenantId.toString(), ...(options.includeCancelled ? {} : { cancelledAt: null }) },
+      orderBy: { startDate: "desc" },
+    });
     return ok(rows.map((r) => this.toDomain(r)));
   }
   async findPreviousPeriods(projectId: string, beforeReportingPeriodId: string, tenantId: TenantId, limit = 4, filter: PreviousPeriodFilter = {}): Promise<Result<ReportingPeriod[], DomainError>> {
@@ -95,6 +103,7 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         projectId,
         tenantId: tenantId.toString(),
         startDate: { lt: current.startDate },
+        cancelledAt: null,
         ...(filter.reportTypes ? { reportType: { in: [...filter.reportTypes] } } : {}),
       },
       orderBy: { startDate: "desc" },
@@ -123,6 +132,8 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
     templateSnapshotJson: string;
     storyContextJson: string;
     scopeJson: string;
+    cancelledAt?: Date | null;
+    cancelReason?: string | null;
     createdAt: Date;
   }): ReportingPeriod {
     return ReportingPeriod.rehydrate({
@@ -145,6 +156,8 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         templateSnapshotJson: row.templateSnapshotJson,
         storyContextJson: row.storyContextJson,
         scopeJson: row.scopeJson,
+        ...(row.cancelledAt ? { cancelledAt: row.cancelledAt } : {}),
+        ...(row.cancelReason ? { cancelReason: row.cancelReason } : {}),
       },
     });
   }
@@ -252,6 +265,8 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         status: s.status,
         chartConfigJson: s.chartConfig ? JSON.stringify(s.chartConfig) : null,
         currentRevisionId: s.currentRevisionId,
+        generationFallbackReason: s.generationFallback?.reason ?? null,
+        generationFallbackDetail: s.generationFallback?.detail ?? null,
         updatedAt: s.updatedAt,
       },
     });
@@ -272,6 +287,9 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         status: s.status,
         chartConfigJson: s.chartConfig ? JSON.stringify(s.chartConfig) : null,
         currentRevisionId: s.currentRevisionId,
+        // Prisma `update` ignores undefined: null is what clears a stored reason.
+        generationFallbackReason: s.generationFallback?.reason ?? null,
+        generationFallbackDetail: s.generationFallback?.detail ?? null,
         updatedAt: s.updatedAt,
       },
     });
@@ -305,6 +323,8 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
     status: string;
     chartConfigJson: string | null;
     currentRevisionId: string | null;
+    generationFallbackReason?: string | null;
+    generationFallbackDetail?: string | null;
     createdAt: Date;
     updatedAt: Date;
   }): ReportSection {
@@ -326,6 +346,9 @@ export class PrismaReportSectionRepository implements IReportSectionRepository {
         status: row.status as SectionStatus,
         chartConfig: parseChartConfig(row.chartConfigJson),
         currentRevisionId: row.currentRevisionId ?? undefined,
+        ...(isGenerationFallbackReason(row.generationFallbackReason)
+          ? { generationFallback: { reason: row.generationFallbackReason, ...(row.generationFallbackDetail ? { detail: row.generationFallbackDetail } : {}) } }
+          : {}),
       },
     });
   }

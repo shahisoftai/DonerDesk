@@ -1,12 +1,17 @@
 import type { Result } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IChecklistRepository } from "../../ports/compliance.js";
+import type { IChecklistRepository, IChecklistReconciler } from "../../ports/compliance.js";
 
 export class ListChecklistHandler {
-  constructor(private readonly repo: IChecklistRepository) {}
+  constructor(
+    private readonly repo: IChecklistRepository,
+    /** Closes the items the data now satisfies before they are listed. */
+    private readonly reconciler?: IChecklistReconciler,
+  ) {}
 
   async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<unknown[], DomainError>> {
+    await this.reconciler?.reconcile(ctx, reportingPeriodId);
     const r = await this.repo.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!r.ok) return r;
     return {

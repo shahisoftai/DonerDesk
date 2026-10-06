@@ -91,6 +91,7 @@ function walk(value: unknown, out: string[]): void {
 }
 
 export interface GroundingFinding {
+  indicatorCode?: string;
   value?: unknown;
   baseline?: unknown;
   target?: unknown;
@@ -129,6 +130,23 @@ export function allowedNumbers(sources: unknown, findings: ReadonlyArray<Groundi
       if (cumulative !== null) for (const v of roundedVariants(cumulative)) allowed.add(v);
       const lifePct = percentOfTarget(f.lifeOfProject.value, f.target);
       if (lifePct !== null) for (const v of roundedVariants(lifePct)) allowed.add(v);
+    }
+  }
+  // The writer also sees each indicator's recorded cumulative/period values (`indicatorUpdates`): their percent of the
+  // same indicator's target is the same one derived figure the contract allows ("7,000, 87.5% of the 8,000 target").
+  // Mirror of the same rule in the worker's `grounding.allowed_numbers`.
+  const targets = new Map<string, unknown>();
+  for (const f of findings) {
+    const notCalculable = f.valueStatus === "NOT_CALCULABLE" || (f.qualityFlags ?? []).includes("MISSING_DENOMINATOR");
+    if (f.indicatorCode && !notCalculable) targets.set(f.indicatorCode, f.target);
+  }
+  const updates = (sources as { indicatorUpdates?: Array<{ indicatorCode?: string; cumulativeAchievement?: unknown; periodAchievement?: unknown }> } | null | undefined)?.indicatorUpdates ?? [];
+  for (const u of updates) {
+    const target = u.indicatorCode ? targets.get(u.indicatorCode) : undefined;
+    if (target === undefined) continue;
+    for (const raw of [u.cumulativeAchievement, u.periodAchievement]) {
+      const pct = percentOfTarget(raw, target);
+      if (pct !== null) for (const v of roundedVariants(pct)) allowed.add(v);
     }
   }
   return allowed;

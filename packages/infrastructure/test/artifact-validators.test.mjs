@@ -3,6 +3,8 @@ import test from "node:test";
 import {
   assertBannedPhrases,
   assertNoWorkflowVocabulary,
+  assertNoInternalIds,
+  integrityIssues,
   assertMandatoryQuestionsAnswered,
   assertNumericExactness,
   assertRepetition,
@@ -228,4 +230,29 @@ test("assertNoWorkflowVocabulary flags the reporting tool's own vocabulary and n
 test("runAll reports workflow vocabulary as a quality issue, not an integrity one", () => {
   const result = runAll({ ...baseSection, content: "Data quality is good. Readiness score is 80." });
   assert.equal(result.issues.some((i) => i.startsWith("WORKFLOW_VOCABULARY")), true);
+});
+
+// Same table as `INTERNAL_ID_CASES` in apps/workers/tests/test_ai_reporter_quality.py: Python and TS stay in lockstep.
+const INTERNAL_ID_CASES = [
+  ["Attendance was recorded in evidence 3f2a9c1e-7b44-4d0e-9a51-0c6d2e8f1a77.", true],
+  ["See ev-14 and ev:a91c for the register.", true],
+  ["Source: record-2291 and chunk_88.", true],
+  ["The supervision checklist is in Mentorship_Log_March.pdf.", true],
+  ["The evidence ids are listed below.", true],
+  ["Reference 9f86d081884c7d659a2feaa0c55ad015 was used.", true],
+  ["Indicator HL-1.1b reached 142 caregivers, against IND-1 and OUT-3.", false],
+  ["The team kept good record-keeping and evidence of attendance.", false],
+  ["Award number 72062326CA00001 funds the work, signed on 20260927150000.", false],
+  ["Counselling reached 142 caregivers; a PDF summary was shared with the ministry.", false],
+];
+
+test("assertNoInternalIds flags ids, uuids and file names and nothing else (mirrors the worker)", () => {
+  for (const [content, hit] of INTERNAL_ID_CASES) {
+    const result = assertNoInternalIds({ ...baseSection, content });
+    assert.equal(!result.ok, hit, content);
+    if (hit) {
+      assert.equal(result.issues[0]?.startsWith("INTERNAL_ID"), true);
+      assert.equal(integrityIssues(result).length, 1, "an id in donor text earns the retry");
+    }
+  }
 });

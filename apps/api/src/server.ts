@@ -10,6 +10,7 @@ import { TenantId, DomainError, type Role } from "@donordesk/domain";
 import { authMiddleware } from "./middleware/auth.js";
 import { authorizationMiddleware } from "./middleware/authorization.js";
 import { dataResidencyMiddleware } from "./middleware/data-residency.js";
+import { idempotencyBegin, idempotencyFinish } from "./middleware/idempotency.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerOrgRoutes } from "./routes/org.js";
 import { registerUserRoutes } from "./routes/users.js";
@@ -146,6 +147,8 @@ export async function buildServer(): Promise<FastifyInstance> {
     });
     instance.addHook("preHandler", authorizationMiddleware);
     instance.addHook("preHandler", dataResidencyMiddleware);
+    instance.addHook("preHandler", idempotencyBegin);
+    instance.addHook("onSend", idempotencyFinish);
     instance.addHook("onResponse", async (req) => {
       // Background work started by the request (report generation) must
       // finish before its database client is closed. The response is

@@ -13,6 +13,17 @@ export async function registerBillingRoutes(app: FastifyInstance) {
     return BillingSummarySchema.parse(result.value);
   });
 
+  /** The tenant's recent AI section runs (written / recovered / basic version, with the reason). Administrators only. */
+  app.get("/v1/ai/section-runs", async (req) => {
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const result = await req.container.handlers.listAiSectionRuns.handle(ctx);
+    if (!result.ok) throw result.error;
+    return {
+      counts: result.value.counts,
+      runs: result.value.runs.map((r) => ({ ...r, at: r.at.toISOString() })),
+    };
+  });
+
   app.post("/v1/billing/checkout", async (req) => {
     const body = CreateCheckoutSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };

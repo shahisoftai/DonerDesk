@@ -25,6 +25,8 @@ import type {
   AwardReportingOverride,
   ResolvedReportingRequirements,
   ReportingRequirement,
+  GenerationFallback,
+  GenerationFallbackReason,
 } from "@donordesk/domain";
 import type { FinanceSummaryView, ReportingPeriod, ReportDraft, ReportSection } from "@donordesk/domain";
 
@@ -32,7 +34,8 @@ export interface IReportingPeriodRepository {
   create(p: ReportingPeriod): Promise<Result<ReportingPeriod>>;
   update(p: ReportingPeriod): Promise<Result<ReportingPeriod>>;
   findById(id: string, tenantId: TenantId): Promise<Result<ReportingPeriod | null>>;
-  findByProject(projectId: string, tenantId: TenantId): Promise<Result<ReportingPeriod[]>>;
+  /** A project's periods, newest first. Cancelled periods are left out unless asked for: they take no part in the calendar. */
+  findByProject(projectId: string, tenantId: TenantId, options?: { includeCancelled?: boolean }): Promise<Result<ReportingPeriod[]>>;
   /**
    * Adjacent reporting periods that started before the given period, newest
    * first. The deterministic analyst uses these for period-on-period deltas.
@@ -389,15 +392,7 @@ export interface GeneratedDraftResult {
    * users can distinguish "no real LLM configured", "provider timeout",
    * "malformed response", etc. When `usedFallback` is false this is omitted.
    */
-  fallbackReason?:
-    | "PROVIDER_NOT_CONFIGURED"
-    | "PROVIDER_EMPTY_RESPONSE"
-    | "PROVIDER_MALFORMED_RESPONSE"
-    | "PROVIDER_TIMEOUT"
-    | "PROVIDER_HTTP_ERROR"
-    | "PII_REJECTED"
-    | "VALIDATOR_FAILED"
-    | "AI_REPORTER_DISABLED";
+  fallbackReason?: GenerationFallbackReason;
 }
 
 /**
@@ -409,6 +404,8 @@ export interface GeneratedSectionResult {
   section: GeneratedSection;
   usedFallback: boolean;
   fallbackReason?: GeneratedDraftResult["fallbackReason"];
+  /** Short, user-safe detail for the reason ("figure not in your data: 33.3"); stored on the section. */
+  fallbackDetail?: string;
   /** Deliberate deterministic output because this section had no authoritative inputs. */
   deterministicReason?: "INSUFFICIENT_INPUT";
   /** Provider-call facts used for section-level production diagnostics. */
@@ -416,6 +413,8 @@ export interface GeneratedSectionResult {
     inputTokens: number;
     outputTokens: number;
     latencyMs: number;
+    /** Provider calls made for this section (1, or 2 after the one automatic retry). */
+    attempts?: number;
     promptHash: string;
     responseHash?: string;
     responseChars: number;
@@ -751,6 +750,8 @@ export interface IReportRevisionService {
     modelId?: string;
     promptVersion?: number;
     generationRunId?: string;
+    /** Why this text is not AI-written; omit when the AI or a person wrote it (clears the stored reason). */
+    generationFallback?: GenerationFallback;
   }): Promise<Result<ReportRevision, DomainError>>;
 }
 

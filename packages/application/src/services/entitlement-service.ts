@@ -11,6 +11,7 @@ import {
   type PlanLimitsResolver,
   type PlanCode,
   planLimitsToJson,
+  parseStoredLimitsOverride,
   type UsageMetric,
   MAX_ACTIVE_GROWTH_STANDING_BALANCE_PACKS,
 } from "@donordesk/domain";
@@ -153,7 +154,7 @@ export class EntitlementService {
       effectiveFrom: g.effectiveFrom,
       effectiveUntil: g.effectiveUntil,
       subscription: g.source === "CREEM_SUBSCRIPTION" ? subscriptionView : undefined,
-      overrideLimits: g.overrideLimitsJson ? JSON.parse(g.overrideLimitsJson) : undefined,
+      overrideLimits: parseStoredLimitsOverride(g.overrideLimitsJson, resolveLimits(g.planCode as PlanCode)),
       createdAt: g.createdAt,
     }));
 

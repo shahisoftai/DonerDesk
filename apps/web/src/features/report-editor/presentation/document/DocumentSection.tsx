@@ -7,6 +7,9 @@ import { Badge } from "@/components/data/Badge";
 import { Button } from "@/components/ui/Button";
 import { sectionStatusTone } from "@/lib/shared/tone";
 import { SECTION_STATUS_LABEL } from "@/lib/labels";
+import Link from "next/link";
+import { fallbackBannerCopy } from "@/lib/reporting-copy";
+import { RECORDED_FIGURES_ONLY_INSTRUCTION } from "@donordesk/domain/contexts/reporting/generation-fallback.js";
 import type { ReportArtifact } from "@/lib/server/schemas";
 import { SectionArtifacts } from "@/features/reporting/presentation/document-blocks";
 import { ChartFigure, type ChartFigureIndicator } from "@/features/reporting/presentation/ChartFigure";
@@ -39,6 +42,7 @@ export type DocumentSectionData = {
   updatedAt: string;
   chartConfig?: ChartConfig | null;
   generatedWithAi?: boolean | null;
+  generationFallback?: { reason: string; detail?: string | null; action: "RETRY" | "RETRY_RECORDED_FIGURES_ONLY" | "OPEN_SETTINGS" } | null;
 };
 
 const PEEK_HIDE_DELAY_MS = 180;
@@ -239,12 +243,23 @@ export function DocumentSection({
       </h2>
 
       {section.generatedWithAi === false && content.trim() && !busy && (
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning-500/30 bg-warning-50 px-3 py-2 text-sm text-warning-700 dark:bg-warning-500/10 dark:text-warning-400">
-          <span>Written without AI — the AI writer timed out, was unavailable, or used a figure that is not in your verified data, so a basic version was used (or you wrote it by hand). Check the wording. Try AI again opens the rewrite box: a short instruction such as “quote only recorded figures” often helps.</span>
-          {canRegenerate && (
-            <Button size="sm" variant="secondary" onClick={() => setRegenerateOpen(true)}>
-              Try AI again
-            </Button>
+        <div role="status" className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning-500/30 bg-warning-50 px-3 py-2 text-sm text-warning-700 dark:bg-warning-500/10 dark:text-warning-400">
+          {section.generationFallback ? (
+            <FallbackBannerBody
+              fallback={section.generationFallback}
+              canRegenerate={canRegenerate}
+              onRetry={() => void onRegenerate("")}
+              onRetryRecordedOnly={() => void onRegenerate(RECORDED_FIGURES_ONLY_INSTRUCTION)}
+            />
+          ) : (
+            <>
+              <span>Written without AI: this text was written by hand, or by an earlier version that did not record why. Check the wording.</span>
+              {canRegenerate && (
+                <Button size="sm" variant="secondary" onClick={() => setRegenerateOpen(true)}>
+                  Try AI again
+                </Button>
+              )}
+            </>
           )}
         </div>
       )}
@@ -332,5 +347,35 @@ export function DocumentSection({
       )}
       {!editing && <SectionArtifacts artifacts={artifacts} contentHasTable={/^\s*\|.*\|\s*$/m.test(content)} />}
     </section>
+  );
+}
+
+function FallbackBannerBody({
+  fallback,
+  canRegenerate,
+  onRetry,
+  onRetryRecordedOnly,
+}: {
+  fallback: NonNullable<DocumentSectionData["generationFallback"]>;
+  canRegenerate: boolean;
+  onRetry: () => void;
+  onRetryRecordedOnly: () => void;
+}) {
+  const banner = fallbackBannerCopy(fallback);
+  return (
+    <>
+      <span>Written without AI. {banner.message} Check the wording before you approve it.</span>
+      {banner.action === "OPEN_SETTINGS" ? (
+        <Link href="/settings" className="text-sm font-medium underline">
+          {banner.actionLabel}
+        </Link>
+      ) : (
+        canRegenerate && (
+          <Button size="sm" variant="secondary" onClick={banner.action === "RETRY" ? onRetry : onRetryRecordedOnly}>
+            {banner.actionLabel}
+          </Button>
+        )
+      )}
+    </>
   );
 }

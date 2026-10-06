@@ -37,7 +37,7 @@ export default function GuidedProjectWizard() {
   const [stepIndex, setStepIndex] = useState(0);
   const [data, setData] = useState<ProjectWizardData>(emptyWizardData);
   const [errors, setErrors] = useState<WizardFieldErrors>({});
-  const { busy, error, run } = useActionState();
+  const { busy, waiting, error, runCreate } = useActionState();
   const drafts = useMemo(
     () => createWizardDraftStore(typeof window === "undefined" ? null : window.localStorage, { maxStepIndex: STEPS.length - 1 }),
     [],
@@ -92,7 +92,7 @@ export default function GuidedProjectWizard() {
   }
 
   async function submit() {
-    const result = await run(() =>
+    const result = await runCreate((idempotencyKey) =>
       createProjectAction({
         title: data.step.title,
         projectCode: data.step.projectCode,
@@ -110,7 +110,7 @@ export default function GuidedProjectWizard() {
         budgetCurrency: data.reporting.budgetCurrency || undefined,
         primaryContactName: data.reporting.primaryContactName || undefined,
         description: data.reporting.description || undefined,
-      }),
+      }, { idempotencyKey }),
     );
     if (result) {
       drafts.clear();
@@ -260,7 +260,7 @@ export default function GuidedProjectWizard() {
             Back
           </Button>
           <Button type="submit" pending={busy}>
-            {stepIndex < STEPS.length - 1 ? "Next" : busy ? "Creating..." : "Create project"}
+            {stepIndex < STEPS.length - 1 ? "Next" : waiting ? "Still saving…" : busy ? "Creating..." : "Create project"}
           </Button>
         </div>
       </form>

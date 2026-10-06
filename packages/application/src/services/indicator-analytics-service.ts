@@ -169,7 +169,7 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
       // target measures, and would read "below expectation" for an indicator that met its target.
       enriched.push(
         lifeOfProject
-          ? { ...finding, lifeOfProject, performanceEvaluation: evaluatePerformance({ value: lifeOfProject.value, baseline: finding.baseline, target: finding.target, semantics }) }
+          ? { ...finding, status: "REPORTED" as const, lifeOfProject, performanceEvaluation: evaluatePerformance({ value: lifeOfProject.value, baseline: finding.baseline, target: finding.target, semantics }) }
           : finding,
       );
     }

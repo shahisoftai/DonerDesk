@@ -1,5 +1,5 @@
 import type { FinanceSummaryView, Result, Project, ReportingPeriod, ReportScope, TemplateSection, VerifiedFinding } from "@donordesk/domain";
-import { DomainError, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
+import { DomainError, isReportedFinding, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
 import { taggedEvidenceIds } from "./period-evidence.js";
 import { resolveGenerationActivities, resolvePeriodActivities, scopeIndicatorData } from "./period-activities.js";
 import type { AuthenticatedContext } from "../context.js";
@@ -189,9 +189,9 @@ export class ReportGenerationContextBuilder {
 
     const allUpdatesResult = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!allUpdatesResult.ok) return allUpdatesResult;
-    // An indicator with no value for this period (a quarterly survey in a monthly report) was not measured: its finding
-    // is computed as "0", which a writer would quote as a result. Leave it out unless a life-of-project figure exists.
-    const reported = findingsResult.value.filter((f) => f.lifeOfProject !== undefined || allUpdatesResult.value.some((u) => u.indicatorId === f.indicatorId));
+    // An indicator with no figure for this period (a quarterly survey in a monthly report, or values nobody has verified)
+    // was not measured: its calculator value is a placeholder a writer would quote as a result. Only REPORTED findings go on.
+    const reported = findingsResult.value.filter(isReportedFinding);
     const scoped = scopeIndicatorData(period.reportType, activitiesResult.value, reported, allUpdatesResult.value);
     const verifiedFindings = scoped.findings;
     const updatesResult = { ok: true as const, value: scoped.updates };

@@ -112,3 +112,19 @@ def test_canonical_title_drives_detection_in_translated_reports() -> None:
         canonicalTitle="Cumulative Progress Against Project Targets",
     )
     assert artifact_builder.is_cumulative_section(req, section_kind(req.section))
+
+
+def test_percent_of_target_of_a_recorded_cumulative_value_is_grounded() -> None:
+    """D5-2: 'cumulative 7,000, 87.5% of the 8,000 target' came from the indicator update, not the finding, and was rejected."""
+    from app.ai_reporter.models import IndicatorUpdate
+
+    req = _req(with_life=False)
+    req.indicatorUpdates = [
+        IndicatorUpdate(indicatorCode="OUT-1", indicatorId="ind-1", periodAchievement="2,500", cumulativeAchievement="7,000"),
+        IndicatorUpdate(indicatorCode="UNKNOWN", indicatorId="x", cumulativeAchievement="9,999"),
+    ]
+    allowed = grounding.allowed_numbers(req)
+    assert grounding.ungrounded_numbers("Cumulative 7,000, which is 87.5% of the target.", allowed) == []
+    # the update's own percent is allowed for its own indicator only, and an invented percent still is not
+    assert grounding.ungrounded_numbers("Cumulative 7,000, which is 91% of the target.", allowed) == ["91"]
+    assert "125" not in allowed

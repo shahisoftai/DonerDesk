@@ -25,6 +25,29 @@ export function fallbackReasonCopy(reason: string | undefined | null): string {
   return "The AI service was unavailable, so a basic version was used.";
 }
 
+export interface FallbackBanner {
+  message: string;
+  action: "RETRY" | "RETRY_RECORDED_FIGURES_ONLY" | "OPEN_SETTINGS";
+  actionLabel: string;
+}
+
+const FALLBACK_ACTION_LABEL: Record<FallbackBanner["action"], string> = {
+  RETRY: "Try again",
+  RETRY_RECORDED_FIGURES_ONLY: "Try again, quote recorded figures only",
+  OPEN_SETTINGS: "Open AI settings",
+};
+
+/** The banner of a section the AI did not write: the stored reason in plain words, its detail, and the one action that fits. */
+export function fallbackBannerCopy(fallback: { reason: string; detail?: string | null; action: FallbackBanner["action"] }): FallbackBanner {
+  const detail = fallback.detail?.trim();
+  const base = fallbackReasonCopy(fallback.reason);
+  return {
+    message: detail ? `${base.replace(/\.$/, "")} (${detail}).` : base,
+    action: fallback.action,
+    actionLabel: FALLBACK_ACTION_LABEL[fallback.action],
+  };
+}
+
 /** Status line shown after a (non-background) draft generation completes. */
 export function draftGeneratedCopy(input: { sectionCount: number; fallbackUsed: boolean; fallbackReason?: string | null }): string {
   const base = `Draft created with ${input.sectionCount} section${input.sectionCount === 1 ? "" : "s"}.`;
@@ -106,4 +129,19 @@ const FLAG_CLASS_COPY: Record<FlagClassName, { title: string; hint: string }> = 
 /** Heading and one-line explanation for a flag class; unknown classes read as a decision, never as a checker limit. */
 export function flagClassCopy(flagClass: string | undefined | null): { title: string; hint: string } {
   return FLAG_CLASS_COPY[(flagClass as FlagClassName) ?? "NEEDS_DECISION"] ?? FLAG_CLASS_COPY.NEEDS_DECISION;
+}
+
+const AI_RUN_OUTCOME_COPY: Record<string, string> = {
+  WRITTEN: "Written by the AI",
+  RECOVERED: "Written by the AI after one retry",
+  STUB: "Basic version used",
+  NO_INPUT: "Nothing recorded to write from",
+};
+
+/** One run of the AI writer as an administrator reads it: the outcome and, for a basic version, why. */
+export function aiRunOutcomeCopy(run: { outcome: string; reason: string | null; detail: string | null }): { label: string; why: string | null } {
+  const label = AI_RUN_OUTCOME_COPY[run.outcome] ?? "Unknown";
+  if (run.outcome !== "STUB") return { label, why: null };
+  const base = run.reason ? fallbackReasonCopy(run.reason) : "The reason was not recorded.";
+  return { label, why: run.detail ? `${base.replace(/\.$/, "")} (${run.detail}).` : base };
 }

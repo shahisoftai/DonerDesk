@@ -15,7 +15,8 @@ export const BillingSummarySchema = z.object({
       cancelAtPeriodEnd: z.boolean().default(false),
     })
     .optional(),
-  limits: PlanLimitsJsonSchema,
+  // The page only reads usage and the top-up flag: a missing bucket must never blank it (D5-5).
+  limits: PlanLimitsJsonSchema.partial(),
   overLimit: z.array(z.enum(["PROJECTS", "SEATS", "VIEWERS", "STORAGE", "AI_CREDITS"])),
   usage: BillingSummaryUsageSchema,
 });

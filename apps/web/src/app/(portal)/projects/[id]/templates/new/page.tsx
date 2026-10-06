@@ -1,5 +1,6 @@
 "use client";
 
+import { useActionState } from "@/lib/client/action-state";
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createTemplateAction, parseTemplateFileAction, type ParsedTemplateFile } from "@/lib/actions/templates";
@@ -28,7 +29,7 @@ export default function NewTemplatePage({ params }: { params: Promise<{ id: stri
   const [text, setText] = useState("");
   const [file, setFile] = useState<ParsedTemplateFile | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const save = useActionState();
   const [parsing, setParsing] = useState(false);
 
   async function onFiles(files: File[]) {
@@ -56,23 +57,24 @@ export default function NewTemplatePage({ params }: { params: Promise<{ id: stri
       setError(mode === "upload" ? "Upload the donor's template file first." : "Paste the donor's template text first.");
       return;
     }
-    setBusy(true);
-    const r = await createTemplateAction({
-      projectId,
-      templateName,
-      donorName,
-      reportType,
-      language,
-      extractedRawText: mode === "manual" ? undefined : text,
-      originalFileKey: mode === "upload" && file ? file.fileKey : undefined,
-      sections: mode === "manual" ? [{ title: "Executive Summary", inputType: "NARRATIVE" }] : [],
-    });
-    setBusy(false);
-    if (!r.ok) {
-      setError(r.error.message);
-      return;
-    }
-    router.push(`/projects/${projectId}/templates/${r.value.id}`);
+    // One key for this form: a double click or a repeat after a timeout never creates the template twice.
+    const created = await save.runCreate((idempotencyKey) =>
+      createTemplateAction(
+        {
+          projectId,
+          templateName,
+          donorName,
+          reportType,
+          language,
+          extractedRawText: mode === "manual" ? undefined : text,
+          originalFileKey: mode === "upload" && file ? file.fileKey : undefined,
+          sections: mode === "manual" ? [{ title: "Executive Summary", inputType: "NARRATIVE" }] : [],
+        },
+        { idempotencyKey },
+      ),
+    );
+    if (!created) return;
+    router.push(`/projects/${projectId}/templates/${created.id}`);
   }
 
   return (
@@ -133,10 +135,10 @@ export default function NewTemplatePage({ params }: { params: Promise<{ id: stri
           </InlineAlert>
         )}
 
-        {error && <InlineAlert tone="danger" title={error} />}
+        {(error ?? save.error) && <InlineAlert tone="danger" title={(error ?? save.error) as string} />}
         <div className="flex justify-end gap-3">
           <Button type="button" variant="secondary" onClick={() => router.back()}>Cancel</Button>
-          <Button type="submit" pending={busy} disabled={busy || parsing}>{mode === "manual" ? "Create template" : "Extract and review"}</Button>
+          <Button type="submit" pending={save.busy} disabled={save.busy || parsing}>{save.waiting ? "Still saving…" : mode === "manual" ? "Create template" : "Extract and review"}</Button>
         </div>
       </form>
     </div>

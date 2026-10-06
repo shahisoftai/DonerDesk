@@ -1,5 +1,6 @@
 "use client";
 
+import { useActionState } from "@/lib/client/action-state";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogframeLevelSchema } from "@donordesk/contracts";
@@ -36,8 +37,7 @@ export function NewLogframeItemForm({
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const save = useActionState();
 
   const parents = eligibleParents(items, { level });
 
@@ -48,23 +48,21 @@ export function NewLogframeItemForm({
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    const result = await createLogframeItemAction({
-      projectId,
-      parentId: parentId || undefined,
-      level,
-      code: code || undefined,
-      title,
-      description: description || undefined,
-    });
-    if (!result.ok) {
-      setBusy(false);
-      setError(result.error.message);
-      return;
-    }
-    // Stay locked while leaving the page: re-enabling the button during the route change allowed a second save.
+    // One key for this form: a double click or a repeat after a timeout never saves the item twice.
+    const result = await save.runCreate((idempotencyKey) =>
+      createLogframeItemAction(
+        {
+          projectId,
+          parentId: parentId || undefined,
+          level,
+          code: code || undefined,
+          title,
+          description: description || undefined,
+        },
+        { idempotencyKey },
+      ),
+    );
+    if (!result) return;
     router.push(`/projects/${projectId}/logframe`);
     router.refresh();
   }
@@ -94,10 +92,10 @@ export function NewLogframeItemForm({
       <Field label="Description (optional)" htmlFor="description">
         <textarea id="description" className="input" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} />
       </Field>
-      {error && <InlineAlert tone="danger" title={error} />}
+      {save.error && <InlineAlert tone="danger" title={save.error} />}
       <div className="flex justify-end gap-3">
         <Button type="button" variant="secondary" onClick={() => router.back()}>Cancel</Button>
-        <Button type="submit" pending={busy}>Save item</Button>
+        <Button type="submit" pending={save.busy}>{save.waiting ? "Still saving…" : "Save item"}</Button>
       </div>
     </form>
   );

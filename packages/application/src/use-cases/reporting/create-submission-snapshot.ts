@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, SubmissionSnapshot, canApproveAssurance } from "@donordesk/domain";
+import { DomainError, SubmissionSnapshot, canApproveAssurance, plainRequirementName } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
   IReportDraftRepository,
@@ -10,6 +10,7 @@ import type {
   ISubmissionSnapshotRepository,
   IGenerationRunRepository,
   IReportingPeriodRepository,
+  IRequirementResolver,
 } from "../../ports/reporting.js";
 import type { ApproveReportHandler } from "./approve-report.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -37,6 +38,8 @@ export class CreateSubmissionSnapshotHandler {
     private readonly gate: ApproveReportHandler,
     private readonly audit: IAuditLogger,
     private readonly events: IEventBus,
+    /** Resolves the period's requirements when none were stored (a draft that predates resolution, or a resolver that failed then). */
+    private readonly requirementResolver?: IRequirementResolver,
   ) {}
 
   async handle(ctx: AuthenticatedContext, draftId: string): Promise<Result<{ id: string }, DomainError>> {
@@ -50,7 +53,7 @@ export class CreateSubmissionSnapshotHandler {
     if (gateResult.value.submitBlocked || gateResult.value.submitNeedsDecision || gateResult.value.approvalBlocked) {
       return {
         ok: false,
-        error: DomainError.reportGateBlocked("Donor submission is blocked by the aggregate gate", {
+        error: DomainError.reportGateBlocked(refusalMessage("The donor copy cannot be sealed yet", gateResult.value.blockReasons), {
           blockers: gateResult.value.blockReasons,
         }),
       };
@@ -91,17 +94,23 @@ export class CreateSubmissionSnapshotHandler {
 
     const requirementsResult = await this.requirements.findLatestForPeriod(draft.reportingPeriodId, ctx.tenant.tenantId);
     if (!requirementsResult.ok) return requirementsResult;
-    const resolved = requirementsResult.value;
+    // Resolution is idempotent: sealing never fails merely because nobody resolved the requirements first.
+    let resolved = requirementsResult.value;
+    if (!resolved && this.requirementResolver) {
+      const fresh = await this.requirementResolver.resolve({ tenantId: ctx.tenant.tenantId, reportingPeriodId: draft.reportingPeriodId, effectiveDate: new Date() });
+      if (!fresh.ok) return fresh;
+      resolved = fresh.value;
+    }
     if (!resolved) {
       return {
         ok: false,
-        error: DomainError.reportGateBlocked("Resolve effective reporting requirements before creating a submission snapshot"),
+        error: DomainError.reportGateBlocked("The donor's reporting requirements for this report could not be worked out, so the copy cannot be sealed. Check the report's template and try again."),
       };
     }
     if (resolved.coverage.unmet.length > 0) {
       return {
         ok: false,
-        error: DomainError.reportGateBlocked("Mandatory reporting requirements are unsatisfied", {
+        error: DomainError.reportGateBlocked(refusalMessage("The report does not yet cover everything the donor requires", resolved.coverage.unmet.map(plainRequirementName)), {
           unmet: resolved.coverage.unmet,
         }),
       };
@@ -213,4 +222,10 @@ export class CreateSubmissionSnapshotHandler {
 
     return { ok: true, value: { id: snapshot.id } };
   }
+}
+
+/** "<what>: <reason>; <reason>" - the reasons the gate gave, in the words it gave them, so the user sees which rule failed. */
+function refusalMessage(what: string, reasons: ReadonlyArray<string>): string {
+  const shown = reasons.map((r) => r.trim()).filter(Boolean);
+  return shown.length > 0 ? `${what}: ${shown.join("; ")}.` : `${what}.`;
 }

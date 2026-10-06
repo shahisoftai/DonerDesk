@@ -6,6 +6,7 @@ import { resolveSectionFlagsAction } from "@/lib/actions/reporting";
 import { useToast } from "@/components/feedback/Toast";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
+import { stillNeed } from "@donordesk/domain/core/plural.js";
 
 const MIN_NOTE = 10;
 
@@ -47,7 +48,7 @@ export function SectionFlagsDecision({
       const { resolved, approved, remaining } = result.value;
       toast.push({
         title: approved ? `${sectionTitle} approved` : `${resolved} statement${resolved === 1 ? "" : "s"} accepted`,
-        description: remaining.length > 0 ? `${remaining.length} statement${remaining.length === 1 ? " still needs" : "s still need"} your attention before the section can be approved.` : undefined,
+        description: remaining.length > 0 ? `${stillNeed(remaining.length, "statement", undefined, "your attention")} before the section can be approved.` : undefined,
         tone: remaining.length > 0 ? "warning" : "success",
       });
       setOpen(false);

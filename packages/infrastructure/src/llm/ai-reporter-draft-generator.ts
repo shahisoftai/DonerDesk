@@ -17,8 +17,17 @@ import type {
   LlmGeneratorModelInfo,
   ILogger,
 } from "@donordesk/application";
-import type { ReportPlanSection, SourceReference } from "@donordesk/domain";
-import { attributionSectionTitle, isSynthesisSection, visibilityPromptBlock } from "@donordesk/domain";
+import type { GenerationFallbackReason, ReportPlanSection, SourceReference } from "@donordesk/domain";
+import {
+  attributionSectionTitle,
+  fallbackDetailFromIssues,
+  hasInternalIdIssue,
+  isSynthesisSection,
+  isTransientFallback,
+  recoveryInstruction,
+  ungroundedFiguresFromIssues,
+  visibilityPromptBlock,
+} from "@donordesk/domain";
 import type { StubReportDraftGenerator } from "./report-draft-generator.js";
 import { DeterministicEvidenceRetriever } from "./evidence-retriever.js";
 import { buildSectionSpecificGuidance } from "./llm-report-draft-generator.js";
@@ -69,6 +78,24 @@ const MAX_SIBLINGS = 10;
  * unchanged. The reporter only narrates verified findings; every material
  * assertion is still extracted and verified downstream.
  */
+/** One provider attempt at a section: the finished section, or why it cannot be used. */
+type Attempt = { kind: "ok"; result: GeneratedSectionResult } | FailedAttempt;
+
+interface FailedAttempt {
+  kind: "failed";
+  reason: GenerationFallbackReason;
+  /** User-safe, e.g. "figures not in your data: 33.3". */
+  detail?: string;
+  /** The worker's own issue strings; read for the offending figures, never shown. */
+  issues: string[];
+  telemetry: NonNullable<GeneratedSectionResult["telemetry"]>;
+}
+
+/** The worker client reports a timed-out call by message (the abort signal's own, or a gateway 408/504). */
+export function isTimeoutError(message: string): boolean {
+  return /timeout|timed out|aborted|returned (408|504)\b/i.test(message);
+}
+
 export class AiReporterDraftGenerator implements IReportDraftGenerator {
   readonly model: LlmGeneratorModelInfo;
 
@@ -121,11 +148,69 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
     return { sections, usedFallback: false };
   }
 
+  /**
+   * One section, with at most one automatic recovery: a draft rejected for a figure not in the inputs is asked again
+   * naming that figure; a provider failure is asked again with a shorter brief. The retry shares the section's time
+   * budget (the worker enforces it per call) and is never billed (credits follow `usedFallback`, not attempts).
+   */
   async generateSection(
     input: GenerateReportDraftInput,
     section: ReportPlanSection,
   ): Promise<GeneratedSectionResult> {
     const startedAt = Date.now();
+    const first = await this.attemptSection(input, section);
+    if (first.kind === "ok") return first.result;
+
+    const retryInput = this.recoveryInput(input, section, first);
+    if (!retryInput) return this.finish(input, section, first, 1, startedAt);
+
+    this.logger?.warn("AI Reporter draft failed; retrying once", { section: section.title, reason: first.reason, detail: first.detail });
+    const second = await this.attemptSection(retryInput, section);
+    if (second.kind === "ok") {
+      return { ...second.result, telemetry: second.result.telemetry ? { ...second.result.telemetry, attempts: 2, latencyMs: Date.now() - startedAt } : second.result.telemetry };
+    }
+    return this.finish(input, section, second, 2, startedAt);
+  }
+
+  /** The input for the one automatic retry, or undefined when this failure is not worth one. */
+  private recoveryInput(input: GenerateReportDraftInput, section: ReportPlanSection, failed: FailedAttempt): GenerateReportDraftInput | undefined {
+    if (failed.reason === "VALIDATOR_FAILED") {
+      const figures = ungroundedFiguresFromIssues(failed.issues);
+      return { ...input, sectionInstruction: recoveryInstruction(figures, input.sectionInstruction, { internalIds: hasInternalIdIssue(failed.issues) }) };
+    }
+    if (isTransientFallback(failed.reason)) {
+      // A shorter brief: leave out the other sections' summaries, except for a synthesis section, which is built from them.
+      return isSynthesisSection(section) ? input : { ...input, draftedSections: [] };
+    }
+    return undefined;
+  }
+
+  /** The deterministic section, labelled with why it was used. */
+  private async finish(
+    input: GenerateReportDraftInput,
+    section: ReportPlanSection,
+    failed: FailedAttempt,
+    attempts: number,
+    startedAt: number,
+  ): Promise<GeneratedSectionResult> {
+    const fallback = await this.fallback.generateSection(input, section);
+    return {
+      ...fallback,
+      usedFallback: true,
+      fallbackReason: failed.reason,
+      ...(failed.detail ? { fallbackDetail: failed.detail } : {}),
+      telemetry: { ...failed.telemetry, attempts, latencyMs: Date.now() - startedAt },
+    };
+  }
+
+  private async attemptSection(input: GenerateReportDraftInput, section: ReportPlanSection): Promise<Attempt> {
+    const startedAt = Date.now();
+    const providerError = (reason: GenerationFallbackReason): FailedAttempt => ({
+      kind: "failed",
+      reason,
+      issues: [],
+      telemetry: { inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startedAt, promptHash: "", responseChars: 0, parseOutcome: "PROVIDER_ERROR" },
+    });
     try {
       const prior = this.prior ? await this.prior.fetch(input, section) : [];
       // Donor/template-scoped memory is a future extension (v1 only ever
@@ -136,24 +221,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
       const request = await this.buildSectionRequest(input, section, prior, agentMemoryGuidance);
       const response = await this.worker.draftSection(request);
       if (!response.ok) {
-        this.logger?.warn("AI Reporter draft failed; falling back to stub", {
-          section: section.title,
-          error: response.error.message,
-        });
-        const fallback = await this.fallback.generateSection(input, section);
-        return {
-          ...fallback,
-          usedFallback: true,
-          fallbackReason: "PROVIDER_HTTP_ERROR",
-          telemetry: {
-            inputTokens: 0,
-            outputTokens: 0,
-            latencyMs: Date.now() - startedAt,
-            promptHash: "",
-            responseChars: 0,
-            parseOutcome: "PROVIDER_ERROR",
-          },
-        };
+        this.logger?.warn("AI Reporter draft failed", { section: section.title, error: response.error.message });
+        return providerError(isTimeoutError(response.error.message) ? "PROVIDER_TIMEOUT" : "PROVIDER_HTTP_ERROR");
       }
 
       const payload = response.value;
@@ -165,13 +234,14 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
       // section, and report the fallback so billing and the "drafted without
       // AI" banner stay truthful.
       if (!content || payload.telemetry?.usedFallback) {
-        const reason = !content ? "PROVIDER_EMPTY_RESPONSE" : "VALIDATOR_FAILED";
-        this.logger?.warn("AI Reporter draft rejected; falling back to stub", { section: section.title, reason, issues: workerIssues });
-        const fallback = await this.fallback.generateSection(input, section);
+        const reason: GenerationFallbackReason = !content ? "PROVIDER_EMPTY_RESPONSE" : "VALIDATOR_FAILED";
+        this.logger?.warn("AI Reporter draft rejected", { section: section.title, reason, issues: workerIssues });
+        const detail = fallbackDetailFromIssues(workerIssues);
         return {
-          ...fallback,
-          usedFallback: true,
-          fallbackReason: reason,
+          kind: "failed",
+          reason,
+          ...(detail ? { detail } : {}),
+          issues: workerIssues,
           telemetry: {
             inputTokens: payload.telemetry?.inputTokens ?? 0,
             outputTokens: payload.telemetry?.outputTokens ?? 0,
@@ -235,26 +305,13 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         qualityIssues: [...new Set([...workerIssues, ...validatorResult.issues, ...(validatorResult.warnings ?? [])])],
       };
 
-      return { section: generatedSection, usedFallback: false, telemetry };
+      return { kind: "ok", result: { section: generatedSection, usedFallback: false, telemetry: { ...telemetry, attempts: 1 } } };
     } catch (error) {
-      this.logger?.warn("AI Reporter draft threw; falling back to stub", {
+      this.logger?.warn("AI Reporter draft threw", {
         section: section.title,
         error: error instanceof Error ? error.message : String(error),
       });
-      const fallback = await this.fallback.generateSection(input, section);
-      return {
-        ...fallback,
-        usedFallback: true,
-        fallbackReason: "PROVIDER_HTTP_ERROR",
-        telemetry: {
-          inputTokens: 0,
-          outputTokens: 0,
-          latencyMs: Date.now() - startedAt,
-          promptHash: "",
-          responseChars: 0,
-          parseOutcome: "PROVIDER_ERROR",
-        },
-      };
+      return providerError(isTimeoutError(error instanceof Error ? error.message : String(error)) ? "PROVIDER_TIMEOUT" : "PROVIDER_HTTP_ERROR");
     }
   }
 

@@ -182,7 +182,7 @@ export function NewReportingPeriodForm({
     }
     setLocalErrors({});
 
-    const result = await actionState.run(() =>
+    const result = await actionState.runCreate((idempotencyKey) =>
       createReportingPeriodAction({
         projectId,
         reportType,
@@ -194,7 +194,7 @@ export function NewReportingPeriodForm({
         endDate: new Date(endDate).toISOString(),
         deadline: new Date(deadline).toISOString(),
         internalReviewDeadline: internalReviewDeadline ? new Date(internalReviewDeadline).toISOString() : undefined,
-      }),
+      }, { idempotencyKey }),
     );
     if (result) {
       router.push(`/projects/${projectId}/reports/${result.id}`);
@@ -295,7 +295,7 @@ export function NewReportingPeriodForm({
 
       <div className="flex justify-end gap-3">
         <Button type="button" variant="secondary" onClick={() => router.back()}>Cancel</Button>
-        <Button type="submit" pending={actionState.busy}>Create period</Button>
+        <Button type="submit" pending={actionState.busy}>{actionState.waiting ? "Still saving…" : "Create period"}</Button>
       </div>
       </form>
     </div>

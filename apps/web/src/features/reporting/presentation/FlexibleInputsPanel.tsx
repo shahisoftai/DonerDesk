@@ -1,5 +1,6 @@
 "use client";
 
+import { agree } from "@donordesk/domain/core/plural.js";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
@@ -51,7 +52,7 @@ export function FlexibleInputsPanel({
     setStatus(null);
     const r = await previewPeriodValuesAction(projectId, periodId, rows);
     setBusy(false);
-    if (r.ok) { setPreview(r.value); setStatus(`${r.value.readyRows} ready, ${r.value.errorRows} need attention`); }
+    if (r.ok) { setPreview(r.value); setStatus(`${r.value.readyRows} ready, ${r.value.errorRows} ${agree(r.value.errorRows, "needs", "need")} attention`); }
     else setStatus(r.error.message);
   }
 

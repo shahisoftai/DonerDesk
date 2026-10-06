@@ -1,3 +1,4 @@
+import { agree, countOf } from "../../core/plural.js";
 import type { ReadinessBreakdown, ReadinessWeights } from "./readiness-calculator.js";
 
 /** Counts the ranking uses only to word the advice ("3 values still to verify"). */
@@ -68,7 +69,7 @@ export const READINESS_BLOCKER_RULES: ReadonlyArray<BlockerRule> = [
     key: "sections",
     points: (b, w) => gap(b.sectionsScore, w.sections),
     label: "Review the report sections",
-    detail: (c) => (c.totalSections === 0 ? "Generate a draft to start." : `${c.sectionsNeedingAttention} of ${c.totalSections} section${c.totalSections === 1 ? "" : "s"} still need attention.`),
+    detail: (c) => (c.totalSections === 0 ? "Generate a draft to start." : `${c.sectionsNeedingAttention} of ${countOf(c.totalSections, "section")} still ${agree(c.sectionsNeedingAttention, "needs", "need")} attention.`),
     action: { kind: "OPEN_REPORT", label: "Review sections" },
   },
   {

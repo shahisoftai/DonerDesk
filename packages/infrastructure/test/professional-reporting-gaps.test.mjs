@@ -309,3 +309,12 @@ test("checklist projector closes open items whose statement no longer fails, and
   assert.equal(done.status, "RESOLVED");
   assert.deepEqual(updated, [stale]);
 });
+
+test("numeric verifier accepts the percent of target of a recorded cumulative figure (D5-2)", () => {
+  const verifier = new NumericAssertionVerifier();
+  const f = finding({ indicatorCode: "OUT-4", value: "2500", cumulativeValue: "7000", target: "8000" });
+  const percent = (value) => verifier.verify({ atoms: [{ charStart: 0, charEnd: 5, value, role: "PERCENT", isPercent: true, bound: false }], findings: [f] });
+  assert.equal(percent("87.5").result, "PASSED", "7000 / 8000");
+  assert.equal(percent("31.25").result, "PASSED", "the period value still derives its own percent");
+  assert.equal(percent("91").result, "FAILED", "an invented percent is still rejected");
+});

@@ -134,6 +134,9 @@ import {
   BulkResolveReportClaimHandler,
   UpdateReportingPeriodStoryHandler,
   UpdateReportingPeriodScopeHandler,
+  CancelReportingPeriodHandler,
+  RestoreReportingPeriodHandler,
+  ConvertPeriodToFinalHandler,
   FinanceInputsService,
   GetPeriodFinanceHandler,
   SavePeriodFinanceHandler,
@@ -146,6 +149,9 @@ import {
   ResolveChecklistItemHandler,
   BulkResolveChecklistHandler,
   ListChecklistHandler,
+  ListAiSectionRunsHandler,
+  RequestIdempotencyService,
+  ChecklistReconciler,
   CalculateReadinessHandler,
   RecomputeReadinessHandler,
   GenerateChecklistHandler,
@@ -264,6 +270,7 @@ import {
 } from "./repositories/logframe.js";
 import { PrismaEvidenceRepository } from "./repositories/evidence.js";
 import { PrismaIdempotencyRepository } from "./repositories/idempotency.js";
+import { PrismaRequestIdempotencyRepository } from "./repositories/request-idempotency.js";
 import { PrismaActivityUpdateRepository } from "./repositories/activities.js";
 import {
   PrismaReportingPeriodRepository,
@@ -401,6 +408,8 @@ export interface Container {
   indicatorUpdates: PrismaIndicatorUpdateRepository;
   evidence: PrismaEvidenceRepository;
   idempotency: PrismaIdempotencyRepository;
+  /** Makes a create request repeatable under an `Idempotency-Key` (the first response is replayed). */
+  requestIdempotency: RequestIdempotencyService;
   activities: PrismaActivityUpdateRepository;
   periods: PrismaReportingPeriodRepository;
   drafts: PrismaReportDraftRepository;
@@ -536,6 +545,9 @@ export interface Container {
     ensureAutoPeriod: EnsureAutoPeriodHandler;
     updateReportingPeriodStory: UpdateReportingPeriodStoryHandler;
     updateReportingPeriodScope: UpdateReportingPeriodScopeHandler;
+    cancelReportingPeriod: CancelReportingPeriodHandler;
+    restoreReportingPeriod: RestoreReportingPeriodHandler;
+    convertPeriodToFinal: ConvertPeriodToFinalHandler;
     changePeriodTemplate: ChangePeriodTemplateHandler;
     getDefaultTemplates: GetDefaultTemplatesHandler;
     createAllPeriods: CreateAllPeriodsHandler;
@@ -611,6 +623,7 @@ export interface Container {
     rejectNonprofitVerification: RejectNonprofitVerificationHandler;
     createCustomerPortal: CreateCustomerPortalHandler;
     getBillingSummary: GetBillingSummaryHandler;
+    listAiSectionRuns: ListAiSectionRunsHandler;
     processBillingWebhook: ProcessBillingWebhookHandler;
     expireLocalTrials: ExpireLocalTrialsHandler;
     reconcileBillingSubscriptions: ReconcileBillingSubscriptionsHandler;
@@ -747,6 +760,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const indicatorUpdates = new PrismaIndicatorUpdateRepository(prisma);
   const evidence = new PrismaEvidenceRepository(prisma);
   const idempotency = new PrismaIdempotencyRepository(prisma);
+  const requestIdempotency = new RequestIdempotencyService(new PrismaRequestIdempotencyRepository(prisma));
   const activities = new PrismaActivityUpdateRepository(prisma);
   const periods = new PrismaReportingPeriodRepository(prisma);
   const drafts = new PrismaReportDraftRepository(prisma);
@@ -801,6 +815,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
         return { ok: true, value: { provider: org?.storageProvider ?? "LOCAL" } };
       },
     },
+    projectMembers,
   );
 
   const evidenceTagger = new StubEvidenceTagger();
@@ -1090,8 +1105,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const claimSuggestionHandler = new GetClaimSuggestionHandler(reportClaims, drafts, indicatorAnalytics);
   const requirementResolver = new DeterministicRequirementResolver(ids, periods, requirementPacks, awardOverrides, reportPlans, resolvedRequirements);
 
-  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics, lintGrounding);
   const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits, indicatorAnalytics, financeInputs, indicators);
+  // Reading the checklist or a period's readiness closes the items the data already satisfies: no manual scan needed.
+  const checklistReconciler = new ChecklistReconciler(detectMissingEvidenceHandler);
+  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics, lintGrounding, checklistReconciler);
 
   if (jobRegistrar?.register) {
     jobRegistrar.register(
@@ -1124,7 +1141,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const lockTemplateMappingHandler = new LockTemplateMappingHandler(periods, donorTemplateMappings, audits);
   const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding);
   const defaultTemplateResolver = new DefaultTemplateResolver(templates, reportingProfiles);
-  const closingPlanHandler = new PlanClosingReportHandler(projects, periods, drafts, indicators, indicatorUpdates, activities, reportingProfiles, templates, financeInputs, defaultTemplateResolver);
+  const closingPlanHandler = new PlanClosingReportHandler(projects, periods, drafts, indicators, indicatorUpdates, activities, reportingProfiles, templates, financeInputs, defaultTemplateResolver, projectMembers);
   const createReportingPeriodHandler = new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events, activities, defaultTemplateResolver);
   const ensureAutoPeriodHandler = new EnsureAutoPeriodHandler(projects, reportingProfiles, periods, createReportingPeriodHandler);
 
@@ -1213,7 +1230,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     verifyPeriodIndicatorUpdates: new VerifyPeriodIndicatorUpdatesHandler(indicatorUpdates, indicators, periods, activities, audits),
     createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits, evidenceLinker),
     bulkUpsertIndicatorUpdates: new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker),
-    listPeriodIndicators: new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates, activities),
+    listPeriodIndicators: new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates, activities, projects),
     parseIndicatorSheet: new ParseIndicatorSheetHandler(periods, indicators, sheetReader),
     verifyIndicatorUpdate: new VerifyIndicatorUpdateHandler(indicatorUpdates, audits),
     requestIndicatorUpdateCorrection: new RequestIndicatorUpdateCorrectionHandler(indicatorUpdates, audits),
@@ -1252,6 +1269,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     ensureAutoPeriod: ensureAutoPeriodHandler,
     updateReportingPeriodStory: new UpdateReportingPeriodStoryHandler(periods, audits),
     updateReportingPeriodScope: new UpdateReportingPeriodScopeHandler(periods, drafts, sections, reportRevisions, activities, audits),
+    cancelReportingPeriod: new CancelReportingPeriodHandler(periods, drafts, audits),
+    restoreReportingPeriod: new RestoreReportingPeriodHandler(periods, drafts, audits),
+    convertPeriodToFinal: new ConvertPeriodToFinalHandler(periods, drafts, audits),
     changePeriodTemplate: new ChangePeriodTemplateHandler(periods, drafts, templates, audits),
     getDefaultTemplates: new GetDefaultTemplatesHandler(defaultTemplateResolver),
     createAllPeriods: new CreateAllPeriodsHandler(projects, reportingProfiles, periods, createReportingPeriodHandler),
@@ -1311,11 +1331,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     upsertRequirementPack: new UpsertRequirementPackHandler(ids, requirementPacks, audits),
     activateRequirementPack: new ActivateRequirementPackHandler(requirementPacks, audits),
     upsertAwardOverride: new UpsertAwardOverrideHandler(ids, awardOverrides, audits),
-    createSubmissionSnapshot: new CreateSubmissionSnapshotHandler(ids, drafts, sections, reportClaims, reportRevisions, resolvedRequirements, submissionSnapshots, periods, generationRuns, approveReportHandler, audits, events),
+    createSubmissionSnapshot: new CreateSubmissionSnapshotHandler(ids, drafts, sections, reportClaims, reportRevisions, resolvedRequirements, submissionSnapshots, periods, generationRuns, approveReportHandler, audits, events, requirementResolver),
     detectMissingEvidence: detectMissingEvidenceHandler,
     resolveChecklistItem: new ResolveChecklistItemHandler(checklist, audits),
     bulkResolveChecklist: new BulkResolveChecklistHandler(checklist, audits),
-    listChecklist: new ListChecklistHandler(checklist),
+    listChecklist: new ListChecklistHandler(checklist, checklistReconciler),
     calculateReadiness: calculateReadinessHandler,
     recomputeReadiness: new RecomputeReadinessHandler(calculateReadinessHandler),
     generateChecklist: new GenerateChecklistHandler(detectMissingEvidenceHandler),
@@ -1343,6 +1363,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     rejectNonprofitVerification: new RejectNonprofitVerificationHandler(nonprofitVerifications, organizations, audits),
     createCustomerPortal: new CreateCustomerPortalHandler(billingProvider, billingSubscriptions, audits),
     getBillingSummary: new GetBillingSummaryHandler(entitlements),
+    listAiSectionRuns: new ListAiSectionRunsHandler(llmUsage),
     processBillingWebhook: new ProcessBillingWebhookHandler(billingProvider, billingSubscriptions, billingInbox, billingSubscriptionSynchronizer, purchasedCreditPacks, audits),
     expireLocalTrials: new ExpireLocalTrialsHandler(entitlementGrants, audits, clock),
     reconcileBillingSubscriptions: new ReconcileBillingSubscriptionsHandler(billingProvider, billingSubscriptions, billingSubscriptionSynchronizer, clock, audits),
@@ -1360,7 +1381,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     },
     auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, structuredParser, templateFiles, checklistDetector, exportBuilder,
-    organizations, users, invitations, passwordResetTokens, passwordResetRateLimiter,    projects, demoProjects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, activities,
+    organizations, users, invitations, passwordResetTokens, passwordResetRateLimiter,    projects, demoProjects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, requestIdempotency, activities,
     periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, reportArtifacts, agentMemory, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, purchasedCreditPacks, llmUsage, planCatalog, billingProvider,
     handlers,

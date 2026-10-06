@@ -3,7 +3,7 @@ import type { Result } from "@donordesk/domain";
 import { DomainError, lintReportContradictions, toLintFindingData, calculateReadiness, readinessStageFor, rankReadinessBlockers, DATA_QUALITY_PENALTY, type ReadinessBlocker, type ReadinessWeights, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILintGrounding } from "../../services/lint-grounding.js";
-import type { IChecklistRepository } from "../../ports/compliance.js";
+import type { IChecklistRepository, IChecklistReconciler } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IIndicatorRepository } from "../../ports/logframe.js";
@@ -36,12 +36,16 @@ export class CalculateReadinessHandler {
     private readonly analytics?: IIndicatorAnalyticsService,
     /** Figures the project's own records state, so the quality lint does not flag them. */
     private readonly lintGrounding?: ILintGrounding,
+    /** Closes the checklist items the data now satisfies before they are counted (single-period reads only). */
+    private readonly reconciler?: IChecklistReconciler,
   ) {}
 
   async handle(
     ctx: AuthenticatedContext,
     reportingPeriodId: string,
+    options: { reconcile?: boolean } = {},
   ): Promise<Result<ReadinessBreakdown & { reportingPeriodId: string; weights: ReadinessWeights; dataQualityPenalty: number; topBlockers: ReadinessBlocker[]; totalSections: number }, DomainError>> {
+    if (options.reconcile) await this.reconciler?.reconcile(ctx, reportingPeriodId);
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     const period = periodResult.ok ? periodResult.value : null;
     const draftsResult = await this.drafts.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);

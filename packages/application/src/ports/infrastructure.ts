@@ -237,3 +237,28 @@ export interface IDriveFileContentReader {
 export interface IProjectWorkspaceProviderResolver {
   resolve(tenantId: TenantId): Promise<Result<ProjectWorkspaceProviderConfig, DomainError>>;
 }
+
+/** Where a repeated create request is looked up: one tenant + user + route + key is one intended creation. */
+export interface RequestIdempotencyScope {
+  tenantId: string;
+  userId: string;
+  route: string;
+  key: string;
+}
+
+export interface StoredRequest {
+  state: "PENDING" | "DONE";
+  createdAt: Date;
+  statusCode?: number;
+  body?: string;
+  contentType?: string;
+}
+
+export interface IRequestIdempotencyStore {
+  /** Records the request as running; "EXISTS" when the key was already used (the unique key decides, so two clicks cannot both win). */
+  insertPending(scope: RequestIdempotencyScope, now: Date): Promise<Result<"CREATED" | "EXISTS", DomainError>>;
+  find(scope: RequestIdempotencyScope): Promise<Result<StoredRequest | null, DomainError>>;
+  complete(scope: RequestIdempotencyScope, response: { statusCode: number; body: string; contentType?: string }, now: Date): Promise<Result<void, DomainError>>;
+  /** Forgets the key (a failed request, or an expired record), so it can be used again. */
+  release(scope: RequestIdempotencyScope): Promise<Result<void, DomainError>>;
+}

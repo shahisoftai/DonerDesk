@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, agree, countOf } from "@donordesk/domain";
 import { canApproveAssurance } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportSectionRepository, IReportClaimRepository, IReportRevisionRepository } from "../../ports/reporting.js";
@@ -56,7 +56,7 @@ export class ApproveReportSectionHandler {
       return {
         ok: false,
         error: DomainError.reportGateBlocked(
-          `This section contains ${unresolved.length} statement${unresolved.length === 1 ? "" : "s"} that still need a decision. Accept each statement with a note or exclude it below, then try again.`,
+          `This section contains ${countOf(unresolved.length, "statement")} that still ${agree(unresolved.length, "needs", "need")} a decision. Accept each statement with a note or exclude it below, then try again.`,
           { unresolvedClaims: unresolved.map((c) => c.id) },
         ),
       };

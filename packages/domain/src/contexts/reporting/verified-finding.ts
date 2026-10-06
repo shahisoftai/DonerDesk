@@ -21,6 +21,13 @@ export const FINDING_QUALITY_FLAGS: FindingQualityFlag[] = [
 ];
 
 /**
+ * What a finding's `value` means. `NOT_MEASURED`: nothing was recorded for the period (and, in a roll-up report, no
+ * life-of-project figure exists); `UNVERIFIED`: values were recorded but none is verified. Only `REPORTED` carries a
+ * figure a writer, table, chart or export may show: the calculator's `"0"` for the other two is a placeholder.
+ */
+export type FindingStatus = "REPORTED" | "NOT_MEASURED" | "UNVERIFIED";
+
+/**
  * Direction-aware narrative gating result. Produced deterministically by
  * `evaluatePerformance`; the narrator may only use evaluative wording when
  * the type is POSITIVE/NEGATIVE (i.e. semantics are resolved and a baseline
@@ -54,6 +61,9 @@ export interface VerifiedFinding {
   /** Baseline and target from the indicator definition (decimal strings). */
   baseline?: string;
   target?: string;
+  /** Absent on snapshots persisted before Phase 25; read it through `findingStatus`. */
+  status?: FindingStatus;
+  /** Decimal string; a placeholder (`"0"`) unless the finding is REPORTED, see `findingStatus`. */
   value: string;
   /**
    * Latest verified cumulative-to-date achievement (decimal string) when the
@@ -91,4 +101,22 @@ export function buildCalculationMethod(
   reportingBasis: "PERIOD" | "CUMULATIVE",
 ): string {
   return `${aggregation}:${direction.toLowerCase().replace(/_/g, "-")}:${reportingBasis.toLowerCase()}`;
+}
+
+/** The one reading of a finding's status: a snapshot without one predates the field and is taken as reported. */
+export function findingStatus(finding: Pick<VerifiedFinding, "status">): FindingStatus {
+  return finding.status ?? "REPORTED";
+}
+
+/** True when the finding carries a figure that may be shown (this period's value or a life-of-project one). */
+export function isReportedFinding(finding: Pick<VerifiedFinding, "status">): boolean {
+  return findingStatus(finding) === "REPORTED";
+}
+
+/** Splits findings into the ones with a figure and the ones without (for the "not measured" line). */
+export function partitionFindings<T extends Pick<VerifiedFinding, "status">>(findings: readonly T[]): { reported: T[]; withoutFigure: T[] } {
+  const reported: T[] = [];
+  const withoutFigure: T[] = [];
+  for (const finding of findings) (isReportedFinding(finding) ? reported : withoutFigure).push(finding);
+  return { reported, withoutFigure };
 }

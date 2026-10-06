@@ -278,3 +278,17 @@ export function createAwardOverride(input: {
     updatedAt: now,
   };
 }
+
+/**
+ * A requirement key as a person would say it ("annex_a_budget" -> "Annex a budget", "bp:monthly:exec" -> "Monthly exec"):
+ * keys are for code, never for a refusal message.
+ */
+export function plainRequirementName(key: string): string {
+  const words = key
+    .replace(/^bp:/i, "")
+    .replace(/[:_\-./]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .trim()
+    .toLowerCase();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : "A required item";
+}

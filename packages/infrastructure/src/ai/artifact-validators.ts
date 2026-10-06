@@ -26,7 +26,7 @@ export interface ValidationResult {
 }
 
 /** Issues meaning the prose may state something the inputs do not support. */
-export const INTEGRITY_ISSUE_PREFIXES: readonly string[] = ["UNGROUNDED_NUMBER", "CHART_UNGROUNDED", "NUMERIC_PARAPHRASE", "TABLE row"];
+export const INTEGRITY_ISSUE_PREFIXES: readonly string[] = ["UNGROUNDED_NUMBER", "CHART_UNGROUNDED", "NUMERIC_PARAPHRASE", "TABLE row", "INTERNAL_ID"];
 
 export function integrityIssues(result: ValidationResult): string[] {
   return result.issues.filter((i) => INTEGRITY_ISSUE_PREFIXES.some((p) => i.startsWith(p)));
@@ -324,6 +324,32 @@ export function assertNoWorkflowVocabulary(section: GeneratedSection): Validatio
   return ok();
 }
 
+// Ids and file names are the tool's, not the donor's: a report describes a source in words. Indicator codes are
+// deliberately not matched (a donor report quotes them). Mirror of `find_internal_ids` in the worker.
+const INTERNAL_ID_PATTERNS: readonly RegExp[] = [
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+  /\b(?:ev|evidence|record|chunk)[-:_](?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{2,}\b/gi,
+  /\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{16,}\b/gi,
+  /\b[\w-]+\.(?:pdf|docx?|xlsx?|csv|pptx?|jpe?g|png)\b/gi,
+  /\bevidence ids?\b/gi,
+];
+
+/** Internal ids, hex ids and file names present in donor text (first occurrences, de-duplicated). */
+export function findInternalIds(text: string): string[] {
+  const found: string[] = [];
+  for (const pattern of INTERNAL_ID_PATTERNS) {
+    for (const match of (text ?? "").matchAll(pattern)) if (!found.includes(match[0])) found.push(match[0]);
+  }
+  return found;
+}
+
+/** Donor text never names an evidence id, record id, file name or uuid. */
+export function assertNoInternalIds(section: GeneratedSection): ValidationResult {
+  const hits = findInternalIds(section.content ?? "");
+  if (hits.length > 0) return fail(`INTERNAL_ID: ${hits.slice(0, 3).join(", ")} must not appear in the report; describe the source in words instead`);
+  return ok();
+}
+
 export function assertBannedPhrases(section: GeneratedSection): ValidationResult {
   const hits = findBannedPhrases(section.content ?? "");
   if (hits.length > 0) return fail(`BANNED_PHRASE: ${hits.join(", ")}`);
@@ -376,6 +402,7 @@ export function runAll(section: GeneratedSection, opts: RunAllOptions = {}): Val
     opts.synthesis ? ok() : assertRepetition(section, opts.priorSectionsSummary ?? []),
     assertBannedPhrases(section),
     assertNoWorkflowVocabulary(section),
+    assertNoInternalIds(section),
     assertArtifactOrdering(section),
     assertDonorVoice(section),
   ];

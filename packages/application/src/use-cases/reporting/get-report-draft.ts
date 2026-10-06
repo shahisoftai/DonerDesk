@@ -1,7 +1,7 @@
 import type { Result, Role } from "@donordesk/domain";
 import { flagClassOf } from "../../services/flag-class.js";
-import { DomainError, Permissions, staleSynthesisSectionIds } from "@donordesk/domain";
-import type { ReportDraft, ReportSection, ReportClaim } from "@donordesk/domain";
+import { DomainError, Permissions, staleSynthesisSectionIds, FALLBACK_ACTION } from "@donordesk/domain";
+import type { ReportDraft, ReportSection, ReportClaim, GenerationFallback, FallbackAction } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
   IReportDraftRepository,
@@ -121,6 +121,7 @@ export class GetReportDraftHandler {
             updatedAt: s.updatedAt.toISOString(),
             generatedWithAi: s.currentRevisionId ? (current?.modelId ?? null) !== null : null,
             assuranceState: current?.assuranceState ?? null,
+            generationFallback: fallbackView(s.generationFallback),
           };
         }),
         claims: claimsResult.value.map((c) => ({
@@ -238,4 +239,10 @@ function serializeDraftVersion(d: ReportDraft): Record<string, unknown> {
     supersededAt: d.supersededAt?.toISOString() ?? null,
     createdAt: d.createdAt.toISOString(),
   };
+}
+
+/** What the editor needs to explain a section the AI did not write: why, a short detail, and the action to offer. */
+function fallbackView(fallback: GenerationFallback | undefined): { reason: string; detail: string | null; action: FallbackAction } | null {
+  if (!fallback) return null;
+  return { reason: fallback.reason, detail: fallback.detail ?? null, action: FALLBACK_ACTION[fallback.reason] };
 }

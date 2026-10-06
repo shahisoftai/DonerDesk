@@ -60,11 +60,21 @@ def _env_int(name: str, default: int) -> int:
 # fix them.
 _CONTENT_RETRY_PREFIXES: tuple[str, ...] = ("MISSING_QA", "MISSING_TABLE")
 
+# A synthesis section (executive summary, conclusion) carries the donor's word limit as a hard requirement: running over
+# it earns the one feedback retry ("shorten to N words"). Other sections report it as a style issue only.
+_LENGTH_RETRY_PREFIX = "WORD_LIMIT: "
 
-def _needs_retry(result: ValidationResult) -> bool:
+
+def _over_word_limit(result: ValidationResult) -> bool:
+    return any(i.startswith(_LENGTH_RETRY_PREFIX) and " > maxWords=" in i for i in result.issues)
+
+
+def _needs_retry(result: ValidationResult, synthesis: bool = False) -> bool:
     if result.ok:
         return False
     if os.getenv("AI_REPORTER_RETRY_ON_STYLE", "0") == "1":
+        return True
+    if synthesis and _over_word_limit(result):
         return True
     return bool(result.integrity_issues) or any(i.startswith(_CONTENT_RETRY_PREFIXES) for i in result.issues)
 
@@ -156,7 +166,7 @@ def run_pipeline(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, 
         attempts.append((section, result))
         # One feedback retry at most, and none after an error retry (keeps the
         # worst case at two completed calls per section).
-        if len(attempts) >= 2 or error_retry_used or not _needs_retry(result):
+        if len(attempts) >= 2 or error_retry_used or not _needs_retry(result, bool(req.section.synthesis)):
             break
         feedback = list(result.issues) + list(result.warnings)
         previous = written.content

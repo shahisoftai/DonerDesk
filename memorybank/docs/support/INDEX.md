@@ -1,6 +1,6 @@
 # DonorDesk Support Documentation Index
 
-Source files for the public Support Center at donordesk.online/support. Each file is routed from `apps/web/src/app/support/<category>/[article]/page.tsx` (see `FILE_MAP`) and listed in `apps/web/src/components/support/wikiCategories.tsx`. **When you add, rename or remove an article, update both.** Last full refresh: 2026-10-07 (Phase 24 features and four new how-tos).
+Source files for the public Support Center at donordesk.online/support. Each file is routed from `apps/web/src/app/support/<category>/[article]/page.tsx` (see `FILE_MAP`) and listed in `apps/web/src/components/support/wikiCategories.tsx`. **When you add, rename or remove an article, update both.** Last full refresh: 2026-10-07; corrected after demo 5 (2026-10-06).
 
 ## Ground truth to check when editing
 

@@ -3,6 +3,7 @@ import {
   DomainError,
   planClosingReport,
   missingCumulativeFields,
+  signOffRoles,
   effectiveIndicatorSemantics,
   suggestDeadline,
   isOpenActivity,
@@ -12,6 +13,7 @@ import {
 } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IProjectRepository } from "../../ports/projects.js";
+import type { IProjectMemberRepository } from "../../ports/project-members.js";
 import type { IReportingPeriodRepository, IReportDraftRepository } from "../../ports/reporting.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
@@ -39,6 +41,8 @@ export class PlanClosingReportHandler {
     private readonly finance?: IFinanceInputs,
     /** The same resolver period creation uses, so the step names the template the period will really get. */
     private readonly defaultTemplates?: IDefaultTemplateResolver,
+    /** The project's members, so sign-off roles read the same assignments the team page shows. */
+    private readonly members?: IProjectMemberRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<ClosingPlan, DomainError>> {
@@ -111,6 +115,15 @@ export class PlanClosingReportHandler {
       }
     }
 
+    const memberList = this.members ? await this.members.findByProject(projectId, tenantId) : undefined;
+    if (memberList && !memberList.ok) return memberList;
+    const roles = signOffRoles({
+      projectManagerId: project.value.projectManagerId,
+      meOfficerId: project.value.meOfficerId,
+      reportingOfficerId: project.value.reportingOfficerId,
+      members: memberList ? memberList.value.map((m) => ({ userId: m.userId, role: m.role, status: m.status })) : [],
+    });
+
     return {
       ok: true,
       value: planClosingReport({
@@ -126,8 +139,8 @@ export class PlanClosingReportHandler {
         ...(finalFinance ? { finalFinance } : {}),
         templateState,
         ...(templateName ? { templateName } : {}),
-        projectManagerAssigned: Boolean(project.value.projectManagerId),
-        meOfficerAssigned: Boolean(project.value.meOfficerId),
+        projectManagerAssigned: roles.projectManager,
+        meOfficerAssigned: roles.meOfficer,
       }),
     };
   }

@@ -5,7 +5,7 @@ import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
 import { renderChartPngCached, chartHasData, type ChartSource } from "./chart-png-renderer.js";
 import { parseMarkdownBlocks, renderDocxBlocks, renderPdfBlocks } from "./markdown-renderer.js";
-import { indicatorExportColumns, indicatorExportCell, isRollUpIndicatorTable } from "@donordesk/domain";
+import { indicatorExportColumns, indicatorExportCell, isRollUpIndicatorTable, NOT_MEASURED_LABEL } from "@donordesk/domain";
 
 /** Report section depth (1 = section, 2-4 = sub-sections); absent on legacy data. */
 function sectionLevel(level: number | undefined): number {
@@ -121,7 +121,7 @@ export class DefaultExportBuilder implements IExportBuilder {
         ...input.indicators.map(
           (i) =>
             new TableRow({
-              children: indicatorExportColumns(input.indicators).map((c) => indicatorExportCell(i, c.key)).map(
+              children: indicatorExportColumns(input.indicators).map((c) => indicatorExportCell(i, c.key, { notMeasured: NOT_MEASURED_LABEL })).map(
                 (v) => new TableCell({ children: [new Paragraph({ children: textRuns(v) })] }),
               ),
             }),
@@ -231,8 +231,8 @@ export class DefaultExportBuilder implements IExportBuilder {
     for (const i of input.indicators) {
       doc.text(
         isRollUpIndicatorTable(input.indicators)
-          ? `${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, this period ${i.periodValue || "—"}, life of project to date ${i.lifeOfProjectValue || "—"}${i.percentOfTarget ? `, ${i.percentOfTarget} of target` : ""}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`
-          : `${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, achievement ${i.achievement}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`,
+          ? `${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, this period ${i.periodValue || "not measured"}, life of project to date ${i.lifeOfProjectValue || "not measured"}${i.percentOfTarget ? `, ${i.percentOfTarget} of target` : ""}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`
+          : `${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, achievement ${i.achievement || "not measured"}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`,
       );
     }
     doc.moveDown();

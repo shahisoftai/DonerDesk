@@ -38,7 +38,12 @@ export class DetectMissingEvidenceHandler {
     private readonly indicators?: IIndicatorRepository,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<{ created: number }, DomainError>> {
+  /**
+   * `SCAN` (the default) raises what is missing and closes what the data now satisfies. `RECONCILE` only closes: it is
+   * what runs when someone looks at the checklist, so reading never creates work and nothing needs a manual scan.
+   */
+  async handle(ctx: AuthenticatedContext, reportingPeriodId: string, options: { mode?: "SCAN" | "RECONCILE" } = {}): Promise<Result<{ created: number; closed: number }, DomainError>> {
+    const reconcileOnly = options.mode === "RECONCILE";
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", reportingPeriodId) };
@@ -152,7 +157,7 @@ export class DetectMissingEvidenceHandler {
     const seenKeys = new Set<string>();
 
     let created = 0;
-    for (const s of combined) {
+    for (const s of reconcileOnly ? [] : combined) {
       const key = `${s.type}:${s.relatedEntityId ?? ""}`;
       if (isSatisfiedByFacts(s.type, facts, s.relatedEntityId)) continue;
       if (alreadyTracked(s)) continue;
@@ -175,22 +180,36 @@ export class DetectMissingEvidenceHandler {
       if (saved.ok) created++;
     }
 
+    let closed = 0;
     for (const { item, reason } of stateItemsToClose(existingResult.value, facts)) {
       item.resolve(reason);
-      await this.checklist.update(item);
+      const updated = await this.checklist.update(item);
+      if (!updated.ok) continue;
+      closed += 1;
+      await this.audit.record({
+        tenantId: ctx.tenant.tenantId,
+        actorId: ctx.tenant.userId,
+        eventType: "checklist.closed_by_data",
+        entityType: "checklist_item",
+        entityId: item.id,
+        projectId: period.projectId,
+        newValue: JSON.stringify({ type: item.type, reason, reportingPeriodId }),
+      });
     }
 
-    await this.audit.record({
-      tenantId: ctx.tenant.tenantId,
-      actorId: ctx.tenant.userId,
-      eventType: "compliance.checklist.detected",
-      entityType: "reporting_period",
-      entityId: reportingPeriodId,
-      projectId: period.projectId,
-      newValue: `created=${created}`,
-    });
+    if (!reconcileOnly) {
+      await this.audit.record({
+        tenantId: ctx.tenant.tenantId,
+        actorId: ctx.tenant.userId,
+        eventType: "compliance.checklist.detected",
+        entityType: "reporting_period",
+        entityId: reportingPeriodId,
+        projectId: period.projectId,
+        newValue: `created=${created};closed=${closed}`,
+      });
+    }
 
-    return { ok: true, value: { created } };
+    return { ok: true, value: { created, closed } };
   }
 
   /** The items that follow from the kind of report (what it covers and builds on). */

@@ -391,6 +391,8 @@ export const PeriodIndicatorRowSchema = z.object({
   disaggregationRequired: z.boolean(),
   breakdownMustSum: z.boolean().optional(),
   requiresDenominator: z.boolean(),
+  /** False when the indicator's frequency says no value is expected in this period (and none is recorded). */
+  dueThisPeriod: z.boolean().optional(),
   participantsHint: z.string().optional(),
   logframeLevel: z.string().nullable(),
   logframeCode: z.string().nullable(),
@@ -588,6 +590,10 @@ export const ReportingPeriodItemSchema = z.object({
   internalReviewDeadline: z.string().nullable().optional(),
   daysUntilDeadline: z.number(),
   donorTemplateId: z.string().nullish(),
+  /** A cancelled period keeps its data but is out of the calendar; it is listed apart so it can be restored. */
+  cancelled: z.boolean().optional(),
+  cancelledAt: z.string().nullish(),
+  cancelReason: z.string().nullish(),
   /** Focus of an activity / situation / custom report; empty for cadence reports. */
   scope: z.object({
     activityIds: z.array(z.string()).optional(),
@@ -641,6 +647,11 @@ export const ReportSectionSchema = z.object({
   chartConfig: ChartConfigSchema.nullable().optional(),
   updatedAt: z.string(),
   generatedWithAi: z.boolean().nullable().optional(),
+  /** Why the text was not written by the AI (stored at generation time) and the action the banner offers. */
+  generationFallback: z
+    .object({ reason: z.string(), detail: z.string().nullable().optional(), action: z.enum(["RETRY", "RETRY_RECORDED_FIGURES_ONLY", "OPEN_SETTINGS"]) })
+    .nullable()
+    .optional(),
   /** Assurance of the section's current revision (CURRENT = checked and approvable). */
   assuranceState: z.string().nullable().optional(),
 });
@@ -1088,3 +1099,22 @@ export const ClosingPlanSchema = z.object({
   ),
 });
 export type ClosingPlan = z.infer<typeof ClosingPlanSchema>;
+
+/** An administrator's view of the AI writer's recent section runs. */
+export const AiSectionRunsResponseSchema = z.object({
+  counts: z.object({ WRITTEN: z.number(), RECOVERED: z.number(), STUB: z.number(), NO_INPUT: z.number() }),
+  runs: z.array(
+    z.object({
+      id: z.string(),
+      at: z.string(),
+      sectionTitle: z.string().nullable(),
+      outcome: z.enum(["WRITTEN", "RECOVERED", "STUB", "NO_INPUT"]),
+      reason: z.string().nullable(),
+      detail: z.string().nullable(),
+      attempts: z.number(),
+      latencyMs: z.number(),
+      tokens: z.number(),
+    }),
+  ),
+});
+export type AiSectionRunsResponse = z.infer<typeof AiSectionRunsResponseSchema>;

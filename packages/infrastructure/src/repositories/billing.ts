@@ -752,6 +752,16 @@ export class PrismaLlmUsageRepository implements ILlmUsageRepository {
     return ok(count);
   }
 
+  async listRecent(tenantId: string, operationType: string, limit: number): Promise<Result<import("@donordesk/domain").AiRunRecord[], DomainError>> {
+    const rows = await this.prisma.llmRun.findMany({
+      where: { tenantId, operationType },
+      orderBy: { createdAt: "desc" },
+      take: Math.max(1, Math.min(200, Math.floor(limit))),
+      select: { id: true, status: true, errorMessage: true, responseText: true, latencyMs: true, inputTokens: true, outputTokens: true, createdAt: true },
+    });
+    return ok(rows);
+  }
+
   async recordRun(input: {
     id: string;
     tenantId: string;

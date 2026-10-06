@@ -6,6 +6,7 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
+import { idempotency, type CreateOptions } from "./_idempotency";
 import { EvidenceLinkSuggestionsResponseSchema, OkResponseSchema, UploadResponseSchema } from "./_schemas";
 import { ImportEvidenceResponseSchema, type ImportEvidenceResponse } from "@/lib/server/schemas";
 
@@ -29,7 +30,7 @@ export async function importEvidenceTextAction(input: unknown): Promise<ImportEv
 
 export type UploadEvidenceResult = Result<{ id: string; fileUrl: string }, AppError>;
 
-export async function uploadEvidenceAction(formData: FormData): Promise<UploadEvidenceResult> {
+export async function uploadEvidenceAction(formData: FormData, options: CreateOptions = {}): Promise<UploadEvidenceResult> {
   const context = await requireSession();
 
   const projectId = String(formData.get("projectId") ?? "").trim();
@@ -54,6 +55,7 @@ export async function uploadEvidenceAction(formData: FormData): Promise<UploadEv
   return gatewayRequest("/v1/evidence/upload", UploadResponseSchema, context.token, {
     method: "POST",
     formData,
+    ...idempotency(options),
   });
 }
 

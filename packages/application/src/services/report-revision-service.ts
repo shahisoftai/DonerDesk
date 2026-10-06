@@ -1,4 +1,4 @@
-import type { Result, TenantId, DomainError, ReportRevision, ReportSection, SourceReference } from "@donordesk/domain";
+import type { Result, TenantId, DomainError, ReportRevision, ReportSection, SourceReference, GenerationFallback } from "@donordesk/domain";
 import type {
   IReportRevisionService,
   IReportRevisionRepository,
@@ -31,6 +31,8 @@ export class ReportRevisionService implements IReportRevisionService {
     modelId?: string;
     promptVersion?: number;
     generationRunId?: string;
+    /** Why this text is not AI-written. Absent when the AI wrote it or a person did: the stored reason is cleared. */
+    generationFallback?: GenerationFallback;
   }): Promise<Result<ReportRevision, DomainError>> {
     const contentHash = this.hasher.normalizeAndHash(input.content);
 
@@ -51,6 +53,7 @@ export class ReportRevisionService implements IReportRevisionService {
     const section = input.section;
     section.setContent(input.content, input.sourceReferences, input.unsupportedClaims);
     section.setCurrentRevision(created.value.id);
+    section.recordGenerationFallback(input.generationFallback ?? null);
     const saved = await this.sections.update(section);
     if (!saved.ok) return saved;
 

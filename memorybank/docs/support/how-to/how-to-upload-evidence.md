@@ -34,9 +34,9 @@ After upload DonorDesk suggests tags (evidence type, related activity or indicat
 
 ## Link evidence to activities and indicators
 
-A file counts as **proof** in reports once it is **attached** to an activity or to an indicator value. Choosing "Use as proof for" at upload attaches it at once; you can also open a file later and use **Link this file to an activity or indicator**. A file can be linked to several.
+A file counts as **proof** in reports once it is **attached** to an activity or to an indicator value. Choosing "Use as proof for" at upload attaches it at once; files dropped on the activity form are attached to that activity and its period only (type "Other", titled by file name), not to an indicator. To prove an indicator value, upload through **Upload evidence** and choose the indicator under "Use as proof for". A file can be linked to several.
 
-Each activity and indicator page has a **Supporting evidence** panel. It lists its files, marks each **Used in reports** (attached) or **Tagged only**, and shows which report statements cite it. Click **Suggest links** to see likely matches based on titles and confirm the ones you want. Linked evidence is what supports numbers in reports and what the checklist counts.
+Each activity and indicator page has a **Supporting evidence** panel. It lists its files, marks each **Used in reports** (attached) or **Tagged only**, and shows which report statements cite it. Click **Suggest links** to see likely matches based on titles and confirm the ones you want (it may find none; then link by uploading again with the indicator chosen). Linked evidence is what supports numbers in reports and what the checklist counts.
 
 **Which reports use a file?** A monthly or quarterly report uses the files of its own period and of its activities. A **final, annual or semi-annual** report states progress since the project started, so it uses **all of the project's verified evidence**. The report inputs panel, the export wizard and the AI draft all use the same rule, so the numbers agree. On the file's own page you see **Uploaded** (the day it was added) and, if you gave one, **Date of activity**.
 

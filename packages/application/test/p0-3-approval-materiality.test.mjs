@@ -49,7 +49,7 @@ test("P0-3: an unresolved MATERIAL FAILED claim blocks approval with an actionab
   const result = await handler.handle(ctx, "section-1");
   assert.ok(!result.ok);
   assert.equal(result.error.code, "REPORT_GATE_BLOCKED");
-  assert.match(result.error.message, /still need a decision/i);
+  assert.match(result.error.message, /still needs? a decision/i);
   assert.ok(!section.approved);
 });
 

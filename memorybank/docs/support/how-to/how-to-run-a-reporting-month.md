@@ -19,13 +19,13 @@ This is the whole routine in one page. Do it once a month (or once per reporting
 5. **Review activities.** Accept them all at once, ask for a fix, or withdraw a duplicate. See [How to review and accept activities](/support/how-to/review-and-accept-activities).
 6. **Enter indicator values** for the period and use **Verify all**. See [How to update indicator values](/support/how-to/update-indicator-values).
 7. **Verify evidence.** See [Evidence verification](/support/getting-started/evidence-verification).
-8. **Tell the story** (a few short questions). See [How to tell the story](/support/how-to/tell-the-story-and-add-inputs).
+8. **Tell the story** (five short questions). See [How to tell the story](/support/how-to/tell-the-story-and-add-inputs).
 
 ## Write and approve
 
 9. **Generate the draft.** See [How to generate an AI report draft](/support/how-to/generate-ai-report-draft).
 10. **Review in the editor.** Follow the one big button at the top right. Fix or decide on flagged statements, read each section, approve. An approved section can still be edited: click **Edit (reopens section)**. See [How to use the report editor](/support/how-to/use-the-report-editor).
-11. **Clear the checks.** Items that depend on your data close by themselves; the rest need a person. See [How to use the compliance checklist](/support/how-to/use-compliance-checklist).
+11. **Clear the checks.** Items that depend on your data close when you run **⋯ → Scan for missing items**; the rest need a person. See [How to use the compliance checklist](/support/how-to/use-compliance-checklist).
 12. **Submit, approve and export.** See [How to review and approve reports](/support/how-to/review-and-approve-reports) and [How to export reports](/support/how-to/export-reports).
 
 ## At the end of the project

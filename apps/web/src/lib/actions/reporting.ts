@@ -1,13 +1,14 @@
 "use server";
 
 import { z } from "zod";
-import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, SavePeriodFinanceSchema, ChangePeriodTemplateSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, CancelReportingPeriodSchema, SavePeriodFinanceSchema, ChangePeriodTemplateSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { CreateAllPeriodsResponseSchema } from "@/lib/server/schemas";
+import { idempotency, type CreateOptions } from "./_idempotency";
 import {
   DetectMissingResponseSchema,
   DraftPollResponseSchema,
@@ -42,7 +43,7 @@ import {
 
 export type CreateReportingPeriodResult = Result<{ id: string }, AppError>;
 
-export async function createReportingPeriodAction(input: unknown): Promise<CreateReportingPeriodResult> {
+export async function createReportingPeriodAction(input: unknown, options: CreateOptions = {}): Promise<CreateReportingPeriodResult> {
   const context = await requireSession();
   const parsed = CreateReportingPeriodSchema.safeParse(input);
   if (!parsed.success) {
@@ -54,6 +55,7 @@ export async function createReportingPeriodAction(input: unknown): Promise<Creat
   return gatewayRequest("/v1/reporting-periods", IdResponseSchema, context.token, {
     method: "POST",
     body: parsed.data,
+    ...idempotency(options),
   });
 }
 
@@ -132,6 +134,30 @@ export async function updateReportingPeriodScopeAction(periodId: string, scope: 
   }
   const result = await gatewayRequest(`/v1/reporting-periods/${periodId}/scope`, ScopeUpdateResponseSchema, context.token, { method: "PUT", body: parsed.data });
   return result.ok ? { ok: true, value: { changed: result.value.changed, staleSections: result.value.staleSections } } : result;
+}
+
+export type PeriodLifecycleActionResult = Result<{ periodId: string; reportType: string; cancelled: boolean }, AppError>;
+const PeriodLifecycleResponseSchema = z.object({ periodId: z.string(), reportType: z.string(), cancelled: z.boolean() });
+
+/** Takes a period out of the calendar; its data stays. The server refuses while a report on it is approved. */
+export async function cancelReportingPeriodAction(periodId: string, reason?: string): Promise<PeriodLifecycleActionResult> {
+  const context = await requireSession();
+  const parsed = CancelReportingPeriodSchema.safeParse({ reason: reason?.trim() || undefined });
+  if (!parsed.success) {
+    return { ok: false, error: { kind: "validation", message: "The reason is too long.", fields: flattenZodFields(parsed.error) } };
+  }
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/cancel`, PeriodLifecycleResponseSchema, context.token, { method: "POST", body: parsed.data });
+}
+
+export async function restoreReportingPeriodAction(periodId: string): Promise<PeriodLifecycleActionResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/restore`, PeriodLifecycleResponseSchema, context.token, { method: "POST", body: {} });
+}
+
+/** The repair for a closing month created as a regular month: it becomes the Final report. */
+export async function convertPeriodToFinalAction(periodId: string): Promise<PeriodLifecycleActionResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/convert-to-final`, PeriodLifecycleResponseSchema, context.token, { method: "POST", body: {} });
 }
 
 export type ChangeTemplateResult = Result<{ changed: boolean; regenerateNeeded: boolean }, AppError>;

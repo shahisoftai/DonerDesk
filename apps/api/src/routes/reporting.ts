@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, ChangePeriodTemplateSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, CancelReportingPeriodSchema, ChangePeriodTemplateSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -51,6 +51,31 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const body = UpdateReportingPeriodScopeSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.updateReportingPeriodScope.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/reporting-periods/:id/cancel", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = CancelReportingPeriodSchema.parse(req.body ?? {});
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.cancelReportingPeriod.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/reporting-periods/:id/restore", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.restoreReportingPeriod.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/reporting-periods/:id/convert-to-final", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.convertPeriodToFinal.handle(ctx, id);
     if (!r.ok) throw r.error;
     return r.value;
   });

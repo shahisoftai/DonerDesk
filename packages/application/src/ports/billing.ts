@@ -243,4 +243,6 @@ export interface ILlmUsageRepository {
     /** Redacted structured diagnostics only; never store unrestricted donor content here. */
     responseText?: string;
   }): Promise<Result<{ id: string }>>;
+  /** The most recent runs of one kind for a tenant, newest first (the administrator's AI usage view). */
+  listRecent(tenantId: string, operationType: string, limit: number): Promise<Result<import("@donordesk/domain").AiRunRecord[]>>;
 }

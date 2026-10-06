@@ -28,6 +28,10 @@ It states progress since the project started, so it uses **all of the project's 
 
 When the project can take a closing report, the page shows the dates it will cover (from the end of your last regular period to the project's end) and **Start the closing report**. It creates the Final period through the same checks as any other period and builds its checklist, then opens it.
 
+## Who counts as signing off
+
+"Sign-offs assigned" is done when a project manager and an M&E officer are assigned to the project, either in the project settings or on the **Team** page (project members with those roles). Removed members do not count.
+
 ## When you can't start
 
 The page says why. Common reasons: a closing report already exists (a link takes you to it), the project is **Completed** or **Archived**, or every part of the project's dates already has a period. A one-off over existing dates is a **Custom** report.

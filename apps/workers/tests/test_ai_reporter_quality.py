@@ -401,3 +401,71 @@ def test_workflow_vocabulary_lint(text: str, hit: bool) -> None:
     assert (not result.ok) is hit, text
     if hit:
         assert result.issues[0].startswith("WORKFLOW_VOCABULARY")
+
+
+INTERNAL_ID_CASES = [
+    ("Attendance was recorded in evidence 3f2a9c1e-7b44-4d0e-9a51-0c6d2e8f1a77.", True),
+    ("See ev-14 and ev:a91c for the register.", True),
+    ("Source: record-2291 and chunk_88.", True),
+    ("The supervision checklist is in Mentorship_Log_March.pdf.", True),
+    ("The evidence ids are listed below.", True),
+    ("Reference 9f86d081884c7d659a2feaa0c55ad015 was used.", True),
+    ("Indicator HL-1.1b reached 142 caregivers, against IND-1 and OUT-3.", False),
+    ("The team kept good record-keeping and evidence of attendance.", False),
+    ("Award number 72062326CA00001 funds the work, signed on 20260927150000.", False),
+    ("Counselling reached 142 caregivers; a PDF summary was shared with the ministry.", False),
+]
+
+
+@pytest.mark.parametrize("text, hit", INTERNAL_ID_CASES)
+def test_internal_id_lint(text: str, hit: bool) -> None:
+    result = artifact_validators.assert_no_internal_ids(GeneratedSection(sectionId="s", title="Results", content=text))
+    assert (not result.ok) is hit, text
+    if hit:
+        assert result.issues[0].startswith("INTERNAL_ID")
+        assert result.integrity_issues, "an id in donor text is an integrity issue: it earns the retry"
+
+
+# --------------------------------------------------------------------------- #
+# 25.1 - the donor's word limit is a hard requirement for a synthesis section
+# --------------------------------------------------------------------------- #
+
+_LONG = "The project rehabilitated 96 centres. " * 12
+_SHORT = "The project rehabilitated 96 centres."
+
+
+def test_synthesis_section_over_its_word_limit_gets_one_shorten_retry(monkeypatch) -> None:
+    calls: list[dict] = []
+
+    def fake_draft(req, **kw):
+        calls.append(kw)
+        return GeneratedSection(sectionId="s", title=req.section.title, content=_SHORT if kw.get("feedback") else _LONG)
+
+    monkeypatch.setattr(pipeline, "draft", fake_draft)
+    section, telemetry = pipeline.run_pipeline(_req(title="Executive Summary", synthesis=True, maxWords=20))
+    assert len(calls) == 2
+    assert any(i.startswith("WORD_LIMIT") for i in calls[1]["feedback"])
+    assert section.content == _SHORT
+    assert not any("WORD_LIMIT" in i for i in telemetry.get("validatorIssues", []))
+
+
+def test_other_sections_over_the_limit_keep_one_call_and_report_it(monkeypatch) -> None:
+    calls: list[dict] = []
+
+    def fake_draft(req, **kw):
+        calls.append(kw)
+        return GeneratedSection(sectionId="s", title=req.section.title, content=_LONG)
+
+    monkeypatch.setattr(pipeline, "draft", fake_draft)
+    _, telemetry = pipeline.run_pipeline(_req(maxWords=20))
+    assert len(calls) == 1, "a style issue never costs a second call"
+    assert any("WORD_LIMIT" in i for i in telemetry["validatorIssues"])
+    assert "usedFallback" not in telemetry
+
+
+def test_a_synthesis_section_still_over_after_the_retry_keeps_the_prose_and_reports_the_count(monkeypatch) -> None:
+    monkeypatch.setattr(pipeline, "draft", lambda req, **kw: GeneratedSection(sectionId="s", title="Executive Summary", content=_LONG))
+    section, telemetry = pipeline.run_pipeline(_req(title="Executive Summary", synthesis=True, maxWords=20))
+    assert section.content == _LONG
+    assert "usedFallback" not in telemetry, "length alone never swaps in the stub"
+    assert any(i.startswith("WORD_LIMIT") and "> maxWords=20" in i for i in telemetry["validatorIssues"])

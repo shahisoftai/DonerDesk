@@ -456,6 +456,9 @@ model ReportingPeriod {
   templateSnapshotJson         String @default("{}")
   storyContextJson             String @default("{}")
   scopeJson                    String @default("{}")
+  /// Set when the period was cancelled: its data stays, it leaves the calendar and the closing report.
+  cancelledAt                  DateTime?
+  cancelReason                 String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -599,6 +602,10 @@ model ReportSection {
   status              String   @default("NOT_STARTED")
   chartConfigJson     String?
   currentRevisionId   String?
+  /// Why the current text was not written by the AI (a GenerationFallbackReason); null when it was or a person wrote it.
+  generationFallbackReason String?
+  /// Short, user-safe detail for the reason ("figure not in your data: 33.3%").
+  generationFallbackDetail String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -1155,6 +1162,27 @@ model IdempotencyRecord {
   @@unique([tenantId, key])
   @@index([tenantId])
   @@index([tenantId, jobName])
+}
+
+/// A create request a client may safely repeat: the first response is stored and replayed for the same key, so a double
+/// click or a retry after a timeout never creates a second record. Scoped by tenant + user + route; expires after 24 hours.
+model RequestIdempotency {
+  id          String   @id
+  tenantId    String
+  userId      String
+  route       String
+  key         String
+  /// PENDING while the first request runs, DONE once its response is stored.
+  state       String   @default("PENDING")
+  statusCode  Int?
+  responseJson String? @db.Text
+  contentType String?
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@unique([tenantId, userId, route, key])
+  @@index([tenantId])
+  @@index([createdAt])
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -56,3 +56,12 @@ export interface IUnsupportedClaimProjector {
    */
   reconcile(input: { tenantId: TenantId; periodId: string; activeKeys: string[] }): Promise<Result<void>>;
 }
+
+/**
+ * Closes the checklist items the report's data now satisfies, without raising new ones. Called wherever the checklist or
+ * readiness is read, so a state concern never stays open after the data that satisfies it exists.
+ * Best-effort: a failure leaves the checklist as it was and never fails the read.
+ */
+export interface IChecklistReconciler {
+  reconcile(ctx: import("../context.js").AuthenticatedContext, reportingPeriodId: string): Promise<void>;
+}

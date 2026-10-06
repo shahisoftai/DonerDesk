@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { getSmartReviewAction, type SmartReviewSummaryShape } from "@/lib/actions/reporting";
+import { agree, countOf } from "@donordesk/domain/core/plural.js";
 
 function deepLink(projectId: string, periodId: string, item: SmartReviewSummaryShape["items"][number]): string {
   switch (item.action.type) {
@@ -73,7 +74,7 @@ export function SmartReviewPanel({
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Things to fix</h3>
         <span className="text-xs text-slate-500 dark:text-slate-400">
-          {summary.issueCount} thing{summary.issueCount === 1 ? "" : "s"} need attention
+          {countOf(summary.issueCount, "thing")} {agree(summary.issueCount, "needs", "need")} attention
         </span>
       </div>
 

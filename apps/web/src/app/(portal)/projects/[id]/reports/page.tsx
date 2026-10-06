@@ -8,6 +8,8 @@ import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { reportStatusTone } from "@/lib/shared/tone";
 import { formatDate, deadlineUrgency } from "@/lib/shared/dates";
+import { checkCancelPeriod, checkConvertToFinal } from "@donordesk/domain/contexts/reporting/period-lifecycle.js";
+import { PeriodLifecycleActions, type PeriodLifecycleOffer } from "@/features/reporting/presentation/PeriodLifecycleActions";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +42,20 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
       </div>
     );
   }
-  const items = result.value.items;
+  const allItems = result.value.items;
+  const items = allItems.filter((p) => !p.cancelled);
+  const cancelledItems = allItems.filter((p) => p.cancelled);
+  const canManage = ctx.capabilities.has("project.edit");
+  // The offers come from the rules the server enforces; the report's own status stands in for its draft statuses.
+  const facts = items.map((p) => ({ id: p.id, reportType: p.reportType, start: new Date(p.startDate), end: new Date(p.endDate) }));
+  const offersFor = (p: (typeof items)[number]): PeriodLifecycleOffer[] => {
+    if (!canManage) return [];
+    const offers: PeriodLifecycleOffer[] = [];
+    if (checkCancelPeriod({ cancelled: false, draftStatuses: [p.status] }).ok) offers.push("cancel");
+    const self = facts.find((f) => f.id === p.id);
+    if (self && checkConvertToFinal({ period: self, cancelled: false, others: facts.filter((f) => f.id !== p.id), draftStatuses: [p.status] }).ok) offers.push("convert");
+    return offers;
+  };
 
   const groups = STATUS_ORDER.map((status) => ({
     status,
@@ -113,12 +128,34 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
                         </Link>
                       )}
                     </div>
+                    <PeriodLifecycleActions periodId={p.id} offers={offersFor(p)} />
                   </div>
                 ))}
               </div>
             </section>
           ))}
         </div>
+      )}
+
+      {cancelledItems.length > 0 && (
+        <section className="mt-8" aria-label="Cancelled periods">
+          <h2 className="text-sm font-medium text-slate-600 dark:text-slate-300">
+            Cancelled periods <span className="ml-1 font-normal text-slate-400">({cancelledItems.length})</span>
+          </h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">They no longer count in the calendar or the closing report. Their data is kept.</p>
+          <div className="mt-2 space-y-2">
+            {cancelledItems.map((p) => (
+              <div key={p.id} className="card opacity-80">
+                <div className="font-medium">{reportHeading(p.reportType, p.scope)}</div>
+                <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  Period {formatDate(p.startDate)} – {formatDate(p.endDate)}
+                  {p.cancelReason ? ` · ${p.cancelReason}` : ""}
+                </div>
+                <PeriodLifecycleActions periodId={p.id} offers={canManage ? ["restore"] : []} />
+              </div>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

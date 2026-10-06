@@ -39,7 +39,7 @@ export async function registerComplianceRoutes(app: FastifyInstance) {
   app.get("/v1/reporting-periods/:id/readiness", async (req) => {
     const id = (req.params as { id: string }).id;
     const ctx = { tenant: req.tenant, requestId: req.id };
-    const r = await req.container.handlers.calculateReadiness.handle(ctx, id);
+    const r = await req.container.handlers.calculateReadiness.handle(ctx, id, { reconcile: true });
     if (!r.ok) throw r.error;
     return r.value;
   });

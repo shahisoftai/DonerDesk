@@ -14,6 +14,7 @@ import {
   verifyPeriodFinanceAction,
 } from "@/lib/actions/reporting";
 import type { FinanceImportPreviewShape, FinanceLineShape, PeriodFinanceShape } from "@/lib/actions/_schemas";
+import { agree, countOf } from "@donordesk/domain/core/plural.js";
 
 type Entry = "lines" | "totals";
 
@@ -209,7 +210,7 @@ export function FinanceInputs({
           <Field label="Paste your budget lines" htmlFor="financePaste" hint="Columns: budget line, budget, expenditure, committed (optional). A header row is fine.">
             <Textarea id="financePaste" rows={6} value={paste} onChange={(e) => { setPaste(e.target.value); setPreview(null); }} placeholder={"Budget line\tBudget\tExpenditure\nStaff\t6,000\t2,000"} />
           </Field>
-          <Button variant="secondary" pending={busy} disabled={rows.length === 0} onClick={() => void run(async () => { const r = await previewFinanceImportAction(periodId, rows); if (r.ok) setPreview(r.value); return r; }, (p) => `${p.readyCount} line(s) ready, ${p.errorCount} need attention.`)}>Preview</Button>
+          <Button variant="secondary" pending={busy} disabled={rows.length === 0} onClick={() => void run(async () => { const r = await previewFinanceImportAction(periodId, rows); if (r.ok) setPreview(r.value); return r; }, (p) => `${countOf(p.readyCount, "line")} ready, ${countOf(p.errorCount, "line")} ${agree(p.errorCount, "needs", "need")} attention.`)}>Preview</Button>
           {preview && (
             <div className="space-y-2 text-sm">
               <ul className="space-y-1">

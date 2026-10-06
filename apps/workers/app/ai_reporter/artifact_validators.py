@@ -35,6 +35,7 @@ INTEGRITY_ISSUE_PREFIXES: tuple[str, ...] = (
     "CHART_UNGROUNDED",
     "NUMERIC_PARAPHRASE",
     "TABLE row",
+    "INTERNAL_ID",
 )
 
 
@@ -303,6 +304,39 @@ def find_workflow_vocabulary(text: str) -> list[str]:
     return [p for p in WORKFLOW_VOCABULARY if re.search(r"(?<![a-z])" + re.escape(p.lower()) + r"(?![a-z])", lower)]
 
 
+# Ids and file names are the tool's, not the donor's: a report describes a source in words. Indicator codes are
+# deliberately not matched (a donor report quotes them). Mirrored in `ai/artifact-validators.ts` (`findInternalIds`).
+_INTERNAL_ID_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", re.I),
+    re.compile(r"\b(?:ev|evidence|record|chunk)[-:_](?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{2,}\b", re.I),
+    re.compile(r"\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{16,}\b", re.I),
+    re.compile(r"\b[\w-]+\.(?:pdf|docx?|xlsx?|csv|pptx?|jpe?g|png)\b", re.I),
+    re.compile(r"\bevidence ids?\b", re.I),
+)
+
+
+def find_internal_ids(text: str) -> list[str]:
+    """Internal ids, hex ids and file names present in donor text (first occurrences, de-duplicated)."""
+    found: list[str] = []
+    for pattern in _INTERNAL_ID_PATTERNS:
+        for match in pattern.finditer(text or ""):
+            token = match.group(0)
+            if token not in found:
+                found.append(token)
+    return found
+
+
+def assert_no_internal_ids(section: GeneratedSection) -> ValidationResult:
+    """Donor text never names an evidence id, record id, file name or uuid."""
+    hits = find_internal_ids(section.content or "")
+    if hits:
+        return ValidationResult(
+            ok=False,
+            issues=(f"INTERNAL_ID: {', '.join(hits[:3])} must not appear in the report; describe the source in words instead",),
+        )
+    return _ok()
+
+
 def assert_no_workflow_vocabulary(section: GeneratedSection) -> ValidationResult:
     """Donor text describes the project, not the tool used to prepare the report."""
     hits = find_workflow_vocabulary(section.content or "")
@@ -366,6 +400,7 @@ def run_all(
         _ok() if req.section.synthesis else assert_repetition(section, list(req.section.priorSectionsSummary or [])),
         assert_banned_phrases(section),
         assert_no_workflow_vocabulary(section),
+        assert_no_internal_ids(section),
         assert_artifact_ordering(section),
         assert_required_table_present(section, req),
         assert_donor_voice(section),

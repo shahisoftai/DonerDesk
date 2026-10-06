@@ -26,6 +26,22 @@
       "types": "./dist/contexts/reporting/report-scope.d.ts",
       "import": "./dist/contexts/reporting/report-scope.js"
     },
+    "./contexts/reporting/generation-fallback.js": {
+      "types": "./dist/contexts/reporting/generation-fallback.d.ts",
+      "import": "./dist/contexts/reporting/generation-fallback.js"
+    },
+    "./contexts/reporting/period-lifecycle.js": {
+      "types": "./dist/contexts/reporting/period-lifecycle.d.ts",
+      "import": "./dist/contexts/reporting/period-lifecycle.js"
+    },
+    "./core/copy-lint.js": {
+      "types": "./dist/core/copy-lint.d.ts",
+      "import": "./dist/core/copy-lint.js"
+    },
+    "./core/plural.js": {
+      "types": "./dist/core/plural.d.ts",
+      "import": "./dist/core/plural.js"
+    },
     "./contexts/reporting/verification-reason.js": {
       "types": "./dist/contexts/reporting/verification-reason.d.ts",
       "import": "./dist/contexts/reporting/verification-reason.js"

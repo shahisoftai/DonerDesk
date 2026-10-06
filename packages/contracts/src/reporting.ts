@@ -66,6 +66,10 @@ export type CreateReportingPeriodInput = z.infer<typeof CreateReportingPeriodSch
 export const UpdateReportingPeriodScopeSchema = z.object({ scope: ReportScopeSchema });
 export type UpdateReportingPeriodScopeInput = z.infer<typeof UpdateReportingPeriodScopeSchema>;
 
+/** Cancel a reporting period: its data stays; the reason is optional and goes to the audit trail. */
+export const CancelReportingPeriodSchema = z.object({ reason: z.string().trim().max(500).optional() });
+export type CancelReportingPeriodInput = z.infer<typeof CancelReportingPeriodSchema>;
+
 /** `null` puts the built-in structure back. */
 export const ChangePeriodTemplateSchema = z.object({ donorTemplateId: z.string().min(1).nullable() });
 export type ChangePeriodTemplateInput = z.infer<typeof ChangePeriodTemplateSchema>;

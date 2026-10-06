@@ -21,11 +21,21 @@ Regular periods (Monthly to Annual and Final) must not overlap each other and mu
 
 For a project that reports **monthly or quarterly**, the Reporting page shows **Set up the whole reporting calendar**, for example *5 periods: Mar 2026 – Jul 2026. The last one (Aug 2026) is the closing report, created from its own steps.* Click **Create all 5 periods**. The periods are created one after another with the same checks as above, each with its donor deadline. If one is refused you see which and why, and the others are still created. Running it again never makes duplicates.
 
-The last block of the project is not created here: it belongs to the [closing report](/support/how-to/create-the-closing-report).
+The last block of the project is not created here: it belongs to the [closing report](/support/how-to/create-the-closing-report). **Auto-create reporting periods** (a reporting-profile setting, on by default) follows the same rule: it creates each regular period once its month is over and never creates the last block, so the closing report can still be started.
 
 ## After creating it
 
 The period workspace opens with the four steps: **Update Project → Tell the Story → Generate Draft → Review & Submit**. See [Understanding the reporting workflow](/support/getting-started/reporting-workflow).
+
+## Cancel a period, restore it, or make it the final report
+
+On **Reports**, each period offers what it may do, for people who can edit the project:
+
+- **Cancel period**: takes a period out of the calendar when it was created by mistake. Nothing is deleted: its data stays, and it no longer blocks the dates, the closing report or comparisons. Cancelled periods are listed at the bottom of the page. A period with an approved or exported report cannot be cancelled; reopen the report first if it was approved by mistake.
+- **Restore period**: puts a cancelled period back, unless another period now covers its dates.
+- **Make this the final report**: shown on the last regular period (for example, a final month that was created as a regular month). It becomes the project's closing report. This works only when no later period exists, the project has no final report yet, and nothing on the period has been approved.
+
+Every one of these is recorded in the audit log.
 
 ## Period status
 

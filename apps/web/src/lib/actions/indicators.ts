@@ -8,6 +8,7 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
+import { idempotency, type CreateOptions } from "./_idempotency";
 import { IdResponseSchema, OkResponseSchema } from "./_schemas";
 import {
   PeriodIndicatorsResponseSchema,
@@ -22,7 +23,7 @@ import {
 
 export type CreateIndicatorResult = Result<import("zod").infer<typeof CreateIndicatorResponseSchema>, AppError>;
 
-export async function createIndicatorAction(input: unknown): Promise<CreateIndicatorResult> {
+export async function createIndicatorAction(input: unknown, options: CreateOptions = {}): Promise<CreateIndicatorResult> {
   const context = await requireSession();
   const parsed = CreateIndicatorSchema.safeParse(input);
   if (!parsed.success) {
@@ -38,6 +39,7 @@ export async function createIndicatorAction(input: unknown): Promise<CreateIndic
   return gatewayRequest("/v1/indicators", CreateIndicatorResponseSchema, context.token, {
     method: "POST",
     body: parsed.data,
+    ...idempotency(options),
   });
 }
 

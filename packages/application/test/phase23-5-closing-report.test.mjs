@@ -96,3 +96,43 @@ test("unknown project is NOT_FOUND", async () => {
   const plan = new PlanClosingReportHandler({ async findById() { return { ok: true, value: null }; } }, {}, {}, {}, {}, {}, {}, {});
   assert.equal((await plan.handle(ctx, "x")).error.code, "NOT_FOUND");
 });
+
+test("sign-offs: a PM and an M&E officer assigned on the Team page count, though the project's own fields are empty (D5-11)", async () => {
+  const proj = project({ projectManagerId: undefined, meOfficerId: undefined });
+  const members = {
+    async findByProject() {
+      return { ok: true, value: [{ userId: "u1", role: "PROJECT_MANAGER", status: "ACTIVE" }, { userId: "u2", role: "ME_OFFICER", status: "ACTIVE" }] };
+    },
+  };
+  const plan = new PlanClosingReportHandler(
+    { async findById() { return { ok: true, value: proj }; } },
+    { async findByProject() { return { ok: true, value: [] }; } },
+    { async findByReportingPeriod() { return { ok: true, value: [] }; } },
+    { async findByProject() { return { ok: true, value: [] }; } },
+    { async findByIndicator() { return { ok: true, value: [] }; } },
+    { async findByProject() { return { ok: true, value: [] }; } },
+    { async findByProject() { return { ok: true, value: null }; } },
+    { async findById() { return { ok: true, value: null }; } },
+    undefined,
+    undefined,
+    members,
+  );
+  const r = await plan.handle(ctx, "p");
+  assert.equal(r.value.steps.find((s) => s.key === "signoffs").status, "DONE");
+
+  const removedOnly = { async findByProject() { return { ok: true, value: [{ userId: "u1", role: "PROJECT_MANAGER", status: "REMOVED" }] }; } };
+  const alone = new PlanClosingReportHandler(
+    { async findById() { return { ok: true, value: proj }; } },
+    { async findByProject() { return { ok: true, value: [] }; } },
+    { async findByReportingPeriod() { return { ok: true, value: [] }; } },
+    { async findByProject() { return { ok: true, value: [] }; } },
+    { async findByIndicator() { return { ok: true, value: [] }; } },
+    { async findByProject() { return { ok: true, value: [] }; } },
+    { async findByProject() { return { ok: true, value: null }; } },
+    { async findById() { return { ok: true, value: null }; } },
+    undefined,
+    undefined,
+    removedOnly,
+  );
+  assert.equal((await alone.handle(ctx, "p")).value.steps.find((s) => s.key === "signoffs").status, "TODO");
+});

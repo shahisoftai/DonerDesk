@@ -69,6 +69,7 @@ type EditorSection = {
   chartConfig?: ChartConfig | null;
   updatedAt: string;
   generatedWithAi?: boolean | null;
+  generationFallback?: { reason: string; detail?: string | null; action: "RETRY" | "RETRY_RECORDED_FIGURES_ONLY" | "OPEN_SETTINGS" } | null;
   assuranceState?: string | null;
 };
 

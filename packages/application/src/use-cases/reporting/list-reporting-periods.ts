@@ -11,7 +11,7 @@ export class ListReportingPeriodsHandler {
   ) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<Array<unknown>, DomainError>> {
-    const r = await this.periods.findByProject(projectId, ctx.tenant.tenantId);
+    const r = await this.periods.findByProject(projectId, ctx.tenant.tenantId, { includeCancelled: true });
     if (!r.ok) return r;
 
     // Readiness is derived live (never persisted) so the list always reflects
@@ -33,6 +33,9 @@ export class ListReportingPeriodsHandler {
           daysUntilDeadline: p.daysUntilDeadline(),
           donorTemplateId: p.donorTemplateId,
           scope: p.scope,
+          cancelled: p.isCancelled,
+          cancelledAt: p.cancelledAt?.toISOString() ?? null,
+          cancelReason: p.cancelReason ?? null,
         };
       }),
     );

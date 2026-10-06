@@ -6,6 +6,7 @@ import { blockerHref } from "@/lib/shared/readiness-links";
 import { acknowledgeProjectSetupAction, retryProjectWorkspaceAction, repairProjectWorkspaceAction } from "@/lib/actions/setup";
 import { Badge } from "@/components/data/Badge";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { stillNeed } from "@donordesk/domain/core/plural.js";
 
 type BlockerView = { code: string; label: string; href?: string; retryable?: boolean };
 
@@ -113,7 +114,7 @@ export function SetupChecklistClient({
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {ready
             ? "Your project is ready for reporting. You can create reporting periods."
-            : `${blockerItems.length} item${blockerItems.length === 1 ? "" : "s"} still need attention.`}
+            : `${stillNeed(blockerItems.length, "item")}.`}
         </p>
         {error && <InlineAlert tone="danger" title={error} />}
       </section>

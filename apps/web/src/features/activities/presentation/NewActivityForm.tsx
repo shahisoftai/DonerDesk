@@ -90,7 +90,7 @@ export function NewActivityForm({
     // A retry after a failed upload must not create the activity a second time.
     let activityId = createdActivityId;
     if (!activityId) {
-      const created = await actionState.run(() =>
+      const created = await actionState.runCreate((idempotencyKey) =>
         createActivityAction({
           projectId,
           reportingPeriodId,
@@ -109,7 +109,7 @@ export function NewActivityForm({
           lessonsLearned,
           nextSteps,
           attachedEvidenceIds: selectedEvidence,
-        }),
+        }, { idempotencyKey }),
       );
       if (!created) return;
       activityId = created.id;

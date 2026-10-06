@@ -42,3 +42,8 @@ export * from "./period-evidence-scope.js";
 export * from "./default-template.js";
 export * from "./export-indicator-columns.js";
 export * from "./closing-report-plan.js";
+export * from "./indicator-frequency.js";
+export * from "./generation-fallback.js";
+export * from "./section-kind.js";
+export * from "./period-lifecycle.js";
+export * from "./ai-run-summary.js";

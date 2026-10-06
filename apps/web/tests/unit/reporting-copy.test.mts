@@ -108,3 +108,25 @@ test("flag class copy is plain and unknown classes fail safe to a decision", () 
   assert.equal(flagClassCopy("WHATEVER").title, "Needs your decision");
   assert.equal(flagClassCopy("UNCONFIRMED").title, "We could not confirm");
 });
+
+test("fallback banner: stored reason, detail and the one action that fits (25.1)", async () => {
+  const { fallbackBannerCopy } = await import("../../src/lib/reporting-copy.ts");
+  const timeout = fallbackBannerCopy({ reason: "PROVIDER_TIMEOUT", action: "RETRY" });
+  assert.equal(timeout.actionLabel, "Try again");
+  assert.match(timeout.message, /took too long/);
+  const figures = fallbackBannerCopy({ reason: "VALIDATOR_FAILED", detail: "figures not in your data: 33.3, 26.2", action: "RETRY_RECORDED_FIGURES_ONLY" });
+  assert.equal(figures.actionLabel, "Try again, quote recorded figures only");
+  assert.match(figures.message, /did not pass our fact checks, so a basic version was used \(figures not in your data: 33\.3, 26\.2\)\.$/);
+  assert.equal(fallbackBannerCopy({ reason: "PROVIDER_NOT_CONFIGURED", action: "OPEN_SETTINGS" }).actionLabel, "Open AI settings");
+  assert.doesNotMatch(figures.message, /VALIDATOR|UNGROUNDED/);
+});
+
+test("AI usage rows read as outcomes, never codes (25.9)", async () => {
+  const { aiRunOutcomeCopy } = await import("../../src/lib/reporting-copy.ts");
+  assert.deepEqual(aiRunOutcomeCopy({ outcome: "WRITTEN", reason: null, detail: null }), { label: "Written by the AI", why: null });
+  assert.equal(aiRunOutcomeCopy({ outcome: "RECOVERED", reason: null, detail: null }).label, "Written by the AI after one retry");
+  const stub = aiRunOutcomeCopy({ outcome: "STUB", reason: "VALIDATOR_FAILED", detail: "figures not in your data: 33.3" });
+  assert.equal(stub.label, "Basic version used");
+  assert.match(stub.why!, /fact checks, so a basic version was used \(figures not in your data: 33\.3\)\.$/);
+  assert.equal(aiRunOutcomeCopy({ outcome: "STUB", reason: null, detail: null }).why, "The reason was not recorded.");
+});

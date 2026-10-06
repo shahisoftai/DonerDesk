@@ -7,6 +7,7 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
+import { idempotency, type CreateOptions } from "./_idempotency";
 import { IdResponseSchema, OkResponseSchema, PolishActivityResponseSchema } from "./_schemas";
 import { ImportActivitiesResponseSchema, type ImportActivitiesResponse } from "@/lib/server/schemas";
 
@@ -30,7 +31,7 @@ export async function importActivitiesTextAction(input: unknown): Promise<Import
   });
 }
 
-export async function createActivityAction(input: unknown): Promise<CreateActivityResult> {
+export async function createActivityAction(input: unknown, options: CreateOptions = {}): Promise<CreateActivityResult> {
   const context = await requireSession();
   const parsed = CreateActivityUpdateSchema.safeParse(input);
   if (!parsed.success) {
@@ -42,6 +43,7 @@ export async function createActivityAction(input: unknown): Promise<CreateActivi
   return gatewayRequest("/v1/activities", IdResponseSchema, context.token, {
     method: "POST",
     body: parsed.data,
+    ...idempotency(options),
   });
 }
 

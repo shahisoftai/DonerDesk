@@ -1,5 +1,6 @@
 "use client";
 
+import { useActionState } from "@/lib/client/action-state";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createIndicatorAction } from "@/lib/actions/indicators";
@@ -40,8 +41,7 @@ export function NewIndicatorForm({
   const [meansOfVerification, setMeansOfVerification] = useState("");
   const [dataSource, setDataSource] = useState("");
   const [frequency, setFrequency] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const save = useActionState();
   const [breakdownChoice, setBreakdownChoice] = useState<boolean | null>(null);
   const [created, setCreated] = useState<{ id: string; summary: string; needsReview: boolean; placedUnder: string } | null>(null);
   // Counts of people are broken down by sex by default; the user's own choice always wins.
@@ -51,40 +51,36 @@ export function NewIndicatorForm({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (busy) return;
-    setBusy(true); setError(null);
-    // Stay locked while leaving the page: re-enabling the button during the route change allowed a second save.
-    let leaving = false;
-    try {
-      const result = await createIndicatorAction({
-        projectId,
-        logframeItemId,
-        code,
-        name,
-        type,
-        baseline: baseline || undefined,
-        target: target || undefined,
-        unit: unit || undefined,
-        meansOfVerification: meansOfVerification || undefined,
-        dataSource: dataSource || undefined,
-        frequency: frequency || undefined,
-        disaggregationRequired: breakdown,
-      });
-      if (!result.ok) {
-        setError(result.error.message);
-        return;
-      }
-      const description = result.value.semanticsDescription;
-      if (description) {
-        // Show how reports will treat it right away, with a one-click confirm, instead of leaving it to be found later.
-        setCreated({ id: result.value.id, summary: description.summary, needsReview: description.needsReview, placedUnder });
-        router.refresh();
-        return;
-      }
-      leaving = true;
-      router.push(`/projects/${projectId}/logframe`);
+    // One key for this form: a double click or a repeat after a timeout never saves the indicator twice.
+    const result = await save.runCreate((idempotencyKey) =>
+      createIndicatorAction(
+        {
+          projectId,
+          logframeItemId,
+          code,
+          name,
+          type,
+          baseline: baseline || undefined,
+          target: target || undefined,
+          unit: unit || undefined,
+          meansOfVerification: meansOfVerification || undefined,
+          dataSource: dataSource || undefined,
+          frequency: frequency || undefined,
+          disaggregationRequired: breakdown,
+        },
+        { idempotencyKey },
+      ),
+    );
+    if (!result) return; // a save is already running, or it failed (its message is shown below)
+    const description = result.semanticsDescription;
+    if (description) {
+      // Show how reports will treat it right away, with a one-click confirm, instead of leaving it to be found later.
+      setCreated({ id: result.id, summary: description.summary, needsReview: description.needsReview, placedUnder });
       router.refresh();
-    } finally { if (!leaving) setBusy(false); }
+      return;
+    }
+    router.push(`/projects/${projectId}/logframe`);
+    router.refresh();
   }
 
   if (created) {
@@ -153,10 +149,10 @@ export function NewIndicatorForm({
       <Field label="Frequency (optional)" htmlFor="frequency">
         <Input id="frequency" value={frequency} onChange={(e) => setFrequency(e.target.value)} />
       </Field>
-      {error && <InlineAlert tone="danger" title={error} />}
+      {save.error && <InlineAlert tone="danger" title={save.error} />}
       <div className="flex justify-end gap-3">
         <Button type="button" variant="secondary" onClick={() => router.back()}>Cancel</Button>
-        <Button type="submit" pending={busy}>Save indicator</Button>
+        <Button type="submit" pending={save.busy}>{save.waiting ? "Still saving…" : "Save indicator"}</Button>
       </div>
     </form>
   );

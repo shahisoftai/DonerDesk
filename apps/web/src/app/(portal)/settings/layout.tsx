@@ -18,6 +18,9 @@ export default async function SettingsLayout({ children }: { children: ReactNode
   if (hasCapability(ctx, "audit.view")) {
     tabs.push({ label: "Audit log", href: "/settings/audit" });
   }
+  if (hasCapability(ctx, "org.manage")) {
+    tabs.push({ label: "AI usage", href: "/settings/ai-usage" });
+  }
   // Agent Memory (Phase 21) — hidden unless the viewer can manage it AND the
   // platform rollout flag is on; there is nothing to configure otherwise.
   if (hasCapability(ctx, "report.manage-agent-memory")) {

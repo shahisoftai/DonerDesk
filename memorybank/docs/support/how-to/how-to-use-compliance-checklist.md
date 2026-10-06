@@ -16,14 +16,14 @@ Roles that can manage checklist items: Admin, Project Manager, M&E Officer, Gran
 
 | Kind | Examples | Who closes it |
 |---|---|---|
-| **Data items** | "No activity updates submitted", "Beneficiary data disaggregated", "Financial figures entered", indicator values pending verification, indicator calculations to confirm, evidence shortfall | **They close by themselves** as soon as your data satisfies them. They are not raised at all if the data is already fine. |
+| **Data items** | "No activity updates submitted", "Beneficiary data disaggregated", "Financial figures entered", indicator values pending verification, indicator calculations to confirm, evidence shortfall | **They close when the checklist is refreshed** and your data satisfies them. After you finish entering data (especially on a final report), use **⋯ → Scan for missing items**: items such as "No activity updates submitted" or "Financial figures entered" can stay open until then, and the scan closes them with the note "Closed automatically". |
 | **Confirmations** | "AI-generated content reviewed", "Sensitive data handling confirmed", sign-offs, procurement records, donor requirements | **Only a person.** Data never ticks these for you. |
 
 So on a correct report you only ever resolve the confirmations. A confirmation you have decided stays decided: re-scanning does not bring it back. It would only come back as a *different* item if something new needs your attention.
 
 ## Where items come from
 
-DonorDesk builds the checklist from your donor template's requirements, your logframe's means of verification, activities and uploaded evidence. It **re-checks automatically** as data changes, and regenerating it does not create duplicates or overwrite decisions you already recorded. In the report editor, **⋯ → Scan for missing items** refreshes it on demand.
+DonorDesk builds the checklist from your donor template's requirements, your logframe's means of verification, activities and uploaded evidence. It re-checks as data changes (a manual scan is the sure way), and regenerating it does not create duplicates or overwrite decisions you already recorded. In the report editor, **⋯ → Scan for missing items** refreshes it on demand.
 
 ## Statuses
 
@@ -34,6 +34,10 @@ DonorDesk builds the checklist from your donor template's requirements, your log
 | Resolved | Fixed, with a **required note** describing how. |
 | Accepted risk | You knowingly proceed. High-severity items ask you to confirm you have the authority. |
 | Not applicable | Does not apply to this report. |
+
+## Items that close by themselves
+
+An item that describes the state of your data (an activity exists, finance is verified, a breakdown is recorded, every indicator value is verified) closes automatically the next time you open the checklist or the report's readiness, with the note "Closed automatically: …". You never have to press **Scan for missing items** for that; the scan remains for finding new gaps. Items that need a person (sign-off, handling of sensitive data, AI content reviewed) are never closed by data.
 
 ## Resolve an item
 

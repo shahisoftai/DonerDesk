@@ -1,7 +1,7 @@
 import type { IndicatorType } from "../logframe/indicator.js";
 import type { IndicatorSemantics } from "../logframe/indicator-semantics.js";
 import type { DisaggregationEntry } from "../logframe/indicator-disaggregation.js";
-import type { FindingQualityFlag, PerformanceEvaluation, VerifiedFinding } from "./verified-finding.js";
+import type { FindingQualityFlag, FindingStatus, PerformanceEvaluation, VerifiedFinding } from "./verified-finding.js";
 import { buildCalculationMethod } from "./verified-finding.js";
 
 // ---------------------------------------------------------------------------
@@ -209,6 +209,8 @@ export function computeIndicator(input: IndicatorCalculationInput): VerifiedFind
   }
 
   let computed: string;
+  // Set only when `computed` is a real figure; every `"0"` below is a placeholder for "no figure".
+  let hasFigure = false;
 
   if (input.semantics.aggregation === "RATIO" || input.semantics.aggregation === "PERCENTAGE") {
     const denominators = (input.denominatorValues ?? []).filter((v) => isNumeric(v));
@@ -235,6 +237,7 @@ export function computeIndicator(input: IndicatorCalculationInput): VerifiedFind
           qualityFlags.push("MISSING_DENOMINATOR");
           computed = "0";
         } else {
+          hasFigure = true;
           computed = input.semantics.aggregation === "PERCENTAGE"
             ? formatDecimal(decimalMultiply(ratio, { value: 100n, scale: 0 }), 2)
             : formatDecimal(ratio, 6);
@@ -245,6 +248,7 @@ export function computeIndicator(input: IndicatorCalculationInput): VerifiedFind
     computed = "0";
   } else {
     const decimals = numericValues.map((v) => parseDecimal(v.text) as Decimal);
+    hasFigure = true;
     switch (input.semantics.aggregation) {
       case "SUM":
         computed = formatDecimal(decimals.reduce((acc, d) => decimalAdd(acc, d)), 6);
@@ -273,6 +277,8 @@ export function computeIndicator(input: IndicatorCalculationInput): VerifiedFind
         computed = "0";
     }
   }
+
+  const status: FindingStatus = hasFigure ? "REPORTED" : input.updates.length === 0 ? "NOT_MEASURED" : verified.length === 0 ? "UNVERIFIED" : "NOT_MEASURED";
 
   const sourceRecordIds = verified.length > 0
     ? verified.map((u) => u.id)
@@ -311,6 +317,7 @@ export function computeIndicator(input: IndicatorCalculationInput): VerifiedFind
     indicatorType: input.indicatorType,
     baseline: input.baseline,
     target: input.target,
+    status,
     value: computed,
     cumulativeValue,
     priorCumulativeValue,

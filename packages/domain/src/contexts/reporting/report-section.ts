@@ -1,6 +1,7 @@
 import { Entity } from "../../core/entity.js";
 import { DomainError } from "../../core/domain-error.js";
 import type { ChartConfig } from "./chart-config.js";
+import { isGenerationFallbackReason, type GenerationFallback } from "./generation-fallback.js";
 
 export type SectionStatus = "NOT_STARTED" | "DRAFTED" | "NEEDS_EVIDENCE" | "NEEDS_REVIEW" | "APPROVED";
 
@@ -34,6 +35,8 @@ export interface ReportSectionProps {
   chartConfig?: ChartConfig | null;
   /** The revision whose content this section currently points at. */
   currentRevisionId?: string;
+  /** Why the current text was not written by the AI; absent when it was, or when a person wrote it. */
+  generationFallback?: GenerationFallback;
 }
 
 export class ReportSection extends Entity<string> {
@@ -105,6 +108,18 @@ export class ReportSection extends Entity<string> {
   get status(): SectionStatus { return this.props.status; }
   get chartConfig(): ChartConfig | null { return this.props.chartConfig ?? null; }
   get currentRevisionId(): string | undefined { return this.props.currentRevisionId; }
+
+  /** Why the current text is not AI-written, or undefined (a written-by-AI or hand-written text clears it). */
+  get generationFallback(): GenerationFallback | undefined { return this.props.generationFallback ? { ...this.props.generationFallback } : undefined; }
+
+  /** Records the outcome of the latest write: pass nothing when the AI wrote it or a person did. */
+  recordGenerationFallback(fallback: GenerationFallback | null | undefined): void {
+    if (fallback && !isGenerationFallbackReason(fallback.reason)) throw DomainError.validation("Unknown generation fallback reason");
+    const detail = fallback?.detail?.trim();
+    if (fallback) this.props.generationFallback = { reason: fallback.reason, ...(detail ? { detail: detail.slice(0, 240) } : {}) };
+    else delete this.props.generationFallback;
+    this.touch();
+  }
 
   setCurrentRevision(revisionId: string): void {
     if (!revisionId) throw DomainError.validation("Current revision id is required");

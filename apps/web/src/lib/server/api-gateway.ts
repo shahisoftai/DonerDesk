@@ -27,6 +27,8 @@ export type GatewayRequestOptions = {
   formData?: FormData;
   timeoutMs?: number;
   signal?: AbortSignal;
+  /** Makes a create repeatable: the API replays the first response for a repeated key (double click, retry after a timeout). */
+  idempotencyKey?: string;
 };
 
 type ProblemHeaders = { "x-request-id"?: string };
@@ -41,6 +43,7 @@ export async function gatewayRequest<T>(
   const headers = new Headers();
   headers.set("authorization", `Bearer ${token}`);
   headers.set("accept", "application/json");
+  if (options.idempotencyKey) headers.set("idempotency-key", options.idempotencyKey);
 
   let body: BodyInit | undefined;
   if (options.formData) {

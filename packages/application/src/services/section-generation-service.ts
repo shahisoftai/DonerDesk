@@ -119,6 +119,8 @@ export class SectionGenerationService {
           promptHash: t.promptHash,
           responseHash: t.responseHash,
           responseChars: t.responseChars,
+          attempts: t.attempts ?? 1,
+          ...(generated.fallbackDetail ? { fallbackDetail: generated.fallbackDetail } : {}),
         }),
       });
     }
@@ -153,6 +155,10 @@ export class SectionGenerationService {
       modelId: byModel ? generator.model.modelId : undefined,
       promptVersion: byModel ? generator.model.promptVersion : undefined,
       generationRunId: input.runId,
+      // A stub is never silent: the reason and what to do about it are stored with the text.
+      ...(generated.usedFallback && !generated.deterministicReason && generated.fallbackReason
+        ? { generationFallback: { reason: generated.fallbackReason, ...(generated.fallbackDetail ? { detail: generated.fallbackDetail } : {}) } }
+        : {}),
     });
     if (!committed.ok) return committed;
     input.onCommitted?.();

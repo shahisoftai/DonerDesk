@@ -29,7 +29,7 @@ function finding(overrides = {}) {
 
 function buildInput(findings = [finding()]) {
   return {
-    reportPlan: { sections: [{ templateSectionId: "narrative", title: "Narrative Report", inputType: "NARRATIVE", required: true, mandatoryQuestions: [], evidenceNeeds: [] }] },
+    reportPlan: { sections: [{ templateSectionId: "results", title: "Results Against Indicators", inputType: "NARRATIVE", required: true, mandatoryQuestions: [], evidenceNeeds: [] }] },
     verifiedFindings: findings,
     evidencePackages: [],
     activities: [],
@@ -57,8 +57,7 @@ test("P0-2: forced provider failure falls back, is flagged usedFallback, and emi
   assert.ok(!content.includes("recorded via"), "must not expose 'recorded via'");
   assert.ok(!content.includes("SUM:neutral"), "must not expose calculationMethod debug string");
   assert.ok(!content.includes("MISSING_DISAGGREGATION"), "must not expose raw quality-flag codes");
-  assert.ok(content.includes("recorded for the period"), "clean donor prose must be emitted");
-  assert.ok(content.includes("disaggregated data was not recorded"), "caveat must be donor-friendly");
+  assert.ok(content.includes("30 centres"), "the recorded value is stated with its unit");
 });
 
 test("P0-2: the deterministic stub is never an AI model and its prose is donor-clean", async () => {
@@ -70,7 +69,7 @@ test("P0-2: the deterministic stub is never an AI model and its prose is donor-c
   const content = result.section.content;
   assert.ok(!content.includes("SUM:neutral"), "no internal calculation string");
   assert.ok(!content.includes("MISSING_DISAGGREGATION"), "no raw flag codes");
-  assert.ok(content.includes("recorded for the period"), "clean prose");
+  assert.ok(content.includes("30 centres"), "clean prose");
 });
 
 test("P0-2: a clean provider response is NOT flagged as fallback (no false positive)", async () => {
@@ -86,4 +85,22 @@ test("P0-2: a clean provider response is NOT flagged as fallback (no false posit
   const result = await generator.generateSection(buildInput(), buildInput().reportPlan.sections[0]);
   assert.equal(result.usedFallback, false, "clean provider response must not be treated as fallback");
   assert.ok(result.section.content.includes("delivered 30 centres"));
+});
+
+test("25.1: a section with no planned stub is written from the officer's records, never an indicator dump", async () => {
+  const stub = new StubReportDraftGenerator();
+  const input = buildInput();
+  const environmental = { templateSectionId: "env", title: "Environmental Compliance", inputType: "NARRATIVE", required: true, mandatoryQuestions: [], evidenceNeeds: [] };
+
+  const empty = await stub.generateSection(input, environmental);
+  assert.equal(empty.section.content, "No information was recorded for this section in this period.");
+  assert.ok(!empty.section.content.includes("learning centres"), "no indicator values in a compliance section");
+  assert.deepEqual(empty.section.claims, []);
+
+  const withStory = await stub.generateSection(
+    { ...input, reportContext: { ...input.reportContext, storyContext: { achievements: "Waste was sorted at all three sites." } } },
+    environmental,
+  );
+  assert.match(withStory.section.content, /Waste was sorted at all three sites\./);
+  assert.ok(!withStory.section.content.includes("learning centres"));
 });

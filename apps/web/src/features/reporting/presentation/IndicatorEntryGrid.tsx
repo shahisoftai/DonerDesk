@@ -451,6 +451,11 @@ function LevelGroupRows({
               <td className="min-w-[200px] px-3 py-2">
                 <span className="font-medium">{row.name}</span>
                 {row.logframeTitle && <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{row.logframeTitle}</span>}
+                {row.dueThisPeriod === false && (
+                  <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                    Not due this period{row.frequency ? ` (measured ${row.frequency.toLowerCase()})` : ""}. Leave it empty; it is not reported as 0.
+                  </span>
+                )}
                 {row.participantsHint && <span role="status" className="mt-1 block text-xs text-slate-600 dark:text-slate-300">{row.participantsHint}</span>}
                 {row.requiresDenominator && (
                   <span className="mt-1 block text-xs text-warning-700 dark:text-warning-400">

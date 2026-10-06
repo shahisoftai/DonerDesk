@@ -1,5 +1,6 @@
 import type { IReportDraftGenerator, GeneratedSection, GeneratedSectionResult, ReportClaimDraft, ActivityGenerationContext } from "@donordesk/application";
-import type { ReportPlanSection, SourceReference, VerifiedFinding } from "@donordesk/domain";
+import type { ReportPlanSection, SectionKind, SourceReference, VerifiedFinding } from "@donordesk/domain";
+import { sectionKind } from "@donordesk/domain";
 
 /**
  * Heuristic, deterministic draft generator (no LLM). Narrates verified
@@ -29,49 +30,38 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     return { section: this.buildSection(input, planSection), usedFallback: true, fallbackReason: "PROVIDER_NOT_CONFIGURED" };
   }
 
+  /** One deterministic writer per section kind (an exhaustive table: a new kind cannot be added without one). */
   private buildSection(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], planSection: ReportPlanSection): GeneratedSection {
-    const titleLower = planSection.title.toLowerCase();
-    if (titleLower.includes("executive summary")) {
-      return this.executiveSummary(input, planSection.title);
-    }
-    if (titleLower.includes("methodolog") || titleLower.includes("data quality")) {
-      return this.methodologyNote(input, planSection.title);
-    }
-    // "Progress Against the Work Plan" reports results: it must not fall into the next-period-plan branch below
-    // just because it contains "work plan".
-    if (titleLower.includes("indicator") || titleLower.includes("progress") || titleLower.includes("performance")) {
-      return this.indicatorProgress(input, planSection.title);
-    }
-    if (titleLower.includes("activit")) {
-      return this.activityNarrative(input, planSection.title);
-    }
-    if (titleLower.includes("achievement")) {
-      return this.achievements(input, planSection.title);
-    }
-    if (titleLower.includes("challenge")) {
-      return this.challenges(input, planSection.title);
-    }
-    if (titleLower.includes("lesson") || titleLower.includes("learning") || titleLower.includes("adaptation")) {
-      return this.lessons(input, planSection.title);
-    }
-    if (titleLower.includes("next period") || titleLower.includes("next month") || titleLower.includes("next quarter") || titleLower.includes("priorities") || titleLower.includes("work plan")) {
-      return this.nextPeriodPlan(input, planSection.title);
-    }
-    if (titleLower.includes("voice") || titleLower.includes("testimonial") || titleLower.includes("quote")) {
-      return this.beneficiaryVoice(input, planSection.title);
-    }
-    if (titleLower.includes("financial") || titleLower.includes("budget")) {
-      return this.financialSummary(input, planSection.title);
-    }
-    if (titleLower.includes("annex")) {
-      return this.annexList(input, planSection.title);
-    }
+    const title = planSection.title;
+    const writers: Record<SectionKind, () => GeneratedSection> = {
+      executive_summary: () => this.executiveSummary(input, title),
+      methodology: () => this.methodologyNote(input, title),
+      results: () => this.indicatorProgress(input, title),
+      activities: () => this.activityNarrative(input, title),
+      achievements: () => this.achievements(input, title),
+      challenges: () => this.challenges(input, title),
+      learning: () => this.lessons(input, title),
+      plan: () => this.nextPeriodPlan(input, title),
+      voice: () => this.beneficiaryVoice(input, title),
+      finance: () => this.financialSummary(input, title),
+      annex: () => this.annexList(input, title),
+      // A section nobody planned a stub for is written from what the officer recorded, never from every indicator.
+      compliance: () => this.recordsNarrative(input, planSection),
+      narrative: () => this.recordsNarrative(input, planSection),
+    };
+    return writers[sectionKind(planSection)]();
+  }
+
+  private recordsNarrative(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], planSection: ReportPlanSection): GeneratedSection {
+    const story = this.storyContextBlock(input);
+    const activities = input.activities.slice(0, 5).map((a) => `- ${a.activityTitle}: ${a.summary || a.achievements}`.trimEnd()).filter((line) => !line.endsWith(":"));
+    const parts = [story, activities.length > 0 ? `Activity records for the period:\n${activities.join("\n")}` : ""].filter(Boolean);
     return {
       sectionId: planSection.templateSectionId,
       title: planSection.title,
-      content: this.descriptiveNarrative(input, planSection.title),
-      claims: findingsClaims(input),
-      sourceReferences: findingsRefs(input),
+      content: parts.length > 0 ? parts.join("\n\n") : "No information was recorded for this section in this period.",
+      claims: [],
+      sourceReferences: [],
     };
   }
 
@@ -694,19 +684,6 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
     return "—";
   }
 
-  private descriptiveNarrative(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], title: string): string {
-    const findings = input.verifiedFindings;
-    const story = this.storyContextBlock(input);
-    let body: string;
-    if (findings.length === 0) {
-      const activityLines = input.activities.slice(0, 5).map((a) => `- ${a.activityTitle}: ${a.summary || a.achievements}`);
-      body = activityLines.length > 0 ? `Activity records for the period:\n${activityLines.join("\n")}` : `No verified findings or activity records were available for this period.`;
-    } else {
-      body = findings.slice(0, 5).map((f) => this.describeFinding(input, f)).join("\n\n");
-    }
-    return story ? `${body}\n\n${story}` : body;
-  }
-
   private storyContextBlock(input: Parameters<IReportDraftGenerator["generateDraft"]>[0]): string {
     const story = input.reportContext?.storyContext;
     if (!story) return "";
@@ -723,44 +700,6 @@ export class StubReportDraftGenerator implements IReportDraftGenerator {
       if (value && value.trim()) rows.push(`- ${label}: ${value.trim()}`);
     }
     return rows.length > 0 ? `Context recorded by the reporting officer:\n${rows.join("\n")}` : "";
-  }
-
-  /**
-   * P0-2 — Converts internal quality-flag codes into donor-friendly caveat
-   * language so engineering/debug strings never leak into a user-facing report.
-   */
-  private cleanQualityCaveats(flags: string[]): string {
-    const map: Record<string, string> = {
-      MISSING_DISAGGREGATION: "disaggregated data was not recorded",
-      LOW_COVERAGE: "the figures are based on partial records",
-      STALE: "the underlying records predate the reporting period",
-      UNIT_MISMATCH: "units were inconsistent across the source records",
-      NEEDS_REVIEW: "the figure requires verification before finalisation",
-      MISSING_DENOMINATOR: "the denominator could not be established",
-    };
-    const clean = flags
-      .map((f) => map[f])
-      .filter((t): t is string => Boolean(t));
-    return clean.length > 0 ? clean.join("; ") : "";
-  }
-
-  private describeFinding(input: Parameters<IReportDraftGenerator["generateDraft"]>[0], finding: VerifiedFinding): string {
-    const update = input.indicatorUpdates.find((u) => u.indicatorId === finding.indicatorId);
-    const source = update?.dataSource ? ` Source: ${update.dataSource}.` : "";
-    const label = finding.indicatorName ? `${finding.indicatorCode} (${finding.indicatorName})` : finding.indicatorCode;
-    const target = finding.target ? ` against a target of ${finding.target}${finding.unit ? ` ${finding.unit}` : ""}` : "";
-    const previous = finding.comparisonValue !== undefined
-      ? `, compared to ${finding.comparisonValue}${finding.unit ? ` ${finding.unit}` : ""} in the previous period`
-      : "";
-    const perf = finding.performanceEvaluation && finding.performanceEvaluation.type !== "NEUTRAL"
-      ? ` Performance: ${finding.performanceEvaluation.type.toLowerCase()}${finding.performanceEvaluation.detail ? ` (${finding.performanceEvaluation.detail})` : ""}.`
-      : "";
-    const caveat = this.cleanQualityCaveats(finding.qualityFlags);
-    if (finding.qualityFlags.includes("MISSING_DENOMINATOR")) {
-      return `${label}: the result could not be calculated because the denominator was unavailable.${source}`;
-    }
-    const caveatsClause = caveat ? ` Note: ${caveat}.` : "";
-    return `${label}: ${finding.value}${finding.unit ? ` ${finding.unit}` : ""} recorded for the period${target}${previous}${perf}${caveatsClause}${source}`;
   }
 
   private shorten(content: string, audience: "DONOR" | "INTERNAL" | "GENERAL"): string {

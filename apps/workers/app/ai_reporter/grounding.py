@@ -5,7 +5,8 @@ makes that rule checkable: it extracts numeric tokens from a draft and verifies
 each one against the set of numbers present anywhere in the section request
 (findings, updates, activities, evidence text, story/project/period context,
 prior narrative, brief), plus the single derived figure the contract allows —
-a finding's percent of target, at 0–2 decimals.
+a finding's percent of target (of its period, cumulative or life-of-project
+value), at 0–2 decimals.
 
 This is the inverse of the legacy `assert_numeric_exactness` ("every verified
 number must appear in this section"), which is wrong for any section that does
@@ -154,6 +155,17 @@ def allowed_numbers(req: SectionDraftRequest) -> set[str]:
             life_pct = percent_of_target(f.lifeOfProject.value, f.target)
             if life_pct is not None:
                 allowed.update(_rounded_variants(life_pct))
+    # The writer also sees each indicator's recorded cumulative/period values (`indicatorUpdates`): their percent of the
+    # same indicator's target is the same one derived figure the contract allows ("7,000, 87.5% of the 8,000 target").
+    targets = {f.indicatorCode: f.target for f in req.verifiedFindings if f.valueStatus != "NOT_CALCULABLE"}
+    for update in req.indicatorUpdates:
+        target = targets.get(update.indicatorCode)
+        if target is None:
+            continue
+        for raw in (update.cumulativeAchievement, update.periodAchievement):
+            pct = percent_of_target(raw, target)
+            if pct is not None:
+                allowed.update(_rounded_variants(pct))
     return allowed
 
 

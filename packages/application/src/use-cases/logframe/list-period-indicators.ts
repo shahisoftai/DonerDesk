@@ -1,8 +1,9 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, disaggregationMustSum, indicatorParticipantHint } from "@donordesk/domain";
+import { DomainError, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
+import type { IProjectRepository } from "../../ports/projects.js";
 import { toIndicatorUpdateView, type IndicatorUpdateView } from "./indicator-update-view.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import { periodIndicatorScope, inIndicatorScope } from "../../services/period-activities.js";
@@ -28,6 +29,11 @@ export interface PeriodIndicatorRow {
   logframeCode: string | null;
   logframeTitle: string | null;
   update: IndicatorUpdateView | null;
+  /**
+   * False when the indicator's own frequency (quarterly, annual...) says no value is expected in this period and none is
+   * recorded: the grid then shows "not due this period" instead of asking for it. Absent frequency means every period.
+   */
+  dueThisPeriod: boolean;
   /** A non-blocking prompt when linked activities record a different head-count than the indicator reports. */
   participantsHint?: string;
 }
@@ -45,6 +51,8 @@ export class ListPeriodIndicatorsHandler {
     private readonly indicators: IIndicatorRepository,
     private readonly updates: IIndicatorUpdateRepository,
     private readonly activities?: IActivityUpdateRepository,
+    /** Gives the project's start, which a frequency counts from; without it every indicator is due every period. */
+    private readonly projects?: IProjectRepository,
   ) {}
 
   async handle(
@@ -68,6 +76,10 @@ export class ListPeriodIndicatorsHandler {
     const scopeResult = await periodIndicatorScope(this.activities, period, ctx.tenant.tenantId);
     if (!scopeResult.ok) return scopeResult;
     const scope = scopeResult.value;
+
+    const project = this.projects ? await this.projects.findById(period.projectId, ctx.tenant.tenantId) : undefined;
+    if (project && !project.ok) return project;
+    const projectStart = project?.value?.duration.start;
 
     const itemsById = new Map(itemsResult.value.map((item) => [item.id, item]));
     const updatesByIndicator = new Map(updatesResult.value.map((u) => [u.indicatorId, u]));
@@ -112,6 +124,11 @@ export class ListPeriodIndicatorsHandler {
         logframeCode: item?.code ?? null,
         logframeTitle: item?.title ?? null,
         update: update ? toIndicatorUpdateView(update) : null,
+        // A recorded value is always expected; otherwise the indicator's own frequency decides.
+        dueThisPeriod:
+          Boolean(update) ||
+          !projectStart ||
+          isDueInPeriod(ind.frequency, { projectStart, periodEnd: period.duration.end }, { isFinalPeriod: period.reportType === "FINAL" }),
         ...(hint ? { participantsHint: hint.message } : {}),
       };
     });

@@ -1,5 +1,6 @@
 "use server";
 
+import { idempotency, type CreateOptions } from "./_idempotency";
 import {
   CloneTemplateSchema,
   CreateDonorTemplateSchema,
@@ -46,11 +47,11 @@ export async function parseTemplateFileAction(formData: FormData): Promise<Resul
 
 export type CreateTemplateResult = Result<{ id: string; status: string }, AppError>;
 
-export async function createTemplateAction(input: unknown): Promise<CreateTemplateResult> {
+export async function createTemplateAction(input: unknown, options: CreateOptions = {}): Promise<CreateTemplateResult> {
   const context = await requireSession();
   const parsed = CreateDonorTemplateSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
-  const result = await gatewayRequest("/v1/templates", TemplateListItemSchema, context.token, { method: "POST", body: parsed.data });
+  const result = await gatewayRequest("/v1/templates", TemplateListItemSchema, context.token, { method: "POST", body: parsed.data, ...idempotency(options) });
   if (!result.ok) return result;
   return { ok: true, value: { id: result.value.id, status: result.value.status } };
 }

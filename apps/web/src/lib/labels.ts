@@ -1,5 +1,5 @@
-import type { Role } from "@/lib/shared/capabilities";
-export { ROLES } from "@/lib/shared/capabilities";
+import type { Role } from "./shared/capabilities.ts";
+export { ROLES } from "./shared/capabilities.ts";
 export type { Role };
 
 export const ORG_TYPE_LABEL: Record<string, string> = {

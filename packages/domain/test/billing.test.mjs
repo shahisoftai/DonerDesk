@@ -13,6 +13,8 @@ import {
   isPlanCode,
   resolvePlan,
   isPlanForTrial,
+  parseStoredLimitsOverride,
+  resolvePlanLimits,
 } from "../dist/index.js";
 
 test("plan catalog defines the four commercial plans", () => {
@@ -265,4 +267,28 @@ test("usage counter reserve/consume/release math", () => {
 
 test("plan catalog version is stable", () => {
   assert.equal(PLAN_CATALOG_VERSION, 2);
+});
+
+test("stored limit overrides keep the plan's value for keys they lack (D5-5)", () => {
+  const base = resolvePlanLimits("TEAM");
+  // An override written before viewerSeats/aiCreditTopUp/byoLlmEnabled existed.
+  const legacy = JSON.stringify({ maxActiveProjects: 9, maxSeats: 3, maxManagedStorageBytes: "1073741824", monthlyAiDraftCredits: null });
+  const parsed = parseStoredLimitsOverride(legacy, base);
+  assert.equal(parsed.maxActiveProjects, 9);
+  assert.equal(parsed.monthlyAiDraftCredits, null);
+  assert.equal(parsed.viewerSeats, base.viewerSeats);
+  assert.equal(parsed.aiCreditTopUp, base.aiCreditTopUp);
+  assert.equal(parsed.byoLlmEnabled, base.byoLlmEnabled);
+  assert.equal(typeof parsed.maxManagedStorageBytes, "bigint");
+  for (const code of ["STARTER", "TEAM", "GROWTH", "ENTERPRISE"]) {
+    const json = planLimitsToJson(parseStoredLimitsOverride("{}", resolvePlanLimits(code)));
+    for (const key of ["viewerSeats", "aiCreditTopUp", "byoLlmEnabled"]) assert.notEqual(json[key], undefined, `${code}.${key}`);
+  }
+});
+
+test("malformed stored overrides fall back to the plan", () => {
+  const base = resolvePlanLimits("TEAM");
+  assert.equal(parseStoredLimitsOverride(null, base), undefined);
+  assert.equal(parseStoredLimitsOverride("{not json", base), undefined);
+  assert.equal(parseStoredLimitsOverride("[1]", base), undefined);
 });

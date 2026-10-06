@@ -8,6 +8,8 @@ DonorDesk always tries to give you a report. If the AI cannot write a section pr
 |---|---|---|
 | AI writing is switched off for this workspace, so a basic version was used. | AI is disabled. | An Admin can enable **AI enabled** in **Settings → Settings**. |
 | AI writing is not set up for your organisation, so a basic version was used. | No AI provider is configured for your workspace. | Contact support@donordesk.online. |
+| **Written without AI** banner on a section **with a reason** (for example "figures not in your data: 33.3") | The reason is stored with the section when it is written, so you can read it any time. The banner offers the action that fits: **Try again** for a timeout or a service error, **Try again, quote recorded figures only** when the text used a figure that is not in your data, **Open AI settings** when AI is switched off or not set up. | Press the button in the banner. Before a basic version is used, the system already retried once by itself (naming the figure it must not state, or with a shorter brief after a timeout); the banner appears only if that retry failed too. |
+| **Written without AI** banner on a section (no reason shown) | The AI writer timed out, failed, or used a figure that is not in your verified data, so a basic version was used. | Open **Try AI again** and add a short instruction such as "quote only recorded figures; do not calculate totals or percentages", or write the section by hand. A section that fails every month is usually a validation failure on a derived figure. |
 | The AI service took too long for this section… Try again. | The provider timed out. | Regenerate that section. |
 | The AI service returned no text / text we could not use… | Provider returned an empty or unusable answer. | Regenerate the section. |
 | The AI service could not be reached… Try again later. | Provider or network problem. | Wait and retry. |
@@ -15,6 +17,14 @@ DonorDesk always tries to give you a report. If the AI cannot write a section pr
 | The AI text did not pass our fact checks, so a basic version was used. | The draft contained numbers or claims not supported by your data. | Check that indicator values are entered and verified, then regenerate. |
 
 Fallback sections are not billed as AI drafts.
+
+## What the AI did for each section
+
+An administrator can see the last 50 sections the AI worked on under **Settings → AI usage**: written, written after one retry, or a basic version (with the reason), how many tries it took and how long. You never need a server log to find out why a section was written without AI.
+
+## Text with an id or a file name
+
+A report never names an evidence id, a record id or a file name: the system rejects such a draft and asks the writer again. If a section still contains one after that, the basic version is used and the banner says "the text named an internal id or file name".
 
 ## "Generate report" is missing or disabled
 

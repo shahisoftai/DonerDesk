@@ -11,7 +11,7 @@ BEGIN
     'ReportPlan','ReportClaim','ReportGenerationRun','DonorTemplateMapping',
     'ReportRevision','SubmissionSnapshot','ReportingRequirementPack','AwardReportingOverride','ResolvedReportingRequirements',
     'Notification','AuditEvent','LlmRun','LlmFeedback','EvidenceChunk','EvidenceEmbedding',
-    'IdempotencyRecord',
+    'IdempotencyRecord','RequestIdempotency',
     'ReportArtifact','ReportArtifactRow','AgentMemory',
     'BillingSubscription','EntitlementGrant','UsageCounter','TrialIdentity','PurchasedCreditPack','NonprofitVerification',
     'PasswordResetToken','PeriodFinancialSummary'

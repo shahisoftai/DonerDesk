@@ -45,3 +45,18 @@ test("P0-3: genuine numeric performance statements still become verifiable claim
   assert.equal(numeric.materiality, "MATERIAL");
   assert.ok(numeric.numericAtoms.some((a) => a.value === "500"));
 });
+
+test("25.3: an abbreviation's full stop does not split a sentence into two statements (D5-7)", async () => {
+  const texts = async (content) => (await extractor.extract({ content, writerClaims: [] })).value.map((a) => a.text);
+  const award = "The project is funded under USAID Award No. 72062326CA00001 and reached 142 caregivers.";
+  assert.deepEqual(await texts(award), [award], "the award-number sentence stays whole");
+  const cases = [
+    "Counselling reached approx. 140 caregivers in Kisumu county.",
+    "Sites were selected using agreed criteria, e.g. distance to the clinic and population size.",
+    "Attendance rose vs. last month, and Dr. Otieno led the sessions at the district hospital.",
+  ];
+  for (const sentence of cases) assert.deepEqual(await texts(sentence), [sentence], sentence);
+  // Real sentence ends still split, including after the word "no" and after "etc.".
+  assert.equal((await texts("We reached 142 caregivers. There were no. The team continued.")).length, 3);
+  assert.equal((await texts("Nurses, midwives, etc. Counselling reached 142 caregivers.")).length, 2);
+});

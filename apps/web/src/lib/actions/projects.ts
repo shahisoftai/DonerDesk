@@ -7,11 +7,12 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
+import { idempotency, type CreateOptions } from "./_idempotency";
 import { IdResponseSchema, OkResponseSchema } from "./_schemas";
 
 export type CreateProjectResult = Result<{ id: string }, AppError>;
 
-export async function createProjectAction(input: unknown): Promise<CreateProjectResult> {
+export async function createProjectAction(input: unknown, options: CreateOptions = {}): Promise<CreateProjectResult> {
   const context = await requireSession();
   const parsed = CreateProjectSchema.safeParse(input);
   if (!parsed.success) {
@@ -23,6 +24,7 @@ export async function createProjectAction(input: unknown): Promise<CreateProject
   return gatewayRequest("/v1/projects", IdResponseSchema, context.token, {
     method: "POST",
     body: parsed.data,
+    ...idempotency(options),
   });
 }
 

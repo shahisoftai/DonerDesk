@@ -1,9 +1,10 @@
-import { effectiveIndicatorSemantics, type Result, type DomainError, type TenantId } from "@donordesk/domain";
+import { effectiveIndicatorSemantics, signOffRoles, type Result, type DomainError, type TenantId } from "@donordesk/domain";
 import type { IProjectRepository, IProjectReadinessService, ProjectReadiness, ProjectReadinessSnapshot, SetupWarning } from "../ports/projects.js";
 import type { IProjectSetupRepository, IReportingProfileRepository } from "../ports/setup.js";
 import type { IDonorTemplateRepository } from "../ports/templates.js";
 import type { IIndicatorRepository } from "../ports/logframe.js";
 import type { IUserRepository } from "../ports/identity.js";
+import type { IProjectMemberRepository } from "../ports/project-members.js";
 
 /**
  * Derived readiness: NEVER persist readiness booleans. This service computes the
@@ -21,6 +22,8 @@ export class ProjectReadinessService implements IProjectReadinessService {
     private readonly providerResolver: {
       resolve(tenantId: TenantId): Promise<Result<{ provider: string }, DomainError>>;
     },
+    /** Project members count as assigned team (the same reading the closing plan uses). */
+    private readonly members?: IProjectMemberRepository,
   ) {}
 
   async compute(projectId: string, tenantId: TenantId): Promise<Result<ProjectReadiness, DomainError>> {
@@ -175,6 +178,15 @@ export class ProjectReadinessService implements IProjectReadinessService {
     const usersResult = await this.users.listByTenant(tenantId);
     if (!usersResult.ok) return usersResult;
 
+    const memberList = this.members ? await this.members.findByProject(projectId, tenantId) : undefined;
+    if (memberList && !memberList.ok) return memberList;
+    const teamRoles = signOffRoles({
+      projectManagerId: projectResult.value?.projectManagerId,
+      meOfficerId: projectResult.value?.meOfficerId,
+      reportingOfficerId: projectResult.value?.reportingOfficerId,
+      members: memberList ? memberList.value.map((m) => ({ userId: m.userId, role: m.role, status: m.status })) : [],
+    });
+
     return {
       ok: true,
       value: {
@@ -211,11 +223,7 @@ export class ProjectReadinessService implements IProjectReadinessService {
           incomplete: projectIndicators.length - reportable.length,
         },
         team: {
-          assigned: Boolean(
-            projectResult.value?.projectManagerId ||
-              projectResult.value?.meOfficerId ||
-              projectResult.value?.reportingOfficerId,
-          ),
+          assigned: teamRoles.anyoneAssigned,
           memberCount: usersResult.value.length,
         },
         acknowledgedAt: setup?.acknowledgedAt?.toISOString(),

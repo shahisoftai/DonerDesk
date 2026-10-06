@@ -73,6 +73,9 @@ export interface ReportingPeriodProps {
   donorTemplateVersion?: number;
   /** Locked donor template mapping id at period creation. */
   donorTemplateMappingId?: string;
+  /** Set when the period was cancelled: its data stays, but it no longer takes part in the calendar or the closing report. */
+  cancelledAt?: Date;
+  cancelReason?: string;
 }
 
 export class ReportingPeriod extends Entity<string> {
@@ -148,6 +151,10 @@ export class ReportingPeriod extends Entity<string> {
   get donorTemplateVersion(): number | undefined { return this.props.donorTemplateVersion; }
   get donorTemplateMappingId(): string | undefined { return this.props.donorTemplateMappingId; }
 
+  get cancelledAt(): Date | undefined { return this.props.cancelledAt ? new Date(this.props.cancelledAt.getTime()) : undefined; }
+  get cancelReason(): string | undefined { return this.props.cancelReason; }
+  get isCancelled(): boolean { return this.props.cancelledAt !== undefined; }
+
   daysUntilDeadline(): number {
     const ms = this.props.deadline.getTime() - Date.now();
     return Math.round(ms / (1000 * 60 * 60 * 24));
@@ -203,6 +210,27 @@ export class ReportingPeriod extends Entity<string> {
   /** Replaces what an activity/situation/custom report covers. Validated by the caller (`ReportScopeResolver`). */
   setScope(scope: ReportScope): void {
     this.props.scopeJson = JSON.stringify(scope);
+    this.touch();
+  }
+
+  /** Takes the period out of the calendar without deleting anything. Whether it may be cancelled is `checkCancelPeriod`'s call. */
+  cancel(reason: string | undefined, at: Date): void {
+    this.props.cancelledAt = at;
+    const text = reason?.trim();
+    if (text) this.props.cancelReason = text.slice(0, 500);
+    else delete this.props.cancelReason;
+    this.touch();
+  }
+
+  restore(): void {
+    delete this.props.cancelledAt;
+    delete this.props.cancelReason;
+    this.touch();
+  }
+
+  /** The period becomes the project's final report. Whether it may is `checkConvertToFinal`'s call. */
+  convertToFinal(): void {
+    this.props.reportType = "FINAL";
     this.touch();
   }
 

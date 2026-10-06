@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { DetectMissingEvidenceHandler } from "../dist/index.js";
+import { DetectMissingEvidenceHandler, ChecklistReconciler, ListChecklistHandler } from "../dist/index.js";
 import { ChecklistItem, Indicator, ReportingPeriod, TenantId } from "@donordesk/domain";
 
 const ctx = { tenant: { tenantId: TenantId.create("tenant-a"), userId: "u1", role: "ADMIN" }, requestId: "r" };
@@ -13,6 +13,7 @@ function item(type, title, over = {}) {
 function build({ existing = [], activities = [], updates = [], indicators = [], evidenceTotal = 59, finance }) {
   const created = [];
   const updated = [];
+  const audits = [];
   const h = new DetectMissingEvidenceHandler(
     { generate: () => `new-${created.length + 1}` },
     { findByReportingPeriod: async () => ({ ok: true, value: existing }), create: async (i) => (created.push(i), { ok: true, value: i }), update: async (i) => (updated.push(i), { ok: true, value: i }) },
@@ -24,12 +25,12 @@ function build({ existing = [], activities = [], updates = [], indicators = [], 
     { findByReportDraft: async () => ({ ok: true, value: [] }) },
     { findByReportingPeriod: async () => ({ ok: true, value: activities }), findByProject: async () => ({ ok: true, value: activities }) },
     { search: async () => ({ ok: true, value: { total: evidenceTotal } }) },
-    { record: async () => undefined },
+    { record: async (e) => { audits.push(e); } },
     { computeFindings: async () => ({ ok: true, value: [] }) },
     finance,
     { findByProject: async () => ({ ok: true, value: indicators }) },
   );
-  return { h, created, updated };
+  return { h, created, updated, audits };
 }
 
 const activity = (id, status = "ACCEPTED") => ({ id, status, activityTitle: id, attachedEvidenceIds: ["e"], indicatorId: undefined });
@@ -107,4 +108,50 @@ test("a concern the data already satisfies is not raised, so scans do not churn 
   assert.equal(created.some((i) => i.type === "MISSING_DISAGGREGATION"), false);
   // attestations are still raised once
   assert.equal(created.some((i) => i.type === "SENSITIVE_DATA_WARNING"), true);
+});
+
+test("RECONCILE closes what the data satisfies, raises nothing, and audits each closing (25.3)", async () => {
+  const existing = [item("LATE_ACTIVITY_UPDATE", "No activity updates submitted for this period"), item("SENSITIVE_DATA_WARNING", "Sensitive data handling confirmed")];
+  const { h, created, audits } = build({ existing, activities: [activity("a1")], indicators: [indicator("i1", { disaggregationRequired: true })], updates: [value("i1", false)] });
+  const r = await h.handle(ctx, "p1", { mode: "RECONCILE" });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.value, { created: 0, closed: 1 });
+  assert.equal(created.length, 0, "reading never creates work");
+  assert.deepEqual(existing.map((i) => i.status), ["RESOLVED", "OPEN"]);
+  const closing = audits.filter((a) => a.eventType === "checklist.closed_by_data");
+  assert.equal(closing.length, 1);
+  assert.equal(closing[0].entityId, existing[0].id);
+  assert.equal(audits.some((a) => a.eventType === "compliance.checklist.detected"), false, "a reconcile is not a scan");
+});
+
+test("a SCAN reports what it closed too", async () => {
+  const existing = [item("LATE_ACTIVITY_UPDATE", "No activity updates submitted for this period")];
+  const { h } = build({ existing, activities: [activity("a1")] });
+  const r = await h.handle(ctx, "p1");
+  assert.equal(r.value.closed, 1);
+});
+
+test("listing the checklist closes the satisfied items first, so no manual scan is needed", async () => {
+  const existing = [item("LATE_ACTIVITY_UPDATE", "No activity updates submitted for this period")];
+  const { h } = build({ existing, activities: [activity("a1")] });
+  const reconciler = new ChecklistReconciler(h);
+  const list = new ListChecklistHandler({ findByReportingPeriod: async () => ({ ok: true, value: existing }) }, reconciler);
+  const r = await list.handle(ctx, "p1");
+  assert.equal(r.value[0].status, "RESOLVED");
+});
+
+test("the reconciler throttles per period, separates periods, and never fails a read", async () => {
+  let calls = 0;
+  let clock = 1000;
+  const pass = { handle: async () => { calls += 1; if (calls === 3) throw new Error("db down"); return { ok: true, value: { created: 0, closed: 0 } }; } };
+  const reconciler = new ChecklistReconciler(pass, 3000, () => clock);
+  await reconciler.reconcile(ctx, "p1");
+  await reconciler.reconcile(ctx, "p1");
+  assert.equal(calls, 1, "a second read inside the window does no work");
+  await reconciler.reconcile(ctx, "p2");
+  assert.equal(calls, 2, "another period is separate");
+  clock += 3001;
+  await reconciler.reconcile(ctx, "p1");
+  assert.equal(calls, 3);
+  await assert.doesNotReject(() => reconciler.reconcile({ ...ctx, tenant: { ...ctx.tenant, tenantId: TenantId.create("tenant-b") } }, "p1"));
 });

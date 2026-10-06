@@ -6,12 +6,13 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
+import { idempotency, type CreateOptions } from "./_idempotency";
 import { IdResponseSchema, OkResponseSchema } from "./_schemas";
 import { ImportLogframeResponseSchema, type ImportLogframeResponse } from "@/lib/server/schemas";
 
 export type CreateLogframeItemResult = Result<{ id: string }, AppError>;
 
-export async function createLogframeItemAction(input: unknown): Promise<CreateLogframeItemResult> {
+export async function createLogframeItemAction(input: unknown, options: CreateOptions = {}): Promise<CreateLogframeItemResult> {
   const context = await requireSession();
   const parsed = CreateLogframeItemSchema.safeParse(input);
   if (!parsed.success) {
@@ -23,6 +24,7 @@ export async function createLogframeItemAction(input: unknown): Promise<CreateLo
   return gatewayRequest("/v1/logframe-items", IdResponseSchema, context.token, {
     method: "POST",
     body: parsed.data,
+    ...idempotency(options),
   });
 }
 

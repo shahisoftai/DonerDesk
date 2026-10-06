@@ -42,12 +42,30 @@ const DATE_RE = /\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|jun(e)?|jul(y)?
 const ENTITY_RE = /\b(UN|USAID|BHA|EU|ECHO|Gavi|GFATM|ministry|government|organization|partner|committee)\b/i;
 const TARGET_PERFORMANCE_RE = /\b(against the target|target progress|target was|achieved .{0,20} target|on track to (meet|reach) the target)\b/i;
 
+/**
+ * A full stop after one of these does not end the sentence: "approx. 40", "e.g. Nairobi", "vs. last year", "Dr. Otieno".
+ * "etc." is left out on purpose: it usually does close a sentence.
+ */
+const ABBREVIATION_BEFORE_STOP_RE = /(?:\b(?:approx|vs|dr|mr|mrs|ms|prof|st|cf|fig|inc|ltd|co|sec|art|vol|ref|est|ca|incl|dept|govt)|\b[ei]\.g|\bi\.e)\.$/i;
+/** "No." / "Nos." is "number" only when a figure or id follows ("Award No. 72062326CA00001"); "There were no." ends. */
+const NUMBER_ABBREVIATION_RE = /\bnos?\.$/i;
+const STARTS_WITH_FIGURE_RE = /^\s*[#\d]/;
+
+/** True when the stop at `stopEnd` (index just after the full stop) belongs to an abbreviation, not the end of a sentence. */
+function isAbbreviationStop(text: string, stopEnd: number): boolean {
+  const before = text.slice(Math.max(0, stopEnd - 12), stopEnd);
+  if (ABBREVIATION_BEFORE_STOP_RE.test(before)) return true;
+  return NUMBER_ABBREVIATION_RE.test(before) && STARTS_WITH_FIGURE_RE.test(text.slice(stopEnd, stopEnd + 4));
+}
+
 function splitSentences(text: string): Sentence[] {
   const result: Sentence[] = [];
   const re = /[.!?]+(\s+|$)/g;
   let cursor = 0;
   let match: RegExpExecArray | null;
   while ((match = re.exec(text)) !== null) {
+    const stop = text.slice(match.index, match.index + match[0].length).trimEnd();
+    if (stop === "." && isAbbreviationStop(text, match.index + 1)) continue;
     const rawStart = cursor;
     const rawEnd = match.index + match[0].length;
     const raw = text.slice(rawStart, rawEnd);

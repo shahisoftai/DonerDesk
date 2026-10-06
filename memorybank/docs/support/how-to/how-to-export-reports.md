@@ -14,9 +14,13 @@ Exports produce the files you send to the donor. They come from the approved rep
 | Report | Word (DOCX) and PDF | Follows the donor template's structure and formatting. Includes charts, tables and figures. |
 | Indicator table | Excel | All indicators with values for the period. For **final, annual and semi-annual** reports it also shows **This period**, **Life of project to date** and **% of target**, so the file matches the report's own table. A value that was never recorded is left empty, not shown as 0. |
 | Evidence checklist | Excel/document | Every checklist item and its status. |
-| Evidence pack | ZIP | Report, indicator table, checklist and selected evidence files in a numbered folder structure. For final, annual and semi-annual reports it offers **all of the project's evidence**; for others, the files of the period and its activities. Sensitive files are left out unless you include them. |
+| Evidence pack | ZIP | Report, indicator table, checklist and selected evidence files in a numbered folder structure. For final, annual and semi-annual reports it offers **all of the project's evidence**; for others, the files of the period and its activities. The ticks in the wizard start with the files the report cites, so tick the others you want in the ZIP. Sensitive files are left out unless you include them. |
 
 If the donor supplied a Word template, the report can be rendered into it (donor-native rendering); otherwise a standard DonorDesk layout is used.
+
+## Which copy do you get?
+
+Once the report is **Approved** with no open issues, the first step of the wizard asks **Copy**: **Final copy for the donor** (the default; it seals this version and carries no internal-review mark) or **Internal copy** (watermarked, never for the donor). A report with open issues can only be downloaded as the watermarked internal copy. If sealing fails, the wizard shows the reason; fix it or choose the internal copy.
 
 ## Two kinds of export
 
@@ -39,6 +43,14 @@ If the donor supplied a Word template, the report can be rendered into it (donor
 4. Choose the export type and confirm. A notification tells you when it is ready (**Export**).
 
 Statements you **left out** are omitted from the files.
+
+## What the file name tells you
+
+A Word or PDF file ends in **-final** when it is the sealed donor copy and **-internal** when it carries the internal-review watermark (for example `…-v3-internal.docx`). An approved report exported for review is never called a draft.
+
+## If the donor copy cannot be sealed
+
+The message lists the reasons in words, for example "The donor copy cannot be sealed yet: 2 statements still need a decision." Requirements the donor sets are worked out automatically when you seal, so you no longer need to do that first. Fix the listed items, then try again.
 
 ## Download and history
 
