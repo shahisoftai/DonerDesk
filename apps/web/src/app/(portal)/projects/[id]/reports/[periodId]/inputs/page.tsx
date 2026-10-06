@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ActivitiesResponseSchema, ExportPreflightSchema, ProjectDetailSchema, ReportDraftResponseSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
+import { ActivitiesResponseSchema, TemplatesResponseSchema, ExportPreflightSchema, ProjectDetailSchema, ReportDraftResponseSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
 import { PeriodFinanceResponseSchema, StoryContextResponseSchema } from "@/lib/actions/_schemas";
 import { loadPeriodIndicatorsAction } from "@/lib/actions/indicators";
 import { InlineError } from "@/components/feedback/PageState";
@@ -10,6 +10,7 @@ import { IndicatorEntryGrid } from "@/features/reporting/presentation/IndicatorE
 import { StoryInputs } from "@/features/report-editor/presentation/inputs/StoryInputs";
 import { ImportInputs } from "@/features/report-editor/presentation/inputs/ImportInputs";
 import { ScopeInputs } from "@/features/report-editor/presentation/inputs/ScopeInputs";
+import { PeriodTemplateCard } from "@/features/reporting/presentation/PeriodTemplateCard";
 import { FinanceInputs } from "@/features/report-editor/presentation/inputs/FinanceInputs";
 import { countStoryAnswers } from "@/features/reporting/application/reporting-steps";
 import { formatDate } from "@/lib/shared/dates";
@@ -35,13 +36,15 @@ export default async function ReportInputsPage({
   const { tab: tabParam } = await searchParams;
   const ctx = await requireSession();
 
-  const [indicatorsResult, storyResult, preflightResult, projectResult, periodsResult, financeResult] = await Promise.all([
+  const [indicatorsResult, storyResult, preflightResult, projectResult, periodsResult, financeResult, templatesResult, templateDraftResult] = await Promise.all([
     loadPeriodIndicatorsAction(periodId),
     gatewayRequest(`/v1/reporting-periods/${periodId}/story`, StoryContextResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${periodId}/export-preflight`, ExportPreflightSchema, ctx.token),
     gatewayRequest(`/v1/projects/${projectId}`, ProjectDetailSchema, ctx.token),
     gatewayRequest(`/v1/projects/${projectId}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${periodId}/finance`, PeriodFinanceResponseSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${projectId}/templates`, TemplatesResponseSchema, ctx.token),
+    gatewayRequest(`/v1/reporting-periods/${periodId}/draft`, ReportDraftResponseSchema, ctx.token),
   ]);
   if (!indicatorsResult.ok && indicatorsResult.error.kind === "not_found") notFound();
 
@@ -94,6 +97,17 @@ export default async function ReportInputsPage({
           Back to the report
         </Link>
       </header>
+
+      {period && templatesResult.ok && (
+        <PeriodTemplateCard
+          periodId={periodId}
+          projectId={projectId}
+          currentTemplateId={period.donorTemplateId ?? null}
+          templates={templatesResult.value.items.map((t) => ({ id: t.id, name: t.templateName, reportType: t.reportType, approved: t.status === "REVIEWED" }))}
+          canEdit={ctx.capabilities.has("reporting.edit")}
+          lockedReason={["APPROVED", "EXPORTED", "SUBMITTED"].includes(templateDraftResult.ok ? templateDraftResult.value.draft?.status ?? "" : "") ? "This report is approved, so its template cannot change. Reopen it first." : undefined}
+        />
+      )}
 
       <nav aria-label="Report inputs" className="flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-white/10">
         {tabs.map((t) => (

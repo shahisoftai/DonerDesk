@@ -14,6 +14,8 @@ export const INDICATOR_MOV_HEADERS: ReadonlyArray<string> = ["meansofverificatio
 export const INDICATOR_DATA_SOURCE_HEADERS: ReadonlyArray<string> = ["datasource", "source", "sourcedata"];
 export const INDICATOR_FREQUENCY_HEADERS: ReadonlyArray<string> = ["frequency", "reportingfrequency"];
 export const INDICATOR_DISAGG_HEADERS: ReadonlyArray<string> = ["disaggregationrequired", "disaggregated"];
+/** Which logframe item the indicator measures, when that is not simply the indicator's own code. */
+export const INDICATOR_LOGFRAME_CODE_HEADERS: ReadonlyArray<string> = ["logframecode", "outputcode", "logframeitemcode", "measures"];
 
 export const INDICATOR_SHEET_HEADERS: ReadonlyArray<string> = [
   ...INDICATOR_CODE_HEADERS,
@@ -26,4 +28,5 @@ export const INDICATOR_SHEET_HEADERS: ReadonlyArray<string> = [
   ...INDICATOR_DATA_SOURCE_HEADERS,
   ...INDICATOR_FREQUENCY_HEADERS,
   ...INDICATOR_DISAGG_HEADERS,
+  ...INDICATOR_LOGFRAME_CODE_HEADERS,
 ];

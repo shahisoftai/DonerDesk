@@ -2,6 +2,7 @@ import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import {
   TemplatesResponseSchema,
+  DefaultTemplatesResponseSchema,
   ProjectDetailSchema,
   ReportingPeriodsResponseSchema,
   ReportingProfileResponseSchema,
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 export default async function NewReportingPeriodPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const ctx = await requireSession();
-  const [templatesResult, setupResult, projectResult, periodsResult, profileResult, activitiesResult, optionsResult] = await Promise.all([
+  const [templatesResult, setupResult, projectResult, periodsResult, profileResult, activitiesResult, optionsResult, defaultsResult] = await Promise.all([
     gatewayRequest(`/v1/projects/${resolvedParams.id}/templates`, TemplatesResponseSchema, ctx.token),
     loadProjectSetupAction(resolvedParams.id),
     gatewayRequest(`/v1/projects/${resolvedParams.id}`, ProjectDetailSchema, ctx.token),
@@ -26,6 +27,7 @@ export default async function NewReportingPeriodPage({ params }: { params: Promi
     gatewayRequest(`/v1/projects/${resolvedParams.id}/reporting-profile`, ReportingProfileResponseSchema, ctx.token),
     gatewayRequest(`/v1/projects/${resolvedParams.id}/activities`, ActivitiesResponseSchema, ctx.token),
     gatewayRequest(`/v1/projects/${resolvedParams.id}/period-options`, PeriodOptionsResponseSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}/default-templates`, DefaultTemplatesResponseSchema, ctx.token),
   ]);
 
   const readiness: ProjectReadiness | null = setupResult.ok ? setupResult.value.setup.readiness : null;
@@ -44,6 +46,7 @@ export default async function NewReportingPeriodPage({ params }: { params: Promi
                 deadlineOffsetDays: t.requirements.submission.deadlineOffsetDays,
                 deadlineRule: t.requirements.submission.deadlineRule,
               })) : []}
+        defaultTemplateIds={defaultsResult.ok ? Object.fromEntries(Object.entries(defaultsResult.value.types).flatMap(([type, d]) => (d.templateId ? [[type, d.templateId]] : []))) : {}}
         readiness={readiness}
         periodOptions={optionsResult.ok ? optionsResult.value.types : undefined}
         activities={activitiesResult.ok ? activitiesResult.value.items.map((a) => ({ id: a.id, title: a.activityTitle, date: a.activityDate, location: a.location })) : []}

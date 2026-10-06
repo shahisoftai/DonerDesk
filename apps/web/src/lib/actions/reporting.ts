@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, SavePeriodFinanceSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, UpdateSectionSchema, CreateReportSectionSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, SavePeriodFinanceSchema, ChangePeriodTemplateSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -131,6 +131,18 @@ export async function updateReportingPeriodScopeAction(periodId: string, scope: 
   }
   const result = await gatewayRequest(`/v1/reporting-periods/${periodId}/scope`, ScopeUpdateResponseSchema, context.token, { method: "PUT", body: parsed.data });
   return result.ok ? { ok: true, value: { changed: result.value.changed, staleSections: result.value.staleSections } } : result;
+}
+
+export type ChangeTemplateResult = Result<{ changed: boolean; regenerateNeeded: boolean }, AppError>;
+
+/** Re-points a period at another approved template, or at the built-in structure (null). The server re-validates it. */
+export async function changePeriodTemplateAction(periodId: string, donorTemplateId: string | null): Promise<ChangeTemplateResult> {
+  const context = await requireSession();
+  const parsed = ChangePeriodTemplateSchema.safeParse({ donorTemplateId });
+  if (!parsed.success) {
+    return { ok: false, error: { kind: "validation", message: "Please choose a template.", fields: flattenZodFields(parsed.error) } };
+  }
+  return gatewayRequest(`/v1/reporting-periods/${periodId}/template`, z.object({ changed: z.boolean(), regenerateNeeded: z.boolean() }), context.token, { method: "PUT", body: parsed.data });
 }
 
 export type PeriodFinanceResult = Result<PeriodFinanceShape, AppError>;

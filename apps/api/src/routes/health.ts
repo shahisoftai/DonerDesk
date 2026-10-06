@@ -7,6 +7,7 @@ import { metrics } from "../observability.js";
 // it here too — otherwise /ready will fail and the deploy will be blocked.
 const REQUIRED_PRISMA_FIELDS = [
   { model: "Organization", field: "storageProvider" },
+  { model: "Indicator", field: "archivedAt" },
   { model: "ReportingPeriod", field: "donorTemplateId" },
   { model: "ReportingPeriod", field: "storyContextJson" },
   { model: "ReportingPeriod", field: "scopeJson" },

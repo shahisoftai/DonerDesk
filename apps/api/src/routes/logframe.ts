@@ -6,6 +6,8 @@ import {
   ImportIndicatorsTextSchema,
   CreateIndicatorSchema,
   UpdateIndicatorSemanticsSchema,
+  UpdateIndicatorSchema,
+  MoveIndicatorSchema,
   ConfirmIndicatorSemanticsSchema,
   VerifyPeriodIndicatorUpdatesSchema,
   CreateIndicatorUpdateSchema,
@@ -88,6 +90,40 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const body = UpdateIndicatorSemanticsSchema.parse({ ...(req.body as object), indicatorId: id });
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.updateIndicatorSemantics.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.patch("/v1/indicators/:id", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = UpdateIndicatorSchema.parse({ ...(req.body as object), indicatorId: id });
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.updateIndicator.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/indicators/:id/move", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = MoveIndicatorSchema.parse({ ...(req.body as object), indicatorId: id });
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.moveIndicator.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/indicators/:id/archive", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.archiveIndicator.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/indicators/:id/restore", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.restoreIndicator.handle(ctx, id);
     if (!r.ok) throw r.error;
     return r.value;
   });

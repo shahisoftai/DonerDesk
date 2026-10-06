@@ -57,9 +57,10 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
     await this.prisma.reportingPeriod.update({
       where: { id: p.id },
       data: {
-        donorTemplateId: p.donorTemplateId,
-        donorTemplateVersion: p.donorTemplateVersion,
-        donorTemplateMappingId: p.donorTemplateMappingId,
+        // null (not undefined) so that changing to "no template" really clears the stored values
+        donorTemplateId: p.donorTemplateId ?? null,
+        donorTemplateVersion: p.donorTemplateVersion ?? null,
+        donorTemplateMappingId: p.donorTemplateMappingId ?? null,
         status: p.status.toString(),
         readinessScore: p.readinessScore,
         responsibleOfficerId: p.responsibleOfficerId,

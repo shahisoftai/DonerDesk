@@ -17,6 +17,7 @@ import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IReportingProfileRepository } from "../../ports/setup.js";
 import type { IFinanceInputs } from "../../services/finance-inputs.js";
+import type { IDefaultTemplateResolver } from "../../ports/default-template-resolver.js";
 import type { CreateReportingPeriodHandler } from "./create-reporting-period.js";
 
 const FINISHED_DRAFT = new Set(["APPROVED", "EXPORTED", "SUBMITTED"]);
@@ -35,6 +36,8 @@ export class PlanClosingReportHandler {
     private readonly templates: IDonorTemplateRepository,
     /** Absent when the deployment has no finance support. */
     private readonly finance?: IFinanceInputs,
+    /** The same resolver period creation uses, so the step names the template the period will really get. */
+    private readonly defaultTemplates?: IDefaultTemplateResolver,
   ) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<ClosingPlan, DomainError>> {
@@ -79,7 +82,15 @@ export class PlanClosingReportHandler {
     const profile = await this.profiles.findByProject(projectId, tenantId);
     if (!profile.ok) return profile;
     let templateState: ClosingFacts["templateState"] = "NONE";
-    if (profile.value?.defaultTemplateId) {
+    let templateName: string | undefined;
+    if (this.defaultTemplates) {
+      const resolved = await this.defaultTemplates.resolve(tenantId, projectId, "FINAL");
+      if (!resolved.ok) return resolved;
+      if (resolved.value.templateId) {
+        templateState = resolved.value.status === "REVIEWED" ? "REVIEWED" : "NOT_REVIEWED";
+        templateName = resolved.value.templateName;
+      }
+    } else if (profile.value?.defaultTemplateId) {
       const template = await this.templates.findById(profile.value.defaultTemplateId, tenantId);
       if (!template.ok) return template;
       if (template.value) templateState = template.value.status === "REVIEWED" ? "REVIEWED" : "NOT_REVIEWED";
@@ -113,6 +124,7 @@ export class PlanClosingReportHandler {
         financeMode,
         ...(finalFinance ? { finalFinance } : {}),
         templateState,
+        ...(templateName ? { templateName } : {}),
         projectManagerAssigned: Boolean(project.value.projectManagerId),
         meOfficerAssigned: Boolean(project.value.meOfficerId),
       }),

@@ -1,7 +1,8 @@
 "use server";
 
-import { CreateIndicatorSchema, CreateIndicatorUpdateSchema, BulkUpsertIndicatorUpdatesSchema, ParseIndicatorSheetSchema, ImportIndicatorsTextSchema, IndicatorUpdateReviewReasonSchema } from "@donordesk/contracts";
+import { UpdateIndicatorSchema, MoveIndicatorSchema, CreateIndicatorSchema, CreateIndicatorUpdateSchema, BulkUpsertIndicatorUpdatesSchema, ParseIndicatorSheetSchema, ImportIndicatorsTextSchema, IndicatorUpdateReviewReasonSchema } from "@donordesk/contracts";
 import type { UpsertIndicatorUpdateInput } from "@donordesk/contracts";
+import { z } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -196,4 +197,42 @@ export async function verifyAllIndicatorUpdatesAction(reportingPeriodId: string,
     method: "POST",
     body: updateIds ? { updateIds } : {},
   });
+}
+
+const IndicatorMovedResponseSchema = z.object({ id: z.string(), moved: z.boolean() });
+const IndicatorRemovedResponseSchema = z.object({ outcome: z.enum(["ARCHIVED", "DELETED"]) });
+
+function validationFailure(error: import("zod").ZodError): { ok: false; error: AppError } {
+  return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(error) } };
+}
+
+/** Edits an indicator's own fields; only the fields sent change. */
+export async function updateIndicatorAction(input: unknown): Promise<Result<{ id: string }, AppError>> {
+  const context = await requireSession();
+  const parsed = UpdateIndicatorSchema.safeParse(input);
+  if (!parsed.success) return validationFailure(parsed.error);
+  const { indicatorId, ...body } = parsed.data;
+  return gatewayRequest(`/v1/indicators/${encodeURIComponent(indicatorId)}`, IdResponseSchema, context.token, { method: "PATCH", body });
+}
+
+/** Moves an indicator under another logframe item of the same project. */
+export async function moveIndicatorAction(input: unknown): Promise<Result<{ id: string; moved: boolean }, AppError>> {
+  const context = await requireSession();
+  const parsed = MoveIndicatorSchema.safeParse(input);
+  if (!parsed.success) return validationFailure(parsed.error);
+  return gatewayRequest(`/v1/indicators/${encodeURIComponent(parsed.data.indicatorId)}/move`, IndicatorMovedResponseSchema, context.token, {
+    method: "POST",
+    body: { logframeItemId: parsed.data.logframeItemId },
+  });
+}
+
+/** Deletes an indicator nothing was recorded for, otherwise archives it (its values are kept). */
+export async function archiveIndicatorAction(indicatorId: string): Promise<Result<{ outcome: "ARCHIVED" | "DELETED" }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/indicators/${encodeURIComponent(indicatorId)}/archive`, IndicatorRemovedResponseSchema, context.token, { method: "POST", body: {} });
+}
+
+export async function restoreIndicatorAction(indicatorId: string): Promise<Result<{ id: string }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/indicators/${encodeURIComponent(indicatorId)}/restore`, IdResponseSchema, context.token, { method: "POST", body: {} });
 }

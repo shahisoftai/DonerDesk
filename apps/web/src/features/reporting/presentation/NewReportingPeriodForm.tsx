@@ -56,6 +56,7 @@ export function NewReportingPeriodForm({
   projectBounds = null,
   existingPeriodEnds = [],
   profileDeadlineOffsetDays,
+  defaultTemplateIds = {},
 }: {
   projectId: string;
   templates: Array<{ id: string; templateName: string; reportType?: string; status?: string; deadlineOffsetDays?: number; deadlineRule?: string }>;
@@ -72,11 +73,13 @@ export function NewReportingPeriodForm({
   existingPeriodEnds?: string[];
   /** Fallback deadline offset (days after the period ends) from the project's reporting profile, used when the chosen template states none. */
   profileDeadlineOffsetDays?: number;
+  /** The template each report type starts from (decided by the server's one resolver), preselected so the choice is visible. */
+  defaultTemplateIds?: Record<string, string>;
 }) {
   const router = useRouter();
   const actionState = useActionState();
   const [reportType, setReportType] = useState("MONTHLY");
-  const [donorTemplateId, setDonorTemplateId] = useState("");
+  const [donorTemplateId, setDonorTemplateId] = useState(defaultTemplateIds["MONTHLY"] ?? "");
   const [scope, setScope] = useState<ReportScope>({});
   const patchScope = (patch: Partial<ReportScope>) => setScope((s) => ({ ...s, ...patch }));
   const [startDate, setStartDate] = useState("");
@@ -184,6 +187,8 @@ export function NewReportingPeriodForm({
         projectId,
         reportType,
         donorTemplateId: donorTemplateId || undefined,
+        // an explicit "no template" must not be replaced by a default on the server
+        useBuiltInStructure: donorTemplateId ? undefined : true,
         scope: reportType === "ACTIVITY" || reportType === "SITUATION" || reportType === "CUSTOM" ? cleanScope(scope) : undefined,
         startDate: new Date(startDate).toISOString(),
         endDate: new Date(endDate).toISOString(),
@@ -204,7 +209,7 @@ export function NewReportingPeriodForm({
       <FormSummary errors={fields} count={errorCount} />
 
       <Field label="Report type" htmlFor="reportType" error={fields.reportType?.[0]}>
-        <Select id="reportType" value={reportType} onChange={(e) => { setReportType(e.target.value); setScope({}); setLocalErrors({}); setDonorTemplateId(""); setDatesAuto(true); }}>
+        <Select id="reportType" value={reportType} onChange={(e) => { setReportType(e.target.value); setScope({}); setLocalErrors({}); setDonorTemplateId(defaultTemplateIds[e.target.value] ?? ""); setDatesAuto(true); }}>
           {REPORT_TYPE_OPTIONS.map((t) => (
             <option key={t} value={t}>{REPORT_TYPE_LABEL[t] ?? t.replace(/_/g, " ")}{periodOptions?.find((o) => o.type === t)?.available === false ? " (not available)" : ""}</option>
           ))}
@@ -226,9 +231,9 @@ export function NewReportingPeriodForm({
         hint={usableTemplates.length === 0 ? `No ${reportType === "ACTIVITY" || reportType === "SITUATION" ? reportType.toLowerCase() + " " : ""}templates. That is fine: a ready-made ${reportType.replace(/_/g, "-").toLowerCase()} report structure is used.` : "Optional. Without a template the report uses a ready-made structure for this report type."}
       >
         <Select id="donorTemplateId" value={donorTemplateId} onChange={(e) => setDonorTemplateId(e.target.value)}>
-          <option value="">No template</option>
+          <option value="">Built-in structure (no template)</option>
           {usableTemplates.map((t) => (
-            <option key={t.id} value={t.id}>{t.templateName}{t.status && t.status !== "REVIEWED" ? " (not approved yet)" : ""}</option>
+            <option key={t.id} value={t.id}>{t.templateName}{t.status && t.status !== "REVIEWED" ? " (not approved yet)" : ""}{t.id === defaultTemplateIds[reportType] ? " · default for this type" : ""}</option>
           ))}
         </Select>
       </Field>

@@ -48,32 +48,38 @@ export function DisaggregationEditor({
       {entries.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">No breakdown yet. Add a dimension below.</p>}
       {entries.map((entry, index) => (
         <div key={index} className="flex flex-wrap items-center gap-2">
+          <div className="w-36">
           <Select
             value={entry.dimension}
             disabled={disabled}
             onChange={(event) => set(index, { dimension: event.target.value as DisaggregationEntryInput["dimension"] })}
-            className="min-h-[34px] w-36 px-2 py-1 text-xs"
+            className="min-h-[34px] px-2 py-1 text-xs"
             aria-label="Dimension"
           >
             {DIMENSIONS.map((d) => <option key={d} value={d}>{DISAGGREGATION_DIMENSION_LABEL[d] ?? d}</option>)}
           </Select>
+          </div>
+          <div className="w-40">
           <Input
             value={entry.category}
             disabled={disabled}
             onChange={(event) => set(index, { category: event.target.value })}
             placeholder="Category"
-            className="min-h-[34px] w-40 px-2 py-1 text-xs"
+            className="min-h-[34px] px-2 py-1 text-xs"
             aria-label="Category"
           />
+          </div>
+          <div className="w-28">
           <Input
             value={entry.value}
             disabled={disabled}
             inputMode="decimal"
             onChange={(event) => set(index, { value: event.target.value })}
             placeholder="Value"
-            className="min-h-[34px] w-28 px-2 py-1 text-xs"
+            className="min-h-[34px] px-2 py-1 text-xs"
             aria-label={`Value for ${entry.category || "category"}`}
           />
+          </div>
           {!disabled && (
             <Button type="button" variant="ghost" size="sm" onClick={() => onChange(entries.filter((_, i) => i !== index))} aria-label={`Remove ${entry.category || "row"}`}>
               Remove

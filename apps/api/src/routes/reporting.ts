@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, ChangePeriodTemplateSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -51,6 +51,15 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const body = UpdateReportingPeriodScopeSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.updateReportingPeriodScope.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/reporting-periods/:id/template", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = ChangePeriodTemplateSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.changePeriodTemplate.handle(ctx, { reportingPeriodId: id, donorTemplateId: body.donorTemplateId });
     if (!r.ok) throw r.error;
     return r.value;
   });
@@ -331,6 +340,14 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const projectId = (req.params as { projectId: string }).projectId;
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.startClosingReport.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/default-templates", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getDefaultTemplates.handle(ctx, projectId);
     if (!r.ok) throw r.error;
     return r.value;
   });

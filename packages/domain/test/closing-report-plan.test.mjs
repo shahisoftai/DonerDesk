@@ -80,3 +80,12 @@ test("cumulative field rule", () => {
   assert.deepEqual(missingCumulativeFields({ baseline: "0", target: "10", hasVerifiedCumulative: true }), []);
   assert.deepEqual(missingCumulativeFields({ baseline: "", target: undefined, hasVerifiedCumulative: false }), ["baseline", "project target", "verified cumulative value"]);
 });
+
+test("the template step names the template that will structure the closing report", () => {
+  const named = step(planClosingReport({ ...ready, templateState: "REVIEWED", templateName: "GWHF Final Project Report" }), "template");
+  assert.equal(named.status, "DONE");
+  assert.match(named.detail, /GWHF Final Project Report/);
+  const none = step(planClosingReport({ ...ready, templateState: "NONE" }), "template");
+  assert.match(none.detail, /built-in/);
+  assert.equal(step(planClosingReport({ ...ready, templateState: "REVIEWED" }), "template").detail, "The donor template is approved.");
+});

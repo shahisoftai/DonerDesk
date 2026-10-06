@@ -21,6 +21,8 @@ export interface IndicatorProps {
   disaggregationRequired: boolean;
   /** Serialized IndicatorSemantics; absent for legacy rows (conservative defaults apply). */
   semanticsJson?: string;
+  /** Set when the indicator is retired but its recorded values must stay (reports that used it keep their history). */
+  archivedAt?: Date;
 }
 
 export class Indicator extends Entity<string> {
@@ -93,6 +95,8 @@ export class Indicator extends Entity<string> {
   get responsibleUserId(): string | undefined { return this.props.responsibleUserId; }
   get disaggregationRequired(): boolean { return this.props.disaggregationRequired; }
   get semanticsJson(): string | undefined { return this.props.semanticsJson; }
+  get archivedAt(): Date | undefined { return this.props.archivedAt; }
+  get isArchived(): boolean { return this.props.archivedAt !== undefined; }
 
   get semantics(): IndicatorSemantics | undefined {
     if (!this.props.semanticsJson) return undefined;
@@ -105,6 +109,23 @@ export class Indicator extends Entity<string> {
 
   update(patch: Partial<IndicatorProps>): void {
     this.props = { ...this.props, ...patch };
+    this.touch();
+  }
+
+  moveTo(logframeItemId: string): void {
+    if (!logframeItemId) throw DomainError.validation("A logframe item is required");
+    this.props = { ...this.props, logframeItemId };
+    this.touch();
+  }
+
+  archive(at: Date): void {
+    this.props = { ...this.props, archivedAt: at };
+    this.touch();
+  }
+
+  restore(): void {
+    const { archivedAt: _archivedAt, ...rest } = this.props;
+    this.props = rest;
     this.touch();
   }
 }

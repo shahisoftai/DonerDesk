@@ -28,7 +28,8 @@ export interface ImportIndicatorsResult {
 /**
  * Parses indicator content (from an upload or template) into structured rows
  * and persists them as real Indicator records. Each indicator is attached to
- * the logframe item whose Code matches the indicator's Code; rows that cannot
+ * the logframe item named by its "Logframe code" column, or, when that column is absent, the item whose
+ * Code equals the indicator's own Code (so several indicators can sit under one item); rows that cannot
  * be matched, or whose code already exists in the project, are skipped with a
  * warning instead of failing the whole import.
  */
@@ -70,7 +71,7 @@ export class ImportIndicatorsHandler {
       itemByCode.set(item.code.trim().toLowerCase(), item.id);
     }
 
-    const existing = await this.indicators.findByProject(input.projectId, ctx.tenant.tenantId);
+    const existing = await this.indicators.findByProject(input.projectId, ctx.tenant.tenantId, { includeArchived: true });
     if (!existing.ok) return existing;
     const existingCodes = new Set(
       existing.value
@@ -89,9 +90,10 @@ export class ImportIndicatorsHandler {
         skipped++;
         continue;
       }
-      const logframeItemId = itemByCode.get(codeKey);
+      const itemKey = (row.logframeCode ?? row.code).trim().toLowerCase();
+      const logframeItemId = itemByCode.get(itemKey);
       if (!logframeItemId) {
-        importWarnings.push(`Indicator "${row.code}" does not match any logframe item code in this project; skipped.`);
+        importWarnings.push(`Indicator "${row.code}" does not match any logframe item code ("${row.logframeCode ?? row.code}") in this project; skipped.`);
         skipped++;
         continue;
       }

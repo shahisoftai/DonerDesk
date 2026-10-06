@@ -15,7 +15,8 @@ export interface IIndicatorRepository {
   create(i: Indicator): Promise<Result<Indicator>>;
   update(i: Indicator): Promise<Result<Indicator>>;
   findById(id: string, tenantId: TenantId): Promise<Result<Indicator | null>>;
-  findByProject(projectId: string, tenantId: TenantId): Promise<Result<Indicator[]>>;
+  /** Archived indicators are left out unless asked for: reports, grids and readiness never see a retired indicator. */
+  findByProject(projectId: string, tenantId: TenantId, options?: { includeArchived?: boolean }): Promise<Result<Indicator[]>>;
   findByLogframeItem(logframeItemId: string, tenantId: TenantId): Promise<Result<Indicator[]>>;
   delete(id: string, tenantId: TenantId): Promise<Result<void>>;
 }

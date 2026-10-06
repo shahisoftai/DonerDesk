@@ -39,4 +39,5 @@ export * from "./report-type-blueprint-i18n.js";
 export * from "./flag-classification.js";
 export * from "./period-type-rules.js";
 export * from "./period-evidence-scope.js";
+export * from "./default-template.js";
 export * from "./closing-report-plan.js";

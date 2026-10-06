@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { updateIndicatorSemanticsAction } from "@/lib/actions/logframe";
 import { SemanticsBadge, type SemanticsSummary } from "./SemanticsBadge";
 import { ConfirmSemanticsButton } from "./ConfirmSemanticsButton";
+import { semanticsIntro } from "@/features/logframe/domain/semantics-copy";
 
 type Semantics = {
   aggregation: string;
@@ -86,9 +87,7 @@ export function IndicatorSemanticsCard({
     <section className="card mt-4" aria-labelledby="semantics-heading">
       <h3 id="semantics-heading" className="font-medium">How this value is calculated</h3>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-        {current?.status === "CONFIGURED"
-          ? "Confirmed. Reports treat this indicator according to the settings below."
-          : "Not confirmed yet. Reports use the suggestion below and only describe this indicator — they will not say whether it is on track."}
+        {semanticsIntro({ configured: current?.status === "CONFIGURED", needsReview: description?.needsReview })}
       </p>
       {description && (
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm dark:border-white/10 dark:bg-white/5">

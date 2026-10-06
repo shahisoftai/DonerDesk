@@ -172,6 +172,18 @@ export class ReportingPeriod extends Entity<string> {
     this.touch();
   }
 
+  /**
+   * Re-points the period at another template (or none: the built-in structure). The version and mapping locked
+   * for the old template no longer apply, so they are cleared; the next generation locks the new ones.
+   */
+  changeTemplate(templateId: string | undefined, templateSnapshotJson: string): void {
+    this.props.donorTemplateId = templateId;
+    this.props.templateSnapshotJson = templateId ? templateSnapshotJson : "{}";
+    this.props.donorTemplateVersion = undefined;
+    this.props.donorTemplateMappingId = undefined;
+    this.touch();
+  }
+
   /** Immutable effective snapshots are resolved once at creation. */
   setSnapshots(reportingProfileSnapshotJson: string, templateSnapshotJson: string): void {
     this.props.reportingProfileSnapshotJson = reportingProfileSnapshotJson;

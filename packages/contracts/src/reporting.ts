@@ -34,6 +34,8 @@ export const CreateReportingPeriodSchema = z
   .object({
     projectId: z.string().min(1),
     donorTemplateId: z.string().optional(),
+    /** The user chose the built-in structure: do not apply a default template. */
+    useBuiltInStructure: z.boolean().optional(),
     reportType: ReportTypeSchema,
     startDate: z.string().datetime(),
     endDate: z.string().datetime(),
@@ -63,6 +65,10 @@ export type CreateReportingPeriodInput = z.infer<typeof CreateReportingPeriodSch
 /** Replaces the scope of an activity / situation / custom report (the server re-validates it). */
 export const UpdateReportingPeriodScopeSchema = z.object({ scope: ReportScopeSchema });
 export type UpdateReportingPeriodScopeInput = z.infer<typeof UpdateReportingPeriodScopeSchema>;
+
+/** `null` puts the built-in structure back. */
+export const ChangePeriodTemplateSchema = z.object({ donorTemplateId: z.string().min(1).nullable() });
+export type ChangePeriodTemplateInput = z.infer<typeof ChangePeriodTemplateSchema>;
 
 export const StoryContextFieldSchema = z.enum(["achievements", "challenges", "varianceExplanations", "adaptations", "lessons"]);
 

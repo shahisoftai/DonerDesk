@@ -59,6 +59,14 @@ import {
   ImportIndicatorsHandler,
   CreateIndicatorHandler,
   UpdateIndicatorSemanticsHandler,
+  UpdateIndicatorHandler,
+  MoveIndicatorHandler,
+  ArchiveIndicatorHandler,
+  RestoreIndicatorHandler,
+  IndicatorApprovalGuard,
+  DefaultTemplateResolver,
+  ChangePeriodTemplateHandler,
+  GetDefaultTemplatesHandler,
   EvidenceLinkService,
   ActivityLinkResolver,
   GetPeriodOptionsHandler,
@@ -474,6 +482,10 @@ export interface Container {
     importIndicators: ImportIndicatorsHandler;
     createIndicator: CreateIndicatorHandler;
     updateIndicatorSemantics: UpdateIndicatorSemanticsHandler;
+    updateIndicator: UpdateIndicatorHandler;
+    moveIndicator: MoveIndicatorHandler;
+    archiveIndicator: ArchiveIndicatorHandler;
+    restoreIndicator: RestoreIndicatorHandler;
     confirmIndicatorSemantics: ConfirmIndicatorSemanticsHandler;
     verifyPeriodIndicatorUpdates: VerifyPeriodIndicatorUpdatesHandler;
     createIndicatorUpdate: CreateIndicatorUpdateHandler;
@@ -513,6 +525,8 @@ export interface Container {
     ensureAutoPeriod: EnsureAutoPeriodHandler;
     updateReportingPeriodStory: UpdateReportingPeriodStoryHandler;
     updateReportingPeriodScope: UpdateReportingPeriodScopeHandler;
+    changePeriodTemplate: ChangePeriodTemplateHandler;
+    getDefaultTemplates: GetDefaultTemplatesHandler;
     getPeriodFinance: GetPeriodFinanceHandler;
     savePeriodFinance: SavePeriodFinanceHandler;
     previewPeriodFinanceImport: PreviewPeriodFinanceImportHandler;
@@ -724,6 +738,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const activities = new PrismaActivityUpdateRepository(prisma);
   const periods = new PrismaReportingPeriodRepository(prisma);
   const drafts = new PrismaReportDraftRepository(prisma);
+  const indicatorApprovalGuard = new IndicatorApprovalGuard(indicatorUpdates, drafts);
   const sections = new PrismaReportSectionRepository(prisma);
   const reportPlans = new PrismaReportPlanRepository(prisma);
   const reportClaims = new PrismaReportClaimRepository(prisma);
@@ -1096,8 +1111,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const approveTemplateMappingHandler = new ApproveTemplateMappingHandler(donorTemplateMappings, donorTemplateRenderer, storage, audits);
   const lockTemplateMappingHandler = new LockTemplateMappingHandler(periods, donorTemplateMappings, audits);
   const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding);
-  const closingPlanHandler = new PlanClosingReportHandler(projects, periods, drafts, indicators, indicatorUpdates, activities, reportingProfiles, templates, financeInputs);
-  const createReportingPeriodHandler = new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events, activities);
+  const defaultTemplateResolver = new DefaultTemplateResolver(templates, reportingProfiles);
+  const closingPlanHandler = new PlanClosingReportHandler(projects, periods, drafts, indicators, indicatorUpdates, activities, reportingProfiles, templates, financeInputs, defaultTemplateResolver);
+  const createReportingPeriodHandler = new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events, activities, defaultTemplateResolver);
   const ensureAutoPeriodHandler = new EnsureAutoPeriodHandler(projects, reportingProfiles, periods, createReportingPeriodHandler);
 
   const handlers: Container["handlers"] = {
@@ -1176,6 +1192,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     importIndicators: new ImportIndicatorsHandler(ids, logframe, indicators, audits),
     createIndicator: new CreateIndicatorHandler(ids, indicators, audits),
     updateIndicatorSemantics: new UpdateIndicatorSemanticsHandler(indicators, audits),
+    updateIndicator: new UpdateIndicatorHandler(indicators, indicatorUpdates, audits),
+    moveIndicator: new MoveIndicatorHandler(indicators, logframe, indicatorApprovalGuard, audits),
+    archiveIndicator: new ArchiveIndicatorHandler(indicators, indicatorUpdates, indicatorApprovalGuard, audits),
+    restoreIndicator: new RestoreIndicatorHandler(indicators, audits),
     confirmIndicatorSemantics: new ConfirmIndicatorSemanticsHandler(indicators, audits),
     verifyPeriodIndicatorUpdates: new VerifyPeriodIndicatorUpdatesHandler(indicatorUpdates, indicators, periods, activities, audits),
     createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits, evidenceLinker),
@@ -1215,6 +1235,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     ensureAutoPeriod: ensureAutoPeriodHandler,
     updateReportingPeriodStory: new UpdateReportingPeriodStoryHandler(periods, audits),
     updateReportingPeriodScope: new UpdateReportingPeriodScopeHandler(periods, drafts, sections, reportRevisions, activities, audits),
+    changePeriodTemplate: new ChangePeriodTemplateHandler(periods, drafts, templates, audits),
+    getDefaultTemplates: new GetDefaultTemplatesHandler(defaultTemplateResolver),
     getPeriodFinance: new GetPeriodFinanceHandler(periods, financeInputs, projects, periodFinancials),
     savePeriodFinance: new SavePeriodFinanceHandler(ids, periods, financeInputs, projects, periodFinancials, drafts, audits),
     previewPeriodFinanceImport: new PreviewPeriodFinanceImportHandler(periods, financeInputs, projects),

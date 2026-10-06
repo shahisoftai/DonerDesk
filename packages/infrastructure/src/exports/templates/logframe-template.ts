@@ -38,6 +38,7 @@ const INDICATOR_HEADERS = [
   "Data Source",
   "Frequency",
   "Disaggregation Required",
+  "Logframe Code",
 ] as const;
 
 const EXAMPLE_ROWS: Array<{ level: string; code: string; title: string; description?: string }> = [
@@ -55,6 +56,8 @@ const EXAMPLE_INDICATORS: Array<{
   target: string;
   unit?: string;
   disaggregationRequired?: string;
+  /** The item the indicator measures; leave empty to use the indicator's own code. Lets several indicators share one item. */
+  logframeCode?: string;
 }> = [
   { code: "O1.1", name: "Example indicator for the outcome above — replace with your indicator", type: "PERCENTAGE", baseline: "0", target: "80", unit: "%", disaggregationRequired: "Yes" },
 ];
@@ -128,10 +131,11 @@ async function renderLogframeTemplate(): Promise<Buffer> {
     { header: INDICATOR_HEADERS[7], key: "dataSource", width: 25 },
     { header: INDICATOR_HEADERS[8], key: "frequency", width: 14 },
     { header: INDICATOR_HEADERS[9], key: "disaggregationRequired", width: 22 },
+    { header: INDICATOR_HEADERS[10], key: "logframeCode", width: 18 },
   ];
   styleHeaderRow(indicatorSheet, INDICATOR_HEADERS.length);
   indicatorSheet.views = [{ state: "frozen", ySplit: 1 }];
-  indicatorSheet.autoFilter = { from: "A1", to: "J1" };
+  indicatorSheet.autoFilter = { from: "A1", to: "K1" };
   for (const row of EXAMPLE_INDICATORS) {
     indicatorSheet.addRow({
       code: row.code,
@@ -144,6 +148,7 @@ async function renderLogframeTemplate(): Promise<Buffer> {
       dataSource: "",
       frequency: "",
       disaggregationRequired: row.disaggregationRequired ?? "No",
+      logframeCode: row.logframeCode ?? "",
     });
   }
   withDataValidations(indicatorSheet).dataValidations.add("C2:C200", {

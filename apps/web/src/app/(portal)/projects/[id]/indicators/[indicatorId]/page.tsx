@@ -9,6 +9,7 @@ import { IndicatorSemanticsCard } from "@/features/logframe/presentation/Indicat
 import { IndicatorProgressCard } from "@/features/logframe/presentation/IndicatorProgressCard";
 import { IndicatorVerificationPipeline } from "@/features/logframe/presentation/IndicatorVerificationPipeline";
 import { EvidenceSupportPanel } from "@/features/evidence/presentation/EvidenceSupportPanel";
+import { IndicatorManageCard } from "@/features/logframe/presentation/IndicatorManageCard";
 import { IndicatorHistoryPanel } from "@/features/logframe/presentation/IndicatorHistoryPanel";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,12 @@ export default async function IndicatorDetailPage({ params }: { params: Promise<
       description={indicator.semanticsDescription ?? null}
       candidates={result.value.indicators.filter((item) => item.id !== indicator.id).map((item) => ({ id: item.id, label: `${item.code} — ${item.name}` }))}
     />
+    {ctx.capabilities.has("logframe.edit") && (
+      <IndicatorManageCard
+        indicator={{ id: indicator.id, projectId: id, logframeItemId: indicator.logframeItemId, name: indicator.name, code: indicator.code, baseline: indicator.baseline, target: indicator.target, unit: indicator.unit ?? undefined, disaggregationRequired: indicator.disaggregationRequired ?? false }}
+        items={result.value.items}
+      />
+    )}
     {support.ok && <EvidenceSupportPanel support={support.value} projectId={id} />}
     <IndicatorProgressCard baseline={indicator.baseline} target={indicator.target} unit={indicator.unit ?? undefined} latest={latest} />
     {history.ok ? <>

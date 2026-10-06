@@ -41,6 +41,8 @@ export interface ClosingFacts {
   /** Status of the FINAL period's finance when it exists. */
   finalFinance?: "OFF" | "MISSING" | "UNVERIFIED" | "VERIFIED";
   templateState: "NONE" | "REVIEWED" | "NOT_REVIEWED";
+  /** The template the closing report will use, when there is one (named in the step so the user sees what will apply). */
+  templateName?: string;
   projectManagerAssigned: boolean;
   meOfficerAssigned: boolean;
 }
@@ -102,7 +104,7 @@ export const CLOSING_STEP_RULES: ReadonlyArray<StepRule> = [
     evaluate: (f) =>
       f.templateState === "NOT_REVIEWED"
         ? { label: "Donor template approved", status: "TODO", detail: "The donor template is not approved yet. Review and approve it, or the built-in structure is used.", action: { kind: "OPEN_TEMPLATES", label: "Open templates" } }
-        : { label: "Donor template approved", status: "DONE", detail: f.templateState === "NONE" ? "No donor template: the built-in closing report structure is used." : "The donor template is approved." },
+        : { label: "Donor template approved", status: "DONE", detail: f.templateState === "NONE" ? "No donor template: the built-in closing report structure is used. Add and approve a Final template to use the donor's own sections." : f.templateName ? `The approved template "${f.templateName}" will structure the closing report.` : "The donor template is approved." },
   },
   {
     key: "signoffs",

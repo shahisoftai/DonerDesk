@@ -10,11 +10,14 @@ import {
   INDICATOR_DATA_SOURCE_HEADERS,
   INDICATOR_FREQUENCY_HEADERS,
   INDICATOR_DISAGG_HEADERS,
+  INDICATOR_LOGFRAME_CODE_HEADERS,
   INDICATOR_SHEET_HEADERS,
 } from "./header-vocab.js";
 
 export interface ParsedIndicatorRow {
   code: string;
+  /** The logframe item this indicator measures; absent means the item whose code equals `code`. */
+  logframeCode?: string;
   name: string;
   type: IndicatorType;
   baseline: string;
@@ -169,6 +172,7 @@ export function parseIndicatorText(text: string): ParseIndicatorResult {
   const dataSourceCol = headers.findIndex((h) => INDICATOR_DATA_SOURCE_HEADERS.includes(h));
   const frequencyCol = headers.findIndex((h) => INDICATOR_FREQUENCY_HEADERS.includes(h));
   const disaggregationCol = headers.findIndex((h) => INDICATOR_DISAGG_HEADERS.includes(h));
+  const logframeCodeCol = headers.findIndex((h) => INDICATOR_LOGFRAME_CODE_HEADERS.includes(h));
 
   if (codeCol === -1 && nameCol === -1) {
     return {
@@ -217,6 +221,7 @@ export function parseIndicatorText(text: string): ParseIndicatorResult {
 
     rows.push({
       code,
+      logframeCode: logframeCodeCol >= 0 ? (cells[logframeCodeCol] ?? "").trim() || undefined : undefined,
       name,
       type,
       baseline: baselineCol >= 0 ? (cells[baselineCol] ?? "").trim() : "",

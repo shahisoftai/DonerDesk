@@ -401,6 +401,7 @@ model Indicator {
   responsibleUserId     String?
   disaggregationRequired Boolean @default(false)
   semanticsJson         String?
+  archivedAt            DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

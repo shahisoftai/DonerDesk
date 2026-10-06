@@ -9,6 +9,7 @@ import type { IProjectReadinessService } from "../../ports/projects.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IIdGenerator, IAuditLogger, IEventBus } from "../../ports/core.js";
 import type { CreateReportingPeriodInput } from "@donordesk/contracts";
+import type { IDefaultTemplateResolver } from "../../ports/default-template-resolver.js";
 import { serializeTemplateSnapshot } from "../../services/template-snapshot.js";
 import { ReportScopeResolver } from "../../services/report-scope-resolver.js";
 
@@ -30,6 +31,8 @@ export class CreateReportingPeriodHandler {
     private readonly audit: IAuditLogger,
     private readonly events: IEventBus,
     activities: IActivityUpdateRepository,
+    /** Chooses the template a period starts from; without it the profile's default applies, as it always did. */
+    private readonly defaultTemplates?: IDefaultTemplateResolver,
   ) {
     this.scopes = new ReportScopeResolver(repo, activities);
   }
@@ -72,7 +75,16 @@ export class CreateReportingPeriodHandler {
 
     // The profile's default template is for the project's regular reports; it is
     // never silently applied to a short activity/situation report.
-    let templateId = input.donorTemplateId ?? profile?.defaultTemplateId;
+    let templateId = input.donorTemplateId;
+    if (!templateId && !input.useBuiltInStructure) {
+      if (this.defaultTemplates) {
+        const resolved = await this.defaultTemplates.resolve(tenantId, input.projectId, input.reportType);
+        if (!resolved.ok) return resolved;
+        templateId = resolved.value.templateId;
+      } else {
+        templateId = profile?.defaultTemplateId;
+      }
+    }
     let template = null;
     if (templateId) {
       const templateResult = await this.templates.findById(templateId, tenantId);

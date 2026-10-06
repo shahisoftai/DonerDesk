@@ -257,6 +257,13 @@ export const ParsedTemplateFileSchema = z.object({
   pageCount: z.number().optional(),
 });
 
+export const DefaultTemplatesResponseSchema = z.object({
+  types: z.record(
+    z.string(),
+    z.object({ source: z.string(), templateId: z.string().optional(), templateName: z.string().optional(), status: z.string().optional() }),
+  ),
+});
+
 export const TemplatesResponseSchema = z.object({ items: z.array(TemplateListItemSchema) });
 
 export const TemplateRegionSchema = z.object({

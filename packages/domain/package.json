@@ -26,6 +26,10 @@
       "types": "./dist/contexts/reporting/report-scope.d.ts",
       "import": "./dist/contexts/reporting/report-scope.js"
     },
+    "./contexts/logframe/indicator-change-rules.js": {
+      "types": "./dist/contexts/logframe/indicator-change-rules.d.ts",
+      "import": "./dist/contexts/logframe/indicator-change-rules.js"
+    },
     "./contexts/logframe/participants-consistency.js": {
       "types": "./dist/contexts/logframe/participants-consistency.d.ts",
       "import": "./dist/contexts/logframe/participants-consistency.js"

@@ -54,6 +54,28 @@ export const CreateIndicatorSchema = z.object({
 });
 export type CreateIndicatorInput = z.infer<typeof CreateIndicatorSchema>;
 
+/** Every field is optional: only what is sent changes. The parent item is changed through the move schema, not here. */
+export const UpdateIndicatorSchema = z.object({
+  indicatorId: z.string().min(1),
+  code: z.string().min(1).max(50).optional(),
+  name: z.string().min(1).max(300).optional(),
+  type: IndicatorTypeSchema.optional(),
+  baseline: z.string().max(100).optional(),
+  target: z.string().max(100).optional(),
+  unit: z.string().max(50).optional(),
+  meansOfVerification: z.string().max(500).optional(),
+  dataSource: z.string().max(500).optional(),
+  frequency: z.string().max(50).optional(),
+  disaggregationRequired: z.boolean().optional(),
+});
+export type UpdateIndicatorInput = z.infer<typeof UpdateIndicatorSchema>;
+
+export const MoveIndicatorSchema = z.object({
+  indicatorId: z.string().min(1),
+  logframeItemId: z.string().min(1),
+});
+export type MoveIndicatorInput = z.infer<typeof MoveIndicatorSchema>;
+
 export const UpdateIndicatorSemanticsSchema = z.object({
   indicatorId: z.string().min(1),
   aggregation: z.enum(["SUM", "AVERAGE", "LATEST", "MIN", "MAX", "RATIO", "PERCENTAGE"]),

@@ -126,6 +126,8 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     await this.prisma.indicator.update({
       where: { id: i.id },
       data: {
+        logframeItemId: i.logframeItemId,
+        archivedAt: i.archivedAt ?? null,
         code: i.code,
         name: i.name,
         type: i.type,
@@ -147,12 +149,15 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     if (!row) return ok(null);
     return ok(this.toDomain(row));
   }
-  async findByProject(projectId: string, tenantId: TenantId): Promise<Result<Indicator[], DomainError>> {
-    const rows = await this.prisma.indicator.findMany({ where: { projectId, tenantId: tenantId.toString() }, orderBy: { createdAt: "asc" } });
+  async findByProject(projectId: string, tenantId: TenantId, options: { includeArchived?: boolean } = {}): Promise<Result<Indicator[], DomainError>> {
+    const rows = await this.prisma.indicator.findMany({
+      where: { projectId, tenantId: tenantId.toString(), ...(options.includeArchived ? {} : { archivedAt: null }) },
+      orderBy: { createdAt: "asc" },
+    });
     return ok(rows.map((r) => this.toDomain(r)));
   }
   async findByLogframeItem(logframeItemId: string, tenantId: TenantId): Promise<Result<Indicator[], DomainError>> {
-    const rows = await this.prisma.indicator.findMany({ where: { logframeItemId, tenantId: tenantId.toString() }, orderBy: { createdAt: "asc" } });
+    const rows = await this.prisma.indicator.findMany({ where: { logframeItemId, tenantId: tenantId.toString(), archivedAt: null }, orderBy: { createdAt: "asc" } });
     return ok(rows.map((r) => this.toDomain(r)));
   }
   async delete(id: string, tenantId: TenantId): Promise<Result<void, DomainError>> {
@@ -176,6 +181,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     responsibleUserId: string | null;
     disaggregationRequired: boolean;
     semanticsJson: string | null;
+    archivedAt: Date | null;
     createdAt: Date;
   }): Indicator {
     return Indicator.rehydrate({
@@ -197,6 +203,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         responsibleUserId: row.responsibleUserId ?? undefined,
         disaggregationRequired: row.disaggregationRequired,
         semanticsJson: row.semanticsJson ?? undefined,
+        archivedAt: row.archivedAt ?? undefined,
       },
     });
   }

@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
-import { INDICATOR_TYPE_OPTIONS, INDICATOR_TYPE_LABEL } from "@/lib/labels";
+import { INDICATOR_TYPE_OPTIONS, INDICATOR_TYPE_LABEL, LOGFRAME_LEVEL_LABEL } from "@/lib/labels";
 import type { OutlineSource } from "@/features/logframe/domain/logframe-outline";
+import { defaultBreakdown } from "@donordesk/domain/contexts/logframe/indicator-change-rules.js";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { LogframeItemSelect } from "./LogframeItemSelect";
 import { SemanticsBadge } from "./SemanticsBadge";
 import { ConfirmSemanticsButton } from "./ConfirmSemanticsButton";
@@ -40,7 +42,12 @@ export function NewIndicatorForm({
   const [frequency, setFrequency] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [created, setCreated] = useState<{ id: string; summary: string; needsReview: boolean } | null>(null);
+  const [breakdownChoice, setBreakdownChoice] = useState<boolean | null>(null);
+  const [created, setCreated] = useState<{ id: string; summary: string; needsReview: boolean; placedUnder: string } | null>(null);
+  // Counts of people are broken down by sex by default; the user's own choice always wins.
+  const breakdown = breakdownChoice ?? defaultBreakdown(unit || undefined, type);
+  const chosenItem = items.find((item) => item.id === logframeItemId);
+  const placedUnder = chosenItem ? `${LOGFRAME_LEVEL_LABEL[chosenItem.level] ?? chosenItem.level}${chosenItem.code ? ` ${chosenItem.code}` : ""}` : "";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,6 +68,7 @@ export function NewIndicatorForm({
         meansOfVerification: meansOfVerification || undefined,
         dataSource: dataSource || undefined,
         frequency: frequency || undefined,
+        disaggregationRequired: breakdown,
       });
       if (!result.ok) {
         setError(result.error.message);
@@ -69,7 +77,7 @@ export function NewIndicatorForm({
       const description = result.value.semanticsDescription;
       if (description) {
         // Show how reports will treat it right away, with a one-click confirm, instead of leaving it to be found later.
-        setCreated({ id: result.value.id, summary: description.summary, needsReview: description.needsReview });
+        setCreated({ id: result.value.id, summary: description.summary, needsReview: description.needsReview, placedUnder });
         router.refresh();
         return;
       }
@@ -82,7 +90,7 @@ export function NewIndicatorForm({
   if (created) {
     return (
       <section className="card mt-6 space-y-4" aria-live="polite">
-        <h2 className="font-semibold">Indicator saved</h2>
+        <h2 className="font-semibold">Indicator saved{created.placedUnder ? ` under ${created.placedUnder}` : ""}</h2>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <SemanticsBadge description={{ summary: created.summary, needsReview: created.needsReview }} />
           <span>{created.summary}</span>
@@ -129,6 +137,12 @@ export function NewIndicatorForm({
       </div>
       <Field label="Unit (optional)" htmlFor="unit">
         <Input id="unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. households" />
+      </Field>
+      <Field label="Record a breakdown" htmlFor="breakdown" description="Enter results split by sex, age group and disability. On by default when the unit counts people.">
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox id="breakdown" checked={breakdown} onChange={(e) => setBreakdownChoice(e.target.checked)} />
+          <span>Break results down by sex, age group and disability</span>
+        </label>
       </Field>
       <Field label="Means of verification (optional)" htmlFor="meansOfVerification">
         <Input id="meansOfVerification" value={meansOfVerification} onChange={(e) => setMeansOfVerification(e.target.value)} />

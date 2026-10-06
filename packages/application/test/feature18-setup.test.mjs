@@ -523,3 +523,57 @@ test("a full-report template cannot be attached to an activity or situation repo
   assert.equal(none.ok, true);
   assert.equal(state.created.donorTemplateId, undefined);
 });
+
+
+function readyPeriodHandler(templates, defaultTemplates) {
+  const repos = makeRepos({
+    setup: ProjectSetup.create({ id: "s", tenantId: "tenant-a", projectId: "p1", status: "NOT_REQUIRED" }),
+    profile: ReportingProfile.create({ id: "rp", tenantId: "tenant-a", projectId: "p1", createdById: "u" }),
+    templates,
+    indicators: [reportableIndicator()],
+  });
+  const readiness = new ProjectReadinessService(repos.projects, repos.setup, repos.profiles, repos.templates, repos.indicators, repos.users, repos.providerResolver);
+  const out = {};
+  const periods = {
+    create: async (x) => { out.created = x; return { ok: true, value: x }; },
+    findByProject: async () => ({ ok: true, value: [] }),
+  };
+  out.handler = new CreateReportingPeriodHandler(
+    { generate: () => "period-1" }, periods, repos.projects, repos.templates, repos.setup, repos.profiles, readiness,
+    { record: async () => {} }, { publish: async () => {} }, undefined, defaultTemplates,
+  );
+  return out;
+}
+const monthlyInput = {
+  projectId: "p1", reportType: "MONTHLY",
+  startDate: new Date("2026-04-01").toISOString(), endDate: new Date("2026-04-30").toISOString(), deadline: new Date("2026-05-15").toISOString(),
+};
+const reviewedTemplate = {
+  id: "t-final", templateName: "Final", donorName: "D", reportType: "MONTHLY", language: "en",
+  sections: [{ id: "secF", title: "X", inputType: "NARRATIVE", required: true, reviewStatus: "REVIEWED", order: 0 }],
+  projectId: "p1", tenantIdValue: "tenant-a",
+};
+
+test("reporting period: the resolved default template is used when none is chosen", async () => {
+  const w = readyPeriodHandler([reviewedTemplate], { resolve: async () => ({ ok: true, value: { source: "TYPE_MATCH", templateId: "t-final" } }) });
+  const r = await w.handler.handle(ctx, monthlyInput);
+  assert.equal(r.ok, true);
+  assert.equal(w.created.donorTemplateId, "t-final");
+  assert.ok(w.created.templateSnapshotJson.includes("secF"));
+});
+
+test("reporting period: choosing the built-in structure is never replaced by a default", async () => {
+  let asked = false;
+  const w = readyPeriodHandler([reviewedTemplate], { resolve: async () => { asked = true; return { ok: true, value: { source: "TYPE_MATCH", templateId: "t-final" } }; } });
+  const r = await w.handler.handle(ctx, { ...monthlyInput, useBuiltInStructure: true });
+  assert.equal(r.ok, true);
+  assert.equal(w.created.donorTemplateId, undefined);
+  assert.equal(asked, false);
+});
+
+test("reporting period: an explicit template beats the default", async () => {
+  const w = readyPeriodHandler([reviewedTemplate], { resolve: async () => { throw new Error("must not be asked"); } });
+  const r = await w.handler.handle(ctx, { ...monthlyInput, donorTemplateId: "t-final" });
+  assert.equal(r.ok, true);
+  assert.equal(w.created.donorTemplateId, "t-final");
+});
