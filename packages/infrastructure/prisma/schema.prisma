@@ -543,6 +543,8 @@ model ActivityUpdate {
   status                String   @default("DRAFT")
   submittedById         String
   polishedNarrative     String?
+  /// The record that replaced this one when it was withdrawn.
+  supersededById        String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

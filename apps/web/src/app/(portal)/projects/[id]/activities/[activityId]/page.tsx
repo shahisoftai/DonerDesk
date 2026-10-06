@@ -12,6 +12,11 @@ import { formatDate } from "@/lib/shared/dates";
 import { ActivityPolishPanel } from "@/features/activities/presentation/ActivityPolishPanel";
 import { ActivityReviewPanel } from "@/features/activities/presentation/ActivityReviewPanel";
 import { EvidenceSupportPanel } from "@/features/evidence/presentation/EvidenceSupportPanel";
+import { ActivityResubmitPanel } from "@/features/activities/presentation/ActivityResubmitPanel";
+import { ActivityLifecyclePanel } from "@/features/activities/presentation/ActivityLifecyclePanel";
+import { splitReviewerNotes, canApplyActivityAction } from "@donordesk/domain/contexts/activities/activity-transitions.js";
+import { activityOptionLabel } from "@/lib/shared/option-labels";
+import { ActivitiesResponseSchema } from "@/lib/server/schemas";
 import { ActivityEvidencePanel } from "@/features/activities/presentation/ActivityEvidencePanel";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +55,18 @@ export default async function ActivityDetailPage({
 
   const support = await gatewayRequest(`/v1/activities/${resolvedParams.activityId}/evidence-support`, EvidenceSupportResponseSchema, ctx.token);
 
+  const status = activity.status as Parameters<typeof canApplyActivityAction>[0];
   const canReview = hasCapability(ctx, "activity.review") && activity.status === "SUBMITTED";
+  // The reviewer's notes live at the end of the stored summary; show them beside the text, not inside it.
+  const { summary: cleanSummary, notes: reviewerNotes } = splitReviewerNotes(activity.summary);
+  const canResubmit = hasCapability(ctx, "activity.create") && activity.status === "NEEDS_REVISION";
+  const canWithdraw = hasCapability(ctx, "activity.review") && (canApplyActivityAction(status, "WITHDRAW") || canApplyActivityAction(status, "RESTORE"));
+  const siblingsResult = canWithdraw
+    ? await gatewayRequest(`/v1/projects/${resolvedParams.id}/activities`, ActivitiesResponseSchema, ctx.token)
+    : null;
+  const siblings = siblingsResult?.ok ? siblingsResult.value.items : [];
+  const replacements = siblings.filter((a) => a.id !== activity.id && a.status !== "WITHDRAWN").map((a) => ({ id: a.id, label: `${activityOptionLabel(a)} · ${ACTIVITY_STATUS_LABEL[a.status] ?? a.status}` }));
+  const replacedBy = activity.supersededById ? siblings.find((a) => a.id === activity.supersededById) : undefined;
   const canPolish = hasCapability(ctx, "activity.create");
   const canManageEvidence = hasCapability(ctx, "activity.create");
   const demoMode = process.env.NODE_ENV !== "production";
@@ -79,7 +95,13 @@ export default async function ActivityDetailPage({
 
       <section className="card" aria-label="Activity summary">
         <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Summary</h2>
-        <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{activity.summary}</p>
+        <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{cleanSummary}</p>
+        {reviewerNotes.length > 0 && (
+          <div role="note" className="mt-3 rounded-lg border border-warning-500/30 bg-warning-500/5 p-3 text-sm text-slate-700 dark:text-slate-200">
+            <p className="font-medium">Reviewer note</p>
+            {reviewerNotes.map((n, i) => <p key={i} className="mt-1 whitespace-pre-wrap">{n}</p>)}
+          </div>
+        )}
       </section>
 
       {activity.achievements && (
@@ -167,7 +189,25 @@ export default async function ActivityDetailPage({
         />
       )}
 
+      {canResubmit && (
+        <ActivityResubmitPanel
+          activityId={activity.id}
+          notes={reviewerNotes}
+          initial={{ summary: cleanSummary, achievements: activity.achievements ?? "", challenges: activity.challenges ?? "", lessonsLearned: activity.lessonsLearned ?? "", nextSteps: activity.nextSteps ?? "", location: activity.location ?? "" }}
+        />
+      )}
+
       {canReview && <ActivityReviewPanel activityId={activity.id} />}
+
+      {canWithdraw && (
+        <ActivityLifecyclePanel
+          activityId={activity.id}
+          withdrawn={activity.status === "WITHDRAWN"}
+          supersededByLabel={replacedBy ? activityOptionLabel(replacedBy) : undefined}
+          canWithdraw={canWithdraw}
+          replacements={replacements}
+        />
+      )}
 
       <div className="flex gap-3">
         <Link className="btn-secondary" href={`/projects/${activity.projectId}/activities`}>

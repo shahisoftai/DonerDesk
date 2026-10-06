@@ -25,6 +25,11 @@ export function ActivityReviewPanel({ activityId }: { activityId: string }) {
     setLocalNoteError(undefined);
   }
 
+  async function acceptNow() {
+    const result = await actionState.run(() => reviewActivityAction({ activityId, decision: "ACCEPT" }));
+    if (result !== undefined) router.refresh();
+  }
+
   async function submit() {
     if (!decision) return;
     const trimmed = notes.trim();
@@ -51,8 +56,11 @@ export function ActivityReviewPanel({ activityId }: { activityId: string }) {
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button size="sm" variant={decision === "ACCEPT" ? "primary" : "secondary"} onClick={() => begin("ACCEPT")}>
+        <Button size="sm" onClick={() => void acceptNow()} pending={actionState.busy && decision === null}>
           Accept
+        </Button>
+        <Button size="sm" variant={decision === "ACCEPT" ? "primary" : "secondary"} onClick={() => begin("ACCEPT")}>
+          Accept with a note
         </Button>
         <Button size="sm" variant="secondary" onClick={() => begin("REVISE")}>
           Request revision

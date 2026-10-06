@@ -17,9 +17,15 @@ export class ReviewActivityHandler {
     if (!r.ok) return r;
     if (!r.value) return { ok: false, error: DomainError.notFound("ActivityUpdate", activityId) };
     const a = r.value;
-    if (decision.decision === "ACCEPT") a.accept();
-    else if (decision.decision === "REVISE") a.requestRevision(decision.notes ?? "");
-    else a.reject(decision.notes ?? "");
+    try {
+      if (decision.decision === "ACCEPT") a.accept();
+      else if (decision.decision === "REVISE") a.requestRevision(decision.notes ?? "");
+      else a.reject(decision.notes ?? "");
+    } catch (e) {
+      // A refused transition is an expected outcome (already accepted, withdrawn...), not a crash.
+      if (e instanceof DomainError) return { ok: false, error: e };
+      throw e;
+    }
     const saved = await this.repo.update(a);
     if (!saved.ok) return saved;
     await this.audit.record({

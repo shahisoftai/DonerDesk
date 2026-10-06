@@ -20,7 +20,7 @@ from typing import Any
 from .llm_gateway import _chat, coerce_section, extract_json
 from .models import GeneratedSection, SectionDraftRequest
 from .outline import outline_for, section_kind
-from .writer_contract import system_prompt
+from .writer_contract import WRITER_EXCLUDED_PERIOD_KEYS, system_prompt
 
 _TONE = {
     "FORMAL": "Use formal, professional donor-reporting language.",
@@ -105,7 +105,7 @@ def _shared_prompt(req: SectionDraftRequest) -> str:
     if ctx.project:
         parts.append(_bullets("Project context:", [f"{k}: {v}" for k, v in ctx.project.model_dump(exclude_none=True).items()]))
     if ctx.period:
-        parts.append(_bullets("Reporting period:", [f"{k}: {v}" for k, v in ctx.period.model_dump(exclude_none=True).items()]))
+        parts.append(_bullets("Reporting period:", [f"{k}: {v}" for k, v in ctx.period.model_dump(exclude_none=True, exclude=set(WRITER_EXCLUDED_PERIOD_KEYS)).items()]))
     if ctx.template:
         template_lists = {
             "generalInstructions": "Donor's report-wide instructions (MUST be honoured):",

@@ -303,7 +303,6 @@ export function buildReportContext(
       endDate: period.duration.end.toISOString(),
       deadline: period.deadline.toISOString(),
       internalReviewDeadline: period.internalReviewDeadline?.toISOString(),
-      readinessScore: period.readinessScore,
       daysUntilDeadline: period.daysUntilDeadline(),
       ...(scope ? { scope } : {}),
     },

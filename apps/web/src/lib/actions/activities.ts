@@ -1,6 +1,7 @@
 "use server";
 
-import { CreateActivityUpdateSchema, ReviewActivitySchema, UpdateActivitySchema, AttachEvidenceSchema, DetachEvidenceSchema, ImportActivitiesTextSchema } from "@donordesk/contracts";
+import { z } from "zod";
+import { BulkReviewActivitiesSchema, ResubmitActivitySchema, CreateActivityUpdateSchema, ReviewActivitySchema, UpdateActivitySchema, AttachEvidenceSchema, DetachEvidenceSchema, ImportActivitiesTextSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -138,4 +139,42 @@ export async function detachEvidenceAction(input: {
   });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
+}
+
+const BulkReviewResponseSchema = z.object({
+  succeeded: z.number(),
+  failed: z.number(),
+  results: z.array(z.object({ activityId: z.string(), ok: z.boolean(), error: z.string().optional() })),
+});
+export type BulkReviewResult = Result<z.infer<typeof BulkReviewResponseSchema>, AppError>;
+
+/** Reviews several records with one decision and one shared note; each record's result comes back separately. */
+export async function bulkReviewActivitiesAction(input: { activityIds: string[]; decision: "ACCEPT" | "REVISE" | "REJECT"; notes?: string }): Promise<BulkReviewResult> {
+  const context = await requireSession();
+  const parsed = BulkReviewActivitiesSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: { kind: "validation", message: "Choose at least one record to review.", fields: flattenZodFields(parsed.error) } };
+  }
+  return gatewayRequest("/v1/activities/review-bulk", BulkReviewResponseSchema, context.token, { method: "POST", body: parsed.data, timeoutMs: 60_000 });
+}
+
+/** The submitter's answer to a revision request: optional corrections, then back to review. */
+export async function resubmitActivityAction(activityId: string, patch: Record<string, string | undefined>): Promise<Result<{ id: string }, AppError>> {
+  const context = await requireSession();
+  const parsed = ResubmitActivitySchema.safeParse({ activityId, patch });
+  if (!parsed.success) {
+    return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) } };
+  }
+  return gatewayRequest(`/v1/activities/${encodeURIComponent(activityId)}/resubmit`, IdResponseSchema, context.token, { method: "POST", body: { patch: parsed.data.patch } });
+}
+
+/** Takes a record out of the reports (replaced by another record, or entered by mistake). */
+export async function withdrawActivityAction(activityId: string, supersededById?: string): Promise<Result<{ id: string }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/activities/${encodeURIComponent(activityId)}/withdraw`, IdResponseSchema, context.token, { method: "POST", body: supersededById ? { supersededById } : {} });
+}
+
+export async function restoreActivityAction(activityId: string): Promise<Result<{ id: string }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/activities/${encodeURIComponent(activityId)}/restore`, IdResponseSchema, context.token, { method: "POST", body: {} });
 }

@@ -126,7 +126,7 @@ function buildProjectBlock(ctx: GenerateReportDraftInput["reportContext"]): stri
   ].filter(Boolean) as string[];
 }
 
-function buildPeriodBlock(ctx: GenerateReportDraftInput["reportContext"]): string[] {
+export function buildPeriodBlock(ctx: GenerateReportDraftInput["reportContext"]): string[] {
   if (!ctx?.period) return [];
   return [
     `# Reporting Period`,
@@ -135,9 +135,6 @@ function buildPeriodBlock(ctx: GenerateReportDraftInput["reportContext"]): strin
     `- Period: ${ctx.period.startDate} to ${ctx.period.endDate}`,
     ctx.period.deadline ? `- Submission Deadline: ${ctx.period.deadline}` : null,
     ctx.period.internalReviewDeadline ? `- Internal Review Deadline: ${ctx.period.internalReviewDeadline}` : null,
-    ctx.period.readinessScore !== undefined && ctx.period.readinessScore !== null
-      ? `- Readiness Score: ${ctx.period.readinessScore}/100`
-      : null,
     ``,
   ].filter(Boolean) as string[];
 }

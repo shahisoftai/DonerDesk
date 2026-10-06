@@ -239,6 +239,7 @@ export const ACTIVITY_STATUS_LABEL: Record<string, string> = {
   NEEDS_REVISION: "Needs revision",
   ACCEPTED: "Accepted",
   REJECTED: "Rejected",
+  WITHDRAWN: "Withdrawn",
 };
 
 export const DISAGGREGATION_DIMENSION_LABEL: Record<string, string> = {

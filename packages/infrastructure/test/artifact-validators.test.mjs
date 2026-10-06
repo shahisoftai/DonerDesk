@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   assertBannedPhrases,
+  assertNoWorkflowVocabulary,
   assertMandatoryQuestionsAnswered,
   assertNumericExactness,
   assertRepetition,
@@ -209,3 +210,22 @@ test("runAll passes for a fully compliant table section", () => {
   assert.equal(result.ok, true, result.issues.join(" | "));
 });
 
+
+test("assertNoWorkflowVocabulary flags the reporting tool's own vocabulary and nothing else", () => {
+  const rows = [
+    ["Readiness scoring for this final report stands at 0.0, so the report requires verification before approval.", true],
+    ["The report has three open checklist items.", true],
+    ["The ministry gave its approval for the borehole sites.", false],
+    ["The checklist used by field teams covers 12 sanitation criteria.", false],
+  ];
+  for (const [content, hit] of rows) {
+    const result = assertNoWorkflowVocabulary({ ...baseSection, content });
+    assert.equal(!result.ok, hit, content);
+    if (hit) assert.equal(result.issues[0]?.startsWith("WORKFLOW_VOCABULARY"), true);
+  }
+});
+
+test("runAll reports workflow vocabulary as a quality issue, not an integrity one", () => {
+  const result = runAll({ ...baseSection, content: "Data quality is good. Readiness score is 80." });
+  assert.equal(result.issues.some((i) => i.startsWith("WORKFLOW_VOCABULARY")), true);
+});

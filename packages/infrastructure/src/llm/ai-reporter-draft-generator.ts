@@ -480,7 +480,6 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
             startDate: ctx.period.startDate,
             endDate: ctx.period.endDate,
             deadline: ctx.period.deadline,
-            readinessScore: ctx.period.readinessScore,
           }
         : undefined,
       template: ctx?.template

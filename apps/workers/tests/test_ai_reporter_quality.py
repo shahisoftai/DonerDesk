@@ -11,6 +11,8 @@ Each test pins one defect found in the 2026-09 quality audit:
 """
 from __future__ import annotations
 
+import pytest
+
 from app.ai_reporter import artifact_builder, artifact_validators, donor_voice, grounding, pipeline, writer_contract
 from app.ai_reporter.draft_writer import build_user_prompt
 from app.ai_reporter.llm_gateway import coerce_section
@@ -309,7 +311,7 @@ def test_ts_contract_mirror_is_string_identical() -> None:
 
     ts = (pathlib.Path(__file__).resolve().parents[3] / "packages/infrastructure/src/llm/ai-reporter/contract.ts").read_text()
     assert f"WRITER_CONTRACT_VERSION = {writer_contract.WRITER_CONTRACT_VERSION} as const" in ts
-    for items in (writer_contract._WRITER_RULES_V4, writer_contract.BANNED_PHRASES, writer_contract.LANGUAGE_CRAFT_RULES):
+    for items in (writer_contract._WRITER_RULES_V4, writer_contract.BANNED_PHRASES, writer_contract.LANGUAGE_CRAFT_RULES, writer_contract.WRITER_EXCLUDED_PERIOD_KEYS, writer_contract.WORKFLOW_VOCABULARY):
         for item in items:
             assert json.dumps(item, ensure_ascii=False) in ts, item
 
@@ -366,3 +368,36 @@ def test_section_kind_uses_the_canonical_title_for_translated_sections() -> None
     assert section_kind(SectionBrief(title="Difficultés et enseignements tirés", canonicalTitle="Challenges and Lessons Learned")) == "CHALLENGE"
     assert section_kind(SectionBrief(title="Difficultés et enseignements tirés")) == "NARRATIVE"
     assert section_kind(SectionBrief(title="Prochaines étapes", canonicalTitle="Next Steps")) == "NEXT_PERIOD"
+
+
+def test_workflow_state_never_reaches_the_prompt() -> None:
+    """A readiness score once leaked into donor text ("readiness scoring stands at 0.0"); it is not a writer input."""
+    from app.ai_reporter.models import ContextPeriod
+
+    req = _req()
+    req.context.period = ContextPeriod(reportType="FINAL", startDate="2026-03-01", endDate="2026-08-31", readinessScore=0.0)
+    prompt = build_user_prompt(req)
+    assert "reportType: FINAL" in prompt
+    for key in writer_contract.WRITER_EXCLUDED_PERIOD_KEYS:
+        assert key not in prompt
+    assert "readiness" not in prompt.lower()
+
+
+@pytest.mark.parametrize(
+    "text, hit",
+    [
+        ("Readiness scoring for this final report stands at 0.0, so the report requires verification before approval.", True),
+        ("The report has three open checklist items.", True),
+        ("Gate issues remain.", True),
+        ("The ministry gave its approval for the borehole sites.", False),
+        ("Communities were ready to take over the water points; verification of each test was completed on site.", False),
+        ("The checklist used by field teams covers 12 sanitation criteria.", False),
+    ],
+)
+def test_workflow_vocabulary_lint(text: str, hit: bool) -> None:
+    from app.ai_reporter.artifact_validators import assert_no_workflow_vocabulary
+
+    result = assert_no_workflow_vocabulary(GeneratedSection(sectionId="s", title="Data quality", content=text))
+    assert (not result.ok) is hit, text
+    if hit:
+        assert result.issues[0].startswith("WORKFLOW_VOCABULARY")

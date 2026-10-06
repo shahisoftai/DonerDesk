@@ -176,6 +176,7 @@ export function activityStatusTone(status: string | undefined): Tone {
     case "NEEDS_REVISION":
       return "danger";
     case "DRAFT":
+    case "WITHDRAWN":
       return "neutral";
     case "SUBMITTED":
       return "info";

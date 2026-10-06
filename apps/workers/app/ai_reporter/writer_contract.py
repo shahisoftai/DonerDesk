@@ -32,6 +32,28 @@ from .models import WRITER_CONTRACT_VERSION
 # "permanently"; see `artifact_validators.find_banned_phrases`.
 # --------------------------------------------------------------------------- #
 
+# Workflow state is not something a report is written from. These period fields may still arrive (an older api
+# sent them) but are never rendered into a prompt, so an internal score cannot end up in donor text.
+WRITER_EXCLUDED_PERIOD_KEYS: tuple[str, ...] = ("readinessScore",)
+
+# Vocabulary of the reporting workflow itself. Donor text describes the project, never the tool used to prepare the
+# report, so a hit is raised to the reviewer (WORKFLOW_VOCABULARY). Whole phrases only: "approval" alone is fine.
+WORKFLOW_VOCABULARY: list[str] = [
+    "readiness score",
+    "readiness scoring",
+    "readiness level",
+    "readiness gate",
+    "report readiness",
+    "requires verification before approval",
+    "verification before approval",
+    "approval gate",
+    "gate issue",
+    "gate issues",
+    "checklist item",
+    "checklist items",
+    "open checklist",
+]
+
 BANNED_PHRASES: list[str] = [
     "transformative",
     "life-changing",

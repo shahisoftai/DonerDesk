@@ -467,6 +467,7 @@ export const VerifyAllResponseSchema = z.object({
 export const ActivityItemSchema = z.object({
   id: z.string(),
   reportingPeriodId: z.string().optional(),
+  supersededById: z.string().optional(),
   activityTitle: z.string(),
   activityDate: z.string(),
   location: z.string().optional(),
@@ -500,6 +501,7 @@ export const ActivityDetailSchema = z.object({
   nextSteps: z.string().optional(),
   polishedNarrative: z.string().optional(),
   attachedEvidenceIds: z.array(z.string()).optional(),
+  supersededById: z.string().optional(),
   status: z.string(),
   submittedById: z.string().optional(),
   createdAt: z.string().optional(),

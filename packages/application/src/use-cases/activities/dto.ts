@@ -25,6 +25,8 @@ export interface ActivityUpdateDto {
   attachedEvidenceIds: string[];
   status: string;
   submittedById: string;
+  /** The record that replaced this one when it was withdrawn. */
+  supersededById?: string;
   createdAt?: string;
 }
 
@@ -54,6 +56,7 @@ export function toActivityUpdateDto(a: ActivityUpdate): ActivityUpdateDto {
     attachedEvidenceIds: a.attachedEvidenceIds,
     status: a.status,
     submittedById: a.submittedById,
+    supersededById: a.supersededById,
     createdAt: a.createdAt?.toISOString(),
   };
 }

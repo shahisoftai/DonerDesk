@@ -1,9 +1,10 @@
 import { Entity } from "../../core/entity.js";
 import { DomainError } from "../../core/domain-error.js";
+import { ACTIVITY_TRANSITIONS, activityStatusAfter, canApplyActivityAction, splitReviewerNotes, type ActivityAction } from "./activity-transitions.js";
 
-export type ActivityStatus = "DRAFT" | "SUBMITTED" | "NEEDS_REVISION" | "ACCEPTED" | "REJECTED";
+export type ActivityStatus = "DRAFT" | "SUBMITTED" | "NEEDS_REVISION" | "ACCEPTED" | "REJECTED" | "WITHDRAWN";
 
-export const ACTIVITY_STATUSES: ActivityStatus[] = ["DRAFT", "SUBMITTED", "NEEDS_REVISION", "ACCEPTED", "REJECTED"];
+export const ACTIVITY_STATUSES: ActivityStatus[] = ["DRAFT", "SUBMITTED", "NEEDS_REVISION", "ACCEPTED", "REJECTED", "WITHDRAWN"];
 
 export interface ActivityUpdateProps {
   reportingPeriodId: string;
@@ -29,6 +30,8 @@ export interface ActivityUpdateProps {
   status: ActivityStatus;
   submittedById: string;
   polishedNarrative?: string;
+  /** The record that replaced this one when it was withdrawn. */
+  supersededById?: string;
 }
 
 export class ActivityUpdate extends Entity<string> {
@@ -111,6 +114,7 @@ export class ActivityUpdate extends Entity<string> {
   get status(): ActivityStatus { return this.props.status; }
   get submittedById(): string { return this.props.submittedById; }
   get polishedNarrative(): string | undefined { return this.props.polishedNarrative; }
+  get supersededById(): string | undefined { return this.props.supersededById; }
 
   attachEvidence(id: string): void {
     if (!this.props.attachedEvidenceIds.includes(id)) {
@@ -129,27 +133,57 @@ export class ActivityUpdate extends Entity<string> {
     this.touch();
   }
 
+  private apply(action: ActivityAction): void {
+    if (!canApplyActivityAction(this.props.status, action)) {
+      throw DomainError.invalidTransition(`${ACTIVITY_TRANSITIONS[action].refusal} (it is ${this.props.status.toLowerCase().replace(/_/g, " ")}).`);
+    }
+    this.props.status = activityStatusAfter(this.props.status, action);
+  }
+
   submit(): void {
-    if (this.props.status === "ACCEPTED") throw DomainError.invalidTransition("Cannot resubmit accepted activity");
-    this.props.status = "SUBMITTED";
+    this.apply("SUBMIT");
+    this.touch();
+  }
+
+  /**
+   * The submitter's answer to a revision request: the reviewer's notes leave the text (they are shown beside it
+   * while editing and must never reach a report) and the record goes back to review.
+   */
+  resubmit(): void {
+    if (this.props.status !== "NEEDS_REVISION") throw DomainError.invalidTransition("Only an activity sent back for revision can be resubmitted.");
+    this.props.summary = splitReviewerNotes(this.props.summary).summary;
+    this.apply("SUBMIT");
     this.touch();
   }
 
   accept(): void {
-    if (this.props.status !== "SUBMITTED") throw DomainError.invalidTransition("Only submitted activities can be accepted");
-    this.props.status = "ACCEPTED";
+    this.apply("ACCEPT");
     this.touch();
   }
 
   requestRevision(notes: string): void {
-    this.props.status = "NEEDS_REVISION";
+    this.apply("REQUEST_REVISION");
     if (notes) this.props.summary = `${this.props.summary}\n\n[Reviewer note]: ${notes}`;
     this.touch();
   }
 
   reject(reason: string): void {
-    this.props.status = "REJECTED";
+    this.apply("REJECT");
     if (reason) this.props.summary = `${this.props.summary}\n\n[Rejected]: ${reason}`;
+    this.touch();
+  }
+
+  /** Takes the record out of the reports (a replacement exists, or it was entered by mistake). Reversible with `restore`. */
+  withdraw(supersededById?: string): void {
+    this.apply("WITHDRAW");
+    this.props.supersededById = supersededById;
+    this.touch();
+  }
+
+  /** Brings a withdrawn record back; it goes through review again. */
+  restore(): void {
+    this.apply("RESTORE");
+    this.props.supersededById = undefined;
     this.touch();
   }
 
@@ -175,7 +209,7 @@ export class ActivityUpdate extends Entity<string> {
       >
     >,
   ): void {
-    if (this.props.status === "ACCEPTED") throw DomainError.invalidTransition("Cannot edit accepted activity");
+    if (!canApplyActivityAction(this.props.status, "EDIT")) throw DomainError.invalidTransition(`Cannot edit ${this.props.status === "ACCEPTED" ? "an accepted" : "a withdrawn"} activity`);
     this.props = { ...this.props, ...patch };
     this.touch();
   }

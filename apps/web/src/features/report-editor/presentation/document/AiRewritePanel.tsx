@@ -5,6 +5,7 @@ import { rewriteReportSectionAction } from "@/lib/actions/reporting";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
+import { Textarea } from "@/components/ui/Textarea";
 import { fallbackReasonCopy } from "@/lib/reporting-copy";
 
 /**
@@ -14,13 +15,14 @@ import { fallbackReasonCopy } from "@/lib/reporting-copy";
 export function AiRewritePanel({ sectionId, onApplied, onClose }: { sectionId: string; onApplied: (notice?: string) => void; onClose: () => void }) {
   const [mode, setMode] = useState<"REWRITE" | "SHORTEN">("REWRITE");
   const [audience, setAudience] = useState<"DONOR" | "INTERNAL" | "GENERAL">("DONOR");
+  const [instructions, setInstructions] = useState("");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function run() {
     setRunning(true);
     setError(null);
-    const result = await rewriteReportSectionAction(sectionId, { mode, audience });
+    const result = await rewriteReportSectionAction(sectionId, { mode, audience, ...(instructions.trim() ? { instructions: instructions.trim() } : {}) });
     setRunning(false);
     if (!result.ok) {
       setError(result.error.message);
@@ -48,6 +50,18 @@ export function AiRewritePanel({ sectionId, onApplied, onClose }: { sectionId: s
             <option value="INTERNAL">Internal readers</option>
             <option value="GENERAL">A general audience</option>
           </Select>
+        </Field>
+      </div>
+      <div className="mt-3">
+        <Field label="Specific change (optional)" htmlFor={`rewrite-instructions-${sectionId}`} description="For example: replace “beneficiaries” with “people reached”, or say that the work finished in August.">
+          <Textarea
+            id={`rewrite-instructions-${sectionId}`}
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            maxLength={1000}
+            rows={2}
+            disabled={running}
+          />
         </Field>
       </div>
       {error && (

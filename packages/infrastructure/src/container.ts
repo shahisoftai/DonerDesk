@@ -66,6 +66,10 @@ import {
   IndicatorApprovalGuard,
   DefaultTemplateResolver,
   ChangePeriodTemplateHandler,
+  ResubmitActivityHandler,
+  WithdrawActivityHandler,
+  RestoreActivityHandler,
+  BulkReviewActivitiesHandler,
   GetDefaultTemplatesHandler,
   EvidenceLinkService,
   ActivityLinkResolver,
@@ -511,6 +515,10 @@ export interface Container {
     importActivities: ImportActivitiesHandler;
     polishActivity: PolishActivityHandler;
     reviewActivity: ReviewActivityHandler;
+    resubmitActivity: ResubmitActivityHandler;
+    withdrawActivity: WithdrawActivityHandler;
+    restoreActivity: RestoreActivityHandler;
+    bulkReviewActivities: BulkReviewActivitiesHandler;
     listActivities: ListActivitiesHandler;
     getActivity: GetActivityHandler;
     updateActivity: UpdateActivityHandler;
@@ -1221,6 +1229,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     importActivities: new ImportActivitiesHandler(ids, activities, logframe, indicators, audits),
     polishActivity: new PolishActivityHandler(activities, activityPolisher),
     reviewActivity: new ReviewActivityHandler(activities, audits),
+    resubmitActivity: new ResubmitActivityHandler(activities, audits),
+    withdrawActivity: new WithdrawActivityHandler(activities, audits),
+    restoreActivity: new RestoreActivityHandler(activities, audits),
+    bulkReviewActivities: new BulkReviewActivitiesHandler(new ReviewActivityHandler(activities, audits)),
     listActivities: new ListActivitiesHandler(activities),
     getActivity: new GetActivityHandler(activities),
     updateActivity: new UpdateActivityHandler(activities, evidence, audits, activityLinks),

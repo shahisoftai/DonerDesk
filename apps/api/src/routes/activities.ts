@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateActivityUpdateSchema, PolishActivitySchema, ReviewActivitySchema, UpdateActivitySchema, AttachEvidenceSchema, DetachEvidenceSchema, ImportActivitiesTextSchema } from "@donordesk/contracts";
+import { CreateActivityUpdateSchema, PolishActivitySchema, ReviewActivitySchema, ResubmitActivitySchema, WithdrawActivitySchema, BulkReviewActivitiesSchema, UpdateActivitySchema, AttachEvidenceSchema, DetachEvidenceSchema, ImportActivitiesTextSchema } from "@donordesk/contracts";
 import { buildActivityTemplate, ACTIVITY_TEMPLATE_FILENAME } from "@donordesk/infrastructure";
 
 export async function registerActivityRoutes(app: FastifyInstance) {
@@ -67,6 +67,38 @@ export async function registerActivityRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.reviewActivity.handle(ctx, body.activityId, { decision: body.decision, notes: body.notes });
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  app.post("/v1/activities/review-bulk", async (req) => {
+    const body = BulkReviewActivitiesSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    return req.container.handlers.bulkReviewActivities.handle(ctx, body);
+  });
+
+  app.post("/v1/activities/:id/resubmit", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = ResubmitActivitySchema.parse({ ...(req.body as object), activityId: id });
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.resubmitActivity.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/activities/:id/withdraw", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = WithdrawActivitySchema.parse({ ...(req.body as object), activityId: id });
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.withdrawActivity.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/activities/:id/restore", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.restoreActivity.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.patch("/v1/activities/:id", async (req) => {

@@ -211,9 +211,14 @@ export function DocumentSection({
               Re-check
             </Button>
           )}
-          {canEdit && !vm.isApproved && !editing && !busy && (
-            <Button size="sm" variant="secondary" onClick={onEdit}>
-              Edit
+          {canEdit && !editing && !busy && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={onEdit}
+              title={vm.isApproved ? "Saving a change reopens this section for review" : undefined}
+            >
+              {vm.isApproved ? "Edit (reopens section)" : "Edit"}
             </Button>
           )}
           {!vm.isApproved && vm.canApprove && !editing && (

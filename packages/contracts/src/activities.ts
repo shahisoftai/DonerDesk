@@ -55,6 +55,24 @@ export const UpdateActivitySchema = z.object({
 });
 export type UpdateActivityInput = z.infer<typeof UpdateActivitySchema>;
 
+/** The submitter's answer to a revision request: optional corrections, then back to review. */
+export const ResubmitActivitySchema = z.object({
+  activityId: z.string().min(1),
+  patch: PatchActivitySchema.optional(),
+});
+
+export const WithdrawActivitySchema = z.object({
+  activityId: z.string().min(1),
+  /** The record that replaces this one, when there is one. */
+  supersededById: z.string().min(1).optional(),
+});
+
+export const BulkReviewActivitiesSchema = z.object({
+  activityIds: z.array(z.string().min(1)).min(1).max(200),
+  decision: z.enum(["ACCEPT", "REVISE", "REJECT"]),
+  notes: z.string().max(2000).optional(),
+});
+
 /**
  * Attach an evidence file to an activity and/or an indicator UPDATE (one indicator's value for one reporting
  * period). `indicatorId` has always meant the update's id, which is easy to mistake for the indicator's own

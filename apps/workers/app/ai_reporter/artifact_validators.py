@@ -27,7 +27,7 @@ from .grounding import allowed_numbers, normalise_number, ungrounded_numbers
 from .artifact_builder import DELTA_KINDS
 from .models import GeneratedSection, SectionDraftRequest
 from .outline import section_kind
-from .writer_contract import BANNED_PHRASES
+from .writer_contract import BANNED_PHRASES, WORKFLOW_VOCABULARY
 
 # Issues whose presence after the retry means the prose cannot be trusted.
 INTEGRITY_ISSUE_PREFIXES: tuple[str, ...] = (
@@ -297,6 +297,20 @@ def find_banned_phrases(text: str) -> list[str]:
     return [p for p in BANNED_PHRASES if re.search(r"(?<![a-z])" + re.escape(p.lower()) + r"(?![a-z])", lower)]
 
 
+def find_workflow_vocabulary(text: str) -> list[str]:
+    """Workflow phrases present as whole phrases (case-insensitive)."""
+    lower = (text or "").lower()
+    return [p for p in WORKFLOW_VOCABULARY if re.search(r"(?<![a-z])" + re.escape(p.lower()) + r"(?![a-z])", lower)]
+
+
+def assert_no_workflow_vocabulary(section: GeneratedSection) -> ValidationResult:
+    """Donor text describes the project, not the tool used to prepare the report."""
+    hits = find_workflow_vocabulary(section.content or "")
+    if hits:
+        return ValidationResult(ok=False, issues=(f"WORKFLOW_VOCABULARY: {', '.join(hits)}",))
+    return _ok()
+
+
 def assert_banned_phrases(section: GeneratedSection) -> ValidationResult:
     hits = find_banned_phrases(section.content or "")
     if hits:
@@ -351,6 +365,7 @@ def run_all(
         assert_word_count(section, req),
         _ok() if req.section.synthesis else assert_repetition(section, list(req.section.priorSectionsSummary or [])),
         assert_banned_phrases(section),
+        assert_no_workflow_vocabulary(section),
         assert_artifact_ordering(section),
         assert_required_table_present(section, req),
         assert_donor_voice(section),

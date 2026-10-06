@@ -569,7 +569,7 @@ export function ReportEditor(props: ReportEditorProps) {
         goToIssue(-1);
         break;
       case "edit":
-        if (selectedVM && canAuthor && !selectedVM.isApproved && !selectedVM.regenerating) editSection(selectedVM.id);
+        if (selectedVM && canAuthor && !selectedVM.regenerating) editSection(selectedVM.id);
         break;
       case "approve":
         if (selectedVM?.canApprove && !editingId) void approveSection(selectedVM.id);

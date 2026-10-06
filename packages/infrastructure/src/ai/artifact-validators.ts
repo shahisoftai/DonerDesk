@@ -13,7 +13,7 @@
  */
 
 import type { GeneratedSection } from "@donordesk/application";
-import { BANNED_PHRASES } from "../llm/ai-reporter/contract.js";
+import { BANNED_PHRASES, WORKFLOW_VOCABULARY } from "../llm/ai-reporter/contract.js";
 import { assessDonorVoice } from "./donor-voice.js";
 import { normaliseNumber, ungroundedNumbers } from "./number-grounding.js";
 
@@ -309,6 +309,21 @@ export function findBannedPhrases(text: string): string[] {
   );
 }
 
+/** Workflow phrases present as whole phrases (case-insensitive). */
+export function findWorkflowVocabulary(text: string): string[] {
+  const lower = (text ?? "").toLowerCase();
+  return WORKFLOW_VOCABULARY.filter((p) =>
+    new RegExp(`(?<![a-z])${p.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![a-z])`).test(lower),
+  );
+}
+
+/** Donor text describes the project, not the tool used to prepare the report. */
+export function assertNoWorkflowVocabulary(section: GeneratedSection): ValidationResult {
+  const hits = findWorkflowVocabulary(section.content ?? "");
+  if (hits.length > 0) return fail(`WORKFLOW_VOCABULARY: ${hits.join(", ")}`);
+  return ok();
+}
+
 export function assertBannedPhrases(section: GeneratedSection): ValidationResult {
   const hits = findBannedPhrases(section.content ?? "");
   if (hits.length > 0) return fail(`BANNED_PHRASE: ${hits.join(", ")}`);
@@ -360,6 +375,7 @@ export function runAll(section: GeneratedSection, opts: RunAllOptions = {}): Val
     assertWordCount(section, { minWords: opts.minWords, maxWords: opts.maxWords }),
     opts.synthesis ? ok() : assertRepetition(section, opts.priorSectionsSummary ?? []),
     assertBannedPhrases(section),
+    assertNoWorkflowVocabulary(section),
     assertArtifactOrdering(section),
     assertDonorVoice(section),
   ];

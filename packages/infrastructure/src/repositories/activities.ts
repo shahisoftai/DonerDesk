@@ -43,6 +43,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
         status: a.status,
         submittedById: a.submittedById,
         polishedNarrative: a.polishedNarrative,
+        supersededById: a.supersededById,
       },
     });
     return ok(a);
@@ -72,6 +73,8 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
         attachedEvidenceIds: JSON.stringify(a.attachedEvidenceIds),
         status: a.status,
         polishedNarrative: a.polishedNarrative,
+        // null (not undefined) so that restoring a record really clears who replaced it
+        supersededById: a.supersededById ?? null,
       },
     });
     return ok(a);
@@ -119,6 +122,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
     status: string;
     submittedById: string;
     polishedNarrative: string | null;
+    supersededById: string | null;
     createdAt: Date;
   }): ActivityUpdate {
     return ActivityUpdate.rehydrate({
@@ -149,6 +153,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
         status: row.status as ActivityStatus,
         submittedById: row.submittedById,
         polishedNarrative: row.polishedNarrative ?? undefined,
+        supersededById: row.supersededById ?? undefined,
       },
     });
   }

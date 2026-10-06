@@ -100,7 +100,6 @@ export interface AiReporterContextPeriod {
   startDate?: string;
   endDate?: string;
   deadline?: string;
-  readinessScore?: number;
 }
 
 export interface AiReporterContextTemplate {

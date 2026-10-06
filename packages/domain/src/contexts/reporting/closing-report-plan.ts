@@ -112,7 +112,7 @@ export const CLOSING_STEP_RULES: ReadonlyArray<StepRule> = [
       const missing = [!f.projectManagerAssigned ? "project manager" : "", !f.meOfficerAssigned ? "M&E officer" : ""].filter(Boolean);
       return missing.length === 0
         ? { label: "Sign-offs assigned", status: "DONE", detail: "The project manager and M&E officer are assigned to review and approve." }
-        : { label: "Sign-offs assigned", status: "TODO", detail: `Assign a ${missing.join(" and a ")} so someone can review and approve the closing report.`, action: { kind: "OPEN_SETTINGS", label: "Open project settings" } };
+        : { label: "Sign-offs assigned", status: "TODO", detail: `Assign a ${missing.join(" and a ")} so someone can review and approve the closing report. The two roles are held by different people, so if you work alone, invite a colleague under Team first.`, action: { kind: "OPEN_SETTINGS", label: "Open project settings" } };
     },
   },
 ];

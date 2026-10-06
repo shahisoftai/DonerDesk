@@ -15,6 +15,26 @@
 export const WRITER_CONTRACT_VERSION = 4 as const;
 
 /** Matched on word boundaries (see `findBannedPhrases`). */
+/** Workflow state a writer never receives (mirror of writer_contract.py WRITER_EXCLUDED_PERIOD_KEYS). */
+export const WRITER_EXCLUDED_PERIOD_KEYS: readonly string[] = ["readinessScore"];
+
+/** Workflow vocabulary donor text must not contain (mirror of writer_contract.py WORKFLOW_VOCABULARY). */
+export const WORKFLOW_VOCABULARY: readonly string[] = [
+  "readiness score",
+  "readiness scoring",
+  "readiness level",
+  "readiness gate",
+  "report readiness",
+  "requires verification before approval",
+  "verification before approval",
+  "approval gate",
+  "gate issue",
+  "gate issues",
+  "checklist item",
+  "checklist items",
+  "open checklist",
+];
+
 export const BANNED_PHRASES: readonly string[] = [
   "transformative",
   "life-changing",

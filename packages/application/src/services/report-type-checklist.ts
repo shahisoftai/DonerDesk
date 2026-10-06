@@ -1,6 +1,6 @@
 import type { ActivityUpdate, Indicator, ChecklistItemType, ReportingPeriod, Severity, VerifiedFinding } from "@donordesk/domain";
 import type { FinanceStatus } from "./finance-inputs.js";
-import { effectiveIndicatorSemantics, missingCumulativeFields, comparableReportTypes, periodComparability, selectComparablePeriods } from "@donordesk/domain";
+import { isOpenActivity, effectiveIndicatorSemantics, missingCumulativeFields, comparableReportTypes, periodComparability, selectComparablePeriods } from "@donordesk/domain";
 
 /** A checklist item the detector proposes for a reporting period. */
 export interface ChecklistSuggestion {
@@ -29,7 +29,7 @@ export function activityEvidenceItems(activities: ReadonlyArray<ActivityUpdate>)
 /** An activity report should rest on accepted activity records. */
 export function activityRecordAcceptedItems(activities: ReadonlyArray<ActivityUpdate>): ChecklistSuggestion[] {
   return activities
-    .filter((a) => a.status !== "ACCEPTED")
+    .filter((a) => isOpenActivity(a.status))
     .map((a) => ({
       type: "ACTIVITY_RECORD_ACCEPTED" as const,
       title: `Activity record accepted: "${a.activityTitle}"`,
