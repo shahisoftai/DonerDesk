@@ -49,3 +49,6 @@ The [compliance checklist](/support/getting-started/understanding-compliance-che
 2. Verify indicator data and evidence.
 3. Resolve missing-evidence items (in bulk if needed).
 4. Approve each section.
+
+## Names and codes are not counted as figures
+The check that compares the numbers in your text with your approved data ignores identifiers: dates, indicator codes, award or agreement numbers (for example `72061526CA00012`) and labels that start with letters (for example "P25" in an activity title). If you still see "A reported figure doesn't match your approved data", open the section with **Review and fix**: the figure it names is a real number that is not in your records.

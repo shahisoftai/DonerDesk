@@ -68,3 +68,18 @@ export async function step(name, work, { results } = {}) {
 }
 
 export const text = async (page, selector = "main") => (await page.locator(selector).innerText()).replace(/\n+/g, " | ");
+
+/** Lists the visible controls of the page (tag | type | name | label | text | href | value): to find what a form asks for. */
+export async function dump(page) {
+  return page.evaluate(() => {
+    const out = [];
+    document.querySelectorAll("main input,main select,main textarea,main button,main a[href],form input,form button").forEach((e) => {
+      const r = e.getBoundingClientRect();
+      if (!r.width && !r.height) return;
+      const id = e.id;
+      const label = id ? document.querySelector(`label[for="${id}"]`)?.textContent?.trim() : e.closest("label")?.textContent?.trim();
+      out.push([e.tagName.toLowerCase(), e.type ?? "", e.name ?? "", label ?? e.getAttribute("aria-label") ?? "", (e.textContent ?? "").trim().slice(0, 60), e.getAttribute("href") ?? "", e.value?.slice?.(0, 30) ?? ""].join(" | "));
+    });
+    return out;
+  });
+}

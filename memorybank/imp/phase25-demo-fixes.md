@@ -1,7 +1,7 @@
 # Phase 25 — Stability and ease of use: implementation plan
 
-**Status (2026-10-06): partly implemented, not deployed.** §2.1 fixes were deployed during demo 5. Since then the items marked **Done** in
-[§0 Implementation status](#0-implementation-status) are built and tested in this working tree (uncommitted, no deploy, no browser run on production).
+**Status (2026-10-06): mostly implemented, deployed and browser-checked on production** (four releases plus two lint fixes from demo 6, see *Outcome so far* at the end). The items marked **Done** in
+[§0 Implementation status](#0-implementation-status) are built and tested; the open ones are listed in the Outcome section.
 Everything marked **Not done** is still the plan as written below.
 Sources: the 19 findings of the UI-driven WASH run, [`../demo/verification-demo-4.md`](../demo/verification-demo-4.md); the 13 findings of the UI-driven USAID health run,
 [`../demo/verification-demo-5.md`](../demo/verification-demo-5.md); and the reflection on both runs (§1). Follows Phase 24, [`Phase24-user-simplicity.md`](Phase24-user-simplicity.md).
@@ -413,3 +413,20 @@ The phase is done when all of the following hold on production, verified in the 
 4. Every blocker has a user action that clears it; no blocker needs a manual scan, a developer, or a server log.
 5. Two-person and one-person sign-off both complete; permissions are covered by tests.
 6. The measures in §4 are met, the docs in §7 are live, and the outcome is written into this file.
+
+## Outcome so far (demo 6, 2026-10-06, stopped by the owner before completion)
+
+Run on production with three accounts (admin, a field officer and an M&E officer). Verified: the field officer's activity was accepted; the M&E officer created an
+Activity report from it and generated the draft (7 sections, all written by the AI on the first try, 7–15 s; last 50 AI section runs: 49 written, 0 retries, 1 basic);
+Settings → AI usage is admin-only (404 for the M&E role); "A second person must approve reports" persists (Setup → Reporting profile); the M&E role may not approve
+sections; the admin approved all 7 sections of a report someone else wrote; the export wizard offers "Final copy for the donor" and "Internal copy (watermarked)".
+
+**Found and fixed (deployed, releases `20261006163305` and `20261006164402`):** the contradiction lint (`contradiction-lint.ts`) read an award number
+(`72061526CA00012`) and a letter-prefixed label (`P25` in an activity title) as figures, so three sections showed "A reported figure doesn't match your approved data"
+and blocked approval. Both are now exempt (`exemptRanges`), with regression tests (domain 485 pass). After the fix no "Must fix" remained on the report.
+
+**Not finished (open):**
+- The internal-review copy's filename was read as `…-v1-final.docx` in my last browser check; the naming code (`export-file-name.ts`) is correct (`-internal` for INTERNAL_REVIEW), so this was most likely a stale link read by the script. Re-check by listing the new export's own download link.
+- A sealed donor export of the demo-5 activity period was created during the run (test data).
+- Showing the author blocked by the second-approver rule (needs an admin/PM who authored a report; unit-tested only), bulk verify/attest checks, failure drills (ungrounded figure, timeout, auto-created final month), §4 scoring, `verification-demo-6.md`.
+- Still unbuilt from §0: checks-panel buttons, inline "may be shared" for confidential files, assigned attestations in My work, pending invitees on the Team page, mobile pass, stub-alert email (email delivery is inactive in production; the dashboard alert is done), provider pacing review, writer contract v5 default decision.
