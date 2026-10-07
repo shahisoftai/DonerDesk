@@ -35,7 +35,7 @@ export default function PrivacyPage() {
     <LegalLayout
       title="Privacy Policy"
       subtitle="Legal"
-      updated="14 August 2026 (Version 1.0)"
+      updated="7 October 2026 (Version 1.1)"
       toc={TOC}
     >
       <Section id="who-we-are" title="1. Who we are">
@@ -255,7 +255,7 @@ export default function PrivacyPage() {
             <B>Service providers.</B> With third parties who help us operate the
             Service, such as infrastructure and hosting providers, storage
             providers (which may include per-tenant file storage), AI service
-            providers, error monitoring, and email delivery providers. These
+            providers, error monitoring, email delivery providers, and our payment processor (which acts as merchant of record and handles payment card data; we do not store full card numbers). These
             providers are bound by confidentiality and data protection
             obligations and may process data only on our documented instructions.
           </Li>
@@ -282,9 +282,9 @@ export default function PrivacyPage() {
         </Ul>
         <P>
           We do not sell, rent, or trade personal information, and we do not share
-          workspace content with advertisers. A current list of our service
-          providers and sub-processors is available on request from{" "}
-          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>.
+          workspace content with advertisers. Our current
+          sub-processors are listed at <A href="/subprocessors">/subprocessors</A>, and
+          our <A href="/dpa">Data Processing Addendum</A> is published on this site.
         </P>
       </Section>
 
@@ -458,7 +458,8 @@ export default function PrivacyPage() {
       <Section id="cookies" title="15. Cookies and similar technologies">
         <P>
           We use cookies and similar technologies (such as local storage and
-          session identifiers) to operate and secure the Service. We use:
+          session identifiers) to operate and secure the Service. See our{" "}
+          <A href="/cookies">Cookie Policy</A> for details. We use:
         </P>
         <Ul>
           <Li>

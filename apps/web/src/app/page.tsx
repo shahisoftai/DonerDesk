@@ -696,6 +696,10 @@ export default function HomePage() {
                 <li><Link href="/terms" className="transition hover:text-white">Terms of Service</Link></li>
                 <li><Link href="/cookies" className="transition hover:text-white">Cookie Policy</Link></li>
                 <li><Link href="/security" className="transition hover:text-white">Security</Link></li>
+                <li><Link href="/dpa" className="transition hover:text-white">Data Processing Addendum</Link></li>
+                <li><Link href="/subprocessors" className="transition hover:text-white">Sub-processors</Link></li>
+                <li><Link href="/acceptable-use" className="transition hover:text-white">Acceptable Use</Link></li>
+                <li><Link href="/refunds" className="transition hover:text-white">Refunds &amp; Cancellation</Link></li>
               </ul>
             </div>
           </div>

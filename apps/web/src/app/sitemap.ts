@@ -10,6 +10,11 @@ const STATIC: Array<{ path: string; priority: number; changeFrequency: "weekly" 
   { path: "/contact-sales", priority: 0.6, changeFrequency: "monthly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/cookies", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/dpa", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/subprocessors", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/acceptable-use", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/refunds", priority: 0.3, changeFrequency: "yearly" },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

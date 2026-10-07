@@ -23,6 +23,7 @@ const TOC = [
   { id: "confidentiality", title: "Confidentiality" },
   { id: "third-party", title: "Third-party services" },
   { id: "availability", title: "Availability and disclaimers" },
+  { id: "no-obligation", title: "No additional obligations" },
   { id: "liability", title: "Limitation of liability" },
   { id: "indemnification", title: "Indemnification" },
   { id: "termination", title: "Termination and suspension" },
@@ -31,6 +32,7 @@ const TOC = [
   { id: "changes", title: "Changes to these Terms" },
   { id: "governing-law", title: "Governing law and disputes" },
   { id: "general", title: "General provisions" },
+  { id: "general-more", title: "Further provisions" },
   { id: "contact", title: "Contact us" },
 ];
 
@@ -39,7 +41,7 @@ export default function TermsPage() {
     <LegalLayout
       title="Terms of Service"
       subtitle="Legal"
-      updated="14 August 2026 (Version 1.0)"
+      updated="7 October 2026 (Version 1.1)"
       toc={TOC}
     >
       <Section id="agreement" title="1. Agreement and scope">
@@ -232,9 +234,11 @@ export default function TermsPage() {
           Each party will comply with the data protection and privacy laws
           applicable to it. We process personal information in accordance with our{" "}
           <A href="/privacy">Privacy Policy</A>. Where required by applicable law,
-          you may enter into our data processing addendum, which is available on
-          request from{" "}
-          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>.
+          our <A href="/dpa">Data Processing Addendum</A> applies automatically to
+          personal data in your workspace (sub-processors:{" "}
+          <A href="/subprocessors">/subprocessors</A>). You also agree to our{" "}
+          <A href="/acceptable-use">Acceptable Use Policy</A> and{" "}
+          <A href="/refunds">Refund &amp; Cancellation Policy</A>, which form part of these Terms.
         </P>
         <P>
           You are responsible for the lawfulness of Your Data and for obtaining
@@ -258,6 +262,15 @@ export default function TermsPage() {
           pricing materials or in a separate order form, and payment terms will
           be as stated there. Fees are non-refundable except as required by law
           or as expressly stated in an order form.
+        </P>
+        <P>
+          Payments are processed by our payment partner, which acts as merchant
+          of record and whose terms apply to the transaction. Paid
+          subscriptions renew automatically for the same period until you
+          cancel before the renewal date; cancellation takes effect at the end
+          of the paid period and no partial-period refunds are given. Fees are
+          exclusive of taxes, duties, and bank charges, which you are
+          responsible for. We may suspend paid features for non-payment.
         </P>
         <P>
           We may change fees or introduce fees for features by giving you
@@ -350,18 +363,43 @@ export default function TermsPage() {
         </P>
       </Section>
 
+      <Section id="no-obligation" title="13A. No additional obligations">
+        <P>
+          Except as expressly set out in these Terms or a signed order form,
+          DonorDesk has no obligation to: provide any uptime commitment,
+          service credits, or support response time; retain, restore, or back
+          up Your Data beyond our standard operational practices; develop,
+          maintain, or continue any feature, integration, report format, or
+          donor template; monitor, review, or verify Your Data, evidence, or
+          reports; or act as your agent, adviser, fiduciary, auditor, or
+          representative towards any donor, regulator, or beneficiary. Donor
+          templates, requirements, and compliance checklists are provided as
+          general aids and may be incomplete or out of date; you must confirm
+          each donor's current requirements directly with that donor.
+        </P>
+        <P>
+          You, and not DonorDesk, are responsible for: sanctions, export-control,
+          and counter-terrorism screening of your organization, partners, and
+          beneficiaries; obtaining any donor approvals needed to use the
+          Service or AI features, or to store data with the providers you
+          enable; and notifying your donors, regulators, and affected
+          individuals of any incident involving Your Data that arises from your
+          own acts, credentials, or configuration.
+        </P>
+      </Section>
+
       <Section id="liability" title="14. Limitation of liability">
         <P>
-          To the maximum extent permitted by law, neither party will be liable to
-          the other for any indirect, incidental, special, consequential, or
+          To the maximum extent permitted by law, DonorDesk, its affiliates, suppliers,
+          and personnel will not be liable to you for any indirect, incidental, special, consequential, or
           punitive damages, or for loss of profits, revenue, data, or goodwill,
           arising out of or in connection with these Terms or the Service, even if
           advised of the possibility of such damages.
         </P>
         <P>
-          To the maximum extent permitted by law, each party's total aggregate
-          liability arising out of or in connection with these Terms will not
-          exceed the amount paid by you for the Service in the twelve (12) months
+          To the maximum extent permitted by law, DonorDesk's total aggregate
+          liability arising out of or in connection with these Terms or the
+          Service, under any theory of liability, will not exceed the amount paid by you for the Service in the twelve (12) months
           preceding the event giving rise to the claim, or, if you used the
           Service free of charge, one hundred US dollars (USD 100).
         </P>
@@ -370,6 +408,18 @@ export default function TermsPage() {
           limited or excluded under applicable law, including liability for
           fraud, death or personal injury caused by negligence, or gross
           negligence or willful misconduct.
+        </P>
+        <P>
+          DonorDesk is not liable for any loss arising from: your decisions or
+          submissions to donors or regulators; rejected, delayed, reduced, or
+          clawed-back funding or grants; inaccurate, incomplete, or unverified
+          content (including AI-generated content); your failure to export or
+          back up Your Data; unauthorized access resulting from your
+          credentials or configuration; or third-party services, providers, or
+          networks outside our reasonable control. Any claim must be brought
+          within one (1) year after the cause of action arose. These
+          limitations are an essential basis of the bargain and apply even if a
+          remedy fails of its essential purpose.
         </P>
       </Section>
 
@@ -510,6 +560,22 @@ export default function TermsPage() {
             for notices to us.
           </Li>
         </Ul>
+      </Section>
+
+      <Section id="general-more" title="21A. Further provisions">
+        <P>
+          <B>Survival.</B> Provisions that by their nature should survive
+          termination (including ownership, disclaimers, limitation of
+          liability, indemnification, and governing law) will survive.{" "}
+          <B>No third-party beneficiaries.</B> These Terms confer no rights on
+          anyone other than you and us. <B>Relationship.</B> The parties are
+          independent contractors; nothing creates a partnership, agency,
+          employment, or fiduciary relationship. <B>Electronic communications.</B>{" "}
+          You consent to receive notices and records electronically.{" "}
+          <B>Interpretation.</B> Headings are for convenience only; these Terms
+          are not construed against the drafter. <B>Language.</B> If these Terms
+          are translated, the English version prevails.
+        </P>
       </Section>
 
       <Section id="contact" title="22. Contact us">
