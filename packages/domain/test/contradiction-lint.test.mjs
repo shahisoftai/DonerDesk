@@ -139,6 +139,16 @@ test("sex-split counts of different groups are not one divergent metric (demo 7)
   assert.equal(result.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
 });
 
+test("a noun phrase after another figure or a comma is not the noun of the first number (demo 7)", () => {
+  const result = lintReportContradictions({
+    sections: sections(
+      ["Summary", "The project trained 30 health workers, for a total of 220 of 240, and 20 community health volunteers, for a total of 300 of 300."],
+    ),
+    findings: [],
+  });
+  assert.equal(result.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
+});
+
 test("a metric divergence points at the section that states one of the figures, not at the first section", () => {
   const result = lintReportContradictions({
     sections: sections(

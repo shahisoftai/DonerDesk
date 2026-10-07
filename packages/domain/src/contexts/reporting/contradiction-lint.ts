@@ -213,7 +213,8 @@ function normalizeKey(n: number): string {
 
 /** Noun phrase following a number (up to 3 non-stopwords), for divergence keys. */
 function followingNounPhrase(sentence: string, endIndex: number): string {
-  const tail = sentence.slice(endIndex).toLowerCase();
+  // The phrase belongs to the number it follows: stop at the next figure or clause break ("220 of 240, and 20 volunteers").
+  const tail = (sentence.slice(endIndex).toLowerCase().split(/[\d,;:.()]/)[0]) ?? "";
   const words = tail.match(/[a-z][a-z-]*/g) ?? [];
   const picked: string[] = [];
   for (const w of words) {
