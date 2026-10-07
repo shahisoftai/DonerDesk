@@ -499,3 +499,13 @@ def test_officer_note_is_a_compliance_sections_only_source() -> None:
     assert "Reporting officer's statement" not in build_user_prompt(_req())
     prompt = build_user_prompt(_req(title="Environmental Compliance", officerNote="  Waste was sorted at all three sites.  "))
     assert "ONLY source" in prompt and "Waste was sorted at all three sites." in prompt
+
+
+def test_rate_indicator_has_no_percent_of_target_cell() -> None:
+    from app.ai_reporter import artifact_builder
+    from app.ai_reporter.models import Finding
+
+    rate = Finding(indicatorCode="R1", indicatorType="Percentage", unit="%", baseline=52, target=70, value=53)
+    count = Finding(indicatorCode="C1", indicatorType="Number", unit="clinics", baseline=0, target=360, value=20)
+    assert artifact_builder._pct_cell(rate) == "—"
+    assert artifact_builder._pct_cell(count) == "5.6%"

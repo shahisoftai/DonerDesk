@@ -49,8 +49,13 @@ def _not_calculable(f: Finding) -> bool:
     return f.valueStatus == "NOT_CALCULABLE" or "MISSING_DENOMINATOR" in f.qualityFlags or f.value is None
 
 
+def _is_rate(f: Finding) -> bool:
+    """A value that is itself a percentage (coverage, rate): "percent of target" is the wrong yardstick; baseline and target are shown instead."""
+    return (f.indicatorType or "").strip().lower() == "percentage" or (f.unit or "").strip() == "%"
+
+
 def _pct_cell(f: Finding) -> str:
-    if _not_calculable(f):
+    if _not_calculable(f) or _is_rate(f):
         return "—"
     pct = percent_of_target(f.value, f.target)
     return "—" if pct is None else f"{normalise_number(f'{pct:.1f}')}%"
@@ -87,6 +92,8 @@ def _life_value(f: Finding) -> str:
 
 
 def _life_pct_cell(f: Finding) -> str:
+    if _is_rate(f):
+        return "—"
     if f.lifeOfProject is None:
         return "—"
     pct = percent_of_target(f.lifeOfProject.value, f.target)

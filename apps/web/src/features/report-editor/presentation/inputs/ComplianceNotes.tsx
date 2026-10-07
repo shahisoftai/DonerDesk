@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
@@ -20,6 +20,9 @@ export function ComplianceNotes({ periodId, projectId, initial, canEdit }: { per
   const [saved, setSaved] = useState<Record<string, string>>(() => Object.fromEntries(initial.sections.map((r) => [r.key, r.note])));
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Typing saves after a short pause, so a statement is not lost when the user leaves the page without leaving the field.
+  const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  useEffect(() => () => { Object.values(timers.current).forEach(clearTimeout); }, []);
   if (rows.length === 0) return null;
 
   const missing = rows.filter((r) => !r.note.trim()).length;
@@ -47,6 +50,8 @@ export function ComplianceNotes({ periodId, projectId, initial, canEdit }: { per
 
   function change(key: string, note: string) {
     setRows((current) => current.map((r) => (r.key === key ? { ...r, note } : r)));
+    clearTimeout(timers.current[key]);
+    timers.current[key] = setTimeout(() => void save(key, note), 1500);
   }
 
   return (
