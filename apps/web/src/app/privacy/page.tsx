@@ -342,6 +342,14 @@ export default function PrivacyPage() {
 
       <Section id="security" title="10. Data security">
         <P>
+          Where you connect your own Google Drive, your source files are
+          stored in your Drive under your control, not by us. We keep on our
+          infrastructure (Contabo) references to those files, text extracted for
+          search and AI drafting, drafts, records, and audit logs. Google
+          processes your Drive files under your own agreement with Google; see
+          <A href="/subprocessors">/subprocessors</A>.
+        </P>
+        <P>
           We apply technical and organizational measures appropriate to the
           sensitivity of the data we process, including:
         </P>

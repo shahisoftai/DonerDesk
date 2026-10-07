@@ -13,6 +13,7 @@ const TOC = [
   { id: "core", title: "Always used" },
   { id: "ai", title: "AI providers" },
   { id: "optional", title: "Used only if you enable them" },
+  { id: "drive", title: "Your own Google Drive" },
   { id: "changes", title: "Changes and objections" },
 ];
 
@@ -67,14 +68,24 @@ export default function SubprocessorsPage() {
         <Table
           head={["Provider", "Purpose", "Data"]}
           rows={[
-            ["Google (Drive, Sheets)", "Link or read evidence files you choose to connect", "Files and metadata you authorise"],
             ["Cloudflare (R2)", "Managed file storage if you choose DonorDesk-managed uploads", "Uploaded evidence files"],
             ["Slack, Microsoft Teams, WhatsApp", "Notifications you configure", "Notification text and recipients"],
           ]}
         />
         <p>These are your choices. Where you connect your own account, your agreement with that provider also applies.</p>
       </Section>
-      <Section id="changes" title="4. Changes and objections">
+      <Section id="drive" title="4. Your own Google Drive">
+        <p>
+          Our recommended setup is that you connect your organisation&apos;s <strong>Google Drive</strong> and your evidence,
+          templates and exports are stored in <em>your</em> Drive. Google is then <strong>your</strong> service provider,
+          under your own agreement with Google, and not a DonorDesk sub-processor for the files stored there. DonorDesk
+          accesses your Drive only through the permissions you grant (files DonorDesk creates or you open with it, file and folder names, and read-only access to spreadsheets you choose), to create project folders, save and read files you
+          upload or link. What DonorDesk itself keeps on Contabo: references to your files, text extracted for search and
+          AI drafting, report drafts, indicator and activity records, and the audit log. Text from your files is also sent to the
+          configured AI provider when you use AI drafting.
+        </p>
+      </Section>
+      <Section id="changes" title="5. Changes and objections">
         <p>
           We will update this page before adding or replacing a sub-processor, and notify customers
           with a DPA by email at least 30 days ahead where practicable. You may object on reasonable

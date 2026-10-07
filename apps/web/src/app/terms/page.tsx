@@ -347,6 +347,17 @@ export default function TermsPage() {
           maintenance.
         </P>
         <P>
+          If you connect your own Google Drive or another storage account, it
+          remains your account and your responsibility: its security, sharing
+          settings, retention, costs, and your agreement with the provider. We
+          access it only within the permissions you grant. We are not
+          responsible for files you or others delete, change, or lose there, for
+          the provider&apos;s outages, or for features that stop working when you
+          revoke access. Even then, we keep on our systems references, extracted
+          text, drafts, records, and audit logs as described in the Privacy
+          Policy.
+        </P>
+        <P>
           You are responsible for maintaining your own copies and records of Your
           Data, including evidence files and reports required for your donor
           obligations. We recommend that you export critical data regularly using

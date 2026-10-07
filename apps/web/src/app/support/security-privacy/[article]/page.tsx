@@ -13,6 +13,7 @@ const FILE_MAP: Record<string, string> = {
   "security-best-practices": "security-best-practices.md",
   "data-handling": "security-privacy-data-handling.md",
   "gdpr-compliance": "security-privacy-gdpr-compliance.md",
+  "google-drive-data": "security-privacy-google-drive-data.md",
 };
 
 export async function generateStaticParams() {

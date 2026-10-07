@@ -186,6 +186,7 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
       { title: "Security Best Practices", description: "How to keep your DonorDesk account secure.", href: "/support/security-privacy/security-best-practices" },
       { title: "Data Handling", description: "How DonorDesk collects, stores, and uses your data.", href: "/support/security-privacy/data-handling" },
       { title: "GDPR Compliance", description: "Your rights under GDPR and how DonorDesk complies.", href: "/support/security-privacy/gdpr-compliance" },
+      { title: "How Your Data Is Stored with Google Drive", description: "What stays in your Drive and what DonorDesk keeps.", href: "/support/security-privacy/google-drive-data" },
     ],
   },
   {

@@ -16,6 +16,7 @@ const TOC = [
   { id: "security", title: "Security" },
   { id: "subprocessors", title: "Sub-processors" },
   { id: "transfers", title: "International transfers" },
+  { id: "drive", title: "Customer-provided storage" },
   { id: "rights", title: "Individuals' rights" },
   { id: "breach", title: "Personal data breach" },
   { id: "deletion", title: "Return and deletion" },
@@ -80,6 +81,16 @@ export default function DpaPage() {
           responsible for any additional donor or local-law restrictions on data location.
         </p>
       </Section>
+      <Section id="drive" title="6A. Customer-provided storage (Google Drive)">
+        <p>
+          Where the Customer connects its own Google Drive (or another storage account), that account is the Customer&apos;s
+          own service and the Customer is responsible for its security, sharing settings, retention, and its agreement
+          with the provider; the provider is not a DonorDesk sub-processor for files stored there. DonorDesk accesses it
+          only within the permissions the Customer grants (limited file access, file and folder names, and read-only spreadsheet access, as described in our Support Center) and may keep references, extracted text, and derived records
+          in its own systems as described in section 12. If the Customer revokes access or deletes files in its account,
+          related features may stop working and DonorDesk is not responsible for data the Customer holds in that account.
+        </p>
+      </Section>
       <Section id="rights" title="7. Individuals' rights">
         <p>
           DonorDesk will, taking into account the nature of processing, give the Customer reasonable assistance
@@ -124,7 +135,7 @@ export default function DpaPage() {
           <li><strong>Duration:</strong> the term of the Customer&apos;s subscription plus the transition period.</li>
           <li><strong>Data subjects:</strong> the Customer&apos;s staff and partners, beneficiaries, and other individuals named in its records.</li>
           <li><strong>Data types:</strong> contact details, activity and evidence records, report content, and any special-category data the Customer chooses to upload.</li>
-          <li><strong>Hosting:</strong> {LEGAL.hostingLocation}.</li>
+          <li><strong>Hosting:</strong> {LEGAL.hostingLocation}. Source files may instead sit in the Customer&apos;s own Google Drive (section 6A).</li>
           <li><strong>Contact for data protection:</strong> <A href={`mailto:${LEGAL.privacyEmail}`}>{LEGAL.privacyEmail}</A>.</li>
         </ul>
       </Section>
