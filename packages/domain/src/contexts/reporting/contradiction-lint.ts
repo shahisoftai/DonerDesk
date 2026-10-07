@@ -181,6 +181,12 @@ const GENERIC_METRIC_NOUNS = new Set(["female", "males", "male", "females", "wom
  * A phrase made only of participles ("targeted", "trained", "reached") names what was done to something, not a metric:
  * "120 targeted" and "6,000 targeted" are the targets of two different indicators, so they never diverge.
  */
+/** A phrase that names a sex group ("female male", "chvs female") describes a component of a total: its counts differ by design. */
+const SEX_WORDS = new Set(["female", "females", "male", "males", "women", "woman", "men", "man", "girls", "girl", "boys", "boy"]);
+function mentionsSexGroup(phrase: string): boolean {
+  return phrase.split(" ").some((w) => SEX_WORDS.has(w));
+}
+
 function isVerbOnlyPhrase(phrase: string): boolean {
   const words = phrase.split(" ").filter(Boolean);
   return words.length > 0 && words.every((w) => w.length >= 5 && w.endsWith("ed"));
@@ -451,7 +457,7 @@ export function lintReportContradictions(input: ContradictionLintInput): Contrad
         const basis = LIFE_BASIS_RE.test(text) ? "life of project" : "period";
         const noun = `${followingNounPhrase(text, p.end)}|${basis}`;
         const phrase = followingNounPhrase(text, p.end);
-        const genericOnly = phrase.split(" ").every((w) => GENERIC_METRIC_NOUNS.has(w)) || isVerbOnlyPhrase(phrase);
+        const genericOnly = phrase.split(" ").every((w) => GENERIC_METRIC_NOUNS.has(w)) || isVerbOnlyPhrase(phrase) || mentionsSexGroup(phrase);
         if (phrase.length >= 3 && !genericOnly) {
           const bucket = metricValues.get(noun) ?? new Map<string, { value: number; section: string; sectionId: string; excerpt: string }>();
           if (!bucket.has(normalizeKey(p.value))) {

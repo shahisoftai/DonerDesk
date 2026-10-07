@@ -128,6 +128,17 @@ test("'<n> to date' quotes of different metrics are not one divergent metric cal
   assert.equal(result.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
 });
 
+test("sex-split counts of different groups are not one divergent metric (demo 7)", () => {
+  const result = lintReportContradictions({
+    sections: sections(
+      ["Summary", "The project trained 30 CHVs, 20 female and 10 male."],
+      ["Progress", "Life-of-Action totals are 190 CHVs trained female male, 240 total, and 30 female male in the month."],
+    ),
+    findings: [],
+  });
+  assert.equal(result.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
+});
+
 test("a metric divergence points at the section that states one of the figures, not at the first section", () => {
   const result = lintReportContradictions({
     sections: sections(
