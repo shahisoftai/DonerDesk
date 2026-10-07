@@ -1,0 +1,247 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+
+GHA-MNCH-R-MUXVF1L0 · European Union (Delegation of the European Union to Ghana) · Ghana · HEALTH
+
+Oct 1, 2025 – Sep 30, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) · Nov 1, 2025 – Nov 30, 2025 · due Dec 5, 2025
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+Approved
+Version 1
+100% ready
+· all done
+Export report
+OUTLINE
+8 of 8 approved
+1
+Summary of the Month
+Approved
+2
+Progress Against Expected Results
+Approved
+3
+Activities Implemented
+Approved
+4
+Outcome Indicators and Data Quality
+Approved
+5
+Challenges, Risks and Mitigation
+Approved
+6
+Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+Approved
+7
+Visibility and Communication
+Approved
+8
+Plan for the Next Month
+Approved
+REPORT INPUTS
+Edit
+Indicator values
+14 of 14 verified · 5 not entered
+Story answers
+5 of 5 answered
+Evidence
+13 files
+
+[DEMO-7] NORTHERN GHANA MATERNAL, NEWBORN & CHILD HEALTH RESILIENCE PROGRAMME (MNCH-R) · NOV 1, 2025 – NOV 30, 2025 · DUE DEC 5, 2025
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+
+Approved
+1 Summary of the Month
+
+November 2025 delivered the Action's first health-worker training cohort and its first facility equipment, alongside continued community and district-level work across Tolon, Kumbungu, Savelugu, Nanton and Karaga districts. The project trained 40 health workers in EmONC, IMNCI and essential newborn care at Savelugu Municipal Hospital against a target of 240 (16.7% of target): 28 female and 12 male this period. It equipped 2 facilities with delivery kits and solar vaccine fridges against a target of 24 (8.3% of target); the officer's context records this as two against a plan of three, owing to a delayed shipment of fridges. Teams trained 15 DHMT staff in DHIMS2 and scorecard data use against a target of 60 (25% of target): 11 female and 4 male this period. CHV numbers stayed on plan, with 50 trained and active this period (30 female, 20 male), bringing the life-of-Action total to 100. Teams held 28 outreach clinics against a target of 360 (7.8% of target), up from 20 in the previous period, reached 1,300 women through community education against a target of 18,000 (7.2% of target), up from 900, assisted 400 households with NHIS enrolment or renewal against a target of 6,000 (6.7% of target), up from 300, and made 8 supportive supervision visits against a target of 120 (6.7% of target), up from 6. Verified DHIMS2/GHS records show ANC4+ at 54% (baseline 52, target 70), skilled birth attendance at 60% (baseline 58, target 75), Penta3 at 73% (baseline 71, target 88), postnatal checks within 48 hours at 38% (baseline 34, target 60), no tracer-medicine stock-out at 60% of facilities (baseline 55, target 85) and complete DHIMS2 reporting at 77% (baseline 71, target 95). Heavy late-season rain left some Karaga CHPS compounds unreachable for two days; training venues moved to the nearest health centres. The verified evidence for the month comprises the training attendance sheet, equipment handover document, outreach register, DHIMS2 extract, NHIS register and supervision monitoring report. Priority for the coming month: the next training cohort and mentoring follow-up.
+
+2 Progress Against Expected Results
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	54	53	77.1%	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	60	59	80%	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	73	72	83%	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	38	36	63.3%	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	60	58	70.6%	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	77	74	81.1%	Descriptive only	DHIMS2 / GHS records
+MR-OP1.1	Number of health workers trained in EmONC or IMNCI	health workers	0	240	40	—	16.7%	Descriptive only	Training registers
+MR-OP1.2	Number of facilities equipped with delivery kits and solar vaccine fridges	facilities	0	24	2	—	8.3%	Descriptive only	Procurement and handover records
+MR-OP1.3	Number of CHVs trained and active	CHVs	0	300	50	50	16.7%	Descriptive only	CHV registers
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	28	20	7.8%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	1300	900	7.2%	Descriptive only	Community session registers
+MR-OP2.1	Number of DHMT staff trained in data use	staff	0	60	15	—	25%	Descriptive only	Training registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	8	6	6.7%	Descriptive only	Supervision reports
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	400	300	6.7%	Descriptive only	NHIA drive registers
+
+The Action recorded its first health-worker and DHMT training cohorts in November 2025 and delivered equipment to 2 of the 40 supported facilities.
+
+The strongest monthly results were 1,300 women reached by community education sessions (up from 900 in the previous period) and 40 health workers trained in EmONC or IMNCI, of whom 28 female and 12 male. Facilities equipped with delivery kits and solar vaccine fridges stood at 2 against a target of 24 (8.3% of target); the officer's narrative attributes this to a delayed shipment of fridges, and the recorded next step is to install the remaining kits and fridges as stock arrives. No indicator was classified as not calculable this month.
+
+Data quality notes: no quality flags were raised against any verified finding in this period. Outcome indicators draw on DHIMS2 / GHS records and facility stock cards; recorded commentary on data completeness and reliability is limited to the DHIMS2 completeness and timeliness figure of 77%. The training team could not reach some CHPS compounds in Karaga for two days after heavy late-season rain, and training venues were moved to the nearest health centre.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 53 → 54 ▲
+
+Progress against targets
+
+Showing the first 12 of 14; the table has them all.
+
+Chart data
+3 Activities Implemented
+
+The Action carried out eight activities in November 2025 across Savelugu, Kumbungu, Nanton, Tolon and Karaga districts, all dated within the reporting period.
+
+In Savelugu District, the project trained 40 health workers in EmONC, IMNCI and essential newborn care with on-site mentoring at Savelugu Municipal Hospital on 9 November 2025 (28 female, 12 male), reaching 40 of 240 planned health workers for the year (16.7% of target). Verified evidence comprises the attendance sheet (02-A1.1-attendance) and a session photograph (02-A1.1-photo). The training records note that mentoring at the facility within a month of the classroom course improves use of the partograph and neonatal resuscitation. Also in Savelugu, the project trained 15 DHMT staff in DHIMS2 and scorecard data use at the Savelugu District Health Directorate on 10 November 2025 (11 female, 4 male), against a yearly target of 60 (25% of target); verified evidence is the training attendance sheet (02-A2.1-attendance) and a session photograph (02-A2.1-photo).
+
+In Kumbungu District, the project trained 50 community health volunteers at Voggu CHPS compound on 11 November 2025 (30 female, 20 male), contributing to a life-of-Action total of 100 of 300; verified evidence comprises the training attendance sheet (02-A1.3-attendance) and a session photograph (02-A1.3-photo). On 14 November 2025, the project delivered and installed delivery kits and solar vaccine fridges at 2 facilities in Kumbungu District, against a yearly target of 24 (8.3% of target); handover certificates were signed by the in-charges and logged by the district health directorate. Verified evidence comprises the handover approval document (02-A1.2-handover) and an installation photograph (02-A1.2-photo). Delivery reached 2 of the 3 facilities planned for the month because a shipment of fridges was delayed. In Kumbungu communities, CHVs and community mobilisers ran education sessions on antenatal care, facility delivery and newborn danger signs, reaching 1,300 women in November against a yearly target of 18,000 (7.2% of target).
+
+In Nanton District, the project held 28 integrated outreach clinics offering ANC, immunisation, postnatal checks and child weighing on 20 November 2025, against a yearly target of 360 (7.8% of target); verified evidence comprises the outreach register (02-A1.4-outreach-register) and a DHIMS2 extract (02-A1.4-dhims2-extract). District teams and project staff also made 8 supportive supervision visits on 24 November 2025 using the standard checklist, against a yearly target of 120 (6.7% of target); verified evidence is the supervision monitoring report (02-A2.2-supervision). In Nanton and Tolon districts, NHIA district officers and CHVs ran NHIS enrolment and renewal drives on 19 November 2025, registering or renewing 400 households against a yearly target of 6,000 (6.7% of target); verified evidence is the NHIS beneficiary register (02-A2.4-nhis-register).
+
+Heavy late-season rain left some CHPS compounds in Karaga unreachable by the training team for two days; training venues were moved to the nearest health centre. No other planned activities were recorded as not carried out in the month.
+
+4 Outcome Indicators and Data Quality
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	54	53	77.1%	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	60	59	80%	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	73	72	83%	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	38	36	63.3%	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	60	58	70.6%	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	77	74	81.1%	Descriptive only	DHIMS2 / GHS records
+MR-OP1.1	Number of health workers trained in EmONC or IMNCI	health workers	0	240	40	—	16.7%	Descriptive only	Training registers
+MR-OP1.2	Number of facilities equipped with delivery kits and solar vaccine fridges	facilities	0	24	2	—	8.3%	Descriptive only	Procurement and handover records
+MR-OP1.3	Number of CHVs trained and active	CHVs	0	300	50	50	16.7%	Descriptive only	CHV registers
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	28	20	7.8%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	1300	900	7.2%	Descriptive only	Community session registers
+MR-OP2.1	Number of DHMT staff trained in data use	staff	0	60	15	—	25%	Descriptive only	Training registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	8	6	6.7%	Descriptive only	Supervision reports
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	400	300	6.7%	Descriptive only	NHIA drive registers
+
+The six outcome indicators for November 2025 were recorded from DHIMS2/GHS records and facility stock cards. Postnatal checks within 48 hours rose to 38% from 36% in the previous period (baseline 34, target 60, 63.3% of target), the largest movement among the outcome indicators. Facilities with no stock-out of tracer MNCH medicines reached 60% against a target of 85% (70.6% of target), up from 58%. Complete and timely DHIMS2 reporting stood at 77% against a target of 95% (81.1% of target), up from 74%. ANC4+ reached 54% against a target of 70% (77.1% of target), skilled birth attendance 60% against a target of 75% (80% of target), and Penta3 coverage 73% against a target of 88% (83% of target), each up slightly on the previous period (from 53, 59 and 72 respectively). All six findings carry a neutral evaluation, so this report stays descriptive and records no performance judgement.
+
+No indicator was left unmeasured this month: all fourteen verified findings, including the six outcome-level indicators, recorded values, none was flagged as not calculable, and none carried a data-quality flag. The Action's indicator framework draws on DHIMS2/GHS records and facility stock cards; no survey-based result was recorded for this period, and the inputs contain no survey data to report. Outcomes are reported from DHIMS2 as the donor instructions require; commentary on completeness rests on the recorded DHIMS2 reporting rate of 77% against a target of 95%.
+
+Data quality notes: MR-OC1a to MR-OC1c and MR-OC2a draw on DHIMS2/GHS records, and MR-OC1e draws on facility stock cards. No completeness or reliability caveat, quality flag or disaggregation gap was recorded against any outcome-level finding in November 2025. No outcome-level finding carried a sex disaggregation list; sex-disaggregated results appear under the output indicators reported in their own sections.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 53 → 54 ▲
+
+Progress against targets
+
+Showing the first 12 of 14; the table has them all.
+
+Chart data
+5 Challenges, Risks and Mitigation
+
+Heavy late-season rain disrupted access in Karaga District during November 2025. Some CHPS compounds in Karaga could not be reached by the training team for two days. The verified attendance record for the health-worker training (02-A1.1-attendance), the supervision report (02-A2.2-supervision) and the attached activity records for the month document this challenge.
+
+The project mitigated the access disruption by moving training venues to the nearest health centre, so the first EmONC/IMNCI cohort and the CHV sessions went ahead. Equipment deliveries also ran behind plan: the officer's context records 2 facilities equipped against a plan of three this month, owing to a delayed shipment of solar vaccine fridges, with installation of the remaining kits and fridges to follow as stock arrives (02-A1.2-handover records the completed handovers).
+
+The inputs record no request for support or change requiring the Contracting Authority's agreement for November 2025.
+
+6 Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+
+Sex-disaggregated results from November 2025 show women formed the majority of trainees: of the 40 health workers trained in EmONC/IMNCI, 28 were female and 12 male; of the 50 CHVs trained and active, 30 were female and 20 male (60 percent female); and of the 15 DHMT staff trained in data use, 11 were female and 4 male. Community education sessions reached 1,300 women. Gender integration this month extended beyond training counts: women made up 60 percent of CHVs trained, and community sessions were held at times women could attend.
+
+On environment, healthcare waste was segregated at all newly equipped facilities, and old vaccine fridges were returned to the regional stores for responsible disposal. On do-no-harm, no incident was reported in November 2025, and CHVs were briefed on confidentiality of patient information. This month's records show no complaint, feedback or safeguarding compliance documentation beyond the officer's statement that no incident was reported; no further safeguarding evidence was supplied.
+
+7 Visibility and Communication
+
+The Action held one dedicated communication event in November 2025: a launch event in Tamale attended by the district chief executives and the press. The Action also delivered visible items and events during the month, including equipment handovers at 2 facilities and training sessions, as described in the section Activities Implemented; the handover was recorded through signed certificates (02-A1.2-handover), and training participation through attendance sheets (02-A1.1-attendance).
+
+Compliance status is partial. EU visibility is recorded for the launch event through the officer's narrative and for the events above through verified evidence, but the inputs do not include a dedicated record confirming EU visibility on the delivered equipment or materials. The compliance requirement that EU visibility be confirmed on materials, equipment and events is therefore recorded as met for the events held this month; confirmation for equipment and materials remains outstanding. No remediation steps are recorded in the inputs; the recorded next step in the equipment activity is to install the remaining kits and fridges as stock arrives.
+
+This project is funded by the European Union.
+
+Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union. Neither the European Union nor the granting authority can be held responsible for them.
+
+8 Plan for the Next Month
+Written without AI: this text was written by hand, or by an earlier version that did not record why. Check the wording.
+
+For the coming month, the Action will continue the delivery of its first-year activities, drawing on the plans recorded in November's activity records. The project will hold the next cohort of EmONC, IMNCI and essential newborn care training and follow up trained staff with mentoring visits; mentoring within a month of the classroom course was observed to improve use of the partograph and neonatal resuscitation. CHV cohorts and refresher sessions will continue, building on the observation that training at the nearest CHPS compound reduces absenteeism. Community education sessions on antenatal care, facility delivery and newborn danger signs will continue, with radio spots added; the November records note that sessions at market days and water points reach more women than sessions at fixed venues. NHIS enrolment and renewal drives will continue, with follow-up on renewals due next month, prioritising drives at antenatal clinics where they reach pregnant women directly. The project will hold the planned integrated outreach clinics and review outreach routes against road conditions, in view of the access disruption in Karaga described in the section Challenges, Risks and Mitigation. District teams will follow up the actions agreed with each facility during supportive supervision, using the checklist reviewed at each visit. DHMTs will be supported to use the new data views in monthly review meetings. The remaining delivery kits and solar vaccine fridges will be installed as stock arrives. No numerical expected results for the coming month were recorded in the inputs, so none are stated here.(Beside
+
+Section 1
+
+Summary of the Month
+Statements
+Sources · 28
+Chart
+Comments
+History
+
+Nothing to decide — all 10 statements are backed by evidence or decided.
+
+Not checked (minor)
+
+“November 2025 delivered the Action's first health-worker training cohort and its first facility equipment, alongside continued community and district-level work across Tolon, Kumbungu, Savelugu, Nanton and Karaga districts.”
+
+Not checked (minor)
+
+“Teams held 28 outreach clinics against a target of 360 (7.8% of target), up from 20 in the previous period, reached 1,300 women through community education against a target of 18,000 (7.2% of target), up from 900, assisted 400 households with NHIS enrolment or renewal against a target of 6,000 (6.7% of target), up from 300, and made 8 supportive supervision visits against a target of 120 (6.7% of target), up from 6.”
+
+Matches evidence
+
+“The project trained 40 health workers in EmONC, IMNCI and essential newborn care at Savelugu Municipal Hospital against a target of 240 (16.7% of target): 28 female and 12 male this period.”
+
+Matches evidence
+
+“It equipped 2 facilities with delivery kits and solar vaccine fridges against a target of 24 (8.3% of target); the officer's context records this as two against a plan of three, owing to a delayed shipment of fridges.”
+
+Matches evidence
+
+“Teams trained 15 DHMT staff in DHIMS2 and scorecard data use against a target of 60 (25% of target): 11 female and 4 male this period.”
+
+Matches evidence
+
+“CHV numbers stayed on plan, with 50 trained and active this period (30 female, 20 male), bringing the life-of-Action total to 100.”
+
+Matches evidence
+
+“Verified DHIMS2/GHS records show ANC4+ at 54% (baseline 52, target 70), skilled birth attendance at 60% (baseline 58, target 75), Penta3 at 73% (baseline 71, target 88), postnatal checks within 48 hours at 38% (baseline 34, target 60), no tracer-medicine stock-out at 60% of facilities (baseline 55, target 85) and complete DHIMS2 reporting at 77% (baseline 71, target 95).”
+
+Matches evidence
+
+“Heavy late-season rain left some Karaga CHPS compounds unreachable for two days; training venues moved to the nearest health centres.”
+
+Matches evidence
+
+“The verified evidence for the month comprises the training attendance sheet, equipment handover document, outreach register, DHIMS2 extract, NHIS register and supervision monitoring report.”
+
+Matches evidence
+
+“Priority for the coming month: the next training cohort and mentoring follow-up.”

@@ -1,0 +1,27 @@
+Clinic,Community,District,Date,ANC visits,Penta doses,Postnatal checks,Children weighed
+1,Community-1,Tolon,2026-07-01,26,18,8,56
+2,Community-2,Kumbungu,2026-07-02,15,15,12,41
+3,Community-3,Savelugu,2026-07-03,19,19,9,46
+4,Community-4,Nanton,2026-07-04,12,19,6,38
+5,Community-5,Karaga,2026-07-05,16,22,7,41
+6,Community-6,Tolon,2026-07-06,13,5,6,29
+7,Community-7,Kumbungu,2026-07-07,13,7,8,41
+8,Community-8,Savelugu,2026-07-08,12,15,5,51
+9,Community-9,Nanton,2026-07-09,13,21,3,27
+10,Community-10,Karaga,2026-07-10,13,21,10,22
+11,Community-11,Tolon,2026-07-11,19,22,12,54
+12,Community-12,Kumbungu,2026-07-12,13,21,5,25
+13,Community-13,Savelugu,2026-07-13,23,14,9,26
+14,Community-14,Nanton,2026-07-14,19,20,5,20
+15,Community-15,Karaga,2026-07-15,17,20,10,37
+16,Community-16,Tolon,2026-07-16,17,6,9,40
+17,Community-17,Kumbungu,2026-07-17,10,20,3,34
+18,Community-1,Savelugu,2026-07-18,22,15,10,25
+19,Community-2,Nanton,2026-07-19,25,12,8,46
+20,Community-3,Karaga,2026-07-20,26,5,9,20
+21,Community-4,Tolon,2026-07-21,21,8,5,24
+22,Community-5,Kumbungu,2026-07-22,20,7,9,40
+23,Community-6,Savelugu,2026-07-23,15,6,3,55
+24,Community-7,Nanton,2026-07-24,15,15,4,59
+25,Community-8,Karaga,2026-07-25,25,16,9,34
+26,Community-9,Tolon,2026-07-26,11,11,8,41

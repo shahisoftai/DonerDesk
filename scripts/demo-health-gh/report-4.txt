@@ -1,0 +1,246 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+
+GHA-MNCH-R-MUXVF1L0 · European Union (Delegation of the European Union to Ghana) · Ghana · HEALTH
+
+Oct 1, 2025 – Sep 30, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) · Feb 1, 2026 – Feb 28, 2026 · due Mar 5, 2026
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+Approved
+Version 1
+100% ready
+· all done
+Export report
+OUTLINE
+8 of 8 approved
+1
+Summary of the Month
+Approved
+2
+Progress Against Expected Results
+Approved
+3
+Activities Implemented
+Approved
+4
+Outcome Indicators and Data Quality
+Approved
+5
+Challenges, Risks and Mitigation
+Approved
+6
+Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+Approved
+7
+Visibility and Communication
+Approved
+8
+Plan for the Next Month
+Approved
+REPORT INPUTS
+Edit
+Indicator values
+12 of 12 verified · 7 not entered
+Story answers
+5 of 5 answered
+Evidence
+9 files
+
+[DEMO-7] NORTHERN GHANA MATERNAL, NEWBORN & CHILD HEALTH RESILIENCE PROGRAMME (MNCH-R) · FEB 1, 2026 – FEB 28, 2026 · DUE MAR 5, 2026
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+
+Approved
+1 Summary of the Month
+
+February 2026 delivered strong delivery volumes across the Action, with 32 outreach clinics held in Kumbungu District against a target of 360 (8.9% of target), the highest monthly figure recorded to date. The project trained 50 community health volunteers (30 female, 20 male) at Wantugu CHPS compound against a target of 300, and 15 DHMT staff (11 female, 4 male) in DHIMS2 and scorecard data use at Tolon District Health Directorate against a target of 60. Community education sessions reached 1,600 women against a target of 18,000, up from 1,500 in the previous period, and NHIS drives in Kumbungu and Nanton assisted 520 households against a target of 6,000. Supportive supervision covered 10 facility visits against a target of 120. Verified DHIMS2 and GHS records show ANC4+ at 57% (target 70), skilled birth attendance at 63% (target 75), postnatal checks within 48 hours at 43% (target 60), and complete DHIMS2 reporting at 84% (target 95). Two service indicators fell this month: Penta3 coverage declined to 70% (target 88), down from 75, and no tracer-medicine stock-out stood at 60% (target 85), down from 65. The officer's narrative attributes both to a national Penta vaccine shortage of about three weeks and facility-level stock-outs of several tracer medicines; CHVs listed and recalled children missed during the shortage once stock arrived, and the Regional Health Directorate was asked to redistribute stock between districts. Recovery is expected once stock arrives. Priority for the coming month: follow up supervision actions and continue CHV cohorts and NHIS renewals.
+
+2 Progress Against Expected Results
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	57	56	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	63	62	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	70	75	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	43	41	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	60	65	—	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	84	82	—	Descriptive only	DHIMS2 / GHS records
+MR-OP1.3	Number of CHVs trained and active	CHVs	0	300	50	50	16.7%	Descriptive only	CHV registers
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	32	30	8.9%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	1600	1500	8.9%	Descriptive only	Community session registers
+MR-OP2.1	Number of DHMT staff trained in data use	staff	0	60	15	15	25%	Descriptive only	Training registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	10	10	8.3%	Descriptive only	Supervision reports
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	520	500	8.7%	Descriptive only	NHIA drive registers
+
+The Action held 32 outreach clinics against a target of 360 (8.9% of target), its highest monthly number to date, up from 30 in the previous period, and trained 50 CHVs against a target of 300 (16.7% of target): 30 female and 20 male this period. DHMT data-use training covered 15 staff against a target of 60 (25% of target): 11 female and 4 male. Community education reached 1,600 women against a target of 18,000 (8.9% of target), up from 1,500, and NHIS drives assisted 520 households against a target of 6,000 (8.7% of target), up from 500. Teams conducted 10 supportive supervision visits against a target of 120 (8.3% of target).
+
+All six percentage indicators sit below their end-of-Action targets in the table. ANC4+ reached 57% against a 70% target (baseline 52, up 5 percentage points from the baseline), skilled delivery 63% against 75% (baseline 58), postnatal checks within 48 hours 43% against 60% (baseline 34) and complete and timely DHIMS2 reporting 84% against 95% (baseline 71). Penta3 coverage fell to 70% against an 88% target (baseline 71, down 1 percentage point) and no tracer-medicine stock-out stood at 60% against 85% (baseline 55): the officer's narrative attributes both to a national Penta vaccine shortage of about three weeks and facility-level stock-outs of several tracer medicines, and records that both are expected to recover once stock arrives. Corrective measures recorded this month: CHVs listed children missed during the shortage and recalled them for vaccination in the last week, and the Regional Health Directorate was asked to redistribute stock between districts. Indicators MR-IMP1, MR-OC2b, MR-OC2c, MR-OP1.1, MR-OP1.2, MR-OP2.3 and MR-OP2.5 were not measured this period, so no figures are reported for them.
+
+Data quality notes: no quality flags were raised against any verified finding this month, and no indicator was classified as not calculable. Outcome indicators MR-OC1a to MR-OC2a draw on DHIMS2 / GHS records and facility stock cards; recorded commentary on data completeness and reliability is limited to the DHIMS2 completeness and timeliness figure of 84%. Output figures come from CHV registers, outreach registers, community session registers, training registers, supervision reports and NHIA drive registers.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 56 → 57 ▲
+
+Progress against targets
+Chart data
+3 Activities Implemented
+
+The Action carried out six activities in February 2026 across Tolon, Kumbungu and Nanton districts. All were dated within the reporting period.
+
+In Tolon District, the project trained 50 community health volunteers at Wantugu CHPS compound on 11 February 2026 (30 female, 20 male). This brought the life-of-Action total to 200 of 300 (66.7% of target). Verified evidence is the training attendance sheet for that session. The records note that training CHVs at the nearest CHPS compound reduces absenteeism. Also in Tolon District, the project trained 15 DHMT staff in DHIMS2 and scorecard data use on 10 February 2026 at the Tolon District Health Directorate (11 female, 4 male). The life-of-Action total is 30 of 60 (50% of target). Verified evidence is the attendance record and supporting session evidence for this training. The records note that training on the district's own data is more useful than generic examples.
+
+In Tolon District communities on 17 February 2026, CHVs and community mobilisers held education sessions on antenatal care, facility delivery and newborn danger signs. The sessions reached 1,600 women against a target of 18,000 for the year (8.9% of target). All participants recorded were female. The life-of-Action total is 6,550 of 18,000. Verified evidence is the community session attendance sheet. The records note that sessions at market days and water points reach more women than sessions at fixed venues.
+
+In Kumbungu and Nanton districts on 19 February 2026, NHIA district officers and CHVs ran NHIS enrolment and renewal drives. They registered or renewed 520 households against a target of 6,000 (8.7% of target), prioritising households with pregnant women and children under five. The life-of-Action total is 2,170 of 6,000. Verified evidence is the NHIS beneficiary register. The records note that drives at antenatal clinics reach pregnant women directly. Sex-disaggregated figures for this result were not recorded in the available inputs.
+
+In the Kumbungu Health Centre catchment, Kumbungu District, the project held 32 integrated outreach clinics on 20 February 2026. The clinics offered ANC, immunisation, postnatal checks and child weighing, against a target of 360 for the year (8.9% of target). The life-of-Action total is 136 of 360. This was the highest monthly number of clinics so far. Verified evidence comprises the outreach register and a DHIMS2 extract. The records note that fixed outreach calendars shared with CHVs and chiefs raise turnout.
+
+In Kumbungu District on 24 February 2026, district teams and project staff made 10 supportive supervision visits using the standard checklist, against a target of 120 (8.3% of target). The life-of-Action total is 42 of 120. The checklist covered partograph use, stock management, cold chain and DHIMS2 completeness. Verified evidence is the supervision monitoring report. The records note that a checklist with agreed actions reviewed at the next visit closes gaps faster than reports alone.
+
+No activities were recorded as planned but not carried out in February. A national shortage of Penta (pentavalent) vaccine lasted about three weeks, and several tracer medicines were out of stock at facility level. This affected service delivery rather than cancelling planned activities. Children missed during the shortage were listed by CHVs and recalled in the last week.
+
+4 Outcome Indicators and Data Quality
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	57	56	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	63	62	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	70	75	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	43	41	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	60	65	—	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	84	82	—	Descriptive only	DHIMS2 / GHS records
+MR-OP1.3	Number of CHVs trained and active	CHVs	0	300	50	50	16.7%	Descriptive only	CHV registers
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	32	30	8.9%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	1600	1500	8.9%	Descriptive only	Community session registers
+MR-OP2.1	Number of DHMT staff trained in data use	staff	0	60	15	15	25%	Descriptive only	Training registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	10	10	8.3%	Descriptive only	Supervision reports
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	520	500	8.7%	Descriptive only	NHIA drive registers
+
+The Action recorded all six outcome indicators in February 2026. Complete and timely DHIMS2 reporting stood at 84% against a target of 95% (88.4% of target), up from 82% in the previous period, and ANC4+ reached 57% against a target of 70% (81.4% of target), up from 56%. Skilled birth attendance rose to 63% against a target of 75% (84% of target) from 62%, and postnatal checks within 48 hours reached 43% against a target of 60% (71.7% of target) from 41%.
+
+Two indicators fell. Penta3 coverage was 70% against a target of 88% (79.5% of target), down from 75%, and facilities with no stock-out of tracer MNCH medicines stood at 60% against a target of 85% (70.6% of target), down from 65%. The indicator comments and the reporting officer attribute both falls to a national Penta (pentavalent) vaccine shortage of about three weeks and tracer-medicine stock-outs at facility level, described in the section Challenges, Risks and Mitigation; both are expected to recover once stock arrives. All six findings carry a neutral evaluation, so this report records no performance judgement.
+
+Two survey-based indicators were not measured this month: MR-OC2b, percentage of target households covered by active NHIS membership, and MR-OC2c, percentage of women satisfied with respectful maternity care. The verified findings for February 2026 contain no survey results, and the inputs record no value for these two indicators this period; the prior approved narratives place them on a quarterly survey cycle. No finding was flagged as not calculable and no finding carried a data-quality flag.
+
+The Action reports outcome indicators from DHIMS2/GHS records and surveys as required. Commentary on data completeness rests on the recorded DHIMS2 reporting rate of 84% of facilities submitting complete and timely reports against a target of 95%; the remaining outcome indicator draws on facility stock cards.
+
+Data quality notes: MR-OC1a to MR-OC1d and MR-OC2a draw on DHIMS2 / GHS records, and MR-OC1e draws on facility stock cards. The Action recorded no completeness or reliability caveat, quality flag or disaggregation gap against any outcome-level finding in February 2026. No outcome-level finding carried a sex disaggregation list; sex-disaggregated results appear under the output indicators reported in their own sections.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 56 → 57 ▲
+
+Progress against targets
+Chart data
+5 Challenges, Risks and Mitigation
+
+A national shortage of Penta (pentavalent) vaccine lasted about three weeks during February 2026, and several tracer medicines were out of stock at facility level. The shortage affected two service indicators. Penta3 coverage stood at 70% against a target of 88%, down from 75 in the previous period. The share of facilities with no stock-out of tracer MNCH medicines stood at 60% against a target of 85%, down from 65. The verified supervision monitoring report, the outreach field visit register and the DHIMS2 extract attached to the month's activities document this challenge. The indicator updates record the national Penta vaccine shortage and tracer-medicine stock-outs as the recorded causes.
+
+The project mitigated the shortage in two ways. Community health volunteers listed the children who missed vaccination during the shortage and recalled them in the last week of the month, once stock arrived. The officer's context records that these recall lists helped trace and vaccinate the children missed. The project also asked the Regional Health Directorate to redistribute stock between districts. Both the officer's context and the activity records state that Penta3 coverage and tracer-medicine availability are expected to recover once stock arrives.
+
+The inputs record no other challenge or risk for February 2026. No request for support or a change that needs the Contracting Authority's agreement was recorded for the month.
+
+6 Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+
+The national Penta vaccine shortage of about three weeks shaped cross-cutting work in February 2026: the Action had to trace and recall children who missed vaccinations once stock arrived.
+
+Gender. Sex-disaggregated results for the month show women in the majority of trainees: the Action trained 50 CHVs this period, 30 female and 20 male, and 15 DHMT staff in data use, 11 female and 4 male. Community education sessions reached 1,600 women. The reporting officer's statement records that CHVs prioritised pregnant women and newborns on the Penta recall lists. Verified attendance sheets record these breakdowns for the CHV training and the community education sessions; other February activities, including the NHIS enrolment drives and the supportive supervision visits, did not record sex-disaggregated participant data in the records supplied for this section.
+
+Environment. The reporting officer's statement records that the Action returned expired vaccines for incineration under district supervision. No further health-care waste or environmental monitoring record was supplied for February.
+
+Do-no-harm. The officer's statement records no incident or safeguarding concern in February 2026, and CHVs handled the recall lists with consent. No complaints, feedback or safeguarding compliance documentation beyond this statement was supplied for the month.
+
+7 Visibility and Communication
+
+No dedicated communication activity took place in February 2026. The Action's visible community-facing events this month were the 50-participant CHV training at Wantugu CHPS compound, the 15-participant DHMT data-use training at Tolon District Health Directorate, the community education sessions that reached 1,600 women, the 32 integrated outreach clinics, the 520-household NHIS drives and the 10 supportive supervision visits, as described in the section Activities Implemented.
+
+Compliance status is partial. Verified evidence records these events: the verified attendance sheets for the CHV and community education sessions, the attendance and training records held with the DHMT data-use training activity, the verified outreach register and DHIMS2 extract from the outreach activity, the verified NHIS drive register, and the verified supportive supervision report. The inputs do not include a dedicated record confirming EU visibility on the delivered materials and equipment, so confirmation on materials and equipment remains outstanding. No remediation steps are recorded in the inputs.
+
+This project is funded by the European Union.
+
+Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union. Neither the European Union nor the granting authority can be held responsible for them.
+
+8 Plan for the Next Month
+
+For March 2026, the Action will carry forward the plans recorded in February's activity records. The project will continue CHV cohorts and refresher sessions, building on the 50 CHVs trained and active this period (200 of 300 to date). Community education sessions on antenatal care, facility delivery and newborn danger signs will continue, with radio spots added; sessions reached 1,600 women in February (6,550 of 18,000 to date), and the records note that sessions at market days and water points reach more women than sessions at fixed venues. The project will hold the planned integrated outreach clinics and review outreach routes against the road conditions, after 32 clinics in February (136 of 360 to date). District teams will follow up the actions agreed at each facility during supportive supervision, using the checklist reviewed at the next visit; 10 visits were made in February (42 of 120 to date). DHMTs will be supported to use the new data views in monthly review meetings, following the training for 15 DHMT staff (30 of 60 to date). NHIS enrolment and renewal drives will continue, with follow-up on renewals due next month; 520 households were assisted in February (2,170 of 6,000 to date), and drives at antenatal clinics reach pregnant women directly. In response to the national Penta vaccine shortage described in the section Challenges, Risks and Mitigation, children missed during the shortage were listed by CHVs and recalled in the last week, and the Regional Health Directorate was asked to redistribute stock between districts; both the Penta3 coverage and tracer-medicine availability are expected to recover once stock arrives. No numerical targets or expected results for March 2026 were recorded in the inputs, so none are stated here.
+
+Section 1
+
+Summary of the Month
+Statements
+Sources · 25
+Chart
+Comments
+History
+
+Nothing to decide — all 9 statements are backed by evidence or decided.
+
+Kept with a note
+
+“Two service indicators fell this month: Penta3 coverage declined to 70% (target 88), down from 75, and no tracer-medicine stock-out stood at 60% (target 85), down from 65.”
+
+Note: Figure checked against the verified indicator value and the attached register; wording accepted by the reviewer.
+
+Not checked (minor)
+
+“Recovery is expected once stock arrives.”
+
+Matches evidence
+
+“February 2026 delivered strong delivery volumes across the Action, with 32 outreach clinics held in Kumbungu District against a target of 360 (8.9% of target), the highest monthly figure recorded to date.”
+
+Matches evidence
+
+“The project trained 50 community health volunteers (30 female, 20 male) at Wantugu CHPS compound against a target of 300, and 15 DHMT staff (11 female, 4 male) in DHIMS2 and scorecard data use at Tolon District Health Directorate against a target of 60.”
+
+Matches evidence
+
+“Community education sessions reached 1,600 women against a target of 18,000, up from 1,500 in the previous period, and NHIS drives in Kumbungu and Nanton assisted 520 households against a target of 6,000.”
+
+Matches evidence
+
+“Supportive supervision covered 10 facility visits against a target of 120.”
+
+Matches evidence
+
+“Verified DHIMS2 and GHS records show ANC4+ at 57% (target 70), skilled birth attendance at 63% (target 75), postnatal checks within 48 hours at 43% (target 60), and complete DHIMS2 reporting at 84% (target 95).”
+
+Matches evidence
+
+“The officer's narrative attributes both to a national Penta vaccine shortage of about three weeks and facility-level stock-outs of several tracer medicines; CHVs listed and recalled children missed during the shortage once stock arrived, and the Regional Health Directorate was asked to redistribute stock between districts.”
+
+Matches evidence
+
+“Priority for the coming month: follow up supervision actions and continue CHV cohorts and NHIS renewals.”

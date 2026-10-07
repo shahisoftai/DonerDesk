@@ -1,0 +1,248 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+
+GHA-MNCH-R-MUXVF1L0 · European Union (Delegation of the European Union to Ghana) · Ghana · HEALTH
+
+Oct 1, 2025 – Sep 30, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) · Jun 1, 2026 – Jun 30, 2026 · due Jul 5, 2026
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+Approved
+Version 1
+100% ready
+· all done
+Export report
+OUTLINE
+8 of 8 approved
+1
+Summary of the Month
+Approved
+2
+Progress Against Expected Results
+Approved
+3
+Activities Implemented
+Approved
+4
+Outcome Indicators and Data Quality
+Approved
+5
+Challenges, Risks and Mitigation
+Approved
+6
+Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+Approved
+7
+Visibility and Communication
+Approved
+8
+Plan for the Next Month
+Approved
+REPORT INPUTS
+Edit
+Indicator values
+15 of 15 verified · 4 not entered
+Story answers
+5 of 5 answered
+Evidence
+10 files
+
+[DEMO-7] NORTHERN GHANA MATERNAL, NEWBORN & CHILD HEALTH RESILIENCE PROGRAMME (MNCH-R) · JUN 1, 2026 – JUN 30, 2026 · DUE JUL 5, 2026
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+
+Approved
+1 Summary of the Month
+
+June 2026 put the European Union-funded Action back on plan after the May backlog. The project held 31 integrated outreach clinics against a target of 360, up from 18 in the previous period, and reached 1,650 women with community education sessions against a target of 18,000, up from 900. NHIS enrolment and renewal drives in Kumbungu and Savelugu districts assisted 560 households against a target of 6,000, up from 350. The project trained 35 health workers (25 female, 10 male) in EmONC, IMNCI and essential newborn care at Tolon Health Centre and 30 community health volunteers (18 female, 12 male) at Wantugu CHPS compound. District teams conducted 11 supportive supervision visits against a target of 120, and the five DHMTs produced 5 quarterly scorecards against a target of 20, their third round.
+
+2 Progress Against Expected Results
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	62	59	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	68	66	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	80	78	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	50	46	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	76	70	—	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	90	86	—	Descriptive only	DHIMS2 / GHS records
+MR-OC2b	Percentage of target households covered by active NHIS membership	%	48	65	59	55	—	Descriptive only	Quarterly household spot survey
+MR-OC2c	Percentage of women satisfied with respectful maternity care	%	62	80	74	70	—	Descriptive only	Quarterly exit interviews
+MR-OP1.1	Number of health workers trained in EmONC or IMNCI	health workers	0	240	35	40	14.6%	Descriptive only	Training registers
+MR-OP1.3	Number of CHVs trained and active	CHVs	0	300	30	50	10%	Descriptive only	CHV registers
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	31	18	8.6%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	1650	900	9.2%	Descriptive only	Community session registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	11	6	9.2%	Descriptive only	Supervision reports
+MR-OP2.3	Number of quarterly district scorecards produced	scorecards	0	20	5	5	25%	Descriptive only	DHMT review minutes
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	560	350	9.3%	Descriptive only	NHIA drive registers
+
+The verified results table for June 2026 reports progress by Outcome and Output of the Logical Framework Matrix.
+
+Service indicators recovered strongly. The Action held 31 outreach clinics against a target of 360 (8.6% of target), up from 18 in the previous period, and reached 1650 women with community education against a target of 18,000 (9.2% of target), up from 900. Penta3 coverage rose to 80 against an 88 target, and complete and timely DHIMS2 reporting stood at 90 against a 95 target (94.7% of target). The Action trained 35 health workers in EmONC or IMNCI against a target of 240 (14.6% of target), of whom 25 female and 10 male this period, and 30 CHVs against a target of 300 (10% of target), of whom 18 female and 12 male this period. All outcome and output findings were evaluated without a positive or negative performance judgement this month; none was classified as not calculable. Indicators MR-IMP1, MR-OP1.2, MR-OP2.1 and MR-OP2.5 were not measured this period, so no figures are reported for them.
+
+On the question of indicators behind plan: the monthly output figures are small shares of end-of-Action targets, which reflects a monthly reporting rhythm against project-life targets rather than shortfalls; the officer's narrative records the Action as on plan after the recovery, with the backlog of clinics and trainings postponed in May cleared in June. The recorded corrective measures were that the team ran extra clinics at weekends and combined two training cohorts; weekend clinics cleared the May backlog in two weeks.
+
+Data quality notes: no quality flags were raised against any verified finding this month, and no indicator was classified as not calculable. Outcome indicators draw on DHIMS2 / GHS records, facility stock cards, the quarterly household spot survey and quarterly exit interviews; recorded commentary on data completeness and reliability is limited to the DHIMS2 completeness and timeliness figure of 90. Output figures come from training registers, CHV registers, outreach registers, community session registers, supervision reports, DHMT review minutes and NHIA drive registers.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 59 → 62 ▲
+
+Progress against targets
+
+Showing the first 12 of 15; the table has them all.
+
+Chart data
+3 Activities Implemented
+
+The Action carried out seven activities in June 2026, all dated within the reporting period, across Tolon, Kumbungu and Savelugu districts and in Tamale. A backlog of clinics and trainings postponed in May had to be fitted into June alongside the quarterly survey round; the team ran extra clinics at weekends and combined two training cohorts, and weekend clinics cleared the May backlog in two weeks.
+
+In Tolon District, the project trained 35 health workers in EmONC, IMNCI and essential newborn care with on-site mentoring at Tolon Health Centre on 9 June 2026 (25 female, 10 male), bringing the life-of-Action total to 190 of 240. Verified evidence comprises the training attendance sheet and session records. The training records note that mentoring at the facility within a month of the classroom course improves use of the partograph and neonatal resuscitation.
+
+Also in Tolon District, on 11 June 2026 at Wantugu CHPS compound, the project trained 30 community health volunteers (18 female, 12 male), bringing the life-of-Action total to 280 of 300. Verified evidence comprises the CHV training and session records. The records note that training CHVs at the nearest CHPS compound reduces absenteeism.
+
+In Tolon District communities on 17 June 2026, CHVs and community mobilisers held education sessions on antenatal care, facility delivery and newborn danger signs, reaching 1,650 women, all recorded as female; the life-of-Action total is 12,450 of 18,000. Verified evidence is the community session register. The records note that sessions at market days and water points reach more women than fixed venues.
+
+In Kumbungu and Savelugu districts on 19 June 2026, NHIA district officers and CHVs ran NHIS enrolment and renewal drives, registering or renewing 560 households against a target of 6,000; the life-of-Action total is 4,240 of 6,000. Verified evidence is the attached drive register. The records note that drives at antenatal clinics reach pregnant women directly.
+
+In the Kumbungu Health Centre catchment, Kumbungu District, the project held 31 integrated outreach clinics offering ANC, immunisation, postnatal checks and child weighing on 20 June 2026, against a target of 360; the life-of-Action total is 250 of 360. The DHIMS2 extract shows 62 percent of pregnant women with four or more ANC visits, 68 percent skilled deliveries, 80 percent Penta3 coverage and 50 percent postnatal checks within 48 hours at supported facilities. Verified evidence comprises the outreach register and the DHIMS2 extract. The records note that fixed outreach calendars shared with CHVs and chiefs raise turnout.
+
+In Kumbungu District on 24 June 2026, district teams and project staff made 11 supportive supervision visits using the standard checklist covering partograph use, stock management, cold chain and DHIMS2 completeness, against a target of 120; the life-of-Action total is 81 of 120. Verified evidence is the supervision report. The records note that a checklist with agreed actions reviewed at the next visit closes gaps faster than reports alone.
+
+On 27 June 2026 in Tamale, the five DHMTs produced and reviewed their quarterly scorecards for the quarter ending June 2026 at a review meeting attended by 25 participants (14 male, 11 female); 5 scorecards were published, and review minutes recorded agreed actions. The life-of-Action total is 15 of 20. Verified evidence is the review minutes.
+
+No activities were recorded as planned but not carried out in June. The trainings and clinics postponed during the May industrial action were rescheduled and delivered within the month.
+
+Verified evidence for the month comprises the training attendance and session records, the CHV training records, the community session register, the NHIA drive register, the outreach register, the DHIMS2 extract, the supervision report and the scorecard review minutes.
+
+4 Outcome Indicators and Data Quality
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	62	59	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	68	66	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	80	78	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	50	46	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	76	70	—	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	90	86	—	Descriptive only	DHIMS2 / GHS records
+MR-OC2b	Percentage of target households covered by active NHIS membership	%	48	65	59	55	—	Descriptive only	Quarterly household spot survey
+MR-OC2c	Percentage of women satisfied with respectful maternity care	%	62	80	74	70	—	Descriptive only	Quarterly exit interviews
+MR-OP1.1	Number of health workers trained in EmONC or IMNCI	health workers	0	240	35	40	14.6%	Descriptive only	Training registers
+MR-OP1.3	Number of CHVs trained and active	CHVs	0	300	30	50	10%	Descriptive only	CHV registers
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	31	18	8.6%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	1650	900	9.2%	Descriptive only	Community session registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	11	6	9.2%	Descriptive only	Supervision reports
+MR-OP2.3	Number of quarterly district scorecards produced	scorecards	0	20	5	5	25%	Descriptive only	DHMT review minutes
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	560	350	9.3%	Descriptive only	NHIA drive registers
+
+All eight outcome-level indicators were measured in June 2026, and every one rose against the previous period. DHIMS2/GHS records showed ANC4+ at 62 percent against a target of 70 (up from 59), skilled birth attendance at 68 percent against 75 (up from 66), Penta3 coverage at 80 percent against 88 (up from 78), and postnatal checks within 48 hours at 50 percent against 60 (up from 46). Facilities with no stock-out of tracer MNCH medicines stood at 76 percent against 85 (up from 70, from facility stock cards), and complete and timely DHIMS2 reporting reached 90 percent against a target of 95 (94.7% of target), up from 86. The quarterly survey round returned active NHIS membership at 59 percent of target households against 65 (up from 55) and satisfaction with respectful maternity care at 74 percent against 80 (up from 70). Every finding carries a neutral evaluation, so the report records no performance judgement, and no outcome-level finding was flagged as not calculable.
+
+The Action reports outcome indicators from DHIMS2/GHS records and surveys as the donor template requires. Commentary on data completeness rests on the recorded DHIMS2 reporting rate of 90 percent of facilities submitting complete and timely reports against a target of 95. The quarterly household spot survey and quarterly exit interviews were both conducted in June, so no survey-based outcome was missing this month.
+
+Which indicators were not measured this month, and why? Four indicators were not measured in June 2026: MR-IMP1 (institutional maternal mortality ratio per 100,000 live births at supported facilities), MR-OP1.2 (facilities equipped with delivery kits and solar vaccine fridges), MR-OP2.1 (DHMT staff trained in data use) and MR-OP2.5 (facility managers trained in respectful maternity care). These indicators sit outside this section's outcome set and no verified value was recorded for them this period; the inputs record no result for any of the four in June. No finding was flagged as not calculable and no outcome-level finding carried a data-quality flag.
+
+Data quality notes: MR-OC1a to MR-OC1d and MR-OC2a draw on DHIMS2 / GHS records, MR-OC1e on facility stock cards, MR-OC2b on the quarterly household spot survey and MR-OC2c on quarterly exit interviews. The Action recorded no completeness or reliability caveat, quality flag or disaggregation gap against any outcome-level finding in June 2026. No outcome-level finding carried a sex disaggregation list; sex-disaggregated results appear under the output indicators reported in their own sections.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 59 → 62 ▲
+
+Progress against targets
+
+Showing the first 12 of 15; the table has them all.
+
+Chart data
+5 Challenges, Risks and Mitigation
+
+The principal challenge of June 2026 was a backlog of clinics and trainings postponed during the May industrial action. The team had to fit this backlog into June alongside the quarterly survey round. The challenge is recorded in the verified evidence attached to June's activities: the outreach clinic register and DHIMS2 extract, the supervision monitoring report, the training attendance sheet, the CHV training records, the NHIS register and the scorecard review minutes, all dated within the reporting period.
+
+The project applied two mitigations. Weekend outreach clinics cleared the May backlog in two weeks, and two training cohorts were combined into one. As recorded in the Summary of the Month, the Action returned to plan: it held 31 outreach clinics against a target of 360, reached 1,650 women against a target of 18,000, and assisted 560 households with NHIS enrolment or renewal against a target of 6,000.
+
+The inputs record no other challenge or risk for June 2026. No request for support or a change that needs the Contracting Authority's agreement was recorded for the month.
+
+6 Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+
+June 2026 was a recovery month in which the project cleared the May backlog while keeping gender, environment and do-no-harm considerations in view.
+
+Gender. The reporting officer's statement records that the Action arranged weekend outreach clinics so that women could attend with their companions. Sex-disaggregated results for the month show 35 health workers trained in EmONC or IMNCI, comprising 25 female and 10 male, per the verified attendance sheet, and 30 CHVs trained and active, comprising 18 female and 12 male, per the CHV registers. Community education sessions reached 1650 women, all female as recorded in the session registers. The outreach clinics, NHIS enrolment drives, supportive supervision visits and scorecard review meetings did not record sex-disaggregated participant data in the records supplied for this section, beyond the scorecard meeting's 25 participants (14 male, 11 female).
+
+Environment. The officer's statement records no change on environment or health-care waste this month; no environmental monitoring record was supplied for June 2026.
+
+Do-no-harm. The officer's statement records that no incident was reported in June 2026. No safeguarding concern was recorded in the records supplied for the month. No complaints, feedback or safeguarding compliance documentation beyond this statement was supplied for the period.
+
+7 Visibility and Communication
+
+No dedicated communication activity took place in June 2026. The Action's visible community-facing events this month were the training of 35 health workers (25 female, 10 male) at Tolon Health Centre, the training of 30 community health volunteers (18 female, 12 male) at Wantugu CHPS compound, the community education sessions that reached 1,650 women, the 31 integrated outreach clinics in Kumbungu District, the 560-household NHIS enrolment and renewal drives in Kumbungu and Savelugu districts, the 11 supportive supervision visits and the quarterly district scorecard review meetings in Tamale, as described in the section Activities Implemented.
+
+Compliance status is partial. Verified evidence records these events: the verified attendance sheet held with the EmONC, IMNCI and essential newborn care training, the verified training and session records held with the CHV activity, the verified community session record held with the education activity, the verified outreach register and DHIMS2 extract, the verified NHIS drive register, the verified supervision report and the verified minutes of the quarterly district scorecard review meetings. The inputs do not include a dedicated record confirming EU visibility on materials, equipment and events, so confirmation remains outstanding. No remediation steps are recorded in the inputs; the recorded next steps are to hold the next training cohort, continue the sessions and drives, and follow the agreed actions from the scorecard review.
+
+This project is funded by the European Union.
+
+Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union. Neither the European Union nor the granting authority can be held responsible for them.
+
+8 Plan for the Next Month
+
+The Action will carry forward, for July 2026, the plans recorded in June's activity records, after the project returned to plan by clearing the May backlog through weekend outreach clinics and combined training cohorts. The project will hold the next cohort of EmONC, IMNCI and essential newborn care training and follow up trained staff with mentoring visits, building on the 35 health workers trained in June (25 female, 10 male; 190 of 240 to date), since the training records note that mentoring at the facility within a month of the classroom course improves use of the partograph and neonatal resuscitation. The project will continue CHV cohorts and refresher sessions, following the 30 CHVs trained and active in June (18 female, 12 male; 280 of 300 to date). Community education sessions on antenatal care, facility delivery and newborn danger signs will continue, with radio spots added; sessions reached 1,650 women in June (12,450 of 18,000 to date), and the records note that sessions at market days and water points reach more women than sessions at fixed venues. The project will hold the planned integrated outreach clinics and review outreach routes against the road conditions, after 31 clinics in June (250 of 360 to date). District teams will follow up the actions agreed at each facility during supportive supervision, using the checklist reviewed at the next visit; 11 visits were made in June (81 of 120 to date). DHMTs will follow the agreed actions from the quarterly scorecards for the quarter ending June 2026 in the next quarter, as recorded in the scorecard review minutes; 5 scorecards were produced (15 of 20 to date). NHIS enrolment and renewal drives will continue, with follow-up on renewals due next month; 560 households were assisted in June (4,240 of 6,000 to date), and the drive records note that drives at antenatal clinics reach pregnant women directly. No numerical targets or expected results for July 2026 were recorded in the inputs, so none are stated here.
+
+Section 1
+
+Summary of the Month
+Statements
+Sources · 26
+Chart
+Comments
+History
+
+Nothing to decide — all 5 statements are backed by evidence or decided.
+
+Kept with a note
+
+“NHIS enrolment and renewal drives in Kumbungu and Savelugu districts assisted 560 households against a target of 6,000, up from 350.”
+
+Note: Figure checked against the verified indicator value and the attached register; wording accepted by the reviewer.
+
+Matches evidence
+
+“June 2026 put the European Union-funded Action back on plan after the May backlog.”
+
+Matches evidence
+
+“The project held 31 integrated outreach clinics against a target of 360, up from 18 in the previous period, and reached 1,650 women with community education sessions against a target of 18,000, up from 900.”
+
+Matches evidence
+
+“The project trained 35 health workers (25 female, 10 male) in EmONC, IMNCI and essential newborn care at Tolon Health Centre and 30 community health volunteers (18 female, 12 male) at Wantugu CHPS compound.”
+
+Matches evidence
+
+“District teams conducted 11 supportive supervision visits against a target of 120, and the five DHMTs produced 5 quarterly scorecards against a target of 20, their third round.”

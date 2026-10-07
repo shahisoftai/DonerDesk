@@ -1,0 +1,250 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+
+GHA-MNCH-R-MUXVF1L0 · European Union (Delegation of the European Union to Ghana) · Ghana · HEALTH
+
+Oct 1, 2025 – Sep 30, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) · May 1, 2026 – May 31, 2026 · due Jun 5, 2026
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+Approved
+Version 1
+100% ready
+· all done
+Export report
+OUTLINE
+8 of 8 approved
+1
+Summary of the Month
+Approved
+2
+Progress Against Expected Results
+Approved
+3
+Activities Implemented
+Approved
+4
+Outcome Indicators and Data Quality
+Approved
+5
+Challenges, Risks and Mitigation
+Approved
+6
+Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+Approved
+7
+Visibility and Communication
+Approved
+8
+Plan for the Next Month
+Approved
+REPORT INPUTS
+Edit
+Indicator values
+12 of 12 verified · 7 not entered
+Story answers
+5 of 5 answered
+Evidence
+9 files
+
+[DEMO-7] NORTHERN GHANA MATERNAL, NEWBORN & CHILD HEALTH RESILIENCE PROGRAMME (MNCH-R) · MAY 1, 2026 – MAY 31, 2026 · DUE JUN 5, 2026
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+
+Approved
+1 Summary of the Month
+
+May 2026 delivered less than planned for the European Union-funded Action because an industrial action by nurses and community health officers closed or reduced services at many facilities in the five districts for about two weeks. The project held 18 integrated outreach clinics against a target of 360 (5% of target), down from 33 in the previous period, for a life-of-Action total of 219. Community education sessions reached 900 women against a target of 18,000, down from 1,700, for a total of 10,800. NHIS drives in Savelugu and Kumbungu districts assisted 350 households against a target of 6,000, down from 600, for a total of 3,680. The project equipped 2 facilities with delivery kits and solar vaccine fridges, bringing the total to 16 of 24, and conducted 6 supportive supervision visits against a target of 120. It trained 10 facility managers (6 female, 4 male) in respectful maternity care at Kumbungu District Health Directorate, for a life-of-Action total of 30 of 40. Verified DHIMS2/GHS records show ANC4+ at 59% (target 70), skilled birth attendance at 66% (target 75), Penta3 at 78% (target 88), postnatal checks within 48 hours at 46% (target 60), no tracer-medicine stock-out at 70% of facilities (target 85) and complete and timely DHIMS2 reporting at 86% (target 95). Project mobile teams kept emergency obstetric referrals running during the action, and clinics were rescheduled in June. Evidence comprises the verified outreach register, DHIMS2 extract, attendance sheet, NHIS register, handover document and supervision report. Priorities: hold the rescheduled June clinics, resume training and outreach, and install the remaining kits and fridges.
+
+2 Progress Against Expected Results
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	59	61	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	66	67	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	78	76	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	46	48	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	70	72	—	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	86	89	—	Descriptive only	DHIMS2 / GHS records
+MR-OP1.2	Number of facilities equipped with delivery kits and solar vaccine fridges	facilities	0	24	2	3	8.3%	Descriptive only	Procurement and handover records
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	18	33	5%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	900	1700	5%	Descriptive only	Community session registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	6	11	5%	Descriptive only	Supervision reports
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	350	600	5.8%	Descriptive only	NHIA drive registers
+MR-OP2.5	Number of facility managers trained in respectful maternity care	managers	0	40	10	10	25%	Descriptive only	Training registers
+
+Penta3 coverage was the strongest outcome measure this month at 78% against an 88% target, and complete and timely DHIMS2 reporting stood at 86% against a 95% target. Several indicators fell behind plan because an industrial action by nurses and community health officers lasted about two weeks and closed or reduced services at many facilities in the five districts: outreach clinics fell to 18 against about 30 planned (5% of the 360 target), community education reached 900 women against a target of 18,000 (5% of target), ANC4+ dipped to 59% against a 70% target, and postnatal checks within 48 hours fell to 46% against a 60% target. The recorded corrective action was that training and outreach were suspended during the action, project mobile teams supported emergency services and kept emergency obstetric referrals running, and clinics were rescheduled in June. The indicators MR-OP1.1 (health workers trained in EmONC or IMNCI), MR-OP1.3 (CHVs trained and active) and MR-OP2.1 (DHMT staff trained in data use) were not reported this month; the officer's narrative records there was no training or CHV cohort in May. No indicator was classified as not calculable.
+
+Data quality notes: no quality flags were raised against any verified finding this month. Outcome indicators draw on DHIMS2 / GHS records and facility stock cards; recorded commentary on data completeness and reliability is limited to the DHIMS2 completeness and timeliness figure of 86% and the comment that the industrial action reduced postnatal checks. Output figures come from training registers, procurement and handover records, outreach registers, community session registers, supervision reports and NHIA drive registers.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 61 → 59 ▼
+
+Progress against targets
+Chart data
+3 Activities Implemented
+
+The Action carried out six activities in May 2026, all dated within the reporting period, across Kumbungu and Savelugu districts. An industrial action by nurses and community health officers lasted about two weeks and closed or reduced services at many facilities in the five districts; training and outreach were suspended during the action and clinics were rescheduled in June.
+
+On 12 May 2026 at the Kumbungu District Health Directorate, Kumbungu District, the project trained 10 facility managers in respectful maternity care (6 female, 4 male), bringing the life-of-Action total to 30 of 40. Verified evidence comprises the training attendance and session records. The records note that managers who hear women's exit-interview feedback commit to concrete changes.
+
+On 14 May 2026 at Diare CHPS compound, Kumbungu District, the project delivered and installed delivery kits (delivery sets, neonatal resuscitation equipment and fetal dopplers) and solar vaccine fridges at 2 facilities, bringing the life-of-Action total to 16 of 24. Handover certificates were signed by the in-charges and logged by the district health directorate. Verified evidence is the signed handover approval document. The records note that technician handover and a daily temperature log at installation keep fridges working after the project.
+
+On 17 May 2026 in Kumbungu District communities, CHVs and community mobilisers held education sessions on antenatal care, facility delivery and newborn danger signs, reaching 900 women (all recorded as female) against a target of 18,000; the life-of-Action total is 10,800 of 18,000. Verified evidence is the attendance sheet. The records note that market-day and water-point sessions reach more women than fixed venues.
+
+On 19 May 2026 in Savelugu and Kumbungu districts, NHIA district officers and CHVs ran NHIS enrolment and renewal drives, registering or renewing 350 households against a target of 6,000; the life-of-Action total is 3,680 of 6,000. Verified evidence is the attached drive register. The records note that drives at antenatal clinics reach pregnant women directly.
+
+On 20 May 2026 in the Savelugu Municipal Hospital catchment, Savelugu District, the project held 18 integrated outreach clinics offering ANC, immunisation, postnatal checks and child weighing, against a target of 360; the life-of-Action total is 219 of 360. Verified evidence comprises the outreach register and the DHIMS2 extract.
+
+On 24 May 2026 in Savelugu District, district teams and project staff made 6 supportive supervision visits using the standard checklist covering partograph use, stock management, cold chain and DHIMS2 completeness, against a target of 120; the life-of-Action total is 70 of 120. Verified evidence is the attached supervision report.
+
+Outreach clinics fell to 18 against about 30 planned for the month, and no EmONC/IMNCI or community health volunteer training cohort took place in May, because of the two-week industrial action. The officer's narrative records that project mobile teams kept emergency obstetric referrals running during the action and supported emergency services.
+
+4 Outcome Indicators and Data Quality
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	59	61	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	66	67	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	78	76	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	46	48	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	70	72	—	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	86	89	—	Descriptive only	DHIMS2 / GHS records
+MR-OP1.2	Number of facilities equipped with delivery kits and solar vaccine fridges	facilities	0	24	2	3	8.3%	Descriptive only	Procurement and handover records
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	18	33	5%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	900	1700	5%	Descriptive only	Community session registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	6	11	5%	Descriptive only	Supervision reports
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	350	600	5.8%	Descriptive only	NHIA drive registers
+MR-OP2.5	Number of facility managers trained in respectful maternity care	managers	0	40	10	10	25%	Descriptive only	Training registers
+
+Five of the six outcome indicators recorded in May 2026 fell on the previous period, and one rose. Complete and timely DHIMS2 reporting stood at 86 percent against a target of 95, down from 89. Facilities with no stock-out of tracer MNCH medicines were at 70 percent against a target of 85, down from 72. ANC4+ was 59 percent against a target of 70, down from 61; skilled deliveries were 66 percent against a target of 75, down from 67; and postnatal checks within 48 hours were 46 percent against a target of 60, down from 48. Penta3 coverage rose to 78 percent against a target of 88, up from 76. The indicator comment attributes the dip in postnatal checks to the industrial action, which the section Activities Implemented describes; all findings carry a neutral evaluation, so the report records no performance judgement.
+
+The Action reports outcome indicators from DHIMS2/GHS records as the donor instructions require. MR-OC1a to MR-OC1d and MR-OC2a draw on DHIMS2 / GHS records and MR-OC1e on facility stock cards. Commentary on data completeness rests on the recorded DHIMS2 reporting rate of 86 percent of facilities submitting complete and timely reports against a target of 95.
+
+Which indicators were not measured this month, and why? The two survey-based indicators were not measured in May 2026: MR-OC2b, percentage of target households covered by active NHIS membership, and MR-OC2c, percentage of women satisfied with respectful maternity care. The verified findings for this period contain no survey results, and the inputs record no value for these two indicators this month; the prior approved narratives place them on a quarterly survey cycle. No finding was flagged as not calculable and no finding carried a data-quality flag.
+
+Data quality notes: the Action recorded no completeness or reliability caveat, quality flag or disaggregation gap against any outcome-level finding in May 2026. No outcome-level finding carried a sex disaggregation list; sex-disaggregated results appear under the output indicators reported in their own sections. No survey-based outcome measurement is available for this period, as stated above.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 61 → 59 ▼
+
+Progress against targets
+Chart data
+5 Challenges, Risks and Mitigation
+
+The principal challenge of May 2026 was an industrial action by nurses and community health officers. It lasted about two weeks and closed or reduced services at many facilities in the five districts. Verified evidence attached to the month's activities records it: the outreach clinic field visit register and the DHIMS2 extract for the outreach activity, the supervision monitoring report, the training attendance sheet, the equipment handover document and the NHIS register all document the disruption and the reduced service levels it caused. As detailed in the Summary of the Month and Activities Implemented, the Action held 18 outreach clinics against a target of 360, reached 900 women against a target of 18,000, and assisted 350 households against a target of 6,000. The indicator updates record that clinics were suspended during the action and that postnatal checks dipped.
+
+The project mitigated the disruption in three ways. Project mobile teams supported emergency services, and the officer's context records that these teams kept emergency obstetric referrals running during the industrial action. The mobile teams also held 18 clinics during the month, and the Action rescheduled remaining clinics in June. Delivery continued where facilities stayed open: the project installed delivery kits and solar vaccine fridges at 2 facilities on 14 May 2026 and trained 10 facility managers (6 female, 4 male) on 12 May 2026.
+
+The inputs record no other challenge or risk for May 2026. No request for support or a change that needs the Contracting Authority's agreement was recorded for the month.
+
+6 Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+
+An industrial action by nurses and community health officers that lasted about two weeks and closed or reduced services at many facilities shaped cross-cutting work in May 2026.
+
+Gender. Women were prioritised in service delivery this month: the reporting officer's statement records that emergency obstetric care was prioritised during the industrial action and that project mobile teams ran antenatal clinics for women in Karaga. Sex-disaggregated results for the month show 10 facility managers trained in respectful maternity care (6 female, 4 male), per the verified attendance sheet, and community education sessions reached 900 women, all female as recorded. The outreach clinics, NHIS enrolment drives, equipment installation and supportive supervision visits did not record sex-disaggregated participant data in the records supplied for this section.
+
+Environment. The officer's statement records that health-care waste management checks were paused for two weeks during the industrial action. No further environmental monitoring record was supplied for May 2026.
+
+Do-no-harm. The statement records that the project did not replace striking staff and referred women to the nearest functioning facility. Beyond the industrial action itself, no incident or safeguarding concern was recorded in the records supplied for the month. No complaints, feedback or safeguarding compliance documentation beyond this statement was supplied for the period.
+
+7 Visibility and Communication
+
+No dedicated communication activity took place in May 2026. The Action's visible community-facing events this month were the 10-participant respectful maternity care training for facility managers at Kumbungu District Health Directorate, the delivery kits and solar vaccine fridges installed at 2 facilities in Kumbungu District, the community education sessions that reached 900 women, the 18 integrated outreach clinics, the 350-household NHIS drives and the 6 supportive supervision visits, as described in the section Activities Implemented.
+
+Compliance status is partial. Verified evidence records these events: the verified training records held with the respectful maternity care activity, the verified handover documentation for the delivered kits and fridges, the verified community session attendance record, the verified outreach register and DHIMS2 extract, the verified NHIS drive register and the verified supervision report. The inputs do not include a dedicated record confirming EU visibility on the delivered materials, equipment and events, so confirmation remains outstanding. No remediation steps are recorded in the inputs; the recorded next steps are to install the remaining kits and fridges as stock arrives and to support managers in implementing their agreed action plans.
+
+This project is funded by the European Union.
+
+Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union. Neither the European Union nor the granting authority can be held responsible for them.
+
+8 Plan for the Next Month
+
+The Action will carry forward the plans recorded in May's activity records, after an industrial action by nurses and community health officers suspended training and outreach for about two weeks. The project will hold the integrated outreach clinics rescheduled into June, and review outreach routes against the road conditions, after 18 clinics were held in May (219 of 360 to date). Project mobile teams, which kept emergency obstetric referrals running during the action, will continue supporting emergency services. The remaining delivery kits and solar vaccine fridges will be installed as stock arrives, following 2 facilities equipped in May (16 of 24 to date), with technicians continuing the handover practice of a daily temperature log. The project will support the 10 facility managers trained in respectful maternity care in May (6 female, 4 male; 30 of 40 to date) to put their agreed action plans in place. Community education sessions on antenatal care, facility delivery and newborn danger signs will continue, with radio spots added, after sessions reached 900 women in May (10800 of 18,000 to date); the records note that sessions at market days and water points reach more women than sessions at fixed venues. NHIS enrolment and renewal drives will continue, with follow-up on renewals due next month, after 350 households were assisted in May (3680 of 6,000 to date). District teams will follow up the actions agreed at each facility during supportive supervision, after 6 visits in May (70 of 120 to date). No numerical targets or expected results for June 2026 were recorded in the inputs, so none are stated here.
+
+Section 1
+
+Summary of the Month
+Statements
+Sources · 24
+Chart
+Comments
+History
+
+Nothing to decide — all 10 statements are backed by evidence or decided.
+
+Kept with a note
+
+“Community education sessions reached 900 women against a target of 18,000, down from 1,700, for a total of 10,800.”
+
+Note: Figure checked against the verified indicator value and the attached register; wording accepted by the reviewer.
+
+Kept with a note
+
+“NHIS drives in Savelugu and Kumbungu districts assisted 350 households against a target of 6,000, down from 600, for a total of 3,680.”
+
+Note: Figure checked against the verified indicator value and the attached register; wording accepted by the reviewer.
+
+Not checked (minor)
+
+“Priorities: hold the rescheduled June clinics, resume training and outreach, and install the remaining kits and fridges.”
+
+Matches evidence
+
+“May 2026 delivered less than planned for the European Union-funded Action because an industrial action by nurses and community health officers closed or reduced services at many facilities in the five districts for about two weeks.”
+
+Matches evidence
+
+“The project held 18 integrated outreach clinics against a target of 360 (5% of target), down from 33 in the previous period, for a life-of-Action total of 219.”
+
+Matches evidence
+
+“The project equipped 2 facilities with delivery kits and solar vaccine fridges, bringing the total to 16 of 24, and conducted 6 supportive supervision visits against a target of 120.”
+
+Matches evidence
+
+“It trained 10 facility managers (6 female, 4 male) in respectful maternity care at Kumbungu District Health Directorate, for a life-of-Action total of 30 of 40.”
+
+Matches evidence
+
+“Verified DHIMS2/GHS records show ANC4+ at 59% (target 70), skilled birth attendance at 66% (target 75), Penta3 at 78% (target 88), postnatal checks within 48 hours at 46% (target 60), no tracer-medicine stock-out at 70% of facilities (target 85) and complete and timely DHIMS2 reporting at 86% (target 95).”
+
+Matches evidence
+
+“Project mobile teams kept emergency obstetric referrals running during the action, and clinics were rescheduled in June.”
+
+Matches evidence
+
+“Evidence comprises the verified outreach register, DHIMS2 extract, attendance sheet, NHIS register, handover document and supervision report.”

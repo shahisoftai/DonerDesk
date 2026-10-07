@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const { page, browser } = await attach("profile");
+await page.goto(`${BASE}/projects/${P}/setup/profile`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(1200);
+await page.getByLabel("Tone").selectOption({ label: "Formal" });
+await page.getByLabel("Writing style (optional)").fill("Formal EU reporting register: refer to \"the Action\", write in the third person, report results first and causes second, and state shortfalls plainly.");
+await page.getByLabel("Audience notes (optional)").fill("European Union Delegation programme officers who read many reports: they want verified results against the Logical Framework, honest variance explanations and no promotional language.");
+await page.getByLabel("Financial figures in reports").selectOption({ label: "Type them in" });
+await page.getByRole("button", { name: "Save profile" }).click(); await page.waitForTimeout(3500);
+console.log((await page.locator("main").innerText()).replace(/\n+/g," | ").match(/(Saved|saved|Profile)[^|]*/g)?.slice(0,3));
+await browser.close(); process.exit(0);

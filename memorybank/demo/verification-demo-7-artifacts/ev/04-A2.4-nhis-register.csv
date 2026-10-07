@@ -1,0 +1,501 @@
+No,Household ID (anonymised),Type,District,Pregnant woman in household,Child under 5
+1,HH-04-0001,New enrolment,Tolon,no,no
+2,HH-04-0002,Renewal,Kumbungu,no,no
+3,HH-04-0003,Renewal,Savelugu,no,no
+4,HH-04-0004,New enrolment,Nanton,yes,no
+5,HH-04-0005,New enrolment,Karaga,no,yes
+6,HH-04-0006,New enrolment,Tolon,no,yes
+7,HH-04-0007,Renewal,Kumbungu,no,yes
+8,HH-04-0008,New enrolment,Savelugu,no,no
+9,HH-04-0009,New enrolment,Nanton,yes,yes
+10,HH-04-0010,New enrolment,Karaga,no,no
+11,HH-04-0011,Renewal,Tolon,yes,no
+12,HH-04-0012,New enrolment,Kumbungu,no,yes
+13,HH-04-0013,Renewal,Savelugu,no,no
+14,HH-04-0014,Renewal,Nanton,yes,no
+15,HH-04-0015,Renewal,Karaga,yes,no
+16,HH-04-0016,New enrolment,Tolon,no,no
+17,HH-04-0017,Renewal,Kumbungu,no,yes
+18,HH-04-0018,Renewal,Savelugu,yes,yes
+19,HH-04-0019,New enrolment,Nanton,no,no
+20,HH-04-0020,New enrolment,Karaga,no,yes
+21,HH-04-0021,Renewal,Tolon,no,yes
+22,HH-04-0022,New enrolment,Kumbungu,yes,no
+23,HH-04-0023,Renewal,Savelugu,no,yes
+24,HH-04-0024,Renewal,Nanton,no,yes
+25,HH-04-0025,New enrolment,Karaga,yes,yes
+26,HH-04-0026,Renewal,Tolon,no,yes
+27,HH-04-0027,Renewal,Kumbungu,yes,no
+28,HH-04-0028,New enrolment,Savelugu,yes,yes
+29,HH-04-0029,New enrolment,Nanton,yes,no
+30,HH-04-0030,Renewal,Karaga,yes,no
+31,HH-04-0031,New enrolment,Tolon,yes,yes
+32,HH-04-0032,Renewal,Kumbungu,no,yes
+33,HH-04-0033,Renewal,Savelugu,yes,no
+34,HH-04-0034,New enrolment,Nanton,yes,yes
+35,HH-04-0035,Renewal,Karaga,no,yes
+36,HH-04-0036,New enrolment,Tolon,yes,no
+37,HH-04-0037,New enrolment,Kumbungu,yes,no
+38,HH-04-0038,New enrolment,Savelugu,yes,no
+39,HH-04-0039,New enrolment,Nanton,no,yes
+40,HH-04-0040,Renewal,Karaga,no,no
+41,HH-04-0041,New enrolment,Tolon,yes,yes
+42,HH-04-0042,New enrolment,Kumbungu,no,yes
+43,HH-04-0043,New enrolment,Savelugu,no,no
+44,HH-04-0044,New enrolment,Nanton,no,yes
+45,HH-04-0045,New enrolment,Karaga,no,no
+46,HH-04-0046,Renewal,Tolon,yes,no
+47,HH-04-0047,New enrolment,Kumbungu,yes,yes
+48,HH-04-0048,New enrolment,Savelugu,yes,yes
+49,HH-04-0049,Renewal,Nanton,yes,no
+50,HH-04-0050,New enrolment,Karaga,no,no
+51,HH-04-0051,New enrolment,Tolon,yes,yes
+52,HH-04-0052,New enrolment,Kumbungu,yes,yes
+53,HH-04-0053,Renewal,Savelugu,no,yes
+54,HH-04-0054,Renewal,Nanton,no,yes
+55,HH-04-0055,New enrolment,Karaga,no,yes
+56,HH-04-0056,New enrolment,Tolon,yes,yes
+57,HH-04-0057,Renewal,Kumbungu,no,no
+58,HH-04-0058,New enrolment,Savelugu,yes,no
+59,HH-04-0059,Renewal,Nanton,yes,yes
+60,HH-04-0060,Renewal,Karaga,no,yes
+61,HH-04-0061,New enrolment,Tolon,no,no
+62,HH-04-0062,New enrolment,Kumbungu,yes,no
+63,HH-04-0063,Renewal,Savelugu,no,yes
+64,HH-04-0064,New enrolment,Nanton,yes,yes
+65,HH-04-0065,Renewal,Karaga,yes,no
+66,HH-04-0066,New enrolment,Tolon,yes,no
+67,HH-04-0067,New enrolment,Kumbungu,yes,no
+68,HH-04-0068,Renewal,Savelugu,no,yes
+69,HH-04-0069,New enrolment,Nanton,yes,yes
+70,HH-04-0070,Renewal,Karaga,no,no
+71,HH-04-0071,Renewal,Tolon,yes,yes
+72,HH-04-0072,Renewal,Kumbungu,yes,yes
+73,HH-04-0073,Renewal,Savelugu,no,yes
+74,HH-04-0074,Renewal,Nanton,yes,yes
+75,HH-04-0075,New enrolment,Karaga,yes,yes
+76,HH-04-0076,Renewal,Tolon,no,no
+77,HH-04-0077,Renewal,Kumbungu,yes,no
+78,HH-04-0078,Renewal,Savelugu,yes,yes
+79,HH-04-0079,Renewal,Nanton,no,no
+80,HH-04-0080,New enrolment,Karaga,yes,no
+81,HH-04-0081,Renewal,Tolon,yes,no
+82,HH-04-0082,New enrolment,Kumbungu,no,no
+83,HH-04-0083,Renewal,Savelugu,no,yes
+84,HH-04-0084,Renewal,Nanton,no,no
+85,HH-04-0085,New enrolment,Karaga,no,no
+86,HH-04-0086,Renewal,Tolon,no,no
+87,HH-04-0087,New enrolment,Kumbungu,yes,no
+88,HH-04-0088,New enrolment,Savelugu,yes,no
+89,HH-04-0089,Renewal,Nanton,no,yes
+90,HH-04-0090,Renewal,Karaga,no,yes
+91,HH-04-0091,New enrolment,Tolon,yes,yes
+92,HH-04-0092,Renewal,Kumbungu,no,yes
+93,HH-04-0093,Renewal,Savelugu,no,no
+94,HH-04-0094,New enrolment,Nanton,yes,no
+95,HH-04-0095,New enrolment,Karaga,no,yes
+96,HH-04-0096,Renewal,Tolon,yes,no
+97,HH-04-0097,Renewal,Kumbungu,yes,yes
+98,HH-04-0098,Renewal,Savelugu,no,no
+99,HH-04-0099,Renewal,Nanton,yes,no
+100,HH-04-0100,Renewal,Karaga,yes,yes
+101,HH-04-0101,New enrolment,Tolon,yes,yes
+102,HH-04-0102,New enrolment,Kumbungu,no,no
+103,HH-04-0103,New enrolment,Savelugu,no,no
+104,HH-04-0104,New enrolment,Nanton,yes,no
+105,HH-04-0105,Renewal,Karaga,yes,yes
+106,HH-04-0106,Renewal,Tolon,no,no
+107,HH-04-0107,New enrolment,Kumbungu,yes,no
+108,HH-04-0108,Renewal,Savelugu,yes,yes
+109,HH-04-0109,Renewal,Nanton,no,yes
+110,HH-04-0110,New enrolment,Karaga,yes,no
+111,HH-04-0111,Renewal,Tolon,no,no
+112,HH-04-0112,Renewal,Kumbungu,yes,yes
+113,HH-04-0113,New enrolment,Savelugu,yes,no
+114,HH-04-0114,New enrolment,Nanton,yes,yes
+115,HH-04-0115,New enrolment,Karaga,yes,no
+116,HH-04-0116,New enrolment,Tolon,no,no
+117,HH-04-0117,New enrolment,Kumbungu,yes,no
+118,HH-04-0118,Renewal,Savelugu,no,no
+119,HH-04-0119,New enrolment,Nanton,no,yes
+120,HH-04-0120,Renewal,Karaga,no,yes
+121,HH-04-0121,Renewal,Tolon,yes,no
+122,HH-04-0122,New enrolment,Kumbungu,no,no
+123,HH-04-0123,Renewal,Savelugu,no,no
+124,HH-04-0124,Renewal,Nanton,yes,no
+125,HH-04-0125,Renewal,Karaga,no,yes
+126,HH-04-0126,Renewal,Tolon,no,no
+127,HH-04-0127,New enrolment,Kumbungu,yes,yes
+128,HH-04-0128,Renewal,Savelugu,yes,no
+129,HH-04-0129,Renewal,Nanton,no,no
+130,HH-04-0130,New enrolment,Karaga,yes,no
+131,HH-04-0131,New enrolment,Tolon,no,yes
+132,HH-04-0132,New enrolment,Kumbungu,no,no
+133,HH-04-0133,Renewal,Savelugu,no,yes
+134,HH-04-0134,New enrolment,Nanton,no,no
+135,HH-04-0135,New enrolment,Karaga,no,yes
+136,HH-04-0136,Renewal,Tolon,no,no
+137,HH-04-0137,Renewal,Kumbungu,no,yes
+138,HH-04-0138,Renewal,Savelugu,no,no
+139,HH-04-0139,New enrolment,Nanton,yes,no
+140,HH-04-0140,Renewal,Karaga,no,yes
+141,HH-04-0141,Renewal,Tolon,no,no
+142,HH-04-0142,New enrolment,Kumbungu,yes,yes
+143,HH-04-0143,Renewal,Savelugu,yes,yes
+144,HH-04-0144,New enrolment,Nanton,no,no
+145,HH-04-0145,Renewal,Karaga,yes,no
+146,HH-04-0146,New enrolment,Tolon,no,no
+147,HH-04-0147,New enrolment,Kumbungu,yes,yes
+148,HH-04-0148,Renewal,Savelugu,no,yes
+149,HH-04-0149,New enrolment,Nanton,yes,yes
+150,HH-04-0150,Renewal,Karaga,no,no
+151,HH-04-0151,New enrolment,Tolon,no,no
+152,HH-04-0152,Renewal,Kumbungu,yes,no
+153,HH-04-0153,New enrolment,Savelugu,yes,yes
+154,HH-04-0154,Renewal,Nanton,no,no
+155,HH-04-0155,New enrolment,Karaga,yes,no
+156,HH-04-0156,Renewal,Tolon,no,yes
+157,HH-04-0157,Renewal,Kumbungu,yes,yes
+158,HH-04-0158,Renewal,Savelugu,no,no
+159,HH-04-0159,New enrolment,Nanton,no,no
+160,HH-04-0160,New enrolment,Karaga,no,no
+161,HH-04-0161,New enrolment,Tolon,no,yes
+162,HH-04-0162,Renewal,Kumbungu,no,no
+163,HH-04-0163,Renewal,Savelugu,yes,no
+164,HH-04-0164,New enrolment,Nanton,no,no
+165,HH-04-0165,New enrolment,Karaga,yes,yes
+166,HH-04-0166,Renewal,Tolon,yes,no
+167,HH-04-0167,New enrolment,Kumbungu,no,yes
+168,HH-04-0168,New enrolment,Savelugu,no,yes
+169,HH-04-0169,Renewal,Nanton,no,yes
+170,HH-04-0170,Renewal,Karaga,no,no
+171,HH-04-0171,Renewal,Tolon,no,yes
+172,HH-04-0172,New enrolment,Kumbungu,no,no
+173,HH-04-0173,Renewal,Savelugu,no,no
+174,HH-04-0174,New enrolment,Nanton,yes,no
+175,HH-04-0175,Renewal,Karaga,yes,yes
+176,HH-04-0176,New enrolment,Tolon,no,no
+177,HH-04-0177,Renewal,Kumbungu,no,no
+178,HH-04-0178,New enrolment,Savelugu,no,yes
+179,HH-04-0179,New enrolment,Nanton,yes,yes
+180,HH-04-0180,Renewal,Karaga,no,no
+181,HH-04-0181,New enrolment,Tolon,yes,yes
+182,HH-04-0182,Renewal,Kumbungu,yes,yes
+183,HH-04-0183,New enrolment,Savelugu,no,no
+184,HH-04-0184,New enrolment,Nanton,yes,no
+185,HH-04-0185,Renewal,Karaga,no,no
+186,HH-04-0186,Renewal,Tolon,yes,yes
+187,HH-04-0187,Renewal,Kumbungu,no,yes
+188,HH-04-0188,Renewal,Savelugu,yes,no
+189,HH-04-0189,New enrolment,Nanton,no,no
+190,HH-04-0190,Renewal,Karaga,no,yes
+191,HH-04-0191,Renewal,Tolon,no,yes
+192,HH-04-0192,Renewal,Kumbungu,no,yes
+193,HH-04-0193,New enrolment,Savelugu,yes,no
+194,HH-04-0194,Renewal,Nanton,no,no
+195,HH-04-0195,New enrolment,Karaga,yes,yes
+196,HH-04-0196,Renewal,Tolon,no,no
+197,HH-04-0197,New enrolment,Kumbungu,yes,yes
+198,HH-04-0198,New enrolment,Savelugu,yes,no
+199,HH-04-0199,Renewal,Nanton,yes,no
+200,HH-04-0200,New enrolment,Karaga,yes,yes
+201,HH-04-0201,New enrolment,Tolon,no,yes
+202,HH-04-0202,Renewal,Kumbungu,no,yes
+203,HH-04-0203,New enrolment,Savelugu,yes,no
+204,HH-04-0204,New enrolment,Nanton,no,no
+205,HH-04-0205,Renewal,Karaga,no,yes
+206,HH-04-0206,Renewal,Tolon,yes,no
+207,HH-04-0207,New enrolment,Kumbungu,yes,yes
+208,HH-04-0208,Renewal,Savelugu,no,no
+209,HH-04-0209,Renewal,Nanton,yes,no
+210,HH-04-0210,Renewal,Karaga,no,yes
+211,HH-04-0211,New enrolment,Tolon,yes,yes
+212,HH-04-0212,New enrolment,Kumbungu,no,yes
+213,HH-04-0213,Renewal,Savelugu,no,no
+214,HH-04-0214,Renewal,Nanton,yes,no
+215,HH-04-0215,New enrolment,Karaga,no,no
+216,HH-04-0216,New enrolment,Tolon,no,yes
+217,HH-04-0217,New enrolment,Kumbungu,no,yes
+218,HH-04-0218,New enrolment,Savelugu,no,yes
+219,HH-04-0219,New enrolment,Nanton,no,yes
+220,HH-04-0220,New enrolment,Karaga,no,no
+221,HH-04-0221,New enrolment,Tolon,no,no
+222,HH-04-0222,New enrolment,Kumbungu,no,yes
+223,HH-04-0223,New enrolment,Savelugu,yes,no
+224,HH-04-0224,Renewal,Nanton,no,no
+225,HH-04-0225,Renewal,Karaga,no,no
+226,HH-04-0226,New enrolment,Tolon,no,no
+227,HH-04-0227,Renewal,Kumbungu,yes,yes
+228,HH-04-0228,Renewal,Savelugu,no,no
+229,HH-04-0229,Renewal,Nanton,no,yes
+230,HH-04-0230,New enrolment,Karaga,no,no
+231,HH-04-0231,New enrolment,Tolon,yes,no
+232,HH-04-0232,Renewal,Kumbungu,no,yes
+233,HH-04-0233,New enrolment,Savelugu,no,no
+234,HH-04-0234,New enrolment,Nanton,no,yes
+235,HH-04-0235,New enrolment,Karaga,no,yes
+236,HH-04-0236,New enrolment,Tolon,yes,yes
+237,HH-04-0237,New enrolment,Kumbungu,yes,no
+238,HH-04-0238,Renewal,Savelugu,yes,yes
+239,HH-04-0239,New enrolment,Nanton,no,yes
+240,HH-04-0240,Renewal,Karaga,no,no
+241,HH-04-0241,New enrolment,Tolon,no,no
+242,HH-04-0242,New enrolment,Kumbungu,yes,yes
+243,HH-04-0243,Renewal,Savelugu,no,no
+244,HH-04-0244,New enrolment,Nanton,yes,no
+245,HH-04-0245,Renewal,Karaga,yes,yes
+246,HH-04-0246,Renewal,Tolon,no,no
+247,HH-04-0247,Renewal,Kumbungu,yes,no
+248,HH-04-0248,Renewal,Savelugu,yes,no
+249,HH-04-0249,Renewal,Nanton,yes,no
+250,HH-04-0250,New enrolment,Karaga,yes,no
+251,HH-04-0251,New enrolment,Tolon,no,yes
+252,HH-04-0252,Renewal,Kumbungu,yes,no
+253,HH-04-0253,Renewal,Savelugu,yes,yes
+254,HH-04-0254,Renewal,Nanton,yes,yes
+255,HH-04-0255,New enrolment,Karaga,yes,no
+256,HH-04-0256,New enrolment,Tolon,yes,yes
+257,HH-04-0257,Renewal,Kumbungu,yes,no
+258,HH-04-0258,New enrolment,Savelugu,no,yes
+259,HH-04-0259,Renewal,Nanton,yes,yes
+260,HH-04-0260,New enrolment,Karaga,yes,no
+261,HH-04-0261,Renewal,Tolon,no,no
+262,HH-04-0262,Renewal,Kumbungu,no,yes
+263,HH-04-0263,New enrolment,Savelugu,no,no
+264,HH-04-0264,New enrolment,Nanton,yes,yes
+265,HH-04-0265,Renewal,Karaga,no,yes
+266,HH-04-0266,New enrolment,Tolon,yes,yes
+267,HH-04-0267,New enrolment,Kumbungu,no,yes
+268,HH-04-0268,Renewal,Savelugu,no,no
+269,HH-04-0269,New enrolment,Nanton,yes,no
+270,HH-04-0270,New enrolment,Karaga,yes,yes
+271,HH-04-0271,New enrolment,Tolon,yes,yes
+272,HH-04-0272,New enrolment,Kumbungu,yes,yes
+273,HH-04-0273,New enrolment,Savelugu,no,yes
+274,HH-04-0274,Renewal,Nanton,yes,no
+275,HH-04-0275,Renewal,Karaga,yes,yes
+276,HH-04-0276,New enrolment,Tolon,yes,no
+277,HH-04-0277,New enrolment,Kumbungu,yes,yes
+278,HH-04-0278,Renewal,Savelugu,yes,yes
+279,HH-04-0279,New enrolment,Nanton,yes,no
+280,HH-04-0280,New enrolment,Karaga,no,no
+281,HH-04-0281,New enrolment,Tolon,yes,yes
+282,HH-04-0282,Renewal,Kumbungu,yes,yes
+283,HH-04-0283,Renewal,Savelugu,no,yes
+284,HH-04-0284,New enrolment,Nanton,yes,no
+285,HH-04-0285,Renewal,Karaga,no,yes
+286,HH-04-0286,New enrolment,Tolon,yes,yes
+287,HH-04-0287,Renewal,Kumbungu,no,yes
+288,HH-04-0288,Renewal,Savelugu,no,yes
+289,HH-04-0289,Renewal,Nanton,no,no
+290,HH-04-0290,Renewal,Karaga,no,no
+291,HH-04-0291,New enrolment,Tolon,no,yes
+292,HH-04-0292,New enrolment,Kumbungu,yes,no
+293,HH-04-0293,New enrolment,Savelugu,no,yes
+294,HH-04-0294,Renewal,Nanton,yes,no
+295,HH-04-0295,New enrolment,Karaga,yes,yes
+296,HH-04-0296,Renewal,Tolon,yes,no
+297,HH-04-0297,New enrolment,Kumbungu,yes,no
+298,HH-04-0298,New enrolment,Savelugu,yes,yes
+299,HH-04-0299,New enrolment,Nanton,no,no
+300,HH-04-0300,Renewal,Karaga,yes,yes
+301,HH-04-0301,New enrolment,Tolon,no,no
+302,HH-04-0302,Renewal,Kumbungu,yes,no
+303,HH-04-0303,Renewal,Savelugu,no,yes
+304,HH-04-0304,Renewal,Nanton,no,no
+305,HH-04-0305,Renewal,Karaga,no,no
+306,HH-04-0306,New enrolment,Tolon,yes,yes
+307,HH-04-0307,New enrolment,Kumbungu,no,yes
+308,HH-04-0308,Renewal,Savelugu,no,yes
+309,HH-04-0309,Renewal,Nanton,yes,no
+310,HH-04-0310,New enrolment,Karaga,no,no
+311,HH-04-0311,New enrolment,Tolon,no,no
+312,HH-04-0312,New enrolment,Kumbungu,yes,no
+313,HH-04-0313,New enrolment,Savelugu,no,yes
+314,HH-04-0314,New enrolment,Nanton,yes,no
+315,HH-04-0315,New enrolment,Karaga,no,yes
+316,HH-04-0316,New enrolment,Tolon,no,yes
+317,HH-04-0317,New enrolment,Kumbungu,yes,no
+318,HH-04-0318,Renewal,Savelugu,no,no
+319,HH-04-0319,New enrolment,Nanton,no,no
+320,HH-04-0320,New enrolment,Karaga,yes,yes
+321,HH-04-0321,Renewal,Tolon,yes,yes
+322,HH-04-0322,Renewal,Kumbungu,no,no
+323,HH-04-0323,New enrolment,Savelugu,yes,yes
+324,HH-04-0324,Renewal,Nanton,no,yes
+325,HH-04-0325,Renewal,Karaga,no,yes
+326,HH-04-0326,New enrolment,Tolon,no,no
+327,HH-04-0327,New enrolment,Kumbungu,yes,yes
+328,HH-04-0328,Renewal,Savelugu,yes,no
+329,HH-04-0329,New enrolment,Nanton,no,yes
+330,HH-04-0330,New enrolment,Karaga,yes,yes
+331,HH-04-0331,New enrolment,Tolon,yes,no
+332,HH-04-0332,Renewal,Kumbungu,no,no
+333,HH-04-0333,Renewal,Savelugu,no,yes
+334,HH-04-0334,Renewal,Nanton,yes,no
+335,HH-04-0335,New enrolment,Karaga,yes,no
+336,HH-04-0336,Renewal,Tolon,yes,yes
+337,HH-04-0337,Renewal,Kumbungu,yes,yes
+338,HH-04-0338,Renewal,Savelugu,yes,yes
+339,HH-04-0339,New enrolment,Nanton,no,no
+340,HH-04-0340,Renewal,Karaga,yes,no
+341,HH-04-0341,New enrolment,Tolon,no,yes
+342,HH-04-0342,Renewal,Kumbungu,no,no
+343,HH-04-0343,Renewal,Savelugu,yes,no
+344,HH-04-0344,New enrolment,Nanton,no,no
+345,HH-04-0345,New enrolment,Karaga,no,yes
+346,HH-04-0346,New enrolment,Tolon,no,no
+347,HH-04-0347,Renewal,Kumbungu,yes,no
+348,HH-04-0348,Renewal,Savelugu,yes,yes
+349,HH-04-0349,Renewal,Nanton,yes,yes
+350,HH-04-0350,Renewal,Karaga,yes,yes
+351,HH-04-0351,New enrolment,Tolon,no,no
+352,HH-04-0352,New enrolment,Kumbungu,no,yes
+353,HH-04-0353,New enrolment,Savelugu,no,no
+354,HH-04-0354,Renewal,Nanton,yes,no
+355,HH-04-0355,Renewal,Karaga,yes,yes
+356,HH-04-0356,New enrolment,Tolon,no,no
+357,HH-04-0357,Renewal,Kumbungu,no,no
+358,HH-04-0358,New enrolment,Savelugu,yes,no
+359,HH-04-0359,Renewal,Nanton,no,yes
+360,HH-04-0360,Renewal,Karaga,yes,no
+361,HH-04-0361,New enrolment,Tolon,no,no
+362,HH-04-0362,New enrolment,Kumbungu,yes,yes
+363,HH-04-0363,Renewal,Savelugu,no,no
+364,HH-04-0364,New enrolment,Nanton,yes,no
+365,HH-04-0365,New enrolment,Karaga,no,no
+366,HH-04-0366,Renewal,Tolon,no,no
+367,HH-04-0367,New enrolment,Kumbungu,yes,no
+368,HH-04-0368,Renewal,Savelugu,no,no
+369,HH-04-0369,Renewal,Nanton,no,yes
+370,HH-04-0370,Renewal,Karaga,yes,yes
+371,HH-04-0371,Renewal,Tolon,no,no
+372,HH-04-0372,Renewal,Kumbungu,no,yes
+373,HH-04-0373,Renewal,Savelugu,yes,no
+374,HH-04-0374,Renewal,Nanton,yes,yes
+375,HH-04-0375,Renewal,Karaga,no,yes
+376,HH-04-0376,Renewal,Tolon,no,no
+377,HH-04-0377,Renewal,Kumbungu,no,yes
+378,HH-04-0378,Renewal,Savelugu,yes,yes
+379,HH-04-0379,New enrolment,Nanton,yes,yes
+380,HH-04-0380,New enrolment,Karaga,no,no
+381,HH-04-0381,Renewal,Tolon,yes,no
+382,HH-04-0382,Renewal,Kumbungu,yes,no
+383,HH-04-0383,Renewal,Savelugu,yes,yes
+384,HH-04-0384,New enrolment,Nanton,yes,yes
+385,HH-04-0385,New enrolment,Karaga,no,no
+386,HH-04-0386,New enrolment,Tolon,yes,no
+387,HH-04-0387,New enrolment,Kumbungu,no,no
+388,HH-04-0388,Renewal,Savelugu,yes,yes
+389,HH-04-0389,New enrolment,Nanton,yes,no
+390,HH-04-0390,Renewal,Karaga,yes,yes
+391,HH-04-0391,Renewal,Tolon,no,no
+392,HH-04-0392,Renewal,Kumbungu,yes,no
+393,HH-04-0393,Renewal,Savelugu,yes,no
+394,HH-04-0394,Renewal,Nanton,no,yes
+395,HH-04-0395,New enrolment,Karaga,no,yes
+396,HH-04-0396,New enrolment,Tolon,no,yes
+397,HH-04-0397,Renewal,Kumbungu,yes,no
+398,HH-04-0398,Renewal,Savelugu,yes,yes
+399,HH-04-0399,New enrolment,Nanton,yes,yes
+400,HH-04-0400,New enrolment,Karaga,yes,yes
+401,HH-04-0401,New enrolment,Tolon,yes,yes
+402,HH-04-0402,Renewal,Kumbungu,no,no
+403,HH-04-0403,New enrolment,Savelugu,no,no
+404,HH-04-0404,Renewal,Nanton,no,no
+405,HH-04-0405,New enrolment,Karaga,yes,no
+406,HH-04-0406,Renewal,Tolon,no,yes
+407,HH-04-0407,Renewal,Kumbungu,no,no
+408,HH-04-0408,Renewal,Savelugu,yes,no
+409,HH-04-0409,Renewal,Nanton,no,no
+410,HH-04-0410,Renewal,Karaga,yes,no
+411,HH-04-0411,New enrolment,Tolon,no,no
+412,HH-04-0412,Renewal,Kumbungu,yes,yes
+413,HH-04-0413,Renewal,Savelugu,no,yes
+414,HH-04-0414,New enrolment,Nanton,yes,yes
+415,HH-04-0415,New enrolment,Karaga,yes,no
+416,HH-04-0416,New enrolment,Tolon,yes,no
+417,HH-04-0417,Renewal,Kumbungu,yes,yes
+418,HH-04-0418,New enrolment,Savelugu,yes,no
+419,HH-04-0419,New enrolment,Nanton,yes,yes
+420,HH-04-0420,Renewal,Karaga,yes,no
+421,HH-04-0421,Renewal,Tolon,no,no
+422,HH-04-0422,New enrolment,Kumbungu,yes,no
+423,HH-04-0423,New enrolment,Savelugu,no,yes
+424,HH-04-0424,New enrolment,Nanton,no,no
+425,HH-04-0425,Renewal,Karaga,yes,yes
+426,HH-04-0426,New enrolment,Tolon,no,yes
+427,HH-04-0427,New enrolment,Kumbungu,yes,yes
+428,HH-04-0428,Renewal,Savelugu,yes,yes
+429,HH-04-0429,Renewal,Nanton,no,no
+430,HH-04-0430,Renewal,Karaga,no,no
+431,HH-04-0431,Renewal,Tolon,no,no
+432,HH-04-0432,New enrolment,Kumbungu,no,yes
+433,HH-04-0433,Renewal,Savelugu,yes,no
+434,HH-04-0434,Renewal,Nanton,no,no
+435,HH-04-0435,Renewal,Karaga,yes,no
+436,HH-04-0436,Renewal,Tolon,no,no
+437,HH-04-0437,Renewal,Kumbungu,yes,yes
+438,HH-04-0438,New enrolment,Savelugu,no,yes
+439,HH-04-0439,Renewal,Nanton,no,no
+440,HH-04-0440,New enrolment,Karaga,yes,yes
+441,HH-04-0441,Renewal,Tolon,no,yes
+442,HH-04-0442,New enrolment,Kumbungu,yes,yes
+443,HH-04-0443,New enrolment,Savelugu,yes,yes
+444,HH-04-0444,Renewal,Nanton,yes,yes
+445,HH-04-0445,Renewal,Karaga,no,no
+446,HH-04-0446,Renewal,Tolon,no,yes
+447,HH-04-0447,Renewal,Kumbungu,no,yes
+448,HH-04-0448,New enrolment,Savelugu,no,yes
+449,HH-04-0449,Renewal,Nanton,yes,no
+450,HH-04-0450,New enrolment,Karaga,yes,no
+451,HH-04-0451,New enrolment,Tolon,no,yes
+452,HH-04-0452,New enrolment,Kumbungu,no,yes
+453,HH-04-0453,New enrolment,Savelugu,no,no
+454,HH-04-0454,New enrolment,Nanton,no,yes
+455,HH-04-0455,Renewal,Karaga,no,yes
+456,HH-04-0456,Renewal,Tolon,no,no
+457,HH-04-0457,Renewal,Kumbungu,no,yes
+458,HH-04-0458,New enrolment,Savelugu,no,no
+459,HH-04-0459,New enrolment,Nanton,yes,no
+460,HH-04-0460,New enrolment,Karaga,yes,yes
+461,HH-04-0461,Renewal,Tolon,no,no
+462,HH-04-0462,New enrolment,Kumbungu,yes,yes
+463,HH-04-0463,New enrolment,Savelugu,no,no
+464,HH-04-0464,New enrolment,Nanton,yes,yes
+465,HH-04-0465,New enrolment,Karaga,yes,no
+466,HH-04-0466,Renewal,Tolon,yes,yes
+467,HH-04-0467,New enrolment,Kumbungu,no,no
+468,HH-04-0468,New enrolment,Savelugu,no,no
+469,HH-04-0469,New enrolment,Nanton,no,no
+470,HH-04-0470,Renewal,Karaga,no,no
+471,HH-04-0471,Renewal,Tolon,yes,no
+472,HH-04-0472,Renewal,Kumbungu,no,no
+473,HH-04-0473,New enrolment,Savelugu,yes,yes
+474,HH-04-0474,Renewal,Nanton,yes,no
+475,HH-04-0475,New enrolment,Karaga,yes,no
+476,HH-04-0476,New enrolment,Tolon,no,no
+477,HH-04-0477,New enrolment,Kumbungu,yes,yes
+478,HH-04-0478,Renewal,Savelugu,yes,no
+479,HH-04-0479,Renewal,Nanton,no,no
+480,HH-04-0480,Renewal,Karaga,no,yes
+481,HH-04-0481,Renewal,Tolon,no,no
+482,HH-04-0482,New enrolment,Kumbungu,yes,yes
+483,HH-04-0483,Renewal,Savelugu,no,yes
+484,HH-04-0484,Renewal,Nanton,yes,no
+485,HH-04-0485,Renewal,Karaga,no,yes
+486,HH-04-0486,New enrolment,Tolon,no,no
+487,HH-04-0487,New enrolment,Kumbungu,no,no
+488,HH-04-0488,New enrolment,Savelugu,no,no
+489,HH-04-0489,New enrolment,Nanton,yes,yes
+490,HH-04-0490,New enrolment,Karaga,yes,yes
+491,HH-04-0491,Renewal,Tolon,yes,yes
+492,HH-04-0492,New enrolment,Kumbungu,no,yes
+493,HH-04-0493,New enrolment,Savelugu,no,yes
+494,HH-04-0494,New enrolment,Nanton,no,yes
+495,HH-04-0495,Renewal,Karaga,yes,no
+496,HH-04-0496,Renewal,Tolon,no,yes
+497,HH-04-0497,New enrolment,Kumbungu,no,no
+498,HH-04-0498,New enrolment,Savelugu,yes,no
+499,HH-04-0499,Renewal,Nanton,no,no
+500,HH-04-0500,Renewal,Karaga,no,no

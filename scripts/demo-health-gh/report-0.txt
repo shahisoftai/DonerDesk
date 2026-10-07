@@ -1,0 +1,220 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+
+GHA-MNCH-R-MUXVF1L0 · European Union (Delegation of the European Union to Ghana) · Ghana · HEALTH
+
+Oct 1, 2025 – Sep 30, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) · Oct 1, 2025 – Oct 31, 2025 · due Nov 5, 2025
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+Approved
+Version 1
+100% ready
+· all done
+Export report
+OUTLINE
+8 of 8 approved
+1
+Summary of the Month
+Approved
+2
+Progress Against Expected Results
+Approved
+3
+Activities Implemented
+Approved
+4
+Outcome Indicators and Data Quality
+Approved
+5
+Challenges, Risks and Mitigation
+Approved
+6
+Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+Approved
+7
+Visibility and Communication
+Approved
+8
+Plan for the Next Month
+Approved
+REPORT INPUTS
+Edit
+Indicator values
+11 of 11 verified · 8 not entered
+Story answers
+5 of 5 answered
+Evidence
+7 files
+
+[DEMO-7] NORTHERN GHANA MATERNAL, NEWBORN & CHILD HEALTH RESILIENCE PROGRAMME (MNCH-R) · OCT 1, 2025 – OCT 31, 2025 · DUE NOV 5, 2025
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+
+Approved
+1 Summary of the Month
+
+October 2025, the Action's first month, delivered its first results across the five districts. The project trained and activated 50 CHVs against a target of 300 (16.7% of target): 30 female and 20 male this period. Teams held 20 outreach clinics against a target of 360 (5.6% of target), reached 900 women through community education against a target of 18,000 (5% of target), assisted 300 households with NHIS enrolment or renewal against a target of 6,000 (5% of target) and conducted 6 supportive supervision visits against a target of 120 (5% of target). Outcome indicators, recorded from DHIMS2/GHS records and facility stock cards, stood close to their baselines: ANC4+ at 53% (baseline 52, target 70), skilled birth attendance at 59% (baseline 58, target 75), Penta3 at 72% (baseline 71, target 88), postnatal checks within 48 hours at 36% (baseline 34, target 60), facilities with no tracer-medicine stock-out at 58% (baseline 55, target 85) and complete DHIMS2 reporting at 74% (baseline 71, target 95). The Action's evidence for the month comprises the verified training attendance sheet, photograph, outreach register, DHIMS2 extract, NHIS register and supervision monitoring report. Training numbers remain at zero for health workers because the first cohort is scheduled for November; recruitment of six nurse-mentors and the first procurement round took longer than planned, so supported facilities were only partly covered in the first weeks. Priority for next month: the first health-worker training cohort.
+
+2 Progress Against Expected Results
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	53	—	75.7%	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	59	—	78.7%	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	72	—	81.8%	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	36	—	60%	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	58	—	68.2%	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	74	—	77.9%	Descriptive only	DHIMS2 / GHS records
+MR-OP1.3	Number of CHVs trained and active	CHVs	0	300	50	—	16.7%	Descriptive only	CHV registers
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	20	—	5.6%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	900	—	5%	Descriptive only	Community session registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	6	—	5%	Descriptive only	Supervision reports
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	300	—	5%	Descriptive only	NHIA drive registers
+
+The Action delivered its first output results in October 2025. The project trained and activated 50 CHVs against a target of 300 (16.7% of target): 30 female and 20 male this period. Teams held 20 outreach clinics against a target of 360 (5.6% of target), reached 900 women through community education against a target of 18,000 (5% of target), assisted 300 households with NHIS enrolment or renewal against a target of 6,000 (5% of target) and conducted 6 supportive supervision visits against a target of 120 (5% of target).
+
+Outcome indicators stood close to their baselines and below their targets. Facilities recorded 53% of pregnant women with four or more ANC visits against a 70% target (75.7% of target), 59% skilled birth attendance against a 75% target (78.7% of target), 72% Penta3 coverage against an 88% target (81.8% of target), 36% postnatal checks within 48 hours against a 60% target (60% of target), 58% of facilities with no tracer-medicine stock-out against an 85% target (68.2% of target) and 74% complete and timely DHIMS2 reporting against a 95% target (77.9% of target).
+
+All indicators remain below plan in this first month. The officer's narrative explains that training numbers stand at zero for health-worker training because the first cohort is scheduled for November. Recruitment of six nurse-mentors and the first procurement round took longer than planned, so supported facilities were only partly covered in the first weeks. Corrective measures recorded this month: the project completed baseline assessments in all 40 facilities and deployed mentors from the second week.
+
+Data quality notes: no quality flags were raised against any verified finding this month. Outcome indicators MR-OC1a to MR-OC2a draw on DHIMS2, GHS records and facility stock cards; recorded commentary on data completeness and reliability is limited to the DHIMS2 completeness and timeliness figure of 74%. No indicator was classified as not calculable in this period.
+
+Progress against targets
+Chart data
+3 Activities Implemented
+
+The Action carried out five activities in October 2025, its first month of delivery, across the five districts.
+
+In Tolon District, the project held CHV training and refresher sessions at Wantugu CHPS compound during October, training 50 people (30 female, 20 male) against a target of 300 for the year (16.7% of target). Verified evidence comprises the training attendance sheet (01-A1.3-attendance) and a photograph from the session (01-A1.3-photo). The training records note that holding sessions at the nearest CHPS compound reduces absenteeism.
+
+In Kumbungu District communities, CHVs and community mobilisers ran community education sessions on antenatal care, facility delivery and newborn danger signs during October, reaching 900 women against a target of 18,000 (5% of target). The session records note that sessions at market days and water points reach more women than sessions at fixed venues.
+
+In Savelugu and Karaga Districts, NHIA district officers and CHVs ran NHIS enrolment and renewal drives during October, registering or renewing 300 households against a target of 6,000 (5% of target), prioritising households with pregnant women and children under five. The drives' records note that drives at antenatal clinics reach pregnant women directly.
+
+In the Kumbungu Health Centre catchment in Savelugu District, the project held 20 integrated outreach clinics offering antenatal care, immunisation, postnatal checks and child weighing during October, against a target of 360 (5.6% of target). Verified evidence comprises the outreach register (01-A1.4-outreach-register) and a DHIMS2 extract (01-A1.4-dhims2-extract). The outreach records note that fixed outreach calendars shared with CHVs and chiefs raise turnout.
+
+In Nanton District, district teams and project staff conducted 6 supportive supervision visits to facilities during October, against a target of 120 (5% of target), using a standard checklist covering partograph use, stock management, cold chain and DHIMS2 completeness. Verified evidence is the supervision monitoring report (01-A2.2-supervision). The supervision records note that a checklist with agreed actions reviewed at the next visit closes gaps faster than reports alone.
+
+Health-worker (EmONC and IMNCI) training had not yet started in October: the officer's narrative records that training numbers were zero because the first cohort was scheduled for November. Recruitment of six nurse-mentors and the first procurement round took longer than planned, so supported facilities were only partly covered in the first weeks; baseline assessments of all 40 facilities were nonetheless completed and mentors deployed from the second week.
+
+4 Outcome Indicators and Data Quality
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	53	—	75.7%	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	59	—	78.7%	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	72	—	81.8%	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	36	—	60%	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	58	—	68.2%	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	74	—	77.9%	Descriptive only	DHIMS2 / GHS records
+MR-OP1.3	Number of CHVs trained and active	CHVs	0	300	50	—	16.7%	Descriptive only	CHV registers
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	20	—	5.6%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	900	—	5%	Descriptive only	Community session registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	6	—	5%	Descriptive only	Supervision reports
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	300	—	5%	Descriptive only	NHIA drive registers
+
+Outcome indicators for October 2025 were recorded from DHIMS2/GHS records and facility stock cards. The strongest result against target was Penta3 coverage, at 72% against a target of 88% (81.8% of target), followed by skilled birth attendance at 59% against a target of 75% (78.7% of target). ANC4+ stood at 53% against a target of 70% (75.7% of target), complete and timely DHIMS2 reporting at 74% against a target of 95% (77.9% of target), facilities with no tracer-medicine stock-out at 58% against a target of 85% (68.2% of target), and postnatal checks within 48 hours at 36% against a target of 60% (60% of target). All six outcome indicators performed below their end-of-Action targets in this first month; the evaluation for each is neutral, so no performance judgement is recorded.
+
+All eleven indicators in the verified table were measured this month. Health worker training figures under the Action are not yet recorded because the first EmONC/IMNCI cohort is scheduled for November, so no value exists for that result in October. No finding could not be calculated, and no finding carried a data-quality flag.
+
+Data quality notes: outcome indicators MR-OC1a to MR-OC1c and MR-OC2a draw on DHIMS2/GHS records; MR-OC1e draws on facility stock cards. The Action reports 74% of facilities submitting complete and timely DHIMS2 reports against a baseline of 71%, and no data-completeness or reliability caveats were recorded against any finding this month. No disaggregation list was recorded for any outcome-level finding, and no unmeasured indicator or limitation requires further caveat.
+
+Progress against targets
+Chart data
+5 Challenges, Risks and Mitigation
+
+Start-up delays partly limited coverage of supported facilities in October 2025, the Action's first month of delivery. The project recorded that recruitment of six nurse-mentors and the first procurement round took longer than planned, so supported facilities received only partial coverage in the first weeks. The verified monitoring report for the supportive supervision visits (01-A2.2-supervision) and the attendance, outreach, education and NHIS records attached to the month's activities document this challenge.
+
+To mitigate the delay, the project completed baseline assessments of all 40 facilities and deployed mentors from the second week of October; nurse-mentor recruitment and procurement continued alongside this deployment. The officer's narrative also records that the first EmONC and IMNCI cohort is scheduled for November, which explains why health worker training numbers stood at zero in the first month. Activity records note that training CHVs at the nearest CHPS compound reduced absenteeism. The inputs record no other challenges or risks for October and no further mitigation steps.
+
+No request for support or change requiring the Contracting Authority's agreement appears in the October inputs.
+
+6 Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+
+Women made up 70 percent of the health workers trained and 60 percent of the CHVs this month, and the Action prioritised antenatal and postnatal services for adolescent mothers. On environment, the Action checked sharps boxes and placenta pits at all facilities visited, and its use of solar cold chain avoids diesel generators. On do-no-harm, the reporting officer records that no safeguarding incident was reported in October 2025, and all trainings used attendance sheets with consent for photographs.
+
+7 Visibility and Communication
+
+The Action met European Union visibility requirements in October 2025. The EU kick-off meeting was held in Tolon, marking the formal launch of the Action. The attendance sheet and photograph from the community health volunteer training at Wantugu CHPS compound on 11 October record the session at which the trained volunteers participated (30 female, 20 male). Verified evidence for the month includes the training attendance sheet (01-A1.3-attendance), a photograph from that session (01-A1.3-photo), the outreach register and DHIMS2 extract (01-A1.4-outreach-register, 01-A1.4-dhims2-extract), the NHIS register (01-A2.4-nhis-register) and the supervision monitoring report (01-A2.2-supervision). The report-wide compliance requirement that EU visibility be confirmed on materials, equipment and events is therefore recorded as met for the events held this month. The Action is funded by the European Union.
+
+This project is funded by the European Union.
+
+Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union. Neither the European Union nor the granting authority can be held responsible for them.
+
+8 Plan for the Next Month
+
+The Action enters November 2025 with its first health-worker training cohort, which is scheduled for that month. Activity records set out the coming month's plans directly: the project will continue CHV cohorts and refresher sessions; continue the community education sessions on antenatal care, facility delivery and newborn danger signs and add radio spots; continue NHIS enrolment and renewal drives and follow up renewals due next month; hold the planned integrated outreach clinics and review outreach routes against the road conditions; and follow up the actions agreed with each facility during supportive supervision. No numerical targets or expected results for November 2025 were recorded in the inputs, so none can be reported here. These plans build on October's start-up, in which baseline assessments of all 40 facilities were completed and mentors were deployed from the second week, partly offsetting the delayed recruitment of six nurse-mentors and the first procurement round.
+
+Section 1
+
+Summary of the Month
+Statements
+Sources · 21
+Chart
+Comments
+History
+
+Nothing to decide — all 7 statements are backed by evidence or decided.
+
+Not checked (minor)
+
+“October 2025, the Action's first month, delivered its first results across the five districts.”
+
+Matches evidence
+
+“The project trained and activated 50 CHVs against a target of 300 (16.7% of target): 30 female and 20 male this period.”
+
+Matches evidence
+
+“Teams held 20 outreach clinics against a target of 360 (5.6% of target), reached 900 women through community education against a target of 18,000 (5% of target), assisted 300 households with NHIS enrolment or renewal against a target of 6,000 (5% of target) and conducted 6 supportive supervision visits against a target of 120 (5% of target).”
+
+Matches evidence
+
+“Outcome indicators, recorded from DHIMS2/GHS records and facility stock cards, stood close to their baselines: ANC4+ at 53% (baseline 52, target 70), skilled birth attendance at 59% (baseline 58, target 75), Penta3 at 72% (baseline 71, target 88), postnatal checks within 48 hours at 36% (baseline 34, target 60), facilities with no tracer-medicine stock-out at 58% (baseline 55, target 85) and complete DHIMS2 reporting at 74% (baseline 71, target 95).”
+
+Matches evidence
+
+“The Action's evidence for the month comprises the verified training attendance sheet, photograph, outreach register, DHIMS2 extract, NHIS register and supervision monitoring report.”
+
+Matches evidence
+
+“Training numbers remain at zero for health workers because the first cohort is scheduled for November; recruitment of six nurse-mentors and the first procurement round took longer than planned, so supported facilities were only partly covered in the first weeks.”
+
+Matches evidence
+
+“Priority for next month: the first health-worker training cohort.”

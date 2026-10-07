@@ -1,0 +1,561 @@
+No,Household ID (anonymised),Type,District,Pregnant woman in household,Child under 5
+1,HH-06-0001,New enrolment,Tolon,yes,no
+2,HH-06-0002,New enrolment,Kumbungu,yes,no
+3,HH-06-0003,New enrolment,Savelugu,yes,yes
+4,HH-06-0004,New enrolment,Nanton,no,no
+5,HH-06-0005,Renewal,Karaga,no,no
+6,HH-06-0006,New enrolment,Tolon,yes,no
+7,HH-06-0007,Renewal,Kumbungu,no,no
+8,HH-06-0008,New enrolment,Savelugu,no,no
+9,HH-06-0009,Renewal,Nanton,no,yes
+10,HH-06-0010,New enrolment,Karaga,yes,yes
+11,HH-06-0011,Renewal,Tolon,yes,yes
+12,HH-06-0012,Renewal,Kumbungu,yes,yes
+13,HH-06-0013,Renewal,Savelugu,no,yes
+14,HH-06-0014,New enrolment,Nanton,yes,no
+15,HH-06-0015,New enrolment,Karaga,no,no
+16,HH-06-0016,Renewal,Tolon,yes,no
+17,HH-06-0017,New enrolment,Kumbungu,no,yes
+18,HH-06-0018,Renewal,Savelugu,yes,no
+19,HH-06-0019,Renewal,Nanton,yes,yes
+20,HH-06-0020,Renewal,Karaga,yes,yes
+21,HH-06-0021,New enrolment,Tolon,no,yes
+22,HH-06-0022,New enrolment,Kumbungu,no,no
+23,HH-06-0023,Renewal,Savelugu,no,yes
+24,HH-06-0024,Renewal,Nanton,yes,yes
+25,HH-06-0025,New enrolment,Karaga,yes,yes
+26,HH-06-0026,New enrolment,Tolon,no,yes
+27,HH-06-0027,New enrolment,Kumbungu,no,no
+28,HH-06-0028,Renewal,Savelugu,no,yes
+29,HH-06-0029,Renewal,Nanton,yes,yes
+30,HH-06-0030,Renewal,Karaga,yes,no
+31,HH-06-0031,Renewal,Tolon,yes,no
+32,HH-06-0032,Renewal,Kumbungu,no,yes
+33,HH-06-0033,Renewal,Savelugu,yes,no
+34,HH-06-0034,New enrolment,Nanton,no,no
+35,HH-06-0035,Renewal,Karaga,yes,yes
+36,HH-06-0036,New enrolment,Tolon,yes,yes
+37,HH-06-0037,New enrolment,Kumbungu,yes,no
+38,HH-06-0038,New enrolment,Savelugu,no,yes
+39,HH-06-0039,New enrolment,Nanton,no,no
+40,HH-06-0040,New enrolment,Karaga,yes,yes
+41,HH-06-0041,Renewal,Tolon,no,no
+42,HH-06-0042,Renewal,Kumbungu,yes,yes
+43,HH-06-0043,New enrolment,Savelugu,no,yes
+44,HH-06-0044,Renewal,Nanton,yes,no
+45,HH-06-0045,Renewal,Karaga,no,yes
+46,HH-06-0046,New enrolment,Tolon,no,no
+47,HH-06-0047,New enrolment,Kumbungu,yes,no
+48,HH-06-0048,New enrolment,Savelugu,yes,yes
+49,HH-06-0049,Renewal,Nanton,no,yes
+50,HH-06-0050,Renewal,Karaga,yes,yes
+51,HH-06-0051,New enrolment,Tolon,no,yes
+52,HH-06-0052,Renewal,Kumbungu,yes,yes
+53,HH-06-0053,Renewal,Savelugu,yes,no
+54,HH-06-0054,New enrolment,Nanton,yes,no
+55,HH-06-0055,Renewal,Karaga,yes,no
+56,HH-06-0056,Renewal,Tolon,yes,yes
+57,HH-06-0057,Renewal,Kumbungu,yes,no
+58,HH-06-0058,Renewal,Savelugu,no,yes
+59,HH-06-0059,Renewal,Nanton,no,yes
+60,HH-06-0060,New enrolment,Karaga,yes,no
+61,HH-06-0061,New enrolment,Tolon,yes,no
+62,HH-06-0062,Renewal,Kumbungu,no,no
+63,HH-06-0063,New enrolment,Savelugu,no,no
+64,HH-06-0064,Renewal,Nanton,yes,yes
+65,HH-06-0065,Renewal,Karaga,yes,no
+66,HH-06-0066,New enrolment,Tolon,no,no
+67,HH-06-0067,Renewal,Kumbungu,no,no
+68,HH-06-0068,Renewal,Savelugu,no,yes
+69,HH-06-0069,Renewal,Nanton,no,no
+70,HH-06-0070,Renewal,Karaga,yes,yes
+71,HH-06-0071,New enrolment,Tolon,no,no
+72,HH-06-0072,Renewal,Kumbungu,yes,no
+73,HH-06-0073,Renewal,Savelugu,yes,no
+74,HH-06-0074,New enrolment,Nanton,yes,no
+75,HH-06-0075,New enrolment,Karaga,yes,yes
+76,HH-06-0076,New enrolment,Tolon,no,yes
+77,HH-06-0077,Renewal,Kumbungu,yes,no
+78,HH-06-0078,New enrolment,Savelugu,yes,no
+79,HH-06-0079,Renewal,Nanton,yes,no
+80,HH-06-0080,Renewal,Karaga,no,no
+81,HH-06-0081,New enrolment,Tolon,yes,yes
+82,HH-06-0082,Renewal,Kumbungu,no,no
+83,HH-06-0083,Renewal,Savelugu,no,yes
+84,HH-06-0084,Renewal,Nanton,no,no
+85,HH-06-0085,New enrolment,Karaga,yes,yes
+86,HH-06-0086,Renewal,Tolon,no,no
+87,HH-06-0087,Renewal,Kumbungu,no,yes
+88,HH-06-0088,Renewal,Savelugu,no,no
+89,HH-06-0089,Renewal,Nanton,yes,yes
+90,HH-06-0090,Renewal,Karaga,no,no
+91,HH-06-0091,Renewal,Tolon,no,no
+92,HH-06-0092,New enrolment,Kumbungu,yes,yes
+93,HH-06-0093,Renewal,Savelugu,yes,yes
+94,HH-06-0094,New enrolment,Nanton,no,yes
+95,HH-06-0095,New enrolment,Karaga,yes,yes
+96,HH-06-0096,New enrolment,Tolon,yes,yes
+97,HH-06-0097,New enrolment,Kumbungu,no,yes
+98,HH-06-0098,Renewal,Savelugu,yes,yes
+99,HH-06-0099,Renewal,Nanton,no,yes
+100,HH-06-0100,New enrolment,Karaga,yes,yes
+101,HH-06-0101,New enrolment,Tolon,yes,yes
+102,HH-06-0102,New enrolment,Kumbungu,no,yes
+103,HH-06-0103,New enrolment,Savelugu,yes,no
+104,HH-06-0104,New enrolment,Nanton,yes,yes
+105,HH-06-0105,Renewal,Karaga,no,no
+106,HH-06-0106,New enrolment,Tolon,no,no
+107,HH-06-0107,New enrolment,Kumbungu,yes,no
+108,HH-06-0108,Renewal,Savelugu,no,no
+109,HH-06-0109,Renewal,Nanton,no,no
+110,HH-06-0110,New enrolment,Karaga,yes,yes
+111,HH-06-0111,New enrolment,Tolon,no,yes
+112,HH-06-0112,Renewal,Kumbungu,no,no
+113,HH-06-0113,Renewal,Savelugu,no,no
+114,HH-06-0114,Renewal,Nanton,yes,yes
+115,HH-06-0115,Renewal,Karaga,no,yes
+116,HH-06-0116,Renewal,Tolon,yes,yes
+117,HH-06-0117,Renewal,Kumbungu,yes,yes
+118,HH-06-0118,New enrolment,Savelugu,yes,no
+119,HH-06-0119,New enrolment,Nanton,no,yes
+120,HH-06-0120,Renewal,Karaga,no,no
+121,HH-06-0121,New enrolment,Tolon,yes,yes
+122,HH-06-0122,New enrolment,Kumbungu,no,yes
+123,HH-06-0123,Renewal,Savelugu,no,no
+124,HH-06-0124,New enrolment,Nanton,no,no
+125,HH-06-0125,Renewal,Karaga,yes,yes
+126,HH-06-0126,Renewal,Tolon,no,no
+127,HH-06-0127,Renewal,Kumbungu,yes,no
+128,HH-06-0128,Renewal,Savelugu,no,no
+129,HH-06-0129,New enrolment,Nanton,no,yes
+130,HH-06-0130,New enrolment,Karaga,yes,yes
+131,HH-06-0131,Renewal,Tolon,yes,no
+132,HH-06-0132,New enrolment,Kumbungu,yes,yes
+133,HH-06-0133,New enrolment,Savelugu,yes,yes
+134,HH-06-0134,New enrolment,Nanton,no,no
+135,HH-06-0135,Renewal,Karaga,no,no
+136,HH-06-0136,Renewal,Tolon,yes,no
+137,HH-06-0137,Renewal,Kumbungu,no,yes
+138,HH-06-0138,New enrolment,Savelugu,no,no
+139,HH-06-0139,New enrolment,Nanton,no,no
+140,HH-06-0140,Renewal,Karaga,no,no
+141,HH-06-0141,Renewal,Tolon,no,yes
+142,HH-06-0142,Renewal,Kumbungu,yes,yes
+143,HH-06-0143,New enrolment,Savelugu,yes,yes
+144,HH-06-0144,New enrolment,Nanton,yes,yes
+145,HH-06-0145,New enrolment,Karaga,yes,yes
+146,HH-06-0146,Renewal,Tolon,no,no
+147,HH-06-0147,Renewal,Kumbungu,yes,no
+148,HH-06-0148,New enrolment,Savelugu,yes,no
+149,HH-06-0149,Renewal,Nanton,yes,no
+150,HH-06-0150,New enrolment,Karaga,yes,yes
+151,HH-06-0151,New enrolment,Tolon,no,yes
+152,HH-06-0152,New enrolment,Kumbungu,yes,yes
+153,HH-06-0153,New enrolment,Savelugu,no,yes
+154,HH-06-0154,New enrolment,Nanton,yes,no
+155,HH-06-0155,New enrolment,Karaga,yes,yes
+156,HH-06-0156,New enrolment,Tolon,yes,yes
+157,HH-06-0157,Renewal,Kumbungu,yes,no
+158,HH-06-0158,Renewal,Savelugu,yes,yes
+159,HH-06-0159,Renewal,Nanton,yes,yes
+160,HH-06-0160,Renewal,Karaga,no,no
+161,HH-06-0161,New enrolment,Tolon,yes,yes
+162,HH-06-0162,New enrolment,Kumbungu,yes,yes
+163,HH-06-0163,New enrolment,Savelugu,no,no
+164,HH-06-0164,Renewal,Nanton,no,yes
+165,HH-06-0165,Renewal,Karaga,yes,yes
+166,HH-06-0166,New enrolment,Tolon,yes,yes
+167,HH-06-0167,New enrolment,Kumbungu,yes,no
+168,HH-06-0168,Renewal,Savelugu,yes,no
+169,HH-06-0169,New enrolment,Nanton,no,yes
+170,HH-06-0170,Renewal,Karaga,yes,no
+171,HH-06-0171,New enrolment,Tolon,yes,yes
+172,HH-06-0172,New enrolment,Kumbungu,yes,yes
+173,HH-06-0173,New enrolment,Savelugu,no,no
+174,HH-06-0174,Renewal,Nanton,no,yes
+175,HH-06-0175,Renewal,Karaga,no,no
+176,HH-06-0176,New enrolment,Tolon,yes,yes
+177,HH-06-0177,Renewal,Kumbungu,yes,no
+178,HH-06-0178,Renewal,Savelugu,no,yes
+179,HH-06-0179,Renewal,Nanton,yes,no
+180,HH-06-0180,New enrolment,Karaga,yes,yes
+181,HH-06-0181,New enrolment,Tolon,yes,yes
+182,HH-06-0182,Renewal,Kumbungu,no,yes
+183,HH-06-0183,Renewal,Savelugu,yes,yes
+184,HH-06-0184,Renewal,Nanton,yes,yes
+185,HH-06-0185,New enrolment,Karaga,no,yes
+186,HH-06-0186,Renewal,Tolon,no,yes
+187,HH-06-0187,New enrolment,Kumbungu,yes,yes
+188,HH-06-0188,New enrolment,Savelugu,no,no
+189,HH-06-0189,New enrolment,Nanton,yes,yes
+190,HH-06-0190,Renewal,Karaga,no,yes
+191,HH-06-0191,Renewal,Tolon,yes,yes
+192,HH-06-0192,Renewal,Kumbungu,no,yes
+193,HH-06-0193,New enrolment,Savelugu,no,no
+194,HH-06-0194,Renewal,Nanton,no,yes
+195,HH-06-0195,Renewal,Karaga,yes,yes
+196,HH-06-0196,New enrolment,Tolon,yes,yes
+197,HH-06-0197,Renewal,Kumbungu,no,no
+198,HH-06-0198,New enrolment,Savelugu,yes,yes
+199,HH-06-0199,Renewal,Nanton,yes,no
+200,HH-06-0200,Renewal,Karaga,no,yes
+201,HH-06-0201,Renewal,Tolon,yes,yes
+202,HH-06-0202,Renewal,Kumbungu,no,yes
+203,HH-06-0203,New enrolment,Savelugu,yes,no
+204,HH-06-0204,New enrolment,Nanton,no,yes
+205,HH-06-0205,New enrolment,Karaga,no,no
+206,HH-06-0206,Renewal,Tolon,yes,no
+207,HH-06-0207,New enrolment,Kumbungu,yes,no
+208,HH-06-0208,New enrolment,Savelugu,no,no
+209,HH-06-0209,New enrolment,Nanton,no,yes
+210,HH-06-0210,Renewal,Karaga,no,yes
+211,HH-06-0211,New enrolment,Tolon,yes,yes
+212,HH-06-0212,Renewal,Kumbungu,yes,yes
+213,HH-06-0213,New enrolment,Savelugu,no,no
+214,HH-06-0214,Renewal,Nanton,no,yes
+215,HH-06-0215,New enrolment,Karaga,no,yes
+216,HH-06-0216,New enrolment,Tolon,yes,no
+217,HH-06-0217,New enrolment,Kumbungu,no,no
+218,HH-06-0218,Renewal,Savelugu,no,yes
+219,HH-06-0219,Renewal,Nanton,no,no
+220,HH-06-0220,Renewal,Karaga,yes,yes
+221,HH-06-0221,Renewal,Tolon,yes,no
+222,HH-06-0222,Renewal,Kumbungu,no,yes
+223,HH-06-0223,Renewal,Savelugu,no,no
+224,HH-06-0224,Renewal,Nanton,yes,yes
+225,HH-06-0225,Renewal,Karaga,yes,no
+226,HH-06-0226,Renewal,Tolon,no,no
+227,HH-06-0227,Renewal,Kumbungu,yes,yes
+228,HH-06-0228,Renewal,Savelugu,yes,no
+229,HH-06-0229,New enrolment,Nanton,yes,no
+230,HH-06-0230,Renewal,Karaga,yes,no
+231,HH-06-0231,New enrolment,Tolon,no,yes
+232,HH-06-0232,Renewal,Kumbungu,no,no
+233,HH-06-0233,Renewal,Savelugu,no,no
+234,HH-06-0234,Renewal,Nanton,no,yes
+235,HH-06-0235,Renewal,Karaga,yes,yes
+236,HH-06-0236,Renewal,Tolon,yes,no
+237,HH-06-0237,New enrolment,Kumbungu,yes,yes
+238,HH-06-0238,Renewal,Savelugu,no,yes
+239,HH-06-0239,Renewal,Nanton,yes,no
+240,HH-06-0240,Renewal,Karaga,no,yes
+241,HH-06-0241,New enrolment,Tolon,no,no
+242,HH-06-0242,New enrolment,Kumbungu,yes,no
+243,HH-06-0243,Renewal,Savelugu,no,no
+244,HH-06-0244,New enrolment,Nanton,yes,yes
+245,HH-06-0245,Renewal,Karaga,yes,no
+246,HH-06-0246,Renewal,Tolon,no,no
+247,HH-06-0247,New enrolment,Kumbungu,no,yes
+248,HH-06-0248,Renewal,Savelugu,yes,yes
+249,HH-06-0249,Renewal,Nanton,no,yes
+250,HH-06-0250,New enrolment,Karaga,no,yes
+251,HH-06-0251,New enrolment,Tolon,no,yes
+252,HH-06-0252,New enrolment,Kumbungu,no,no
+253,HH-06-0253,Renewal,Savelugu,no,yes
+254,HH-06-0254,New enrolment,Nanton,yes,no
+255,HH-06-0255,Renewal,Karaga,no,yes
+256,HH-06-0256,Renewal,Tolon,yes,no
+257,HH-06-0257,Renewal,Kumbungu,no,no
+258,HH-06-0258,New enrolment,Savelugu,no,yes
+259,HH-06-0259,New enrolment,Nanton,yes,no
+260,HH-06-0260,Renewal,Karaga,yes,yes
+261,HH-06-0261,New enrolment,Tolon,no,no
+262,HH-06-0262,Renewal,Kumbungu,no,no
+263,HH-06-0263,New enrolment,Savelugu,no,no
+264,HH-06-0264,New enrolment,Nanton,yes,no
+265,HH-06-0265,Renewal,Karaga,no,yes
+266,HH-06-0266,New enrolment,Tolon,yes,yes
+267,HH-06-0267,Renewal,Kumbungu,no,yes
+268,HH-06-0268,New enrolment,Savelugu,no,no
+269,HH-06-0269,New enrolment,Nanton,yes,yes
+270,HH-06-0270,New enrolment,Karaga,yes,no
+271,HH-06-0271,New enrolment,Tolon,no,yes
+272,HH-06-0272,New enrolment,Kumbungu,no,yes
+273,HH-06-0273,New enrolment,Savelugu,no,no
+274,HH-06-0274,Renewal,Nanton,yes,yes
+275,HH-06-0275,New enrolment,Karaga,no,no
+276,HH-06-0276,New enrolment,Tolon,no,no
+277,HH-06-0277,Renewal,Kumbungu,yes,yes
+278,HH-06-0278,Renewal,Savelugu,yes,yes
+279,HH-06-0279,New enrolment,Nanton,yes,no
+280,HH-06-0280,New enrolment,Karaga,yes,yes
+281,HH-06-0281,Renewal,Tolon,yes,no
+282,HH-06-0282,New enrolment,Kumbungu,yes,no
+283,HH-06-0283,Renewal,Savelugu,yes,no
+284,HH-06-0284,Renewal,Nanton,yes,no
+285,HH-06-0285,Renewal,Karaga,yes,no
+286,HH-06-0286,Renewal,Tolon,yes,yes
+287,HH-06-0287,Renewal,Kumbungu,yes,yes
+288,HH-06-0288,New enrolment,Savelugu,no,yes
+289,HH-06-0289,New enrolment,Nanton,yes,yes
+290,HH-06-0290,New enrolment,Karaga,no,yes
+291,HH-06-0291,Renewal,Tolon,yes,yes
+292,HH-06-0292,New enrolment,Kumbungu,no,yes
+293,HH-06-0293,New enrolment,Savelugu,no,no
+294,HH-06-0294,New enrolment,Nanton,no,no
+295,HH-06-0295,New enrolment,Karaga,no,no
+296,HH-06-0296,Renewal,Tolon,yes,yes
+297,HH-06-0297,New enrolment,Kumbungu,no,yes
+298,HH-06-0298,Renewal,Savelugu,no,yes
+299,HH-06-0299,Renewal,Nanton,no,yes
+300,HH-06-0300,Renewal,Karaga,yes,yes
+301,HH-06-0301,Renewal,Tolon,no,yes
+302,HH-06-0302,Renewal,Kumbungu,yes,yes
+303,HH-06-0303,Renewal,Savelugu,yes,yes
+304,HH-06-0304,Renewal,Nanton,yes,yes
+305,HH-06-0305,Renewal,Karaga,yes,no
+306,HH-06-0306,New enrolment,Tolon,no,yes
+307,HH-06-0307,New enrolment,Kumbungu,yes,yes
+308,HH-06-0308,Renewal,Savelugu,yes,yes
+309,HH-06-0309,Renewal,Nanton,yes,no
+310,HH-06-0310,New enrolment,Karaga,yes,yes
+311,HH-06-0311,Renewal,Tolon,no,no
+312,HH-06-0312,New enrolment,Kumbungu,no,no
+313,HH-06-0313,Renewal,Savelugu,no,yes
+314,HH-06-0314,Renewal,Nanton,yes,no
+315,HH-06-0315,New enrolment,Karaga,no,yes
+316,HH-06-0316,Renewal,Tolon,no,no
+317,HH-06-0317,New enrolment,Kumbungu,yes,yes
+318,HH-06-0318,New enrolment,Savelugu,yes,no
+319,HH-06-0319,Renewal,Nanton,no,yes
+320,HH-06-0320,New enrolment,Karaga,no,no
+321,HH-06-0321,Renewal,Tolon,no,yes
+322,HH-06-0322,New enrolment,Kumbungu,yes,no
+323,HH-06-0323,Renewal,Savelugu,yes,yes
+324,HH-06-0324,Renewal,Nanton,no,yes
+325,HH-06-0325,Renewal,Karaga,yes,no
+326,HH-06-0326,New enrolment,Tolon,yes,yes
+327,HH-06-0327,Renewal,Kumbungu,no,no
+328,HH-06-0328,Renewal,Savelugu,no,no
+329,HH-06-0329,New enrolment,Nanton,no,yes
+330,HH-06-0330,Renewal,Karaga,no,yes
+331,HH-06-0331,Renewal,Tolon,no,no
+332,HH-06-0332,New enrolment,Kumbungu,no,no
+333,HH-06-0333,Renewal,Savelugu,yes,no
+334,HH-06-0334,Renewal,Nanton,no,no
+335,HH-06-0335,Renewal,Karaga,yes,no
+336,HH-06-0336,Renewal,Tolon,yes,no
+337,HH-06-0337,Renewal,Kumbungu,no,yes
+338,HH-06-0338,Renewal,Savelugu,no,yes
+339,HH-06-0339,New enrolment,Nanton,no,yes
+340,HH-06-0340,Renewal,Karaga,yes,no
+341,HH-06-0341,Renewal,Tolon,yes,no
+342,HH-06-0342,Renewal,Kumbungu,yes,no
+343,HH-06-0343,Renewal,Savelugu,yes,yes
+344,HH-06-0344,Renewal,Nanton,no,yes
+345,HH-06-0345,New enrolment,Karaga,no,yes
+346,HH-06-0346,Renewal,Tolon,yes,no
+347,HH-06-0347,Renewal,Kumbungu,yes,yes
+348,HH-06-0348,New enrolment,Savelugu,no,yes
+349,HH-06-0349,Renewal,Nanton,no,no
+350,HH-06-0350,New enrolment,Karaga,no,no
+351,HH-06-0351,Renewal,Tolon,yes,no
+352,HH-06-0352,Renewal,Kumbungu,no,no
+353,HH-06-0353,New enrolment,Savelugu,yes,no
+354,HH-06-0354,Renewal,Nanton,no,no
+355,HH-06-0355,New enrolment,Karaga,yes,yes
+356,HH-06-0356,New enrolment,Tolon,yes,yes
+357,HH-06-0357,Renewal,Kumbungu,yes,yes
+358,HH-06-0358,Renewal,Savelugu,yes,yes
+359,HH-06-0359,Renewal,Nanton,no,yes
+360,HH-06-0360,New enrolment,Karaga,yes,no
+361,HH-06-0361,Renewal,Tolon,no,yes
+362,HH-06-0362,New enrolment,Kumbungu,yes,yes
+363,HH-06-0363,Renewal,Savelugu,yes,no
+364,HH-06-0364,Renewal,Nanton,yes,no
+365,HH-06-0365,Renewal,Karaga,yes,no
+366,HH-06-0366,New enrolment,Tolon,yes,yes
+367,HH-06-0367,New enrolment,Kumbungu,no,no
+368,HH-06-0368,New enrolment,Savelugu,yes,yes
+369,HH-06-0369,New enrolment,Nanton,yes,yes
+370,HH-06-0370,New enrolment,Karaga,no,yes
+371,HH-06-0371,Renewal,Tolon,yes,yes
+372,HH-06-0372,Renewal,Kumbungu,yes,no
+373,HH-06-0373,Renewal,Savelugu,yes,no
+374,HH-06-0374,New enrolment,Nanton,no,no
+375,HH-06-0375,Renewal,Karaga,no,yes
+376,HH-06-0376,Renewal,Tolon,no,no
+377,HH-06-0377,Renewal,Kumbungu,no,no
+378,HH-06-0378,New enrolment,Savelugu,no,no
+379,HH-06-0379,New enrolment,Nanton,yes,no
+380,HH-06-0380,New enrolment,Karaga,no,yes
+381,HH-06-0381,Renewal,Tolon,yes,yes
+382,HH-06-0382,Renewal,Kumbungu,no,yes
+383,HH-06-0383,New enrolment,Savelugu,no,no
+384,HH-06-0384,New enrolment,Nanton,no,no
+385,HH-06-0385,Renewal,Karaga,no,no
+386,HH-06-0386,Renewal,Tolon,yes,yes
+387,HH-06-0387,Renewal,Kumbungu,yes,no
+388,HH-06-0388,Renewal,Savelugu,yes,yes
+389,HH-06-0389,New enrolment,Nanton,yes,yes
+390,HH-06-0390,New enrolment,Karaga,no,no
+391,HH-06-0391,New enrolment,Tolon,yes,no
+392,HH-06-0392,New enrolment,Kumbungu,yes,no
+393,HH-06-0393,Renewal,Savelugu,no,no
+394,HH-06-0394,New enrolment,Nanton,yes,no
+395,HH-06-0395,Renewal,Karaga,yes,yes
+396,HH-06-0396,New enrolment,Tolon,yes,yes
+397,HH-06-0397,New enrolment,Kumbungu,yes,yes
+398,HH-06-0398,Renewal,Savelugu,no,no
+399,HH-06-0399,New enrolment,Nanton,yes,yes
+400,HH-06-0400,New enrolment,Karaga,yes,no
+401,HH-06-0401,New enrolment,Tolon,yes,yes
+402,HH-06-0402,Renewal,Kumbungu,no,no
+403,HH-06-0403,New enrolment,Savelugu,yes,no
+404,HH-06-0404,Renewal,Nanton,no,no
+405,HH-06-0405,New enrolment,Karaga,no,no
+406,HH-06-0406,Renewal,Tolon,yes,yes
+407,HH-06-0407,Renewal,Kumbungu,yes,no
+408,HH-06-0408,New enrolment,Savelugu,yes,yes
+409,HH-06-0409,New enrolment,Nanton,yes,no
+410,HH-06-0410,Renewal,Karaga,no,yes
+411,HH-06-0411,New enrolment,Tolon,yes,yes
+412,HH-06-0412,Renewal,Kumbungu,no,yes
+413,HH-06-0413,New enrolment,Savelugu,no,yes
+414,HH-06-0414,Renewal,Nanton,yes,no
+415,HH-06-0415,Renewal,Karaga,no,yes
+416,HH-06-0416,New enrolment,Tolon,no,no
+417,HH-06-0417,New enrolment,Kumbungu,yes,no
+418,HH-06-0418,Renewal,Savelugu,yes,yes
+419,HH-06-0419,Renewal,Nanton,yes,no
+420,HH-06-0420,New enrolment,Karaga,no,yes
+421,HH-06-0421,Renewal,Tolon,no,yes
+422,HH-06-0422,New enrolment,Kumbungu,yes,yes
+423,HH-06-0423,New enrolment,Savelugu,yes,no
+424,HH-06-0424,Renewal,Nanton,yes,yes
+425,HH-06-0425,Renewal,Karaga,yes,yes
+426,HH-06-0426,Renewal,Tolon,no,no
+427,HH-06-0427,Renewal,Kumbungu,no,yes
+428,HH-06-0428,Renewal,Savelugu,yes,no
+429,HH-06-0429,Renewal,Nanton,yes,yes
+430,HH-06-0430,Renewal,Karaga,yes,no
+431,HH-06-0431,Renewal,Tolon,no,yes
+432,HH-06-0432,New enrolment,Kumbungu,yes,yes
+433,HH-06-0433,New enrolment,Savelugu,yes,no
+434,HH-06-0434,Renewal,Nanton,no,yes
+435,HH-06-0435,New enrolment,Karaga,no,yes
+436,HH-06-0436,Renewal,Tolon,yes,yes
+437,HH-06-0437,New enrolment,Kumbungu,yes,no
+438,HH-06-0438,Renewal,Savelugu,yes,no
+439,HH-06-0439,New enrolment,Nanton,no,no
+440,HH-06-0440,New enrolment,Karaga,no,no
+441,HH-06-0441,New enrolment,Tolon,no,yes
+442,HH-06-0442,New enrolment,Kumbungu,yes,yes
+443,HH-06-0443,New enrolment,Savelugu,no,no
+444,HH-06-0444,New enrolment,Nanton,no,no
+445,HH-06-0445,New enrolment,Karaga,no,yes
+446,HH-06-0446,Renewal,Tolon,no,no
+447,HH-06-0447,Renewal,Kumbungu,no,yes
+448,HH-06-0448,New enrolment,Savelugu,yes,no
+449,HH-06-0449,Renewal,Nanton,yes,yes
+450,HH-06-0450,New enrolment,Karaga,yes,no
+451,HH-06-0451,Renewal,Tolon,no,no
+452,HH-06-0452,New enrolment,Kumbungu,no,no
+453,HH-06-0453,Renewal,Savelugu,yes,yes
+454,HH-06-0454,New enrolment,Nanton,yes,no
+455,HH-06-0455,Renewal,Karaga,yes,no
+456,HH-06-0456,New enrolment,Tolon,yes,yes
+457,HH-06-0457,Renewal,Kumbungu,yes,no
+458,HH-06-0458,Renewal,Savelugu,no,yes
+459,HH-06-0459,Renewal,Nanton,no,yes
+460,HH-06-0460,New enrolment,Karaga,yes,no
+461,HH-06-0461,New enrolment,Tolon,no,yes
+462,HH-06-0462,New enrolment,Kumbungu,yes,no
+463,HH-06-0463,New enrolment,Savelugu,no,yes
+464,HH-06-0464,Renewal,Nanton,yes,yes
+465,HH-06-0465,Renewal,Karaga,no,no
+466,HH-06-0466,New enrolment,Tolon,yes,no
+467,HH-06-0467,New enrolment,Kumbungu,yes,yes
+468,HH-06-0468,Renewal,Savelugu,no,no
+469,HH-06-0469,Renewal,Nanton,no,yes
+470,HH-06-0470,New enrolment,Karaga,yes,no
+471,HH-06-0471,New enrolment,Tolon,no,no
+472,HH-06-0472,Renewal,Kumbungu,no,yes
+473,HH-06-0473,New enrolment,Savelugu,yes,yes
+474,HH-06-0474,Renewal,Nanton,no,no
+475,HH-06-0475,Renewal,Karaga,no,no
+476,HH-06-0476,Renewal,Tolon,no,yes
+477,HH-06-0477,New enrolment,Kumbungu,yes,no
+478,HH-06-0478,New enrolment,Savelugu,no,no
+479,HH-06-0479,New enrolment,Nanton,yes,yes
+480,HH-06-0480,Renewal,Karaga,yes,no
+481,HH-06-0481,Renewal,Tolon,no,yes
+482,HH-06-0482,Renewal,Kumbungu,yes,no
+483,HH-06-0483,Renewal,Savelugu,no,no
+484,HH-06-0484,New enrolment,Nanton,no,no
+485,HH-06-0485,New enrolment,Karaga,yes,yes
+486,HH-06-0486,New enrolment,Tolon,no,yes
+487,HH-06-0487,Renewal,Kumbungu,no,yes
+488,HH-06-0488,Renewal,Savelugu,no,yes
+489,HH-06-0489,Renewal,Nanton,yes,no
+490,HH-06-0490,New enrolment,Karaga,yes,yes
+491,HH-06-0491,Renewal,Tolon,yes,yes
+492,HH-06-0492,New enrolment,Kumbungu,yes,yes
+493,HH-06-0493,New enrolment,Savelugu,no,yes
+494,HH-06-0494,New enrolment,Nanton,yes,no
+495,HH-06-0495,Renewal,Karaga,yes,no
+496,HH-06-0496,New enrolment,Tolon,yes,yes
+497,HH-06-0497,New enrolment,Kumbungu,yes,no
+498,HH-06-0498,Renewal,Savelugu,yes,no
+499,HH-06-0499,New enrolment,Nanton,no,no
+500,HH-06-0500,New enrolment,Karaga,yes,no
+501,HH-06-0501,Renewal,Tolon,yes,no
+502,HH-06-0502,New enrolment,Kumbungu,yes,no
+503,HH-06-0503,Renewal,Savelugu,no,no
+504,HH-06-0504,Renewal,Nanton,no,no
+505,HH-06-0505,New enrolment,Karaga,no,no
+506,HH-06-0506,New enrolment,Tolon,no,no
+507,HH-06-0507,Renewal,Kumbungu,no,no
+508,HH-06-0508,Renewal,Savelugu,no,no
+509,HH-06-0509,Renewal,Nanton,yes,no
+510,HH-06-0510,Renewal,Karaga,yes,yes
+511,HH-06-0511,Renewal,Tolon,no,no
+512,HH-06-0512,New enrolment,Kumbungu,yes,yes
+513,HH-06-0513,New enrolment,Savelugu,yes,no
+514,HH-06-0514,Renewal,Nanton,yes,no
+515,HH-06-0515,New enrolment,Karaga,no,no
+516,HH-06-0516,New enrolment,Tolon,yes,yes
+517,HH-06-0517,Renewal,Kumbungu,no,yes
+518,HH-06-0518,New enrolment,Savelugu,yes,yes
+519,HH-06-0519,New enrolment,Nanton,no,yes
+520,HH-06-0520,New enrolment,Karaga,no,no
+521,HH-06-0521,Renewal,Tolon,yes,no
+522,HH-06-0522,New enrolment,Kumbungu,yes,no
+523,HH-06-0523,Renewal,Savelugu,no,yes
+524,HH-06-0524,New enrolment,Nanton,no,no
+525,HH-06-0525,Renewal,Karaga,no,yes
+526,HH-06-0526,Renewal,Tolon,no,no
+527,HH-06-0527,Renewal,Kumbungu,yes,yes
+528,HH-06-0528,Renewal,Savelugu,no,no
+529,HH-06-0529,Renewal,Nanton,no,yes
+530,HH-06-0530,New enrolment,Karaga,yes,yes
+531,HH-06-0531,Renewal,Tolon,yes,no
+532,HH-06-0532,New enrolment,Kumbungu,yes,yes
+533,HH-06-0533,New enrolment,Savelugu,no,yes
+534,HH-06-0534,Renewal,Nanton,no,yes
+535,HH-06-0535,New enrolment,Karaga,yes,no
+536,HH-06-0536,New enrolment,Tolon,yes,yes
+537,HH-06-0537,New enrolment,Kumbungu,no,yes
+538,HH-06-0538,New enrolment,Savelugu,yes,yes
+539,HH-06-0539,Renewal,Nanton,no,no
+540,HH-06-0540,New enrolment,Karaga,yes,no
+541,HH-06-0541,New enrolment,Tolon,yes,yes
+542,HH-06-0542,Renewal,Kumbungu,no,no
+543,HH-06-0543,Renewal,Savelugu,no,yes
+544,HH-06-0544,New enrolment,Nanton,no,no
+545,HH-06-0545,New enrolment,Karaga,no,no
+546,HH-06-0546,New enrolment,Tolon,no,yes
+547,HH-06-0547,Renewal,Kumbungu,no,yes
+548,HH-06-0548,New enrolment,Savelugu,yes,yes
+549,HH-06-0549,New enrolment,Nanton,no,no
+550,HH-06-0550,New enrolment,Karaga,yes,yes
+551,HH-06-0551,New enrolment,Tolon,no,yes
+552,HH-06-0552,Renewal,Kumbungu,no,no
+553,HH-06-0553,Renewal,Savelugu,no,yes
+554,HH-06-0554,Renewal,Nanton,yes,yes
+555,HH-06-0555,New enrolment,Karaga,yes,no
+556,HH-06-0556,New enrolment,Tolon,yes,yes
+557,HH-06-0557,New enrolment,Kumbungu,no,no
+558,HH-06-0558,Renewal,Savelugu,no,no
+559,HH-06-0559,New enrolment,Nanton,no,yes
+560,HH-06-0560,New enrolment,Karaga,no,yes

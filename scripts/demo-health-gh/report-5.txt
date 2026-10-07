@@ -1,0 +1,262 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+
+GHA-MNCH-R-MUXVF1L0 · European Union (Delegation of the European Union to Ghana) · Ghana · HEALTH
+
+Oct 1, 2025 – Sep 30, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) · Mar 1, 2026 – Mar 31, 2026 · due Apr 5, 2026
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+Approved
+Version 1
+100% ready
+· all done
+Export report
+OUTLINE
+8 of 8 approved
+1
+Summary of the Month
+Approved
+2
+Progress Against Expected Results
+Approved
+3
+Activities Implemented
+Approved
+4
+Outcome Indicators and Data Quality
+Approved
+5
+Challenges, Risks and Mitigation
+Approved
+6
+Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+Approved
+7
+Visibility and Communication
+Approved
+8
+Plan for the Next Month
+Approved
+REPORT INPUTS
+Edit
+Indicator values
+16 of 16 verified · 3 not entered
+Story answers
+5 of 5 answered
+Evidence
+25 files
+
+[DEMO-7] NORTHERN GHANA MATERNAL, NEWBORN & CHILD HEALTH RESILIENCE PROGRAMME (MNCH-R) · MAR 1, 2026 – MAR 31, 2026 · DUE APR 5, 2026
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+
+Approved
+1 Summary of the Month
+
+March 2026 kept the Action on plan, with training, equipment and outreach all progressing across the five districts and the February Penta and stock-out dip recovering. The project trained 30 health workers (21 female, 9 male) in EmONC, IMNCI and essential newborn care against a target of 240, bringing the life-of-Action total to 115. It trained 10 facility managers (6 female, 4 male) in respectful maternity care against a target of 40, for a life-of-Action total of 20. Teams installed delivery kits and solar vaccine fridges at 4 facilities against a target of 24, reaching 11 to date; the solar fridges allowed two remote CHPS compounds to hold Penta stock for the first time. The Action held 32 integrated outreach clinics against a target of 360 (life-of-Action total 168), reached 1,650 women with community education against a target of 18,000 (8,200 to date), assisted 560 households with NHIS enrolment or renewal against a target of 6,000 (2,730 to date), conducted 11 supportive supervision visits against a target of 120 (53 to date), and produced 5 quarterly district scorecards against a target of 20 (10 to date). Verified DHIMS2/GHS records show ANC4+ at 59% (target 70, up from 57), skilled birth attendance at 65% (target 75), Penta3 at 72% (target 88), postnatal checks within 48 hours at 45% (target 60), no tracer-medicine stock-out at 68% of facilities (target 85), complete DHIMS2 reporting at 86% (target 95), NHIS coverage at 55% (target 65) and satisfaction with respectful maternity care at 70% (target 80). Fridges needed more installation days than planned because of poor access roads to two CHPS compounds; installation teams worked in pairs and technicians trained facility staff on daily temperature logging at handover. Priorities for April: the next training cohort, mentoring visits and follow-up of supervision and scorecard actions.
+
+2 Progress Against Expected Results
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	59	57	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	65	63	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	72	70	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	45	43	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	68	60	—	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	86	84	—	Descriptive only	DHIMS2 / GHS records
+MR-OC2b	Percentage of target households covered by active NHIS membership	%	48	65	55	51	—	Descriptive only	Quarterly household spot survey
+MR-OC2c	Percentage of women satisfied with respectful maternity care	%	62	80	70	65	—	Descriptive only	Quarterly exit interviews
+MR-OP1.1	Number of health workers trained in EmONC or IMNCI	health workers	0	240	30	45	12.5%	Descriptive only	Training registers
+MR-OP1.2	Number of facilities equipped with delivery kits and solar vaccine fridges	facilities	0	24	4	2	16.7%	Descriptive only	Procurement and handover records
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	32	32	8.9%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	1650	1600	9.2%	Descriptive only	Community session registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	11	10	9.2%	Descriptive only	Supervision reports
+MR-OP2.3	Number of quarterly district scorecards produced	scorecards	0	20	5	5	25%	Descriptive only	DHMT review minutes
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	560	520	9.3%	Descriptive only	NHIA drive registers
+MR-OP2.5	Number of facility managers trained in respectful maternity care	managers	0	40	10	10	25%	Descriptive only	Training registers
+
+The table below reports verified March 2026 results against the Logical Framework Matrix, by outcome and output.
+
+Complete and timely DHIMS2 reporting reached 86 percent against a 95 percent target (90.5% of target), and satisfaction with respectful maternity care reached 70 percent against 80 (87.5% of target). No indicator was recorded below expectation this month. The Penta and stock-out dip of February recovered, with Penta3 coverage at 72 percent against an 88 percent target and no tracer-medicine stock-out at 68 percent of facilities. Indicators MR-IMP1, MR-OP1.3 and MR-OP2.1 were not measured this period, so no figures are reported for them.
+
+The Action's training and equipment stayed on plan. Equipping 4 facilities against a target of 24 required more installation days than planned because of poor access roads to two CHPS compounds; installation teams worked in pairs and technicians trained facility staff on daily temperature logging at handover. The officer's narrative records that solar fridges allowed two remote CHPS compounds to hold Penta stock for the first time. Of the 30 health workers trained this month, the recorded sex breakdown is 21 female and 9 male; of the 10 facility managers trained, 6 female and 4 male.
+
+Data quality notes: no quality flags were raised against any verified finding this month, and no indicator was classified as not calculable. Outcome indicators MR-OC1a to MR-OC2a draw on DHIMS2 / GHS records, facility stock cards, the quarterly household spot survey and quarterly exit interviews; recorded commentary on data completeness and reliability is limited to the DHIMS2 completeness and timeliness figure of 86 percent. Output figures come from training registers, procurement and handover records, outreach registers, community session registers, supervision reports, DHMT review minutes and NHIA drive registers.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 57 → 59 ▲
+
+Progress against targets
+
+Showing the first 12 of 16; the table has them all.
+
+Chart data
+3 Activities Implemented
+
+The Action carried out eight activities in March 2026 across Savelugu, Kumbungu, Nanton and Karaga districts, all dated within the reporting period.
+
+In Savelugu District, the project trained 30 health workers in EmONC, IMNCI and essential newborn care with on-site mentoring at Savelugu Municipal Hospital on 9 March 2026 (21 female, 9 male), against a target of 240 for the year (12.5% of target). The life-of-Action total is 115 of 240. Verified evidence comprises the attached training attendance and session records. The training records note that mentoring at the facility within a month of the classroom course improves use of the partograph and neonatal resuscitation.
+
+Also in March, the project trained 10 facility managers in respectful maternity care at the Kumbungu District Health Directorate, Savelugu District, on 12 March 2026 (6 female, 4 male), against a target of 40 (25% of target). The life-of-Action total is 20 of 40. Verified evidence comprises the attached attendance and session records. The records note that managers who hear women's exit-interview feedback commit to concrete changes.
+
+On 14 March 2026 at Voggu CHPS compound, Kumbungu District, the project delivered and installed delivery kits (delivery sets, neonatal resuscitation equipment, fetal dopplers) and solar vaccine fridges at 4 facilities, against a target of 24 (16.7% of target). The life-of-Action total is 11 of 24. Handover certificates were signed by the in-charges and logged by the district health directorate. Verified evidence is the handover record. Delivery of the solar vaccine fridges needed more installation days than planned because of poor access roads to two CHPS compounds; installation teams worked in pairs and technicians trained facility staff on daily temperature logging at handover. The records note that technician handover and a daily temperature log at installation keep fridges working after the project, and that solar fridges allowed two remote CHPS compounds to hold Penta stock for the first time.
+
+In Kumbungu District communities on 17 March 2026, CHVs and community mobilisers held education sessions on antenatal care, facility delivery and newborn danger signs, reaching 1,650 women against a target of 18,000 (9.2% of target). All participants recorded were female. The life-of-Action total is 8,200 of 18,000. Verified evidence is the community session register. The records note that sessions at market days and water points reach more women than sessions at fixed venues.
+
+In Nanton and Karaga Districts on 19 March 2026, NHIA district officers and CHVs ran NHIS enrolment and renewal drives and registered or renewed 560 households against a target of 6,000 (9.3% of target), prioritising households with pregnant women and children under five. The life-of-Action total is 2,730 of 6,000. Verified evidence is the NHIA drive register. Sex-disaggregated figures for this result were not recorded in the available inputs.
+
+In the Nanton Health Centre catchment, Nanton District, the project held 32 integrated outreach clinics on 20 March 2026, offering ANC, immunisation, postnatal checks and child weighing, against a target of 360 (8.9% of target). The life-of-Action total is 168 of 360. Verified evidence comprises the outreach register and a DHIMS2 extract. The records note that fixed outreach calendars shared with CHVs and chiefs raise turnout.
+
+In Nanton District on 24 March 2026, district teams and project staff made 11 supportive supervision visits using the standard checklist, covering partograph use, stock management, cold chain and DHIMS2 completeness, against a target of 120 (9.2% of target). The life-of-Action total is 53 of 120. Verified evidence is the supervision monitoring report. The records note that a checklist with agreed actions reviewed at the next visit closes gaps faster than reports alone.
+
+On 27 March 2026 in Tamale, the five DHMTs produced and reviewed their quarterly scorecards for the quarter ending March 2026 at a review meeting attended by 25 participants (14 male, 11 female). The five DHMTs published 5 scorecards, or 25% of the target of 20. The life-of-Action total is 10 of 20. Verified evidence is the review minutes.
+
+No activities were recorded as planned but not carried out in March. The officer's narrative records equipment and training as on plan; the additional installation days required for the solar fridges delayed that activity rather than cancelling it.
+
+4 Outcome Indicators and Data Quality
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	59	57	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	65	63	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	72	70	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	45	43	—	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	68	60	—	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	86	84	—	Descriptive only	DHIMS2 / GHS records
+MR-OC2b	Percentage of target households covered by active NHIS membership	%	48	65	55	51	—	Descriptive only	Quarterly household spot survey
+MR-OC2c	Percentage of women satisfied with respectful maternity care	%	62	80	70	65	—	Descriptive only	Quarterly exit interviews
+MR-OP1.1	Number of health workers trained in EmONC or IMNCI	health workers	0	240	30	45	12.5%	Descriptive only	Training registers
+MR-OP1.2	Number of facilities equipped with delivery kits and solar vaccine fridges	facilities	0	24	4	2	16.7%	Descriptive only	Procurement and handover records
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	32	32	8.9%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	1650	1600	9.2%	Descriptive only	Community session registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	11	10	9.2%	Descriptive only	Supervision reports
+MR-OP2.3	Number of quarterly district scorecards produced	scorecards	0	20	5	5	25%	Descriptive only	DHMT review minutes
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	560	520	9.3%	Descriptive only	NHIA drive registers
+MR-OP2.5	Number of facility managers trained in respectful maternity care	managers	0	40	10	10	25%	Descriptive only	Training registers
+
+All eight outcome-level indicators were measured in March 2026, and none was left unmeasured. Complete and timely DHIMS2 reporting reached 86% against a target of 95% (90.5% of target), up from 84% in the previous period, and was the strongest result relative to target. Skilled birth attendance stood at 65% against a target of 75% (86.7% of target), up from 63%, and satisfaction with respectful maternity care reached 70% against a target of 80% (87.5% of target), up from 65%, from quarterly exit interviews. ANC4+ was 59% against a target of 70% (84.3% of target), up from 57%, and active NHIS membership covered 55% of target households against a target of 65% (84.6% of target), up from 51%, from the quarterly household spot survey.
+
+Facilities with no stock-out of tracer MNCH medicines stood at 68% against a target of 85% (80% of target), up from 60%, and Penta3 coverage recovered to 72% against a target of 88% (81.8% of target), up from 70%. Postnatal checks within 48 hours reached 45% against a target of 60% (75% of target), up from 43%. Every finding carries a neutral evaluation, so this report records no performance judgement. No outcome-level finding was flagged as not calculable and none carried a data-quality flag this month.
+
+The Action reports outcome indicators from DHIMS2/GHS records and surveys as required. Commentary on data completeness rests on the recorded DHIMS2 reporting rate of 86% of facilities submitting complete and timely reports against a target of 95%; MR-OC1e draws on facility stock cards.
+
+Data quality notes: MR-OC1a to MR-OC1d and MR-OC2a draw on DHIMS2 / GHS records, MR-OC1e on facility stock cards, MR-OC2b on the quarterly household spot survey and MR-OC2c on quarterly exit interviews. The Action recorded no completeness or reliability caveat, quality flag or disaggregation gap against any outcome-level finding in March 2026. No outcome-level finding carried a sex disaggregation list; sex-disaggregated results appear under the output indicators reported in their own sections.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 57 → 59 ▲
+
+Progress against targets
+
+Showing the first 12 of 16; the table has them all.
+
+Chart data
+5 Challenges, Risks and Mitigation
+
+Solar vaccine fridge installation took more days than planned in March 2026 because poor access roads to two CHPS compounds slowed delivery. The installation teams worked in pairs to keep deliveries moving, and technicians trained facility staff on daily temperature logging at handover, so the 4 facilities equipped this month received a working cold chain with trained operators. The activity records and the officer's context document this challenge and the mitigation applied. Despite the delays, equipment and training stayed on plan, and the February Penta and stock-out dip recovered, as recorded in the officer's context. The solar fridges also allowed two remote CHPS compounds to hold Penta stock for the first time.
+
+The verified activity records for March 2026 list no other challenge or risk. The Action recorded no request for support or a change that needs the Contracting Authority's agreement this month.
+
+6 Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+
+The Action mainstreamed gender, environmental and safety considerations in March 2026 while installing solar vaccine fridges at facilities that poor access roads made hard to reach. The project recorded this access challenge in the March supportive supervision monitoring report attached to the supervision activity.
+
+Gender. Sex-disaggregated results for the month show women in the majority of trainees: of the 30 health workers trained in EmONC, IMNCI and essential newborn care, 21 were female and 9 male; of the 10 facility managers trained in respectful maternity care, 6 were female and 4 male. The reporting officer's statement records that women and men CHV supervisors both received solar-fridge handover training. The outreach clinics and NHIS enrolment drives did not record sex-disaggregated participant data in the records supplied for this section.
+
+Environment. The officer's statement records that solar fridges reduce diesel use and that old fridges were handed to the regional stores. No further health-care waste or environmental monitoring record was supplied for March.
+
+Do-no-harm. The officer's statement records that installation teams used safe working practices and reported no injuries; it records no incident or safeguarding concern for March 2026. No complaints, feedback or safeguarding compliance documentation beyond this statement was supplied for the month.
+
+7 Visibility and Communication
+
+The inputs record no dedicated communication activity in March 2026. The Action's visible community-facing events this month were the training, equipping, outreach, community education, NHIS drives, supervision visits and scorecard review meetings described in the section Activities Implemented.
+
+Compliance status is partial. Verified evidence records these events: the training attendance and session records for the 30 health workers and the 10 facility managers trained, the equipment handover records for the delivery kits and solar vaccine fridges installed at 4 facilities, the community session registers for the 1,650 women reached, the verified outreach register and DHIMS2 extract, the verified NHIS drive register, the verified supportive supervision report, and the verified minutes of the quarterly district scorecard review meetings. The inputs do not include a dedicated record confirming EU visibility on the delivered materials and equipment, so confirmation on materials and equipment remains outstanding. No remediation steps are recorded in the inputs; the recorded next step in the equipment activity is to install the remaining kits and fridges as stock arrives.
+
+This project is funded by the European Union.
+
+Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union. Neither the European Union nor the granting authority can be held responsible for them.
+
+8 Plan for the Next Month
+
+For April 2026, the Action will carry forward the plans recorded in March's activity records. The project will hold the next cohort of EmONC, IMNCI and essential newborn care training and follow up trained staff with mentoring visits, building on the 30 health workers trained this period (21 female, 9 male; 115 of 240 to date), since the training records note that mentoring at the facility within a month of the classroom course improves use of the partograph and neonatal resuscitation. The remaining delivery kits and solar vaccine fridges will be installed as stock arrives, after 4 facilities were equipped in March (11 of 24 to date); technicians will continue training facility staff on daily temperature logging at handover. The project will support facility managers to put the agreed respectful maternity care action plans in place, following the training for 10 managers (6 female, 4 male; 20 of 40 to date). Community education sessions on antenatal care, facility delivery and newborn danger signs will continue, with radio spots added; sessions reached 1650 women in March (8200 of 18,000 to date), and the session registers note that sessions at market days and water points reach more women than sessions at fixed venues. The project will hold the planned integrated outreach clinics and review outreach routes against the road conditions, after 32 clinics in March (168 of 360 to date). District teams will follow up the actions agreed at each facility during supportive supervision, using the checklist reviewed at the next visit; 11 visits were made in March (53 of 120 to date). DHMTs will follow the agreed actions from the quarterly scorecards for the quarter ending March 2026 in the next quarter, as recorded in the scorecard review minutes; 5 scorecards were produced (10 of 20 to date). NHIS enrolment and renewal drives will continue, with follow-up on renewals due next month; 560 households were assisted in March (2730 of 6,000 to date), and the drive records note that drives at antenatal clinics reach pregnant women directly. No numerical targets or expected results for April 2026 were recorded in the inputs, so none are stated here.
+
+Section 1
+
+Summary of the Month
+Statements
+Sources · 22
+Chart
+Comments
+History
+
+Nothing to decide — all 8 statements are backed by evidence or decided.
+
+Kept with a note
+
+“Verified DHIMS2/GHS records show ANC4+ at 59% (target 70, up from 57), skilled birth attendance at 65% (target 75), Penta3 at 72% (target 88), postnatal checks within 48 hours at 45% (target 60), no tracer-medicine stock-out at 68% of facilities (target 85), complete DHIMS2 reporting at 86% (target 95), NHIS coverage at 55% (target 65) and satisfaction with respectful maternity care at 70% (target 80).”
+
+Note: Figure checked against the verified indicator value and the attached register; wording accepted by the reviewer.
+
+Kept with a note
+
+“Fridges needed more installation days than planned because of poor access roads to two CHPS compounds; installation teams worked in pairs and technicians trained facility staff on daily temperature logging at handover.”
+
+Note: Figure checked against the verified indicator value and the attached register; wording accepted by the reviewer.
+
+Not checked (minor)
+
+“March 2026 kept the Action on plan, with training, equipment and outreach all progressing across the five districts and the February Penta and stock-out dip recovering.”
+
+Matches evidence
+
+“The project trained 30 health workers (21 female, 9 male) in EmONC, IMNCI and essential newborn care against a target of 240, bringing the life-of-Action total to 115.”
+
+Matches evidence
+
+“It trained 10 facility managers (6 female, 4 male) in respectful maternity care against a target of 40, for a life-of-Action total of 20.”
+
+Matches evidence
+
+“Teams installed delivery kits and solar vaccine fridges at 4 facilities against a target of 24, reaching 11 to date; the solar fridges allowed two remote CHPS compounds to hold Penta stock for the first time.”
+
+Matches evidence
+
+“The Action held 32 integrated outreach clinics against a target of 360 (life-of-Action total 168), reached 1,650 women with community education against a target of 18,000 (8,200 to date), assisted 560 households with NHIS enrolment or renewal against a target of 6,000 (2,730 to date), conducted 11 supportive supervision visits against a target of 120 (53 to date), and produced 5 quarterly district scorecards against a target of 20 (10 to date).”
+
+Matches evidence
+
+“Priorities for April: the next training cohort, mentoring visits and follow-up of supervision and scorecard actions.”

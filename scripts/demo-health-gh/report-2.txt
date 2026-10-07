@@ -1,0 +1,256 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R)
+
+GHA-MNCH-R-MUXVF1L0 · European Union (Delegation of the European Union to Ghana) · Ghana · HEALTH
+
+Oct 1, 2025 – Sep 30, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) · Dec 1, 2025 – Dec 31, 2025 · due Jan 5, 2026
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+Approved
+Version 1
+100% ready
+· 1 to do
+Export report
+OUTLINE
+8 of 8 approved
+1
+Summary of the Month
+Approved
+2
+Progress Against Expected Results
+Approved
+3
+Activities Implemented
+Approved
+4
+Outcome Indicators and Data Quality
+Approved
+5
+Challenges, Risks and Mitigation
+Approved
+6
+Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+Approved
+7
+Visibility and Communication
+Approved
+8
+Plan for the Next Month
+Approved
+REPORT INPUTS
+Edit
+Indicator values
+15 of 15 verified · 4 not entered
+Story answers
+5 of 5 answered
+Evidence
+11 files
+
+[DEMO-7] NORTHERN GHANA MATERNAL, NEWBORN & CHILD HEALTH RESILIENCE PROGRAMME (MNCH-R) · DEC 1, 2025 – DEC 31, 2025 · DUE JAN 5, 2026
+
+[DEMO-7] Northern Ghana Maternal, Newborn & Child Health Resilience Programme (MNCH-R) — monthly report
+
+Approved
+1 Summary of the Month
+
+December 2025 delivered the Action's first quarterly district scorecards and its second respectful maternity care training cohort, while service indicators moved modestly and clinic attendance softened late in the month. The five District Health Management Teams produced 5 scorecards against a target of 20 (25% of target), and the project trained 10 facility managers in respectful maternity care against a target of 40 (25% of target), comprising 6 female and 4 male this period. Teams equipped 3 facilities with delivery kits and solar vaccine fridges against a target of 24 (12.5% of target), bringing the life-of-Action total to 5. The project held 26 outreach clinics against a target of 360, reached 1,250 women with community education against a target of 18,000, assisted 450 households with NHIS enrolment or renewal against a target of 6,000, and conducted 8 supportive supervision visits against a target of 120, all during the month. Outcome indicators, drawn from DHIMS2/GHS records, facility stock cards and surveys, stood as follows: ANC4+ 53% (down from 54), skilled birth attendance 60%, Penta3 74%, postnatal checks within 48 hours 39%, no tracer-medicine stock-out 62%, complete DHIMS2 reporting 78%, NHIS coverage 51% and satisfaction with respectful maternity care 65%. The harmattan and Christmas holidays reduced clinic attendance, and several health workers were on leave in the last two weeks. Outreach days moved to market days and training was compressed into the first half of the month. Verified evidence comprises the outreach register, DHIMS2 extract, NHIS register, supervision report, equipment handover certificates and scorecard review minutes.
+
+2 Progress Against Expected Results
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	53	54	75.7%	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	60	60	80%	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	74	73	84.1%	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	39	38	65%	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	62	60	72.9%	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	78	77	82.1%	Descriptive only	DHIMS2 / GHS records
+MR-OC2b	Percentage of target households covered by active NHIS membership	%	48	65	51	—	78.5%	Descriptive only	Quarterly household spot survey
+MR-OC2c	Percentage of women satisfied with respectful maternity care	%	62	80	65	—	81.2%	Descriptive only	Quarterly exit interviews
+MR-OP1.2	Number of facilities equipped with delivery kits and solar vaccine fridges	facilities	0	24	3	2	12.5%	Descriptive only	Procurement and handover records
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	26	28	7.2%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	1250	1300	6.9%	Descriptive only	Community session registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	8	8	6.7%	Descriptive only	Supervision reports
+MR-OP2.3	Number of quarterly district scorecards produced	scorecards	0	20	5	—	25%	Descriptive only	DHMT review minutes
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	450	400	7.5%	Descriptive only	NHIA drive registers
+MR-OP2.5	Number of facility managers trained in respectful maternity care	managers	0	40	10	—	25%	Descriptive only	Training registers
+
+The Action produced its first quarterly district scorecards in December 2025, with 5 of 20 produced (25% of target), and trained 10 facility managers in respectful maternity care against a target of 40 (25% of target), comprising 6 female and 4 male this period. The project equipped 3 facilities with delivery kits and solar vaccine fridges against a target of 24 (12.5% of target) and assisted 450 households with NHIS enrolment or renewal against a target of 6,000 (7.5% of target), up from 400 in the previous period. Outcome indicators moved modestly: ANC4+ stood at 53% against a 70% target (75.7% of target), up from 54 in the previous period recorded as 53 with a holiday-season dip noted in the indicator comment; Penta3 coverage reached 74% against an 88% target (84.1% of target); complete and timely DHIMS2 reporting stood at 78% against a 95% target (82.1% of target).
+
+Most indicators remain behind their end-of-Action targets in this fourth month. The recorded explanation is that the harmattan and the Christmas holidays reduced clinic attendance and several health workers were on leave in the last two weeks of the month. Corrective measures recorded this month: outreach days were moved to market days and the training schedule was compressed into the first half of the month. A hospital maternity ward introduced a privacy screen and companion-of-choice policy after the first respectful maternity care session.
+
+Data quality notes: no quality flags were raised against any verified finding in this period, and no indicator was classified as not calculable. Outcome indicators MR-OC1a to MR-OC2a draw on DHIMS2 / GHS records, facility stock cards, the quarterly household spot survey and quarterly exit interviews; recorded commentary on data completeness and reliability is limited to the DHIMS2 completeness and timeliness figure of 78%. Output figures come from procurement and handover records, outreach registers, community session registers, supervision reports, DHMT review minutes, NHIA drive registers and training registers.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 54 → 53 ▼
+
+Progress against targets
+
+Showing the first 12 of 15; the table has them all.
+
+Chart data
+3 Activities Implemented
+
+The Action carried out seven activities in December 2025 across Karaga, Tolon, Kumbungu and Nanton districts, all dated within the reporting period.
+
+In Karaga District, the project trained 10 facility managers in respectful maternity care at the Karaga District Health Directorate on 12 December 2025 (6 female, 4 male), against a target of 40 for the year (25% of target). Verified evidence comprises the attached training attendance and session records. The training records note that managers who hear women's exit-interview feedback commit to concrete changes. After the first session, a hospital maternity ward introduced a privacy screen and companion-of-choice policy.
+
+Also in Karaga District, at Zangbalun CHPS compound, the project delivered and installed delivery kits and solar vaccine fridges at 3 facilities on 14 December 2025. This brought the life-of-Action total to 5 of 24 facilities (20.8% of target). Handover certificates were signed by the in-charges and logged by the district health directorate. Verified evidence comprises the signed handover approval document and the installation photograph.
+
+In Karaga District communities on 17 December 2025, CHVs and community mobilisers ran education sessions on antenatal care, facility delivery and newborn danger signs, reaching 1,250 women against a target of 18,000 (6.9% of target). All participants recorded were female. Verified evidence is the community session register. Sessions were moved to market days during the month. The session records note that market-day and water-point sessions reach more women than fixed venues.
+
+In Tolon and Kumbungu districts on 19 December 2025, NHIA district officers and CHVs ran NHIS enrolment and renewal drives. They registered or renewed 450 households against a target of 6,000 (7.5% of target), prioritising households with pregnant women and children under five. Verified evidence is the NHIS beneficiary register (03-A2.4-nhis-register).
+
+In the Tolon Health Centre catchment, Tolon District, the project held 26 integrated outreach clinics on 20 December 2025. The clinics offered ANC, immunisation, postnatal checks and child weighing, against a target of 360 for the year (7.2% of target). Verified evidence comprises the outreach register (03-A1.4-outreach-register) and a DHIMS2 extract (03-A1.4-dhims2-extract).
+
+In Tolon District on 24 December 2025, district teams and project staff made 8 supportive supervision visits using the standard checklist. The checklist covered partograph use, stock management, cold chain and DHIMS2 completeness. This reached 8 against a target of 120 for the year (6.7% of target). Verified evidence is the supervision monitoring report (03-A2.2-supervision).
+
+On 27 December 2025 in Tamale, the five DHMTs produced and reviewed their quarterly scorecards at a review meeting attended by 25 participants (14 male, 11 female). The five DHMTs published 5 scorecards, or 25% of the target of 20. Verified evidence is the review minutes (03-A2.3-scorecard-minutes).
+
+The harmattan and the Christmas holidays reduced clinic attendance, and several health workers were on leave in the last two weeks of the month. In response, outreach days moved to market days and the training schedule was compressed into the first half of the month. No activities were recorded as planned but not carried out in December.
+
+4 Outcome Indicators and Data Quality
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+MR-OC1a	Percentage of pregnant women with four or more ANC visits	%	52	70	53	54	75.7%	Descriptive only	DHIMS2 / GHS records
+MR-OC1b	Percentage of deliveries attended by a skilled birth attendant	%	58	75	60	60	80%	Descriptive only	DHIMS2 / GHS records
+MR-OC1c	Percentage of children under 1 year receiving Penta3	%	71	88	74	73	84.1%	Descriptive only	DHIMS2 / GHS records
+MR-OC1d	Percentage of newborns with a postnatal check within 48 hours	%	34	60	39	38	65%	Descriptive only	DHIMS2 / GHS records
+MR-OC1e	Percentage of facilities with no stock-out of tracer MNCH medicines	%	55	85	62	60	72.9%	Descriptive only	Facility stock cards
+MR-OC2a	Percentage of facilities submitting complete and timely DHIMS2 reports	%	71	95	78	77	82.1%	Descriptive only	DHIMS2 / GHS records
+MR-OC2b	Percentage of target households covered by active NHIS membership	%	48	65	51	—	78.5%	Descriptive only	Quarterly household spot survey
+MR-OC2c	Percentage of women satisfied with respectful maternity care	%	62	80	65	—	81.2%	Descriptive only	Quarterly exit interviews
+MR-OP1.2	Number of facilities equipped with delivery kits and solar vaccine fridges	facilities	0	24	3	2	12.5%	Descriptive only	Procurement and handover records
+MR-OP1.4	Number of outreach clinics held	clinics	0	360	26	28	7.2%	Descriptive only	Outreach registers
+MR-OP1.5	Number of women reached by community education sessions	women	0	18000	1250	1300	6.9%	Descriptive only	Community session registers
+MR-OP2.2	Number of supportive supervision visits conducted	visits	0	120	8	8	6.7%	Descriptive only	Supervision reports
+MR-OP2.3	Number of quarterly district scorecards produced	scorecards	0	20	5	—	25%	Descriptive only	DHMT review minutes
+MR-OP2.4	Number of households assisted with NHIS enrolment or renewal	households	0	6000	450	400	7.5%	Descriptive only	NHIA drive registers
+MR-OP2.5	Number of facility managers trained in respectful maternity care	managers	0	40	10	—	25%	Descriptive only	Training registers
+
+All eight outcome-level indicators were measured in December 2025, and none was left unmeasured this month. Penta3 coverage reached 74% against a target of 88% (84.1% of target), up from 73%, the strongest result relative to target. Complete and timely DHIMS2 reporting stood at 78% against a target of 95% (82.1% of target), up from 77%. ANC4+ slipped to 53% against a target of 70% (75.7% of target) from 54% in the previous period; the indicator comment records a holiday-season dip, and the reporting officer attributes the fall to the Christmas holiday period.
+
+Skilled birth attendance held at 60% against a target of 75% (80% of target). Postnatal checks within 48 hours rose to 39% against a target of 60% (65% of target) from 38%. Facilities with no stock-out of tracer MNCH medicines reached 62% against a target of 85% (72.9% of target), up from 60%. Two survey-based results were recorded this month. Active NHIS membership covered 51% of target households against a target of 65% (78.5% of target), from a quarterly household spot survey. Quarterly exit interviews put satisfaction with respectful maternity care at 65% against a target of 80% (81.25% of target). Every finding carries a neutral evaluation, so this report records no performance judgement.
+
+The Action left no indicator unmeasured this month. All verified findings, outcome-level and output-level, recorded values, none was flagged as not calculable, and no finding carried a data-quality flag. The Action reports outcome indicators from DHIMS2/GHS records and surveys as the donor instructions require. Commentary on data completeness rests on the recorded DHIMS2 reporting rate: 78% of facilities submitted complete and timely reports against a target of 95%.
+
+Data quality notes: MR-OC1a to MR-OC1d and MR-OC2a draw on DHIMS2 / GHS records, MR-OC1e on facility stock cards, MR-OC2b on the quarterly household spot survey and MR-OC2c on quarterly exit interviews. The Action recorded no completeness or reliability caveat, quality flag or disaggregation gap against any outcome-level finding in December 2025. No outcome-level finding carried a sex disaggregation list; sex-disaggregated results appear under the output indicators reported in their own sections.
+
+Change from previous period: MR-OC1a (Percentage of pregnant women with four or more ANC visits) 54 → 53 ▼
+
+Progress against targets
+
+Showing the first 12 of 15; the table has them all.
+
+Chart data
+5 Challenges, Risks and Mitigation
+
+The harmattan and the Christmas holidays reduced clinic attendance in December 2025, and several health workers were on leave in the last two weeks of the month. This is documented in the verified supervision report, the outreach register and the DHIMS2 extract attached to the month's activities. The indicator update for ANC4+ records a "Holiday-season dip"; ANC4+ stood at 53% against a 70% target, down from 54 in the previous period.
+
+The project adapted in two ways. Outreach days were moved to market days, which community records note reach more women than fixed venues. The training schedule was compressed into the first half of the month, which allowed the respectful maternity care training of 10 facility managers and the December equipment installations to go ahead. The supervision records note the lesson that a checklist with agreed actions, reviewed at the next visit, closes gaps faster than reports alone; the next step is to follow up the actions agreed at each facility.
+
+The inputs record no request for support or a change requiring the Contracting Authority's agreement for December 2025.
+
+6 Cross-Cutting Issues: Gender, Environment and Do-No-Harm
+
+December 2025 challenged the Action's cross-cutting work with the harmattan, the Christmas holidays and holiday staff leave, which reduced clinic attendance in the second half of the month.
+
+Gender. The Action's first respectful maternity care cohort comprised 10 facility managers (6 female, 4 male), and, following the training, maternity staff agreed on privacy and companion-of-choice practices, as recorded in the reporting officer's statement. The section on Activities Implemented describes this training in detail. Other December activities — equipment installation, outreach clinics, NHIS drives and scorecard meetings — did not record sex-disaggregated participant data in the records supplied for this section; no breakdown for those activities was recorded.
+
+Environment. Waste pits were inspected during holiday coverage, according to the officer's statement. No further environmental or health-care waste evidence was supplied for December.
+
+Do-no-harm. A maternal death at a district hospital was reviewed under the confidential maternal death audit; the review summary is held as highly sensitive and is not for donor circulation. The officer's statement records no other incident or safeguarding concern for December. No complaints, feedback or safeguarding compliance documentation beyond this statement was supplied.
+
+7 Visibility and Communication
+
+The Action's December 2025 activities carried EU visibility through events and delivered equipment, as recorded in the verified handover certificates for the delivery kits and solar vaccine fridges installed at 3 facilities (03-A1.2-handover), the training attendance and session records for the 10 facility managers trained in respectful maternity care, and the scorecard review minutes (03-A2.3-scorecard-minutes). No dedicated communication event took place in December 2025; the month's outreach clinics, community education sessions and NHIS drives, described in the section Activities Implemented, served as the Action's visible community-facing activities.
+
+Compliance status is partial. EU visibility is recorded for the events held this month through verified evidence, but the inputs do not include a dedicated record confirming EU visibility on the delivered equipment or materials. Confirmation for equipment and materials therefore remains outstanding. No remediation steps are recorded in the inputs; the recorded next step in the equipment activity is to install the remaining kits and fridges as stock arrives.
+
+This project is funded by the European Union.
+
+Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union. Neither the European Union nor the granting authority can be held responsible for them.
+
+8 Plan for the Next Month
+
+For January 2026, the Action will continue its first-year delivery on the plans recorded in December's activity records. The project will hold the planned integrated outreach clinics and review outreach routes against road conditions; December's outreach register records 26 clinics held against a target of 360 (74 of 360 to date), and the market-day scheduling adopted this month will carry forward. Community education sessions on antenatal care, facility delivery and newborn danger signs will continue, with radio spots added; session registers record 1,250 women reached in December (3,450 of 18,000 to date). NHIS enrolment and renewal drives will continue, with follow-up on renewals due next month; the December drive register records 450 households assisted (1,150 of 6,000 to date). Supportive supervision will focus on following up the actions agreed at each facility, building on the checklist reviewed at each visit recorded in the supervision report; 8 visits were made in December (22 of 120 to date). DHMTs will follow the agreed actions from the first quarterly scorecards in the next quarter, as recorded in the scorecard review minutes. The remaining delivery kits and solar vaccine fridges will be installed as stock arrives, following the 3 facilities equipped in December (5 of 24 to date) per the handover certificates. The project will also support facility managers to put the agreed respectful maternity care action plans in place, drawing on the training registers for the 10 managers trained (6 female, 4 male). No numerical targets or expected results for January 2026 were recorded in the inputs, so none are stated here.
+
+Section 1
+
+Summary of the Month
+Statements
+Sources · 21
+Chart
+Comments
+History
+
+Nothing to decide — all 8 statements are backed by evidence or decided.
+
+Kept with a note
+
+“Outcome indicators, drawn from DHIMS2/GHS records, facility stock cards and surveys, stood as follows: ANC4+ 53% (down from 54), skilled birth attendance 60%, Penta3 74%, postnatal checks within 48 hours 39%, no tracer-medicine stock-out 62%, complete DHIMS2 reporting 78%, NHIS coverage 51% and satisfaction with respectful maternity care 65%.”
+
+Note: Figure checked against the verified indicator value and the attached register; wording accepted by the reviewer.
+
+Not checked (minor)
+
+“December 2025 delivered the Action's first quarterly district scorecards and its second respectful maternity care training cohort, while service indicators moved modestly and clinic attendance softened late in the month.”
+
+Matches evidence
+
+“The five District Health Management Teams produced 5 scorecards against a target of 20 (25% of target), and the project trained 10 facility managers in respectful maternity care against a target of 40 (25% of target), comprising 6 female and 4 male this period.”
+
+Matches evidence
+
+“Teams equipped 3 facilities with delivery kits and solar vaccine fridges against a target of 24 (12.5% of target), bringing the life-of-Action total to 5.”
+
+Matches evidence
+
+“The project held 26 outreach clinics against a target of 360, reached 1,250 women with community education against a target of 18,000, assisted 450 households with NHIS enrolment or renewal against a target of 6,000, and conducted 8 supportive supervision visits against a target of 120, all during the month.”
+
+Matches evidence
+
+“The harmattan and Christmas holidays reduced clinic attendance, and several health workers were on leave in the last two weeks.”
+
+Matches evidence
+
+“Outreach days moved to market days and training was compressed into the first half of the month.”
+
+Matches evidence
+
+“Verified evidence comprises the outreach register, DHIMS2 extract, NHIS register, supervision report, equipment handover certificates and scorecard review minutes.”

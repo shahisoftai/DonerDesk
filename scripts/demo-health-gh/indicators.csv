@@ -1,0 +1,20 @@
+Code,Name,Type,Baseline,Target,Unit,Means of Verification,Data Source,Frequency,Disaggregation Required,Logframe Code
+MR-IMP1,"Institutional maternal mortality ratio per 100,000 live births at supported facilities",Number,168,120,"per 100,000 live births","GHS facility maternal death audit and DHIMS2 births","Annual maternal death review and DHIMS2",Annual,no,G1
+MR-OC1a,"Percentage of pregnant women with four or more ANC visits",Percentage,52,70,"%","DHIMS2 ANC register extract","DHIMS2 / GHS records",Monthly,no,O1
+MR-OC1b,"Percentage of deliveries attended by a skilled birth attendant",Percentage,58,75,"%","DHIMS2 maternity register extract","DHIMS2 / GHS records",Monthly,no,O1
+MR-OC1c,"Percentage of children under 1 year receiving Penta3",Percentage,71,88,"%","DHIMS2 immunisation summary","DHIMS2 / GHS records",Monthly,no,O1
+MR-OC1d,"Percentage of newborns with a postnatal check within 48 hours",Percentage,34,60,"%","DHIMS2 postnatal register extract","DHIMS2 / GHS records",Monthly,no,O1
+MR-OC1e,"Percentage of facilities with no stock-out of tracer MNCH medicines",Percentage,55,85,"%","Facility stock cards and monthly stock report","Facility stock cards",Monthly,no,O1
+MR-OC2a,"Percentage of facilities submitting complete and timely DHIMS2 reports",Percentage,71,95,"%","DHIMS2 reporting-rate dashboard","DHIMS2 / GHS records",Monthly,no,O2
+MR-OC2b,"Percentage of target households covered by active NHIS membership",Percentage,48,65,"%","Household coverage survey and NHIA records","Quarterly household spot survey",Quarterly,no,O2
+MR-OC2c,"Percentage of women satisfied with respectful maternity care",Percentage,62,80,"%","Exit interview survey report","Quarterly exit interviews",Quarterly,no,O2
+MR-OP1.1,"Number of health workers trained in EmONC or IMNCI",Number,0,240,"health workers","Training attendance sheets and certificates","Training registers",Monthly,yes,1.1
+MR-OP1.2,"Number of facilities equipped with delivery kits and solar vaccine fridges",Number,0,24,"facilities","Equipment handover certificates","Procurement and handover records",Monthly,no,1.2
+MR-OP1.3,"Number of CHVs trained and active",Number,0,300,"CHVs","CHV training registers and activity logs","CHV registers",Monthly,yes,1.3
+MR-OP1.4,"Number of outreach clinics held",Number,0,360,"clinics","Signed outreach clinic registers","Outreach registers",Monthly,no,1.4
+MR-OP1.5,"Number of women reached by community education sessions",Number,0,18000,"women","Session attendance registers","Community session registers",Monthly,no,1.5
+MR-OP2.1,"Number of DHMT staff trained in data use",Number,0,60,"staff","Training attendance sheets","Training registers",Monthly,yes,2.1
+MR-OP2.2,"Number of supportive supervision visits conducted",Number,0,120,"visits","Signed supervision checklists","Supervision reports",Monthly,no,2.2
+MR-OP2.3,"Number of quarterly district scorecards produced",Number,0,20,"scorecards","Published scorecards and review minutes","DHMT review minutes",Quarterly,no,2.3
+MR-OP2.4,"Number of households assisted with NHIS enrolment or renewal",Number,0,6000,"households","NHIS enrolment drive registers","NHIA drive registers",Monthly,no,2.4
+MR-OP2.5,"Number of facility managers trained in respectful maternity care",Number,0,40,"managers","Training attendance sheets","Training registers",Monthly,yes,2.5

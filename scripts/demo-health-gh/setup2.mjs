@@ -1,0 +1,13 @@
+import { attach, BASE } from "../demo-ui/lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const { page, browser } = await attach("setup2");
+await page.goto(`${BASE}/projects/${P}/logframe`); await page.waitForLoadState("networkidle");
+await page.getByRole("button", { name: /Confirm all/ }).click(); await page.waitForTimeout(4000);
+console.log("confirm-all left:", await page.getByRole("button", { name: /Confirm all/ }).count());
+await page.goto(`${BASE}/projects/${P}/setup`); await page.waitForLoadState("networkidle");
+console.log((await page.locator("main").innerText()).replace(/\n+/g," | ").split("Worth reviewing")[1]?.slice(0,300));
+await page.getByRole("button", { name: "Mark setup complete" }).click().catch(()=>{}); await page.waitForTimeout(2500);
+await page.getByRole("button", { name: "Activate project" }).first().click(); await page.waitForTimeout(3500);
+console.log((await page.locator("main").innerText()).replace(/\n+/g," | ").slice(0,900));
+await page.goto(`${BASE}/projects/${P}/reports`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(1500);
+console.log((await page.locator("main").innerText()).replace(/\n+/g," | ").split("Settings")[1]?.slice(0,1800));
+await browser.close(); process.exit(0);

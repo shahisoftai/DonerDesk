@@ -1,0 +1,27 @@
+Clinic,Community,District,Date,ANC visits,Penta doses,Postnatal checks,Children weighed
+1,Community-1,Tolon,2025-12-01,20,16,6,25
+2,Community-2,Kumbungu,2025-12-02,22,8,4,33
+3,Community-3,Savelugu,2025-12-03,24,13,3,39
+4,Community-4,Nanton,2025-12-04,26,20,10,55
+5,Community-5,Karaga,2025-12-05,21,20,3,53
+6,Community-6,Tolon,2025-12-06,19,14,3,49
+7,Community-7,Kumbungu,2025-12-07,9,20,9,20
+8,Community-8,Savelugu,2025-12-08,18,16,6,25
+9,Community-9,Nanton,2025-12-09,8,21,11,50
+10,Community-10,Karaga,2025-12-10,19,12,5,25
+11,Community-11,Tolon,2025-12-11,20,5,8,44
+12,Community-12,Kumbungu,2025-12-12,11,21,3,22
+13,Community-13,Savelugu,2025-12-13,20,19,11,21
+14,Community-14,Nanton,2025-12-14,12,6,8,27
+15,Community-15,Karaga,2025-12-15,10,22,5,32
+16,Community-16,Tolon,2025-12-16,10,13,10,46
+17,Community-17,Kumbungu,2025-12-17,18,9,5,57
+18,Community-1,Savelugu,2025-12-18,19,5,4,24
+19,Community-2,Nanton,2025-12-19,25,19,4,58
+20,Community-3,Karaga,2025-12-20,26,15,5,41
+21,Community-4,Tolon,2025-12-21,12,19,3,33
+22,Community-5,Kumbungu,2025-12-22,12,8,4,57
+23,Community-6,Savelugu,2025-12-23,25,17,8,51
+24,Community-7,Nanton,2025-12-24,10,15,5,54
+25,Community-8,Karaga,2025-12-25,12,20,11,40
+26,Community-9,Tolon,2025-12-26,16,14,6,49
