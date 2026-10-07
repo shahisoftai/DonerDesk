@@ -106,6 +106,43 @@ test("two distinct values warn, delta phrasing is exempt", () => {
   assert.equal(exempt.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
 });
 
+test("targets of different indicators written as '<n> targeted' are not one divergent metric (demo 7)", () => {
+  const result = lintReportContradictions({
+    sections: sections(
+      ["Summary", "The Action began in October."],
+      ["Activities", "Teams held 20 clinics of the 360 targeted. Sessions reached 900 women of the 18,000 targeted, and 6 visits of the 120 targeted, with 300 households of the 6,000 targeted."],
+    ),
+    findings: [],
+  });
+  assert.equal(result.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
+});
+
+test("'<n> to date' quotes of different metrics are not one divergent metric called 'date' (demo 7)", () => {
+  const result = lintReportContradictions({
+    sections: sections(
+      ["Summary", "The Action began in October."],
+      ["Plan", "The Action has reached 14 to date, 48 to date, 120 to date and 360 to date across its activities."],
+    ),
+    findings: [],
+  });
+  assert.equal(result.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
+});
+
+test("a metric divergence points at the section that states one of the figures, not at the first section", () => {
+  const result = lintReportContradictions({
+    sections: sections(
+      ["Summary", "The Action began in October."],
+      ["Overview of results", "The project operates 30 learning centres."],
+      ["Activities", "Supplies were distributed to 45 learning centres."],
+      ["Annex", "Reports were collected from 75 learning centres."],
+    ),
+    findings,
+  });
+  const divergence = result.findings.find((f) => f.kind === "SAME_METRIC_DIVERGENCE");
+  assert.ok(divergence);
+  assert.notEqual(divergence.sectionId, "s-0");
+});
+
 test("out-of-period dates warn; in-period dates stay silent", () => {
   const result = lintReportContradictions({
     sections: sections(["Activities", "The training on 28 February 2026 preceded this quarter; review closed on 2026-05-30."]),

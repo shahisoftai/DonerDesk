@@ -312,6 +312,9 @@ _INTERNAL_ID_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{16,}\b", re.I),
     re.compile(r"\b[\w-]+\.(?:pdf|docx?|xlsx?|csv|pptx?|jpe?g|png)\b", re.I),
     re.compile(r"\bevidence ids?\b", re.I),
+    # File names quoted without their extension: numbered stems with an activity code ("01-A1.3-attendance") and snake_case stems.
+    re.compile(r"\b\d{1,3}-[A-Z]\d+(?:\.\d+)*-[a-z][\w-]*\b"),
+    re.compile(r"\b[A-Za-z0-9]+(?:_[A-Za-z0-9]+)+\b"),
 )
 
 

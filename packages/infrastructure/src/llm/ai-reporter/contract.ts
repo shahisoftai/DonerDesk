@@ -33,6 +33,11 @@ export const WORKFLOW_VOCABULARY: readonly string[] = [
   "checklist item",
   "checklist items",
   "open checklist",
+  "performance judgement",
+  "performance judgment",
+  "evaluation for each is neutral",
+  "finding could not be calculated",
+  "disaggregation list",
 ];
 
 export const BANNED_PHRASES: readonly string[] = [

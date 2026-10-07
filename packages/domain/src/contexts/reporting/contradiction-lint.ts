@@ -176,7 +176,15 @@ const DATE_PATTERNS: RegExp[] = [
 const LIFE_BASIS_RE =
   /\b(to date|cumulative(?:ly)?|since (?:the )?(?:start|beginning|inception|launch|project)|over the (?:life|course|duration) of the project|life of (?:the )?project|life-of-project|overall|in total|altogether|across the project|throughout the project|by the end of the project|project-wide|so far)\b/i;
 // Words that name a category, not a metric: "35 female" (caregivers) and "656 female" (enrolment) are different metrics.
-const GENERIC_METRIC_NOUNS = new Set(["female", "males", "male", "females", "women", "woman", "men", "man", "girls", "girl", "boys", "boy", "target", "targets", "baseline", "total", "percent", "usd", "female male"]);
+const GENERIC_METRIC_NOUNS = new Set(["female", "males", "male", "females", "women", "woman", "men", "man", "girls", "girl", "boys", "boy", "target", "targets", "baseline", "total", "percent", "usd", "female male", "date", "far", "month", "months", "year", "years", "period", "week", "weeks", "quarter", "next", "coming"]);
+/**
+ * A phrase made only of participles ("targeted", "trained", "reached") names what was done to something, not a metric:
+ * "120 targeted" and "6,000 targeted" are the targets of two different indicators, so they never diverge.
+ */
+function isVerbOnlyPhrase(phrase: string): boolean {
+  const words = phrase.split(" ").filter(Boolean);
+  return words.length > 0 && words.every((w) => w.length >= 5 && w.endsWith("ed"));
+}
 const NUMBER_RE = /\d[\d,]*(?:\.\d+)?/g;
 const STOPWORDS = new Set([
   "of", "the", "a", "an", "to", "in", "on", "and", "with", "for", "from",
@@ -399,7 +407,7 @@ export function lintReportContradictions(input: ContradictionLintInput): Contrad
     findingsData.length > 0 && findingsData.every((f) => f.qualityFlags.includes("MISSING_DISAGGREGATION"));
 
   /** Divergence model: normalized noun phrase -> distinct values -> sections. */
-  const metricValues = new Map<string, Map<string, { value: number; section: string; excerpt: string }>>();
+  const metricValues = new Map<string, Map<string, { value: number; section: string; sectionId: string; excerpt: string }>>();
 
   for (const sentence of sentences) {
     const text = sentence.text;
@@ -443,11 +451,11 @@ export function lintReportContradictions(input: ContradictionLintInput): Contrad
         const basis = LIFE_BASIS_RE.test(text) ? "life of project" : "period";
         const noun = `${followingNounPhrase(text, p.end)}|${basis}`;
         const phrase = followingNounPhrase(text, p.end);
-        const genericOnly = phrase.split(" ").every((w) => GENERIC_METRIC_NOUNS.has(w));
+        const genericOnly = phrase.split(" ").every((w) => GENERIC_METRIC_NOUNS.has(w)) || isVerbOnlyPhrase(phrase);
         if (phrase.length >= 3 && !genericOnly) {
-          const bucket = metricValues.get(noun) ?? new Map<string, { value: number; section: string; excerpt: string }>();
+          const bucket = metricValues.get(noun) ?? new Map<string, { value: number; section: string; sectionId: string; excerpt: string }>();
           if (!bucket.has(normalizeKey(p.value))) {
-            bucket.set(normalizeKey(p.value), { value: p.value, section: sentence.sectionTitle, excerpt: clip(text) });
+            bucket.set(normalizeKey(p.value), { value: p.value, section: sentence.sectionTitle, sectionId: sentence.sectionId, excerpt: clip(text) });
           }
           metricValues.set(noun, bucket);
         }
@@ -497,7 +505,7 @@ export function lintReportContradictions(input: ContradictionLintInput): Contrad
     findings.push({
       kind: "SAME_METRIC_DIVERGENCE",
       severity,
-      sectionId: input.sections[0]?.id ?? "",
+      sectionId: values[0]?.sectionId ?? input.sections[0]?.id ?? "",
       sectionTitle: distinctSections.join(", "),
       excerpt: values.map((v) => `${formatNumber(v.value)} (${v.section})`).join(" vs "),
       detail: `The report uses different figures for "${noun}"${basis === "life of project" ? " (for the life of the project)" : ""}: ${values

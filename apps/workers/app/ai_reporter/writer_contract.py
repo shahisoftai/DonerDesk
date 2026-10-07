@@ -52,6 +52,11 @@ WORKFLOW_VOCABULARY: list[str] = [
     "checklist item",
     "checklist items",
     "open checklist",
+    "performance judgement",
+    "performance judgment",
+    "evaluation for each is neutral",
+    "finding could not be calculated",
+    "disaggregation list",
 ]
 
 BANNED_PHRASES: list[str] = [
