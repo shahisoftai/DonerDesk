@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { SupportSearch, type SearchEntry } from "@/components/support/SupportSearch";
+import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
 
 const CATEGORIES = [
   {
@@ -108,6 +110,10 @@ const RECENT_GUIDES = [
   { title: "Security best practices", href: "/support/security-privacy/security-best-practices", category: "Security" },
 ];
 
+const SEARCH_ENTRIES: SearchEntry[] = WIKI_CATEGORIES.flatMap((c) =>
+  c.articles.map((a) => ({ title: a.title, description: a.description, href: a.href, category: c.name })),
+);
+
 const DONOR_NAMES = [
   "DG ECHO", "UNHCR", "USAID", "Global Fund", "GCF", "FCDO", "Norad", "Sida", "Danida",
 ];
@@ -205,18 +211,7 @@ export default function SupportPage() {
             Find guides, donor reporting references, tutorials, and troubleshooting for DonorDesk.
           </p>
           {/* Search */}
-          <div className="relative mx-auto mt-8 max-w-xl">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
-              <svg className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <input
-              type="search"
-              placeholder="Search guides, how-tos, donor requirements..."
-              className="w-full rounded-xl border border-white/15 bg-white/5 py-3.5 pl-11 pr-4 text-sm text-white placeholder-slate-400 backdrop-blur focus:border-brand-400/60 focus:outline-none focus:ring-1 focus:ring-brand-400/40"
-            />
-          </div>
+          <SupportSearch entries={SEARCH_ENTRIES} />
           {/* Quick links */}
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             {["Getting Started", "Donor Reporting", "Billing", "API", "Troubleshooting"].map((q) => (

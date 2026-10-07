@@ -66,7 +66,7 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
       { title: "Storage and File Management", description: "Local storage, Google Drive, and R2.", href: "/support/getting-started/storage-file-management" },
       { title: "AI in DonorDesk", description: "How AI assists report drafting in DonorDesk.", href: "/support/getting-started/ai-in-donordesk" },
       { title: "Data Security", description: "How DonorDesk protects your data.", href: "/support/getting-started/data-security" },
-      { title: "User Roles and Permissions", description: "Owner, Admin, Manager, Member, Viewer roles.", href: "/support/getting-started/user-roles-and-permissions" },
+      { title: "User Roles and Permissions", description: "The seven roles and a full table of what each can do.", href: "/support/getting-started/user-roles-and-permissions" },
       { title: "DonorDesk Pricing Plans", description: "Starter, Team, Growth, Enterprise — what's included.", href: "/support/getting-started/donor-desk-pricing-plans" },
     ],
   },
