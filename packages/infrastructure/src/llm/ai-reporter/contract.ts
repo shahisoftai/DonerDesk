@@ -142,6 +142,7 @@ export const WRITER_RULES_V5_ADDITIONS: readonly string[] = [
   "Use only the section titles and indicator or outcome codes listed under \"Report structure\"; never invent labels (such as IR1, IR2) or refer to a section that is not listed.",
   "An indicator listed under \"Not measured this period\" has no figure: say it was not measured this period and give no value for it.",
   "For an indicator whose value is itself a percentage (a rate or coverage), give the value, its baseline and its target and the change from the baseline in percentage points; never quote its percent of target, and never rank or compare indicators by percent of target.",
+  "A finding whose performanceEvaluation type is NEUTRAL is to be described plainly without praise or criticism; never mention the evaluation, the word neutral or a performance judgement in the text.",
   "Give a previous-period value only beside its own indicator, as in \"56 percent, up from 53 percent in December\"; never list several previous values together (\"up from 53, 60 and 39 respectively\").",
 ];
 
