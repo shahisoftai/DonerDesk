@@ -176,7 +176,7 @@ const DATE_PATTERNS: RegExp[] = [
 const LIFE_BASIS_RE =
   /\b(to date|cumulative(?:ly)?|since (?:the )?(?:start|beginning|inception|launch|project)|over the (?:life|course|duration) of the project|life of (?:the )?project|life-of-project|overall|in total|altogether|across the project|throughout the project|by the end of the project|project-wide|so far)\b/i;
 // Words that name a category, not a metric: "35 female" (caregivers) and "656 female" (enrolment) are different metrics.
-const GENERIC_METRIC_NOUNS = new Set(["female", "males", "male", "females", "women", "woman", "men", "man", "girls", "girl", "boys", "boy", "target", "targets", "baseline", "total", "percent", "usd", "female male", "date", "far", "month", "months", "year", "years", "period", "week", "weeks", "quarter", "next", "coming", "against", "versus", "vs", "above", "below", "up", "down", "than", "compared", "points", "point", "pp"]);
+const GENERIC_METRIC_NOUNS = new Set(["female", "males", "male", "females", "women", "woman", "men", "man", "girls", "girl", "boys", "boy", "target", "targets", "baseline", "total", "percent", "usd", "female male", "date", "far", "month", "months", "year", "years", "period", "week", "weeks", "quarter", "next", "coming", "against", "versus", "vs", "above", "below", "up", "down", "than", "compared", "points", "point", "pp", "eur", "euro", "euros", "gbp", "ghs", "cedis", "cedi", "dollars", "dollar", "currency"]);
 /**
  * A phrase made only of participles ("targeted", "trained", "reached") names what was done to something, not a metric:
  * "120 targeted" and "6,000 targeted" are the targets of two different indicators, so they never diverge.

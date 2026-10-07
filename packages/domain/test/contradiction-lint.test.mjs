@@ -157,6 +157,18 @@ test("'<n> percent against a target' of different indicators is not one divergen
   assert.equal(result.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
 });
 
+test("different money amounts in one currency are not one divergent metric (demo 7)", () => {
+  const result = lintReportContradictions({
+    sections: sections(
+      ["Efficiency", "The Action spent EUR 1,712,400 of EUR 1,800,000, leaving EUR 87,600 and EUR 505,000 on personnel."],
+      ["Finance", "A budget of 1,800,000 EUR, 1,712,400 EUR expended and 87,600 EUR unspent."],
+    ),
+    findings: [],
+    groundedFigures: ["1800000", "1712400", "87600", "505000"],
+  });
+  assert.equal(result.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
+});
+
 test("a metric divergence points at the section that states one of the figures, not at the first section", () => {
   const result = lintReportContradictions({
     sections: sections(
