@@ -149,6 +149,14 @@ test("a noun phrase after another figure or a comma is not the noun of the first
   assert.equal(result.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
 });
 
+test("'<n> percent against a target' of different indicators is not one divergent metric (demo 7)", () => {
+  const result = lintReportContradictions({
+    sections: sections(["Progress", "Penta3 reached 86 percent against a target of 88; ANC4+ reached 70 percent against 75; skilled delivery 72 percent against 75."]),
+    findings: [],
+  });
+  assert.equal(result.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
+});
+
 test("a metric divergence points at the section that states one of the figures, not at the first section", () => {
   const result = lintReportContradictions({
     sections: sections(
