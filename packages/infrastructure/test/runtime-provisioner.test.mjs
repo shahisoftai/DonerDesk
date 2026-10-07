@@ -99,7 +99,7 @@ test("renderWorkersManagedBlock: contains provider, model, apiKey, and timeouts"
   assert.ok(text.includes("AI_REPORTER_API_KEY=sk-SUPER-SECRET-KEY"));
   assert.ok(text.includes("AI_REPORTER_DRAFT_TIMEOUT_MS=90000"));
   assert.ok(text.includes("AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS=200000"));
-  assert.ok(text.includes("AI_REPORTER_CONTRACT_VERSION=4"));
+  assert.ok(text.includes("AI_REPORTER_CONTRACT_VERSION=5"));
 });
 
 test("RuntimeProvisioner.provisionGlobalLlm writes env files, restarts, and is idempotent", async () => {
@@ -201,7 +201,7 @@ test("renderApiManagedBlock: carries AI_REPORTER_DRAFT_TIMEOUT_MS so the api nev
   const text = renderApiManagedBlock({ provider: "deepseek", model: "deepseek-chat" }, "GLOBAL").join("\n");
   assert.ok(text.includes("AI_REPORTER_DRAFT_TIMEOUT_MS=180000"), "api.env managed block must define a draft timeout");
   assert.ok(text.includes("AI_REPORTER_HTTP_TIMEOUT_MS=240000"), "HTTP ceiling must exceed the worker's 200s section budget");
-  assert.ok(text.includes("AI_REPORTER_CONTRACT_VERSION=4"), "api and worker must agree on the writer contract");
+  assert.ok(text.includes("AI_REPORTER_CONTRACT_VERSION=5"), "api and worker must agree on the writer contract");
 });
 
 test("stripStandaloneManagedKeys: removes pre-provisioning-era duplicate declarations, keeps the managed block's own copy", () => {

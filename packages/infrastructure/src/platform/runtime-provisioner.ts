@@ -90,7 +90,7 @@ export function renderWorkersManagedBlock(config: GlobalLlmConfig, scopeId: stri
   // sections), 200s per section (draft + one validator-feedback retry).
   lines.push(`AI_REPORTER_DRAFT_TIMEOUT_MS=90000`);
   lines.push(`AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS=200000`);
-  lines.push(`AI_REPORTER_CONTRACT_VERSION=4`);
+  lines.push(`AI_REPORTER_CONTRACT_VERSION=5`);
   lines.push(MANAGED_BLOCK_END_MARKER);
   return lines;
 }
@@ -155,7 +155,7 @@ export function renderApiManagedBlock(config: { provider: string; model: string 
   // prefers AI_REPORTER_HTTP_TIMEOUT_MS. Must exceed the worker's
   // AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS (200000).
   lines.push(`AI_REPORTER_HTTP_TIMEOUT_MS=240000`);
-  lines.push(`AI_REPORTER_CONTRACT_VERSION=4`);
+  lines.push(`AI_REPORTER_CONTRACT_VERSION=5`);
   lines.push(MANAGED_BLOCK_END_MARKER);
   return lines;
 }
