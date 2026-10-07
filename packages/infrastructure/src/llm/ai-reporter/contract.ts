@@ -143,7 +143,7 @@ export const WRITER_RULES_V5_ADDITIONS: readonly string[] = [
   "An indicator listed under \"Not measured this period\" has no figure: say it was not measured this period and give no value for it.",
   "For an indicator whose value is itself a percentage (a rate or coverage), give the value, its baseline and its target and the change from the baseline in percentage points; never quote its percent of target, and never rank or compare indicators by percent of target.",
   "A finding whose performanceEvaluation type is NEUTRAL is to be described plainly without praise or criticism; never mention the evaluation, the word neutral or a performance judgement in the text.",
-  "An activity record has a single date. When its figures are monthly totals (clinics held, women reached, households assisted), say they happened during the month and never on that date.",
+  "An activity record has a date, and an endDate when it covers a span: write \"from <date> to <endDate>\" or \"during the month\" for a span. When there is no endDate and its figures are monthly totals (clinics held, women reached, households assisted), say they happened during the month and never on that date.",
   "Give a previous-period value only beside its own indicator, as in \"56 percent, up from 53 percent in December\"; never list several previous values together (\"up from 53, 60 and 39 respectively\").",
 ];
 

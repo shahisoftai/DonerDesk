@@ -22,6 +22,7 @@ export class CreateActivityUpdateHandler {
       reportingPeriodId: input.reportingPeriodId,
       activityTitle: input.activityTitle,
       activityDate: new Date(input.activityDate),
+      ...(input.activityEndDate ? { activityEndDate: new Date(input.activityEndDate) } : {}),
       location: input.location,
       outputId: link.value.outputId,
       logframeActivityId: link.value.logframeActivityId,

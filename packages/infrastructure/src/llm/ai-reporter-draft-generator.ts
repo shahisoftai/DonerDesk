@@ -442,6 +442,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         activityId: a.activityId,
         attachedEvidenceIds: a.attachedEvidenceIds,
         date: a.activityDate.toISOString().slice(0, 10),
+        ...(a.activityEndDate ? { endDate: a.activityEndDate.toISOString().slice(0, 10) } : {}),
         location: a.location,
         participantsTotal: a.participantsTotal,
         participantsMale: a.participantsMale,

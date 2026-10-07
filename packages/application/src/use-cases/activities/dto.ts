@@ -6,6 +6,7 @@ export interface ActivityUpdateDto {
   projectId: string;
   activityTitle: string;
   activityDate: string;
+  activityEndDate?: string;
   location?: string;
   outputId?: string;
   logframeActivityId?: string;
@@ -37,6 +38,7 @@ export function toActivityUpdateDto(a: ActivityUpdate): ActivityUpdateDto {
     projectId: a.projectId,
     activityTitle: a.activityTitle,
     activityDate: a.activityDate.toISOString(),
+    activityEndDate: a.activityEndDate?.toISOString(),
     location: a.location,
     outputId: a.outputId,
     logframeActivityId: a.logframeActivityId,

@@ -5,6 +5,8 @@ export const CreateActivityUpdateSchema = z.object({
   reportingPeriodId: z.string().min(1),
   activityTitle: z.string().min(1).max(300),
   activityDate: z.string().datetime(),
+  /** Last day of the span the record covers (a whole month of outreach clinics); omit for a single day. */
+  activityEndDate: z.string().datetime().optional(),
   location: z.string().max(200).optional(),
   outputId: z.string().optional(),
   /** The logframe Activity-level item this record delivers; the output is derived from it. */

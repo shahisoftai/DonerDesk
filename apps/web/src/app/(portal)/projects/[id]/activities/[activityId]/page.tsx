@@ -77,7 +77,7 @@ export default async function ActivityDetailPage({
         <div>
           <h1 className="text-xl font-semibold tracking-tight">{activity.activityTitle}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {formatDate(activity.activityDate)}
+            {formatDate(activity.activityDate)}{activity.activityEndDate && activity.activityEndDate.slice(0, 10) !== activity.activityDate.slice(0, 10) ? ` – ${formatDate(activity.activityEndDate)}` : ""}
             {activity.location ? ` · ${activity.location}` : ""}
           </p>
         </div>

@@ -206,3 +206,11 @@ test("a recorded sex split is also stated as a plain sentence a report would wri
   const text = recordChunksFromFindings([finding({ value: "1260", disaggregation: [{ dimension: "SEX", category: "Female", value: "655" }, { dimension: "SEX", category: "Male", value: "605" }] })]).map((c) => c.text).join(" ");
   assert.match(text, /Of the 1260 children, 655 female and 605 male\./);
 });
+
+test("an activity record that covers a span says so in the record sentence (demo 7)", () => {
+  const span = { ...sources, activities: [{ ...sources.activities[0], activityDate: new Date("2026-02-01T00:00:00Z"), activityEndDate: new Date("2026-02-28T00:00:00Z") }] };
+  const text = buildRecordChunks(span).map((c) => c.text).join(" ");
+  assert.match(text, /Enrolment drive at Majengo from .*2026-02-01.* to .*2026-02-28/);
+  const single = buildRecordChunks(sources).map((c) => c.text).join(" ");
+  assert.match(single, /Enrolment drive at Majengo on /);
+});

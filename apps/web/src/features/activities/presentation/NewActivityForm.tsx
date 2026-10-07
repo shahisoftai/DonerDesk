@@ -52,6 +52,8 @@ export function NewActivityForm({
   const [periodChosenByUser, setPeriodChosenByUser] = useState(false);
   const [activityTitle, setActivityTitle] = useState("");
   const [activityDate, setActivityDate] = useState("");
+  // Optional last day, for a record that covers a span (a whole month of outreach clinics) instead of one day.
+  const [activityEndDate, setActivityEndDate] = useState("");
   const [location, setLocation] = useState("");
   const [participantsTotal, setParticipantsTotal] = useState("");
   const [participantsMale, setParticipantsMale] = useState("");
@@ -121,6 +123,11 @@ export function NewActivityForm({
     setLocalErrors({});
 
     const dateValue = activityDate ? new Date(activityDate).toISOString() : undefined;
+    if (activityEndDate && activityDate && activityEndDate < activityDate) {
+      setLocalErrors({ activityEndDate: ["The end date cannot be before the activity date."] });
+      return;
+    }
+    const endDateValue = activityEndDate ? new Date(activityEndDate).toISOString() : undefined;
     // A retry after a failed upload must not create the activity a second time.
     let activityId = createdActivityId;
     if (!activityId) {
@@ -130,6 +137,7 @@ export function NewActivityForm({
           reportingPeriodId,
           activityTitle,
           activityDate: dateValue ?? new Date().toISOString(),
+          ...(endDateValue ? { activityEndDate: endDateValue } : {}),
           location: location || undefined,
           logframeActivityId: logframeActivityId || undefined,
           participantsTotal: participantsTotal ? Number(participantsTotal) : undefined,
@@ -264,6 +272,32 @@ export function NewActivityForm({
             invalid={Boolean(fields.activityDate)}
             required
           />
+        </Field>
+        <Field label="Through (optional)" htmlFor="activityEndDate" error={fields.activityEndDate?.[0]} hint="Leave empty if it happened on one day. For monthly totals (clinics held, women reached) pick the last day of the month.">
+          <div className="flex gap-2">
+            <Input
+              id="activityEndDate"
+              name="activityEndDate"
+              type="date"
+              value={activityEndDate}
+              min={activityDate || undefined}
+              onChange={(e) => setActivityEndDate(e.target.value)}
+              invalid={Boolean(fields.activityEndDate)}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={!activityDate}
+              onClick={() => {
+                // Last day of the month of the activity date.
+                const [y, m] = activityDate.split("-").map(Number);
+                if (y && m) setActivityEndDate(new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10));
+              }}
+            >
+              End of month
+            </Button>
+          </div>
         </Field>
         <Field label="Location" htmlFor="location" error={fields.location?.[0]}>
           <Input

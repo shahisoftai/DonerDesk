@@ -532,6 +532,8 @@ model ActivityUpdate {
   reportingPeriodId     String
   activityTitle         String
   activityDate          DateTime
+  /// Last day when the record covers a span (a whole month of clinics); null = it happened on activityDate.
+  activityEndDate       DateTime?
   location              String?
   outputId              String?
   /// The logframe's own ACTIVITY node this record delivers (outputId is its parent output).

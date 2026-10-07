@@ -24,6 +24,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
         reportingPeriodId: a.reportingPeriodId,
         activityTitle: a.activityTitle,
         activityDate: a.activityDate,
+        activityEndDate: a.activityEndDate,
         location: a.location,
         outputId: a.outputId,
         logframeActivityId: a.logframeActivityId,
@@ -55,6 +56,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
       data: {
         activityTitle: a.activityTitle,
         activityDate: a.activityDate,
+        activityEndDate: a.activityEndDate ?? null, // Prisma ignores undefined: write null so the span can be cleared
         location: a.location,
         outputId: a.outputId,
         logframeActivityId: a.logframeActivityId,
@@ -103,6 +105,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
     reportingPeriodId: string;
     activityTitle: string;
     activityDate: Date;
+    activityEndDate: Date | null;
     location: string | null;
     outputId: string | null;
     logframeActivityId: string | null;
@@ -134,6 +137,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
         reportingPeriodId: row.reportingPeriodId,
         activityTitle: row.activityTitle,
         activityDate: row.activityDate,
+        activityEndDate: row.activityEndDate ?? undefined,
         location: row.location ?? undefined,
         outputId: row.outputId ?? undefined,
         logframeActivityId: row.logframeActivityId ?? undefined,

@@ -253,6 +253,8 @@ class Activity(BaseModel):
     activityId: str | None = None
     attachedEvidenceIds: list[str] = Field(default_factory=list)
     date: str | None = None
+    # Last day of the span the record covers (a whole month of clinics); absent when it happened on `date` alone.
+    endDate: str | None = None
     location: str | None = None
     participantsTotal: int | None = None
     participantsMale: int | None = None

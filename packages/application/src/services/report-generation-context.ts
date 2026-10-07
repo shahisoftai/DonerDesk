@@ -230,6 +230,7 @@ export class ReportGenerationContextBuilder {
       activityId: a.id,
       activityTitle: a.activityTitle,
       activityDate: a.activityDate,
+      ...(a.activityEndDate ? { activityEndDate: a.activityEndDate } : {}),
       location: a.location,
       participantsTotal: a.participantsTotal,
       participantsMale: a.participantsMale,

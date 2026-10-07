@@ -30,3 +30,12 @@ def test_trim_drops_figure_free_sentences_from_the_end_only() -> None:
     assert trim_to_word_limit(text, 100) == text
     only_figures = "The project trained 40 health workers in the five districts of the region this month."
     assert trim_to_word_limit(only_figures, 5) == only_figures
+
+
+def test_activity_record_accepts_an_end_date_and_the_writer_rule_mentions_it() -> None:
+    from app.ai_reporter import writer_contract
+    from app.ai_reporter.models import Activity
+
+    a = Activity(title="Outreach clinics", date="2026-02-01", endDate="2026-02-28")
+    assert a.model_dump(exclude_none=True)["endDate"] == "2026-02-28"
+    assert any("endDate" in r for r in writer_contract._WRITER_RULES_V5_ADDITIONS)

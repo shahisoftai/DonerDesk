@@ -190,6 +190,7 @@ export interface AiReporterActivity {
   activityId?: string;
   attachedEvidenceIds?: string[];
   date?: string;
+  endDate?: string;
   location?: string;
   participantsTotal?: number;
   participantsMale?: number;

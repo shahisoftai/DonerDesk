@@ -140,6 +140,8 @@ export interface ActivityGenerationContext {
   activityId: string;
   activityTitle: string;
   activityDate: Date;
+  /** Last day of the span the record covers; absent for a single day. */
+  activityEndDate?: Date;
   location?: string;
   participantsTotal?: number;
   participantsMale?: number;

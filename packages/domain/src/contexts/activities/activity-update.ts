@@ -10,6 +10,8 @@ export interface ActivityUpdateProps {
   reportingPeriodId: string;
   activityTitle: string;
   activityDate: Date;
+  /** Last day of the span the record covers; absent when it happened on `activityDate` alone. */
+  activityEndDate?: Date;
   location?: string;
   outputId?: string;
   /** The logframe ACTIVITY node this record delivers. */
@@ -52,6 +54,7 @@ export class ActivityUpdate extends Entity<string> {
     reportingPeriodId: string;
     activityTitle: string;
     activityDate: Date;
+    activityEndDate?: Date;
     location?: string;
     outputId?: string;
     logframeActivityId?: string;
@@ -74,6 +77,10 @@ export class ActivityUpdate extends Entity<string> {
     if (!input.activityDate || isNaN(input.activityDate.getTime())) {
       throw DomainError.validation("Activity date required");
     }
+    if (input.activityEndDate !== undefined) {
+      if (isNaN(input.activityEndDate.getTime())) throw DomainError.validation("Activity end date is not a valid date");
+      if (input.activityEndDate.getTime() < input.activityDate.getTime()) throw DomainError.validation("The end date cannot be before the activity date");
+    }
     if (!input.summary) throw DomainError.validation("Summary required");
     return new ActivityUpdate(input.id, input.tenantId, input.projectId, {
       ...input,
@@ -95,6 +102,7 @@ export class ActivityUpdate extends Entity<string> {
   get reportingPeriodId(): string { return this.props.reportingPeriodId; }
   get activityTitle(): string { return this.props.activityTitle; }
   get activityDate(): Date { return new Date(this.props.activityDate.getTime()); }
+  get activityEndDate(): Date | undefined { return this.props.activityEndDate ? new Date(this.props.activityEndDate.getTime()) : undefined; }
   get location(): string | undefined { return this.props.location; }
   get outputId(): string | undefined { return this.props.outputId; }
   get logframeActivityId(): string | undefined { return this.props.logframeActivityId; }

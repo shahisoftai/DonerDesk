@@ -33,6 +33,7 @@ export interface RecordSources {
     id: string;
     activityTitle: string;
     activityDate: Date;
+    activityEndDate?: Date;
     location?: string;
     participantsTotal?: number;
     participantsMale?: number;
@@ -110,7 +111,7 @@ export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
       a.participantsDisability !== undefined ? `${a.participantsDisability} with disabilities` : undefined,
     ].filter(Boolean);
     add("activity", a.id, label, [
-      `${a.activityTitle}${a.location ? ` at ${a.location}` : ""} on ${bothDates(a.activityDate)}.`,
+      `${a.activityTitle}${a.location ? ` at ${a.location}` : ""} ${a.activityEndDate ? `from ${bothDates(a.activityDate)} to ${bothDates(a.activityEndDate)}` : `on ${bothDates(a.activityDate)}`}.`,
       participants.length ? `Participants: ${participants.join(", ")}.` : undefined,
       ...recordSentences(a.summary),
       ...recordSentences(a.achievements),
