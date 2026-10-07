@@ -276,10 +276,12 @@ function exemptRanges(text: string): Array<[number, number]> {
 }
 
 function dateRanges(text: string): Array<[number, number]> {
+  // Every occurrence counts: the same date written twice in a section is two dates, not one date and one figure.
   const ranges: Array<[number, number]> = [];
-  for (const d of matchDates(text)) {
-    const idx = text.indexOf(d);
-    if (idx >= 0) ranges.push([idx, idx + d.length]);
+  for (const re of DATE_PATTERNS) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) ranges.push([m.index, m.index + m[0].length]);
   }
   return ranges;
 }

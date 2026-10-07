@@ -169,6 +169,14 @@ test("different money amounts in one currency are not one divergent metric (demo
   assert.equal(result.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0);
 });
 
+test("a date written twice is exempt both times (demo 7)", () => {
+  const result = lintReportContradictions({
+    sections: sections(["Assessment", "Records were last reported as of 2026-07-31 for training, and records as of 2026-07-31 for scorecards."]),
+    findings: [],
+  });
+  assert.equal(result.findings.filter((f) => f.kind === "PROSE_VALUE_NOT_IN_VERIFIED_DATA").length, 0);
+});
+
 test("a metric divergence points at the section that states one of the figures, not at the first section", () => {
   const result = lintReportContradictions({
     sections: sections(
