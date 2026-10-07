@@ -19,3 +19,14 @@ def test_echoed_donor_question_is_dropped_and_answer_kept() -> None:
 def test_table_rows_and_normal_prose_are_untouched() -> None:
     text = "| MR-OC1a | Not calculable | — |\n\nThe project trained 40 health workers."
     assert scrub_content(text, Q) == text
+
+
+def test_trim_drops_figure_free_sentences_from_the_end_only() -> None:
+    from app.ai_reporter.scrub import trim_to_word_limit
+
+    text = "The project trained 40 health workers. It was a good month for everyone involved. Priorities for the coming month are continued mentoring and follow-up."
+    out = trim_to_word_limit(text, 12)
+    assert "40 health workers" in out and "Priorities" not in out
+    assert trim_to_word_limit(text, 100) == text
+    only_figures = "The project trained 40 health workers in the five districts of the region this month."
+    assert trim_to_word_limit(only_figures, 5) == only_figures

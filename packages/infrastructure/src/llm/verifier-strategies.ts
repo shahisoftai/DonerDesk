@@ -329,12 +329,15 @@ export class DeterministicEntailmentVerifier implements IEntailmentVerifier {
 }
 
 /**
- * Causal review policy: causality is never auto-approved. Causal assertions
- * always require an authorized human decision even when evidence passes.
+ * Causal review policy: the AI never introduces a cause on its own. A causal assertion needs an authorized human
+ * decision unless it restates a cause the project's own records already give (the reporting officer's story or an
+ * activity record): then a person has already made that statement and the report only repeats it.
  */
 export class CausalReviewPolicy implements ICausalReviewPolicy {
-  requiresHumanDecision(type: AssertionType, verdict: EntailmentVerdict): boolean {
-    return type === "CAUSAL" && (verdict === "SUPPORTED" || verdict === "UNCERTAIN");
+  requiresHumanDecision(type: AssertionType, verdict: EntailmentVerdict, citedEvidenceIds: readonly string[] = []): boolean {
+    if (type !== "CAUSAL") return false;
+    if (verdict === "SUPPORTED" && citedEvidenceIds.length > 0 && citedEvidenceIds.every((id) => id.startsWith("record:"))) return false;
+    return verdict === "SUPPORTED" || verdict === "UNCERTAIN";
   }
 
   reasonCode(): VerificationReasonCode {

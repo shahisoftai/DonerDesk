@@ -2,7 +2,7 @@ import type { Result, VerifiedFinding, IndicatorUpdate, ReportingPeriod, TenantI
 import { CADENCE_REPORT_TYPES, DomainError, LIFE_OF_PROJECT_REPORT_TYPES, comparableReportTypes, computeLifeOfProject, computeIndicator, evaluatePerformance, inferIndicatorSemantics, periodComparability, selectComparablePeriods } from "@donordesk/domain";
 import type { IIndicatorAnalyticsService } from "../ports/reporting.js";
 import type { IReportingPeriodRepository } from "../ports/reporting.js";
-import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../ports/logframe.js";
+import type { IIndicatorRepository, IIndicatorUpdateRepository, ILogframeRepository } from "../ports/logframe.js";
 
 /** Candidate periods read before choosing the comparable ones. */
 const PREVIOUS_PERIOD_WINDOW = 20;
@@ -18,6 +18,7 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
     private readonly periods: IReportingPeriodRepository,
     private readonly indicators: IIndicatorRepository,
     private readonly updates: IIndicatorUpdateRepository,
+    private readonly logframe?: ILogframeRepository,
   ) {}
 
   async computeFindings(input: {
@@ -33,6 +34,12 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
 
     const indicatorsResult = await this.indicators.findByProject(input.projectId, input.tenantId);
     if (!indicatorsResult.ok) return indicatorsResult;
+
+    const levelByItem = new Map<string, string>();
+    if (this.logframe) {
+      const items = await this.logframe.findByProject(input.projectId, input.tenantId);
+      if (items.ok) for (const item of items.value) levelByItem.set(item.id, item.level);
+    }
 
     const currentUpdatesResult = await this.updates.findByReportingPeriod(input.reportingPeriodId, input.tenantId);
     if (!currentUpdatesResult.ok) return currentUpdatesResult;
@@ -119,7 +126,8 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
         numeratorValues,
         denominatorValues,
       });
-      findings.push({ ...finding, reportingPeriodId: input.reportingPeriodId });
+      const level = levelByItem.get(ind.logframeItemId);
+      findings.push({ ...finding, reportingPeriodId: input.reportingPeriodId, ...(level ? { level } : {}) });
     }
 
     if (LIFE_OF_PROJECT_REPORT_TYPES.has(periodResult.value.reportType)) {

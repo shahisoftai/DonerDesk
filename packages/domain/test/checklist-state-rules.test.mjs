@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CHECKLIST_ITEM_TYPES, CHECKLIST_KIND, CHECKLIST_STATE_RULES, ChecklistItem, isAttestation, isConcernTracked, stateItemsToClose } from "../dist/index.js";
+import { CHECKLIST_ITEM_TYPES, CHECKLIST_KIND, CHECKLIST_STATE_RULES, ChecklistItem, DATA_SETTLED_ATTESTATIONS, isAttestation, isConcernTracked, stateItemsToClose } from "../dist/index.js";
 
-test("every item type is classified, and exactly the state types have a rule", () => {
+test("every item type is classified, and exactly the state types and the data-settled attestations have a rule", () => {
   assert.deepEqual(Object.keys(CHECKLIST_KIND).sort(), [...CHECKLIST_ITEM_TYPES].sort());
-  const stateTypes = CHECKLIST_ITEM_TYPES.filter((t) => CHECKLIST_KIND[t] === "STATE").sort();
+  const stateTypes = CHECKLIST_ITEM_TYPES.filter((t) => CHECKLIST_KIND[t] === "STATE" || DATA_SETTLED_ATTESTATIONS.has(t)).sort();
   assert.deepEqual(CHECKLIST_STATE_RULES.map((r) => r.type).sort(), stateTypes);
 });
 
@@ -60,4 +60,15 @@ test("a resolved item can be reopened, and the note that justified the decision 
   item.reopen();
   assert.equal(item.status, "OPEN");
   assert.equal(item.resolutionNotes, undefined);
+});
+
+import { isSatisfiedByFacts as _sat, stateItemsToClose as _close } from "../dist/index.js";
+
+test("a verified procurement document settles the procurement item, which stays an attestation otherwise (demo 7)", () => {
+  assert.equal(_sat("MISSING_PROCUREMENT_DOCUMENT", { verifiedProcurementDocumentCount: 1 }, undefined), true);
+  assert.equal(_sat("MISSING_PROCUREMENT_DOCUMENT", { verifiedProcurementDocumentCount: 0 }, undefined), false);
+  assert.equal(_sat("MISSING_PROCUREMENT_DOCUMENT", {}, undefined), false);
+  assert.equal(_sat("SENSITIVE_DATA_WARNING", { verifiedProcurementDocumentCount: 1 }, undefined), false);
+  const out = _close([{ type: "MISSING_PROCUREMENT_DOCUMENT", status: "OPEN" }], { verifiedProcurementDocumentCount: 2 });
+  assert.equal(out.length, 1);
 });

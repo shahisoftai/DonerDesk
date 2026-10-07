@@ -201,3 +201,8 @@ test("what the verified figures imply is a statement too: all indicators at targ
   const overChunks = recordChunksFromFinance(over);
   assert.ok(!overChunks.some((c) => /within budget/.test(c.text)), "an overspend is never stated as within budget");
 });
+
+test("a recorded sex split is also stated as a plain sentence a report would write (demo 7)", () => {
+  const text = recordChunksFromFindings([finding({ value: "1260", disaggregation: [{ dimension: "SEX", category: "Female", value: "655" }, { dimension: "SEX", category: "Male", value: "605" }] })]).map((c) => c.text).join(" ");
+  assert.match(text, /Of the 1260 children, 655 female and 605 male\./);
+});

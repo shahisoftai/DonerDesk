@@ -1,7 +1,7 @@
 import { Entity } from "../../core/entity.js";
 import { DomainError } from "../../core/domain-error.js";
 import { DateRange } from "../../value-objects/date-range.js";
-import { ReportStatus } from "../../value-objects/report-status.js";
+import { ReportStatus, type ReportStatusValue } from "../../value-objects/report-status.js";
 import type { ReportType } from "../templates/donor-template.js";
 import { parseReportScope, type ReportScope } from "./report-scope.js";
 
@@ -187,6 +187,17 @@ export class ReportingPeriod extends Entity<string> {
     if (!this.props.status.canTransitionTo(next)) {
       throw DomainError.invalidTransition(`Cannot transition from ${this.props.status} to ${next}`);
     }
+    this.props.status = next;
+    this.touch();
+  }
+
+  /**
+   * Moves the status forward to `value` and never backwards (a report that is approved stays approved when a later
+   * regeneration touches the period). Before this nothing advanced the status, so every period read "Not started".
+   */
+  advanceStatus(value: ReportStatusValue): void {
+    const next = ReportStatus.create(value);
+    if (this.props.status.value === value || !this.props.status.canTransitionTo(next)) return;
     this.props.status = next;
     this.touch();
   }

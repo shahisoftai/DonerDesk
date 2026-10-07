@@ -629,7 +629,7 @@ export interface IEntailmentVerifier {
 }
 
 export interface ICausalReviewPolicy {
-  requiresHumanDecision(type: AssertionType, verdict: EntailmentVerdict): boolean;
+  requiresHumanDecision(type: AssertionType, verdict: EntailmentVerdict, citedEvidenceIds?: readonly string[]): boolean;
   reasonCode(): VerificationReasonCode;
 }
 

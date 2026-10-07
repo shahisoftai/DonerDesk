@@ -13,7 +13,7 @@ function build({ requireSecondApprover = false, members = [] } = {}) {
   const draft = { id: "d", projectId: "p", reportingPeriodId: "per", createdById: "author", approve: (u) => approved.push(u) };
   const h = new ApproveReportHandler(
     { findById: async () => ok(draft), update: async (d) => ok(d) },
-    { findById: async () => ok({ status: { toString: () => "X" }, transitionTo() {} }), update: async (p) => ok(p) },
+    { findById: async () => ok({ status: { toString: () => "X" }, transitionTo() {}, advanceStatus() {} }), update: async (p) => ok(p) },
     {}, {}, {}, {}, {},
     { record: async (e) => { audits.push(e.eventType); } },
     undefined, undefined,

@@ -49,6 +49,8 @@ export interface ChecklistFacts {
   activityStatusById?: ReadonlyMap<string, string>;
   /** Indicators whose calculation is confirmed. */
   confirmedSemanticsIds?: ReadonlySet<string>;
+  /** Verified evidence files of type procurement document on the project; undefined when not counted. */
+  verifiedProcurementDocumentCount?: number;
   financeStatus?: "OFF" | "MISSING" | "UNVERIFIED" | "VERIFIED";
   /** Indicators still missing cumulative fields (roll-up reports); undefined when not evaluated. */
   cumulativeGapIds?: ReadonlySet<string>;
@@ -64,7 +66,19 @@ export interface ChecklistStateRule {
   reason: string;
 }
 
+/**
+ * Attestations that data can also settle: a person states them, but when the record they ask for exists and is
+ * verified there is nothing left to attest ("final procurement records available" once a verified procurement
+ * document is on file). Still attestations for everything else (`isAttestation`, never re-raised once decided).
+ */
+export const DATA_SETTLED_ATTESTATIONS: ReadonlySet<ChecklistItemType> = new Set<ChecklistItemType>(["MISSING_PROCUREMENT_DOCUMENT"]);
+
 export const CHECKLIST_STATE_RULES: ReadonlyArray<ChecklistStateRule> = [
+  {
+    type: "MISSING_PROCUREMENT_DOCUMENT",
+    isSatisfied: (f) => (f.verifiedProcurementDocumentCount === undefined ? undefined : f.verifiedProcurementDocumentCount > 0),
+    reason: "a verified procurement document is on file",
+  },
   {
     type: "MISSING_EVIDENCE",
     isSatisfied: (f) => (f.evidenceCount === undefined || f.requiredEvidenceCount === undefined ? undefined : f.evidenceCount >= f.requiredEvidenceCount),
@@ -117,7 +131,7 @@ export const CHECKLIST_STATE_RULES: ReadonlyArray<ChecklistStateRule> = [
 
 /** Whether a concern is already settled by the data (so it must not be raised at all). Attestations and unknowns are never settled. */
 export function isSatisfiedByFacts(type: ChecklistItemType, facts: ChecklistFacts, relatedEntityId: string | undefined): boolean {
-  if (CHECKLIST_KIND[type] !== "STATE") return false;
+  if (CHECKLIST_KIND[type] !== "STATE" && !DATA_SETTLED_ATTESTATIONS.has(type)) return false;
   return CHECKLIST_STATE_RULES.find((r) => r.type === type)?.isSatisfied(facts, relatedEntityId) === true;
 }
 
@@ -129,7 +143,7 @@ export function stateItemsToClose<T extends { type: ChecklistItemType; status: s
   const out: Array<{ item: T; reason: string }> = [];
   for (const item of items) {
     if (item.status !== "OPEN" && item.status !== "IN_PROGRESS") continue;
-    if (CHECKLIST_KIND[item.type] !== "STATE") continue;
+    if (CHECKLIST_KIND[item.type] !== "STATE" && !DATA_SETTLED_ATTESTATIONS.has(item.type)) continue;
     const rule = CHECKLIST_STATE_RULES.find((r) => r.type === item.type);
     if (!rule) continue;
     if (rule.isSatisfied(facts, item.relatedEntityId) === true) out.push({ item, reason: `Closed automatically: ${rule.reason}.` });

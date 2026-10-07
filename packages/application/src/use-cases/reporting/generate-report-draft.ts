@@ -360,7 +360,7 @@ export class GenerateReportDraftHandler {
       }));
     } else {
       // AI disabled: no background work; the manual skeleton is the result.
-      period.transitionTo(period.status);
+      period.advanceStatus("DRAFT_GENERATED");
       period.setDonorTemplate(period.donorTemplateId ?? "");
       await this.periods.update(period);
       await this.audit.record({
@@ -569,7 +569,7 @@ export class GenerateReportDraftHandler {
       });
     }
 
-    input.period.transitionTo(input.period.status);
+    input.period.advanceStatus("DRAFT_GENERATED");
     input.period.setDonorTemplate(input.period.donorTemplateId ?? "");
     await this.periods.update(input.period);
   }

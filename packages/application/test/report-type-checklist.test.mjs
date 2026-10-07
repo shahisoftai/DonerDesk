@@ -122,8 +122,9 @@ test("evidence for a roll-up report is counted across the project, for a monthly
   );
   await handlerWith(makePeriod("FINAL")).handle(ctx, "p1");
   await handlerWith(makePeriod("MONTHLY")).handle(ctx, "p1");
-  assert.equal(filters[0].reportingPeriodId, undefined, "final: the whole project's evidence");
-  assert.equal(filters[1].reportingPeriodId, "p1", "monthly: its own period's evidence");
+  const periodFilters = filters.filter((f) => !f.evidenceType); // the procurement-document lookup is a separate, project-wide search
+  assert.equal(periodFilters[0].reportingPeriodId, undefined, "final: the whole project's evidence");
+  assert.equal(periodFilters[1].reportingPeriodId, "p1", "monthly: its own period's evidence");
 });
 
 test("an evidence-shortfall item is closed once the evidence is on file", async () => {
@@ -166,4 +167,13 @@ test("semantics review items are raised only for unconfirmed indicators and clea
   unconfirmed.update({ semanticsJson: JSON.stringify({ aggregation: "SUM", direction: "NEUTRAL", reportingBasis: "PERIOD", status: "CONFIGURED" }) });
   assert.deepEqual(semanticsReviewItems([unconfirmed]), []);
   assert.equal(confirmedSemanticsIndicatorIds([unconfirmed]).has("i-1"), true);
+});
+
+test("a writing-style instruction is guidance for the writer, not a checklist item (demo 7)", async () => {
+  const { donorRequirementItems, isWritingStyleRule } = await import("../dist/index.js");
+  assert.equal(isWritingStyleRule("Use the formal EU reporting register: 'the Action', third person, evidence-based statements only."), true);
+  assert.equal(isWritingStyleRule("Submit the final report within 30 days of the end date."), false);
+  assert.equal(isWritingStyleRule("Confirm EU visibility requirements were met."), false);
+  const items = donorRequirementItems({ compliance: [{ id: "a", text: "Use the formal register, third person.", severity: "WARN" }, { id: "b", text: "Submit within 30 days of the end date.", severity: "BLOCK" }] });
+  assert.deepEqual(items.map((i) => i.relatedEntityId), ["b"]);
 });

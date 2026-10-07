@@ -1078,7 +1078,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
 
   const activityLinks = new ActivityLinkResolver(logframe);
   const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits);
-  const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates);
+  const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates, logframe);
   const periodFinancials = new PrismaPeriodFinancialRepository(prisma);
   const financeInputs = new FinanceInputsService(reportingProfiles, periodFinancials);
   const reportPlanner = new InferredReportPlanner(ids);

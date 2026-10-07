@@ -163,6 +163,12 @@ function referenceFor(issue: GateIssue, claimTextById?: Map<string, string>, sec
     const text = claimTextById.get(issue.claimId)!.trim();
     return text.length > 160 ? `${text.slice(0, 157)}…` : text;
   }
+  // A figure conflict found by the contradiction check carries its own plain-language reason (which figure, in which
+  // sections). Showing only "in the section X" left users with nothing to fix (demo 7).
+  if (issue.kind === "NUMERIC_CONTRADICTION" && !issue.claimId && issue.detail.trim()) {
+    const text = issue.detail.trim();
+    return text.length > 420 ? `${text.slice(0, 417)}…` : text;
+  }
   if (issue.sectionId && sectionTitleById?.has(issue.sectionId)) {
     return `In the section "${sectionTitleById.get(issue.sectionId)}".`;
   }

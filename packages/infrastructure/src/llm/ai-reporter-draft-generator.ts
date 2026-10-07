@@ -414,6 +414,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         indicatorId: f.indicatorId,
         indicatorName: f.indicatorName ?? undefined,
         indicatorType: f.indicatorType ?? undefined,
+        ...(f.level ? { logframeLevel: f.level } : {}),
         calculationMethod: f.calculationMethod,
         baseline: f.baseline ?? null,
         target: f.target ?? null,

@@ -75,7 +75,7 @@ export class ApproveReportHandler {
     const periodResult = await this.periods.findById(draft.reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (periodResult.value) {
-      periodResult.value.transitionTo(periodResult.value.status);
+      periodResult.value.advanceStatus("APPROVED");
       await this.periods.update(periodResult.value);
     }
 

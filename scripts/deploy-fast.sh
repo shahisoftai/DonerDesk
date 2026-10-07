@@ -470,6 +470,20 @@ ${SSH} "
     echo 'worker not active'
     exit 1
   fi
+  # The api rewrites the AI_REPORTER_* env blocks when it starts but does not restart the worker, so the worker can keep
+  # an old writer contract. Compare the running process with the env file and restart the worker once on a mismatch.
+  echo '--- worker env ---'
+  for KEY in AI_REPORTER_CONTRACT_VERSION; do
+    WANT=\$(grep \"^\${KEY}=\" /opt/donordesk/shared/workers.env | tail -n 1 | cut -d= -f2)
+    HAVE=\$(tr '\\0' '\\n' </proc/\$(systemctl show -p MainPID --value donordesk-workers)/environ | grep \"^\${KEY}=\" | cut -d= -f2)
+    if [ \"\${WANT}\" != \"\${HAVE}\" ]; then
+      echo \"worker \${KEY} is '\${HAVE}', env file says '\${WANT}': restarting the worker\"
+      systemctl restart donordesk-workers; sleep 5
+      HAVE=\$(tr '\\0' '\\n' </proc/\$(systemctl show -p MainPID --value donordesk-workers)/environ | grep \"^\${KEY}=\" | cut -d= -f2)
+      if [ \"\${WANT}\" != \"\${HAVE}\" ]; then echo \"worker \${KEY} still '\${HAVE}'\"; exit 1; fi
+    fi
+    echo \"\${KEY}=\${HAVE}\"
+  done
 "
 echo "    verify: $(($(date +%s)-VERIFY_START))s"
 

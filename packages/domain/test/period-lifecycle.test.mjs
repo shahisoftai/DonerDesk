@@ -66,3 +66,13 @@ test("a requirement key reads as a person would say it", async () => {
   assert.equal(plainRequirementName("executiveSummary"), "Executive summary");
   assert.equal(plainRequirementName(""), "A required item");
 });
+
+test("a period's status moves forward with its report and never backwards (demo 7)", () => {
+  const period = ReportingPeriod.create({ id: "p", tenantId: "t", projectId: "pr", reportType: "MONTHLY", startDate: d(3), endDate: d(3, 30), deadline: d(4, 10) });
+  assert.equal(period.status.value, "NOT_STARTED");
+  period.advanceStatus("DRAFT_GENERATED");
+  assert.equal(period.status.value, "DRAFT_GENERATED");
+  period.advanceStatus("APPROVED");
+  period.advanceStatus("DRAFT_GENERATED"); // a later regeneration must not demote an approved report
+  assert.equal(period.status.value, "APPROVED");
+});

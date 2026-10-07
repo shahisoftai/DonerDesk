@@ -33,7 +33,7 @@ import time
 from typing import Any
 
 from . import artifact_builder
-from .scrub import scrub_section
+from .scrub import scrub_section, trim_to_word_limit
 from .artifact_validators import ValidationResult, run_all
 from .draft_writer import draft, pop_last_telemetry
 from .llm_gateway import ProviderQuotaError, TransientProviderError
@@ -171,6 +171,8 @@ def run_pipeline(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, 
         if len(attempts) >= 2 or error_retry_used or not _needs_retry(result, bool(req.section.synthesis)):
             break
         feedback = list(result.issues) + list(result.warnings)
+        if req.section.maxWords and _over_word_limit(result):
+            feedback.append(f"Rewrite to at most {int(req.section.maxWords * 0.9)} words: keep every figure and the main causes, drop the least important detail.")
         previous = written.content
 
     if not attempts:
@@ -180,6 +182,11 @@ def run_pipeline(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, 
 
     best_index = min(range(len(attempts)), key=lambda i: (_rank(attempts[i][1]), -i))
     section, result = attempts[best_index]
+    if req.section.maxWords and _over_word_limit(result):
+        trimmed = trim_to_word_limit(section.content, req.section.maxWords)
+        if trimmed != section.content:
+            section = section.model_copy(update={"content": trimmed})
+            result = run_all(section, req, prior_narrative_present=prior_present)
     telemetry: dict[str, Any] = {
         **tokens,
         "promptHash": prompt_hash,

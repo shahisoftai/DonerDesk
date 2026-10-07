@@ -69,6 +69,8 @@ export class DetectMissingEvidenceHandler {
     // A roll-up report (semi-annual, annual, final) reports on the project's life, so its evidence is the project's;
     // counting only the closing period's files would flag a well-evidenced project as short of evidence.
     const evidenceFilter = LIFE_OF_PROJECT_REPORT_TYPES.has(period.reportType) ? { projectId: period.projectId } : { projectId: period.projectId, reportingPeriodId };
+    const procurement = await this.evidence.search({ projectId: period.projectId, evidenceType: "PROCUREMENT_DOCUMENT", verificationStatus: "VERIFIED", pageSize: 1 }, ctx.tenant.tenantId);
+    const verifiedProcurementDocumentCount = procurement.ok ? procurement.value.total : undefined;
     const ev = await this.evidence.search({ ...evidenceFilter, pageSize: 200 }, ctx.tenant.tenantId);
     if (!ev.ok) return ev;
     const evidenceCount = ev.value.total;
@@ -120,13 +122,14 @@ export class DetectMissingEvidenceHandler {
     const combined: ChecklistSuggestion[] = [...baseline, ...typeItems.value.items, ...suggestions, ...donorRules];
 
     // What the data says right now. A state concern the data already satisfies is not raised, and an open one is closed;
-    // attestations are never touched by data, only a person decides those.
+    // attestations are never touched by data, only a person decides those (but see DATA_SETTLED_ATTESTATIONS).
     const facts: ChecklistFacts = {
       evidenceCount,
       requiredEvidenceCount: requiredAnnexes.length * 2 + 5,
       activityCount: activitiesCount,
       verifiedIndicatorCount: verified,
       totalIndicatorCount: updates.value.length,
+      ...(verifiedProcurementDocumentCount !== undefined ? { verifiedProcurementDocumentCount } : {}),
       ...(activitiesResult.ok ? { activityStatusById: new Map(activitiesResult.value.map((a) => [a.id, a.status])) } : {}),
       ...typeItems.value.facts,
     };
@@ -284,8 +287,19 @@ type DonorRuleItem = {
 const RULE_SEVERITY: Record<TemplateRequirements["compliance"][number]["severity"], Severity> = { BLOCK: "HIGH", WARN: "MEDIUM", INFO: "LOW" };
 
 /** Each donor compliance rule becomes a trackable checklist item (deduped by rule id). */
+const STYLE_RULE_RE = /\b(register|tone|third person|first person|active voice|passive voice|plain language|writing style|jargon|write in|use the formal)\b/i;
+const VERIFIABLE_RULE_RE = /\b(submit|submitted|submission|deadline|within \d+|\d+ days|annex|attach|signed|signature|approval|approved|budget|audit|logo|visibility|brand|marking|consent|safeguard)/i;
+
+/**
+ * A rule that only says how to write ("use the formal register, third person") is guidance for the writer, not
+ * something a person can attest was done or not: it must not become an open checklist item (demo 7).
+ */
+export function isWritingStyleRule(text: string): boolean {
+  return STYLE_RULE_RE.test(text) && !VERIFIABLE_RULE_RE.test(text);
+}
+
 export function donorRequirementItems(requirements: TemplateRequirements): DonorRuleItem[] {
-  return requirements.compliance.map((rule) => ({
+  return requirements.compliance.filter((rule) => !isWritingStyleRule(rule.text)).map((rule) => ({
     type: "DONOR_REQUIREMENT",
     title: rule.text.length > 120 ? `${rule.text.slice(0, 117)}…` : rule.text,
     description: `${rule.severity === "BLOCK" ? "Mandatory donor rule" : "Donor rule"}: ${rule.text}`,

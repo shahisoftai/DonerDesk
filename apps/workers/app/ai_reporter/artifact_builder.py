@@ -104,8 +104,34 @@ def _has_life_of_project(req: SectionDraftRequest) -> bool:
     return any(f.lifeOfProject is not None for f in req.verifiedFindings)
 
 
+_OUTCOME_LEVELS = {"GOAL", "OUTCOME"}
+
+
+def _scoped_findings(req: SectionDraftRequest) -> list[Finding]:
+    """When a report has both an outcome section and an output section, each table keeps its own level.
+
+    Without this both sections print the same table of every indicator (demo 7). The split needs the indicator's
+    logframe level and the list of report sections; with either missing every finding is shown, as before.
+    """
+    findings = list(req.verifiedFindings)
+    if not any(f.logframeLevel for f in findings):
+        return findings
+    structure = getattr(req.context, "structure", None) if req.context else None
+    titles = [t.lower() for t in (structure.sectionTitles if structure else [])]
+    mine = (req.section.canonicalTitle or req.section.title or "").lower()
+    is_outcome = "outcome" in mine or "impact" in mine
+    other_outcome = any(("outcome" in t or "impact" in t) and t != mine for t in titles)
+    if is_outcome:
+        scoped = [f for f in findings if (f.logframeLevel or "").upper() in _OUTCOME_LEVELS]
+    elif other_outcome:
+        scoped = [f for f in findings if (f.logframeLevel or "").upper() not in _OUTCOME_LEVELS]
+    else:
+        return findings
+    return scoped or findings
+
+
 def indicator_table(req: SectionDraftRequest) -> tuple[Artifact, str] | None:
-    findings = req.verifiedFindings
+    findings = _scoped_findings(req)
     if not findings:
         return None
     life = _has_life_of_project(req)

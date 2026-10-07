@@ -89,6 +89,8 @@ export interface VerifiedFinding {
   /** Deterministic evaluation gating evaluative narrative for this finding. */
   performanceEvaluation?: PerformanceEvaluation;
   reportingPeriodId: string;
+  /** Logframe level of the indicator's item (GOAL, OUTCOME, OUTPUT, ...); lets a report keep outcome and output tables apart. */
+  level?: string;
   comparisonPeriodId?: string;
   sourceRecordIds: string[];
   qualityFlags: FindingQualityFlag[];

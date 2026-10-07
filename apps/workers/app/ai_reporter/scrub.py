@@ -52,3 +52,34 @@ def scrub_content(content: str, mandatory_questions: list[str]) -> str:
 def scrub_section(section: GeneratedSection, req: SectionDraftRequest) -> GeneratedSection:
     cleaned = scrub_content(section.content, list(req.section.mandatoryQuestions or []))
     return section if cleaned == section.content else section.model_copy(update={"content": cleaned})
+
+
+def _count(text: str) -> int:
+    return len([w for w in re.split(r"\s+", "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("|")).strip()) if w])
+
+
+def trim_to_word_limit(content: str, max_words: int | None) -> str:
+    """Last resort when the writer is still over a donor's word limit after its retry.
+
+    Sentences that carry no figure are dropped from the end of the prose until the limit holds. A sentence with a
+    number is a grounded fact and is never removed; if the limit cannot be met that way the text is returned unchanged.
+    """
+    if not max_words or _count(content) <= max_words:
+        return content
+    lines = content.splitlines()
+    for li in range(len(lines) - 1, -1, -1):
+        line = lines[li]
+        if not line.strip() or line.lstrip().startswith("|"):
+            continue
+        sentences = _SENTENCE_SPLIT.split(line.strip())
+        for si in range(len(sentences) - 1, -1, -1):
+            if re.search(r"\d", sentences[si]):
+                continue
+            candidate = sentences[:si] + sentences[si + 1:]
+            lines[li] = " ".join(candidate)
+            sentences = candidate
+            if _count("\n".join(lines)) <= max_words:
+                return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+        if not lines[li].strip():
+            lines[li] = ""
+    return content

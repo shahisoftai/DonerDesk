@@ -509,3 +509,28 @@ def test_rate_indicator_has_no_percent_of_target_cell() -> None:
     count = Finding(indicatorCode="C1", indicatorType="Number", unit="clinics", baseline=0, target=360, value=20)
     assert artifact_builder._pct_cell(rate) == "—"
     assert artifact_builder._pct_cell(count) == "5.6%"
+
+
+def _leveled_req(title: str):
+    from app.ai_reporter.models import ContextStructure, Finding
+
+    req = _req(title=title, inputType="INDICATOR_TABLE")
+    req.verifiedFindings = [
+        Finding(indicatorCode="OC1", indicatorName="Coverage", indicatorType="PERCENTAGE", unit="%", value=60, target=70, logframeLevel="OUTCOME"),
+        Finding(indicatorCode="OP1", indicatorName="Trained", indicatorType="NUMBER", unit="people", value=40, target=240, logframeLevel="OUTPUT"),
+    ]
+    req.context.structure = ContextStructure(sectionTitles=["Progress Against Expected Results", "Outcome Indicators and Data Quality"], indicatorCodes=["OC1", "OP1"])
+    return req
+
+
+def test_outcome_and_output_sections_keep_their_own_indicator_table() -> None:
+    outcome = artifact_builder.indicator_table(_leveled_req("Outcome Indicators and Data Quality"))
+    progress = artifact_builder.indicator_table(_leveled_req("Progress Against Expected Results"))
+    assert outcome and "OC1" in outcome[1] and "OP1" not in outcome[1]
+    assert progress and "OP1" in progress[1] and "OC1" not in progress[1]
+
+
+def test_without_levels_every_indicator_is_shown() -> None:
+    req = _req(title="Progress Against Expected Results", inputType="INDICATOR_TABLE")
+    built = artifact_builder.indicator_table(req)
+    assert built and all(f.indicatorCode in built[1] for f in req.verifiedFindings)

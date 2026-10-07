@@ -118,7 +118,7 @@ export class DeterministicClaimVerifier implements IClaimVerifier {
           evidence,
         });
         if (!entailment.ok) return entailment;
-        const requiresHuman = this.causal.requiresHumanDecision(claim.type, entailment.value.verdict);
+        const requiresHuman = this.causal.requiresHumanDecision(claim.type, entailment.value.verdict, entailment.value.citedSpans.map((c) => c.evidenceId));
         if (requiresHuman) {
           return {
             ok: true,

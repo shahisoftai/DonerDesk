@@ -160,6 +160,7 @@ export interface AiReporterFinding {
   indicatorId?: string;
   indicatorName?: string;
   indicatorType?: string;
+  logframeLevel?: string;
   calculationMethod?: string;
   baseline?: string | number | null;
   target?: string | number | null;

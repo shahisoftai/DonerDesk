@@ -160,6 +160,16 @@ const money = (text: string, currency: string): string => `${text} ${currency}`;
  * Pure. The verified indicator findings as statements: a sentence that restates a value, target, baseline,
  * life-of-project total, recorded breakdown or evaluation of a finding is supported by that finding.
  */
+/** "SEX / Female" → "female": the way a sentence names a recorded group. */
+function groupLabel(category: string): string {
+  return category.split("/").pop()!.trim().toLowerCase();
+}
+
+/** "Of the 15 staff, 11 female and 4 male": the breakdown as a sentence a report would actually write. */
+function breakdownSentence(total: string, unit: string, entries: ReadonlyArray<{ category: string; value: string }>): string {
+  return `Of the ${total}${unit}, ${entries.map((e) => `${e.value} ${groupLabel(e.category)}`).join(" and ")}.`;
+}
+
 export function recordChunksFromFindings(findings: ReadonlyArray<VerifiedFinding>): RecordChunk[] {
   const chunks: RecordChunk[] = [];
   const push = (code: string, i: number, label: string, text: string): void => {
@@ -185,9 +195,11 @@ export function recordChunksFromFindings(findings: ReadonlyArray<VerifiedFinding
     }
     if ((f.disaggregation ?? []).length > 0) {
       push(f.indicatorCode, i++, label, `${name}, recorded breakdown of this period's ${f.value}${unit}: ${f.disaggregation!.map((e) => `${e.category} ${e.value}`).join(", ")}.`);
+      push(f.indicatorCode, i++, label, `${name}: ${breakdownSentence(f.value, unit, f.disaggregation!)}`);
     }
     if ((f.lifeOfProject?.disaggregation ?? []).length > 0) {
       push(f.indicatorCode, i++, label, `${name}, recorded breakdown of the life-of-project ${f.lifeOfProject!.value}${unit}: ${f.lifeOfProject!.disaggregation!.map((e) => `${e.category} ${e.value}`).join(", ")}.`);
+      push(f.indicatorCode, i++, label, `${name}: ${breakdownSentence(f.lifeOfProject!.value, unit, f.lifeOfProject!.disaggregation!)}`);
     }
     if (f.performanceEvaluation?.type === "POSITIVE") push(f.indicatorCode, i++, label, `${name} is on track: it meets or exceeds its target.`);
     if (f.performanceEvaluation?.type === "NEGATIVE") push(f.indicatorCode, i++, label, `${name} is below expectation against its target.`);

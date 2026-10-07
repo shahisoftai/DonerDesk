@@ -7,9 +7,12 @@ import { agree, countOf } from "@donordesk/domain/core/plural.js";
 
 function deepLink(projectId: string, periodId: string, item: SmartReviewSummaryShape["items"][number]): string {
   switch (item.action.type) {
+    case "review-confidentiality":
+      // The sensitive-data concern is a checklist item of this period; with no single file named, the library is the wrong place.
+      if (!item.evidenceId) return `/projects/${projectId}/compliance?period=${periodId}`;
+      return `/projects/${projectId}/evidence/${item.evidenceId}`;
     case "add-evidence":
     case "review-evidence":
-    case "review-confidentiality":
       return item.evidenceId ? `/projects/${projectId}/evidence/${item.evidenceId}` : `/projects/${projectId}/evidence`;
     default:
       // Section-scoped items open the workspace on that section's editor,

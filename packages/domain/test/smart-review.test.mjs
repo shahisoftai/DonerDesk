@@ -89,3 +89,11 @@ test("Smart Review: action integrity — a resolved claim no longer surfaces (so
   const after = summarizeSmartReview({ blockingIssues: [] });
   assert.equal(after.issueCount, 0);
 });
+
+test("a figure conflict from the contradiction check explains which figure, not only which section (demo 7)", () => {
+  const summary = summarizeSmartReview({
+    blockingIssues: [{ kind: "NUMERIC_CONTRADICTION", detail: 'Activities: The section states "31" but this figure does not appear in the verified data.', sectionId: "s1" }],
+    sectionTitleById: new Map([["s1", "Activities"]]),
+  });
+  assert.match(summary.items[0].explanation, /states "31"/);
+});
