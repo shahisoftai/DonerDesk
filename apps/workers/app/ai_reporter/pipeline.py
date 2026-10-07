@@ -33,6 +33,7 @@ import time
 from typing import Any
 
 from . import artifact_builder
+from .scrub import scrub_section
 from .artifact_validators import ValidationResult, run_all
 from .draft_writer import draft, pop_last_telemetry
 from .llm_gateway import ProviderQuotaError, TransientProviderError
@@ -161,6 +162,7 @@ def run_pipeline(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, 
             tokens["inputTokens"] += int(call_telemetry.get("inputTokens", 0) or 0)
             tokens["outputTokens"] += int(call_telemetry.get("outputTokens", 0) or 0)
 
+        written = scrub_section(written, req)
         section = artifact_builder.attach(written, req, kind)
         result = run_all(section, req, prior_narrative_present=prior_present)
         attempts.append((section, result))
