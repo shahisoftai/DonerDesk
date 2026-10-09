@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import Script from "next/script";
 import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { HomeFaq } from "@/components/landing/HomeFaq";
 import { ProductProofStrip } from "@/components/landing/ProductProofStrip";
@@ -717,6 +718,19 @@ export default function HomePage() {
         </div>
       </footer>
       <CookieConsentBanner />
+      <Script id="voxeleon-chat" strategy="afterInteractive">{`
+        window.voxeleonSettings = {"position":"right","type":"standard","launcherTitle":""};
+        (function(d,t){
+          var BASE_URL="https://app.voxeleon.com";
+          var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+          g.src=BASE_URL+"/packs/js/voxeleon-sdk.js";
+          g.async=true;
+          s.parentNode.insertBefore(g,s);
+          g.onload=function(){
+            window.voxeleonSDK.run({websiteToken:'PiC3TqgB2V3xSYpE7M6Asz7G',baseUrl:BASE_URL});
+          };
+        })(document,"script");
+      `}</Script>
     </main>
   );
 }
