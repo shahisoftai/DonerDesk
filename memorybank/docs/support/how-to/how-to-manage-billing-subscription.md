@@ -36,7 +36,7 @@ Downgrades and cancellations take effect at the **end of the billing period**. Y
 
 ## Apply for the nonprofit discount
 
-Fill in the nonprofit verification form (registration number and a link to your certificate). You will get an email once it has been reviewed. Approved workspaces move to the 40% discounted price.
+Fill in the nonprofit verification form (registration number and a link to your certificate). You will get an email once it has been reviewed. Approved workspaces get the 25% welcome discount for their first year.
 
 ## Enterprise
 

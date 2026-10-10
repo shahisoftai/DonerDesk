@@ -103,20 +103,26 @@ test("/pricing Free-card and comparison credits match PLAN_CATALOG (STARTER drif
 
 test("landing page Enterprise floor and signup plan options match PLAN_CATALOG", () => {
   const landing = readSource("src/app/page.tsx");
+  const team = PLAN_CATALOG.TEAM;
+  const growth = PLAN_CATALOG.GROWTH;
   assert.ok(
     landing.includes(`annual: "From ${usd(Math.floor(ENTERPRISE_PRICE_FLOOR_ANNUAL_USD / 1000))}k / year"`),
     `page.tsx Enterprise floor line must track ENTERPRISE_PRICE_FLOOR_ANNUAL_USD (${ENTERPRISE_PRICE_FLOOR_ANNUAL_USD})`,
   );
-  // §3 pins the NGO ladder as its own decided prices ($79/$179 — "40%" is the
-  // marketing rounding, not exact arithmetic: 129*0.6 = 77). Pin them here so
-  // any change to the decided NGO ladder is a conscious edit in both places.
+  // The NGO ladder is its own decided pricing decision: a 25% welcome
+  // discount off the standard price for the first year. Unlike the earlier
+  // "40%" ladder the arithmetic is exact (standard × 0.75), so pin the derived
+  // value here; any change to the standard price or the discount is a
+  // conscious edit in both places.
+  const teamNgo = `$${(team.monthlyPriceUsd! * 0.75).toFixed(2)}`;
+  const growthNgo = `$${(growth.monthlyPriceUsd! * 0.75).toFixed(2)}`;
   assert.ok(
-    landing.includes("NGO price: $79/mo (verified 40% discount)"),
-    "page.tsx Team NGO price must stay in lockstep with the §3 decided NGO ladder ($79)",
+    landing.includes(`NGO price: ${teamNgo}/mo (verified 25% welcome discount, first year)`),
+    `page.tsx Team NGO price must stay in lockstep with 75% of PLAN_CATALOG.TEAM.monthlyPriceUsd (${teamNgo})`,
   );
   assert.ok(
-    landing.includes("NGO price: $179/mo (verified 40% discount)"),
-    "page.tsx Growth NGO price must stay in lockstep with the §3 decided NGO ladder ($179)",
+    landing.includes(`NGO price: ${growthNgo}/mo (verified 25% welcome discount, first year)`),
+    `page.tsx Growth NGO price must stay in lockstep with 75% of PLAN_CATALOG.GROWTH.monthlyPriceUsd (${growthNgo})`,
   );
   assert.ok(
     landing.includes("2 read-only viewers"),

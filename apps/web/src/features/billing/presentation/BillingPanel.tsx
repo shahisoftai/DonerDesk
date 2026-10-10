@@ -345,11 +345,11 @@ function NonprofitDiscountSection() {
   return (
     <section className="card max-w-2xl space-y-3">
       <div>
-        <h3 className="text-sm font-medium text-slate-800 dark:text-slate-100">Nonprofit discount (40% off)</h3>
+        <h3 className="text-sm font-medium text-slate-800 dark:text-slate-100">Nonprofit discount (25% welcome discount, first year)</h3>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Verified nonprofits get 40% off Team and Growth. Submit your registration number and a link to your
-          registration certificate (upload it to Drive/Dropbox and share a view link) — our team reviews submissions
-          manually.
+          Verified nonprofits get 25% off Team and Growth for their first year. Submit your registration number and a
+          link to your registration certificate (upload it to Drive/Dropbox and share a view link) — our team reviews
+          submissions manually.
         </p>
       </div>
       {submitted ? (

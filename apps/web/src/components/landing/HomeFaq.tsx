@@ -21,7 +21,7 @@ const FAQS = [
   },
   {
     q: "How much does DonorDesk cost?",
-    a: "Every workspace starts on the free Starter plan. Paid plans are Team at $129 per month and Growth at $299 per month, Enterprise is contracted, annual billing gives two months free, and verified nonprofits get 40% off. See the pricing page for full limits.",
+    a: "Every workspace starts on the free Starter plan. Paid plans are Team at $79 per month and Growth at $149 per month, Enterprise is contracted, annual billing gives two months free, and verified nonprofits get 25% off for their first year. See the pricing page for full limits.",
   },
   {
     q: "Which export formats are supported?",

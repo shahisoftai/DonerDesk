@@ -4,7 +4,7 @@ Source files for the public Support Center at donordesk.online/support. Each fil
 
 ## Ground truth to check when editing
 
-- Plans and limits: `packages/domain/src/contexts/billing/plan.ts` (Starter $0, Team $129, Growth $299, Enterprise contracted; AI drafts 5 / 20 / 100)
+- Plans and limits: `packages/domain/src/contexts/billing/plan.ts` (Starter $0, Team $79, Growth $149, Enterprise contracted; AI drafts 5 / 20 / 100)
 - Roles and permissions: `packages/domain/src/policies/permissions.ts`
 - Labels and statuses: `apps/web/src/lib/labels.ts`
 - Report editor: `apps/web/src/features/report-editor/`

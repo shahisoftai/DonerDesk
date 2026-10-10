@@ -152,8 +152,8 @@ const PLANS = [
   {
     code: "TEAM",
     name: "Team",
-    monthly: "$129",
-    annual: "$1,290",
+    monthly: "$79",
+    annual: "$790",
     tagline: "For growing teams reporting across several grants or projects.",
     cta: { label: "Continue", href: "/signup?plan=team" },
     highlight: true,
@@ -166,14 +166,14 @@ const PLANS = [
       "AI credit top-ups (+50 for $79)",
       TRIALS_ENABLED ? "14-day free trial" : "",
       "Email support",
-      "NGO price: $79/mo (verified 40% discount)",
+      "NGO price: $59.25/mo (verified 25% welcome discount, first year)",
     ].filter(Boolean),
   },
   {
     code: "GROWTH",
     name: "Growth",
-    monthly: "$299",
-    annual: "$2,990",
+    monthly: "$149",
+    annual: "$1,490",
     tagline: "For organizations with multiple funders and substantial reporting volume.",
     cta: { label: "Continue", href: "/signup?plan=growth" },
     highlight: false,
@@ -187,7 +187,7 @@ const PLANS = [
       TRIALS_ENABLED ? "14-day free trial" : "",
       "Soft overage instead of a hard stop",
       "Priority email support + onboarding call",
-      "NGO price: $179/mo (verified 40% discount)",
+      "NGO price: $111.75/mo (verified 25% welcome discount, first year)",
     ].filter(Boolean),
   },
   {
@@ -548,11 +548,12 @@ export default function HomePage() {
             </Link>
           </div>
           <p className="mt-6 text-center text-sm text-slate-400">
-            Verified nonprofits get 40% off Team and Growth; nonprofit pricing
-            for Enterprise is built into the contract. Tax is calculated at
-            checkout where applicable. Annual billing gives two months free.
-            Regional pricing for eligible organizations in lower-income
-            countries is available on request — contact sales.
+            Verified nonprofits get 25% off Team and Growth for their first
+            year; nonprofit pricing for Enterprise is built into the contract.
+            Tax is calculated at checkout where applicable. Annual billing
+            gives two months free. Regional pricing for eligible
+            organizations in lower-income countries is available on request —
+            contact sales.
           </p>
         </div>
       </section>

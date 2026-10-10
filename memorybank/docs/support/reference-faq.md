@@ -9,7 +9,7 @@ A platform that helps NGOs and grant-funded organisations prepare donor reports 
 Local and national NGOs, INGOs, UN implementing partners, consultancies and government programme units.
 
 ### How much does it cost?
-Starter is free (1 project, 1 full seat plus 2 viewers, 1 GB, 5 AI drafts a month). Team is $129/month (5 projects, 5 seats, 25 GB, 20 drafts). Growth is $299/month (20 projects, 15 seats, 100 GB, 100 drafts, bring your own AI provider). Enterprise is contracted from $12,000/year. Annual billing is two months free, and verified nonprofits get 40% off. See [Pricing](/pricing).
+Starter is free (1 project, 1 full seat plus 2 viewers, 1 GB, 5 AI drafts a month). Team is $79/month (5 projects, 5 seats, 25 GB, 20 drafts). Growth is $149/month (20 projects, 15 seats, 100 GB, 100 drafts, bring your own AI provider). Enterprise is contracted from $12,000/year. Annual billing is two months free, and verified nonprofits get 25% off for their first year. See [Pricing](/pricing).
 
 ### Is there a free trial?
 Every workspace starts on the free Starter plan. There is no standard trial. The Academy demo project lets you explore without using your limits.
@@ -107,7 +107,7 @@ Cards through our payment partner Creem, which also handles tax. Enterprise cust
 Nothing is deleted. You keep read, export and delete access on Starter.
 
 ### Do you offer a nonprofit discount?
-Yes, 40% off Team and Growth for verified nonprofits. Apply in **Settings → Billing**.
+Yes, 25% off Team and Growth for verified nonprofits, for their first year. Apply in **Settings → Billing**.
 
 ## Technical
 

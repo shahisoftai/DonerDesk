@@ -16,8 +16,8 @@ const TRIALS_ENABLED = process.env.NEXT_PUBLIC_TRIALS_ENABLED === "1";
 
 const PLAN_OPTIONS: { value: RequestedPlan; label: string; description: string }[] = [
   { value: "starter", label: "Starter — Free", description: "1 project, 1 seat + 2 viewers, 1 GB storage, 5 AI drafts/month" },
-  { value: "team", label: "Team — $129/mo", description: "5 projects, 5 seats + unlimited viewers, 25 GB, 20 AI drafts/month" },
-  { value: "growth", label: "Growth — $299/mo", description: "20 projects, 15 seats + unlimited viewers, 100 GB, 100 AI drafts/month" },
+  { value: "team", label: "Team — $79/mo", description: "5 projects, 5 seats + unlimited viewers, 25 GB, 20 AI drafts/month" },
+  { value: "growth", label: "Growth — $149/mo", description: "20 projects, 15 seats + unlimited viewers, 100 GB, 100 AI drafts/month" },
 ];
 
 export default function SignupForm({ initialPlan }: { initialPlan: RequestedPlan }) {

@@ -25,8 +25,8 @@ test("plan catalog defines the four commercial plans", () => {
   assert.equal(isPlanCode("NOPE"), false);
 
   assert.equal(PLAN_CATALOG.STARTER.monthlyPriceUsd, 0);
-  assert.equal(PLAN_CATALOG.TEAM.monthlyPriceUsd, 129);
-  assert.equal(PLAN_CATALOG.GROWTH.monthlyPriceUsd, 299);
+  assert.equal(PLAN_CATALOG.TEAM.monthlyPriceUsd, 79);
+  assert.equal(PLAN_CATALOG.GROWTH.monthlyPriceUsd, 149);
   assert.equal(PLAN_CATALOG.ENTERPRISE.maxActiveProjects, null);
 
   // Phase 22 catalog v2: viewer seats, top-up eligibility, BYO-LLM gating.
@@ -266,7 +266,7 @@ test("usage counter reserve/consume/release math", () => {
 });
 
 test("plan catalog version is stable", () => {
-  assert.equal(PLAN_CATALOG_VERSION, 2);
+  assert.equal(PLAN_CATALOG_VERSION, 3);
 });
 
 test("stored limit overrides keep the plan's value for keys they lack (D5-5)", () => {

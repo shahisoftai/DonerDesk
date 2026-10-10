@@ -5,7 +5,7 @@ export type PlanCode = "STARTER" | "TEAM" | "GROWTH" | "ENTERPRISE";
 export const PLAN_CODES: readonly PlanCode[] = ["STARTER", "TEAM", "GROWTH", "ENTERPRISE"];
 
 /** Bumping this version invalidates persisted catalog-coded snapshots. */
-export const PLAN_CATALOG_VERSION = 2;
+export const PLAN_CATALOG_VERSION = 3;
 
 export interface PlanLimits {
   /** Active projects; null = unlimited (contractual). */
@@ -56,8 +56,8 @@ export const PLAN_CATALOG: Readonly<Record<PlanCode, PlanDefinition>> = {
   TEAM: {
     code: "TEAM",
     name: "Team",
-    monthlyPriceUsd: 129,
-    annualPriceUsd: 1290,
+    monthlyPriceUsd: 79,
+    annualPriceUsd: 790,
     trialDays: 14,
     maxActiveProjects: 5,
     maxSeats: 5,
@@ -70,8 +70,8 @@ export const PLAN_CATALOG: Readonly<Record<PlanCode, PlanDefinition>> = {
   GROWTH: {
     code: "GROWTH",
     name: "Growth",
-    monthlyPriceUsd: 299,
-    annualPriceUsd: 2990,
+    monthlyPriceUsd: 149,
+    annualPriceUsd: 1490,
     trialDays: 14,
     maxActiveProjects: 20,
     maxSeats: 15,

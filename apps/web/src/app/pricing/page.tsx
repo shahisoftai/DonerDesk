@@ -37,44 +37,44 @@ const PLANS = [
   {
     code: "TEAM",
     name: "Team",
-    priceLine: "$129",
+    priceLine: "$79",
     annualLine: TRIALS_ENABLED
-      ? "$1,290 / year (2 months free) · 14-day free trial"
-      : "$1,290 / year (2 months free)",
+      ? "$790 / year (2 months free) · 14-day free trial"
+      : "$790 / year (2 months free)",
     tagline: "For growing teams reporting across several grants or projects.",
     cta: { label: TRIALS_ENABLED ? "Start 14-day trial" : "Choose Team", href: "/signup?plan=team" },
     highlight: true,
     benefits: [
       "Everything in Free, plus:",
-      "$79/mo for verified nonprofits (40% discount)",
+      "$59.25/mo for verified nonprofits (25% welcome discount, first year)",
       "5 active projects with unlimited archived history",
       "5 full seats plus unlimited read-only viewers for field staff, partners, and auditors",
       "20 successful AI report drafts / month, topped up with +50 credit packs ($79) instead of a forced tier jump",
       "AI donor-template extraction: upload a donor's guidelines and get structured sections, mandatory questions, and evidence needs",
       "Full review & approval workflow with claim-level provenance for every number",
       "25 GB managed storage",
-      "Email support · 40% nonprofit discount for qualifying organizations",
+      "Email support · 25% nonprofit welcome discount (first year) for qualifying organizations",
     ],
   },
   {
     code: "GROWTH",
     name: "Growth",
-    priceLine: "$299",
+    priceLine: "$149",
     annualLine: TRIALS_ENABLED
-      ? "$2,990 / year (2 months free) · 14-day free trial"
-      : "$2,990 / year (2 months free)",
+      ? "$1,490 / year (2 months free) · 14-day free trial"
+      : "$1,490 / year (2 months free)",
     tagline: "For organizations with multiple funders and substantial reporting volume.",
     cta: { label: TRIALS_ENABLED ? "Start 14-day trial" : "Choose Growth", href: "/signup?plan=growth" },
     highlight: false,
     benefits: [
       "Everything in Team, plus:",
-      "$179/mo for verified nonprofits (40% discount)",
+      "$111.75/mo for verified nonprofits (25% welcome discount, first year)",
       "20 active projects, 15 full seats, 100 GB managed storage",
       "100 successful AI report drafts / month with +100 credit packs ($149) and a prepaid standing balance — keep generating past the quota instead of stopping",
       "Bring your own AI provider: connect your own LLM keys and your drafts consume zero DonorDesk credits",
       "Table-of-contents-first template extraction with report-wide requirements and section hierarchy",
       "Priority email support and a 30-minute onboarding call",
-      "40% nonprofit discount for qualifying organizations",
+      "25% nonprofit welcome discount (first year) for qualifying organizations",
     ],
   },
   {
@@ -97,9 +97,9 @@ const PLANS = [
 ];
 
 const COMPARISON: { label: string; cells: [Cell, Cell, Cell, Cell] }[] = [
-  { label: "Monthly price", cells: ["$0", "$129", "$299", "Custom"] },
-  { label: "Annual price (2 months free)", cells: ["$0", "$1,290", "$2,990", "From $12,000/yr"] },
-  { label: "NGO price — 40% verified discount", cells: ["—", "$79/mo · $790/yr", "$179/mo · $1,790/yr", "Built into contract"] },
+  { label: "Monthly price", cells: ["$0", "$79", "$149", "Custom"] },
+  { label: "Annual price (2 months free)", cells: ["$0", "$790", "$1,490", "From $12,000/yr"] },
+  { label: "NGO welcome price — 25% off, first year", cells: ["—", "$59.25/mo · $592.50/yr", "$111.75/mo · $1,117.50/yr", "Built into contract"] },
   { label: "Active projects", cells: ["1", "5", "20", "Unlimited / contracted"] },
   { label: "Archived projects", cells: ["Unlimited", "Unlimited", "Unlimited", "Unlimited"] },
   { label: "Full seats", cells: ["1 (owner)", "5", "15", "Unlimited / contracted"] },
@@ -155,7 +155,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Do you offer nonprofit or regional discounts?",
-    a: "Yes. Verified nonprofits receive 40% off paid plans — Team at $79/mo and Growth at $179/mo. Submit your NGO registration number and certificate link from Billing settings and our team reviews it, usually within two business days. Eligible organizations registered in lower-income countries can request regional pricing by contacting sales.",
+    a: "Yes. Verified nonprofits receive 25% off paid plans for their first year — Team at $59.25/mo and Growth at $111.75/mo. Submit your NGO registration number and certificate link from Billing settings and our team reviews it, usually within two business days. Eligible organizations registered in lower-income countries can request regional pricing by contacting sales.",
   },
   {
     q: "What happens if I cancel or downgrade?",
@@ -222,7 +222,7 @@ export default function PricingPage() {
           an immutable audit trail.
           {TRIALS_ENABLED
             ? " Paid plans start with a 14-day free trial — no credit card required."
-            : " Verified nonprofits get 40% off all paid plans."}
+            : " Verified nonprofits get 25% off all paid plans for their first year."}
         </p>
       </section>
 

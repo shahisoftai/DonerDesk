@@ -6,9 +6,9 @@ DonorDesk has four plans: **Starter** (free), **Team**, **Growth** and **Enterpr
 
 | | Starter | Team | Growth | Enterprise |
 |---|---|---|---|---|
-| **Monthly** | $0 | $129 | $299 | Contracted |
-| **Annual** | $0 | $1,290 | $2,990 | Contracted (from $12,000/year) |
-| **Verified nonprofit price** | – | $79/mo · $790/yr | $179/mo · $1,790/yr | Built into contract |
+| **Monthly** | $0 | $79 | $149 | Contracted |
+| **Annual** | $0 | $790 | $1,490 | Contracted (from $12,000/year) |
+| **Verified nonprofit price (first year)** | – | $59.25/mo · $592.50/yr | $111.75/mo · $1,117.50/yr | Built into contract |
 | **Active projects** | 1 | 5 | 20 | Contracted |
 | **Full seats** | 1 | 5 | 15 | Contracted |
 | **Read-only Viewers** | 2 | Unlimited | Unlimited | Unlimited |
@@ -40,7 +40,7 @@ A successful AI draft uses one credit. Fallback (non-AI) output is never billed 
 
 ## Nonprofit discount
 
-Verified nonprofits get 40% off paid plans. Submit your registration details in **Settings → Billing**; the team reviews the request and emails you when it is approved.
+Verified nonprofits get 25% off paid plans for their first year. Submit your registration details in **Settings → Billing**; the team reviews the request and emails you when it is approved.
 
 ## How billing works
 

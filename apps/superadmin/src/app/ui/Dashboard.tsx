@@ -172,7 +172,7 @@ function Billing({ rows, onManagePacks, onSetCredits, onAdjustCredits, onResetCo
 }
 
 function NonprofitVerifications({ rows, busy, onApprove, onReject, onRunByoLlmGrandfather }: any) {
-  return <Resource title="Nonprofit verification queue" description="Pending submissions for the 40% verified nonprofit discount. Approving unlocks the discounted Creem checkout product for that tenant; it never changes plan limits.">
+  return <Resource title="Nonprofit verification queue" description="Pending submissions for the 25% verified nonprofit welcome discount (first year). Approving unlocks the discounted Creem checkout product for that tenant; it never changes plan limits.">
     <div style={{ marginBottom: 12 }}><button onClick={onRunByoLlmGrandfather} disabled={busy}>Run BYO-LLM grandfather migration</button></div>
     {rows.length === 0 && <Empty text="No pending nonprofit verifications." />}
     {rows.length > 0 && <table>
@@ -301,7 +301,7 @@ function TenantTierModal({ row, busy, onClose, onSave, onReset }: any) {
   const storageBytes = limits.maxManagedStorageGb === "" ? null : String(Math.round(Number(limits.maxManagedStorageGb) * 1073741824));
   return <Modal title={`Manage tier — ${row?.name}`} subtitle={`Currently ${row?.planName ?? row?.planCode} via ${pretty(row?.source)}. Manual changes take effect immediately.`} onClose={onClose} wide>
     <FormGrid>
-      {select("Target tier", "planCode", tierPlanCodes, { planCode }, (x: any) => setPlanCode(x.planCode), false, { STARTER: "Starter — free", TEAM: "Team — $129/mo", GROWTH: "Growth — $299/mo", ENTERPRISE: "Enterprise — custom" })}
+      {select("Target tier", "planCode", tierPlanCodes, { planCode }, (x: any) => setPlanCode(x.planCode), false, { STARTER: "Starter — free", TEAM: "Team — $79/mo", GROWTH: "Growth — $149/mo", ENTERPRISE: "Enterprise — custom" })}
       {input("Reason (audit trail)", "reason", { reason }, (x: any) => setReason(x.reason))}
       <label className="check full"><input type="checkbox" checked={customLimits} onChange={e => setCustomLimits(e.target.checked)} /> Override feature allocation for this tenant (within the selected tier)</label>
       {customLimits && <>

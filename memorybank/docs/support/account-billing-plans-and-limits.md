@@ -6,8 +6,8 @@ Your DonorDesk plan sets limits on projects, team seats, storage and AI report d
 
 | Resource | Starter (Free) | Team | Growth | Enterprise |
 |---|---|---|---|---|
-| Price (monthly) | $0 | $129 | $299 | Contracted (from $12,000/year) |
-| Price (annual) | $0 | $1,290 | $2,990 | Contracted |
+| Price (monthly) | $0 | $79 | $149 | Contracted (from $12,000/year) |
+| Price (annual) | $0 | $790 | $1,490 | Contracted |
 | Active projects | 1 | 5 | 20 | Contracted |
 | Archived projects | Unlimited | Unlimited | Unlimited | Unlimited |
 | Full team seats (incl. the Admin who owns the workspace) | 1 | 5 | 15 | Contracted |
@@ -19,7 +19,7 @@ Your DonorDesk plan sets limits on projects, team seats, storage and AI report d
 | SSO / SCIM, custom data residency | – | – | – | Yes |
 | Support | Community | Email | Priority email + onboarding call | SLA + dedicated contact |
 
-Verified nonprofits get **40% off** Team and Growth (see [Nonprofit discount](#nonprofit-discount)).
+Verified nonprofits get **25% off** Team and Growth for their first year (see [Nonprofit discount](#nonprofit-discount)).
 
 ## What each limit counts
 
@@ -63,7 +63,7 @@ Packs are used **after** your monthly plan allowance runs out, and unused credit
 
 ## Nonprofit discount
 
-Verified nonprofits pay **40% less** on paid plans (Team about $79/month, Growth about $179/month).
+Verified nonprofits pay **25% less** on paid plans for their first year (Team $59.25/month or $592.50/year, Growth $111.75/month or $1,117.50/year).
 
 1. Go to **Settings → Billing** and submit the nonprofit verification form (registration number and a link to your registration certificate).
 2. The DonorDesk team reviews it and emails you when it is approved.
