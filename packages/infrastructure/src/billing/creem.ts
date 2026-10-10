@@ -171,7 +171,7 @@ export class CreemBillingProvider implements BillingProvider {
         return { ok: false, error: DomainError.billingProviderUnavailable(`Creem subscription lookup failed (HTTP ${response.status}).`) };
       }
       const data = (await response.json()) as Record<string, unknown>;
-      const mapped = mapSubscriptionObject(data);
+      const mapped = mapSubscriptionObject(data, (productId) => this.recoverPlan(productId));
       if (!mapped) {
         return { ok: false, error: DomainError.billingProviderUnavailable("Creem subscription returned an unexpected payload.") };
       }
@@ -198,7 +198,7 @@ export class CreemBillingProvider implements BillingProvider {
       const createdRaw = payload.created_at;
       const createdAt = typeof createdRaw === "number" ? new Date(createdRaw) : typeof createdRaw === "string" ? new Date(createdRaw) : undefined;
       const object = (payload.object ?? {}) as Record<string, unknown>;
-      const subscription = mapSubscriptionObject(object);
+      const subscription = mapSubscriptionObject(object, (productId) => this.recoverPlan(productId));
       const metadata = extractMetadata(object);
       const productId = String(((object.product ?? {}) as Record<string, unknown>).id ?? object.product_id ?? "");
       const topupSku = this.resolveTopupSku(productId);
@@ -243,6 +243,31 @@ export class CreemBillingProvider implements BillingProvider {
     return this.topupProducts[sku] ?? process.env[CREEM_TOPUP_SKUS[sku].envKey];
   }
 
+  /**
+   * Recover the plan from a provider product id. Creem generates opaque
+   * `prod_...` ids, so the substring heuristic alone cannot be trusted:
+   * first match against every product id this deployment can actually
+   * create a checkout for (constructor config, standard env vars and the
+   * `_NONPROFIT` variants), then fall back to the id substring. Unknown
+   * products fall back to STARTER-safe handling by returning the raw id
+   * (rejected by isPlanCode in the caller).
+   */
+  private recoverPlan(productId: string): string {
+    for (const plan of ["TEAM", "GROWTH"] as const) {
+      for (const interval of ["MONTH", "YEAR"] as const) {
+        const candidates = [
+          this.products[plan]?.[interval],
+          process.env[CREEM_PRODUCT_ENV[plan][interval]],
+          process.env[`${CREEM_PRODUCT_ENV[plan][interval]}_NONPROFIT`],
+        ];
+        if (candidates.includes(productId)) return plan;
+      }
+    }
+    if (productId.includes("team")) return "TEAM";
+    if (productId.includes("growth")) return "GROWTH";
+    return productId;
+  }
+
   private resolveTopupSku(productId: string): CreditPackSku | undefined {
     if (!productId) return undefined;
     return (Object.keys(CREEM_TOPUP_SKUS) as CreditPackSku[]).find((sku) => this.resolveTopupProduct(sku) === productId);
@@ -274,11 +299,11 @@ function extractMetadata(object: Record<string, unknown>): Record<string, unknow
   return undefined;
 }
 
-function mapSubscriptionObject(obj: Record<string, unknown>): ProviderSubscription | undefined {
+function mapSubscriptionObject(obj: Record<string, unknown>, recoverPlan: (productId: string) => string): ProviderSubscription | undefined {
   const id = obj.id;
   const product = (obj.product ?? {}) as Record<string, unknown>;
   const statusRaw = String(obj.status ?? "");
-  const planCode = mapProductToPlan(String(product.id ?? ""));
+  const planCode = recoverPlan(String(product.id ?? ""));
   if (typeof id !== "string" || !isPlanCode(planCode)) return undefined;
 
   return {
@@ -322,16 +347,6 @@ function mapStatus(raw: string): import("@donordesk/domain").BillingSubscription
     default:
       return "ACTIVE";
   }
-}
-
-function mapProductToPlan(productId: string): string {
-  // Allowlisted server-side mapping in resolveProduct; here we recover the
-  // plan from the provider product id when it was configured with a known
-  // suffix. Unknown products fall back to STARTER-safe handling by returning
-  // the raw id (rejected by isPlanCode in the caller).
-  if (productId.includes("team")) return "TEAM";
-  if (productId.includes("growth")) return "GROWTH";
-  return productId;
 }
 
 function toDate(value: unknown): Date | undefined {
