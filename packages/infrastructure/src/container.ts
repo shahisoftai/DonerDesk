@@ -232,6 +232,7 @@ import {
   ListSectionRevisionsHandler,
   ReportGenerationContextBuilder,
   SectionGenerationService,
+  AiCreditGate,
   UpdateAgentMemorySettingsHandler,
   ExtractAgentMemoryHandler,
   ListPendingAgentMemoryHandler,
@@ -324,7 +325,8 @@ import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credent
 import { TolerantDocumentParser } from "./parsers/document-parser.js";
 import { MammothDonorTemplateStructureParser } from "./parsers/donor-template-structure-parser.js";
 import { HttpDonorTemplateWorkerClient } from "./llm/donor-template-worker-client.js";
-import { FallbackTemplateExtractionService, HeuristicTemplateExtractor, LlmTemplateExtractor, TocTemplateExtractor } from "./llm/template-extraction/index.js";
+import { FallbackTemplateExtractionService, HeuristicTemplateExtractor, LlmTemplateExtractor, TemplateExtractionQuota, TEMPLATE_EXTRACTION_OPERATION, TocTemplateExtractor } from "./llm/template-extraction/index.js";
+import { UsageRecordingLlmProvider } from "./llm/usage-recording-provider.js";
 import { CompositeStructuredDocumentParser } from "./parsers/structured/index.js";
 import { StorageTemplateFileStore } from "./storage/template-file-store.js";
 import { NarratorBriefRenderer } from "./llm/narrator-brief-renderer.js";
@@ -1046,6 +1048,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   // organisation with AI disabled, or no configured provider, gets the
   // deterministic extractor. The template is donor guidance (no beneficiary
   // data), and redaction would break source-grounding, so no PII firewall.
+  const templateExtractionQuota = new TemplateExtractionQuota(llmUsage);
   const resolveTemplateLlm = async (tenantId: string): Promise<ILLMProvider | null> => {
     try {
       const org = await organizations.findByTenant(TenantId.create(tenantId));
@@ -1054,8 +1057,14 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       // Same WS-E plan gate as report drafting (fail-closed) — tenant keys
       // must not flow to the extraction path on plans without BYO either.
       const resolved = await gateTenantLlm(tenantResolved, tenantId, "template-extraction");
+      // The daily cap protects the DonorDesk provider; a tenant's own key is not capped.
+      if (resolved?.scope !== "TENANT" && (await templateExtractionQuota.isExceeded(tenantId))) {
+        logger.warn("Template extraction LLM quota reached; using heuristic extraction", { tenantId });
+        return null;
+      }
       const provider = resolved ? createLLMProvider(resolved) : process.env.LLM_PROVIDER ? createLLMProvider() : null;
-      return provider && provider.name !== "stub" ? provider : null;
+      if (!provider || provider.name === "stub") return null;
+      return new UsageRecordingLlmProvider(provider, llmUsage, ids, { tenantId, operationType: TEMPLATE_EXTRACTION_OPERATION, promptId: "template-extractor" });
     } catch (error) {
       logger.warn("Template extraction LLM unavailable; using heuristic extraction", { tenantId, error: error instanceof Error ? error.message : String(error) });
       return null;
@@ -1346,7 +1355,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       ids, drafts, sections, reportPlans, generationRuns,
       new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence),
       new SectionGenerationService(ids, llmUsage, revisionService, assuranceService, audits, reportArtifacts),
-      sectionRegenerationTracker, audits, runInBackground,
+      sectionRegenerationTracker, new AiCreditGate(entitlements, llmUsage, audits, purchasedCreditPacks), audits, runInBackground,
     ),
     reopenReportClaim: new ReopenReportClaimHandler(reportClaims, sections, assuranceService, audits),
     getClaimSuggestion: claimSuggestionHandler,

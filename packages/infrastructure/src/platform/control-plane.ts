@@ -711,7 +711,7 @@ export class PlatformControlPlane {
     org: { id: string; tenantId: string; name: string; aiEnabled: boolean },
     grants: BillingGrantRow[],
     subByTenant: Map<string, BillingSubscriptionRow>,
-    usage: Map<string, { activeProjects: number; archivedProjects: number; seats: number; managedStorageBytes: bigint; aiUsed: bigint; aiReserved: bigint }>,
+    usage: Map<string, { activeProjects: number; archivedProjects: number; seats: number; managedStorageBytes: bigint; aiUsed: bigint; aiReserved: bigint; aiTokens: bigint }>,
     overrides: Map<PlanCode, PlanCatalogOverride>,
     now: Date,
     packs?: { active: number; credits: number; used: number; suspended?: number },
@@ -751,6 +751,7 @@ export class PlatformControlPlane {
       monthlyAiDraftCredits: limits.monthlyAiDraftCredits,
       aiCreditsUsed: Number(counter?.aiUsed ?? 0n),
       aiCreditsReserved: Number(counter?.aiReserved ?? 0n),
+      aiTokensThisMonth: Number(counter?.aiTokens ?? 0n),
       usage: {
         projects: counter?.activeProjects ?? 0,
         archivedProjects: counter?.archivedProjects ?? 0,
@@ -799,14 +800,17 @@ export class PlatformControlPlane {
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
     const tenantFilter = tenantId ? { tenantId } : {};
-    const [projects, archivedProjects, users, storageRows, aiRows] = await Promise.all([
+    const [projects, archivedProjects, users, storageRows, aiRows, tokenRows] = await Promise.all([
       this.prisma.project.groupBy({ by: ["tenantId"], where: { ...tenantFilter, status: { not: "ARCHIVED" } }, _count: { _all: true } }),
       this.prisma.project.groupBy({ by: ["tenantId"], where: { ...tenantFilter, status: "ARCHIVED" }, _count: { _all: true } }),
       this.prisma.user.groupBy({ by: ["tenantId"], where: { ...tenantFilter, status: { in: ["ACTIVE", "INVITED", "SUSPENDED"] } }, _count: { _all: true } }),
       this.query<{ tenantId: string; used: bigint; reserved: bigint }>(`SELECT "tenantId","used","reserved" FROM "UsageCounter" WHERE metric='MANAGED_STORAGE_BYTES' AND "periodStart">=$1 AND "periodStart"<$2`, monthStart, monthEnd),
       this.query<{ tenantId: string; used: bigint; reserved: bigint }>(`SELECT "tenantId","used","reserved" FROM "UsageCounter" WHERE metric='AI_DRAFT_CREDITS' AND "periodStart">=$1 AND "periodStart"<$2`, monthStart, monthEnd),
+      // Provider tokens across every AI operation (sections, template extraction). The
+      // draft-level REPORT_DRAFT row carries no tokens, so nothing is counted twice.
+      this.query<{ tenantId: string; tokens: bigint }>(`SELECT "tenantId", COALESCE(SUM("totalTokens"),0)::bigint AS tokens FROM "LlmRun" WHERE "createdAt">=$1 AND "createdAt"<$2 GROUP BY "tenantId"`, monthStart, monthEnd),
     ]);
-    const empty = () => ({ activeProjects: 0, archivedProjects: 0, seats: 0, managedStorageBytes: 0n, aiUsed: 0n, aiReserved: 0n });
+    const empty = () => ({ activeProjects: 0, archivedProjects: 0, seats: 0, managedStorageBytes: 0n, aiUsed: 0n, aiReserved: 0n, aiTokens: 0n });
     const map = new Map<string, ReturnType<typeof empty>>();
     for (const row of projects) map.set(row.tenantId, { ...empty(), activeProjects: row._count._all });
     for (const row of archivedProjects) {
@@ -828,6 +832,11 @@ export class PlatformControlPlane {
       const entry = map.get(row.tenantId) ?? empty();
       entry.aiUsed = row.used;
       entry.aiReserved = row.reserved;
+      map.set(row.tenantId, entry);
+    }
+    for (const row of tokenRows) {
+      const entry = map.get(row.tenantId) ?? empty();
+      entry.aiTokens = row.tokens;
       map.set(row.tenantId, entry);
     }
     return map;

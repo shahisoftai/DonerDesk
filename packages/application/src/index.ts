@@ -242,6 +242,7 @@ export * from "./use-cases/billing/_usage.js";
 export * from "./services/billing-subscription-synchronizer.js";
 export * from "./services/report-generation-context.js";
 export * from "./services/section-generation-service.js";
+export * from "./services/ai-credit-gate.js";
 export * from "./use-cases/reporting/regenerate-report-section.js";
 export * from "./use-cases/reporting/reopen-report-claim.js";
 export * from "./use-cases/reporting/get-claim-suggestion.js";

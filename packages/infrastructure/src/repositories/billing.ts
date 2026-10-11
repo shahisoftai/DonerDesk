@@ -752,6 +752,11 @@ export class PrismaLlmUsageRepository implements ILlmUsageRepository {
     return ok(count);
   }
 
+  async countRuns(tenantId: string, operationType: string, since: Date): Promise<Result<number, DomainError>> {
+    const count = await this.prisma.llmRun.count({ where: { tenantId, operationType, createdAt: { gte: since } } });
+    return ok(count);
+  }
+
   async listRecent(tenantId: string, operationType: string, limit: number): Promise<Result<import("@donordesk/domain").AiRunRecord[], DomainError>> {
     const rows = await this.prisma.llmRun.findMany({
       where: { tenantId, operationType },

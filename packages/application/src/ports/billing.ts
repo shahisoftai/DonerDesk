@@ -221,6 +221,8 @@ export interface ILlmUsageRepository {
   countSuccessfulReportDrafts(tenantId: string, monthStart: Date): Promise<Result<number>>;
   /** Billable successful REPORT_DRAFT runs backed by a real (non-stub) DonorDesk model in a UTC month (tenant-own-provider runs excluded). */
   countAiReportDrafts(tenantId: string, monthStart: Date): Promise<Result<number>>;
+  /** Runs of one kind recorded for a tenant since `since` (any status), for usage caps. */
+  countRuns(tenantId: string, operationType: string, since: Date): Promise<Result<number>>;
   /** Record a run (success or failure) so cost is always tracked. */
   recordRun(input: {
     id: string;

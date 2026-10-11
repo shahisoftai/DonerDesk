@@ -144,7 +144,7 @@ function Billing({ rows, onManagePacks, onSetCredits, onAdjustCredits, onResetCo
   return <Resource title="Billing & AI credits" description="Per-tenant plan, monthly AI-draft allowance and current usage. Manual grants take effect immediately.">
     <div style={{ marginBottom: 12 }}><button onClick={onOverrideFingerprint}>Clear a trial-abuse fingerprint</button></div>
     <table>
-      <thead><tr><th>Organization</th><th>Plan</th><th>Source</th><th>AI credits / month</th><th>Used this month</th><th>Remaining</th><th>Top-up packs</th><th>Subscription</th><th /></tr></thead>
+      <thead><tr><th>Organization</th><th>Plan</th><th>Source</th><th>AI credits / month</th><th>Used this month</th><th>Remaining</th><th>AI tokens this month</th><th>Top-up packs</th><th>Subscription</th><th /></tr></thead>
       <tbody>{rows.map((r: AnyRow) => {
         const remaining = r.monthlyAiDraftCredits == null ? null : Number(r.monthlyAiDraftCredits) - Number(r.aiCreditsUsed);
         return <tr key={r.tenantId}>
@@ -154,6 +154,7 @@ function Billing({ rows, onManagePacks, onSetCredits, onAdjustCredits, onResetCo
           <td>{r.monthlyAiDraftCredits == null ? "Unlimited" : r.monthlyAiDraftCredits}</td>
           <td>{Number(r.aiCreditsUsed)}{Number(r.aiCreditsReserved) > 0 ? ` (+${r.aiCreditsReserved} reserved)` : ""}</td>
           <td>{remaining == null ? "—" : remaining}</td>
+          <td>{Number(r.aiTokensThisMonth ?? 0).toLocaleString()}</td>
           <td>{r.creditPacks?.active ? `${r.creditPacks.active} active (${r.creditPacks.credits - r.creditPacks.used}/${r.creditPacks.credits} left)${r.creditPacks.suspended ? ` · ${r.creditPacks.suspended} suspended` : ""}` : (r.creditPacks?.suspended ? `${r.creditPacks.suspended} suspended` : "—")}</td>
           <td>{r.subscription ? <span><Badge ok={r.subscription.status === "ACTIVE"}>{pretty(r.subscription.status)}</Badge><small>{pretty(r.subscription.planCode)} · {pretty(r.subscription.interval)}</small></span> : <span className="muted">None</span>}</td>
           <td><div className="row-actions">

@@ -6,3 +6,4 @@ export { analyzeSection } from "./content-analyzer.js";
 export { analyzeRequirements } from "./requirements-analyzer.js";
 export { buildSectionTree, splitNumbering } from "./section-tree.js";
 export { TocTemplateExtractor, TOC_TEMPLATE_EXTRACTION_PROMPT_VERSION, renderOutlineView, validateToc } from "./toc-extractor.js";
+export { TemplateExtractionQuota, TEMPLATE_EXTRACTION_OPERATION, DEFAULT_TEMPLATE_EXTRACTION_DAILY_CALLS } from "./extraction-quota.js";

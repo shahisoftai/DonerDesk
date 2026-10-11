@@ -58,7 +58,7 @@ const draftOf = (overrides = {}) => ({
 // B7 — regenerate one section
 // ---------------------------------------------------------------------------
 
-function buildRegenerate({ sections, draft = draftOf(), generated, runs = [], plan = { sections: [{ templateSectionId: "t1", title: "Project context", inputType: "NARRATIVE", required: true, mandatoryQuestions: [], evidenceNeeds: [] }] } } = {}) {
+function buildRegenerate({ sections, draft = draftOf(), generated, runs = [], meter = false, gate = { assertAvailable: async () => ok(undefined) }, plan = { sections: [{ templateSectionId: "t1", title: "Project context", inputType: "NARRATIVE", required: true, mandatoryQuestions: [], evidenceNeeds: [] }] } } = {}) {
   const calls = { persisted: [], audits: [], drafted: [], finished: [] };
   const store = new Map(sections.map((s) => [s.id, s]));
   const running = new Set();
@@ -70,7 +70,7 @@ function buildRegenerate({ sections, draft = draftOf(), generated, runs = [], pl
     { findByReportingPeriod: async () => ok(plan ? [plan] : []) },
     { findByDraft: async () => ok(runs), create: async (run) => ok(run) },
     {
-      loadBase: async () => ok({ period: { donorTemplateVersion: 1 }, templateVersion: 1, reportingProfileSnapshot: {}, generator: { model: { modelId: "m", promptVersion: 4, modelVersion: "v" } } }),
+      loadBase: async () => ok({ period: { donorTemplateVersion: 1 }, templateVersion: 1, reportingProfileSnapshot: {}, meterPlatformCredits: meter, generator: { model: { modelId: "m", promptVersion: 4, modelVersion: "v" } } }),
       loadInputs: async () => ok({ verifiedFindings: [], indicatorUpdateIds: [], activityIds: [], evidenceIds: [], evidencePackages: [], indicatorUpdates: [], activities: [], reportContext: {} }),
     },
     {
@@ -91,6 +91,7 @@ function buildRegenerate({ sections, draft = draftOf(), generated, runs = [], pl
       },
       runningAmong: (ids) => ids.filter((id) => running.has(id)),
     },
+    gate,
     { record: async (e) => { calls.audits.push(e.eventType); return ok(undefined); } },
     (task) => tasks.push(task()),
   );
@@ -111,6 +112,23 @@ test("B7: regenerates one section with the instruction and every other section a
   assert.equal(calls.persisted[0].changeOrigin, "REGENERATION");
   assert.deepEqual(calls.audits, ["report.section.regeneration_requested", "report.section.regenerated"]);
   assert.deepEqual(calls.finished, ["s1"]);
+});
+
+test("B7: regeneration is refused, and nothing starts, when the tenant is out of AI credits", async () => {
+  const exhausted = { assertAvailable: async () => ({ ok: false, error: { code: "AI_CREDITS_EXHAUSTED", message: "out" } }) };
+  const { handler, calls, running } = buildRegenerate({ sections: [section()], generated: aiText, meter: true, gate: exhausted });
+  const result = await handler.handle(ctx(), "s1", {});
+  assert.equal(result.ok, false);
+  assert.equal(result.error.code, "AI_CREDITS_EXHAUSTED");
+  assert.equal(calls.drafted.length, 0);
+  assert.equal(running.has("s1"), false, "the section must be released");
+});
+
+test("B7: a tenant on its own provider is never credit-gated", async () => {
+  const exhausted = { assertAvailable: async () => { throw new Error("gate must not be consulted"); } };
+  const { handler, settle } = buildRegenerate({ sections: [section()], generated: aiText, meter: false, gate: exhausted });
+  assert.ok((await handler.handle(ctx(), "s1", {})).ok);
+  await settle();
 });
 
 test("B7: a fallback keeps the previous text and records a failed run", async () => {

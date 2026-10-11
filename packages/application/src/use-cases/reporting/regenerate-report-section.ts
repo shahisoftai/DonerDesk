@@ -20,6 +20,7 @@ import type {
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { ReportGenerationContextBuilder, GenerationBase, GenerationInputs } from "../../services/report-generation-context.js";
 import type { SectionGenerationService } from "../../services/section-generation-service.js";
+import type { AiCreditGate } from "../../services/ai-credit-gate.js";
 import { fireAndForget, type BackgroundRunner } from "../../services/background-runner.js";
 
 export interface RegenerateSectionInput {
@@ -70,8 +71,9 @@ export function planSectionFor(plan: ReportPlan | undefined, section: Pick<Repor
  * The previous text is never lost: the new text is a new revision
  * (`REGENERATION`), and when the writer falls back or times out the section
  * keeps its current text and the run is recorded as failed. An approved
- * section is reopened (its approval covered the old text). Not metered;
- * rate-limited per draft.
+ * section is reopened (its approval covered the old text). Not charged a
+ * credit, but refused once a tenant on the DonorDesk provider is out of AI
+ * credits (`AiCreditGate`); rate-limited per draft.
  */
 export class RegenerateReportSectionHandler {
   constructor(
@@ -83,6 +85,7 @@ export class RegenerateReportSectionHandler {
     private readonly context: ReportGenerationContextBuilder,
     private readonly sectionGeneration: SectionGenerationService,
     private readonly tracker: ISectionRegenerationTracker,
+    private readonly creditGate: AiCreditGate,
     private readonly audit: IAuditLogger,
     private readonly runInBackground: BackgroundRunner = fireAndForget,
   ) {}
@@ -120,6 +123,10 @@ export class RegenerateReportSectionHandler {
     try {
       const baseResult = await this.context.loadBase(ctx, draft.reportingPeriodId);
       if (!baseResult.ok) return this.release(sectionId, baseResult);
+      if (baseResult.value.meterPlatformCredits) {
+        const credits = await this.creditGate.assertAvailable(ctx.tenant.tenantId, ctx.tenant.userId);
+        if (!credits.ok) return this.release(sectionId, credits);
+      }
       const inputsResult = await this.context.loadInputs(ctx, draft.reportingPeriodId, baseResult.value);
       if (!inputsResult.ok) return this.release(sectionId, inputsResult);
       const plansResult = await this.plans.findByReportingPeriod(draft.reportingPeriodId, ctx.tenant.tenantId);
