@@ -37,6 +37,14 @@ export class SignUpHandler {
   ) {}
 
   async handle(cmd: SignUpCommand): Promise<Result<{ userId: string; tenantId: string; token: string; plan: string; trialGranted: boolean }, DomainError>> {
+    // Login resolves a user by email alone, so a second workspace under the same
+    // email would shadow the existing one.
+    const existing = await this.users.findByEmailGlobal(cmd.email.trim().toLowerCase());
+    if (!existing.ok) return existing;
+    if (existing.value) {
+      return { ok: false, error: DomainError.conflict("An account with this email already exists. Sign in instead.") };
+    }
+
     const passwordHash = await this.auth.hashPassword(cmd.password);
     const provisioned = await this.provisioner.handle({
       name: cmd.name,

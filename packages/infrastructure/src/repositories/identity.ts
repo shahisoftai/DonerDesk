@@ -232,7 +232,7 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async findByEmailGlobal(email: string): Promise<Result<User | null, DomainError>> {
-    const row = await this.prisma.user.findFirst({ where: { email: email.toLowerCase() } });
+    const row = await this.prisma.user.findFirst({ where: { email: email.toLowerCase() }, orderBy: { createdAt: "asc" } });
     if (!row) return ok(null);
     return ok(this.toDomain(row));
   }
