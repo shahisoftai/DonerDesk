@@ -53,9 +53,9 @@ Story: Feb start-up (contractor, Ramadan), Mar first boreholes, Apr Mafa road cl
 | 22 | H | Final report checks | "Confidential information needs review - A confidential source is cited without authorisation" is a **Must fix** blocker, but no source is named and none is cited: the gate is raised by the open checklist item "Sensitive data handling confirmed" (`approve-report.ts` `openSensitive` → CONFIDENTIALITY_VIOLATION). Its button "Review confidentiality" opens the unfiltered evidence library (cannot help). Real fix is resolving the checklist item on the Compliance page. Demo 7 #(Review confidentiality) fix is not visible here | Open |
 | 23 | M | Checklist | "No activity updates submitted for this period" stayed open on the Final period although 3 accepted September activities exist (recorded before the period existed); "Final report sign-off obtained" (Critical) must be resolved before the report can be submitted for approval, i.e. before the sign-off exists | Open |
 | 24 | L | Final text | "Lake Chad Basin **Resilient** Fund" (name mangled in section 2); exec summary says "2,600 of 2,500 households" and picks "Change from previous period: WS-OC1a 58 → 72" for a final; "the only outcome recorded as positive against plan" is not true of the other outcome rates | Open |
-| 25 | M | Indicator spreadsheet (Final) | The "% of target" column shows 117% for the lower-is-better diarrhoea rate (21 vs target 18) and 96% / 95% / 98% for the rate indicators, although the report table shows "—" for rates (demo 7 rule) and the "Life of project to date" column is empty for rates | Open |
+| 25 | M | Indicator spreadsheet (Final) | The "% of target" column shows 117% for the lower-is-better diarrhoea rate (21 vs target 18) and 96% / 95% / 98% for the rate indicators, although the report table shows "—" for rates (demo 7 rule). (My first note also said the life-of-project cell was empty for rates: wrong, it holds the value) | Open |
 | 26 | M | Evidence checklist CSV (donor copy) | The sealed donor "Evidence checklist" lists each compliance item with its **Resolution Notes** verbatim: the internal attestation text, which names the highly sensitive March safety audit and says "(demo run)", is in a file meant for the donor | Open |
-| 27 | M | Evidence package (ZIP, Final) | 10 KB with 5 entries (README, index.csv, checklist, sections.json, indicators.json): no evidence files inside, and index.csv lists only the 9 September files although a roll-up report "covers the project's evidence" (43 files) | Open |
+| 27 | M | Evidence package (ZIP, Final) | 10 KB with 5 entries (README, index.csv, checklist, sections.json, indicators.json): no evidence files inside (index.csv correctly listed all 47 files; my first note said 9, wrong) | Open |
 | 28 | L | Withdrawn activities | The three withdrawn "(corrected import)" records still appear in the evidence "Link to…" lists and the project overview counts 27 activities (24 real + 3 withdrawn) | Open |
 | 29 | L | Evidence for early-recorded activities | A September file shows reporting period "Not linked" in the library: evidence inherits its activity's period, and the activity had none when it was recorded | Info |
 | + | - | Project completion | "Mark completed" (Settings) closed the project: banner "Completed — no new reports", overview shows 7 approved reports, readiness 100%, "what changed in the last day" (approved 3 times, 5 checklist items resolved, 5 closed by data, 10 compliance statements saved) | OK |
@@ -80,3 +80,38 @@ grounding 1 (invented cause for finance, "no illnesses recorded"), honesty 2, te
 4. #6/#7 "Re-check affected sections" does not rebuild a table built before values were verified; generation with 0 verified values proceeds without a confirmation.
 5. #10 per-outcome sub-sections print the same outcome table; #11 finance prose ("in the quarter", invented cause, no thousands separators).
 6. #25-#27 export defects (rate % of target, internal notes in the donor checklist, evidence ZIP without files).
+
+
+## Fixes and status (2026-10-14, after the run)
+
+**Plan and invariants:** [`../imp/phase27-demo8-fixes.md`](../imp/phase27-demo8-fixes.md); rules in AGENTS.md "Phase 27 invariants". Version 2.002, branch `0012-demo8-fixes`, merged by fast-forward into `master` (both on GitHub at `94f1c6a`).
+
+### What was fixed, by finding
+| Findings | Fix |
+|---|---|
+| 15, 16, 17, 18, 20 (situation report; the "figure ignored" was my empty Group field dropped silently) | Scope text becomes record chunks so the lint and claim check accept it; `scopeProblems` flags half-filled rows and long needs; field-labelled validation text; optional "Event started on"; empty indicator grid says why |
+| 20, 23 (September activities in the wrong period) | Root cause: the activity form preselected the first listed period when no period covered the date. Now nothing is preselected and the person must choose |
+| 9, 22, 8 (blockers) | The confidentiality gate names its cause (open checklist item) and opens the checklist; Approve is hidden when the second-approver rule would refuse |
+| 13, 14, 28 (activities) | Accepted records can be reopened or withdrawn unless an approved report used them (`IActivityApprovalGuard`); logframe link editable on resubmit; withdrawn records not counted or offered; import column "Logframe Code (Output or Activity)" and a warning for rows without a code |
+| 6, 7 (stale draft, empty generation) | "Rewrite affected sections" (confirmed) beside "Re-check statements only"; confirmation when no indicator value is verified |
+| 10, 11, 12, 19, 24 (report text) | Per-outcome tables (`outcomeCode`), not-due indicators are not "not measured", finance stated as cumulative with separators, writer rules for file stems and exact names, `restore_proper_names`, no previous-period delta in roll-ups, more workflow vocabulary |
+| 25, 26, 27 (exports) | Rates show "—" in the workbook; donor checklist has no resolution notes; the evidence pack contains the files (150 MB cap, README lists what was left out) |
+| 1, 2, 3 (first run) | Suggestion hints in the wizard; forms disabled until hydrated, second-approver toggle says "Saved"; Terms accepted on the invite page |
+| 4, 5 | Covered by the vocabulary/stem rules (4) and left as information (5) |
+
+### Verification
+- Tests: contracts 13, domain 527, application 462, infrastructure 340 (+1 skipped), web unit 280, worker 210; `pnpm -r typecheck` clean. API tests needing a database were not run.
+- Production (release 20261014132934, then 20261014144856 for the writer-wording fix and the support articles; worker contract v5), checked in the visible browser: accepted-record guard refuses and names both approved reports; Final export re-run (donor checklist without notes, evidence ZIP with 47 files, rates "—"); activity form starts with no period and asks; situation form flags a half-filled row and a 230-character need; a situation report now uses the affected-households figure with its source and date and the check accepts it.
+- Not verified live: the rewrite banner, the generation confirmation, per-outcome tables and the finance wording (covered by unit tests; need a fresh quarterly report with data).
+- One leak seen live after the first deploy ("sought from the reporting officer") was added to the workflow vocabulary and shipped in the second release; not re-checked.
+
+### Still open
+- A preview before the activity import creates records.
+- Finding 5 (label "To do" glued to the compliance statement title) and the checks-panel wording are unchanged.
+
+### Support articles
+Updated for these changes: log activities, review and accept activities, review and approve reports, export reports, create a reporting period, create the closing report, invite team members, data import/export, glossary, and the indicator-data and report-generation troubleshooting pages.
+
+### Clean-up
+Removed after the run: local logs, screenshots and state files, one-off debug scripts, throwaway report dumps, the temporary Chromium profiles and the file holding the demo users' passwords. Kept: this log, the reusable scripts and generated inputs in `scripts/demo-wash-ng/`, and the downloaded reports in `verification-demo-8-artifacts/`.
+**Left on production:** project `[DEMO-8] … BORNO-WASH` (completed, 7 approved reports), the demo users `ibrahim.kyari.demo@example.org` and `zainab.lawan.demo@example.org`, and the scratch situation report `[VERIFY-2.002] Flooding in Jere` in the `[P25-CHECK]` project. Delete them in the app when no longer needed.
