@@ -48,6 +48,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const navItems: Array<{ href: string; label: string }> = [{ href: "/dashboard", label: "Home" }, { href: "/my-work", label: "My Work" }];
   navItems.push({ href: "/projects", label: "Projects" });
   navItems.push({ href: "/reports", label: "Reports" });
+  navItems.push({ href: "/downloads", label: "Download Center" });
   navItems.push({ href: "/evidence", label: "Evidence" });
   navItems.push({ href: "/compliance", label: "Compliance" });
   if (hasCapability(ctx, "team.manage") || hasCapability(ctx, "team.invite")) {

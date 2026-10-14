@@ -818,6 +818,7 @@ export const ChecklistResponseSchema = z.object({ items: z.array(ChecklistItemSc
 
 export const ExportItemSchema = z.object({
   id: z.string(),
+  reportingPeriodId: z.string().optional(),
   exportType: z.string(),
   fileUrl: z.string(),
   /** Readable download name (project, report kind, period, version); absent for old rows the API cannot name. */
