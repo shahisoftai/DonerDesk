@@ -107,6 +107,30 @@ def _has_life_of_project(req: SectionDraftRequest) -> bool:
 _OUTCOME_LEVELS = {"GOAL", "OUTCOME"}
 
 
+_OUTCOME_NUMBER_RE = re.compile(r"\boutcome\s*(\d+)\b")
+
+
+def _digits(code: str | None) -> str | None:
+    """The number inside an outcome code (O1 -> 1, "Outcome 2" -> 2), or None."""
+    found = re.findall(r"\d+", code or "")
+    return found[0].lstrip("0") or "0" if found else None
+
+
+def _per_outcome_findings(findings: list[Finding], section_title: str) -> list[Finding] | None:
+    """A section named for one outcome ("Outcome 2: ...") shows only that outcome's indicators.
+
+    Both "Outcome 1" and "Outcome 2" sub-sections used to match `"outcome" in title` and print the same rows (demo 8).
+    The owning outcome comes from the finding's `outcomeCode`; None means this rule does not apply and the level-based
+    split below decides.
+    """
+    match = _OUTCOME_NUMBER_RE.search(section_title)
+    if not match or not any(f.outcomeCode for f in findings):
+        return None
+    wanted = match.group(1).lstrip("0") or "0"
+    own = [f for f in findings if _digits(f.outcomeCode) == wanted]
+    return own or None
+
+
 def _scoped_findings(req: SectionDraftRequest) -> list[Finding]:
     """When a report has both an outcome section and an output section, each table keeps its own level.
 
@@ -120,6 +144,9 @@ def _scoped_findings(req: SectionDraftRequest) -> list[Finding]:
     titles = [t.lower() for t in (structure.sectionTitles if structure else [])]
     mine = (req.section.canonicalTitle or req.section.title or "").lower()
     is_outcome = "outcome" in mine or "impact" in mine
+    numbered = _per_outcome_findings(findings, mine)
+    if numbered is not None:
+        return numbered
     other_outcome = any(("outcome" in t or "impact" in t) and t != mine for t in titles)
     if is_outcome:
         scoped = [f for f in findings if (f.logframeLevel or "").upper() in _OUTCOME_LEVELS]
@@ -222,6 +249,10 @@ def is_cumulative_section(req: SectionDraftRequest, kind: str) -> bool:
 
 
 def period_delta(req: SectionDraftRequest) -> DeltaPayload | None:
+    # A roll-up report (semi-annual, annual, final) states progress since the project started; "change from the previous
+    # period" is a monthly or quarterly idea and read oddly at the top of a final report (demo 8).
+    if _has_life_of_project(req):
+        return None
     for f in req.verifiedFindings:
         if _not_calculable(f) or f.comparisonValue is None:
             continue

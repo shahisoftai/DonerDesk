@@ -13,6 +13,7 @@ deterministically by `artifact_builder`, so the model no longer re-types them.
 from __future__ import annotations
 
 import json
+import re
 import os
 import threading
 from typing import Any
@@ -72,6 +73,30 @@ def _object_block(title: str, obj: Any) -> str:
     return f"# {title} (JSON):\n" + json.dumps(obj.model_dump(exclude_none=True), ensure_ascii=False)
 
 
+_MONEY_KEYS = {"budget", "expenditure", "committed", "balance"}
+
+
+def _with_thousands(value: Any) -> Any:
+    """295000 -> "295,000" (decimals kept). The grounding check strips commas, so the number is still the input's."""
+    text = str(value)
+    if not re.fullmatch(r"-?\d{4,}(?:\.\d+)?", text):
+        return value
+    whole, _, fraction = text.partition(".")
+    return f"{int(whole):,}" + (f".{fraction}" if fraction else "")
+
+
+def _finance_block(title: str, finance: Any) -> str:
+    """The finance block with amounts written the way the report should write them, and the basis stated once."""
+    data = finance.model_dump(exclude_none=True)
+    for key in _MONEY_KEYS & data.keys():
+        data[key] = _with_thousands(data[key])
+    for line in data.get("lines", []):
+        for key in _MONEY_KEYS & line.keys():
+            line[key] = _with_thousands(line[key])
+    data["basis"] = "Expenditure is cumulative to the end of the period; balance and burn rate are against the whole budget."
+    return f"# {title} (JSON):\n" + json.dumps(data, ensure_ascii=False)
+
+
 def build_user_prompt_parts(req: SectionDraftRequest) -> tuple[str, str]:
     """(report-wide prefix, section-specific suffix) of the user prompt.
 
@@ -129,7 +154,7 @@ def _shared_prompt(req: SectionDraftRequest) -> str:
 
     if ctx.finance:
         parts.append(
-            _object_block("Financial figures (verified; the only financial numbers you may quote)", ctx.finance)
+            _finance_block("Financial figures (verified; the only financial numbers you may quote)", ctx.finance)
         )
 
     if ctx.structure and (ctx.structure.sectionTitles or ctx.structure.indicatorCodes):

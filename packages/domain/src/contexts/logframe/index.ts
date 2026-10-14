@@ -14,3 +14,4 @@ export * from "./participants-consistency.js";
 export * from "./activity-delivery.js";
 export * from "./indicator-entry-suggestions.js";
 export * from "./setup-copy.js";
+export * from "./owning-outcome.js";

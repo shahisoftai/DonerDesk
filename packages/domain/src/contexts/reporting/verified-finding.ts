@@ -91,6 +91,11 @@ export interface VerifiedFinding {
   reportingPeriodId: string;
   /** Logframe level of the indicator's item (GOAL, OUTCOME, OUTPUT, ...); lets a report keep outcome and output tables apart. */
   level?: string;
+  /** The outcome the indicator's item belongs to (itself, or its nearest outcome ancestor); see `owningOutcome`. */
+  outcomeCode?: string;
+  /** The indicator's measurement frequency (free text), so a report can tell "not due" from "not measured". */
+  frequency?: string;
+  outcomeTitle?: string;
   comparisonPeriodId?: string;
   sourceRecordIds: string[];
   qualityFlags: FindingQualityFlag[];

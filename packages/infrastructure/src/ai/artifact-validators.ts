@@ -335,6 +335,8 @@ const INTERNAL_ID_PATTERNS: readonly RegExp[] = [
   // File names quoted without their extension: numbered stems with an activity code ("01-A1.3-attendance") and snake_case stems.
   /\b\d{1,3}-[A-Z]\d+(?:\.\d+)*-[a-z][\w-]*\b/g,
   /\b[A-Za-z0-9]+(?:_[A-Za-z0-9]+)+\b/g,
+  // Hyphenated document stems without a number ("sit-flood-photo", "water-quality-log"): at least three words ending in a document noun.
+  /\b[a-z][a-z0-9]*(?:-[a-z][a-z0-9]*){1,}-(?:photo|attendance|register|certificate|log|list|assessment|minutes|checklist|extract|audit|summary|file|scan)\b/g,
 ];
 
 /** Internal ids, hex ids and file names present in donor text (first occurrences, de-duplicated). */

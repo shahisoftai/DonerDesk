@@ -223,6 +223,9 @@ class Finding(BaseModel):
     indicatorType: str | None = None
     # GOAL / OUTCOME / OUTPUT / ACTIVITY level of the indicator's logframe item (keeps outcome and output tables apart).
     logframeLevel: str | None = None
+    # The outcome the indicator belongs to (its own item or nearest outcome ancestor): keeps one section per outcome apart.
+    outcomeCode: str | None = None
+    outcomeTitle: str | None = None
     calculationMethod: str | None = None
     baseline: str | float | None = None
     target: str | float | None = None

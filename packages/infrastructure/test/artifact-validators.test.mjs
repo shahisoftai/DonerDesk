@@ -247,6 +247,10 @@ const INTERNAL_ID_CASES = [
   ["The team kept good record-keeping and evidence of attendance.", false],
   ["Award number 72062326CA00001 funds the work, signed on 20260927150000.", false],
   ["Counselling reached 142 caregivers; a PDF summary was shared with the ministry.", false],
+  ["The rapid assessment (sit-flood-rapid-assessment) and a photo (sit-flood-photo) were attached.", true],
+  ["Results are in the water-quality-log kept by the committee.", true],
+  ["A door-to-door survey and a follow-up visit were completed.", false],
+  ["The team used an up-to-date list of households.", false],
 ];
 
 test("assertNoInternalIds flags ids, uuids and file names and nothing else (mirrors the worker)", () => {

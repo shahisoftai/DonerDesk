@@ -1,5 +1,5 @@
 import type { FinanceSummaryView, Result, Project, ReportingPeriod, ReportScope, TemplateSection, VerifiedFinding } from "@donordesk/domain";
-import { DomainError, partitionFindings, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
+import { DomainError, partitionFindings, isDueInPeriod, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
 import { taggedEvidenceIds } from "./period-evidence.js";
 import { resolveGenerationActivities, resolvePeriodActivities, scopeIndicatorData } from "./period-activities.js";
 import type { AuthenticatedContext } from "../context.js";
@@ -250,7 +250,7 @@ export class ReportGenerationContextBuilder {
       ok: true,
       value: {
         verifiedFindings,
-        notMeasured: scopeNotMeasured(withoutFigure, scoped.findings),
+        notMeasured: scopeNotMeasured(withoutFigure, scoped.findings, { projectStart: project.duration.start, periodEnd: period.duration.end, isFinalPeriod: period.reportType === "FINAL" }),
         indicatorUpdateIds: updatesResult.value.map((u) => u.id),
         activityIds: activitiesResult.value.map((a) => a.id),
         evidenceIds,
@@ -350,12 +350,19 @@ export function buildTemplateGenerationContext(template: PeriodTemplateSnapshot)
 }
 
 /** The in-scope indicators that have no figure, for the writer's "not measured" line (those already reported are excluded). */
-function scopeNotMeasured(
+/**
+ * Indicators with no figure that *were due* in this period. One that is not due (a quarterly survey in a month it is
+ * not measured, an annual indicator before the final month) is simply absent: telling the writer it "was not measured"
+ * made reports apologise for things nobody expected yet.
+ */
+export function scopeNotMeasured(
   withoutFigure: ReadonlyArray<VerifiedFinding>,
   reported: ReadonlyArray<VerifiedFinding>,
+  window: { projectStart: Date; periodEnd: Date; isFinalPeriod: boolean },
 ): Array<{ indicatorCode: string; indicatorName?: string; frequency?: string }> {
   const reportedIds = new Set(reported.map((f) => f.indicatorId));
   return withoutFigure
     .filter((f) => !reportedIds.has(f.indicatorId))
+    .filter((f) => isDueInPeriod(f.frequency, { projectStart: window.projectStart, periodEnd: window.periodEnd }, { isFinalPeriod: window.isFinalPeriod }))
     .map((f) => ({ indicatorCode: f.indicatorCode, ...(f.indicatorName ? { indicatorName: f.indicatorName } : {}) }));
 }

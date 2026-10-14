@@ -159,6 +159,9 @@ export function FinanceInputs({
       {!readOnly && initial.mode === "TYPED" && (
         <form onSubmit={submitTyped} className="card space-y-4" noValidate>
           <h2 className="font-semibold">{summary ? "Change the figures" : "Enter the figures"}</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Enter <strong className="font-medium">expenditure to date</strong>: everything spent from the project start to the end of this report&apos;s period, against the whole budget. The balance and burn rate are worked out from it, and the report says &ldquo;to date&rdquo;.
+          </p>
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Currency" htmlFor="financeCurrency" hint="3-letter code, e.g. USD">
               <Input id="financeCurrency" value={currency} maxLength={3} onChange={(e) => setCurrency(e.target.value)} />

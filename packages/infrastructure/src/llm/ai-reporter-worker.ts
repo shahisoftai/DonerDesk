@@ -161,6 +161,9 @@ export interface AiReporterFinding {
   indicatorName?: string;
   indicatorType?: string;
   logframeLevel?: string;
+  /** The outcome the indicator belongs to, so a per-outcome section shows only its own indicators. */
+  outcomeCode?: string;
+  outcomeTitle?: string;
   calculationMethod?: string;
   baseline?: string | number | null;
   target?: string | number | null;

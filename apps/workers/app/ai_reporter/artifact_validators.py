@@ -315,6 +315,8 @@ _INTERNAL_ID_PATTERNS: tuple[re.Pattern[str], ...] = (
     # File names quoted without their extension: numbered stems with an activity code ("01-A1.3-attendance") and snake_case stems.
     re.compile(r"\b\d{1,3}-[A-Z]\d+(?:\.\d+)*-[a-z][\w-]*\b"),
     re.compile(r"\b[A-Za-z0-9]+(?:_[A-Za-z0-9]+)+\b"),
+    # Hyphenated document stems without a number ("sit-flood-photo", "water-quality-log"): at least three words ending in a document noun.
+    re.compile(r"\b[a-z][a-z0-9]*(?:-[a-z][a-z0-9]*){1,}-(?:photo|attendance|register|certificate|log|list|assessment|minutes|checklist|extract|audit|summary|file|scan)\b"),
 )
 
 

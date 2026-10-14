@@ -39,3 +39,18 @@ def test_activity_record_accepts_an_end_date_and_the_writer_rule_mentions_it() -
     a = Activity(title="Outreach clinics", date="2026-02-01", endDate="2026-02-28")
     assert a.model_dump(exclude_none=True)["endDate"] == "2026-02-28"
     assert any("endDate" in r for r in writer_contract._WRITER_RULES_V5_ADDITIONS)
+
+
+def test_a_mangled_donor_name_is_restored_exactly() -> None:
+    from app.ai_reporter.scrub import restore_proper_names
+
+    donor = "Lake Chad Basin Resilience Fund"
+    assert restore_proper_names("Funded by the Lake Chad Basin Resilient Fund under grant X.", [donor]) == "Funded by the Lake Chad Basin Resilience Fund under grant X."
+    assert restore_proper_names("Funded by the Lake Chad Basin Resilience Fund.", [donor]) == "Funded by the Lake Chad Basin Resilience Fund."
+
+
+def test_short_names_and_unrelated_phrases_are_left_alone() -> None:
+    from app.ai_reporter.scrub import restore_proper_names
+
+    assert restore_proper_names("The Global Fund paid.", ["Global Fund"]) == "The Global Fund paid."
+    assert restore_proper_names("Lake Chad Basin communities were reached.", ["Lake Chad Basin Resilience Fund"]) == "Lake Chad Basin communities were reached."

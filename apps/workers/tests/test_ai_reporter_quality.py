@@ -417,6 +417,10 @@ INTERNAL_ID_CASES = [
     ("The team kept good record-keeping and evidence of attendance.", False),
     ("Award number 72062326CA00001 funds the work, signed on 20260927150000.", False),
     ("Counselling reached 142 caregivers; a PDF summary was shared with the ministry.", False),
+    ("The rapid assessment (sit-flood-rapid-assessment) and a photo (sit-flood-photo) were attached.", True),
+    ("Results are in the water-quality-log kept by the committee.", True),
+    ("A door-to-door survey and a follow-up visit were completed.", False),
+    ("The team used an up-to-date list of households.", False),
 ]
 
 
@@ -534,3 +538,50 @@ def test_without_levels_every_indicator_is_shown() -> None:
     req = _req(title="Progress Against Expected Results", inputType="INDICATOR_TABLE")
     built = artifact_builder.indicator_table(req)
     assert built and all(f.indicatorCode in built[1] for f in req.verifiedFindings)
+
+
+def _per_outcome_req(title: str):
+    from app.ai_reporter.models import ContextStructure, Finding
+
+    req = _req(title=title, inputType="INDICATOR_TABLE")
+    req.verifiedFindings = [
+        Finding(indicatorCode="OC1a", indicatorName="Water use", indicatorType="PERCENTAGE", unit="%", value=58, target=75, logframeLevel="OUTCOME", outcomeCode="O1"),
+        Finding(indicatorCode="OP1.1", indicatorName="Water points", indicatorType="NUMBER", unit="points", value=6, target=20, logframeLevel="OUTPUT", outcomeCode="O1"),
+        Finding(indicatorCode="OC2a", indicatorName="Handwashing", indicatorType="PERCENTAGE", unit="%", value=41, target=60, logframeLevel="OUTCOME", outcomeCode="O2"),
+        Finding(indicatorCode="OP2.1", indicatorName="People reached", indicatorType="NUMBER", unit="people", value=9200, target=24000, logframeLevel="OUTPUT", outcomeCode="O2"),
+    ]
+    req.context.structure = ContextStructure(sectionTitles=["Results by Outcome", "Outcome 1: Safe water", "Outcome 2: Hygiene"], indicatorCodes=["OC1a", "OP1.1", "OC2a", "OP2.1"])
+    return req
+
+
+def test_each_outcome_subsection_shows_only_its_own_indicators() -> None:
+    one = artifact_builder.indicator_table(_per_outcome_req("Outcome 1: Safe water"))
+    two = artifact_builder.indicator_table(_per_outcome_req("Outcome 2: Hygiene"))
+    assert one and "OC1a" in one[1] and "OP1.1" in one[1] and "OC2a" not in one[1] and "OP2.1" not in one[1]
+    assert two and "OC2a" in two[1] and "OP2.1" in two[1] and "OC1a" not in two[1]
+
+
+def test_an_unnumbered_outcome_section_still_uses_the_level_split() -> None:
+    req = _per_outcome_req("Results by Outcome")
+    built = artifact_builder.indicator_table(req)
+    assert built and "OC1a" in built[1] and "OC2a" in built[1]
+
+
+def test_a_roll_up_report_has_no_previous_period_delta() -> None:
+    from app.ai_reporter.models import Finding, LifeOfProject
+
+    req = _req(title="Executive Summary")
+    req.verifiedFindings = [Finding(indicatorCode="OC1a", indicatorType="PERCENTAGE", unit="%", value=72, comparisonValue=58, lifeOfProject=LifeOfProject(value="72", basis="LATEST"))]
+    assert artifact_builder.period_delta(req) is None
+    req.verifiedFindings = [Finding(indicatorCode="OC1a", indicatorType="PERCENTAGE", unit="%", value=72, comparisonValue=58)]
+    assert artifact_builder.period_delta(req) is not None
+
+
+def test_finance_block_uses_thousands_separators_and_states_the_basis() -> None:
+    from app.ai_reporter.draft_writer import _finance_block
+    from app.ai_reporter.models import ContextFinance, FinanceLine
+
+    block = _finance_block("Financial figures", ContextFinance(currency="USD", budget="720000", expenditure="295000", balance="425000", burnRatePercent="41", lines=[FinanceLine(budgetLine="Water", budget="260000", expenditure="118000", balance="142000")]))
+    assert '"expenditure": "295,000"' in block and '"budget": "720,000"' in block and '"balance": "142,000"' in block
+    assert "cumulative to the end of the period" in block
+    assert '"burnRatePercent": "41"' in block

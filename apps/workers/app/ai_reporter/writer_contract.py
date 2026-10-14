@@ -57,6 +57,17 @@ WORKFLOW_VOCABULARY: list[str] = [
     "evaluation for each is neutral",
     "finding could not be calculated",
     "disaggregation list",
+    "the reporting officer's account",
+    "the reporting officer recorded",
+    "reporting officer's statement",
+    "officer's statement",
+    "the inputs contain",
+    "inputs contain no",
+    "recorded in the situation context",
+    "input activity reports",
+    "this section's evidence",
+    "supplied with this report",
+    "were not recorded in this reporting cycle",
 ]
 
 BANNED_PHRASES: list[str] = [
@@ -307,6 +318,9 @@ _WRITER_RULES_V5_ADDITIONS: list[str] = [
     "A finding whose performanceEvaluation type is NEUTRAL is to be described plainly without praise or criticism; never mention the evaluation, the word neutral or a performance judgement in the text.",
     "An activity record has a date, and an endDate when it covers a span: write \"from <date> to <endDate>\" or \"during the month\" for a span. When there is no endDate and its figures are monthly totals (clinics held, women reached, households assisted), say they happened during the month and never on that date.",
     "Give a previous-period value only beside its own indicator, as in \"56 percent, up from 53 percent in December\"; never list several previous values together (\"up from 53, 60 and 39 respectively\").",
+    "Financial figures are cumulative to the end of the period (the balance and burn rate are against the whole budget): say \"to date\" or \"by the end of <period>\", never \"in the quarter\" or \"in the month\"; write amounts with thousands separators (295,000 USD); never explain why a budget line is over or under spent unless the officer's own note says so.",
+    "Never write a file name, a file stem or a hyphenated document label (such as 01-A1.3-attendance or sit-flood-photo); describe the source in words (\"the water quality log\", \"the rapid assessment\").",
+    "Write the donor's name and the project's name exactly as given in the project details; never abbreviate, translate or re-spell them.",
 ]
 
 

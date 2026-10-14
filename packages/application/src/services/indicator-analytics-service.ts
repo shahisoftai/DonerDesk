@@ -1,5 +1,5 @@
-import type { Result, VerifiedFinding, IndicatorUpdate, ReportingPeriod, TenantId } from "@donordesk/domain";
-import { CADENCE_REPORT_TYPES, DomainError, LIFE_OF_PROJECT_REPORT_TYPES, comparableReportTypes, computeLifeOfProject, computeIndicator, evaluatePerformance, inferIndicatorSemantics, periodComparability, selectComparablePeriods } from "@donordesk/domain";
+import type { OutcomeNode, Result, VerifiedFinding, IndicatorUpdate, ReportingPeriod, TenantId } from "@donordesk/domain";
+import { CADENCE_REPORT_TYPES, DomainError, LIFE_OF_PROJECT_REPORT_TYPES, comparableReportTypes, computeLifeOfProject, computeIndicator, evaluatePerformance, inferIndicatorSemantics, owningOutcome, periodComparability, selectComparablePeriods } from "@donordesk/domain";
 import type { IIndicatorAnalyticsService } from "../ports/reporting.js";
 import type { IReportingPeriodRepository } from "../ports/reporting.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository, ILogframeRepository } from "../ports/logframe.js";
@@ -36,9 +36,13 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
     if (!indicatorsResult.ok) return indicatorsResult;
 
     const levelByItem = new Map<string, string>();
+    let logframeNodes: OutcomeNode[] = [];
     if (this.logframe) {
       const items = await this.logframe.findByProject(input.projectId, input.tenantId);
-      if (items.ok) for (const item of items.value) levelByItem.set(item.id, item.level);
+      if (items.ok) {
+        for (const item of items.value) levelByItem.set(item.id, item.level);
+        logframeNodes = items.value.map((i) => ({ id: i.id, parentId: i.parentId, level: i.level, code: i.code, title: i.title }));
+      }
     }
 
     const currentUpdatesResult = await this.updates.findByReportingPeriod(input.reportingPeriodId, input.tenantId);
@@ -127,7 +131,8 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
         denominatorValues,
       });
       const level = levelByItem.get(ind.logframeItemId);
-      findings.push({ ...finding, reportingPeriodId: input.reportingPeriodId, ...(level ? { level } : {}) });
+      const outcome = owningOutcome(logframeNodes, ind.logframeItemId);
+      findings.push({ ...finding, reportingPeriodId: input.reportingPeriodId, ...(level ? { level } : {}), ...(ind.frequency ? { frequency: ind.frequency } : {}), ...(outcome?.code ? { outcomeCode: outcome.code } : {}), ...(outcome ? { outcomeTitle: outcome.title } : {}) });
     }
 
     if (LIFE_OF_PROJECT_REPORT_TYPES.has(periodResult.value.reportType)) {

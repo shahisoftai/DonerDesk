@@ -7,6 +7,7 @@ question as a heading. Neither belongs in donor text, so both are removed here r
 from __future__ import annotations
 
 import re
+from difflib import SequenceMatcher
 
 from .models import GeneratedSection, SectionDraftRequest
 
@@ -49,8 +50,47 @@ def scrub_content(content: str, mandatory_questions: list[str]) -> str:
     return re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip() if changed else content
 
 
+_WORD = re.compile(r"[A-Za-z][A-Za-z'’-]*")
+_MIN_NAME_WORDS = 3
+_NEAR_NAME = 0.86
+
+
+def restore_proper_names(content: str, names: list[str]) -> str:
+    """Puts a mangled donor, organisation or project name back to exactly as given ("Resilient Fund" -> "Resilience Fund").
+
+    The model sometimes re-spells a long name by one word. A name of at least three words is looked for in the text as a
+    run of the same number of words that is *almost* the name (same first word, similarity >= 0.86) and replaced by the
+    exact name. Names shorter than three words are left alone: a near match on two words is too often a different thing.
+    """
+    text = content or ""
+    for name in sorted({n.strip() for n in names if n and n.strip()}, key=len, reverse=True):
+        name_words = _WORD.findall(name)
+        count = len(name_words)
+        if count < _MIN_NAME_WORDS:
+            continue
+        lowered = name.lower()
+        spans = [m.span() for m in _WORD.finditer(text)]
+        replacements: list[tuple[int, int]] = []
+        i = 0
+        while i + count <= len(spans):
+            start, end = spans[i][0], spans[i + count - 1][1]
+            window = text[start:end]
+            # the run must be plain words separated by single spaces, so it is a phrase and not words from two sentences
+            if re.fullmatch(r"[^\s]+(?: [^\s]+)*", window) and window != name and window.lower().split()[0] == lowered.split()[0] and SequenceMatcher(None, window.lower(), lowered).ratio() >= _NEAR_NAME:
+                replacements.append((start, end))
+                i += count
+            else:
+                i += 1
+        for start, end in reversed(replacements):
+            text = text[:start] + name + text[end:]
+    return text
+
+
 def scrub_section(section: GeneratedSection, req: SectionDraftRequest) -> GeneratedSection:
     cleaned = scrub_content(section.content, list(req.section.mandatoryQuestions or []))
+    project = req.context.project if req.context else None
+    names = [n for n in (project.donorName, project.implementingOrganization, project.partnerOrganization, project.title) if n] if project else []
+    cleaned = restore_proper_names(cleaned, names)
     return section if cleaned == section.content else section.model_copy(update={"content": cleaned})
 
 
