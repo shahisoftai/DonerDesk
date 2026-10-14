@@ -1,6 +1,6 @@
 # Structuring Your Narrative
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 A donor report that reads like a list of activities is forgettable. A report that reads like a compelling story — with tension, progression, and resolution — is one that gets remembered favourably. This guide teaches you how to structure your narrative so that data tells a story and challenges are presented with integrity.
 

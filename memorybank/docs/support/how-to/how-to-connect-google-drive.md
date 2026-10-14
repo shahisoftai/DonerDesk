@@ -1,6 +1,6 @@
 # How to Connect Google Drive
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Connecting Google Drive is the first step of workspace setup. Your evidence stays in **your** Google Drive; DonorDesk stores links and access, not copies.
 

@@ -1,6 +1,6 @@
 # How to Use the Academy Tour and Demo Project
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 **DonorDesk Academy** teaches the real reporting workflow using a sample project, so you can learn without touching live data.
 

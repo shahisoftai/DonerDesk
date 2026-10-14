@@ -1,6 +1,6 @@
 # How to Invite Team Members
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Only **Admins** can invite people and change roles.
 
@@ -12,6 +12,10 @@ Only **Admins** can invite people and change roles.
 4. Click **Send invite**.
 
 An **Invitation created** panel shows the acceptance link (`/invite/accept?token=…`). **DonorDesk does not send invitation emails at the moment**, so copy the link, add your workspace's address in front of it, and send it to the person yourself (email, chat, etc.).
+
+## Who has not joined yet
+
+Below the member table, **Invited, not joined yet (n)** lists everyone you invited who has not accepted. Each row shows the email, the role and how long the link is valid (or **Expired**), with a **Copy link** button, so you can send the link again without inviting twice. Only Admins see this list, because the link lets whoever has it join with that role.
 
 ## What the invitee does
 

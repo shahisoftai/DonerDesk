@@ -1,6 +1,6 @@
 # Donor Comparison Table
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 This table provides a quick-reference comparison of the major donor reporting frameworks. For full details, refer to the individual donor guides.
 

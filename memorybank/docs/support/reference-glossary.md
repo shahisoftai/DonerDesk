@@ -1,6 +1,6 @@
 # Glossary of Terms
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 This glossary explains the key terms used in DonorDesk.
 
@@ -179,3 +179,9 @@ An activity record left out of reports because it was a duplicate, a mistake or 
 
 **Top-up pack**
 Extra AI report drafts bought on Team or Growth.
+
+**Outbox**
+Records you finished with no connection, kept on your device until they can be sent. See [How to work offline and take photos](/support/how-to/work-offline-and-take-photos).
+
+**Dictation**
+Speaking into a text box with the microphone button instead of typing. See [How to dictate instead of typing](/support/how-to/dictate-instead-of-typing).

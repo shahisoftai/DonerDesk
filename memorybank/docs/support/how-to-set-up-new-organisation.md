@@ -1,6 +1,6 @@
 # How to Set Up Your Organisation
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Signing up creates your workspace. This guide covers the setup that follows. Everything is on one page, **Settings → Setup** (also shown as **Set up your workspace** after signup). Only Admins can complete it.
 
@@ -8,11 +8,13 @@ Signing up creates your workspace. This guide covers the setup that follows. Eve
 
 | Step | Required? | What it does |
 |---|---|---|
-| **Connect Google Drive** | Yes | Choose where evidence lives: your own Google Drive (recommended) or DonorDesk storage. |
+| **Accept Terms of Service** | Yes | Accept the Terms and Privacy Policy. It is the only step that must be done before you can work. |
+| **Connect Google Drive** | Recommended | Choose where evidence lives: your own Google Drive (recommended) or DonorDesk storage. |
 | **Organization profile** | Optional | Name, type, country, main office, sectors, contact person, website, donor types you serve, default language. |
 | **Default reporting profile** | Optional | Defaults for every new project: language, tone (Formal, Concise, Narrative or Technical), writing style, audience notes, formatting rules and special requirements. |
 | **Invite your team** | Optional | Add teammates with roles (see [Roles and permissions](/support/getting-started/user-roles-and-permissions)). |
-| **Accept Terms of Service** | Yes | Accept the Terms and Privacy Policy. |
+
+Optional steps are marked **Optional** and can be done any time from Settings. After you accept the terms, **Create your first project** is offered straight away.
 
 Each project can override the default reporting profile on its own Setup page.
 

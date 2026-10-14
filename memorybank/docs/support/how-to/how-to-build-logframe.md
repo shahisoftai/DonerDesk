@@ -1,6 +1,6 @@
 # How to Build a Logframe
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 The logframe (results framework) is the backbone of your reporting: goals, outcomes, outputs and activities, with indicators to measure them. Who can edit it: Admin, Project Manager and M&E Officer.
 
@@ -14,7 +14,24 @@ Open **Projects → your project → Logframe**.
 4. Items are created with their parent links. Rows whose **code already exists are skipped**, so re-importing is safe.
 5. Fill in the **Indicators** sheet and use **Import indicators from Excel**. By default an indicator's code must match a logframe item's code in this project. To put **several indicators under one item**, fill the optional **Logframe Code** column (the last column of the template) with the item's code; the indicator's own code can then be anything unique.
 
-## Option B: Build by hand
+## Option B: Paste or dictate your results list
+
+On the same import screen you do not need a file. Type, paste or dictate your results list into the box: one line per result, starting with its level (**Goal**, **Outcome**, **Output**, **Activity**) or a code such as *1.1.2*, indented to show what sits under what:
+
+```
+Goal: Improved child health in Kisumu County
+  Outcome 1: Fewer children under five with diarrhoea
+    Output 1.1: 40 water points rehabilitated
+      Activity 1.1.1: Train water committees
+```
+
+Edit the text if needed, then click **Create logframe items**. The same screen (file, paste or dictate) is used to import indicators, evidence records and activities.
+
+## Option C: Reuse another project's logframe
+
+When a project's logframe is empty and your workspace has other projects, the Logframe page offers **Reuse another project's logframe**. Choose the project and click **Copy logframe and indicators**. The results hierarchy and the indicator definitions (codes, targets, units, frequency, calculation) are copied. **Recorded values, evidence, activities, retired indicators and who is responsible are not copied.** Copying is only offered into an empty logframe, so nothing is duplicated. You can also do this while [creating a project](/support/how-to/create-a-project).
+
+## Option D: Build by hand
 
 1. Click to add a logframe item. Choose its **level** (Goal, Outcome, Output or Activity), give it a **code** and title, and pick its **parent** with the item picker.
 2. Add child items under each parent.

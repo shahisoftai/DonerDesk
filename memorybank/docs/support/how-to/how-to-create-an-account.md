@@ -1,6 +1,6 @@
 # How to Create an Account
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Creating an account also creates your organisation's **workspace**. You become its **Admin**. Every workspace starts on the free **Starter** plan.
 

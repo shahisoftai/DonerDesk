@@ -1,6 +1,6 @@
 # Getting Started with DonorDesk
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 A complete first-time guide. The whole path takes an afternoon; the [Academy tour](/tour) shows it on a demo project in 10–15 minutes.
 

@@ -1,6 +1,6 @@
 # Troubleshooting Evidence Upload
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 ## The Upload button is missing
 
@@ -45,3 +45,9 @@ Older files uploaded against an activity but without a period have been fixed au
 ## Tags look wrong
 
 AI tag suggestions are only suggestions. Open the tag review and edit or reject them.
+
+## "Saved on this device" or records waiting to send
+A new activity finished with no connection is kept on your device and sent when you are back online. A bar at the bottom shows how many are waiting, with **Send now**. If one says it **needs your attention**, it shows the reason; fix the cause and click **Try again**, or **Discard**. Records are kept per person and per browser, and clearing the browser's site data before they are sent removes them. See [How to work offline and take photos](/support/how-to/work-offline-and-take-photos).
+
+## The camera or microphone button does nothing
+Allow the camera or microphone for DonorDesk in the browser's site settings. The microphone button needs Chrome, Edge or Safari; it is not shown in browsers without speech recognition.

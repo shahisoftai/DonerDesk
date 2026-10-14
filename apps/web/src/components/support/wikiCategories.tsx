@@ -93,6 +93,8 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
       { title: "How to Upload a Donor Template", description: "Upload and parse a funder template.", href: "/support/how-to/upload-donor-template" },
       { title: "How to Update Indicator Values", description: "Enter and update indicator results.", href: "/support/how-to/update-indicator-values" },
       { title: "How to Log Activities", description: "Record programme activities as they happen.", href: "/support/how-to/log-activities" },
+      { title: "How to Dictate Instead of Typing", description: "Speak your text with the microphone button.", href: "/support/how-to/dictate-instead-of-typing" },
+      { title: "How to Work Offline and Take Photos", description: "Capture photos and finish activities without a signal.", href: "/support/how-to/work-offline-and-take-photos" },
       { title: "How to Upload Evidence", description: "Add documents and evidence to your project.", href: "/support/how-to/upload-evidence" },
       { title: "How to Use the Dashboard", description: "Navigate and get the most from your dashboard.", href: "/support/how-to/use-the-dashboard" },
       { title: "How to Search Projects and Evidence", description: "Find records quickly with search.", href: "/support/how-to/search-projects-and-evidence" },

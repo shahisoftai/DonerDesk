@@ -1,6 +1,6 @@
 # AI in DonorDesk
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 AI helps you write and organise faster. **People stay in charge**: they verify data, decide on flagged statements, edit and approve.
 

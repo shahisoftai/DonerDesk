@@ -1,6 +1,6 @@
 # DonorDesk Support Documentation Index
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Source files for the public Support Center at donordesk.online/support. Each file is routed from `apps/web/src/app/support/<category>/[article]/page.tsx` (see `FILE_MAP`) and listed in `apps/web/src/components/support/wikiCategories.tsx`. **When you add, rename or remove an article, update both.** Last full refresh: 2026-10-07; corrected after demo 5 (2026-10-06).
 
@@ -19,7 +19,7 @@ what-is-donordesk, getting-started-overview, key-concepts, understanding-project
 ## How-To (`how-to/`)
 Accounts: log-in, create-an-account, change-your-password, set-up-new-organisation, change-organisation-profile, invite-team-members, manage-team-roles-permissions, onboard-team-member.
 Projects: create-a-project, archive-a-project, build-logframe, upload-donor-template, connect-google-drive.
-Reporting: project-walkthrough, run-a-reporting-month, create-a-reporting-period, create-the-closing-report, review-and-accept-activities, fix-or-remove-an-indicator, change-a-reports-template, update-indicator-values, import-from-google-sheets, log-activities, upload-evidence, tell-the-story-and-add-inputs, generate-ai-report-draft, use-the-report-editor, review-and-approve-reports, export-reports, use-compliance-checklist, use-bulk-actions, use-comments-feedback, use-the-audit-trail, prepare-for-donor-visit.
+Reporting: project-walkthrough, run-a-reporting-month, create-a-reporting-period, create-the-closing-report, review-and-accept-activities, fix-or-remove-an-indicator, change-a-reports-template, update-indicator-values, import-from-google-sheets, log-activities, dictate-instead-of-typing, work-offline-and-take-photos, upload-evidence, tell-the-story-and-add-inputs, generate-ai-report-draft, use-the-report-editor, review-and-approve-reports, export-reports, use-compliance-checklist, use-bulk-actions, use-comments-feedback, use-the-audit-trail, prepare-for-donor-visit.
 Navigation: use-the-dashboard, search-projects-and-evidence, use-the-notification-system, use-the-academy-tour, manage-billing-subscription.
 
 ## Troubleshooting

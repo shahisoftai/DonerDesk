@@ -1,6 +1,6 @@
 # How to Upload Evidence
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Evidence is the proof behind your numbers: attendance sheets, photos, distribution lists, monitoring reports and so on. Roles that can upload: Admin, Project Manager, M&E Officer, Grants Officer, Field Officer and Compliance Officer.
 
@@ -16,7 +16,7 @@ Your workspace stores evidence in one of two places (chosen in **Settings → Se
 ## Upload files
 
 1. Click **Upload evidence**.
-2. Drop files onto the upload area or click to browse. You can select **several files at once**; each is uploaded separately in the **Upload queue**. Opening the form from an activity's **Add evidence** button (or from the activity form itself) has the activity already chosen.
+2. Drop files onto the upload area or click to browse. On a phone, click **Take a photo** to open the camera; each photo is named from the time it was taken (for example *photo-20270312-141502.jpg*), so several photos never clash. You can select **several files at once**; each is uploaded separately in the **Upload queue**. Opening the form from an activity's **Add evidence** button (or from the activity form itself) has the activity already chosen.
 3. For each file set:
    - **Evidence title**
    - **Evidence type** – Attendance sheet, Photo, Distribution list, Training record, Field visit report, Monitoring report, Kobo/ODK export, Procurement document, Approval document, Beneficiary list, Meeting minutes, Case study, Financial document, Supplier document, Donor communication or Other

@@ -1,6 +1,6 @@
 # How to Fix, Move or Remove an Indicator
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 You no longer need to rebuild a project because of an indicator mistake. Open the indicator and change it. Who can: **Admin**, **Project Manager** and **M&E Officer**.
 

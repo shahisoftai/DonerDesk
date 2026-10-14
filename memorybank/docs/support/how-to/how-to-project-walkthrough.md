@@ -1,6 +1,6 @@
 # Project Walkthrough: From the First Click to the Closing Report
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 This is the whole life of a donor-funded project in DonorDesk, in the order you do it. Each stage says what to do, who does it, what to check before moving on, and where the detailed article is. It was written from a complete six-month run (a health project with monthly reports and a closing report), so it also lists the places where people usually get stuck.
 

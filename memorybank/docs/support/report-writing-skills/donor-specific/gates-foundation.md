@@ -1,6 +1,6 @@
 # Gates Foundation and Private Foundation Reporting
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Private foundations like the Bill & Melinda Gates Foundation, Bloomberg Philanthropies, the Rockefeller Foundation, and the Walton Family Foundation represent a distinct donor category. Unlike government-to-government aid agencies, private foundations are governed by their own charitable missions, internal policies, and board decisions. Reporting requirements tend to be lighter than government donors, but the expectations for evidence quality and outcome demonstration are equally rigorous.
 

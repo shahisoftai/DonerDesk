@@ -1,6 +1,6 @@
 # How to Log Activities
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Activities are the field updates that tell the story behind your indicators: trainings held, distributions made, visits completed. Roles that can create activities: Admin, Project Manager, M&E Officer and Field Officer. Admin and Project Manager can approve them.
 
@@ -11,14 +11,32 @@ Open **Projects → your project → Activities**.
 1. Click **New activity**.
 2. Fill in:
    - **Activity title** and **Activity date**
-   - **Reporting period** – the report this activity should feed. The choices read like *Monthly · Mar 2026*, newest first. When you pick the date, DonorDesk selects the period that contains it for you; change it only if you need to.
+   - **Reporting period** – the report this activity should feed. Once you have a date, DonorDesk states the period instead of asking: *Reporting period: Monthly · Mar 2026 (from the activity date)*, with a **Change** link if you need another. If no period contains the date, the list appears with a note so you can pick one (or create the period first).
    - **Location**
    - **Logframe activity** (optional): the planned activity this record delivers. The logframe then shows what has been delivered against it (records, accepted records and participants), and the output is filled in for you.
-   - **Summary** of what happened
+   - **Summary** of what happened (you can [dictate it](/support/how-to/dictate-instead-of-typing))
    - **Total participants**, with **Female**, **Male**, **Children** and **Participants with disability** where relevant
    - **Achievements**, **Challenges**, **Lessons learned** and **Next steps**
-   - **Upload evidence (optional)**: drop the proof files (photos, registers, attendance sheets) on the form, or choose them from your computer.
+   - **Upload evidence (optional)**: drop the proof files (photos, registers, attendance sheets) on the form, choose them from your computer, or click **Take a photo** on a phone.
 3. Click **Submit activity**.
+
+## Tell it in your own words
+
+Click **Tell it in your own words (type or speak) and fill the form for me** at the top of the form. Type or dictate what happened, for example:
+
+> Held a hygiene session in Kisumu on 12 March 2026 with 40 women, 12 men and 8 children. Challenges: the road was flooded. Next steps: return in May.
+
+Click **Fill the form**. DonorDesk fills in only what your words state outright: the date (*12 March 2026*, *2026-03-12*, *today*, *yesterday*), a place after *in*, *at* or *near*, the numbers next to *women*, *men*, *children*, *participants* and *people with disabilities*, and any part you start with **Challenges:**, **Achievements:**, **Lessons learned:** or **Next steps:**. The rest of your text becomes the summary, and its first sentence the title.
+
+A message lists what was filled (*Filled: title, date, place…*) and what was **left as you typed it**: fields that already had text are never overwritten. Nothing is guessed and nothing is sent to an AI service, so check the form before you submit.
+
+## If you lose your place
+
+Everything you type on the form is kept in your browser for 24 hours. If the page reloads or the connection drops, the form offers **You have an unfinished activity from…** with **Restore draft** or **Start fresh**. Attached files are not kept in the draft; add them again.
+
+## No connection?
+
+If you finish the form with no internet, the activity (with its photos) is saved on your device and sent when you are back online. See [How to work offline and take photos](/support/how-to/work-offline-and-take-photos).
 
 The activity is saved first, then each file is uploaded and attached to it. The files take the activity's reporting period automatically, so there is no separate step to link them. You see **Uploaded** next to each file. If a file fails, the record is still saved: the button changes to **Retry failed uploads**, or choose **Finish without these files** and add them later.
 
@@ -29,6 +47,8 @@ Everything you write here can be used by the AI Reporter, so include specifics: 
 ## Files on the activity form
 
 Each dropped file has its own **type** (suggested from the file name: an attendance register becomes an attendance sheet, a mentorship log a monitoring report), **confidentiality** and optional **indicator**. When the activity points at a logframe Activity that has exactly one indicator, that indicator is already chosen.
+
+With several files, click **Use the first file's confidentiality and indicator for all N files** to set them once (the type stays per file, so a photo next to an attendance sheet keeps its own type). DonorDesk also remembers the confidentiality you chose last and suggests it next time.
 
 ## Start from an earlier record, or from the logframe
 
@@ -61,8 +81,8 @@ If yours is **Needs revision**, the reviewer's note is shown next to the text. F
 
 1. On the Activities page click **Download template** and fill it in.
 2. Click **Import activities from Excel** and upload it (XLSX, CSV or TXT).
-3. Pick the **reporting period**; all imported activities are attached to it.
-4. **Review the parsed content**, then create the records. Output and indicator codes are matched to your logframe. Rows whose titles already exist in the project are skipped.
+3. Each activity is placed in the reporting period that **contains its own date**, so one file can cover several months. If a row's date is in no period, it is skipped with a message, unless you chose a period under **If a row's date is in no reporting period**.
+4. You can also paste the rows (or dictate them) into the box instead of uploading a file. Review the text, then create the records. Output and indicator codes are matched to your logframe. Rows whose titles already exist in the project are skipped.
 
 ## Tips
 

@@ -1,6 +1,6 @@
 # DonorDesk Pricing and Plans
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 DonorDesk has four plans: **Starter** (free), **Team**, **Growth** and **Enterprise**. The live prices are always on the [Pricing page](/pricing).
 

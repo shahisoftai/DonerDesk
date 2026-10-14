@@ -1,6 +1,6 @@
 # Roles and Permissions in Depth
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 The seven workspace roles and the full capability matrix are in [User roles and permissions](/support/getting-started/user-roles-and-permissions). This page covers how roles interact with the rest of DonorDesk.
 

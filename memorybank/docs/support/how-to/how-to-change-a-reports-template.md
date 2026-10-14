@@ -1,6 +1,6 @@
 # How to Change a Report's Template
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Every report follows a **donor template** (the donor's sections and rules) or, if there is none, a ready-made structure for its type. DonorDesk now picks the right template for you and lets you change it later.
 

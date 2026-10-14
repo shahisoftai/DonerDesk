@@ -1,6 +1,6 @@
 # How to Review and Accept Activities
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Activity records only count in reports once someone with approval rights **accepts** them. This guide covers every decision a reviewer can make and what the person who wrote the record does next.
 

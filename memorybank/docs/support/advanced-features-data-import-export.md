@@ -1,14 +1,16 @@
 # Data Import and Export
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 ## Import
+
+Every import screen works the same way: upload a file, **or paste or dictate** the rows into the box, check the text, then create the records.
 
 | What | Where | Formats |
 |---|---|---|
 | **Logframe** | Project → Logframe → **Import logframe from Excel** | XLSX, CSV, TXT (Logframe sheet of the template) |
 | **Indicators** | Logframe → **Import indicators from Excel** | XLSX, CSV, TXT (Indicators sheet). Codes must match logframe items. |
-| **Activities** | Project → Activities → **Import activities from Excel** | XLSX, CSV, TXT. Choose the reporting period. |
+| **Activities** | Project → Activities → **Import activities from Excel** | XLSX, CSV, TXT. Each row goes to the reporting period containing its date. |
 | **Evidence records** | Project → Evidence → import | Evidence template (XLSX/CSV) |
 | **Indicator values** | Reporting period → Update Project → **Import from Google Sheets**, or Data & story inputs (paste CSV) | Google Sheets; CSV |
 | **Donor template** | Project → Templates | Word, PDF, text, Markdown, Excel, CSV |

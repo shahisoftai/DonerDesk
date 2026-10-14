@@ -1,6 +1,6 @@
 # How to Export Reports
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Exports produce the files you send to the donor. They come from the approved report and go through the same quality gate as approval.
 
@@ -30,6 +30,8 @@ Once the report is **Approved** with no open issues, the first step of the wizar
 - **Donor submission** – bound to a sealed snapshot of the approved report. Only available when the gate passes.
 
 ## The export wizard and the gate
+
+The wizard is a **single screen**: export type, copy, evidence files and warnings are read together, with **Create export** at the bottom. The evidence files appear as one line (*Evidence files: 12 files included, 3.6 MB. Change*); click it to open the list, tick or untick files, or include sensitive ones.
 
 1. Click **Export report**. The wizard runs a **preflight** check.
    The wizard shows **Checked at hh:mm** with a **Re-check** link. The checks are read from the report as it is now; if you fixed something in another tab, click **Re-check**.

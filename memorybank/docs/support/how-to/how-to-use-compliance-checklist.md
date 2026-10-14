@@ -1,6 +1,6 @@
 # How to Use the Compliance Checklist
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 The compliance checklist lists what is missing or weak before a report can go out: missing evidence, unverified indicators, unsupported claims, missing annexes and so on. Open it from **Compliance** in the main menu (all projects) or the project's compliance page.
 

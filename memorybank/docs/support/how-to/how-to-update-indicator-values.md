@@ -1,6 +1,6 @@
 # How to Update Indicator Values
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 Indicator values are entered **per reporting period** in a spreadsheet-style grid. This is step **1. Update Project** of the reporting workspace.
 
@@ -18,6 +18,9 @@ If there is no reporting period yet, create one first (see [Understanding report
 1. Each row is an indicator. Type the **Period achievement** and, where relevant, the **source of the figure** and a comment.
 2. If the indicator has a **breakdown** (the **Breakdown** button shows on its row), enter values by category (for example Female / Male); for Number and Currency indicators each dimension must add up to the total.
 3. Click **Save all**. Values are saved in one bulk operation. Each indicator has one value per period, so saving again updates it.
+   - **Same as last period (n)** appears under an empty value when the indicator had a value last period; click it to repeat that figure.
+   - For indicators whose values **add up** (calculation *Sum of period values*), the **Cumulative** box fills in by itself: last period's running total plus what you typed. It shows *Last: n* as a hint. If you type your own cumulative figure it is never replaced.
+   - The **source of the figure** carries forward from the last period, so you only change it when it changes.
 4. If you may verify values, click **Save & verify all** to save and verify everything in the period in one step. When nothing is unsaved the button reads **Verify all (n)**. Rows that cannot be verified are listed with the indicator code and the reason; the others are still verified.
 
 Under each indicator the badge shows whether its **calculation is confirmed**. See [Understanding indicators and targets](/support/getting-started/indicators-and-targets).

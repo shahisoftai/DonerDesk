@@ -1,6 +1,6 @@
 # How DonorDesk Handles Your Data
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 ## What we store
 
@@ -24,6 +24,10 @@ Only members of your workspace, according to their roles, and DonorDesk staff fo
 ## AI processing
 
 When AI is enabled, the text needed to draft or rewrite a section is sent to the configured AI provider solely to produce that result. Turn AI off in **Settings** at any time. Sensitive and highly sensitive evidence is not sent to the drafting AI.
+
+## Voice dictation and offline copies
+
+The microphone button uses your **browser's own speech recognition** (in Chrome, Edge or Safari, the browser vendor's speech service turns your voice into text). DonorDesk never receives the audio, only the text you confirm by submitting the form. A record finished offline is kept in your browser's storage on your own device, for you only, until it is sent; clearing the browser's site data removes unsent records.
 
 ## Exporting your data
 

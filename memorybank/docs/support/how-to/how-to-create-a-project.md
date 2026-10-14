@@ -1,6 +1,6 @@
 # How to Create a Project
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 A **project** is one funded grant or programme with one donor and one reporting cycle. Only **Admins** can create projects. Check that you have a free project slot on your plan ([Plans and limits](/support/account-billing/plans-and-limits)); archived projects do not count.
 
@@ -8,20 +8,23 @@ A **project** is one funded grant or programme with one donor and one reporting 
 
 Click **New project** on **Projects** (or use the Create menu in the top bar). The wizard has three steps plus a review screen. **Your progress is saved as a draft**, so you can leave and come back.
 
+The form does not start empty. Your **organisation's name** is filled in as the implementer, the **country**, **sector** and **reporting frequency** follow your most recent project (or your organisation profile), and the **currency** follows the country. Change anything that is not right.
+
 ### Identity
+- **Start from an earlier project (optional)**: pick a project you already have to copy its donor, country, sector and reporting cadence. The title, code and dates stay yours to enter. Tick **Also copy its logframe and indicators (no recorded values)** to start with the same results framework; it is ticked by default.
 - **Title** and **Project code** (required; codes should be unique in your workspace)
-- **Donor name**
+- **Donor name** (donors you have used before, and common donors, are suggested as you type; any name is accepted)
 - **Implementing organization**
 - **Partner organization** (optional)
 
 ### Geography and dates
-- **Country** (required), **Region** and **District** (optional)
+- **Country** (required; suggestions appear as you type), **Region** and **District** (optional)
 - **Sector** – Nutrition, Food security, WASH, Health, Protection, Education, Livelihoods, Shelter, Multi-sector or Other
 - **Start date** and **End date**
 
 ### Reporting
 - **Reporting frequency** – Monthly, Quarterly, Semi-annual, Annual, Final or Custom
-- **Budget amount** and **currency** (optional)
+- **Budget amount** and **currency** (optional; the currency of the country is suggested, and changes if you change the country until you type your own)
 - **Primary contact** (optional) and **Description**
 
 Review your answers and create the project.

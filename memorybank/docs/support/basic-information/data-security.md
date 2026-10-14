@@ -1,6 +1,6 @@
 # Data Security
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 How DonorDesk protects your organisation's data. The public [Security & trust](/security) page has the current summary.
 

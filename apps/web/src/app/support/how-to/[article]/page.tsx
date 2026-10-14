@@ -19,6 +19,8 @@ const FILE_MAP: Record<string, string> = {
   "upload-donor-template": "how-to/how-to-upload-donor-template.md",
   "update-indicator-values": "how-to/how-to-update-indicator-values.md",
   "log-activities": "how-to/how-to-log-activities.md",
+  "dictate-instead-of-typing": "how-to/how-to-dictate-instead-of-typing.md",
+  "work-offline-and-take-photos": "how-to/how-to-work-offline-and-take-photos.md",
   "upload-evidence": "how-to/how-to-upload-evidence.md",
   "use-the-dashboard": "how-to/how-to-use-the-dashboard.md",
   "search-projects-and-evidence": "how-to/how-to-search-projects-and-evidence.md",

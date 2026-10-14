@@ -1,6 +1,6 @@
 # How to Create a Reporting Period
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 A **reporting period** is one report cycle for a project: for example "Q3 2026 progress report". It holds the period's indicator values, activities, evidence, story, draft and exports.
 
@@ -21,7 +21,7 @@ Regular periods (Monthly to Annual and Final) must not overlap each other and mu
 
 ## Create the whole calendar in one click
 
-For a project that reports **monthly or quarterly**, the Reporting page shows **Set up the whole reporting calendar**, for example *5 periods: Mar 2026 – Jul 2026. The last one (Aug 2026) is the closing report, created from its own steps.* Click **Create all 5 periods**. The periods are created one after another with the same checks as above, each with its donor deadline. If one is refused you see which and why, and the others are still created. Running it again never makes duplicates.
+For a project that reports **monthly or quarterly**, the Reporting page shows **Set up the whole reporting calendar**, for example *5 periods: Mar 2026 – Jul 2026. The last one (Aug 2026) is the closing report, created from its own steps.* Click **Create all 5 periods**, or **Create just the next one** to add only the next period (for example this month's) and leave the rest for later. The periods are created one after another with the same checks as above, each with its donor deadline. If one is refused you see which and why, and the others are still created. Running it again never makes duplicates.
 
 The last block of the project is not created here: it belongs to the [closing report](/support/how-to/create-the-closing-report). **Auto-create reporting periods** (a reporting-profile setting, on by default) follows the same rule: it creates each regular period once its month is over and never creates the last block, so the closing report can still be started.
 

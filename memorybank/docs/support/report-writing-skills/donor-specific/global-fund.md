@@ -1,6 +1,6 @@
 # Global Fund to Fight AIDS, Tuberculosis and Malaria
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 The Global Fund is one of the largest multilateral health financing mechanisms, providing funding for programmes to fight AIDS, tuberculosis, and malaria in more than 100 countries. Understanding its operating model, the concept of "Dual Track Financing," and its grant architecture is essential for writing credible Global Fund reports.
 

@@ -1,6 +1,6 @@
 # How Your Data Is Stored with Google Drive
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 DonorDesk works best when you connect your organisation's own Google Drive. This page explains exactly what stays in your Drive and what DonorDesk keeps.
 

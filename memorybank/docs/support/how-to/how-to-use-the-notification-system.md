@@ -1,6 +1,6 @@
 # How to Use Notifications
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 DonorDesk tells you when something needs your attention. Click the **bell** in the top bar for the latest items, or open the full **Notifications** page.
 

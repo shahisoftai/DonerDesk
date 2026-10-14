@@ -1,6 +1,6 @@
 # Frequently Asked Questions
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.001**
 
 ## General
 
@@ -117,7 +117,10 @@ Yes, 25% off Team and Growth for verified nonprofits, for their first year. Appl
 Current versions of Chrome, Edge, Firefox and Safari.
 
 ### Does it work on mobile?
-The portal is responsive and works on phones and tablets, though report review is easiest on a larger screen.
+The portal is responsive and works on phones and tablets, though report review is easiest on a larger screen. On a phone you can take photos straight from the activity and evidence forms, add DonorDesk to your home screen, and finish an activity with no signal: it is saved on the device and sent later. See [How to work offline and take photos](/support/how-to/work-offline-and-take-photos).
+
+### Can I speak instead of typing?
+Yes, in Chrome, Edge and Safari. Click the microphone in the corner of a text box. See [How to dictate instead of typing](/support/how-to/dictate-instead-of-typing).
 
 ### Can I connect other tools?
 Google Drive and Google Sheets are supported. There is no public API yet; ask about integrations via [contact sales](/contact-sales).
