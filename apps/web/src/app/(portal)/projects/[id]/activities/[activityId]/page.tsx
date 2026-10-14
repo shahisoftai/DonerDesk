@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ActivityDetailSchema, EvidenceResponseSchema, EvidenceSupportResponseSchema } from "@/lib/server/schemas";
+import { ActivityDetailSchema, EvidenceResponseSchema, EvidenceSupportResponseSchema, LogframeResponseSchema } from "@/lib/server/schemas";
 import { hasCapability } from "@/lib/server/auth-context";
 import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
@@ -10,6 +10,7 @@ import { activityStatusTone } from "@/lib/shared/tone";
 import { ACTIVITY_STATUS_LABEL } from "@/lib/labels";
 import { formatDate } from "@/lib/shared/dates";
 import { ActivityPolishPanel } from "@/features/activities/presentation/ActivityPolishPanel";
+import { ActivityReopenPanel } from "@/features/activities/presentation/ActivityReopenPanel";
 import { ActivityReviewPanel } from "@/features/activities/presentation/ActivityReviewPanel";
 import { EvidenceSupportPanel } from "@/features/evidence/presentation/EvidenceSupportPanel";
 import { ActivityResubmitPanel } from "@/features/activities/presentation/ActivityResubmitPanel";
@@ -59,6 +60,7 @@ export default async function ActivityDetailPage({
   const canReview = hasCapability(ctx, "activity.review") && activity.status === "SUBMITTED";
   // The reviewer's notes live at the end of the stored summary; show them beside the text, not inside it.
   const { summary: cleanSummary, notes: reviewerNotes } = splitReviewerNotes(activity.summary);
+  const canReopen = hasCapability(ctx, "activity.review") && activity.status === "ACCEPTED";
   const canResubmit = hasCapability(ctx, "activity.create") && activity.status === "NEEDS_REVISION";
   const canWithdraw = hasCapability(ctx, "activity.review") && (canApplyActivityAction(status, "WITHDRAW") || canApplyActivityAction(status, "RESTORE"));
   const siblingsResult = canWithdraw
@@ -67,6 +69,10 @@ export default async function ActivityDetailPage({
   const siblings = siblingsResult?.ok ? siblingsResult.value.items : [];
   const replacements = siblings.filter((a) => a.id !== activity.id && a.status !== "WITHDRAWN").map((a) => ({ id: a.id, label: `${activityOptionLabel(a)} · ${ACTIVITY_STATUS_LABEL[a.status] ?? a.status}` }));
   const replacedBy = activity.supersededById ? siblings.find((a) => a.id === activity.supersededById) : undefined;
+  const logframeResult = canResubmit ? await gatewayRequest(`/v1/projects/${resolvedParams.id}/logframe`, LogframeResponseSchema, ctx.token) : null;
+  const logframeActivities = logframeResult?.ok
+    ? logframeResult.value.items.filter((n) => n.level === "ACTIVITY").map((n) => ({ id: n.id, label: `${n.code ? `${n.code} — ` : ""}${n.title}` }))
+    : [];
   const canPolish = hasCapability(ctx, "activity.create");
   const canManageEvidence = hasCapability(ctx, "activity.create");
   const demoMode = process.env.NODE_ENV !== "production";
@@ -193,11 +199,13 @@ export default async function ActivityDetailPage({
         <ActivityResubmitPanel
           activityId={activity.id}
           notes={reviewerNotes}
-          initial={{ summary: cleanSummary, achievements: activity.achievements ?? "", challenges: activity.challenges ?? "", lessonsLearned: activity.lessonsLearned ?? "", nextSteps: activity.nextSteps ?? "", location: activity.location ?? "" }}
+          initial={{ summary: cleanSummary, achievements: activity.achievements ?? "", challenges: activity.challenges ?? "", lessonsLearned: activity.lessonsLearned ?? "", nextSteps: activity.nextSteps ?? "", location: activity.location ?? "", logframeActivityId: activity.logframeActivityId ?? "" }}
+          logframeActivities={logframeActivities}
         />
       )}
 
       {canReview && <ActivityReviewPanel activityId={activity.id} />}
+      {canReopen && <ActivityReopenPanel activityId={activity.id} />}
 
       {canWithdraw && (
         <ActivityLifecyclePanel

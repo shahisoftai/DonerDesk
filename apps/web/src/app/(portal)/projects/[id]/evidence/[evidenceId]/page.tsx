@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isLiveActivity } from "@donordesk/domain/contexts/activities/activity-transitions.js";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -145,7 +146,7 @@ export default async function EvidenceDetailPage({
       <EvidenceLinkPanel
         evidenceId={evidence.id}
         current={{ activityId: evidence.activityId, indicatorId: evidence.indicatorId, reportingPeriodId: evidence.reportingPeriodId }}
-        activities={activitiesResult.ok ? recentFirst(activitiesResult.value.items, (a) => a.activityDate).map((a) => ({ id: a.id, label: activityOptionLabel(a) })) : []}
+        activities={activitiesResult.ok ? recentFirst(activitiesResult.value.items.filter((a) => isLiveActivity(a.status)), (a) => a.activityDate).map((a) => ({ id: a.id, label: activityOptionLabel(a) })) : []}
         indicators={logframeResult.ok ? logframeResult.value.indicators.map((i) => ({ id: i.id, label: `${i.code} — ${i.name}` })) : []}
         periods={periodsResult.ok ? recentFirst(periodsResult.value.items, (p) => p.startDate).map((p) => ({ id: p.id, label: periodOptionLabel(p) })) : []}
         canEdit={hasCapability(ctx, "evidence.upload")}

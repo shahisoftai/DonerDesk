@@ -511,6 +511,7 @@ export const ActivityDetailSchema = z.object({
   activityEndDate: z.string().optional(),
   location: z.string().optional(),
   outputId: z.string().optional(),
+  logframeActivityId: z.string().optional(),
   indicatorId: z.string().optional(),
   participantsTotal: z.number().optional(),
   participantsMale: z.number().optional(),

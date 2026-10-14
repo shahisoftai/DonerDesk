@@ -52,10 +52,11 @@ test("withdraw records the replacement and is audited; restore reverses it", asy
   assert.deepEqual(w.audit.events.map((e) => e.eventType), ["activity.withdrawn", "activity.restored"]);
 });
 
-test("withdraw is refused for an accepted record, itself, another project's record, or a withdrawn replacement", async () => {
+test("withdraw is refused for an accepted record an approved report used, itself, another project's record, or a withdrawn replacement", async () => {
   const elsewhere = ActivityUpdate.rehydrate({ id: "elsewhere", tenantId: "tenant-a", projectId: "p-2", createdAt: new Date(), props: { reportingPeriodId: "rp-9", activityTitle: "Other project", activityDate: new Date("2026-03-06"), summary: "s", achievements: "", challenges: "", lessonsLearned: "", nextSteps: "", attachedEvidenceIds: [], status: "ACCEPTED", submittedById: "u-1" } });
   const w = world([activity("acc", "ACCEPTED"), activity("old", "REJECTED"), activity("gone", "WITHDRAWN"), elsewhere]);
-  const h = new WithdrawActivityHandler(w.repo, w.audit);
+  const usedGuard = { approvedReportsUsing: async () => ({ ok: true, value: ["the monthly report 2026-03-01 to 2026-03-31"] }) };
+  const h = new WithdrawActivityHandler(w.repo, w.audit, usedGuard);
   assert.equal((await h.handle(ctx, { activityId: "acc" })).ok, false);
   assert.equal((await h.handle(ctx, { activityId: "old", supersededById: "old" })).ok, false);
   assert.equal((await h.handle(ctx, { activityId: "old", supersededById: "gone" })).ok, false);

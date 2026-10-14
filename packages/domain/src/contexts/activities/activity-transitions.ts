@@ -14,7 +14,7 @@ export const ACTIVITY_TRANSITIONS: Readonly<Record<ActivityAction, { from: Reado
   REQUEST_REVISION: { from: ALL.filter((s) => s !== "WITHDRAWN"), to: "NEEDS_REVISION", refusal: "A withdrawn activity cannot be sent back for revision" },
   REJECT: { from: ALL.filter((s) => s !== "WITHDRAWN"), to: "REJECTED", refusal: "A withdrawn activity cannot be rejected" },
   EDIT: { from: ["DRAFT", "SUBMITTED", "NEEDS_REVISION", "REJECTED"], refusal: "Only an activity that is not accepted or withdrawn can be edited" },
-  WITHDRAW: { from: ["DRAFT", "SUBMITTED", "NEEDS_REVISION", "REJECTED"], to: "WITHDRAWN", refusal: "Only an activity that is not accepted can be withdrawn" },
+  WITHDRAW: { from: ["DRAFT", "SUBMITTED", "NEEDS_REVISION", "ACCEPTED", "REJECTED"], to: "WITHDRAWN", refusal: "This activity cannot be withdrawn in its current state" },
   RESTORE: { from: ["WITHDRAWN"], to: "SUBMITTED", refusal: "Only a withdrawn activity can be restored" },
 };
 
@@ -25,6 +25,22 @@ export function canApplyActivityAction(status: ActivityStatus, action: ActivityA
 /** The status an action leads to (EDIT leaves the status as it is). */
 export function activityStatusAfter(status: ActivityStatus, action: ActivityAction): ActivityStatus {
   return ACTIVITY_TRANSITIONS[action].to ?? status;
+}
+
+/**
+ * Actions that undo a decision a report may already rely on. The aggregate allows them (a mistake must be fixable),
+ * but the application layer asks `IActivityApprovalGuard` first and refuses when an approved report used the record.
+ */
+export function undoesAcceptance(status: ActivityStatus, action: ActivityAction): boolean {
+  return status === "ACCEPTED" && (action === "WITHDRAW" || action === "REQUEST_REVISION" || action === "REJECT");
+}
+
+/**
+ * A record that counts as part of the project's activity: everything except a withdrawn one (replaced, or entered by
+ * mistake). Counts and link pickers use this one rule so a withdrawn record is never counted or offered.
+ */
+export function isLiveActivity(status: string): boolean {
+  return status !== "WITHDRAWN";
 }
 
 /** A record that still needs someone's attention. Accepted records are done; withdrawn ones are out of the report. */

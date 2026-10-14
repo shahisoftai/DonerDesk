@@ -3,6 +3,8 @@ import { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IAuditLogger } from "../../ports/core.js";
+import type { IActivityApprovalGuard } from "../../ports/activity-approval-guard.js";
+import { checkUndoAllowed } from "../../services/activity-undo-policy.js";
 
 export interface ReviewActivityDecision {
   decision: "ACCEPT" | "REVISE" | "REJECT";
@@ -10,13 +12,17 @@ export interface ReviewActivityDecision {
 }
 
 export class ReviewActivityHandler {
-  constructor(private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger) {}
+  constructor(private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger, private readonly guard?: IActivityApprovalGuard) {}
 
   async handle(ctx: AuthenticatedContext, activityId: string, decision: ReviewActivityDecision): Promise<Result<void, DomainError>> {
     const r = await this.repo.findById(activityId, ctx.tenant.tenantId);
     if (!r.ok) return r;
     if (!r.value) return { ok: false, error: DomainError.notFound("ActivityUpdate", activityId) };
     const a = r.value;
+    if (decision.decision !== "ACCEPT") {
+      const allowed = await checkUndoAllowed(this.guard, ctx, a, decision.decision === "REVISE" ? "REQUEST_REVISION" : "REJECT");
+      if (!allowed.ok) return allowed;
+    }
     try {
       if (decision.decision === "ACCEPT") a.accept();
       else if (decision.decision === "REVISE") a.requestRevision(decision.notes ?? "");

@@ -1,4 +1,5 @@
 import "server-only";
+import { isLiveActivity } from "@donordesk/domain/contexts/activities/activity-transitions.js";
 import { cache } from "react";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import {
@@ -77,7 +78,7 @@ export const loadProjectOverview = cache(
       readinessPeriodId: activePeriodId,
       checklist: checklistResult && checklistResult.ok ? checklistResult.value.items : [],
       pendingEvidence: evidenceResult && evidenceResult.ok ? (evidenceResult.value?.total ?? 0) : 0,
-      activityCount: activitiesResult && activitiesResult.ok ? activitiesResult.value.items.length : 0,
+      activityCount: activitiesResult && activitiesResult.ok ? activitiesResult.value.items.filter((a) => isLiveActivity(a.status)).length : 0,
     };
 
     return { ok: true, value: overview };

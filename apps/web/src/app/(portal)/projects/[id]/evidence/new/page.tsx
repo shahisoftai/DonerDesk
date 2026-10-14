@@ -1,4 +1,5 @@
 import { requireSession } from "@/lib/server/auth-context";
+import { isLiveActivity } from "@donordesk/domain/contexts/activities/activity-transitions.js";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ActivitiesResponseSchema, LogframeResponseSchema, OrganizationSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
 import { activityOptionLabel, periodOptionLabel, recentFirst } from "@/lib/shared/option-labels";
@@ -32,7 +33,7 @@ export default async function NewEvidencePage({ params, searchParams }: { params
         projectId={resolvedParams.id}
         storageProvider={storageProvider}
         initialActivityId={initialActivityId}
-        activities={activitiesResult.ok ? recentFirst(activitiesResult.value.items, (a) => a.activityDate).map((a) => ({ id: a.id, label: activityOptionLabel(a), periodLabel: a.reportingPeriodId ? periodLabelById.get(a.reportingPeriodId) : undefined })) : []}
+        activities={activitiesResult.ok ? recentFirst(activitiesResult.value.items.filter((a) => isLiveActivity(a.status)), (a) => a.activityDate).map((a) => ({ id: a.id, label: activityOptionLabel(a), periodLabel: a.reportingPeriodId ? periodLabelById.get(a.reportingPeriodId) : undefined })) : []}
         indicators={logframeResult.ok ? logframeResult.value.indicators.map((i) => ({ id: i.id, label: `${i.code} — ${i.name}` })) : []}
         periods={periodsResult.ok ? recentFirst(periodsResult.value.items, (p) => p.startDate).map((p) => ({ id: p.id, label: periodOptionLabel(p) })) : []}
       />

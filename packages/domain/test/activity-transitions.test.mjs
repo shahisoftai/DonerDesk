@@ -16,7 +16,7 @@ const ALLOWED = {
   REQUEST_REVISION: ["DRAFT", "SUBMITTED", "NEEDS_REVISION", "ACCEPTED", "REJECTED"],
   REJECT: ["DRAFT", "SUBMITTED", "NEEDS_REVISION", "ACCEPTED", "REJECTED"],
   EDIT: ["DRAFT", "SUBMITTED", "NEEDS_REVISION", "REJECTED"],
-  WITHDRAW: ["DRAFT", "SUBMITTED", "NEEDS_REVISION", "REJECTED"],
+  WITHDRAW: ["DRAFT", "SUBMITTED", "NEEDS_REVISION", "ACCEPTED", "REJECTED"],
   RESTORE: ["WITHDRAWN"],
 };
 
@@ -49,7 +49,9 @@ test("withdraw keeps who replaced it, restore sends it back to review", () => {
   a.restore();
   assert.equal(a.status, "SUBMITTED");
   assert.equal(a.supersededById, undefined);
-  assert.throws(() => activity("ACCEPTED").withdraw());
+  // An accepted record may be withdrawn by the aggregate; the application guard decides whether a report used it.
+  const accepted = activity("ACCEPTED"); accepted.withdraw(); assert.equal(accepted.status, "WITHDRAWN");
+  assert.throws(() => activity("WITHDRAWN").withdraw());
 });
 
 test("a revision request adds the note; resubmit removes it from the text and returns the record to review", () => {
@@ -72,4 +74,14 @@ test("reviewer notes are separated from the text, several in order", () => {
 
 test("open records are those not yet accepted or withdrawn", () => {
   assert.deepEqual(ACTIVITY_STATUSES.filter(isOpenActivity), ["DRAFT", "SUBMITTED", "NEEDS_REVISION", "REJECTED"]);
+});
+
+import { undoesAcceptance } from "../dist/index.js";
+
+test("withdrawing, reopening or rejecting an accepted record is an undo the application must guard", () => {
+  assert.equal(undoesAcceptance("ACCEPTED", "WITHDRAW"), true);
+  assert.equal(undoesAcceptance("ACCEPTED", "REQUEST_REVISION"), true);
+  assert.equal(undoesAcceptance("ACCEPTED", "REJECT"), true);
+  assert.equal(undoesAcceptance("SUBMITTED", "WITHDRAW"), false);
+  assert.equal(undoesAcceptance("ACCEPTED", "EDIT"), false);
 });

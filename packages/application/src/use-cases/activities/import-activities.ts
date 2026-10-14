@@ -87,6 +87,7 @@ export class ImportActivitiesHandler {
 
     const created: ImportedActivity[] = [];
     let skipped = 0;
+    let rowsWithoutCode = 0;
     const importWarnings: string[] = [...warnings];
 
     for (const row of rows) {
@@ -112,8 +113,9 @@ export class ImportActivitiesHandler {
       const outputId = linked.ok ? linked.value.outputId : undefined;
       const logframeActivityId = linked.ok && "logframeActivityId" in linked.value ? linked.value.logframeActivityId : undefined;
       if (row.outputCode && !codedId) {
-        importWarnings.push(`Activity "${row.activityTitle}": output code "${row.outputCode}" does not match any logframe item; left unlinked.`);
+        importWarnings.push(`Activity "${row.activityTitle}": logframe code "${row.outputCode}" does not match any output or activity in the logframe; left unlinked.`);
       }
+      if (!row.outputCode) rowsWithoutCode += 1;
       const indicatorId = row.indicatorCode ? indicatorByCode.get(row.indicatorCode.trim().toLowerCase()) : undefined;
       if (row.indicatorCode && !indicatorId) {
         importWarnings.push(`Activity "${row.activityTitle}": indicator code "${row.indicatorCode}" does not match any indicator; left unlinked.`);
@@ -154,6 +156,10 @@ export class ImportActivitiesHandler {
         activityTitle: activity.activityTitle,
         activityDate: activity.activityDate.toISOString(),
       });
+    }
+
+    if (rowsWithoutCode > 0) {
+      importWarnings.push(`${rowsWithoutCode} ${rowsWithoutCode === 1 ? "record has" : "records have"} no logframe code, so ${rowsWithoutCode === 1 ? "it is" : "they are"} not linked to an output or planned activity. Add a "Logframe Code" column (for example A1.1) to link them.`);
     }
 
     await this.audit.record({

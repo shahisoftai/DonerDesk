@@ -3,10 +3,12 @@ import { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IAuditLogger } from "../../ports/core.js";
+import type { IActivityApprovalGuard } from "../../ports/activity-approval-guard.js";
+import { checkUndoAllowed } from "../../services/activity-undo-policy.js";
 
 /** Takes a record out of the reports: replaced by another record, or entered by mistake. */
 export class WithdrawActivityHandler {
-  constructor(private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger) {}
+  constructor(private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger, private readonly guard?: IActivityApprovalGuard) {}
 
   async handle(ctx: AuthenticatedContext, input: { activityId: string; supersededById?: string }): Promise<Result<{ id: string }, DomainError>> {
     const found = await this.repo.findById(input.activityId, ctx.tenant.tenantId);
@@ -21,6 +23,9 @@ export class WithdrawActivityHandler {
       if (!replacement.value || replacement.value.projectId !== activity.projectId) return { ok: false, error: DomainError.notFound("ActivityUpdate", input.supersededById) };
       if (replacement.value.status === "WITHDRAWN") return { ok: false, error: DomainError.validation("The replacing record is itself withdrawn.") };
     }
+
+    const allowed = await checkUndoAllowed(this.guard, ctx, activity, "WITHDRAW");
+    if (!allowed.ok) return allowed;
 
     try {
       activity.withdraw(input.supersededById);

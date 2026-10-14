@@ -7,6 +7,7 @@ import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 
 export interface ResubmitInitial {
@@ -16,13 +17,15 @@ export interface ResubmitInitial {
   lessonsLearned: string;
   nextSteps: string;
   location: string;
+  /** The planned activity (logframe node) the record is linked to; empty = not linked. */
+  logframeActivityId: string;
 }
 
 /**
  * Answers a revision request on the same page: the reviewer's notes are shown beside the text (never inside it),
  * the submitter corrects the record and sends it back to review.
  */
-export function ActivityResubmitPanel({ activityId, notes, initial }: { activityId: string; notes: string[]; initial: ResubmitInitial }) {
+export function ActivityResubmitPanel({ activityId, notes, initial, logframeActivities = [] }: { activityId: string; notes: string[]; initial: ResubmitInitial; logframeActivities?: Array<{ id: string; label: string }> }) {
   const router = useRouter();
   const actionState = useActionState();
   const [form, setForm] = useState(initial);
@@ -40,6 +43,8 @@ export function ActivityResubmitPanel({ activityId, notes, initial }: { activity
         lessonsLearned: form.lessonsLearned,
         nextSteps: form.nextSteps,
         location: form.location.trim() || undefined,
+        // only sent when it changed, so a record keeps its link unless the person changes it
+        logframeActivityId: form.logframeActivityId !== initial.logframeActivityId && form.logframeActivityId ? form.logframeActivityId : undefined,
       }),
     );
     if (result) {
@@ -64,6 +69,14 @@ export function ActivityResubmitPanel({ activityId, notes, initial }: { activity
           <Textarea dictate id="resubmit-summary" value={form.summary} onChange={(e) => set("summary")(e.target.value)} className="min-h-[120px]" maxLength={10000} required />
         </Field>
         <Field label="Location" htmlFor="resubmit-location"><Input id="resubmit-location" value={form.location} onChange={(e) => set("location")(e.target.value)} maxLength={200} /></Field>
+        {logframeActivities.length > 0 && (
+          <Field label="Planned activity (logframe)" htmlFor="resubmit-node" hint="Link the record to the activity it delivers, so the logframe and the reports count it.">
+            <Select id="resubmit-node" value={form.logframeActivityId} onChange={(e) => set("logframeActivityId")(e.target.value)}>
+              <option value="">Not linked to a planned activity</option>
+              {logframeActivities.map((n) => <option key={n.id} value={n.id}>{n.label}</option>)}
+            </Select>
+          </Field>
+        )}
         <Field label="Achievements" htmlFor="resubmit-achievements"><Textarea dictate id="resubmit-achievements" value={form.achievements} onChange={(e) => set("achievements")(e.target.value)} maxLength={5000} /></Field>
         <Field label="Challenges" htmlFor="resubmit-challenges"><Textarea dictate id="resubmit-challenges" value={form.challenges} onChange={(e) => set("challenges")(e.target.value)} maxLength={5000} /></Field>
         <Field label="Lessons learned" htmlFor="resubmit-lessons"><Textarea dictate id="resubmit-lessons" value={form.lessonsLearned} onChange={(e) => set("lessonsLearned")(e.target.value)} maxLength={5000} /></Field>

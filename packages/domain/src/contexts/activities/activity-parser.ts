@@ -27,7 +27,8 @@ export interface ParseActivityResult {
 const TITLE_HEADERS: ReadonlyArray<string> = ["activitytitle", "title", "activity"];
 const DATE_HEADERS: ReadonlyArray<string> = ["activitydate", "date"];
 const LOCATION_HEADERS: ReadonlyArray<string> = ["location", "venue", "place"];
-const OUTPUT_CODE_HEADERS: ReadonlyArray<string> = ["outputcode", "output", "outputitemcode", "outputcode"];
+/** The code of the logframe item a record belongs to: an output, or a planned activity (A1.1). */
+const OUTPUT_CODE_HEADERS: ReadonlyArray<string> = ["outputcode", "output", "outputitemcode", "logframecode", "logframecodeoutputoractivity", "logframeactivity", "activitycode", "plannedactivity"];
 const INDICATOR_CODE_HEADERS: ReadonlyArray<string> = ["indicatorcode", "indicator"];
 const PARTICIPANTS_TOTAL_HEADERS: ReadonlyArray<string> = ["participantstotal", "participants", "totalparticipants", "participantscount"];
 const MALE_HEADERS: ReadonlyArray<string> = ["participantsmale", "male", "maleparticipants"];

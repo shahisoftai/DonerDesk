@@ -46,3 +46,31 @@ test("a date in no period uses the fallback period when given, otherwise the row
   assert.equal(rows.length, 2);
   assert.match(out.value.warnings.join(" "), /March clinic.*2027-03-02/);
 });
+
+test("the template's 'Logframe Code (Output or Activity)' column links a planned activity and its output", async () => {
+  const rows = [];
+  const nodes = [
+    { id: "out1", code: "1.1", level: "OUTPUT", title: "Water points" },
+    { id: "act1", code: "A1.1", level: "ACTIVITY", parentId: "out1", title: "Drill" },
+  ];
+  const handler = new ImportActivitiesHandler(
+    { generate: () => "a1" },
+    { async create(a) { rows.push(a); return ok(a); }, async findByProject() { return ok([]); } },
+    { async findByProject() { return ok(nodes); } },
+    { async findByProject() { return ok([]); } },
+    { async findByProject() { return ok(periods); } },
+    { async record() {} },
+  );
+  const text = ["Activity Title,Activity Date,Logframe Code (Output or Activity),Summary", "Drilled,2027-01-12,A1.1,Two boreholes"].join("\n");
+  const out = await handler.handle(ctx, { projectId: "p", text });
+  assert.equal(out.ok, true);
+  assert.equal(rows[0].logframeActivityId, "act1");
+  assert.equal(rows[0].outputId, "out1");
+  assert.deepEqual(out.value.warnings, []);
+});
+
+test("rows with no logframe code are reported in one sentence, not silently left unlinked", async () => {
+  const { handler } = setup(periods);
+  const out = await handler.handle(ctx, { projectId: "p", text: csv, reportingPeriodId: "feb" });
+  assert.match(out.value.warnings.join(" "), /3 records have no logframe code, so they are not linked/);
+});

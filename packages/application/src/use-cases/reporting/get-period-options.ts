@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, describePeriodTypes, type PeriodTypeOption } from "@donordesk/domain";
+import { DomainError, describePeriodTypes, isLiveActivity, type PeriodTypeOption } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
@@ -26,7 +26,7 @@ export class GetPeriodOptionsHandler {
       projectEnd: project.value.duration.end,
       projectStatus: project.value.status,
       existing: periods.value.map((p) => ({ id: p.id, reportType: p.reportType, start: p.duration.start, end: p.duration.end })),
-      activityCount: activities.value.length,
+      activityCount: activities.value.filter((a) => isLiveActivity(a.status)).length,
     });
     return { ok: true, value: { projectStatus: project.value.status, types } };
   }

@@ -67,6 +67,7 @@ import {
   RestoreIndicatorHandler,
   ListArchivedIndicatorsHandler,
   IndicatorApprovalGuard,
+  ActivityApprovalGuard,
   DefaultTemplateResolver,
   ChangePeriodTemplateHandler,
   ResubmitActivityHandler,
@@ -787,6 +788,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const periods = new PrismaReportingPeriodRepository(prisma);
   const drafts = new PrismaReportDraftRepository(prisma);
   const indicatorApprovalGuard = new IndicatorApprovalGuard(indicatorUpdates, drafts);
+  const activityApprovalGuard = new ActivityApprovalGuard(periods, drafts);
   const sections = new PrismaReportSectionRepository(prisma);
   const reportPlans = new PrismaReportPlanRepository(prisma);
   const reportClaims = new PrismaReportClaimRepository(prisma);
@@ -1283,9 +1285,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks),
     importActivities: new ImportActivitiesHandler(ids, activities, logframe, indicators, periods, audits),
     polishActivity: new PolishActivityHandler(activities, activityPolisher),
-    reviewActivity: new ReviewActivityHandler(activities, audits),
+    reviewActivity: new ReviewActivityHandler(activities, audits, activityApprovalGuard),
     resubmitActivity: new ResubmitActivityHandler(activities, audits),
-    withdrawActivity: new WithdrawActivityHandler(activities, audits),
+    withdrawActivity: new WithdrawActivityHandler(activities, audits, activityApprovalGuard),
     restoreActivity: new RestoreActivityHandler(activities, audits),
     bulkReviewActivities: new BulkReviewActivitiesHandler(new ReviewActivityHandler(activities, audits)),
     listActivities: new ListActivitiesHandler(activities),
