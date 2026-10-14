@@ -1,5 +1,7 @@
 # ADR-0009: Donor-native rendering behind the export builder
 
+**DonorDesk Version 1.93**
+
 **Status:** Accepted  
 **Date:** 2026-08-19  
 **Related:** PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN (Phase 8)

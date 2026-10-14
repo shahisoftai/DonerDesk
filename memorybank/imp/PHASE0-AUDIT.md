@@ -1,5 +1,7 @@
 # Phase 0 audit
 
+**DonorDesk Version 1.93**
+
 Audited against Phase 0 in `memorybank/base/DonorDesk — Phased Implementation Plan.md`.
 
 **Status: implemented and runtime-accepted** on a Docker-enabled Linux host (11 August 2026),

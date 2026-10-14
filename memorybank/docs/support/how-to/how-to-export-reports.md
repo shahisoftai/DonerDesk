@@ -1,5 +1,7 @@
 # How to Export Reports
 
+**DonorDesk Version 1.93**
+
 Exports produce the files you send to the donor. They come from the approved report and go through the same quality gate as approval.
 
 ## Where to export

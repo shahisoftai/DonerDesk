@@ -1,5 +1,7 @@
 # Troubleshooting Export Issues
 
+**DonorDesk Version 1.93**
+
 ## "Export is blocked"
 
 The export wizard runs the same gate as approval. Expand the list and fix each item. Each links to where you can resolve it.

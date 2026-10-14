@@ -1,5 +1,7 @@
 # Troubleshooting Storage Issues
 
+**DonorDesk Version 1.93**
+
 ## Where is my evidence stored?
 
 Either in **your Google Drive** (link-first, recommended) or in **DonorDesk-managed storage**. Check **Settings → Setup → Connect Google Drive**.

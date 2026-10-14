@@ -1,5 +1,7 @@
 # AI Settings and AI Writing Style
 
+**DonorDesk Version 1.93**
+
 DonorDesk uses AI to **tag evidence**, **draft reports section by section** and help you **rewrite or regenerate** text. You stay in control: numbers come from verified data, and people approve everything.
 
 ## Turn AI on or off

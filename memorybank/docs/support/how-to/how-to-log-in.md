@@ -1,5 +1,7 @@
 # How to Log In
 
+**DonorDesk Version 1.93**
+
 ## Sign in with email and password
 
 1. Go to donordesk.online and click **Sign in**.

@@ -1,5 +1,7 @@
 # Feature 3: User and Role Management
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 Admin users can invite users, assign roles, manage project assignments, and control user statuses.

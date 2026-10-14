@@ -1,5 +1,7 @@
 # DonorDesk Frontend — Phase 3 Implementation Report
 
+**DonorDesk Version 1.93**
+
 **Date:** 2026-08-12
 **Scope:** Phase 3 "Operational Home and role queues" (DASH, NTF-01, PROJ-02/03) from `memorybank/imp/frontend-imp-plan.md`
 **Status:** Delivered; backend dependency tracked below.

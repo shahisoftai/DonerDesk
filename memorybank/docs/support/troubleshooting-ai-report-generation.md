@@ -1,5 +1,7 @@
 # Troubleshooting AI Report Generation
 
+**DonorDesk Version 1.93**
+
 DonorDesk always tries to give you a report. If the AI cannot write a section properly, it uses a **basic (deterministic) version** for that section and tells you why. The rest of the report continues.
 
 ## Messages you may see and what to do

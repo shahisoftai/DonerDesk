@@ -1,5 +1,7 @@
 # Phase 23 — User-friendliness: implementation plan
 
+**DonorDesk Version 1.93**
+
 **Status (2026-10-06): R1–R9 implemented, deployed (release `20261005123155`) and browser-verified in a UI-driven six-month WASH run — see ["Verification outcome (demo 4)"](#verification-outcome-demo-4-2026-10-05) and the follow-up plan ["Phase 24 recommendations"](#phase-24--recommendations-from-the-demo-4-findings) at the end of this file. R10 (23.6) is a research protocol: [`../demo/usability-test-protocol.md`](../demo/usability-test-protocol.md). See "Implementation notes" for where the build differs from this plan.**
 Source: the ten recommendations at the end of [`demo/verification-demo-3.md`](../demo/verification-demo-3.md) ("Appendix — a user's-eye review").
 Goal: lift "overall ease of use for a non-technical officer" from **3.0** toward 4.0+ by removing hidden rules, dangerous defaults and opaque scores, **without** weakening any

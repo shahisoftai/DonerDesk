@@ -1,5 +1,7 @@
 # How to Use the Dashboard and My Work
 
+**DonorDesk Version 1.93**
+
 ## Home (the dashboard)
 
 **Home** is your operational overview. What you see depends on your role and projects.

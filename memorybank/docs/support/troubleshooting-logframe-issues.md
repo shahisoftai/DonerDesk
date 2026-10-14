@@ -1,5 +1,7 @@
 # Troubleshooting Logframe Issues
 
+**DonorDesk Version 1.93**
+
 ## The logframe import created nothing
 
 - "No new items were created. Existing codes are skipped; check the file for parseable rows." – rows whose code already exists are skipped. Use the **Logframe** sheet of the downloaded template (XLSX, CSV or TXT).

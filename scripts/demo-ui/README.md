@@ -1,5 +1,7 @@
 # demo-ui
 
+**DonorDesk Version 1.93**
+
 Shared harness for the browser demo and verification scripts (Phase 25.0).
 
 1. Start one visible Chromium with `--remote-debugging-port=9333` and log in (it stays open for the whole session).

@@ -1,5 +1,7 @@
 # DonorDesk Frontend Portal Implementation Plan
 
+**DonorDesk Version 1.93**
+
 **Project:** DonorDesk  
 **Application:** `apps/web` — Next.js 15 App Router  
 **Document purpose:** Product, UX, information architecture, and frontend delivery specification  

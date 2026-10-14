@@ -1,5 +1,7 @@
 # AI Reporter — Implementation Plan
 
+**DonorDesk Version 1.93**
+
 **Status:** IMPLEMENTED (2026-08-28) — see §11 below
 **Owner:** DonorDesk engineering
 **Scope:** Replace the single-shot "narrator" LLM attachment with a small, intelligent

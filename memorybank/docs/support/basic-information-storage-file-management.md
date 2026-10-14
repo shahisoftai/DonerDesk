@@ -1,5 +1,7 @@
 # Storage and File Management
 
+**DonorDesk Version 1.93**
+
 DonorDesk stores evidence in one of two places, chosen in **Settings → Setup**.
 
 ## Google Drive (link-first, recommended)

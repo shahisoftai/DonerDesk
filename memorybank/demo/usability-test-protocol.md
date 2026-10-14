@@ -1,5 +1,7 @@
 # Usability test protocol — DonorDesk forms and flows (Phase 23, R10)
 
+**DonorDesk Version 1.93**
+
 **Why.** The review in [`verification-demo-3.md`](verification-demo-3.md) scored ease of use for a non-technical officer at 3.0 but could not test the UI forms with real staff. Phase 23 (see [`../imp/PHSE23-userfriendliness.md`](../imp/PHSE23-userfriendliness.md)) changed the rules, defaults and guidance; this protocol checks that they work for people. Run it **after** Phase 23.1–23.5 are deployed. It is a research task: it needs real participants and cannot be run by an engineer or an agent.
 
 ## Participants

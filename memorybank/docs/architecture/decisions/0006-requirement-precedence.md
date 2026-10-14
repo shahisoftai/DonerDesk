@@ -1,5 +1,7 @@
 # ADR-0006: Reporting requirement precedence
 
+**DonorDesk Version 1.93**
+
 **Status:** Accepted  
 **Date:** 2026-08-19  
 **Related:** PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN (Phase 5)

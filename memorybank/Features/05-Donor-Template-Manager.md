@@ -1,3 +1,5 @@
+
+**DonorDesk Version 1.93**
 > **Superseded 2026-09-27** — Template Manager v2 is implemented. See the "Donor Template Manager v2"
 > section in the repo `AGENTS.md` and `05-Donor-Template-Manager-Plan.md` (issues I1–I20). Real code:
 > domain `packages/domain/src/contexts/templates/`, API `apps/api/src/routes/templates.ts` (`/v1/templates*`),

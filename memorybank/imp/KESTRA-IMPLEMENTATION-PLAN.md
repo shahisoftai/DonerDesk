@@ -1,5 +1,7 @@
 # Kestra Integration — Comprehensive Implementation Plan
 
+**DonorDesk Version 1.93**
+
 **Author:** Kilo (agent audit) · **Date:** 2026-08-13
 **Scope:** Make Kestra a real, deployable, SOLID-compliant orchestrator for DonorDesk's async/scheduled work, then deploy it safely on the Contabo shared host.
 **Governing constraints:** `memorybank/contabo-ops.md` (host facts/rules, incl. Kestra design §15 state), `AGENTS.md`.

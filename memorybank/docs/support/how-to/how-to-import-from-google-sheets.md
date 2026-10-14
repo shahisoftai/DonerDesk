@@ -1,5 +1,7 @@
 # How to Import Indicator Data from Google Sheets
 
+**DonorDesk Version 1.93**
+
 If you track indicator data in Google Sheets you can import it into a reporting period instead of retyping it.
 
 ## Before you start

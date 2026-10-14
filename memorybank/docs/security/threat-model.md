@@ -1,5 +1,7 @@
 # Threat Model — Phase 1 baseline
 
+**DonorDesk Version 1.93**
+
 ## Assets
 1. Tenant data (organization profile, projects, logframes, evidence, reports).
 2. Beneficiary PII that may appear inside uploaded evidence.

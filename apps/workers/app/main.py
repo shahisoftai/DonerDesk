@@ -26,7 +26,7 @@ from .polishing import PolishRequest, polish
 from .security import require_internal_token
 from .tagging import SuggestTagsRequest, suggest_tags
 
-app = FastAPI(title="DonorDesk Workers", version="0.2.0")
+app = FastAPI(title="DonorDesk Workers", version="1.93.0")
 
 v1 = APIRouter(prefix="/v1", dependencies=[Depends(require_internal_token)])
 

@@ -1,5 +1,7 @@
 # Supported File Formats and Size Limits
 
+**DonorDesk Version 1.93**
+
 ## Evidence files
 
 Common document, spreadsheet, image and text formats can be uploaded as evidence, for example PDF, Word (.docx), Excel (.xlsx) and CSV, JPG/PNG images and plain text. **Maximum size: 100 MB per file.** Files linked from Google Drive stay in Drive.

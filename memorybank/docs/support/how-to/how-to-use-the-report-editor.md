@@ -1,5 +1,7 @@
 # How to Use the Report Editor
 
+**DonorDesk Version 1.93**
+
 The report editor is where you read, edit, check and approve the report. It works like a normal document, with checks alongside.
 
 Open it from **Projects → project → Reporting →** the reporting period.

@@ -1,5 +1,7 @@
 # Pending
 
+**DonorDesk Version 1.93**
+
 Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-05.
 
 ## Charts (2026-10-05)

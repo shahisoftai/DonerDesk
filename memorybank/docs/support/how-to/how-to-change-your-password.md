@@ -1,5 +1,7 @@
 # How to Change Your Password
 
+**DonorDesk Version 1.93**
+
 ## While signed in
 
 1. Go to **Settings → Security**.

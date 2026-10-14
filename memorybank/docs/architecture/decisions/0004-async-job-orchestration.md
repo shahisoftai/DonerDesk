@@ -1,5 +1,7 @@
 # ADR 0004 — Async job ownership and orchestration
 
+**DonorDesk Version 1.93**
+
 ## Status
 Accepted (2026-08-13)
 

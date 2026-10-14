@@ -1,5 +1,7 @@
 # Phase 20: Project Setup & Logframe/Indicator Manager UX Enhancements
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 Implementation plan for the UX enhancements recommended for Feature 4 (Project

@@ -1,5 +1,7 @@
 # DonorDesk Frontend Portal — Comprehensive Implementation Plan
 
+**DonorDesk Version 1.93**
+
 **Application:** `apps/web`  
 **Framework:** Next.js 15 App Router, React 18, TypeScript, Tailwind CSS  
 **Source product specification:** `memorybank/imp/frontend-implementation.md`  

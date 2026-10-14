@@ -1,5 +1,7 @@
 # Fixes
 
+**DonorDesk Version 1.93**
+
 Record of fixes applied to DonorDesk. Last updated: 2026-10-05 (Education demo: disaggregation and attendance findings).
 
 ## Report charts did not match their section or data (2026-10-05, audit + rebuild)

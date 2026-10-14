@@ -1,5 +1,7 @@
 # Phase 24 — User simplicity: implementation plan
 
+**DonorDesk Version 1.93**
+
 **Status (2026-10-07): built (24.1–24.5), deployed and re-verified in a browser; see §9 for what was built, what differs from this plan and what is deferred.**
 Revised 2026-10-06 after a code review of the first draft (scope cut, causes verified, SOLID design rules added).
 Source: the 19 findings of the UI-driven WASH run, [`../demo/verification-demo-4.md`](../demo/verification-demo-4.md), and the product direction "fewer steps, links chosen while creating things"

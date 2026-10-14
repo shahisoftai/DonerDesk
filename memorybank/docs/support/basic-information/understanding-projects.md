@@ -1,5 +1,7 @@
 # Understanding Projects
 
+**DonorDesk Version 1.93**
+
 A **project** is one funded grant or programme. It holds the logframe, indicators, activities, evidence, donor template(s), team assignments and reporting periods.
 
 ## Key fields

@@ -1,5 +1,7 @@
 # Deploy to Contabo — Fastest Path
 
+**DonorDesk Version 1.93**
+
 **Last deploy:** 2026-10-06 (UTC) — `releaseId=20261006054211` (`SCOPE=both`, no migration): **Restore screen for archived indicators** (Logframe page, `GET /v1/projects/:id/indicators/archived`) and the matching Help Center text; `/ready` 200, worker ok, route 401 unauthenticated. Before it: `releaseId=20261006051833` (`SCOPE=web`): Help Center articles for Phase 24 (four new how-tos, ~25 updated; articles are baked into the web build). Verified: all new pages 200, in the sitemap. Before it: `releaseId=20261006045737` (`SCOPE=both`, branch `0009-agent-memory`). **Phase 24 user simplicity** (`imp/Phase24-user-simplicity.md` §9): one evidence-scope rule, evidence inherits its activity's period,
 editable/movable/archivable indicators, template defaults per report type, writers no longer see the readiness score, activity resubmit/withdraw/bulk accept, self-closing checklist state items + one-step resolve with Undo,
 roll-up exports with life-of-project columns, create-all periods. **Three additive migrations applied manually first** (`rsync --relative` + `prisma migrate deploy` as `donordesk_migrator`):
@@ -69,7 +71,7 @@ pass. Verified: api/web/workers active, `/ready` 200, worker health ok. Pre-depl
 snapshot: `dd-app-pre-20261003142133.tgz`. Feature: Features/10 "Report types & scope".
 
 **Earlier:** (previous)  2026-09-28 — `releaseId=20260928094857` (`SCOPE=both`, branch
-`0009-agent-memory`, commit `9ebe213`). **DonorDesk Version 2.0 — Agent
+`0009-agent-memory`, commit `9ebe213`). **Agent Memory (introduced in Version 1.93) — Agent
 Memory** (Feature 21): lets the AI Reporter learn tenant/donor-specific
 narrative style and terminology from what reviewers change in AI-drafted
 sections, gated by explicit human approval; numbers/dates/facts are never

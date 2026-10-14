@@ -1,5 +1,7 @@
 # AI Reporter 2 — Post-Deploy Operator Runbook
 
+**DonorDesk Version 1.93**
+
 **Latest deploy:** `20260901160940` (2026-09-01) — feature flag is **ON** on the live host.
 **Status:** internal preview complete; controlled rollout to pilot tenants next.
 

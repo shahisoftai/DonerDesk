@@ -1,5 +1,7 @@
 # AI Reporter 2 — Post-Deploy Retrospective
 
+**DonorDesk Version 1.93**
+
 **Release:** `20260828200000`
 **Deployed:** 2026-08-29 (commit `a2ffc29` on `0005-report-enhanc-03`, pushed to
 `origin/0005-report-enhanc-03`)

@@ -1,5 +1,7 @@
 # ADR 0002 — LLM strategy and provider abstraction
 
+**DonorDesk Version 1.93**
+
 ## Context
 Phase 1 ships a deterministic stub LLM provider. Production needs real providers
 (OpenAI, Anthropic, Bedrock, Ollama) with PII redaction, prompt versioning, and

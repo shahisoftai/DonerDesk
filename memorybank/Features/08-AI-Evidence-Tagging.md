@@ -1,5 +1,7 @@
 # Feature 8: AI Evidence Tagging
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 AI assists users by classifying uploaded evidence and suggesting metadata tags. Human approval is required before tags become final.

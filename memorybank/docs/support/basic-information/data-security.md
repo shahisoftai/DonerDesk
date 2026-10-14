@@ -1,5 +1,7 @@
 # Data Security
 
+**DonorDesk Version 1.93**
+
 How DonorDesk protects your organisation's data. The public [Security & trust](/security) page has the current summary.
 
 ## Tenant isolation

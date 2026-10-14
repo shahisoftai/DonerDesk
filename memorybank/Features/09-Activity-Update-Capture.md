@@ -1,5 +1,7 @@
 # Feature 9: Activity Update Capture
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 Field officers and project staff can submit activity updates with participant data, achievements, challenges, and attached evidence.

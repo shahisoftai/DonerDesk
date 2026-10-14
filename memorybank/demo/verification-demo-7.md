@@ -1,5 +1,7 @@
 # Verification demo 7 — 12-month EU health programme in Ghana (run log, started 2026-10-07)
 
+**DonorDesk Version 1.93**
+
 Reference and plan: [`verification-demo-7-reference.md`](verification-demo-7-reference.md). Project: **[DEMO-7] Northern Ghana MNCH-R**, id `2b7659cf-8938-4c5a-b0ac-95ea73de9ae4`, tenant GEC, prod.
 Scripts: `scripts/demo-health-gh/`.
 

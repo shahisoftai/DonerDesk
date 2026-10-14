@@ -1,5 +1,7 @@
 # Frequently Asked Questions
 
+**DonorDesk Version 1.93**
+
 ## General
 
 ### What is DonorDesk?

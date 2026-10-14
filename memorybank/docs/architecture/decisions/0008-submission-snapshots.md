@@ -1,5 +1,7 @@
 # ADR-0008: Immutable submission snapshots
 
+**DonorDesk Version 1.93**
+
 **Status:** Accepted  
 **Date:** 2026-08-19  
 **Related:** PROFESSIONAL-REPORTING-IMPLEMENTATION-PLAN (Phase 7)

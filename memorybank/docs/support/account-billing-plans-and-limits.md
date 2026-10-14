@@ -1,5 +1,7 @@
 # Understanding Billing Plans and Limits
 
+**DonorDesk Version 1.93**
+
 Your DonorDesk plan sets limits on projects, team seats, storage and AI report drafts. This page explains what each limit counts and what happens when you reach one. Current prices and features are also on the public [Pricing page](/pricing).
 
 ## Plan limits at a glance

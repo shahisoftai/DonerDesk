@@ -1,5 +1,7 @@
 # DonorDesk
 
+**DonorDesk Version 1.93**
+
 AI-assisted donor reporting, evidence management, and compliance platform for NGOs and humanitarian programmes.
 
 ## Monorepo layout

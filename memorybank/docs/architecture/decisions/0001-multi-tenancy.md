@@ -1,5 +1,7 @@
 # ADR 0001 — Why shared-schema multi-tenancy with Postgres RLS (Phase 2 target)
 
+**DonorDesk Version 1.93**
+
 ## Context
 DonorDesk is multi-tenant by design. The master plan compares database-per-tenant,
 schema-per-tenant, and shared-schema-with-RLS approaches.

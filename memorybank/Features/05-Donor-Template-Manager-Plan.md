@@ -1,5 +1,7 @@
 # Donor Template Manager — Remediation & Completion Plan (2026-09-27)
 
+**DonorDesk Version 1.93**
+
 Goal: a fully working Template Manager. It extracts **everything** a donor template
 asks for (the report structure, each section's instructions and questions, tables,
 annexes, compliance rules, formatting, and submission and deadline rules). It then lets a

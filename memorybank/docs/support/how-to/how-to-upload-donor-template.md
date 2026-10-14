@@ -1,5 +1,7 @@
 # How to Upload a Donor Template
 
+**DonorDesk Version 1.93**
+
 A **donor template** tells DonorDesk how the donor wants the report structured. DonorDesk reads the donor's document, extracts the report outline and instructions, and lets you review them before anything is written.
 
 Who can manage templates: Admin, Project Manager and Grants Officer.

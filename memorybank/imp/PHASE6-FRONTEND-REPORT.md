@@ -1,5 +1,7 @@
 # DonorDesk Frontend — Phase 6 Implementation Report
 
+**DonorDesk Version 1.93**
+
 **Date:** 2026-08-12
 **Scope:** Phase 6 "Review, approval, and export" (REV-01…REV-03, EXP-01…EXP-03) from `memorybank/imp/frontend-imp-plan.md`
 **Status:** Delivered; backend claim-provenance dependency tracked below.

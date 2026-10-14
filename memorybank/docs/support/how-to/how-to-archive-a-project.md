@@ -1,5 +1,7 @@
 # How to Archive or Complete a Project
 
+**DonorDesk Version 1.93**
+
 Use **Projects → your project → Settings**. Editing project settings requires Admin or Project Manager rights.
 
 ## Mark a project completed

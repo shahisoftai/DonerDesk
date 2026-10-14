@@ -1,7 +1,8 @@
-# Feature 21: Agent Memory (DonorDesk Version 2.0)
+# Feature 21: Agent Memory (introduced in DonorDesk Version 1.93)
 
-**Version:** 2.0 — this feature is the headline addition of the DonorDesk
-Version 2.0 release, built on branch `0009-agent-memory`.
+**DonorDesk Version 1.93**
+
+**Version:** introduced in DonorDesk Version 1.93 as its headline addition, built on branch `0009-agent-memory`.
 **Status:** Implemented on branch `0009-agent-memory` (not yet merged to
 `master` — pending the user's review per the branch's stated purpose). See
 [`../imp/Phase21-agent-memory.md`](../imp/Phase21-agent-memory.md) for the

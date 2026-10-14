@@ -1,5 +1,7 @@
 # How to Change a Team Member's Role
 
+**DonorDesk Version 1.93**
+
 Only **Admins** can change roles.
 
 ## Steps

@@ -1,5 +1,7 @@
 # Report-type quality gaps — implementation plan
 
+**DonorDesk Version 1.93**
+
 **Status (2026-10-04): implemented in code (Phases 1–7 except the native-speaker review); tests green; not yet deployed or browser-verified.** Outcome notes: [`Features/10-Reporting-Period-Manager.md`](../Features/10-Reporting-Period-Manager.md) §"Report-type quality gaps closed". Phase 0 was folded into per-phase tests (no separate golden-corpus fixtures were added).
 
 Source: audit of 2026-10-03 (report types vs. what the code feeds the writer). Baseline behaviour is documented in

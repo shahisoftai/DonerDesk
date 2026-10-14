@@ -1,5 +1,7 @@
 # Operational notes: demo 7 (EU / Ghana, 12-month health project) and the fixes it produced
 
+**DonorDesk Version 1.93**
+
 Written 2026-10-07. Audience: engineers and operators of DonorDesk. Companion files: `demo/verification-demo-7-reference.md` (plan and data), `demo/verification-demo-7.md` (run log and findings), `AGENTS.md` ("Phase 26 invariants").
 
 ## 1. What was run

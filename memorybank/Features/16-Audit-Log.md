@@ -1,5 +1,7 @@
 # Feature 16: Audit Log
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 Comprehensive logging of all important system events for accountability and troubleshooting.

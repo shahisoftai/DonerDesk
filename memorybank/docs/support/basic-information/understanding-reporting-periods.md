@@ -1,5 +1,7 @@
 # Understanding Reporting Periods
 
+**DonorDesk Version 1.93**
+
 A **reporting period** is one report cycle for a project, for example a quarterly progress report. Everything for that report lives in its workspace.
 
 ## What a period has

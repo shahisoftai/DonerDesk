@@ -1,5 +1,7 @@
 # Feature 1: Authentication and Onboarding
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 Users can create accounts, log in, reset passwords, and complete a first-time setup wizard to configure their organization.

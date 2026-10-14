@@ -1,5 +1,7 @@
 # Understanding Report Readiness
 
+**DonorDesk Version 1.93**
+
 DonorDesk shows several readiness signals. They answer different questions.
 
 ## 1. Project setup readiness

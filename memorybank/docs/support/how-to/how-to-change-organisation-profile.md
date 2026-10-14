@@ -1,5 +1,7 @@
 # How to Change Your Organisation Profile
 
+**DonorDesk Version 1.93**
+
 Go to **Settings → Settings**. Admins can edit; other roles see the page read-only ("You do not have permission to edit organization settings").
 
 ## What you can edit

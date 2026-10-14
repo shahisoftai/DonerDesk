@@ -1,5 +1,7 @@
 # Feature 2: Organization Workspace
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 Each organization has a workspace with a profile and dashboard displaying key metrics, active projects, upcoming reports, and recent activity.

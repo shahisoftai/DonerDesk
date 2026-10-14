@@ -1,5 +1,7 @@
 # DonorDesk Frontend — Phase 0 Implementation Report
 
+**DonorDesk Version 1.93**
+
 **Date:** 2026-08-12
 **Scope:** Phase 0 "Baseline and safety" from `memorybank/imp/frontend-imp-plan.md`
 **Status:** Implemented for frontend scope; backend dependencies tracked below.

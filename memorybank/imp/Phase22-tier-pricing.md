@@ -1,5 +1,7 @@
 # Phase 22 — Tier Pricing Overhaul: Catalog, Entitlements, Monetization Features
 
+**DonorDesk Version 1.93**
+
 **Created:** 2026-09-28
 **Status:** IN PROGRESS — **WS-A shipped 2026-09-28** (catalog flipped to §3
 values in the same change as this status update; see §2.1a). **WS-B shipped

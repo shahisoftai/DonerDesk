@@ -1,5 +1,7 @@
 # Feature 10: Reporting Period Manager
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 Manages reporting periods for projects with deadlines, templates, and status tracking.

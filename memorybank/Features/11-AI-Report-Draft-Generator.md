@@ -1,5 +1,7 @@
 # Feature 11: AI Report Draft Generator
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 AI generates donor-ready report drafts from project data, evidence, and templates. Each section is editable with source references.

@@ -1,5 +1,7 @@
 # DonorDesk SuperAdmin Portal
 
+**DonorDesk Version 1.93**
+
 **Portal:** `https://sa.donordesk.online`  
 **Classification:** privileged platform control plane  
 **Production status:** deployed and reachable  

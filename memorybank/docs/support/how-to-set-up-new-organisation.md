@@ -1,5 +1,7 @@
 # How to Set Up Your Organisation
 
+**DonorDesk Version 1.93**
+
 Signing up creates your workspace. This guide covers the setup that follows. Everything is on one page, **Settings → Setup** (also shown as **Set up your workspace** after signup). Only Admins can complete it.
 
 ## The setup checklist

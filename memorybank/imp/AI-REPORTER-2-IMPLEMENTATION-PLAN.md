@@ -1,5 +1,7 @@
 # AI Reporter 2.0 — Implementation Plan (Narrative, Lists, Tables, Charts, Numeric Discipline, Historical Intelligence, Per-Section Reliability)
 
+**DonorDesk Version 1.93**
+
 **Status:** ✅ **IMPLEMENTED AND DEPLOYED** (release `20260828200000`, 2026-08-29)
 **Deployed commit:** `a2ffc29 feat(ai-reporter-2): typed artifacts, validators, per-section fallback, 25-case eval` on `0005-report-enhanc-03` (pushed to `origin/0005-report-enhanc-03`).
 **Owner:** DonorDesk engineering

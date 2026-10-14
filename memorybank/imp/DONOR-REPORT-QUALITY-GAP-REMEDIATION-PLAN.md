@@ -1,5 +1,7 @@
 # Donor-Report Quality Gap Remediation — Implementation Plan
 
+**DonorDesk Version 1.93**
+
 > Source audit: donor-reporting quality gap analysis (conversation, 2026-09).
 > Verdict: strong on assurance (anti-inflation, numeric integrity, gates); weak on
 > craft/specificity — donor-*shaped* but not donor-*voiced*. Three structural

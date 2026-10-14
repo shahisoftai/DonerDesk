@@ -1,5 +1,7 @@
 # How to Use Bulk Actions
 
+**DonorDesk Version 1.93**
+
 Bulk actions let you make the same decision on many items at once. DonorDesk has three of them.
 
 ## 1. Compliance checklist

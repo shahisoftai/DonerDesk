@@ -1,5 +1,7 @@
 # Donor Templates
 
+**DonorDesk Version 1.93**
+
 A donor template describes the structure and rules of the report a donor expects. DonorDesk uses it to build the report outline and to guide the AI Reporter.
 
 ## What a template contains

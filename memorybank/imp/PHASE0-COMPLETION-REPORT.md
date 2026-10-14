@@ -1,5 +1,7 @@
 # DonorDesk Phase 0 Completion Report
 
+**DonorDesk Version 1.93**
+
 **Report date:** 11 August 2026  
 **Phase:** Phase 0 — Foundation  
 **Assessment basis:** `memorybank/base/DonorDesk — Phased Implementation Plan.md`  

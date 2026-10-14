@@ -1,5 +1,7 @@
 # How to Generate an AI Report Draft
 
+**DonorDesk Version 1.93**
+
 DonorDesk's **AI Reporter** writes the narrative of a donor report from the data already in your project. Numbers, tables, charts and comparisons are built from your **verified** indicator data. The AI writes only the prose around them, and every figure it uses is checked against that data before you see it.
 
 ## Before you generate

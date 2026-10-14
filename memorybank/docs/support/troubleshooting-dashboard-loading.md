@@ -1,5 +1,7 @@
 # Troubleshooting Dashboard and Home Loading
 
+**DonorDesk Version 1.93**
+
 ## Home shows "Could not load" cards
 
 Individual cards can fail without breaking the page (for example **Notifications unavailable**, **Deadlines unavailable**, **Projects unavailable**). Reload after a minute. If one stays broken, email support@donordesk.online with the card name and time.

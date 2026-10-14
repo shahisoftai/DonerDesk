@@ -1,5 +1,7 @@
 # Security Best Practices
 
+**DonorDesk Version 1.93**
+
 Practical steps to keep your DonorDesk workspace safe.
 
 ## Accounts and passwords

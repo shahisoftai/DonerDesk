@@ -1,5 +1,7 @@
 # Understanding Indicators and Targets
 
+**DonorDesk Version 1.93**
+
 An **indicator** is how you measure a result. A **target** is the value you plan to reach.
 
 ## Fields

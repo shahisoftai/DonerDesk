@@ -1,5 +1,7 @@
 # Verification demo 5 — a six-month USAID health project in Kenya, built and reported through the UI (2026-10-06)
 
+**DonorDesk Version 1.93**
+
 A six-month **health** project for **USAID**, built on production (`donordesk.online`, tenant `GEC`) as a tenant would: one visible Chromium window driven by Playwright, no API calls and no
 database writes. It follows [`verification-demo-4.md`](verification-demo-4.md) and re-tests Phase 23/24 on a donor-style (USAID) project with monthly reports and a closing report.
 

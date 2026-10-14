@@ -1,5 +1,7 @@
 # Verification demo 4 — a six-month WASH project built and reported entirely through the UI (2026-10-05)
 
+**DonorDesk Version 1.93**
+
 A completed six-month **WASH** project, built on production (`donordesk.online`, tenant `GEC`, `mnpiracha@gmail.com`) the way a tenant would: every step went through the real web UI in
 one visible Chromium window (Playwright driving the page, no API calls and no database writes), then **one AI final report** was generated, reviewed and downloaded. This re-tests the
 Phase 23 user-friendliness work ([`../imp/PHSE23-userfriendliness.md`](../imp/PHSE23-userfriendliness.md)) and follows [`verification-demo-3.md`](verification-demo-3.md), which used the API.

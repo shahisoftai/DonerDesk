@@ -1,5 +1,7 @@
 # Product Recovery Plan — Implementation Record
 
+**DonorDesk Version 1.93**
+
 **Date:** 2026-08-30
 **Status:** IMPLEMENTED (P0 + P1) and DEPLOYED — release `20260829160000` on Contabo
 **Audit basis:** end-to-end realistic user audit of donordesk.online (Programme

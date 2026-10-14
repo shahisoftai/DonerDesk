@@ -1,5 +1,7 @@
 # Troubleshooting Project Setup
 
+**DonorDesk Version 1.93**
+
 ## Where to look
 
 Open the project's **Setup** page. It shows the status (Not started, In progress, Ready, Action required), a checklist and a **Blockers** list with **Fix** links.

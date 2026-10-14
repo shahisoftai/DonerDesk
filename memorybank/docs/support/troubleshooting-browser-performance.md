@@ -1,5 +1,7 @@
 # Troubleshooting Browser and Performance Issues
 
+**DonorDesk Version 1.93**
+
 ## Pages are slow or do not load
 
 1. Reload the page and check your connection.

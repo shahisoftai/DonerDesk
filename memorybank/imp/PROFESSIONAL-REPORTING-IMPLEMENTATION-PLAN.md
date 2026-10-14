@@ -1,5 +1,7 @@
 # Professional Donor Reporting — Comprehensive Phased Implementation Plan
 
+**DonorDesk Version 1.93**
+
 **Created:** 2026-08-18  
 **Status:** IMPLEMENTED (2026-08-19, release `20260819090000` — see §15 below)  
 **Scope:** Hardening and completing Feature 20 so approved outputs can be treated as donor-submission candidates for institutional funders such as UN agencies, USAID/BHA, DG ECHO/EU, Gavi, the Global Fund, GPE, climate funds, and bilateral donors.

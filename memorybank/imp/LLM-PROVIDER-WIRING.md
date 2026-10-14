@@ -1,5 +1,7 @@
 # LLM Provider Wiring — Implementation Plan
 
+**DonorDesk Version 1.93**
+
 **Status:** IMPLEMENTED (Phase 1–4, 2026-08-17) + AI Reporter sidecar (2026-08-28)
 **Date:** 2026-08-17
 **Feature reference:** `memorybank/Features/11-AI-Report-Draft-Generator.md`,

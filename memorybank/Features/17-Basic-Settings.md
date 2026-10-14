@@ -1,5 +1,7 @@
 # Feature 17: Basic Settings
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 Organization and project-level settings, user preferences, and system configuration.

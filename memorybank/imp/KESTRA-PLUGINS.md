@@ -1,5 +1,7 @@
 # Kestra Plugins — inbound integrations & data pipelines
 
+**DonorDesk Version 1.93**
+
 **Author:** Kilo (agent)
 **Date:** 2026-08-13
 **Status:** OPERATIONAL (core) · STAGED/GATED (GDrive, SFTP)

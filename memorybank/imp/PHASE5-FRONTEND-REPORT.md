@@ -1,5 +1,7 @@
 # DonorDesk Frontend — Phase 5 Implementation Report
 
+**DonorDesk Version 1.93**
+
 **Date:** 2026-08-12
 **Scope:** Phase 5 "Reporting and compliance" (REP-01…REP-06, CMP-01…CMP-03, shared job handling) from `memorybank/imp/frontend-imp-plan.md`
 **Status:** Delivered; backend provenance dependency tracked below.

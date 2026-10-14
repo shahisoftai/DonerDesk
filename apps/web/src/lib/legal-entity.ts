@@ -8,5 +8,5 @@ export const LEGAL = {
   legalEmail: "legal@donordesk.online",
   privacyEmail: "privacy@donordesk.online", // TO CONFIRM mailbox exists
   hostingLocation: "Contabo data centre",
-  updated: "7 October 2026 (Version 1.0)",
+  updated: "7 October 2026 (Version 1.93)",
 } as const;

@@ -1,5 +1,7 @@
 # How to Manage Billing and Subscription
 
+**DonorDesk Version 1.93**
+
 Use **Settings → Billing** to see your plan and usage, upgrade, buy extra AI credits, and manage your subscription.
 
 ## Who can open it

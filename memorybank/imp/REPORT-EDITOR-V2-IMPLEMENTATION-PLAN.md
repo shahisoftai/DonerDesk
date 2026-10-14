@@ -1,5 +1,7 @@
 # Report Editor v2 — Document-First Workspace — Implementation Plan
 
+**DonorDesk Version 1.93**
+
 > **Status:** APPROVED FOR IMPLEMENTATION (2026-09-26). **P0–P6 code complete (2026-09-27, not deployed; v2 behind `REPORT_EDITOR_V2`). P7 = rollout (flag on → pilot → all) and deletion of the classic workspace after one release.**
 > **Decision:** Option C ("document-first editor") from the Report Workspace UX
 > audit, chosen over A (declutter in place) and B (step screens).

@@ -1,5 +1,7 @@
 # DonorDesk BYOC (Bring Your Own Cloud) Deployment Guide
 
+**DonorDesk Version 1.93**
+
 > **Current production reality (2026-08-13):** DonorDesk is deployed on a single
 > **Contabo** host (PostgreSQL 16 + systemd), not yet in an AWS/GCP BYOC account.
 > This guide documents the future managed-cloud target. See `contabo-ops.md`

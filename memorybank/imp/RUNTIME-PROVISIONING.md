@@ -1,5 +1,7 @@
 # Runtime Provisioning — Implementation Plan & Result
 
+**DonorDesk Version 1.93**
+
 **Status:** IMPLEMENTED + DEPLOYED + BROWSER-VERIFIED (releaseId `20260901140002` on Contabo).
 **Date:** 2026-09-01
 **Related docs:** `memorybank/Fixes.md` (section "Report-Quality root cause + … deploy hardening + AI runtime provisioning"), `memorybank/contabo-ops.md` (Runtime provisioning + MiniMax fix), `memorybank/imp/LLM-PROVIDER-WIRING.md` §18 + §19, `memorybank/SUPERADMIN-PORTAL.md`.

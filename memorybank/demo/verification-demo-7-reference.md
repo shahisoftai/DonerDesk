@@ -1,5 +1,7 @@
 # Demo 7 — quick reference: a 12-month EU-funded health programme in Ghana (2026-10-07)
 
+**DonorDesk Version 1.93**
+
 Everything needed to run and score the demo without searching. Run notes and findings go in `verification-demo-7.md` (create when the run starts). Scripts: `scripts/demo-health-gh/`; generated inputs and downloads: `memorybank/demo/verification-demo-7-artifacts/`.
 Follows demos 1-6 (`verification-demo-5.md`, `baseline-phase25.md`). Demo 6 was stopped early, so its unscored items (second-approver block, bulk attest, failure drills) are folded into section 9.
 

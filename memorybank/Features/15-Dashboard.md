@@ -1,5 +1,7 @@
 # Feature 15: Dashboard
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 Organization and project dashboards with actionable metrics, KPIs, and readiness scores.

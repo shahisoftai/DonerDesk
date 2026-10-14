@@ -1,5 +1,7 @@
 # Feature 6: Logframe and Indicator Manager
 
+**DonorDesk Version 1.93**
+
 ## Overview
 
 Users can create, upload, or AI-structure project logframes with Goals, Outcomes, Outputs, Activities, and Indicators.

@@ -1,5 +1,7 @@
 # Feature 20: Report Intelligence Engine — Implementation Plan
 
+**DonorDesk Version 1.93**
+
 **Updated:** 2026-08-19
 **Status:** IMPLEMENTED — core (Phases 0–1 + foundation of 2–4) landed 2026-08-16: domain primitives, decimal-safe indicator analyst, semantics inference, generation-run snapshot, structured claim provenance with evidence-hash snapshots, deterministic tiered claim verifier, approval gates, reject/request-changes transition, report-plan/claim/run/mapping persistence, `DONOR_TEMPLATE` export type, API routes, RLS coverage, and tests. LLM-backed planner/writer/verifier are implemented; docxtpl rendering in Python workers was completed 2026-09-18 (see §20) and is dark-launched behind `DONOR_TEMPLATE_RENDER_ENABLED`. **2026-08-18:** the analyst/narrator contract was enriched for professional donor reports (indicator metadata + target/baseline, previous-period `comparisonValue`, deterministic `performanceEvaluation`, project/period/template context, per-section guidance) — see §17. **2026-08-19:** the full professional-reporting hardening plan (revision integrity, assertion coverage, structured numeric/evidence verification, requirement packs, submission snapshots, one shared gate, export intent, golden corpus) is IMPLEMENTED and shipped — see §18.
 

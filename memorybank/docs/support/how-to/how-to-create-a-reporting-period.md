@@ -1,5 +1,7 @@
 # How to Create a Reporting Period
 
+**DonorDesk Version 1.93**
+
 A **reporting period** is one report cycle for a project: for example "Q3 2026 progress report". It holds the period's indicator values, activities, evidence, story, draft and exports.
 
 ## Before you start
