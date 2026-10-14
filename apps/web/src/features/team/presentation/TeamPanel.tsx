@@ -39,7 +39,20 @@ export function TeamPanel({
   const canInvite = can(capabilities, "team.invite");
   const canManage = can(capabilities, "team.manage");
 
-  const filtered = useMemo(() => filterTeamMembers(members, { query, role: roleFilter }), [members, query, roleFilter]);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sortBy, setSortBy] = useState<"NAME" | "NAME_DESC" | "EMAIL" | "ROLE" | "STATUS">("NAME");
+  const statuses = useMemo(() => [...new Set(members.map((m) => m.status))].sort(), [members]);
+  const filtered = useMemo(() => {
+    const roleName = (r: string) => ROLE_LABEL[r as keyof typeof ROLE_LABEL] ?? r;
+    const cmp = {
+      NAME: (a: TeamMember, b: TeamMember) => a.name.localeCompare(b.name),
+      NAME_DESC: (a: TeamMember, b: TeamMember) => b.name.localeCompare(a.name),
+      EMAIL: (a: TeamMember, b: TeamMember) => a.email.localeCompare(b.email),
+      ROLE: (a: TeamMember, b: TeamMember) => roleName(a.role).localeCompare(roleName(b.role)) || a.name.localeCompare(b.name),
+      STATUS: (a: TeamMember, b: TeamMember) => a.status.localeCompare(b.status) || a.name.localeCompare(b.name),
+    }[sortBy];
+    return filterTeamMembers(members, { query, role: roleFilter }).filter((m) => !statusFilter || m.status === statusFilter).sort(cmp);
+  }, [members, query, roleFilter, statusFilter, sortBy]);
   const fields = actionState.fields ?? localErrors;
   const errorCount = Object.keys(fields).reduce((sum, k) => sum + (fields[k]?.length ?? 0), 0);
 
@@ -128,6 +141,23 @@ export function TeamPanel({
             {ROLE_OPTIONS.map((r) => (
               <option key={r} value={r}>{ROLE_LABEL[r as keyof typeof ROLE_LABEL] ?? r}</option>
             ))}
+          </Select>
+        </div>
+        <div>
+          <label className="label" htmlFor="team-status-filter">Status</label>
+          <Select id="team-status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">All statuses</option>
+            {statuses.map((st) => <option key={st} value={st}>{st.charAt(0) + st.slice(1).toLowerCase().replace(/_/g, " ")}</option>)}
+          </Select>
+        </div>
+        <div>
+          <label className="label" htmlFor="team-sort">Sort by</label>
+          <Select id="team-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
+            <option value="NAME">Name (A–Z)</option>
+            <option value="NAME_DESC">Name (Z–A)</option>
+            <option value="EMAIL">Email</option>
+            <option value="ROLE">Role</option>
+            <option value="STATUS">Status</option>
           </Select>
         </div>
       </div>
