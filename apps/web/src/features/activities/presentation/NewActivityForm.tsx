@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createActivityAction } from "@/lib/actions/activities";
-import { guardNetwork, isOfflineFailure } from "@/lib/shared/connectivity";
+import { isOfflineFailure } from "@/lib/shared/connectivity";
 import type { AppError } from "@/lib/shared/app-error";
 import { useOutbox } from "@/features/offline/presentation/OutboxProvider";
 import { activityEntry } from "@/features/offline/domain/activity-outbox";
@@ -243,12 +243,13 @@ export function NewActivityForm({
         attachedEvidenceIds: selectedEvidence,
       };
       const attempt: { key: string; error?: AppError } = { key: "" };
-      const created = await actionState.runCreate(async (idempotencyKey) => {
-        attempt.key = idempotencyKey;
-        const result = await guardNetwork(() => createActivityAction(input, { idempotencyKey }));
-        if (!result.ok) attempt.error = result.error;
-        return result;
-      });
+      const created = await actionState.runCreate(
+        (idempotencyKey) => createActivityAction(input, { idempotencyKey }),
+        (error, idempotencyKey) => {
+          attempt.error = error;
+          attempt.key = idempotencyKey;
+        },
+      );
       if (!created) {
         // No connection: keep the finished form (photos included) on this device and let the outbox send it later.
         if (outbox.supported && isOfflineFailure(attempt.error)) {

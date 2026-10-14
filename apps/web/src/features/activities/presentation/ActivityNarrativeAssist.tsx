@@ -37,7 +37,7 @@ export function ActivityNarrativeAssist({
   }
 
   return (
-    <section className="rounded-xl border border-ai-500/30 bg-ai-500/5 p-4" aria-label="Describe the activity in your own words">
+    <section className="rounded-xl border border-ai-500/30 bg-ai-500/5 p-4" aria-label="Tell it in your own words">
       <h2 className="text-sm font-medium text-slate-800 dark:text-slate-100">Tell it in your own words</h2>
       <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
         Say what happened, when, where and who took part. Start a part with &ldquo;Challenges:&rdquo;, &ldquo;Achievements:&rdquo;,

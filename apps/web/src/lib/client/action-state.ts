@@ -20,7 +20,11 @@ export type ActionState = {
    * Runs one *create*. The action receives this form's idempotency key and must pass it to the create action: that is
    * what makes it safe to repeat a save that timed out (done here, with the same key) and to click twice.
    */
-  runCreate: <T>(action: (idempotencyKey: string) => Promise<Result<T, AppError>>) => Promise<T | undefined>;
+  runCreate: <T>(
+    action: (idempotencyKey: string) => Promise<Result<T, AppError>>,
+    /** Told how it failed, with this form's key, even when the call was never made (offline). */
+    onFailure?: (error: AppError, idempotencyKey: string) => void,
+  ) => Promise<T | undefined>;
 };
 
 export function useActionState(): ActionState {
@@ -32,7 +36,7 @@ export function useActionState(): ActionState {
   const inFlight = useRef(false);
   const key = useRef<string | null>(null);
 
-  const execute = useCallback(async <T,>(attempt: () => Promise<Result<T, AppError>>, repeat: boolean): Promise<T | undefined> => {
+  const execute = useCallback(async <T,>(attempt: () => Promise<Result<T, AppError>>, repeat: boolean, onFailure?: (error: AppError) => void): Promise<T | undefined> => {
     if (inFlight.current) return undefined;
     inFlight.current = true;
     setBusy(true);
@@ -46,6 +50,7 @@ export function useActionState(): ActionState {
       if (!result.ok) {
         setError(result.error.message);
         setFailure(result.error);
+        onFailure?.(result.error);
         if (result.error.kind === "validation" && result.error.fields) {
           setFields(result.error.fields);
         }
@@ -62,10 +67,10 @@ export function useActionState(): ActionState {
   const run = useCallback(<T,>(action: () => Promise<Result<T, AppError>>) => execute(action, false), [execute]);
 
   const runCreate = useCallback(
-    <T,>(action: (idempotencyKey: string) => Promise<Result<T, AppError>>) => {
+    <T,>(action: (idempotencyKey: string) => Promise<Result<T, AppError>>, onFailure?: (error: AppError, idempotencyKey: string) => void) => {
       key.current ??= newIdempotencyKey();
       const idempotencyKey = key.current;
-      return execute(() => action(idempotencyKey), true);
+      return execute(() => action(idempotencyKey), true, onFailure ? (error) => onFailure(error, idempotencyKey) : undefined);
     },
     [execute],
   );
