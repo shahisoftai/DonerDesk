@@ -50,3 +50,11 @@ test("currency by country is case-insensitive and unsure countries give nothing"
   assert.equal(currencyForCountry(" KENYA "), "KES");
   assert.equal(currencyForCountry("Atlantis"), undefined);
 });
+
+import { suggestionHint } from "../../src/features/projects/domain/project-wizard-defaults.ts";
+
+test("a value that is still the suggestion is labelled as one; a changed or absent one is not", () => {
+  assert.match(suggestionHint("HEALTH", "HEALTH", "Health")!, /Suggested from your last project \(Health\): change it/);
+  assert.equal(suggestionHint("HEALTH", "WASH", "WASH"), undefined);
+  assert.equal(suggestionHint("", "", undefined), undefined);
+});

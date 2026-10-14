@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
+import { useHydrated } from "@/lib/client/use-hydrated";
 
 const TONES = ["FORMAL", "CONCISE", "NARRATIVE", "TECHNICAL"] as const;
 
@@ -26,6 +27,7 @@ export function ReportingProfileForm({
   initialProfile: ReportingProfile | null;
 }) {
   const router = useRouter();
+  const hydrated = useHydrated();
   const [language, setLanguage] = useState(initialProfile?.language ?? "en");
   const [tone, setTone] = useState(initialProfile?.tone ?? "FORMAL");
   const [writingStyle, setWritingStyle] = useState(initialProfile?.writingStyle ?? "");
@@ -74,6 +76,7 @@ export function ReportingProfileForm({
         void save(false);
       }}
     >
+      <fieldset disabled={!hydrated} className="contents">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="label" htmlFor="language">Language</label>
@@ -141,8 +144,9 @@ export function ReportingProfileForm({
 
       {error && <InlineAlert tone="danger" title={error} />}
 
+      </fieldset>
       <div className="flex gap-3">
-        <Button type="submit" pending={busy}>Save profile</Button>
+        <Button type="submit" pending={busy} disabled={!hydrated}>Save profile</Button>
         <Button type="button" variant="secondary" pending={busy} onClick={() => void save(true)}>
           Use defaults
         </Button>

@@ -17,6 +17,7 @@ import {
   type WizardFieldErrors,
 } from "@/features/projects/validation/project-wizard";
 import { currencyForCountry } from "@/features/projects/domain/reference-data";
+import { suggestionHint } from "@/features/projects/domain/project-wizard-defaults";
 import { wizardDataFromProject, type DefaultsProject, type WizardSuggestions } from "@/features/projects/domain/project-wizard-defaults";
 import { createWizardDraftStore, hasWizardInput, type WizardDraft } from "@/features/projects/application/wizard-draft-store";
 import { formatDateTime } from "@/lib/shared/dates";
@@ -248,7 +249,7 @@ export function NewProjectWizard({
 
         {step === "geography" && (
           <>
-            <Field label="Country" htmlFor="country" error={fieldError("country")}>
+            <Field label="Country" htmlFor="country" error={fieldError("country")} hint={suggestionHint(defaults.geography.country, data.geography.country)}>
               <Input id="country" list="country-suggestions" value={data.geography.country} invalid={Boolean(errors.country)} onChange={(e) => changeCountry(e.target.value)} required />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -259,7 +260,7 @@ export function NewProjectWizard({
                 <Input id="district" value={data.geography.district ?? ""} onChange={(e) => update("geography", { district: e.target.value })} />
               </Field>
             </div>
-            <Field label="Sector" htmlFor="sector">
+            <Field label="Sector" htmlFor="sector" hint={suggestionHint(defaults.geography.sector, data.geography.sector, SECTOR_LABEL[data.geography.sector])}>
               <Select id="sector" value={data.geography.sector} onChange={(e) => update("geography", { sector: e.target.value })}>
                 {SECTOR_OPTIONS.map((s) => (
                   <option key={s} value={s}>

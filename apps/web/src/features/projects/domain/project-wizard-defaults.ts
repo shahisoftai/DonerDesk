@@ -90,3 +90,11 @@ export function projectWizardDefaults(input: {
     },
   };
 }
+
+/**
+ * A pre-filled value that is still the suggestion is called one, so a project of a different sector or country is
+ * not created with a value nobody chose. Empty once the person has changed it (or when nothing was suggested).
+ */
+export function suggestionHint(suggested: string, current: string, label?: string): string | undefined {
+  return suggested && suggested === current ? `Suggested from your last project${label ? ` (${label})` : ""}: change it if this project is different.` : undefined;
+}

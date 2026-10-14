@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { setSessionCookie } from "@/lib/session-server";
 import { AuthService, AuthFormError } from "@/features/auth/application/auth-service";
 import type { AuthFormState } from "@/features/auth/application/auth-schemas";
+import { gatewayRequest } from "@/lib/server/api-gateway";
+import { LegalConsentSchema } from "@/lib/server/schemas";
 
 const service = new AuthService();
 
@@ -25,6 +27,8 @@ export async function acceptInvitationAction(
   if (token.length < 10) fields.token = ["Invalid invitation link"];
   if (name.length < 2) fields.name = ["Please enter your full name"];
   if (password.length < 8) fields.password = ["Use at least 8 characters"];
+  // The terms are accepted here, on the page the person is already on, so they are not sent to a second screen they cannot leave.
+  if (form.get("acceptTerms") !== "on") fields.acceptTerms = ["Please accept the Terms of Service and Privacy Policy to join."];
   if (Object.keys(fields).length > 0) {
     return { error: "Please correct the highlighted fields.", fields };
   }
@@ -38,5 +42,7 @@ export async function acceptInvitationAction(
     return { error: "We could not accept this invitation. It may have expired or already been used." };
   }
   await setSessionCookie(sessionToken);
+  // Best effort: if recording fails the person still lands on the onboarding screen, which asks again.
+  await gatewayRequest("/v1/legal/consent", LegalConsentSchema, sessionToken, { method: "POST", body: { accepted: true, source: "invitation" } });
   redirect("/dashboard");
 }

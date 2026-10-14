@@ -28,6 +28,14 @@ export default function InviteAcceptForm({ token, role }: { token: string; role:
       >
         <Input id="invite-password" name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={200} />
       </Field>
+      <Field label="" htmlFor="invite-terms" error={fields.acceptTerms?.[0]}>
+        <label className="flex items-start gap-2 text-sm">
+          <input id="invite-terms" name="acceptTerms" type="checkbox" className="mt-1" required />
+          <span>
+            I have read and accept the <a className="underline" href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and the <a className="underline" href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>. This is recorded in my organisation&apos;s audit trail.
+          </span>
+        </label>
+      </Field>
       {state?.error && (
         <p role="alert" className="text-sm font-medium text-danger-700 dark:text-danger-400">{state.error}</p>
       )}

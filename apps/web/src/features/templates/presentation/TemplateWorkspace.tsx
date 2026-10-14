@@ -164,7 +164,7 @@ export function TemplateWorkspace({
           title="Analysing your template"
           steps={EXTRACTION_STEPS}
           estimatedMs={EXTRACTION_ESTIMATED_MS}
-          note="This usually takes one to three minutes for a full donor template. You can leave this page open — it updates on its own."
+          note="This usually takes one to three minutes for a Word template and up to five for a long PDF. You can leave this page open — it updates on its own."
           variant="overlay"
         />
         {template.status === "EXTRACTION_FAILED" && (
