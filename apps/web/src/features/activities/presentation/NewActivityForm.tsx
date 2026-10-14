@@ -35,7 +35,8 @@ import type { OutlineSource } from "@/features/logframe/domain/logframe-outline"
 type PeriodOption = { id: string; label: string; reportType: string; startDate: string; endDate: string };
 type EvidenceOption = { id: string; label: string };
 
-export function NewActivityForm({
+function NewActivityFormInner({
+  onQueued,
   projectId,
   reportingPeriods,
   evidenceOptions,
@@ -55,6 +56,8 @@ export function NewActivityForm({
   initialLogframeActivityId?: string;
   /** Earlier records the new one can start from (title, place and node are copied; numbers and text are not). */
   earlierRecords?: Array<{ id: string; title: string; location?: string | undefined; logframeActivityId?: string | undefined }>;
+  /** Called when the finished form was kept on this device because there was no connection. */
+  onQueued: (title: string) => void;
 }) {
   const router = useRouter();
   const actionState = useActionState();
@@ -269,8 +272,8 @@ export function NewActivityForm({
             }),
           );
           drafts.clear();
-          setLeaving(true);
-          router.push(`/projects/${projectId}/activities`);
+          // No navigation: with no connection the next page cannot load. The wrapper confirms in place.
+          onQueued(activityTitle);
         }
         return;
       }
@@ -710,4 +713,38 @@ export function NewActivityForm({
       </div>
     </form>
   );
+}
+
+type NewActivityFormProps = Omit<Parameters<typeof NewActivityFormInner>[0], "onQueued">;
+
+/**
+ * The new-activity form. When it was finished without a connection, the record is kept on this device (the outbox sends
+ * it later) and this confirms that in place, because the next page could not be loaded offline either.
+ */
+export function NewActivityForm(props: NewActivityFormProps) {
+  const [session, setSession] = useState(0);
+  const [queuedTitle, setQueuedTitle] = useState<string | null>(null);
+  if (queuedTitle !== null) {
+    return (
+      <div className="card mt-6 max-w-3xl space-y-3" role="status">
+        <h2 className="text-base font-semibold">Saved on this device</h2>
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          &ldquo;{queuedTitle || "Your activity"}&rdquo; will be sent as soon as you are back online. You can leave this page; the status shows at the bottom of the screen.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            onClick={() => {
+              setQueuedTitle(null);
+              setSession((n) => n + 1);
+            }}
+          >
+            Record another activity
+          </Button>
+          <a className="btn-secondary" href={`/projects/${props.projectId}/activities`}>Back to activities</a>
+        </div>
+      </div>
+    );
+  }
+  return <NewActivityFormInner key={session} {...props} onQueued={setQueuedTitle} />;
 }
