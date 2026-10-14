@@ -2,7 +2,8 @@ import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ProjectsResponseSchema, ReportingPeriodsResponseSchema, ExportsResponseSchema } from "@/lib/server/schemas";
 import { InlineError, EmptyState } from "@/components/feedback/PageState";
-import { ReportsList, downloadsFor, type ReportRow } from "@/features/reports/presentation/ReportsList";
+import { ReportsList, type ReportRow } from "@/features/reports/presentation/ReportsList";
+import { downloadsFor } from "@/features/reports/downloads-for";
 
 export const dynamic = "force-dynamic";
 

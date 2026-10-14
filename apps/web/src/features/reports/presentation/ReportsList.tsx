@@ -7,7 +7,6 @@ import { Select } from "@/components/ui/Select";
 import { REPORT_STATUS_LABEL, REPORT_TYPE_LABEL } from "@/lib/labels";
 import { reportStatusTone } from "@/lib/shared/tone";
 import { deadlineUrgency, formatDate } from "@/lib/shared/dates";
-import { protectedFileDownloadHref } from "@/lib/shared/downloads";
 
 export type ReportDownload = { label: string; href: string };
 export type ReportRow = {
@@ -158,12 +157,4 @@ export function ReportsList({ rows }: { rows: ReportRow[] }) {
       })}</div>
     </section>)}
   </div>;
-}
-
-export function downloadsFor(exports: Array<{ exportType: string; fileUrl: string; fileName?: string; createdAt: string }>): ReportDownload[] {
-  const latest = (t: string) => exports.filter((e) => e.exportType === t).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-  return ([["PDF", "PDF"], ["WORD", "Word"]] as const).flatMap(([t, label]) => {
-    const e = latest(t);
-    return e ? [{ label, href: protectedFileDownloadHref(e.fileUrl, e.fileName) }] : [];
-  });
 }
