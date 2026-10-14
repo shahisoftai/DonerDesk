@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { resolveReportClaimAction } from "@/lib/actions/reporting";
 import { Button } from "@/components/ui/Button";
+import { Textarea } from "@/components/ui/Textarea";
 
 /**
  * Inline resolution controls for a failed report statement. Lets a reviewer
@@ -68,9 +69,8 @@ export function ClaimResolutionActions({
                 ? "Exclude this statement from the report. You have the authority required for confidential sources."
                 : "Exclude this statement from the report."}
           </p>
-          <textarea
+          <Textarea dictate
             aria-label={open === "ACCEPTED_WITH_LIMITATION" ? "Limitation note" : "Exclusion note"}
-            className="block w-full rounded-md border border-slate-300 bg-white p-2 text-sm dark:border-slate-700 dark:bg-slate-900"
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}

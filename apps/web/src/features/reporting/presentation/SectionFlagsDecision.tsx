@@ -72,7 +72,7 @@ export function SectionFlagsDecision({
       <label className="block text-xs font-medium text-slate-700 dark:text-slate-200" htmlFor={`flags-note-${sectionId}`}>
         Why are these acceptable? (recorded with each statement)
       </label>
-      <Textarea id={`flags-note-${sectionId}`} value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="e.g. Reviewed by the programme lead against field notes." />
+      <Textarea dictate id={`flags-note-${sectionId}`} value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="e.g. Reviewed by the programme lead against field notes." />
       {!valid && note.length > 0 && <p className="text-xs text-slate-500">At least {MIN_NOTE} characters.</p>}
       {canApprove && (
         <label className="flex items-center gap-2 text-xs">

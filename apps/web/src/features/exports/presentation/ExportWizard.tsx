@@ -14,6 +14,7 @@ import { Badge } from "@/components/data/Badge";
 import { EXPORT_TYPE_LABEL } from "@/lib/labels";
 import { protectedFileDownloadHref } from "@/lib/shared/downloads";
 import { type ExportPreflight, type ExportPreflightItem } from "@/lib/server/schemas";
+import { Textarea } from "@/components/ui/Textarea";
 
 type Step = "type" | "inclusions" | "warnings" | "result";
 
@@ -526,8 +527,7 @@ function ExportIssueRow({
             <span className="font-medium text-slate-700 dark:text-slate-200">
               Notes {item.resolution === "ACCEPT_WITH_LIMITATION" ? "(required)" : "(optional)"}
             </span>
-            <textarea
-              className="mt-1 block w-full rounded-md border border-slate-300 bg-white p-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+            <Textarea dictate
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

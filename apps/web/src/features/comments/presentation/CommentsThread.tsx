@@ -113,7 +113,7 @@ export function CommentsThread({
 
       <form onSubmit={add} className="mt-4 space-y-2">
         <label className="label" htmlFor={`comment-${entityId}`}>Add a comment</label>
-        <Textarea
+        <Textarea dictate
           id={`comment-${entityId}`}
           value={text}
           onChange={(e) => setText(e.target.value)}

@@ -282,7 +282,7 @@ export function SectionTreeEditor({
                     </Field>
                     <div className="md:col-span-2">
                       <Field label="Donor instructions (sent to the AI writer)" htmlFor={`${s.id}-instr`} description="What the donor asks you to write in this section, in the donor's words.">
-                        <Textarea id={`${s.id}-instr`} className="min-h-[90px]" value={s.instructions ?? ""} onChange={(e) => patch(s.id, { instructions: e.target.value || undefined })} />
+                        <Textarea dictate id={`${s.id}-instr`} className="min-h-[90px]" value={s.instructions ?? ""} onChange={(e) => patch(s.id, { instructions: e.target.value || undefined })} />
                       </Field>
                     </div>
                     <div className="md:col-span-2">
@@ -303,7 +303,7 @@ export function SectionTreeEditor({
                         htmlFor={`${s.id}-author`}
                         description="Your own standing guidance for this section, e.g. emphasis or structure. Never extracted from the donor."
                       >
-                        <Textarea id={`${s.id}-author`} className="min-h-[60px]" value={s.authorInstructions ?? ""} onChange={(e) => patch(s.id, { authorInstructions: e.target.value || undefined })} />
+                        <Textarea dictate id={`${s.id}-author`} className="min-h-[60px]" value={s.authorInstructions ?? ""} onChange={(e) => patch(s.id, { authorInstructions: e.target.value || undefined })} />
                       </Field>
                     </div>
                     {s.source && (

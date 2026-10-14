@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/data/Badge";
 import { INDICATOR_VERIFICATION_LABEL, REPORT_TYPE_LABEL } from "@/lib/labels";
 import { indicatorVerificationTone } from "@/lib/shared/tone";
 import { formatDate } from "@/lib/shared/dates";
+import { Textarea } from "@/components/ui/Textarea";
 
 const DECISION_LABEL: Record<IndicatorUpdateReviewDecision, string> = {
   "request-correction": "Request correction",
@@ -106,9 +107,8 @@ export function IndicatorHistoryPanel({
                           <label className="text-xs font-medium text-slate-500" htmlFor={`reason-${row.id}`}>
                             Reason ({DECISION_LABEL[pending.decision].toLowerCase()})
                           </label>
-                          <textarea
+                          <Textarea dictate
                             id={`reason-${row.id}`}
-                            className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
                             rows={2}
                             maxLength={2000}
                             required

@@ -10,6 +10,7 @@ import { confirmClaimMatchesIndicatorAction, getClaimSuggestionAction } from "@/
 import { verificationDetailCopy } from "@/lib/reporting-copy";
 import { statementState, type StatementState } from "../../application/statements";
 import type { Anchor } from "../../application/claim-anchors";
+import { Textarea } from "@/components/ui/Textarea";
 
 export type InspectorClaim = ReportClaim;
 
@@ -251,7 +252,7 @@ function StatementCard({
                 ? "This statement cites confidential evidence: a grants officer or admin must leave it out."
                 : "The statement is removed from the exported report. You can undo this."}
           </p>
-          <textarea
+          <Textarea dictate
             aria-label={decision === "keep" ? "Why this statement is acceptable" : "Reason for leaving it out (optional)"}
             rows={2}
             autoFocus
@@ -259,7 +260,6 @@ function StatementCard({
             maxLength={2000}
             onChange={(e) => setNotes(e.target.value)}
             placeholder={decision === "keep" ? "For example: Figure confirmed by the district office by phone" : "Optional"}
-            className="block w-full rounded-md border border-slate-300 bg-white p-2 text-sm dark:border-white/15 dark:bg-slate-900"
           />
           <div className="flex justify-end gap-2">
             <Button

@@ -152,7 +152,7 @@ export function EvidenceUploadQueue({
           <Input value={location} onChange={(e) => setLocation(e.target.value)} />
         </Field>
         <Field label="Notes">
-          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+          <Textarea dictate value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
         </Field>
       </div>
 

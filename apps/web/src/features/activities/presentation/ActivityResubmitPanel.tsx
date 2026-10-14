@@ -61,13 +61,13 @@ export function ActivityResubmitPanel({ activityId, notes, initial }: { activity
       )}
       <form onSubmit={submit} className="space-y-4" noValidate>
         <Field label="Summary" htmlFor="resubmit-summary" error={fields.patch?.[0] ?? fields["patch.summary"]?.[0]}>
-          <Textarea id="resubmit-summary" value={form.summary} onChange={(e) => set("summary")(e.target.value)} className="min-h-[120px]" maxLength={10000} required />
+          <Textarea dictate id="resubmit-summary" value={form.summary} onChange={(e) => set("summary")(e.target.value)} className="min-h-[120px]" maxLength={10000} required />
         </Field>
         <Field label="Location" htmlFor="resubmit-location"><Input id="resubmit-location" value={form.location} onChange={(e) => set("location")(e.target.value)} maxLength={200} /></Field>
-        <Field label="Achievements" htmlFor="resubmit-achievements"><Textarea id="resubmit-achievements" value={form.achievements} onChange={(e) => set("achievements")(e.target.value)} maxLength={5000} /></Field>
-        <Field label="Challenges" htmlFor="resubmit-challenges"><Textarea id="resubmit-challenges" value={form.challenges} onChange={(e) => set("challenges")(e.target.value)} maxLength={5000} /></Field>
-        <Field label="Lessons learned" htmlFor="resubmit-lessons"><Textarea id="resubmit-lessons" value={form.lessonsLearned} onChange={(e) => set("lessonsLearned")(e.target.value)} maxLength={5000} /></Field>
-        <Field label="Next steps" htmlFor="resubmit-next"><Textarea id="resubmit-next" value={form.nextSteps} onChange={(e) => set("nextSteps")(e.target.value)} maxLength={5000} /></Field>
+        <Field label="Achievements" htmlFor="resubmit-achievements"><Textarea dictate id="resubmit-achievements" value={form.achievements} onChange={(e) => set("achievements")(e.target.value)} maxLength={5000} /></Field>
+        <Field label="Challenges" htmlFor="resubmit-challenges"><Textarea dictate id="resubmit-challenges" value={form.challenges} onChange={(e) => set("challenges")(e.target.value)} maxLength={5000} /></Field>
+        <Field label="Lessons learned" htmlFor="resubmit-lessons"><Textarea dictate id="resubmit-lessons" value={form.lessonsLearned} onChange={(e) => set("lessonsLearned")(e.target.value)} maxLength={5000} /></Field>
+        <Field label="Next steps" htmlFor="resubmit-next"><Textarea dictate id="resubmit-next" value={form.nextSteps} onChange={(e) => set("nextSteps")(e.target.value)} maxLength={5000} /></Field>
         {actionState.error && <p role="alert" className="text-sm font-medium text-danger-700 dark:text-danger-400">{actionState.error}</p>}
         <div className="flex justify-end">
           <Button type="submit" pending={actionState.busy || leaving} disabled={leaving || !form.summary.trim()}>Resubmit for review</Button>

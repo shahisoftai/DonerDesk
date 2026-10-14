@@ -52,7 +52,7 @@ export function ContactSalesForm() {
         <Input id="cs-org" value={organization} onChange={(e) => setOrganization(e.target.value)} required minLength={2} />
       </Field>
       <Field label="What are you looking for?" htmlFor="cs-message">
-        <Textarea id="cs-message" value={message} onChange={(e) => setMessage(e.target.value)} required minLength={10} rows={5} />
+        <Textarea dictate id="cs-message" value={message} onChange={(e) => setMessage(e.target.value)} required minLength={10} rows={5} />
       </Field>
       {/* Honeypot: hidden from real users, invisible to screen readers; bots that fill it are silently dropped server-side. */}
       <input

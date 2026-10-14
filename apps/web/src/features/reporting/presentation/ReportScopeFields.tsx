@@ -92,7 +92,7 @@ export function ReportScopeFields({
           </Field>
           <div className="sm:col-span-2">
             <Field label="Situation summary (optional)" htmlFor="scopeSummary" hint="A few lines of context the report should build on.">
-              <Textarea id="scopeSummary" rows={3} value={scope.summary ?? ""} onChange={(e) => patchScope({ summary: e.target.value })} />
+              <Textarea dictate id="scopeSummary" rows={3} value={scope.summary ?? ""} onChange={(e) => patchScope({ summary: e.target.value })} />
             </Field>
           </div>
           <div className="sm:col-span-2">
@@ -135,7 +135,7 @@ export function ReportScopeFields({
             <Input id="scopeTitle" value={scope.title ?? ""} onChange={(e) => patchScope({ title: e.target.value })} invalid={Boolean(fields.title)} />
           </Field>
           <Field label="Purpose (optional)" htmlFor="scopePurpose" hint="What this report is for and who will read it.">
-            <Textarea id="scopePurpose" rows={3} value={scope.purpose ?? ""} onChange={(e) => patchScope({ purpose: e.target.value })} />
+            <Textarea dictate id="scopePurpose" rows={3} value={scope.purpose ?? ""} onChange={(e) => patchScope({ purpose: e.target.value })} />
           </Field>
           <Field label="Sections (optional)" htmlFor="scopeSections" hint="List the sections you want. Leave empty for Background, Findings and Conclusions.">
             <div id="scopeSections" className="space-y-2">

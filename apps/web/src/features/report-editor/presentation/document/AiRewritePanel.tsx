@@ -54,7 +54,7 @@ export function AiRewritePanel({ sectionId, onApplied, onClose }: { sectionId: s
       </div>
       <div className="mt-3">
         <Field label="Specific change (optional)" htmlFor={`rewrite-instructions-${sectionId}`} description="For example: replace “beneficiaries” with “people reached”, or say that the work finished in August.">
-          <Textarea
+          <Textarea dictate
             id={`rewrite-instructions-${sectionId}`}
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}

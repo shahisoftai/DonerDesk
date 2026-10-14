@@ -72,7 +72,7 @@ export function ReportingDefaultsForm({
 
       <div>
         <label className="label" htmlFor="formattingRules">Default formatting rules (one per line)</label>
-        <Textarea id="formattingRules" value={formattingRules} onChange={(e) => setFormattingRules(e.target.value)} />
+        <Textarea dictate id="formattingRules" value={formattingRules} onChange={(e) => setFormattingRules(e.target.value)} />
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           Examples: "use headings for each section", "attach annex list at the end".
         </p>

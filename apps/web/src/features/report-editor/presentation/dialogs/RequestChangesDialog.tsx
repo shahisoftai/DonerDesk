@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { Dialog } from "@/components/feedback/Dialog";
 import { Button } from "@/components/ui/Button";
+import { Textarea } from "@/components/ui/Textarea";
 
 const NOTES_MAX = 2000;
 
@@ -40,14 +41,13 @@ export function RequestChangesDialog({
         <label htmlFor={id} className="block text-sm font-medium">
           What needs to change?
         </label>
-        <textarea
+        <Textarea dictate
           id={id}
           required
           rows={4}
           maxLength={NOTES_MAX}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm dark:border-white/15 dark:bg-slate-900"
         />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>

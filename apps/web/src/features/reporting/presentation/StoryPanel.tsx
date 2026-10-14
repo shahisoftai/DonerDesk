@@ -70,7 +70,7 @@ export function StoryPanel({ periodId, onSaved }: { periodId: string; onSaved?: 
           {FIELDS.map((field) => (
             <label key={field.key} className="block">
               <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{field.label}</span>
-              <Textarea
+              <Textarea dictate
                 rows={2}
                 value={story[field.key] ?? ""}
                 placeholder={field.placeholder}

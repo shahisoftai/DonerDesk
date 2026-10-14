@@ -69,7 +69,7 @@ export function BulkClaimResolution({
             htmlFor="bulk-claim-note"
             description="Shared note applied to every selected statement."
           >
-            <Textarea
+            <Textarea dictate
               id="bulk-claim-note"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

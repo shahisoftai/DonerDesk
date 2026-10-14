@@ -78,7 +78,7 @@ export function ChecklistResolution({ itemId, severity }: { itemId: string; seve
             error={localNoteError ?? actionState.fields?.notes?.[0]}
             description={decision === "START" ? "Optional — record why you are starting work on this item." : "Record how this item was resolved."}
           >
-            <Textarea
+            <Textarea dictate
               id={`note-${itemId}`}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

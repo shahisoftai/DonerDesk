@@ -94,7 +94,7 @@ export function StoryInputs({ periodId, initialStory, canEdit }: { periodId: str
         <label key={field.key} className="block">
           <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{field.label}</span>
           <span className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{field.hint}</span>
-          <Textarea
+          <Textarea dictate
             rows={3}
             value={story[field.key] ?? ""}
             placeholder={field.placeholder}

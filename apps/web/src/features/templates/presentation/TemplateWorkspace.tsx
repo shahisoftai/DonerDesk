@@ -146,7 +146,7 @@ export function TemplateWorkspace({
               </Select>
             </Field>
             <Field label="Language" htmlFor="meta-lang"><Input id="meta-lang" value={meta.language} onChange={(e) => setMeta({ ...meta, language: e.target.value })} /></Field>
-            <div className="sm:col-span-2"><Field label="Notes" htmlFor="meta-notes"><Textarea id="meta-notes" value={meta.notes} onChange={(e) => setMeta({ ...meta, notes: e.target.value })} /></Field></div>
+            <div className="sm:col-span-2"><Field label="Notes" htmlFor="meta-notes"><Textarea dictate id="meta-notes" value={meta.notes} onChange={(e) => setMeta({ ...meta, notes: e.target.value })} /></Field></div>
             <div className="flex justify-end gap-2 sm:col-span-2">
               <Button type="button" variant="secondary" onClick={() => setEditingMeta(false)}>Cancel</Button>
               <Button type="submit" pending={busy === "meta"}>Save details</Button>

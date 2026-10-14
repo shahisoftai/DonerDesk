@@ -68,7 +68,7 @@ export function ComplianceNotes({ periodId, projectId, initial, canEdit }: { per
           <label htmlFor={`note-${row.key}`} className="block text-sm font-medium text-slate-800 dark:text-slate-100">
             {row.title}{!row.note.trim() && <span className="ml-2 text-xs font-normal text-warning-700 dark:text-warning-400">To do</span>}
           </label>
-          <Textarea
+          <Textarea dictate
             id={`note-${row.key}`}
             rows={3}
             value={row.note}

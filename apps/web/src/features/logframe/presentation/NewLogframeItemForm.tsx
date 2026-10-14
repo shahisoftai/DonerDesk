@@ -13,6 +13,7 @@ import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { LOGFRAME_LEVEL_LABEL } from "@/lib/labels";
 import { eligibleParents, logframeLevelRank, type OutlineSource } from "@/features/logframe/domain/logframe-outline";
 import { LogframeItemSelect } from "./LogframeItemSelect";
+import { Textarea } from "@/components/ui/Textarea";
 
 const LEVELS = LogframeLevelSchema.options;
 
@@ -90,7 +91,7 @@ export function NewLogframeItemForm({
         <Input id="title" value={title} onChange={(event) => setTitle(event.target.value)} required minLength={2} maxLength={300} />
       </Field>
       <Field label="Description (optional)" htmlFor="description">
-        <textarea id="description" className="input" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} />
+        <Textarea dictate id="description" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} />
       </Field>
       {save.error && <InlineAlert tone="danger" title={save.error} />}
       <div className="flex justify-end gap-3">

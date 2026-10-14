@@ -177,7 +177,7 @@ export function ProjectSettingsForm({ project }: { project: ProjectDetail }) {
           </Field>
         </div>
         <Field label="Description" htmlFor="settings-description">
-          <Textarea id="settings-description" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} rows={3} />
+          <Textarea dictate id="settings-description" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} rows={3} />
         </Field>
         {actionState.error && (
           <p role="alert" className="text-sm font-medium text-danger-700 dark:text-danger-400">{actionState.error}</p>

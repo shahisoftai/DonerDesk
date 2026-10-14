@@ -60,7 +60,7 @@ export function BulkChecklistResolution({
             htmlFor="bulk-note"
             description={decision === "START" ? "Optional — record why you are starting work." : "Shared note applied to all selected items."}
           >
-            <Textarea
+            <Textarea dictate
               id="bulk-note"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

@@ -3,6 +3,7 @@
 import { useRef, type ReactNode } from "react";
 import type { Editor } from "@tiptap/core";
 import { useEditorState } from "@tiptap/react";
+import { useDictation } from "@/components/ui/useDictation";
 
 type Item = {
   key: string;
@@ -33,6 +34,7 @@ const ICONS = {
   table: svg(<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 10h18M9 4v16M15 4v16" /></>),
   undo: svg(<path d="M9 14L4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3" />),
   redo: svg(<path d="M15 14l5-5-5-5M20 9H9a5 5 0 0 0 0 10h3" />),
+  mic: svg(<><rect x="9" y="3" width="6" height="12" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></>),
   clear: svg(<path d="M4 7V5h12v2M10 5l-3 14M14 19h-4M17 14l4 4M21 14l-4 4" />),
 };
 
@@ -61,6 +63,12 @@ export function EditorToolbar({ editor, onLink }: { editor: Editor; onLink: () =
   });
   const barRef = useRef<HTMLDivElement>(null);
   const chain = () => editor.chain().focus();
+  const dictation = useDictation((text) => {
+    const { from } = editor.state.selection;
+    const before = editor.state.doc.textBetween(Math.max(0, from - 1), from);
+    chain().insertContent(before && !/\s/.test(before) ? ` ${text}` : text).run();
+  });
+  const listening = dictation.state === "listening";
 
   const groups: Item[][] = [
     [
@@ -84,6 +92,9 @@ export function EditorToolbar({ editor, onLink }: { editor: Editor; onLink: () =
       },
     ],
     [
+      ...(dictation.supported
+        ? [{ key: "dictate", label: listening ? "Stop dictating" : "Dictate with your voice", icon: ICONS.mic, active: listening, run: dictation.toggle }]
+        : []),
       { key: "clear", label: "Clear formatting", icon: ICONS.clear, run: () => chain().unsetAllMarks().clearNodes().run() },
       { key: "undo", label: "Undo", shortcut: "Ctrl+Z", icon: ICONS.undo, disabled: !state.canUndo, run: () => chain().undo().run() },
       { key: "redo", label: "Redo", shortcut: "Ctrl+Shift+Z", icon: ICONS.redo, disabled: !state.canRedo, run: () => chain().redo().run() },

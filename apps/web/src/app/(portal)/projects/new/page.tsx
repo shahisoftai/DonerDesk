@@ -245,7 +245,7 @@ export default function GuidedProjectWizard() {
               <Input id="primaryContactName" value={data.reporting.primaryContactName ?? ""} onChange={(e) => update("reporting", { primaryContactName: e.target.value })} />
             </Field>
             <Field label="Description (optional)" htmlFor="description">
-              <Textarea id="description" value={data.reporting.description ?? ""} onChange={(e) => update("reporting", { description: e.target.value })} />
+              <Textarea dictate id="description" value={data.reporting.description ?? ""} onChange={(e) => update("reporting", { description: e.target.value })} />
             </Field>
             <ReviewSummary data={data} />
           </>

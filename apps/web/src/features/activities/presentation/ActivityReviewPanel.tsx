@@ -82,7 +82,7 @@ export function ActivityReviewPanel({ activityId }: { activityId: string }) {
                 : "Required — explain what needs to change or why this is rejected."
             }
           >
-            <Textarea
+            <Textarea dictate
               id="reviewNote"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

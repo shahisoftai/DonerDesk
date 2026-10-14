@@ -387,7 +387,7 @@ export function NewActivityForm({
       </fieldset>
 
       <Field label="Summary" htmlFor="summary" error={fields.summary?.[0]}>
-        <Textarea
+        <Textarea dictate
           id="summary"
           name="summary"
           value={summary}
@@ -400,7 +400,7 @@ export function NewActivityForm({
       </Field>
 
       <Field label="Achievements" htmlFor="achievements" error={fields.achievements?.[0]}>
-        <Textarea
+        <Textarea dictate
           id="achievements"
           name="achievements"
           value={achievements}
@@ -411,7 +411,7 @@ export function NewActivityForm({
       </Field>
 
       <Field label="Challenges" htmlFor="challenges" error={fields.challenges?.[0]}>
-        <Textarea
+        <Textarea dictate
           id="challenges"
           name="challenges"
           value={challenges}
@@ -422,7 +422,7 @@ export function NewActivityForm({
       </Field>
 
       <Field label="Lessons learned" htmlFor="lessonsLearned" error={fields.lessonsLearned?.[0]}>
-        <Textarea
+        <Textarea dictate
           id="lessonsLearned"
           name="lessonsLearned"
           value={lessonsLearned}
@@ -433,7 +433,7 @@ export function NewActivityForm({
       </Field>
 
       <Field label="Next steps" htmlFor="nextSteps" error={fields.nextSteps?.[0]}>
-        <Textarea
+        <Textarea dictate
           id="nextSteps"
           name="nextSteps"
           value={nextSteps}

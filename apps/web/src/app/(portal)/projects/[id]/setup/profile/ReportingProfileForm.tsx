@@ -89,22 +89,22 @@ export function ReportingProfileForm({
 
       <div>
         <label className="label" htmlFor="writingStyle">Writing style (optional)</label>
-        <Textarea id="writingStyle" value={writingStyle} onChange={(e) => setWritingStyle(e.target.value)} />
+        <Textarea dictate id="writingStyle" value={writingStyle} onChange={(e) => setWritingStyle(e.target.value)} />
       </div>
 
       <div>
         <label className="label" htmlFor="audienceNotes">Audience notes (optional)</label>
-        <Textarea id="audienceNotes" value={audienceNotes} onChange={(e) => setAudienceNotes(e.target.value)} />
+        <Textarea dictate id="audienceNotes" value={audienceNotes} onChange={(e) => setAudienceNotes(e.target.value)} />
       </div>
 
       <div>
         <label className="label" htmlFor="formattingRules">Formatting rules (one per line)</label>
-        <Textarea id="formattingRules" value={formattingRules} onChange={(e) => setFormattingRules(e.target.value)} />
+        <Textarea dictate id="formattingRules" value={formattingRules} onChange={(e) => setFormattingRules(e.target.value)} />
       </div>
 
       <div>
         <label className="label" htmlFor="specialRequirements">Special requirements (one per line)</label>
-        <Textarea id="specialRequirements" value={specialRequirements} onChange={(e) => setSpecialRequirements(e.target.value)} />
+        <Textarea dictate id="specialRequirements" value={specialRequirements} onChange={(e) => setSpecialRequirements(e.target.value)} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

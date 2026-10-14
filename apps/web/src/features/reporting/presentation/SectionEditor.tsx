@@ -228,7 +228,7 @@ export function SectionEditor({
         </p>
       )}
 
-      <Textarea
+      <Textarea dictate
         aria-label={`Edit section ${title}`}
         value={state.text}
         onChange={(e) => onChange(e.target.value)}

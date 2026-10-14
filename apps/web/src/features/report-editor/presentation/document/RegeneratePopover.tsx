@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { Textarea } from "@/components/ui/Textarea";
 
 const INSTRUCTION_MAX = 500;
 
@@ -35,7 +36,7 @@ export function RegeneratePopover({
       <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
         Optional: tell the AI what to change. It writes from the same data and evidence as the rest of the report.
       </p>
-      <textarea
+      <Textarea dictate
         id={id}
         rows={2}
         maxLength={INSTRUCTION_MAX}
@@ -45,7 +46,6 @@ export function RegeneratePopover({
           if (e.key === "Escape") onClose();
         }}
         placeholder="For example: Focus more on the flood response"
-        className="mt-2 block w-full rounded-md border border-slate-300 bg-white p-2 text-sm dark:border-white/15 dark:bg-slate-900"
       />
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-slate-500 dark:text-slate-400">
