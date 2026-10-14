@@ -50,3 +50,51 @@ export function countStoryAnswers(story: Partial<Record<(typeof STORY_KEYS)[numb
   if (!story) return 0;
   return STORY_KEYS.filter((key) => (story[key] ?? "").trim().length > 0).length;
 }
+
+export type NextStepKind = "enter-indicators" | "generate" | "review-statements" | "approve-sections" | "submit-review" | "approve-report";
+
+export interface NextReportStep {
+  kind: NextStepKind;
+  label: string;
+}
+
+export interface NextStepsInput {
+  unverifiedIndicatorCount: number;
+  hasDraft: boolean;
+  draftStatus?: string | null;
+  /** Statements that failed verification and still wait for a decision. */
+  pendingFailedClaims: number;
+  sectionCount: number;
+  approvedSectionCount: number;
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/**
+ * What the person should do next, in order, in plain words. The first one is the single "do this now" button; the whole
+ * list is the "what to do next" card. The page maps each kind to the place where it is done, so wording lives here once.
+ */
+export function nextReportSteps(input: NextStepsInput): NextReportStep[] {
+  const steps: NextReportStep[] = [];
+  if (input.unverifiedIndicatorCount > 0) {
+    steps.push({ kind: "enter-indicators", label: `Enter and verify ${plural(input.unverifiedIndicatorCount, "indicator row", "indicator rows")}` });
+  }
+  if (!input.hasDraft) {
+    steps.push({ kind: "generate", label: "Generate the AI draft" });
+    return steps;
+  }
+  if (input.pendingFailedClaims > 0) {
+    steps.push({ kind: "review-statements", label: `Review ${plural(input.pendingFailedClaims, "statement", "statements")} that need a decision` });
+  }
+  const remaining = input.sectionCount - input.approvedSectionCount;
+  if (input.sectionCount > 0 && remaining > 0) {
+    steps.push({ kind: "approve-sections", label: `Approve the remaining ${plural(remaining, "section", "sections")}` });
+  }
+  if (input.sectionCount > 0 && remaining === 0 && input.draftStatus === "DRAFT") {
+    steps.push({ kind: "submit-review", label: "Submit the report for review" });
+  }
+  if (input.draftStatus === "UNDER_REVIEW") {
+    steps.push({ kind: "approve-report", label: "Approve the report" });
+  }
+  return steps;
+}

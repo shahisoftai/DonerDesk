@@ -27,7 +27,7 @@ import { ClaimResolutionActions } from "./ClaimResolutionActions";
 import { ReportReviewPanel } from "./ReportReviewPanel";
 import { ReportPreviewPanel } from "./ReportPreviewPanel";
 import { DraftVersionsPanel } from "./DraftVersionsPanel";
-import { computeReportingSteps, type ReportingStepKey } from "../application/reporting-steps";
+import { computeReportingSteps, nextReportSteps, type NextStepKind, type ReportingStepKey } from "../application/reporting-steps";
 import { draftGeneratedCopy, evidenceLabelCopy, verificationDetailCopy, verificationResultCopy } from "@/lib/reporting-copy";
 import type { ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import type { ReportArtifact } from "@/lib/server/schemas";
@@ -255,35 +255,22 @@ export function ReportWorkspace({
   // to the exact place where it is fixed; nothing here exposes internal
   // assurance or revision terminology.
   type NextStep = { label: string; href?: string; action?: () => void };
-  const nextSteps: NextStep[] = [];
-  if (unverifiedIndicatorCount > 0) {
-    nextSteps.push({
-      label: `Enter and verify ${unverifiedIndicatorCount} indicator row${unverifiedIndicatorCount === 1 ? "" : "s"}`,
-      href: `/projects/${projectId}/reports/${periodId}/indicators`,
-    });
-  }
-  if (!draft) {
-    nextSteps.push({ label: "Generate the AI draft", action: () => void generate() });
-  } else {
-    if (pendingFailedClaims > 0) {
-      nextSteps.push({
-        label: `Review ${pendingFailedClaims} statement${pendingFailedClaims === 1 ? "" : "s"} that need a decision`,
-        action: () => setMode("review"),
-      });
-    }
-    if (liveSections.length > 0 && approvedSectionCount < liveSections.length) {
-      nextSteps.push({
-        label: `Approve the remaining ${liveSections.length - approvedSectionCount} section${liveSections.length - approvedSectionCount === 1 ? "" : "s"}`,
-        action: () => setMode("editor"),
-      });
-    }
-    if (liveSections.length > 0 && approvedSectionCount === liveSections.length && draft.status === "DRAFT") {
-      nextSteps.push({ label: "Submit the report for review", action: () => void submitReview() });
-    }
-    if (draft.status === "UNDER_REVIEW") {
-      nextSteps.push({ label: "Approve the report", action: () => setMode("check") });
-    }
-  }
+  const nextStepTarget: Record<NextStepKind, Pick<NextStep, "href" | "action">> = {
+    "enter-indicators": { href: `/projects/${projectId}/reports/${periodId}/indicators` },
+    generate: { action: () => void generate() },
+    "review-statements": { action: () => setMode("review") },
+    "approve-sections": { action: () => setMode("editor") },
+    "submit-review": { action: () => void submitReview() },
+    "approve-report": { action: () => setMode("check") },
+  };
+  const nextSteps: NextStep[] = nextReportSteps({
+    unverifiedIndicatorCount,
+    hasDraft: Boolean(draft),
+    draftStatus: draft?.status,
+    pendingFailedClaims,
+    sectionCount: liveSections.length,
+    approvedSectionCount,
+  }).map((step) => ({ label: step.label, ...nextStepTarget[step.kind] }));
 
   // Flat chart-ready indicator rows; a single memoised map is shared by every
   // section's chart panel.
@@ -523,6 +510,17 @@ export function ReportWorkspace({
   return (
     <div className="mt-6 space-y-4">
       <ReportingStepGuide projectId={projectId} periodId={periodId} states={stepStates} onSelect={selectStep} />
+      {nextSteps[0] && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-brand-500/30 bg-brand-500/5 p-3" data-testid="next-best-action">
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Next:</span>
+          {nextSteps[0].href ? (
+            <Link href={nextSteps[0].href} className="btn-primary">{nextSteps[0].label}</Link>
+          ) : (
+            <Button onClick={nextSteps[0].action} disabled={busyAction !== null}>{nextSteps[0].label}</Button>
+          )}
+          {nextSteps.length > 1 && <span className="text-xs text-slate-500 dark:text-slate-400">then {nextSteps.length - 1} more, listed under “What to do next”</span>}
+        </div>
+      )}
       <div id="report-draft-actions" className="flex scroll-mt-4 flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-medium">{draft ? draft.title : "No report draft yet"}</h2>

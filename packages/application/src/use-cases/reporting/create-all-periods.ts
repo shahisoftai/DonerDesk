@@ -51,7 +51,8 @@ export class CreateAllPeriodsHandler {
     return { ok: true, value: { reportType, plan } };
   }
 
-  async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<CreateAllResult, DomainError>> {
+  /** `limit` creates only the first few of the planned periods (the next month, not the whole calendar). */
+  async handle(ctx: AuthenticatedContext, projectId: string, options: { limit?: number } = {}): Promise<Result<CreateAllResult, DomainError>> {
     const view = await this.preview(ctx, projectId);
     if (!view.ok) return view;
     const { reportType, plan } = view.value;
@@ -62,7 +63,8 @@ export class CreateAllPeriodsHandler {
     if (!profile.ok) return profile;
     const offset = profile.value?.deadlineOffsetDays ?? DEFAULT_DEADLINE_OFFSET_DAYS;
 
-    for (const p of plan.periods) {
+    const planned = options.limit && options.limit > 0 ? plan.periods.slice(0, options.limit) : plan.periods;
+    for (const p of planned) {
       const created = await this.createPeriod.handle(ctx, {
         projectId,
         reportType,

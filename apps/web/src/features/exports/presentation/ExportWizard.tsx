@@ -16,7 +16,8 @@ import { protectedFileDownloadHref } from "@/lib/shared/downloads";
 import { type ExportPreflight, type ExportPreflightItem } from "@/lib/server/schemas";
 import { Textarea } from "@/components/ui/Textarea";
 
-type Step = "type" | "inclusions" | "warnings" | "result";
+// One screen to set up and confirm, then the result: type, files and warnings are read together, not clicked through.
+type Step = "type" | "result";
 
 /**
  * Human-readable category labels for the GateKind values that the export
@@ -209,12 +210,15 @@ export function ExportWizard({
               </Select>
             </div>
           )}
-          <Button size="sm" onClick={() => setStep("inclusions")}>Next: files</Button>
         </div>
       )}
 
-      {step === "inclusions" && (
-        <div className="mt-4 space-y-3">
+      {step === "type" && preflight.evidence.length > 0 && (
+        <details className="mt-3 rounded-md border border-slate-200 p-3 dark:border-white/10">
+          <summary className="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">
+            Evidence files: {countOf(included.length, "file")} included, {formatFileSize(preflight.evidence.filter((e) => included.includes(e.id)).reduce((sum, e) => sum + (e.fileSize ?? 0), 0))}. Change
+          </summary>
+        <div className="mt-3 space-y-3">
           <p className="text-sm text-slate-700 dark:text-slate-200">
             Choose which evidence files to include. Sensitive files are excluded by default.
           </p>
@@ -257,14 +261,11 @@ export function ExportWizard({
               Include {sensitiveFiles.length} sensitive file(s)
             </label>
           )}
-          <div className="flex gap-2">
-            <Button size="sm" variant="secondary" onClick={() => setStep("type")}>Back</Button>
-            <Button size="sm" onClick={() => setStep("warnings")}>Next: review</Button>
-          </div>
         </div>
+        </details>
       )}
 
-      {step === "warnings" && (
+      {step === "type" && (
         <div className="mt-4 space-y-3">
           {preflight.warnings.length === 0 && !openIssues ? (
             <p className="text-sm text-success-700 dark:text-success-400">No warnings. Proceed with the export.</p>
@@ -289,7 +290,6 @@ export function ExportWizard({
             {effectiveCopy === "donor" ? " This is the final copy for the donor: it is sealed and carries no internal-review mark." : " This copy is watermarked for internal review and cannot be sent to the donor."}
           </p>
           <div className="flex gap-2">
-            <Button size="sm" variant="secondary" onClick={() => setStep("inclusions")}>Back</Button>
             <Button size="sm" onClick={create} pending={actionState.busy}>
               Create export
             </Button>

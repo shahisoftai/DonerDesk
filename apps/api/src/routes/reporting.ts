@@ -413,7 +413,10 @@ export async function registerReportingRoutes(app: FastifyInstance) {
   app.post("/v1/projects/:projectId/periods/create-all", async (req) => {
     const projectId = (req.params as { projectId: string }).projectId;
     const ctx = { tenant: req.tenant, requestId: req.id };
-    const r = await req.container.handlers.createAllPeriods.handle(ctx, projectId);
+    const { limit } = (req.body ?? {}) as { limit?: unknown };
+    const r = await req.container.handlers.createAllPeriods.handle(ctx, projectId, {
+      ...(typeof limit === "number" && Number.isInteger(limit) && limit > 0 && limit <= 60 ? { limit } : {}),
+    });
     if (!r.ok) throw r.error;
     return r.value;
   });

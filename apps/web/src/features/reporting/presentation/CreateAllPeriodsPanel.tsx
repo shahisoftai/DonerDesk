@@ -12,11 +12,11 @@ export function CreateAllPeriodsPanel({ projectId, plan, note }: { projectId: st
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ tone: "ok" | "error"; text: string; failures: string[] } | null>(null);
 
-  async function createAll() {
+  async function createAll(limit?: number) {
     if (busy) return;
     setBusy(true);
     setResult(null);
-    const r = await createAllPeriodsAction(projectId);
+    const r = await createAllPeriodsAction(projectId, limit ? { limit } : {});
     setBusy(false);
     if (!r.ok) return setResult({ tone: "error", text: r.error.message, failures: [] });
     setResult({
@@ -40,7 +40,14 @@ export function CreateAllPeriodsPanel({ projectId, plan, note }: { projectId: st
           </div>
         )}
       </div>
-      {plan.periods.length > 0 && <Button onClick={() => void createAll()} pending={busy}>Create all {plan.periods.length} periods</Button>}
+      {plan.periods.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {plan.periods.length > 1 && (
+            <Button variant="secondary" onClick={() => void createAll(1)} pending={busy}>Create just the next one</Button>
+          )}
+          <Button onClick={() => void createAll()} pending={busy}>{plan.periods.length === 1 ? "Create the period" : `Create all ${plan.periods.length} periods`}</Button>
+        </div>
+      )}
     </section>
   );
 }

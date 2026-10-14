@@ -215,9 +215,9 @@ export async function changePeriodTemplateAction(periodId: string, donorTemplate
 export type CreateAllPeriodsResult = Result<z.infer<typeof CreateAllPeriodsResponseSchema>, AppError>;
 
 /** Creates every cadence period the project still needs (the last block is left for the closing report). */
-export async function createAllPeriodsAction(projectId: string): Promise<CreateAllPeriodsResult> {
+export async function createAllPeriodsAction(projectId: string, options: { limit?: number } = {}): Promise<CreateAllPeriodsResult> {
   const context = await requireSession();
-  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/periods/create-all`, CreateAllPeriodsResponseSchema, context.token, { method: "POST", body: {}, timeoutMs: 60_000 });
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/periods/create-all`, CreateAllPeriodsResponseSchema, context.token, { method: "POST", body: options.limit ? { limit: options.limit } : {}, timeoutMs: 60_000 });
 }
 
 export type PeriodFinanceResult = Result<PeriodFinanceShape, AppError>;
