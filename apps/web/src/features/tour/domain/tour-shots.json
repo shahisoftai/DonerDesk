@@ -6,25 +6,18 @@
     "project-setup": null,
     "donor-template": {
       "x": 0.18888888888888888,
-      "y": 0.29555555555555557,
-      "w": 0.7944444444444444,
-      "h": 0.33555555555555555
+      "y": 0.4288888888888889,
+      "w": 0.7875,
+      "h": 0.5311111111111111
     },
     "logframe-indicators": null,
     "evidence": null,
-    "reporting-period": {
-      "x": 0.18888888888888888,
-      "y": 0.29555555555555557,
-      "w": 0.7944444444444444,
-      "h": 0.24333333333333335
-    },
-    "ai-draft": {
-      "x": 0.6118055555555556,
-      "y": 0.6722222222222223,
-      "w": 0.0763888888888889,
-      "h": 0.06222222222222222
-    },
+    "reporting-period": null,
     "report-editor": null,
+    "activity-capture": null,
+    "indicator-entry": null,
+    "closing-report": null,
+    "team": null,
     "compliance": null,
     "export": null
   }

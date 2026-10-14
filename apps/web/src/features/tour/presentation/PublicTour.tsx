@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { TOUR_STEPS } from "../domain/tour-steps";
+import { PUBLIC_TOUR_STEPS as TOUR_STEPS } from "../domain/public-tour-steps";
 import shotsManifest from "../domain/tour-shots.json";
 
 type Rect = { x: number; y: number; w: number; h: number };
-const SHOTS = shotsManifest.shots as Record<string, Rect | null>;
+const SHOTS = shotsManifest.shots as Record<string, Rect | null | undefined>;
 const ASPECT = `${shotsManifest.width} / ${shotsManifest.height}`;
 
 /**

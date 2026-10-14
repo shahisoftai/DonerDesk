@@ -19,7 +19,8 @@ const BASE = process.env.TOUR_BASE_URL ?? "https://donordesk.online";
 const EMAIL = process.env.TOUR_EMAIL;
 const PASSWORD = process.env.TOUR_PASSWORD;
 const PROJECT = process.env.TOUR_PROJECT ?? "Nutrition Resilience";
-if (!EMAIL || !PASSWORD) throw new Error("Set TOUR_EMAIL and TOUR_PASSWORD");
+const CDP = process.env.TOUR_CDP; // attach to a visible browser the user already logged in
+if (!CDP && (!EMAIL || !PASSWORD)) throw new Error("Set TOUR_EMAIL and TOUR_PASSWORD");
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(here, "../public/tour");
@@ -36,18 +37,27 @@ const STEPS = [
   ["reporting-period", "/reports", '[data-tour-id="reporting-period-list"]'],
   ["ai-draft", "/reports/{P}", '[data-tour-id="generate-ai-draft"]', "#report-draft-actions, button:has-text('Regenerate')"],
   ["report-editor", "/reports/{P}", '[data-tour-id="report-editor"]'],
+  ["activity-capture", "/activities/new", "main"],
+  ["indicator-entry", "/reports/{P}/indicators", "main"],
+  ["closing-report", "/reports/closing", "main"],
+  ["team", "/team", "main"],
   ["compliance", "/compliance", '[data-tour-id="compliance-checklist"]'],
   ["export", "/reports/{P}/export", '[data-tour-id="export-report"]'],
 ];
 
-const browser = await chromium.launch();
-const page = await (await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 })).newPage();
+const browser = CDP ? await chromium.connectOverCDP(CDP) : await chromium.launch();
+const page = CDP
+  ? (browser.contexts()[0].pages()[0] ?? (await browser.contexts()[0].newPage()))
+  : await (await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 })).newPage();
+await page.setViewportSize({ width: W, height: H });
 const settle = () => page.waitForLoadState("networkidle").catch(() => {});
 
-await page.goto(`${BASE}/login`);
-await page.fill("#email", EMAIL);
-await page.fill("#password", PASSWORD);
-await Promise.all([page.waitForURL((u) => !u.pathname.startsWith("/login")), page.click("button[type=submit]")]);
+if (!CDP) {
+  await page.goto(`${BASE}/login`);
+  await page.fill("#email", EMAIL);
+  await page.fill("#password", PASSWORD);
+  await Promise.all([page.waitForURL((u) => !u.pathname.startsWith("/login")), page.click("button[type=submit]")]);
+}
 
 await page.goto(`${BASE}/projects`);
 await settle();
@@ -62,7 +72,7 @@ if (!periodId) throw new Error("No reporting period found");
 await mkdir(OUT, { recursive: true });
 const shots = {};
 for (const [id, route, selector, fallback] of STEPS) {
-  await page.goto(route === "@dashboard" ? `${BASE}/dashboard` : `${BASE}/projects/${projectId}${route.replace("{P}", periodId)}`);
+  await page.goto(route === "@dashboard" ? `${BASE}/dashboard` : route.startsWith("@") ? `${BASE}${route.slice(1)}` : `${BASE}/projects/${projectId}${route.replace("{P}", periodId)}`);
   await settle();
   let el = page.locator(selector).first();
   if (!(await el.count()) && fallback) el = page.locator(fallback).first();
@@ -79,4 +89,4 @@ for (const [id, route, selector, fallback] of STEPS) {
   console.log(`ok ${id}`, shots[id]);
 }
 await writeFile(MANIFEST, JSON.stringify({ width: W, height: H, shots }, null, 2) + "\n");
-await browser.close();
+if (!CDP) await browser.close(); // keep a visible window open for the user
