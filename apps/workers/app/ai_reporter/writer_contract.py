@@ -58,6 +58,8 @@ WORKFLOW_VOCABULARY: list[str] = [
     "finding could not be calculated",
     "disaggregation list",
     "the reporting officer's account",
+    "from the reporting officer",
+    "sought from the reporting officer",
     "the reporting officer recorded",
     "reporting officer's statement",
     "officer's statement",

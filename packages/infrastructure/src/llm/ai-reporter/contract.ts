@@ -39,6 +39,8 @@ export const WORKFLOW_VOCABULARY: readonly string[] = [
   "finding could not be calculated",
   "disaggregation list",
   "the reporting officer's account",
+  "from the reporting officer",
+  "sought from the reporting officer",
   "the reporting officer recorded",
   "reporting officer's statement",
   "officer's statement",
