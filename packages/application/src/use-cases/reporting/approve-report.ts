@@ -101,6 +101,17 @@ export class ApproveReportHandler {
     return { ok: true, value: undefined };
   }
 
+  /**
+   * Whether the current user may approve a report written by `authorId`, as a plain answer the UI can use to offer or
+   * hide the Approve button. It is the same check `handle` enforces, so a button and a refusal cannot disagree.
+   */
+  async approverEligibility(ctx: AuthenticatedContext, projectId: string, authorId: string | undefined): Promise<Result<{ canApprove: boolean; reason?: string }, DomainError>> {
+    const result = await this.checkApprover(ctx, projectId, authorId);
+    if (result.ok) return { ok: true, value: { canApprove: true } };
+    if (result.error.code === "FORBIDDEN") return { ok: true, value: { canApprove: false, reason: result.error.message } };
+    return result;
+  }
+
   /** The project's second-approver rule: who may approve this report, from the same sign-off roles the closing plan reads. */
   private async checkApprover(ctx: AuthenticatedContext, projectId: string, authorId: string | undefined): Promise<Result<{ selfApproval: boolean }, DomainError>> {
     if (!this.signOff) return { ok: true, value: { selfApproval: false } };

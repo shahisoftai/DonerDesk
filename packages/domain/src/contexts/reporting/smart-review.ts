@@ -158,6 +158,26 @@ const KIND_RULES: Record<GateKind, KindRule> = {
   },
 };
 
+/**
+ * The confidentiality gate has two causes that read very differently to a person: a statement citing a restricted
+ * source (names the statement), and an open checklist item about handling sensitive data (names the item). Saying
+ * "a confidential source is cited" for the second sent users hunting for a citation that did not exist (demo 8).
+ */
+function confidentialityCause(issue: GateIssue): "CITED_RESTRICTED_SOURCE" | "OPEN_CHECKLIST_ITEM" {
+  return issue.claimId || issue.evidenceId ? "CITED_RESTRICTED_SOURCE" : "OPEN_CHECKLIST_ITEM";
+}
+
+const CHECKLIST_CAUSE = {
+  title: "A confidentiality check is still open",
+  action: { type: "review-confidentiality" as const, label: "Open the checklist item" },
+};
+
+function ruleFor(issue: GateIssue): KindRule {
+  const rule = KIND_RULES[issue.kind] ?? KIND_RULES.UNSUPPORTED_MATERIAL_CLAIM;
+  if (issue.kind === "CONFIDENTIALITY_VIOLATION" && confidentialityCause(issue) === "OPEN_CHECKLIST_ITEM") return { ...rule, ...CHECKLIST_CAUSE };
+  return rule;
+}
+
 function referenceFor(issue: GateIssue, claimTextById?: Map<string, string>, sectionTitleById?: Map<string, string>): string {
   if (issue.claimId && claimTextById?.has(issue.claimId)) {
     const text = claimTextById.get(issue.claimId)!.trim();
@@ -168,6 +188,12 @@ function referenceFor(issue: GateIssue, claimTextById?: Map<string, string>, sec
   if (issue.kind === "NUMERIC_CONTRADICTION" && !issue.claimId && issue.detail.trim()) {
     const text = issue.detail.trim();
     return text.length > 420 ? `${text.slice(0, 417)}…` : text;
+  }
+  if (issue.kind === "CONFIDENTIALITY_VIOLATION" && confidentialityCause(issue) === "OPEN_CHECKLIST_ITEM") {
+    const item = issue.detail.trim();
+    return item
+      ? `The checklist item "${item}" is still open. Confirm that confidential material is handled correctly, then resolve it.`
+      : "A checklist item about sensitive data is still open. Confirm that confidential material is handled correctly, then resolve it.";
   }
   if (issue.sectionId && sectionTitleById?.has(issue.sectionId)) {
     return `In the section "${sectionTitleById.get(issue.sectionId)}".`;
@@ -185,7 +211,7 @@ export function summarizeSmartReview(input: SmartReviewInput): SmartReviewSummar
   const ranked: Array<{ item: SmartReviewIssue; blocksApproval: boolean; priority: number }> = [];
 
   for (const issue of input.blockingIssues) {
-    const rule = KIND_RULES[issue.kind] ?? KIND_RULES.UNSUPPORTED_MATERIAL_CLAIM;
+    const rule = ruleFor(issue);
     const key = issue.claimId ?? `${issue.sectionId ?? ""}:${issue.kind}`;
     if (seen.has(key)) continue;
     seen.add(key);

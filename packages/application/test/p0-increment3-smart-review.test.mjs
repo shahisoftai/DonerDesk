@@ -13,6 +13,7 @@ function makeHandler(gateBlockingIssues, claims = [], sections = []) {
     findByReportingPeriod: async () => ({ ok: true, value: [{ id: "draft-1", isSuperseded: false, projectId: "p1", reportingPeriodId: "period-1" }] }),
   };
   const approveGate = {
+    approverEligibility: async () => ({ ok: true, value: { canApprove: true } }),
     evaluateGate: async () => ({ ok: true, value: { approvalBlocked: false, submitBlocked: false, submitNeedsDecision: false, blockReasons: [], blockingIssues: gateBlockingIssues } }),
   };
   const claimsRepo = { findByDraft: async () => ({ ok: true, value: claims }) };

@@ -232,8 +232,8 @@ export function buildReportChecks(input: ChecksInput): ReportCheck[] {
       severity: "WARNING",
       title: `${plural(input.sensitiveEvidenceCount, "sensitive file")} linked to this report`,
       detail: "Confirm these files may be shared before you export.",
-      actionLabel: "Review files",
-      target: { kind: "href", href: `/projects/${input.projectId}/evidence` },
+      actionLabel: "Review sensitive files",
+      target: { kind: "href", href: `/projects/${input.projectId}/evidence?confidentialityLevel=HIGHLY_SENSITIVE` },
     });
   }
 
@@ -243,11 +243,7 @@ export function buildReportChecks(input: ChecksInput): ReportCheck[] {
   for (const item of input.smartReviewItems ?? []) {
     if (item.claimId) continue;
     if (item.action.type === "complete-section" || item.action.type === "review-section") continue;
-    const target: CheckTarget = item.evidenceId
-      ? { kind: "href", href: `/projects/${input.projectId}/evidence/${item.evidenceId}` }
-      : item.sectionId && sectionIds.has(item.sectionId)
-        ? { kind: "section", sectionId: item.sectionId }
-        : { kind: "href", href: `/projects/${input.projectId}/evidence` };
+    const target = smartReviewTarget(item, { projectId: input.projectId, periodId: input.periodId, sectionIds });
     checks.push({
       id: `smart-${item.id}`,
       severity: item.severity,
@@ -263,4 +259,19 @@ export function buildReportChecks(input: ChecksInput): ReportCheck[] {
     .map((c, i) => ({ c, i }))
     .sort((a, b) => (a.c.severity === b.c.severity ? a.i - b.i : a.c.severity === "BLOCKING" ? -1 : 1))
     .map(({ c }) => c);
+}
+
+/**
+ * Where a Smart Review item sends the person. A file named by the issue opens that file; a confidentiality item that
+ * names no file is an open checklist item, so it opens the period's checklist (the evidence library cannot help);
+ * a section-scoped item opens its section; anything else falls back to the evidence library.
+ */
+export function smartReviewTarget(
+  item: { evidenceId?: string; sectionId?: string; action: { type: string } },
+  where: { projectId: string; periodId: string; sectionIds: ReadonlySet<string> },
+): CheckTarget {
+  if (item.evidenceId) return { kind: "href", href: `/projects/${where.projectId}/evidence/${item.evidenceId}` };
+  if (item.action.type === "review-confidentiality") return { kind: "href", href: `/projects/${where.projectId}/compliance?period=${where.periodId}` };
+  if (item.sectionId && where.sectionIds.has(item.sectionId)) return { kind: "section", sectionId: item.sectionId };
+  return { kind: "href", href: `/projects/${where.projectId}/evidence` };
 }

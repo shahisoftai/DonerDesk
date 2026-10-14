@@ -99,6 +99,7 @@ export default async function ReportWorkspacePage({
           unverifiedIndicatorCount={unverifiedIndicatorCount}
           sensitiveEvidenceCount={sensitiveEvidenceCount}
           smartReviewItems={smartReviewResult.ok ? smartReviewResult.value.items : []}
+          approverBlockedReason={smartReviewResult.ok && smartReviewResult.value.approval?.canApprove === false ? smartReviewResult.value.approval.reason : undefined}
           storyAnsweredCount={storyAnsweredCount}
           evidenceCount={preflightResult.ok ? preflightResult.value.evidence.length : 0}
           regeneratingSectionIds={draftValue?.regeneratingSectionIds ?? []}

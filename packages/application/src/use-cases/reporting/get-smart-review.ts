@@ -25,7 +25,7 @@ export class GetSmartReviewHandler {
     private readonly sections: IReportSectionRepository,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<SmartReviewSummary, DomainError>> {
+  async handle(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<Result<SmartReviewSummary & { approval?: { canApprove: boolean; reason?: string } }, DomainError>> {
     const draftsResult = await this.drafts.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!draftsResult.ok) return draftsResult;
     const draft = draftsResult.value.find((d) => !d.isSuperseded) ?? null;
@@ -52,6 +52,7 @@ export class GetSmartReviewHandler {
       claimTextById,
       sectionTitleById,
     });
-    return { ok: true, value: summary };
+    const eligibility = await this.approveGate.approverEligibility(ctx, draft.projectId, draft.createdById);
+    return { ok: true, value: { ...summary, ...(eligibility.ok ? { approval: eligibility.value } : {}) } };
   }
 }

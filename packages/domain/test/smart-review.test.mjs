@@ -97,3 +97,19 @@ test("a figure conflict from the contradiction check explains which figure, not 
   });
   assert.match(summary.items[0].explanation, /states "31"/);
 });
+
+import { summarizeSmartReview as summarize } from "../dist/index.js";
+
+test("an open sensitive-data checklist item is named as such, not as a cited confidential source", () => {
+  const out = summarize({ blockingIssues: [{ kind: "CONFIDENTIALITY_VIOLATION", detail: "Sensitive data handling confirmed" }] });
+  const item = out.items[0];
+  assert.equal(item.title, "A confidentiality check is still open");
+  assert.match(item.explanation, /The checklist item "Sensitive data handling confirmed" is still open/);
+  assert.equal(item.action.label, "Open the checklist item");
+  assert.equal(item.blocksApproval, true);
+});
+
+test("a statement citing a restricted source keeps the citation wording", () => {
+  const out = summarize({ blockingIssues: [{ kind: "CONFIDENTIALITY_VIOLATION", detail: "x", claimId: "c1", evidenceId: "e1" }] });
+  assert.equal(out.items[0].title, "Confidential information needs review");
+});

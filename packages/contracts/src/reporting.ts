@@ -118,6 +118,8 @@ export const SmartReviewSummarySchema = z.object({
   issueCount: z.number(),
   blockingCount: z.number(),
   items: z.array(SmartReviewItemSchema),
+  /** Whether the current user may approve this report, and why not (second-approver rule). */
+  approval: z.object({ canApprove: z.boolean(), reason: z.string().optional() }).optional(),
 });
 
 export const PeriodValueImportRowsSchema = z.array(z.array(z.string()));

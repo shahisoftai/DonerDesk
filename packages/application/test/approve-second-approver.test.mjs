@@ -50,3 +50,19 @@ test("rule on and nobody else assigned: the refusal says what to do", async () =
   const r = await w.h.handle(as("author"), "d");
   assert.match(r.error.message, /nobody else is assigned/);
 });
+
+test("approverEligibility tells the UI whether to offer Approve, with the same reason the refusal gives", async () => {
+  const { h } = build({ requireSecondApprover: true, members: [pm] });
+  const self = await h.approverEligibility(as("author"), "p", "author");
+  assert.equal(self.ok, true);
+  assert.equal(self.value.canApprove, false);
+  assert.match(self.value.reason, /needs a second person to approve/);
+  const other = await h.approverEligibility(as("pm"), "p", "author");
+  assert.deepEqual(other.value, { canApprove: true });
+});
+
+test("a team of one with the rule off may approve (recorded as a self sign-off elsewhere)", async () => {
+  const { h } = build({ requireSecondApprover: false });
+  const r = await h.approverEligibility(as("author"), "p", "author");
+  assert.deepEqual(r.value, { canApprove: true });
+});

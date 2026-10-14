@@ -167,6 +167,7 @@ export const SmartReviewSummarySchema = z.object({
       blocksApproval: z.boolean(),
     }),
   ),
+  approval: z.object({ canApprove: z.boolean(), reason: z.string().optional() }).optional(),
 });
 
 export const PeriodValuePreviewRowSchema = z.object({

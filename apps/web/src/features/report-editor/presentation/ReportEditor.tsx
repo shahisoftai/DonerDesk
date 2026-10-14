@@ -112,6 +112,8 @@ export type ReportEditorProps = {
   unverifiedIndicatorCount: number;
   sensitiveEvidenceCount: number;
   smartReviewItems: SmartReviewItem[];
+  /** Why the current user may not approve this report (second-approver rule); the button is then not offered. */
+  approverBlockedReason?: string;
   storyAnsweredCount: number;
   evidenceCount: number;
   regeneratingSectionIds: string[];
@@ -229,10 +231,10 @@ export function ReportEditor(props: ReportEditorProps) {
       canGenerate: can(props.capabilities, "report.generate"),
       canEdit: can(props.capabilities, "reporting.edit"),
       canApproveSection: can(props.capabilities, "report.approve"),
-      canApproveReport: can(props.capabilities, "report.approve"),
+      canApproveReport: can(props.capabilities, "report.approve") && !props.approverBlockedReason,
       canExport: can(props.capabilities, "export.create"),
     }),
-    [props.capabilities],
+    [props.capabilities, props.approverBlockedReason],
   );
   const canResolveClaim = can(props.capabilities, "report.resolve-claim");
   const canOverrideConfidential = can(props.capabilities, "report.override-confidentiality");
@@ -724,6 +726,12 @@ export function ReportEditor(props: ReportEditorProps) {
             </button>
           )}
         </div>
+      )}
+
+      {model.phase === "UNDER_REVIEW" && props.approverBlockedReason && (
+        <p role="status" className="mt-4 rounded-lg border border-info-500/30 bg-info-50 px-3 py-2 text-sm text-info-700 dark:bg-info-500/10 dark:text-info-300">
+          Waiting for another approver. {props.approverBlockedReason}
+        </p>
       )}
 
       {showBanner && inputsChanged && (
