@@ -88,5 +88,17 @@ Deploy only with the user's allowance (`SCOPE=both`); no migration is expected (
 | Export/donor-readiness | 7 | 9 | WP6 |
 | Learning curve | 6.5 | 8 | WP2, WP7 |
 
-## Status
-Updated as packages complete (see the commit log of `0012-demo8-fixes`).
+## Status (all seven work packages implemented, committed on `0012-demo8-fixes`; not deployed)
+| WP | State | Notes |
+|---|---|---|
+| 1 Situation integrity | done | scope chunks + lint grounding, `scopeProblems`, labelled validation text (contracts), `eventStartDate`, no silent period in the activity form, empty-grid wording |
+| 2 Blockers | done | confidentiality cause + target, `approverEligibility` hides Approve; the stale "No activity updates" item was a symptom of the period mis-assignment (WP1) |
+| 3 Activity lifecycle | done | withdraw/reopen accepted unless an approved report used it, link edit on resubmit, `isLiveActivity`, import column + warnings. Not built: a pre-create import preview |
+| 4 Stale drafts | done | banner "Rewrite affected sections", `generationWarning` |
+| 5 Report text | done | per-outcome tables, not-due indicators, finance basis/separators, vocabulary and stems, exact donor name, no delta in roll-ups |
+| 6 Exports | done | rate % of target, donor checklist notes, evidence pack files |
+| 7 First run | done | wizard hints, hydration guard, terms on the invite page, PDF extraction time note |
+
+Corrections to the demo-8 log found while fixing: the workbook's "Life of project" cell for rates was not empty (it holds the value), and the evidence pack's `index.csv` listed all 47 files (the real defect was that the files themselves were missing).
+
+Verification: contracts 13, domain 527, application 462, infrastructure 340 (+1 skipped), web unit 280, worker 210 tests green; `pnpm -r typecheck` clean. Browser verification on production waits for a deploy (needs the user's allowance).
