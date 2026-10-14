@@ -66,6 +66,14 @@
       "types": "./dist/contexts/reporting/period-for-date.d.ts",
       "import": "./dist/contexts/reporting/period-for-date.js"
     },
+    "./contexts/activities/activity-narrative.js": {
+      "types": "./dist/contexts/activities/activity-narrative.d.ts",
+      "import": "./dist/contexts/activities/activity-narrative.js"
+    },
+    "./contexts/logframe/indicator-entry-suggestions.js": {
+      "types": "./dist/contexts/logframe/indicator-entry-suggestions.d.ts",
+      "import": "./dist/contexts/logframe/indicator-entry-suggestions.js"
+    },
     "./contexts/logframe/participants-consistency.js": {
       "types": "./dist/contexts/logframe/participants-consistency.d.ts",
       "import": "./dist/contexts/logframe/participants-consistency.js"

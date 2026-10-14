@@ -27,5 +27,7 @@ export interface IIndicatorUpdateRepository {
   findById(id: string, tenantId: TenantId): Promise<Result<IndicatorUpdate | null>>;
   findByReportingPeriod(reportingPeriodId: string, tenantId: TenantId): Promise<Result<IndicatorUpdate[]>>;
   findByIndicator(indicatorId: string, tenantId: TenantId): Promise<Result<IndicatorUpdate[]>>;
+  /** The values recorded in any of the given periods, in one query (for "last period's value" suggestions). */
+  findByReportingPeriods(reportingPeriodIds: readonly string[], tenantId: TenantId): Promise<Result<IndicatorUpdate[]>>;
   findByIndicatorAndPeriod(indicatorId: string, reportingPeriodId: string, tenantId: TenantId): Promise<Result<IndicatorUpdate | null>>;
 }

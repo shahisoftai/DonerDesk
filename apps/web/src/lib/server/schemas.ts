@@ -394,6 +394,10 @@ export const PeriodIndicatorRowSchema = z.object({
   /** False when the indicator's frequency says no value is expected in this period (and none is recorded). */
   dueThisPeriod: z.boolean().optional(),
   participantsHint: z.string().optional(),
+  aggregation: z.string().default("LATEST"),
+  previous: z
+    .object({ periodAchievement: z.string(), cumulativeAchievement: z.string(), dataSource: z.string().optional(), periodEnd: z.string() })
+    .optional(),
   logframeLevel: z.string().nullable(),
   logframeCode: z.string().nullable(),
   logframeTitle: z.string().nullable(),

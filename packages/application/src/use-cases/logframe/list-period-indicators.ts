@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod } from "@donordesk/domain";
+import { DomainError, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -34,6 +34,10 @@ export interface PeriodIndicatorRow {
    * recorded: the grid then shows "not due this period" instead of asking for it. Absent frequency means every period.
    */
   dueThisPeriod: boolean;
+  /** How a period's value adds up over time (SUM, LATEST, PERCENTAGE...), so the grid can offer a running total. */
+  aggregation: string;
+  /** This indicator's value from the latest earlier period, to repeat or add to; absent when there is none. */
+  previous?: PreviousIndicatorValue;
   /** A non-blocking prompt when linked activities record a different head-count than the indicator reports. */
   participantsHint?: string;
 }
@@ -76,6 +80,18 @@ export class ListPeriodIndicatorsHandler {
     const scopeResult = await periodIndicatorScope(this.activities, period, ctx.tenant.tenantId);
     if (!scopeResult.ok) return scopeResult;
     const scope = scopeResult.value;
+
+    // Earlier, non-cancelled periods and what was recorded in them: one query each, however many indicators.
+    const allPeriods = await this.periods.findByProject(period.projectId, ctx.tenant.tenantId);
+    if (!allPeriods.ok) return allPeriods;
+    const earlier = allPeriods.value.filter((p) => p.id !== period.id && p.duration.end.getTime() < period.duration.start.getTime());
+    const earlierValues = await this.updates.findByReportingPeriods(earlier.map((p) => p.id), ctx.tenant.tenantId);
+    if (!earlierValues.ok) return earlierValues;
+    const previousByIndicator = latestPreviousValues(
+      earlier.map((p) => ({ id: p.id, start: p.duration.start, end: p.duration.end })),
+      earlierValues.value.map((u) => ({ indicatorId: u.indicatorId, reportingPeriodId: u.reportingPeriodId, periodAchievement: u.periodAchievement, cumulativeAchievement: u.cumulativeAchievement, dataSource: u.dataSource })),
+      period.duration.start,
+    );
 
     const project = this.projects ? await this.projects.findById(period.projectId, ctx.tenant.tenantId) : undefined;
     if (project && !project.ok) return project;
@@ -129,6 +145,8 @@ export class ListPeriodIndicatorsHandler {
           Boolean(update) ||
           !projectStart ||
           isDueInPeriod(ind.frequency, { projectStart, periodEnd: period.duration.end }, { isFinalPeriod: period.reportType === "FINAL" }),
+        aggregation: effectiveIndicatorSemantics({ type: ind.type, name: ind.name, unit: ind.unit, semantics: ind.semantics }).aggregation,
+        ...(previousByIndicator.has(ind.id) ? { previous: previousByIndicator.get(ind.id)! } : {}),
         ...(hint ? { participantsHint: hint.message } : {}),
       };
     });

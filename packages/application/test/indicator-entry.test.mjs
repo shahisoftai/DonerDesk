@@ -45,7 +45,7 @@ const audit = {
 };
 
 function periodRepo(period) {
-  return { findById: async () => ({ ok: true, value: period }) };
+  return { findById: async () => ({ ok: true, value: period }), findByProject: async () => ({ ok: true, value: [] }) };
 }
 
 function indicatorRepo(indicators) {
@@ -166,7 +166,7 @@ test("list period indicators merges logframe indicators with their updates", asy
       }),
     },
     indicatorRepo([indicator]),
-    { findByReportingPeriod: async () => ({ ok: true, value: [update] }) },
+    { findByReportingPeriod: async () => ({ ok: true, value: [update] }), findByReportingPeriods: async () => ({ ok: true, value: [] }) },
   );
 
   const result = await handler.handle(ctx, "period-1");
@@ -250,7 +250,7 @@ test("bulk save rejects a breakdown that does not add up, before writing anythin
 
 test("list period indicators is scoped to the report: activity → its activities' indicators, situation → none", async () => {
   const logframe = { findByProject: async () => ({ ok: true, value: [] }) };
-  const updates = { findByReportingPeriod: async () => ({ ok: true, value: [] }) };
+  const updates = { findByReportingPeriod: async () => ({ ok: true, value: [] }), findByReportingPeriods: async () => ({ ok: true, value: [] }) };
   const indicators = indicatorRepo([makeIndicator("ind-1", "IND-1"), makeIndicator("ind-2", "IND-2")]);
   const acts = [
     { id: "a1", indicatorId: "ind-2", status: "ACCEPTED", activityDate: new Date("2026-08-10T00:00:00Z") },

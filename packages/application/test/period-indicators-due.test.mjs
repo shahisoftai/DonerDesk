@@ -10,10 +10,10 @@ const month = (id, type, m) => ReportingPeriod.create({ id, tenantId: "tenant-a"
 
 function handler(period, indicators, updates = []) {
   return new ListPeriodIndicatorsHandler(
-    { findById: async () => ok(period) },
+    { findById: async () => ok(period), findByProject: async () => ok([]) },
     { findByProject: async () => ok([]) },
     { findByProject: async () => ok(indicators) },
-    { findByReportingPeriod: async () => ok(updates) },
+    { findByReportingPeriod: async () => ok(updates), findByReportingPeriods: async () => ok([]) },
     undefined,
     { findById: async () => ok({ duration: { start: new Date(Date.UTC(2026, 0, 1)) } }) },
   );

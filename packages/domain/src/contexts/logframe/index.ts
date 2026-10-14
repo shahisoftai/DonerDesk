@@ -12,3 +12,4 @@ export * from "./indicator-semantics-description.js";
 export * from "./activity-node-link.js";
 export * from "./participants-consistency.js";
 export * from "./activity-delivery.js";
+export * from "./indicator-entry-suggestions.js";

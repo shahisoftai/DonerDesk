@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
+import { nextRunningTotal } from "@donordesk/domain/contexts/logframe/indicator-entry-suggestions.js";
 import type { DisaggregationEntryInput } from "@donordesk/contracts";
 import { useRouter } from "next/navigation";
 import {
@@ -32,7 +33,8 @@ function initialValues(row: PeriodIndicatorRow): RowValues {
     periodAchievement: row.update?.periodAchievement ?? "",
     cumulativeAchievement: row.update?.cumulativeAchievement ?? "",
     comments: row.update?.comments ?? "",
-    dataSource: row.update?.dataSource ?? (row.dataSource ?? ""),
+    // The source typed for this indicator last period carries forward; else the indicator's own definition.
+    dataSource: row.update?.dataSource ?? row.previous?.dataSource ?? row.dataSource ?? "",
     disaggregation: row.update?.disaggregation ?? [],
   };
 }
@@ -82,8 +84,26 @@ export function IndicatorEntryGrid({
 
   const dirtyCount = dirty.size;
 
+  /** The running total last suggested per row, so a person's own entry is never replaced by a newer suggestion. */
+  const lastSuggestion = useRef<Record<string, string | undefined>>({});
+
   function updateRow(indicatorId: string, patch: Partial<RowValues>) {
-    setValues((current) => ({ ...current, [indicatorId]: { ...(current[indicatorId] ?? initialValues(rows.find((r) => r.id === indicatorId)!)), ...patch } }));
+    const row = rows.find((r) => r.id === indicatorId)!;
+    // Computed from the current snapshot (not inside the state updater) so the suggestion bookkeeping runs exactly once.
+    const before = values[indicatorId] ?? initialValues(row);
+    const merged = { ...before, ...patch };
+    if (patch.periodAchievement !== undefined && patch.cumulativeAchievement === undefined) {
+      const next = nextRunningTotal({
+        aggregation: row.aggregation,
+        periodValue: merged.periodAchievement,
+        currentCumulative: before.cumulativeAchievement,
+        previousCumulative: row.previous?.cumulativeAchievement,
+        lastSuggestion: lastSuggestion.current[indicatorId],
+      });
+      lastSuggestion.current[indicatorId] = next.suggestion;
+      merged.cumulativeAchievement = next.cumulative;
+    }
+    setValues((current) => ({ ...current, [indicatorId]: merged }));
     setDirty((current) => new Set(current).add(indicatorId));
   }
 
@@ -489,6 +509,16 @@ function LevelGroupRows({
                     aria-label={`Period achievement for ${row.code}`}
                   />
                 )}
+                {row.previous && editable && v.periodAchievement.trim() === "" && (
+                  <button
+                    type="button"
+                    className="mt-1 block text-xs text-brand-600 hover:underline dark:text-brand-400"
+                    title={`Last period (to ${row.previous.periodEnd}) you entered ${row.previous.periodAchievement}`}
+                    onClick={() => onChange(row.id, { periodAchievement: row.previous!.periodAchievement })}
+                  >
+                    Same as last period ({row.previous.periodAchievement})
+                  </button>
+                )}
                 {showBreakdown && (
                   <button
                     type="button"
@@ -507,7 +537,7 @@ function LevelGroupRows({
                   value={v.cumulativeAchievement}
                   onChange={(e) => onChange(row.id, { cumulativeAchievement: e.target.value })}
                   disabled={!editable}
-                  placeholder="Running total"
+                  placeholder={row.aggregation === "SUM" && row.previous?.cumulativeAchievement ? `Last: ${row.previous.cumulativeAchievement}` : "Running total"}
                   className="min-h-[38px] px-2 py-1 text-xs"
                   aria-label={`Cumulative achievement for ${row.code}`}
                 />

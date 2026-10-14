@@ -17,6 +17,8 @@ import { recordParticipantHints } from "@donordesk/domain/contexts/logframe/part
 import { LogframeItemSelect } from "@/features/logframe/presentation/LogframeItemSelect";
 import { periodContainingDate } from "@/lib/shared/option-labels";
 import { FileDropzone } from "@/components/editor/FileDropzone";
+import { applyNarrativeProposal, type NarrativeProposal } from "@/features/activities/domain/apply-narrative-proposal";
+import { ActivityNarrativeAssist } from "./ActivityNarrativeAssist";
 import { createActivityDraftStore, type ActivityDraft } from "@/features/activities/domain/activity-draft";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { formatDateTime } from "@/lib/shared/dates";
@@ -104,6 +106,29 @@ export function NewActivityForm({
   useEffect(() => {
     if (createdActivityId) drafts.clear();
   }, [createdActivityId, drafts]);
+
+  /** Puts what the person's own words stated into the empty fields; the period follows a newly filled date. */
+  function applyProposal(proposal: NarrativeProposal) {
+    const { next, filled, kept } = applyNarrativeProposal(currentDraft, proposal);
+    setActivityTitle(next.activityTitle);
+    setActivityDate(next.activityDate);
+    setLocation(next.location);
+    setParticipantsTotal(next.participantsTotal);
+    setParticipantsMale(next.participantsMale);
+    setParticipantsFemale(next.participantsFemale);
+    setParticipantsChildren(next.participantsChildren);
+    setParticipantsDisability(next.participantsDisability);
+    setSummary(next.summary);
+    setAchievements(next.achievements);
+    setChallenges(next.challenges);
+    setLessonsLearned(next.lessonsLearned);
+    setNextSteps(next.nextSteps);
+    if (filled.includes("activityDate") && !periodChosenByUser) {
+      const derived = periodContainingDate(reportingPeriods, next.activityDate);
+      if (derived) setReportingPeriodId(derived);
+    }
+    return { filled, kept };
+  }
 
   function resumeDraft(d: ActivityDraft) {
     setActivityTitle(d.activityTitle);
@@ -263,6 +288,8 @@ export function NewActivityForm({
           </div>
         </InlineAlert>
       )}
+
+      <ActivityNarrativeAssist onApply={applyProposal} />
 
       {earlierRecords.length > 0 && (
         <Field label="Start from an earlier record (optional)" htmlFor="start-from">
