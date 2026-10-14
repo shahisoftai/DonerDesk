@@ -1,0 +1,15 @@
+Code,Name,Type,Baseline,Target,Unit,Means of Verification,Data Source,Frequency,Disaggregation Required,Logframe Code
+WS-IMP1,"Percentage of households reporting diarrhoea in a child under five in the last two weeks",Percentage,31,18,"%","Household survey (baseline, mid-line and end-line)","Household WASH survey",Annual,no,G1
+WS-OC1a,"Percentage of households using an improved drinking water source",Percentage,42,75,"%","Household survey report","Household WASH survey",Quarterly,no,O1
+WS-OC1b,"Percentage of households with access to a functional, unshared latrine",Percentage,28,55,"%","Household survey report","Household WASH survey",Quarterly,no,O1
+WS-OC1c,"Percentage of water points with free chlorine residual of at least 0.2 mg/l",Percentage,40,90,"%","Water quality test logs","Monthly water quality monitoring",Monthly,no,O1
+WS-OC2a,"Percentage of households with a handwashing facility with soap and water",Percentage,22,60,"%","Household survey and spot checks","Household WASH survey",Quarterly,no,O2
+WS-OC2b,"Percentage of water point committees that are functional",Percentage,15,80,"%","Committee functionality checklist","Committee monitoring visits",Monthly,no,O2
+WS-OP1.1,"Number of water points constructed or rehabilitated",Number,0,20,"water points","Completion and handover certificates","Contractor and engineer records",Monthly,no,1.1
+WS-OP1.1b,"Number of people with new or improved access to safe water",Number,0,30000,"people","Water point population estimate and handover records","Engineer and community records",Monthly,yes,1.1
+WS-OP1.2,"Number of household latrines constructed",Number,0,600,"latrines","Latrine completion register and inspection checklists","Construction registers",Monthly,no,1.2
+WS-OP1.3,"Number of school and health-facility WASH blocks constructed",Number,0,8,"blocks","Completion certificates","Contractor and engineer records",Monthly,no,1.3
+WS-OP2.1,"Number of people reached with hygiene promotion",Number,0,24000,"people","Session attendance registers","Mobiliser registers",Monthly,yes,2.1
+WS-OP2.2,"Number of water point committees established and trained",Number,0,16,"committees","Training attendance sheets and committee minutes","Committee registers",Monthly,no,2.2
+WS-OP2.3,"Number of water quality tests conducted",Number,0,320,"tests","Water quality test logs","Water quality monitoring logs",Monthly,no,2.3
+WS-OP2.4,"Number of households receiving hygiene kits and household water treatment",Number,0,2500,"households","Distribution lists","Distribution registers",Monthly,no,2.4

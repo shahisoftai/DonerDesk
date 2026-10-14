@@ -1,0 +1,180 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH)
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH)
+
+NGA-WASH-BRN-MV7ZA36U · Lake Chad Basin Resilience Fund (LCBRF) · Nigeria · WASH
+
+Feb 1, 2026 – Sep 30, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH) · Mar 1, 2026 – Mar 31, 2026 · due Apr 5, 2026
+
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH) — monthly report
+Draft
+Version 1
+100% ready
+· 4 to do
+1 issue
+Review 1 flagged statement
+8 indicator values and 3 evidence files changed since this draft was written · 6 sections affected.
+Re-check affected sections
+Dismiss
+OUTLINE
+0 of 7 approved
+Approve all clean sections (6)
+1
+Headline Summary
+Draft
+2
+Progress Against Logframe
+Draft
+3
+Activities Completed
+Draft
+4
+Water Quality and Public Health Risks
+Draft
+5
+Access, Security and Operating Environment
+Draft
+6
+Protection, Gender and Accountability to Affected Populations
+1
+flagged statement
+7
+Plan for Next Month
+Draft
++ Add section
+Reorder
+REPORT INPUTS
+Edit
+Indicator values
+8 of 8 verified · 6 not entered
+Story answers
+5 of 5 answered
+Evidence
+7 files
+
+[DEMO-8] SAFE WATER, SANITATION AND HYGIENE FOR DISPLACED AND HOST COMMUNITIES IN BORNO STATE (BORNO-WASH) · MAR 1, 2026 – MAR 31, 2026 · DUE APR 5, 2026
+
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH) — monthly report
+
+Drafted
+Rewrite with AI
+Regenerate
+Edit
+Approve section
+1 Headline Summary
+
+In March 2026 the project completed and handed over two boreholes at Konduga town, Konduga LGA, giving about 2,400 people safe water; the new borehole ended a daily two-hour walk for women to a shallow well that dried up each March. This was the most important result of the month. The project also built 40 household latrines, formed and trained three water point committees (21 members, 12 female, 9 male) in Dalori ward, Jere LGA, and reached 2400 people with hygiene promotion in Mashimari, Jere LGA (1440 female, 960 male). Evidence includes verified handover certificates, attendance sheets and photographs. Two boreholes were completed against a plan of three because the rig was shared with a second site; one will follow in April. Ramadan fasting hours cut working time, so construction was scheduled for early mornings and mobilisers recorded sessions on paper registers. The main decision needed is how to schedule the rig to complete the remaining water point without further sharing delays. This project is implemented with the support of Lake Chad Basin Resilience Fund.
+
+2 Progress Against Logframe
+
+No logframe indicator was measured against a verified figure in March 2026. All output and outcome indicators, including WS-OP1.1 (water points constructed or rehabilitated), WS-OP1.2 (household latrines), WS-OP2.1 (people reached with hygiene promotion), WS-OP2.2 (water point committees) and WS-OP2.3 (water quality tests), were recorded as not measured this period, so no this-month, cumulative, target or percent-of-target value can be reported for them.
+
+indicator	this month	cumulative	target	percent of target
+WS-OP1.1 — Number of water points constructed or rehabilitated	Not reported	Not reported	Not reported	Not reported
+WS-OP1.2 — Number of household latrines constructed	Not reported	Not reported	Not reported	Not reported
+WS-OP2.1 — Number of people reached with hygiene promotion	Not reported	Not reported	Not reported	Not reported
+WS-OP2.2 — Number of water point committees established and trained	Not reported	Not reported	Not reported	Not reported
+WS-OP2.3 — Number of water quality tests conducted	Not reported	Not reported	Not reported	Not reported
+
+No indicator is behind plan this period in the table sense, because no verified indicator value was recorded for March 2026. Activity records note delivery during the month — two boreholes drilled, chlorinated and handed over serving about 2,400 people, 2,400 people reached with hygiene promotion (1,440 female, 960 male), three water point committees formed and trained, and 40 household latrines built — but these results are not yet reflected as verified logframe findings. Sex-disaggregated people-level figures are available in the activity records for hygiene promotion and committee training.
+
+Data quality notes: No data-quality flags were raised on verified findings this period, because no verified findings were recorded. The figures cited above come from activity records and remain to be verified as logframe indicator results.
+
+3 Activities Completed
+
+The project completed three activities in March 2026. In Konduga LGA, the contractor drilled, developed and test-pumped two boreholes with hand pumps at Konduga town on 10 March; the water quality officer chlorinated and tested them before handover, and about 2,400 people now use them (handover certificate and photo on file). In Jere LGA, at Mashimari, trained community mobilisers held hygiene promotion sessions on handwashing, safe water storage and latrine use at water points, markets and mosques from 17 March; 2400 people attended (1440 female, 960 male), bringing the cumulative total to 3900 of 24,000 (attendance sheet and photo on file). Also in Jere LGA, at Dalori ward, the project formed and trained three water point committees on 24 March, each with seven members including at least four women; 21 people took part (12 female, 9 male) (attendance sheet and photo on file). Two planned activities fell short. The project completed two water points against a plan of three because the rig was shared with a second site; the remaining water point will follow in April. Ramadan fasting hours cut working hours for local labour and masons, so the project scheduled construction for early mornings, and the unreliable mobile network at Mashimari meant mobilisers recorded sessions on paper registers for later entry.
+
+4 Water Quality and Public Health Risks
+
+Half of the tested water points met the chlorine standard in March 2026. The water quality officer carried out 35 water quality tests in the period, and 50 percent of the water points tested had a free chlorine residual of at least 0.2 mg/l at the end of it. As mitigation, the project chlorinated and tested each new or rehabilitated water point before handover, as recorded in the verified handover certificate and handover photograph for the Konduga boreholes. Water points are designed to provide at least 15 litres per person per day within 500 metres, and latrines are lockable, lined and fitted with a handwashing station, in line with SPHERE minimum standards. No cholera alert or other outbreak event is recorded for March. The outcome indicators WS-IMP1, WS-OC1a, WS-OC1b, WS-OC1c, WS-OC2a and WS-OC2b were not measured this period, so the project cannot report household-level water use, sanitation or health outcome figures for March; no reasons for the non-measurement were recorded.
+
+5 Access, Security and Operating Environment
+
+Ramadan fasting hours cut working hours for local labour and masons in March 2026, and the mobile network at Mashimari, Jere LGA, was unreliable for data collection. The project adapted by scheduling construction for early mornings, and the mobilisers recorded sessions on paper registers for later entry. Drilling, testing and handover of the two boreholes are recorded in the handover certificate and photo on file, and attendance sheets record the hygiene promotion and committee sessions held despite these constraints. No security incident is recorded in the March records. No request for support or a change requiring the Fund's agreement was recorded this month.
+
+6 Protection, Gender and Accountability to Affected Populations
+
+In March 2026 the project applied protection, gender and accountability measures across its sites in Konduga and Jere LGAs.
+
+Gender: women hold four of the seven places on each of the three new water point committees formed in Dalori ward, Jere LGA. Committee training reached 21 participants (12 female, 9 male), and hygiene promotion sessions at Mashimari reached 2400 people (1440 female, 960 male) (attendance sheets and photos on file). Protection: water points were sited in daylight-accessible places agreed with women's groups. Accountability: two complaints about the water point location in Jere were recorded and resolved by moving the tap stand.
+
+No safeguarding incident or protection concern is recorded this month.
+
+7 Plan for Next Month
+
+In April 2026 the project will complete the third water point that was not finished in March, as the rig was shared with a second site, and hand each completed water point over to its committee. The project will chlorinate and test each water point at handover before the community starts to use it, following the practice adopted in March. Community mobilisers will continue the hygiene promotion sessions and add a hygiene club session in schools. The project will follow up the three water point committees with monthly monitoring visits. Expected results are the completion and handover of the remaining water points, continued sessions reaching more people toward the 24,000 target, and further trained committees toward the 16 planned. No verified indicator figures were recorded in March, so the April report will show whether the logframe indicators were measured against these results.
+
+Section 1
+
+Headline Summary
+Statements
+Sources · 9
+Chart
+Comments
+History
+
+Nothing to decide — all 8 statements are backed by evidence or decided.
+
+Not checked (minor)
+
+“This was the most important result of the month.”
+
+Not checked (minor)
+
+“Evidence includes verified handover certificates, attendance sheets and photographs.”
+
+Not checked (minor)
+
+“The main decision needed is how to schedule the rig to complete the remaining water point without further sharing delays.”
+
+Matches evidence
+
+“In March 2026 the project completed and handed over two boreholes at Konduga town, Konduga LGA, giving about 2,400 people safe water; the new borehole ended a daily two-hour walk for women to a shallow well that dried up each March.”
+
+Matches evidence
+
+“The project also built 40 household latrines, formed and trained three water point committees (21 members, 12 female, 9 male) in Dalori ward, Jere LGA, and reached 2400 people with hygiene promotion in Mashimari, Jere LGA (1440 female, 960 male).”
+
+Matches evidence
+
+“Two boreholes were completed against a plan of three because the rig was shared with a second site; one will follow in April.”
+
+Matches evidence
+
+“Ramadan fasting hours cut working time, so construction was scheduled for early mornings and mobilisers recorded sessions on paper registers.”
+
+Matches evidence
+
+“This project is implemented with the support of Lake Chad Basin Resilience Fund.”

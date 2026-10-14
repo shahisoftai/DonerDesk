@@ -1,0 +1,8 @@
+*.log
+shot-*.png
+pid.txt
+periods.txt
+situation.txt
+acts.log
+ev.log
+act-template-download

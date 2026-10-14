@@ -1,0 +1,311 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH)
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH)
+
+NGA-WASH-BRN-MV7ZA36U · Lake Chad Basin Resilience Fund (LCBRF) · Nigeria · WASH
+
+Feb 1, 2026 – Sep 30, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH) · Sep 1, 2026 – Sep 30, 2026 · due Oct 5, 2026
+
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH) — final report
+Draft
+Version 1
+84% ready
+· 6 to do
+7 issues
+Review 7 flagged statements
+OUTLINE
+0 of 14 approved
+Collapse sub-sections
+Approve all clean sections (10)
+1
+Executive Summary
+Draft
+2
+Context and Project Description
+Draft
+2.1
+Context Update
+Draft
+2.2
+Theory of Change
+Draft
+3
+Results Achieved
+1
+flagged statement
+3.1
+Impact and Outcome Results
+Draft
+3.2
+Output Delivery
+Draft
+3.3
+Deviations from Plan
+Draft
+4
+Compliance with WASH Standards
+Draft
+5
+Protection, Gender and Accountability
+4
+flagged statements
+6
+Sustainability and Handover
+Draft
+7
+Risks and Lessons Learned
+1
+flagged statement
+8
+Financial Report
+1
+flagged statement
+9
+Recommendations
+Draft
++ Add section
+Reorder
+REPORT INPUTS
+Edit
+Indicator values
+14 of 14 verified
+Story answers
+5 of 5 answered
+Evidence
+48 files
+
+[DEMO-8] SAFE WATER, SANITATION AND HYGIENE FOR DISPLACED AND HOST COMMUNITIES IN BORNO STATE (BORNO-WASH) · SEP 1, 2026 – SEP 30, 2026 · DUE OCT 5, 2026
+
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH) — final report
+
+Drafted
+Rewrite with AI
+Regenerate
+Edit
+Approve section
+1 Executive Summary
+
+This project is implemented with the support of Lake Chad Basin Resilience Fund. BORNO-WASH (NGA-WASH-BRN-MV7ZA36U), an eight-month project implemented by Borno Community Water Initiative with Konduga Women's Development Association in Jere, Konduga, Mafa and Dikwa LGAs of Borno State, delivered safe water, sanitation and hygiene to displaced and host communities, funded in full by the Lake Chad Basin Resilience Fund under grant LCBRF/NG/2026/WASH-031.
+
+Delivery against life-of-project targets was mostly strong. All 8 school and health-facility WASH blocks were completed (100% of target), 585 of 600 household latrines were built (97.5% of target), and 2,600 of 2,500 households received hygiene kits and household water treatment (104% of target). Water points reached 16 of 20 (80% of target) and people with new or improved access to safe water 26,000 of 30,000 (life-of-project figures), short of plan because of rig breakdowns, the Mafa road closure and the floods. Outcomes moved well from baseline: handwashing facilities with soap and water reached 63 percent against a target of 60 percent, the only outcome recorded as positive against plan, while childhood diarrhoea fell from a baseline of 31 percent to 21 percent but stayed above the 18 percent target. Expenditure was 695800 USD against a budget of 720000 USD, a burn rate of 96.6%.
+
+Recorded challenges included flooding in Jere and Konduga that damaged one water point and contaminated three others, with about 400 households unable to reach their latrines for a week; the project disinfected and retested the water points. Next steps recorded in the activities include following up kit use during future hygiene sessions and training the school hygiene clubs.
+
+Change from previous period: WS-OC1a (Percentage of households using an improved drinking water source) 58 → 72 ▲
+
+2 Context and Project Description
+
+Borno State, north-east Nigeria, hosts displaced and host communities in Jere, Konduga, Mafa and Dikwa LGAs who face persistent gaps in safe water, sanitation and hygiene. The eight-month project BORNO-WASH (NGA-WASH-BRN-MV7ZA36U), funded in full by the Lake Chad Basin Resilient Fund under grant LCBRF/NG/2026/WASH-031, provided safe water, sanitation and hygiene to displaced and host communities in these four LGAs. Borno Community Water Initiative (BCWI) implemented the project with Konduga Women's Development Association (KWDA) as partner.
+
+The design combined four lines of delivery: drilling and rehabilitating hand-pump boreholes; building household latrines and school and health-centre WASH blocks; training community mobilisers and water point committees; and monitoring water quality. It also prepared the project to respond to the 2026 cholera alert and floods with hygiene kits. Results were disaggregated by sex throughout the design. The project assessed its delivery against the logframe and the Fund's WASH standards (SPHERE minimum standards and national WASH cluster guidance). Delivery was recorded through contractor and engineer records, construction registers, mobiliser and committee registers, water quality monitoring logs and distribution registers, which the reported results cite as their data sources. The findings recorded under those sources are presented in the Results Achieved section.
+
+2.1 Context Update
+
+Over the eight months of implementation, the situation in Jere, Konduga, Mafa and Dikwa LGAs changed in ways that affected delivery. In July 2026, the Borno State Ministry of Health declared a cholera alert in Jere and Konduga; the project reoriented its hygiene sessions to cholera prevention and brought the kit distribution forward from September. In August 2026, floods in Jere and Konduga damaged one water point and contaminated three others, and about 400 households could not reach their latrines for a week. Insecurity on the Mafa to Dikwa road restricted movement for about ten days in April 2026. The drilling rig broke down for nine days in May 2026 waiting for a spare part from Kano, and the first rains collapsed latrine pits in sandy soil at Mele and Dalori. Heavy rain in September delayed the last school block by one week.
+
+The people reached were displaced and host households in the four LGAs. Households receiving hygiene kits were selected from the community list with the water point committees, and the distribution list was verified at the point of distribution. Latrine construction prioritised households headed by women, older people and people with disabilities. Water point committees were formed with community leaders, seven members each with at least four women. By the end of the project, 26,000 people (14,300 female and 11,700 male, life of project) had new or improved access to safe water against a target of 30,000, and 22,900 people (13,740 female and 9,160 male, life of project) had been reached with hygiene promotion against a target of 24,000.
+
+These events explain the delivery shortfall on water points: 16 of 20 (80% of target) were constructed or rehabilitated, owing to the rig breakdowns, the Mafa road closure and the floods.
+
+2.2 Theory of Change
+
+The project's theory was that constructing and rehabilitating water points, household latrines and school and health-facility WASH blocks, combined with trained committees, hygiene promotion and water quality monitoring, would improve household access to safe water and sanitation and, in turn, reduce childhood diarrhoea. The logic largely held. Water points reached 16 against a target of 20 (80% of target) and people with new or improved access to safe water reached 26,000 of 30,000 (life-of-project figures). Household latrines reached 585 of 600 and all 8 WASH blocks were completed, including the final school block in Mafa in September 2026 and a health-centre block in Dikwa. These outputs moved the outcome indicators close to target: improved drinking water use rose to 72 percent against a 75 percent target, unshared latrine access to 52 percent against 55 percent, chlorine compliance to 88 percent against 90 percent, and functional committees to 78 percent against 80 percent. Handwashing facilities with soap and water exceeded the target at 63 percent against 60 percent, the only outcome recorded as positive against plan. The goal indicator, households reporting diarrhoea in a child under five, fell from a baseline of 31 percent to 21 percent against an 18 percent target, showing progress but not the full expected effect. The officer's account attributes the shortfalls in water points and access to rig breakdowns, the Mafa road closure and the floods. The project did not record additional evidence on the causal pathway between outputs and outcomes beyond the end-line household survey.
+
+3 Results Achieved
+
+The project delivered most life-of-project targets in full or near-full. All 8 school and health-facility WASH blocks were completed (100% of target); the final two blocks, at a primary health centre in Dikwa Ward 3 and a primary school in Mafa town, were completed and handed over in September 2026 with signed completion certificates. Household latrines reached 585 of 600 (97.5% of target), and hygiene kits and household water treatment reached 2,600 households against a target of 2,500 (104% of target). Hygiene promotion reached 22,900 people of 24,000 (life-of-project figures, 95.4% of target), of whom 13,740 were female and 9,160 male. Water point committees established and trained reached 15 of 16 (93.8% of target) and water quality tests 340 against a target of 320. As set out in Theory of Change, water points reached 16 of 20 (80% of target) and people with new or improved access to safe water 26,000 of 30,000 (life-of-project figures), short of target because of rig breakdowns, the Mafa road closure and the floods.
+
+Outcomes moved substantially from baseline. Households using an improved drinking water source stood at 72 percent against a target of 75 percent, up from a baseline of 42 percent and from 58 percent in the previous period. Households with access to a functional, unshared latrine reached 52 percent against a target of 55 percent, up from 28 percent at baseline and 38 percent in the previous period. Water points with a free chlorine residual of at least 0.2 mg/l reached 88 percent against a target of 90 percent, up from 40 percent at baseline and 70 percent in the previous period, grounded in monthly monitoring logs. Handwashing facilities with soap and water exceeded target at 63 percent against 60 percent, up from 22 percent at baseline and 41 percent in the previous period. Functional water point committees reached 78 percent against a target of 80 percent, up from 15 percent at baseline and 50 percent in the previous period.
+
+The goal indicator fell short. The percentage of households reporting diarrhoea in a child under five in the last two weeks stood at 21 percent against a target of 18 percent, down from a baseline of 31 percent, per the end-line household survey. Sex-disaggregated life-of-project figures were recorded for water access (26,000 people: 14,300 female, 11,700 male) and hygiene promotion (22,900 people: 13,740 female, 9,160 male). No data-quality caveats were flagged on the verified findings used here.
+
+Change from previous period: WS-OC1a (Percentage of households using an improved drinking water source) 58 → 72 ▲
+
+3.1 Impact and Outcome Results
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Cumulative to date	% of project target	Status	Data source
+WS-IMP1	Percentage of households reporting diarrhoea in a child under five in the last two weeks	%	31	18	21	—	—	21	—	Below expectation	Household WASH survey
+WS-OC1a	Percentage of households using an improved drinking water source	%	42	75	72	58	—	72	—	Below expectation	Household WASH survey
+WS-OC1b	Percentage of households with access to a functional, unshared latrine	%	28	55	52	38	—	52	—	Below expectation	Household WASH survey
+WS-OC1c	Percentage of water points with free chlorine residual of at least 0.2 mg/l	%	40	90	88	70	—	88	—	Below expectation	Monthly water quality monitoring
+WS-OC2a	Percentage of households with a handwashing facility with soap and water	%	22	60	63	41	—	63	—	On track	Household WASH survey
+WS-OC2b	Percentage of water point committees that are functional	%	15	80	78	50	—	78	—	Below expectation	Committee monitoring visits
+
+Childhood diarrhoea fell from a baseline of 31 percent to 21 percent by the end of the project, but stayed above the target of 18 percent. Households using an improved drinking water source reached 72 percent against a target of 75 percent, up from a baseline of 42 percent and from 58 percent in the previous period. Households with access to a functional, unshared latrine reached 52 percent against a target of 55 percent, up from 28 percent at baseline and 38 percent in the previous period, and households with a handwashing facility with soap and water reached 63 percent, exceeding the target of 60 percent and up from 22 percent at baseline and 41 percent in the previous period. Water points with a free chlorine residual of at least 0.2 mg/l reached 88 percent against a target of 90 percent, up from 40 percent at baseline and 70 percent in the previous period, and functional water point committees reached 78 percent against a target of 80 percent, up from 15 percent at baseline and 50 percent in the previous period.
+
+Against the mandatory question: the target of 18 percent for childhood diarrhoea was not met because the end-line household survey recorded 21 percent. The project reached 16 of 20 water points and 26,000 of 30,000 people with new access to safe water because of the rig breakdowns, the Mafa road closure and the floods. Committees, latrines and WASH blocks finished at or close to target. All percentage indicators were slightly below target except the handwashing indicator.
+
+Data quality notes: the verified findings carry no quality flags. Data sources are the Household WASH survey, monthly water quality monitoring and committee monitoring visits; no data category went unrecorded for these indicators.
+
+Change from previous period: WS-OC1a (Percentage of households using an improved drinking water source) 58 → 72 ▲
+
+Progress to date against project targets
+Chart data
+3.2 Output Delivery
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Cumulative to date	% of project target	Status	Data source
+WS-OP1.1	Number of water points constructed or rehabilitated	water points	0	20	3	6	15%	16	80%	Descriptive only	Contractor and engineer records
+WS-OP1.1b	Number of people with new or improved access to safe water	people	0	30000	6900	8700	23%	26000	86.7%	Descriptive only	Engineer and community records
+WS-OP1.2	Number of household latrines constructed	latrines	0	600	70	315	11.7%	585	97.5%	Descriptive only	Construction registers
+WS-OP1.3	Number of school and health-facility WASH blocks constructed	blocks	0	8	2	3	25%	8	100%	Descriptive only	Contractor and engineer records
+WS-OP2.1	Number of people reached with hygiene promotion	people	0	24000	3000	9200	12.5%	22900	95.4%	Descriptive only	Mobiliser registers
+WS-OP2.2	Number of water point committees established and trained	committees	0	16	1	8	6.2%	15	93.8%	Descriptive only	Committee registers
+WS-OP2.3	Number of water quality tests conducted	tests	0	320	50	130	15.6%	340	106.2%	Descriptive only	Water quality monitoring logs
+WS-OP2.4	Number of households receiving hygiene kits and household water treatment	households	0	2500	900	—	36%	2600	104%	Descriptive only	Distribution registers
+
+The project delivered its outputs over eight months against life-of-project targets. WASH blocks reached 8 of 8 (100% of target). Hygiene kits and household water treatment reached 2,600 of 2,500 households (104% of target), and water quality tests reached 340 against a target of 320. Household latrines reached 585 of 600 (97.5% of target), committees 15 of 16 (93.8% of target) and hygiene promotion 22,900 of 24,000 people (95.4% of target).
+
+Two outputs fell short of target. Water points reached 16 of 20 (80% of target) and people with new or improved access to safe water reached 26,000 of 30,000 (86.7% of target); the reporting officer attributes these shortfalls to rig breakdowns, the Mafa road closure and the floods. Of the 26,000 people with new or improved access over the life of the project, 14,300 were female and 11,700 were male. Of the 22,900 people reached with hygiene promotion over the life of the project, 13,740 were female and 9,160 were male.
+
+Data quality notes: the verified output findings carry no quality flags. Values come from contractor and engineer records, construction registers, mobiliser registers, committee registers, water quality monitoring logs and distribution registers as listed in the indicator table.
+
+Change from previous period: WS-OC1a (Percentage of households using an improved drinking water source) 58 → 72 ▲
+
+Progress to date against project targets
+Chart data
+3.3 Deviations from Plan
+
+Water points fell short of plan: the project completed 16 against a target of 20 (80% of target), and people with new or improved access to safe water reached 26,000 against 30,000 (87% of target, life-of-project figures). The officer's account attributes this to drilling rig breakdowns, the closure of the Mafa to Dikwa road and the August floods; the rig was out for nine days in May waiting for a spare part, and the road closure restricted movement for about ten days in April. In response, the project hired a second smaller rig for hand-pump boreholes and pooled diesel purchases across sites.
+
+Other outputs came at or close to target. Household latrines reached 585 of 600 (98% of target). Water point committees reached 15 of 16 (94% of target). All 8 WASH blocks were completed, but the last Mafa school block finished one week late because heavy rain coincided with the end of staff contracts; handover meetings were brought forward to each LGA before contracts ended. Hygiene kits and household water treatment exceeded plan at 2,600 households against a target of 2,500 (104% of target) after the July cholera alert brought distribution forward.
+
+Financially, hygiene promotion, kits and household water treatment overspent its line at 103.9% of budget (83100 USD against 80000 USD), while monitoring, evaluation, accountability and learning used 78.4% of its line (19600 USD of 25000 USD). Total expenditure was 695800 USD against a budget of 720000 USD, a burn rate of 96.6%. The deviation in the water supply outputs is the main variance against the logframe; the underlying evidence is in the September findings and the activity records for April, May and August 2026.
+
+4 Compliance with WASH Standards
+
+The project's water, sanitation and hygiene work met the SPHERE minimum standards, with water quality compliance close to but below target. Over the project, the water quality officer conducted 340 water quality tests against a target of 320 (106% of target), including 50 tests in the final period. At the end of the project, 88 percent of water points tested had a free chlorine residual of at least 0.2 mg/l, against a target of 90 percent; compliance rose from 40 percent at baseline. Monthly water quality logs record these results. Each new or rehabilitated water point was chlorinated and tested before handover, and handover certificates record this. Water points are designed for at least 15 litres per person per day within 500 metres, and household latrines are lockable, lined and fitted with a handwashing station, in line with the SPHERE minimum standards and national WASH cluster guidance, as shown in the latrine registers. The 88 percent chlorine residual result fell 2 percentage points short of the 90 percent target; the project's water quality monitoring records (WS-OC1c) document this gap.
+
+5 Protection, Gender and Accountability
+
+Over the whole project, the design placed women at the centre of delivery and no safeguarding incident was reported.
+
+Gender. Women and girls formed the majority of those the project reached. Of the 26,000 people with new or improved access to safe water over the life of the project, 14,300 were female and 11,700 male. Of the 22,900 people reached with hygiene promotion, 13,740 were female and 9,160 male. Household latrine construction prioritised households headed by women, older people and people with disabilities, and every water point committee had at least four of its seven members be women. School and health-facility WASH blocks included separate girls and boys latrines and a menstrual hygiene room. At the Mafa school, a girls' hygiene club began managing the menstrual hygiene room and the soap stock. Female mobilisers led many hygiene sessions, and recorded lessons note that women attend sessions led by female mobilisers.
+
+Protection. The reporting officer states that no safeguarding incident was reported during the project. No protection compliance record was supplied in the evidence files, so compliance beyond this statement cannot be confirmed.
+
+Accountability to affected populations. Community involvement was recorded in site selection with community leaders, household selection for kits made with the committees, distribution lists verified at the point of distribution, and a complaint desk at distributions, which the recorded lesson says reduced disputes about who is on the list. The officer states that all complaints were resolved; the number of complaints received and resolved was not recorded.
+
+Inclusion and environment. Latrine designs were adapted after the first rains collapsed pits in sandy soil, with concrete ring lining added and collapsed pits rebuilt. No disability-disaggregated data was recorded for the hygiene promotion activities, so participation by persons with disabilities could not be established from the records.
+
+6 Sustainability and Handover
+
+The project transferred all assets and responsibilities to community and local institutions before staff contracts ended. Water point committees (seven members each, at least four women) now hold the keys, tariff books and spare parts for the completed water points. The four LGA water boards received the maintenance plans, the asset register and the water quality monitoring schedule. School and health-centre management committees took over the 8 WASH blocks with signed completion certificates. The project did not retain any asset.
+
+Handover documents were formally signed: handover certificates for the water points are on file as verified evidence, and the completion certificates for the school and health-centre blocks were signed by the school or facility management committees. Handover meetings were held in each LGA before contracts ended, so the transfer was completed while staff were still in post. The sustainability of the water points rests on the trained committees, which collect a small monthly tariff, keep the tariff books and hold the spare parts; the LGA water boards hold the maintenance plans and the monitoring schedule that guide their oversight. Committee functionality reached 78 percent against a target of 80 percent at end-line (life-of-project figure).
+
+7 Risks and Lessons Learned
+
+Over the eight months, four recorded risks materialised: rig breakdowns, the closure of the Mafa to Dikwa road, a cholera alert and floods. The drilling rig broke down for nine days in May while a spare part was awaited from Kano, and the project hired a second smaller rig and pooled diesel purchases across sites. Insecurity on the Mafa to Dikwa road restricted movement for about ten days in April; work moved to Konduga and Jere and the Mafa school block started once the road was cleared with community leaders. After the July cholera alert in Jere and Konduga, the project reoriented hygiene sessions to cholera prevention and brought the kit distribution forward from September. August floods damaged one water point and contaminated three; the team repaired the pump, disinfected and retested the water points, released a contingency of hygiene kits and raised latrine access paths. Heavy rain at project end delayed the last school block by one week, and the end-line survey and handover coincided with the end of staff contracts; the project held handover meetings in each LGA before contracts ended. Water points reached 16 of 20 (80% of target) and people with new or improved access to safe water 26,000 of 30,000 (87% of target) because of the rig breakdowns, the road closure and the floods; committees, latrines and WASH blocks finished at or close to target.
+
+Verified monitoring and field records document these events: the monthly water quality logs record testing rounds through the response (73a042d1, d566ad34, 5092599c), and the latrine registers and handover certificate record construction progress and completions (69acd78a, 718e715e, f1ee42b5).
+
+Recorded lessons for future programming: chlorinating and testing a water point at handover, before use, avoids early contamination complaints; committees that agree a small monthly tariff before the water point opens keep it working; a simple chlorinator and a weekly committee check raise chlorine compliance; involving the school management committee from the design stage secures a maintenance budget; households that dig their own pits and are paid for materials finish latrines faster; distributing kits at the water point with a complaint desk reduces disputes; and sessions held after prayers, at water points and led by female mobilisers reach more participants. A girls' hygiene club at the Mafa school began managing the menstrual hygiene room and the soap stock.
+
+Drawing only on the recorded lessons, the project would chlorinate and test each water point at handover from the outset, secure spare rig parts and a standby rig earlier, involve school and facility management committees at the design stage, and schedule end-line survey and handover with a margin before staff contracts end.
+
+8 Financial Report
+
+The project expended 695800 of its 720000 budget, leaving a balance of 24200 and an overall burn rate of 96.6 percent. The budget and expenditure by line were:
+
+Budget line	Budget	Expended	Balance
+Water supply infrastructure	260000	247500	12500
+Sanitation and WASH blocks	150000	146200	3800
+Hygiene promotion, kits and household water treatment	80000	83100	-3100
+Committees, training and capacity building	50000	47800	2200
+Water quality monitoring	30000	28400	1600
+Programme staff and field operations	90000	88300	1700
+Monitoring, evaluation, accountability and learning	25000	19600	5400
+Indirect costs	35000	34900	100
+
+Expenditure was close to budget on most lines. Two lines varied by more than ten percent. Hygiene promotion, kits and household water treatment spent 83100 against a budget of 80000 (a burn rate of 103.9 percent). The activity records state that the Borno State Ministry of Health declared a cholera alert in Jere and Konduga, after which demand for chlorine and hygiene kits rose sharply and the kit distribution was brought forward from September. Monitoring, evaluation, accountability and learning spent 19600 against a budget of 25000 (a burn rate of 78.4 percent); no variance explanation for this line was recorded in the officer's narrative. The Tell the Story context notes that the end-line survey and handover coincided with the end of staff contracts and with heavy rain that delayed the last school block; no financial variance figures for these events were recorded.
+
+9 Recommendations
+
+Observation. Over the whole project, the water supply line carried the greatest delivery risk: the project completed 16 water points against a target of 20 (80% of target) and 26,000 people gained new or improved access to safe water against a target of 30,000 (87% of target). Rig breakdowns, the closure of the Mafa to Dikwa road and the August floods drove these shortfalls. Other outputs landed at or near target: 8 of 8 WASH blocks, 585 of 600 latrines (97.5% of target), 15 of 16 committees, 22,900 of 24,000 people reached with hygiene promotion and 2,600 of 2,500 households with hygiene kits (104% of target). Chlorine compliance reached 88 percent against a 90 percent target, and childhood diarrhoea fell from 31 percent to 21 percent against a target of 18 percent. Handover meetings in each LGA were held before staff contracts ended, and the school block at Mafa finished one week late after heavy rain.
+
+Section 1
+
+Executive Summary
+Statements
+Sources · 8
+Chart
+Comments
+History
+
+Nothing to decide — all 10 statements are backed by evidence or decided.
+
+Not checked (minor)
+
+“Delivery against life-of-project targets was mostly strong.”
+
+Matches evidence
+
+“This project is implemented with the support of Lake Chad Basin Resilience Fund.”
+
+Matches evidence
+
+“BORNO-WASH (NGA-WASH-BRN-MV7ZA36U), an eight-month project implemented by Borno Community Water Initiative with Konduga Women's Development Association in Jere, Konduga, Mafa and Dikwa LGAs of Borno State, delivered safe water, sanitation and hygiene to displaced and host communities, funded in full by the Lake Chad Basin Resilience Fund under grant LCBRF/NG/2026/WASH-031.”
+
+Matches evidence
+
+“All 8 school and health-facility WASH blocks were completed (100% of target), 585 of 600 household latrines were built (97.5% of target), and 2,600 of 2,500 households received hygiene kits and household water treatment (104% of target).”
+
+Matches evidence
+
+“2,600 of 2,500 households received hygiene kits and household water treatment (104% of target).”
+
+Matches evidence
+
+“Water points reached 16 of 20 (80% of target) and people with new or improved access to safe water 26,000 of 30,000 (life-of-project figures), short of plan because of rig breakdowns, the Mafa road closure and the floods.”
+
+Matches evidence
+
+“Outcomes moved well from baseline: handwashing facilities with soap and water reached 63 percent against a target of 60 percent, the only outcome recorded as positive against plan, while childhood diarrhoea fell from a baseline of 31 percent to 21 percent but stayed above the 18 percent target.”
+
+Matches evidence
+
+“Expenditure was 695800 USD against a budget of 720000 USD, a burn rate of 96.6%.”
+
+Matches evidence
+
+“Recorded challenges included flooding in Jere and Konduga that damaged one water point and contaminated three others, with about 400 households unable to reach their latrines for a week; the project disinfected and retested the water points.”
+
+Matches evidence
+
+“Next steps recorded in the activities include following up kit use during future hygiene sessions and training the school hygiene clubs.”

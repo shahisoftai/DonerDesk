@@ -1,0 +1,601 @@
+No,Household ID (anonymised),Ward,Kit received,Water treatment received,Signature or thumbprint
+1,HH-06-0001,Dalori,yes,yes,signed
+2,HH-06-0002,Mashimari,yes,yes,signed
+3,HH-06-0003,Mashimari,yes,yes,signed
+4,HH-06-0004,Dikwa Ward 3,yes,yes,signed
+5,HH-06-0005,Mafa,yes,yes,signed
+6,HH-06-0006,Mashimari,yes,yes,signed
+7,HH-06-0007,Dikwa Ward 3,yes,yes,signed
+8,HH-06-0008,Dikwa Ward 3,yes,yes,signed
+9,HH-06-0009,Mele,yes,yes,signed
+10,HH-06-0010,Mashimari,yes,yes,signed
+11,HH-06-0011,Dikwa Ward 3,yes,yes,signed
+12,HH-06-0012,Mele,yes,yes,signed
+13,HH-06-0013,Dalori,yes,yes,signed
+14,HH-06-0014,Mele,yes,yes,signed
+15,HH-06-0015,Mashimari,yes,yes,signed
+16,HH-06-0016,Mafa,yes,yes,signed
+17,HH-06-0017,Mashimari,yes,yes,signed
+18,HH-06-0018,Mele,yes,yes,signed
+19,HH-06-0019,Dalori,yes,yes,signed
+20,HH-06-0020,Dalori,yes,yes,signed
+21,HH-06-0021,Dalori,yes,yes,signed
+22,HH-06-0022,Dalori,yes,yes,signed
+23,HH-06-0023,Mafa,yes,yes,signed
+24,HH-06-0024,Dikwa Ward 3,yes,yes,signed
+25,HH-06-0025,Konduga,yes,yes,signed
+26,HH-06-0026,Mashimari,yes,yes,signed
+27,HH-06-0027,Mashimari,yes,yes,signed
+28,HH-06-0028,Dalori,yes,yes,signed
+29,HH-06-0029,Dikwa Ward 3,yes,yes,signed
+30,HH-06-0030,Mele,yes,yes,signed
+31,HH-06-0031,Konduga,yes,yes,signed
+32,HH-06-0032,Dikwa Ward 3,yes,yes,signed
+33,HH-06-0033,Konduga,yes,yes,signed
+34,HH-06-0034,Dikwa Ward 3,yes,yes,signed
+35,HH-06-0035,Dalori,yes,yes,signed
+36,HH-06-0036,Dikwa Ward 3,yes,yes,signed
+37,HH-06-0037,Mele,yes,yes,signed
+38,HH-06-0038,Konduga,yes,yes,signed
+39,HH-06-0039,Mafa,yes,yes,signed
+40,HH-06-0040,Dalori,yes,yes,signed
+41,HH-06-0041,Mafa,yes,yes,signed
+42,HH-06-0042,Mafa,yes,yes,signed
+43,HH-06-0043,Konduga,yes,yes,signed
+44,HH-06-0044,Mele,yes,yes,signed
+45,HH-06-0045,Mashimari,yes,yes,signed
+46,HH-06-0046,Dikwa Ward 3,yes,yes,signed
+47,HH-06-0047,Mele,yes,yes,signed
+48,HH-06-0048,Dikwa Ward 3,yes,yes,signed
+49,HH-06-0049,Dalori,yes,yes,signed
+50,HH-06-0050,Mele,yes,yes,signed
+51,HH-06-0051,Mafa,yes,yes,signed
+52,HH-06-0052,Mafa,yes,yes,signed
+53,HH-06-0053,Mele,yes,yes,signed
+54,HH-06-0054,Mafa,yes,yes,signed
+55,HH-06-0055,Mashimari,yes,yes,signed
+56,HH-06-0056,Konduga,yes,yes,signed
+57,HH-06-0057,Mashimari,yes,yes,signed
+58,HH-06-0058,Mele,yes,yes,signed
+59,HH-06-0059,Mashimari,yes,yes,signed
+60,HH-06-0060,Dalori,yes,yes,signed
+61,HH-06-0061,Dikwa Ward 3,yes,yes,signed
+62,HH-06-0062,Mashimari,yes,yes,signed
+63,HH-06-0063,Mashimari,yes,yes,signed
+64,HH-06-0064,Mashimari,yes,yes,signed
+65,HH-06-0065,Konduga,yes,yes,signed
+66,HH-06-0066,Dikwa Ward 3,yes,yes,signed
+67,HH-06-0067,Konduga,yes,yes,signed
+68,HH-06-0068,Dikwa Ward 3,yes,yes,signed
+69,HH-06-0069,Mele,yes,yes,signed
+70,HH-06-0070,Konduga,yes,yes,signed
+71,HH-06-0071,Mafa,yes,yes,signed
+72,HH-06-0072,Dalori,yes,yes,signed
+73,HH-06-0073,Mafa,yes,yes,signed
+74,HH-06-0074,Mele,yes,yes,signed
+75,HH-06-0075,Mafa,yes,yes,signed
+76,HH-06-0076,Mafa,yes,yes,signed
+77,HH-06-0077,Mele,yes,yes,signed
+78,HH-06-0078,Konduga,yes,yes,signed
+79,HH-06-0079,Dalori,yes,yes,signed
+80,HH-06-0080,Mele,yes,yes,signed
+81,HH-06-0081,Dalori,yes,yes,signed
+82,HH-06-0082,Mele,yes,yes,signed
+83,HH-06-0083,Mele,yes,yes,signed
+84,HH-06-0084,Mele,yes,yes,signed
+85,HH-06-0085,Mele,yes,yes,signed
+86,HH-06-0086,Dikwa Ward 3,yes,yes,signed
+87,HH-06-0087,Dalori,yes,yes,signed
+88,HH-06-0088,Konduga,yes,yes,signed
+89,HH-06-0089,Mashimari,yes,yes,signed
+90,HH-06-0090,Mele,yes,yes,signed
+91,HH-06-0091,Konduga,yes,yes,signed
+92,HH-06-0092,Dikwa Ward 3,yes,yes,signed
+93,HH-06-0093,Konduga,yes,yes,signed
+94,HH-06-0094,Mashimari,yes,yes,signed
+95,HH-06-0095,Konduga,yes,yes,signed
+96,HH-06-0096,Mashimari,yes,yes,signed
+97,HH-06-0097,Mashimari,yes,yes,signed
+98,HH-06-0098,Mele,yes,yes,signed
+99,HH-06-0099,Dalori,yes,yes,signed
+100,HH-06-0100,Mashimari,yes,yes,signed
+101,HH-06-0101,Dalori,yes,yes,signed
+102,HH-06-0102,Dikwa Ward 3,yes,yes,signed
+103,HH-06-0103,Mele,yes,yes,signed
+104,HH-06-0104,Dikwa Ward 3,yes,yes,signed
+105,HH-06-0105,Dikwa Ward 3,yes,yes,signed
+106,HH-06-0106,Mele,yes,yes,signed
+107,HH-06-0107,Mafa,yes,yes,signed
+108,HH-06-0108,Dikwa Ward 3,yes,yes,signed
+109,HH-06-0109,Mashimari,yes,yes,signed
+110,HH-06-0110,Konduga,yes,yes,signed
+111,HH-06-0111,Mashimari,yes,yes,signed
+112,HH-06-0112,Dikwa Ward 3,yes,yes,signed
+113,HH-06-0113,Dikwa Ward 3,yes,yes,signed
+114,HH-06-0114,Mele,yes,yes,signed
+115,HH-06-0115,Mele,yes,yes,signed
+116,HH-06-0116,Dalori,yes,yes,signed
+117,HH-06-0117,Konduga,yes,yes,signed
+118,HH-06-0118,Mele,yes,yes,signed
+119,HH-06-0119,Mashimari,yes,yes,signed
+120,HH-06-0120,Mafa,yes,yes,signed
+121,HH-06-0121,Mafa,yes,yes,signed
+122,HH-06-0122,Dalori,yes,yes,signed
+123,HH-06-0123,Mafa,yes,yes,signed
+124,HH-06-0124,Mele,yes,yes,signed
+125,HH-06-0125,Dikwa Ward 3,yes,yes,signed
+126,HH-06-0126,Konduga,yes,yes,signed
+127,HH-06-0127,Dalori,yes,yes,signed
+128,HH-06-0128,Mele,yes,yes,signed
+129,HH-06-0129,Konduga,yes,yes,signed
+130,HH-06-0130,Dikwa Ward 3,yes,yes,signed
+131,HH-06-0131,Dalori,yes,yes,signed
+132,HH-06-0132,Konduga,yes,yes,signed
+133,HH-06-0133,Mele,yes,yes,signed
+134,HH-06-0134,Konduga,yes,yes,signed
+135,HH-06-0135,Dikwa Ward 3,yes,yes,signed
+136,HH-06-0136,Mashimari,yes,yes,signed
+137,HH-06-0137,Mafa,yes,yes,signed
+138,HH-06-0138,Mafa,yes,yes,signed
+139,HH-06-0139,Mafa,yes,yes,signed
+140,HH-06-0140,Dalori,yes,yes,signed
+141,HH-06-0141,Dikwa Ward 3,yes,yes,signed
+142,HH-06-0142,Mafa,yes,yes,signed
+143,HH-06-0143,Dalori,yes,yes,signed
+144,HH-06-0144,Mashimari,yes,yes,signed
+145,HH-06-0145,Dalori,yes,yes,signed
+146,HH-06-0146,Dikwa Ward 3,yes,yes,signed
+147,HH-06-0147,Mele,yes,yes,signed
+148,HH-06-0148,Mele,yes,yes,signed
+149,HH-06-0149,Dikwa Ward 3,yes,yes,signed
+150,HH-06-0150,Konduga,yes,yes,signed
+151,HH-06-0151,Mashimari,yes,yes,signed
+152,HH-06-0152,Dalori,yes,yes,signed
+153,HH-06-0153,Mele,yes,yes,signed
+154,HH-06-0154,Mele,yes,yes,signed
+155,HH-06-0155,Konduga,yes,yes,signed
+156,HH-06-0156,Mashimari,yes,yes,signed
+157,HH-06-0157,Mafa,yes,yes,signed
+158,HH-06-0158,Mafa,yes,yes,signed
+159,HH-06-0159,Mashimari,yes,yes,signed
+160,HH-06-0160,Mafa,yes,yes,signed
+161,HH-06-0161,Mashimari,yes,yes,signed
+162,HH-06-0162,Mele,yes,yes,signed
+163,HH-06-0163,Mele,yes,yes,signed
+164,HH-06-0164,Konduga,yes,yes,signed
+165,HH-06-0165,Konduga,yes,yes,signed
+166,HH-06-0166,Dalori,yes,yes,signed
+167,HH-06-0167,Konduga,yes,yes,signed
+168,HH-06-0168,Konduga,yes,yes,signed
+169,HH-06-0169,Mafa,yes,yes,signed
+170,HH-06-0170,Dalori,yes,yes,signed
+171,HH-06-0171,Mashimari,yes,yes,signed
+172,HH-06-0172,Konduga,yes,yes,signed
+173,HH-06-0173,Konduga,yes,yes,signed
+174,HH-06-0174,Konduga,yes,yes,signed
+175,HH-06-0175,Mashimari,yes,yes,signed
+176,HH-06-0176,Mafa,yes,yes,signed
+177,HH-06-0177,Konduga,yes,yes,signed
+178,HH-06-0178,Mafa,yes,yes,signed
+179,HH-06-0179,Dikwa Ward 3,yes,yes,signed
+180,HH-06-0180,Dikwa Ward 3,yes,yes,signed
+181,HH-06-0181,Mele,yes,yes,signed
+182,HH-06-0182,Konduga,yes,yes,signed
+183,HH-06-0183,Dikwa Ward 3,yes,yes,signed
+184,HH-06-0184,Mafa,yes,yes,signed
+185,HH-06-0185,Dikwa Ward 3,yes,yes,signed
+186,HH-06-0186,Mafa,yes,yes,signed
+187,HH-06-0187,Dalori,yes,yes,signed
+188,HH-06-0188,Konduga,yes,yes,signed
+189,HH-06-0189,Dikwa Ward 3,yes,yes,signed
+190,HH-06-0190,Konduga,yes,yes,signed
+191,HH-06-0191,Konduga,yes,yes,signed
+192,HH-06-0192,Dalori,yes,yes,signed
+193,HH-06-0193,Mafa,yes,yes,signed
+194,HH-06-0194,Konduga,yes,yes,signed
+195,HH-06-0195,Konduga,yes,yes,signed
+196,HH-06-0196,Konduga,yes,yes,signed
+197,HH-06-0197,Dikwa Ward 3,yes,yes,signed
+198,HH-06-0198,Mafa,yes,yes,signed
+199,HH-06-0199,Mafa,yes,yes,signed
+200,HH-06-0200,Mele,yes,yes,signed
+201,HH-06-0201,Dalori,yes,yes,signed
+202,HH-06-0202,Dikwa Ward 3,yes,yes,signed
+203,HH-06-0203,Mele,yes,yes,signed
+204,HH-06-0204,Dikwa Ward 3,yes,yes,signed
+205,HH-06-0205,Konduga,yes,yes,signed
+206,HH-06-0206,Mele,yes,yes,signed
+207,HH-06-0207,Mafa,yes,yes,signed
+208,HH-06-0208,Mele,yes,yes,signed
+209,HH-06-0209,Mafa,yes,yes,signed
+210,HH-06-0210,Dalori,yes,yes,signed
+211,HH-06-0211,Konduga,yes,yes,signed
+212,HH-06-0212,Mafa,yes,yes,signed
+213,HH-06-0213,Mashimari,yes,yes,signed
+214,HH-06-0214,Mele,yes,yes,signed
+215,HH-06-0215,Mele,yes,yes,signed
+216,HH-06-0216,Mafa,yes,yes,signed
+217,HH-06-0217,Dalori,yes,yes,signed
+218,HH-06-0218,Dalori,yes,yes,signed
+219,HH-06-0219,Dikwa Ward 3,yes,yes,signed
+220,HH-06-0220,Dikwa Ward 3,yes,yes,signed
+221,HH-06-0221,Mafa,yes,yes,signed
+222,HH-06-0222,Konduga,yes,yes,signed
+223,HH-06-0223,Konduga,yes,yes,signed
+224,HH-06-0224,Dikwa Ward 3,yes,yes,signed
+225,HH-06-0225,Mele,yes,yes,signed
+226,HH-06-0226,Dalori,yes,yes,signed
+227,HH-06-0227,Mele,yes,yes,signed
+228,HH-06-0228,Konduga,yes,yes,signed
+229,HH-06-0229,Mele,yes,yes,signed
+230,HH-06-0230,Mashimari,yes,yes,signed
+231,HH-06-0231,Mashimari,yes,yes,signed
+232,HH-06-0232,Dalori,yes,yes,signed
+233,HH-06-0233,Dalori,yes,yes,signed
+234,HH-06-0234,Konduga,yes,yes,signed
+235,HH-06-0235,Dalori,yes,yes,signed
+236,HH-06-0236,Mafa,yes,yes,signed
+237,HH-06-0237,Dalori,yes,yes,signed
+238,HH-06-0238,Konduga,yes,yes,signed
+239,HH-06-0239,Mashimari,yes,yes,signed
+240,HH-06-0240,Konduga,yes,yes,signed
+241,HH-06-0241,Dalori,yes,yes,signed
+242,HH-06-0242,Mafa,yes,yes,signed
+243,HH-06-0243,Mele,yes,yes,signed
+244,HH-06-0244,Dikwa Ward 3,yes,yes,signed
+245,HH-06-0245,Mele,yes,yes,signed
+246,HH-06-0246,Dalori,yes,yes,signed
+247,HH-06-0247,Dalori,yes,yes,signed
+248,HH-06-0248,Mashimari,yes,yes,signed
+249,HH-06-0249,Mafa,yes,yes,signed
+250,HH-06-0250,Dikwa Ward 3,yes,yes,signed
+251,HH-06-0251,Mele,yes,yes,signed
+252,HH-06-0252,Mele,yes,yes,signed
+253,HH-06-0253,Dikwa Ward 3,yes,yes,signed
+254,HH-06-0254,Dalori,yes,yes,signed
+255,HH-06-0255,Dalori,yes,yes,signed
+256,HH-06-0256,Konduga,yes,yes,signed
+257,HH-06-0257,Mafa,yes,yes,signed
+258,HH-06-0258,Dalori,yes,yes,signed
+259,HH-06-0259,Mashimari,yes,yes,signed
+260,HH-06-0260,Konduga,yes,yes,signed
+261,HH-06-0261,Dikwa Ward 3,yes,yes,signed
+262,HH-06-0262,Mafa,yes,yes,signed
+263,HH-06-0263,Mele,yes,yes,signed
+264,HH-06-0264,Mafa,yes,yes,signed
+265,HH-06-0265,Mele,yes,yes,signed
+266,HH-06-0266,Mafa,yes,yes,signed
+267,HH-06-0267,Dikwa Ward 3,yes,yes,signed
+268,HH-06-0268,Dikwa Ward 3,yes,yes,signed
+269,HH-06-0269,Mashimari,yes,yes,signed
+270,HH-06-0270,Mashimari,yes,yes,signed
+271,HH-06-0271,Mafa,yes,yes,signed
+272,HH-06-0272,Mele,yes,yes,signed
+273,HH-06-0273,Konduga,yes,yes,signed
+274,HH-06-0274,Konduga,yes,yes,signed
+275,HH-06-0275,Konduga,yes,yes,signed
+276,HH-06-0276,Mafa,yes,yes,signed
+277,HH-06-0277,Dikwa Ward 3,yes,yes,signed
+278,HH-06-0278,Dikwa Ward 3,yes,yes,signed
+279,HH-06-0279,Mele,yes,yes,signed
+280,HH-06-0280,Konduga,yes,yes,signed
+281,HH-06-0281,Mele,yes,yes,signed
+282,HH-06-0282,Mashimari,yes,yes,signed
+283,HH-06-0283,Konduga,yes,yes,signed
+284,HH-06-0284,Mele,yes,yes,signed
+285,HH-06-0285,Mele,yes,yes,signed
+286,HH-06-0286,Mashimari,yes,yes,signed
+287,HH-06-0287,Dikwa Ward 3,yes,yes,signed
+288,HH-06-0288,Dalori,yes,yes,signed
+289,HH-06-0289,Konduga,yes,yes,signed
+290,HH-06-0290,Mashimari,yes,yes,signed
+291,HH-06-0291,Mele,yes,yes,signed
+292,HH-06-0292,Mafa,yes,yes,signed
+293,HH-06-0293,Mashimari,yes,yes,signed
+294,HH-06-0294,Dalori,yes,yes,signed
+295,HH-06-0295,Mele,yes,yes,signed
+296,HH-06-0296,Mashimari,yes,yes,signed
+297,HH-06-0297,Mashimari,yes,yes,signed
+298,HH-06-0298,Konduga,yes,yes,signed
+299,HH-06-0299,Mafa,yes,yes,signed
+300,HH-06-0300,Mele,yes,yes,signed
+301,HH-06-0301,Mafa,yes,yes,signed
+302,HH-06-0302,Mashimari,yes,yes,signed
+303,HH-06-0303,Mashimari,yes,yes,signed
+304,HH-06-0304,Konduga,yes,yes,signed
+305,HH-06-0305,Dalori,yes,yes,signed
+306,HH-06-0306,Mafa,yes,yes,signed
+307,HH-06-0307,Mashimari,yes,yes,signed
+308,HH-06-0308,Mashimari,yes,yes,signed
+309,HH-06-0309,Dalori,yes,yes,signed
+310,HH-06-0310,Mafa,yes,yes,signed
+311,HH-06-0311,Konduga,yes,yes,signed
+312,HH-06-0312,Mafa,yes,yes,signed
+313,HH-06-0313,Mafa,yes,yes,signed
+314,HH-06-0314,Dikwa Ward 3,yes,yes,signed
+315,HH-06-0315,Mashimari,yes,yes,signed
+316,HH-06-0316,Konduga,yes,yes,signed
+317,HH-06-0317,Dikwa Ward 3,yes,yes,signed
+318,HH-06-0318,Dalori,yes,yes,signed
+319,HH-06-0319,Dikwa Ward 3,yes,yes,signed
+320,HH-06-0320,Mele,yes,yes,signed
+321,HH-06-0321,Mele,yes,yes,signed
+322,HH-06-0322,Mashimari,yes,yes,signed
+323,HH-06-0323,Dalori,yes,yes,signed
+324,HH-06-0324,Konduga,yes,yes,signed
+325,HH-06-0325,Konduga,yes,yes,signed
+326,HH-06-0326,Konduga,yes,yes,signed
+327,HH-06-0327,Dalori,yes,yes,signed
+328,HH-06-0328,Dikwa Ward 3,yes,yes,signed
+329,HH-06-0329,Dalori,yes,yes,signed
+330,HH-06-0330,Mafa,yes,yes,signed
+331,HH-06-0331,Dalori,yes,yes,signed
+332,HH-06-0332,Mele,yes,yes,signed
+333,HH-06-0333,Dalori,yes,yes,signed
+334,HH-06-0334,Mele,yes,yes,signed
+335,HH-06-0335,Mafa,yes,yes,signed
+336,HH-06-0336,Dikwa Ward 3,yes,yes,signed
+337,HH-06-0337,Dikwa Ward 3,yes,yes,signed
+338,HH-06-0338,Dalori,yes,yes,signed
+339,HH-06-0339,Dalori,yes,yes,signed
+340,HH-06-0340,Konduga,yes,yes,signed
+341,HH-06-0341,Dalori,yes,yes,signed
+342,HH-06-0342,Mele,yes,yes,signed
+343,HH-06-0343,Konduga,yes,yes,signed
+344,HH-06-0344,Dalori,yes,yes,signed
+345,HH-06-0345,Dikwa Ward 3,yes,yes,signed
+346,HH-06-0346,Mashimari,yes,yes,signed
+347,HH-06-0347,Dalori,yes,yes,signed
+348,HH-06-0348,Dikwa Ward 3,yes,yes,signed
+349,HH-06-0349,Dalori,yes,yes,signed
+350,HH-06-0350,Konduga,yes,yes,signed
+351,HH-06-0351,Mele,yes,yes,signed
+352,HH-06-0352,Konduga,yes,yes,signed
+353,HH-06-0353,Dalori,yes,yes,signed
+354,HH-06-0354,Mele,yes,yes,signed
+355,HH-06-0355,Mele,yes,yes,signed
+356,HH-06-0356,Mele,yes,yes,signed
+357,HH-06-0357,Mele,yes,yes,signed
+358,HH-06-0358,Dalori,yes,yes,signed
+359,HH-06-0359,Mashimari,yes,yes,signed
+360,HH-06-0360,Mele,yes,yes,signed
+361,HH-06-0361,Mele,yes,yes,signed
+362,HH-06-0362,Dalori,yes,yes,signed
+363,HH-06-0363,Konduga,yes,yes,signed
+364,HH-06-0364,Dikwa Ward 3,yes,yes,signed
+365,HH-06-0365,Dalori,yes,yes,signed
+366,HH-06-0366,Dalori,yes,yes,signed
+367,HH-06-0367,Dalori,yes,yes,signed
+368,HH-06-0368,Mafa,yes,yes,signed
+369,HH-06-0369,Mafa,yes,yes,signed
+370,HH-06-0370,Mashimari,yes,yes,signed
+371,HH-06-0371,Dalori,yes,yes,signed
+372,HH-06-0372,Dalori,yes,yes,signed
+373,HH-06-0373,Konduga,yes,yes,signed
+374,HH-06-0374,Mafa,yes,yes,signed
+375,HH-06-0375,Konduga,yes,yes,signed
+376,HH-06-0376,Mele,yes,yes,signed
+377,HH-06-0377,Dikwa Ward 3,yes,yes,signed
+378,HH-06-0378,Mafa,yes,yes,signed
+379,HH-06-0379,Mele,yes,yes,signed
+380,HH-06-0380,Konduga,yes,yes,signed
+381,HH-06-0381,Mele,yes,yes,signed
+382,HH-06-0382,Dalori,yes,yes,signed
+383,HH-06-0383,Mashimari,yes,yes,signed
+384,HH-06-0384,Dalori,yes,yes,signed
+385,HH-06-0385,Dalori,yes,yes,signed
+386,HH-06-0386,Mashimari,yes,yes,signed
+387,HH-06-0387,Mafa,yes,yes,signed
+388,HH-06-0388,Mafa,yes,yes,signed
+389,HH-06-0389,Dikwa Ward 3,yes,yes,signed
+390,HH-06-0390,Mashimari,yes,yes,signed
+391,HH-06-0391,Konduga,yes,yes,signed
+392,HH-06-0392,Dikwa Ward 3,yes,yes,signed
+393,HH-06-0393,Mashimari,yes,yes,signed
+394,HH-06-0394,Mafa,yes,yes,signed
+395,HH-06-0395,Konduga,yes,yes,signed
+396,HH-06-0396,Mele,yes,yes,signed
+397,HH-06-0397,Konduga,yes,yes,signed
+398,HH-06-0398,Dikwa Ward 3,yes,yes,signed
+399,HH-06-0399,Mele,yes,yes,signed
+400,HH-06-0400,Konduga,yes,yes,signed
+401,HH-06-0401,Dalori,yes,yes,signed
+402,HH-06-0402,Dalori,yes,yes,signed
+403,HH-06-0403,Dalori,yes,yes,signed
+404,HH-06-0404,Mashimari,yes,yes,signed
+405,HH-06-0405,Dikwa Ward 3,yes,yes,signed
+406,HH-06-0406,Konduga,yes,yes,signed
+407,HH-06-0407,Mashimari,yes,yes,signed
+408,HH-06-0408,Dikwa Ward 3,yes,yes,signed
+409,HH-06-0409,Konduga,yes,yes,signed
+410,HH-06-0410,Dikwa Ward 3,yes,yes,signed
+411,HH-06-0411,Mashimari,yes,yes,signed
+412,HH-06-0412,Konduga,yes,yes,signed
+413,HH-06-0413,Mashimari,yes,yes,signed
+414,HH-06-0414,Dalori,yes,yes,signed
+415,HH-06-0415,Dikwa Ward 3,yes,yes,signed
+416,HH-06-0416,Dikwa Ward 3,yes,yes,signed
+417,HH-06-0417,Mele,yes,yes,signed
+418,HH-06-0418,Konduga,yes,yes,signed
+419,HH-06-0419,Mashimari,yes,yes,signed
+420,HH-06-0420,Mafa,yes,yes,signed
+421,HH-06-0421,Konduga,yes,yes,signed
+422,HH-06-0422,Dalori,yes,yes,signed
+423,HH-06-0423,Mele,yes,yes,signed
+424,HH-06-0424,Dalori,yes,yes,signed
+425,HH-06-0425,Konduga,yes,yes,signed
+426,HH-06-0426,Mashimari,yes,yes,signed
+427,HH-06-0427,Dikwa Ward 3,yes,yes,signed
+428,HH-06-0428,Dalori,yes,yes,signed
+429,HH-06-0429,Dikwa Ward 3,yes,yes,signed
+430,HH-06-0430,Konduga,yes,yes,signed
+431,HH-06-0431,Dalori,yes,yes,signed
+432,HH-06-0432,Dalori,yes,yes,signed
+433,HH-06-0433,Mele,yes,yes,signed
+434,HH-06-0434,Dikwa Ward 3,yes,yes,signed
+435,HH-06-0435,Mashimari,yes,yes,signed
+436,HH-06-0436,Mafa,yes,yes,signed
+437,HH-06-0437,Dikwa Ward 3,yes,yes,signed
+438,HH-06-0438,Dalori,yes,yes,signed
+439,HH-06-0439,Konduga,yes,yes,signed
+440,HH-06-0440,Konduga,yes,yes,signed
+441,HH-06-0441,Mashimari,yes,yes,signed
+442,HH-06-0442,Mafa,yes,yes,signed
+443,HH-06-0443,Dalori,yes,yes,signed
+444,HH-06-0444,Dalori,yes,yes,signed
+445,HH-06-0445,Dalori,yes,yes,signed
+446,HH-06-0446,Dalori,yes,yes,signed
+447,HH-06-0447,Konduga,yes,yes,signed
+448,HH-06-0448,Dalori,yes,yes,signed
+449,HH-06-0449,Dikwa Ward 3,yes,yes,signed
+450,HH-06-0450,Mele,yes,yes,signed
+451,HH-06-0451,Mele,yes,yes,signed
+452,HH-06-0452,Dalori,yes,yes,signed
+453,HH-06-0453,Mafa,yes,yes,signed
+454,HH-06-0454,Mele,yes,yes,signed
+455,HH-06-0455,Dalori,yes,yes,signed
+456,HH-06-0456,Mashimari,yes,yes,signed
+457,HH-06-0457,Mafa,yes,yes,signed
+458,HH-06-0458,Mafa,yes,yes,signed
+459,HH-06-0459,Dalori,yes,yes,signed
+460,HH-06-0460,Mashimari,yes,yes,signed
+461,HH-06-0461,Dikwa Ward 3,yes,yes,signed
+462,HH-06-0462,Dikwa Ward 3,yes,yes,signed
+463,HH-06-0463,Mashimari,yes,yes,signed
+464,HH-06-0464,Dalori,yes,yes,signed
+465,HH-06-0465,Mafa,yes,yes,signed
+466,HH-06-0466,Mafa,yes,yes,signed
+467,HH-06-0467,Mafa,yes,yes,signed
+468,HH-06-0468,Mashimari,yes,yes,signed
+469,HH-06-0469,Konduga,yes,yes,signed
+470,HH-06-0470,Dikwa Ward 3,yes,yes,signed
+471,HH-06-0471,Konduga,yes,yes,signed
+472,HH-06-0472,Konduga,yes,yes,signed
+473,HH-06-0473,Mashimari,yes,yes,signed
+474,HH-06-0474,Mele,yes,yes,signed
+475,HH-06-0475,Dalori,yes,yes,signed
+476,HH-06-0476,Dalori,yes,yes,signed
+477,HH-06-0477,Mele,yes,yes,signed
+478,HH-06-0478,Dalori,yes,yes,signed
+479,HH-06-0479,Dikwa Ward 3,yes,yes,signed
+480,HH-06-0480,Mashimari,yes,yes,signed
+481,HH-06-0481,Konduga,yes,yes,signed
+482,HH-06-0482,Mashimari,yes,yes,signed
+483,HH-06-0483,Mele,yes,yes,signed
+484,HH-06-0484,Mele,yes,yes,signed
+485,HH-06-0485,Mashimari,yes,yes,signed
+486,HH-06-0486,Mele,yes,yes,signed
+487,HH-06-0487,Mafa,yes,yes,signed
+488,HH-06-0488,Dalori,yes,yes,signed
+489,HH-06-0489,Dikwa Ward 3,yes,yes,signed
+490,HH-06-0490,Konduga,yes,yes,signed
+491,HH-06-0491,Dalori,yes,yes,signed
+492,HH-06-0492,Mashimari,yes,yes,signed
+493,HH-06-0493,Dikwa Ward 3,yes,yes,signed
+494,HH-06-0494,Mafa,yes,yes,signed
+495,HH-06-0495,Mafa,yes,yes,signed
+496,HH-06-0496,Dikwa Ward 3,yes,yes,signed
+497,HH-06-0497,Mafa,yes,yes,signed
+498,HH-06-0498,Konduga,yes,yes,signed
+499,HH-06-0499,Mele,yes,yes,signed
+500,HH-06-0500,Dikwa Ward 3,yes,yes,signed
+501,HH-06-0501,Mashimari,yes,yes,signed
+502,HH-06-0502,Mafa,yes,yes,signed
+503,HH-06-0503,Dikwa Ward 3,yes,yes,signed
+504,HH-06-0504,Konduga,yes,yes,signed
+505,HH-06-0505,Mafa,yes,yes,signed
+506,HH-06-0506,Konduga,yes,yes,signed
+507,HH-06-0507,Konduga,yes,yes,signed
+508,HH-06-0508,Mele,yes,yes,signed
+509,HH-06-0509,Dikwa Ward 3,yes,yes,signed
+510,HH-06-0510,Mafa,yes,yes,signed
+511,HH-06-0511,Dalori,yes,yes,signed
+512,HH-06-0512,Mele,yes,yes,signed
+513,HH-06-0513,Dalori,yes,yes,signed
+514,HH-06-0514,Dikwa Ward 3,yes,yes,signed
+515,HH-06-0515,Dalori,yes,yes,signed
+516,HH-06-0516,Dalori,yes,yes,signed
+517,HH-06-0517,Mafa,yes,yes,signed
+518,HH-06-0518,Mashimari,yes,yes,signed
+519,HH-06-0519,Konduga,yes,yes,signed
+520,HH-06-0520,Mashimari,yes,yes,signed
+521,HH-06-0521,Konduga,yes,yes,signed
+522,HH-06-0522,Dikwa Ward 3,yes,yes,signed
+523,HH-06-0523,Mafa,yes,yes,signed
+524,HH-06-0524,Mele,yes,yes,signed
+525,HH-06-0525,Konduga,yes,yes,signed
+526,HH-06-0526,Konduga,yes,yes,signed
+527,HH-06-0527,Dikwa Ward 3,yes,yes,signed
+528,HH-06-0528,Mashimari,yes,yes,signed
+529,HH-06-0529,Mele,yes,yes,signed
+530,HH-06-0530,Dalori,yes,yes,signed
+531,HH-06-0531,Mafa,yes,yes,signed
+532,HH-06-0532,Konduga,yes,yes,signed
+533,HH-06-0533,Mafa,yes,yes,signed
+534,HH-06-0534,Dalori,yes,yes,signed
+535,HH-06-0535,Konduga,yes,yes,signed
+536,HH-06-0536,Mafa,yes,yes,signed
+537,HH-06-0537,Dalori,yes,yes,signed
+538,HH-06-0538,Dikwa Ward 3,yes,yes,signed
+539,HH-06-0539,Konduga,yes,yes,signed
+540,HH-06-0540,Mashimari,yes,yes,signed
+541,HH-06-0541,Mafa,yes,yes,signed
+542,HH-06-0542,Dikwa Ward 3,yes,yes,signed
+543,HH-06-0543,Konduga,yes,yes,signed
+544,HH-06-0544,Mele,yes,yes,signed
+545,HH-06-0545,Mele,yes,yes,signed
+546,HH-06-0546,Mele,yes,yes,signed
+547,HH-06-0547,Mafa,yes,yes,signed
+548,HH-06-0548,Mashimari,yes,yes,signed
+549,HH-06-0549,Mafa,yes,yes,signed
+550,HH-06-0550,Dalori,yes,yes,signed
+551,HH-06-0551,Konduga,yes,yes,signed
+552,HH-06-0552,Konduga,yes,yes,signed
+553,HH-06-0553,Mele,yes,yes,signed
+554,HH-06-0554,Mafa,yes,yes,signed
+555,HH-06-0555,Mashimari,yes,yes,signed
+556,HH-06-0556,Konduga,yes,yes,signed
+557,HH-06-0557,Dalori,yes,yes,signed
+558,HH-06-0558,Konduga,yes,yes,signed
+559,HH-06-0559,Dalori,yes,yes,signed
+560,HH-06-0560,Dalori,yes,yes,signed
+561,HH-06-0561,Dikwa Ward 3,yes,yes,signed
+562,HH-06-0562,Dalori,yes,yes,signed
+563,HH-06-0563,Mafa,yes,yes,signed
+564,HH-06-0564,Dikwa Ward 3,yes,yes,signed
+565,HH-06-0565,Mafa,yes,yes,signed
+566,HH-06-0566,Mafa,yes,yes,signed
+567,HH-06-0567,Dikwa Ward 3,yes,yes,signed
+568,HH-06-0568,Dikwa Ward 3,yes,yes,signed
+569,HH-06-0569,Dalori,yes,yes,signed
+570,HH-06-0570,Dalori,yes,yes,signed
+571,HH-06-0571,Mashimari,yes,yes,signed
+572,HH-06-0572,Dalori,yes,yes,signed
+573,HH-06-0573,Mele,yes,yes,signed
+574,HH-06-0574,Mafa,yes,yes,signed
+575,HH-06-0575,Mafa,yes,yes,signed
+576,HH-06-0576,Mashimari,yes,yes,signed
+577,HH-06-0577,Mele,yes,yes,signed
+578,HH-06-0578,Mele,yes,yes,signed
+579,HH-06-0579,Dalori,yes,yes,signed
+580,HH-06-0580,Dalori,yes,yes,signed
+581,HH-06-0581,Mele,yes,yes,signed
+582,HH-06-0582,Dikwa Ward 3,yes,yes,signed
+583,HH-06-0583,Mele,yes,yes,signed
+584,HH-06-0584,Mafa,yes,yes,signed
+585,HH-06-0585,Mafa,yes,yes,signed
+586,HH-06-0586,Mashimari,yes,yes,signed
+587,HH-06-0587,Mafa,yes,yes,signed
+588,HH-06-0588,Konduga,yes,yes,signed
+589,HH-06-0589,Konduga,yes,yes,signed
+590,HH-06-0590,Dikwa Ward 3,yes,yes,signed
+591,HH-06-0591,Mele,yes,yes,signed
+592,HH-06-0592,Mele,yes,yes,signed
+593,HH-06-0593,Dikwa Ward 3,yes,yes,signed
+594,HH-06-0594,Mashimari,yes,yes,signed
+595,HH-06-0595,Mashimari,yes,yes,signed
+596,HH-06-0596,Konduga,yes,yes,signed
+597,HH-06-0597,Mele,yes,yes,signed
+598,HH-06-0598,Mashimari,yes,yes,signed
+599,HH-06-0599,Mele,yes,yes,signed
+600,HH-06-0600,Dikwa Ward 3,yes,yes,signed

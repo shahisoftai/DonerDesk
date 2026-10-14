@@ -1,0 +1,12 @@
+import { attach, BASE } from "../demo-ui/lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const { page, browser } = await attach("profile");
+await page.goto(`${BASE}/projects/${P}/setup/profile`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(3000);
+await page.getByLabel("Tone").selectOption({ label: "Concise" });
+await page.getByLabel("Writing style (optional)").fill("Plain, factual English in the third person; refer to \"the project\"; report results first and causes second; state shortfalls plainly; no promotional language.");
+await page.getByLabel("Audience notes (optional)").fill("Fund Management Unit programme officers for the Lake Chad Basin Resilience Fund: they read many grantee reports and want verified results against the logframe, honest explanations of variances and the effect of insecurity, floods and the cholera alert.");
+await page.getByLabel("Financial figures in reports").selectOption({ label: "Type them in" });
+const cb = page.getByLabel("Auto-create reporting periods"); if (await cb.isChecked()) await cb.uncheck();
+const sec = page.getByLabel(/A second person must approve reports/); console.log('second approver before:', await sec.isChecked());
+await page.getByRole("button", { name: "Save profile" }).click(); await page.waitForTimeout(3500);
+console.log((await page.locator('body').innerText()).replace(/\n+/g,' | ').match(/[^|]*(aved|rror|ailed)[^|]*/g));
+await browser.close(); process.exit(0);

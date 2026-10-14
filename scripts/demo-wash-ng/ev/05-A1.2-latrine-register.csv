@@ -1,0 +1,116 @@
+No,Household ID (anonymised),Ward,Head of household,Lockable door,Handwashing station,Inspected,Pit lined
+1,HH-05-0001,Dalori,Older person,yes,yes,yes,yes
+2,HH-05-0002,Dalori,Older person,yes,yes,yes,yes
+3,HH-05-0003,Dalori,Woman,yes,yes,yes,yes
+4,HH-05-0004,Konduga,Man,yes,yes,yes,yes
+5,HH-05-0005,Mafa,Person with disability,yes,yes,yes,yes
+6,HH-05-0006,Mafa,Man,yes,yes,yes,yes
+7,HH-05-0007,Mele,Man,yes,yes,yes,yes
+8,HH-05-0008,Dalori,Man,yes,yes,yes,yes
+9,HH-05-0009,Dalori,Man,yes,yes,yes,yes
+10,HH-05-0010,Mashimari,Woman,yes,yes,yes,yes
+11,HH-05-0011,Konduga,Older person,yes,yes,yes,yes
+12,HH-05-0012,Dikwa Ward 3,Older person,yes,yes,yes,yes
+13,HH-05-0013,Dalori,Older person,yes,yes,yes,yes
+14,HH-05-0014,Dalori,Older person,yes,yes,yes,yes
+15,HH-05-0015,Mafa,Man,yes,yes,yes,yes
+16,HH-05-0016,Konduga,Person with disability,yes,yes,yes,yes
+17,HH-05-0017,Mafa,Older person,yes,yes,yes,yes
+18,HH-05-0018,Mele,Older person,yes,yes,yes,yes
+19,HH-05-0019,Dalori,Older person,yes,yes,yes,yes
+20,HH-05-0020,Dikwa Ward 3,Person with disability,yes,yes,yes,yes
+21,HH-05-0021,Dalori,Woman,yes,yes,yes,yes
+22,HH-05-0022,Mashimari,Woman,yes,yes,yes,yes
+23,HH-05-0023,Mafa,Person with disability,yes,yes,yes,yes
+24,HH-05-0024,Dalori,Man,yes,yes,yes,yes
+25,HH-05-0025,Dikwa Ward 3,Older person,yes,yes,yes,yes
+26,HH-05-0026,Mafa,Older person,yes,yes,yes,yes
+27,HH-05-0027,Mashimari,Woman,yes,yes,yes,yes
+28,HH-05-0028,Mafa,Older person,yes,yes,yes,yes
+29,HH-05-0029,Konduga,Older person,yes,yes,yes,yes
+30,HH-05-0030,Mashimari,Woman,yes,yes,yes,yes
+31,HH-05-0031,Mele,Man,yes,yes,yes,yes
+32,HH-05-0032,Mele,Woman,yes,yes,yes,yes
+33,HH-05-0033,Konduga,Older person,yes,yes,yes,yes
+34,HH-05-0034,Mashimari,Person with disability,yes,yes,yes,yes
+35,HH-05-0035,Mafa,Woman,yes,yes,yes,yes
+36,HH-05-0036,Mafa,Woman,yes,yes,yes,yes
+37,HH-05-0037,Dalori,Person with disability,yes,yes,yes,yes
+38,HH-05-0038,Konduga,Person with disability,yes,yes,yes,yes
+39,HH-05-0039,Mashimari,Man,yes,yes,yes,yes
+40,HH-05-0040,Mele,Person with disability,yes,yes,yes,yes
+41,HH-05-0041,Dikwa Ward 3,Man,yes,yes,yes,yes
+42,HH-05-0042,Mafa,Person with disability,yes,yes,yes,yes
+43,HH-05-0043,Mele,Man,yes,yes,yes,yes
+44,HH-05-0044,Mashimari,Man,yes,yes,yes,yes
+45,HH-05-0045,Dikwa Ward 3,Man,yes,yes,yes,yes
+46,HH-05-0046,Konduga,Man,yes,yes,yes,yes
+47,HH-05-0047,Dalori,Man,yes,yes,yes,yes
+48,HH-05-0048,Mele,Man,yes,yes,yes,yes
+49,HH-05-0049,Mafa,Woman,yes,yes,yes,yes
+50,HH-05-0050,Mafa,Older person,yes,yes,yes,yes
+51,HH-05-0051,Dikwa Ward 3,Person with disability,yes,yes,yes,yes
+52,HH-05-0052,Konduga,Older person,yes,yes,yes,yes
+53,HH-05-0053,Dikwa Ward 3,Person with disability,yes,yes,yes,yes
+54,HH-05-0054,Dalori,Man,yes,yes,yes,yes
+55,HH-05-0055,Mafa,Man,yes,yes,yes,yes
+56,HH-05-0056,Mafa,Man,yes,yes,yes,yes
+57,HH-05-0057,Mafa,Woman,yes,yes,yes,yes
+58,HH-05-0058,Mele,Woman,yes,yes,yes,yes
+59,HH-05-0059,Mashimari,Person with disability,yes,yes,yes,yes
+60,HH-05-0060,Konduga,Woman,yes,yes,yes,yes
+61,HH-05-0061,Mafa,Person with disability,yes,yes,yes,yes
+62,HH-05-0062,Dalori,Person with disability,yes,yes,yes,yes
+63,HH-05-0063,Konduga,Person with disability,yes,yes,yes,yes
+64,HH-05-0064,Dalori,Woman,yes,yes,yes,yes
+65,HH-05-0065,Dalori,Person with disability,yes,yes,yes,yes
+66,HH-05-0066,Mafa,Woman,yes,yes,yes,yes
+67,HH-05-0067,Dikwa Ward 3,Man,yes,yes,yes,yes
+68,HH-05-0068,Mashimari,Older person,yes,yes,yes,yes
+69,HH-05-0069,Mashimari,Woman,yes,yes,yes,yes
+70,HH-05-0070,Dalori,Older person,yes,yes,yes,yes
+71,HH-05-0071,Dikwa Ward 3,Man,yes,yes,yes,yes
+72,HH-05-0072,Mashimari,Older person,yes,yes,yes,yes
+73,HH-05-0073,Dalori,Man,yes,yes,yes,yes
+74,HH-05-0074,Konduga,Older person,yes,yes,yes,yes
+75,HH-05-0075,Konduga,Woman,yes,yes,yes,yes
+76,HH-05-0076,Mafa,Man,yes,yes,yes,yes
+77,HH-05-0077,Mashimari,Person with disability,yes,yes,yes,yes
+78,HH-05-0078,Konduga,Person with disability,yes,yes,yes,yes
+79,HH-05-0079,Dalori,Person with disability,yes,yes,yes,yes
+80,HH-05-0080,Mafa,Person with disability,yes,yes,yes,yes
+81,HH-05-0081,Mafa,Older person,yes,yes,yes,yes
+82,HH-05-0082,Mashimari,Person with disability,yes,yes,yes,yes
+83,HH-05-0083,Mafa,Older person,yes,yes,yes,yes
+84,HH-05-0084,Dikwa Ward 3,Older person,yes,yes,yes,yes
+85,HH-05-0085,Mele,Woman,yes,yes,yes,yes
+86,HH-05-0086,Konduga,Woman,yes,yes,yes,yes
+87,HH-05-0087,Mafa,Man,yes,yes,yes,yes
+88,HH-05-0088,Mele,Woman,yes,yes,yes,yes
+89,HH-05-0089,Dikwa Ward 3,Woman,yes,yes,yes,yes
+90,HH-05-0090,Mele,Person with disability,yes,yes,yes,yes
+91,HH-05-0091,Konduga,Older person,yes,yes,yes,yes
+92,HH-05-0092,Dikwa Ward 3,Person with disability,yes,yes,yes,yes
+93,HH-05-0093,Konduga,Woman,yes,yes,yes,yes
+94,HH-05-0094,Mele,Man,yes,yes,yes,yes
+95,HH-05-0095,Mashimari,Woman,yes,yes,yes,yes
+96,HH-05-0096,Konduga,Older person,yes,yes,yes,yes
+97,HH-05-0097,Dalori,Older person,yes,yes,yes,yes
+98,HH-05-0098,Dikwa Ward 3,Woman,yes,yes,yes,yes
+99,HH-05-0099,Konduga,Woman,yes,yes,yes,yes
+100,HH-05-0100,Konduga,Person with disability,yes,yes,yes,yes
+101,HH-05-0101,Dalori,Woman,yes,yes,yes,yes
+102,HH-05-0102,Dalori,Woman,yes,yes,yes,yes
+103,HH-05-0103,Mafa,Person with disability,yes,yes,yes,yes
+104,HH-05-0104,Konduga,Person with disability,yes,yes,yes,yes
+105,HH-05-0105,Mafa,Man,yes,yes,yes,yes
+106,HH-05-0106,Mafa,Older person,yes,yes,yes,yes
+107,HH-05-0107,Dalori,Older person,yes,yes,yes,yes
+108,HH-05-0108,Mele,Person with disability,yes,yes,yes,yes
+109,HH-05-0109,Mashimari,Man,yes,yes,yes,yes
+110,HH-05-0110,Mashimari,Man,yes,yes,yes,yes
+111,HH-05-0111,Mashimari,Older person,yes,yes,yes,yes
+112,HH-05-0112,Konduga,Man,yes,yes,yes,yes
+113,HH-05-0113,Dikwa Ward 3,Woman,yes,yes,yes,yes
+114,HH-05-0114,Dalori,Older person,yes,yes,yes,yes
+115,HH-05-0115,Konduga,Older person,yes,yes,yes,yes

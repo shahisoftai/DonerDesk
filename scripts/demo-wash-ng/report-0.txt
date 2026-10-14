@@ -1,0 +1,169 @@
+Skip to main content
+GEC
+Donor reporting workspace
+⌕
+Search
+⌘K
+Academy
++ Create
+N
+Home
+My Work
+Projects
+Reports
+Evidence
+Compliance
+Team
+Settings
+Projects
+/
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH)
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH)
+
+NGA-WASH-BRN-MV7ZA36U · Lake Chad Basin Resilience Fund (LCBRF) · Nigeria · WASH
+
+Feb 1, 2026 – Sep 30, 2026 · monthly reporting
+
+ACTIVE
+Reporting
+Overview
+Logframe
+Activities
+Evidence
+Templates
+Team
+Settings
+?
+Help
+
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH) · Feb 1, 2026 – Feb 28, 2026 · due Mar 5, 2026
+
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH) — monthly report
+Draft
+Version 1
+80% ready
+· 3 to do
+1 issue
+Review 1 flagged statement
+OUTLINE
+0 of 7 approved
+Approve all clean sections (6)
+1
+Headline Summary
+Draft
+2
+Progress Against Logframe
+Draft
+3
+Activities Completed
+Draft
+4
+Water Quality and Public Health Risks
+Draft
+5
+Access, Security and Operating Environment
+Draft
+6
+Protection, Gender and Accountability to Affected Populations
+1
+flagged statement
+7
+Plan for Next Month
+Draft
++ Add section
+Reorder
+REPORT INPUTS
+Edit
+Indicator values
+3 of 3 verified · 11 not entered
+Story answers
+5 of 5 answered
+Evidence
+6 files
+
+[DEMO-8] SAFE WATER, SANITATION AND HYGIENE FOR DISPLACED AND HOST COMMUNITIES IN BORNO STATE (BORNO-WASH) · FEB 1, 2026 – FEB 28, 2026 · DUE MAR 5, 2026
+
+[DEMO-8] Safe Water, Sanitation and Hygiene for Displaced and Host Communities in Borno State (BORNO-WASH) — monthly report
+
+Drafted
+Rewrite with AI
+Regenerate
+Edit
+Approve section
+1 Headline Summary
+
+The project reached 1,500 people with hygiene promotion in February 2026 (900 female, 600 male) against a project target of 24,000, its most important result of the month. It also selected a drilling contractor, surveyed six borehole sites with community leaders, trained twelve mobilisers and conducted 20 water quality tests against a target of 320. Verified monitoring shows 42 percent of water points tested had a free chlorine residual of at least 0.2 mg/l, below the 90 percent target, up from a baseline of 40 percent. No water point and no latrine was completed in February: the contractor mobilised later than planned, the rig reached Konduga only in the last week, and harmattan dust and the start of Ramadan on 18 February shortened working days. Evidence for these results includes the verified water quality log, the session attendance sheet and the drilling procurement file. The main decision needed is whether to accelerate completion of the remaining water points now that the rig is on site. This project is implemented with the support of Lake Chad Basin Resilience Fund.
+
+2 Progress Against Logframe
+
+Built from verified data
+
+Code	Indicator	Unit	Baseline	Target	This period	Previous	% of target	Status	Data source
+WS-OC1c	Percentage of water points with free chlorine residual of at least 0.2 mg/l	%	40	90	42	—	—	Below expectation	Monthly water quality monitoring
+WS-OP2.1	Number of people reached with hygiene promotion	people	0	24000	1500	—	6.2%	Descriptive only	Mobiliser registers
+WS-OP2.3	Number of water quality tests conducted	tests	0	320	20	—	6.2%	Descriptive only	Water quality monitoring logs
+
+The project reached 1,500 people with hygiene promotion in February 2026 against a target of 24,000 (900 female and 600 male), and conducted 20 water quality tests against a target of 320. Chlorine compliance stood at 42 percent, up from a baseline of 40 percent but below the target of 90 percent. No water point and no latrine was completed in February because the rig arrived late; the indicators for water points, latrines, WASH blocks, water point committees and hygiene kits were not measured this period.
+
+Data quality notes: No data-quality flags were raised on the verified findings for this period.
+
+Progress against targets
+Chart data
+3 Activities Completed
+
+The project completed three activities in February 2026. In Konduga LGA, the project selected a drilling contractor after a three-quote procurement and completed a hydrogeological and geophysical survey on 9 February; six borehole sites were agreed with community leaders and the Ministry of Water Resources (procurement file, handover certificate and photo on file). In Jere LGA, at Dalori ward, trained community mobilisers held hygiene promotion sessions on 16 February, reaching 1,500 people (900 female, 600 male) with handwashing, safe water storage and latrine use messages; twelve mobilisers (eight women) were trained first (attendance sheet and photo on file). In Jere LGA, at Mashimari, the water quality officer tested 20 water points on 24 February for free chlorine residual and, for a sample, bacteriology using portable test kits (monitoring log on file). The rig reached Konduga only in the last week of the month, so drilling had not started by the end of February. The contractor mobilised later than planned, and harmattan dust and the start of Ramadan on 18 February shortened working days. The project therefore completed no water points or latrines in February; the three-quote procurement and site surveys took the whole month, and the project carried out surveys and baseline water quality testing first so drilling could start as soon as the rig arrived.
+
+4 Water Quality and Public Health Risks
+
+Water quality fell below the project standard this month. The water quality officer tested 20 water points in February, and 42 percent of the tested points met the free chlorine residual standard of at least 0.2 mg/l. This is below the target of 90 percent and up from the baseline of 40 percent. The officer's statement also records that the project chlorinates and tests each new or rehabilitated water point before handover. Water points are designed to provide at least 15 litres per person per day within 500 metres, and latrines are lockable, lined and fitted with a handwashing station, in line with SPHERE minimum standards. The tests used portable test kits at existing water points, including bacteriology for a sample, as recorded in the verified water quality monitoring log. As mitigation, the project plans to retest the water points that failed and to train committee members to read the test kit. The project also records the lesson that a simple chlorinator at the water point and a weekly committee check raise compliance. No cholera alert or other outbreak event is recorded for February. Several water quality and health outcome indicators were not measured this period: WS-IMP1 (child diarrhoea), WS-OC1a (improved drinking water source), WS-OC1b (functional unshared latrine), WS-OC2a (handwashing facility with soap and water) and WS-OC2b (functional water point committees). No figures for these were recorded in February.
+
+5 Access, Security and Operating Environment
+
+The project worked through access and operating constraints in February 2026. The drilling contractor mobilised later than planned, and the rig reached Konduga only in the last week of the month. Harmattan dust and the start of Ramadan on 18 February shortened working days. The project adapted by completing site surveys and baseline water quality testing first, so drilling could start as soon as the rig arrived. No security incident is recorded in the February records. No request for support or a change requiring the Fund's agreement was recorded this month.
+
+6 Protection, Gender and Accountability to Affected Populations
+
+The project applied protection, gender and accountability measures in February 2026. Twelve community mobilisers were recruited, eight of them women, so that women could be reached at home. The site survey followed the do-no-harm checklist, and no sites were chosen near military checkpoints. For accountability, the project set up a complaint and feedback box at the Konduga office, and each site displayed the hotline number. No complaints received or resolved are recorded in the February records. No safeguarding incident or protection concern is recorded this month. Hygiene promotion sessions in Dalori ward, Jere LGA, reached 1,500 people (900 female, 600 male), with sessions led by female mobilisers attended by women (attendance sheet and photo on file).
+
+7 Plan for Next Month
+
+In March 2026 the project plans to complete the remaining water points now that the rig has arrived in Konduga, and to hand each completed water point over to its committee, chlorinating and testing each point at handover before the community starts to use it. The project will retest the water points that failed the free chlorine residual check and train committee members to read the test kit. Hygiene promotion sessions will continue, with a new hygiene club session added in schools, and a second handwashing session is planned in response to requests from women's group leaders in Jere. Expected results for March are the first completed and handed-over water points, continued progress toward the 24,000-people hygiene promotion target against 1,500 reached to date, and further tests toward the target of 320 against 20 conducted to date.
+
+Section 1
+
+Headline Summary
+Statements
+Sources · 9
+Chart
+Comments
+History
+
+Nothing to decide — all 7 statements are backed by evidence or decided.
+
+Not checked (minor)
+
+“Evidence for these results includes the verified water quality log, the session attendance sheet and the drilling procurement file.”
+
+Not checked (minor)
+
+“The main decision needed is whether to accelerate completion of the remaining water points now that the rig is on site.”
+
+Matches evidence
+
+“The project reached 1,500 people with hygiene promotion in February 2026 (900 female, 600 male) against a project target of 24,000, its most important result of the month.”
+
+Matches evidence
+
+“It also selected a drilling contractor, surveyed six borehole sites with community leaders, trained twelve mobilisers and conducted 20 water quality tests against a target of 320.”
+
+Matches evidence
+
+“Verified monitoring shows 42 percent of water points tested had a free chlorine residual of at least 0.2 mg/l, below the 90 percent target, up from a baseline of 40 percent.”
+
+Matches evidence
+
+“No water point and no latrine was completed in February: the contractor mobilised later than planned, the rig reached Konduga only in the last week, and harmattan dust and the start of Ramadan on 18 February shortened working days.”
+
+Matches evidence
+
+“This project is implemented with the support of Lake Chad Basin Resilience Fund.”

@@ -1,0 +1,17 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = process.argv[2]; const { page, browser } = await attach("v2");
+await page.goto(`${BASE}/projects/${S}/activities/new`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(1500);
+const fresh = page.getByRole("button", { name: "Start fresh" }); if (await fresh.count()) await fresh.click();
+console.log("initial period value:", JSON.stringify(await page.locator("select[name=reportingPeriodId]").inputValue().catch(()=>"(derived/hidden)")));
+await page.locator("input[name=activityDate]").fill("2031-01-15"); await page.waitForTimeout(800);
+console.log("after far date:", JSON.stringify(await page.locator("select[name=reportingPeriodId]").inputValue().catch(()=>"(derived)")), "|", (await page.locator("form").innerText()).match(/No reporting period contains[^\n]*/)?.[0]);
+await page.locator("input[name=activityTitle]").fill("verify"); await page.locator("textarea[name=summary]").fill("verification record"); await page.getByRole("button", { name: "Submit activity" }).click(); await page.waitForTimeout(1500);
+console.log("submit message:", (await page.locator("form").innerText()).match(/Choose the reporting period[^\n]*/)?.[0]);
+await page.goto(`${BASE}/projects/${S}/reports/new`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(1200);
+await page.getByLabel("Report type").selectOption({ label: "Situation report" }); await page.waitForTimeout(800);
+await page.getByLabel("Event / situation").fill("Verify event"); await page.getByLabel("Situation date (as of)").fill("2026-08-15");
+await page.getByLabel("Main needs (optional)").fill("x".repeat(230));
+await page.getByRole("button", { name: /Add figure/ }).click(); await page.getByLabel("Figure 1").fill("1,850");
+await page.getByRole("button", { name: "Create period" }).click(); await page.waitForTimeout(2500);
+console.log("situation errors:", (await page.locator("form").innerText()).match(/(Affected population|Main needs)[^\n]*/g));
+await browser.close(); process.exit(0);
