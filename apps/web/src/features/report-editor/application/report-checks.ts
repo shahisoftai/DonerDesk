@@ -172,8 +172,8 @@ export function buildReportChecks(input: ChecksInput): ReportCheck[] {
       id: "inputs-changed",
       severity: "WARNING",
       title: `${parts.join(" and ")} changed since this draft`,
-      detail: "Re-check the affected sections so every statement is checked against the latest data. The text is not rewritten.",
-      actionLabel: "Re-check affected sections",
+      detail: "Re-checking only reassesses the statements; tables and figures change only when the sections are rewritten from the current data (\"Rewrite affected sections\" in the banner).",
+      actionLabel: "Re-check statements only",
       target: { kind: "recheck", sectionIds: affected },
     });
   }

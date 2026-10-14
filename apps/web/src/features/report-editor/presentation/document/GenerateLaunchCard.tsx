@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import type { ReportInputRow } from "../../application/report-inputs";
@@ -13,13 +14,17 @@ export function GenerateLaunchCard({
   rows,
   canGenerate,
   starting,
+  warning,
   onGenerate,
 }: {
   rows: ReportInputRow[];
   canGenerate: boolean;
   starting: boolean;
+  /** Why generating now is probably a mistake; the person must confirm to go ahead. */
+  warning?: string | null;
   onGenerate: () => void;
 }) {
+  const [confirming, setConfirming] = useState(false);
   return (
     <div className="mx-auto max-w-xl py-6">
       <h2 className="text-xl font-semibold">Ready to write this report</h2>
@@ -45,9 +50,22 @@ export function GenerateLaunchCard({
       </ul>
       <div className="mt-6">
         {canGenerate ? (
-          <Button onClick={onGenerate} pending={starting}>
-            Generate report
-          </Button>
+          <>
+            {warning && (
+              <p role="status" className="mb-3 rounded-lg border border-warning-500/30 bg-warning-50 px-3 py-2 text-sm text-warning-800 dark:bg-warning-500/10 dark:text-warning-300">
+                {warning}
+              </p>
+            )}
+            {warning && !confirming ? (
+              <Button variant="secondary" onClick={() => setConfirming(true)}>
+                Generate anyway
+              </Button>
+            ) : (
+              <Button onClick={onGenerate} pending={starting}>
+                {warning ? "Yes, generate with what is there" : "Generate report"}
+              </Button>
+            )}
+          </>
         ) : (
           <p className="text-sm text-slate-600 dark:text-slate-300">Ask a report writer or programme manager to generate the draft.</p>
         )}

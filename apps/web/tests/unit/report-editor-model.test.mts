@@ -150,3 +150,16 @@ test("report editor v2 flag: query overrides env", () => {
   assert.equal(isReportEditorV2Enabled("classic", "1"), false);
   assert.equal(isReportEditorV2Enabled("v2", undefined), true);
 });
+
+import { generationWarning } from "../../src/features/report-editor/application/report-inputs.ts";
+
+test("generating with no verified indicator value asks for confirmation, in plain words", () => {
+  assert.match(generationWarning([{ update: null }, { update: null }], "MONTHLY")!, /No indicator value has been entered/);
+  assert.match(generationWarning([{ update: { verificationStatus: "DRAFT" } }], "MONTHLY")!, /entered but none is verified/);
+});
+
+test("no warning when something is verified, when there are no indicators, or for a situation report", () => {
+  assert.equal(generationWarning([{ update: { verificationStatus: "VERIFIED" } }, { update: null }], "MONTHLY"), null);
+  assert.equal(generationWarning([], "MONTHLY"), null);
+  assert.equal(generationWarning([{ update: null }], "SITUATION"), null);
+});

@@ -131,3 +131,17 @@ export function buildReportInputRows(input: {
   });
   return rows;
 }
+
+/**
+ * A draft written while no indicator value is verified states every indicator as "not reported" and looks like a
+ * normal draft (demo 8). Returns the sentence to confirm before generating, or `null` when generating is sensible.
+ * A situation report takes no indicator values, so it never warns.
+ */
+export function generationWarning(indicators: ReadonlyArray<InputIndicatorRow>, reportType: string | undefined): string | null {
+  if (reportType === "SITUATION") return null;
+  const s = summarizeIndicators(indicators);
+  if (s.total === 0 || s.verified > 0) return null;
+  return s.entered === 0
+    ? `No indicator value has been entered for this period, so the report will say that none were reported. Enter and verify the values first, or generate anyway.`
+    : `${plural(s.entered, "indicator value")} ${s.entered === 1 ? "is" : "are"} entered but none is verified, so the report will not use ${s.entered === 1 ? "it" : "them"}. Verify the values first, or generate anyway.`;
+}

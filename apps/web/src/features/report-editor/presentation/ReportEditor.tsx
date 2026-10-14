@@ -30,7 +30,7 @@ import { DraftVersionsPanel, type DraftVersion } from "@/features/reporting/pres
 import { HelpButton } from "@/features/tour/presentation/HelpButton";
 import type { ChartFigureIndicator } from "@/features/reporting/presentation/ChartFigure";
 import { buildEditorModel } from "../application/editor-model";
-import { buildReportInputRows, type ReportScopeInfo } from "../application/report-inputs";
+import { buildReportInputRows, generationWarning, type ReportScopeInfo } from "../application/report-inputs";
 import type { ReportCheck } from "../application/report-checks";
 import { serializeEditorUrlState, type EditorUrlState, type InspectorPanel } from "../application/url-state";
 import { anchorClaims, type Anchor } from "../application/claim-anchors";
@@ -745,6 +745,18 @@ export function ReportEditor(props: ReportEditorProps) {
             const ids = inputsChanged.sectionIds.length > 0 ? inputsChanged.sectionIds : model.sections.filter((s) => s.hasContent && !s.isApproved).map((s) => s.id);
             void recheck(ids, "inputs-banner").then(() => setBannerDismissed(true));
           }}
+          canRewrite={canAuthor}
+          rewriting={Boolean(regeneration.starting) || regeneration.regeneratingIds.size > 0}
+          onRewrite={() => {
+            const ids = inputsChanged.sectionIds.length > 0 ? inputsChanged.sectionIds : model.sections.filter((s) => s.hasContent).map((s) => s.id);
+            void (async () => {
+              for (const id of ids) {
+                const section = sections.find((s) => s.id === id);
+                if (section) await regeneration.start(id, "", section.content ?? "");
+              }
+              setBannerDismissed(true);
+            })();
+          }}
           onDismiss={() => setBannerDismissed(true)}
         />
       )}
@@ -755,6 +767,7 @@ export function ReportEditor(props: ReportEditorProps) {
             rows={inputRows}
             canGenerate={caps.canGenerate}
             starting={generation.starting}
+            warning={generationWarning(props.indicators, props.reportScope?.reportType)}
             onGenerate={() => void generation.generate()}
           />
         </div>
