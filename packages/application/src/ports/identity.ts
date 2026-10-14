@@ -69,6 +69,8 @@ export interface IInvitationRepository {
   findByToken(token: string): Promise<Result<Invitation | null>>;
   /** Persists acceptance (acceptedAt). The aggregate guards single-use. */
   update(invitation: Invitation): Promise<Result<Invitation>>;
+  /** Invitations of a workspace that nobody has accepted yet (expired ones included), newest first. */
+  listOpenByTenant(tenantId: TenantId): Promise<Result<Invitation[]>>;
 }
 
 export interface AuthenticatedUser {

@@ -51,6 +51,7 @@ export * from "./use-cases/identity/update-agent-memory-settings.js";
 export * from "./use-cases/identity/connect-google-drive.js";
 export * from "./use-cases/identity/google-sign-in.js";
 export * from "./use-cases/identity/list-users.js";
+export * from "./use-cases/identity/list-pending-invitations.js";
 export * from "./use-cases/identity/provision-tenant.js";
 
 export * from "./use-cases/memory/extract-agent-memory.js";

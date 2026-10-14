@@ -22,6 +22,7 @@ import {
   SignUpHandler,
   LoginHandler,
   InviteUserHandler,
+  ListPendingInvitationsHandler,
   AcceptInvitationHandler,
   ChangeRoleHandler,
   ChangePasswordHandler,
@@ -447,6 +448,7 @@ export interface Container {
     login: LoginHandler;
     googleSignIn: GoogleSignInHandler;
     inviteUser: InviteUserHandler;
+    listPendingInvitations: ListPendingInvitationsHandler;
     acceptInvitation: AcceptInvitationHandler;
     changeRole: ChangeRoleHandler;
     changePassword: ChangePasswordHandler;
@@ -1178,6 +1180,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     login: new LoginHandler(users, auth, audits),
     googleSignIn: new GoogleSignInHandler(googleSignIn, users, organizations, auth, ids, audits, provisionTenant),
     inviteUser: new InviteUserHandler(ids, users, invitations, audits, notify, entitlements),
+    listPendingInvitations: new ListPendingInvitationsHandler(invitations),
     acceptInvitation: new AcceptInvitationHandler(ids, users, invitations, auth, audits, entitlements),
     changeRole: new ChangeRoleHandler(users, audits, entitlements),
     changePassword: new ChangePasswordHandler(users, auth, audits, clock),

@@ -1,7 +1,7 @@
 import { requireSession } from "@/lib/server/auth-context";
 import { hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { TeamResponseSchema } from "@/lib/server/schemas";
+import { PendingInvitationsResponseSchema, TeamResponseSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
 import { TeamPanel } from "@/features/team/presentation/TeamPanel";
 
@@ -31,11 +31,15 @@ export default async function TeamPage() {
     );
   }
 
+  // Outstanding invitations are a convenience beside the team; the page works without them.
+  const pending = await gatewayRequest("/v1/users/invitations", PendingInvitationsResponseSchema, ctx.token);
+
   return (
     <div className="animate-fade-in">
       <h1 className="text-xl font-semibold tracking-tight">Team</h1>
       <div className="mt-6">
         <TeamPanel
+          pendingInvitations={pending.ok ? pending.value.items : []}
           members={result.value.items}
           capabilities={Array.from(ctx.capabilities)}
         />

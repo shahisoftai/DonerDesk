@@ -305,6 +305,31 @@ export class PrismaInvitationRepository implements IInvitationRepository {
     }
   }
 
+  async listOpenByTenant(tenantId: TenantId): Promise<Result<Invitation[], DomainError>> {
+    const rows = await this.prisma.invitation.findMany({
+      where: { tenantId: tenantId.toString(), acceptedAt: null },
+      orderBy: { createdAt: "desc" },
+    });
+    return ok(
+      rows.map((row) =>
+        Invitation.rehydrate({
+          id: row.id,
+          tenantId: TenantId.create(row.tenantId),
+          createdAt: row.createdAt,
+          props: {
+            email: Email.create(row.email),
+            role: row.role as Role,
+            invitedById: row.invitedById,
+            token: row.token,
+            expiresAt: row.expiresAt,
+            acceptedAt: undefined,
+            projectIds: JSON.parse(row.projectIds) as string[],
+          },
+        }),
+      ),
+    );
+  }
+
   async findByToken(token: string): Promise<Result<Invitation | null, DomainError>> {
     const row = await this.prisma.invitation.findUnique({ where: { token } });
     if (!row) return ok(null);

@@ -9,6 +9,8 @@ import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { AppShell } from "@/components/layout/AppShell";
 import { ToastProvider } from "@/components/feedback/Toast";
 import { TourOverlay } from "@/features/tour/presentation/TourOverlay";
+import { OutboxProvider } from "@/features/offline/presentation/OutboxProvider";
+import { OutboxBanner } from "@/features/offline/presentation/OutboxBanner";
 
 export const dynamic = "force-dynamic";
 export const metadata = NOINDEX_METADATA;
@@ -62,6 +64,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
 
   return (
     <ToastProvider>
+      <OutboxProvider scope={identity?.sub ?? user.email ?? "user"}>
       <AppShell
         orgName={orgName}
         user={user}
@@ -72,6 +75,8 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         {children}
       </AppShell>
       <TourOverlay />
+      <OutboxBanner />
+      </OutboxProvider>
     </ToastProvider>
   );
 }

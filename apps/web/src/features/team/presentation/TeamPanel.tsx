@@ -12,13 +12,17 @@ import { Select } from "@/components/ui/Select";
 import { Field } from "@/components/ui/Field";
 import { FormSummary } from "@/components/ui/FormSummary";
 import { ROLE_LABEL, ROLE_OPTIONS, CAPABILITY_LABEL } from "@/lib/labels";
+import type { PendingInvitation } from "@/lib/server/schemas";
+import { PendingInvitations } from "./PendingInvitations";
 import { filterTeamMembers, type TeamMember } from "@/features/team/application/team-view";
 
 export function TeamPanel({
   members,
   capabilities,
+  pendingInvitations = [],
 }: {
   members: TeamMember[];
+  pendingInvitations?: PendingInvitation[];
   capabilities: readonly Capability[];
 }) {
   const router = useRouter();
@@ -167,6 +171,8 @@ export function TeamPanel({
           </tbody>
         </table>
       </div>
+
+      {pendingInvitations.length > 0 && <PendingInvitations invitations={pendingInvitations} />}
 
       {roleChange && canManage && (
         <RoleChangeDialog

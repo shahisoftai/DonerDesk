@@ -10,6 +10,7 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
+import { CameraButton } from "@/components/editor/CameraButton";
 import { FileDropzone } from "@/components/editor/FileDropzone";
 import { EVIDENCE_TYPE_LABEL, CONFIDENTIALITY_LABEL, EVIDENCE_TYPE_OPTIONS, CONFIDENTIALITY_OPTIONS } from "@/lib/labels";
 import {
@@ -203,6 +204,10 @@ export function EvidenceUploadQueue({
         label={driveMode ? "Drop files here or click to browse — saved to your project's Google Drive folder" : "Drop files here or click to browse"}
         hint={driveMode ? "You can select multiple files. Each is uploaded into your project's Evidence folder in Google Drive." : "You can select multiple files. Each is uploaded separately."}
       />
+
+      <div>
+        <CameraButton onFiles={addFiles} />
+      </div>
 
       {driveMode && (
         <Field

@@ -152,6 +152,18 @@ export const TeamMemberSchema = z.object({
 
 export const TeamResponseSchema = z.object({ items: z.array(TeamMemberSchema) });
 
+export const PendingInvitationSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  role: z.string(),
+  invitedAt: z.string(),
+  expiresAt: z.string(),
+  expired: z.boolean(),
+  acceptPath: z.string(),
+});
+export type PendingInvitation = z.infer<typeof PendingInvitationSchema>;
+export const PendingInvitationsResponseSchema = z.object({ items: z.array(PendingInvitationSchema) });
+
 const SourceRefSchema = z.object({ excerpt: z.string(), page: z.number().optional(), headingPath: z.array(z.string()).optional() });
 
 export const TemplateSectionSchema = z.object({

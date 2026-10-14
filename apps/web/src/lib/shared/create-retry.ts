@@ -13,6 +13,8 @@ export interface RetryOptions {
   sleep?: (ms: number) => Promise<void>;
   /** Called before each repeat (for a "still saving..." message). */
   onRetry?: (attempt: number) => void;
+  /** Repeating is pointless with no connection (the outbox sends later instead); defaults to the browser's own knowledge. */
+  isOnline?: () => boolean;
 }
 
 export const CREATE_ATTEMPTS = 4;
@@ -25,8 +27,9 @@ export function isRetryable(error: AppError): boolean {
 export async function retryWhileUnavailable<T>(attempt: () => Promise<Result<T, AppError>>, options: RetryOptions = {}): Promise<Result<T, AppError>> {
   const attempts = options.attempts ?? CREATE_ATTEMPTS;
   const sleep = options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+  const isOnline = options.isOnline ?? (() => (typeof navigator === "undefined" ? true : navigator.onLine !== false));
   let result = await attempt();
-  for (let n = 1; n < attempts && !result.ok && isRetryable(result.error); n += 1) {
+  for (let n = 1; n < attempts && !result.ok && isRetryable(result.error) && isOnline(); n += 1) {
     options.onRetry?.(n);
     await sleep(options.waitMs ?? CREATE_WAIT_MS);
     result = await attempt();

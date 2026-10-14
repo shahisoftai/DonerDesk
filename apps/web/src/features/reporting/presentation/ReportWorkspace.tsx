@@ -18,6 +18,7 @@ import {
 import { SECTION_STATUS_LABEL, REPORT_DRAFT_STATUS_LABEL } from "@/lib/labels";
 import { SectionEditor } from "./SectionEditor";
 import { ReportingStepGuide } from "./ReportingStepGuide";
+import { ReadinessChange } from "./ReadinessChange";
 import { StoryPanel } from "./StoryPanel";
 import { FlexibleInputsPanel } from "./FlexibleInputsPanel";
 import { SmartReviewPanel } from "./SmartReviewPanel";
@@ -958,6 +959,10 @@ export function ReportWorkspace({
             <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">Readiness</h3>
             <div className="mt-2">
               <ReadinessGauge value={readiness.overall} />
+              <ReadinessChange
+                periodId={periodId}
+                now={{ overall: readiness.overall, sections: readiness.sectionsScore, indicators: readiness.indicatorsScore, evidence: readiness.evidenceScore, checklist: readiness.checklistScore, approval: readiness.approvalScore }}
+              />
             </div>
             <dl className="mt-3 space-y-1.5 text-sm">
               <ReadinessRow label="Sections" v={readiness.sectionsScore} onClick={() => { setMode("editor"); setPanel("sections"); }} />

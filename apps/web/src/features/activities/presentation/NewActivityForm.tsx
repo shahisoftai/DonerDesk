@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createActivityAction } from "@/lib/actions/activities";
+import { guardNetwork, isOfflineFailure } from "@/lib/shared/connectivity";
+import type { AppError } from "@/lib/shared/app-error";
+import { useOutbox } from "@/features/offline/presentation/OutboxProvider";
+import { activityEntry } from "@/features/offline/domain/activity-outbox";
 import { uploadEvidenceAction } from "@/lib/actions/evidence";
 import { useActionState } from "@/lib/client/action-state";
 import { validateParticipantBreakdown } from "@/lib/shared/participants";
@@ -17,6 +21,7 @@ import { recordParticipantHints } from "@donordesk/domain/contexts/logframe/part
 import { LogframeItemSelect } from "@/features/logframe/presentation/LogframeItemSelect";
 import { periodContainingDate } from "@/lib/shared/option-labels";
 import { FileDropzone } from "@/components/editor/FileDropzone";
+import { CameraButton } from "@/components/editor/CameraButton";
 import { applyNarrativeProposal, type NarrativeProposal } from "@/features/activities/domain/apply-narrative-proposal";
 import { ActivityNarrativeAssist } from "./ActivityNarrativeAssist";
 import { createActivityDraftStore, type ActivityDraft } from "@/features/activities/domain/activity-draft";
@@ -53,6 +58,7 @@ export function NewActivityForm({
 }) {
   const router = useRouter();
   const actionState = useActionState();
+  const outbox = useOutbox();
 
   const [reportingPeriodId, setReportingPeriodId] = useState(reportingPeriods[0]?.id ?? "");
   const [periodChosenByUser, setPeriodChosenByUser] = useState(false);
@@ -184,6 +190,9 @@ export function NewActivityForm({
     setParticipantsDisability("");
   }
 
+  const addProofFiles = (added: File[]) =>
+    setFiles((prev) => [...prev, ...added.filter((f) => f.size > 0 && !prev.some((p) => p.name === f.name))]);
+
   function toggleEvidence(id: string) {
     setSelectedEvidence((prev) => (prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]));
   }
@@ -213,29 +222,57 @@ export function NewActivityForm({
     // A retry after a failed upload must not create the activity a second time.
     let activityId = createdActivityId;
     if (!activityId) {
-      const created = await actionState.runCreate((idempotencyKey) =>
-        createActivityAction({
-          projectId,
-          reportingPeriodId,
-          activityTitle,
-          activityDate: dateValue ?? new Date().toISOString(),
-          ...(endDateValue ? { activityEndDate: endDateValue } : {}),
-          location: location || undefined,
-          logframeActivityId: logframeActivityId || undefined,
-          participantsTotal: participantsTotal ? Number(participantsTotal) : undefined,
-          participantsMale: participantsMale ? Number(participantsMale) : undefined,
-          participantsFemale: participantsFemale ? Number(participantsFemale) : undefined,
-          participantsChildren: participantsChildren ? Number(participantsChildren) : undefined,
-          participantsDisability: participantsDisability ? Number(participantsDisability) : undefined,
-          summary,
-          achievements,
-          challenges,
-          lessonsLearned,
-          nextSteps,
-          attachedEvidenceIds: selectedEvidence,
-        }, { idempotencyKey }),
-      );
-      if (!created) return;
+      const input = {
+        projectId,
+        reportingPeriodId,
+        activityTitle,
+        activityDate: dateValue ?? new Date().toISOString(),
+        ...(endDateValue ? { activityEndDate: endDateValue } : {}),
+        location: location || undefined,
+        logframeActivityId: logframeActivityId || undefined,
+        participantsTotal: participantsTotal ? Number(participantsTotal) : undefined,
+        participantsMale: participantsMale ? Number(participantsMale) : undefined,
+        participantsFemale: participantsFemale ? Number(participantsFemale) : undefined,
+        participantsChildren: participantsChildren ? Number(participantsChildren) : undefined,
+        participantsDisability: participantsDisability ? Number(participantsDisability) : undefined,
+        summary,
+        achievements,
+        challenges,
+        lessonsLearned,
+        nextSteps,
+        attachedEvidenceIds: selectedEvidence,
+      };
+      const attempt: { key: string; error?: AppError } = { key: "" };
+      const created = await actionState.runCreate(async (idempotencyKey) => {
+        attempt.key = idempotencyKey;
+        const result = await guardNetwork(() => createActivityAction(input, { idempotencyKey }));
+        if (!result.ok) attempt.error = result.error;
+        return result;
+      });
+      if (!created) {
+        // No connection: keep the finished form (photos included) on this device and let the outbox send it later.
+        if (outbox.supported && isOfflineFailure(attempt.error)) {
+          await outbox.enqueue(
+            activityEntry({
+              id: attempt.key,
+              title: activityTitle,
+              now: Date.now(),
+              payload: {
+                projectId,
+                reportingPeriodId,
+                ...(dateValue ? { activityDate: dateValue } : {}),
+                ...(location ? { location } : {}),
+                create: input,
+                files: files.map((f) => ({ name: f.name, type: f.type, blob: f, settings: settingsFor(f) })),
+              },
+            }),
+          );
+          drafts.clear();
+          setLeaving(true);
+          router.push(`/projects/${projectId}/activities`);
+        }
+        return;
+      }
       activityId = created.id;
       setCreatedActivityId(created.id);
     }
@@ -584,8 +621,11 @@ export function NewActivityForm({
           multiple
           label="Add evidence files"
           hint="Drop files here or choose them"
-          onFiles={(added) => setFiles((prev) => [...prev, ...added.filter((f) => f.size > 0 && !prev.some((p) => p.name === f.name))])}
+          onFiles={addProofFiles}
         />
+        <div className="mt-2">
+          <CameraButton onFiles={addProofFiles} />
+        </div>
         {files.length > 0 && (
           <>
           {files.length > 1 && !createdActivityId && (

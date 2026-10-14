@@ -4,12 +4,15 @@ import { useCallback, useRef, useState } from "react";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { newIdempotencyKey, retryWhileUnavailable } from "@/lib/shared/create-retry";
+import { guardNetwork } from "@/lib/shared/connectivity";
 
 export type ActionState = {
   busy: boolean;
   /** True while a timed-out save is being repeated ("Still saving..."). */
   waiting: boolean;
   error: string | null;
+  /** The whole failure of the last action (its kind tells "offline, try later" from "refused"). */
+  failure: AppError | null;
   fields: Record<string, string[]> | null;
   /** Runs one action once. A second call while it runs is ignored. */
   run: <T>(action: () => Promise<Result<T, AppError>>) => Promise<T | undefined>;
@@ -24,6 +27,7 @@ export function useActionState(): ActionState {
   const [busy, setBusy] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [failure, setFailure] = useState<AppError | null>(null);
   const [fields, setFields] = useState<Record<string, string[]> | null>(null);
   const inFlight = useRef(false);
   const key = useRef<string | null>(null);
@@ -33,11 +37,15 @@ export function useActionState(): ActionState {
     inFlight.current = true;
     setBusy(true);
     setError(null);
+    setFailure(null);
     setFields(null);
     try {
-      const result = repeat ? await retryWhileUnavailable(attempt, { onRetry: () => setWaiting(true) }) : await attempt();
+      // An offline browser or a dropped fetch is an answer ("unavailable"), never an exception that escapes the form.
+      const guarded = () => guardNetwork(attempt);
+      const result = repeat ? await retryWhileUnavailable(guarded, { onRetry: () => setWaiting(true) }) : await guarded();
       if (!result.ok) {
         setError(result.error.message);
+        setFailure(result.error);
         if (result.error.kind === "validation" && result.error.fields) {
           setFields(result.error.fields);
         }
@@ -62,5 +70,5 @@ export function useActionState(): ActionState {
     [execute],
   );
 
-  return { busy, waiting, error, fields, run, runCreate };
+  return { busy, waiting, error, failure, fields, run, runCreate };
 }
