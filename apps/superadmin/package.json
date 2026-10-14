@@ -1,6 +1,6 @@
 {
   "name": "@donordesk/superadmin",
-  "version": "1.93.0",
+  "version": "2.0.1",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3012",

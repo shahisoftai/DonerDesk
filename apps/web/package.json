@@ -1,6 +1,6 @@
 {
   "name": "@donordesk/web",
-  "version": "1.93.0",
+  "version": "2.0.1",
   "private": true,
   "scripts": {
     "build": "next build",

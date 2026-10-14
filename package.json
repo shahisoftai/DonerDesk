@@ -1,6 +1,6 @@
 {
   "name": "donordesk",
-  "version": "1.93.0",
+  "version": "2.0.1",
   "private": true,
   "description": "DonorDesk — AI-assisted donor reporting and evidence management for NGOs",
   "packageManager": "pnpm@10.34.5",
