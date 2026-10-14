@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ReportScope } from "@donordesk/domain/contexts/reporting/report-scope.js";
-import { missingScopeFields } from "@donordesk/domain/contexts/reporting/report-scope.js";
+import { missingScopeFields, scopeProblems } from "@donordesk/domain/contexts/reporting/report-scope.js";
 import { Button } from "@/components/ui/Button";
 import { ReportScopeFields, cleanScope, type ScopeActivityOption } from "@/features/reporting/presentation/ReportScopeFields";
 import { updateReportingPeriodScopeAction } from "@/lib/actions/reporting";
@@ -50,8 +50,11 @@ export function ScopeInputs({
     setMessage(null);
     setFailure(null);
     const missing = missingScopeFields(reportType, scope);
-    if (missing.length > 0) {
-      setErrors(Object.fromEntries(missing.map((k) => [k, [SCOPE_ERROR[k] ?? "Required."]])));
+    const problems = scopeProblems(scope);
+    if (missing.length > 0 || problems.length > 0) {
+      const found: Record<string, string[]> = Object.fromEntries(missing.map((k) => [k, [SCOPE_ERROR[k] ?? "Required."]]));
+      for (const problem of problems) (found[problem.field] ??= []).push(problem.message);
+      setErrors(found);
       return;
     }
     setErrors({});

@@ -18,6 +18,7 @@ export const ReportScopeSchema = z.object({
   eventName: z.string().trim().max(300).optional(),
   location: z.string().trim().max(300).optional(),
   situationDate: z.string().trim().max(40).optional(),
+  eventStartDate: z.string().trim().max(40).optional(),
   summary: z.string().trim().max(2000).optional(),
   affectedPopulation: z
     .array(z.object({ group: z.string().trim().min(1).max(100), figure: z.string().trim().min(1).max(40), source: z.string().trim().max(200).optional(), asOf: z.string().trim().max(40).optional() }))

@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { missingScopeFields, normalizeEventName, type ReportScope } from "@donordesk/domain/contexts/reporting/report-scope.js";
+import { missingScopeFields, scopeProblems, normalizeEventName, type ReportScope } from "@donordesk/domain/contexts/reporting/report-scope.js";
 import { FormSummary } from "@/components/ui/FormSummary";
 import { ReportScopeFields, cleanScope } from "./ReportScopeFields";
 import { PeriodTypeGuide, type PeriodTypeOptionView } from "./PeriodTypeGuide";
@@ -108,8 +108,8 @@ export function NewReportingPeriodForm({
         .map((h) => h.endDate.slice(0, 10))
         .sort()
         .pop();
-      let start = scope.situationDate;
-      if (previous && previous < scope.situationDate) {
+      let start = scope.eventStartDate && scope.eventStartDate <= scope.situationDate ? scope.eventStartDate : scope.situationDate;
+      if (previous && previous < scope.situationDate && previous >= start) {
         const d = new Date(`${previous}T00:00:00Z`);
         d.setUTCDate(d.getUTCDate() + 1);
         start = d.toISOString().slice(0, 10);
@@ -120,7 +120,7 @@ export function NewReportingPeriodForm({
     const serverOption = periodOptions?.find((o) => o.type === reportType);
     if (serverOption) return serverOption.suggestedDates ?? null;
     return projectBounds ? suggestPeriodDates(reportType, projectBounds.startDate, projectBounds.endDate, existingPeriodEnds) : null;
-  }, [reportType, periodOptions, projectBounds, existingPeriodEnds, activities, scope.activityIds, scope.situationDate, scope.eventName, situationHistory]);
+  }, [reportType, periodOptions, projectBounds, existingPeriodEnds, activities, scope.activityIds, scope.situationDate, scope.eventStartDate, scope.eventName, situationHistory]);
 
   // Suggests Start/End from the report type + the project's dates, chained
   // after the latest existing period. Activity/Situation take their dates from
@@ -170,6 +170,7 @@ export function NewReportingPeriodForm({
     if (missing.includes("eventName")) scopeErrors.eventName = ["Name the event or situation."];
     if (missing.includes("situationDate")) scopeErrors.situationDate = ["Enter the date the situation refers to."];
     if (missing.includes("title")) scopeErrors.title = ["Give the report a title."];
+    for (const problem of scopeProblems(scope)) (scopeErrors[problem.field] ??= []).push(problem.message);
     const dateErrors = validateReportDates({
       startDate,
       endDate,

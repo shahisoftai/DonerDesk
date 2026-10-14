@@ -47,12 +47,15 @@ export function IndicatorEntryGrid({
   projectId,
   periodId,
   rows,
+  reportType,
   canEdit,
   canVerify,
 }: {
   projectId: string;
   periodId: string;
   rows: PeriodIndicatorRow[];
+  /** Lets the empty state say why there is nothing to enter. */
+  reportType?: string;
   canEdit: boolean;
   canVerify: boolean;
 }) {
@@ -376,11 +379,17 @@ export function IndicatorEntryGrid({
 
       {grouped.length === 0 ? (
         <div className="card text-sm text-slate-600 dark:text-slate-300">
+          {reportType === "SITUATION" ? (
+            <>A situation report describes an event and the response, so it takes no indicator values. Enter indicator data in the regular reports (monthly, quarterly, final).</>
+          ) : reportType === "ACTIVITY" ? (
+            <>An activity report only uses the indicators its own activities feed. Link an activity to an indicator, or enter values in a regular report.</>
+          ) : (<>
           No indicators defined yet.{" "}
           <a className="font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${projectId}/logframe`}>
             Add indicators to the logframe
           </a>{" "}
           first, then return here to enter their values.
+          </>)}
         </div>
       ) : (
         <div className="table-shell overflow-x-auto">

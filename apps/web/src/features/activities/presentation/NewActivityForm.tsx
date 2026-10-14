@@ -63,7 +63,8 @@ function NewActivityFormInner({
   const actionState = useActionState();
   const outbox = useOutbox();
 
-  const [reportingPeriodId, setReportingPeriodId] = useState(reportingPeriods[0]?.id ?? "");
+  // No period is preselected: a date no period covers must not silently land in whichever period is listed first.
+  const [reportingPeriodId, setReportingPeriodId] = useState("");
   const [periodChosenByUser, setPeriodChosenByUser] = useState(false);
   const [changingPeriod, setChangingPeriod] = useState(false);
   const [activityTitle, setActivityTitle] = useState("");
@@ -133,8 +134,7 @@ function NewActivityFormInner({
     setLessonsLearned(next.lessonsLearned);
     setNextSteps(next.nextSteps);
     if (filled.includes("activityDate") && !periodChosenByUser) {
-      const derived = periodContainingDate(reportingPeriods, next.activityDate);
-      if (derived) setReportingPeriodId(derived);
+      setReportingPeriodId(periodContainingDate(reportingPeriods, next.activityDate) ?? "");
     }
     return { filled, kept };
   }
@@ -155,8 +155,7 @@ function NewActivityFormInner({
     setChallenges(d.challenges);
     setLessonsLearned(d.lessonsLearned);
     setNextSteps(d.nextSteps);
-    const derived = d.activityDate ? periodContainingDate(reportingPeriods, d.activityDate) : undefined;
-    if (derived) setReportingPeriodId(derived);
+    setReportingPeriodId(d.activityDate ? periodContainingDate(reportingPeriods, d.activityDate) ?? "" : "");
     setPendingDraft(null);
   }
 
@@ -219,6 +218,10 @@ function NewActivityFormInner({
     const dateValue = activityDate ? new Date(activityDate).toISOString() : undefined;
     if (activityEndDate && activityDate && activityEndDate < activityDate) {
       setLocalErrors({ activityEndDate: ["The end date cannot be before the activity date."] });
+      return;
+    }
+    if (!reportingPeriodId) {
+      setLocalErrors({ reportingPeriodId: ["Choose the reporting period this record belongs to. If none covers the date, create the period first."] });
       return;
     }
     const endDateValue = activityEndDate ? new Date(activityEndDate).toISOString() : undefined;
@@ -356,7 +359,7 @@ function NewActivityFormInner({
           label="Reporting period"
           htmlFor="reportingPeriodId"
           error={fields.reportingPeriodId?.[0]}
-          hint={activityDate && !dateInsidePeriodId ? "No reporting period contains this date. Pick one, or create the period first." : undefined}
+          hint={activityDate && !dateInsidePeriodId ? "No reporting period contains this date yet. Create the period first (Reports), or choose the period this record belongs to." : undefined}
         >
           <Select
             id="reportingPeriodId"
@@ -369,6 +372,7 @@ function NewActivityFormInner({
             invalid={Boolean(fields.reportingPeriodId)}
             required
           >
+            <option value="">Choose a reporting period…</option>
             {reportingPeriods.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
@@ -417,8 +421,7 @@ function NewActivityFormInner({
             onChange={(e) => {
               setActivityDate(e.target.value);
               // Derive, don't ask: the period that contains the date, unless the user already picked one.
-              const derived = periodChosenByUser ? undefined : periodContainingDate(reportingPeriods, e.target.value);
-              if (derived) setReportingPeriodId(derived);
+              if (!periodChosenByUser) setReportingPeriodId(periodContainingDate(reportingPeriods, e.target.value) ?? "");
             }}
             invalid={Boolean(fields.activityDate)}
             required

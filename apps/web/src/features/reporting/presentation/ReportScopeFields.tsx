@@ -87,6 +87,9 @@ export function ReportScopeFields({
           <Field label="Situation date (as of)" htmlFor="scopeSituationDate" error={fields.situationDate?.[0]}>
             <Input id="scopeSituationDate" type="date" value={scope.situationDate ?? ""} onChange={(e) => patchScope({ situationDate: e.target.value })} invalid={Boolean(fields.situationDate)} />
           </Field>
+          <Field label="Event started on (optional)" htmlFor="scopeEventStart" error={fields.eventStartDate?.[0]} hint="The report then covers the event from this day to the situation date.">
+            <Input id="scopeEventStart" type="date" value={scope.eventStartDate ?? ""} onChange={(e) => patchScope({ eventStartDate: e.target.value })} invalid={Boolean(fields.eventStartDate)} />
+          </Field>
           <Field label="Location / affected area (optional)" htmlFor="scopeLocation">
             <Input id="scopeLocation" value={scope.location ?? ""} onChange={(e) => patchScope({ location: e.target.value })} />
           </Field>
@@ -99,6 +102,7 @@ export function ReportScopeFields({
             <Field
               label="Affected population (optional)"
               htmlFor="scopeAffected"
+              error={fields.affectedPopulation?.[0]}
               hint="Figures you have from a named source. They appear in the report exactly as entered; none are estimated."
             >
               <div id="scopeAffected" className="space-y-2">
@@ -122,7 +126,7 @@ export function ReportScopeFields({
             </Field>
           </div>
           <div className="sm:col-span-2">
-            <Field label="Main needs (optional)" htmlFor="scopeNeeds" hint="One need per line.">
+            <Field label="Main needs (optional)" htmlFor="scopeNeeds" error={fields.needs?.[0]} hint="One need per line, up to 200 characters each.">
               <Textarea id="scopeNeeds" rows={3} value={(scope.needs ?? []).join("\n")} onChange={(e) => patchScope({ needs: e.target.value.split("\n") })} />
             </Field>
           </div>

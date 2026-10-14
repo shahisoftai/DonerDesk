@@ -620,6 +620,7 @@ export const ReportingPeriodItemSchema = z.object({
     eventName: z.string().optional(),
     location: z.string().optional(),
     situationDate: z.string().optional(),
+    eventStartDate: z.string().optional(),
     summary: z.string().optional(),
     title: z.string().optional(),
     purpose: z.string().optional(),

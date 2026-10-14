@@ -1,4 +1,4 @@
-import type { FinanceSummaryView, Result, TenantId, VerifiedFinding } from "@donordesk/domain";
+import type { FinanceSummaryView, ReportScope, Result, TenantId, VerifiedFinding } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
 import type { IRecordChunkBuilder, IReportingPeriodRepository, RecordChunk } from "../ports/reporting.js";
 import type { IProjectRepository } from "../ports/projects.js";
@@ -27,7 +27,7 @@ export interface RecordSources {
     budget?: { amount: number; currency: string } | null;
     description?: string;
   };
-  period: { reportType: string; duration: { start: Date; end: Date } };
+  period: { reportType: string; duration: { start: Date; end: Date }; scope?: ReportScope };
   story?: { achievements?: string; challenges?: string; varianceExplanations?: string; adaptations?: string; lessons?: string; sectionNotes?: Record<string, string> };
   activities: Array<{
     id: string;
@@ -64,6 +64,27 @@ export function recordSentences(text: string | undefined): string[] {
 }
 
 /**
+ * Pure. What the person typed when they created a situation / custom / activity report, as statements: the event,
+ * where and when, the summary, the affected-population figures with their source and date, and the main needs.
+ * A claim quoting any of them is therefore supported by the record it came from, and the contradiction lint can
+ * accept the figures (a figure the user supplied is never "not in your data").
+ */
+export function scopeStatements(scope: ReportScope | undefined): string[] {
+  if (!scope) return [];
+  const out: string[] = [];
+  if (scope.eventName) out.push(`The event covered is ${scope.eventName}${scope.location ? ` in ${scope.location}` : ""}.`);
+  else if (scope.location) out.push(`The affected area is ${scope.location}.`);
+  if (scope.situationDate) out.push(`The situation is reported as of ${bothDates(new Date(`${scope.situationDate.slice(0, 10)}T00:00:00Z`))}.`);
+  if (scope.eventStartDate) out.push(`The event began on ${bothDates(new Date(`${scope.eventStartDate.slice(0, 10)}T00:00:00Z`))}.`);
+  out.push(...recordSentences(scope.summary));
+  for (const f of scope.affectedPopulation ?? []) {
+    out.push(`Affected population as reported: ${f.group}: ${f.figure}${f.source ? ` (source: ${f.source}${f.asOf ? `, as of ${f.asOf}` : ""})` : f.asOf ? ` (as of ${f.asOf})` : ""}.`);
+  }
+  for (const need of scope.needs ?? []) out.push(`A reported need is ${need.replace(/[.\s]+$/, "")}.`);
+  return out;
+}
+
+/**
  * Pure. One short chunk per statement of the structured records the writer was given. A factual
  * or qualitative claim that restates one of them ("rainy-season delays were managed through early
  * ordering") is supported by the record it came from, even though no evidence file says it.
@@ -89,6 +110,8 @@ export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
   add("period", "dates", "Reporting period", [
     `This ${sources.period.reportType.toLowerCase().replace(/_/g, "-")} report covers ${bothDates(sources.period.duration.start)} to ${bothDates(sources.period.duration.end)}.`,
   ]);
+
+  add("scope", "situation", "The situation this report covers", scopeStatements(sources.period.scope));
 
   const s = sources.story;
   if (s) {

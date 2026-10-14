@@ -28,6 +28,8 @@ export interface ReportScope {
   location?: string;
   /** SITUATION: ISO date the situation refers to ("as of"). */
   situationDate?: string;
+  /** SITUATION: ISO date the event began; the report window then runs from here to the "as of" date. */
+  eventStartDate?: string;
   /** SITUATION: optional short description of the situation. */
   summary?: string;
   /** SITUATION: affected-population figures, quoted verbatim in the report. */
@@ -116,7 +118,7 @@ export function normalizeReportScope(raw: unknown): ReportScope {
     const v = trimmed(r[key], 80);
     if (v) out[key] = v;
   }
-  for (const key of ["eventName", "location", "situationDate", "summary", "title", "purpose"] as const) {
+  for (const key of ["eventName", "location", "situationDate", "eventStartDate", "summary", "title", "purpose"] as const) {
     const v = trimmed(r[key], key === "summary" || key === "purpose" ? 2000 : 300);
     if (v) out[key] = v;
   }
@@ -174,4 +176,34 @@ export function describeReportScope(reportType: string, scope: ReportScope, acti
 function describeFigure(f: AffectedFigure): string {
   const detail = [f.source ? `source: ${f.source}` : undefined, f.asOf ? `as of ${f.asOf}` : undefined].filter(Boolean).join(", ");
   return `${f.group}: ${f.figure}${detail ? ` (${detail})` : ""}`;
+}
+
+export interface ScopeProblem {
+  /** The scope key the problem belongs to, so a form can show it beside the field. */
+  field: keyof ReportScope;
+  message: string;
+}
+
+const MAX_NEED = 200;
+
+/**
+ * What is wrong with a scope as typed, before anything is dropped. A half-filled affected-population row or an
+ * over-long need line used to be trimmed or discarded silently; saying so lets the person fix it. Pure.
+ */
+export function scopeProblems(scope: ReportScope): ScopeProblem[] {
+  const problems: ScopeProblem[] = [];
+  (scope.affectedPopulation ?? []).forEach((row, i) => {
+    const group = row.group?.trim() ?? "";
+    const figure = row.figure?.trim() ?? "";
+    if (!group && !figure) return;
+    if (!group) problems.push({ field: "affectedPopulation", message: `Affected population, row ${i + 1}: say who the figure is for (for example "Displaced households").` });
+    else if (!figure) problems.push({ field: "affectedPopulation", message: `Affected population, row ${i + 1}: enter the figure for "${group}".` });
+  });
+  (scope.needs ?? []).forEach((line, i) => {
+    if (line.trim().length > MAX_NEED) problems.push({ field: "needs", message: `Main needs, line ${i + 1}: keep each need to ${MAX_NEED} characters or fewer (it has ${line.trim().length}); put each need on its own line.` });
+  });
+  if (scope.eventStartDate && scope.situationDate && scope.eventStartDate > scope.situationDate) {
+    problems.push({ field: "eventStartDate", message: "The event cannot start after the situation date." });
+  }
+  return problems;
 }

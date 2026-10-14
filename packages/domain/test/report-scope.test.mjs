@@ -205,3 +205,22 @@ test("a follow-up's 'changes' section looks for the previous report's at-a-glanc
   assert.deepEqual(sectionPredecessorKeys({ templateSectionId: "bp:situation:changes", title: "Developments" }), ["bp:changes", "bp:overview", "title:developments"]);
   assert.deepEqual(sectionPredecessorKeys({ templateSectionId: "bp:situation:overview", title: "At a Glance" }), ["bp:overview", "title:at a glance"]);
 });
+
+import { scopeProblems } from "../dist/index.js";
+
+test("scopeProblems names a half-filled affected-population row instead of dropping it silently", () => {
+  const problems = scopeProblems({ affectedPopulation: [{ group: "", figure: "1,850" }, { group: "Displaced households", figure: "" }, { group: "", figure: "" }] });
+  assert.equal(problems.length, 2);
+  assert.match(problems[0].message, /row 1: say who the figure is for/);
+  assert.match(problems[1].message, /row 2: enter the figure for "Displaced households"/);
+});
+
+test("scopeProblems flags an over-long need line and an event that starts after its date", () => {
+  const problems = scopeProblems({ needs: ["x".repeat(201), "short"], eventStartDate: "2026-08-20", situationDate: "2026-08-15" });
+  assert.deepEqual(problems.map((p) => p.field), ["needs", "eventStartDate"]);
+});
+
+test("a complete scope has no problems and eventStartDate survives normalisation", () => {
+  assert.deepEqual(scopeProblems({ affectedPopulation: [{ group: "Households", figure: "1,850" }], needs: ["Clean water"] }), []);
+  assert.equal(normalizeReportScope({ eventStartDate: " 2026-08-06 " }).eventStartDate, "2026-08-06");
+});
