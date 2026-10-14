@@ -63,6 +63,10 @@ export interface IExportBuilder {
       confidentiality: string;
     }>;
     includeSensitive: boolean;
+    /** Evidence pack only: the evidence files themselves, as read from storage (paths inside the zip are `05_Evidence/<name>`). */
+    evidenceFiles?: Array<{ name: string; buffer: Buffer }>;
+    /** Evidence pack only: files that could not be included, with the reason (shown in the pack's README). */
+    evidenceNotIncluded?: Array<{ name: string; reason: string }>;
     /** Watermark text for internal previews; donor submissions must never be watermarked. */
     watermark?: string;
     /** Present only when the period has an APPROVED, locked donor-template

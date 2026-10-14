@@ -124,6 +124,7 @@ export * from "./use-cases/logframe/list-archived-indicators.js";
 export * from "./services/indicator-approval-guard.js";
 export * from "./services/activity-approval-guard.js";
 export * from "./services/activity-undo-policy.js";
+export * from "./services/evidence-pack-files.js";
 export * from "./services/default-template-resolver.js";
 export * from "./ports/default-template-resolver.js";
 export * from "./ports/indicator-approval-guard.js";

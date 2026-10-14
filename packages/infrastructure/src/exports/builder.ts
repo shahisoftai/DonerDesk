@@ -363,10 +363,7 @@ export class DefaultExportBuilder implements IExportBuilder {
   }
 
   private async buildChecklist(input: Parameters<IExportBuilder["build"]>[0]): Promise<ExportArtifacts> {
-    const lines: string[] = ["Title,Severity,Status,Resolution Notes"];
-    for (const c of input.checklist) {
-      lines.push([c.title, c.severity, c.status, c.resolutionNotes ?? ""].map(escapeCsv).join(","));
-    }
+    const lines = checklistCsvLines(input);
     return {
       fileBuffer: Buffer.from(lines.join("\n"), "utf8"),
       contentType: "text/csv",
@@ -379,10 +376,10 @@ export class DefaultExportBuilder implements IExportBuilder {
     const chunks: Buffer[] = [];
     archive.on("data", (c: Buffer) => chunks.push(c));
     const done = new Promise<void>((resolve) => archive.on("end", () => resolve()));
-    archive.append(`${input.reportTitle}\nProject: ${input.projectName}\nReporting period: ${input.reportingPeriodLabel}\n`, { name: "README.txt" });
+    archive.append(packReadme(input), { name: "README.txt" });
     archive.append(this.buildIndexCsv(input), { name: "index.csv" });
-    const checklists = ["Title,Severity,Status,Resolution Notes", ...input.checklist.map((c) => [c.title, c.severity, c.status, c.resolutionNotes ?? ""].map(escapeCsv).join(","))].join("\n");
-    archive.append(checklists, { name: "03_Evidence_Checklist/01_checklist.csv" });
+    archive.append(checklistCsvLines(input).join("\n"), { name: "03_Evidence_Checklist/01_checklist.csv" });
+    for (const f of input.evidenceFiles ?? []) archive.append(f.buffer, { name: `05_Evidence/${f.name}` });
     archive.append(JSON.stringify(input.sections.map((s) => ({ title: s.title, content: s.content, status: s.status })), null, 2), { name: "01_Final_Report/sections.json" });
     archive.append(JSON.stringify(input.indicators, null, 2), { name: "02_Indicator_Table/indicators.json" });
     for (const a of input.activities) {
@@ -404,6 +401,32 @@ export class DefaultExportBuilder implements IExportBuilder {
     }
     return lines.join("\n");
   }
+}
+
+/**
+ * The checklist as CSV. A donor submission carries title, severity and status only: resolution notes are the team's
+ * own working notes (they can name sensitive files or say how an item was settled) and are not for the donor. An
+ * internal copy keeps them.
+ */
+export function checklistCsvLines(input: Pick<Parameters<IExportBuilder["build"]>[0], "checklist" | "exportIntent">): string[] {
+  const withNotes = input.exportIntent !== "DONOR_SUBMISSION";
+  const lines = [withNotes ? "Title,Severity,Status,Resolution Notes" : "Title,Severity,Status"];
+  for (const c of input.checklist) {
+    const cells = withNotes ? [c.title, c.severity, c.status, c.resolutionNotes ?? ""] : [c.title, c.severity, c.status];
+    lines.push(cells.map(escapeCsv).join(","));
+  }
+  return lines;
+}
+
+/** What the pack holds, and what it could not include and why. */
+export function packReadme(input: Pick<Parameters<IExportBuilder["build"]>[0], "reportTitle" | "projectName" | "reportingPeriodLabel" | "evidenceFiles" | "evidenceNotIncluded">): string {
+  const lines = [input.reportTitle, `Project: ${input.projectName}`, `Reporting period: ${input.reportingPeriodLabel}`, ""];
+  if (input.evidenceFiles) lines.push(`Evidence files included: ${input.evidenceFiles.length} (folder 05_Evidence). index.csv lists every file the report covers.`);
+  const missing = input.evidenceNotIncluded ?? [];
+  if (missing.length > 0) {
+    lines.push("", `Not included (${missing.length}):`, ...missing.map((m) => `- ${m.name}: ${m.reason}`));
+  }
+  return lines.join("\n") + "\n";
 }
 
 function slug(s: string): string {

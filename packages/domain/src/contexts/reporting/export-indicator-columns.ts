@@ -104,7 +104,7 @@ export function indicatorExportRow(input: {
   };
   if (!ROLL_UP_REPORT_TYPES.has(input.reportType)) return { ...base, achievement: (update?.periodAchievement ?? "").trim() };
 
-  const rate = indicator.type === "PERCENTAGE" || indicator.type === "RATIO";
+  const rate = isRateIndicator(indicator);
   const period = (update?.periodAchievement ?? "").trim();
   const cumulative = (update?.cumulativeAchievement ?? "").trim();
   const life = rate ? period : cumulative !== "" ? cumulative : period;
@@ -113,6 +113,15 @@ export function indicatorExportRow(input: {
     achievement: life,
     periodValue: period,
     lifeOfProjectValue: life,
-    percentOfTarget: percentOfTarget(life, indicator.target),
+    // A rate is a level, not progress toward a count, so "% of target" is not shown (the report table shows "—" too).
+    percentOfTarget: rate ? RATE_PERCENT_OF_TARGET : percentOfTarget(life, indicator.target),
   };
+}
+
+/** What a rate indicator shows in the "% of target" column. */
+export const RATE_PERCENT_OF_TARGET = "—";
+
+/** Percentage or ratio type, or a percent unit: the same rule the report's own indicator table uses. */
+export function isRateIndicator(indicator: { type: string; unit?: string | undefined }): boolean {
+  return indicator.type === "PERCENTAGE" || indicator.type === "RATIO" || (indicator.unit ?? "").trim() === "%";
 }

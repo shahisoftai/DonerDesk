@@ -15,6 +15,7 @@ import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { CreateExportInput } from "@donordesk/contracts";
 import { resolvePeriodActivities } from "../../services/period-activities.js";
 import { PeriodEvidenceScope } from "../../services/period-evidence-scope-service.js";
+import { EvidencePackFileLoader, type PackCandidate } from "../../services/evidence-pack-files.js";
 import { exportFileName } from "../../services/export-file-name.js";
 
 export class CreateExportHandler {
@@ -167,6 +168,7 @@ export class CreateExportHandler {
       ? await new PeriodEvidenceScope(this.evidence).filesFor(ctx.tenant.tenantId, period.value, periodActivities.value.map((a) => a.id))
       : periodActivities;
     const evidenceRows: Array<{ id: string; fileName: string; title: string; type: string; verificationStatus: string; confidentiality: string }> = [];
+    const packCandidates: PackCandidate[] = [];
     const includeIds = new Set(input.includeEvidenceIds);
     if (ev.ok) {
       for (const e of ev.value) {
@@ -180,8 +182,11 @@ export class CreateExportHandler {
           verificationStatus: e.verificationStatus,
           confidentiality: e.confidentialityLevel,
         });
+        packCandidates.push({ fileName: e.fileName, storageKey: e.storageKey, fileSize: e.fileSize });
       }
     }
+    // The evidence pack carries the files themselves, not only an index of them.
+    const pack = input.exportType === "EVIDENCE_PACK_ZIP" ? await new EvidencePackFileLoader(this.storage).load(packCandidates) : undefined;
 
     // Donor-template rendering (docxtpl): only populated when the period
     // has an APPROVED, locked mapping — every other tenant/period gets
@@ -226,6 +231,7 @@ export class CreateExportHandler {
       checklist: checklistRows,
       evidenceItems: evidenceRows,
       includeSensitive: input.includeSensitive,
+      ...(pack ? { evidenceFiles: pack.files, evidenceNotIncluded: pack.notIncluded } : {}),
       watermark: intent === "DONOR_SUBMISSION" ? undefined : "INTERNAL PREVIEW",
       donorTemplate,
     });

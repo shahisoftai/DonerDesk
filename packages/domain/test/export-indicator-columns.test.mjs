@@ -26,10 +26,10 @@ test("a final report shows 14,000 (life of project) beside 2,800 (August) and th
   assert.deepEqual(cols.map((c) => indicatorExportCell(row, c.key)), ["IND1", "People with safe water", "0", "14000", "2800", "14000", "100%", "people", "VERIFIED"]);
 });
 
-test("roll-ups: a rate stands for itself, a missing value stays empty (never 0), no target gives no percentage", () => {
+test("roll-ups: a rate stands for itself (and shows no % of target), a missing value stays empty (never 0), no target gives no percentage", () => {
   const rate = indicatorExportRow({ reportType: "ANNUAL", indicator: { ...safeWater, type: "PERCENTAGE", target: "80", unit: "%" }, update: { periodAchievement: "76", cumulativeAchievement: "", verificationStatus: "VERIFIED" } });
   assert.equal(rate.lifeOfProjectValue, "76");
-  assert.equal(rate.percentOfTarget, "95%");
+  assert.equal(rate.percentOfTarget, "—");
   const missing = indicatorExportRow({ reportType: "SEMI_ANNUAL", indicator: safeWater });
   assert.equal(missing.periodValue, "");
   assert.equal(missing.lifeOfProjectValue, "");
@@ -42,4 +42,19 @@ test("percent of target handles commas, zero and missing targets", () => {
   assert.equal(percentOfTarget("5", "0"), "");
   assert.equal(percentOfTarget("", "10"), "");
   assert.equal(percentOfTarget("5", undefined), "");
+});
+
+import { isRateIndicator, RATE_PERCENT_OF_TARGET } from "../dist/index.js";
+
+test("a rate shows '—' in % of target (as the report table does), whatever its direction; a count keeps its percentage", () => {
+  const rate = indicatorExportRow({ reportType: "FINAL", indicator: { code: "IMP1", name: "Diarrhoea", baseline: "31", target: "18", unit: "%", type: "PERCENTAGE" }, update: { periodAchievement: "21", cumulativeAchievement: "21", verificationStatus: "VERIFIED" } });
+  assert.equal(rate.percentOfTarget, RATE_PERCENT_OF_TARGET);
+  assert.equal(rate.lifeOfProjectValue, "21");
+  const count = indicatorExportRow({ reportType: "FINAL", indicator: { code: "OP1", name: "Latrines", baseline: "0", target: "600", unit: "latrines", type: "NUMBER" }, update: { periodAchievement: "70", cumulativeAchievement: "585", verificationStatus: "VERIFIED" } });
+  assert.equal(count.percentOfTarget, "98%");
+});
+
+test("a percent unit makes it a rate even when the type says number", () => {
+  assert.equal(isRateIndicator({ type: "NUMBER", unit: "%" }), true);
+  assert.equal(isRateIndicator({ type: "NUMBER", unit: "people" }), false);
 });
