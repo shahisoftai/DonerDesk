@@ -11,7 +11,7 @@ Open **Projects → your project → Activities**.
 1. Click **New activity**.
 2. Fill in:
    - **Activity title** and **Activity date**
-   - **Reporting period** – the report this activity should feed. Once you have a date, DonorDesk states the period instead of asking: *Reporting period: Monthly · Mar 2026 (from the activity date)*, with a **Change** link if you need another. If no period contains the date, the list appears with a note so you can pick one (or create the period first).
+   - **Reporting period** – the report this activity should feed. Once you have a date, DonorDesk states the period instead of asking: *Reporting period: Monthly · Mar 2026 (from the activity date)*, with a **Change** link if you need another. If no period contains the date, nothing is chosen for you: the list appears with a note and you must pick the period the record belongs to (or create the period first). A record is never put into a period just because it is listed first.
    - **Location**
    - **Logframe activity** (optional): the planned activity this record delivers. The logframe then shows what has been delivered against it (records, accepted records and participants), and the output is filled in for you.
    - **Summary** of what happened (you can [dictate it](/support/how-to/dictate-instead-of-typing))
@@ -81,7 +81,7 @@ If yours is **Needs revision**, the reviewer's note is shown next to the text. F
 
 1. On the Activities page click **Download template** and fill it in.
 2. Click **Import activities from Excel** and upload it (XLSX, CSV or TXT).
-3. Each activity is placed in the reporting period that **contains its own date**, so one file can cover several months. If a row's date is in no period, it is skipped with a message, unless you chose a period under **If a row's date is in no reporting period**.
+3. Add a **Logframe Code (Output or Activity)** column (for example `A1.1` for a planned activity, or `1.1` for an output) to link each row; rows without a code are imported but unlinked, and the result says how many. Each activity is placed in the reporting period that **contains its own date**, so one file can cover several months. If a row's date is in no period, it is skipped with a message, unless you chose a period under **If a row's date is in no reporting period**.
 4. You can also paste the rows (or dictate them) into the box instead of uploading a file. Review the text, then create the records. Output and indicator codes are matched to your logframe. Rows whose titles already exist in the project are skipped.
 
 ## Tips

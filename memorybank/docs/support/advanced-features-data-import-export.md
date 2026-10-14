@@ -10,7 +10,7 @@ Every import screen works the same way: upload a file, **or paste or dictate** t
 |---|---|---|
 | **Logframe** | Project → Logframe → **Import logframe from Excel** | XLSX, CSV, TXT (Logframe sheet of the template) |
 | **Indicators** | Logframe → **Import indicators from Excel** | XLSX, CSV, TXT (Indicators sheet). Codes must match logframe items. |
-| **Activities** | Project → Activities → **Import activities from Excel** | XLSX, CSV, TXT. Each row goes to the reporting period containing its date. |
+| **Activities** | Project → Activities → **Import activities from Excel** | XLSX, CSV, TXT. Each row goes to the reporting period containing its date; a **Logframe Code (Output or Activity)** column links it to an output or planned activity. |
 | **Evidence records** | Project → Evidence → import | Evidence template (XLSX/CSV) |
 | **Indicator values** | Reporting period → Update Project → **Import from Google Sheets**, or Data & story inputs (paste CSV) | Google Sheets; CSV |
 | **Donor template** | Project → Templates | Word, PDF, text, Markdown, Excel, CSV |

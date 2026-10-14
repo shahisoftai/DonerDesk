@@ -175,7 +175,7 @@ A sealed copy of the approved report used for donor submission exports.
 A verification that no longer holds because the data or evidence changed afterwards.
 
 **Withdrawn (activity)**
-An activity record left out of reports because it was a duplicate, a mistake or was replaced by another record. It can be restored. See [How to review and accept activities](/support/how-to/review-and-accept-activities).
+An activity record left out of reports because it was a duplicate, a mistake or was replaced by another record. It can be restored. An accepted record can be withdrawn too, unless an approved report used it. Withdrawn records are not counted and are not offered when linking evidence. See [How to review and accept activities](/support/how-to/review-and-accept-activities).
 
 **Top-up pack**
 Extra AI report drafts bought on Team or Growth.

@@ -60,4 +60,4 @@ The reviewer left a reason. Fix the value or attach better evidence and resubmit
 
 ## Reports show different numbers from the grid
 
-Reports use **verified** data. Verify the latest values, then re-check the report ("Inputs changed" banner).
+Reports use **verified** data. Verify the latest values, then use **Rewrite affected sections** in the "Inputs changed" banner. **Re-check statements only** does not change tables or text, so it will not fix a table built before the values were verified.

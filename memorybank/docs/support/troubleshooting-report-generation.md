@@ -35,7 +35,7 @@ Open the **Statements** tab and decide on each: use the evidence value, edit, ke
 
 ## "Finish n remaining checks"
 
-Open **Report checks**. Typical items: verify indicator data, resolve checklist items, re-check sections after inputs changed, confirm confidential files.
+Open **Report checks**. Typical items: verify indicator data, resolve checklist items, rewrite or re-check sections after inputs changed, confirm confidential files.
 
 ## Sections are out of order or missing
 

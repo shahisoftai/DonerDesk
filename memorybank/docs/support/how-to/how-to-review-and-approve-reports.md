@@ -55,7 +55,7 @@ An approved section can still be edited: click **Edit (reopens section)**. Savin
 
 ### After edits
 
-Editing text or changing data can make earlier checks stale. DonorDesk re-checks the affected sections; an **Inputs changed** banner offers to re-check or regenerate. A summary section shows a warning if other sections changed a lot after it was written.
+Editing text or changing data can make earlier checks stale. DonorDesk re-checks the affected sections; an **Inputs changed** banner offers **Re-check statements only** (reassesses the statements, never the text or tables) and **Rewrite affected sections** (asks you to confirm, then rewrites those sections from the current data so tables and figures pick up new values; the old text stays in History). Generating a first draft while no indicator value is verified asks you to confirm. A summary section shows a warning if other sections changed a lot after it was written.
 
 ## Submit for review
 
@@ -78,3 +78,7 @@ In **Setup → Reporting profile → Approval**, "A second person must approve r
 ## After approval
 
 The approved version is locked. Use **Export report** to open the export wizard. See [How to export reports](/support/how-to/export-reports). Every approval, decision and export is recorded in the [audit trail](/support/how-to/use-the-audit-trail).
+
+### Who can approve
+
+When the project requires a second approver, the person who wrote the report does not see an **Approve report** button; a note says it is waiting for another project manager or M&E officer. A blocker titled **A confidentiality check is still open** means a checklist item about sensitive data is unresolved: use **Open the checklist item** and resolve it.

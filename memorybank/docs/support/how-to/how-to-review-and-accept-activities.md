@@ -42,6 +42,10 @@ It goes back to **Submitted**. You do not need to create a new record.
 
 **Reject** closes a record for good and needs a note. Use it for records that were wrong; use **Withdraw** (below) for duplicates and replacements.
 
+## Correct an accepted record
+
+An accepted record is not frozen. If it has a wrong figure, text or logframe link, open it and use **Reopen for correction** (write what must change). It goes back to **Needs revision**; the writer fixes it, including the **Planned activity (logframe)** link, and resubmits, and you accept it again. The same applies to **Withdraw**. Both are refused, naming the report, when a report that is already approved used the record: reopen that report first, or add a correcting record.
+
 ## Withdraw a record that should not count
 
 Use this when a record was entered twice, entered by mistake, or replaced by a better one.

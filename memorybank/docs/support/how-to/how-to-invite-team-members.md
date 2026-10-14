@@ -21,7 +21,7 @@ Below the member table, **Invited, not joined yet (n)** lists everyone you invit
 
 1. Opens the link (**Join your workspace**).
 2. Enters their name and a password (at least 8 characters).
-3. Clicks **Accept invitation** and signs in.
+3. Ticks **I have read and accept the Terms of Service and the Privacy Policy** (recorded in the audit trail) and clicks **Accept invitation**, signing in.
 
 They join with the role you chose. Links expire; if it stops working, invite the person again.
 
