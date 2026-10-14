@@ -4,6 +4,8 @@
  * they are stored as calendar dates.
  */
 
+import { periodForDate } from "@donordesk/domain/contexts/reporting/period-for-date.js";
+
 export interface PeriodLike {
   id: string;
   reportType: string;
@@ -54,11 +56,5 @@ export function recentFirst<T>(items: ReadonlyArray<T>, dateOf: (item: T) => str
 
 /** The id of the period whose dates contain `date` (inclusive); the narrowest one wins when periods overlap. */
 export function periodContainingDate(periods: ReadonlyArray<PeriodLike>, date: string): string | undefined {
-  const day = utc(date)?.getTime();
-  if (day === undefined) return undefined;
-  const inside = periods
-    .map((p) => ({ id: p.id, start: utc(p.startDate)?.getTime(), end: utc(p.endDate)?.getTime() }))
-    .filter((p): p is { id: string; start: number; end: number } => p.start !== undefined && p.end !== undefined && p.start <= day && day <= p.end + 24 * 60 * 60 * 1000 - 1);
-  inside.sort((a, b) => a.end - a.start - (b.end - b.start));
-  return inside[0]?.id;
+  return periodForDate(periods, date);
 }

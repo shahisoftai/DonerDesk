@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createActivityAction } from "@/lib/actions/activities";
 import { uploadEvidenceAction } from "@/lib/actions/evidence";
@@ -17,7 +17,11 @@ import { recordParticipantHints } from "@donordesk/domain/contexts/logframe/part
 import { LogframeItemSelect } from "@/features/logframe/presentation/LogframeItemSelect";
 import { periodContainingDate } from "@/lib/shared/option-labels";
 import { FileDropzone } from "@/components/editor/FileDropzone";
-import { activityEvidenceFormData, defaultFileSettings, defaultIndicatorForActivity, failedUploads, type FileSettings, type FileUploadOutcome } from "@/features/activities/domain/activity-evidence";
+import { createActivityDraftStore, type ActivityDraft } from "@/features/activities/domain/activity-draft";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
+import { formatDateTime } from "@/lib/shared/dates";
+import { createFileSettingsMemory } from "@/features/activities/domain/file-settings-memory";
+import { activityEvidenceFormData, applyBatchSettings, defaultFileSettings, defaultIndicatorForActivity, failedUploads, type FileSettings, type FileUploadOutcome } from "@/features/activities/domain/activity-evidence";
 import { EVIDENCE_TYPE_LABEL, EVIDENCE_TYPE_OPTIONS, CONFIDENTIALITY_LABEL, CONFIDENTIALITY_OPTIONS } from "@/lib/labels";
 import type { OutlineSource } from "@/features/logframe/domain/logframe-outline";
 
@@ -50,6 +54,7 @@ export function NewActivityForm({
 
   const [reportingPeriodId, setReportingPeriodId] = useState(reportingPeriods[0]?.id ?? "");
   const [periodChosenByUser, setPeriodChosenByUser] = useState(false);
+  const [changingPeriod, setChangingPeriod] = useState(false);
   const [activityTitle, setActivityTitle] = useState("");
   const [activityDate, setActivityDate] = useState("");
   // Optional last day, for a record that covers a span (a whole month of outreach clinics) instead of one day.
@@ -77,15 +82,67 @@ export function NewActivityForm({
   const [uploading, setUploading] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
+  // What this person chose last time for how sensitive their files are (browser-local, optional).
+  const [memory] = useState(() => createFileSettingsMemory(typeof window === "undefined" ? null : window.localStorage));
+  const [remembered, setRemembered] = useState<ReturnType<typeof memory.load>>({});
+  useEffect(() => setRemembered(memory.load()), [memory]);
+
+  // Typed text survives a reload or a lost connection; it is offered back, never applied silently.
+  const drafts = useMemo(() => createActivityDraftStore(typeof window === "undefined" ? null : window.localStorage, projectId), [projectId]);
+  const [pendingDraft, setPendingDraft] = useState<{ value: ActivityDraft; savedAt: number } | null | undefined>(undefined);
+  useEffect(() => setPendingDraft(drafts.load()), [drafts]);
+  const currentDraft: ActivityDraft = {
+    activityTitle, activityDate, activityEndDate, location, participantsTotal, participantsMale, participantsFemale,
+    participantsChildren, participantsDisability, logframeActivityId, summary, achievements, challenges, lessonsLearned, nextSteps,
+  };
+  const draftKey = JSON.stringify(currentDraft);
+  useEffect(() => {
+    // pendingDraft === null: nothing to offer or already decided, so what is typed now is the draft.
+    if (pendingDraft !== null || createdActivityId) return;
+    drafts.save(JSON.parse(draftKey) as ActivityDraft);
+  }, [draftKey, pendingDraft, createdActivityId, drafts]);
+  useEffect(() => {
+    if (createdActivityId) drafts.clear();
+  }, [createdActivityId, drafts]);
+
+  function resumeDraft(d: ActivityDraft) {
+    setActivityTitle(d.activityTitle);
+    setActivityDate(d.activityDate);
+    setActivityEndDate(d.activityEndDate);
+    setLocation(d.location);
+    setParticipantsTotal(d.participantsTotal);
+    setParticipantsMale(d.participantsMale);
+    setParticipantsFemale(d.participantsFemale);
+    setParticipantsChildren(d.participantsChildren);
+    setParticipantsDisability(d.participantsDisability);
+    if (logframeItems.some((i) => i.id === d.logframeActivityId)) setLogframeActivityId(d.logframeActivityId);
+    setSummary(d.summary);
+    setAchievements(d.achievements);
+    setChallenges(d.challenges);
+    setLessonsLearned(d.lessonsLearned);
+    setNextSteps(d.nextSteps);
+    const derived = d.activityDate ? periodContainingDate(reportingPeriods, d.activityDate) : undefined;
+    if (derived) setReportingPeriodId(derived);
+    setPendingDraft(null);
+  }
+
   const fields = actionState.fields ?? localErrors;
+
+  // Derive, don't ask: once the date is known the period is stated, not asked, unless the user opens it.
+  const dateInsidePeriodId = activityDate ? periodContainingDate(reportingPeriods, activityDate) : undefined;
+  const periodIsDerived = Boolean(dateInsidePeriodId) && dateInsidePeriodId === reportingPeriodId && !changingPeriod && !fields.reportingPeriodId;
 
   const activityIndicator = defaultIndicatorForActivity(logframeActivityId, indicators);
   /** What was chosen for a file; a file nobody touched gets the suggestion for its name and the activity's own indicator. */
   function settingsFor(file: File): FileSettings {
-    return fileSettings[file.name] ?? defaultFileSettings(file, activityIndicator);
+    return fileSettings[file.name] ?? defaultFileSettings(file, activityIndicator, remembered);
   }
   function setSettings(file: File, patch: Partial<FileSettings>) {
     setFileSettings((prev) => ({ ...prev, [file.name]: { ...settingsFor(file), ...patch } }));
+    if (patch.confidentialityLevel) {
+      memory.save({ confidentialityLevel: patch.confidentialityLevel });
+      setRemembered({ confidentialityLevel: patch.confidentialityLevel });
+    }
   }
 
   /** Starts from an earlier record: what repeats (title, place, node) is copied; counts and narrative stay blank to be entered. */
@@ -197,6 +254,16 @@ export function NewActivityForm({
 
   return (
     <form onSubmit={submit} className="card mt-6 grid max-w-3xl gap-4" noValidate>
+      {pendingDraft && (
+        <InlineAlert tone="info" title={`You have an unfinished activity from ${formatDateTime(new Date(pendingDraft.savedAt))}`}>
+          <p>{pendingDraft.value.activityTitle ? `“${pendingDraft.value.activityTitle}”` : "Untitled activity"}. Continue where you left off?</p>
+          <div className="mt-2 flex gap-2">
+            <Button type="button" size="sm" onClick={() => resumeDraft(pendingDraft.value)}>Restore draft</Button>
+            <Button type="button" size="sm" variant="secondary" onClick={() => { drafts.clear(); setPendingDraft(null); }}>Start fresh</Button>
+          </div>
+        </InlineAlert>
+      )}
+
       {earlierRecords.length > 0 && (
         <Field label="Start from an earlier record (optional)" htmlFor="start-from">
           <Select id="start-from" defaultValue="" onChange={(e) => startFrom(e.target.value)}>
@@ -207,25 +274,41 @@ export function NewActivityForm({
       )}
       <FormSummary errors={fields} count={errorCount} />
 
-      <Field label="Reporting period" htmlFor="reportingPeriodId" error={fields.reportingPeriodId?.[0]}>
-        <Select
-          id="reportingPeriodId"
-          name="reportingPeriodId"
-          value={reportingPeriodId}
-          onChange={(e) => {
-            setPeriodChosenByUser(true);
-            setReportingPeriodId(e.target.value);
-          }}
-          invalid={Boolean(fields.reportingPeriodId)}
-          required
+      {periodIsDerived ? (
+        <p className="flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-300" data-testid="derived-period">
+          <span>
+            Reporting period: <strong className="font-medium">{reportingPeriods.find((p) => p.id === reportingPeriodId)?.label}</strong> (from the activity date)
+          </span>
+          <button type="button" className="text-brand-600 underline dark:text-brand-300" onClick={() => setChangingPeriod(true)}>
+            Change
+          </button>
+        </p>
+      ) : (
+        <Field
+          label="Reporting period"
+          htmlFor="reportingPeriodId"
+          error={fields.reportingPeriodId?.[0]}
+          hint={activityDate && !dateInsidePeriodId ? "No reporting period contains this date. Pick one, or create the period first." : undefined}
         >
-          {reportingPeriods.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-        </Select>
-      </Field>
+          <Select
+            id="reportingPeriodId"
+            name="reportingPeriodId"
+            value={reportingPeriodId}
+            onChange={(e) => {
+              setPeriodChosenByUser(true);
+              setReportingPeriodId(e.target.value);
+            }}
+            invalid={Boolean(fields.reportingPeriodId)}
+            required
+          >
+            {reportingPeriods.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
 
       <Field label="Activity title" htmlFor="activityTitle" error={fields.activityTitle?.[0]}>
         <Input
@@ -477,6 +560,18 @@ export function NewActivityForm({
           onFiles={(added) => setFiles((prev) => [...prev, ...added.filter((f) => f.size > 0 && !prev.some((p) => p.name === f.name))])}
         />
         {files.length > 0 && (
+          <>
+          {files.length > 1 && !createdActivityId && (
+            <p className="mt-3 text-xs">
+              <button
+                type="button"
+                className="text-brand-600 underline dark:text-brand-300"
+                onClick={() => setFileSettings(applyBatchSettings(files, settingsFor, files[0]!))}
+              >
+                Use the first file&apos;s confidentiality and indicator for all {files.length} files
+              </button>
+            </p>
+          )}
           <ul className="mt-3 space-y-1 text-sm" aria-label="Files to upload">
             {files.map((f) => {
               const failure = uploadFailures.find((o) => o.name === f.name);
@@ -512,6 +607,7 @@ export function NewActivityForm({
               );
             })}
           </ul>
+          </>
         )}
       </fieldset>
 

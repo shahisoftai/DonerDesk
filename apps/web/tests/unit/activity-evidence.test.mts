@@ -52,3 +52,31 @@ test("a file's type is suggested from its name (demo 5: everything was 'Other')"
   assert.equal(fd.get("indicatorId"), "ind-1");
   assert.equal(activityEvidenceFormData(new File(["x"], "a.pdf"), { projectId: "p", activityId: "a", reportingPeriodId: "r" }).get("indicatorId"), null);
 });
+
+import { applyBatchSettings, defaultFileSettings } from "../../src/features/activities/domain/activity-evidence.ts";
+import { createFileSettingsMemory } from "../../src/features/activities/domain/file-settings-memory.ts";
+
+test("batch settings copy confidentiality and indicator, never the evidence type", () => {
+  const photo = { name: "p.png", type: "image/png" };
+  const sheet = { name: "attendance.csv", type: "text/csv" };
+  const own = { [photo.name]: { ...defaultFileSettings(photo, "i1"), confidentialityLevel: "SENSITIVE" as const } };
+  const settingsFor = (f: { name: string; type: string }) => own[f.name] ?? defaultFileSettings(f.name === sheet.name ? sheet : photo, "");
+  const out = applyBatchSettings([photo, sheet], settingsFor, photo);
+  assert.equal(out["attendance.csv"]!.confidentialityLevel, "SENSITIVE");
+  assert.equal(out["attendance.csv"]!.indicatorId, "i1");
+  assert.equal(out["attendance.csv"]!.evidenceType, "ATTENDANCE_SHEET");
+  assert.equal(out["p.png"]!.evidenceType, "PHOTO");
+});
+
+test("remembered confidentiality becomes the default; unreadable or missing storage remembers nothing", () => {
+  const data = new Map<string, string>();
+  const store = { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => void data.set(k, v) };
+  const memory = createFileSettingsMemory(store);
+  assert.deepEqual(memory.load(), {});
+  memory.save({ confidentialityLevel: "HIGHLY_SENSITIVE" });
+  assert.equal(defaultFileSettings({ name: "a.pdf", type: "" }, "", memory.load()).confidentialityLevel, "HIGHLY_SENSITIVE");
+  data.set("donordesk.fileSettings.v1", JSON.stringify({ confidentialityLevel: "bogus" }));
+  assert.deepEqual(memory.load(), {});
+  assert.deepEqual(createFileSettingsMemory(null).load(), {});
+  assert.doesNotThrow(() => createFileSettingsMemory({ getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); } }).save({}));
+});

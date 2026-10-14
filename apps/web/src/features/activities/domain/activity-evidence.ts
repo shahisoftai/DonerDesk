@@ -41,8 +41,25 @@ export interface FileSettings {
   indicatorId: string;
 }
 
-export function defaultFileSettings(file: Pick<File, "name" | "type">, defaultIndicatorId = ""): FileSettings {
-  return { evidenceType: evidenceTypeForFile(file), confidentialityLevel: "INTERNAL", indicatorId: defaultIndicatorId };
+export function defaultFileSettings(
+  file: Pick<File, "name" | "type">,
+  defaultIndicatorId = "",
+  remembered: Partial<Pick<FileSettings, "confidentialityLevel">> = {},
+): FileSettings {
+  return { evidenceType: evidenceTypeForFile(file), confidentialityLevel: remembered.confidentialityLevel ?? "INTERNAL", indicatorId: defaultIndicatorId };
+}
+
+/**
+ * Gives every file the same confidentiality and indicator as `source`. The evidence type is left alone: it follows
+ * each file's own name (a photo next to an attendance sheet), unlike the other two which usually hold for a batch.
+ */
+export function applyBatchSettings<F extends Pick<File, "name">>(
+  files: ReadonlyArray<F>,
+  settingsFor: (file: F) => FileSettings,
+  source: F,
+): Record<string, FileSettings> {
+  const { confidentialityLevel, indicatorId } = settingsFor(source);
+  return Object.fromEntries(files.map((f) => [f.name, { ...settingsFor(f), confidentialityLevel, indicatorId }]));
 }
 
 /**

@@ -1,8 +1,9 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ActivityUpdate, parseActivityText, resolveActivityNodeLink } from "@donordesk/domain";
+import { DomainError, ActivityUpdate, parseActivityText, resolveActivityNodeLink, periodForDate } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { ILogframeRepository, IIndicatorRepository } from "../../ports/logframe.js";
+import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { ImportActivitiesTextInput } from "@donordesk/contracts";
 
@@ -25,7 +26,8 @@ export interface ImportActivitiesResult {
  * Parses activity content (from an upload or template) and persists each row
  * as a submitted ActivityUpdate. Output and indicator links are resolved from
  * the project's logframe item codes and indicator codes; rows whose title
- * already exists in the project are skipped with a warning.
+ * already exists in the project are skipped with a warning. Each row is placed in the reporting period that
+ * contains its date; the period named in the input is only the fallback for a date no period contains.
  */
 export class ImportActivitiesHandler {
   constructor(
@@ -33,6 +35,7 @@ export class ImportActivitiesHandler {
     private readonly activities: IActivityUpdateRepository,
     private readonly logframe: ILogframeRepository,
     private readonly indicators: IIndicatorRepository,
+    private readonly periods: IReportingPeriodRepository,
     private readonly audit: IAuditLogger,
   ) {}
 
@@ -74,6 +77,10 @@ export class ImportActivitiesHandler {
       indicatorByCode.set(ind.code.trim().toLowerCase(), ind.id);
     }
 
+    const periodsResult = await this.periods.findByProject(input.projectId, ctx.tenant.tenantId);
+    if (!periodsResult.ok) return periodsResult;
+    const projectPeriods = periodsResult.value.map((p) => ({ id: p.id, startDate: p.duration.start, endDate: p.duration.end }));
+
     const existingResult = await this.activities.findByProject(input.projectId, ctx.tenant.tenantId);
     if (!existingResult.ok) return existingResult;
     const existingTitles = new Set(existingResult.value.map((a) => a.activityTitle.trim().toLowerCase()));
@@ -86,6 +93,13 @@ export class ImportActivitiesHandler {
       const titleKey = row.activityTitle.trim().toLowerCase();
       if (existingTitles.has(titleKey)) {
         skipped++;
+        continue;
+      }
+
+      const reportingPeriodId = periodForDate(projectPeriods, row.activityDate) ?? input.reportingPeriodId;
+      if (!reportingPeriodId) {
+        skipped++;
+        importWarnings.push(`Activity "${row.activityTitle}": no reporting period contains ${row.activityDate.slice(0, 10)}; skipped. Create that period or choose a fallback period.`);
         continue;
       }
 
@@ -110,7 +124,7 @@ export class ImportActivitiesHandler {
         id,
         tenantId: ctx.tenant.tenantId.toString(),
         projectId: input.projectId,
-        reportingPeriodId: input.reportingPeriodId,
+        reportingPeriodId,
         activityTitle: row.activityTitle,
         activityDate: new Date(row.activityDate),
         location: row.location,

@@ -94,7 +94,8 @@ export type AttachEvidenceInput = z.infer<typeof AttachEvidenceSchema>;
 /** Bulk-import activity content as text (Excel/CSV/plain) and auto-create records. */
 export const ImportActivitiesTextSchema = z.object({
   projectId: z.string().min(1),
-  reportingPeriodId: z.string().min(1),
+  /** Used only for rows whose own date falls in no reporting period; each row is otherwise placed by its date. */
+  reportingPeriodId: z.string().min(1).optional(),
   text: z.string().min(1).max(2_000_000),
   sourceName: z.string().max(300).optional(),
 });

@@ -1275,7 +1275,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     searchEvidence: new SearchEvidenceHandler(evidence),
     getEvidence: new GetEvidenceHandler(evidence),
     createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks),
-    importActivities: new ImportActivitiesHandler(ids, activities, logframe, indicators, audits),
+    importActivities: new ImportActivitiesHandler(ids, activities, logframe, indicators, periods, audits),
     polishActivity: new PolishActivityHandler(activities, activityPolisher),
     reviewActivity: new ReviewActivityHandler(activities, audits),
     resubmitActivity: new ResubmitActivityHandler(activities, audits),

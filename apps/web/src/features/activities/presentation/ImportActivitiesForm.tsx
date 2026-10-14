@@ -6,6 +6,7 @@ import { parseFileAction } from "@/lib/actions/parse";
 import { importActivitiesTextAction } from "@/lib/actions/activities";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
+import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import type { ImportActivitiesResponse } from "@/lib/server/schemas";
@@ -25,7 +26,8 @@ export function ImportActivitiesForm({
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [reportingPeriodId, setReportingPeriodId] = useState(reportingPeriods[0]?.id ?? "");
+  // Each row goes to the period containing its own date; this only catches dates no period contains ("" = skip them).
+  const [fallbackPeriodId, setFallbackPeriodId] = useState("");
   const [extractedText, setExtractedText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -51,12 +53,12 @@ export function ImportActivitiesForm({
   }
 
   async function createActivities() {
-    if (!extractedText || !reportingPeriodId) return;
+    if (!extractedText) return;
     setImporting(true);
     setError(null);
     const r = await importActivitiesTextAction({
       projectId,
-      reportingPeriodId,
+      ...(fallbackPeriodId ? { reportingPeriodId: fallbackPeriodId } : {}),
       text: extractedText,
       sourceName: fileName ?? undefined,
     });
@@ -83,20 +85,16 @@ export function ImportActivitiesForm({
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-4">
             <Field
-              label="Reporting period"
+              label="If a row's date is in no reporting period"
               htmlFor="reportingPeriod"
-              description="All imported activities are attached to this period."
+              description="Each activity is placed in the reporting period that contains its date, so one file can cover several months."
             >
-              <select
-                id="reportingPeriod"
-                value={reportingPeriodId}
-                onChange={(e) => setReportingPeriodId(e.target.value)}
-                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm dark:border-white/15 dark:bg-white/5"
-              >
+              <Select id="reportingPeriod" value={fallbackPeriodId} onChange={(e) => setFallbackPeriodId(e.target.value)}>
+                <option value="">Skip that row and tell me</option>
                 {reportingPeriods.map((p) => (
-                  <option key={p.id} value={p.id}>{p.label}</option>
+                  <option key={p.id} value={p.id}>Use {p.label}</option>
                 ))}
-              </select>
+              </Select>
             </Field>
             <Field
               label="Activities file"

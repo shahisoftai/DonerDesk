@@ -33,6 +33,7 @@ export * from "./section-regeneration.js";
 export * from "./statement-span.js";
 export * from "./report-scope.js";
 export * from "./period-comparability.js";
+export * from "./period-for-date.js";
 export * from "./life-of-project.js";
 export * from "./report-type-blueprints.js";
 export * from "./report-type-blueprint-i18n.js";

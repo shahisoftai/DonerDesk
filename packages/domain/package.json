@@ -62,6 +62,10 @@
       "types": "./dist/contexts/logframe/indicator-change-rules.d.ts",
       "import": "./dist/contexts/logframe/indicator-change-rules.js"
     },
+    "./contexts/reporting/period-for-date.js": {
+      "types": "./dist/contexts/reporting/period-for-date.d.ts",
+      "import": "./dist/contexts/reporting/period-for-date.js"
+    },
     "./contexts/logframe/participants-consistency.js": {
       "types": "./dist/contexts/logframe/participants-consistency.d.ts",
       "import": "./dist/contexts/logframe/participants-consistency.js"
