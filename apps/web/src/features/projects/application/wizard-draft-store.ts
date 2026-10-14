@@ -51,9 +51,9 @@ export function parseWizardDraft(raw: unknown, maxStepIndex: number): Omit<Wizar
   };
 }
 
-/** True when the user has typed anything beyond the defaults. */
-export function hasWizardInput(data: ProjectWizardData): boolean {
-  const empty = emptyWizardData();
+/** True when the user has typed anything beyond the starting values (the empty form, or the defaults the form was given). */
+export function hasWizardInput(data: ProjectWizardData, baseline: ProjectWizardData = emptyWizardData()): boolean {
+  const empty = baseline;
   return (["step", "geography", "reporting"] as const).some((section) =>
     Object.entries(data[section]).some(([key, value]) => (value ?? "") !== ((empty[section] as Record<string, string | undefined>)[key] ?? "")),
   );
@@ -61,7 +61,7 @@ export function hasWizardInput(data: ProjectWizardData): boolean {
 
 export function createWizardDraftStore(
   storage: KeyValueStorage | null,
-  options: { maxStepIndex: number; now?: () => number; key?: string; ttlMs?: number },
+  options: { maxStepIndex: number; now?: () => number; key?: string; ttlMs?: number; baseline?: ProjectWizardData },
 ): WizardDraftStore {
   const key = options.key ?? WIZARD_DRAFT_KEY;
   const ttl = options.ttlMs ?? WIZARD_DRAFT_TTL_MS;
@@ -82,7 +82,7 @@ export function createWizardDraftStore(
         const raw = JSON.parse(text) as { savedAt?: unknown };
         const savedAt = typeof raw.savedAt === "number" ? raw.savedAt : 0;
         const parsed = parseWizardDraft(raw, options.maxStepIndex);
-        if (!parsed || now() - savedAt > ttl || !hasWizardInput(parsed.data)) {
+        if (!parsed || now() - savedAt > ttl || !hasWizardInput(parsed.data, options.baseline)) {
           storage.removeItem(key);
           return null;
         }

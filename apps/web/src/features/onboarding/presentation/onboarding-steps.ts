@@ -27,11 +27,18 @@ const STEPS: Array<{
   optional: boolean;
 }> = [
   {
+    key: "legal-consent",
+    label: "Accept Terms of Service",
+    description: "Review and accept the DonorDesk Terms of Service and Privacy Policy.",
+    href: "/onboarding#legal-consent",
+    optional: false,
+  },
+  {
     key: "storage",
     label: "Connect Google Drive",
-    description: "Store evidence in your own Google Drive.",
+    description: "Recommended: keep evidence in your own Google Drive. You can do this later.",
     href: "/onboarding/storage",
-    optional: false,
+    optional: true,
   },
   {
     key: "organization",
@@ -53,13 +60,6 @@ const STEPS: Array<{
     description: "Add teammates with the right roles.",
     href: "/onboarding/team",
     optional: true,
-  },
-  {
-    key: "legal-consent",
-    label: "Accept Terms of Service",
-    description: "Review and accept the DonorDesk Terms of Service and Privacy Policy.",
-    href: "/onboarding#legal-consent",
-    optional: false,
   },
 ] as const;
 
@@ -104,6 +104,11 @@ export function deriveOnboardingSteps(snapshot: OnboardingSnapshot): OnboardingS
       summary: summary[step.key as StepKey] ?? "",
     };
   });
+}
+
+/** The only thing that stops someone starting is the legal acceptance; everything else can wait. */
+export function canStartWorking(steps: OnboardingStep[]): boolean {
+  return steps.find((s) => s.key === "legal-consent")?.status === "complete";
 }
 
 export function allComplete(steps: OnboardingStep[]): boolean {

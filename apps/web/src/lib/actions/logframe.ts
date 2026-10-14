@@ -1,6 +1,7 @@
 "use server";
 
-import { CreateLogframeItemSchema, ImportLogframeTextSchema, MoveLogframeItemSchema, UpdateIndicatorSemanticsSchema } from "@donordesk/contracts";
+import { z } from "zod";
+import { CopyProjectSetupSchema, CreateLogframeItemSchema, ImportLogframeTextSchema, MoveLogframeItemSchema, UpdateIndicatorSemanticsSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -74,6 +75,22 @@ export async function updateIndicatorSemanticsAction(input: unknown): Promise<Up
   }
   return gatewayRequest(`/v1/indicators/${parsed.data.indicatorId}/semantics`, IdResponseSchema, context.token, {
     method: "PUT",
+    body: parsed.data,
+  });
+}
+
+const CopyProjectSetupResponseSchema = z.object({ items: z.number(), indicators: z.number() });
+export type CopyProjectSetupResult = Result<z.infer<typeof CopyProjectSetupResponseSchema>, AppError>;
+
+/** Starts an empty project's logframe and indicators from another project of the workspace. */
+export async function copyProjectSetupAction(targetProjectId: string, input: unknown): Promise<CopyProjectSetupResult> {
+  const context = await requireSession();
+  const parsed = CopyProjectSetupSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: { kind: "validation", message: "Choose a project to copy from.", fields: flattenZodFields(parsed.error) } };
+  }
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(targetProjectId)}/copy-setup`, CopyProjectSetupResponseSchema, context.token, {
+    method: "POST",
     body: parsed.data,
   });
 }

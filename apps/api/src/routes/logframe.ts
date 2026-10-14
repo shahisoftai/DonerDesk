@@ -3,6 +3,7 @@ import {
   CreateLogframeItemSchema,
   MoveLogframeItemSchema,
   ImportLogframeTextSchema,
+  CopyProjectSetupSchema,
   ImportIndicatorsTextSchema,
   CreateIndicatorSchema,
   UpdateIndicatorSemanticsSchema,
@@ -47,6 +48,15 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.moveLogframeItem.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  app.post("/v1/projects/:projectId/copy-setup", async (req) => {
+    const targetProjectId = (req.params as { projectId: string }).projectId;
+    const body = CopyProjectSetupSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.copyProjectSetup.handle(ctx, { targetProjectId, sourceProjectId: body.sourceProjectId });
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.post("/v1/logframe/import", async (req) => {

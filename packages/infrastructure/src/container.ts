@@ -56,6 +56,7 @@ import {
   CreateLogframeItemHandler,
   MoveLogframeItemHandler,
   ImportLogframeHandler,
+  CopyProjectSetupHandler,
   ImportIndicatorsHandler,
   CreateIndicatorHandler,
   UpdateIndicatorSemanticsHandler,
@@ -504,6 +505,7 @@ export interface Container {
     createLogframeItem: CreateLogframeItemHandler;
     moveLogframeItem: MoveLogframeItemHandler;
     importLogframe: ImportLogframeHandler;
+    copyProjectSetup: CopyProjectSetupHandler;
     importIndicators: ImportIndicatorsHandler;
     createIndicator: CreateIndicatorHandler;
     updateIndicatorSemantics: UpdateIndicatorSemanticsHandler;
@@ -1244,6 +1246,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createLogframeItem: new CreateLogframeItemHandler(ids, logframe, audits),
     moveLogframeItem: new MoveLogframeItemHandler(logframe, audits),
     importLogframe: new ImportLogframeHandler(ids, logframe, audits),
+    copyProjectSetup: new CopyProjectSetupHandler(projects, logframe, indicators, ids, audits),
     importIndicators: new ImportIndicatorsHandler(ids, logframe, indicators, audits),
     createIndicator: new CreateIndicatorHandler(ids, indicators, audits),
     updateIndicatorSemantics: new UpdateIndicatorSemanticsHandler(indicators, audits),

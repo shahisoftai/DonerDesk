@@ -29,6 +29,12 @@ export const ImportLogframeTextSchema = z.object({
 });
 export type ImportLogframeTextInput = z.infer<typeof ImportLogframeTextSchema>;
 
+/** Start a project's logframe and indicators from another project of the same workspace. */
+export const CopyProjectSetupSchema = z.object({
+  sourceProjectId: z.string().min(1),
+});
+export type CopyProjectSetupInput = z.infer<typeof CopyProjectSetupSchema>;
+
 /** Import indicator content as text (Excel/CSV/plain) and auto-create records. */
 export const ImportIndicatorsTextSchema = z.object({
   projectId: z.string().min(1),

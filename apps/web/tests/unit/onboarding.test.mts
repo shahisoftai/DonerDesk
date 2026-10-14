@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deriveOnboardingSteps, allComplete } from "../../src/features/onboarding/presentation/onboarding-steps.ts";
+import { deriveOnboardingSteps, allComplete, canStartWorking } from "../../src/features/onboarding/presentation/onboarding-steps.ts";
 import type { OnboardingSnapshot } from "../../src/features/onboarding/application/onboarding-status.ts";
 
 const empty: OnboardingSnapshot = {
@@ -28,14 +28,20 @@ test("onboarding has no project-specific steps (Feature 18 scope)", () => {
   assert.ok(keys.includes("legal-consent"));
 });
 
-test("empty snapshot marks storage as current and later required steps pending", () => {
+test("only the terms are required: they come first and are the current step; the rest are optional", () => {
   const steps = deriveOnboardingSteps(empty);
-  // Connect Google Drive is the first required step, so it is "current".
-  const storage = steps.find((s) => s.key === "storage");
-  assert.equal(storage?.status, "current");
-  const consent = steps.find((s) => s.key === "legal-consent");
-  assert.equal(consent?.status, "pending");
+  assert.equal(steps[0]?.key, "legal-consent");
+  assert.equal(steps[0]?.status, "current");
+  assert.deepEqual(steps.filter((s) => !s.optional).map((s) => s.key), ["legal-consent"]);
+  assert.equal(steps.find((s) => s.key === "storage")?.status, "pending");
   assert.equal(allComplete(steps), false);
+  assert.equal(canStartWorking(steps), false);
+});
+
+test("accepting the terms is enough to start working, even with nothing else done", () => {
+  const steps = deriveOnboardingSteps({ ...empty, legalConsent: { accepted: true, termsVersion: "v", privacyVersion: "v" } });
+  assert.equal(canStartWorking(steps), true);
+  assert.equal(allComplete(steps), true);
 });
 
 test("completed snapshot marks every step complete", () => {

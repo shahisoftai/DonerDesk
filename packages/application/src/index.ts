@@ -110,6 +110,7 @@ export * from "./use-cases/templates/lock-template-mapping.js";
 export * from "./use-cases/logframe/create-logframe-item.js";
 export * from "./use-cases/logframe/move-logframe-item.js";
 export * from "./use-cases/logframe/import-logframe.js";
+export * from "./use-cases/logframe/copy-project-setup.js";
 export * from "./use-cases/logframe/import-indicators.js";
 export * from "./use-cases/logframe/create-indicator.js";
 export * from "./use-cases/logframe/create-indicator-update.js";

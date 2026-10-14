@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { LogframeResponseSchema, OrganizationSchema, ArchivedIndicatorsResponseSchema } from "@/lib/server/schemas";
+import { LogframeResponseSchema, OrganizationSchema, ArchivedIndicatorsResponseSchema, ProjectsResponseSchema } from "@/lib/server/schemas";
+import { CopySetupPanel } from "@/features/logframe/presentation/CopySetupPanel";
 import { ArchivedIndicatorsPanel } from "@/features/logframe/presentation/ArchivedIndicatorsPanel";
 import { InlineError } from "@/components/feedback/PageState";
 import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
@@ -42,6 +43,13 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
     ? await gatewayRequest(`/v1/projects/${resolvedParams.id}/indicators/archived`, ArchivedIndicatorsResponseSchema, ctx.token)
     : null;
   const archived = archivedResult?.ok ? archivedResult.value.items : [];
+  // An empty logframe can start from another project's; the list is only needed then.
+  const copyCandidates =
+    data.items.length === 0 && canConfirm
+      ? await gatewayRequest("/v1/projects", ProjectsResponseSchema, ctx.token).then((r) =>
+          r.ok ? r.value.items.filter((p) => p.id !== resolvedParams.id && !p.isDemo).map((p) => ({ id: p.id, title: p.title })) : [],
+        )
+      : [];
   const canReorder = isLogframeReorderEnabled() && ctx.capabilities.has("logframe.edit");
 
   return (
@@ -61,12 +69,15 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
           Goal → Outcome → Output → Activity.{canReorder ? " Drag the handle to reorder items, or use “Move to” to change an item’s parent." : ""}
         </p>
         {data.items.length === 0 ? (
+          <>
           <div className="card mt-3 text-sm text-slate-600 dark:text-slate-300">
             No logframe items yet.{" "}
             <Link className="font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${resolvedParams.id}/logframe/new`}>
               Add your first item
             </Link>.
           </div>
+            <CopySetupPanel projectId={resolvedParams.id} candidates={copyCandidates} />
+          </>
         ) : (
           <LogframeTreeEditor projectId={resolvedParams.id} items={data.items} indicatorCounts={indicatorCounts} editable={canReorder} />
         )}

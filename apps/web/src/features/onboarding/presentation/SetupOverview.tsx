@@ -18,8 +18,11 @@ export function SetupOverview({ snapshot }: { snapshot: OnboardingSnapshot }) {
       {complete && (
         <div className="mt-6">
           <InlineAlert tone="success" title="Setup complete">
-            Your workspace is ready. Project-specific setup (logframe, templates, indicators, evidence) is
-            handled per project from each project&apos;s setup checklist.
+            You can start now. The optional steps below can be done any time from Settings, and project-specific
+            setup (logframe, templates, indicators, evidence) is handled per project.
+            <Link className="btn-primary mt-3 inline-flex" href="/projects/new">
+              Create your first project
+            </Link>
           </InlineAlert>
         </div>
       )}
@@ -31,7 +34,12 @@ export function SetupOverview({ snapshot }: { snapshot: OnboardingSnapshot }) {
               <div className="flex items-start gap-3">
                 <StepIndicator status={step.status} label={step.label} />
                 <div>
-                  <div className="font-medium">{step.label}</div>
+                  <div className="font-medium">
+                    {step.label}
+                    {step.optional && step.status !== "complete" && (
+                      <span className="ml-2 rounded-full border border-slate-300 px-2 py-0.5 text-xs font-normal text-slate-500 dark:border-white/15 dark:text-slate-400">Optional</span>
+                    )}
+                  </div>
                   <div className="text-sm text-slate-500 dark:text-slate-400">{step.description}</div>
                   <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{step.summary}</div>
                 </div>
