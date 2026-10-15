@@ -132,3 +132,9 @@ test("charts: a gauge of one indicator against its target", () => {
   assert.ok(r.ok);
   assert.equal(r.option.series[0].data[0].value, 25);
 });
+
+test("charts: a target line far above the data stretches the axis so it stays visible", () => {
+  const r = buildDataChart(sheet, spec({ measure: "CUMULATIVE", type: "LINE", showTarget: true }));
+  assert.ok(r.ok);
+  assert.ok(r.option.yAxis.max >= 100);
+});

@@ -122,7 +122,14 @@ const unitOf = (i: DataSheetIndicator): string => (i.unit ?? "").trim();
 
 function draw(spec: DataChartSpec, data: Omit<ResolvedChartData, "type" | "dataBinding" | "title">, title: string): DataChartResult {
   const resolved: ResolvedChartData = { ...data, type: spec.type, dataBinding: "INDICATOR_PROGRESS" /* unused: optionForType does not coerce by binding */, title };
-  return { ok: true, option: optionForType(resolved, spec.type), title: spec.title?.trim() || title, notes: [] };
+  const option = optionForType(resolved, spec.type);
+  // A reference line (target, 100%) outside the data range would sit off the chart: stretch the axis to include it.
+  const yAxis = option.yAxis as Record<string, unknown> | undefined;
+  if (data.referenceLine && yAxis) {
+    const peak = Math.max(0, ...data.series.flatMap((x) => x.data.map((d) => (typeof d === "number" ? d : 0))));
+    yAxis.max = Math.max(peak, data.referenceLine.value) * 1.05;
+  }
+  return { ok: true, option, title: spec.title?.trim() || title, notes: [] };
 }
 
 /** The value of one cell under a measure, as a number (null when not recorded or not meaningful). */
