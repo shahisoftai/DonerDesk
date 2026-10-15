@@ -121,3 +121,14 @@ test("rebuilding a section's table charts after a text edit leaves Data Center c
   const list = (await t.handler.list(ctx, "s1")).value;
   assert.deepEqual(list.map((c) => c.caption), ["mine"]);
 });
+
+test("chosen colours are stored with the chart's data (so the report and exports use them) and come back on the saved settings", async () => {
+  const t = setup();
+  await t.handler.add(ctx, "s1", { spec: { ...spec, colors: ["#aa0000"] }, caption: "coloured" });
+  assert.deepEqual(t.stored()[0].payload.colors, ["#aa0000"]);
+  assert.deepEqual((await t.handler.list(ctx, "s1")).value[0].spec.colors, ["#aa0000"]);
+  await t.handler.update(ctx, "s1", "chart-1", { spec: { ...spec, colors: ["#0000bb"] } });
+  assert.deepEqual(t.stored()[0].payload.colors, ["#0000bb"]);
+  await t.handler.update(ctx, "s1", "chart-1", { spec });
+  assert.equal(t.stored()[0].payload.colors, undefined);
+});

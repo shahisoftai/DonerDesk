@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { buildDataChart, DATA_CHART_TEMPLATES, DATA_CHART_TEMPLATE_ORDER, type DataChartResult, type DataChartSpec, type DataChartTemplate } from "@donordesk/domain/contexts/reporting/data-charts.js";
+import { buildDataChart, CHART_PALETTES, DATA_CHART_TEMPLATES, DATA_CHART_TEMPLATE_ORDER, type DataChartResult, type DataChartSpec, type DataChartTemplate } from "@donordesk/domain/contexts/reporting/data-charts.js";
 import { PIVOT_MEASURE_LABEL, type PivotMeasure } from "@donordesk/domain/contexts/reporting/data-sheet.js";
 import type { ChartType } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import type { DataSheetResponse } from "@/lib/server/schemas";
@@ -181,6 +181,8 @@ export function DataChartBuilder({
           </div>
         </div>
 
+        <ColourPicker spec={spec} result={result} onChange={(colors) => update({ colors })} />
+
         {spec.template === "INDICATOR_OVER_TIME" && spec.measure === "CUMULATIVE" && (
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={spec.showTarget} onChange={(e) => update({ showTarget: e.target.checked })} /> Show the target line
@@ -206,5 +208,50 @@ export function DataChartBuilder({
         {footer?.({ spec, result })}
       </div>
     </div>
+  );
+}
+
+const STANDARD = CHART_PALETTES[0]!.colors;
+
+/** Colour choice: a ready-made palette, or one colour per series (per slice for a pie). Saved with the chart. */
+function ColourPicker({ spec, result, onChange }: { spec: DataChartSpec; result: DataChartResult; onChange: (colors: string[] | undefined) => void }) {
+  if (!result.ok) return null;
+  const labels = spec.type === "PIE" ? result.resolved.categories : result.resolved.series.map((s) => s.name);
+  const slots = Math.min(labels.length, 12);
+  if (slots === 0) return null;
+  const current = (i: number): string => spec.colors?.[i] ?? STANDARD[i % STANDARD.length]!;
+  const setOne = (i: number, value: string): void => onChange(Array.from({ length: slots }, (_, k) => (k === i ? value : current(k))));
+  const usingPalette = (colors: string[]): boolean => Array.from({ length: slots }, (_, i) => colors[i % colors.length]!.toLowerCase()).join() === Array.from({ length: slots }, (_, i) => current(i).toLowerCase()).join();
+  return (
+    <fieldset>
+      <legend className="text-xs text-slate-500">Colours</legend>
+      <div className="mt-1 flex flex-wrap gap-2">
+        {CHART_PALETTES.map((p) => {
+          const active = usingPalette(p.colors);
+          return (
+            <button
+              key={p.id}
+              type="button"
+              title={p.label}
+              aria-label={`${p.label} colours`}
+              aria-pressed={active}
+              onClick={() => onChange(p.id === "STANDARD" ? undefined : Array.from({ length: slots }, (_, i) => p.colors[i % p.colors.length]!))}
+              className={`flex overflow-hidden rounded-md border ${active ? "border-brand-600 ring-2 ring-brand-500/40" : "border-slate-300 dark:border-white/15"}`}
+            >
+              {p.colors.slice(0, 5).map((c) => <span key={c} className="block h-6 w-4" style={{ backgroundColor: c }} />)}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-2 space-y-1">
+        {labels.slice(0, slots).map((label, i) => (
+          <label key={`${label}-${i}`} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+            <input type="color" aria-label={`Colour for ${label}`} value={current(i)} onChange={(e) => setOne(i, e.target.value)} className="h-7 w-9 cursor-pointer rounded border border-slate-300 bg-transparent p-0.5 dark:border-white/15" />
+            <span className="truncate">{label}</span>
+          </label>
+        ))}
+      </div>
+      {spec.colors && <button type="button" className="mt-1 text-xs text-brand-600 hover:underline" onClick={() => onChange(undefined)}>Back to standard colours</button>}
+    </fieldset>
   );
 }

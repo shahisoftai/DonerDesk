@@ -141,6 +141,8 @@ export interface ResolvedChartData {
   referenceLine?: { name: string; value: number };
   /** Set when the chart shows only the first `shown` of `total` categories. */
   truncated?: { shown: number; total: number };
+  /** Hex colours (#rrggbb) in series (or pie slice) order; absent: the standard palette. */
+  colors?: string[];
 }
 
 export interface ChartIndicatorInput {
@@ -284,11 +286,12 @@ export function optionFromResolved(resolved: ResolvedChartData, requestedType: C
 /** Draws the dataset as exactly this type. For callers (Data Center templates) that have already chosen a type that suits their data. */
 export function optionForType(resolved: ResolvedChartData, type: ChartType): Record<string, unknown> {
   const unit = resolved.unit ?? "";
+  const palette = resolved.colors && resolved.colors.length > 0 ? resolved.colors : ECHARTS_PALETTE;
 
   if (type === "PIE") {
     const data = resolved.categories.map((name, i) => ({ name, value: numeric(resolved.series[i]?.data[0]) }));
     return {
-      color: ECHARTS_PALETTE,
+      color: palette,
       tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
       legend: { type: "scroll", bottom: 0 },
       series: [{ type: "pie", radius: ["32%", "68%"], avoidLabelOverlap: true, itemStyle: { borderRadius: 6, borderColor: "#fff", borderWidth: 2 }, label: { formatter: "{b}" }, data }],
@@ -303,7 +306,7 @@ export function optionForType(resolved: ResolvedChartData, type: ChartType): Rec
         type: "gauge",
         min: 0,
         max,
-        progress: { show: true, width: 14 },
+        progress: { show: true, width: 14, itemStyle: { color: palette[0] } },
         axisLine: { lineStyle: { width: 14 } },
         axisLabel: { fontSize: 10 },
         title: { show: true, offsetCenter: [0, "70%"], fontSize: 12 },
@@ -316,7 +319,7 @@ export function optionForType(resolved: ResolvedChartData, type: ChartType): Rec
   if (type === "RADAR") {
     const peak = Math.max(100, ...resolved.series.flatMap((s) => s.data.map(numeric)));
     return {
-      color: ECHARTS_PALETTE,
+      color: palette,
       tooltip: {},
       legend: { bottom: 0 },
       radar: { indicator: resolved.categories.map((name) => ({ name, max: Math.ceil(peak / 10) * 10 })), radius: "65%" },
@@ -332,7 +335,7 @@ export function optionForType(resolved: ResolvedChartData, type: ChartType): Rec
     smooth: isLine,
     stack: resolved.stacked ? "total" : undefined,
     areaStyle: type === "AREA" ? { opacity: 0.18 } : undefined,
-    itemStyle: { color: ECHARTS_PALETTE[i % ECHARTS_PALETTE.length] },
+    itemStyle: { color: palette[i % palette.length] },
     ...(i === 0 && resolved.referenceLine
       ? { markLine: { silent: true, symbol: "none", label: { formatter: resolved.referenceLine.name, position: "insideEndTop" }, lineStyle: { color: "#ef4444", type: "dashed" }, data: [{ yAxis: resolved.referenceLine.value }] } }
       : {}),
@@ -345,7 +348,7 @@ export function optionForType(resolved: ResolvedChartData, type: ChartType): Rec
       : {};
 
   return {
-    color: ECHARTS_PALETTE,
+    color: palette,
     tooltip: { trigger: "axis" },
     legend: { bottom: 0, itemGap: 24 },
     grid: { left: 56, right: 24, top: 24, bottom: 56, containLabel: true },

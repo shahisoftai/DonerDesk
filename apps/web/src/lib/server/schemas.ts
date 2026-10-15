@@ -1231,6 +1231,7 @@ export const SectionDataChartSchema = z.object({
     toPeriodId: z.string().optional(),
     showTarget: z.boolean(),
     title: z.string().optional(),
+    colors: z.array(z.string()).optional(),
   }),
   builtAt: z.string(),
   points: z.number(),

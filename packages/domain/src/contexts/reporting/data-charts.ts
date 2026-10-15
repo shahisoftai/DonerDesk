@@ -26,7 +26,21 @@ export interface DataChartSpec {
   /** Draw the indicator's target as a reference line (over-time charts of one indicator). */
   showTarget: boolean;
   title?: string | undefined;
+  /** Hex colours (#rrggbb) for the series (or pie slices), in order; absent: the standard palette. */
+  colors?: string[] | undefined;
 }
+
+/** Ready-made colour sets for the picker; the first is the app's standard palette. */
+export const CHART_PALETTES: ReadonlyArray<{ id: string; label: string; colors: string[] }> = [
+  { id: "STANDARD", label: "Standard", colors: ["#2f7be8", "#f59e0b", "#10b981", "#8b5cf6", "#ef4444", "#06b6d4"] },
+  { id: "COLOUR_BLIND", label: "Colour-blind safe", colors: ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#D55E00", "#56B4E9"] },
+  { id: "OCEAN", label: "Ocean", colors: ["#0b3c5d", "#1d6fa5", "#328cc1", "#5aaed6", "#8fcae6", "#c3e4f2"] },
+  { id: "FOREST", label: "Forest", colors: ["#1b4332", "#2d6a4f", "#40916c", "#52b788", "#74c69d", "#b7e4c7"] },
+  { id: "WARM", label: "Warm", colors: ["#7f1d1d", "#c2410c", "#ea580c", "#f59e0b", "#fbbf24", "#fde68a"] },
+  { id: "GREYS", label: "Greys (prints well)", colors: ["#1f2937", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb"] },
+];
+
+export const HEX_COLOUR = /^#[0-9a-fA-F]{6}$/;
 
 export interface DataChartTemplateInfo {
   label: string;
@@ -129,7 +143,8 @@ export function periodsInRange(sheet: DataSheet, fromId?: string, toId?: string)
 const unitOf = (i: DataSheetIndicator): string => (i.unit ?? "").trim();
 
 function draw(spec: DataChartSpec, data: Omit<ResolvedChartData, "type" | "dataBinding" | "title">, title: string): DataChartResult {
-  const resolved: ResolvedChartData = { ...data, type: spec.type, dataBinding: "DATA_CENTER", title };
+  const colors = (spec.colors ?? []).filter((c) => HEX_COLOUR.test(c));
+  const resolved: ResolvedChartData = { ...data, type: spec.type, dataBinding: "DATA_CENTER", title, ...(colors.length > 0 ? { colors } : {}) };
   const option = optionForType(resolved, spec.type);
   return { ok: true, option, resolved, title: spec.title?.trim() || title, notes: [], provenance: { points: 0, unverified: 0 } };
 }

@@ -271,6 +271,7 @@ export const DataChartSpecSchema = z.object({
   toPeriodId: z.string().min(1).optional(),
   showTarget: z.boolean().default(false),
   title: z.string().trim().max(200).optional(),
+  colors: z.array(z.string().regex(/^#[0-9a-fA-F]{6}$/, "Colours are written as #rrggbb")).max(12).optional(),
 });
 export type DataChartSpecInput = z.infer<typeof DataChartSpecSchema>;
 

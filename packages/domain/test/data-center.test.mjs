@@ -152,3 +152,21 @@ test("charts: finance provenance counts unverified figures", () => {
   const r = buildDataChart(unverified, { template: "FINANCE_BUDGET_VS_SPEND", indicatorIds: [], measure: "PERIOD", type: "BAR", showTarget: false });
   assert.deepEqual(r.provenance, { points: 1, unverified: 1 });
 });
+
+test("charts: chosen colours are used per series, ignore anything that is not #rrggbb, and cycle if fewer than series", () => {
+  const two = buildDataChart(sheet, spec({ template: "INDICATORS_OVER_TIME", indicatorIds: ["i1", "i2"], type: "BAR", measure: "PERCENT_OF_TARGET", colors: ["#112233", "#445566"] }));
+  assert.ok(two.ok);
+  assert.deepEqual(two.option.series.map((s) => s.itemStyle.color), ["#112233", "#445566"]);
+  assert.deepEqual(two.resolved.colors, ["#112233", "#445566"]);
+  const bad = buildDataChart(sheet, spec({ colors: ["red", "javascript:1", "#abc"] }));
+  assert.ok(bad.ok);
+  assert.equal(bad.resolved.colors, undefined);
+  const one = buildDataChart(sheet, spec({ template: "INDICATORS_OVER_TIME", indicatorIds: ["i1", "i2"], type: "BAR", measure: "PERCENT_OF_TARGET", colors: ["#112233"] }));
+  assert.deepEqual(one.option.series.map((s) => s.itemStyle.color), ["#112233", "#112233"]);
+});
+
+test("charts: a pie takes one colour per slice from the same list", () => {
+  const r = buildDataChart(sheet, { template: "STATUS_DISTRIBUTION", indicatorIds: [], measure: "PERIOD", type: "PIE", showTarget: false, colors: ["#aa0000", "#00aa00"] });
+  assert.ok(r.ok);
+  assert.deepEqual(r.option.color, ["#aa0000", "#00aa00"]);
+});

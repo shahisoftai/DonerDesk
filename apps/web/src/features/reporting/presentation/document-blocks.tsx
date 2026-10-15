@@ -179,5 +179,6 @@ function payloadToResolved(p: Record<string, unknown>, categories: string[], ser
     title: asText(p.title),
     ...(p.stacked === true ? { stacked: true } : {}),
     ...(p.referenceLine ? { referenceLine: p.referenceLine as { name: string; value: number } } : {}),
+    ...(Array.isArray(p.colors) && p.colors.length > 0 ? { colors: p.colors.filter((c): c is string => typeof c === "string") } : {}),
   };
 }

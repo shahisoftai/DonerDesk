@@ -224,6 +224,7 @@ export class SectionDataChartsHandler {
         sourceReferences: [],
         ...(r.stacked ? { stacked: true } : {}),
         ...(r.referenceLine ? { referenceLine: r.referenceLine } : {}),
+        ...(r.colors ? { colors: r.colors } : {}),
         dataCenter: { id, spec, builtAt: this.now().toISOString(), points: drawn.provenance.points, unverified: drawn.provenance.unverified, notes: drawn.notes },
       },
       sourceReferences: [],

@@ -25,3 +25,8 @@ test("a stored Data Center chart is exported as a PNG", async () => {
   assert.equal(png.subarray(1, 4).toString(), "PNG");
   assert.ok(png.length > 2000);
 });
+
+test("a stored chart's colours are used when it is exported", () => {
+  const option = optionFromResolved({ ...resolved, colors: ["#aa0000"] }, "LINE");
+  assert.equal(option.series[0].itemStyle.color, "#aa0000");
+});

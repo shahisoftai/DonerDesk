@@ -353,6 +353,7 @@ export interface GeneratedChartSpec {
   stacked?: boolean;
   referenceLine?: { name: string; value: number };
   truncated?: { shown: number; total: number };
+  colors?: string[];
   /** Set on a chart the user added from the Data Center: its stable id, the settings it was drawn from and what it plotted. */
   dataCenter?: {
     id: string;

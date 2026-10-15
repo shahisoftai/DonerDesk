@@ -82,6 +82,7 @@ export function chartPayloadToResolved(payload: unknown): ResolvedChartData | nu
     ...(p.stacked ? { stacked: true } : {}),
     ...(p.referenceLine ? { referenceLine: p.referenceLine } : {}),
     ...(p.truncated ? { truncated: p.truncated } : {}),
+    ...(Array.isArray(p.colors) && p.colors.length > 0 ? { colors: p.colors.filter((c): c is string => typeof c === "string") } : {}),
   } as ResolvedChartData;
 }
 
@@ -95,4 +96,5 @@ interface GeneratedChartLike {
   stacked: boolean;
   referenceLine: { name: string; value: number };
   truncated: { shown: number; total: number };
+  colors: unknown[];
 }
