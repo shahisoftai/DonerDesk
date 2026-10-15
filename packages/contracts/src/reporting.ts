@@ -289,6 +289,9 @@ export type UpdateSectionDataChartInput = z.infer<typeof UpdateSectionDataChartS
 
 export const MoveSectionDataChartSchema = z.object({ direction: z.enum(["UP", "DOWN"]) });
 
+export const ReopenReportSchema = z.object({ reason: z.string().trim().min(5, "Say why the report is being reopened").max(1000) });
+export type ReopenReportInput = z.infer<typeof ReopenReportSchema>;
+
 export const UpdateSectionChartSchema = z.object({
   chartConfig: ChartConfigSchema.nullable(),
   expectedVersion: z.string().optional(),

@@ -1,4 +1,4 @@
-import type { Result, Role } from "@donordesk/domain";
+import type { Result, Role, TenantId } from "@donordesk/domain";
 import { flagClassOf } from "../../services/flag-class.js";
 import { DomainError, Permissions, staleSynthesisSectionIds, FALLBACK_ACTION } from "@donordesk/domain";
 import type { ReportDraft, ReportSection, ReportClaim, GenerationFallback, FallbackAction } from "@donordesk/domain";
@@ -18,7 +18,13 @@ import type {
 import type { ICommentCounter } from "../../ports/support.js";
 
 /** Optional read collaborators used by the document-first editor (Report Editor v2). */
+/** When and why the current draft was last reopened for changes (from the audit trail), so the editor can say so. */
+export interface IReportReopenReader {
+  latestFor(input: { draftId: string; projectId: string; tenantId: TenantId }): Promise<{ at: string; byId: string; reason: string; previousStatus: string } | null>;
+}
+
 export interface GetReportDraftExtras {
+  reopenReader?: IReportReopenReader;
   evidenceDirectory?: IEvidenceDirectory;
   inputsChangeReader?: IReportInputsChangeReader;
   regenerationTracker?: ISectionRegenerationTracker;
@@ -158,6 +164,8 @@ export class GetReportDraftHandler {
         ),
         commentCounts: await this.commentCounts(ctx, sectionIds),
         inputsChangedSince: await this.inputsChangedSince(ctx, draft, sorted, claimsResult.value),
+        // Shown while the reopened report is still being changed and re-approved.
+        reopened: draft.status === "DRAFT" || draft.status === "UNDER_REVIEW" ? await this.extras.reopenReader?.latestFor({ draftId: draft.id, projectId: draft.projectId, tenantId: ctx.tenant.tenantId }) ?? null : null,
       },
     };
   }

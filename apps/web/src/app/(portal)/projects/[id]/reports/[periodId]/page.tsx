@@ -106,6 +106,7 @@ export default async function ReportWorkspacePage({
           summaryStaleSectionIds={draftValue?.summaryStaleSectionIds ?? []}
           commentCounts={draftValue?.commentCounts ?? {}}
           inputsChangedSince={draftValue?.inputsChangedSince ?? null}
+          reopened={draftValue?.reopened ?? null}
           capabilities={Array.from(ctx.capabilities)}
           initialUrlState={parseEditorUrlState(query)}
         />

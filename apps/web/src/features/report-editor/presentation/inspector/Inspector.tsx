@@ -163,7 +163,8 @@ export function Inspector({
             key={`data-charts-${sectionData.id}-${sectionData.updatedAt}`}
             projectId={projectId}
             sectionId={sectionData.id}
-            readOnly={!canEdit || section.isApproved}
+            readOnly={!canEdit}
+            sectionApproved={section.isApproved}
             onChanged={onReload}
           />
         )}

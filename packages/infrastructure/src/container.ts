@@ -95,6 +95,7 @@ import {
   ListIndicatorUpdatesHandler,
   GetProjectDataSheetHandler,
   SectionDataChartsHandler,
+  ReopenReportHandler,
   ImportDataSheetHandler,
   ListLogframeHandler,
   ListIndicatorsHandler,
@@ -600,6 +601,7 @@ export interface Container {
     updateReportSectionChart: UpdateReportSectionChartHandler;
     refreshSectionCharts: RefreshSectionChartsHandler;
     sectionDataCharts: SectionDataChartsHandler;
+    reopenReport: ReopenReportHandler;
     approveReportSection: ApproveReportSectionHandler;
     submitReportForReview: SubmitReportForReviewHandler;
     approveReport: ApproveReportHandler;
@@ -1347,6 +1349,15 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       inputsChangeReader: new PrismaReportInputsChangeReader(prisma),
       regenerationTracker: sectionRegenerationTracker,
       commentCounter: comments,
+      reopenReader: {
+        latestFor: async ({ draftId, projectId, tenantId }) => {
+          const rows = await audits.listByTenant(tenantId, { projectId, eventType: "report.draft.reopened", limit: 100 });
+          const row = rows.ok ? rows.value.filter((r) => r.entityId === draftId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] : undefined;
+          if (!row) return null;
+          const read = (json: string | undefined): Record<string, unknown> => { try { return JSON.parse(json ?? "{}") as Record<string, unknown>; } catch { return {}; } };
+          return { at: row.createdAt.toISOString(), byId: row.actorId, reason: String(read(row.newValue).reason ?? ""), previousStatus: String(read(row.oldValue).status ?? "") };
+        },
+      },
     }),
     getSmartReview: new GetSmartReviewHandler(drafts, approveReportHandler, reportClaims, sections),
     cancelReportGeneration: new CancelReportGenerationHandler(drafts, sections, audits),
@@ -1359,6 +1370,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     updateReportSectionChart: new UpdateReportSectionChartHandler(sections, audits),
     refreshSectionCharts: new RefreshSectionChartsHandler(sections, sectionChartService, audits),
     sectionDataCharts,
+    reopenReport: new ReopenReportHandler(drafts, periods, audits),
     rewriteReportSection: new RewriteReportSectionHandler(
       ids, drafts, sections, periods, indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder,
       getReportDraftGenerator, revisionService, assuranceService, generationRuns, audits, reportArtifacts,

@@ -11,5 +11,5 @@ export default async function DataCenterPage({ params }: { params: Promise<{ id:
   const ctx = await requireSession();
   const result = await gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/data-sheet`, DataSheetResponseSchema, ctx.token);
   if (!result.ok) return <InlineError title={result.error.message} referenceId={result.error.referenceId} />;
-  return <DataCenter projectId={id} sheet={result.value} canEdit={ctx.capabilities.has("indicator.update")} canEditReports={ctx.capabilities.has("reporting.edit")} />;
+  return <DataCenter projectId={id} sheet={result.value} canEdit={ctx.capabilities.has("indicator.update")} canEditReports={ctx.capabilities.has("reporting.edit")} canReopenReports={ctx.capabilities.has("report.approve")} />;
 }

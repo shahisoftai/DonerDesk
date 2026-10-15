@@ -18,7 +18,7 @@ type Editing = { mode: "add" } | { mode: "edit"; chart: SectionDataChart };
  * The charts a person added to this section from the Data Center: add, edit, update to the latest data, reorder, remove.
  * A chart keeps the data it showed when it was added; it only changes when someone presses Update or saves an edit.
  */
-export function DataChartsPanel({ projectId, sectionId, readOnly, onChanged }: { projectId: string; sectionId: string; readOnly: boolean; onChanged: () => void }) {
+export function DataChartsPanel({ projectId, sectionId, readOnly, sectionApproved = false, onChanged }: { projectId: string; sectionId: string; readOnly: boolean; sectionApproved?: boolean; onChanged: () => void }) {
   const [charts, setCharts] = useState<SectionDataChart[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -106,7 +106,8 @@ export function DataChartsPanel({ projectId, sectionId, readOnly, onChanged }: {
           ))}
         </ul>
       )}
-      {readOnly && <p className="mt-2 text-xs text-slate-500">Reopen the section to change its charts.</p>}
+      {readOnly && <p className="mt-2 text-xs text-slate-500">This report is not open for changes. An approver can reopen it from the ⋯ menu (Reopen for changes).</p>}
+      {!readOnly && sectionApproved && <p className="mt-2 text-xs text-slate-500">This section is approved. Adding or changing a chart reopens it, and it will need approving again.</p>}
 
       <Dialog open={editing !== null} onClose={() => setEditing(null)} title={editing?.mode === "edit" ? "Edit chart" : "Add a chart from the Data Center"} size="lg">
         {sheetError && <p role="alert" className="mb-3 text-sm text-danger-700 dark:text-danger-300">{sheetError}</p>}

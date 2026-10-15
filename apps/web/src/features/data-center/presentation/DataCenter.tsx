@@ -10,7 +10,7 @@ import { DataSheetImport } from "./DataSheetImport";
 
 type Tab = "sheet" | "charts" | "finance" | "import";
 
-export function DataCenter({ projectId, sheet, canEdit, canEditReports }: { projectId: string; sheet: DataSheetResponse; canEdit: boolean; canEditReports: boolean }) {
+export function DataCenter({ projectId, sheet, canEdit, canEditReports, canReopenReports = false }: { projectId: string; sheet: DataSheetResponse; canEdit: boolean; canEditReports: boolean; canReopenReports?: boolean }) {
   const [tab, setTab] = useState<Tab>("sheet");
   const tabs: Array<[Tab, string]> = [
     ["sheet", "Indicator data"],
@@ -37,7 +37,7 @@ export function DataCenter({ projectId, sheet, canEdit, canEditReports }: { proj
           <DataChartBuilder
             sheet={sheet}
             footer={({ spec, result }) => (
-              <AddToReportPanel projectId={projectId} sheet={sheet} spec={spec} canAdd={canEditReports} {...(result.ok ? {} : { disabledReason: "This chart cannot be drawn yet, so it cannot be added." })} />
+              <AddToReportPanel projectId={projectId} sheet={sheet} spec={spec} canAdd={canEditReports} canReopen={canReopenReports} {...(result.ok ? {} : { disabledReason: "This chart cannot be drawn yet, so it cannot be added." })} />
             )}
           />
         )}

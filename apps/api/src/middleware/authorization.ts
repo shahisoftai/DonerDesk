@@ -120,6 +120,7 @@ const RULES: ReadonlyArray<{
   { method: "PUT", route: /^\/v1\/report-drafts\/[^/]+\/sections-order$/, permission: "report.edit" },
   { method: "POST", route: /^\/v1\/report-drafts\/[^/]+\/activate$/, permission: "report.edit" },
   { method: "POST", route: /^\/v1\/report-drafts\/[^/]+\/reject$/, permission: "report.approve" },
+  { method: "POST", route: /^\/v1\/report-drafts\/[^/]+\/reopen$/, permission: "report.approve" },
   { method: "POST", route: /^\/v1\/report-sections\/[^/]+\/resolve-flags$/, permission: "report.resolve-claim" },
   { method: "POST", route: /^\/v1\/report-claims\/bulk-resolve$/, permission: "report.resolve-claim" },
   { method: "POST", route: /^\/v1\/report-claims\/[^/]+\/reopen$/, permission: "report.resolve-claim" },

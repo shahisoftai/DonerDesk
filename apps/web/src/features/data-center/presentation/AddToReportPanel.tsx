@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { DataChartSpec } from "@donordesk/domain/contexts/reporting/data-charts.js";
+import { ReopenReportDialog } from "@/features/report-editor/presentation/dialogs/ReopenReportDialog";
+import { reopenReportAction } from "@/lib/actions/report-reopen";
 import { addSectionDataChartAction, getDraftSectionChoicesAction, type DraftSectionChoices } from "@/lib/actions/data-charts";
 import type { DataSheetResponse } from "@/lib/server/schemas";
 import { Button } from "@/components/ui/Button";
@@ -23,21 +25,26 @@ const STATE_LABEL: Record<string, string> = {
 const MAY_BE_DRAFT = new Set(["IN_PROGRESS", "EVIDENCE_COLLECTION", "DRAFT_GENERATED"]);
 
 /** Why charts cannot be added to a report in this state, in words a person can act on. */
-function lockedReason(status: string | null, version: number | null): string {
+function lockedReason(status: string | null, version: number | null, canReopen: boolean): string {
   const v = version ? ` (version ${version})` : "";
   if (status === "UNDER_REVIEW") return `This report${v} is under review, so its charts are locked. Charts can be added again once it is back in draft.`;
-  return `This report${v} is ${status === "SUBMITTED" ? "submitted" : status === "EXPORTED" ? "exported" : "approved"}, so its content, charts included, is locked. To add a chart, open the report and choose Regenerate whole draft: that starts a new version and keeps this one in history.`;
+  const state = status === "SUBMITTED" ? "submitted" : status === "EXPORTED" ? "exported" : "approved";
+  return canReopen
+    ? `This report${v} is ${state}, so its content, charts included, is locked. You can reopen it for changes: it goes back to draft and has to be approved again.`
+    : `This report${v} is ${state}, so its content, charts included, is locked. An approver can reopen it for changes.`;
 }
 
 /**
  * "Add this chart to a report": the report (a reporting period of the project), the section and a caption. A report that has no
  * draft yet, or is no longer a draft, says so instead of offering sections.
  */
-export function AddToReportPanel({ projectId, sheet, spec, canAdd, disabledReason, defaultPeriodId, onAdded }: {
+export function AddToReportPanel({ projectId, sheet, spec, canAdd, canReopen = false, disabledReason, defaultPeriodId, onAdded }: {
   projectId: string;
   sheet: DataSheetResponse;
   spec: DataChartSpec;
   canAdd: boolean;
+  /** The person may reopen an approved report (an approver). */
+  canReopen?: boolean;
   /** Why the chart cannot be added right now (it cannot be drawn). */
   disabledReason?: string;
   defaultPeriodId?: string;
@@ -51,6 +58,10 @@ export function AddToReportPanel({ projectId, sheet, spec, canAdd, disabledReaso
   const [caption, setCaption] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
+  const [reopenOpen, setReopenOpen] = useState(false);
+  const [reopening, setReopening] = useState(false);
+  const [reopenError, setReopenError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!periodId) { setChoices(null); return; }
@@ -65,11 +76,23 @@ export function AddToReportPanel({ projectId, sheet, spec, canAdd, disabledReaso
       setChoices(r.value);
     });
     return () => { cancelled = true; };
-  }, [periodId]);
+  }, [periodId, reloadTick]);
 
   if (!canAdd) return null;
   const anyOpenHint = latestOpen ? null : "None of this project's reports is a draft right now, so there is nowhere to add a chart yet. Charts can be added to a report while it is a draft.";
   const editable = choices?.draftId && choices.draftStatus === "DRAFT";
+
+  async function reopen(reason: string): Promise<void> {
+    if (!choices?.draftId) return;
+    setReopening(true);
+    setReopenError(null);
+    const r = await reopenReportAction(choices.draftId, reason);
+    setReopening(false);
+    if (!r.ok) { setReopenError(r.error.message); return; }
+    setReopenOpen(false);
+    setMessage({ tone: "ok", text: "Report reopened. Choose the section for the chart; the report will need approving again." });
+    setReloadTick((n) => n + 1);
+  }
 
   async function add(): Promise<void> {
     if (!sectionId) return;
@@ -111,7 +134,12 @@ export function AddToReportPanel({ projectId, sheet, spec, canAdd, disabledReaso
         )}
         {periodId && !loading && choices?.draftId && !editable && (
           <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200 sm:col-span-2" role="status">
-            {lockedReason(choices.draftStatus, choices.draftVersion)} <Link className="font-medium underline" href={`/projects/${projectId}/reports/${periodId}`}>Open the report</Link>
+            {lockedReason(choices.draftStatus, choices.draftVersion, canReopen)} <Link className="font-medium underline" href={`/projects/${projectId}/reports/${periodId}`}>Open the report</Link>
+            {canReopen && choices.draftStatus !== "UNDER_REVIEW" && (
+              <span className="mt-2 block">
+                <Button size="sm" variant="secondary" onClick={() => { setReopenError(null); setReopenOpen(true); }}>Reopen report for changes</Button>
+              </span>
+            )}
           </p>
         )}
         <label className="text-xs text-slate-500 sm:col-span-2">
@@ -125,6 +153,7 @@ export function AddToReportPanel({ projectId, sheet, spec, canAdd, disabledReaso
         {message && <span role="status" className={`text-sm ${message.tone === "ok" ? "text-emerald-700 dark:text-emerald-300" : "text-danger-700 dark:text-danger-300"}`}>{message.text}</span>}
         {message?.tone === "ok" && periodId && <Link className="text-sm text-brand-600 hover:underline" href={`/projects/${projectId}/reports/${periodId}`}>Open the report</Link>}
       </div>
+      <ReopenReportDialog open={reopenOpen} status={choices?.draftStatus ?? null} version={choices?.draftVersion ?? null} pending={reopening} error={reopenError} onClose={() => setReopenOpen(false)} onSubmit={(reason) => void reopen(reason)} />
     </section>
   );
 }

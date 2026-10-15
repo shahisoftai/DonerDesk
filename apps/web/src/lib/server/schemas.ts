@@ -767,6 +767,8 @@ export const ReportDraftResponseSchema = z.object({
   summaryStaleSectionIds: z.array(z.string()).optional(),
   /** Open comments per section id. */
   commentCounts: z.record(z.string(), z.number().int().nonnegative()).optional(),
+  /** When and why the current draft was reopened after approval (shown until it is approved again). */
+  reopened: z.object({ at: z.string(), byId: z.string(), reason: z.string(), previousStatus: z.string() }).nullable().optional(),
   /** Indicator values / evidence changed after this draft was written. */
   inputsChangedSince: z
     .object({ indicators: z.number().int().nonnegative(), evidence: z.number().int().nonnegative(), sectionIds: z.array(z.string()) })

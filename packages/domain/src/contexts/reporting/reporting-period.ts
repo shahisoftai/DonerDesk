@@ -202,6 +202,17 @@ export class ReportingPeriod extends Entity<string> {
     this.touch();
   }
 
+  /**
+   * A reopened report takes its period back from approved/submitted to "draft generated", so the reports list and the gates see
+   * a report that is being changed again. Status otherwise only moves forward (`advanceStatus`); a closed period is left alone.
+   */
+  reopenStatus(): void {
+    const current = this.props.status.value;
+    if (current !== "APPROVED" && current !== "SUBMITTED") return;
+    this.props.status = ReportStatus.create("DRAFT_GENERATED");
+    this.touch();
+  }
+
   setReadinessScore(score: number): void {
     const clamped = Math.max(0, Math.min(100, Math.round(score)));
     this.props.readinessScore = clamped;
