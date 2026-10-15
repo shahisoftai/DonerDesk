@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { buildDataChart, DATA_CHART_TEMPLATES, DATA_CHART_TEMPLATE_ORDER, type DataChartSpec, type DataChartTemplate } from "@donordesk/domain/contexts/reporting/data-charts.js";
+import { useMemo, useState, type ReactNode } from "react";
+import { buildDataChart, DATA_CHART_TEMPLATES, DATA_CHART_TEMPLATE_ORDER, type DataChartResult, type DataChartSpec, type DataChartTemplate } from "@donordesk/domain/contexts/reporting/data-charts.js";
 import { PIVOT_MEASURE_LABEL, type PivotMeasure } from "@donordesk/domain/contexts/reporting/data-sheet.js";
 import type { ChartType } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import type { DataSheetResponse } from "@/lib/server/schemas";
@@ -44,8 +44,25 @@ export function defaultIndicatorIds(sheet: DataSheetResponse, template: DataChar
   return ranked.slice(0, 12).map((i) => i.id);
 }
 
-export function DataChartBuilder({ sheet }: { sheet: DataSheetResponse }) {
-  const [spec, setSpec] = useState<DataChartSpec>({ template: "INDICATOR_OVER_TIME", indicatorIds: defaultIndicatorIds(sheet, "INDICATOR_OVER_TIME"), measure: "PERIOD", type: "BAR", showTarget: false });
+/**
+ * The chart builder. On its own (the Data Center page) it only previews; give it `footer` to add controls under the preview,
+ * such as "add to a report", and `initialSpec` to edit a chart that already exists.
+ */
+export function DataChartBuilder({
+  sheet,
+  initialSpec,
+  footer,
+  stacked = false,
+}: {
+  sheet: DataSheetResponse;
+  initialSpec?: DataChartSpec;
+  footer?: (state: { spec: DataChartSpec; result: DataChartResult }) => ReactNode;
+  /** Settings above the preview instead of beside it (a narrow dialog). */
+  stacked?: boolean;
+}) {
+  const [spec, setSpec] = useState<DataChartSpec>(
+    initialSpec ?? { template: "INDICATOR_OVER_TIME", indicatorIds: defaultIndicatorIds(sheet, "INDICATOR_OVER_TIME"), measure: "PERIOD", type: "BAR", showTarget: false },
+  );
   const [filter, setFilter] = useState("");
   const info = DATA_CHART_TEMPLATES[spec.template];
   const templates = DATA_CHART_TEMPLATE_ORDER.filter((t) => sheet.financeEnabled || !t.startsWith("FINANCE_"));
@@ -80,7 +97,7 @@ export function DataChartBuilder({ sheet }: { sheet: DataSheetResponse }) {
   if (sheet.periods.length === 0) return <p className="card text-sm text-slate-500">Create a reporting period and record values to chart them here.</p>;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[22rem_1fr]">
+    <div className={stacked ? "grid gap-6" : "grid gap-6 lg:grid-cols-[22rem_1fr]"}>
       <div className="space-y-4">
         <div>
           <p className="text-xs font-medium text-slate-500">Quick start</p>
@@ -182,11 +199,11 @@ export function DataChartBuilder({ sheet }: { sheet: DataSheetResponse }) {
             <h3 className="font-medium">{result.title}</h3>
             <EChartFigure option={result.option} caption={`Drawn from the recorded values in the data sheet.`} />
             {result.notes.map((n) => <p key={n} className="mt-1 text-xs text-amber-700 dark:text-amber-300">{n}</p>)}
-            <p className="mt-3 text-xs text-slate-500">To use a chart in a report, add a table with these figures to the section: charts in reports are drawn from the section’s tables and indicator data.</p>
           </>
         ) : (
           <div className="card text-sm text-slate-600 dark:text-slate-300" role="status">{result.reason}</div>
         )}
+        {footer?.({ spec, result })}
       </div>
     </div>
   );

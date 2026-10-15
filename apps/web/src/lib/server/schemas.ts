@@ -1217,3 +1217,27 @@ export const DataSheetImportResponseSchema = z.object({
   }),
 });
 export type DataSheetImportResponse = z.infer<typeof DataSheetImportResponseSchema>;
+
+export const SectionDataChartSchema = z.object({
+  id: z.string(),
+  caption: z.string(),
+  title: z.string(),
+  spec: z.object({
+    template: z.enum(["INDICATOR_OVER_TIME", "INDICATOR_VS_TARGET", "INDICATORS_PROGRESS", "INDICATORS_OVER_TIME", "STATUS_DISTRIBUTION", "FINANCE_BUDGET_VS_SPEND", "FINANCE_BURN_RATE"]),
+    indicatorIds: z.array(z.string()),
+    measure: z.enum(["PERIOD", "CUMULATIVE", "PERCENT_OF_TARGET"]),
+    type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
+    fromPeriodId: z.string().optional(),
+    toPeriodId: z.string().optional(),
+    showTarget: z.boolean(),
+    title: z.string().optional(),
+  }),
+  builtAt: z.string(),
+  points: z.number(),
+  unverified: z.number(),
+  notes: z.array(z.string()),
+  stale: z.boolean(),
+  broken: z.string().optional(),
+});
+export type SectionDataChart = z.infer<typeof SectionDataChartSchema>;
+export const SectionDataChartsResponseSchema = z.object({ items: z.array(SectionDataChartSchema) });

@@ -340,7 +340,7 @@ export interface GeneratedTablePayload {
 
 export interface GeneratedChartSpec {
   type: "BAR" | "LINE" | "PIE" | "AREA" | "RADAR" | "GAUGE";
-  dataBinding: "INDICATOR_PROGRESS" | "INDICATOR_COMPARISON" | "INDICATOR_ACHIEVEMENT" | "STATUS_DISTRIBUTION" | "TABLE_INDICATOR_PROGRESS" | "TABLE_FINANCE_BY_LINE" | "TABLE_ACTIVITY_PARTICIPANTS";
+  dataBinding: "INDICATOR_PROGRESS" | "INDICATOR_COMPARISON" | "INDICATOR_ACHIEVEMENT" | "STATUS_DISTRIBUTION" | "TABLE_INDICATOR_PROGRESS" | "TABLE_FINANCE_BY_LINE" | "TABLE_ACTIVITY_PARTICIPANTS" | "DATA_CENTER";
   unit?: string;
   title: string;
   caption: string;
@@ -353,7 +353,18 @@ export interface GeneratedChartSpec {
   stacked?: boolean;
   referenceLine?: { name: string; value: number };
   truncated?: { shown: number; total: number };
+  /** Set on a chart the user added from the Data Center: its stable id, the settings it was drawn from and what it plotted. */
+  dataCenter?: {
+    id: string;
+    spec: DataChartSpecStored;
+    builtAt: string;
+    points: number;
+    unverified: number;
+    notes: string[];
+  };
 }
+
+export type DataChartSpecStored = import("@donordesk/domain").DataChartSpec;
 
 export interface GeneratedListPayload {
   ordered: boolean;

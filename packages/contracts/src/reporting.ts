@@ -261,6 +261,33 @@ export const ChartConfigSchema = z.object({
 });
 export type ChartConfigInput = z.infer<typeof ChartConfigSchema>;
 
+/** A Data Center chart: what to draw from the project's data sheet (see `buildDataChart`). */
+export const DataChartSpecSchema = z.object({
+  template: z.enum(["INDICATOR_OVER_TIME", "INDICATOR_VS_TARGET", "INDICATORS_PROGRESS", "INDICATORS_OVER_TIME", "STATUS_DISTRIBUTION", "FINANCE_BUDGET_VS_SPEND", "FINANCE_BURN_RATE"]),
+  indicatorIds: z.array(z.string().min(1)).max(40).default([]),
+  measure: z.enum(["PERIOD", "CUMULATIVE", "PERCENT_OF_TARGET"]).default("PERIOD"),
+  type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
+  fromPeriodId: z.string().min(1).optional(),
+  toPeriodId: z.string().min(1).optional(),
+  showTarget: z.boolean().default(false),
+  title: z.string().trim().max(200).optional(),
+});
+export type DataChartSpecInput = z.infer<typeof DataChartSpecSchema>;
+
+export const AddSectionDataChartSchema = z.object({
+  spec: DataChartSpecSchema,
+  caption: z.string().trim().max(300).optional(),
+});
+export type AddSectionDataChartInput = z.infer<typeof AddSectionDataChartSchema>;
+
+export const UpdateSectionDataChartSchema = z.object({
+  spec: DataChartSpecSchema.optional(),
+  caption: z.string().trim().max(300).optional(),
+});
+export type UpdateSectionDataChartInput = z.infer<typeof UpdateSectionDataChartSchema>;
+
+export const MoveSectionDataChartSchema = z.object({ direction: z.enum(["UP", "DOWN"]) });
+
 export const UpdateSectionChartSchema = z.object({
   chartConfig: ChartConfigSchema.nullable(),
   expectedVersion: z.string().optional(),

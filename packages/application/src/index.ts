@@ -268,3 +268,4 @@ export * from "./services/request-idempotency-service.js";
 export * from "./use-cases/evidence/bulk-verify-evidence.js";
 export * from "./use-cases/setup/profile-preferences.js";
 export * from "./use-cases/data-center/data-sheet.js";
+export * from "./use-cases/reporting/section-data-charts.js";

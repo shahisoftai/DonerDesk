@@ -99,7 +99,15 @@ export const DATA_CHART_TEMPLATE_ORDER: DataChartTemplate[] = [
   "FINANCE_BURN_RATE",
 ];
 
-export type DataChartResult = { ok: true; option: Record<string, unknown>; title: string; notes: string[] } | { ok: false; reason: string };
+/** How many plotted values there are and how many of them are not verified yet (a report must say so). */
+export interface DataChartProvenance {
+  points: number;
+  unverified: number;
+}
+
+export type DataChartResult =
+  | { ok: true; option: Record<string, unknown>; resolved: ResolvedChartData; title: string; notes: string[]; provenance: DataChartProvenance }
+  | { ok: false; reason: string };
 
 const num = (v: string | undefined): number | null => {
   if (v === undefined || v.trim() === "") return null;
@@ -121,15 +129,9 @@ export function periodsInRange(sheet: DataSheet, fromId?: string, toId?: string)
 const unitOf = (i: DataSheetIndicator): string => (i.unit ?? "").trim();
 
 function draw(spec: DataChartSpec, data: Omit<ResolvedChartData, "type" | "dataBinding" | "title">, title: string): DataChartResult {
-  const resolved: ResolvedChartData = { ...data, type: spec.type, dataBinding: "INDICATOR_PROGRESS" /* unused: optionForType does not coerce by binding */, title };
+  const resolved: ResolvedChartData = { ...data, type: spec.type, dataBinding: "DATA_CENTER", title };
   const option = optionForType(resolved, spec.type);
-  // A reference line (target, 100%) outside the data range would sit off the chart: stretch the axis to include it.
-  const yAxis = option.yAxis as Record<string, unknown> | undefined;
-  if (data.referenceLine && yAxis) {
-    const peak = Math.max(0, ...data.series.flatMap((x) => x.data.map((d) => (typeof d === "number" ? d : 0))));
-    yAxis.max = Math.max(peak, data.referenceLine.value) * 1.05;
-  }
-  return { ok: true, option, title: spec.title?.trim() || title, notes: [] };
+  return { ok: true, option, resolved, title: spec.title?.trim() || title, notes: [], provenance: { points: 0, unverified: 0 } };
 }
 
 /** The value of one cell under a measure, as a number (null when not recorded or not meaningful). */
@@ -142,7 +144,70 @@ function measureValue(cells: ReturnType<typeof indexCells>, indicator: DataSheet
   return pct(num(cell.cumulativeValue) ?? num(cell.periodValue), num(indicator.target));
 }
 
+/** Draws a chart from the data sheet. Draft values are plotted too; `provenance` says how many are not verified yet. */
 export function buildDataChart(sheet: DataSheet, spec: DataChartSpec): DataChartResult {
+  const result = buildDataChartCore(sheet, spec);
+  if (!result.ok) return result;
+  const provenance = plottedProvenance(sheet, spec);
+  return {
+    ...result,
+    provenance,
+    notes: provenance.unverified > 0 ? [...result.notes, `${provenance.unverified} of ${provenance.points} plotted ${provenance.points === 1 ? "value is" : "values are"} not verified yet.`] : result.notes,
+  };
+}
+
+function plottedProvenance(sheet: DataSheet, spec: DataChartSpec): DataChartProvenance {
+  const cells = indexCells(sheet);
+  const periods = periodsInRange(sheet, spec.fromPeriodId, spec.toPeriodId);
+  const chosen = spec.indicatorIds.map((id) => sheet.indicators.find((i) => i.id === id)).filter((i): i is DataSheetIndicator => Boolean(i));
+  let points = 0;
+  let unverified = 0;
+  const count = (indicator: DataSheetIndicator, period: DataSheetPeriod, measure: PivotMeasure): boolean => {
+    if (measureValue(cells, indicator, period, measure) === null) return false;
+    points += 1;
+    if (cells.get(`${indicator.id}|${period.id}`)?.status !== "VERIFIED") unverified += 1;
+    return true;
+  };
+  switch (spec.template) {
+    case "INDICATOR_OVER_TIME": {
+      const ind = chosen[0];
+      if (ind) for (const p of periods) count(ind, p, ind.isRate && spec.measure === "PERCENT_OF_TARGET" ? "PERIOD" : spec.measure);
+      break;
+    }
+    case "INDICATORS_OVER_TIME": {
+      const mixed = new Set(chosen.map(unitOf)).size > 1;
+      const measure: PivotMeasure = mixed && spec.measure !== "PERCENT_OF_TARGET" ? "PERCENT_OF_TARGET" : spec.measure;
+      for (const i of chosen) if (!(measure === "PERCENT_OF_TARGET" && i.isRate)) for (const p of periods) count(i, p, measure);
+      break;
+    }
+    case "INDICATOR_VS_TARGET": {
+      const ind = chosen[0];
+      if (!ind) break;
+      for (const p of [...periods].reverse()) {
+        if (count(ind, p, ind.isRate ? "PERIOD" : "CUMULATIVE") || count(ind, p, "PERIOD")) break;
+      }
+      break;
+    }
+    case "INDICATORS_PROGRESS":
+      for (const i of chosen) if (!i.isRate) for (const p of [...periods].reverse()) if (count(i, p, "PERCENT_OF_TARGET")) break;
+      break;
+    case "FINANCE_BUDGET_VS_SPEND":
+    case "FINANCE_BURN_RATE": {
+      const inRange = new Set(periods.map((p) => p.id));
+      for (const f of sheet.finance) {
+        if (!inRange.has(f.periodId)) continue;
+        points += 1;
+        if (!f.verified) unverified += 1;
+      }
+      break;
+    }
+    case "STATUS_DISTRIBUTION":
+      break;
+  }
+  return { points, unverified };
+}
+
+function buildDataChartCore(sheet: DataSheet, spec: DataChartSpec): DataChartResult {
   const info = DATA_CHART_TEMPLATES[spec.template];
   if (!info.types.includes(spec.type)) return { ok: false, reason: `${info.label} cannot be drawn as a ${spec.type.toLowerCase()} chart.` };
   const cells = indexCells(sheet);

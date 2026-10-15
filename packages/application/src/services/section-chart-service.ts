@@ -31,6 +31,18 @@ export function chartArtifactsForSection(section: { title: string; content: stri
   }));
 }
 
+/** A chart a person added from the Data Center (not derived from a table): it survives text edits and regeneration. */
+export function isDataCenterChart(payload: unknown): boolean {
+  return Boolean((payload as { dataCenter?: unknown } | null)?.dataCenter);
+}
+
+/** The section's Data Center charts as artifacts to write back, in their stored order. */
+export function dataCenterChartsToKeep(existing: ReadonlyArray<{ kind: string; caption: string | null; payload: unknown; sourceReferences: unknown }>): GeneratedArtifact[] {
+  return existing
+    .filter((a) => a.kind === "CHART" && isDataCenterChart(a.payload))
+    .map((a) => ({ kind: "CHART", caption: a.caption ?? undefined, ordinal: 0, payload: a.payload, sourceReferences: a.sourceReferences }) as GeneratedArtifact);
+}
+
 export interface ISectionChartService {
   /** Rebuilds the section's charts from its current text, leaving its other artifacts alone. Returns how many charts it has. */
   refresh(input: { tenantId: TenantId; sectionId: string; revisionId: string | null; title: string; content: string }): Promise<Result<number, DomainError>>;
@@ -42,11 +54,12 @@ export class SectionChartService implements ISectionChartService {
   async refresh(input: { tenantId: TenantId; sectionId: string; revisionId: string | null; title: string; content: string }): Promise<Result<number, DomainError>> {
     const existing = await this.artifacts.findBySection(input.sectionId, input.tenantId);
     if (!existing.ok) return existing;
+    // Charts the person added from the Data Center are theirs: only the table-derived ones are rebuilt.
     const kept: GeneratedArtifact[] = existing.value
       .filter((a) => a.kind !== "CHART")
       .map((a) => ({ kind: a.kind, caption: a.caption ?? undefined, ordinal: 0, payload: a.payload, sourceReferences: a.sourceReferences }) as GeneratedArtifact);
     const charts = chartArtifactsForSection({ title: input.title, content: input.content });
-    const all = [...kept, ...charts].map((a, i) => ({ ...a, ordinal: i }) as GeneratedArtifact);
+    const all = [...kept, ...charts, ...dataCenterChartsToKeep(existing.value)].map((a, i) => ({ ...a, ordinal: i }) as GeneratedArtifact);
     const replaced = await this.artifacts.replaceForSection({ tenantId: input.tenantId, sectionId: input.sectionId, revisionId: input.revisionId, artifacts: all });
     if (!replaced.ok) return replaced;
     return { ok: true, value: charts.length };

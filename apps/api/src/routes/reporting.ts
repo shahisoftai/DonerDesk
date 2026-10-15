@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, CancelReportingPeriodSchema, SaveSectionNoteSchema, ChangePeriodTemplateSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema } from "@donordesk/contracts";
+import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, CancelReportingPeriodSchema, SaveSectionNoteSchema, ChangePeriodTemplateSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema, AddSectionDataChartSchema, UpdateSectionDataChartSchema, MoveSectionDataChartSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -17,6 +17,57 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const projectId = (req.params as { projectId: string }).projectId;
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.ensureAutoPeriod.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/report-sections/:id/data-charts", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.list(ctx, id);
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.post("/v1/report-sections/:id/data-charts", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = AddSectionDataChartSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.add(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/report-sections/:id/data-charts/:chartId", async (req) => {
+    const { id, chartId } = req.params as { id: string; chartId: string };
+    const body = UpdateSectionDataChartSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.update(ctx, id, chartId, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-sections/:id/data-charts/:chartId/refresh", async (req) => {
+    const { id, chartId } = req.params as { id: string; chartId: string };
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.refresh(ctx, id, chartId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-sections/:id/data-charts/:chartId/move", async (req) => {
+    const { id, chartId } = req.params as { id: string; chartId: string };
+    const body = MoveSectionDataChartSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.move(ctx, id, chartId, body.direction);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.delete("/v1/report-sections/:id/data-charts/:chartId", async (req) => {
+    const { id, chartId } = req.params as { id: string; chartId: string };
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.remove(ctx, id, chartId);
     if (!r.ok) throw r.error;
     return r.value;
   });

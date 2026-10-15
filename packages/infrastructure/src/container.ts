@@ -94,6 +94,7 @@ import {
   RejectIndicatorUpdateHandler,
   ListIndicatorUpdatesHandler,
   GetProjectDataSheetHandler,
+  SectionDataChartsHandler,
   ImportDataSheetHandler,
   ListLogframeHandler,
   ListIndicatorsHandler,
@@ -598,6 +599,7 @@ export interface Container {
     reorderReportSections: ReorderReportSectionsHandler;
     updateReportSectionChart: UpdateReportSectionChartHandler;
     refreshSectionCharts: RefreshSectionChartsHandler;
+    sectionDataCharts: SectionDataChartsHandler;
     approveReportSection: ApproveReportSectionHandler;
     submitReportForReview: SubmitReportForReviewHandler;
     approveReport: ApproveReportHandler;
@@ -1183,6 +1185,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const periodContextBuilder = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence);
   const getProjectDataSheet = new GetProjectDataSheetHandler(periods, logframe, indicators, indicatorUpdates, financeInputs, periodFinancials);
   const bulkUpsertIndicatorUpdates = new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker);
+  const sectionDataCharts = new SectionDataChartsHandler(sections, drafts, periods, reportArtifacts, getProjectDataSheet, ids, audits);
   const handlers: Container["handlers"] = {
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
     login: new LoginHandler(users, auth, audits),
@@ -1355,6 +1358,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     reorderReportSections: new ReorderReportSectionsHandler(drafts, sections, audits),
     updateReportSectionChart: new UpdateReportSectionChartHandler(sections, audits),
     refreshSectionCharts: new RefreshSectionChartsHandler(sections, sectionChartService, audits),
+    sectionDataCharts,
     rewriteReportSection: new RewriteReportSectionHandler(
       ids, drafts, sections, periods, indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder,
       getReportDraftGenerator, revisionService, assuranceService, generationRuns, audits, reportArtifacts,
@@ -1391,7 +1395,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     generateChecklist: new GenerateChecklistHandler(detectMissingEvidenceHandler),
     createExport: createExportHandler,
     runExport: new RunExportHandler(createExportHandler),
-    getExportPreflight: new GetExportPreflightHandler(periods, drafts, sections, indicatorUpdates, checklist, evidence, approveReportHandler, activities),
+    getExportPreflight: new GetExportPreflightHandler(periods, drafts, sections, indicatorUpdates, checklist, evidence, approveReportHandler, activities, sectionDataCharts),
     generateDeadlineReminders: new GenerateDeadlineRemindersHandler(ids, drafts, sections, notifications, notify),
     addComment: new AddCommentHandler(ids, comments, audits, notify),
     resolveComment: new ResolveCommentHandler(comments, audits),

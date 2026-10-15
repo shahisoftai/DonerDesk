@@ -100,6 +100,7 @@ function ArtifactView({ artifact }: { artifact: ReportArtifact }) {
         <div>
           {resolved && <ResolvedChartFigure resolved={resolved} caption={artifact.caption ?? asText(p.title)} />}
           {truncated?.total ? <p className="-mt-2 mb-2 text-xs text-slate-500 dark:text-slate-400">Showing the first {truncated.shown} of {truncated.total}; the table has them all.</p> : null}
+          {dataCenterNote(p) ? <p className="-mt-2 mb-2 text-xs text-amber-700 dark:text-amber-300">{dataCenterNote(p)}</p> : null}
           <details className="text-xs">
             <summary className="cursor-pointer text-slate-500 dark:text-slate-400">Chart data</summary>
             <PreviewTable
@@ -155,6 +156,12 @@ function QaItem({ question, answer }: { question: string; answer: string }) {
       <p className="text-slate-700 dark:text-slate-300">{answer}</p>
     </div>
   );
+}
+
+/** A chart added from the Data Center says when it plots values that are not verified yet. */
+function dataCenterNote(p: Record<string, unknown>): string | null {
+  const dc = p.dataCenter as { unverified?: number; points?: number } | undefined;
+  return dc?.unverified && dc.unverified > 0 ? `${dc.unverified} of ${dc.points ?? dc.unverified} plotted ${dc.points === 1 ? "value is" : "values are"} not verified yet.` : null;
 }
 
 const CHART_TYPES = ["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"] as const;

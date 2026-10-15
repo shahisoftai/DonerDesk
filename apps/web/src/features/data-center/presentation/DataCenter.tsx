@@ -5,11 +5,12 @@ import type { DataSheetResponse } from "@/lib/server/schemas";
 import { DataSheetTable } from "./DataSheetTable";
 import { FinanceSheetTable } from "./FinanceSheetTable";
 import { DataChartBuilder } from "./DataChartBuilder";
+import { AddToReportPanel } from "./AddToReportPanel";
 import { DataSheetImport } from "./DataSheetImport";
 
 type Tab = "sheet" | "charts" | "finance" | "import";
 
-export function DataCenter({ projectId, sheet, canEdit }: { projectId: string; sheet: DataSheetResponse; canEdit: boolean }) {
+export function DataCenter({ projectId, sheet, canEdit, canEditReports }: { projectId: string; sheet: DataSheetResponse; canEdit: boolean; canEditReports: boolean }) {
   const [tab, setTab] = useState<Tab>("sheet");
   const tabs: Array<[Tab, string]> = [
     ["sheet", "Indicator data"],
@@ -32,7 +33,14 @@ export function DataCenter({ projectId, sheet, canEdit }: { projectId: string; s
       </div>
       <div className="mt-5">
         {tab === "sheet" && <DataSheetTable projectId={projectId} sheet={sheet} canEdit={canEdit} />}
-        {tab === "charts" && <DataChartBuilder sheet={sheet} />}
+        {tab === "charts" && (
+          <DataChartBuilder
+            sheet={sheet}
+            footer={({ spec, result }) => (
+              <AddToReportPanel projectId={projectId} sheet={sheet} spec={spec} canAdd={canEditReports} {...(result.ok ? {} : { disabledReason: "This chart cannot be drawn yet, so it cannot be added." })} />
+            )}
+          />
+        )}
         {tab === "finance" && <FinanceSheetTable projectId={projectId} sheet={sheet} />}
         {tab === "import" && (
           <div className="space-y-4">

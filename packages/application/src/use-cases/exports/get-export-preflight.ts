@@ -13,6 +13,7 @@ import type { ApproveReportHandler } from "../reporting/approve-report.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import { periodIndicatorScope, inIndicatorScope, resolvePeriodActivities } from "../../services/period-activities.js";
 import { PeriodEvidenceScope } from "../../services/period-evidence-scope-service.js";
+import type { SectionDataChartsHandler } from "../reporting/section-data-charts.js";
 
 export const EXPORT_TYPES = [
   "WORD",
@@ -76,7 +77,31 @@ export class GetExportPreflightHandler {
     private readonly evidence: IEvidenceRepository,
     private readonly gate: ApproveReportHandler,
     private readonly activities?: IActivityUpdateRepository,
+    /** Reads the charts people added from the Data Center, to warn about ones that are out of date. */
+    private readonly dataCharts?: SectionDataChartsHandler,
   ) {}
+
+  /** Charts from the Data Center in the current draft: how many show old data, cannot be redrawn, or plot unverified values. */
+  private async dataChartIssues(ctx: AuthenticatedContext, reportingPeriodId: string): Promise<{ stale: number; broken: number; unverified: number }> {
+    const none = { stale: 0, broken: 0, unverified: 0 };
+    if (!this.dataCharts) return none;
+    const drafts = await this.drafts.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
+    const draft = drafts.ok ? drafts.value[0] : undefined;
+    if (!draft) return none;
+    const sections = await this.sections.findByReportDraft(draft.id, ctx.tenant.tenantId);
+    if (!sections.ok) return none;
+    const total = { ...none };
+    for (const section of sections.value) {
+      const listed = await this.dataCharts.list(ctx, section.id);
+      if (!listed.ok) continue;
+      for (const c of listed.value) {
+        if (c.broken) total.broken += 1;
+        else if (c.stale) total.stale += 1;
+        if (c.unverified > 0) total.unverified += 1;
+      }
+    }
+    return total;
+  }
 
   /** The evidence the report covers (the shared scope rule), so this list agrees with generation and readiness. */
   private async periodEvidence(ctx: AuthenticatedContext, period: ReportingPeriod): Promise<Result<EvidenceFile[]>> {
@@ -272,6 +297,21 @@ export class GetExportPreflightHandler {
       warnings.push({
         code: "INCOMPLETE_SECTIONS",
         message: `${incompleteSections} of ${totalSections} section(s) are not approved.`,
+        overridable: true,
+      });
+    }
+    const chartIssues = await this.dataChartIssues(ctx, reportingPeriodId);
+    if (chartIssues.stale + chartIssues.broken > 0) {
+      warnings.push({
+        code: "DATA_CHARTS_OUT_OF_DATE",
+        message: `${chartIssues.stale + chartIssues.broken} chart(s) from the Data Center no longer match the data (${chartIssues.broken > 0 ? `${chartIssues.broken} cannot be redrawn; ` : ""}press Update in the section's chart panel).`,
+        overridable: true,
+      });
+    }
+    if (chartIssues.unverified > 0) {
+      warnings.push({
+        code: "DATA_CHARTS_UNVERIFIED",
+        message: `${chartIssues.unverified} chart(s) from the Data Center plot values that are not verified yet.`,
         overridable: true,
       });
     }

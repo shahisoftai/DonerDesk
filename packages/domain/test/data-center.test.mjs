@@ -138,3 +138,17 @@ test("charts: a target line far above the data stretches the axis so it stays vi
   assert.ok(r.ok);
   assert.ok(r.option.yAxis.max >= 100);
 });
+
+test("charts: unverified values are plotted but counted and warned about", () => {
+  const r = buildDataChart(sheet, spec({}));
+  assert.ok(r.ok);
+  assert.deepEqual(r.provenance, { points: 2, unverified: 1 });
+  assert.ok(r.notes.some((n) => /1 of 2 plotted values/.test(n)));
+  assert.equal(r.resolved.dataBinding, "DATA_CENTER");
+});
+
+test("charts: finance provenance counts unverified figures", () => {
+  const unverified = { ...sheet, finance: [{ ...sheet.finance[0], verified: false }] };
+  const r = buildDataChart(unverified, { template: "FINANCE_BUDGET_VS_SPEND", indicatorIds: [], measure: "PERIOD", type: "BAR", showTarget: false });
+  assert.deepEqual(r.provenance, { points: 1, unverified: 1 });
+});

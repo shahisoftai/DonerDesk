@@ -27,7 +27,7 @@ export const CHART_DATA_BINDINGS: ChartDataBinding[] = [
 ];
 
 /** Bindings a chart derived from a table of the section carries (never chosen by hand). */
-export type DerivedChartBinding = "TABLE_INDICATOR_PROGRESS" | "TABLE_FINANCE_BY_LINE" | "TABLE_ACTIVITY_PARTICIPANTS";
+export type DerivedChartBinding = "TABLE_INDICATOR_PROGRESS" | "TABLE_FINANCE_BY_LINE" | "TABLE_ACTIVITY_PARTICIPANTS" | "DATA_CENTER";
 
 /**
  * Which chart types a binding can honestly be drawn as. A pie of baseline/target/achievement, a line joining unrelated
@@ -41,6 +41,8 @@ export const CHART_BINDING_TYPES: Record<ChartDataBinding | DerivedChartBinding,
   TABLE_INDICATOR_PROGRESS: ["BAR", "RADAR"],
   TABLE_FINANCE_BY_LINE: ["BAR"],
   TABLE_ACTIVITY_PARTICIPANTS: ["BAR"],
+  // A Data Center chart: its template (data-charts.ts) already chose a type that suits its data.
+  DATA_CENTER: ["BAR", "LINE", "AREA", "PIE", "RADAR", "GAUGE"],
 };
 
 /** The chart types allowed for a binding; a gauge needs exactly one thing to show. */
@@ -336,6 +338,12 @@ export function optionForType(resolved: ResolvedChartData, type: ChartType): Rec
       : {}),
   }));
 
+  // A Data Center target line outside the data range would sit off the chart, so the axis is stretched to include it.
+  const stretch =
+    resolved.dataBinding === "DATA_CENTER" && resolved.referenceLine
+      ? { max: Math.max(0, ...resolved.series.flatMap((s) => s.data.map(numeric)), resolved.referenceLine.value) * 1.05 }
+      : {};
+
   return {
     color: ECHARTS_PALETTE,
     tooltip: { trigger: "axis" },
@@ -343,7 +351,7 @@ export function optionForType(resolved: ResolvedChartData, type: ChartType): Rec
     grid: { left: 56, right: 24, top: 24, bottom: 56, containLabel: true },
     // Every category is labelled: long names (budget lines, activities) wrap instead of being skipped.
     xAxis: { type: "category", data: resolved.categories, axisLabel: { interval: 0, width: resolved.categories.length > 6 ? 70 : 110, overflow: "break", rotate: resolved.categories.length > 8 ? 30 : 0 } },
-    yAxis: { type: "value", axisLabel: { formatter: unit ? (unit === "%" ? "{value}%" : `{value} ${unit}`) : "{value}" } },
+    yAxis: { type: "value", ...stretch, axisLabel: { formatter: unit ? (unit === "%" ? "{value}%" : `{value} ${unit}`) : "{value}" } },
     series: seriesList,
   };
 }
