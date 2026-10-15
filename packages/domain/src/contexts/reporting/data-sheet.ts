@@ -16,6 +16,8 @@ export interface DataSheetPeriod {
   reportType: string;
   /** A CLOSED period cannot be edited or imported into. */
   locked: boolean;
+  /** Where the report stands (NOT_STARTED … APPROVED, SUBMITTED, CLOSED), so a chart picker can say which reports can still be changed. */
+  reportStatus?: string | undefined;
 }
 
 export interface DataSheetIndicator {

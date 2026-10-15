@@ -72,7 +72,7 @@ export class GetProjectDataSheetHandler {
         periods: periods.map((p) => {
           const start = isoDay(p.duration.start);
           const end = isoDay(p.duration.end);
-          return { id: p.id, label: periodSheetLabel(start, end), start, end, reportType: p.reportType, locked: p.status.value === "CLOSED" };
+          return { id: p.id, label: periodSheetLabel(start, end), start, end, reportType: p.reportType, locked: p.status.value === "CLOSED", reportStatus: p.status.value };
         }),
         indicators: indicatorsResult.value.map((i) => ({
           id: i.id,

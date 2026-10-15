@@ -1154,7 +1154,7 @@ export type AiSectionRunsResponse = z.infer<typeof AiSectionRunsResponseSchema>;
 export const DataSheetResponseSchema = z.object({
   projectId: z.string(),
   financeEnabled: z.boolean(),
-  periods: z.array(z.object({ id: z.string(), label: z.string(), start: z.string(), end: z.string(), reportType: z.string(), locked: z.boolean() })),
+  periods: z.array(z.object({ id: z.string(), label: z.string(), start: z.string(), end: z.string(), reportType: z.string(), locked: z.boolean(), reportStatus: z.string().optional() })),
   indicators: z.array(
     z.object({
       id: z.string(),

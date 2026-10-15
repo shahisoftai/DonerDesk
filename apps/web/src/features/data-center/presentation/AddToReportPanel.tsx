@@ -9,6 +9,26 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 
+const STATE_LABEL: Record<string, string> = {
+  NOT_STARTED: "no draft yet",
+  IN_PROGRESS: "in progress",
+  EVIDENCE_COLLECTION: "collecting evidence",
+  DRAFT_GENERATED: "draft",
+  UNDER_REVIEW: "under review",
+  APPROVED: "approved",
+  SUBMITTED: "submitted",
+  CLOSED: "closed",
+};
+/** Report states in which the report may still be a draft that accepts charts (the live check on the chosen report decides). */
+const MAY_BE_DRAFT = new Set(["IN_PROGRESS", "EVIDENCE_COLLECTION", "DRAFT_GENERATED"]);
+
+/** Why charts cannot be added to a report in this state, in words a person can act on. */
+function lockedReason(status: string | null, version: number | null): string {
+  const v = version ? ` (version ${version})` : "";
+  if (status === "UNDER_REVIEW") return `This report${v} is under review, so its charts are locked. Charts can be added again once it is back in draft.`;
+  return `This report${v} is ${status === "SUBMITTED" ? "submitted" : status === "EXPORTED" ? "exported" : "approved"}, so its content, charts included, is locked. To add a chart, open the report and choose Regenerate whole draft: that starts a new version and keeps this one in history.`;
+}
+
 /**
  * "Add this chart to a report": the report (a reporting period of the project), the section and a caption. A report that has no
  * draft yet, or is no longer a draft, says so instead of offering sections.
@@ -23,7 +43,8 @@ export function AddToReportPanel({ projectId, sheet, spec, canAdd, disabledReaso
   defaultPeriodId?: string;
   onAdded?: (sectionId: string) => void;
 }) {
-  const [periodId, setPeriodId] = useState(defaultPeriodId ?? "");
+  const latestOpen = [...sheet.periods].reverse().find((p) => MAY_BE_DRAFT.has(p.reportStatus ?? ""));
+  const [periodId, setPeriodId] = useState(defaultPeriodId ?? latestOpen?.id ?? "");
   const [choices, setChoices] = useState<DraftSectionChoices | null>(null);
   const [loading, setLoading] = useState(false);
   const [sectionId, setSectionId] = useState("");
@@ -47,6 +68,7 @@ export function AddToReportPanel({ projectId, sheet, spec, canAdd, disabledReaso
   }, [periodId]);
 
   if (!canAdd) return null;
+  const anyOpenHint = latestOpen ? null : "None of this project's reports is a draft right now, so there is nowhere to add a chart yet. Charts can be added to a report while it is a draft.";
   const editable = choices?.draftId && choices.draftStatus === "DRAFT";
 
   async function add(): Promise<void> {
@@ -71,27 +93,32 @@ export function AddToReportPanel({ projectId, sheet, spec, canAdd, disabledReaso
           Report
           <Select className="mt-1" value={periodId} onChange={(e) => setPeriodId(e.target.value)}>
             <option value="">Choose a report</option>
-            {sheet.periods.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            {sheet.periods.map((p) => <option key={p.id} value={p.id}>{p.label}{p.reportStatus ? ` — ${STATE_LABEL[p.reportStatus] ?? p.reportStatus.toLowerCase()}` : ""}{p.reportStatus && !MAY_BE_DRAFT.has(p.reportStatus) ? " (locked)" : ""}</option>)}
           </Select>
         </label>
         <label className="text-xs text-slate-500">
           Section
           <Select className="mt-1" value={sectionId} disabled={!editable} onChange={(e) => setSectionId(e.target.value)}>
-            <option value="">{loading ? "Loading…" : "Choose a section"}</option>
+            <option value="">{loading ? "Loading…" : !periodId ? "Choose a report first" : editable ? "Choose a section" : "Not available for this report"}</option>
             {(editable ? choices?.sections : [])?.map((s) => <option key={s.id} value={s.id}>{s.title}{s.approved ? " (approved)" : ""}</option>)}
           </Select>
         </label>
+        {anyOpenHint && <p className="text-xs text-slate-600 dark:text-slate-300 sm:col-span-2" role="status">{anyOpenHint}</p>}
+        {periodId && !loading && choices && !choices.draftId && (
+          <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200 sm:col-span-2" role="status">
+            This report has no draft yet. <Link className="font-medium underline" href={`/projects/${projectId}/reports/${periodId}`}>Open the report</Link> and generate it first.
+          </p>
+        )}
+        {periodId && !loading && choices?.draftId && !editable && (
+          <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200 sm:col-span-2" role="status">
+            {lockedReason(choices.draftStatus, choices.draftVersion)} <Link className="font-medium underline" href={`/projects/${projectId}/reports/${periodId}`}>Open the report</Link>
+          </p>
+        )}
         <label className="text-xs text-slate-500 sm:col-span-2">
           Caption (optional)
           <Input className="mt-1" value={caption} maxLength={300} onChange={(e) => setCaption(e.target.value)} placeholder="Leave empty to use the chart title" />
         </label>
       </div>
-      {periodId && !loading && choices && !choices.draftId && (
-        <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">This report has no draft yet. <Link className="text-brand-600 hover:underline" href={`/projects/${projectId}/reports/${periodId}`}>Open the report</Link> and generate it first.</p>
-      )}
-      {periodId && !loading && choices?.draftId && !editable && (
-        <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">This report is no longer a draft, so charts cannot be added to it.</p>
-      )}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <Button disabled={!sectionId || busy || Boolean(disabledReason)} pending={busy} onClick={() => void add()}>Add to section</Button>
         {disabledReason && <span className="text-xs text-slate-500">{disabledReason}</span>}

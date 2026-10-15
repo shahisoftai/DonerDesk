@@ -20,7 +20,7 @@ export async function getDataSheetAction(projectId: string): Promise<Result<Data
   return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/data-sheet`, DataSheetResponseSchema, context.token);
 }
 
-export type DraftSectionChoices = { draftId: string | null; draftStatus: string | null; sections: Array<{ id: string; title: string; approved: boolean }> };
+export type DraftSectionChoices = { draftId: string | null; draftStatus: string | null; draftVersion: number | null; sections: Array<{ id: string; title: string; approved: boolean }> };
 
 /** The sections of a period's report, for choosing where a chart goes. */
 export async function getDraftSectionChoicesAction(periodId: string): Promise<Result<DraftSectionChoices, AppError>> {
@@ -33,6 +33,7 @@ export async function getDraftSectionChoicesAction(periodId: string): Promise<Re
     value: {
       draftId: draft?.id ?? null,
       draftStatus: draft?.status ?? null,
+      draftVersion: draft?.version ?? null,
       sections: [...(sections ?? [])].sort((a, b) => a.sectionOrder - b.sectionOrder).map((s) => ({ id: s.id, title: s.numbering && !s.sectionTitle.startsWith(s.numbering) ? `${s.numbering} ${s.sectionTitle}` : s.sectionTitle, approved: s.status === "APPROVED" })),
     },
   };
