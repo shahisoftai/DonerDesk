@@ -15,6 +15,8 @@ Review happens in the document-style **report editor**. This guide covers the au
 | Override a confidentiality issue | Admin, Grants Officer |
 | Comment | Everyone except Viewer |
 
+> **Need to change a report after approval?** An approver can reopen it with a reason from the **⋯** menu. It returns to draft, only the sections you change need approving again, and the report is approved again. See [How to reopen an approved report](/support/how-to/reopen-an-approved-report).
+
 ## Author: get the draft ready
 
 1. Open **Projects → project → Reporting → the period**.

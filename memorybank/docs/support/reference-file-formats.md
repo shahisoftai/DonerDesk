@@ -19,6 +19,7 @@ Word (.docx), PDF, text (.txt), Markdown (.md), Excel (.xlsx) or CSV, up to **20
 | Logframe, indicators, activities | XLSX, CSV, TXT. Use **Download template** on each page. |
 | Evidence records | XLSX / CSV using the evidence template |
 | Indicator values | Google Sheets (URL) or pasted CSV |
+| Data sheet (all periods) | XLSX or CSV downloaded from **Project → Data**, up to 10 MB and 20,000 rows |
 
 ## Exports
 

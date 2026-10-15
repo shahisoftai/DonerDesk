@@ -13,7 +13,7 @@ Exports produce the files you send to the donor. They come from the approved rep
 
 | Type | Format | Notes |
 |---|---|---|
-| Report | Word (DOCX) and PDF | Follows the donor template's structure and formatting. Includes charts, tables and figures. |
+| Report | Word (DOCX) and PDF | Follows the donor template's structure and formatting. Includes charts, tables and figures, including charts you added from the Data Center. The donor-template Word output (filled from the donor's own .docx) does not draw charts. |
 | Indicator table | Excel | All indicators with values for the period. For **final, annual and semi-annual** reports it also shows **This period**, **Life of project to date** and **% of target**, so the file matches the report's own table. A value that was never recorded is left empty, not shown as 0. A rate (percentage, ratio or % unit) shows **—** in % of target, as in the report table. |
 | Evidence checklist | Excel/document | Every checklist item and its status. A copy for the donor lists title, severity and status only; your team's resolution notes appear only in internal copies. |
 | Evidence pack | ZIP | Report, indicator table, checklist and the selected evidence files themselves (folder `05_Evidence`) in a numbered structure. Files kept only in your own Google Drive, or too large (150 MB total), are listed in the README as not included. For final, annual and semi-annual reports it offers **all of the project's evidence**; for others, the files of the period and its activities. The ticks in the wizard start with the files the report cites, so tick the others you want in the ZIP. Sensitive files are left out unless you include them. |

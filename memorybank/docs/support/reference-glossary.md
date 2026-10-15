@@ -185,3 +185,9 @@ Records you finished with no connection, kept on your device until they can be s
 
 **Dictation**
 Speaking into a text box with the microphone button instead of typing. See [How to dictate instead of typing](/support/how-to/dictate-instead-of-typing).
+
+**Data Center**
+The project's **Data** tab: every indicator value (and finance figure) across all reporting periods in one sheet, with Excel/CSV download and import and a chart builder. See [How to use the Data Center](/support/how-to/use-the-data-center).
+
+**Reopen (a report)**
+Putting an approved, exported or submitted report back to draft, with a reason, so it can be changed and approved again. See [How to reopen an approved report](/support/how-to/reopen-an-approved-report).

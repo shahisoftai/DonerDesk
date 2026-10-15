@@ -1202,13 +1202,14 @@ export const DataSheetImportResponseSchema = z.object({
     missingColumns: z.array(z.string()),
     changed: z.number(),
     unchanged: z.number(),
+    skipped: z.number().default(0),
     errors: z.number(),
     rows: z.array(
       z.object({
         rowNumber: z.number(),
         indicatorCode: z.string(),
         periodLabel: z.string(),
-        status: z.enum(["CHANGED", "UNCHANGED", "ERROR"]),
+        status: z.enum(["CHANGED", "UNCHANGED", "SKIPPED", "ERROR"]),
         error: z.string().optional(),
         periodValue: z.string().optional(),
         cumulativeValue: z.string().optional(),

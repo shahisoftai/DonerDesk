@@ -52,3 +52,21 @@ test("import: a preview saves nothing; applying saves changed rows per period; a
   assert.equal(bad.ok, false);
   assert.equal(saved.length, 0);
 });
+
+test("import: a verified value is never sent to the bulk save (it would be ignored), and the rest still saves", async () => {
+  const saved = [];
+  const sheetHandler = {
+    handle: async () => ok({
+      projectId: "proj", financeEnabled: false,
+      periods: [{ id: "p1", label: "Jan 2026", start: "2026-01-01", end: "2026-01-31", reportType: "MONTHLY", locked: false }, { id: "p2", label: "Feb 2026", start: "2026-02-01", end: "2026-02-28", reportType: "MONTHLY", locked: false }],
+      indicators: [{ id: "i1", code: "OUT-1", name: "x", level: null, type: "COUNT", baseline: "0", target: "100", isRate: false }],
+      cells: [{ indicatorId: "i1", periodId: "p1", periodValue: "10", cumulativeValue: "10", status: "VERIFIED" }, { indicatorId: "i1", periodId: "p2", periodValue: "5", cumulativeValue: "15", status: "DRAFT" }],
+      finance: [],
+    }),
+  };
+  const imp = new ImportDataSheetHandler(sheetHandler, { handle: async (_c, input) => { saved.push(input); return ok({ saved: input.updates.length, skipped: 0, updates: [] }); } });
+  const r = await imp.handle(ctx, "proj", [["Indicator code", "Period", "Period value", "Cumulative value"], ["OUT-1", "Jan 2026", "99", "99"], ["OUT-1", "Feb 2026", "6", "16"]], true);
+  assert.equal(r.value.saved, 1);
+  assert.equal(r.value.preview.skipped, 1);
+  assert.deepEqual(saved.map((s) => s.reportingPeriodId), ["p2"]);
+});

@@ -242,7 +242,8 @@ export function parseCsv(text: string): string[][] {
 // Import
 // ---------------------------------------------------------------------------
 
-export type DataSheetImportStatus = "CHANGED" | "UNCHANGED" | "ERROR";
+/** SKIPPED: the stored value is verified, so the import leaves it as it is (it says so; nothing is silently dropped). */
+export type DataSheetImportStatus = "CHANGED" | "UNCHANGED" | "SKIPPED" | "ERROR";
 
 export interface DataSheetImportRow {
   /** 1-based row number in the file, header included. */
@@ -250,7 +251,7 @@ export interface DataSheetImportRow {
   indicatorCode: string;
   periodLabel: string;
   status: DataSheetImportStatus;
-  /** Plain-language reason when status is ERROR. */
+  /** Plain-language reason when status is ERROR or SKIPPED. */
   error?: string;
   indicatorId?: string;
   periodId?: string;
@@ -269,6 +270,7 @@ export interface DataSheetImportPreview {
   rows: DataSheetImportRow[];
   changed: number;
   unchanged: number;
+  skipped: number;
   errors: number;
 }
 
@@ -308,7 +310,7 @@ export function previewDataSheetImport(sheet: DataSheet, table: ReadonlyArray<Re
   if (idx.code < 0) missingColumns.push("Indicator code");
   if (idx.period < 0 && (idx.start < 0 || idx.end < 0)) missingColumns.push("Period (or Period start and Period end)");
   if (idx.value < 0 && idx.cumulative < 0) missingColumns.push("Period value or Cumulative value");
-  if (missingColumns.length > 0) return { missingColumns, rows: [], changed: 0, unchanged: 0, errors: 0 };
+  if (missingColumns.length > 0) return { missingColumns, rows: [], changed: 0, unchanged: 0, skipped: 0, errors: 0 };
 
   const indicators = new Map(sheet.indicators.map((i) => [norm(i.code), i]));
   const periodsByDates = new Map(sheet.periods.map((p) => [`${p.start}|${p.end}`, p]));
@@ -365,6 +367,11 @@ export function previewDataSheetImport(sheet: DataSheet, table: ReadonlyArray<Re
       nextSource === (current?.dataSource ?? "") &&
       nextComments === (current?.comments ?? "");
     const nothing = nextValue === "" && nextCumulative === "" && !current;
+    // A verified value is never overwritten (approved figures cannot change silently): say so instead of promising a change.
+    if (!same && !nothing && current?.status === "VERIFIED") {
+      rows.push({ ...base, status: "SKIPPED", error: "This value is verified, so it is left as it is. To change it, ask a reviewer to send it back for correction first.", indicatorId: indicator.id, periodId: period.id, previousPeriodValue: current.periodValue, previousCumulativeValue: current.cumulativeValue });
+      continue;
+    }
     rows.push({
       ...base,
       status: same || nothing ? "UNCHANGED" : "CHANGED",
@@ -383,6 +390,7 @@ export function previewDataSheetImport(sheet: DataSheet, table: ReadonlyArray<Re
     rows,
     changed: rows.filter((x) => x.status === "CHANGED").length,
     unchanged: rows.filter((x) => x.status === "UNCHANGED").length,
+    skipped: rows.filter((x) => x.status === "SKIPPED").length,
     errors: rows.filter((x) => x.status === "ERROR").length,
   };
 }

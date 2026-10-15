@@ -27,9 +27,14 @@ Under each indicator the badge shows whether its **calculation is confirmed**. S
 
 If a note appears under a row such as *Linked activities record 412 participants; the indicator says 380*, it is only a prompt to check: people may attend more than one activity, so the figures can legitimately differ.
 
+## See every month at once
+
+The **Data Center** (**Projects → project → Data**) shows all periods in one sheet, lets you download it as Excel or CSV, and can import values back from a file. See [How to use the Data Center](/support/how-to/use-the-data-center).
+
 ## Import instead of typing
 
 - **Google Sheets:** click **Import from Google Sheets**, paste the sheet's URL. The sheet must be shared with the connected Google account and have a header row with the indicator code and period achievement (cumulative, comments and data source columns are optional). Values are applied to the grid; review them and press **Save all** to keep them. See [How to import from Google Sheets](/support/how-to/import-from-google-sheets).
+- **Excel or CSV of all periods:** download the data sheet from the **Data Center**, fill the shaded columns and import it; a preview shows every change first. Verified values are never overwritten.
 - **Spreadsheet or pasted CSV:** on the report's **Data & story inputs** page you can paste CSV such as `Indicator code,Period achievement` or upload a file, and DonorDesk proposes inputs that you confirm before they are saved.
 
 ## Verify

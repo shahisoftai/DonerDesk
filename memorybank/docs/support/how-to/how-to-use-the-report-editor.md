@@ -36,12 +36,12 @@ Statements in the text that make factual claims are highlighted. In the **Statem
 ## Sources, charts and history
 
 - **Sources** lists the evidence files, activities and indicator updates behind the section; click to open them.
-- **Chart** lets you add a bar, line, pie, area, radar or gauge chart to a section. Exports show the same chart.
+- **Chart** lets you add a bar, line, pie, area, radar or gauge chart to a section, and lists the charts you added from the **Data Center** (update, edit, reorder, remove). Exports show the same charts. See [How to add a chart to a report](/support/how-to/add-a-chart-to-a-report).
 - **History** shows each version: written by the AI, edited by a person, regenerated, rewritten with AI, number corrected from evidence, or restored. You can restore an earlier version.
 
 ## The ⋯ menu
 
-Regenerate the whole draft, **Edit data & story** (the inputs page), **Scan for missing items**, **Version history**, **Export center** and **Keyboard shortcuts**. Items you have no permission for are hidden.
+Regenerate the whole draft, **Reopen for changes** (approvers, on an approved report; see [How to reopen an approved report](/support/how-to/reopen-an-approved-report)), **Edit data & story** (the inputs page), **Scan for missing items**, **Version history**, **Export center** and **Keyboard shortcuts**. Items you have no permission for are hidden.
 
 ## When inputs change
 

@@ -170,3 +170,16 @@ test("charts: a pie takes one colour per slice from the same list", () => {
   assert.ok(r.ok);
   assert.deepEqual(r.option.color, ["#aa0000", "#00aa00"]);
 });
+
+test("import: a verified value is reported as left as it is, not promised as a change, and does not block the rest", () => {
+  const table = parseCsv("Indicator code,Period,Period value,Cumulative value\nOUT-1,Jan 2026,99,99\nOUT-1,Feb 2026,16,26");
+  const preview = previewDataSheetImport(sheet, table);
+  assert.equal(preview.skipped, 1);
+  assert.equal(preview.changed, 1);
+  assert.equal(preview.errors, 0);
+  assert.equal(preview.rows[0].status, "SKIPPED");
+  assert.match(preview.rows[0].error, /verified/);
+  assert.equal(preview.rows[0].previousPeriodValue, "10");
+  const same = previewDataSheetImport(sheet, parseCsv("Indicator code,Period,Period value\nOUT-1,Jan 2026,10"));
+  assert.equal(same.skipped, 0, "an unchanged verified value is just 'already the same'");
+});

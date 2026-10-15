@@ -36,6 +36,7 @@ Every person in a workspace has one **role**. The role decides what they can see
 | Edit reports | ✓ | ✓ | ✓ | ✓ | | | |
 | Decide on flagged statements | ✓ | ✓ | | | | | |
 | Approve reports | ✓ | ✓ | | | | | |
+| Reopen an approved report for changes | ✓ | ✓ | | | | | |
 | Export reports | ✓ | ✓ | | ✓ | | | ✓ |
 | Override confidentiality on export | ✓ | | | ✓ | | | |
 | Manage AI Writing Style | ✓ | ✓ | | | | | |

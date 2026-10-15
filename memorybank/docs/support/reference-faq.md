@@ -122,6 +122,24 @@ The portal is responsive and works on phones and tablets, though report review i
 ### Can I speak instead of typing?
 Yes, in Chrome, Edge and Safari. Click the microphone in the corner of a text box. See [How to dictate instead of typing](/support/how-to/dictate-instead-of-typing).
 
+### Can I see all my indicator data in one place?
+Yes. The **Data** tab of a project (the Data Center) shows every indicator value across all reporting periods, by period or as a list, with filters. You can download it as Excel or CSV. See [How to use the Data Center](/support/how-to/use-the-data-center).
+
+### Can I fill in many months in Excel and upload them?
+Yes. Download the data sheet from **Data → Import / export**, change the shaded columns, and import it. You see a preview of every change first. Empty cells never clear a value and verified values are never overwritten.
+
+### Can I add my own chart to a report?
+Yes. Build it in **Data → Charts** (one indicator over time, an indicator against its target, progress of several indicators, budget against spending and more), choose its colours, and add it to a report section. See [How to add a chart to a report](/support/how-to/add-a-chart-to-a-report).
+
+### Why does my chart say some values are not verified?
+Charts plot draft values too, so you can see the picture early, but they say how many values are not verified yet. Verify the values to clear the note. The export check also warns about it.
+
+### Does a chart change when my data changes?
+Not by itself. A chart keeps the data it showed when you added it, so an approved report never changes silently. When the data has moved, the chart shows **Data has changed** and an **Update** button.
+
+### How do I change a report after it was approved?
+An approver (Admin or Project Manager) can **reopen** it from the **⋯** menu, with a reason. It goes back to draft; only the sections you change need approving again, and the report is approved again. See [How to reopen an approved report](/support/how-to/reopen-an-approved-report).
+
 ### Can I connect other tools?
 Google Drive and Google Sheets are supported. There is no public API yet; ask about integrations via [contact sales](/contact-sales).
 

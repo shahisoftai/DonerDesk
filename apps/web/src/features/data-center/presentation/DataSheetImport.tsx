@@ -50,7 +50,7 @@ export function DataSheetImport({ projectId }: { projectId: string }) {
       <h3 id="import-heading" className="font-medium">Import a data sheet</h3>
       <p className="mt-1 text-sm text-slate-500">
         Download the Excel file, change the shaded columns (period value, cumulative value, data source, comments) and upload it here (.xlsx or .csv).
-        Rows are matched on indicator code and period. An empty cell leaves the stored value as it is. You see what will change before anything is saved.
+        Rows are matched on indicator code and period. An empty cell leaves the stored value as it is, and a verified value is never overwritten. You see what will change before anything is saved.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <input ref={input} type="file" accept=".csv,.xlsx" aria-label="Data sheet file" className="text-sm" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setPreview(null); setMessage(null); }} />
@@ -66,7 +66,7 @@ export function DataSheetImport({ projectId }: { projectId: string }) {
           ) : (
             <>
               <p className="text-sm">
-                <strong>{preview.changed}</strong> to change · <strong>{preview.unchanged}</strong> already the same · <strong className={preview.errors > 0 ? "text-danger-700 dark:text-danger-300" : ""}>{preview.errors}</strong> with problems
+                <strong>{preview.changed}</strong> to change · <strong>{preview.unchanged}</strong> already the same · <strong>{preview.skipped}</strong> verified (left as they are) · <strong className={preview.errors > 0 ? "text-danger-700 dark:text-danger-300" : ""}>{preview.errors}</strong> with problems
               </p>
               {preview.errors > 0 && <p className="mt-1 text-xs text-slate-500">Fix or delete the rows with problems in your file, then check it again. Nothing is saved while any row has a problem.</p>}
               {rows.length > 0 && (
@@ -81,9 +81,9 @@ export function DataSheetImport({ projectId }: { projectId: string }) {
                           <td className="px-3 py-1.5 tabular-nums">{r.rowNumber}</td>
                           <td className="px-3 py-1.5 font-mono text-xs">{r.indicatorCode}</td>
                           <td className="px-3 py-1.5">{r.periodLabel}</td>
-                          <td className="px-3 py-1.5 tabular-nums">{r.status === "ERROR" ? "" : `${r.previousPeriodValue || "—"} → ${r.periodValue || "—"}`}</td>
-                          <td className="px-3 py-1.5 tabular-nums">{r.status === "ERROR" ? "" : `${r.previousCumulativeValue || "—"} → ${r.cumulativeValue || "—"}`}</td>
-                          <td className="px-3 py-1.5">{r.status === "ERROR" ? <Badge tone="danger" title={r.error}>{r.error}</Badge> : <Badge tone="info">Will change</Badge>}</td>
+                          <td className="px-3 py-1.5 tabular-nums">{r.status === "ERROR" ? "" : r.status === "SKIPPED" ? r.previousPeriodValue || "—" : `${r.previousPeriodValue || "—"} → ${r.periodValue || "—"}`}</td>
+                          <td className="px-3 py-1.5 tabular-nums">{r.status === "ERROR" ? "" : r.status === "SKIPPED" ? r.previousCumulativeValue || "—" : `${r.previousCumulativeValue || "—"} → ${r.cumulativeValue || "—"}`}</td>
+                          <td className="px-3 py-1.5">{r.status === "ERROR" ? <Badge tone="danger" title={r.error}>{r.error}</Badge> : r.status === "SKIPPED" ? <Badge tone="warning" title={r.error}>Verified: left as it is</Badge> : <Badge tone="info">Will change</Badge>}</td>
                         </tr>
                       ))}
                     </tbody>

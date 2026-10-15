@@ -111,7 +111,7 @@ Detail: [Review and accept activities](/support/how-to/review-and-accept-activit
 3. Leave an indicator empty in a month it was not measured (for example a quarterly survey). It is shown as **not measured**, never as zero.
 4. Click **Save & verify all**. Rows that cannot be verified are listed with the reason.
 
-Detail: [Update indicator values](/support/how-to/update-indicator-values), [Import from Google Sheets](/support/how-to/import-from-google-sheets), [Troubleshooting indicator data](/support/troubleshooting/indicator-data).
+Detail: [Update indicator values](/support/how-to/update-indicator-values), [Use the Data Center](/support/how-to/use-the-data-center) (all months in one sheet, Excel import and charts), [Import from Google Sheets](/support/how-to/import-from-google-sheets), [Troubleshooting indicator data](/support/troubleshooting/indicator-data).
 
 ## Stage 10: Tell the story
 
