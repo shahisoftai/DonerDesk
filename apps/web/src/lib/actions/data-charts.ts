@@ -33,7 +33,7 @@ export async function getDraftSectionChoicesAction(periodId: string): Promise<Re
     value: {
       draftId: draft?.id ?? null,
       draftStatus: draft?.status ?? null,
-      sections: [...(sections ?? [])].sort((a, b) => a.sectionOrder - b.sectionOrder).map((s) => ({ id: s.id, title: `${s.numbering ? `${s.numbering} ` : ""}${s.sectionTitle}`, approved: s.status === "APPROVED" })),
+      sections: [...(sections ?? [])].sort((a, b) => a.sectionOrder - b.sectionOrder).map((s) => ({ id: s.id, title: s.numbering && !s.sectionTitle.startsWith(s.numbering) ? `${s.numbering} ${s.sectionTitle}` : s.sectionTitle, approved: s.status === "APPROVED" })),
     },
   };
 }
