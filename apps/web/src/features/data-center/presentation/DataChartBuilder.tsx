@@ -20,8 +20,32 @@ const PRESETS: Array<{ label: string; spec: Partial<DataChartSpec> & { template:
   { label: "Budget vs expenditure", spec: { template: "FINANCE_BUDGET_VS_SPEND", type: "BAR" } },
 ];
 
+/**
+ * Indicators worth drawing first: those with the most recorded values (a chart of one value says nothing). Progress charts
+ * skip rates; several-over-time charts keep to the unit most of them share, so the default never mixes raw axes.
+ */
+export function defaultIndicatorIds(sheet: DataSheetResponse, template: DataChartTemplate): string[] {
+  const info = DATA_CHART_TEMPLATES[template];
+  if (info.indicators === "none") return [];
+  const counts = new Map<string, number>();
+  for (const c of sheet.cells) if (c.periodValue.trim() !== "" || c.cumulativeValue.trim() !== "") counts.set(c.indicatorId, (counts.get(c.indicatorId) ?? 0) + 1);
+  let pool = sheet.indicators.filter((i) => counts.has(i.id));
+  if (pool.length === 0) pool = sheet.indicators;
+  if (template === "INDICATORS_PROGRESS") pool = pool.filter((i) => !i.isRate && Number.parseFloat(i.target.replace(/,/g, "")) > 0);
+  if (template === "INDICATOR_VS_TARGET") pool = pool.filter((i) => !i.isRate && Number.parseFloat(i.target.replace(/,/g, "")) > 0).concat(pool);
+  const ranked = [...pool].sort((a, b) => (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0));
+  if (info.indicators === "one") return ranked[0] ? [ranked[0].id] : [];
+  if (template === "INDICATORS_OVER_TIME") {
+    const byUnit = new Map<string, number>();
+    for (const i of ranked) byUnit.set(i.unit ?? "", (byUnit.get(i.unit ?? "") ?? 0) + 1);
+    const unit = [...byUnit.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    return ranked.filter((i) => (i.unit ?? "") === unit).slice(0, 6).map((i) => i.id);
+  }
+  return ranked.slice(0, 12).map((i) => i.id);
+}
+
 export function DataChartBuilder({ sheet }: { sheet: DataSheetResponse }) {
-  const [spec, setSpec] = useState<DataChartSpec>({ template: "INDICATOR_OVER_TIME", indicatorIds: sheet.indicators[0] ? [sheet.indicators[0].id] : [], measure: "PERIOD", type: "BAR", showTarget: false });
+  const [spec, setSpec] = useState<DataChartSpec>({ template: "INDICATOR_OVER_TIME", indicatorIds: defaultIndicatorIds(sheet, "INDICATOR_OVER_TIME"), measure: "PERIOD", type: "BAR", showTarget: false });
   const [filter, setFilter] = useState("");
   const info = DATA_CHART_TEMPLATES[spec.template];
   const templates = DATA_CHART_TEMPLATE_ORDER.filter((t) => sheet.financeEnabled || !t.startsWith("FINANCE_"));
@@ -36,17 +60,14 @@ export function DataChartBuilder({ sheet }: { sheet: DataSheetResponse }) {
     setSpec((s) => ({ ...s, ...patch }));
   }
 
-  function applyTemplate(template: DataChartTemplate, patch: Partial<DataChartSpec> = {}): void {
+  /** `fresh` (a quick start) picks the indicators itself; changing the chart keeps the person's choice where it still fits. */
+  function applyTemplate(template: DataChartTemplate, patch: Partial<DataChartSpec> = {}, fresh = false): void {
     const next = DATA_CHART_TEMPLATES[template];
-    setSpec((s) => ({
-      ...s,
-      template,
-      type: next.types.includes(s.type) ? s.type : next.types[0]!,
-      // A single-indicator template keeps only the first chosen indicator.
-      indicatorIds: next.indicators === "one" ? s.indicatorIds.slice(0, 1).concat(s.indicatorIds.length === 0 && sheet.indicators[0] ? [sheet.indicators[0].id] : []) : next.indicators === "many" && s.indicatorIds.length === 0 ? sheet.indicators.slice(0, 6).map((i) => i.id) : s.indicatorIds,
-      showTarget: false,
-      ...patch,
-    }));
+    setSpec((s) => {
+      const keep = !fresh && next.indicators !== "none" && s.indicatorIds.length > 0;
+      const ids = keep ? (next.indicators === "one" ? s.indicatorIds.slice(0, 1) : s.indicatorIds) : defaultIndicatorIds(sheet, template);
+      return { ...s, template, type: next.types.includes(s.type) ? s.type : next.types[0]!, indicatorIds: ids, showTarget: false, ...patch };
+    });
   }
 
   function toggle(id: string): void {
@@ -65,7 +86,7 @@ export function DataChartBuilder({ sheet }: { sheet: DataSheetResponse }) {
           <p className="text-xs font-medium text-slate-500">Quick start</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {PRESETS.filter((p) => sheet.financeEnabled || !p.spec.template.startsWith("FINANCE_")).map((p) => (
-              <button key={p.label} type="button" className="rounded-full border border-slate-300 px-3 py-1 text-xs hover:border-brand-400 hover:text-brand-700 dark:border-white/15" onClick={() => applyTemplate(p.spec.template, { measure: p.spec.measure ?? "PERIOD", showTarget: p.spec.showTarget ?? false, ...(p.spec.type ? { type: p.spec.type } : {}) })}>
+              <button key={p.label} type="button" className="rounded-full border border-slate-300 px-3 py-1 text-xs hover:border-brand-400 hover:text-brand-700 dark:border-white/15" onClick={() => applyTemplate(p.spec.template, { measure: p.spec.measure ?? "PERIOD", showTarget: p.spec.showTarget ?? false, ...(p.spec.type ? { type: p.spec.type } : {}) }, true)}>
                 {p.label}
               </button>
             ))}
