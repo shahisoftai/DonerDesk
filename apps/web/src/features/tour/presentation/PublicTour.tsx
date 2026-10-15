@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PUBLIC_TOUR_STEPS as TOUR_STEPS } from "../domain/public-tour-steps";
 import shotsManifest from "../domain/tour-shots.json";
 
@@ -17,6 +17,9 @@ const ASPECT = `${shotsManifest.width} / ${shotsManifest.height}`;
  */
 export function PublicTour() {
   const [index, setIndex] = useState(0);
+  const [narrate, setNarrate] = useState(false);
+  const [autoNext, setAutoNext] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const step = TOUR_STEPS[index]!;
   const last = index === TOUR_STEPS.length - 1;
   const rect = SHOTS[step.id] ?? null;
@@ -30,6 +33,22 @@ export function PublicTour() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Narration: one recording per step (public/tour/audio/<id>.mp3, generated from the step copy).
+  // Browsers only allow sound after a click, so it starts when the visitor turns "Listen" on.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    if (!narrate) return;
+    audio.src = `/tour/audio/${step.id}.mp3`;
+    audio.currentTime = 0;
+    audio.play().catch(() => setNarrate(false));
+  }, [narrate, step.id]);
+
+  const onEnded = () => {
+    if (autoNext && index < TOUR_STEPS.length - 1) setIndex(index + 1);
+  };
+
   // Card sits opposite the spotlight so it never covers what it describes.
   const cardOnRight = !rect || rect.x + rect.w / 2 < 0.5;
   const cardBottom = rect ? rect.y + rect.h / 2 < 0.5 : false;
@@ -41,8 +60,19 @@ export function PublicTour() {
           <Link href="/" className="text-sm text-slate-400 hover:text-white">← Back to home</Link>
           <Link href="/signup" className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold hover:bg-emerald-400">Start free</Link>
         </div>
+        <audio ref={audioRef} onEnded={onEnded} preload="none" />
         <h1 className="mt-6 text-2xl font-bold sm:text-3xl">DonorDesk product tour</h1>
         <p className="mt-1 text-slate-400">A real walkthrough of the reporting workflow, end to end. No account needed.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          <button type="button" aria-pressed={narrate} onClick={() => setNarrate((n) => !n)}
+            className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${narrate ? "border-emerald-400 bg-emerald-500/20 text-emerald-300" : "border-white/15 text-slate-200 hover:bg-white/10"}`}>
+            {narrate ? "🔊 Narration on" : "🔈 Listen to the tour"}
+          </button>
+          <label className="flex items-center gap-2 text-sm text-slate-300">
+            <input type="checkbox" checked={autoNext} onChange={(e) => { setAutoNext(e.target.checked); if (e.target.checked) setNarrate(true); }} />
+            Move to the next step automatically
+          </label>
+        </div>
 
         <div className="mt-6 overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
           <div className="flex items-center gap-2 border-b border-white/10 bg-slate-800 px-4 py-2">
