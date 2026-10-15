@@ -1150,3 +1150,70 @@ export const AiSectionRunsResponseSchema = z.object({
   ),
 });
 export type AiSectionRunsResponse = z.infer<typeof AiSectionRunsResponseSchema>;
+
+export const DataSheetResponseSchema = z.object({
+  projectId: z.string(),
+  financeEnabled: z.boolean(),
+  periods: z.array(z.object({ id: z.string(), label: z.string(), start: z.string(), end: z.string(), reportType: z.string(), locked: z.boolean() })),
+  indicators: z.array(
+    z.object({
+      id: z.string(),
+      code: z.string(),
+      name: z.string(),
+      level: z.string().nullable(),
+      type: z.string(),
+      unit: z.string().nullish().transform((v) => v ?? undefined),
+      baseline: z.string(),
+      target: z.string(),
+      isRate: z.boolean(),
+    }),
+  ),
+  cells: z.array(
+    z.object({
+      indicatorId: z.string(),
+      periodId: z.string(),
+      periodValue: z.string(),
+      cumulativeValue: z.string(),
+      dataSource: z.string().optional(),
+      comments: z.string().optional(),
+      status: z.string(),
+    }),
+  ),
+  finance: z.array(
+    z.object({
+      periodId: z.string(),
+      currency: z.string(),
+      budget: z.string(),
+      expenditure: z.string(),
+      committed: z.string().optional(),
+      balance: z.string(),
+      burnRatePercent: z.string().optional(),
+      verified: z.boolean(),
+    }),
+  ),
+});
+export type DataSheetResponse = z.infer<typeof DataSheetResponseSchema>;
+
+export const DataSheetImportResponseSchema = z.object({
+  saved: z.number(),
+  preview: z.object({
+    missingColumns: z.array(z.string()),
+    changed: z.number(),
+    unchanged: z.number(),
+    errors: z.number(),
+    rows: z.array(
+      z.object({
+        rowNumber: z.number(),
+        indicatorCode: z.string(),
+        periodLabel: z.string(),
+        status: z.enum(["CHANGED", "UNCHANGED", "ERROR"]),
+        error: z.string().optional(),
+        periodValue: z.string().optional(),
+        cumulativeValue: z.string().optional(),
+        previousPeriodValue: z.string().optional(),
+        previousCumulativeValue: z.string().optional(),
+      }),
+    ),
+  }),
+});
+export type DataSheetImportResponse = z.infer<typeof DataSheetImportResponseSchema>;

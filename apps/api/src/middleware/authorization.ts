@@ -58,6 +58,8 @@ const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/indicator-updates$/, permission: "indicator.update" },
   { method: "POST", route: /^\/v1\/indicator-updates\/bulk$/, permission: "indicator.update" },
   { method: "POST", route: /^\/v1\/indicator-updates\/parse-sheet$/, permission: "indicator.update" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/data-sheet(?:\/export)?$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/data-sheet\/import$/, permission: "indicator.update" },
   { method: "POST", route: /^\/v1\/indicator-updates\/[^/]+\/verify$/, permission: "indicator.verify" },
   { method: "POST", route: /^\/v1\/indicator-updates\/[^/]+\/request-correction$/, permission: "indicator.verify" },
   { method: "POST", route: /^\/v1\/indicator-updates\/[^/]+\/reject$/, permission: "indicator.verify" },

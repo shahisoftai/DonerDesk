@@ -93,6 +93,8 @@ import {
   RequestIndicatorUpdateCorrectionHandler,
   RejectIndicatorUpdateHandler,
   ListIndicatorUpdatesHandler,
+  GetProjectDataSheetHandler,
+  ImportDataSheetHandler,
   ListLogframeHandler,
   ListIndicatorsHandler,
   UploadEvidenceHandler,
@@ -527,6 +529,8 @@ export interface Container {
     requestIndicatorUpdateCorrection: RequestIndicatorUpdateCorrectionHandler;
     rejectIndicatorUpdate: RejectIndicatorUpdateHandler;
     listIndicatorUpdates: ListIndicatorUpdatesHandler;
+    getProjectDataSheet: GetProjectDataSheetHandler;
+    importDataSheet: ImportDataSheetHandler;
     listLogframe: ListLogframeHandler;
     listIndicators: ListIndicatorsHandler;
     uploadEvidence: UploadEvidenceHandler;
@@ -1177,6 +1181,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const ensureAutoPeriodHandler = new EnsureAutoPeriodHandler(projects, reportingProfiles, periods, createReportingPeriodHandler);
 
   const periodContextBuilder = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence);
+  const getProjectDataSheet = new GetProjectDataSheetHandler(periods, logframe, indicators, indicatorUpdates, financeInputs, periodFinancials);
+  const bulkUpsertIndicatorUpdates = new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker);
   const handlers: Container["handlers"] = {
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
     login: new LoginHandler(users, auth, audits),
@@ -1263,7 +1269,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     confirmIndicatorSemantics: new ConfirmIndicatorSemanticsHandler(indicators, audits),
     verifyPeriodIndicatorUpdates: new VerifyPeriodIndicatorUpdatesHandler(indicatorUpdates, indicators, periods, activities, audits),
     createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits, evidenceLinker),
-    bulkUpsertIndicatorUpdates: new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker),
+    bulkUpsertIndicatorUpdates,
+    getProjectDataSheet,
+    importDataSheet: new ImportDataSheetHandler(getProjectDataSheet, bulkUpsertIndicatorUpdates),
     listPeriodIndicators: new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates, activities, projects),
     parseIndicatorSheet: new ParseIndicatorSheetHandler(periods, indicators, sheetReader),
     verifyIndicatorUpdate: new VerifyIndicatorUpdateHandler(indicatorUpdates, audits),

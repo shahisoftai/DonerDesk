@@ -10,6 +10,14 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./contexts/reporting/data-sheet.js": {
+      "types": "./dist/contexts/reporting/data-sheet.d.ts",
+      "import": "./dist/contexts/reporting/data-sheet.js"
+    },
+    "./contexts/reporting/data-charts.js": {
+      "types": "./dist/contexts/reporting/data-charts.d.ts",
+      "import": "./dist/contexts/reporting/data-charts.js"
+    },
     "./contexts/reporting/chart-config.js": {
       "types": "./dist/contexts/reporting/chart-config.d.ts",
       "import": "./dist/contexts/reporting/chart-config.js"

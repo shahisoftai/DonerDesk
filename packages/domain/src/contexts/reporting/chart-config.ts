@@ -276,7 +276,11 @@ const numeric = (d: string | number | null | undefined): number => (typeof d ===
  * hand-picked type that cannot show this data (a pie of three series, a line over unrelated indicators) is drawn as a bar instead.
  */
 export function optionFromResolved(resolved: ResolvedChartData, requestedType: ChartType): Record<string, unknown> {
-  const type = coerceChartType(resolved.dataBinding, requestedType, resolved.categories.length);
+  return optionForType(resolved, coerceChartType(resolved.dataBinding, requestedType, resolved.categories.length));
+}
+
+/** Draws the dataset as exactly this type. For callers (Data Center templates) that have already chosen a type that suits their data. */
+export function optionForType(resolved: ResolvedChartData, type: ChartType): Record<string, unknown> {
   const unit = resolved.unit ?? "";
 
   if (type === "PIE") {

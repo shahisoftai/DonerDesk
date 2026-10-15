@@ -16,7 +16,8 @@ import {
   ParseIndicatorSheetSchema,
   IndicatorUpdateReviewReasonSchema,
 } from "@donordesk/contracts";
-import { buildLogframeTemplate, LOGFRAME_TEMPLATE_FILENAME } from "@donordesk/infrastructure";
+import { buildLogframeTemplate, LOGFRAME_TEMPLATE_FILENAME, buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME } from "@donordesk/infrastructure";
+import { parseCsv } from "@donordesk/domain";
 
 export async function registerLogframeRoutes(app: FastifyInstance) {
   app.get("/v1/logframe/template", async (_req, reply) => {
@@ -223,6 +224,39 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.rejectIndicatorUpdate.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  app.get("/v1/projects/:projectId/data-sheet", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getProjectDataSheet.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/data-sheet/export", async (req, reply) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getProjectDataSheet.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    reply.header("content-disposition", `attachment; filename="${DATA_SHEET_FILENAME}"`);
+    return buildDataSheetWorkbook(r.value);
+  });
+
+  // Multipart: `file` (.csv or .xlsx) and `apply` ("true" saves; anything else only previews).
+  app.post("/v1/projects/:projectId/data-sheet/import", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const data = await req.file();
+    if (!data) throw new Error("file required");
+    const apply = (data.fields.apply as { value?: string } | undefined)?.value === "true";
+    const buffer = await data.toBuffer();
+    const name = (data.filename ?? "").toLowerCase();
+    const table = name.endsWith(".xlsx") ? await readDataSheetWorkbook(buffer) : parseCsv(buffer.toString("utf8"));
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.importDataSheet.handle(ctx, projectId, table, apply);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.get("/v1/indicators/:id/updates", async (req) => {

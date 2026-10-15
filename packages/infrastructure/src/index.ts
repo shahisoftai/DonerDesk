@@ -45,3 +45,4 @@ export { RuntimeProvisioner, MANAGED_BLOCK_MARKER, MANAGED_BLOCK_END_MARKER, ren
 export { PlatformLlmConfigResolver } from "./llm/llm-config-resolver.js";
 export { SecretCipher } from "./security/secret-cipher.js";
 export * from "./exports/templates/index.js";
+export { buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME } from "./exports/data-sheet-workbook.js";
