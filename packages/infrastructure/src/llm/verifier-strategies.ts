@@ -165,7 +165,7 @@ export class NumericAssertionVerifier {
     );
 
     let derived = false;
-    if (candidates.length === 0 && atom.role === "PERCENT") {
+    if (candidates.length === 0 && (atom.role === "PERCENT" || atom.isPercent)) {
       const derivedMatch = this.matchDerivedPercent(atom, value, findings);
       if (derivedMatch) {
         candidates = [derivedMatch];

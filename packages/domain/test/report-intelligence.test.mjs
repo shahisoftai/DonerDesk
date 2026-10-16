@@ -419,6 +419,9 @@ test("numeric atom classifier treats dates, durations and record counts as metad
   assert.equal(roles("6-month retention was 85%")[0], "6:COUNT");
   assert.equal(roles("recorded 20 verified indicator result(s)")[0], "20:COUNT");
   assert.equal(roles("4500 kits were distributed")[0], "4500:OTHER");
+  // A "percent of target" figure is a percent even when another figure follows it.
+  assert.equal(roles("340 tests against a target of 320 (106 percent of target), including 50 in the final period.")[2], "106:PERCENT");
+  assert.equal(roles("Reached 40 percent of the baseline value, then 12 sites.")[0], "40:PERCENT");
   assert.deepEqual(roles("1 performed favourably, 7 performed unfavourably, and 0 could not be assessed"), ["1:COUNT", "7:COUNT", "0:COUNT"]);
 });
 

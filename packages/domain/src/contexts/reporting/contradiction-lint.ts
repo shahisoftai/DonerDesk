@@ -289,8 +289,10 @@ function dateRanges(text: string): Array<[number, number]> {
 interface ProseNumber {
   raw: string;
   value: number;
-  /** Number written as a percentage ("87%"). */
+  /** Number written as a percentage ("87%" or "87 percent"). */
   isPercent: boolean;
+  /** Written with the word ("87 percent") rather than the sign. */
+  wordPercent: boolean;
   isYear: boolean;
   start: number;
   end: number;
@@ -308,9 +310,10 @@ function extractProseNumbers(text: string): ProseNumber[] {
     const start = m.index;
     const end = m.index + raw.length;
     const after = text.slice(end, end + 12);
-    const isPercent = /^\s*%/.test(after);
+    const wordPercent = /^\s*(?:percent|per cent)\b/i.test(after);
+    const isPercent = /^\s*%/.test(after) || wordPercent;
     const isYear = !isPercent && Number.isInteger(value) && value >= 1900 && value <= 2100;
-    out.push({ raw, value, isPercent, isYear, start, end });
+    out.push({ raw, value, isPercent, wordPercent, isYear, start, end });
   }
   return out;
 }
@@ -339,7 +342,8 @@ class AcceptedNumbers {
     if (!text) return;
     for (const p of extractProseNumbers(text)) {
       if (p.isPercent) this.percent.add(normalizeKey(p.value));
-      else this.addNumber(p.value);
+      // "88 percent" in a record has always been read as the plain figure too.
+      if (!p.isPercent || p.wordPercent) this.addNumber(p.value);
     }
   }
 

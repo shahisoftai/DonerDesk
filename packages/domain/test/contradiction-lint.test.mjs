@@ -401,3 +401,13 @@ test("a label such as P25 in an activity title is not a figure (demo 6)", () => 
   });
   assert.equal(result.blockers, 0, JSON.stringify(result.findings));
 });
+
+test("a percentage written with the word is read like one written with the sign", () => {
+  const run = (content) => lintReportContradictions({
+    sections: sections(["Results", content]),
+    findings: [{ indicatorCode: "IND-2", value: "340", target: "320", qualityFlags: [] }],
+  });
+  const kinds = (r) => r.findings.map((f) => f.kind);
+  assert.deepEqual(kinds(run("The project ran 340 tests against a target of 320 (106 percent of target).")), []);
+  assert.ok(kinds(run("Coverage reached 87 percent of the planned districts.")).includes("PERCENTAGE_WITHOUT_BASIS"));
+});
