@@ -47,6 +47,8 @@ export interface RecordSources {
     nextSteps: string;
   }>;
   indicatorUpdates: Array<{ indicatorCode: string; comments?: string; dataSource?: string }>;
+  /** The logframe's own statement of where each indicator's results come from. */
+  indicatorDefinitions?: Array<{ code: string; name?: string; meansOfVerification?: string }>;
 }
 
 const LONG_DATE = (d: Date): string => `${d.getUTCDate()} ${d.toLocaleString("en-GB", { month: "long", timeZone: "UTC" })} ${d.getUTCFullYear()}`;
@@ -152,6 +154,13 @@ export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
     seen.add(key);
     add("indicator", `${u.indicatorCode}-${i}`, `Indicator update ${u.indicatorCode}`, texts);
   });
+
+  for (const d of sources.indicatorDefinitions ?? []) {
+    const mov = d.meansOfVerification?.trim().replace(/[.;\s]+$/, "");
+    if (!mov) continue;
+    const name = d.name ? `${d.code} ${d.name}` : d.code;
+    add("indicator", `${d.code}-mov`, `Means of verification ${d.code}`, [`${name} is verified through: ${mov}. The results for ${d.code} are recorded in these sources: ${mov}.`]);
+  }
 
   add("report", "counts", "Records behind this report", [
     `This report draws on ${sources.activities.length} activity records and ${sources.indicatorUpdates.length} indicator updates.`,
@@ -344,6 +353,7 @@ export class RecordChunkBuilder implements IRecordChunkBuilder {
         period,
         story: period.storyContext,
         activities: activities.value,
+        indicatorDefinitions: indicators.value.map((i) => ({ code: i.code, name: i.name, meansOfVerification: i.meansOfVerification })),
         indicatorUpdates: updates.value.map((u) => ({ indicatorCode: codeById.get(u.indicatorId) ?? u.indicatorId, comments: u.comments, dataSource: u.dataSource })),
       }),
     };
