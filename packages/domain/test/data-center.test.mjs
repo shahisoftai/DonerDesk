@@ -183,3 +183,44 @@ test("import: a verified value is reported as left as it is, not promised as a c
   const same = previewDataSheetImport(sheet, parseCsv("Indicator code,Period,Period value\nOUT-1,Jan 2026,10"));
   assert.equal(same.skipped, 0, "an unchanged verified value is just 'already the same'");
 });
+
+test("a data table: summary gives the latest value and % of target, a gap is Not measured, a rate has no %", async () => {
+  const { buildDataTable } = await import("../dist/index.js");
+  const r = buildDataTable(sheet, { layout: "SUMMARY", indicatorIds: ["i1", "i2", "i3"], measure: "PERIOD" });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.headers, ["Code", "Indicator", "Unit", "Baseline", "Target", "Cumulative to date", "% of target"]);
+  assert.deepEqual(r.rows[0], ["OUT-1", "OUT-1", "people", "0", "100", "25", "25%"]);
+  assert.deepEqual(r.rows[1], ["OUT-2", "OUT-2", "kits", "0", "100", "5", "5%"]);
+  assert.deepEqual(r.rows[2].slice(5), ["Not measured", "—"]);
+  assert.equal(r.unverified, 2);
+  assert.match(r.markdown, /^\| Code \| Indicator \|/);
+  assert.equal(r.markdown.split("\n")[1], "| --- | --- | --- | --- | --- | --- | --- |");
+});
+
+test("a data table: period by period honours the range and measure; never writes 0 for a gap", async () => {
+  const { buildDataTable } = await import("../dist/index.js");
+  const r = buildDataTable(sheet, { layout: "OVER_TIME", indicatorIds: ["i1"], measure: "PERIOD", fromPeriodId: "p1", toPeriodId: "p2" });
+  assert.deepEqual(r.headers, ["Code", "Indicator", "Unit", "Jan 2026", "Feb 2026"]);
+  assert.deepEqual(r.rows[0].slice(3), ["10", "15"]);
+  const all = buildDataTable(sheet, { layout: "OVER_TIME", indicatorIds: ["i1", "i3"], measure: "PERCENT_OF_TARGET" });
+  assert.deepEqual(all.rows[0].slice(3), ["10%", "25%", "Not measured"]);
+  assert.deepEqual(all.rows[1].slice(3), ["Not measured", "Not measured", "Not measured"]);
+});
+
+test("a data table needs an indicator, and cell text cannot break the row", async () => {
+  const { buildDataTable } = await import("../dist/index.js");
+  assert.equal(buildDataTable(sheet, { layout: "SUMMARY", indicatorIds: [], measure: "PERIOD" }).ok, false);
+  const odd = { ...sheet, indicators: [ind("i9", "A|B", { name: "Kits | sets\nsecond" })], cells: [] };
+  const r = buildDataTable(odd, { layout: "SUMMARY", indicatorIds: ["i9"], measure: "PERIOD" });
+  const row = r.markdown.split("\n")[2];
+  assert.equal(row.split("|").length, 9);
+  assert.match(row, /Kits \/ sets second/);
+});
+
+test("a summary data table is recognised by the report's table classifier (so it is charted)", async () => {
+  const { buildDataTable, parseMarkdownTables, classifyTable, chartsForSection } = await import("../dist/index.js");
+  const r = buildDataTable(sheet, { layout: "SUMMARY", indicatorIds: ["i1", "i2"], measure: "PERIOD" });
+  const [t] = parseMarkdownTables(r.markdown);
+  assert.equal(classifyTable(t), "INDICATORS");
+  assert.ok(chartsForSection({ title: "Progress", content: r.markdown }).length >= 1);
+});

@@ -16,6 +16,7 @@ import { canonicalSectionMarkdown, toStorageMarkdown } from "./markdown-io";
 import { cleanPastedHtml } from "./paste-cleanup";
 import { ClaimHighlights, setClaimHighlights, type EditorHighlight } from "./claim-highlights";
 import { EditorToolbar } from "./EditorToolbar";
+import { DataTableDialog } from "./DataTableDialog";
 import { LinkEditor } from "./LinkEditor";
 import { AskAiPanel, type AskAiSelection } from "./AskAiPanel";
 
@@ -40,6 +41,7 @@ type SaveOrigin = "MANUAL_EDIT" | "REWRITE";
  */
 export default function RichSectionEditor({
   sectionId,
+  projectId,
   title,
   initialContent,
   initialVersion,
@@ -51,6 +53,8 @@ export default function RichSectionEditor({
   onDone,
 }: {
   sectionId: string;
+  /** When given, the toolbar offers "Insert table from data". */
+  projectId?: string;
   title: string;
   initialContent: string;
   initialVersion: string;
@@ -67,6 +71,7 @@ export default function RichSectionEditor({
   const [state, dispatch] = useReducer(autosaveReducer, undefined, () => createAutosaveState(original, initialVersion));
   const [linkOpen, setLinkOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
+  const [dataTableOpen, setDataTableOpen] = useState(false);
   const [words, setWords] = useState(0);
   const latestRef = useRef(original);
   const savedRef = useRef(original);
@@ -242,6 +247,18 @@ export default function RichSectionEditor({
     return null;
   }
 
+  /** Puts a Data Center table after the block the cursor is in; it is saved like any other edit. */
+  function insertDataTable(markdown: string): void {
+    if (!editor) return;
+    const parsed: JSONContent = editor.markdown ? editor.markdown.parse(markdown) : { type: "doc", content: [] };
+    const blocks = parsed.content ?? [];
+    if (blocks.length === 0) return;
+    const { $to } = editor.state.selection;
+    const at = $to.depth >= 1 ? $to.after(1) : $to.pos;
+    editor.chain().focus().insertContentAt(at, [...blocks, { type: "paragraph" }]).run();
+    setDataTableOpen(false);
+  }
+
   if (!editor) {
     return <div className="report-prose min-h-[6rem] animate-pulse rounded bg-slate-50 dark:bg-white/5" aria-busy="true" />;
   }
@@ -251,7 +268,7 @@ export default function RichSectionEditor({
       <div className="sticky top-36 z-10">
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
-            <EditorToolbar editor={editor} onLink={() => setLinkOpen((v) => !v)} />
+            <EditorToolbar editor={editor} onLink={() => setLinkOpen((v) => !v)} {...(projectId ? { onDataTable: () => setDataTableOpen(true) } : {})} />
           </div>
           <Button size="sm" onClick={() => void finish()} pending={finishing} className="mt-1 shrink-0">
             Done editing
@@ -268,6 +285,8 @@ export default function RichSectionEditor({
           </div>
         )}
       </div>
+
+      {projectId && <DataTableDialog projectId={projectId} open={dataTableOpen} onClose={() => setDataTableOpen(false)} onInsert={insertDataTable} />}
 
       {state.status === "conflict" && (
         <div role="alert" className="rounded-lg border border-warning-500/30 bg-warning-50 p-3 dark:bg-warning-500/5">

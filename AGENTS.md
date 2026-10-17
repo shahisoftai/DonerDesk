@@ -312,3 +312,8 @@ in-process default), stub LLM (dev default), pino logs, console email.
 - Draft values are plotted on purpose (user decision), with `unverified/points` stored, a note under the chart in the report, a badge in the chart panel and the non-blocking export-preflight warnings `DATA_CHARTS_OUT_OF_DATE` / `DATA_CHARTS_UNVERIFIED`. The exported image itself carries no such note.
 - Not covered: the donor-template (Python) Word export draws no charts at all (table-derived ones included).
 - Deploy: no migration. Routes `GET/POST /v1/report-sections/:id/data-charts`, `PUT/DELETE …/:chartId`, `POST …/:chartId/refresh|move`; permission `report.edit`.
+
+## Data Center tables in reports
+- The section editor's "Insert table from data" (`DataTableDialog`, only when `projectId` is passed to `RichSectionEditor`) builds a GFM table with `buildDataTable` (`packages/domain/.../data-tables.ts`) from the Data Center sheet and inserts it after the cursor's block. It is a **snapshot of ordinary section text** (no artifact, no stale tracking): editing, claim checks, exports and table-derived charts treat it like any typed table. The summary layout's headers (`Code`, `Target`, `Cumulative…`, `% of target`) are deliberately recognised by `classifyTable`, so it is charted; keep them in step.
+- A gap is "Not measured", never 0; a rate shows "—" for % of target. A cell never contains `|` (the editor's parser does not read `\|`): it is written as " / ". Pinned by `data-center.test.mjs` and the corpus in `rich-text-roundtrip.test.mts`.
+- Deploy: web only, no migration, no API change.

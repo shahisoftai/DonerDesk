@@ -32,6 +32,7 @@ const ICONS = {
   quote: svg(<path d="M7 7h4v4c0 3-2 5-4 5M15 7h4v4c0 3-2 5-4 5" />),
   link: svg(<><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></>),
   table: svg(<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 10h18M9 4v16M15 4v16" /></>),
+  dataTable: svg(<><rect x="3" y="4" width="14" height="12" rx="2" /><path d="M3 9h14M8 4v12" /><path d="M13 21v-3M17 21v-5M21 21v-7" /></>),
   undo: svg(<path d="M9 14L4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3" />),
   redo: svg(<path d="M15 14l5-5-5-5M20 9H9a5 5 0 0 0 0 10h3" />),
   mic: svg(<><rect x="9" y="3" width="6" height="12" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></>),
@@ -43,7 +44,7 @@ const ICONS = {
  * construct the exporters render (see rich-text/extensions.ts). Roving
  * tabindex: one Tab stop, arrow keys move between buttons.
  */
-export function EditorToolbar({ editor, onLink }: { editor: Editor; onLink: () => void }) {
+export function EditorToolbar({ editor, onLink, onDataTable }: { editor: Editor; onLink: () => void; onDataTable?: () => void }) {
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -90,6 +91,7 @@ export function EditorToolbar({ editor, onLink }: { editor: Editor; onLink: () =
         disabled: state.table,
         run: () => chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
       },
+      ...(onDataTable ? [{ key: "data-table", label: "Insert table from data", icon: ICONS.dataTable, disabled: state.table, run: onDataTable }] : []),
     ],
     [
       ...(dictation.supported

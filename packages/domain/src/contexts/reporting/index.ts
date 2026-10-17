@@ -52,3 +52,4 @@ export * from "./section-notes.js";
 export * from "./finding-match.js";
 export * from "./data-sheet.js";
 export * from "./data-charts.js";
+export * from "./data-tables.js";

@@ -323,6 +323,7 @@ export function DocumentSection({
         <RichSectionEditor
           key={section.id}
           sectionId={section.id}
+          projectId={projectId}
           title={vm.title}
           initialContent={content}
           initialVersion={section.updatedAt}
