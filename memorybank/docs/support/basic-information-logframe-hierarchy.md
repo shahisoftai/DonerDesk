@@ -1,7 +1,5 @@
 # Logframe Hierarchy
 
-**DonorDesk Version 2.001**
-
 DonorDesk uses four levels: **Goal → Outcome → Output → Activity**.
 
 ```

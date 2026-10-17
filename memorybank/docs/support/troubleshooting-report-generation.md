@@ -1,7 +1,5 @@
 # Troubleshooting Report Creation and Editing
 
-**DonorDesk Version 2.001**
-
 ## I can't create a reporting period
 
 Creating a period is blocked until the project is **Ready**. Open the project's **Setup** page and clear each blocker:

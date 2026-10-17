@@ -1,7 +1,5 @@
 # How to Review and Accept Activities
 
-**DonorDesk Version 2.001**
-
 Activity records only count in reports once someone with approval rights **accepts** them. This guide covers every decision a reviewer can make and what the person who wrote the record does next.
 
 Who can review: **Admin** and **Project Manager**. Who can write and resubmit: Admin, Project Manager, M&E Officer and Field Officer.

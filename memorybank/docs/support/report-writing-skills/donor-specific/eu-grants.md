@@ -1,7 +1,5 @@
 # EU Grants Reporting
 
-**DonorDesk Version 2.001**
-
 The European Union funds humanitarian aid through DG ECHO (civil protection and humanitarian aid) and development cooperation through INTPA (International Partnerships, formerly DEVCO). The EU has a complex regulatory framework, with detailed rules for both financial and narrative reporting. Understanding which EU directorate general (DG) funds your project is the first step to understanding your reporting obligations.
 
 ## EU Funding Instruments

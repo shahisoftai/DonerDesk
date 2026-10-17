@@ -1,7 +1,5 @@
 # How to Recover Lost or Changed Data
 
-**DonorDesk Version 2.001**
-
 Act quickly and stop editing the affected item. Most things can be recovered from history inside DonorDesk.
 
 ## A report section was changed or deleted

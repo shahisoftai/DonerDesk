@@ -1,7 +1,5 @@
 # How to Change a Report's Template
 
-**DonorDesk Version 2.001**
-
 Every report follows a **donor template** (the donor's sections and rules) or, if there is none, a ready-made structure for its type. DonorDesk now picks the right template for you and lets you change it later.
 
 Who can: Admin, Project Manager and Grants Officer (template changes), and anyone who edits reports.

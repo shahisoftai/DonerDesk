@@ -1,7 +1,5 @@
 # Imported vs. Linked Data
 
-**DonorDesk Version 2.001**
-
 DonorDesk works with your data in two ways.
 
 ## Linked (stays where it is)

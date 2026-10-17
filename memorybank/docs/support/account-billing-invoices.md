@@ -1,7 +1,5 @@
 # Invoices, Payments and Receipts
 
-**DonorDesk Version 2.001**
-
 DonorDesk subscriptions are billed through our payment partner **Creem**, which acts as the Merchant of Record. That means Creem takes the payment, calculates and remits sales tax or VAT, and issues your receipts and invoices.
 
 ## Finding your invoices and receipts

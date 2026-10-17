@@ -1,7 +1,5 @@
 # How to Contact DonorDesk Support
 
-**DonorDesk Version 2.001**
-
 ## Email
 
 **support@donordesk.online** is the best channel for how-to questions, technical problems, billing and account access.

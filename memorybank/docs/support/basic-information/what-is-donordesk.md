@@ -1,35 +1,52 @@
 # What is DonorDesk?
 
-**DonorDesk Version 2.001**
+DonorDesk is a programme management system for NGOs, UN implementing partners and other grant-funded organisations. You run the programme in DonorDesk: the logframe, indicators, activities, evidence, compliance and team. Donor reports are then produced from that record, checked against it, and approved by a person before they go to a donor.
 
-DonorDesk is a web platform that helps NGOs, UN implementing partners and other grant-funded organisations prepare **donor reports** faster, with evidence they can defend.
+## Why it exists
 
-## The problem
+Most programme information lives in several places at once: indicators in one spreadsheet, activities in another, evidence in folders and chat threads, compliance in an email from the donor. Each reporting deadline, someone rebuilds the same numbers from those sources. The report takes weeks, the figures are hard to trace back to their evidence, and compliance gaps are found on the day of submission.
 
-Donor reporting is usually spread across spreadsheets, Word files, WhatsApp threads, Drive folders and Kobo/ODK exports. Reports take weeks, numbers are hard to trace to evidence, and compliance gaps are found too late.
+DonorDesk keeps the record once, while the work happens. The report is then a review of that record, not a rebuild.
 
-## What DonorDesk does
+## What you do in DonorDesk
 
-1. **Understands your donor's template.** Upload the donor's format; DonorDesk extracts the report outline, instructions, required tables and limits, and you review and approve them.
-2. **Holds your results framework.** Logframe, indicators, baselines, targets and per-period values with a verification workflow.
-3. **Collects evidence.** Files stay in your own Google Drive (or DonorDesk storage), get AI tag suggestions, and are linked to activities and indicators.
-4. **Captures field activities** with participants and narrative.
-5. **Drafts the report.** The AI Reporter writes each section following the donor template. Tables, charts and comparisons are built from verified data, and every number is checked.
-6. **Lets you edit like a document**, with flagged statements, sources, comments and version history.
-7. **Checks compliance** continuously and gates approval and export.
-8. **Exports** Word, PDF, Excel and evidence packs, including donor-native rendering and watermarked internal copies.
-9. **Remembers your team's writing style** (optional AI Writing Style), never facts or numbers.
+1. **Set up the project.** Name the programme, the donor, the reporting periods and the team. Copy a logframe from an earlier project if the design is the same.
+2. **Build the logframe and indicators.** Goals, outcomes, outputs and activities, with baselines, targets and how each indicator is measured. You can import an existing logframe from Excel, CSV or Google Sheets.
+3. **Record activities.** Field staff log what happened: date, place, participants and a narrative, typed or dictated. Managers accept or send back records.
+4. **Enter indicator values** once per reporting period, in the Data Center or on the period's inputs page.
+5. **Keep the evidence.** Files can stay in your own Google Drive or in DonorDesk storage. Link each file to the activity or indicator it proves.
+6. **Watch the checklist.** The compliance checklist and readiness score show what the donor requires that is still missing, and what closes each gap.
+7. **Upload the donor template.** DonorDesk extracts its sections, instructions and required tables. You review and approve the structure.
+8. **Draft the report.** Each section is drafted from the record and cites its sources. Tables and charts are built from verified data. You edit the drafts like a document.
+9. **Approve and export.** A second approver can be required. Export Word, PDF, Excel or an evidence pack (ZIP). You send the approved file to the donor yourself.
 
-## Who it is for
+## Who uses it
 
-Local and national NGOs, INGOs, UN implementing partners, consultancies and government programme units, in any sector (health, nutrition, WASH, protection, education, livelihoods, shelter, food security and more).
+- **Project Managers** run the programme and review activities.
+- **M&E Officers** own the indicators and the Data Center.
+- **Grants Officers** track the deadlines and the donor requirements.
+- **Field Officers** record activities and evidence.
+- **Compliance Officers** check the checklist and the evidence.
+- **Admins** set up the workspace, the team and the billing.
+- **Viewers** read projects and reports, for board members, donors' reviewers and auditors.
+
+Local and national NGOs, international NGOs, UN implementing partners, consultancies and government programme units use DonorDesk across humanitarian, development, health, nutrition, WASH, protection, education, livelihoods, shelter, food security and climate work.
 
 ## Principles
 
-- **Humans decide.** AI drafts; people verify, edit and approve.
-- **Evidence first.** Claims trace back to indicators and evidence.
-- **Your data stays yours.** Link-first Google Drive storage, tenant isolation, audit trail.
+- **People decide.** AI drafts; people verify, edit and approve. Nothing is released without an approval.
+- **Evidence first.** Every statement in a report can be traced to an activity, an indicator value or a piece of evidence.
+- **Your data stays yours.** Files can stay in your own Google Drive. Each organisation's data is separated from every other's. Every change is recorded in an audit log.
 
-## Try it
+## What DonorDesk does not do
 
-Take the [product tour](/tour), or create a free workspace and start the Academy demo project. See [Getting started](/support/getting-started).
+- It does not send reports to donors. You upload the approved file yourself.
+- It does not replace your data collection tools. It holds the programme record your reports are built from.
+- The app needs an internet connection to open. Activities you finish offline are saved on the device and sent when you are back online.
+
+## Next steps
+
+- Take the [product tour](/tour).
+- Read [Getting started](/support/getting-started) for your first project.
+- See [Features](/features) for every module and its limits.
+- Read [the reporting workflow](/support/getting-started/reporting-workflow) for how the parts fit together across a reporting period.

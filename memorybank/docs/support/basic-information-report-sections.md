@@ -1,7 +1,5 @@
 # Understanding Report Sections
 
-**DonorDesk Version 2.001**
-
 A DonorDesk report is a set of **sections**. The list comes from the donor template pinned to the reporting period, so your report follows the donor's structure.
 
 ## Sections follow the donor template

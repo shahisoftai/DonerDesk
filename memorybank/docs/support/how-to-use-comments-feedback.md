@@ -1,7 +1,5 @@
 # How to Use Comments and Feedback
 
-**DonorDesk Version 2.001**
-
 Comments keep review conversations next to the thing being discussed.
 
 ## In the report editor

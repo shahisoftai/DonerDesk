@@ -1,7 +1,5 @@
 # Troubleshooting Billing and Payment Issues
 
-**DonorDesk Version 2.001**
-
 Billing is handled by our payment partner Creem. Most problems can be fixed from **Settings → Billing** (Admins only) or the **Manage subscription** portal.
 
 ## I can't open the Billing page

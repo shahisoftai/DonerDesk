@@ -1,11 +1,12 @@
 # Frequently Asked Questions
 
-**DonorDesk Version 2.001**
-
 ## General
 
 ### What is DonorDesk?
-A platform that helps NGOs and grant-funded organisations prepare donor reports faster: it links your logframe, indicators, activities and evidence to an AI-assisted, fact-checked report you edit like a document. See [What is DonorDesk?](/support/getting-started/what-is-donordesk).
+A programme management system for grant-funded organisations. You keep the logframe, indicators, activities, evidence, compliance and team in one record, and donor reports are drafted from that record, checked against it and approved by a person. See [What is DonorDesk?](/support/getting-started/what-is-donordesk).
+
+### Is DonorDesk just a reporting tool?
+No. Reporting is what the system produces. The working parts are the logframe, the activity records, the indicator data in the Data Center, the evidence library, My Work (your queue across projects) and the compliance checklist. Those are useful every month, not only when a report is due. See [Features](/features).
 
 ### Who is it for?
 Local and national NGOs, INGOs, UN implementing partners, consultancies and government programme units.

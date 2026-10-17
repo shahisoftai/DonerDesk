@@ -1,7 +1,5 @@
 # Troubleshooting Indicator Data
 
-**DonorDesk Version 2.001**
-
 ## I can't enter values
 
 - You need permission: Admin, Project Manager or M&E Officer.

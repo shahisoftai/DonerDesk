@@ -1,7 +1,5 @@
 # DonorDesk Support Documentation Index
 
-**DonorDesk Version 2.001**
-
 Source files for the public Support Center at donordesk.online/support. Each file is routed from `apps/web/src/app/support/<category>/[article]/page.tsx` (see `FILE_MAP`) and listed in `apps/web/src/components/support/wikiCategories.tsx`. **When you add, rename or remove an article, update both.** Data Center, report charts and reopening added 2026-10-15; last full refresh: 2026-10-07; corrected after demo 5 (2026-10-06).
 
 ## Ground truth to check when editing

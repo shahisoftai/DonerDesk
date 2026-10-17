@@ -1,7 +1,5 @@
 # Understanding Logframes
 
-**DonorDesk Version 2.001**
-
 A **logframe** (logical framework) is the results framework of your project: what you aim to change, how you will do it, and how you will know. DonorDesk uses it to organise indicators, evidence and report sections.
 
 ## The four levels

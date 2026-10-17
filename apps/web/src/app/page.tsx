@@ -4,128 +4,93 @@ import Script from "next/script";
 import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { HomeFaq } from "@/components/landing/HomeFaq";
 import { ProductProofStrip } from "@/components/landing/ProductProofStrip";
+import { MarketingNav } from "@/components/landing/MarketingNav";
+import { MarketingFooter } from "@/components/landing/MarketingFooter";
+import { RUN_MODULES, REPORT_MODULES, type ModuleCard } from "@/components/landing/platform-content";
 
-const FEATURES = [
-  {
-    icon: "🧩",
-    title: "Donor template extraction",
-    description:
-      "Upload a donor or funder template and structure it into editable, reviewable report sections with evidence requirements mapped to your programme.",
-    tag: "Save weeks of formatting",
-  },
-  {
-    icon: "✨",
-    title: "Source-linked AI drafting",
-    description:
-      "Draft from saved activities, indicator results, and evidence text. Statement-level sources stay visible, and every section remains editable and human-approved.",
-    tag: "AI as assistant, not author",
-  },
-  {
-    icon: "✅",
-    title: "Live compliance checklist",
-    description:
-      "A real-time readiness score surfaces missing evidence, unverified indicators, and late activity updates long before the submission deadline.",
-    tag: "Never miss a requirement",
-  },
-  {
-    icon: "🧾",
-    title: "Evidence that holds up to audit",
-    description:
-      "Keep programme documents, field evidence, and source records organized with checksums, verification states, and a traceable audit history.",
-    tag: "Audit-ready by default",
-  },
-  {
-    icon: "📊",
-    title: "Logframes & indicators",
-    description:
-      "Model objectives, outcomes, outputs, and indicators with baselines and targets — then drive narrative reporting straight from your numbers.",
-    tag: "Outcome-oriented reporting",
-  },
-  {
-    icon: "📦",
-    title: "Donor-ready exports",
-    description:
-      "Generate polished PDF, DOCX, XLSX, and ZIP deliverables for each funder, with review and approval gates before release.",
-    tag: "One-click deliverable packs",
-  },
-];
-
-const STEPS = [
+// The record, from plan to report. Each stage is a step the programme already takes.
+const RECORD_STAGES = [
   {
     step: "01",
     icon: "◫",
-    title: "Set up your project",
-    description: "Define the programme, reporting profile, dates, funder, and team.",
+    title: "Plan",
+    description: "Set up the logframe, indicators, baselines and targets. Import what you already have.",
   },
   {
     step: "02",
-    icon: "⌘",
-    title: "Build your logframe",
-    description: "Create it in DonorDesk or import objectives, outcomes, and outputs.",
+    icon: "✎",
+    title: "Record",
+    description: "Field staff log activities as they happen, typed or dictated. Indicator values are entered once per period.",
   },
   {
     step: "03",
-    icon: "↗",
-    title: "Add your indicators",
-    description: "Enter or import baselines, targets, results, and data sources.",
+    icon: "✓",
+    title: "Check",
+    description: "Link evidence to the activities it proves. The checklist shows what is missing and what closes it.",
   },
   {
     step: "04",
-    icon: "✓",
-    title: "Define compliance",
-    description: "Turn funder requirements into a live, trackable readiness checklist.",
-  },
-  {
-    step: "05",
-    icon: "+",
-    title: "Capture delivery & evidence",
-    description: "Log activities, results, documents, photos, and supporting data as work happens.",
-  },
-  {
-    step: "06",
-    icon: "▤",
-    title: "Generate ready-to-review reports",
-    description: "Draft periodically, verify sources, approve sections, and export funder-ready files.",
+    icon: "⇪",
+    title: "Report",
+    description: "The donor template structures the report. Drafts cite their sources. A person approves before export.",
   },
 ];
 
-const SECTORS = [
-  "Humanitarian Response",
-  "International Development",
-  "Public Health",
-  "Research & Education",
-  "Government Grants",
-  "Climate & Social Impact",
+const HOW_STEPS = [
+  { step: "1", title: "Set up the project", description: "Define the programme, reporting profile, dates, funder and team." },
+  { step: "2", title: "Build the logframe", description: "Add goals, outcomes, outputs and activities, and the indicators that measure them." },
+  { step: "3", title: "Record as you go", description: "Activities, indicator values and evidence are logged by the people doing the work." },
+  { step: "4", title: "Watch the readiness", description: "The checklist and readiness score show gaps and what closes each one, weeks before the deadline." },
+  { step: "5", title: "Draft and approve", description: "Drafts follow the donor template and cite their sources. Approvers sign off each section." },
+  { step: "6", title: "Export and submit", description: "Download Word, PDF, Excel or ZIP and send it to the donor yourself." },
 ];
+
+const SECTORS = ["Health", "Nutrition", "WASH", "Protection", "Education", "Livelihoods", "Shelter", "Food security", "Climate"];
 
 const AUDIENCES = [
-  { icon: "◎", title: "Humanitarian & development", description: "Coordinate logframes, activities, evidence, and reports across donors, partners, and locations." },
-  { icon: "✣", title: "Research & public health", description: "Track milestones, study outputs, results, and supporting records for funder progress reports." },
-  { icon: "◇", title: "Government-funded programmes", description: "Connect deliverables, performance measures, expenditure evidence, and compliance requirements." },
-  { icon: "△", title: "Education & skills", description: "Report enrolment, completion, learning, and employment outcomes against grant targets." },
-  { icon: "≈", title: "Climate & social impact", description: "Turn project evidence and outcome indicators into credible, source-backed impact narratives." },
+  {
+    icon: "◎",
+    title: "Humanitarian & development",
+    description: "Local and international NGOs running several grants at once, with field teams and donor templates to satisfy.",
+  },
+  {
+    icon: "◈",
+    title: "Research & public health",
+    description: "Programmes where results must be evidenced, sometimes for ministries, universities and public agencies.",
+  },
+  {
+    icon: "◇",
+    title: "Government-funded programmes",
+    description: "Units that deliver a programme and report it up to a funder, with approvals and an audit trail.",
+  },
+  {
+    icon: "◐",
+    title: "Education & skills",
+    description: "Training and employment programmes that track cohorts, activities and outcomes across periods.",
+  },
+  {
+    icon: "◉",
+    title: "Climate & social impact",
+    description: "Projects that must show progress against a results framework and document what changed.",
+  },
 ];
 
 const SECURITY = [
   {
-    title: "Multi-tenant by design",
-    description:
-      "Every aggregate carries a tenant ID, enforced with row-level security so no organization can ever see another's data.",
+    title: "Tenant isolation",
+    description: "Row-level security in the database keeps each organisation's data separate from every other.",
   },
   {
-    title: "Immutable audit log",
-    description:
-      "Every mutation is recorded with a chained, verifiable audit trail — ready for internal compliance and external donor review.",
+    title: "Hash-chained audit log",
+    description: "Changes are recorded in a log where each entry is chained to the one before, so edits to history are detectable.",
   },
   {
     title: "Reviewable AI",
-    description:
-      "Model, prompt version, and source references are stored with every AI output so nothing is written without a trace.",
+    description: "Model, prompt version and sources are stored with every AI output, so nothing is written without a trace.",
   },
   {
     title: "Least-privilege roles",
-    description:
-      "Project-level assignments and role-based authorization keep access tight, from field staff to approvers and admins.",
+    description: "Seven per-project roles, so field staff, compliance officers, M&E and approvers each see and change only what their job needs.",
   },
 ];
 
@@ -209,46 +174,36 @@ const PLANS = [
   },
 ];
 
+function ModuleGrid({ modules }: { modules: ModuleCard[] }) {
+  return (
+    <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {modules.map((m) => (
+        <Link
+          key={m.title}
+          href={m.href}
+          className="glass tech-card group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-7 transition duration-300 hover:-translate-y-1 hover:border-brand-400/40 hover:bg-white/[0.05]"
+        >
+          <span className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-brand-500/30 to-brand-700/20 text-2xl">
+            {m.icon}
+          </span>
+          <span className="mt-5 inline-block rounded-full bg-brand-500/10 px-3 py-1 text-xs font-semibold text-brand-300">
+            {m.tag}
+          </span>
+          <h3 className="mt-3 text-xl font-bold text-white">{m.title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-slate-300">{m.description}</p>
+          <span className="mt-4 inline-block text-sm font-semibold text-brand-300 transition group-hover:text-brand-200">
+            What it does <span aria-hidden>→</span>
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 export default function HomePage() {
   return (
     <main className="landing-tech min-h-screen overflow-x-hidden bg-slate-950 text-slate-100">
-      {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/85 shadow-[0_10px_40px_rgba(2,6,23,0.35)] backdrop-blur-2xl supports-[backdrop-filter]:bg-slate-950/70">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <a href="/" className="flex items-center">
-            <Image
-              src="/brand/donordesk-logo.png"
-              alt="DonorDesk"
-              width={552}
-              height={600}
-              className="h-9 w-auto object-contain"
-              sizes="128px"
-            />
-          </a>
-          <div className="hidden items-center gap-7 text-sm font-medium text-slate-300 lg:flex">
-            <a href="#features" className="transition hover:text-white">Features</a>
-            <a href="#how-it-works" className="transition hover:text-white">How it works</a>
-            <a href="#who-its-for" className="transition hover:text-white">Who's it for</a>
-            <a href="#pricing" className="transition hover:text-white">Pricing</a>
-            <a href="#security" className="transition hover:text-white">Security</a>
-            <Link href="/support" className="transition hover:text-white text-brand-300">Support</Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white"
-            >
-              Log in
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 transition hover:from-brand-400 hover:to-brand-500"
-            >
-              Get started
-            </Link>
-          </div>
-        </nav>
-      </header>
+      <MarketingNav />
 
       {/* Hero */}
       <section className="relative isolate px-6 pb-24 pt-20 sm:pt-28">
@@ -268,7 +223,7 @@ export default function HomePage() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-300" />
             </span>
-            Evidence intelligence for funded programmes
+            Programme management for grant-funded work
           </div>
           <Image
             src="/brand/donordesk-logo.png"
@@ -280,16 +235,16 @@ export default function HomePage() {
             priority
           />
           <h1 className="mt-8 text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl md:text-7xl">
-            From scattered field evidence to{" "}
+            Run your programme.{" "}
             <span className="bg-gradient-to-r from-brand-300 via-brand-400 to-cyan-300 bg-clip-text text-transparent">
-              donor-ready reports
+              Report from the record.
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-300 sm:text-xl">
-            DonorDesk helps humanitarian, development, and other grant-funded
-            programmes turn activity records, indicator results, and supporting
-            evidence into professional, audit-ready reports—with source-linked AI
-            drafting, automatic compliance checks, and human approval.
+            DonorDesk holds your logframe, indicators, activities, evidence and
+            compliance in one place. Donor reports come out of the work you
+            already recorded, with every number traced and every report
+            approved by a person.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
@@ -299,12 +254,6 @@ export default function HomePage() {
               Create a free workspace
               <span className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
-            <a
-              href="#how-it-works"
-              className="inline-flex w-full items-center justify-center rounded-xl border border-white/15 bg-white/5 px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition hover:bg-white/10 sm:w-auto"
-            >
-              See how it works
-            </a>
             <Link
               href="/tour"
               className="inline-flex w-full items-center justify-center rounded-xl border border-white/15 bg-white/5 px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition hover:bg-white/10 sm:w-auto"
@@ -313,11 +262,11 @@ export default function HomePage() {
             </Link>
           </div>
           <p className="mt-4 text-sm text-slate-400">
-            No credit card required · Set up in minutes · Human-reviewed AI
+            No credit card required · A demo project is included · A person approves every report
           </p>
         </div>
 
-        {/* Mock dashboard preview */}
+        {/* Sample project preview */}
         <div className="mx-auto mt-16 max-w-5xl">
           <div className="glass tech-dashboard relative overflow-hidden rounded-2xl border border-white/10 p-2 shadow-2xl shadow-brand-500/10">
             <div aria-hidden className="tech-scan-line" />
@@ -328,12 +277,12 @@ export default function HomePage() {
                   <span className="h-2.5 w-2.5 rounded-full bg-amber-300/70" />
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-300/70" />
                 </div>
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-300/70">Live reporting intelligence</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-300/70">Sample project</span>
               </div>
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
                 <div>
                   <p className="text-sm font-semibold text-white">Emergency Response — Health Programme</p>
-                  <p className="text-xs text-slate-400">Report readiness · Q3 2026</p>
+                  <p className="text-xs text-slate-400">Semi-annual report · Q3 2026</p>
                 </div>
                 <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-bold text-green-400">
                   ● 92% ready
@@ -341,9 +290,9 @@ export default function HomePage() {
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {[
+                  { label: "Activities accepted", value: "61 / 64", bar: "w-[95%]", color: "bg-green-400" },
+                  { label: "Indicators reported", value: "24 / 25", bar: "w-[96%]", color: "bg-cyan-400" },
                   { label: "Evidence verified", value: "128 / 132", bar: "w-[97%]", color: "bg-brand-500" },
-                  { label: "Indicators on track", value: "24 / 25", bar: "w-[96%]", color: "bg-cyan-400" },
-                  { label: "Activities logged", value: "61 / 64", bar: "w-[95%]", color: "bg-green-400" },
                 ].map((m) => (
                   <div key={m.label} className="rounded-xl bg-white/5 p-4">
                     <div className="flex items-center justify-between text-xs">
@@ -358,16 +307,16 @@ export default function HomePage() {
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl bg-white/5 p-4">
-                  <p className="text-xs font-semibold text-white">Source-linked AI draft</p>
+                  <p className="text-xs font-semibold text-white">Draft section, with its source</p>
                   <p className="mt-2 text-sm text-slate-300">
-                    “Community health workers delivered 1,240 consultations in Q3 (Indic 4.1, {""}
-                    <span className="text-brand-300 underline decoration-brand-400/50">[evidence-2041]</span>), an
-                    increase of 18% over target.”
+                    “Community health workers delivered 1,240 consultations in Q3 (activity record 2041),
+                    {" "}
+                    <span className="text-brand-300 underline decoration-brand-400/50">[source: evidence 2041]</span>.”
                   </p>
                 </div>
                 <div className="flex flex-col justify-center gap-2 rounded-xl bg-white/5 p-4">
                   {[
-                    { text: "✓ Template sections mapped", done: true },
+                    { text: "✓ Donor template structure approved", done: true },
                     { text: "✓ Required evidence attached", done: true },
                     { text: "⚠ 2 indicators awaiting verification", done: false },
                   ].map((c) => (
@@ -383,7 +332,7 @@ export default function HomePage() {
       <section aria-label="Programmes DonorDesk supports" className="border-y border-white/10 bg-white/[0.025] px-6 py-10">
         <div className="mx-auto max-w-7xl">
           <p className="text-center text-sm font-semibold text-slate-300">
-            Built first for humanitarian and development organizations. Designed for any grant-funded programme that must prove results.
+            Built for humanitarian and development programmes, and for any grant-funded work that must show results.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             {SECTORS.map((sector) => (
@@ -393,41 +342,73 @@ export default function HomePage() {
         </div>
       </section>
 
-      <ProductProofStrip />
-
-      {/* Features */}
-      <section id="features" className="px-6 py-24">
+      {/* The record, plan to report */}
+      <section id="system" className="px-6 py-24">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-bold uppercase tracking-widest text-brand-300">Features</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-brand-300">One record</p>
             <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-              Everything you need to report with confidence
+              From the work you do to the report you owe
             </h2>
             <p className="mt-4 text-lg text-slate-300">
-              Built for programmes that must demonstrate results, substantiate
-              claims, and satisfy different funder requirements—without rebuilding
-              every report from spreadsheets, emails, and folders.
+              The programme record is the working system. The donor report is what it produces, so the numbers,
+              the evidence and the narrative are never rebuilt by hand.
             </p>
           </div>
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <div
-                key={f.title}
-                className="glass tech-card group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-7 transition duration-300 hover:-translate-y-1 hover:border-brand-400/40 hover:bg-white/[0.05]"
-              >
-                <span className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-brand-500/30 to-brand-700/20 text-2xl">
-                  {f.icon}
-                </span>
-                <span className="mt-5 inline-block rounded-full bg-brand-500/10 px-3 py-1 text-xs font-semibold text-brand-300">
-                  {f.tag}
-                </span>
-                <h3 className="mt-3 text-xl font-bold text-white">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-300">{f.description}</p>
+          <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {RECORD_STAGES.map((s) => (
+              <div key={s.step} className="relative rounded-2xl border border-white/10 bg-slate-900/70 p-6">
+                <span className="absolute right-4 top-4 text-xs font-black tracking-widest text-brand-300/60">{s.step}</span>
+                <div className="grid h-14 w-14 place-items-center rounded-2xl border border-brand-300/30 bg-gradient-to-br from-brand-500/30 via-cyan-400/10 to-slate-900 text-2xl font-black text-cyan-200 shadow-lg shadow-brand-500/20">
+                  <span aria-hidden>{s.icon}</span>
+                </div>
+                <h3 className="mt-5 text-lg font-bold text-white">{s.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-300">{s.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
+
+      {/* Run the programme */}
+      <section id="run" className="border-y border-white/10 bg-white/[0.02] px-6 py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-sm font-bold uppercase tracking-widest text-brand-300">Run the programme</p>
+            <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+              The working system your team runs every day
+            </h2>
+            <p className="mt-4 text-lg text-slate-300">
+              Logframe, activities, data, evidence and people. Each is useful on its own, long before a donor asks for a report.
+            </p>
+          </div>
+          <ModuleGrid modules={RUN_MODULES} />
+        </div>
+      </section>
+
+      {/* Report from the record */}
+      <section id="reporting" className="px-6 py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-sm font-bold uppercase tracking-widest text-brand-300">Report from the record</p>
+            <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+              Donor reports you can check, and approve with confidence
+            </h2>
+            <p className="mt-4 text-lg text-slate-300">
+              Each section is drafted from the record, checked against it, and approved by a person before anything is released.
+            </p>
+          </div>
+          <ModuleGrid modules={REPORT_MODULES} />
+          <div className="mt-10 text-center">
+            <Link href="/features" className="inline-flex items-center gap-2 text-sm font-semibold text-brand-300 transition hover:text-brand-200">
+              See every feature, with its limits
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <ProductProofStrip />
 
       {/* How it works */}
       <section id="how-it-works" className="px-6 py-24">
@@ -435,36 +416,34 @@ export default function HomePage() {
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-bold uppercase tracking-widest text-brand-300">How it works</p>
             <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-              One clear path from project setup to periodic reporting
+              Start with the programme, finish with the report
             </h2>
-            <p className="mt-4 text-lg text-slate-300">Build the reporting structure once, keep it current as delivery unfolds, and turn verified programme records into repeatable reports.</p>
+            <p className="mt-4 text-lg text-slate-300">
+              Set the programme up once. Keep the record current as the work happens. The report at each deadline is then a review, not a rebuild.
+            </p>
           </div>
-          <div className="relative mt-16">
-            <div aria-hidden className="absolute left-[8%] right-[8%] top-16 hidden h-px bg-gradient-to-r from-transparent via-brand-400/60 to-transparent lg:block" />
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-6">
-              {STEPS.map((s, index) => (
-                <div key={s.step} className={`group relative rounded-2xl border border-white/10 bg-slate-900/70 p-5 text-center transition duration-300 hover:-translate-y-2 hover:border-cyan-300/50 hover:shadow-2xl hover:shadow-brand-500/20 ${index % 2 ? "lg:mt-10" : ""}`}>
-                  <span className="absolute right-3 top-3 text-xs font-black tracking-widest text-brand-300/60">{s.step}</span>
-                  <div className="relative mx-auto grid h-20 w-20 place-items-center rounded-2xl border border-brand-300/30 bg-gradient-to-br from-brand-500/30 via-cyan-400/10 to-slate-900 text-3xl font-black text-cyan-200 shadow-lg shadow-brand-500/20 transition group-hover:scale-110 group-hover:rotate-3">
-                    <span aria-hidden>{s.icon}</span>
-                    <span className="absolute -inset-2 -z-10 rounded-3xl bg-brand-400/10 blur-xl" />
-                  </div>
-                  <h3 className="mt-5 text-base font-bold text-white">{s.title}</h3>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-300">{s.description}</p>
-                  {index < STEPS.length - 1 && <span aria-hidden className="absolute -right-4 top-14 z-10 hidden text-xl text-cyan-300 lg:block">→</span>}
+          <ol className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {HOW_STEPS.map((s) => (
+              <li key={s.step} className="flex gap-4 rounded-2xl border border-white/10 bg-slate-900/70 p-6">
+                <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-brand-500/20 font-bold text-cyan-200">{s.step}</span>
+                <div>
+                  <h3 className="font-bold text-white">{s.title}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-300">{s.description}</p>
                 </div>
-              ))}
-            </div>
-          </div>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
       <section id="who-its-for" className="border-y border-white/10 bg-white/[0.02] px-6 py-24">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-bold uppercase tracking-widest text-brand-300">Who it’s for</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-brand-300">Who it&apos;s for</p>
             <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">Built for evidence-heavy, grant-funded work</h2>
-            <p className="mt-4 text-lg text-slate-300">Humanitarian reporting is our foundation. The same disciplined workflow supports adjacent programmes where results must be evidenced and accountable.</p>
+            <p className="mt-4 text-lg text-slate-300">
+              Seven roles, so the people who run the programme, record it, check it and approve the report each see what they need.
+            </p>
           </div>
           <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-5">
             {AUDIENCES.map((audience) => (
@@ -475,6 +454,9 @@ export default function HomePage() {
               </article>
             ))}
           </div>
+          <p className="mt-10 text-center text-sm text-slate-400">
+            Roles: Admin · Project Manager · M&amp;E Officer · Grants Officer · Field Officer · Compliance Officer · Viewer
+          </p>
         </div>
       </section>
 
@@ -484,13 +466,11 @@ export default function HomePage() {
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-bold uppercase tracking-widest text-brand-300">Pricing</p>
             <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-              Start free. Upgrade when you grow.
+              Start free. Upgrade when the programme grows.
             </h2>
             <p className="mt-4 text-lg text-slate-300">
-              Every plan includes core donor reporting, the evidence vault with
-              Google Drive link-first storage, exports, and an immutable audit
-              trail. Start on the free Starter plan and upgrade any time —
-              payment is handled securely at checkout.
+              Every plan includes the programme record, the evidence library with Google Drive link-first storage, exports
+              and the audit log. Start on the free Starter plan and upgrade any time. Payment is handled securely at checkout.
             </p>
           </div>
           <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -539,21 +519,15 @@ export default function HomePage() {
             ))}
           </div>
           <div className="mt-10 text-center">
-            <Link
-              href="/pricing"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-brand-300 transition hover:text-brand-200"
-            >
+            <Link href="/pricing" className="inline-flex items-center gap-2 text-sm font-semibold text-brand-300 transition hover:text-brand-200">
               See the full plan comparison
               <span aria-hidden>→</span>
             </Link>
           </div>
           <p className="mt-6 text-center text-sm text-slate-400">
-            Verified nonprofits get 25% off Team and Growth for their first
-            year; nonprofit pricing for Enterprise is built into the contract.
-            Tax is calculated at checkout where applicable. Annual billing
-            gives two months free. Regional pricing for eligible
-            organizations in lower-income countries is available on request —
-            contact sales.
+            Verified nonprofits get 25% off Team and Growth for their first year; nonprofit pricing for Enterprise is
+            built into the contract. Tax is calculated at checkout where applicable. Annual billing gives two months free.
+            Regional pricing for eligible organizations in lower-income countries is available on request. Contact sales.
           </p>
         </div>
       </section>
@@ -563,14 +537,13 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
-              <p className="text-sm font-bold uppercase tracking-widest text-brand-300">Trust & security</p>
+              <p className="text-sm font-bold uppercase tracking-widest text-brand-300">Trust &amp; security</p>
               <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-                Built for sensitive programme and grant data
+                Built for sensitive programme and beneficiary data
               </h2>
               <p className="mt-4 text-lg text-slate-300">
-                DonorDesk protects participant, beneficiary, research, and programme
-                information through tenant isolation, controlled access, traceable AI
-                outputs, and immutable audit records.
+                Tenant isolation, role-based access, traceable AI outputs and a hash-chained audit log. Our data processing
+                agreement and subprocessor list are published. We do not hold external certifications, and we do not claim any.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -580,10 +553,10 @@ export default function HomePage() {
                   Start your free workspace
                 </Link>
                 <Link
-                  href="/login"
+                  href="/security"
                   className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-6 py-3 font-semibold text-white transition hover:bg-white/10"
                 >
-                  Log in
+                  Read the security page
                 </Link>
               </div>
             </div>
@@ -611,11 +584,10 @@ export default function HomePage() {
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_80%_at_50%_-20%,rgba(34,211,238,0.4),transparent)]"
           />
           <h2 className="relative text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-            Make every reporting period easier than the last
+            Make the programme and the report one piece of work
           </h2>
           <p className="relative mx-auto mt-4 max-w-2xl text-lg text-brand-100">
-            Replace scattered spreadsheets, emails, and folders with one traceable
-            workflow for evidence, results, compliance, drafting, review, and export.
+            Keep the logframe, activities, evidence and compliance in one record, and produce each donor report from it.
           </p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
@@ -634,90 +606,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 px-6 py-14">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Col 1 — Brand */}
-            <div className="flex flex-col gap-4">
-              <Link href="/" aria-label="DonorDesk home" className="flex items-center rounded-lg transition hover:opacity-85">
-                <Image
-                  src="/brand/donordesk-logo.png"
-                  alt="DonorDesk"
-                  width={552}
-                  height={600}
-                  className="h-8 w-auto object-contain"
-                  sizes="112px"
-                />
-              </Link>
-              <p className="text-sm leading-relaxed text-slate-400">
-                Streamline humanitarian donor reporting.
-              </p>
-              <a
-                href="https://www.linkedin.com/company/donordesk-online/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="DonorDesk on LinkedIn"
-                className="flex items-center gap-2 text-slate-400 transition hover:text-white"
-              >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                </svg>
-                <span className="text-sm">Follow us on LinkedIn</span>
-              </a>
-            </div>
-
-            {/* Col 2 — Support */}
-            <div>
-              <h4 className="font-semibold text-white">Support</h4>
-              <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-                <li><Link href="/support" className="transition hover:text-white">Support Home</Link></li>
-                <li><Link href="/support#browse" className="transition hover:text-white">All Categories</Link></li>
-                <li><Link href="/support/contact" className="transition hover:text-white">Submit a Ticket</Link></li>
-                <li><a href="mailto:support@donordesk.online" className="transition hover:text-white">Contact: support@donordesk.online</a></li>
-              </ul>
-            </div>
-
-            {/* Col 3 — Report Writing Skills */}
-            <div>
-              <h4 className="font-semibold text-amber-400">Report Writing Skills</h4>
-              <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-                <li><Link href="/support/report-writing-skills/report-writing-fundamentals" className="transition hover:text-white">Report Writing Fundamentals</Link></li>
-                <li><Link href="/support/reference-donor-reporting-guidelines" className="transition hover:text-white">Donor Requirements Index</Link></li>
-                <li><Link href="/support/report-writing-skills/pre-report-checklist" className="transition hover:text-white">Pre-Report Checklist</Link></li>
-                <li><Link href="/support/report-writing-skills/narrative-structure" className="transition hover:text-white">Progress Report Guide</Link></li>
-                <li><Link href="/support/report-writing-skills/donor-comparison" className="transition hover:text-white">Final Report Guide</Link></li>
-              </ul>
-            </div>
-
-            {/* Col 4 — Legal */}
-            <div>
-              <h4 className="font-semibold text-white">Legal</h4>
-              <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-                <li><Link href="/privacy" className="transition hover:text-white">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="transition hover:text-white">Terms of Service</Link></li>
-                <li><Link href="/cookies" className="transition hover:text-white">Cookie Policy</Link></li>
-                <li><Link href="/security" className="transition hover:text-white">Security</Link></li>
-                <li><Link href="/dpa" className="transition hover:text-white">Data Processing Addendum</Link></li>
-                <li><Link href="/subprocessors" className="transition hover:text-white">Sub-processors</Link></li>
-                <li><Link href="/acceptable-use" className="transition hover:text-white">Acceptable Use</Link></li>
-                <li><Link href="/refunds" className="transition hover:text-white">Refunds &amp; Cancellation</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
-            <p className="text-sm text-slate-500">
-              © {new Date().getFullYear()} DonorDesk. All rights reserved.
-            </p>
-            <div className="flex gap-6 text-sm text-slate-500">
-              <Link href="/login" className="transition hover:text-slate-300">Log in</Link>
-              <Link href="/signup" className="transition hover:text-slate-300">Get started</Link>
-              <Link href="/support" className="transition hover:text-brand-400">Support</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
       <CookieConsentBanner />
       <Script id="voxeleon-chat" strategy="afterInteractive">{`
         window.voxeleonSettings = {"position":"right","type":"standard","launcherTitle":""};

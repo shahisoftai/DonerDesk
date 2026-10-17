@@ -1,7 +1,5 @@
 # How to Create a Project
 
-**DonorDesk Version 2.001**
-
 A **project** is one funded grant or programme with one donor and one reporting cycle. Only **Admins** can create projects. Check that you have a free project slot on your plan ([Plans and limits](/support/account-billing/plans-and-limits)); archived projects do not count.
 
 ## Step 1: Start the wizard

@@ -1,7 +1,5 @@
 # Evidence Verification
 
-**DonorDesk Version 2.001**
-
 Verification records whether a person has checked an evidence file. Only checked evidence should support figures in a donor report.
 
 ## Statuses

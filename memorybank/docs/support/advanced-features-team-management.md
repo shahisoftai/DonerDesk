@@ -1,7 +1,5 @@
 # Team Management
 
-**DonorDesk Version 2.001**
-
 Everything about your people in one place.
 
 ## Team page (Admins)

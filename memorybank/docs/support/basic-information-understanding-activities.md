@@ -1,7 +1,5 @@
 # Understanding Activities
 
-**DonorDesk Version 2.001**
-
 Activities are the field updates that document what your team did during a reporting period: a training, a distribution, a monitoring visit, a meeting.
 
 ## Activity vs logframe activity

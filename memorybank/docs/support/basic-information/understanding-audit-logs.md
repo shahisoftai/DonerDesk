@@ -1,7 +1,5 @@
 # Understanding Audit Logs
 
-**DonorDesk Version 2.001**
-
 The audit log is a tamper-resistant record of what happened in your workspace: who did what, when, and to which record. It supports donor audits and internal accountability.
 
 ## What is recorded

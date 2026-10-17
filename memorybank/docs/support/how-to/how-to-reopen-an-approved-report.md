@@ -1,7 +1,5 @@
 # How to Reopen an Approved Report
 
-**DonorDesk Version 2.002**
-
 An approved report is locked: its text and charts cannot change. If you need to change it after approval, for example to add a chart the donor asked for, an approver can **reopen** it. You do not have to regenerate the whole report.
 
 Who can: **Admin** and **Project Manager** (the people who can approve reports).

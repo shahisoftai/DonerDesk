@@ -1,7 +1,5 @@
 # How to Add a Chart to a Report
 
-**DonorDesk Version 2.002**
-
 Charts in a report normally appear by themselves, one beside each table. When you want a chart of your own, for example monthly achievements of one indicator or budget against spending, build it in the **Data Center** and add it to a report section.
 
 Who can: anyone who can edit reports (Admin, Project Manager, M&E Officer, Grants Officer). Adding a chart to a report that is not a draft needs an approver to reopen it first (see [How to reopen an approved report](/support/how-to/reopen-an-approved-report)).

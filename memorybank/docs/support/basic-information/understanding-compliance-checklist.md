@@ -1,7 +1,5 @@
 # Understanding the Compliance Checklist
 
-**DonorDesk Version 2.001**
-
 The compliance checklist is a live list of what is missing or weak before a report goes to the donor.
 
 ## What it checks

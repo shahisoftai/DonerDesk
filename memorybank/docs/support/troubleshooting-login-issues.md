@@ -1,7 +1,5 @@
 # Troubleshooting Login Issues
 
-**DonorDesk Version 2.001**
-
 ## "Invalid credentials"
 
 Your email or password is wrong.

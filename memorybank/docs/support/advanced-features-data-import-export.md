@@ -1,7 +1,5 @@
 # Data Import and Export
 
-**DonorDesk Version 2.001**
-
 ## Import
 
 Every import screen works the same way: upload a file, **or paste or dictate** the rows into the box, check the text, then create the records.

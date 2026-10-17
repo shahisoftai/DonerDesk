@@ -1,7 +1,5 @@
 # How DonorDesk Handles Your Data
 
-**DonorDesk Version 2.001**
-
 ## What we store
 
 - **Account data:** names, work emails, roles, hashed passwords.

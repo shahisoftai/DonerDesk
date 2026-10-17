@@ -1,7 +1,5 @@
 # How to Create the Closing Report
 
-**DonorDesk Version 2.001**
-
 The **closing report** (a **Final** report) closes your reporting cycle and covers the project's whole life: project-wide figures, finance, evidence and sign-offs. The guided page checks what is ready, tells you what is left and where to do it, and starts the report with the right dates.
 
 ## Open it

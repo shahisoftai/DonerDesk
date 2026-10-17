@@ -1,7 +1,5 @@
 # How to Invite Team Members
 
-**DonorDesk Version 2.001**
-
 Only **Admins** can invite people and change roles.
 
 ## Invite from the Team page

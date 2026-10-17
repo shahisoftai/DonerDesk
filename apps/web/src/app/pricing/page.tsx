@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/pricing" },
   title: "Plans & Pricing",
   description:
-    "DonorDesk plans and pricing: start free, upgrade when you grow. AI-assisted donor reporting, evidence management, and compliance for NGOs.",
+    "DonorDesk plans and pricing: start free, upgrade when the programme grows. Logframe, activities, evidence and compliance in one record, with donor reports drafted from it, for NGOs.",
 };
 
 type Cell = string | { text: string; muted?: boolean };

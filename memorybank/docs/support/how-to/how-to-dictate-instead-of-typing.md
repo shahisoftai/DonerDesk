@@ -1,7 +1,5 @@
 # How to Dictate Instead of Typing
 
-**DonorDesk Version 2.001**
-
 You can speak your text instead of typing it. This helps most for the long boxes on the activity form (summary, achievements, challenges, lessons learned, next steps), but it is offered in most places where you write sentences.
 
 ## Use the microphone

@@ -1,7 +1,5 @@
 # Troubleshooting Evidence Upload
 
-**DonorDesk Version 2.001**
-
 ## The Upload button is missing
 
 Uploading needs one of these roles: Admin, Project Manager, M&E Officer, Grants Officer, Field Officer or Compliance Officer. Viewers cannot upload.

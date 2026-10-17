@@ -1,7 +1,5 @@
 # Troubleshooting Account Access
 
-**DonorDesk Version 2.001**
-
 ## I can't see a project
 
 Access follows your role and your project assignments. Ask an Admin or Project Manager to add you on the project's **Team** tab (**Assign member**).

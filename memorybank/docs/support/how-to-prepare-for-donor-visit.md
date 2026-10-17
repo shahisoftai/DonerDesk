@@ -1,7 +1,5 @@
 # How to Prepare for a Donor Visit
 
-**DonorDesk Version 2.001**
-
 Donor visits require preparation to showcase your work effectively. Here is how to use DonorDesk to get ready.
 
 ## Where DonorDesk helps

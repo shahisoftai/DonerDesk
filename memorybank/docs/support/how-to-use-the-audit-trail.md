@@ -1,7 +1,5 @@
 # How to Use the Audit Trail
 
-**DonorDesk Version 2.001**
-
 The audit log records who did what and when: project changes, imports, evidence uploads and verification decisions, report edits and approvals, exports, role changes, billing changes and more. It is your proof of process for donors and auditors.
 
 ## Open it

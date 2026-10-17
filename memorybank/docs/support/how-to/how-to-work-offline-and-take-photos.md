@@ -1,7 +1,5 @@
 # How to Work Offline and Take Photos
 
-**DonorDesk Version 2.001**
-
 Field staff often record activities where the signal is poor. DonorDesk keeps what you finish and sends it when you are back online.
 
 ## Take a photo as evidence

@@ -1,7 +1,5 @@
 # GDPR and Data Protection
 
-**DonorDesk Version 2.001**
-
 DonorDesk is designed to help NGOs meet data-protection duties. This page explains how, and what remains your responsibility.
 
 ## Roles

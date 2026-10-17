@@ -1,7 +1,5 @@
 # User Roles and Permissions
 
-**DonorDesk Version 2.001**
-
 Every person in a workspace has one **role**. The role decides what they can see and do. DonorDesk has seven roles.
 
 | Role | Typical person | Summary |

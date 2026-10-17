@@ -1,7 +1,5 @@
 # Project Walkthrough: From the First Click to the Closing Report
 
-**DonorDesk Version 2.001**
-
 This is the whole life of a donor-funded project in DonorDesk, in the order you do it. Each stage says what to do, who does it, what to check before moving on, and where the detailed article is. It was written from a complete six-month run (a health project with monthly reports and a closing report), so it also lists the places where people usually get stuck.
 
 **How long it takes.** Setting up a project takes about half a day if you have the donor's template, a logframe and an indicator list ready. After that, a reporting month is a routine of a few hours spread over the month. The closing report adds a few more steps at the end.

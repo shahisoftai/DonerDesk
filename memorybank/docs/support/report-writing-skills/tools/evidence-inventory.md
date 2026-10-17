@@ -1,7 +1,5 @@
 # Evidence Inventory Guide
 
-**DonorDesk Version 2.001**
-
 An evidence inventory is a structured record of every piece of supporting documentation for your project's reported results. Maintaining a complete, organised evidence inventory throughout the project — not just at reporting time — is one of the most effective practices in credible reporting.
 
 ## Why an Evidence Inventory Matters

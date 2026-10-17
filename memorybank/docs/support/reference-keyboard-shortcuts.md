@@ -1,7 +1,5 @@
 # Keyboard Shortcuts
 
-**DonorDesk Version 2.001**
-
 ## Report editor
 
 Single-key shortcuts work when you are not typing in a field or the editor. They are ignored if Ctrl, Cmd or Alt is held.

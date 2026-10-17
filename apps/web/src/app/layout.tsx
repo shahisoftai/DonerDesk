@@ -5,7 +5,7 @@ import { GeistSans } from "geist/font/sans";
 import { ThemeScript } from "@/components/ThemeScript";
 
 const DESCRIPTION =
-  "Turn programme data, field evidence, and indicator results into professional, source-linked reports for donors, grantmakers, and funding authorities.";
+  "Run your grant-funded programme in one place: logframe, indicators, activities, evidence and compliance. Donor reports are drafted from that record, checked against it and approved by a person.";
 
 export const viewport: Viewport = {
   themeColor: [
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://donordesk.online"),
   applicationName: "DonorDesk",
   title: {
-    default: "DonorDesk — AI-assisted grant and donor reporting",
+    default: "DonorDesk — programme management and donor reporting",
     template: "%s · DonorDesk",
   },
   description: DESCRIPTION,

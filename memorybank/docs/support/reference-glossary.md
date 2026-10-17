@@ -1,7 +1,5 @@
 # Glossary of Terms
 
-**DonorDesk Version 2.001**
-
 This glossary explains the key terms used in DonorDesk.
 
 ## A

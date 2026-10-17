@@ -1,7 +1,5 @@
 # Report Writing Fundamentals
 
-**DonorDesk Version 2.001**
-
 A donor report is more than a record of activities — it is your organisation's primary evidence of accountability, impact, and professionalism. A well-written report builds donor confidence, strengthens your reputation, and increases the likelihood of future funding.
 
 ## What Makes a Good Donor Report

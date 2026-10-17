@@ -1,7 +1,5 @@
 # How to Log Activities
 
-**DonorDesk Version 2.001**
-
 Activities are the field updates that tell the story behind your indicators: trainings held, distributions made, visits completed. Roles that can create activities: Admin, Project Manager, M&E Officer and Field Officer. Admin and Project Manager can approve them.
 
 Open **Projects → your project → Activities**.

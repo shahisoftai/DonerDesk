@@ -1,7 +1,5 @@
 # Indicators & Evidence: Writing with Data
 
-**DonorDesk Version 2.001**
-
 Numbers give your report credibility. But raw indicator data — without context, comparison, and narrative — is inert. This guide shows you how to transform indicator values into evidence-backed narrative that donors can act on.
 
 ## The Difference Between an Indicator and Evidence

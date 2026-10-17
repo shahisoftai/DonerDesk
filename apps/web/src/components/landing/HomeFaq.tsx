@@ -1,23 +1,35 @@
 const FAQS = [
   {
     q: "What is DonorDesk?",
-    a: "DonorDesk is a platform that helps NGOs and grant-funded organisations prepare donor reports faster. It links your logframe, indicators, activities and evidence to an AI-assisted, fact-checked report that you edit like a document.",
+    a: "DonorDesk is a programme management system for grant-funded organisations. You keep the logframe, indicators, activities, evidence and compliance in one record, and donor reports are drafted from that record, checked against it and approved by a person.",
+  },
+  {
+    q: "Is DonorDesk just a reporting tool?",
+    a: "No. Reporting is the output. The working system is the logframe, the activity records, the indicator data, the evidence library, the team's queue and the compliance checklist. Those are useful every month, not only at the deadline.",
   },
   {
     q: "Who is DonorDesk for?",
-    a: "Local and national NGOs, INGOs, UN implementing partners, consultancies and government programme units that report to donors and funding authorities.",
+    a: "Local and national NGOs, INGOs, UN implementing partners, consultancies and government programme units that run grant-funded work and report it to donors or funding authorities.",
   },
   {
     q: "Can DonorDesk produce reports for any donor?",
-    a: "Yes. You upload the donor's template (Word, PDF, text, Markdown, Excel or CSV). DonorDesk extracts the outline and rules, you review and approve them, and the report follows that structure.",
+    a: "Yes. You upload the donor's template (Word, PDF, text, Markdown, Excel or CSV). DonorDesk extracts the sections, instructions, required tables and limits. You review and approve them, and the report follows that structure.",
   },
   {
     q: "Does the AI invent numbers?",
-    a: "No. Tables, charts and comparisons are built from verified indicator data, and any figure in the AI's text that is not in your inputs is rejected. Every factual statement is checked against your evidence, and a person approves the final report.",
+    a: "No. Tables, charts and comparisons are built from verified indicator data. A figure in the AI's text that is not in your inputs is rejected and regenerated; if it still fails, the section falls back to plain text that says why. A person approves every report.",
+  },
+  {
+    q: "Can field staff record activities without internet?",
+    a: "Partly. A finished activity is kept on the phone or laptop and sent when the connection returns. The DonorDesk app itself needs a connection to open, so it is not a full offline app.",
+  },
+  {
+    q: "Can we keep our evidence in our own Google Drive?",
+    a: "Yes. Files can stay in your Google Drive, and linked files do not count toward your managed storage. You can also upload files to DonorDesk managed storage, within your plan's limit.",
   },
   {
     q: "Can I turn AI off?",
-    a: "Yes. AI drafting can be switched off in Settings and you can always write reports manually.",
+    a: "Yes. AI drafting can be switched off in Settings, and you can always write reports manually. Manual writing never uses AI credits.",
   },
   {
     q: "How much does DonorDesk cost?",
@@ -25,7 +37,7 @@ const FAQS = [
   },
   {
     q: "Which export formats are supported?",
-    a: "Reports export to Word and PDF, indicator tables to Excel, and evidence packs to ZIP, with review and approval gates before release.",
+    a: "Reports export to Word and PDF, indicator tables and the data sheet to Excel, and evidence packs to ZIP. A watermarked internal copy is available for review at any stage, and a donor submission needs a clean, approved report.",
   },
   {
     q: "Can DonorDesk submit reports to donors directly?",

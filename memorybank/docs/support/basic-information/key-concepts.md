@@ -1,7 +1,5 @@
 # Key Concepts and Terminology
 
-**DonorDesk Version 2.001**
-
 | Term | Meaning in DonorDesk |
 |---|---|
 | **Workspace / tenant** | Your organisation's private space. Data is isolated from other organisations. |

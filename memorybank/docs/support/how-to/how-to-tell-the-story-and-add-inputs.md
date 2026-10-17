@@ -1,7 +1,5 @@
 # How to Tell the Story and Add Report Inputs
 
-**DonorDesk Version 2.001**
-
 Numbers do not explain themselves. **Tell the Story** (step 2 of the reporting workspace) is where you add the context that the AI uses to write a convincing report. Open the **Data & story inputs** page from **⋯ → Edit data & story** in the editor or from the period workspace.
 
 Report writers can edit it; others can read it.

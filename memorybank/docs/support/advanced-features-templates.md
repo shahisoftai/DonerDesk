@@ -1,7 +1,5 @@
 # Donor Templates: Advanced Tips
 
-**DonorDesk Version 2.001**
-
 The basics are in [How to upload a donor template](/support/how-to/upload-donor-template). These tips help with tricky templates.
 
 ## Getting good extraction

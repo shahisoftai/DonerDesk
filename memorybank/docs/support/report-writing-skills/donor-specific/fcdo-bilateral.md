@@ -1,7 +1,5 @@
 # FCDO and Bilateral Donors Reporting
 
-**DonorDesk Version 2.001**
-
 The UK's Foreign, Commonwealth & Development Office (FCDO) is one of the largest bilateral donors globally, alongside USAID, GAC (Canada), BMZ (Germany), and Sida (Sweden). While each bilateral donor has specific requirements, they share common frameworks rooted in the OECD-DAC evaluation criteria and results-based management approaches.
 
 ## FCDO's Operating Model

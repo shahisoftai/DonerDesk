@@ -1,7 +1,5 @@
 # How to Fix, Move or Remove an Indicator
 
-**DonorDesk Version 2.001**
-
 You no longer need to rebuild a project because of an indicator mistake. Open the indicator and change it. Who can: **Admin**, **Project Manager** and **M&E Officer**.
 
 Open **Projects → your project → Logframe**, then click the indicator to open its page. Below the calculation settings you will see **Edit indicator**.

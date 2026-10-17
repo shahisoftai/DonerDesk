@@ -1,7 +1,5 @@
 # Troubleshooting the Compliance Checklist
 
-**DonorDesk Version 2.001**
-
 ## The checklist is empty
 
 Items are created from the donor template, logframe, activities and evidence. Make sure the project has a reviewed template and indicators, then in the report editor use **⋯ → Scan for missing items**.

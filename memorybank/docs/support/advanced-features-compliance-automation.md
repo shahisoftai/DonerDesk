@@ -1,7 +1,5 @@
 # Compliance Automation
 
-**DonorDesk Version 2.001**
-
 DonorDesk keeps the compliance checklist current automatically, so you spend time fixing problems rather than hunting for them.
 
 ## What is automated

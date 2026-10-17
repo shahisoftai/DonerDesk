@@ -1,7 +1,5 @@
 # How to Use the Data Center
 
-**DonorDesk Version 2.002**
-
 The **Data Center** shows every indicator value of a project, across all its reporting periods, in one place. Use it to see all months at once, spot gaps, download the whole sheet, fill in many values in Excel and import them back, and build charts for your reports.
 
 Open **Projects → your project → Data**. Anyone who can see the project can view and download. Importing needs the right to enter indicator values (Admin, Project Manager, M&E Officer).
