@@ -28,3 +28,6 @@ export type SetOwnerInput = z.infer<typeof SetOwnerSchema>;
 
 export const ListAssignmentsQuerySchema = z.object({ userId: z.string().min(1).optional(), projectId: z.string().min(1).optional() });
 export type ListAssignmentsQuery = z.infer<typeof ListAssignmentsQuerySchema>;
+
+export const UpdateNotificationPreferencesSchema = z.object({ emailSummaryMode: z.enum(["DAILY_SUMMARY", "URGENT_ONLY", "NEVER"]) });
+export type UpdateNotificationPreferencesInput = z.infer<typeof UpdateNotificationPreferencesSchema>;

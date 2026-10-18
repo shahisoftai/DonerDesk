@@ -1,0 +1,11 @@
+[Unit]
+Description=Run DonorDesk reminders every hour
+
+[Timer]
+# On the hour, so an organisation's 07:00 hour is always hit. Persistent: a missed run (the host was down) is made up at boot.
+OnCalendar=hourly
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

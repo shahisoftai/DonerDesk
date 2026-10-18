@@ -88,6 +88,7 @@ export const OrganizationProfileSchema = z.object({
   contactEmail: z.string(),
   website: z.string().optional(),
   defaultLanguage: z.string(),
+  timeZone: z.string().optional(),
   logoUrl: z.string().optional(),
   mainOfficeLocation: z.string().optional(),
   donorTypesServed: z.string().optional(),
@@ -1360,3 +1361,5 @@ export const TeamWorkResponseSchema = z.object({
   today: z.string(),
   rows: z.array(z.object({ assigneeId: z.string(), open: z.number(), late: z.number(), dueThisWeek: z.number() })),
 });
+
+export const NotificationPreferencesSchema = z.object({ emailSummaryMode: z.enum(["DAILY_SUMMARY", "URGENT_ONLY", "NEVER"]) });

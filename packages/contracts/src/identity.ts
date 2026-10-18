@@ -174,6 +174,8 @@ export const OrganizationProfileSchema = z.object({
   contactEmail: EmailSchema,
   website: z.string().url().optional(),
   defaultLanguage: LanguageCodeSchema,
+  /** IANA name such as Africa/Nairobi; the daily summary goes out at 07:00 here. */
+  timeZone: z.string().min(1).max(64).optional(),
   logoUrl: z.string().url().optional(),
   mainOfficeLocation: z.string().optional(),
   donorTypesServed: z.string().optional(),

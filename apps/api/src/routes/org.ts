@@ -33,6 +33,7 @@ export async function registerOrgRoutes(app: FastifyInstance) {
       contactEmail: o.contactEmail,
       website: o.website,
       defaultLanguage: o.defaultLanguage,
+      timeZone: o.timeZone,
       logoUrl: o.logoUrl,
       mainOfficeLocation: o.mainOfficeLocation,
       donorTypesServed: o.donorTypesServed,

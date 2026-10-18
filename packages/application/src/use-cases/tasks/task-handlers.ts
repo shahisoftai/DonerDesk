@@ -4,7 +4,8 @@ import {
 } from "@donordesk/domain";
 import type { CompleteTaskInput, CreateTaskInput } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IAuditLogger, IClock, IIdGenerator, INotificationPort } from "../../ports/core.js";
+import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
+import type { IPersonNotifier } from "../../ports/reminders.js";
 import type { IProjectRoster, IProjectTaskRepository, ITaskSubjectResolver } from "../../ports/tasks.js";
 
 const role = (ctx: AuthenticatedContext) => ctx.tenant.role as Role;
@@ -16,7 +17,7 @@ const role = (ctx: AuthenticatedContext) => ctx.tenant.role as Role;
 export class CreateTaskHandler {
   constructor(
     private readonly ids: IIdGenerator, private readonly tasks: IProjectTaskRepository, private readonly subjects: ITaskSubjectResolver,
-    private readonly roster: IProjectRoster, private readonly notify: INotificationPort, private readonly audit: IAuditLogger, private readonly clock: IClock,
+    private readonly roster: IProjectRoster, private readonly notify: IPersonNotifier, private readonly audit: IAuditLogger, private readonly clock: IClock,
   ) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string, input: CreateTaskInput): Promise<Result<{ id: string }, DomainError>> {
@@ -56,8 +57,8 @@ export class CreateTaskHandler {
     const saved = await this.tasks.create(created.value);
     if (!saved.ok) return saved;
 
-    await this.notify.notify({
-      tenantId, recipientId: input.assigneeId, type: "ASSIGNMENT", title: input.urgent ? "Urgent request" : "New request",
+    await this.notify.send({
+      tenantId, recipientId: input.assigneeId, type: "ASSIGNMENT", urgent: input.urgent, title: input.urgent ? "Urgent request" : "New request",
       message: `${created.value.title}. Due ${formatShortDate(dueDate, today)}.`, relatedEntityType: "project_task", relatedEntityId: created.value.id,
     });
     await this.audit.record({

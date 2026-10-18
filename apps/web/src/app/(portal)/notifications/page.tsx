@@ -5,13 +5,15 @@ import { NotificationsResponseSchema } from "@/lib/server/schemas";
 import { InlineError, EmptyState } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { MarkReadButton } from "./MarkReadButton";
+import { EmailPreference } from "@/features/tasks/presentation/EmailPreference";
+import { NotificationPreferencesSchema } from "@/lib/server/schemas";
 
 export const dynamic = "force-dynamic";
 
 const TYPE_LABEL: Record<string, string> = {
   ASSIGNMENT: "Assignment",
   EVIDENCE_REVIEW: "Evidence review",
-  DEADLINE_REMINDER: "Deadline",
+  DEADLINE_REMINDER: "Reminder",
   COMMENT_MENTION: "Mention",
   CHECKLIST_ASSIGNED: "Compliance",
   REPORT_APPROVED: "Report approved",
@@ -37,7 +39,10 @@ export default async function NotificationsPage({
 }) {
   const params = await searchParams;
   const ctx = await requireSession();
-  const result = await gatewayRequest("/v1/notifications", NotificationsResponseSchema, ctx.token);
+  const [result, prefs] = await Promise.all([
+    gatewayRequest("/v1/notifications", NotificationsResponseSchema, ctx.token),
+    gatewayRequest("/v1/me/notification-preferences", NotificationPreferencesSchema, ctx.token),
+  ]);
 
   const raw = (key: string) => {
     const v = params[key];
@@ -79,6 +84,8 @@ export default async function NotificationsPage({
           {chip("read", "Read")}
         </div>
       </div>
+
+      {prefs.ok && <div className="mt-6"><EmailPreference initial={prefs.value.emailSummaryMode} /></div>}
 
       <div className="mt-6 space-y-6">
         {!result.ok && <div className="mt-4"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>}

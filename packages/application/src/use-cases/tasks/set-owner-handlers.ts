@@ -1,7 +1,8 @@
 import { DomainError, Permissions, err, ok, type Result, type Role } from "@donordesk/domain";
 import type { SetOwnerInput } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IAuditLogger, INotificationPort } from "../../ports/core.js";
+import type { IAuditLogger } from "../../ports/core.js";
+import type { IPersonNotifier } from "../../ports/reminders.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IIndicatorRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -63,7 +64,7 @@ export class SetPeriodOwnerHandler {
 
 /** Who looks after a compliance item. Calls the aggregate's `assign()` that nothing used until now; the new lead is told. */
 export class AssignChecklistItemHandler {
-  constructor(private readonly checklist: IChecklistRepository, private readonly roster: IProjectRoster, private readonly notify: INotificationPort, private readonly audit: IAuditLogger) {}
+  constructor(private readonly checklist: IChecklistRepository, private readonly roster: IProjectRoster, private readonly notify: IPersonNotifier, private readonly audit: IAuditLogger) {}
 
   async handle(ctx: AuthenticatedContext, itemId: string, input: SetOwnerInput): Promise<Result<void, DomainError>> {
     if (!allowed(ctx, "checklist.manage")) return err(DomainError.forbidden("You cannot assign compliance items"));
@@ -79,7 +80,7 @@ export class AssignChecklistItemHandler {
     const saved = await this.checklist.update(item);
     if (!saved.ok) return saved;
     if (input.userId !== null) {
-      await this.notify.notify({ tenantId: ctx.tenant.tenantId, recipientId: input.userId, type: "CHECKLIST_ASSIGNED", title: "Compliance item assigned to you", message: item.title, relatedEntityType: "checklist_item", relatedEntityId: itemId });
+      await this.notify.send({ tenantId: ctx.tenant.tenantId, recipientId: input.userId, type: "CHECKLIST_ASSIGNED", urgent: false, title: "Compliance item assigned to you", message: item.title, relatedEntityType: "checklist_item", relatedEntityId: itemId });
     }
     await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "checklist.assigned", entityType: "checklist_item", entityId: itemId, projectId: item.projectId, oldValue: String(before), newValue: String(input.userId) });
     return ok(undefined);

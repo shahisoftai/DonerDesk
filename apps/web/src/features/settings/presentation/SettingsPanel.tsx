@@ -40,6 +40,7 @@ export function SettingsPanel({
   const [contactEmail, setContactEmail] = useState(org.contactEmail);
   const [website, setWebsite] = useState(org.website ?? "");
   const [defaultLanguage, setDefaultLanguage] = useState(org.defaultLanguage || "en");
+  const [timeZone, setTimeZone] = useState(org.timeZone || "UTC");
   const [mainOfficeLocation, setMainOfficeLocation] = useState(org.mainOfficeLocation ?? "");
   const [donorTypesServed, setDonorTypesServed] = useState(org.donorTypesServed ?? "");
   const [dataResidency, setDataResidency] = useState(org.dataResidency || "DEFAULT");
@@ -61,6 +62,7 @@ export function SettingsPanel({
         contactEmail,
         website: website || undefined,
         defaultLanguage,
+        timeZone,
         mainOfficeLocation: mainOfficeLocation || undefined,
         donorTypesServed: donorTypesServed || undefined,
         dataResidency,
@@ -92,6 +94,10 @@ export function SettingsPanel({
           <Select id="org-lang" value={defaultLanguage} onChange={(e) => setDefaultLanguage(e.target.value)} disabled={!canEdit}>
             {LANGUAGE_OPTIONS.map((l) => <option key={l} value={l}>{l}</option>)}
           </Select>
+        </Field>
+        <Field label="Time zone" htmlFor="org-tz" error={actionState.fields?.timeZone?.[0]} description="Daily summaries are emailed at 07:00 in this time zone, for example Africa/Nairobi.">
+          <Input id="org-tz" value={timeZone} onChange={(e) => setTimeZone(e.target.value)} disabled={!canEdit} list="org-tz-suggestions" />
+          <datalist id="org-tz-suggestions">{["UTC", "Africa/Nairobi", "Africa/Lagos", "Africa/Accra", "Africa/Addis_Ababa", "Asia/Karachi", "Asia/Dhaka", "Asia/Kolkata", "Asia/Amman", "Europe/London", "Europe/Istanbul", "America/New_York"].map((z) => <option key={z} value={z} />)}</datalist>
         </Field>
         <Field label="Contact name" htmlFor="org-contact-name" error={actionState.fields?.contactName?.[0]}>
           <Input id="org-contact-name" value={contactName} onChange={(e) => setContactName(e.target.value)} disabled={!canEdit} required />

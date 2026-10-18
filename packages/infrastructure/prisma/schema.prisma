@@ -18,6 +18,8 @@ model Organization {
   contactEmail  String
   website       String?
   defaultLanguage String  @default("en")
+  /// IANA zone; the daily summary goes out at 07:00 here. Default UTC.
+  timeZone      String   @default("UTC")
   logoUrl       String?
   mainOfficeLocation String?
   donorTypesServed String?
@@ -162,6 +164,8 @@ model User {
   lastLoginAt   DateTime?
   assignedProjectIds String @default("[]")
   passwordChangedAt DateTime?
+  /// How the person wants to be emailed: DAILY_SUMMARY (default), URGENT_ONLY, NEVER.
+  emailSummaryMode String @default("DAILY_SUMMARY")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -1535,4 +1539,19 @@ model ProjectTask {
   @@index([tenantId, assigneeId, status])
   @@index([tenantId, projectId, status])
   @@index([subjectType, subjectId])
+}
+
+/// What the reminder timer has already sent, so the hourly run never repeats a summary or an escalation.
+model ReminderLedgerEntry {
+  id          String   @id
+  tenantId    String
+  recipientId String
+  /// "summary" for the daily summary, an assignment key for an escalation.
+  subjectKey  String
+  ruleKey     String
+  sentOn      DateTime @db.Date
+  createdAt   DateTime @default(now())
+
+  @@unique([tenantId, recipientId, subjectKey, ruleKey, sentOn])
+  @@index([tenantId, recipientId, subjectKey])
 }

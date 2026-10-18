@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CompleteTaskSchema, CreateTaskSchema, ListAssignmentsQuerySchema, SetOwnerSchema } from "@donordesk/contracts";
+import { UpdateNotificationPreferencesSchema, CompleteTaskSchema, CreateTaskSchema, ListAssignmentsQuerySchema, SetOwnerSchema } from "@donordesk/contracts";
 
 /**
  * Requests, the assignment queue, the team view and the three "Lead" pickers. Thin: validate, call one handler, throw its error.
@@ -58,6 +58,20 @@ export async function registerTaskRoutes(app: FastifyInstance) {
   app.post("/v1/checklist/:itemId/assign", async (req) => {
     const body = SetOwnerSchema.parse(req.body);
     const r = await req.container.handlers.assignChecklistItem.handle({ tenant: req.tenant, requestId: req.id }, param(req, "itemId"), body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  // The only reminder setting: how I want to be emailed. Always about the caller.
+  app.get("/v1/me/notification-preferences", async (req) => {
+    const r = await req.container.handlers.getNotificationPreferences.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/me/notification-preferences", async (req) => {
+    const body = UpdateNotificationPreferencesSchema.parse(req.body);
+    const r = await req.container.handlers.updateNotificationPreferences.handle({ tenant: req.tenant, requestId: req.id }, body);
     if (!r.ok) throw r.error;
     return { ok: true };
   });

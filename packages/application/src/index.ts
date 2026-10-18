@@ -226,7 +226,6 @@ export * from "./use-cases/support/mark-notification-read.js";
 export * from "./use-cases/support/list-audit-log.js";
 export * from "./use-cases/support/record-legal-consent.js";
 export * from "./use-cases/support/get-legal-consent.js";
-export * from "./use-cases/support/generate-deadline-reminders.js";
 
 export * from "./use-cases/billing/create-checkout.js";
 export * from "./use-cases/billing/create-topup-checkout.js";
@@ -290,3 +289,6 @@ export * from "./services/task-reconciler.js";
 export * from "./use-cases/tasks/task-handlers.js";
 export * from "./use-cases/tasks/list-assignments.js";
 export * from "./use-cases/tasks/set-owner-handlers.js";
+export * from "./ports/reminders.js";
+export * from "./services/person-notifier.js";
+export * from "./use-cases/tasks/run-reminders.js";

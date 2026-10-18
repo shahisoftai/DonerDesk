@@ -1,4 +1,5 @@
 import { Entity } from "../../core/entity.js";
+import { isValidTimeZone, suggestTimeZone } from "../../core/time-zone.js";
 import { DomainError } from "../../core/domain-error.js";
 import { TenantId } from "../../value-objects/tenant-id.js";
 import type { StorageProvider } from "../evidence/evidence-file.js";
@@ -43,6 +44,8 @@ export interface OrganizationProps {
   dataResidency: DataResidency;
   aiEnabled: boolean;
   storageProvider: StorageProvider;
+  /** IANA zone; the daily summary goes out at 07:00 here. New organisations get one suggested from their country. */
+  timeZone?: string;
   reportingDefaults: OrganizationReportingDefaults;
   /**
    * Agent Memory (Phase 21) tenant self-service toggle. Effective state is
@@ -64,7 +67,7 @@ export class Organization extends Entity<string> {
     createdAt?: Date,
   ) {
     super(id, createdAt);
-    this.props = { ...this.props, reportingDefaults: normalizeReportingDefaults(this.props.reportingDefaults) };
+    this.props = { ...this.props, reportingDefaults: normalizeReportingDefaults(this.props.reportingDefaults), timeZone: this.props.timeZone ?? suggestTimeZone(this.props.country) };
   }
 
   static create(input: { id: string; tenantId: TenantId; props: OrganizationProps }): Organization {
@@ -93,6 +96,7 @@ export class Organization extends Entity<string> {
       throw DomainError.validation("Valid contact email required");
     }
     if (!p.country) throw DomainError.validation("Country required");
+    if (p.timeZone !== undefined && !isValidTimeZone(p.timeZone)) throw DomainError.validation("Choose a time zone from the list", { field: "timeZone" });
     if (!Array.isArray(p.sectors) || p.sectors.length === 0) {
       throw DomainError.validation("At least one sector required");
     }
@@ -113,6 +117,7 @@ export class Organization extends Entity<string> {
   get aiEnabled(): boolean { return this.props.aiEnabled; }
   get agentMemoryEnabled(): boolean { return this.props.agentMemoryEnabled; }
   get storageProvider(): StorageProvider { return this.props.storageProvider; }
+  get timeZone(): string { return this.props.timeZone ?? "UTC"; }
   get nonprofitVerifiedAt(): Date | undefined { return this.props.nonprofitVerifiedAt; }
   get reportingDefaults(): OrganizationReportingDefaults {
     return {
@@ -149,8 +154,10 @@ export class Organization extends Entity<string> {
   }
 
   updateProfile(patch: Partial<OrganizationProps>): void {
-    this.props = { ...this.props, ...patch };
-    Organization.validateProps(this.props);
+    // Validate the result first: a refused change must not stay on the aggregate.
+    const next = { ...this.props, ...patch };
+    Organization.validateProps(next);
+    this.props = next;
     this.touch();
   }
 }

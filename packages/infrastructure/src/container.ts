@@ -202,7 +202,10 @@ import {
   CreateExportHandler,
   GetExportPreflightHandler,
   RunExportHandler,
-  GenerateDeadlineRemindersHandler,
+  RunRemindersHandler,
+  GetNotificationPreferencesHandler,
+  UpdateNotificationPreferencesHandler,
+  PersonNotifier,
   AddCommentHandler,
   ResolveCommentHandler,
   ListCommentsHandler,
@@ -314,6 +317,7 @@ import { PrismaEvidenceRepository } from "./repositories/evidence.js";
 import { PrismaIdempotencyRepository } from "./repositories/idempotency.js";
 import { PrismaRequestIdempotencyRepository } from "./repositories/request-idempotency.js";
 import { PrismaActivityUpdateRepository } from "./repositories/activities.js";
+import { PrismaReminderLedger, PrismaNotificationPreferences, PrismaReminderAudience } from "./repositories/reminders.js";
 import { PrismaProjectTaskRepository, PrismaTaskSubjectResolver, PrismaTaskFactsReader, PrismaProjectRoster } from "./repositories/tasks.js";
 import { TaskAssignmentSource } from "./assignment-sources/task-source.js";
 import { PlanItemAssignmentSource } from "./assignment-sources/plan-item-source.js";
@@ -685,7 +689,9 @@ export interface Container {
     createExport: CreateExportHandler;
     getExportPreflight: GetExportPreflightHandler;
     runExport: RunExportHandler;
-    generateDeadlineReminders: GenerateDeadlineRemindersHandler;
+    runReminders: RunRemindersHandler;
+    getNotificationPreferences: GetNotificationPreferencesHandler;
+    updateNotificationPreferences: UpdateNotificationPreferencesHandler;
     addComment: AddCommentHandler;
     resolveComment: ResolveCommentHandler;
     listComments: ListCommentsHandler;
@@ -1163,6 +1169,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   // Requests (Phase 28.3): the reconciler closes the ones the records show were met, and is told after the changes that meet them.
   const projectTasks = new PrismaProjectTaskRepository(prisma);
   const projectRoster = new PrismaProjectRoster(prisma);
+  const notificationPreferences = new PrismaNotificationPreferences(prisma);
+  // Tells one person: an in-app note always, an email only when their setting allows it.
+  const personNotifier = new PersonNotifier(ids, notifications, notify, notificationPreferences);
   const taskReconciler = new TaskReconciler(projectTasks, new PrismaTaskFactsReader(prisma), audits, clock);
   const assignmentQueue = new AssignmentQueue([
     new PlanItemAssignmentSource(prisma), new TaskAssignmentSource(prisma), new ChecklistAssignmentSource(prisma), new ReportDeadlineAssignmentSource(prisma),
@@ -1374,14 +1383,14 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listPlanRevisions: new ListPlanRevisionsHandler(plannedActivities, planRevisions),
     setWorkPlanningVisibility: new SetWorkPlanningVisibilityHandler(projects, audits),
     listProjectPeople: new ListProjectPeopleHandler(projectMembers, users),
-    createTask: new CreateTaskHandler(ids, projectTasks, new PrismaTaskSubjectResolver(prisma), projectRoster, notify, audits, clock),
+    createTask: new CreateTaskHandler(ids, projectTasks, new PrismaTaskSubjectResolver(prisma), projectRoster, personNotifier, audits, clock),
     completeTask: new CompleteTaskHandler(projectTasks, audits, clock),
     cancelTask: new CancelTaskHandler(projectTasks, audits, clock),
     listAssignments: new ListAssignmentsHandler(assignmentQueue, taskReconciler, clock),
     listTeamWork: new ListTeamWorkHandler(assignmentQueue, taskReconciler, clock),
     setIndicatorOwner: new SetIndicatorOwnerHandler(indicators, projectRoster, audits),
     setPeriodOwner: new SetPeriodOwnerHandler(periods, projectRoster, audits),
-    assignChecklistItem: new AssignChecklistItemHandler(checklist, projectRoster, notify, audits),
+    assignChecklistItem: new AssignChecklistItemHandler(checklist, projectRoster, personNotifier, audits),
     getMyWeek: new GetMyWeekHandler(new PrismaMyWeekReader(prisma), new PrismaDeliveryFactsReader(prisma), clock),
     copyWorkPlan: new CopyWorkPlanHandler(projects, logframe, plannedActivities, ids, audits),
     importWorkPlan: new ImportWorkPlanHandler(ids, plannedActivities, planContext, new PrismaMemberDirectory(prisma), logframe, audits),
@@ -1497,7 +1506,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createExport: createExportHandler,
     runExport: new RunExportHandler(createExportHandler),
     getExportPreflight: new GetExportPreflightHandler(periods, drafts, sections, indicatorUpdates, checklist, evidence, approveReportHandler, activities, sectionDataCharts),
-    generateDeadlineReminders: new GenerateDeadlineRemindersHandler(ids, drafts, sections, notifications, notify),
+    runReminders: new RunRemindersHandler(assignmentQueue, new PrismaReminderLedger(prisma), notificationPreferences, new PrismaReminderAudience(prisma), personNotifier, audits, clock),
+    getNotificationPreferences: new GetNotificationPreferencesHandler(notificationPreferences),
+    updateNotificationPreferences: new UpdateNotificationPreferencesHandler(notificationPreferences, audits),
     addComment: new AddCommentHandler(ids, comments, audits, notify),
     resolveComment: new ResolveCommentHandler(comments, audits),
     listComments: new ListCommentsHandler(comments),

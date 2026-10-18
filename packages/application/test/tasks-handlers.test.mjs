@@ -34,7 +34,7 @@ function world() {
     resolve: async (type, id) => ok(id === "pa1" ? { projectId: "p", title: "Outreach visits", end: "2026-03-20" } : id === "pa-other" ? { projectId: "elsewhere", title: "X" } : id === "ind1" ? { projectId: "p", title: "V-01 Children vaccinated" } : null),
   };
   const roster = { activeMembers: async (p) => ok(p === "p" ? [{ userId: "pm", role: "PROJECT_MANAGER" }, { userId: "fo", role: "FIELD_OFFICER" }, { userId: "me", role: "ME_OFFICER" }, { userId: "v", role: "VIEWER" }] : []) };
-  const notify = { notify: async (x) => void notes.push(x) };
+  const notify = { send: async (x) => void notes.push(x) };
   const auditLog = { record: async (e) => void audit.push(e) };
   return { store, audit, notes, tasks, subjects, roster, notify, auditLog, ids, create: new CreateTaskHandler(ids, tasks, subjects, roster, notify, auditLog, clock) };
 }
@@ -201,7 +201,7 @@ test("report lead and compliance item lead follow the same rule; the new complia
 
   const notes = [];
   const item = { projectId: "p", title: "Confirm safeguarding", assignedToId: undefined, assign(id) { this.assignedToId = id; }, unassign() { this.assignedToId = undefined; } };
-  const checklist = new AssignChecklistItemHandler({ findById: async () => ok(item), update: async (c) => ok(c) }, w.roster, { notify: async (n) => void notes.push(n) }, w.log);
+  const checklist = new AssignChecklistItemHandler({ findById: async () => ok(item), update: async (c) => ok(c) }, w.roster, { send: async (n) => void notes.push(n) }, w.log);
   assert.equal((await checklist.handle(FIELD, "c1", { userId: "fo" })).error.code, "FORBIDDEN");
   assert.equal((await checklist.handle(PM, "c1", { userId: "fo" })).ok, true);
   assert.deepEqual([notes[0].recipientId, notes[0].type, notes[0].message], ["fo", "CHECKLIST_ASSIGNED", "Confirm safeguarding"]);

@@ -44,6 +44,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           contactEmail: org.contactEmail,
           website: org.website,
           defaultLanguage: org.defaultLanguage,
+          timeZone: org.timeZone,
           logoUrl: org.logoUrl,
           mainOfficeLocation: org.mainOfficeLocation,
           donorTypesServed: org.donorTypesServed,
@@ -74,6 +75,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           contactEmail: org.contactEmail,
           website: org.website,
           defaultLanguage: org.defaultLanguage,
+          timeZone: org.timeZone,
           logoUrl: org.logoUrl,
           mainOfficeLocation: org.mainOfficeLocation,
           donorTypesServed: org.donorTypesServed,
@@ -114,6 +116,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     contactEmail: string;
     website: string | null;
     defaultLanguage: string;
+    timeZone?: string | null;
     logoUrl: string | null;
     mainOfficeLocation: string | null;
     donorTypesServed: string | null;
@@ -138,6 +141,8 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
         contactEmail: row.contactEmail,
         website: row.website ?? undefined,
         defaultLanguage: row.defaultLanguage as import("@donordesk/domain").LanguageCode,
+        // Stored organisations always have a zone (UTC unless set); only a new one is suggested from its country.
+        timeZone: row.timeZone ?? "UTC",
         logoUrl: row.logoUrl ?? undefined,
         mainOfficeLocation: row.mainOfficeLocation ?? undefined,
         donorTypesServed: row.donorTypesServed ?? undefined,

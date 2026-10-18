@@ -55,3 +55,10 @@ export async function assignChecklistItemAction(itemId: string, input: unknown):
   const p = await parsed(SetOwnerSchema, input);
   return p.ok ? ok(`/v1/checklist/${encodeURIComponent(itemId)}/assign`, "POST", p.data) : p.result;
 }
+
+/** The one reminder setting: how I want to be emailed. */
+export async function setEmailSummaryModeAction(emailSummaryMode: string): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const r = await gatewayRequest("/v1/me/notification-preferences", OkResponseSchema, context.token, { method: "PUT", body: { emailSummaryMode } });
+  return r.ok ? { ok: true, value: true } : r;
+}
