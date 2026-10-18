@@ -61,7 +61,8 @@ export function recordSentences(text: string | undefined): string[] {
   if (!text) return [];
   return text
     .split(/\n+|(?<=[.!?])\s+/)
-    .map((s) => s.replace(/^[-*•\d.)\s]+/, "").trim())
+    // Only a real list marker ("- ", "* ", "1. ", "2) ") is dropped: a sentence that starts with a figure ("420 cartons were delivered") keeps it.
+    .map((s) => s.replace(/^(?:[-*•]\s+|\d{1,2}[.)]\s+)+/, "").trim())
     .filter((s) => s.length >= 8)
     .map((s) => (s.length > MAX_SENTENCE ? s.slice(0, MAX_SENTENCE) : s));
 }

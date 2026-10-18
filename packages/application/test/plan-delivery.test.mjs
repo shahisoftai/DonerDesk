@@ -40,3 +40,15 @@ test("the story suggestion handler refuses an unknown period and suggests from t
   const s = await h.handle(ctx, "x");
   assert.match(s.value.challenges, /1 of the 2/);
 });
+
+import { recordSentences, buildRecordChunks, figuresInRecords } from "../dist/index.js";
+
+test("a record sentence that starts with a figure keeps it (it was stripped as if it were a list number)", () => {
+  assert.deepEqual(recordSentences("420 cartons of food were delivered to the sites."), ["420 cartons of food were delivered to the sites."]);
+  assert.deepEqual(recordSentences("1,800 children were screened this month."), ["1,800 children were screened this month."]);
+  assert.deepEqual(recordSentences("- 8 groups were formed in April.\n1. 45 people were trained at Kohalpur."), ["8 groups were formed in April.", "45 people were trained at Kohalpur."]);
+});
+test("the figures a record states reach the contradiction lint's grounding", () => {
+  const chunks = buildRecordChunks({ project: { title: "P", donorName: "D", implementingOrganization: "I", country: "Nepal", sector: "Nutrition", duration: { start: new Date("2026-01-01"), end: new Date("2026-08-31") }, description: "" }, period: { reportType: "QUARTERLY", duration: { start: new Date("2026-03-01"), end: new Date("2026-05-31") }, scope: {} }, story: {}, activities: [{ id: "a1", activityTitle: "Deliver", location: "Nepalgunj", activityDate: new Date("2026-03-18"), summary: "420 cartons of therapeutic food were delivered.", achievements: "", challenges: "", lessonsLearned: "", nextSteps: "" }], indicatorUpdates: [], indicatorDefinitions: [] });
+  assert.ok(figuresInRecords(chunks).includes("420"));
+});
