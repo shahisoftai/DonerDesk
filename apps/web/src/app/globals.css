@@ -3,35 +3,35 @@
 @tailwind utilities;
 
 :root {
-  --background: #eef2f8;
+  --background: #f1f4f1;
   --surface: rgba(255, 255, 255, 0.8);
   --surface-strong: #ffffff;
   --surface-muted: rgba(15, 23, 42, 0.04);
   --border: rgba(15, 23, 42, 0.1);
   --border-strong: rgba(15, 23, 42, 0.18);
-  --text: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --brand-glow: rgba(12, 141, 230, 0.16);
-  --cyan-glow: rgba(34, 211, 238, 0.12);
+  --text: #0e1a16;
+  --text-secondary: #3d4f48;
+  --text-muted: #6b7d75;
+  --brand-glow: rgba(242, 181, 68, 0.16);
+  --cyan-glow: rgba(63, 193, 166, 0.12);
   --grid-line: rgba(15, 23, 42, 0.05);
-  --ring: rgba(12, 141, 230, 0.35);
+  --ring: rgba(242, 181, 68, 0.35);
 }
 
 .dark {
-  --background: #020617;
+  --background: #0b1614;
   --surface: rgba(255, 255, 255, 0.04);
   --surface-strong: rgba(255, 255, 255, 0.07);
   --surface-muted: rgba(255, 255, 255, 0.05);
   --border: rgba(255, 255, 255, 0.1);
   --border-strong: rgba(255, 255, 255, 0.16);
   --text: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --brand-glow: rgba(12, 141, 230, 0.32);
-  --cyan-glow: rgba(34, 211, 238, 0.2);
+  --text-secondary: #a3b5ad;
+  --text-muted: #7d918a;
+  --brand-glow: rgba(242, 181, 68, 0.32);
+  --cyan-glow: rgba(63, 193, 166, 0.2);
   --grid-line: rgba(255, 255, 255, 0.04);
-  --ring: rgba(34, 211, 238, 0.4);
+  --ring: rgba(63, 193, 166, 0.4);
 }
 
 @layer base {
@@ -141,8 +141,8 @@
 
 .landing-tech {
   background-image:
-    radial-gradient(circle at 50% 12%, rgba(14, 165, 233, 0.08), transparent 30%),
-    linear-gradient(180deg, #020617 0%, #050b1b 48%, #020617 100%);
+    radial-gradient(circle at 50% 12%, rgba(242, 181, 68, 0.08), transparent 30%),
+    linear-gradient(180deg, #0b1614 0%, #10221e 48%, #0b1614 100%);
 }
 
 .tech-orb {
@@ -165,13 +165,13 @@
 .tech-orb-left {
   left: -12rem;
   top: 18rem;
-  color: #0c8de6;
+  color: #f2b544;
 }
 
 .tech-orb-right {
   right: -11rem;
   top: 6rem;
-  color: #22d3ee;
+  color: #3fc1a6;
   animation-delay: -4s;
 }
 
@@ -191,8 +191,8 @@
   top: 0;
   height: 1px;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(34,211,238,0.8), transparent);
-  box-shadow: 0 0 18px rgba(34,211,238,0.5);
+  background: linear-gradient(90deg, transparent, rgba(63, 193, 166,0.8), transparent);
+  box-shadow: 0 0 18px rgba(63, 193, 166,0.5);
   animation: tech-scan 8s linear infinite;
 }
 
@@ -202,7 +202,7 @@
   inset: 0;
   pointer-events: none;
   opacity: 0;
-  background: linear-gradient(120deg, transparent 20%, rgba(34,211,238,0.08), transparent 80%);
+  background: linear-gradient(120deg, transparent 20%, rgba(63, 193, 166,0.08), transparent 80%);
   transition: opacity 300ms ease;
 }
 
