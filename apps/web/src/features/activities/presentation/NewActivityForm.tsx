@@ -178,10 +178,10 @@ function NewActivityFormInner({
   const planSuggestions = useMemo(() => {
     const date = /^\d{4}-\d{2}-\d{2}$/.test(activityDate) ? activityDate : new Date().toISOString().slice(0, 10);
     const picked = plannedActivities.find((p) => p.id === plannedActivityId);
-    const found = suggestPlanLinks({ userId, date, ...(logframeActivityId ? { logframeActivityId } : {}) }, plannedActivities);
+    const found = suggestPlanLinks({ userId, date, ...(logframeActivityId ? { logframeActivityId } : {}), ...(activityTitle.trim() ? { title: activityTitle } : {}) }, plannedActivities);
     // A chosen activity always stays in the list, even when the dates suggest others.
     return picked && !found.some((f) => f.id === picked.id) ? [{ id: picked.id, reasons: [] as string[] }, ...found].slice(0, 3) : found;
-  }, [plannedActivities, plannedActivityId, activityDate, logframeActivityId, userId]);
+  }, [plannedActivities, plannedActivityId, activityDate, logframeActivityId, activityTitle, userId]);
 
   /** Choosing a planned activity fills what is empty (title, place, logframe activity); it never overwrites what was typed. */
   function choosePlanned(id: string) {

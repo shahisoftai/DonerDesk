@@ -9,6 +9,7 @@ export * from "./reporting.js";
 export * from "./compliance.js";
 export * from "./exports.js";
 export * from "./comments.js";
+export * from "./legal.js";
 export * from "./internal.js";
 export * from "./storage.js";
 export * from "./reporting-profile.js";

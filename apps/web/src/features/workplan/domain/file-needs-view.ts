@@ -4,7 +4,11 @@
  */
 import { EVIDENCE_TYPE_LABEL } from "../../../lib/labels.ts";
 
-const word = (type: string): string => (EVIDENCE_TYPE_LABEL[type] ?? "file").toLowerCase();
+/** Lower-cased inside a sentence, except names that carry an acronym ("Kobo/ODK export"). */
+const word = (type: string): string => {
+  const label = EVIDENCE_TYPE_LABEL[type] ?? "file";
+  return /[A-Z]{2,}/.test(label) ? label : label.toLowerCase();
+};
 
 /** "attendance sheet", "attendance sheet and photo", "attendance sheet, photo and distribution list". */
 export function fileWords(types: ReadonlyArray<string>): string {

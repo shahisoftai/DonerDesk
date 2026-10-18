@@ -299,3 +299,11 @@ test("a planned activity keeps its required files; changing them is a no-op when
   item.applyStatus("CANCEL", { at: new Date(), reason: "x" });
   assert.equal(item.setRequiredFiles(["PHOTO"]).ok, false);
 });
+
+test("plan link suggestions: the activity whose title the typed title repeats is offered before nearer ones", () => {
+  const c = (id, title, extra) => ({ id, title, status: "PLANNED", plannedStart: "2026-03-01", plannedEnd: "2026-03-05", ...extra });
+  const rows = [c("a", "Counsel caregivers"), c("b", "Deliver food to sites"), c("c", "Form support groups"), c("d", "Screen children by MUAC", { plannedStart: "2026-03-20", plannedEnd: "2026-03-25" })];
+  assert.deepEqual(suggestPlanLinks({ userId: "u", date: "2026-03-02", title: "Screen children by MUAC, March 2026" }, rows).map((s) => s.id)[0], "d");
+  assert.notEqual(suggestPlanLinks({ userId: "u", date: "2026-03-02" }, rows).map((s) => s.id)[0], "d");
+  assert.notEqual(suggestPlanLinks({ userId: "u", date: "2026-03-02", title: "ab" }, rows).map((s) => s.id)[0], "d");
+});

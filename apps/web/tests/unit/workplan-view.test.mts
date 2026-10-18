@@ -191,3 +191,9 @@ test("problems and risks in words: no code in front of a person", () => {
   assert.deepEqual([riskKindWords("PROBLEM"), riskKindWords("RISK"), seriousnessWords("HIGH"), seriousnessWords("LOW")], ["It has happened", "It might happen", "High", "Low"]);
   for (const t of [riskLine({ ...base, ownerId: "u2", reviewBy: "2026-04-09" }, "me", names, "2026-03-10"), riskKindWords("RISK")]) assert.deepEqual(findRawTokens(t), []);
 });
+
+test("a change to the files we will need names them, and an acronym keeps its capitals", async () => {
+  const { describeChanges } = await import("../../src/features/workplan/domain/plan-history-view.ts");
+  const ctx = { today: "2026-02-10", userId: "u", names: {} };
+  assert.equal(describeChanges({ requiredFiles: { from: [], to: ["KOBO_ODK_EXPORT", "PHOTO"] } }, ctx), "files we will need: none to Kobo/ODK export and photo");
+});

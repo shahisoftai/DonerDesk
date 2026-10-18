@@ -2,12 +2,13 @@
  * One line of the activity's history in words: "end date: 12 Mar to 20 Mar", "status: Not started to Under way",
  * "lead: Amina to you". Never a raw code, id or ISO date. Pure.
  */
+import { fileWords } from "./file-needs-view.ts";
 import { formatShortDate, PLAN_STATUS_LABEL, type PlanStatus } from "@donordesk/domain/contexts/workplan/index.js";
 
 const FIELD_WORD: Readonly<Record<string, string>> = {
   plannedStart: "start date", plannedEnd: "end date", status: "status", ownerUserId: "lead", supportUserIds: "helpers",
   targetCount: "number of sessions", targetParticipants: "people expected", title: "title", location: "place", description: "notes",
-  logframeActivityId: "logframe activity",
+  logframeActivityId: "logframe activity", requiredFiles: "files we will need",
 };
 
 const NONE = "none";
@@ -29,6 +30,7 @@ function value(field: string, v: unknown, ctx: HistoryContext): string {
   if ((field === "plannedStart" || field === "plannedEnd") && typeof v === "string") return formatShortDate(v, ctx.today);
   if (field === "ownerUserId") return person(v, ctx);
   if (field === "supportUserIds" && Array.isArray(v)) return v.length === 0 ? NONE : v.map((id) => person(id, ctx)).join(", ");
+  if (field === "requiredFiles" && Array.isArray(v)) return v.length === 0 ? NONE : fileWords(v.map(String));
   if (field === "logframeActivityId") return "linked";
   return typeof v === "string" || typeof v === "number" ? String(v) : "changed";
 }
