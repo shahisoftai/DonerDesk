@@ -177,3 +177,17 @@ test("the choices offered match the domain's kinds, without 'Other'; a suggestio
     for (const t of suggestRequiredFiles(title)) assert.ok(offered.includes(t), `${title}: ${t}`);
   }
 });
+
+import { riskLine, riskKindWords, seriousnessWords } from "../../src/features/tasks/domain/risk-view.ts";
+test("problems and risks in words: no code in front of a person", () => {
+  const base = { kind: "PROBLEM" as const, seriousness: "HIGH" as const, action: "", status: "OPEN" as const };
+  const names = { u2: "Amina" };
+  assert.equal(riskLine({ ...base, ownerId: "u2", reviewBy: "2026-04-09" }, "me", names, "2026-03-10"), "Amina is handling it · Looked at again 9 Apr");
+  assert.equal(riskLine({ ...base, ownerId: "me" }, "me", names, "2026-03-10"), "You are handling it");
+  assert.equal(riskLine({ ...base }, "me", names, "2026-03-10"), "Nobody is handling it yet");
+  assert.equal(riskLine({ ...base, ownerId: "x" }, "me", names, "2026-03-10"), "A team member is handling it");
+  assert.equal(riskLine({ ...base, status: "CLOSED", closedNote: "Road repaired" }, "me", names, "2026-03-10"), "Closed: Road repaired");
+  assert.equal(riskLine({ ...base, status: "CLOSED" }, "me", names, "2026-03-10"), "Closed");
+  assert.deepEqual([riskKindWords("PROBLEM"), riskKindWords("RISK"), seriousnessWords("HIGH"), seriousnessWords("LOW")], ["It has happened", "It might happen", "High", "Low"]);
+  for (const t of [riskLine({ ...base, ownerId: "u2", reviewBy: "2026-04-09" }, "me", names, "2026-03-10"), riskKindWords("RISK")]) assert.deepEqual(findRawTokens(t), []);
+});

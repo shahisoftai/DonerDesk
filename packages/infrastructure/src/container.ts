@@ -94,6 +94,10 @@ import {
   ImportWorkPlanHandler,
   CopyWorkPlanHandler,
   GetMyWeekHandler,
+  CreateRiskHandler,
+  UpdateRiskHandler,
+  CloseRiskHandler,
+  ListRisksHandler,
   GetActivityFileNeedsHandler,
   ProjectHealthService,
   VisibleProjects,
@@ -324,6 +328,8 @@ import { PrismaEvidenceRepository } from "./repositories/evidence.js";
 import { PrismaIdempotencyRepository } from "./repositories/idempotency.js";
 import { PrismaRequestIdempotencyRepository } from "./repositories/request-idempotency.js";
 import { PrismaActivityUpdateRepository } from "./repositories/activities.js";
+import { PrismaProjectRiskRepository } from "./repositories/risks.js";
+import { RiskReviewAssignmentSource } from "./assignment-sources/risk-review-source.js";
 import { PrismaCollectionFactsReader, PrismaRiskTrendStore, PrismaEntryDueDays } from "./repositories/health.js";
 import { IndicatorValueAssignmentSource } from "./assignment-sources/indicator-value-source.js";
 import { PrismaReminderLedger, PrismaNotificationPreferences, PrismaReminderAudience } from "./repositories/reminders.js";
@@ -604,6 +610,10 @@ export interface Container {
     importWorkPlan: ImportWorkPlanHandler;
     copyWorkPlan: CopyWorkPlanHandler;
     getMyWeek: GetMyWeekHandler;
+    createRisk: CreateRiskHandler;
+    updateRisk: UpdateRiskHandler;
+    closeRisk: CloseRiskHandler;
+    listRisks: ListRisksHandler;
     getActivityFileNeeds: GetActivityFileNeedsHandler;
     getDeliveryHealth: GetDeliveryHealthHandler;
     getPortfolioHealth: GetPortfolioHealthHandler;
@@ -1186,6 +1196,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   // Tells one person: an in-app note always, an email only when their setting allows it.
   const personNotifier = new PersonNotifier(ids, notifications, notify, notificationPreferences);
   const taskReconciler = new TaskReconciler(projectTasks, new PrismaTaskFactsReader(prisma), audits, clock);
+  const projectRisks = new PrismaProjectRiskRepository(prisma);
   const collectionFacts = new PrismaCollectionFactsReader(prisma);
   const projectHealth = new ProjectHealthService(plannedActivities, new PrismaDeliveryFactsReader(prisma), collectionFacts);
   const riskTrendStore = new PrismaRiskTrendStore(prisma);
@@ -1193,7 +1204,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const assignmentQueue = new AssignmentQueue([
     new PlanItemAssignmentSource(prisma), new TaskAssignmentSource(prisma), new ChecklistAssignmentSource(prisma), new ReportDeadlineAssignmentSource(prisma),
     new ActivityFixAssignmentSource(prisma), new EvidenceReviewAssignmentSource(prisma), new ActivityReviewAssignmentSource(prisma),
-    new IndicatorValueAssignmentSource(collectionFacts),
+    new IndicatorValueAssignmentSource(collectionFacts), new RiskReviewAssignmentSource(prisma),
   ]);
   const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits, taskReconciler);
   const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates, logframe);
@@ -1413,6 +1424,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     getPortfolioHealth: new GetPortfolioHealthHandler(new VisibleProjects(projects, projectMembers), projectHealth, clock),
     getRiskTrend: new GetRiskTrendHandler(riskTrendStore, projects),
     getActivityFileNeeds: new GetActivityFileNeedsHandler(activities, plannedActivities, evidence),
+    createRisk: new CreateRiskHandler(ids, projectRisks, projectRoster, plannedActivities, personNotifier, audits, clock),
+    updateRisk: new UpdateRiskHandler(projectRisks, projectRoster, personNotifier, audits, clock),
+    closeRisk: new CloseRiskHandler(projectRisks, audits, clock),
+    listRisks: new ListRisksHandler(projectRisks),
     getMyWeek: new GetMyWeekHandler(new PrismaMyWeekReader(prisma), new PrismaDeliveryFactsReader(prisma), clock),
     copyWorkPlan: new CopyWorkPlanHandler(projects, logframe, plannedActivities, ids, audits),
     importWorkPlan: new ImportWorkPlanHandler(ids, plannedActivities, planContext, new PrismaMemberDirectory(prisma), logframe, audits),

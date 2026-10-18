@@ -24,6 +24,8 @@ export const REMINDER_RULES: Readonly<Record<AssignmentKind, ReadonlyArray<Remin
   CHECKLIST_ITEM: ALL,
   REPORT_DEADLINE: ALL,
   INDICATOR_VALUE: ALL,
+  // A serious problem is looked at again every 30 days; it joins the summary like any dated work.
+  RISK_REVIEW: ALL,
   ACTIVITY_FIX: [],
   EVIDENCE_REVIEW: [],
   ACTIVITY_REVIEW: [],

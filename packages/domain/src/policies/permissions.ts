@@ -31,7 +31,9 @@ export type Permission =
   | "workplan.manage"
   | "workplan.update-own"
   | "task.assign"
-  | "team.view-work";
+  | "team.view-work"
+  | "risk.raise"
+  | "risk.manage";
 
 const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -46,6 +48,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "checklist.manage", "comment.create", "audit.view", "billing.manage",
     "workplan.manage", "workplan.update-own",
     "task.assign", "team.view-work",
+    "risk.raise", "risk.manage",
   ]),
   PROJECT_MANAGER: new Set<Permission>([
     "project.edit", "project.view",
@@ -58,6 +61,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "checklist.manage", "comment.create", "audit.view",
     "workplan.manage", "workplan.update-own",
     "task.assign", "team.view-work",
+    "risk.raise", "risk.manage",
   ]),
   ME_OFFICER: new Set<Permission>([
     "project.view",
@@ -69,6 +73,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "checklist.manage", "comment.create",
     "workplan.manage", "workplan.update-own",
     "task.assign", "team.view-work",
+    "risk.raise", "risk.manage",
   ]),
   GRANTS_OFFICER: new Set<Permission>([
     "project.view",
@@ -78,6 +83,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "checklist.manage", "comment.create",
     "workplan.update-own",
     "task.assign",
+    "risk.raise", "risk.manage",
   ]),
   FIELD_OFFICER: new Set<Permission>([
     "project.view",
@@ -85,6 +91,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "activity.create",
     "comment.create",
     "workplan.update-own",
+    "risk.raise",
   ]),
   COMPLIANCE_OFFICER: new Set<Permission>([
     "project.view",
@@ -93,6 +100,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "comment.create", "audit.view",
     "workplan.update-own",
     "task.assign",
+    "risk.raise", "risk.manage",
   ]),
   VIEWER: new Set<Permission>([
     "project.view", "report.export",

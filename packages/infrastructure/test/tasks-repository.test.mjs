@@ -13,6 +13,9 @@ import { ReportDeadlineAssignmentSource } from "../dist/assignment-sources/repor
 import { EvidenceReviewAssignmentSource, ActivityReviewAssignmentSource, ActivityFixAssignmentSource } from "../dist/assignment-sources/review-sources.js";
 import { IndicatorValueAssignmentSource } from "../dist/assignment-sources/indicator-value-source.js";
 import { PrismaCollectionFactsReader, PrismaRiskTrendStore } from "../dist/repositories/health.js";
+import { RiskReviewAssignmentSource } from "../dist/assignment-sources/risk-review-source.js";
+import { PrismaProjectRiskRepository } from "../dist/repositories/risks.js";
+import { ProjectRisk } from "@donordesk/domain";
 import { assignmentSourceContract } from "../../application/test/support/assignment-source-contract.mjs";
 
 const url = process.env.WORKPLAN_VERIFY_DATABASE_URL;
@@ -143,7 +146,18 @@ const seedIndicators = async (tx, tenant = "tenant-tk", project = "p1", owner = 
   await value("i1", "jan"); await value("i2", "jan"); await value("i2", "feb");
 };
 
+const seedRisks = async (tx, tenant = "tenant-tk", project = "p1") => {
+  const repo = new PrismaProjectRiskRepository(tx);
+  const mk = (id, extra = {}) => ProjectRisk.create({ id: tenant === "tenant-tk" ? id : `${tenant}-${id}`, tenantId: tenant, projectId: project, kind: "PROBLEM", title: id, seriousness: "HIGH", action: "", raisedById: "u9", today: "2026-02-01", ownerId: "u2", ...extra }).value;
+  await repo.create(mk("old-high"));                                          // review date 3 Mar: late on 10 Mar
+  await repo.create(mk("new-high", { today: "2026-03-05" }));                 // review date 4 Apr: not late
+  await repo.create(mk("medium", { seriousness: "MEDIUM" }));                 // no review date: not work
+  await repo.create(mk("someone-elses", { ownerId: "u7" }));
+  const closed = mk("closed"); closed.close("u2", "done", new Date()); await repo.create(closed);
+};
+
 const sources = {
+  RISK_REVIEW: [(tx) => new RiskReviewAssignmentSource(tx), (tx) => seedRisks(tx)],
   INDICATOR_VALUE: [(tx) => new IndicatorValueAssignmentSource(new PrismaCollectionFactsReader(tx)), (tx) => seedIndicators(tx)],
   TASK: [(tx) => new TaskAssignmentSource(tx), async (tx) => {
     const repo = new PrismaProjectTaskRepository(tx);
@@ -209,6 +223,7 @@ test("what each source returns for the seeded world", { skip }, async () => {
   assert.deepEqual(keys.ACTIVITY_FIX, ["a-back=OPEN", "a-draft=OPEN"]);
   assert.deepEqual(keys.EVIDENCE_REVIEW, ["e-new=OPEN", "e-tagged=OPEN"], "project manager may verify files");
   assert.deepEqual(keys.ACTIVITY_REVIEW, ["r-wait=OPEN"]);
+  assert.deepEqual(keys.RISK_REVIEW, ["RISK_REVIEW:new-high=OPEN", "RISK_REVIEW:old-high=LATE"].map((k) => k.replace("RISK_REVIEW:", "")), "serious open ones with a review date; medium, closed and other people's are not this person's work");
   assert.deepEqual(keys.INDICATOR_VALUE, ["tenant-tk-i1:tenant-tk-feb=LATE"], "one value overdue; recorded, archived and still-running ones are not work; a closed period takes no values");
 });
 
@@ -252,6 +267,7 @@ test("no source leaks another organisation's work: the same data in two tenants 
         await tx.project.create({ data: { id: project, tenantId: tenant, title: tenant, projectCode: project, donorName: "d", implementingOrganization: "o", country: "KE", sector: "HEALTH", startDate: new Date("2026-01-01"), endDate: new Date("2026-12-31"), reportingFrequency: "QUARTERLY", reportingOfficerId: "u2", meOfficerId: "u2", projectManagerId: "u2" } });
         await tx.projectMember.create({ data: { id: `m-${tenant}`, tenantId: tenant, projectId: project, userId: "u2", role: "PROJECT_MANAGER", assignedById: "x", assignedAt: new Date() } });
         await seedIndicators(tx, tenant, project, "u2");
+        await seedRisks(tx, tenant, project);
         await tx.reportingPeriod.create({ data: { id: `rp-${tenant}`, tenantId: tenant, projectId: project, reportType: "QUARTERLY", startDate: new Date("2026-01-01"), endDate: new Date("2026-03-31"), deadline: new Date("2026-03-15") } });
         await tx.checklistItem.create({ data: { id: `c-${tenant}`, tenantId: tenant, projectId: project, reportingPeriodId: `rp-${tenant}`, type: "ATTESTATION", title: "c", severity: "HIGH", assignedToId: "u2", dueDate: new Date("2026-03-01") } });
         await tx.activityUpdate.create({ data: { id: `a-${tenant}`, tenantId: tenant, projectId: project, reportingPeriodId: "rp", activityTitle: "a", activityDate: new Date("2026-03-02"), summary: "s", status: "SUBMITTED", submittedById: "u2" } });
@@ -259,7 +275,7 @@ test("no source leaks another organisation's work: the same data in two tenants 
         await new PrismaProjectTaskRepository(tx).create(ProjectTask.create({ id: `t-${tenant}`, tenantId: tenant, kind: "OTHER", projectId: project, title: "t", assigneeId: "u2", assignedById: "u1", dueDate: "2026-03-14" }).value);
         await new PrismaPlannedActivityRepository(tx).create(PlannedActivity.create({ id: `pa-${tenant}`, tenantId: tenant, projectId: project, title: "pa", plannedStart: "2026-03-01", plannedEnd: "2026-03-05", createdById: "u", people: { ownerUserId: "u2", supportUserIds: [] } }).value);
       }
-      const all = [new TaskAssignmentSource(tx), new PlanItemAssignmentSource(tx), new ChecklistAssignmentSource(tx), new ReportDeadlineAssignmentSource(tx), new ActivityFixAssignmentSource(tx), new EvidenceReviewAssignmentSource(tx), new ActivityReviewAssignmentSource(tx), new IndicatorValueAssignmentSource(new PrismaCollectionFactsReader(tx))];
+      const all = [new TaskAssignmentSource(tx), new PlanItemAssignmentSource(tx), new ChecklistAssignmentSource(tx), new ReportDeadlineAssignmentSource(tx), new ActivityFixAssignmentSource(tx), new EvidenceReviewAssignmentSource(tx), new ActivityReviewAssignmentSource(tx), new IndicatorValueAssignmentSource(new PrismaCollectionFactsReader(tx)), new RiskReviewAssignmentSource(tx)];
       let seen = 0;
       for (const source of all) {
         for (const q of [{ tenantId: T, today: TODAY, assigneeId: "u2" }, { tenantId: T, today: TODAY }]) {
@@ -272,3 +288,20 @@ test("no source leaks another organisation's work: the same data in two tenants 
     });
   } finally { await prisma.$disconnect(); }
 });
+
+test("risks round-trip every field, clearing the owner persists, and a closed one reads back closed", { skip }, withDb(async (tx) => {
+  const repo = new PrismaProjectRiskRepository(tx);
+  const r = ProjectRisk.create({ id: "rk1", tenantId: "tenant-tk", projectId: "p1", kind: "RISK", title: "Flooding", seriousness: "HIGH", action: "Sandbags", ownerId: "u2", raisedById: "u1", plannedActivityId: "pa1", today: "2026-03-10" }).value;
+  await repo.create(r);
+  assert.deepEqual(plain((await repo.findById("rk1", T)).value.snapshot()), plain(r.snapshot()));
+  r.update({ ownerId: undefined, seriousness: "LOW", action: "Watching" }, "2026-03-11");
+  await repo.update(r);
+  const back = (await repo.findById("rk1", T)).value.snapshot();
+  assert.deepEqual([back.ownerId, back.seriousness, back.reviewBy, back.action], [undefined, "LOW", undefined, "Watching"], "no owner and no review date once cleared");
+  r.close("u1", "Water went down", new Date("2026-03-12T10:00:00Z"));
+  await repo.update(r);
+  const closed = (await repo.findById("rk1", T)).value.snapshot();
+  assert.deepEqual([closed.status, closed.closedNote, closed.closedById], ["CLOSED", "Water went down", "u1"]);
+  assert.equal((await repo.findById("rk1", TenantId.create("other-tenant"))).value, null);
+  assert.deepEqual((await repo.findByProject("p1", T)).value.map((x) => x.id), ["rk1"]);
+}));

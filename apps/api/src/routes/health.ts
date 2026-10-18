@@ -16,6 +16,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "PlannedActivity", field: "originalEnd" },
   { model: "Project", field: "showWorkPlanning" },
   { model: "ProjectTask", field: "assigneeId" },
+  { model: "ProjectRisk", field: "seriousness" },
   { model: "ReminderLedgerEntry", field: "ruleKey" },
   { model: "ReportingProfile", field: "indicatorEntryDueDays" },
   { model: "User", field: "emailSummaryMode" },

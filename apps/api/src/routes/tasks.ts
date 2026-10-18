@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { UpdateNotificationPreferencesSchema, CompleteTaskSchema, CreateTaskSchema, ListAssignmentsQuerySchema, SetOwnerSchema } from "@donordesk/contracts";
+import { CloseRiskSchema, CreateRiskSchema, UpdateRiskSchema, UpdateNotificationPreferencesSchema, CompleteTaskSchema, CreateTaskSchema, ListAssignmentsQuerySchema, SetOwnerSchema } from "@donordesk/contracts";
 
 /**
  * Requests, the assignment queue, the team view and the three "Lead" pickers. Thin: validate, call one handler, throw its error.
@@ -91,6 +91,35 @@ export async function registerTaskRoutes(app: FastifyInstance) {
   app.put("/v1/me/notification-preferences", async (req) => {
     const body = UpdateNotificationPreferencesSchema.parse(req.body);
     const r = await req.container.handlers.updateNotificationPreferences.handle({ tenant: req.tenant, requestId: req.id }, body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  // Problems and risks: a short list on the project Overview. Who may change one is decided in the handler (the person
+  // handling it, the one who raised it, or a manager), so only the list and raising are in the permission table.
+  app.get("/v1/projects/:projectId/risks", async (req) => {
+    const r = await req.container.handlers.listRisks.handle({ tenant: req.tenant, requestId: req.id }, param(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.post("/v1/projects/:projectId/risks", async (req) => {
+    const body = CreateRiskSchema.parse(req.body);
+    const r = await req.container.handlers.createRisk.handle({ tenant: req.tenant, requestId: req.id }, param(req, "projectId"), body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/risks/:riskId", async (req) => {
+    const body = UpdateRiskSchema.parse(req.body);
+    const r = await req.container.handlers.updateRisk.handle({ tenant: req.tenant, requestId: req.id }, param(req, "riskId"), body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.post("/v1/risks/:riskId/close", async (req) => {
+    const body = CloseRiskSchema.parse(req.body ?? {});
+    const r = await req.container.handlers.closeRisk.handle({ tenant: req.tenant, requestId: req.id }, param(req, "riskId"), body);
     if (!r.ok) throw r.error;
     return { ok: true };
   });

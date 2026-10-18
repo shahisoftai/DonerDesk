@@ -7,8 +7,8 @@
 import { addDays, compareDates, type PlainDate } from "../workplan/plain-date.js";
 import { startOfWeekMonday } from "./week.js";
 
-export type AssignmentKind = "PLAN_ITEM" | "TASK" | "CHECKLIST_ITEM" | "REPORT_DEADLINE" | "EVIDENCE_REVIEW" | "ACTIVITY_REVIEW" | "ACTIVITY_FIX" | "INDICATOR_VALUE";
-export const ASSIGNMENT_KIND_KEYS: AssignmentKind[] = ["PLAN_ITEM", "TASK", "CHECKLIST_ITEM", "REPORT_DEADLINE", "EVIDENCE_REVIEW", "ACTIVITY_REVIEW", "ACTIVITY_FIX", "INDICATOR_VALUE"];
+export type AssignmentKind = "PLAN_ITEM" | "TASK" | "CHECKLIST_ITEM" | "REPORT_DEADLINE" | "EVIDENCE_REVIEW" | "ACTIVITY_REVIEW" | "ACTIVITY_FIX" | "INDICATOR_VALUE" | "RISK_REVIEW";
+export const ASSIGNMENT_KIND_KEYS: AssignmentKind[] = ["PLAN_ITEM", "TASK", "CHECKLIST_ITEM", "REPORT_DEADLINE", "EVIDENCE_REVIEW", "ACTIVITY_REVIEW", "ACTIVITY_FIX", "INDICATOR_VALUE", "RISK_REVIEW"];
 
 export interface AssignmentKindSpec {
   label: string;
@@ -27,6 +27,7 @@ export const ASSIGNMENT_KINDS: Readonly<Record<AssignmentKind, AssignmentKindSpe
   ACTIVITY_REVIEW: { label: "Completed activity to review", becauseOfRole: true, because: "because you approve" },
   ACTIVITY_FIX: { label: "Completed activity to fix", becauseOfRole: false },
   INDICATOR_VALUE: { label: "Indicator value", becauseOfRole: false },
+  RISK_REVIEW: { label: "Problem to review", becauseOfRole: false },
 };
 
 export type AssignmentState = "OPEN" | "LATE";

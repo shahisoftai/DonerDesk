@@ -10,8 +10,11 @@ import { projectStatusTone, severityTone } from "@/lib/shared/tone";
 import { readinessHeadline } from "@/features/projects/application/readiness-view";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { DeliveryHealthSchema, type DeliveryHealthResponse, DataSheetResponseSchema, LogframeResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { RisksResponseSchema, DeliveryHealthSchema, type DeliveryHealthResponse, DataSheetResponseSchema, LogframeResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { planCounts, outputProgress } from "@/features/workplan/domain/delivery-overview";
+import { RisksCard } from "@/features/tasks/presentation/RisksCard";
+import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { PlanOverviewCards } from "@/features/workplan/presentation/PlanOverviewCards";
 import { DeleteDemoProjectButton } from "@/features/tour/presentation/DeleteDemoProjectButton";
 
@@ -42,6 +45,12 @@ export default async function ProjectDetail({
   // The plan cards appear only when a plan exists and work planning is shown; otherwise this page is exactly as before.
   const planResult = project.showWorkPlanning === false ? null : await gatewayRequest(`/v1/projects/${project.id}/work-plan`, WorkPlanResponseSchema, ctx.token);
   const planRows = planResult?.ok ? planResult.value.items : [];
+  // Problems and risks: shown once there is a plan or anything was raised, so a project that uses neither looks as before.
+  const risksResult = project.showWorkPlanning === false ? null : await gatewayRequest(`/v1/projects/${project.id}/risks`, RisksResponseSchema, ctx.token);
+  const risks = risksResult?.ok ? risksResult.value.items : [];
+  const meId = decodeSessionPayload(ctx.token)?.sub ?? "";
+  const showRisks = planRows.length > 0 || risks.length > 0;
+  const riskPeople = showRisks ? await loadProjectPeople(ctx.token, project.id, meId) : [];
   let planCards: { health: DeliveryHealthResponse | undefined; counts: ReturnType<typeof planCounts>; outputs: ReturnType<typeof outputProgress> } | null = null;
   if (planRows.length > 0) {
     const [logframe, sheet, healthResult] = await Promise.all([
@@ -107,6 +116,10 @@ export default async function ProjectDetail({
         <Stat label="Pending evidence" value={pendingEvidence === 0 ? "0" : String(pendingEvidence)} />
         <Stat label="Activities" value={String(activityCount)} />
       </section>
+
+      {showRisks && (
+        <div className="mt-4"><RisksCard projectId={project.id} risks={risks} people={riskPeople} userId={meId} canRaise={ctx.capabilities.has("risk.raise")} today={new Date().toISOString().slice(0, 10)} /></div>
+      )}
 
       {planCards && <PlanOverviewCards projectId={project.id} counts={planCards.counts} outputs={planCards.outputs} health={planCards.health} />}
 

@@ -297,3 +297,5 @@ export * from "./services/visible-projects.js";
 export * from "./services/project-health-service.js";
 export * from "./use-cases/health/health-handlers.js";
 export * from "./use-cases/activities/get-activity-file-needs.js";
+export * from "./ports/risks.js";
+export * from "./use-cases/risks/risk-handlers.js";

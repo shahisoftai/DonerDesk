@@ -113,6 +113,10 @@
     "./policies/permissions.js": {
       "types": "./dist/policies/permissions.d.ts",
       "import": "./dist/policies/permissions.js"
+    },
+    "./contexts/risks/index.js": {
+      "types": "./dist/contexts/risks/index.d.ts",
+      "import": "./dist/contexts/risks/index.js"
     }
   },
   "scripts": {

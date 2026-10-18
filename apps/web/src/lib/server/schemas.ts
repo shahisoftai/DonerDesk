@@ -1385,3 +1385,21 @@ export const PortfolioHealthSchema = z.object({
 });
 
 export const FileNeedsSchema = z.object({ required: z.array(z.string()), provided: z.array(z.string()), stillNeeded: z.array(z.string()) });
+
+// ---- Problems and risks (Phase 28.7) ----
+export const RiskSchema = z.object({
+  id: z.string(),
+  kind: z.enum(["PROBLEM", "RISK"]),
+  title: z.string(),
+  seriousness: z.enum(["HIGH", "MEDIUM", "LOW"]),
+  ownerId: z.string().optional(),
+  action: z.string(),
+  status: z.enum(["OPEN", "CLOSED"]),
+  closedNote: z.string().optional(),
+  plannedActivityId: z.string().optional(),
+  raisedById: z.string(),
+  reviewBy: z.string().optional(),
+  canChange: z.boolean(),
+});
+export type RiskItem = z.infer<typeof RiskSchema>;
+export const RisksResponseSchema = z.object({ items: z.array(RiskSchema) });

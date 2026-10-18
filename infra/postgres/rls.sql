@@ -15,7 +15,7 @@ BEGIN
     'ReportArtifact','ReportArtifactRow','AgentMemory',
     'BillingSubscription','EntitlementGrant','UsageCounter','TrialIdentity','PurchasedCreditPack','NonprofitVerification',
     'PasswordResetToken','PeriodFinancialSummary',
-    'PlannedActivity','PlanRevision','ProjectTask','ReminderLedgerEntry'
+    'PlannedActivity','PlanRevision','ProjectTask','ReminderLedgerEntry','ProjectRisk'
   ] LOOP
     EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO donordesk_app', table_name);
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', table_name);

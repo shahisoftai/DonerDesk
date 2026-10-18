@@ -1,6 +1,6 @@
 "use server";
 
-import { CompleteTaskSchema, CreateTaskSchema, SetOwnerSchema } from "@donordesk/contracts";
+import { CloseRiskSchema, CreateRiskSchema, UpdateRiskSchema, CompleteTaskSchema, CreateTaskSchema, SetOwnerSchema } from "@donordesk/contracts";
 import type { ZodType } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -61,4 +61,22 @@ export async function setEmailSummaryModeAction(emailSummaryMode: string): Promi
   const context = await requireSession();
   const r = await gatewayRequest("/v1/me/notification-preferences", OkResponseSchema, context.token, { method: "PUT", body: { emailSummaryMode } });
   return r.ok ? { ok: true, value: true } : r;
+}
+
+/** Raise a problem or risk (four fields). Creates are repeatable by key. */
+export async function raiseRiskAction(projectId: string, input: unknown, options: CreateOptions = {}): Promise<Result<{ id: string }, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(CreateRiskSchema, input);
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/risks`, IdResponseSchema, context.token, { method: "POST", body: p.data, ...idempotency(options) });
+}
+
+export async function updateRiskAction(riskId: string, input: unknown): Promise<Result<true, AppError>> {
+  const p = await parsed(UpdateRiskSchema, input);
+  return p.ok ? ok(`/v1/risks/${encodeURIComponent(riskId)}`, "PUT", p.data) : p.result;
+}
+
+export async function closeRiskAction(riskId: string, input: unknown = {}): Promise<Result<true, AppError>> {
+  const p = await parsed(CloseRiskSchema, input);
+  return p.ok ? ok(`/v1/risks/${encodeURIComponent(riskId)}/close`, "POST", p.data) : p.result;
 }

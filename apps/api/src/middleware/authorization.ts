@@ -76,6 +76,8 @@ const RULES: ReadonlyArray<{
   { method: "PUT", route: /^\/v1\/projects\/[^/]+\/work-planning$/, permission: "org.manage" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/team-work$/, permission: "team.view-work" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/delivery-health$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/risks$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/risks$/, permission: "risk.raise" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/risk-trend$/, permission: "team.view-work" },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/tasks$/, permission: "task.assign" },
   { method: "PUT", route: /^\/v1\/indicators\/[^/]+\/owner$/, permission: "logframe.manage" },

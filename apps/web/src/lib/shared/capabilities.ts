@@ -49,6 +49,8 @@ export type Capability =
   | "workplan.update-own"
   | "task.assign"
   | "team.view-work"
+  | "risk.raise"
+  | "risk.manage"
   | "settings.view"
   | "billing.manage";
 
@@ -87,6 +89,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "workplan.update-own",
     "task.assign",
     "team.view-work",
+      "risk.raise",
+    "risk.manage",
   ],
   PROJECT_MANAGER: [
     "project.create",
@@ -111,6 +115,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "workplan.update-own",
     "task.assign",
     "team.view-work",
+      "risk.raise",
+    "risk.manage",
   ],
   ME_OFFICER: [
     "logframe.edit",
@@ -125,6 +131,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "workplan.update-own",
     "task.assign",
     "team.view-work",
+      "risk.raise",
+    "risk.manage",
   ],
   GRANTS_OFFICER: [
     "template.create",
@@ -136,8 +144,10 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "export.create",
     "workplan.update-own",
     "task.assign",
+      "risk.raise",
+    "risk.manage",
   ],
-  FIELD_OFFICER: ["activity.create", "evidence.upload", "workplan.update-own"],
+  FIELD_OFFICER: ["activity.create", "evidence.upload", "workplan.update-own", "risk.raise"],
   COMPLIANCE_OFFICER: [
     "checklist.resolve",
     "checklist.manage",
@@ -146,6 +156,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "report.approve",
     "workplan.update-own",
     "task.assign",
+      "risk.raise",
+    "risk.manage",
   ],
   VIEWER: ["export.create"],
 };
