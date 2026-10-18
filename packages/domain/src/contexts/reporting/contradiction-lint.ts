@@ -198,6 +198,16 @@ const STOPWORDS = new Set([
   "been", "their", "its", "our", "this", "that", "these", "those", "per",
 ]);
 
+/**
+ * A figure that is a component of a sub-period ("3,200 children in March", "170 (94 girls) between 3 and 30 April", "each month")
+ * differs by design from the report's other figures of the same noun: a quarterly report quotes one value per month.
+ */
+function hasSubPeriodQualifier(sentence: string, endIndex: number): boolean {
+  const tail = sentence.slice(endIndex, endIndex + 200).replace(/\([^)]*\)/g, " ");
+  const own = (tail.split(/[;.]/)[0] ?? "").split(/,\s*(?=\d)/)[0] ?? "";
+  return new RegExp(`\\b(?:in|during|for|between|on|by|of|from)\\s+(?:\\d{1,2}(?:\\s+(?:and|to)\\s+\\d{1,2})?\\s+)?(?:${MONTH_NAMES})[a-z]*\\b|\\b(?:each|every|per|a)\\s+month\\b|\\b(?:monthly|weekly)\\b`, "i").test(own);
+}
+
 function parseDecimalSafe(raw: string): number | null {
   const n = Number.parseFloat(raw.replace(/,/g, ""));
   return Number.isFinite(n) ? n : null;
@@ -460,7 +470,7 @@ export function lintReportContradictions(input: ContradictionLintInput): Contrad
       }
 
       // Same-metric divergence model.
-      if (!sentence.quoted && !DELTA_CONTEXT_RE.test(text) && p.value >= 5) {
+      if (!sentence.quoted && !DELTA_CONTEXT_RE.test(text) && p.value >= 5 && !hasSubPeriodQualifier(text, p.end)) {
         const basis = LIFE_BASIS_RE.test(text) ? "life of project" : "period";
         const noun = `${followingNounPhrase(text, p.end)}|${basis}`;
         const phrase = followingNounPhrase(text, p.end);

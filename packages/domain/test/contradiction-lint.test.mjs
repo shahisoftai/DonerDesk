@@ -411,3 +411,24 @@ test("a percentage written with the word is read like one written with the sign"
   assert.deepEqual(kinds(run("The project ran 340 tests against a target of 320 (106 percent of target).")), []);
   assert.ok(kinds(run("Coverage reached 87 percent of the planned districts.")).includes("PERCENTAGE_WITHOUT_BASIS"));
 });
+
+test("a quarterly report may quote one value per month for the same noun; two undated values for it still diverge", () => {
+  const monthly = lintReportContradictions({
+    sections: [
+      { id: "a", title: "Activities", content: "Volunteers screened 3,200 children (1,664 girls and 1,536 boys) between 3 and 31 March, 3,400 children (1,768 girls and 1,632 boys) between 3 and 30 April, and 3,300 children in May." },
+      { id: "b", title: "Context", content: "Health post staff admitted 150 children in March, 170 in April and 165 in May; each month about 3,400 children were screened." },
+    ],
+    findings: [],
+    groundedFigures: ["3200", "3400", "3300", "1664", "1536", "1768", "1632", "150", "170", "165"],
+  });
+  assert.equal(monthly.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0, JSON.stringify(monthly.findings.map((f) => f.detail)));
+  const undated = lintReportContradictions({
+    sections: [
+      { id: "a", title: "Activities", content: "The project screened 3,200 children aged 6 to 59 months." },
+      { id: "b", title: "Summary", content: "The project screened 3,400 children aged 6 to 59 months." },
+    ],
+    findings: [],
+    groundedFigures: ["3200", "3400"],
+  });
+  assert.equal(undated.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 1);
+});
