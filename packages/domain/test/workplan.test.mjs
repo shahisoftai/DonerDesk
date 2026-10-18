@@ -94,7 +94,7 @@ test("proposed dates spread in order across the project; monthly rows repeat to 
   for (const p of many) assert.ok(p.start <= p.end && p.end <= "2026-01-10" && p.start >= "2026-01-01", JSON.stringify(p));
 });
 
-test("plan link suggestions: mine first, then same node, then nearest date; closed ones never offered", () => {
+test("plan link suggestions: chosen logframe activity first, then mine, then nearest date; closed ones never offered", () => {
   const c = (id, extra) => ({ id, status: "PLANNED", plannedStart: "2026-03-01", plannedEnd: "2026-03-05", ...extra });
   const out = suggestPlanLinks({ userId: "u1", date: "2026-03-20", logframeActivityId: "n1" }, [
     c("far", { plannedStart: "2026-06-01", plannedEnd: "2026-06-02" }),
@@ -103,9 +103,9 @@ test("plan link suggestions: mine first, then same node, then nearest date; clos
     c("mine", { ownerUserId: "u1" }),
     c("done", { ownerUserId: "u1", status: "DONE" }),
   ]);
-  assert.deepEqual(out.map((s) => s.id), ["mine", "node", "near"]);
-  assert.deepEqual(out[0].reasons, ["You lead it", "Planned for 1 Mar to 5 Mar"]);
-  assert.deepEqual(out[1].reasons, ["Same logframe activity", "Planned for 1 Mar to 5 Mar"]);
+  assert.deepEqual(out.map((s) => s.id), ["node", "mine", "near"]);
+  assert.deepEqual(out[0].reasons, ["Same logframe activity", "Planned for 1 Mar to 5 Mar"]);
+  assert.deepEqual(out[1].reasons, ["You lead it", "Planned for 1 Mar to 5 Mar"]);
 });
 
 test("only active members can lead or help; duplicates and the lead are removed from helpers", () => {
@@ -306,4 +306,11 @@ test("plan link suggestions: the activity whose title the typed title repeats is
   assert.deepEqual(suggestPlanLinks({ userId: "u", date: "2026-03-02", title: "Screen children by MUAC, March 2026" }, rows).map((s) => s.id)[0], "d");
   assert.notEqual(suggestPlanLinks({ userId: "u", date: "2026-03-02" }, rows).map((s) => s.id)[0], "d");
   assert.notEqual(suggestPlanLinks({ userId: "u", date: "2026-03-02", title: "ab" }, rows).map((s) => s.id)[0], "d");
+});
+
+test("plan link suggestions: a person who leads many activities in the week can still reach another lead's activity by choosing its logframe activity", () => {
+  const c = (id, node, owner) => ({ id, title: id, status: "PLANNED", plannedStart: "2026-03-01", plannedEnd: "2026-03-07", logframeActivityId: node, ownerUserId: owner });
+  const rows = [c("a1", "n1", "ram"), c("a2", "n2", "ram"), c("a3", "n3", "ram"), c("a4", "n4", "bikash")];
+  assert.equal(suggestPlanLinks({ userId: "ram", date: "2026-03-05", logframeActivityId: "n4" }, rows)[0].id, "a4");
+  assert.equal(suggestPlanLinks({ userId: "ram", date: "2026-03-05" }, rows)[0].id, "a1");
 });

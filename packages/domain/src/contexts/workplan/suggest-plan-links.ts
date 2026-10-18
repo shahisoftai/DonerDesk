@@ -1,7 +1,8 @@
 /**
- * "Which planned activity is this?" on the completed-activity form: up to three open planned activities, ranked
- * (the person's own first, then the same logframe activity, then the one whose title the typed title repeats, then by planned
- * date nearest the activity's date),
+ * "Which planned activity is this?" on the completed-activity form: up to three open planned activities, ranked by what the
+ * person has told us: the logframe activity they chose, then the planned activity whose title the typed title repeats, then
+ * their own, then the planned date nearest the activity's date (someone who leads many activities in one week must still be
+ * able to reach the one they pick),
  * each with the reasons it was suggested. "None of these" is always offered by the form.
  */
 import { compareDates, daysBetween, formatShortDate, type PlainDate } from "./plain-date.js";
@@ -61,7 +62,7 @@ export function suggestPlanLinks(query: LinkQuery, candidates: ReadonlyArray<Lin
       if (sameNode) reasons.push(WORKPLAN_COPY.linkSameLogframe);
       const dates = c.plannedStart === c.plannedEnd ? formatShortDate(c.plannedStart, query.date) : `${formatShortDate(c.plannedStart, query.date)} to ${formatShortDate(c.plannedEnd, query.date)}`;
       reasons.push(`${WORKPLAN_COPY.linkPlannedFor} ${dates}`);
-      return { id: c.id, reasons, rank: [mine ? 0 : 1, sameNode ? 0 : 1, sameTitle ? 0 : 1, distance(c, query.date)] as const };
+      return { id: c.id, reasons, rank: [sameNode ? 0 : 1, sameTitle ? 0 : 1, mine ? 0 : 1, distance(c, query.date)] as const };
     })
     .sort((a, b) => a.rank[0] - b.rank[0] || a.rank[1] - b.rank[1] || a.rank[2] - b.rank[2] || a.rank[3] - b.rank[3] || a.id.localeCompare(b.id))
     .slice(0, limit)
