@@ -34,3 +34,6 @@ contact, reference-faq, reference-glossary, reference-file-formats, reference-er
 
 ## Report Writing Skills (`report-writing-skills/`)
 Fundamentals, donor-specific guides (UNHCR, DG ECHO, USAID, Global Fund, GCF, FCDO, EU, Gates) and tools. These are donor-craft guidance and mention DonorDesk only where a feature is relevant.
+
+## Unpublished (Phase 28 work plan)
+`_unpublished-phase28/` holds four draft how-tos (plan your activities, use the timeline, use My week, import your plan) and a README with the exact edits to apply to existing articles. They describe features that are **built but not deployed**, so they are not routed, not in `FILE_MAP`, not in `wikiCategories.tsx` and not public. Publish them, and make those edits, in the same release that deploys the work plan (checklist in that README).

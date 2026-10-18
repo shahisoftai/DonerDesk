@@ -2,7 +2,18 @@
 
 **DonorDesk Version 1.93**
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-05.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-19.
+
+## Work plan (Phase 28) — before deploy, and what is next (2026-10-19)
+
+- [x] 28.0 copy corrections and architecture guards; 28.1 work plan; 28.2 Timeline, My week, Overview cards (see `imp/phase28-new-management.md` §0 and §14).
+- [ ] **Browser check on a real project** (nothing interactive has been driven in a browser): wizard, List, Timeline drag and keyboard, confirm bar with and without "Why?", My week at 360 px, month calendar, dark mode.
+- [ ] **Offline check:** change a status in My week with the network off, reload, reconnect, confirm it sends; confirm a refused change is parked.
+- [ ] **Deploy** (plan §11): back up, apply migration `20261019100000_work_plan`, re-run `infra/postgres/rls.sql`, `deploy-fast.sh` with `SCOPE=both`, `/ready` green, browser check on production with the user's own account, record the release id in `CONTABO-DEPLOY.md`.
+- [ ] **Publish the support articles** in `docs/support/_unpublished-phase28/` (add to `FILE_MAP` and `wikiCategories.tsx`, move into place, apply the edits listed in its README) and restore "Plan it" wording on the site only after the browser checks pass.
+- [ ] Update the deck (still v2.004, says nothing about planning) and `/features` when the above is live.
+- [ ] Next batches: 28.3 requests and My Work by person, 28.5 reminders, 28.4 delivery health, 28.6 files the work needs, 28.7 problems and risks, 28.8 comments, 28.9 writer v6, 28.12 demo 9.
+- [ ] Known small gaps: leads show a name only (no photo or email); the month calendar needs a wide screen (the phone gets List and Week); the Timeline is not offered under 640 px by design.
 
 ## Charts (2026-10-05)
 

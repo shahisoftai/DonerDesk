@@ -4,6 +4,19 @@
 system whose main output is donor reporting. This overhaul moves the positioning, the site, the support
 library and the deck to match the product, using only claims verified against the code.
 
+## Update 2026-10-19: copy made honest ahead of the work plan (Phase 28, Batch 28.0)
+
+| Area | What changed |
+|---|---|
+| Homepage (`apps/web/src/app/page.tsx`) | "Plan it. Deliver it. Measure it. Prove it." became "Set it up. Deliver it. Measure it. Prove it." Pillar 1 now reads "Set it up once": "Set the logframe once. Each role sees the records, indicators and evidence it works with, and the report deadlines coming up." The Project Manager card reads "Reviews and accepts activity records and signs off reports." The cycle section adds the scope line "DonorDesk records and evidences delivery; activities are logged as they happen." |
+| Hero (`components/landing/home/HomeHero.tsx`) | First statement's sub-head and the cycle diagram say "Set up" instead of "Plan". |
+| Programme-cycle tabs (`StageTabs.tsx`) | "01 Plan" became "01 Set up", heading "Set up the programme once". |
+| Why | The app did not yet let a team plan or assign work, so the site must not say it did. This is a correction, shipped with the next web deploy. |
+| Feature inventory (`02`) | New section "Work plan — BUILT, NOT LIVE" and the status `BUILT-NOT-LIVE`. Nothing in it may be claimed yet. |
+| Support | Draft articles for the work plan are in `docs/support/_unpublished-phase28/`; they are not routed or listed. |
+
+**Open:** "Plan it" wording returns only after the work plan (Batches 28.1 and 28.2) is deployed and checked in a browser (plan §12). The deck (v2.004) says nothing about planning and needs no change until then. `/features` was not re-read for planning claims.
+
 ## Update 2026-10-18: homepage concept, palette and deck v2.004
 
 | Area | What changed |

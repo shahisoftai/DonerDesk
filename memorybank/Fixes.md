@@ -2,7 +2,17 @@
 
 **DonorDesk Version 1.93**
 
-Record of fixes applied to DonorDesk. Last updated: 2026-10-05 (Education demo: disaggregation and attendance findings).
+Record of fixes applied to DonorDesk. Last updated: 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
+
+## Work plan (Phase 28, Batches 28.0–28.2) — bugs found while building (2026-10-19)
+
+Found by the new tests before anything shipped; each has a regression test. Not deployed.
+- **Project setting did not persist.** `PrismaProjectRepository.update` never wrote `showWorkPlanning`, so hiding work planning silently reverted. Fixed; pinned by a repository test (create, hide, show).
+- **Import shifted every column when the first cell was empty.** `parseWorkPlanText` trimmed each line, dropping a leading tab. Lines are no longer trimmed before splitting; the delimiter helpers moved to `core/delimited.ts` and the activity parser uses the same ones.
+- **Server pages passed functions to client components** (`canChangeStatus`, `canMove`). That fails when the page renders, and neither `tsc` nor `next build` reports it. Replaced by id lists (`changeableIds`, `movableIds`); `tests/unit/server-client-boundary.test.mts` now fails any non-client page that does it.
+- **A status change refreshed the page only on a result it could not tell from failure.** The plan actions now return `true` on success.
+- **A monthly row in the wizard kept the long spread-out dates** it had before "Monthly" was ticked, making the first occurrence huge. Ticking Monthly now clears the row's dates so the server's monthly proposal applies.
+- Pre-existing, unchanged: three `apps/api` tests need database credentials for a `test` user and fail without them.
 
 ## Report charts did not match their section or data (2026-10-05, audit + rebuild)
 

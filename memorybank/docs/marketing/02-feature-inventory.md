@@ -5,7 +5,7 @@ conversations). Each capability is listed with what it does, who uses it, where 
 its status. A claim that is not in this file should not be made publicly until it is added here and verified.
 
 **Status key:** `LIVE` = built and in production. `LIVE-LIMIT` = built, with a limit that must be stated.
-`CONTRACT` = available for Enterprise through configuration or contract, not self-serve. `NOT BUILT` = do not claim.
+`CONTRACT` = available for Enterprise through configuration or contract, not self-serve. `NOT BUILT` = do not claim. `BUILT-NOT-LIVE` = built and tested but not deployed or checked in a browser: **do not claim it publicly yet** (it moves to `LIVE` when deployed and verified).
 
 ---
 
@@ -172,12 +172,35 @@ its status. A claim that is not in this file should not be made publicly until i
 | Top-up packs | +50 drafts for $79 (Team); +100 for $149 (Growth), plus a prepaid standing balance on Growth. | LIVE |
 | Trials | 14-day trials on paid plans. | LIVE-LIMIT (shown only when the trial flag is on) |
 
+## Work plan (Phase 28, Batches 28.0–28.2) — BUILT, NOT LIVE
+
+Do not put any of this on the website, the deck or in a sales conversation until it is deployed and checked in a browser. Wording to use once it is live is in `imp/phase28-new-management.md` §12.
+
+| Capability | What it does | Who uses it | Where | Status |
+|---|---|---|---|---|
+| Planned activities | Work planned ahead, with dates, a lead, an optional place, people expected and number of sessions. One date makes a milestone. Sits inside the Activities tab (Planned / Completed). | Project Manager, M&E Officer, Admin plan; everyone reads | `packages/domain/src/contexts/workplan/`, Activities tab | BUILT-NOT-LIVE |
+| Start from my logframe | Three steps (which activities, when, who leads); nothing is saved until the end; refused when a plan already exists. | Project Manager | `StartPlanFromLogframeHandler` | BUILT-NOT-LIVE |
+| Import a plan | Upload, paste or dictate a sheet; any row that cannot be read stops the import and is named. | Project Manager | `ImportWorkPlanHandler` | BUILT-NOT-LIVE |
+| Repeating activities | Weekly or monthly until a date; each one is its own row that can be moved, led or cancelled; move "only this one" or "this and later ones". | Project Manager | `expandRecurrence` | BUILT-NOT-LIVE |
+| On time / Late / Done | One signal per activity, worked out from its dates and the completed activities linked to it, with the reason in words. | Everyone | `deliveryState`, `deliverySignal` | BUILT-NOT-LIVE |
+| Timeline | Bars by output, report deadlines on top, today line, original dates shown when moved, drag to reschedule with a Save / Undo bar, keyboard alternative. Not offered on phones (the List is). | Project Manager, M&E Officer, Admin | `PlanTimeline` | BUILT-NOT-LIVE |
+| My week | A field officer's landing: late, this week, next week; list, week or month; activities sent back to fix; "Add completed activity". Status changes made offline are sent when the connection returns. | Field Officer | `GetMyWeekHandler`, `MyWeekPanel` | BUILT-NOT-LIVE |
+| Plan history | Every change is kept with its reason ("moved from 12 Mar: floods"). | Everyone | `PlanRevision` | BUILT-NOT-LIVE |
+| Link a completed activity to the plan | Picker with up to three suggestions and why; fills empty fields, never overwrites. | Field Officer | `suggestPlanLinks`, `PlanLinkResolver` | BUILT-NOT-LIVE |
+| Overview cards | How many planned activities are done, late and starting soon; per output, done of planned beside the indicator's % of target. | Project Manager | `PlanOverviewCards` | BUILT-NOT-LIVE |
+| Copy plan with setup | Optional when copying a project's setup; dates move with the new project's start; leads and progress are not copied. | Project Manager | `CopyWorkPlanHandler` | BUILT-NOT-LIVE |
+| Show work planning | Admin setting; off hides the screens and keeps the data. | Admin | `SetWorkPlanningVisibilityHandler` | BUILT-NOT-LIVE |
+
+**Limits to state when it goes live:** DonorDesk records, plans and evidences delivery; it does not manage budgets, beneficiaries or partners (Phase 29 and later). There are no requests, reminders or delivery-health labels yet (Batches 28.3–28.5). Leads are shown by name only.
+
 ---
 
 ## Not built, and must not be claimed
 
 - A full offline app (opening DonorDesk with no connection). Only queued activity saving works offline.
 - Assigned attestations in My Work.
+- Requests between people, an assignment queue, reminder emails, delivery health labels, and a risk list (Phase 28, Batches 28.3–28.7; not built).
+- Budget lines, a beneficiary register, partner access and opening the app offline (Phase 29 or later).
 - Server-side readiness history over time.
 - Saving a Data Center chart spec for reuse (charts are drawn from the data each time).
 - Direct submission or sending of reports to donors (donor portal signed links exist in code but are not wired to any route).
@@ -186,5 +209,5 @@ its status. A claim that is not in this file should not be made publicly until i
 
 ## Source
 
-Derived from `memorybank/Features/` (01–22), `memorybank/Fixes.md`, `AGENTS.md` (invariants by version) and the
+Derived from `memorybank/Features/` (01–23), `memorybank/Fixes.md`, `AGENTS.md` (invariants by version) and the
 portal routes under `apps/web/src/app/(portal)/`. Re-verify this file before each major release.
