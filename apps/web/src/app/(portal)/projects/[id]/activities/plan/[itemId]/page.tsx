@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CommentsDisclosure } from "@/features/comments/presentation/CommentsDisclosure";
 import { notFound } from "next/navigation";
 import { countOf } from "@donordesk/domain/core/plural.js";
 import { canActOnPlanItem, formatShortDate, WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
@@ -104,6 +105,7 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
           </ul>
         )}
       </section>
+      <CommentsDisclosure entityType="planned_activity" entityId={row.id} />
     </div>
   );
 }

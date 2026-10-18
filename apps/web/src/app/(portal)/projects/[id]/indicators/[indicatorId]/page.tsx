@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CommentsDisclosure } from "@/features/comments/presentation/CommentsDisclosure";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -68,6 +69,7 @@ export default async function IndicatorDetailPage({ params }: { params: Promise<
       <IndicatorVerificationPipeline statuses={updates.map((u) => u.verificationStatus)} />
       <IndicatorHistoryPanel rows={updates} unit={indicator.unit ?? undefined} canReview={ctx.capabilities.has("indicator.verify")} />
     </> : <div className="mt-4"><InlineError title={history.error.message} referenceId={history.error.referenceId} /></div>}
+    <div className="mt-4"><CommentsDisclosure entityType="indicator" entityId={indicator.id} /></div>
   </div>;
 }
 

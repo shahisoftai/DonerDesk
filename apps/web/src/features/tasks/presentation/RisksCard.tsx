@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import type { ProjectPerson } from "../domain/ask-people";
+import { CommentsDisclosure } from "@/features/comments/presentation/CommentsDisclosure";
 import { riskKindWords, riskLine, seriousnessWords } from "../domain/risk-view";
 
 const TONE = { HIGH: "danger", MEDIUM: "warning", LOW: "neutral" } as const;
@@ -95,6 +96,7 @@ export function RisksCard({ projectId, risks, people, userId, canRaise, today, p
                   {r.canChange && closing !== r.id && <Button size="sm" variant="ghost" onClick={() => { setClosing(r.id); setNote(""); }}>Close</Button>}
                 </div>
               </div>
+              <div className="mt-1"><CommentsDisclosure entityType="project_risk" entityId={r.id} /></div>
               {closing === r.id && (
                 <div className="mt-2 max-w-md space-y-2">
                   <Field label="How did it end? (optional)"><Textarea dictate rows={2} maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} /></Field>

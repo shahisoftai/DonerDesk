@@ -14,7 +14,10 @@ export type CommentableEntityType =
   | "evidence"
   | "indicator_update"
   | "checklist_item"
-  | "activity_update";
+  | "activity_update"
+  | "indicator"
+  | "planned_activity"
+  | "project_risk";
 
 export type CommentItem = {
   id: string;

@@ -6,3 +6,4 @@ export * from "./reminder-rules.js";
 export * from "./reminder-planner.js";
 export * from "./indicator-collection.js";
 export * from "./delivery-health.js";
+export * from "./commentable.js";

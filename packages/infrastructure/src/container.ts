@@ -333,6 +333,7 @@ import { RiskReviewAssignmentSource } from "./assignment-sources/risk-review-sou
 import { PrismaCollectionFactsReader, PrismaRiskTrendStore, PrismaEntryDueDays } from "./repositories/health.js";
 import { IndicatorValueAssignmentSource } from "./assignment-sources/indicator-value-source.js";
 import { PrismaReminderLedger, PrismaNotificationPreferences, PrismaReminderAudience } from "./repositories/reminders.js";
+import { PrismaCommentTargets } from "./repositories/comment-targets.js";
 import { PrismaProjectTaskRepository, PrismaTaskSubjectResolver, PrismaTaskFactsReader, PrismaProjectRoster } from "./repositories/tasks.js";
 import { TaskAssignmentSource } from "./assignment-sources/task-source.js";
 import { PlanItemAssignmentSource } from "./assignment-sources/plan-item-source.js";
@@ -1546,7 +1547,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     runReminders: new RunRemindersHandler(assignmentQueue, new PrismaReminderLedger(prisma), notificationPreferences, new PrismaReminderAudience(prisma), personNotifier, audits, clock, riskRefresh),
     getNotificationPreferences: new GetNotificationPreferencesHandler(notificationPreferences),
     updateNotificationPreferences: new UpdateNotificationPreferencesHandler(notificationPreferences, audits),
-    addComment: new AddCommentHandler(ids, comments, audits, notify),
+    addComment: new AddCommentHandler(ids, comments, audits, personNotifier, new PrismaCommentTargets(prisma)),
     resolveComment: new ResolveCommentHandler(comments, audits),
     listComments: new ListCommentsHandler(comments),
     listNotifications: new ListNotificationsHandler(notifications),

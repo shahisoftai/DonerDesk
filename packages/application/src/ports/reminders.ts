@@ -35,7 +35,7 @@ export interface IReminderAudience {
 export interface PersonNotification {
   tenantId: TenantId;
   recipientId: string;
-  type: "ASSIGNMENT" | "DEADLINE_REMINDER" | "CHECKLIST_ASSIGNED";
+  type: "ASSIGNMENT" | "DEADLINE_REMINDER" | "CHECKLIST_ASSIGNED" | "COMMENT_MENTION";
   title: string;
   message: string;
   relatedEntityType?: string;
@@ -47,4 +47,9 @@ export interface PersonNotification {
 /** Tells one person: always an in-app note, and an email only when their setting allows it. Never fails the caller. */
 export interface IPersonNotifier {
   send(input: PersonNotification): Promise<void>;
+}
+
+/** Resolves a commentable thing in this organisation to its title and the people who own it; null when it does not exist. */
+export interface ICommentTargets {
+  resolve(tenantId: TenantId, entityType: string, entityId: string): Promise<{ title: string; owners: string[] } | null>;
 }

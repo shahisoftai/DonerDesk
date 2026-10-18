@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CommentsDisclosure } from "@/features/comments/presentation/CommentsDisclosure";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -244,6 +245,8 @@ export default async function ActivityDetailPage({
           replacements={replacements}
         />
       )}
+
+      <CommentsDisclosure entityType="activity_update" entityId={activity.id} />
 
       <div className="flex gap-3">
         <Link className="btn-secondary" href={`/projects/${activity.projectId}/activities`}>
