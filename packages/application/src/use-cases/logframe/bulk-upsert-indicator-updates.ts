@@ -15,6 +15,8 @@ export interface BulkUpsertOutcome {
   updates: Array<{ indicatorId: string; updateId: string; changed: boolean }>;
 }
 
+import type { ITaskReconciliation } from "../../ports/tasks.js";
+
 export class BulkUpsertIndicatorUpdatesHandler {
   constructor(
     private readonly ids: IIdGenerator,
@@ -23,6 +25,7 @@ export class BulkUpsertIndicatorUpdatesHandler {
     private readonly periods: IReportingPeriodRepository,
     private readonly audit: IAuditLogger,
     private readonly linker?: IEvidenceLinker,
+    private readonly tasks?: ITaskReconciliation,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: BulkUpsertIndicatorUpdatesInput): Promise<Result<BulkUpsertOutcome, DomainError>> {
@@ -83,6 +86,7 @@ export class BulkUpsertIndicatorUpdatesHandler {
       });
     }
 
+    if (saved > 0) await this.tasks?.reconcileForCurrentUser(ctx);
     return { ok: true, value: { saved, skipped, updates } };
   }
 }

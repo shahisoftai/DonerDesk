@@ -7,8 +7,10 @@ import type { CreateIndicatorUpdateInput } from "@donordesk/contracts";
 import type { IEvidenceLinker } from "../../ports/evidence-linker.js";
 import { upsertIndicatorUpdate } from "./upsert-indicator-update.js";
 
+import type { ITaskReconciliation } from "../../ports/tasks.js";
+
 export class CreateIndicatorUpdateHandler {
-  constructor(private readonly ids: IIdGenerator, private readonly repo: IIndicatorUpdateRepository, private readonly audit: IAuditLogger, private readonly linker?: IEvidenceLinker) {}
+  constructor(private readonly ids: IIdGenerator, private readonly repo: IIndicatorUpdateRepository, private readonly audit: IAuditLogger, private readonly linker?: IEvidenceLinker, private readonly tasks?: ITaskReconciliation) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateIndicatorUpdateInput): Promise<Result<{ id: string }, DomainError>> {
     const saved = await upsertIndicatorUpdate(this.ids, this.repo, ctx.tenant.tenantId, ctx.tenant.userId, input.reportingPeriodId, input, this.linker ? (u) => this.linker!.attachPendingFor(ctx, u) : undefined);
@@ -21,6 +23,7 @@ export class CreateIndicatorUpdateHandler {
       entityId: saved.value.id,
       newValue: input.periodAchievement,
     });
+    await this.tasks?.reconcileForCurrentUser(ctx);
     return { ok: true, value: { id: saved.value.id } };
   }
 }

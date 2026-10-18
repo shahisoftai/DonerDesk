@@ -47,6 +47,8 @@ export type Capability =
   | "audit.view"
   | "workplan.manage"
   | "workplan.update-own"
+  | "task.assign"
+  | "team.view-work"
   | "settings.view"
   | "billing.manage";
 
@@ -83,6 +85,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "billing.manage",
     "workplan.manage",
     "workplan.update-own",
+    "task.assign",
+    "team.view-work",
   ],
   PROJECT_MANAGER: [
     "project.create",
@@ -105,6 +109,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "export.create",
     "workplan.manage",
     "workplan.update-own",
+    "task.assign",
+    "team.view-work",
   ],
   ME_OFFICER: [
     "logframe.edit",
@@ -117,6 +123,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "report.generate",
     "workplan.manage",
     "workplan.update-own",
+    "task.assign",
+    "team.view-work",
   ],
   GRANTS_OFFICER: [
     "template.create",
@@ -127,6 +135,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "report.override-confidentiality",
     "export.create",
     "workplan.update-own",
+    "task.assign",
   ],
   FIELD_OFFICER: ["activity.create", "evidence.upload", "workplan.update-own"],
   COMPLIANCE_OFFICER: [
@@ -136,6 +145,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "reporting.edit",
     "report.approve",
     "workplan.update-own",
+    "task.assign",
   ],
   VIEWER: ["export.create"],
 };

@@ -5,10 +5,11 @@ import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { ActivityLinkResolver } from "../../services/activity-link-resolver.js";
 import type { PlanLinkResolver } from "../../services/plan-link-resolver.js";
+import type { ITaskReconciliation } from "../../ports/tasks.js";
 import type { CreateActivityUpdateInput } from "@donordesk/contracts";
 
 export class CreateActivityUpdateHandler {
-  constructor(private readonly ids: IIdGenerator, private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger, private readonly links?: ActivityLinkResolver, private readonly planLinks?: PlanLinkResolver) {}
+  constructor(private readonly ids: IIdGenerator, private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger, private readonly links?: ActivityLinkResolver, private readonly planLinks?: PlanLinkResolver, private readonly tasks?: ITaskReconciliation) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateActivityUpdateInput): Promise<Result<{ id: string }, DomainError>> {
     // The planned activity may fill an empty logframe link (fill, never overwrite); the pair is then validated as before.
@@ -60,6 +61,7 @@ export class CreateActivityUpdateHandler {
       entityId: id,
       projectId: input.projectId,
     });
+    await this.tasks?.reconcileForCurrentUser(ctx);
     return { ok: true, value: { id } };
   }
 }

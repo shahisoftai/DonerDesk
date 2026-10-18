@@ -342,6 +342,7 @@ export const IndicatorItemSchema = z.object({
   meansOfVerification: z.string().optional(),
   dataSource: z.string().optional(),
   frequency: z.string().optional(),
+  responsibleUserId: z.string().nullish(),
   disaggregationRequired: z.boolean().optional(),
   semantics: z
     .object({
@@ -611,6 +612,8 @@ export const ReportingPeriodItemSchema = z.object({
   internalReviewDeadline: z.string().nullable().optional(),
   daysUntilDeadline: z.number(),
   donorTemplateId: z.string().nullish(),
+  /** Who is responsible for this report. */
+  responsibleOfficerId: z.string().nullish(),
   /** A cancelled period keeps its data but is out of the calendar; it is listed apart so it can be restored. */
   /** An approved, exported or sent report exists: the period cannot be cancelled or converted. */
   releasedReport: z.boolean().optional(),
@@ -1327,3 +1330,33 @@ export const MyWeekSchema = z.object({
   sentBack: z.array(z.object({ id: z.string(), projectId: z.string(), projectTitle: z.string(), title: z.string(), activityDate: z.string(), status: z.enum(["NEEDS_REVISION", "REJECTED"]) })),
 });
 export type MyWeek = z.infer<typeof MyWeekSchema>;
+
+// ---- Requests, assignments, team work (Phase 28.3) ----
+const AssignmentSchema = z.object({
+  key: z.string(),
+  kind: z.enum(["PLAN_ITEM", "TASK", "CHECKLIST_ITEM", "REPORT_DEADLINE", "EVIDENCE_REVIEW", "ACTIVITY_REVIEW", "ACTIVITY_FIX", "INDICATOR_VALUE"]),
+  projectId: z.string(),
+  projectTitle: z.string(),
+  title: z.string(),
+  assigneeId: z.string(),
+  dueDate: z.string().optional(),
+  state: z.enum(["OPEN", "LATE"]),
+  urgent: z.boolean(),
+  href: z.string(),
+  urgency: z.number(),
+  because: z.string().optional(),
+  askedById: z.string().optional(),
+  manual: z.boolean().optional(),
+});
+export type AssignmentItem = z.infer<typeof AssignmentSchema>;
+export const AssignmentsResponseSchema = z.object({
+  today: z.string(),
+  userId: z.string(),
+  total: z.number(),
+  groups: z.array(z.object({ key: z.enum(["LATE", "TODAY", "THIS_WEEK", "LATER", "NO_DATE"]), label: z.string(), items: z.array(AssignmentSchema) })),
+});
+export type AssignmentsResponse = z.infer<typeof AssignmentsResponseSchema>;
+export const TeamWorkResponseSchema = z.object({
+  today: z.string(),
+  rows: z.array(z.object({ assigneeId: z.string(), open: z.number(), late: z.number(), dueThisWeek: z.number() })),
+});

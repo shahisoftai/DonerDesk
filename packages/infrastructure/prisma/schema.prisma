@@ -253,6 +253,7 @@ model Project {
   organization    Organization  @relation(fields: [tenantId], references: [tenantId])
   setup           ProjectSetup?
   plannedActivities PlannedActivity[]
+  projectTasks    ProjectTask[]
   reportingProfile ReportingProfile?
   logframeItems   LogframeItem[]
   indicators      Indicator[]
@@ -293,6 +294,8 @@ model ReportingProfile {
   id                       String   @id
   tenantId                 String
   projectId                String   @unique
+  /// Days after a period ends that its indicator values are due (default 5).
+  indicatorEntryDueDays    Int      @default(5)
   defaultTemplateId        String?
   language                 String   @default("en")
   tone                     String   @default("FORMAL")
@@ -1502,4 +1505,34 @@ model PlanRevision {
 
   @@index([tenantId, plannedActivityId])
   @@index([tenantId, projectId, changedAt])
+}
+
+/// A request: one person asking another for something in a project. STATE kinds close themselves from the records.
+model ProjectTask {
+  id                String    @id
+  tenantId          String
+  projectId         String
+  kind              String
+  subjectType       String?
+  subjectId         String?
+  reportingPeriodId String?
+  title             String
+  details           String?
+  assigneeId        String
+  assignedById      String
+  dueDate           DateTime  @db.Date
+  urgent            Boolean   @default(false)
+  status            String    @default("OPEN")
+  completedById     String?
+  completedAt       DateTime?
+  completionNote    String?
+  closedByData      Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@index([tenantId, assigneeId, status])
+  @@index([tenantId, projectId, status])
+  @@index([subjectType, subjectId])
 }

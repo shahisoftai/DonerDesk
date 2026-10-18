@@ -137,7 +137,8 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         meansOfVerification: i.meansOfVerification,
         dataSource: i.dataSource,
         frequency: i.frequency,
-        responsibleUserId: i.responsibleUserId,
+        // null (not undefined) so that removing the lead really clears it
+        responsibleUserId: i.responsibleUserId ?? null,
         disaggregationRequired: i.disaggregationRequired,
         semanticsJson: i.semanticsJson,
       },

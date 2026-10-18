@@ -8,6 +8,8 @@ import { PlanRevisionsResponseSchema, WorkPlanResponseSchema } from "@/lib/serve
 import { loadPlanPageData } from "@/features/workplan/application/plan-page-data";
 import { showsButton } from "@/features/workplan/domain/role-surfaces";
 import { describeChanges } from "@/features/workplan/domain/plan-history-view";
+import { AskPanel } from "@/features/tasks/presentation/AskPanel";
+import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
 import { PlanItemMenu } from "@/features/workplan/presentation/PlanItemMenu";
 import { PlanStatusControl } from "@/features/workplan/presentation/PlanStatusControl";
 import { Badge } from "@/components/data/Badge";
@@ -63,6 +65,14 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
           canAssign={canActOnPlanItem(actor, people, "ASSIGN")}
           canCancel={canActOnPlanItem(actor, people, "CANCEL")}
         />
+        {data.ctx.capabilities.has("task.assign") && row.status !== "CANCELLED" && row.status !== "DONE" && (
+          <div className="flex flex-wrap gap-2">
+            {row.completedActivities === 0 && (
+              <AskPanel projectId={id} kind="RECORD_ACTIVITY" buttonLabel="Ask for completed activity" subject={{ type: "plannedActivity", id: row.id }} people={data.people} leadId={row.ownerUserId} suggestedDue={suggestTaskDueDate("RECORD_ACTIVITY", { today: data.today, subjectEnd: row.plannedEnd })} />
+            )}
+            <AskPanel projectId={id} kind="PROVIDE_EVIDENCE" buttonLabel="Ask for a file" subject={{ type: "plannedActivity", id: row.id }} people={data.people} leadId={row.ownerUserId} suggestedDue={suggestTaskDueDate("PROVIDE_EVIDENCE", { today: data.today, subjectEnd: row.plannedEnd })} />
+          </div>
+        )}
         {canAddCompleted && (
           <p><Link className="btn" href={`/projects/${id}/activities/new?planned=${row.id}`}>{WORKPLAN_COPY.addCompleted}</Link></p>
         )}

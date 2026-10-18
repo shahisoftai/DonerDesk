@@ -10,6 +10,12 @@ import { IndicatorProgressCard } from "@/features/logframe/presentation/Indicato
 import { IndicatorVerificationPipeline } from "@/features/logframe/presentation/IndicatorVerificationPipeline";
 import { EvidenceSupportPanel } from "@/features/evidence/presentation/EvidenceSupportPanel";
 import { IndicatorManageCard } from "@/features/logframe/presentation/IndicatorManageCard";
+import { AskPanel } from "@/features/tasks/presentation/AskPanel";
+import { LeadPicker } from "@/features/tasks/presentation/LeadPicker";
+import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
+import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
+import { ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
 import { IndicatorHistoryPanel } from "@/features/logframe/presentation/IndicatorHistoryPanel";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +31,14 @@ export default async function IndicatorDetailPage({ params }: { params: Promise<
   if (!result.ok) return <InlineError title={result.error.message} referenceId={result.error.referenceId} />;
   const indicator = result.value.indicators.find((item) => item.id === indicatorId);
   if (!indicator) notFound();
+  const me = decodeSessionPayload(ctx.token)?.sub ?? "";
+  const canLead = ctx.capabilities.has("logframe.edit");
+  const canAsk = ctx.capabilities.has("task.assign");
+  const [people, periods] = await Promise.all([
+    loadProjectPeople(ctx.token, id, me),
+    canAsk ? gatewayRequest(`/v1/projects/${id}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token) : Promise.resolve(null),
+  ]);
+  const periodOptions = (periods?.ok ? periods.value.items : []).filter((p) => !p.cancelled).map((p) => ({ id: p.id, label: `${p.startDate.slice(0, 10)} to ${p.endDate.slice(0, 10)}` }));
   const updates = history.ok ? history.value.updates : [];
   const latest = [...updates].reverse().find((u) => u.cumulativeAchievement.trim() !== "") ?? null;
   return <div className="animate-fade-in"><header className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-mono text-xs text-slate-500">{indicator.code}</p><h2 className="mt-1 text-xl font-semibold tracking-tight">{indicator.name}</h2><p className="mt-1 text-sm text-slate-500">Indicator definition and reporting context</p></div><Link className="btn-secondary" href={`/projects/${id}/logframe`}>Back to logframe</Link></header>
@@ -42,6 +56,12 @@ export default async function IndicatorDetailPage({ params }: { params: Promise<
         items={result.value.items}
       />
     )}
+    <section className="card mt-4 space-y-3" aria-label="Who collects this">
+      <LeadPicker current={indicator.responsibleUserId} people={people} canEdit={canLead} target={{ type: "indicator", id: indicator.id }} />
+      {canAsk && periodOptions.length > 0 && (
+        <AskPanel projectId={id} kind="ENTER_INDICATOR_VALUE" buttonLabel="Ask for this value" subject={{ type: "indicator", id: indicator.id }} periods={periodOptions} people={people} leadId={indicator.responsibleUserId ?? undefined} suggestedDue={suggestTaskDueDate("ENTER_INDICATOR_VALUE", { today: new Date().toISOString().slice(0, 10) })} />
+      )}
+    </section>
     {support.ok && <EvidenceSupportPanel support={support.value} projectId={id} />}
     <IndicatorProgressCard baseline={indicator.baseline} target={indicator.target} unit={indicator.unit ?? undefined} latest={latest} />
     {history.ok ? <>

@@ -43,6 +43,13 @@ const FIELD_LABELS: ReadonlyArray<readonly [string, string]> = [
   ["rows.plannedEnd", "End date"],
   ["rows.ownerUserId", "Lead"],
   ["rows.logframeActivityId", "Logframe activity"],
+  ["assigneeId", "Who"],
+  ["dueDate", "By when"],
+  ["note", "Note"],
+  ["subjectId", "What it is about"],
+  ["reportingPeriodId", "Reporting period"],
+  ["userId", "Person"],
+  ["title", "What"],
 ];
 
 const humanise = (segment: string): string => {

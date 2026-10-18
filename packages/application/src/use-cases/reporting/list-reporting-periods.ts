@@ -37,6 +37,7 @@ export class ListReportingPeriodsHandler {
           endDate: p.duration.end.toISOString(),
           daysUntilDeadline: p.daysUntilDeadline(),
           donorTemplateId: p.donorTemplateId,
+          responsibleOfficerId: p.responsibleOfficerId ?? null,
           scope: p.scope,
           releasedReport,
           cancelled: p.isCancelled,

@@ -50,7 +50,7 @@ export class PrismaChecklistRepository implements IChecklistRepository {
         severity: c.severity,
         relatedEntityType: c.relatedEntityType,
         relatedEntityId: c.relatedEntityId,
-        assignedToId: c.assignedToId,
+        assignedToId: c.assignedToId ?? null,
         dueDate: c.dueDate,
         status: c.status,
         resolutionNotes: c.resolutionNotes,

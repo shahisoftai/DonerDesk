@@ -116,3 +116,42 @@ test("history is written in words: statuses, dates, people and links never show 
   assert.equal(all, "status: Done to Cancelled; start date: 10 Mar to 14 Mar");
   assert.deepEqual(rawTokens(all), []);
 });
+
+import { filterGroupsByProject, projectChips, dueText, askedByText, totalIn } from "../../src/features/tasks/domain/my-work-view.ts";
+import { peopleFor, canDo } from "../../src/features/tasks/domain/ask-people.ts";
+import { TASK_KINDS, TASK_KIND_KEYS } from "@donordesk/domain/contexts/tasks/index.js";
+import { Permissions } from "@donordesk/domain";
+
+const workRow = (key: string, projectId: string, extra = {}) => ({ key, kind: "TASK" as const, projectId, projectTitle: projectId.toUpperCase(), title: key, assigneeId: "u1", state: "OPEN" as const, urgent: false, href: "/x", urgency: 1, ...extra });
+
+test("my work: filter by project keeps order and drops empty groups; chips count what each project has", () => {
+  const groups = [
+    { key: "LATE" as const, label: "Late", items: [workRow("a", "p2"), workRow("b", "p1")] },
+    { key: "LATER" as const, label: "Later", items: [workRow("c", "p2")] },
+  ];
+  assert.deepEqual(filterGroupsByProject(groups, "p1").map((g) => [g.label, g.items.map((i) => i.key)]), [["Late", ["b"]]]);
+  assert.deepEqual(filterGroupsByProject(groups, "all").map((g) => g.items.length), [2, 1]);
+  assert.deepEqual(projectChips(groups), [{ id: "p1", title: "P1", count: 1 }, { id: "p2", title: "P2", count: 2 }]);
+  assert.equal(totalIn(groups), 3);
+  assert.deepEqual(filterGroupsByProject([], "p1"), []);
+});
+
+test("my work words: due dates and who asked read as people say them", () => {
+  assert.equal(dueText({ dueDate: "2026-03-01", state: "LATE" }, "2026-03-10"), "was due 1 Mar");
+  assert.equal(dueText({ dueDate: "2026-03-10", state: "OPEN" }, "2026-03-10"), "due today");
+  assert.equal(dueText({ dueDate: "2026-03-14", state: "OPEN" }, "2026-03-10"), "due 14 Mar");
+  assert.equal(dueText({ state: "OPEN" }, "2026-03-10"), "");
+  assert.equal(askedByText({ kind: "TASK", askedById: "me" }, "me", {}), "asked by you");
+  assert.equal(askedByText({ kind: "TASK", askedById: "u2" }, "me", { u2: "Amina" }), "asked by Amina");
+  assert.equal(askedByText({ kind: "TASK", askedById: "u9" }, "me", {}), "asked by a team member");
+  assert.equal(askedByText({ kind: "PLAN_ITEM" }, "me", {}), "");
+});
+
+test("the dialog offers only people who could do what is asked, the lead first", () => {
+  const people = [{ id: "u1", label: "Zed", role: "FIELD_OFFICER" }, { id: "u2", label: "Amina", role: "FIELD_OFFICER" }, { id: "u3", label: "Joe", role: "VIEWER" }, { id: "u4", label: "Pat", role: "ME_OFFICER" }];
+  assert.deepEqual(peopleFor("RECORD_ACTIVITY", people, "u1").map((p) => p.id), ["u1", "u2", "u4"], "the viewer cannot record an activity; the lead is first");
+  assert.deepEqual(peopleFor("ENTER_INDICATOR_VALUE", people).map((p) => p.id), ["u4"], "only roles that enter values");
+  assert.deepEqual(peopleFor("REVIEW_RECORD", people).map((p) => p.id), [], "nobody here approves");
+  assert.deepEqual(peopleFor("OTHER", people).map((p) => p.label), ["Amina", "Joe", "Pat", "Zed"]);
+  for (const kind of TASK_KIND_KEYS) for (const role of ROLES) assert.equal(canDo(kind, role), Permissions.can(role, TASK_KINDS[kind].requires), `${kind} for ${role}`);
+});

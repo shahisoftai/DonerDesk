@@ -213,6 +213,12 @@ export class ReportingPeriod extends Entity<string> {
     this.touch();
   }
 
+  /** Who is responsible for this report; `undefined` clears it. */
+  assignResponsibleOfficer(userId: string | undefined): void {
+    this.props.responsibleOfficerId = userId;
+    this.touch();
+  }
+
   setReadinessScore(score: number): void {
     const clamped = Math.max(0, Math.min(100, Math.round(score)));
     this.props.readinessScore = clamped;

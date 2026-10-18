@@ -15,6 +15,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "PlannedActivity", field: "ownerUserId" },
   { model: "PlannedActivity", field: "originalEnd" },
   { model: "Project", field: "showWorkPlanning" },
+  { model: "ProjectTask", field: "assigneeId" },
   { model: "ReportingPeriod", field: "donorTemplateId" },
   { model: "ReportingPeriod", field: "storyContextJson" },
   { model: "ReportingPeriod", field: "scopeJson" },

@@ -1,3 +1,6 @@
+import { LeadPicker } from "@/features/tasks/presentation/LeadPicker";
+import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
@@ -70,6 +73,9 @@ export default async function ReportWorkspacePage({
       gatewayRequest(`/v1/projects/${projectId}/reporting-periods`, ReportingPeriodsResponseSchema, ctx.token),
     ]);
     const period = periodsResult.ok ? periodsResult.value.items.find((p) => p.id === periodId) : undefined;
+    // Who leads this report: a picker for people who edit reports, nothing extra for anyone else.
+    const canLeadReport = ctx.capabilities.has("reporting.edit");
+    const reportPeople = canLeadReport ? await loadProjectPeople(ctx.token, projectId, decodeSessionPayload(ctx.token)?.sub ?? "") : [];
     const reportType = period ? reportHeading(period.reportType, period.scope) : "Report";
     const eyebrow = [
       projectResult.ok ? projectResult.value.title : null,
@@ -83,6 +89,9 @@ export default async function ReportWorkspacePage({
       <>
         {!draftResult.ok && <InlineError title={draftResult.error.message} />}
         {!checklistResult.ok && <InlineError title={checklistResult.error.message} />}
+        {canLeadReport && reportPeople.length > 0 && period && (
+          <div className="mb-3"><LeadPicker label="Report lead" current={period.responsibleOfficerId} people={reportPeople} canEdit target={{ type: "period", id: periodId }} /></div>
+        )}
         <ReportEditor
           projectId={projectId}
           periodId={periodId}

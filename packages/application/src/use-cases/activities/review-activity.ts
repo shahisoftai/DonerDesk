@@ -4,6 +4,7 @@ import type { AuthenticatedContext } from "../../context.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IAuditLogger } from "../../ports/core.js";
 import type { IActivityApprovalGuard } from "../../ports/activity-approval-guard.js";
+import type { ITaskReconciliation } from "../../ports/tasks.js";
 import { checkUndoAllowed } from "../../services/activity-undo-policy.js";
 
 export interface ReviewActivityDecision {
@@ -12,7 +13,7 @@ export interface ReviewActivityDecision {
 }
 
 export class ReviewActivityHandler {
-  constructor(private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger, private readonly guard?: IActivityApprovalGuard) {}
+  constructor(private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger, private readonly guard?: IActivityApprovalGuard, private readonly tasks?: ITaskReconciliation) {}
 
   async handle(ctx: AuthenticatedContext, activityId: string, decision: ReviewActivityDecision): Promise<Result<void, DomainError>> {
     const r = await this.repo.findById(activityId, ctx.tenant.tenantId);
@@ -42,6 +43,7 @@ export class ReviewActivityHandler {
       entityId: activityId,
       newValue: decision.notes,
     });
+    await this.tasks?.reconcileForCurrentUser(ctx);
     return { ok: true, value: undefined };
   }
 }

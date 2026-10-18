@@ -18,6 +18,10 @@ import { ActivityLifecyclePanel } from "@/features/activities/presentation/Activ
 import { splitReviewerNotes, canApplyActivityAction } from "@donordesk/domain/contexts/activities/activity-transitions.js";
 import { activityOptionLabel } from "@/lib/shared/option-labels";
 import { ActivitiesResponseSchema } from "@/lib/server/schemas";
+import { AskPanel } from "@/features/tasks/presentation/AskPanel";
+import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
+import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
 import { ActivityEvidencePanel } from "@/features/activities/presentation/ActivityEvidencePanel";
 
 export const dynamic = "force-dynamic";
@@ -73,6 +77,9 @@ export default async function ActivityDetailPage({
   const logframeActivities = logframeResult?.ok
     ? logframeResult.value.items.filter((n) => n.level === "ACTIVITY").map((n) => ({ id: n.id, label: `${n.code ? `${n.code} — ` : ""}${n.title}` }))
     : [];
+  const canAsk = hasCapability(ctx, "task.assign") && activity.status === "SUBMITTED";
+  const me = decodeSessionPayload(ctx.token)?.sub ?? "";
+  const askPeople = canAsk ? await loadProjectPeople(ctx.token, resolvedParams.id, me) : [];
   const canPolish = hasCapability(ctx, "activity.create");
   const canManageEvidence = hasCapability(ctx, "activity.create");
   const demoMode = process.env.NODE_ENV !== "production";
@@ -98,6 +105,17 @@ export default async function ActivityDetailPage({
           </Badge>
         </div>
       </header>
+
+      {canAsk && (
+        <AskPanel
+          projectId={resolvedParams.id}
+          kind="REVIEW_RECORD"
+          buttonLabel="Ask for a review"
+          subject={{ type: "activityUpdate", id: activity.id }}
+          people={askPeople}
+          suggestedDue={suggestTaskDueDate("REVIEW_RECORD", { today: new Date().toISOString().slice(0, 10) })}
+        />
+      )}
 
       <section className="card" aria-label="Activity summary">
         <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Summary</h2>

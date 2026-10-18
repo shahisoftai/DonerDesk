@@ -105,6 +105,14 @@
     "./core/exhaustive.js": {
       "types": "./dist/core/exhaustive.d.ts",
       "import": "./dist/core/exhaustive.js"
+    },
+    "./contexts/tasks/index.js": {
+      "types": "./dist/contexts/tasks/index.d.ts",
+      "import": "./dist/contexts/tasks/index.js"
+    },
+    "./policies/permissions.js": {
+      "types": "./dist/policies/permissions.d.ts",
+      "import": "./dist/policies/permissions.js"
     }
   },
   "scripts": {

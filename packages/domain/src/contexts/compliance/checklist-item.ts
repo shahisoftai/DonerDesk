@@ -170,4 +170,9 @@ export class ChecklistItem extends Entity<string> {
     this.props.assignedToId = toId;
     this.touch();
   }
+
+  unassign(): void {
+    this.props.assignedToId = undefined;
+    this.touch();
+  }
 }

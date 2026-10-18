@@ -390,6 +390,8 @@ export const CAPABILITY_LABEL: Record<string, string> = {
   "activity.review": "Review activity updates",
   "workplan.manage": "Plan and schedule activities",
   "workplan.update-own": "Update the activities you lead",
+  "task.assign": "Ask people for things",
+  "team.view-work": "See what each person is working on",
   "evidence.upload": "Upload evidence",
   "evidence.verify": "Verify evidence",
   "reporting.create": "Create reporting periods",

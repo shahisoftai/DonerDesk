@@ -8,6 +8,8 @@ import {
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import { InlineError } from "@/components/feedback/PageState";
 import { HelpButton } from "@/features/tour/presentation/HelpButton";
+import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { CompliancePanel } from "@/features/compliance/presentation/CompliancePanel";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +50,8 @@ export default async function CompliancePage({
     ? (requestedPeriod as string)
     : periods[0]!.id;
 
-  const [checklistResult, readinessResult] = await Promise.all([
+  const [people, checklistResult, readinessResult] = await Promise.all([
+    loadProjectPeople(ctx.token, resolvedParams.id, decodeSessionPayload(ctx.token)?.sub ?? ""),
     gatewayRequest(`/v1/reporting-periods/${periodId}/checklist`, ChecklistResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${periodId}/readiness`, ReadinessSchema, ctx.token),
   ]);
@@ -68,6 +71,7 @@ export default async function CompliancePage({
         checklist={checklistResult.ok ? checklistResult.value.items : []}
         readiness={readinessResult.ok ? readinessResult.value : { overall: 0, sectionsScore: 0, indicatorsScore: 0, evidenceScore: 0, checklistScore: 0, approvalScore: 0 }}
         capabilities={Array.from(ctx.capabilities)}
+        people={people}
       />
     </div>
   );

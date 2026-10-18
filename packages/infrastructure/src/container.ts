@@ -94,6 +94,16 @@ import {
   ImportWorkPlanHandler,
   CopyWorkPlanHandler,
   GetMyWeekHandler,
+  CreateTaskHandler,
+  CompleteTaskHandler,
+  CancelTaskHandler,
+  ListAssignmentsHandler,
+  ListTeamWorkHandler,
+  SetIndicatorOwnerHandler,
+  SetPeriodOwnerHandler,
+  AssignChecklistItemHandler,
+  AssignmentQueue,
+  TaskReconciler,
   GetPeriodOptionsHandler,
   PlanClosingReportHandler,
   StartClosingReportHandler,
@@ -304,6 +314,12 @@ import { PrismaEvidenceRepository } from "./repositories/evidence.js";
 import { PrismaIdempotencyRepository } from "./repositories/idempotency.js";
 import { PrismaRequestIdempotencyRepository } from "./repositories/request-idempotency.js";
 import { PrismaActivityUpdateRepository } from "./repositories/activities.js";
+import { PrismaProjectTaskRepository, PrismaTaskSubjectResolver, PrismaTaskFactsReader, PrismaProjectRoster } from "./repositories/tasks.js";
+import { TaskAssignmentSource } from "./assignment-sources/task-source.js";
+import { PlanItemAssignmentSource } from "./assignment-sources/plan-item-source.js";
+import { ChecklistAssignmentSource } from "./assignment-sources/checklist-source.js";
+import { ReportDeadlineAssignmentSource } from "./assignment-sources/report-deadline-source.js";
+import { EvidenceReviewAssignmentSource, ActivityReviewAssignmentSource, ActivityFixAssignmentSource } from "./assignment-sources/review-sources.js";
 import { PrismaPlannedActivityRepository, PrismaPlanRevisionRepository, PrismaPlanContextReader, PrismaDeliveryFactsReader, PrismaMemberDirectory, PrismaMyWeekReader } from "./repositories/workplan.js";
 import {
   PrismaReportingPeriodRepository,
@@ -575,6 +591,14 @@ export interface Container {
     importWorkPlan: ImportWorkPlanHandler;
     copyWorkPlan: CopyWorkPlanHandler;
     getMyWeek: GetMyWeekHandler;
+    createTask: CreateTaskHandler;
+    completeTask: CompleteTaskHandler;
+    cancelTask: CancelTaskHandler;
+    listAssignments: ListAssignmentsHandler;
+    listTeamWork: ListTeamWorkHandler;
+    setIndicatorOwner: SetIndicatorOwnerHandler;
+    setPeriodOwner: SetPeriodOwnerHandler;
+    assignChecklistItem: AssignChecklistItemHandler;
     importActivities: ImportActivitiesHandler;
     polishActivity: PolishActivityHandler;
     reviewActivity: ReviewActivityHandler;
@@ -1136,7 +1160,15 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const planLinks = new PlanLinkResolver(plannedActivities);
   const planAccess = new PlanAccess(plannedActivities);
   const planRecorder = new PlanRecorder(ids, planRevisions, audits, clock);
-  const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits);
+  // Requests (Phase 28.3): the reconciler closes the ones the records show were met, and is told after the changes that meet them.
+  const projectTasks = new PrismaProjectTaskRepository(prisma);
+  const projectRoster = new PrismaProjectRoster(prisma);
+  const taskReconciler = new TaskReconciler(projectTasks, new PrismaTaskFactsReader(prisma), audits, clock);
+  const assignmentQueue = new AssignmentQueue([
+    new PlanItemAssignmentSource(prisma), new TaskAssignmentSource(prisma), new ChecklistAssignmentSource(prisma), new ReportDeadlineAssignmentSource(prisma),
+    new ActivityFixAssignmentSource(prisma), new EvidenceReviewAssignmentSource(prisma), new ActivityReviewAssignmentSource(prisma),
+  ]);
+  const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits, taskReconciler);
   const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates, logframe);
   const periodFinancials = new PrismaPeriodFinancialRepository(prisma);
   const financeInputs = new FinanceInputsService(reportingProfiles, periodFinancials);
@@ -1222,7 +1254,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
 
   const periodContextBuilder = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence);
   const getProjectDataSheet = new GetProjectDataSheetHandler(periods, logframe, indicators, indicatorUpdates, financeInputs, periodFinancials);
-  const bulkUpsertIndicatorUpdates = new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker);
+  const bulkUpsertIndicatorUpdates = new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker, taskReconciler);
   const sectionDataCharts = new SectionDataChartsHandler(sections, drafts, periods, reportArtifacts, getProjectDataSheet, ids, audits);
   const handlers: Container["handlers"] = {
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
@@ -1309,7 +1341,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listArchivedIndicators: new ListArchivedIndicatorsHandler(indicators),
     confirmIndicatorSemantics: new ConfirmIndicatorSemanticsHandler(indicators, audits),
     verifyPeriodIndicatorUpdates: new VerifyPeriodIndicatorUpdatesHandler(indicatorUpdates, indicators, periods, activities, audits),
-    createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits, evidenceLinker),
+    createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits, evidenceLinker, taskReconciler),
     bulkUpsertIndicatorUpdates,
     getProjectDataSheet,
     importDataSheet: new ImportDataSheetHandler(getProjectDataSheet, bulkUpsertIndicatorUpdates),
@@ -1331,7 +1363,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     bulkVerifyEvidence: new BulkVerifyEvidenceHandler(new VerifyEvidenceHandler(evidence, audits)),
     searchEvidence: new SearchEvidenceHandler(evidence),
     getEvidence: new GetEvidenceHandler(evidence),
-    createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks),
+    createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler),
     createPlannedActivity: new CreatePlannedActivityHandler(ids, plannedActivities, planContext, logframe, audits),
     changePlanStatus: new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock),
     reschedulePlannedActivity: new ReschedulePlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder, clock),
@@ -1342,12 +1374,20 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listPlanRevisions: new ListPlanRevisionsHandler(plannedActivities, planRevisions),
     setWorkPlanningVisibility: new SetWorkPlanningVisibilityHandler(projects, audits),
     listProjectPeople: new ListProjectPeopleHandler(projectMembers, users),
+    createTask: new CreateTaskHandler(ids, projectTasks, new PrismaTaskSubjectResolver(prisma), projectRoster, notify, audits, clock),
+    completeTask: new CompleteTaskHandler(projectTasks, audits, clock),
+    cancelTask: new CancelTaskHandler(projectTasks, audits, clock),
+    listAssignments: new ListAssignmentsHandler(assignmentQueue, taskReconciler, clock),
+    listTeamWork: new ListTeamWorkHandler(assignmentQueue, taskReconciler, clock),
+    setIndicatorOwner: new SetIndicatorOwnerHandler(indicators, projectRoster, audits),
+    setPeriodOwner: new SetPeriodOwnerHandler(periods, projectRoster, audits),
+    assignChecklistItem: new AssignChecklistItemHandler(checklist, projectRoster, notify, audits),
     getMyWeek: new GetMyWeekHandler(new PrismaMyWeekReader(prisma), new PrismaDeliveryFactsReader(prisma), clock),
     copyWorkPlan: new CopyWorkPlanHandler(projects, logframe, plannedActivities, ids, audits),
     importWorkPlan: new ImportWorkPlanHandler(ids, plannedActivities, planContext, new PrismaMemberDirectory(prisma), logframe, audits),
     importActivities: new ImportActivitiesHandler(ids, activities, logframe, indicators, periods, audits),
     polishActivity: new PolishActivityHandler(activities, activityPolisher),
-    reviewActivity: new ReviewActivityHandler(activities, audits, activityApprovalGuard),
+    reviewActivity: new ReviewActivityHandler(activities, audits, activityApprovalGuard, taskReconciler),
     resubmitActivity: new ResubmitActivityHandler(activities, audits),
     withdrawActivity: new WithdrawActivityHandler(activities, audits, activityApprovalGuard),
     restoreActivity: new RestoreActivityHandler(activities, audits),

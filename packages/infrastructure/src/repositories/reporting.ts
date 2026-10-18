@@ -65,7 +65,7 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         reportType: p.reportType,
         status: p.status.toString(),
         readinessScore: p.readinessScore,
-        responsibleOfficerId: p.responsibleOfficerId,
+        responsibleOfficerId: p.responsibleOfficerId ?? null,
         storyContextJson: p.storyContextJson,
         reportingProfileSnapshotJson: p.reportingProfileSnapshotJson,
         templateSnapshotJson: p.templateSnapshotJson,

@@ -29,7 +29,9 @@ export type Permission =
   | "audit.view"
   | "billing.manage"
   | "workplan.manage"
-  | "workplan.update-own";
+  | "workplan.update-own"
+  | "task.assign"
+  | "team.view-work";
 
 const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -43,6 +45,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "report.generate", "report.edit", "report.approve", "report.export", "report.resolve-claim", "report.override-confidentiality", "report.manage-agent-memory",
     "checklist.manage", "comment.create", "audit.view", "billing.manage",
     "workplan.manage", "workplan.update-own",
+    "task.assign", "team.view-work",
   ]),
   PROJECT_MANAGER: new Set<Permission>([
     "project.edit", "project.view",
@@ -54,6 +57,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "report.generate", "report.edit", "report.approve", "report.export", "report.resolve-claim", "report.manage-agent-memory",
     "checklist.manage", "comment.create", "audit.view",
     "workplan.manage", "workplan.update-own",
+    "task.assign", "team.view-work",
   ]),
   ME_OFFICER: new Set<Permission>([
     "project.view",
@@ -64,6 +68,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "report.generate", "report.edit",
     "checklist.manage", "comment.create",
     "workplan.manage", "workplan.update-own",
+    "task.assign", "team.view-work",
   ]),
   GRANTS_OFFICER: new Set<Permission>([
     "project.view",
@@ -72,6 +77,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "report.generate", "report.edit", "report.export", "report.override-confidentiality",
     "checklist.manage", "comment.create",
     "workplan.update-own",
+    "task.assign",
   ]),
   FIELD_OFFICER: new Set<Permission>([
     "project.view",
@@ -86,6 +92,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "checklist.manage",
     "comment.create", "audit.view",
     "workplan.update-own",
+    "task.assign",
   ]),
   VIEWER: new Set<Permission>([
     "project.view", "report.export",

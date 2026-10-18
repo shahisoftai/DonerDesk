@@ -3,7 +3,9 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { requireSession, type AuthContext } from "@/lib/server/auth-context";
 import { getProject } from "@/lib/server/project-queries";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
-import { LogframeResponseSchema, ProjectPeopleResponseSchema } from "@/lib/server/schemas";
+import { LogframeResponseSchema } from "@/lib/server/schemas";
+import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import type { ProjectPerson } from "@/features/tasks/domain/ask-people";
 import type { PlanFormOption } from "../presentation/PlanActivityForm";
 import type { WizardActivity } from "../presentation/StartFromLogframeWizard";
 
@@ -15,6 +17,8 @@ export interface PlanPageData {
   planningVisible: boolean;
   /** Active members ("You" for the current person). */
   leads: PlanFormOption[];
+  /** The same people with their roles, for the request dialog. */
+  people: ProjectPerson[];
   names: Record<string, string>;
   logframeActivities: WizardActivity[];
   /** Output id -> title, for grouping the Timeline. */
@@ -29,11 +33,10 @@ export async function loadPlanPageData(projectId: string): Promise<PlanPageData>
   const userId = decodeSessionPayload(ctx.token)?.sub ?? "";
   const [project, people, logframe] = await Promise.all([
     getProject(ctx.token, projectId),
-    gatewayRequest(`/v1/projects/${projectId}/people`, ProjectPeopleResponseSchema, ctx.token),
+    loadProjectPeople(ctx.token, projectId, userId),
     gatewayRequest(`/v1/projects/${projectId}/logframe`, LogframeResponseSchema, ctx.token),
   ]);
-  const active = people.ok ? people.value.items : [];
-  const names: Record<string, string> = Object.fromEntries(active.map((p) => [p.userId, p.name]));
+  const names: Record<string, string> = Object.fromEntries(people.map((p) => [p.id, p.label.replace(/ \(you\)$/, "")]));
   const items = logframe.ok ? logframe.value.items : [];
   const today = new Date().toISOString().slice(0, 10);
   const titleOf = new Map(items.map((i) => [i.id, i.title]));
@@ -44,7 +47,8 @@ export async function loadPlanPageData(projectId: string): Promise<PlanPageData>
     outputTitles: Object.fromEntries(items.filter((i) => i.level === "OUTPUT").map((i) => [i.id, i.code ? `${i.code} ${i.title}` : i.title])),
     projectRange: project.ok ? { start: project.value.startDate.slice(0, 10), end: project.value.endDate.slice(0, 10) } : { start: today, end: today },
     planningVisible: project.ok ? project.value.showWorkPlanning !== false : true,
-    leads: active.map((m) => ({ id: m.userId, label: m.userId === userId ? `${m.name} (you)` : m.name })),
+    people,
+    leads: people.map((p) => ({ id: p.id, label: p.label })),
     names,
     logframeActivities: items
       .filter((i) => i.level === "ACTIVITY")
