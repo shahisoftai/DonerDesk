@@ -94,6 +94,12 @@ import {
   ImportWorkPlanHandler,
   CopyWorkPlanHandler,
   GetMyWeekHandler,
+  ProjectHealthService,
+  VisibleProjects,
+  GetDeliveryHealthHandler,
+  GetPortfolioHealthHandler,
+  GetRiskTrendHandler,
+  RefreshProjectRiskHandler,
   CreateTaskHandler,
   CompleteTaskHandler,
   CancelTaskHandler,
@@ -317,6 +323,8 @@ import { PrismaEvidenceRepository } from "./repositories/evidence.js";
 import { PrismaIdempotencyRepository } from "./repositories/idempotency.js";
 import { PrismaRequestIdempotencyRepository } from "./repositories/request-idempotency.js";
 import { PrismaActivityUpdateRepository } from "./repositories/activities.js";
+import { PrismaCollectionFactsReader, PrismaRiskTrendStore, PrismaEntryDueDays } from "./repositories/health.js";
+import { IndicatorValueAssignmentSource } from "./assignment-sources/indicator-value-source.js";
 import { PrismaReminderLedger, PrismaNotificationPreferences, PrismaReminderAudience } from "./repositories/reminders.js";
 import { PrismaProjectTaskRepository, PrismaTaskSubjectResolver, PrismaTaskFactsReader, PrismaProjectRoster } from "./repositories/tasks.js";
 import { TaskAssignmentSource } from "./assignment-sources/task-source.js";
@@ -595,6 +603,9 @@ export interface Container {
     importWorkPlan: ImportWorkPlanHandler;
     copyWorkPlan: CopyWorkPlanHandler;
     getMyWeek: GetMyWeekHandler;
+    getDeliveryHealth: GetDeliveryHealthHandler;
+    getPortfolioHealth: GetPortfolioHealthHandler;
+    getRiskTrend: GetRiskTrendHandler;
     createTask: CreateTaskHandler;
     completeTask: CompleteTaskHandler;
     cancelTask: CancelTaskHandler;
@@ -1173,9 +1184,14 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   // Tells one person: an in-app note always, an email only when their setting allows it.
   const personNotifier = new PersonNotifier(ids, notifications, notify, notificationPreferences);
   const taskReconciler = new TaskReconciler(projectTasks, new PrismaTaskFactsReader(prisma), audits, clock);
+  const collectionFacts = new PrismaCollectionFactsReader(prisma);
+  const projectHealth = new ProjectHealthService(plannedActivities, new PrismaDeliveryFactsReader(prisma), collectionFacts);
+  const riskTrendStore = new PrismaRiskTrendStore(prisma);
+  const riskRefresh = new RefreshProjectRiskHandler(projects, projectHealth, checklist, periods, riskTrendStore, audits);
   const assignmentQueue = new AssignmentQueue([
     new PlanItemAssignmentSource(prisma), new TaskAssignmentSource(prisma), new ChecklistAssignmentSource(prisma), new ReportDeadlineAssignmentSource(prisma),
     new ActivityFixAssignmentSource(prisma), new EvidenceReviewAssignmentSource(prisma), new ActivityReviewAssignmentSource(prisma),
+    new IndicatorValueAssignmentSource(collectionFacts),
   ]);
   const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits, taskReconciler);
   const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates, logframe);
@@ -1354,7 +1370,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     bulkUpsertIndicatorUpdates,
     getProjectDataSheet,
     importDataSheet: new ImportDataSheetHandler(getProjectDataSheet, bulkUpsertIndicatorUpdates),
-    listPeriodIndicators: new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates, activities, projects),
+    listPeriodIndicators: new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates, activities, projects, new PrismaEntryDueDays(prisma), clock),
     parseIndicatorSheet: new ParseIndicatorSheetHandler(periods, indicators, sheetReader),
     verifyIndicatorUpdate: new VerifyIndicatorUpdateHandler(indicatorUpdates, audits),
     requestIndicatorUpdateCorrection: new RequestIndicatorUpdateCorrectionHandler(indicatorUpdates, audits),
@@ -1391,6 +1407,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     setIndicatorOwner: new SetIndicatorOwnerHandler(indicators, projectRoster, audits),
     setPeriodOwner: new SetPeriodOwnerHandler(periods, projectRoster, audits),
     assignChecklistItem: new AssignChecklistItemHandler(checklist, projectRoster, personNotifier, audits),
+    getDeliveryHealth: new GetDeliveryHealthHandler(projects, projectHealth, clock),
+    getPortfolioHealth: new GetPortfolioHealthHandler(new VisibleProjects(projects, projectMembers), projectHealth, clock),
+    getRiskTrend: new GetRiskTrendHandler(riskTrendStore, projects),
     getMyWeek: new GetMyWeekHandler(new PrismaMyWeekReader(prisma), new PrismaDeliveryFactsReader(prisma), clock),
     copyWorkPlan: new CopyWorkPlanHandler(projects, logframe, plannedActivities, ids, audits),
     importWorkPlan: new ImportWorkPlanHandler(ids, plannedActivities, planContext, new PrismaMemberDirectory(prisma), logframe, audits),
@@ -1506,7 +1525,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createExport: createExportHandler,
     runExport: new RunExportHandler(createExportHandler),
     getExportPreflight: new GetExportPreflightHandler(periods, drafts, sections, indicatorUpdates, checklist, evidence, approveReportHandler, activities, sectionDataCharts),
-    runReminders: new RunRemindersHandler(assignmentQueue, new PrismaReminderLedger(prisma), notificationPreferences, new PrismaReminderAudience(prisma), personNotifier, audits, clock),
+    runReminders: new RunRemindersHandler(assignmentQueue, new PrismaReminderLedger(prisma), notificationPreferences, new PrismaReminderAudience(prisma), personNotifier, audits, clock, riskRefresh),
     getNotificationPreferences: new GetNotificationPreferencesHandler(notificationPreferences),
     updateNotificationPreferences: new UpdateNotificationPreferencesHandler(notificationPreferences, audits),
     addComment: new AddCommentHandler(ids, comments, audits, notify),

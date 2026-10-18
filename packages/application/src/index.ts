@@ -292,3 +292,7 @@ export * from "./use-cases/tasks/set-owner-handlers.js";
 export * from "./ports/reminders.js";
 export * from "./services/person-notifier.js";
 export * from "./use-cases/tasks/run-reminders.js";
+export * from "./ports/health.js";
+export * from "./services/visible-projects.js";
+export * from "./services/project-health-service.js";
+export * from "./use-cases/health/health-handlers.js";

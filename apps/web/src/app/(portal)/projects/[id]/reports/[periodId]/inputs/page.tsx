@@ -1,3 +1,5 @@
+import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
@@ -139,6 +141,10 @@ export default async function ReportInputsPage({
             reportType={period?.reportType}
             canEdit={ctx.capabilities.has("indicator.update")}
             canVerify={ctx.capabilities.has("indicator.verify")}
+            today={new Date().toISOString().slice(0, 10)}
+            userId={decodeSessionPayload(ctx.token)?.sub ?? ""}
+            names={Object.fromEntries((await loadProjectPeople(ctx.token, projectId, "")).map((p) => [p.id, p.label]))}
+            canAsk={ctx.capabilities.has("task.assign")}
           />
         ) : (
           <InlineError title={indicatorsResult.error.message} referenceId={indicatorsResult.error.referenceId} />

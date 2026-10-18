@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { collectionText } from "@/features/tasks/domain/collection-view";
 import { Fragment, useMemo, useRef, useState } from "react";
 import { nextRunningTotal } from "@donordesk/domain/contexts/logframe/indicator-entry-suggestions.js";
 import type { DisaggregationEntryInput } from "@donordesk/contracts";
@@ -50,6 +52,10 @@ export function IndicatorEntryGrid({
   reportType,
   canEdit,
   canVerify,
+  today,
+  userId,
+  names = {},
+  canAsk = false,
 }: {
   projectId: string;
   periodId: string;
@@ -58,6 +64,12 @@ export function IndicatorEntryGrid({
   reportType?: string;
   canEdit: boolean;
   canVerify: boolean;
+  /** For "Due by 5 Nov · Amina" beside a row that is waiting for a value. */
+  today?: string;
+  userId?: string;
+  names?: Record<string, string>;
+  /** May this person ask someone for the value (links to the indicator, where the request is made). */
+  canAsk?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -426,6 +438,7 @@ export function IndicatorEntryGrid({
                   onChange={updateRow}
                   onToggleBreakdown={toggleBreakdown}
                   onVerify={verifyRow}
+                  context={{ today, userId: userId ?? "", names, canAsk, projectId }}
                 />
               ))}
             </tbody>
@@ -448,6 +461,7 @@ function LevelGroupRows({
   onChange,
   onToggleBreakdown,
   onVerify,
+  context,
 }: {
   level: string;
   rows: PeriodIndicatorRow[];
@@ -459,6 +473,8 @@ function LevelGroupRows({
   expanded: Set<string>;
   onChange: (indicatorId: string, patch: Partial<RowValues>) => void;
   onToggleBreakdown: (indicatorId: string) => void;
+  /** For the words beside a row that is waiting for a value. */
+  context: { today?: string | undefined; userId: string; names: Record<string, string>; canAsk: boolean; projectId: string };
   onVerify: (row: PeriodIndicatorRow) => void;
 }) {
   return (
@@ -483,6 +499,14 @@ function LevelGroupRows({
                 {row.dueThisPeriod === false && (
                   <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
                     Not due this period{row.frequency ? ` (measured ${row.frequency.toLowerCase()})` : ""}. Leave it empty; it is not reported as 0.
+                  </span>
+                )}
+                {context.today && collectionText(row.collection, context.today, context.userId, context.names) && (
+                  <span className={`mt-1 block text-xs ${row.collection?.state === "OVERDUE" ? "font-medium text-danger-600" : "text-slate-600 dark:text-slate-300"}`}>
+                    {collectionText(row.collection, context.today!, context.userId, context.names)}
+                    {context.canAsk && (row.collection?.state === "DUE" || row.collection?.state === "OVERDUE") && (
+                      <> · <Link className="underline" href={`/projects/${context.projectId}/indicators/${row.id}`}>Ask for this value</Link></>
+                    )}
                   </span>
                 )}
                 {row.participantsHint && <span role="status" className="mt-1 block text-xs text-slate-600 dark:text-slate-300">{row.participantsHint}</span>}

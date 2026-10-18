@@ -1,6 +1,7 @@
 import { DomainError, applyMode, err, isSendHour, isSummaryMode, localDate, ok, planEscalations, renderSummary, summaryLines, type Assignment, type Result, type SummaryMode } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock } from "../../ports/core.js";
+import type { IRiskRefresh } from "../../ports/health.js";
 import type { INotificationPreferences, IPersonNotifier, IReminderAudience, IReminderLedger } from "../../ports/reminders.js";
 import type { AssignmentQueue } from "../../services/assignment-queue.js";
 
@@ -22,6 +23,7 @@ export class RunRemindersHandler {
   constructor(
     private readonly queue: AssignmentQueue, private readonly ledger: IReminderLedger, private readonly prefs: INotificationPreferences,
     private readonly audience: IReminderAudience, private readonly notifier: IPersonNotifier, private readonly audit: IAuditLogger, private readonly clock: IClock,
+    private readonly risk?: IRiskRefresh,
   ) {}
 
   async handle(ctx: AuthenticatedContext, options: { force?: boolean } = {}): Promise<Result<RunRemindersResult, DomainError>> {
@@ -71,6 +73,9 @@ export class RunRemindersHandler {
       await this.notifier.send({ tenantId, recipientId: e.recipientId, type: "DEADLINE_REMINDER", title: e.title, message: e.message, urgent: true });
       escalationsSent += 1;
     }
+
+    // Once a day, in the same run: keep each project's risk snapshot current (the history behind the health label).
+    await this.risk?.refreshAll(tenantId, today);
 
     if (summariesSent + escalationsSent > 0) {
       await this.audit.record({

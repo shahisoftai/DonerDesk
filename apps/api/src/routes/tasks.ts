@@ -15,6 +15,25 @@ export async function registerTaskRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  // How a project stands: a label with its two biggest reasons (no score). One line per visible project for the portfolio.
+  app.get("/v1/projects/:projectId/delivery-health", async (req) => {
+    const r = await req.container.handlers.getDeliveryHealth.handle({ tenant: req.tenant, requestId: req.id }, param(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/portfolio/health", async (req) => {
+    const r = await req.container.handlers.getPortfolioHealth.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.get("/v1/projects/:projectId/risk-trend", async (req) => {
+    const r = await req.container.handlers.getRiskTrend.handle({ tenant: req.tenant, requestId: req.id }, param(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return { trend: r.value };
+  });
+
   app.get("/v1/projects/:projectId/team-work", async (req) => {
     const r = await req.container.handlers.listTeamWork.handle({ tenant: req.tenant, requestId: req.id }, param(req, "projectId"));
     if (!r.ok) throw r.error;

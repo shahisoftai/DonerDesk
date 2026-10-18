@@ -409,6 +409,8 @@ export const PeriodIndicatorRowSchema = z.object({
   requiresDenominator: z.boolean(),
   /** False when the indicator's frequency says no value is expected in this period (and none is recorded). */
   dueThisPeriod: z.boolean().optional(),
+  /** When the value is due and who collects it. */
+  collection: z.object({ dueBy: z.string(), state: z.enum(["RECORDED", "DUE", "OVERDUE", "NOT_DUE"]), ownerId: z.string().optional() }).optional(),
   participantsHint: z.string().optional(),
   aggregation: z.string().default("LATEST"),
   previous: z
@@ -1363,3 +1365,16 @@ export const TeamWorkResponseSchema = z.object({
 });
 
 export const NotificationPreferencesSchema = z.object({ emailSummaryMode: z.enum(["DAILY_SUMMARY", "URGENT_ONLY", "NEVER"]) });
+
+// ---- Delivery health (Phase 28.4): a label with reasons, never a score ----
+export const DeliveryHealthSchema = z.object({
+  projectId: z.string(),
+  band: z.enum(["ON_TRACK", "AT_RISK", "OFF_TRACK", "NO_PLAN"]),
+  label: z.string(),
+  reasons: z.array(z.string()),
+  health: z.object({ planned: z.number(), done: z.number(), doneLate: z.number(), overdue: z.number(), lateStart: z.number(), dueSoon: z.number(), valuesOverdue: z.number(), valuesDue: z.number(), valuesRecorded: z.number() }),
+});
+export type DeliveryHealthResponse = z.infer<typeof DeliveryHealthSchema>;
+export const PortfolioHealthSchema = z.object({
+  items: z.array(z.object({ projectId: z.string(), title: z.string(), band: z.enum(["ON_TRACK", "AT_RISK", "OFF_TRACK", "NO_PLAN"]), label: z.string(), reasons: z.array(z.string()) })),
+});

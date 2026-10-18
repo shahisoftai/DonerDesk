@@ -1,11 +1,13 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
+import { DEFAULT_ENTRY_DUE_DAYS, DomainError, collectionDue, collectionOwner, toPlainDate, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import { toIndicatorUpdateView, type IndicatorUpdateView } from "./indicator-update-view.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
+import type { IEntryDueDays } from "../../ports/health.js";
+import type { IClock } from "../../ports/core.js";
 import { periodIndicatorScope, inIndicatorScope } from "../../services/period-activities.js";
 
 export interface PeriodIndicatorRow {
@@ -40,6 +42,8 @@ export interface PeriodIndicatorRow {
   previous?: PreviousIndicatorValue;
   /** A non-blocking prompt when linked activities record a different head-count than the indicator reports. */
   participantsHint?: string;
+  /** When the value is due and who collects it ("Due by 5 Nov · Amina"); the same rule as the assignment list and the health label. */
+  collection?: { dueBy: string; state: import("@donordesk/domain").CollectionState; ownerId?: string };
 }
 
 /** Activity/situation reports: the activities the report covers (absent for other types). */
@@ -57,6 +61,9 @@ export class ListPeriodIndicatorsHandler {
     private readonly activities?: IActivityUpdateRepository,
     /** Gives the project's start, which a frequency counts from; without it every indicator is due every period. */
     private readonly projects?: IProjectRepository,
+    /** Without these two, rows carry no due date (as before). */
+    private readonly entryDueDays?: IEntryDueDays,
+    private readonly clock?: IClock,
   ) {}
 
   async handle(
@@ -96,6 +103,9 @@ export class ListPeriodIndicatorsHandler {
     const project = this.projects ? await this.projects.findById(period.projectId, ctx.tenant.tenantId) : undefined;
     if (project && !project.ok) return project;
     const projectStart = project?.value?.duration.start;
+    const dueDays = this.entryDueDays ? await this.entryDueDays.forProject(period.projectId, ctx.tenant.tenantId) : DEFAULT_ENTRY_DUE_DAYS;
+    const today = this.clock ? toPlainDate(this.clock.now()) : undefined;
+    const periodForDue = { id: period.id, start: toPlainDate(period.duration.start)!, end: toPlainDate(period.duration.end)!, isFinal: period.reportType === "FINAL" };
 
     const itemsById = new Map(itemsResult.value.map((item) => [item.id, item]));
     const updatesByIndicator = new Map(updatesResult.value.map((u) => [u.indicatorId, u]));
@@ -148,6 +158,13 @@ export class ListPeriodIndicatorsHandler {
         aggregation: effectiveIndicatorSemantics({ type: ind.type, name: ind.name, unit: ind.unit, semantics: ind.semantics }).aggregation,
         ...(previousByIndicator.has(ind.id) ? { previous: previousByIndicator.get(ind.id)! } : {}),
         ...(hint ? { participantsHint: hint.message } : {}),
+        ...(projectStart && today
+          ? (() => {
+              const due = collectionDue({ indicator: { id: ind.id, code: ind.code, name: ind.name, frequency: ind.frequency, responsibleUserId: ind.responsibleUserId }, period: periodForDue, projectStart: toPlainDate(projectStart)!, hasValue: Boolean(update && update.periodAchievement.trim() !== ""), today, dueDays });
+              const owner = collectionOwner(ind, { meOfficerId: project?.value?.meOfficerId, projectManagerId: project?.value?.projectManagerId });
+              return { collection: { dueBy: due.dueBy, state: due.state, ...(owner ? { ownerId: owner } : {}) } };
+            })()
+          : {}),
       };
     });
 

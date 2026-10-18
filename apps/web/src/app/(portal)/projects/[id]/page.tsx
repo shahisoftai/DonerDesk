@@ -10,7 +10,7 @@ import { projectStatusTone, severityTone } from "@/lib/shared/tone";
 import { readinessHeadline } from "@/features/projects/application/readiness-view";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { DataSheetResponseSchema, LogframeResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { DeliveryHealthSchema, type DeliveryHealthResponse, DataSheetResponseSchema, LogframeResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { planCounts, outputProgress } from "@/features/workplan/domain/delivery-overview";
 import { PlanOverviewCards } from "@/features/workplan/presentation/PlanOverviewCards";
 import { DeleteDemoProjectButton } from "@/features/tour/presentation/DeleteDemoProjectButton";
@@ -42,14 +42,16 @@ export default async function ProjectDetail({
   // The plan cards appear only when a plan exists and work planning is shown; otherwise this page is exactly as before.
   const planResult = project.showWorkPlanning === false ? null : await gatewayRequest(`/v1/projects/${project.id}/work-plan`, WorkPlanResponseSchema, ctx.token);
   const planRows = planResult?.ok ? planResult.value.items : [];
-  let planCards: { counts: ReturnType<typeof planCounts>; outputs: ReturnType<typeof outputProgress> } | null = null;
+  let planCards: { health: DeliveryHealthResponse | undefined; counts: ReturnType<typeof planCounts>; outputs: ReturnType<typeof outputProgress> } | null = null;
   if (planRows.length > 0) {
-    const [logframe, sheet] = await Promise.all([
+    const [logframe, sheet, healthResult] = await Promise.all([
       gatewayRequest(`/v1/projects/${project.id}/logframe`, LogframeResponseSchema, ctx.token),
       gatewayRequest(`/v1/projects/${project.id}/data-sheet`, DataSheetResponseSchema, ctx.token),
+      gatewayRequest(`/v1/projects/${project.id}/delivery-health`, DeliveryHealthSchema, ctx.token),
     ]);
     const items = logframe.ok ? logframe.value.items : [];
     planCards = {
+      health: healthResult.ok ? healthResult.value : undefined,
       counts: planCounts(planRows),
       outputs: outputProgress({
         rows: planRows,
@@ -106,7 +108,7 @@ export default async function ProjectDetail({
         <Stat label="Activities" value={String(activityCount)} />
       </section>
 
-      {planCards && <PlanOverviewCards projectId={project.id} counts={planCards.counts} outputs={planCards.outputs} />}
+      {planCards && <PlanOverviewCards projectId={project.id} counts={planCards.counts} outputs={planCards.outputs} health={planCards.health} />}
 
       {readiness && (
         <section className="mt-8 grid gap-6 lg:grid-cols-2">

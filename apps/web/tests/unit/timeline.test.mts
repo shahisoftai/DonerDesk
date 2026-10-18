@@ -189,3 +189,15 @@ test("outputs: activities done of planned, beside the indicator's latest % of ta
   assert.equal(out.some((o) => o.title === "Empty output"), false, "an output with nothing planned is not listed");
   assert.equal(outputProgress({ rows: [orow("a", "PLANNED", "ON_TIME", "UPCOMING", "o1")], outputs: [{ id: "o1", title: "O" }], indicators: [], parentOf: new Map(), otherTitle: "x" })[0]!.indicators.length, 0, "no sheet, no percentages");
 });
+
+import { collectionText } from "../../src/features/tasks/domain/collection-view.ts";
+test("beside an indicator row: due or overdue with the person, nothing once recorded or not yet due", () => {
+  const names = { u2: "Amina" };
+  assert.equal(collectionText({ dueBy: "2026-11-05", state: "DUE", ownerId: "u2" }, "2026-11-01", "me", names), "Due by 5 Nov · Amina");
+  assert.equal(collectionText({ dueBy: "2026-11-05", state: "OVERDUE", ownerId: "me" }, "2026-11-10", "me", names), "Overdue since 5 Nov · you");
+  assert.equal(collectionText({ dueBy: "2026-11-05", state: "DUE", ownerId: "u9" }, "2026-11-01", "me", names), "Due by 5 Nov · a team member");
+  assert.equal(collectionText({ dueBy: "2026-11-05", state: "DUE" }, "2026-11-01", "me", names), "Due by 5 Nov");
+  assert.equal(collectionText({ dueBy: "2026-11-05", state: "RECORDED", ownerId: "u2" }, "2026-11-10", "me", names), "");
+  assert.equal(collectionText({ dueBy: "2026-11-05", state: "NOT_DUE", ownerId: "u2" }, "2026-11-01", "me", names), "");
+  assert.equal(collectionText(undefined, "2026-11-01", "me", names), "");
+});

@@ -1,16 +1,24 @@
 import Link from "next/link";
 import { countOf } from "@donordesk/domain/core/plural.js";
+import { Badge } from "@/components/data/Badge";
+import type { DeliveryHealthResponse } from "@/lib/server/schemas";
 import type { OutputProgress, PlanCounts } from "../domain/delivery-overview";
+
+const BAND_TONE = { ON_TRACK: "success", AT_RISK: "warning", OFF_TRACK: "danger", NO_PLAN: "neutral" } as const;
 
 /**
  * Two cards on the project Overview, shown only when a plan exists: how the plan stands (plain counts) and, per output, the
  * activities done of planned beside the output's indicators. Server-rendered; no new tab, nowhere new to go.
  */
-export function PlanOverviewCards({ projectId, counts, outputs }: { projectId: string; counts: PlanCounts; outputs: OutputProgress[] }) {
+export function PlanOverviewCards({ projectId, counts, outputs, health }: { projectId: string; counts: PlanCounts; outputs: OutputProgress[]; health?: DeliveryHealthResponse | undefined }) {
   return (
     <section className="mt-6 grid gap-4 lg:grid-cols-2" aria-label="Planned activities">
       <div className="card">
-        <h2 className="font-medium">Delivery</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-medium">Delivery</h2>
+          {health && health.band !== "NO_PLAN" && <Badge tone={BAND_TONE[health.band]}>{health.label}</Badge>}
+        </div>
+        {health && health.reasons.length > 0 && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{health.reasons.join(" · ")}</p>}
         <p className="mt-1 text-2xl font-semibold tracking-tight">
           {counts.done} <span className="text-base font-normal text-slate-500">of {countOf(counts.planned, "planned activity", "planned activities")} done</span>
         </p>

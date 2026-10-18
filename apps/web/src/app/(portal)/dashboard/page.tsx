@@ -10,13 +10,15 @@ import { Badge } from "@/components/data/Badge";
 import { projectStatusTone } from "@/lib/shared/tone";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { AiSectionRunsResponseSchema } from "@/lib/server/schemas";
-import { MyWeekSchema } from "@/lib/server/schemas";
+import { MyWeekSchema, PortfolioHealthSchema } from "@/lib/server/schemas";
 import { surfaceFor } from "@/features/workplan/domain/role-surfaces";
 import { shouldShowMyWeek } from "@/features/workplan/domain/my-week";
 import { MyWeekPanel } from "@/features/workplan/presentation/MyWeekPanel";
 import { StartTourCard } from "@/features/tour/presentation/StartTourCard";
 
 export const dynamic = "force-dynamic";
+
+const HEALTH_TONE = { ON_TRACK: "success", AT_RISK: "warning", OFF_TRACK: "danger", NO_PLAN: "neutral" } as const;
 
 const BAND_LABEL: Record<DeadlineBand, string> = {
   overdue: "Overdue",
@@ -28,11 +30,15 @@ const BAND_LABEL: Record<DeadlineBand, string> = {
 export default async function Dashboard() {
   const ctx = await requireSession();
   const landing = surfaceFor(ctx.role).home;
-  const [snapshot, work, myWeek] = await Promise.all([
+  const canSeeHealth = ctx.capabilities.has("team.view-work");
+  const [snapshot, work, myWeek, portfolio] = await Promise.all([
     loadDashboard(ctx.token),
     loadWorkItems(ctx.token),
     landing === "MY_WEEK" ? gatewayRequest("/v1/me/week", MyWeekSchema, ctx.token) : Promise.resolve(null),
+    // Managers see how each project stands: one line, a label and the top reason (no score).
+    canSeeHealth ? gatewayRequest("/v1/portfolio/health", PortfolioHealthSchema, ctx.token) : Promise.resolve(null),
   ]);
+  const healthOf = new Map((portfolio?.ok ? portfolio.value.items : []).map((h) => [h.projectId, h]));
 
   // Administrators are told when the AI writer is failing often; everyone else never sees this call.
   const aiRuns = ctx.capabilities.has("org.manage") ? await gatewayRequest("/v1/ai/section-runs", AiSectionRunsResponseSchema, ctx.token) : null;
@@ -237,6 +243,12 @@ export default async function Dashboard() {
                       </div>
                       <Badge tone={projectStatusTone(p.status)} className="shrink-0">{p.status.replace(/_/g, " ")}</Badge>
                     </div>
+                    {healthOf.get(p.id) && healthOf.get(p.id)!.band !== "NO_PLAN" && (
+                      <div className="mt-2 text-xs">
+                        <Badge tone={HEALTH_TONE[healthOf.get(p.id)!.band]}>{healthOf.get(p.id)!.label}</Badge>
+                        {healthOf.get(p.id)!.reasons[0] && <span className="ml-2 text-slate-600 dark:text-slate-300">{healthOf.get(p.id)!.reasons[0]}</span>}
+                      </div>
+                    )}
                     <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400">
                       <span>{p.daysRemaining}d project time</span>
                       <span className="text-right tabular-nums">{deadline?.readinessScore === null || deadline?.readinessScore === undefined ? "readiness n/a" : `${deadline.readinessScore}% ready`}</span>

@@ -11,6 +11,8 @@ import { PlanItemAssignmentSource } from "../dist/assignment-sources/plan-item-s
 import { ChecklistAssignmentSource } from "../dist/assignment-sources/checklist-source.js";
 import { ReportDeadlineAssignmentSource } from "../dist/assignment-sources/report-deadline-source.js";
 import { EvidenceReviewAssignmentSource, ActivityReviewAssignmentSource, ActivityFixAssignmentSource } from "../dist/assignment-sources/review-sources.js";
+import { IndicatorValueAssignmentSource } from "../dist/assignment-sources/indicator-value-source.js";
+import { PrismaCollectionFactsReader, PrismaRiskTrendStore } from "../dist/repositories/health.js";
 import { assignmentSourceContract } from "../../application/test/support/assignment-source-contract.mjs";
 
 const url = process.env.WORKPLAN_VERIFY_DATABASE_URL;
@@ -129,7 +131,20 @@ const seedWorld = async (tx) => {
   return q;
 };
 
+const seedIndicators = async (tx, tenant = "tenant-tk", project = "p1", owner = "u2") => {
+  // "Today" in these tests is 10 March: January and February have ended, March is still running, December is closed.
+  const period = (id, start, end, extra = {}) => tx.reportingPeriod.create({ data: { id: `${tenant}-${id}`, tenantId: tenant, projectId: project, reportType: "MONTHLY", startDate: new Date(start), endDate: new Date(end), deadline: new Date(end), ...extra } });
+  await period("jan", "2026-01-01", "2026-01-31"); await period("feb", "2026-02-01", "2026-02-28"); await period("mar", "2026-03-01", "2026-03-31"); await period("dec", "2025-12-01", "2025-12-31", { status: "CLOSED" });
+  const ind = (id, extra = {}) => tx.indicator.create({ data: { id: `${tenant}-${id}`, tenantId: tenant, projectId: project, logframeItemId: "l", code: id.toUpperCase(), name: `Indicator ${id}`, type: "NUMBER", baseline: "0", target: "10", frequency: "monthly", ...extra } });
+  await ind("i1", { responsibleUserId: owner });      // January recorded, February missing: overdue
+  await ind("i2", { responsibleUserId: owner });      // recorded for January and February
+  await ind("i3", { responsibleUserId: owner, archivedAt: new Date() });
+  const value = (indicator, period) => tx.indicatorUpdate.create({ data: { id: `${tenant}-iu-${indicator}-${period}`, tenantId: tenant, indicatorId: `${tenant}-${indicator}`, reportingPeriodId: `${tenant}-${period}`, periodAchievement: "5", cumulativeAchievement: "5", createdById: "x" } });
+  await value("i1", "jan"); await value("i2", "jan"); await value("i2", "feb");
+};
+
 const sources = {
+  INDICATOR_VALUE: [(tx) => new IndicatorValueAssignmentSource(new PrismaCollectionFactsReader(tx)), (tx) => seedIndicators(tx)],
   TASK: [(tx) => new TaskAssignmentSource(tx), async (tx) => {
     const repo = new PrismaProjectTaskRepository(tx);
     await repo.create(mkTask({ id: "t-late", dueDate: "2026-03-01" })); await repo.create(mkTask({ id: "t-soon", dueDate: "2026-03-20", urgent: true, kind: "RECORD_ACTIVITY", subjectType: "plannedActivity", subjectId: "pa1" }));
@@ -194,4 +209,66 @@ test("what each source returns for the seeded world", { skip }, async () => {
   assert.deepEqual(keys.ACTIVITY_FIX, ["a-back=OPEN", "a-draft=OPEN"]);
   assert.deepEqual(keys.EVIDENCE_REVIEW, ["e-new=OPEN", "e-tagged=OPEN"], "project manager may verify files");
   assert.deepEqual(keys.ACTIVITY_REVIEW, ["r-wait=OPEN"]);
+  assert.deepEqual(keys.INDICATOR_VALUE, ["tenant-tk-i1:tenant-tk-feb=LATE"], "one value overdue; recorded, archived and still-running ones are not work; a closed period takes no values");
+});
+
+test("the collection reader: active projects, live indicators, open periods, recorded values, the profile's due days", { skip }, withDb(async (tx) => {
+  await seedWorld(tx);
+  await seedIndicators(tx);
+  await tx.reportingProfile.create({ data: { id: "rpf", tenantId: "tenant-tk", projectId: "p1", createdById: "u", updatedById: "u", indicatorEntryDueDays: 9 } });
+  const facts = (await new PrismaCollectionFactsReader(tx).forProjects(T)).value;
+  assert.equal(facts.length, 1);
+  const f = facts[0];
+  assert.deepEqual([f.projectId, f.projectTitle, f.projectStart, f.dueDays], ["p1", "Clinics", "2026-01-01", 9]);
+  assert.deepEqual(f.indicators.map((i) => i.code).sort(), ["I1", "I2"], "the archived indicator is left out");
+  assert.deepEqual(f.periods.map((p) => p.id).sort(), ["tenant-tk-feb", "tenant-tk-jan", "tenant-tk-mar"], "a closed period is left out");
+  assert.deepEqual([...f.recorded].sort(), ["tenant-tk-i1|tenant-tk-jan", "tenant-tk-i2|tenant-tk-feb", "tenant-tk-i2|tenant-tk-jan"]);
+  assert.deepEqual((await new PrismaCollectionFactsReader(tx).forProjects(T, ["nope"])).value, []);
+  assert.equal((await new PrismaCollectionFactsReader(tx).forProjects(TenantId.create("other-tenant"))).value.length, 0);
+}));
+
+test("risk snapshots: one per project per day (saving again replaces it), newest first, tenant scoped", { skip }, withDb(async (tx) => {
+  const store = new PrismaRiskTrendStore(tx);
+  const { ProjectRiskTrend } = await import("@donordesk/domain");
+  const snap = (day, late) => { const t = ProjectRiskTrend.create({ id: `p1:${day}`, tenantId: "tenant-tk", projectId: "p1", periodStart: new Date(`${day}T00:00:00Z`), periodEnd: new Date(`${day}T23:59:59Z`) }); t.updateMetrics({ overdueChecklistItemsCount: late, contributingFactors: [{ type: "plan_slip", weight: late, description: `${late} late`, affectedIndicatorIds: [], severity: "LOW" }] }); return t; };
+  await store.save(snap("2026-04-09", 1)); await store.save(snap("2026-04-10", 2));
+  await store.save(snap("2026-04-10", 6));
+  const rows = (await store.history("p1", T, 10)).value;
+  assert.deepEqual(rows.map((r) => r.id), ["p1:2026-04-10", "p1:2026-04-09"]);
+  assert.equal(rows[0].overdueChecklistItemsCount, 6, "the same day was replaced, not added");
+  assert.deepEqual(rows[0].contributingFactors.map((f) => [f.type, f.weight]), [["plan_slip", 6]]);
+  assert.equal(await tx.projectRiskTrend.count(), 2);
+  assert.deepEqual((await store.history("p1", TenantId.create("other-tenant"), 10)).value, []);
+  assert.equal((await store.history("p1", T, 1)).value.length, 1);
+}));
+
+test("no source leaks another organisation's work: the same data in two tenants stays apart", { skip }, async () => {
+  const prisma = new PrismaClient({ datasources: { db: { url } } });
+  try {
+    await inRollback(prisma, async (tx) => {
+      for (const [tenant, project] of [["tenant-tk", "p1"], ["tenant-evil", "pe"]]) {
+        // "u2" is the same person-id in both organisations on purpose: only the tenant filter can keep their work apart.
+        if (tenant === "tenant-tk") await tx.user.create({ data: { id: "u2", tenantId: tenant, email: "u2@tk.org", name: "U2", passwordHash: "x", role: "PROJECT_MANAGER" } });
+        await tx.project.create({ data: { id: project, tenantId: tenant, title: tenant, projectCode: project, donorName: "d", implementingOrganization: "o", country: "KE", sector: "HEALTH", startDate: new Date("2026-01-01"), endDate: new Date("2026-12-31"), reportingFrequency: "QUARTERLY", reportingOfficerId: "u2", meOfficerId: "u2", projectManagerId: "u2" } });
+        await tx.projectMember.create({ data: { id: `m-${tenant}`, tenantId: tenant, projectId: project, userId: "u2", role: "PROJECT_MANAGER", assignedById: "x", assignedAt: new Date() } });
+        await seedIndicators(tx, tenant, project, "u2");
+        await tx.reportingPeriod.create({ data: { id: `rp-${tenant}`, tenantId: tenant, projectId: project, reportType: "QUARTERLY", startDate: new Date("2026-01-01"), endDate: new Date("2026-03-31"), deadline: new Date("2026-03-15") } });
+        await tx.checklistItem.create({ data: { id: `c-${tenant}`, tenantId: tenant, projectId: project, reportingPeriodId: `rp-${tenant}`, type: "ATTESTATION", title: "c", severity: "HIGH", assignedToId: "u2", dueDate: new Date("2026-03-01") } });
+        await tx.activityUpdate.create({ data: { id: `a-${tenant}`, tenantId: tenant, projectId: project, reportingPeriodId: "rp", activityTitle: "a", activityDate: new Date("2026-03-02"), summary: "s", status: "SUBMITTED", submittedById: "u2" } });
+        await tx.evidenceFile.create({ data: { id: `e-${tenant}`, tenantId: tenant, projectId: project, title: "e", fileName: "e", fileType: "x", fileSize: 1, fileUrl: "u", evidenceType: "PHOTO", uploadedById: "u3", verificationStatus: "UPLOADED" } });
+        await new PrismaProjectTaskRepository(tx).create(ProjectTask.create({ id: `t-${tenant}`, tenantId: tenant, kind: "OTHER", projectId: project, title: "t", assigneeId: "u2", assignedById: "u1", dueDate: "2026-03-14" }).value);
+        await new PrismaPlannedActivityRepository(tx).create(PlannedActivity.create({ id: `pa-${tenant}`, tenantId: tenant, projectId: project, title: "pa", plannedStart: "2026-03-01", plannedEnd: "2026-03-05", createdById: "u", people: { ownerUserId: "u2", supportUserIds: [] } }).value);
+      }
+      const all = [new TaskAssignmentSource(tx), new PlanItemAssignmentSource(tx), new ChecklistAssignmentSource(tx), new ReportDeadlineAssignmentSource(tx), new ActivityFixAssignmentSource(tx), new EvidenceReviewAssignmentSource(tx), new ActivityReviewAssignmentSource(tx), new IndicatorValueAssignmentSource(new PrismaCollectionFactsReader(tx))];
+      let seen = 0;
+      for (const source of all) {
+        for (const q of [{ tenantId: T, today: TODAY, assigneeId: "u2" }, { tenantId: T, today: TODAY }]) {
+          const out = (await source.list(q)).value;
+          seen += out.length;
+          for (const a of out) assert.notEqual(a.projectId, "pe", `${source.kind} returned another organisation's project`);
+        }
+      }
+      assert.ok(seen > 0, "the sources did return this organisation's own work");
+    });
+  } finally { await prisma.$disconnect(); }
 });
