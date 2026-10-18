@@ -12,7 +12,8 @@ Start here. Documents in reading order:
 
 Related:
 
-- Presentation: `memorybank/docs/presentations/DonorDesk-Overview-v2.003-Management-First.pptx`, built by `scripts/build-donordesk-management-deck.py`.
+- Presentation: `memorybank/docs/presentations/DonorDesk-Overview-v2.004.pptx`, built by `scripts/build-donordesk-management-deck.py` (`--out` the same path).
+- Homepage concept and palette: `04-website-redesign-brief.md`, sections 3 and 3a. Source: `apps/web/src/components/landing/home/`.
 - Support Center source: `memorybank/docs/support/` (rendered at `/support`).
 - Plan figures: `packages/domain/src/contexts/billing/plan.ts` (the single source of commercial truth).
 

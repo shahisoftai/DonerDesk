@@ -4,6 +4,25 @@
 system whose main output is donor reporting. This overhaul moves the positioning, the site, the support
 library and the deck to match the product, using only claims verified against the code.
 
+## Update 2026-10-18: homepage concept, palette and deck v2.004
+
+| Area | What changed |
+|---|---|
+| Homepage (`apps/web/src/app/page.tsx`, `components/landing/home/`) | Three rotating hero statements (3 s), programme-cycle tabs, loop, reporting as the outcome, portfolio, the seven real roles, verified plan list. Commit `f8b6785`, release `20261018051329`. |
+| Palette | Homepage palette added as named tokens in `apps/web/tailwind.config.ts` (`spruce`, `paper`, `mist`, `fog`, `saffron`, `seafoam`, `skyline`, `coral`). Support Center pages, `WikiLayout`, `MarketingNav` and `MarketingFooter` now use it; the blue `brand` and slate classes were remapped on those files only. |
+| Positioning (`03`) | Hero statements, taglines, pillars and retired lines rewritten to the approved set. |
+| Website brief (`04`) | Home section table rewritten to the approved structure; new section 3a (palette). |
+| Marketing plan (`01`), README | Hero line, pillars, deck version and explainer name updated. |
+| Deck | `DonorDesk-Overview-v2.004.pptx` replaces v2.003: homepage palette, new headlines, roles corrected (Approver card replaced by Admin, matching the seven roles). Built by `scripts/build-donordesk-management-deck.py`. The v2.003 file is removed; it stays in git history. |
+
+**Noticed, not changed:** `memorybank/docs/presentations/DonorDesk-for-NGOs-v2.002.pptx` was missing from the working tree when this update was made (it is still in git history at `cab5a76`). It was not restored.
+
+**Open:**
+
+- `/pricing`, `/features`, `/security` and the legal pages still use the older blue `brand` scale. They are outside this update.
+- Hero layout was not checked in a desktop browser on this machine (no headless browser installed).
+- Deck rendered and checked through LibreOffice thumbnails only.
+
 ## Added
 
 | File | What it is |
@@ -14,8 +33,8 @@ library and the deck to match the product, using only claims verified against th
 | `memorybank/docs/marketing/03-positioning-and-messaging.md` | Category, taglines, pillars, objections, language, claims policy |
 | `memorybank/docs/marketing/04-website-redesign-brief.md` | Site architecture and section copy |
 | `memorybank/docs/marketing/05-overhaul-changelog.md` | This file |
-| `memorybank/docs/presentations/DonorDesk-Overview-v2.003-Management-First.pptx` | New 14-slide deck (management first, with limits and plans) |
-| `scripts/build-donordesk-management-deck.py` | Generator for the v2.003 deck |
+| `memorybank/docs/presentations/DonorDesk-Overview-v2.003-Management-First.pptx` | Superseded by v2.004 on 2026-10-18 (removed; see git history) |
+| `scripts/build-donordesk-management-deck.py` | Generator for the management deck (now v2.004) |
 | `apps/web/src/components/landing/platform-content.ts` | Shared module copy for the home page and `/features` |
 | `apps/web/src/components/landing/MarketingNav.tsx` | Shared header for marketing pages |
 | `apps/web/src/components/landing/MarketingFooter.tsx` | Shared footer (adds a Platform column and the legal pages) |

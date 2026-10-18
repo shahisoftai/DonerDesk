@@ -1,16 +1,16 @@
 # Positioning and Messaging
 
-**Status:** Approved direction, October 2026. Copy below is the source for the website, deck and sales
-one-pagers. Every factual line must trace to `02-feature-inventory.md`.
+**Status:** Approved direction, October 2026, updated 2026-10-18 for the approved homepage concept. Copy below is the
+source for the website, deck and sales one-pagers. Every factual line must trace to `02-feature-inventory.md`.
 
 ---
 
 ## 1. Positioning in one paragraph
 
-DonorDesk is where a grant-funded programme is **run**: its logframe, indicators, activities, evidence and
-compliance live in one place, with the people who do the work. Donor reports come out of that record, checked
-against it and approved by a person before they go anywhere. Teams stop rebuilding the same numbers from
-spreadsheets, emails and folders every quarter.
+DonorDesk is the record a grant-funded programme runs on, from the first target to the donor's question. The logframe,
+indicators, activities, evidence and compliance live in one place, with the people who do the work. Reports are what
+that record produces: drafted from it, checked against it and approved by a person before anything goes to a donor.
+Teams stop rebuilding the same numbers from spreadsheets, emails and folders every quarter.
 
 ## 2. The category we own
 
@@ -18,26 +18,39 @@ Not "AI report writer." Not "grant database." The category is:
 
 > **Programme management that produces donor-ready reports.**
 
-Reporting is the moment a buyer feels the pain, and the reason they sign up. Management is the reason they stay.
+The buyer feels the pain at reporting time. The reason they stay is that the programme is managed in the same record.
 
-## 3. Taglines (choose per channel)
+## 3. Hero statements and taglines
+
+The homepage hero rotates three statements, each with its own sub-head. Use them as the set; do not mix them with
+retired lines.
+
+| Slide | Statement | Sub-head (short form) |
+|---|---|---|
+| 1 | **Your whole programme, in one place.** | Plan the logframe, record activities as they happen, track every indicator and keep the evidence beside the work. Donor reports are drawn from that same record. |
+| 2 | **Know where your programme stands before the donor asks.** | See every indicator, activity and gap while there is still time to act. The report then draws on the same numbers you have been watching. |
+| 3 | **Stop rebuilding the programme every quarter.** | Enter each value once. The next period starts from the record you already kept, and the donor report is drafted from it with every claim traced to its source. |
 
 | Use | Tagline |
 |---|---|
-| Primary (site hero, deck title) | **Run your programme. Report from the record.** |
-| Secondary | Your programme, always report-ready. |
-| Team and operations audience | One record for the work, the evidence and the donor report. |
+| Deck title, sales one-pagers | **Your whole programme, in one place.** |
+| Monitoring and leadership audience | Know where your programme stands before the donor asks. |
+| Operations and reporting audience | Stop rebuilding the programme every quarter. |
 | Short (ads, social) | Manage the grant. Report on it. |
-| Avoid | "AI writes your reports" (overclaims; humans approve every output), "never miss a deadline" (a promise we cannot keep), "the #1 platform" (no evidence). |
+| Retired | "Run your programme. Report from the record." (replaced by the set above); "Six spreadsheets. One programme." (a count we cannot support); "A programme is the work, the results and the proof." (too abstract) |
+| Avoid | "AI writes your reports" (overclaims; humans approve every output), "never miss a deadline" (a promise we cannot keep), "the #1 platform" (no evidence), "track impact" and "impact" as a headline word (the product tracks indicator results, not impact). |
 
-## 4. Four pillars
+## 4. Pillars
 
-Every page and slide sits under one of these. Order matters: the first two come before reporting.
+Every page and slide sits under one of these. The order matters: planning and monitoring come before reporting.
 
-1. **Run the programme.** Logframe, indicators, activities, team and a personal work queue. The work is tracked as it happens.
-2. **Keep the evidence.** Files stay in the organisation's own Drive or in managed storage, with checksums, verification and an audit log.
-3. **Stay compliant.** The donor's requirements become a live checklist. Gaps are visible weeks before a deadline, not on the day.
-4. **Report from the record.** Donor templates are structured into sections. Drafts cite their sources. Numbers come from verified data. A person approves.
+1. **Plan what matters.** Logframe, indicators, baselines and targets, set once. Each person gets the activities, indicators and evidence their role needs.
+2. **See it while it can change.** Every indicator value in one sheet across all periods, against its own target. Gaps show while there is still time to act.
+3. **Prove it when it counts.** Files stay linked to the activity or indicator they prove. Every change is in a hash-chained audit log.
+4. **Reporting is the outcome.** Donor templates are structured into sections. Drafts cite their sources. Numbers come from verified data. A person approves before export.
+
+Stage labels used on the site and in the deck: Plan (set the target once), Deliver (record it the same day), Monitor
+(see the gaps early), Demonstrate (prove it before it's asked).
 
 ## 5. Core message blocks
 

@@ -14,8 +14,8 @@ const CATEGORIES = [
     title: "Getting Started",
     description: "Onboarding, account setup, and dashboard tour.",
     href: "/support/getting-started",
-    color: "from-brand-500/25 to-cyan-500/15",
-    borderColor: "hover:border-brand-400/50",
+    color: "from-saffron/25 to-skyline/15",
+    borderColor: "hover:border-saffron/50",
   },
   {
     icon: (
@@ -26,8 +26,8 @@ const CATEGORIES = [
     title: "How-To Guides",
     description: "Step-by-step tutorials for every DonorDesk feature.",
     href: "/support/how-to",
-    color: "from-cyan-500/25 to-blue-500/15",
-    borderColor: "hover:border-cyan-400/50",
+    color: "from-skyline/25 to-skyline/15",
+    borderColor: "hover:border-skyline/50",
   },
   {
     icon: (
@@ -38,8 +38,8 @@ const CATEGORIES = [
     title: "Donor Reporting Skills",
     description: "Report writing guides, donor requirements, and templates.",
     href: "/support/report-writing-skills",
-    color: "from-amber-500/25 to-orange-500/15",
-    borderColor: "hover:border-amber-400/50",
+    color: "from-saffron/25 to-coral/15",
+    borderColor: "hover:border-saffron/50",
   },
   {
     icon: (
@@ -50,8 +50,8 @@ const CATEGORIES = [
     title: "Troubleshooting",
     description: "Fix login, payment, and data issues fast.",
     href: "/support/troubleshooting",
-    color: "from-rose-500/25 to-pink-500/15",
-    borderColor: "hover:border-rose-400/50",
+    color: "from-coral/25 to-coral/15",
+    borderColor: "hover:border-coral/50",
   },
   {
     icon: (
@@ -63,8 +63,8 @@ const CATEGORIES = [
     title: "Advanced Features",
     description: "AI settings, imports, templates, roles, and compliance automation.",
     href: "/support/advanced-features",
-    color: "from-violet-500/25 to-purple-500/15",
-    borderColor: "hover:border-violet-400/50",
+    color: "from-skyline/25 to-skyline/15",
+    borderColor: "hover:border-skyline/50",
   },
   {
     icon: (
@@ -75,8 +75,8 @@ const CATEGORIES = [
     title: "Account & Billing",
     description: "Plans, limits, invoices, and nonprofit discounts.",
     href: "/support/account-billing",
-    color: "from-emerald-500/25 to-teal-500/15",
-    borderColor: "hover:border-emerald-400/50",
+    color: "from-seafoam/25 to-seafoam/15",
+    borderColor: "hover:border-seafoam/50",
   },
   {
     icon: (
@@ -87,8 +87,8 @@ const CATEGORIES = [
     title: "Security & Privacy",
     description: "Data protection, GDPR compliance, and best practices.",
     href: "/support/security-privacy",
-    color: "from-amber-500/25 to-orange-500/15",
-    borderColor: "hover:border-amber-400/50",
+    color: "from-saffron/25 to-coral/15",
+    borderColor: "hover:border-saffron/50",
   },
 ];
 
@@ -123,7 +123,7 @@ const REPORT_SKILL_SUBCATS = [
     label: "Foundation",
     items: ["Report Writing Fundamentals", "Indicators & Evidence", "Writing Clearly for Donors"],
     href: "/support/report-writing-skills/report-writing-fundamentals",
-    accent: "bg-amber-500/15 border-amber-400/30",
+    accent: "bg-saffron/15 border-saffron/30",
   },
   {
     label: "Donor-Specific",
@@ -135,7 +135,7 @@ const REPORT_SKILL_SUBCATS = [
       "Climate & Environmental Funds",
     ],
     href: "/support/report-writing-skills/unhcr-reporting",
-    accent: "bg-orange-500/15 border-orange-400/30",
+    accent: "bg-coral/15 border-coral/30",
   },
   {
     label: "Tools & Templates",
@@ -146,7 +146,7 @@ const REPORT_SKILL_SUBCATS = [
       "Report Writing Glossary",
     ],
     href: "/support/report-writing-skills/pre-report-checklist",
-    accent: "bg-yellow-500/15 border-yellow-400/30",
+    accent: "bg-saffron/15 border-saffron/30",
   },
 ];
 
@@ -159,9 +159,9 @@ export const metadata: Metadata = {
 
 export default function SupportPage() {
   return (
-    <div className="landing-tech min-h-screen overflow-x-hidden bg-slate-950 text-slate-100">
+    <div className="min-h-screen overflow-x-hidden bg-spruce text-paper">
       {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/85 shadow-[0_10px_40px_rgba(2,6,23,0.35)] backdrop-blur-2xl supports-[backdrop-filter]:bg-slate-950/70">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-spruce/85 shadow-[0_10px_40px_rgba(2,6,23,0.35)] backdrop-blur-2xl supports-[backdrop-filter]:bg-spruce/70">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center">
             <Image
@@ -171,23 +171,23 @@ export default function SupportPage() {
               height={600}
               className="h-9 w-auto object-contain"
             />
-            <span className="ml-3 text-sm font-medium text-slate-400">Support Center</span>
+            <span className="ml-3 text-sm font-medium text-mist">Support Center</span>
           </Link>
-          <div className="hidden items-center gap-7 text-sm font-medium text-slate-300 lg:flex">
+          <div className="hidden items-center gap-7 text-sm font-medium text-mist lg:flex">
             <Link href="/" className="transition hover:text-white">Home</Link>
             <Link href="/pricing" className="transition hover:text-white">Pricing</Link>
-            <Link href="/support" className="transition hover:text-white text-brand-300">Support</Link>
+            <Link href="/support" className="transition hover:text-white text-saffron">Support</Link>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white"
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-paper transition hover:text-white"
             >
               Log in
             </Link>
             <Link
               href="/support/contact"
-              className="rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 transition hover:from-brand-400 hover:to-brand-500"
+              className="rounded-lg bg-gradient-to-r from-saffron to-saffron px-4 py-2 text-sm font-semibold text-spruce shadow-lg shadow-saffron/30 transition hover:from-saffron hover:to-saffron"
             >
               Submit a ticket
             </Link>
@@ -207,7 +207,7 @@ export default function SupportPage() {
           <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
             How can we help you?
           </h1>
-          <p className="mt-4 text-lg text-slate-300">
+          <p className="mt-4 text-lg text-mist">
             Find guides, donor reporting references, tutorials, and troubleshooting for DonorDesk.
           </p>
           {/* Search */}
@@ -218,7 +218,7 @@ export default function SupportPage() {
               <a
                 key={q}
                 href={`#${q.toLowerCase().replace(/\s+/g, "-")}`}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-slate-300 transition hover:border-brand-400/40 hover:text-brand-300"
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-mist transition hover:border-saffron/40 hover:text-saffron"
               >
                 {q}
               </a>
@@ -235,14 +235,14 @@ export default function SupportPage() {
               <Link
                 key={cat.title}
                 href={cat.href}
-                className={`glass tech-card group relative flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-7 transition duration-300 hover:-translate-y-1 hover:border-brand-400/40 hover:bg-white/[0.05] ${cat.borderColor}`}
+                className={`glass tech-card group relative flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-7 transition duration-300 hover:-translate-y-1 hover:border-saffron/40 hover:bg-white/[0.05] ${cat.borderColor}`}
               >
                 <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${cat.color}`}>
-                  <span className="text-brand-300">{cat.icon}</span>
+                  <span className="text-saffron">{cat.icon}</span>
                 </div>
                 <h3 className="mt-5 text-lg font-bold text-white">{cat.title}</h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-300">{cat.description}</p>
-                <span className="mt-4 text-xs font-semibold text-brand-400 opacity-0 transition group-hover:opacity-100">
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-mist">{cat.description}</p>
+                <span className="mt-4 text-xs font-semibold text-saffron opacity-0 transition group-hover:opacity-100">
                   Browse →
                 </span>
               </Link>
@@ -255,17 +255,17 @@ export default function SupportPage() {
       <section className="border-y border-white/10 bg-white/[0.02] px-6 py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mb-10 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/25 to-orange-500/15">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5 text-amber-300">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-saffron/25 to-coral/15">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5 text-saffron">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
               </svg>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-amber-400">Featured</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-saffron">Featured</p>
               <h2 className="text-2xl font-extrabold text-white">Report Writing Skills</h2>
             </div>
           </div>
-          <p className="max-w-2xl text-slate-300">
+          <p className="max-w-2xl text-mist">
             Master donor reporting — from understanding requirements and writing clear narratives to navigating compliance checklists and submitting on time.
           </p>
 
@@ -280,13 +280,13 @@ export default function SupportPage() {
                 <h3 className="font-bold text-white">{sub.label}</h3>
                 <ul className="mt-3 space-y-2">
                   {sub.items.map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-sm text-slate-300">
-                      <span className="mt-1 text-amber-400">›</span>
+                    <li key={item} className="flex items-start gap-2 text-sm text-mist">
+                      <span className="mt-1 text-saffron">›</span>
                       {item}
                     </li>
                   ))}
                 </ul>
-                <span className="mt-5 inline-block text-xs font-semibold text-amber-400 opacity-0 transition group-hover:opacity-100">
+                <span className="mt-5 inline-block text-xs font-semibold text-saffron opacity-0 transition group-hover:opacity-100">
                   Explore → 
                 </span>
               </Link>
@@ -295,11 +295,11 @@ export default function SupportPage() {
 
           {/* Donor badges */}
           <div className="mt-10 flex flex-wrap items-center gap-3">
-            <span className="text-xs font-semibold text-slate-400">Aligned with:</span>
+            <span className="text-xs font-semibold text-mist">Aligned with:</span>
             {DONOR_NAMES.map((name) => (
               <span
                 key={name}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-300"
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-mist"
               >
                 {name}
               </span>
@@ -323,14 +323,14 @@ export default function SupportPage() {
                     className="group flex items-center justify-between rounded-xl border border-transparent px-4 py-3 transition hover:border-white/10 hover:bg-white/[0.03]"
                   >
                     <div className="flex items-center gap-3">
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 flex-shrink-0 text-slate-500 transition group-hover:text-brand-400">
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 flex-shrink-0 text-fog transition group-hover:text-saffron">
                         <path fillRule="evenodd" d="M4.5 3A1.5 1.5 0 003 4.5v11A1.5 1.5 0 004.5 17h11a1.5 1.5 0 001.5-1.5v-11A1.5 1.5 0 0015.5 3h-11zM10 5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5v3a.5.5 0 01-.5.5h-3a.5.5 0 01-.5-.5V5zM8 9.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5v3a.5.5 0 01-.5.5h-3a.5.5 0 01-.5-.5v-3z" clipRule="evenodd" />
                       </svg>
-                      <span className="text-sm text-slate-200 transition group-hover:text-white">{g.title}</span>
+                      <span className="text-sm text-paper transition group-hover:text-white">{g.title}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">{g.category}</span>
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-slate-600 transition group-hover:text-brand-400 group-hover:translate-x-0.5">
+                      <span className="text-xs text-fog">{g.category}</span>
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-fog transition group-hover:text-saffron group-hover:translate-x-0.5">
                         <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
                       </svg>
                     </div>
@@ -350,16 +350,16 @@ export default function SupportPage() {
                     className="group flex items-center justify-between rounded-xl border border-transparent px-4 py-3 transition hover:border-white/10 hover:bg-white/[0.03]"
                   >
                     <div className="flex items-center gap-3">
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 flex-shrink-0 text-slate-500 transition group-hover:text-brand-400">
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 flex-shrink-0 text-fog transition group-hover:text-saffron">
                         <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
                       </svg>
-                      <span className="text-sm text-slate-200 transition group-hover:text-white">{g.title}</span>
+                      <span className="text-sm text-paper transition group-hover:text-white">{g.title}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${g.category === "New" ? "bg-emerald-500/15 text-emerald-300" : "text-slate-500 bg-white/5"}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${g.category === "New" ? "bg-seafoam/15 text-seafoam" : "text-fog bg-white/5"}`}>
                         {g.category}
                       </span>
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-slate-600 transition group-hover:text-brand-400 group-hover:translate-x-0.5">
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-fog transition group-hover:text-saffron group-hover:translate-x-0.5">
                         <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
                       </svg>
                     </div>
@@ -375,36 +375,36 @@ export default function SupportPage() {
       <section className="border-t border-white/10 px-6 py-16">
         <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-7 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-500/15 text-brand-300">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-saffron/15 text-saffron">
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6">
                 <path d="M3 4a2 2 0 00-2 2v1.16l5.313-2.458a2 2 0 011.789 1.106L3 8.18V6a2 2 0 00-2-2H1a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2v-2.18l5.313 2.458a2 2 0 001.789-1.106L7 17.18V18a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2a2 2 0 00-2 2v2.18l-5.313-2.458a2 2 0 00-1.789 1.106L5 15.82V18a2 2 0 002 2h2a2 2 0 002-2v-2.18l5.313 2.458a2 2 0 001.789-1.106L15 15.82V14a2 2 0 00-2-2H9.82l5.313-2.458a2 2 0 00-1.789-1.106L9.82 11H7.5a.5.5 0 01-.5-.5v-2a.5.5 0 01.5-.5H9l5.313-2.458a2 2 0 00-1.789-1.106L9.82 6H7.5a.5.5 0 01-.5-.5V3.5a.5.5 0 01.5-.5H9l5.313-2.458a2 2 0 00-1.789-1.106L9.82 1H7a2 2 0 00-2 2v2h2V3a2 2 0 012-2h2a2 2 0 012 2v1h2V3a2 2 0 012 2v1.18l-5.313 2.458a2 2 0 001.789 1.106L15.18 5H17a2 2 0 012 2v2h-2v2a2 2 0 01-2 2h-2a2 2 0 00-2 2v2h2a2 2 0 002 2h2v2a2 2 0 01-2 2h-2v2a2 2 0 01-2 2H9a2 2 0 01-2-2v-2H5a2 2 0 01-2-2v-2h2z" />
               </svg>
             </div>
             <h3 className="mt-4 font-bold text-white">Email Support</h3>
-            <p className="mt-2 text-sm text-slate-400">support@donordesk.online</p>
-            <p className="mt-1 text-xs text-slate-500">Response in 1–2 business days</p>
+            <p className="mt-2 text-sm text-mist">support@donordesk.online</p>
+            <p className="mt-1 text-xs text-fog">Response in 1–2 business days</p>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-7 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-500/15 text-brand-300">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-saffron/15 text-saffron">
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6">
                 <path fillRule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zM10 2a8 8 0 100 16 8 8 0 000-16zm0 2c-.076 0-.232.032-.465.262-.238.234-.497.623-.737 1.182-.389.907-.673 2.142-.78 3.276a3.003 3.003 0 01-.53 1.277 5.01 5.01 0 01.22.773c.25.76.495 1.827.64 2.941H8.756c.146-1.114.39-2.18.64-2.941.07-.267.14-.517.22-.773.248-.545.497-1.044.737-1.182C10.232 4.032 10.076 4 10 4zm3.971 5c-.089-1.546-.383-2.97-.837-4.118A6.004 6.004 0 0115.917 9h-1.946zm-2.003 2H8.032c.146-1.114.39-2.18.64-2.941.07-.267.14-.517.22-.773.248-.545.497-1.044.737-1.182.233-.23.389-.262.465-.262.076 0 .232.032.465.262.238.234.497.623.737 1.182.389.907.673 2.142.78 3.276a3.003 3.003 0 01.53-1.277 5.01 5.01 0 01-.22-.773c-.25-.76-.495-1.827-.64-2.941h1.948c.146 1.114.39 2.18.64 2.941.07.267.14.517.22.773a5.01 5.01 0 01-.22.773 3.003 3.003 0 01-.53 1.277 5.01 5.01 0 01.22-.773c.25-.76.495-1.827.64-2.941zM14 10a2 2 0 11-4 0 2 2 0 014 0z" clipRule="evenodd" />
               </svg>
             </div>
             <h3 className="mt-4 font-bold text-white">Documentation</h3>
-            <p className="mt-2 text-sm text-slate-400">100+ guides across 8 categories</p>
-            <p className="mt-1 text-xs text-slate-500">Searchable, always up to date</p>
+            <p className="mt-2 text-sm text-mist">100+ guides across 8 categories</p>
+            <p className="mt-1 text-xs text-fog">Searchable, always up to date</p>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-7 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-500/15 text-brand-300">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-saffron/15 text-saffron">
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6">
                 <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
               </svg>
             </div>
             <h3 className="mt-4 font-bold text-white">Feature Requests</h3>
-            <p className="mt-2 text-sm text-slate-400">Vote on features or suggest new ones</p>
-            <p className="mt-1 text-xs text-slate-500">Via the in-app feedback form</p>
+            <p className="mt-2 text-sm text-mist">Vote on features or suggest new ones</p>
+            <p className="mt-1 text-xs text-fog">Via the in-app feedback form</p>
           </div>
         </div>
       </section>
@@ -427,7 +427,7 @@ export default function SupportPage() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="DonorDesk on LinkedIn"
-              className="flex items-center gap-2 text-slate-400 transition hover:text-white"
+              className="flex items-center gap-2 text-mist transition hover:text-white"
             >
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
@@ -435,15 +435,15 @@ export default function SupportPage() {
               <span className="text-sm">Follow us on LinkedIn</span>
             </a>
           </div>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-mist">
             © {new Date().getFullYear()} DonorDesk. All rights reserved.
           </p>
-          <div className="flex gap-6 text-sm text-slate-400">
+          <div className="flex gap-6 text-sm text-mist">
             <Link href="/login" className="transition hover:text-white">Log in</Link>
             <Link href="/signup" className="transition hover:text-white">Get started</Link>
             <Link href="/privacy" className="transition hover:text-white">Privacy</Link>
             <Link href="/terms" className="transition hover:text-white">Terms</Link>
-            <Link href="/support" className="transition hover:text-white text-brand-300">Support</Link>
+            <Link href="/support" className="transition hover:text-white text-saffron">Support</Link>
           </div>
         </div>
       </footer>

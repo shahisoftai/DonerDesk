@@ -22,16 +22,16 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 FONT = "Calibri"
-INK = RGBColor(0x0F, 0x17, 0x2A)
-BODY = RGBColor(0x33, 0x41, 0x55)
-MUTED = RGBColor(0x64, 0x74, 0x8B)
-BLUE = RGBColor(0x25, 0x63, 0xEB)
-BLUE_DK = RGBColor(0x1E, 0x3A, 0x8A)
-CYAN = RGBColor(0x06, 0xB6, 0xD4)
-DARK = RGBColor(0x0B, 0x12, 0x20)
-CARD = RGBColor(0xF1, 0xF5, 0xF9)
+INK = RGBColor(0x0B, 0x16, 0x14)
+BODY = RGBColor(0x2F, 0x3D, 0x38)
+MUTED = RGBColor(0x6B, 0x7C, 0x75)
+KICKER = RGBColor(0xB7, 0x79, 0x1F)
+HEAD_DK = RGBColor(0x16, 0x30, 0x29)
+ACCENT = RGBColor(0xF2, 0xB5, 0x44)
+DARK = RGBColor(0x0B, 0x16, 0x14)
+CARD = RGBColor(0xF3, 0xF1, 0xEA)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-AMBER = RGBColor(0xB4, 0x53, 0x09)
+CORAL_DK = RGBColor(0xB4, 0x55, 0x3F)
 
 SW, SH = Inches(13.333), Inches(7.5)
 
@@ -82,12 +82,12 @@ def _rect(slide, x, y, w, h, fill, shape=MSO_SHAPE.ROUNDED_RECTANGLE):
 
 def _footer(slide, n):
     _text(slide, Inches(0.6), Inches(7.0), Inches(9), Inches(0.3),
-          "DonorDesk · Overview v2.003 · donordesk.online", size=10, color=MUTED)
+          "DonorDesk · Overview v2.004 · donordesk.online", size=10, color=MUTED)
     _text(slide, Inches(12.0), Inches(7.0), Inches(0.8), Inches(0.3), str(n), size=10, color=MUTED, align=PP_ALIGN.RIGHT)
 
 
 def _header(slide, kicker, title):
-    _text(slide, Inches(0.6), Inches(0.45), Inches(12), Inches(0.35), kicker.upper(), size=12, bold=True, color=BLUE)
+    _text(slide, Inches(0.6), Inches(0.45), Inches(12), Inches(0.35), kicker.upper(), size=12, bold=True, color=KICKER)
     _text(slide, Inches(0.6), Inches(0.8), Inches(12.1), Inches(1.0), title, size=30, bold=True, color=INK)
 
 
@@ -99,7 +99,7 @@ def _cards(slide, items, top=Inches(2.0), cols=3, card_h=Inches(2.2)):
         x = Inches(0.6) + c * (w + gap)
         y = top + r * (card_h + gap)
         _rect(slide, x, y, w, card_h, CARD)
-        _text(slide, x + Inches(0.25), y + Inches(0.2), w - Inches(0.5), Inches(0.5), head, size=17, bold=True, color=BLUE_DK)
+        _text(slide, x + Inches(0.25), y + Inches(0.2), w - Inches(0.5), Inches(0.5), head, size=17, bold=True, color=HEAD_DK)
         _text(slide, x + Inches(0.25), y + Inches(0.75), w - Inches(0.5), card_h - Inches(0.9), body, size=13, color=BODY)
 
 
@@ -119,18 +119,18 @@ def build(out_path: str) -> None:
     bg = s.background.fill
     bg.solid()
     bg.fore_color.rgb = DARK
-    _rect(s, Inches(0.6), Inches(1.6), Inches(0.12), Inches(3.2), CYAN, shape=MSO_SHAPE.RECTANGLE)
-    _text(s, Inches(1.0), Inches(1.5), Inches(11), Inches(0.5), "DONORDESK · OVERVIEW", size=14, bold=True, color=CYAN)
-    _text(s, Inches(1.0), Inches(2.1), Inches(11.5), Inches(1.6), "Run your programme.", size=54, bold=True, color=WHITE)
-    _text(s, Inches(1.0), Inches(3.2), Inches(11.5), Inches(1.6), "Report from the record.", size=54, bold=True, color=CYAN)
+    _rect(s, Inches(0.6), Inches(1.6), Inches(0.12), Inches(3.2), ACCENT, shape=MSO_SHAPE.RECTANGLE)
+    _text(s, Inches(1.0), Inches(1.5), Inches(11), Inches(0.5), "DONORDESK · OVERVIEW", size=14, bold=True, color=ACCENT)
+    _text(s, Inches(1.0), Inches(2.1), Inches(11.5), Inches(1.6), "Your whole programme,", size=54, bold=True, color=WHITE)
+    _text(s, Inches(1.0), Inches(3.2), Inches(11.5), Inches(1.6), "in one place.", size=54, bold=True, color=ACCENT)
     _text(s, Inches(1.0), Inches(4.7), Inches(11), Inches(0.9),
-          "Programme management for grant-funded organisations, with donor reports drafted from the record and approved by people.",
-          size=18, color=RGBColor(0xCB, 0xD5, 0xE1))
+          "Plan, record, monitor and prove the work. Donor reports are drafted from that record and approved by people.",
+          size=18, color=RGBColor(0xA3, 0xB5, 0xAD))
     _text(s, Inches(1.0), Inches(6.4), Inches(11), Inches(0.4), "October 2026 · donordesk.online", size=13, color=MUTED)
 
     # 2. The problem
     s = new_slide()
-    _header(s, "The problem", "A programme is scattered, then rebuilt for every donor report")
+    _header(s, "The problem", "The work is scattered, then rebuilt for every donor report")
     _bullets(s, Inches(0.6), Inches(2.0), Inches(12), Inches(4.5), [
         "Indicators live in one spreadsheet, activities in another, evidence in folders and chat threads.",
         "The report is assembled in the last weeks before the deadline, from numbers nobody can trace back.",
@@ -141,7 +141,7 @@ def build(out_path: str) -> None:
 
     # 3. The record
     s = new_slide()
-    _header(s, "The shift", "One record from plan to report")
+    _header(s, "The shift", "One record from the work to the donor's question")
     _cards(s, [
         ("1 · Plan", "Logframe, indicators, baselines and targets. Import what you already have from Excel, CSV or Google Sheets."),
         ("2 · Record", "Field staff log activities as they happen, typed or dictated. Indicator values are entered once per period."),
@@ -149,7 +149,7 @@ def build(out_path: str) -> None:
         ("4 · Report", "The donor template structures the report. Drafts cite their sources. A person approves before export."),
     ], cols=4, card_h=Inches(3.0))
     _text(s, Inches(0.6), Inches(6.2), Inches(12), Inches(0.5),
-          "The record is the working system. The report is what it produces.", size=16, bold=True, color=BLUE_DK)
+          "The record holds the work. The report is one thing it produces.", size=16, bold=True, color=HEAD_DK)
     _footer(s, n)
 
     # 4. Run the programme
@@ -175,7 +175,7 @@ def build(out_path: str) -> None:
         "Managers accept, send back or reject records, one at a time or in bulk.",
     ], size=17)
     _rect(s, Inches(7.4), Inches(2.0), Inches(5.3), Inches(4.4), CARD)
-    _text(s, Inches(7.7), Inches(2.2), Inches(4.8), Inches(0.5), "Status workflow", size=17, bold=True, color=BLUE_DK)
+    _text(s, Inches(7.7), Inches(2.2), Inches(4.8), Inches(0.5), "Status workflow", size=17, bold=True, color=HEAD_DK)
     _text(s, Inches(7.7), Inches(2.8), Inches(4.8), Inches(3.4), [
         "Draft → Submitted → Accepted",
         "Submitted → Needs revision → Submitted",
@@ -184,7 +184,7 @@ def build(out_path: str) -> None:
         "Undoing an accepted record is refused when an approved report already used it.",
     ], size=14, color=BODY)
     _text(s, Inches(0.6), Inches(6.5), Inches(12), Inches(0.4),
-          "Limit: the app needs a connection to open. Offline use is queued saving only.", size=12, color=AMBER)
+          "Limit: the app needs a connection to open. Offline use is queued saving only.", size=12, color=CORAL_DK)
     _footer(s, n)
 
     # 6. Data Center
@@ -198,7 +198,7 @@ def build(out_path: str) -> None:
         "Draw charts from the data. A chart added to a report is a snapshot you update when you choose.",
     ], size=19)
     _text(s, Inches(0.6), Inches(6.5), Inches(12), Inches(0.4),
-          "Finance figures appear only when finance mode is on for the project (off by default).", size=12, color=AMBER)
+          "Finance figures appear only when finance mode is on for the project (off by default).", size=12, color=CORAL_DK)
     _footer(s, n)
 
     # 7. Evidence
@@ -264,7 +264,7 @@ def build(out_path: str) -> None:
         ("Project Manager", "Review and accept field records in one place."),
         ("Field Officer", "Record what happened in a few lines, or by dictation."),
         ("Compliance Officer", "Every claim links to its evidence; the audit log shows who changed what."),
-        ("Approver", "Second-approver rules; the submitted file is sealed."),
+        ("Admin", "Manages the workspace, members and plan. Second-approver rules and sealed submissions are set per project."),
     ], cols=3, card_h=Inches(2.0))
     _footer(s, n)
 
@@ -300,7 +300,7 @@ def build(out_path: str) -> None:
                 run.font.bold = r == 0 or c == 0
                 run.font.color.rgb = WHITE if r == 0 else BODY
             cell.fill.solid()
-            cell.fill.fore_color.rgb = BLUE_DK if r == 0 else (CARD if r % 2 else WHITE)
+            cell.fill.fore_color.rgb = HEAD_DK if r == 0 else (CARD if r % 2 else WHITE)
     _text(s, Inches(0.6), Inches(6.62), Inches(12), Inches(0.35),
           "Prices from the billing catalogue. Enterprise is by contract. Trial availability is set per launch.",
           size=11, color=MUTED)
@@ -325,14 +325,14 @@ def build(out_path: str) -> None:
     bg = s.background.fill
     bg.solid()
     bg.fore_color.rgb = DARK
-    _text(s, Inches(1.0), Inches(1.6), Inches(11), Inches(0.5), "NEXT STEP", size=14, bold=True, color=CYAN)
+    _text(s, Inches(1.0), Inches(1.6), Inches(11), Inches(0.5), "NEXT STEP", size=14, bold=True, color=ACCENT)
     _text(s, Inches(1.0), Inches(2.2), Inches(11.5), Inches(1.4), "See it on a real programme.", size=48, bold=True, color=WHITE)
     _bullets(s, Inches(1.0), Inches(3.9), Inches(11), Inches(2.4), [
         "Take the narrated product tour: donordesk.online/tour",
         "Create a free workspace; the demo project is included and uses no AI credits: donordesk.online/signup",
         "Read every feature with its limits: donordesk.online/features",
         "Enterprise and pilots: donordesk.online/contact-sales",
-    ], size=18, color=RGBColor(0xCB, 0xD5, 0xE1))
+    ], size=18, color=RGBColor(0xA3, 0xB5, 0xAD))
 
     prs.save(out_path)
     print(f"wrote {out_path} ({n} slides)")

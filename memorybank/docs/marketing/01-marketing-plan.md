@@ -83,8 +83,8 @@ No lifetime deals, no per-report pricing, no certifications we do not hold, and 
 Full copy is in `03-positioning-and-messaging.md`. In short:
 
 - **Category:** programme management that produces donor-ready reports.
-- **Hero line:** Run your programme. Report from the record.
-- **Four pillars, in order:** run the programme, keep the evidence, stay compliant, report from the record.
+- **Hero statements (rotating):** Your whole programme, in one place. / Know where your programme stands before the donor asks. / Stop rebuilding the programme every quarter.
+- **Pillars, in order:** plan what matters, see it while it can change, prove it when it counts; reporting is the outcome.
 
 ## 6. Channels and activities
 
@@ -92,7 +92,7 @@ Full copy is in `03-positioning-and-messaging.md`. In short:
 
 | Channel | Activity | Owner | Cadence |
 |---|---|---|---|
-| Website (home, Features, Pricing, Support) | Rebuild per `04-website-redesign-brief.md`; A/B test the hero line after launch | Marketing lead | Launch, then monthly review |
+| Website (home, Features, Pricing, Support) | Rebuild per `04-website-redesign-brief.md`; A/B test the first hero statement against the other two after launch | Marketing lead | Launch, then monthly review |
 | Support Center | Keep articles current with each release; add the management articles (Data Center, activity capture, My Work) | Product lead with support | Each release |
 | Product tour | Keep the narrated tour in step with the UI; tour is the main self-serve demo | Product lead | Each release |
 | LinkedIn company page | Two posts a week: one product-in-use post (screenshot or short clip of a real workflow, with sample data labelled), one practice post (how reporting works) | Marketing lead | Twice weekly |
@@ -137,8 +137,8 @@ Enterprise: a guided pilot (one project, one donor template, one approved report
 | Week | Asset | Purpose | Format |
 |---|---|---|---|
 | 1 | Website relaunch (home, Features, pricing) | Message clarity | Site |
-| 1 | Deck v2.003 (management-first) | Sales and partners | PPTX |
-| 2 | "Run your programme. Report from the record." explainer | Core message | 3-minute video with narration; the tour's voice can be reused |
+| 1 | Deck v2.004 (programme cycle, homepage palette) | Sales and partners | PPTX |
+| 2 | "Your whole programme, in one place." explainer | Core message | 3-minute video with narration; the tour's voice can be reused |
 | 2 | Support article set update | SEO and self-serve | Support Center |
 | 3 | "What an activity record needs for a donor report" | Field-staff audience | Blog post |
 | 4 | Webinar 1: From activity to donor report | Segment 1 | Live, then recorded |

@@ -6,6 +6,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Homepage palette (components/landing/home). Used by the public marketing pages and the Support Center.
+        spruce: { DEFAULT: "#0b1614", 2: "#10221e", 3: "#163029" },
+        paper: "#eef2ec",
+        mist: "#a3b5ad",
+        fog: "#7d918a",
+        saffron: "#f2b544",
+        seafoam: "#3fc1a6",
+        skyline: "#74b8e6",
+        coral: "#f08a72",
         brand: {
           50: "#f0f7ff",
           100: "#e0effe",
