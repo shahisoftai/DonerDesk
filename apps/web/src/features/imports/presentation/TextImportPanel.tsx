@@ -19,7 +19,7 @@ export interface ImportOutcome {
 }
 
 export interface TextImportPanelProps<R extends ImportOutcome> {
-  kind: "logframe" | "indicators" | "evidence" | "activities";
+  kind: "logframe" | "indicators" | "evidence" | "activities" | "work-plan";
   title: string;
   intro: string;
   /** Singular and plural nouns for the result line, e.g. ["indicator", "indicators"]. */

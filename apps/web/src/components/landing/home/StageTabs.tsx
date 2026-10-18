@@ -19,11 +19,11 @@ type Stage = {
 const STAGES: Stage[] = [
   {
     id: "plan",
-    label: "01 Plan",
+    label: "01 Set up",
     title: "Set the target once",
     summary: "Logframe and indicators",
     color: "var(--teal)",
-    heading: "Plan the programme once",
+    heading: "Set up the programme once",
     statement:
       "Goals, outcomes, outputs and activities, each with indicators whose baselines and targets are set once and reused in every report.",
     points: [

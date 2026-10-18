@@ -11,7 +11,7 @@ import styles from "@/components/landing/home/home.module.css";
 
 const ROLES = [
   { name: "Field Officer", description: "Records activities and dictates them from the field." },
-  { name: "Project Manager", description: "Reviews activities and tracks the work across the project." },
+  { name: "Project Manager", description: "Reviews and accepts activity records and signs off reports." },
   { name: "M&E Officer", description: "Owns indicators, values and the Data Center." },
   { name: "Grants Officer", description: "Watches deadlines, readiness and donor requirements." },
   { name: "Compliance Officer", description: "Checks that claims are backed by evidence." },
@@ -131,8 +131,8 @@ export default function HomePage() {
           </p>
           <div className={styles.pillars}>
             <article className={styles.pillar}>
-              <h3>Plan what matters</h3>
-              <p>Set the logframe once. Give each person the activities, indicators and evidence their role needs, and see what is due this week.</p>
+              <h3>Set it up once</h3>
+              <p>Set the logframe once. Each role sees the records, indicators and evidence it works with, and the report deadlines coming up.</p>
             </article>
             <article className={styles.pillar}>
               <h3>See it while it can change</h3>
@@ -153,11 +153,11 @@ export default function HomePage() {
             <div>
               <p className={styles.eyebrow}>The programme cycle</p>
               <h2>
-                Plan it. Deliver it. Measure it. <em>Prove it.</em>
+                Set it up. Deliver it. Measure it. <em>Prove it.</em>
               </h2>
             </div>
             <p className={styles.lede}>
-              Every stage draws on the same records, so the work you log today is the evidence you need at the end.
+              Every stage draws on the same records, so the work you log today is the evidence you need at the end. DonorDesk records and evidences delivery; activities are logged as they happen.
             </p>
           </div>
           <StageTabs />

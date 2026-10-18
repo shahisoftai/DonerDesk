@@ -32,6 +32,8 @@ export type ImportLogframeTextInput = z.infer<typeof ImportLogframeTextSchema>;
 /** Start a project's logframe and indicators from another project of the same workspace. */
 export const CopyProjectSetupSchema = z.object({
   sourceProjectId: z.string().min(1),
+  /** Also copy the planned activities (needs the work plan permission). */
+  copyWorkPlan: z.boolean().default(false),
 });
 export type CopyProjectSetupInput = z.infer<typeof CopyProjectSetupSchema>;
 

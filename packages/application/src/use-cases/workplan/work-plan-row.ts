@@ -1,0 +1,57 @@
+import {
+  DELIVERY_SIGNAL_LABEL, reasonRequired, deliveryReason, deliverySignal, deliveryState, suggestPlanStatus,
+  type DeliveryFacts, type DeliverySignal, type DeliveryState, type PlainDate, type PlanStatus, type PlannedActivity,
+} from "@donordesk/domain";
+
+export interface WorkPlanRowDto {
+  id: string;
+  title: string;
+  kind: "ACTIVITY" | "MILESTONE";
+  plannedStart: PlainDate;
+  plannedEnd: PlainDate;
+  /** Present only when the dates were moved ("moved from …"). */
+  originalStart?: PlainDate;
+  originalEnd?: PlainDate;
+  status: PlanStatus;
+  state: DeliveryState;
+  signal: DeliverySignal;
+  signalLabel: string;
+  signalReason?: string;
+  ownerUserId?: string;
+  supportUserIds: string[];
+  logframeActivityId?: string;
+  outputId?: string;
+  location?: string;
+  targetCount?: number;
+  deliveredCount: number;
+  completedActivities: number;
+  /** "IN_PROGRESS" or "DONE" when completed activities suggest it; the person confirms. */
+  suggestedStatus?: "IN_PROGRESS" | "DONE";
+  seriesId?: string;
+  /** Moving or changing it needs a "Why?" (original end passed, or a report covers it). */
+  reasonRequired: boolean;
+}
+
+/**
+ * One planned activity as a person reads it: its derived delivery state and signal, the reason in words, the suggestion
+ * from completed activities, and whether changing it needs a "Why?". The one place a row is built, so the project plan
+ * and My week can never disagree about whether something is late.
+ */
+export function toWorkPlanRow(i: PlannedActivity, f: DeliveryFacts, today: PlainDate, reportCovers: boolean): WorkPlanRowDto {
+  const snap = i.snapshot();
+  const view = { status: i.status, plannedStart: i.plannedStart, plannedEnd: i.plannedEnd, ...(i.completedOn ? { completedOn: i.completedOn } : {}) };
+  const state = deliveryState(view, f, today);
+  const reason = deliveryReason(state, view, today);
+  const suggested = suggestPlanStatus({ ...view, ...(snap.targetCount !== undefined ? { targetCount: snap.targetCount } : {}) }, f);
+  return {
+    id: i.id, title: i.title, kind: i.kind, plannedStart: i.plannedStart, plannedEnd: i.plannedEnd,
+    ...(i.isMoved ? { originalStart: i.originalStart, originalEnd: i.originalEnd } : {}),
+    status: i.status, state, signal: deliverySignal(state), signalLabel: DELIVERY_SIGNAL_LABEL[deliverySignal(state)], ...(reason ? { signalReason: reason } : {}),
+    ...(i.ownerUserId ? { ownerUserId: i.ownerUserId } : {}), supportUserIds: [...i.supportUserIds],
+    ...(i.logframeActivityId ? { logframeActivityId: i.logframeActivityId } : {}), ...(snap.outputId ? { outputId: snap.outputId } : {}),
+    ...(snap.location ? { location: snap.location } : {}), ...(snap.targetCount !== undefined ? { targetCount: snap.targetCount } : {}),
+    deliveredCount: f.deliveredCount, completedActivities: f.liveRecords, ...(suggested ? { suggestedStatus: suggested } : {}),
+    ...(i.seriesId ? { seriesId: i.seriesId } : {}),
+    reasonRequired: reasonRequired({ originalEnd: i.originalEnd }, today, { reportUsesIt: reportCovers }),
+  };
+}

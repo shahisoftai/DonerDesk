@@ -10,6 +10,10 @@ import { Badge } from "@/components/data/Badge";
 import { projectStatusTone } from "@/lib/shared/tone";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { AiSectionRunsResponseSchema } from "@/lib/server/schemas";
+import { MyWeekSchema } from "@/lib/server/schemas";
+import { surfaceFor } from "@/features/workplan/domain/role-surfaces";
+import { shouldShowMyWeek } from "@/features/workplan/domain/my-week";
+import { MyWeekPanel } from "@/features/workplan/presentation/MyWeekPanel";
 import { StartTourCard } from "@/features/tour/presentation/StartTourCard";
 
 export const dynamic = "force-dynamic";
@@ -23,9 +27,11 @@ const BAND_LABEL: Record<DeadlineBand, string> = {
 
 export default async function Dashboard() {
   const ctx = await requireSession();
-  const [snapshot, work] = await Promise.all([
+  const landing = surfaceFor(ctx.role).home;
+  const [snapshot, work, myWeek] = await Promise.all([
     loadDashboard(ctx.token),
     loadWorkItems(ctx.token),
+    landing === "MY_WEEK" ? gatewayRequest("/v1/me/week", MyWeekSchema, ctx.token) : Promise.resolve(null),
   ]);
 
   // Administrators are told when the AI writer is failing often; everyone else never sees this call.
@@ -71,6 +77,12 @@ export default async function Dashboard() {
         </div>
         <Link className="btn-secondary" href="/my-work">Open My Work</Link>
       </header>
+
+      {myWeek?.ok && shouldShowMyWeek(landing, myWeek.value.planned.length) && (
+        <div className="mt-6">
+          <MyWeekPanel week={myWeek.value} projects={active.map((p) => ({ id: p.id, title: p.title }))} />
+        </div>
+      )}
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <CountCard

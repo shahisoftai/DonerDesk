@@ -43,6 +43,8 @@ export const ProjectDetailSchema = z.object({
   reportingOfficerId: z.string().optional(),
   workspaceRootId: z.string().optional(),
   isDemo: z.boolean().optional(),
+  /** Admin setting: false hides the work plan screens (the data is kept). */
+  showWorkPlanning: z.boolean().optional(),
 });
 export type ProjectDetail = z.infer<typeof ProjectDetailSchema>;
 
@@ -1245,3 +1247,83 @@ export const SectionDataChartSchema = z.object({
 });
 export type SectionDataChart = z.infer<typeof SectionDataChartSchema>;
 export const SectionDataChartsResponseSchema = z.object({ items: z.array(SectionDataChartSchema) });
+
+// ---- Work plan (Phase 28) ----
+export const WorkPlanRowSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  kind: z.enum(["ACTIVITY", "MILESTONE"]),
+  plannedStart: z.string(),
+  plannedEnd: z.string(),
+  originalStart: z.string().optional(),
+  originalEnd: z.string().optional(),
+  status: z.enum(["PLANNED", "IN_PROGRESS", "DONE", "CANCELLED"]),
+  state: z.string(),
+  signal: z.enum(["ON_TIME", "LATE", "DONE", "CANCELLED"]),
+  signalLabel: z.string(),
+  signalReason: z.string().optional(),
+  ownerUserId: z.string().optional(),
+  supportUserIds: z.array(z.string()),
+  logframeActivityId: z.string().optional(),
+  outputId: z.string().optional(),
+  location: z.string().optional(),
+  targetCount: z.number().optional(),
+  deliveredCount: z.number(),
+  completedActivities: z.number(),
+  suggestedStatus: z.enum(["IN_PROGRESS", "DONE"]).optional(),
+  seriesId: z.string().optional(),
+  reasonRequired: z.boolean(),
+});
+export type WorkPlanRow = z.infer<typeof WorkPlanRowSchema>;
+export const WorkPlanResponseSchema = z.object({ items: z.array(WorkPlanRowSchema) });
+
+export const CreatedPlannedActivitiesSchema = z.object({ ids: z.array(z.string()), capped: z.boolean() });
+
+export const PlanPreviewSchema = z.object({
+  preview: z.object({
+    rows: z.array(
+      z.object({
+        logframeActivityId: z.string(),
+        title: z.string(),
+        outputId: z.string().optional(),
+        plannedStart: z.string(),
+        plannedEnd: z.string(),
+        repeats: z.object({ every: z.enum(["WEEK", "MONTH"]), interval: z.number(), until: z.string() }).optional(),
+        ownerUserId: z.string().optional(),
+      }),
+    ),
+    total: z.number(),
+    repeating: z.number(),
+  }),
+  createdIds: z.array(z.string()).optional(),
+});
+export type PlanPreviewResponse = z.infer<typeof PlanPreviewSchema>;
+
+export const PlanRevisionSchema = z.object({
+  id: z.string(),
+  changes: z.record(z.string(), z.object({ from: z.unknown(), to: z.unknown() })),
+  reason: z.string().optional(),
+  changedById: z.string(),
+  changedAt: z.string(),
+});
+export const PlanRevisionsResponseSchema = z.object({ items: z.array(PlanRevisionSchema) });
+
+export const ProjectPeopleResponseSchema = z.object({ items: z.array(z.object({ userId: z.string(), name: z.string(), role: z.string() })) });
+
+export const ImportWorkPlanResponseSchema = z.object({
+  applied: z.boolean(),
+  created: z.number(),
+  skipped: z.number(),
+  warnings: z.array(z.string()),
+  problems: z.array(z.string()),
+  items: z.array(z.object({ id: z.string().optional(), title: z.string(), plannedStart: z.string(), plannedEnd: z.string() })),
+});
+export type ImportWorkPlanResponse = z.infer<typeof ImportWorkPlanResponseSchema>;
+
+export const MyWeekSchema = z.object({
+  today: z.string(),
+  weekStart: z.string(),
+  planned: z.array(WorkPlanRowSchema.omit({ reasonRequired: true }).extend({ projectId: z.string(), projectTitle: z.string() })),
+  sentBack: z.array(z.object({ id: z.string(), projectId: z.string(), projectTitle: z.string(), title: z.string(), activityDate: z.string(), status: z.enum(["NEEDS_REVISION", "REJECTED"]) })),
+});
+export type MyWeek = z.infer<typeof MyWeekSchema>;

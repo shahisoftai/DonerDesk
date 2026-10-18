@@ -12,12 +12,16 @@ import { InlineAlert } from "@/components/feedback/InlineAlert";
 export function CopySetupPanel({
   projectId,
   candidates,
+  canCopyPlan = false,
 }: {
   projectId: string;
+  canCopyPlan?: boolean;
   candidates: Array<{ id: string; title: string }>;
 }) {
   const router = useRouter();
   const [sourceId, setSourceId] = useState("");
+  const [copyPlan, setCopyPlan] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   if (candidates.length === 0) return null;
@@ -25,12 +29,14 @@ export function CopySetupPanel({
   async function copy() {
     setBusy(true);
     setError(null);
-    const result = await copyProjectSetupAction(projectId, { sourceProjectId: sourceId });
+    const result = await copyProjectSetupAction(projectId, { sourceProjectId: sourceId, copyWorkPlan: copyPlan });
     setBusy(false);
     if (!result.ok) {
       setError(result.error.message);
       return;
     }
+    // The logframe was copied either way; say so when the plan could not be.
+    if (copyPlan && result.value.planMessage) setNote(`The logframe was copied. The planned activities were not: ${result.value.planMessage}`);
     router.refresh();
   }
 
@@ -45,6 +51,13 @@ export function CopySetupPanel({
           ))}
         </Select>
       </Field>
+      {canCopyPlan && (
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" className="h-4 w-4" checked={copyPlan} onChange={(e) => setCopyPlan(e.target.checked)} />
+          Also copy the planned activities (dates move with this project&apos;s start; leads and progress are not copied)
+        </label>
+      )}
+      {note && <InlineAlert tone="warning" title={note} />}
       {error && <InlineAlert tone="danger" title={error} />}
       <Button type="button" size="sm" pending={busy} disabled={!sourceId || busy} onClick={() => void copy()}>
         Copy logframe and indicators

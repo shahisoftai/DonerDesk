@@ -15,7 +15,7 @@ const STATEMENTS = [
         Your whole programme, <em>in one</em> place.
       </>
     ),
-    lede: "Plan the logframe, record activities as they happen, track every indicator and keep the evidence beside the work. Donor reports are drawn from that same record.",
+    lede: "Set up the logframe, record activities as they happen, track every indicator and keep the evidence beside the work. Donor reports are drawn from that same record.",
   },
   {
     heading: (
@@ -96,7 +96,7 @@ export function HomeHero() {
           </div>
         </div>
 
-        <div className={styles.cycle} role="img" aria-label="One record connects four stages: plan, deliver, monitor and demonstrate.">
+        <div className={styles.cycle} role="img" aria-label="One record connects four stages: set up, deliver, monitor and demonstrate.">
           <svg viewBox="0 0 480 480" aria-hidden="true" focusable="false">
             <defs>
               <linearGradient id="home-cycle-gradient" x1="0" y1="0" x2="1" y2="1">
@@ -110,7 +110,7 @@ export function HomeHero() {
             <circle className={styles.flow} cx="240" cy="240" r="190" stroke="url(#home-cycle-gradient)" />
           </svg>
           <div className={`${styles.stageNode} ${styles.nodePlan}`}>
-            <b>Plan</b>
+            <b>Set up</b>
             <small>Logframe, indicators, team</small>
           </div>
           <div className={`${styles.stageNode} ${styles.nodeDeliver}`}>

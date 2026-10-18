@@ -45,6 +45,8 @@ export type Capability =
   | "checklist.manage"
   | "export.create"
   | "audit.view"
+  | "workplan.manage"
+  | "workplan.update-own"
   | "settings.view"
   | "billing.manage";
 
@@ -79,6 +81,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "audit.view",
     "settings.view",
     "billing.manage",
+    "workplan.manage",
+    "workplan.update-own",
   ],
   PROJECT_MANAGER: [
     "project.create",
@@ -99,6 +103,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "report.manage-agent-memory",
     "checklist.resolve",
     "export.create",
+    "workplan.manage",
+    "workplan.update-own",
   ],
   ME_OFFICER: [
     "logframe.edit",
@@ -109,6 +115,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "evidence.verify",
     "reporting.edit",
     "report.generate",
+    "workplan.manage",
+    "workplan.update-own",
   ],
   GRANTS_OFFICER: [
     "template.create",
@@ -118,14 +126,16 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "report.approve",
     "report.override-confidentiality",
     "export.create",
+    "workplan.update-own",
   ],
-  FIELD_OFFICER: ["activity.create", "evidence.upload"],
+  FIELD_OFFICER: ["activity.create", "evidence.upload", "workplan.update-own"],
   COMPLIANCE_OFFICER: [
     "checklist.resolve",
     "checklist.manage",
     "evidence.verify",
     "reporting.edit",
     "report.approve",
+    "workplan.update-own",
   ],
   VIEWER: ["export.create"],
 };

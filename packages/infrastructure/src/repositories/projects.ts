@@ -51,6 +51,7 @@ export class PrismaProjectRepository implements IProjectRepository {
           status: p.status,
           archivedAt: p.archivedAt,
           isDemo: p.isDemo,
+          showWorkPlanning: p.showWorkPlanning,
         },
       });
       return ok(p);
@@ -85,6 +86,7 @@ export class PrismaProjectRepository implements IProjectRepository {
           reportingOfficerId: p.reportingOfficerId,
           status: p.status,
           archivedAt: p.archivedAt,
+          showWorkPlanning: p.showWorkPlanning,
         },
       });
       return ok(p);
@@ -129,6 +131,7 @@ export class PrismaProjectRepository implements IProjectRepository {
     status: string;
     archivedAt: Date | null;
     isDemo: boolean;
+    showWorkPlanning: boolean;
     createdAt: Date;
   }): Project {
     const props: ProjectProps = {
@@ -155,6 +158,7 @@ export class PrismaProjectRepository implements IProjectRepository {
       status: row.status as ProjectProps["status"],
       archivedAt: row.archivedAt ?? undefined,
       isDemo: row.isDemo,
+      showWorkPlanning: row.showWorkPlanning,
     };
     return Project.rehydrate({
       id: row.id,

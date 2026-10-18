@@ -245,11 +245,14 @@ model Project {
   workspaceRootId       String?
   archivedAt            DateTime?
   isDemo                Boolean  @default(false)
+  /// Admin setting: false hides the work plan screens and keeps the data.
+  showWorkPlanning      Boolean  @default(true)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
   organization    Organization  @relation(fields: [tenantId], references: [tenantId])
   setup           ProjectSetup?
+  plannedActivities PlannedActivity[]
   reportingProfile ReportingProfile?
   logframeItems   LogframeItem[]
   indicators      Indicator[]
@@ -538,6 +541,8 @@ model ActivityUpdate {
   outputId              String?
   /// The logframe's own ACTIVITY node this record delivers (outputId is its parent output).
   logframeActivityId    String?
+  /// The planned activity (work plan) this completed activity delivers.
+  plannedActivityId     String?
   indicatorId           String?
   participantsTotal     Int?
   participantsMale      Int?
@@ -566,6 +571,7 @@ model ActivityUpdate {
   @@index([projectId])
   @@index([reportingPeriodId])
   @@index([logframeActivityId])
+  @@index([plannedActivityId])
 }
 
 model ReportDraft {
@@ -1438,4 +1444,62 @@ model PeriodFinancialSummary {
 
   @@index([tenantId])
   @@index([projectId])
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// PHASE 28: Work plan (planned activities and their history)
+////////////////////////////////////////////////////////////////////////////////
+
+/// Work planned ahead. Dates are plain calendar days (@db.Date). The delivery state is derived, never stored.
+model PlannedActivity {
+  id                 String    @id
+  tenantId           String
+  projectId          String
+  title              String
+  description        String    @default("")
+  location           String?
+  logframeActivityId String?
+  outputId           String?
+  ownerUserId        String?
+  /// JSON array of user ids.
+  supportUserIds     String    @default("[]")
+  plannedStart       DateTime  @db.Date
+  plannedEnd         DateTime  @db.Date
+  /// The first dates saved; never changed afterwards.
+  originalStart      DateTime  @db.Date
+  originalEnd        DateTime  @db.Date
+  targetParticipants Int?
+  targetCount        Int?
+  status             String    @default("PLANNED")
+  statusReason       String?
+  seriesId           String?
+  recurrenceJson     String?
+  /// Files the work needs (Batch 28.6).
+  evidenceRequirementsJson String @default("[]")
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  createdById        String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@index([tenantId, projectId, plannedStart])
+  @@index([tenantId, ownerUserId])
+  @@index([seriesId])
+}
+
+/// Append-only history of changes to a planned activity; the reasons are the project's decision history.
+model PlanRevision {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  changeJson        String   @db.Text
+  reason            String?
+  changedById       String
+  changedAt         DateTime @default(now())
+
+  @@index([tenantId, plannedActivityId])
+  @@index([tenantId, projectId, changedAt])
 }

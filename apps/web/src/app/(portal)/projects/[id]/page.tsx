@@ -9,6 +9,10 @@ import { PeriodSwitcher } from "@/features/projects/presentation/PeriodSwitcher"
 import { projectStatusTone, severityTone } from "@/lib/shared/tone";
 import { readinessHeadline } from "@/features/projects/application/readiness-view";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
+import { gatewayRequest } from "@/lib/server/api-gateway";
+import { DataSheetResponseSchema, LogframeResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { planCounts, outputProgress } from "@/features/workplan/domain/delivery-overview";
+import { PlanOverviewCards } from "@/features/workplan/presentation/PlanOverviewCards";
 import { DeleteDemoProjectButton } from "@/features/tour/presentation/DeleteDemoProjectButton";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +38,29 @@ export default async function ProjectDetail({
   const { project, periods, readiness, checklist, pendingEvidence, activityCount, activePeriodId } = overview;
   const openChecklist = checklist.filter((c) => c.status !== "RESOLVED" && c.status !== "ACCEPTED_RISK" && c.status !== "NOT_APPLICABLE");
   const hasPeriod = periods.length > 0;
+
+  // The plan cards appear only when a plan exists and work planning is shown; otherwise this page is exactly as before.
+  const planResult = project.showWorkPlanning === false ? null : await gatewayRequest(`/v1/projects/${project.id}/work-plan`, WorkPlanResponseSchema, ctx.token);
+  const planRows = planResult?.ok ? planResult.value.items : [];
+  let planCards: { counts: ReturnType<typeof planCounts>; outputs: ReturnType<typeof outputProgress> } | null = null;
+  if (planRows.length > 0) {
+    const [logframe, sheet] = await Promise.all([
+      gatewayRequest(`/v1/projects/${project.id}/logframe`, LogframeResponseSchema, ctx.token),
+      gatewayRequest(`/v1/projects/${project.id}/data-sheet`, DataSheetResponseSchema, ctx.token),
+    ]);
+    const items = logframe.ok ? logframe.value.items : [];
+    planCards = {
+      counts: planCounts(planRows),
+      outputs: outputProgress({
+        rows: planRows,
+        outputs: items.filter((i) => i.level === "OUTPUT").map((i) => ({ id: i.id, title: i.code ? `${i.code} ${i.title}` : i.title })),
+        indicators: logframe.ok ? logframe.value.indicators.map((i) => ({ id: i.id, logframeItemId: i.logframeItemId })) : [],
+        parentOf: new Map(items.map((i) => [i.id, i.parentId ?? undefined])),
+        sheet: sheet.ok ? sheet.value : undefined,
+        otherTitle: "Other activities",
+      }),
+    };
+  }
 
   return (
     <div data-tour-id="demo-project-card">
@@ -78,6 +105,8 @@ export default async function ProjectDetail({
         <Stat label="Pending evidence" value={pendingEvidence === 0 ? "0" : String(pendingEvidence)} />
         <Stat label="Activities" value={String(activityCount)} />
       </section>
+
+      {planCards && <PlanOverviewCards projectId={project.id} counts={planCards.counts} outputs={planCards.outputs} />}
 
       {readiness && (
         <section className="mt-8 grid gap-6 lg:grid-cols-2">

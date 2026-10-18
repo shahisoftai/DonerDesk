@@ -79,7 +79,7 @@ export async function updateIndicatorSemanticsAction(input: unknown): Promise<Up
   });
 }
 
-const CopyProjectSetupResponseSchema = z.object({ items: z.number(), indicators: z.number() });
+const CopyProjectSetupResponseSchema = z.object({ items: z.number(), indicators: z.number(), plannedActivities: z.number().optional(), planMessage: z.string().optional() });
 export type CopyProjectSetupResult = Result<z.infer<typeof CopyProjectSetupResponseSchema>, AppError>;
 
 /** Starts an empty project's logframe and indicators from another project of the workspace. */

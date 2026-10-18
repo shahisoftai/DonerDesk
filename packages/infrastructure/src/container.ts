@@ -78,6 +78,22 @@ import {
   CreateAllPeriodsHandler,
   EvidenceLinkService,
   ActivityLinkResolver,
+  PlanLinkResolver,
+  PlanAccess,
+  PlanRecorder,
+  CreatePlannedActivityHandler,
+  ChangePlanStatusHandler,
+  ReschedulePlannedActivityHandler,
+  AssignPlannedActivityHandler,
+  UpdatePlannedActivityHandler,
+  StartPlanFromLogframeHandler,
+  ListWorkPlanHandler,
+  ListPlanRevisionsHandler,
+  SetWorkPlanningVisibilityHandler,
+  ListProjectPeopleHandler,
+  ImportWorkPlanHandler,
+  CopyWorkPlanHandler,
+  GetMyWeekHandler,
   GetPeriodOptionsHandler,
   PlanClosingReportHandler,
   StartClosingReportHandler,
@@ -288,6 +304,7 @@ import { PrismaEvidenceRepository } from "./repositories/evidence.js";
 import { PrismaIdempotencyRepository } from "./repositories/idempotency.js";
 import { PrismaRequestIdempotencyRepository } from "./repositories/request-idempotency.js";
 import { PrismaActivityUpdateRepository } from "./repositories/activities.js";
+import { PrismaPlannedActivityRepository, PrismaPlanRevisionRepository, PrismaPlanContextReader, PrismaDeliveryFactsReader, PrismaMemberDirectory, PrismaMyWeekReader } from "./repositories/workplan.js";
 import {
   PrismaReportingPeriodRepository,
   PrismaReportDraftRepository,
@@ -545,6 +562,19 @@ export interface Container {
     searchEvidence: SearchEvidenceHandler;
     getEvidence: GetEvidenceHandler;
     createActivityUpdate: CreateActivityUpdateHandler;
+    createPlannedActivity: CreatePlannedActivityHandler;
+    changePlanStatus: ChangePlanStatusHandler;
+    reschedulePlannedActivity: ReschedulePlannedActivityHandler;
+    assignPlannedActivity: AssignPlannedActivityHandler;
+    updatePlannedActivity: UpdatePlannedActivityHandler;
+    startPlanFromLogframe: StartPlanFromLogframeHandler;
+    listWorkPlan: ListWorkPlanHandler;
+    listPlanRevisions: ListPlanRevisionsHandler;
+    setWorkPlanningVisibility: SetWorkPlanningVisibilityHandler;
+    listProjectPeople: ListProjectPeopleHandler;
+    importWorkPlan: ImportWorkPlanHandler;
+    copyWorkPlan: CopyWorkPlanHandler;
+    getMyWeek: GetMyWeekHandler;
     importActivities: ImportActivitiesHandler;
     polishActivity: PolishActivityHandler;
     reviewActivity: ReviewActivityHandler;
@@ -1100,6 +1130,12 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const exportBuilder = new DefaultExportBuilder(storage, donorTemplateRenderer);
 
   const activityLinks = new ActivityLinkResolver(logframe);
+  const plannedActivities = new PrismaPlannedActivityRepository(prisma);
+  const planRevisions = new PrismaPlanRevisionRepository(prisma);
+  const planContext = new PrismaPlanContextReader(prisma);
+  const planLinks = new PlanLinkResolver(plannedActivities);
+  const planAccess = new PlanAccess(plannedActivities);
+  const planRecorder = new PlanRecorder(ids, planRevisions, audits, clock);
   const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits);
   const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates, logframe);
   const periodFinancials = new PrismaPeriodFinancialRepository(prisma);
@@ -1295,7 +1331,20 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     bulkVerifyEvidence: new BulkVerifyEvidenceHandler(new VerifyEvidenceHandler(evidence, audits)),
     searchEvidence: new SearchEvidenceHandler(evidence),
     getEvidence: new GetEvidenceHandler(evidence),
-    createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks),
+    createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks),
+    createPlannedActivity: new CreatePlannedActivityHandler(ids, plannedActivities, planContext, logframe, audits),
+    changePlanStatus: new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock),
+    reschedulePlannedActivity: new ReschedulePlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder, clock),
+    assignPlannedActivity: new AssignPlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder),
+    updatePlannedActivity: new UpdatePlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder, clock),
+    startPlanFromLogframe: new StartPlanFromLogframeHandler(ids, plannedActivities, planContext, logframe, audits),
+    listWorkPlan: new ListWorkPlanHandler(plannedActivities, new PrismaDeliveryFactsReader(prisma), planContext, clock),
+    listPlanRevisions: new ListPlanRevisionsHandler(plannedActivities, planRevisions),
+    setWorkPlanningVisibility: new SetWorkPlanningVisibilityHandler(projects, audits),
+    listProjectPeople: new ListProjectPeopleHandler(projectMembers, users),
+    getMyWeek: new GetMyWeekHandler(new PrismaMyWeekReader(prisma), new PrismaDeliveryFactsReader(prisma), clock),
+    copyWorkPlan: new CopyWorkPlanHandler(projects, logframe, plannedActivities, ids, audits),
+    importWorkPlan: new ImportWorkPlanHandler(ids, plannedActivities, planContext, new PrismaMemberDirectory(prisma), logframe, audits),
     importActivities: new ImportActivitiesHandler(ids, activities, logframe, indicators, periods, audits),
     polishActivity: new PolishActivityHandler(activities, activityPolisher),
     reviewActivity: new ReviewActivityHandler(activities, audits, activityApprovalGuard),
@@ -1305,7 +1354,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     bulkReviewActivities: new BulkReviewActivitiesHandler(new ReviewActivityHandler(activities, audits)),
     listActivities: new ListActivitiesHandler(activities),
     getActivity: new GetActivityHandler(activities),
-    updateActivity: new UpdateActivityHandler(activities, evidence, audits, activityLinks),
+    updateActivity: new UpdateActivityHandler(activities, evidence, audits, activityLinks, planLinks),
     attachEvidence: new AttachEvidenceHandler(evidenceLinker),
     getPeriodOptions: new GetPeriodOptionsHandler(projects, periods, activities),
     getEvidenceSupport: new GetEvidenceSupportHandler(evidence, activities, indicators, indicatorUpdates, reportClaims, sections),

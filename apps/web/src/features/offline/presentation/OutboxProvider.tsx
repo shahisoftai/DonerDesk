@@ -6,6 +6,8 @@ import { uploadEvidenceAction } from "@/lib/actions/evidence";
 import { guardNetwork } from "@/lib/shared/connectivity";
 import { createActivitySender } from "../domain/activity-outbox";
 import { ACTIVITY_KIND } from "../domain/activity-outbox";
+import { PLAN_STATUS_KIND, createPlanStatusSender } from "../domain/plan-status-outbox";
+import { changePlanStatusAction } from "@/lib/actions/workplan";
 import { createMemoryOutboxStore, createSerialFlusher, retryEntry, summarise, type OutboxEntry, type OutboxSender, type OutboxStore } from "../domain/outbox";
 import { canUseDurableOutbox, createIndexedDbOutboxStore } from "../infrastructure/indexeddb-outbox-store";
 
@@ -56,6 +58,7 @@ export function OutboxProvider({ scope, children }: { scope: string; children: R
         createActivity: (input, options) => guardNetwork(() => createActivityAction(input, options)),
         uploadEvidence: (form) => guardNetwork(() => uploadEvidenceAction(form)),
       }),
+      [PLAN_STATUS_KIND]: createPlanStatusSender({ changeStatus: (itemId, input) => guardNetwork(() => changePlanStatusAction(itemId, input)) }),
     };
     const send: OutboxSender = (entry, save) =>
       senders[entry.kind]?.(entry, save) ?? Promise.resolve({ kind: "rejected" as const, message: "This kind of saved record is no longer supported." });

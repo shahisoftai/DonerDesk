@@ -97,6 +97,14 @@
     "./contexts/templates/template-diff.js": {
       "types": "./dist/contexts/templates/template-diff.d.ts",
       "import": "./dist/contexts/templates/template-diff.js"
+    },
+    "./contexts/workplan/index.js": {
+      "types": "./dist/contexts/workplan/index.d.ts",
+      "import": "./dist/contexts/workplan/index.js"
+    },
+    "./core/exhaustive.js": {
+      "types": "./dist/core/exhaustive.d.ts",
+      "import": "./dist/core/exhaustive.js"
     }
   },
   "scripts": {

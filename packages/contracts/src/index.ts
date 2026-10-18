@@ -17,3 +17,4 @@ export * from "./agent-memory.js";
 export * from "./sales.js";
 export * from "./finance.js";
 export * from "./validation-text.js";
+export * from "./workplan.js";

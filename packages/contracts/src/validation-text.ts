@@ -28,6 +28,21 @@ const FIELD_LABELS: ReadonlyArray<readonly [string, string]> = [
   ["endDate", "End date"],
   ["deadline", "Donor deadline"],
   ["internalReviewDeadline", "Internal review deadline"],
+  ["plannedStart", "Start date"],
+  ["plannedEnd", "End date"],
+  ["ownerUserId", "Lead"],
+  ["supportUserIds", "Other people helping"],
+  ["logframeActivityId", "Logframe activity"],
+  ["plannedActivityId", "Planned activity"],
+  ["targetParticipants", "People expected"],
+  ["targetCount", "Number of sessions"],
+  ["repeats.until", "Repeats until"],
+  ["repeats", "Repeats"],
+  ["reason", "Why?"],
+  ["rows.plannedStart", "Start date"],
+  ["rows.plannedEnd", "End date"],
+  ["rows.ownerUserId", "Lead"],
+  ["rows.logframeActivityId", "Logframe activity"],
 ];
 
 const humanise = (segment: string): string => {

@@ -27,7 +27,9 @@ export type Permission =
   | "checklist.manage"
   | "comment.create"
   | "audit.view"
-  | "billing.manage";
+  | "billing.manage"
+  | "workplan.manage"
+  | "workplan.update-own";
 
 const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -40,6 +42,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "activity.create", "activity.approve",
     "report.generate", "report.edit", "report.approve", "report.export", "report.resolve-claim", "report.override-confidentiality", "report.manage-agent-memory",
     "checklist.manage", "comment.create", "audit.view", "billing.manage",
+    "workplan.manage", "workplan.update-own",
   ]),
   PROJECT_MANAGER: new Set<Permission>([
     "project.edit", "project.view",
@@ -50,6 +53,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "activity.create", "activity.approve",
     "report.generate", "report.edit", "report.approve", "report.export", "report.resolve-claim", "report.manage-agent-memory",
     "checklist.manage", "comment.create", "audit.view",
+    "workplan.manage", "workplan.update-own",
   ]),
   ME_OFFICER: new Set<Permission>([
     "project.view",
@@ -59,6 +63,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "activity.create",
     "report.generate", "report.edit",
     "checklist.manage", "comment.create",
+    "workplan.manage", "workplan.update-own",
   ]),
   GRANTS_OFFICER: new Set<Permission>([
     "project.view",
@@ -66,18 +71,21 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "evidence.upload",
     "report.generate", "report.edit", "report.export", "report.override-confidentiality",
     "checklist.manage", "comment.create",
+    "workplan.update-own",
   ]),
   FIELD_OFFICER: new Set<Permission>([
     "project.view",
     "evidence.upload",
     "activity.create",
     "comment.create",
+    "workplan.update-own",
   ]),
   COMPLIANCE_OFFICER: new Set<Permission>([
     "project.view",
     "evidence.upload", "evidence.verify",
     "checklist.manage",
     "comment.create", "audit.view",
+    "workplan.update-own",
   ]),
   VIEWER: new Set<Permission>([
     "project.view", "report.export",

@@ -1,0 +1,53 @@
+import "server-only";
+import { gatewayRequest } from "@/lib/server/api-gateway";
+import { requireSession, type AuthContext } from "@/lib/server/auth-context";
+import { getProject } from "@/lib/server/project-queries";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
+import { LogframeResponseSchema, ProjectPeopleResponseSchema } from "@/lib/server/schemas";
+import type { PlanFormOption } from "../presentation/PlanActivityForm";
+import type { WizardActivity } from "../presentation/StartFromLogframeWizard";
+
+export interface PlanPageData {
+  ctx: AuthContext;
+  userId: string;
+  today: string;
+  /** False when an admin hid the work plan for this project. */
+  planningVisible: boolean;
+  /** Active members ("You" for the current person). */
+  leads: PlanFormOption[];
+  names: Record<string, string>;
+  logframeActivities: WizardActivity[];
+  /** Output id -> title, for grouping the Timeline. */
+  outputTitles: Record<string, string>;
+  /** The project's dates (the Timeline's whole-project range). */
+  projectRange: { start: string; end: string };
+}
+
+/** Everything the plan pages share: who the person is, who can lead, and the logframe's activities. One read, used by every plan page. */
+export async function loadPlanPageData(projectId: string): Promise<PlanPageData> {
+  const ctx = await requireSession();
+  const userId = decodeSessionPayload(ctx.token)?.sub ?? "";
+  const [project, people, logframe] = await Promise.all([
+    getProject(ctx.token, projectId),
+    gatewayRequest(`/v1/projects/${projectId}/people`, ProjectPeopleResponseSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${projectId}/logframe`, LogframeResponseSchema, ctx.token),
+  ]);
+  const active = people.ok ? people.value.items : [];
+  const names: Record<string, string> = Object.fromEntries(active.map((p) => [p.userId, p.name]));
+  const items = logframe.ok ? logframe.value.items : [];
+  const today = new Date().toISOString().slice(0, 10);
+  const titleOf = new Map(items.map((i) => [i.id, i.title]));
+  return {
+    ctx,
+    userId,
+    today,
+    outputTitles: Object.fromEntries(items.filter((i) => i.level === "OUTPUT").map((i) => [i.id, i.code ? `${i.code} ${i.title}` : i.title])),
+    projectRange: project.ok ? { start: project.value.startDate.slice(0, 10), end: project.value.endDate.slice(0, 10) } : { start: today, end: today },
+    planningVisible: project.ok ? project.value.showWorkPlanning !== false : true,
+    leads: active.map((m) => ({ id: m.userId, label: m.userId === userId ? `${m.name} (you)` : m.name })),
+    names,
+    logframeActivities: items
+      .filter((i) => i.level === "ACTIVITY")
+      .map((i) => ({ id: i.id, title: i.code ? `${i.code} ${i.title}` : i.title, outputTitle: (i.parentId && titleOf.get(i.parentId)) || "Other activities" })),
+  };
+}

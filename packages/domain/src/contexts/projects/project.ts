@@ -41,6 +41,8 @@ export interface ProjectProps {
   archivedAt?: Date;
   /** Sample project seeded for the DonorDesk Academy tour; excluded from plan-limit counts and AI-credit usage (Feature 22). */
   isDemo: boolean;
+  /** Admin setting: false hides the work plan screens and keeps the data. Absent means shown. */
+  showWorkPlanning?: boolean;
 }
 
 export class Project extends Entity<string> {
@@ -200,6 +202,13 @@ export class Project extends Entity<string> {
       ...patch,
       duration: patch.duration ? DateRange.create(patch.duration.start, patch.duration.end) : this.props.duration,
     };
+    this.touch();
+  }
+
+  get showWorkPlanning(): boolean { return this.props.showWorkPlanning !== false; }
+
+  setWorkPlanningVisible(visible: boolean): void {
+    this.props.showWorkPlanning = visible;
     this.touch();
   }
 

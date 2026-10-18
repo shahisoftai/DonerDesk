@@ -18,6 +18,7 @@ import { Select } from "@/components/ui/Select";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { FormSummary } from "@/components/ui/FormSummary";
 import { recordParticipantHints } from "@donordesk/domain/contexts/logframe/participants-consistency.js";
+import { suggestPlanLinks, WORKPLAN_COPY, type LinkCandidate } from "@donordesk/domain/contexts/workplan/index.js";
 import { LogframeItemSelect } from "@/features/logframe/presentation/LogframeItemSelect";
 import { periodContainingDate } from "@/lib/shared/option-labels";
 import { FileDropzone } from "@/components/editor/FileDropzone";
@@ -44,6 +45,9 @@ function NewActivityFormInner({
   indicators = [],
   initialLogframeActivityId,
   earlierRecords = [],
+  plannedActivities = [],
+  userId = "",
+  initialPlannedActivityId,
 }: {
   projectId: string;
   reportingPeriods: PeriodOption[];
@@ -56,6 +60,11 @@ function NewActivityFormInner({
   initialLogframeActivityId?: string;
   /** Earlier records the new one can start from (title, place and node are copied; numbers and text are not). */
   earlierRecords?: Array<{ id: string; title: string; location?: string | undefined; logframeActivityId?: string | undefined }>;
+  /** The project's planned activities (work plan). The picker is shown only when there are some. */
+  plannedActivities?: Array<LinkCandidate & { title: string; location?: string | undefined }>;
+  userId?: string;
+  /** Opened from a planned activity ("Add completed activity"): that activity is already chosen. */
+  initialPlannedActivityId?: string;
   /** Called when the finished form was kept on this device because there was no connection. */
   onQueued: (title: string) => void;
 }) {
@@ -78,6 +87,7 @@ function NewActivityFormInner({
   const [participantsChildren, setParticipantsChildren] = useState("");
   const [participantsDisability, setParticipantsDisability] = useState("");
   const [logframeActivityId, setLogframeActivityId] = useState(initialLogframeActivityId && logframeItems.some((i) => i.id === initialLogframeActivityId) ? initialLogframeActivityId : "");
+  const [plannedActivityId, setPlannedActivityId] = useState(initialPlannedActivityId && plannedActivities.some((p) => p.id === initialPlannedActivityId) ? initialPlannedActivityId : "");
   const [summary, setSummary] = useState("");
   const [achievements, setAchievements] = useState("");
   const [challenges, setChallenges] = useState("");
@@ -165,6 +175,24 @@ function NewActivityFormInner({
   const dateInsidePeriodId = activityDate ? periodContainingDate(reportingPeriods, activityDate) : undefined;
   const periodIsDerived = Boolean(dateInsidePeriodId) && dateInsidePeriodId === reportingPeriodId && !changingPeriod && !fields.reportingPeriodId;
 
+  const planSuggestions = useMemo(() => {
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(activityDate) ? activityDate : new Date().toISOString().slice(0, 10);
+    const picked = plannedActivities.find((p) => p.id === plannedActivityId);
+    const found = suggestPlanLinks({ userId, date, ...(logframeActivityId ? { logframeActivityId } : {}) }, plannedActivities);
+    // A chosen activity always stays in the list, even when the dates suggest others.
+    return picked && !found.some((f) => f.id === picked.id) ? [{ id: picked.id, reasons: [] as string[] }, ...found].slice(0, 3) : found;
+  }, [plannedActivities, plannedActivityId, activityDate, logframeActivityId, userId]);
+
+  /** Choosing a planned activity fills what is empty (title, place, logframe activity); it never overwrites what was typed. */
+  function choosePlanned(id: string) {
+    setPlannedActivityId(id);
+    const plan = plannedActivities.find((p) => p.id === id);
+    if (!plan) return;
+    if (!activityTitle.trim()) setActivityTitle(plan.title);
+    if (!location.trim() && plan.location) setLocation(plan.location);
+    if (!logframeActivityId && plan.logframeActivityId && logframeItems.some((i) => i.id === plan.logframeActivityId)) setLogframeActivityId(plan.logframeActivityId);
+  }
+
   const activityIndicator = defaultIndicatorForActivity(logframeActivityId, indicators);
   /** What was chosen for a file; a file nobody touched gets the suggestion for its name and the activity's own indicator. */
   function settingsFor(file: File): FileSettings {
@@ -236,6 +264,7 @@ function NewActivityFormInner({
         ...(endDateValue ? { activityEndDate: endDateValue } : {}),
         location: location || undefined,
         logframeActivityId: logframeActivityId || undefined,
+        plannedActivityId: plannedActivityId || undefined,
         participantsTotal: participantsTotal ? Number(participantsTotal) : undefined,
         participantsMale: participantsMale ? Number(participantsMale) : undefined,
         participantsFemale: participantsFemale ? Number(participantsFemale) : undefined,
@@ -393,6 +422,25 @@ function NewActivityFormInner({
           maxLength={300}
         />
       </Field>
+
+      {plannedActivities.length > 0 && (
+        <fieldset className="rounded-xl border border-slate-200 p-3 dark:border-white/10">
+          <legend className="px-1 text-sm font-medium">{WORKPLAN_COPY.whichPlanned}</legend>
+          {planSuggestions.map((sug) => {
+            const plan = plannedActivities.find((p) => p.id === sug.id)!;
+            return (
+              <label key={sug.id} className="flex items-start gap-2 py-1 text-sm">
+                <input type="radio" name="plannedActivity" className="mt-1 h-4 w-4" checked={plannedActivityId === sug.id} onChange={() => choosePlanned(sug.id)} />
+                <span>{plan.title}<span className="block text-xs text-slate-500">{sug.reasons.join(" · ")}</span></span>
+              </label>
+            );
+          })}
+          <label className="flex items-center gap-2 py-1 text-sm">
+            <input type="radio" name="plannedActivity" className="h-4 w-4" checked={plannedActivityId === ""} onChange={() => setPlannedActivityId("")} />
+            {WORKPLAN_COPY.noneOfThese}
+          </label>
+        </fieldset>
+      )}
 
       {logframeItems.some((i) => i.level === "ACTIVITY") && (
         <Field

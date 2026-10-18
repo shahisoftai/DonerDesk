@@ -76,7 +76,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
               Add your first item
             </Link>.
           </div>
-            <CopySetupPanel projectId={resolvedParams.id} candidates={copyCandidates} />
+            <CopySetupPanel projectId={resolvedParams.id} candidates={copyCandidates} canCopyPlan={ctx.capabilities.has("workplan.manage")} />
           </>
         ) : (
           <LogframeTreeEditor projectId={resolvedParams.id} items={data.items} indicatorCounts={indicatorCounts} editable={canReorder} />
