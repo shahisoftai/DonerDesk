@@ -23,3 +23,10 @@ test("a not-calculable indicator grounds no derived percent from its updates", (
   const allowed = allowedNumbers({ indicatorUpdates: sources.indicatorUpdates }, notCalculable);
   assert.deepEqual(ungroundedNumbers("That is 87.5% of the target.", allowed), ["87.5"]);
 });
+
+test("plan delivery counts in the writer context are grounded", async () => {
+  const { allowedNumbers, ungroundedNumbers } = await import("../dist/ai/number-grounding.js");
+  const allowed = allowedNumbers({ context: { deliveryPlan: { planned: 41, held: 38, notHeld: 3, cancelled: 1, moved: 4 } } });
+  assert.deepEqual(ungroundedNumbers("38 of 41 sessions were held.", allowed), []);
+  assert.deepEqual(ungroundedNumbers("39 of 41 sessions were held.", allowed), ["39"]);
+});

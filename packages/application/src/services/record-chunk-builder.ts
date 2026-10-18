@@ -1,10 +1,11 @@
-import type { FinanceSummaryView, ReportScope, Result, TenantId, VerifiedFinding } from "@donordesk/domain";
+import { planDeliverySentences, type FinanceSummaryView, type PlanDeliverySummary, type ReportScope, type Result, type TenantId, type VerifiedFinding } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
 import type { IRecordChunkBuilder, IReportingPeriodRepository, RecordChunk } from "../ports/reporting.js";
 import type { IProjectRepository } from "../ports/projects.js";
 import type { IActivityUpdateRepository } from "../ports/activities.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../ports/logframe.js";
 import type { IEvidenceRepository } from "../ports/evidence.js";
+import type { IPlanDelivery } from "./plan-delivery-service.js";
 import { resolveGenerationActivities } from "./period-activities.js";
 import { taggedEvidenceIds } from "./period-evidence.js";
 
@@ -203,6 +204,12 @@ function breakdownSentence(total: string, unit: string, entries: ReadonlyArray<{
   return `Of the ${total}${unit}, ${entries.map((e) => `${e.value} ${groupLabel(e.category)}`).join(" and ")}.`;
 }
 
+/** Pure. What the plan says about the period, as statements a claim can be supported by (never cited as evidence). */
+export function recordChunksFromPlan(summary: PlanDeliverySummary | undefined): RecordChunk[] {
+  if (!summary) return [];
+  return planDeliverySentences(summary).map((text, i) => ({ chunkId: `record:plan:${i}`, label: "The work plan for this period", text }));
+}
+
 export function recordChunksFromFindings(findings: ReadonlyArray<VerifiedFinding>): RecordChunk[] {
   const chunks: RecordChunk[] = [];
   const push = (code: string, i: number, label: string, text: string): void => {
@@ -312,6 +319,8 @@ export class RecordChunkBuilder implements IRecordChunkBuilder {
     private readonly indicators: IIndicatorRepository,
     private readonly indicatorUpdates: IIndicatorUpdateRepository,
     private readonly evidenceFiles?: IEvidenceRepository,
+    /** Absent: the work plan is not a record (a project without a plan reports exactly as before). */
+    private readonly plan?: IPlanDelivery,
   ) {}
 
   async evidenceIds(input: { tenantId: TenantId; projectId: string; reportingPeriodId: string }): Promise<Result<string[], DomainError>> {
@@ -346,16 +355,18 @@ export class RecordChunkBuilder implements IRecordChunkBuilder {
     if (!indicators.ok) return indicators;
     const codeById = new Map(indicators.value.map((i) => [i.id, i.code]));
 
+    const planned = this.plan ? await this.plan.forPeriod({ tenantId: input.tenantId, projectId: input.projectId, start: period.duration.start, end: period.duration.end }) : undefined;
+
     return {
       ok: true,
-      value: buildRecordChunks({
+      value: [...buildRecordChunks({
         project,
         period,
         story: period.storyContext,
         activities: activities.value,
         indicatorDefinitions: indicators.value.map((i) => ({ code: i.code, name: i.name, meansOfVerification: i.meansOfVerification })),
         indicatorUpdates: updates.value.map((u) => ({ indicatorCode: codeById.get(u.indicatorId) ?? u.indicatorId, comments: u.comments, dataSource: u.dataSource })),
-      }),
+      }), ...(planned?.ok ? recordChunksFromPlan(planned.value) : [])],
     };
   }
 }

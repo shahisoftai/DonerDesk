@@ -57,6 +57,7 @@ export class SectionGenerationService {
         reportContext: request.inputs.reportContext,
         draftedSections: [...request.draftedSections],
         ...(request.inputs.finance ? { finance: request.inputs.finance } : {}),
+        ...(request.inputs.deliveryPlan ? { deliveryPlan: request.inputs.deliveryPlan } : {}),
         ...((request.inputs.notMeasured?.length ?? 0) > 0 ? { notMeasured: request.inputs.notMeasured } : {}),
         ...(request.sectionInstruction ? { sectionInstruction: request.sectionInstruction } : {}),
       },

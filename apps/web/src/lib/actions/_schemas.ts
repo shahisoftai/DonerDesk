@@ -139,6 +139,8 @@ export const InviteUserResponseSchema = z.object({
   token: z.string(),
 });
 
+export const PlanSuggestionResponseSchema = z.object({ suggestion: z.object({ challenges: z.string().optional(), varianceExplanations: z.string().optional() }) });
+
 export const StoryContextResponseSchema = z.object({
   storyContext: z
     .object({

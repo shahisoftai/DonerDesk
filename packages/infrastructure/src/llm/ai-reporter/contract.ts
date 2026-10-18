@@ -163,8 +163,15 @@ export const WRITER_RULES_V5_ADDITIONS: readonly string[] = [
   "Write the donor's name and the project's name exactly as given in the project details; never abbreviate, translate or re-spell them.",
 ];
 
+/** Contract v6: v5 plus these rules (mirror of writer_contract.py _WRITER_RULES_V6_ADDITIONS). */
+export const WRITER_RULES_V6_ADDITIONS: readonly string[] = [
+  "The \"Work plan for this period\" block gives how many activities were planned, held, not held, moved and cancelled, and the reasons the officer recorded; state those counts exactly as given and never calculate any other count or percentage from them.",
+  "Explain a delay, a move or a cancellation only with a reason from the \"Work plan for this period\" block or the officer's own note; never guess a cause, never name who led an activity, and never call an activity late, overdue or behind.",
+  "When the block is absent, say nothing about what was planned.",
+];
+
 export function systemPrompt(version: number = WRITER_CONTRACT_VERSION): string {
-  const rules = version >= 5 ? [...WRITER_RULES_V4, ...WRITER_RULES_V5_ADDITIONS] : version >= 4 ? WRITER_RULES_V4 : WRITER_RULES;
+  const rules = version >= 6 ? [...WRITER_RULES_V4, ...WRITER_RULES_V5_ADDITIONS, ...WRITER_RULES_V6_ADDITIONS] : version >= 5 ? [...WRITER_RULES_V4, ...WRITER_RULES_V5_ADDITIONS] : version >= 4 ? WRITER_RULES_V4 : WRITER_RULES;
   const base = rules.map((r) => `- ${r}`).join("\n");
   const craft =
     version >= 3

@@ -187,6 +187,19 @@ class NotMeasured(BaseModel):
     frequency: str | None = None
 
 
+class ContextDeliveryPlan(BaseModel):
+    """Contract v6: what the work plan says about the period. Counts and recorded reasons only: no names, no statuses."""
+
+    model_config = ConfigDict(extra="forbid")
+    planned: int
+    held: int
+    notHeld: int
+    cancelled: int
+    moved: int
+    cancelledReasons: list[str] = Field(default_factory=list)
+    movedReasons: list[str] = Field(default_factory=list)
+
+
 class Context(BaseModel):
     project: ContextProject | None = None
     period: ContextPeriod | None = None
@@ -201,6 +214,8 @@ class Context(BaseModel):
     # Contract v5 only (absent otherwise, so v2-v4 prompts are byte-stable).
     structure: ContextStructure | None = None
     notMeasured: list[NotMeasured] = Field(default_factory=list)
+    # Contract v6 only.
+    deliveryPlan: ContextDeliveryPlan | None = None
 
 
 class LifeOfProject(BaseModel):

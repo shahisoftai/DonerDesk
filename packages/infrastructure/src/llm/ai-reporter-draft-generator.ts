@@ -588,6 +588,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
             ...(input.notMeasured?.length ? { notMeasured: [...input.notMeasured] } : {}),
           }
         : {}),
+      // Contract v6 only: counts and recorded reasons, never names or statuses.
+      ...(this.writerContractVersion >= 6 && input.deliveryPlan ? { deliveryPlan: input.deliveryPlan } : {}),
     };
   }
 }

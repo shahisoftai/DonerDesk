@@ -28,7 +28,7 @@ import type {
   GenerationFallback,
   GenerationFallbackReason,
 } from "@donordesk/domain";
-import type { FinanceSummaryView, ReportingPeriod, ReportDraft, ReportSection } from "@donordesk/domain";
+import type { FinanceSummaryView, PlanDeliverySummary, ReportingPeriod, ReportDraft, ReportSection } from "@donordesk/domain";
 
 export interface IReportingPeriodRepository {
   create(p: ReportingPeriod): Promise<Result<ReportingPeriod>>;
@@ -283,6 +283,8 @@ export interface GenerateReportDraftInput {
   finance?: FinanceSummaryView;
   /** Indicators with no figure this period (not due, nothing recorded or nothing verified); sent to writer contract v5 only. */
   notMeasured?: ReadonlyArray<{ indicatorCode: string; indicatorName?: string; frequency?: string }>;
+  /** What the work plan says about the period (counts and recorded reasons only); sent to writer contract v6 only. */
+  deliveryPlan?: PlanDeliverySummary;
 }
 
 export interface ReportClaimDraft {

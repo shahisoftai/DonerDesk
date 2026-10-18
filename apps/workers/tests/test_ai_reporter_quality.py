@@ -311,7 +311,7 @@ def test_ts_contract_mirror_is_string_identical() -> None:
 
     ts = (pathlib.Path(__file__).resolve().parents[3] / "packages/infrastructure/src/llm/ai-reporter/contract.ts").read_text()
     assert f"WRITER_CONTRACT_VERSION = {writer_contract.WRITER_CONTRACT_VERSION} as const" in ts
-    for items in (writer_contract._WRITER_RULES_V4, writer_contract._WRITER_RULES_V5_ADDITIONS, writer_contract.BANNED_PHRASES, writer_contract.LANGUAGE_CRAFT_RULES, writer_contract.WRITER_EXCLUDED_PERIOD_KEYS, writer_contract.WORKFLOW_VOCABULARY):
+    for items in (writer_contract._WRITER_RULES_V4, writer_contract._WRITER_RULES_V5_ADDITIONS, writer_contract._WRITER_RULES_V6_ADDITIONS, writer_contract.BANNED_PHRASES, writer_contract.LANGUAGE_CRAFT_RULES, writer_contract.WRITER_EXCLUDED_PERIOD_KEYS, writer_contract.WORKFLOW_VOCABULARY):
         for item in items:
             assert json.dumps(item, ensure_ascii=False) in ts, item
 
@@ -585,3 +585,22 @@ def test_finance_block_uses_thousands_separators_and_states_the_basis() -> None:
     assert '"expenditure": "295,000"' in block and '"budget": "720,000"' in block and '"balance": "142,000"' in block
     assert "cumulative to the end of the period" in block
     assert '"burnRatePercent": "41"' in block
+
+
+def test_contract_v6_adds_plan_rules_and_leaves_v5_byte_stable() -> None:
+    v5, v6 = writer_contract.system_prompt(5), writer_contract.system_prompt(6)
+    assert not any(r in v5 for r in writer_contract._WRITER_RULES_V6_ADDITIONS), "v5 is unchanged"
+    assert all(r in v6 for r in writer_contract._WRITER_RULES_V6_ADDITIONS) and "writer contract v6" in v6
+
+
+def test_delivery_plan_block_appears_only_when_sent_and_its_counts_are_grounded() -> None:
+    from app.ai_reporter.grounding import allowed_numbers, ungrounded_numbers
+    from app.ai_reporter.models import ContextDeliveryPlan
+
+    assert "Work plan for this period" not in build_user_prompt(_req())
+    req = _req()
+    req.context.deliveryPlan = ContextDeliveryPlan(planned=41, held=38, notHeld=3, cancelled=1, moved=4, movedReasons=["Flooding closed the road"])
+    assert "Work plan for this period" in build_user_prompt(req)
+    allowed = allowed_numbers(req)
+    assert ungrounded_numbers("38 of the 41 planned sessions were held; 3 were not, and 4 were moved.", allowed) == []
+    assert ungrounded_numbers("Held 39 of 41 sessions.", allowed) == ["39"]

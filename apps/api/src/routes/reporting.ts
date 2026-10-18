@@ -207,6 +207,13 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     return { storyContext: period.value.storyContext };
   });
 
+  app.get("/v1/reporting-periods/:id/plan-suggestion", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const r = await req.container.handlers.planStorySuggestion.handle({ tenant: req.tenant, requestId: req.id }, id);
+    if (!r.ok) throw r.error;
+    return { suggestion: r.value };
+  });
+
   app.post("/v1/reporting-periods/:id/generate-draft", async (req) => {
     const id = (req.params as { id: string }).id;
     GenerateDraftSchema.parse(req.body ?? {});

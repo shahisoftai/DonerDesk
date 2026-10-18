@@ -157,6 +157,9 @@ def _shared_prompt(req: SectionDraftRequest) -> str:
             _finance_block("Financial figures (verified; the only financial numbers you may quote)", ctx.finance)
         )
 
+    if ctx.deliveryPlan:
+        parts.append(_object_block("Work plan for this period (counts and the officer's recorded reasons; the only plan facts you may state)", ctx.deliveryPlan))
+
     if ctx.structure and (ctx.structure.sectionTitles or ctx.structure.indicatorCodes):
         parts.append(_object_block("Report structure (the only section titles and codes you may name)", ctx.structure))
     if ctx.notMeasured:

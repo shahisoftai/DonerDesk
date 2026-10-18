@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ActivitiesResponseSchema, TemplatesResponseSchema, ExportPreflightSchema, ProjectDetailSchema, ReportDraftResponseSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
-import { PeriodFinanceResponseSchema, StoryContextResponseSchema } from "@/lib/actions/_schemas";
+import { PeriodFinanceResponseSchema, PlanSuggestionResponseSchema, StoryContextResponseSchema } from "@/lib/actions/_schemas";
 import { loadPeriodIndicatorsAction } from "@/lib/actions/indicators";
 import { InlineError } from "@/components/feedback/PageState";
 import { IndicatorEntryGrid } from "@/features/reporting/presentation/IndicatorEntryGrid";
@@ -40,7 +40,7 @@ export default async function ReportInputsPage({
   const { tab: tabParam } = await searchParams;
   const ctx = await requireSession();
 
-  const [indicatorsResult, storyResult, preflightResult, projectResult, periodsResult, financeResult, templatesResult, templateDraftResult, complianceNotesResult] = await Promise.all([
+  const [indicatorsResult, storyResult, preflightResult, projectResult, periodsResult, financeResult, templatesResult, templateDraftResult, complianceNotesResult, planSuggestionResult] = await Promise.all([
     loadPeriodIndicatorsAction(periodId),
     gatewayRequest(`/v1/reporting-periods/${periodId}/story`, StoryContextResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${periodId}/export-preflight`, ExportPreflightSchema, ctx.token),
@@ -50,6 +50,7 @@ export default async function ReportInputsPage({
     gatewayRequest(`/v1/projects/${projectId}/templates`, TemplatesResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${periodId}/draft`, ReportDraftResponseSchema, ctx.token),
     getComplianceNotesAction(periodId),
+    gatewayRequest(`/v1/reporting-periods/${periodId}/plan-suggestion`, PlanSuggestionResponseSchema, ctx.token),
   ]);
   if (!indicatorsResult.ok && indicatorsResult.error.kind === "not_found") notFound();
 
@@ -153,7 +154,7 @@ export default async function ReportInputsPage({
       {tab === "story" &&
         (storyResult.ok ? (
           <div className="space-y-4">
-            <StoryInputs periodId={periodId} initialStory={story} canEdit={ctx.capabilities.has("reporting.edit")} />
+            <StoryInputs periodId={periodId} initialStory={story} planSuggestion={planSuggestionResult.ok ? planSuggestionResult.value.suggestion : {}} canEdit={ctx.capabilities.has("reporting.edit")} />
             {complianceNotesResult.ok && <ComplianceNotes periodId={periodId} projectId={projectId} initial={complianceNotesResult.value} canEdit={ctx.capabilities.has("reporting.edit")} />}
           </div>
         ) : (

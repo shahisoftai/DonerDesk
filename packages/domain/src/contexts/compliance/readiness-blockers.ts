@@ -12,6 +12,8 @@ export interface ReadinessContext {
   openContradictions: number;
   /** Overall score without the contradiction cap; the gap to `overall` is what clearing them would add. */
   uncappedOverall?: number;
+  /** Activities planned for the period and not yet held; supplied only while drafting or in review (advice, never a score). */
+  plannedNotHeld?: number;
 }
 
 export type ReadinessActionKind =
@@ -20,7 +22,8 @@ export type ReadinessActionKind =
   | "OPEN_EVIDENCE"
   | "OPEN_CHECKLIST"
   | "OPEN_LOGFRAME"
-  | "OPEN_APPROVAL";
+  | "OPEN_APPROVAL"
+  | "OPEN_PLAN";
 
 export interface ReadinessBlocker {
   key: string;
@@ -78,6 +81,14 @@ export const READINESS_BLOCKER_RULES: ReadonlyArray<BlockerRule> = [
     label: "Clear the checklist",
     detail: (c) => `${c.openChecklistItems} open item${c.openChecklistItems === 1 ? "" : "s"}${c.unconfirmedCalculations > 0 ? `, including ${c.unconfirmedCalculations} indicator calculation${c.unconfirmedCalculations === 1 ? "" : "s"} to confirm` : ""}.`,
     action: { kind: "OPEN_CHECKLIST", label: "Open the checklist" },
+  },
+  {
+    // Advice only: worth one point so it sorts last and never changes a score; absent unless the context supplies it.
+    key: "plan",
+    points: (_b, _w, c) => ((c.plannedNotHeld ?? 0) > 0 ? 1 : 0),
+    label: "Check the work plan",
+    detail: (c) => `${countOf(c.plannedNotHeld ?? 0, "planned activity", "planned activities")} in this period ${agree(c.plannedNotHeld ?? 0, "has", "have")} no completed activity yet.`,
+    action: { kind: "OPEN_PLAN", label: "Open the work plan" },
   },
   {
     key: "approval",

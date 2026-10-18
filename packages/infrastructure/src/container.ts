@@ -81,6 +81,8 @@ import {
   PlanLinkResolver,
   PlanAccess,
   PlanRecorder,
+  PlanDeliveryService,
+  GetPlanStorySuggestionHandler,
   CreatePlannedActivityHandler,
   ChangePlanStatusHandler,
   ReschedulePlannedActivityHandler,
@@ -615,6 +617,7 @@ export interface Container {
     updateRisk: UpdateRiskHandler;
     closeRisk: CloseRiskHandler;
     listRisks: ListRisksHandler;
+    planStorySuggestion: GetPlanStorySuggestionHandler;
     getActivityFileNeeds: GetActivityFileNeedsHandler;
     getDeliveryHealth: GetDeliveryHealthHandler;
     getPortfolioHealth: GetPortfolioHealthHandler;
@@ -1226,7 +1229,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     backgroundTasks.add(running);
   };
   const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);
-  const recordChunkBuilder = new RecordChunkBuilder(periods, projects, activities, indicators, indicatorUpdates, evidence);
+  const planDelivery = new PlanDeliveryService(plannedActivities, planRevisions);
+  const recordChunkBuilder = new RecordChunkBuilder(periods, projects, activities, indicators, indicatorUpdates, evidence, planDelivery);
   const lintGrounding = new LintGrounding(recordChunkBuilder, evidencePackageBuilder, financeInputs);
   const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector, financeInputs, recordChunkBuilder);
 
@@ -1254,7 +1258,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits, indicatorAnalytics, financeInputs, indicators);
   // Reading the checklist or a period's readiness closes the items the data already satisfies: no manual scan needed.
   const checklistReconciler = new ChecklistReconciler(detectMissingEvidenceHandler);
-  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics, lintGrounding, checklistReconciler, audits);
+  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics, lintGrounding, checklistReconciler, audits, planDelivery);
 
   if (jobRegistrar?.register) {
     jobRegistrar.register(
@@ -1291,7 +1295,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const createReportingPeriodHandler = new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events, activities, defaultTemplateResolver);
   const ensureAutoPeriodHandler = new EnsureAutoPeriodHandler(projects, reportingProfiles, periods, createReportingPeriodHandler);
 
-  const periodContextBuilder = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence);
+  const periodContextBuilder = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence, planDelivery);
   const getProjectDataSheet = new GetProjectDataSheetHandler(periods, logframe, indicators, indicatorUpdates, financeInputs, periodFinancials);
   const bulkUpsertIndicatorUpdates = new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker, taskReconciler);
   const sectionDataCharts = new SectionDataChartsHandler(sections, drafts, periods, reportArtifacts, getProjectDataSheet, ids, audits);
@@ -1429,6 +1433,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     updateRisk: new UpdateRiskHandler(projectRisks, projectRoster, personNotifier, audits, clock),
     closeRisk: new CloseRiskHandler(projectRisks, audits, clock),
     listRisks: new ListRisksHandler(projectRisks),
+    planStorySuggestion: new GetPlanStorySuggestionHandler(periods, planDelivery),
     getMyWeek: new GetMyWeekHandler(new PrismaMyWeekReader(prisma), new PrismaDeliveryFactsReader(prisma), clock),
     copyWorkPlan: new CopyWorkPlanHandler(projects, logframe, plannedActivities, ids, audits),
     importWorkPlan: new ImportWorkPlanHandler(ids, plannedActivities, planContext, new PrismaMemberDirectory(prisma), logframe, audits),
@@ -1521,7 +1526,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     reassessReportRevision: new ReassessReportRevisionHandler(sections, reportRevisions, assuranceService, audits),
     regenerateReportSection: new RegenerateReportSectionHandler(
       ids, drafts, sections, reportPlans, generationRuns,
-      new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence),
+      new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence, planDelivery),
       new SectionGenerationService(ids, llmUsage, revisionService, assuranceService, audits, reportArtifacts),
       sectionRegenerationTracker, new AiCreditGate(entitlements, llmUsage, audits, purchasedCreditPacks), audits, runInBackground,
     ),

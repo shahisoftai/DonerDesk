@@ -15,7 +15,7 @@ export function readinessHeadline(overall: number, stage: string | undefined, ha
   return `${label} · ${overall}%`;
 }
 
-export type BlockerActionKind = "OPEN_REPORT" | "OPEN_INPUTS" | "OPEN_EVIDENCE" | "OPEN_CHECKLIST" | "OPEN_LOGFRAME" | "OPEN_APPROVAL";
+export type BlockerActionKind = "OPEN_REPORT" | "OPEN_INPUTS" | "OPEN_EVIDENCE" | "OPEN_CHECKLIST" | "OPEN_LOGFRAME" | "OPEN_APPROVAL" | "OPEN_PLAN";
 
 /** Where each advice action goes. Unknown kinds fall back to the report so a new server rule never yields a dead button. */
 export function blockerActionHref(kind: string, projectId: string, periodId: string): string {
@@ -23,6 +23,7 @@ export function blockerActionHref(kind: string, projectId: string, periodId: str
     case "OPEN_INPUTS": return `/projects/${projectId}/reports/${periodId}/inputs`;
     case "OPEN_EVIDENCE": return `/projects/${projectId}/evidence`;
     case "OPEN_CHECKLIST": return `/projects/${projectId}/compliance`;
+    case "OPEN_PLAN": return `/projects/${projectId}/activities`;
     case "OPEN_LOGFRAME": return `/projects/${projectId}/logframe`;
     case "OPEN_REPORT":
     case "OPEN_APPROVAL":
