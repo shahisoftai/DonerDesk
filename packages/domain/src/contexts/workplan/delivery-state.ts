@@ -30,6 +30,8 @@ export interface DeliveryFacts {
   firstRecordDate?: PlainDate;
   lastRecordDate?: PlainDate;
   deliveredCount: number;
+  /** The kinds of file attached to the linked completed activities (for "still needed"). */
+  evidenceTypes?: ReadonlyArray<string>;
 }
 
 export const NO_DELIVERY: DeliveryFacts = { liveRecords: 0, acceptedRecords: 0, deliveredCount: 0 };

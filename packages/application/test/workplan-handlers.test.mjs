@@ -351,3 +351,47 @@ test("my week is always the caller's own: late, this week and next week, with wh
   assert.equal(out.sentBack.length, 1);
   assert.equal((await handler.handle(ctxFor("someone-else", "FIELD_OFFICER"))).value.sentBack.length, 0);
 });
+
+import { GetActivityFileNeedsHandler } from "../dist/index.js";
+test("files we will need: set when planning, changed with the same history entry, and a bad kind is refused", async () => {
+  const w = world();
+  const bad = await w.create.handle(PM, "p", input({ requiredFiles: ["SELFIE"] }));
+  assert.equal(bad.error.details.field, "requiredFiles");
+  const [id] = (await w.create.handle(PM, "p", input({ requiredFiles: ["ATTENDANCE_SHEET"] }))).value.ids;
+  assert.deepEqual(w.store.get(id).requiredFiles, ["ATTENDANCE_SHEET"]);
+  assert.equal((await w.update.handle(FIELD, id, { requiredFiles: ["PHOTO"] })).error.code, "FORBIDDEN", "a lead changes notes, not what is asked of the team");
+  const before = w.revisions.length;
+  assert.equal((await w.update.handle(PM, id, { requiredFiles: ["ATTENDANCE_SHEET", "PHOTO"], location: "Ward 4" })).ok, true);
+  assert.equal(w.revisions.length, before + 1, "one history entry for one edit");
+  assert.deepEqual(Object.keys(w.revisions.at(-1).change).sort(), ["location", "requiredFiles"]);
+  assert.equal((await w.update.handle(PM, id, { requiredFiles: ["ATTENDANCE_SHEET", "PHOTO"] })).ok, true);
+  assert.equal(w.revisions.length, before + 1, "no change, no entry");
+  assert.equal((await w.update.handle(PM, id, { requiredFiles: ["OTHER"] })).ok, false);
+});
+
+test("the plan list says which kinds of file no completed activity has shown yet", async () => {
+  const w = world({ today: "2026-03-20" });
+  const [id] = (await w.create.handle(PM, "p", input({ requiredFiles: ["ATTENDANCE_SHEET", "PHOTO"] }))).value.ids;
+  const repo = { findByProject: async (p) => ok([...w.store.values()].filter((i) => i.projectId === p)) };
+  const context = { reportCoveredRanges: async () => ok([]) };
+  const list = (facts) => new ListWorkPlanHandler(repo, { factsByPlannedActivity: async () => ok(new Map(facts ? [[id, facts]] : [])) }, context, { now: () => new Date("2026-03-20T09:00:00Z") });
+  const none = (await list(null).handle(PM, "p")).value[0];
+  assert.deepEqual([none.requiredFiles, none.stillNeeded], [["ATTENDANCE_SHEET", "PHOTO"], []], "nothing is 'missing' before there is a completed activity");
+  const some = (await list({ liveRecords: 1, acceptedRecords: 0, deliveredCount: 0, evidenceTypes: ["PHOTO"] }).handle(PM, "p")).value[0];
+  assert.deepEqual(some.stillNeeded, ["ATTENDANCE_SHEET"]);
+  const all = (await list({ liveRecords: 2, acceptedRecords: 0, deliveredCount: 0, evidenceTypes: ["PHOTO", "ATTENDANCE_SHEET"] }).handle(PM, "p")).value[0];
+  assert.deepEqual(all.stillNeeded, []);
+});
+
+test("for one completed activity: what its planned activity asks for and this one lacks; nothing when unlinked", async () => {
+  const w = world();
+  const [planId] = (await w.create.handle(PM, "p", input({ requiredFiles: ["ATTENDANCE_SHEET", "PHOTO"] }))).value.ids;
+  const acts = new Map([["a1", { plannedActivityId: planId, attachedEvidenceIds: ["e1"] }], ["a2", { attachedEvidenceIds: [] }], ["a3", { plannedActivityId: planId, attachedEvidenceIds: [] }]]);
+  const handler = new GetActivityFileNeedsHandler(
+    { findById: async (id) => ok(acts.get(id) ?? null) }, { findById: async (id) => ok(w.store.get(id) ?? null) }, { findById: async (id) => ok(id === "e1" ? { evidenceType: "PHOTO" } : null) },
+  );
+  assert.deepEqual((await handler.handle(FIELD, "a1")).value, { required: ["ATTENDANCE_SHEET", "PHOTO"], provided: ["PHOTO"], stillNeeded: ["ATTENDANCE_SHEET"] });
+  assert.deepEqual((await handler.handle(FIELD, "a2")).value, { required: [], provided: [], stillNeeded: [] }, "not linked to a plan");
+  assert.deepEqual((await handler.handle(FIELD, "a3")).value.stillNeeded, ["ATTENDANCE_SHEET", "PHOTO"]);
+  assert.equal((await handler.handle(FIELD, "nope")).error.code, "NOT_FOUND");
+});

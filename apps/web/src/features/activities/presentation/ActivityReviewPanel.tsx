@@ -7,15 +7,18 @@ import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
+import { acceptQuestion } from "@/features/workplan/domain/file-needs-view";
 
 type Decision = "ACCEPT" | "REVISE" | "REJECT";
 
-export function ActivityReviewPanel({ activityId }: { activityId: string }) {
+/** `stillNeeded`: kinds of file the planned activity asked for that this one lacks. Accepting without them asks once and never blocks. */
+export function ActivityReviewPanel({ activityId, stillNeeded = [] }: { activityId: string; stillNeeded?: string[] }) {
   const router = useRouter();
   const actionState = useActionState();
   const [decision, setDecision] = useState<Decision | null>(null);
   const [notes, setNotes] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const [confirmAccept, setConfirmAccept] = useState(false);
   const [localNoteError, setLocalNoteError] = useState<string | undefined>();
 
   function begin(d: Decision) {
@@ -25,7 +28,9 @@ export function ActivityReviewPanel({ activityId }: { activityId: string }) {
     setLocalNoteError(undefined);
   }
 
-  async function acceptNow() {
+  async function acceptNow(confirmed = false) {
+    if (stillNeeded.length > 0 && !confirmed) { setConfirmAccept(true); return; }
+    setConfirmAccept(false);
     const result = await actionState.run(() => reviewActivityAction({ activityId, decision: "ACCEPT" }));
     if (result !== undefined) router.refresh();
   }
@@ -56,7 +61,7 @@ export function ActivityReviewPanel({ activityId }: { activityId: string }) {
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => void acceptNow()} pending={actionState.busy && decision === null}>
+        <Button size="sm" onClick={() => void acceptNow()} pending={actionState.busy && decision === null && !confirmAccept}>
           Accept
         </Button>
         <Button size="sm" variant={decision === "ACCEPT" ? "primary" : "secondary"} onClick={() => begin("ACCEPT")}>
@@ -69,6 +74,16 @@ export function ActivityReviewPanel({ activityId }: { activityId: string }) {
           Reject
         </Button>
       </div>
+
+      {confirmAccept && (
+        <div role="alert" className="mt-3 space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-500/40 dark:bg-amber-500/10">
+          <p>{acceptQuestion(stillNeeded)}</p>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => void acceptNow(true)} pending={actionState.busy}>Accept anyway</Button>
+            <Button size="sm" variant="secondary" onClick={() => setConfirmAccept(false)}>Not yet</Button>
+          </div>
+        </div>
+      )}
 
       {decision && (
         <div className="mt-4 space-y-3">

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
+import { WORKPLAN_COPY, suggestRequiredFiles } from "@donordesk/domain/contexts/workplan/index.js";
+import { requirableTypes } from "../domain/file-needs-view";
 import { createPlannedActivityAction } from "@/lib/actions/workplan";
 import { useActionState } from "@/lib/client/action-state";
 import { useHydrated } from "@/lib/client/use-hydrated";
@@ -30,6 +31,13 @@ export function PlanActivityForm({ projectId, leads, activities }: { projectId: 
   const [description, setDescription] = useState("");
   const [people, setPeople] = useState("");
   const [sessions, setSessions] = useState("");
+  // Files we will need: suggested from the title until the person ticks or unticks anything themselves.
+  const [files, setFiles] = useState<string[]>([]);
+  const [filesTouched, setFilesTouched] = useState(false);
+  const logframeTitle = activities.find((a) => a.id === node)?.label;
+  const suggested = suggestRequiredFiles(title, logframeTitle);
+  const shownFiles = filesTouched ? files : suggested;
+  const toggleFile = (id: string, on: boolean) => { const base = filesTouched ? files : suggested; setFilesTouched(true); setFiles(on ? [...new Set([...base, id])] : base.filter((f) => f !== id)); };
 
   const num = (v: string) => (v.trim() ? Number(v) : undefined);
 
@@ -47,6 +55,7 @@ export function PlanActivityForm({ projectId, leads, activities }: { projectId: 
         ...(description.trim() ? { description } : {}),
         ...(num(people) !== undefined ? { targetParticipants: num(people) } : {}),
         ...(num(sessions) !== undefined ? { targetCount: num(sessions) } : {}),
+        ...(shownFiles.length > 0 ? { requiredFiles: shownFiles } : {}),
       }, { idempotencyKey }),
     );
     if (out) router.push(`/projects/${projectId}/activities?view=planned`);
@@ -88,6 +97,17 @@ export function PlanActivityForm({ projectId, leads, activities }: { projectId: 
           <div className="mt-3 space-y-4">
             <Field label="Location"><Input value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} /></Field>
             <Field label="Notes"><Textarea dictate rows={3} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+            <fieldset className="space-y-1">
+              <legend className="label">Files we will need</legend>
+              <p className="text-xs text-slate-500">Suggested from the activity. Untick any you do not need; nothing is blocked if a file is missing.</p>
+              <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                {requirableTypes().map((t) => (
+                  <label key={t.id} className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" className="h-4 w-4" checked={shownFiles.includes(t.id)} onChange={(e) => toggleFile(t.id, e.target.checked)} />{t.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <div className="grid grid-cols-2 gap-3">
               <Field label="People expected" error={err("targetParticipants")}><Input inputMode="numeric" value={people} onChange={(e) => setPeople(e.target.value)} /></Field>
               <Field label="Number of sessions" error={err("targetCount")}><Input inputMode="numeric" value={sessions} onChange={(e) => setSessions(e.target.value)} /></Field>

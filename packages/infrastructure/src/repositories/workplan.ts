@@ -19,6 +19,7 @@ function data(item: PlannedActivity) {
     outputId: s.outputId ?? null,
     ownerUserId: s.ownerUserId ?? null,
     supportUserIds: JSON.stringify(s.supportUserIds),
+    evidenceRequirementsJson: JSON.stringify(s.requiredFiles),
     plannedStart: toDate(s.plannedStart),
     plannedEnd: toDate(s.plannedEnd),
     targetParticipants: s.targetParticipants ?? null,
@@ -45,6 +46,7 @@ function toDomain(row: Row): PlannedActivity {
       ...(row.outputId ? { outputId: row.outputId } : {}),
       ...(row.ownerUserId ? { ownerUserId: row.ownerUserId } : {}),
       supportUserIds: JSON.parse(row.supportUserIds) as string[],
+      requiredFiles: JSON.parse(row.evidenceRequirementsJson || "[]") as import("@donordesk/domain").EvidenceType[],
       plannedStart: toDay(row.plannedStart),
       plannedEnd: toDay(row.plannedEnd),
       originalStart: toDay(row.originalStart),
@@ -177,8 +179,19 @@ export class PrismaDeliveryFactsReader implements IDeliveryFactsReader {
   async factsByPlannedActivity(projectId: string, tenantId: TenantId) {
     const rows = await this.prisma.activityUpdate.findMany({
       where: { projectId, tenantId: tenantId.toString(), plannedActivityId: { not: null }, status: { not: "WITHDRAWN" } },
-      select: { plannedActivityId: true, status: true, activityDate: true, activityEndDate: true },
+      select: { id: true, plannedActivityId: true, status: true, activityDate: true, activityEndDate: true },
     });
+    // The kinds of file attached to those completed activities, per planned activity.
+    const files = rows.length === 0 ? [] : await this.prisma.evidenceFile.findMany({
+      where: { tenantId: tenantId.toString(), activityId: { in: rows.map((r) => r.id) } },
+      select: { activityId: true, evidenceType: true },
+    });
+    const plannedOf = new Map(rows.map((r) => [r.id, r.plannedActivityId!]));
+    const typesByPlanned = new Map<string, Set<string>>();
+    for (const f of files) {
+      const planned = plannedOf.get(f.activityId ?? "");
+      if (planned) typesByPlanned.set(planned, (typesByPlanned.get(planned) ?? new Set()).add(f.evidenceType));
+    }
     const facts = new Map<string, DeliveryFacts>();
     for (const r of rows) {
       const id = r.plannedActivityId!;
@@ -191,6 +204,7 @@ export class PrismaDeliveryFactsReader implements IDeliveryFactsReader {
         deliveredCount: f.deliveredCount + (r.status === "ACCEPTED" ? 1 : 0),
         firstRecordDate: f.firstRecordDate && f.firstRecordDate < day ? f.firstRecordDate : day,
         lastRecordDate: f.lastRecordDate && f.lastRecordDate > last ? f.lastRecordDate : last,
+        evidenceTypes: [...(typesByPlanned.get(id) ?? [])],
       });
     }
     return ok(facts as ReadonlyMap<string, DeliveryFacts>);

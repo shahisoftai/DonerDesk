@@ -518,6 +518,8 @@ export const ActivityDetailSchema = z.object({
   location: z.string().optional(),
   outputId: z.string().optional(),
   logframeActivityId: z.string().optional(),
+  /** The planned activity this completed activity delivers. */
+  plannedActivityId: z.string().optional(),
   indicatorId: z.string().optional(),
   participantsTotal: z.number().optional(),
   participantsMale: z.number().optional(),
@@ -1278,6 +1280,9 @@ export const WorkPlanRowSchema = z.object({
   completedActivities: z.number(),
   suggestedStatus: z.enum(["IN_PROGRESS", "DONE"]).optional(),
   seriesId: z.string().optional(),
+  /** Kinds of file that should prove it, and the ones no completed activity has shown yet. */
+  requiredFiles: z.array(z.string()).default([]),
+  stillNeeded: z.array(z.string()).default([]),
   reasonRequired: z.boolean(),
 });
 export type WorkPlanRow = z.infer<typeof WorkPlanRowSchema>;
@@ -1378,3 +1383,5 @@ export type DeliveryHealthResponse = z.infer<typeof DeliveryHealthSchema>;
 export const PortfolioHealthSchema = z.object({
   items: z.array(z.object({ projectId: z.string(), title: z.string(), band: z.enum(["ON_TRACK", "AT_RISK", "OFF_TRACK", "NO_PLAN"]), label: z.string(), reasons: z.array(z.string()) })),
 });
+
+export const FileNeedsSchema = z.object({ required: z.array(z.string()), provided: z.array(z.string()), stillNeeded: z.array(z.string()) });

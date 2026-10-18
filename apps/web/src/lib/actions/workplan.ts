@@ -1,6 +1,6 @@
 "use server";
 
-import { ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema } from "@donordesk/contracts";
+import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema } from "@donordesk/contracts";
 import type { ZodType } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -74,4 +74,13 @@ export async function importWorkPlanAction(projectId: string, input: unknown): P
   const p = await parsed(ImportWorkPlanSchema, input);
   if (!p.ok) return p.result;
   return gatewayRequest(`/v1/projects/${projectId}/work-plan/import`, ImportWorkPlanResponseSchema, context.token, { method: "POST", body: p.data });
+}
+
+/** Edits a planned activity (title, notes, place, targets, the files we will need). Whether the person may is the server's call. */
+export async function updatePlannedActivityAction(itemId: string, input: unknown): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(UpdatePlannedActivitySchema, input);
+  if (!p.ok) return p.result;
+  const r = await gatewayRequest(`/v1/work-plan/${itemId}`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
+  return r.ok ? { ok: true, value: true } : r;
 }

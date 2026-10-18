@@ -91,6 +91,7 @@ const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/activities\/parse-file$/, permission: "activity.create" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/activities$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/activities\/[^/]+$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/activities\/[^/]+\/file-needs$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/activities\/polish$/, permission: "activity.create" },
   { method: "POST", route: /^\/v1\/activities\/review$/, permission: "activity.approve" },
   { method: "POST", route: /^\/v1\/activities\/review-bulk$/, permission: "activity.approve" },

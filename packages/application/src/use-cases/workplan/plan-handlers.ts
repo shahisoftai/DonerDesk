@@ -54,6 +54,7 @@ export class CreatePlannedActivityHandler {
         id: this.ids.generate(), tenantId: tenantId.toString(), projectId, title: input.title, plannedStart: d.start, plannedEnd: d.end,
         people: people.value, createdById: ctx.tenant.userId,
         ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.requiredFiles ? { requiredFiles: input.requiredFiles } : {}),
         ...(input.location !== undefined ? { location: input.location } : {}),
         ...(input.logframeActivityId ? { logframeActivityId: input.logframeActivityId } : {}),
         ...(outputId ? { outputId } : {}),
@@ -151,8 +152,8 @@ export class UpdatePlannedActivityHandler {
   ) {}
 
   async handle(ctx: AuthenticatedContext, itemId: string, input: UpdatePlannedActivityInput): Promise<Result<void, DomainError>> {
-    const { reason, ...fields } = input;
-    const onlyNotes = Object.keys(fields).every((k) => k === "description" || k === "location");
+    const { reason, requiredFiles, ...fields } = input;
+    const onlyNotes = requiredFiles === undefined && Object.keys(fields).every((k) => k === "description" || k === "location");
     const loaded = await this.access.load(ctx, itemId, onlyNotes ? "EDIT_NOTES" : "EDIT");
     if (!loaded.ok) return loaded;
     const item = loaded.value;
@@ -161,9 +162,13 @@ export class UpdatePlannedActivityHandler {
     const patch = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v === null ? undefined : v]));
     const changed = item.updateDetails(patch, { today: today(this.clock), reportUsesIt: used.value, ...(reason ? { reason } : {}) });
     if (!changed.ok) return changed;
-    if (Object.keys(changed.value.change).length === 0) return ok(undefined);
+    // Files we will need are part of the same edit and the same history entry.
+    const files = requiredFiles === undefined ? ok({ change: {} }) : item.setRequiredFiles(requiredFiles);
+    if (!files.ok) return files;
+    const change = { ...changed.value.change, ...files.value.change };
+    if (Object.keys(change).length === 0) return ok(undefined);
     const saved = await this.repo.update(item);
     if (!saved.ok) return saved;
-    return this.recorder.record(ctx, item, changed.value, "workplan.item_updated");
+    return this.recorder.record(ctx, item, { change, ...(changed.value.reason ? { reason: changed.value.reason } : {}) }, "workplan.item_updated");
   }
 }

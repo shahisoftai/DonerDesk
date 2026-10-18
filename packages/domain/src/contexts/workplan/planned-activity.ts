@@ -14,6 +14,8 @@ import { reasonRequired } from "./reason-required.js";
 import { diffFields, type PlanChange } from "./plan-revision.js";
 import type { RecurrenceRule } from "./recurrence.js";
 import type { PlanPeople } from "./assignment.js";
+import { normalizeRequiredFiles } from "./required-files.js";
+import type { EvidenceType } from "../evidence/evidence-file.js";
 
 export type PlannedActivityKind = "ACTIVITY" | "MILESTONE";
 
@@ -32,6 +34,8 @@ export interface PlannedActivityDetails {
 export interface PlannedActivityProps extends PlannedActivityDetails {
   ownerUserId?: string;
   supportUserIds: string[];
+  /** The kinds of file that should prove this activity ("Files we will need"). Never blocks anything. */
+  requiredFiles: EvidenceType[];
   plannedStart: PlainDate;
   plannedEnd: PlainDate;
   /** The first dates saved; never changed afterwards ("moved from …"). */
@@ -54,6 +58,7 @@ export interface CreatePlannedActivityInput extends Partial<PlannedActivityDetai
   plannedStart: PlainDate;
   plannedEnd: PlainDate;
   people?: PlanPeople;
+  requiredFiles?: ReadonlyArray<string>;
   seriesId?: string;
   recurrence?: RecurrenceRule;
   createdById: string;
@@ -105,6 +110,8 @@ export class PlannedActivity extends Entity<string> {
     if (!details.ok) return details;
     const dates = validateDates(input.plannedStart, input.plannedEnd);
     if (!dates.ok) return dates;
+    const files = normalizeRequiredFiles(input.requiredFiles ?? []);
+    if (!files.ok) return files;
     return ok(
       new PlannedActivity(input.id, input.tenantId, input.projectId, {
         title: input.title.trim(),
@@ -116,6 +123,7 @@ export class PlannedActivity extends Entity<string> {
         ...(input.targetCount !== undefined ? { targetCount: input.targetCount } : {}),
         ...(input.people?.ownerUserId ? { ownerUserId: input.people.ownerUserId } : {}),
         supportUserIds: [...(input.people?.supportUserIds ?? [])],
+        requiredFiles: files.value,
         plannedStart: input.plannedStart,
         plannedEnd: input.plannedEnd,
         originalStart: input.plannedStart,
@@ -129,7 +137,7 @@ export class PlannedActivity extends Entity<string> {
   }
 
   static rehydrate(input: { id: string; tenantId: string; projectId: string; props: PlannedActivityProps; createdAt?: Date; updatedAt?: Date }): PlannedActivity {
-    return new PlannedActivity(input.id, input.tenantId, input.projectId, { ...input.props, supportUserIds: [...input.props.supportUserIds] }, input.createdAt, input.updatedAt);
+    return new PlannedActivity(input.id, input.tenantId, input.projectId, { ...input.props, supportUserIds: [...input.props.supportUserIds], requiredFiles: [...(input.props.requiredFiles ?? [])] }, input.createdAt, input.updatedAt);
   }
 
   get kind(): PlannedActivityKind {
@@ -145,6 +153,7 @@ export class PlannedActivity extends Entity<string> {
   get supportUserIds(): ReadonlyArray<string> { return this.props.supportUserIds; }
   get logframeActivityId(): string | undefined { return this.props.logframeActivityId; }
   get seriesId(): string | undefined { return this.props.seriesId; }
+  get requiredFiles(): ReadonlyArray<EvidenceType> { return this.props.requiredFiles; }
   get isMoved(): boolean {
     return this.props.plannedStart !== this.props.originalStart || this.props.plannedEnd !== this.props.originalEnd;
   }
@@ -154,7 +163,7 @@ export class PlannedActivity extends Entity<string> {
   }
 
   snapshot(): Readonly<PlannedActivityProps> {
-    return { ...this.props, supportUserIds: [...this.props.supportUserIds] };
+    return { ...this.props, supportUserIds: [...this.props.supportUserIds], requiredFiles: [...this.props.requiredFiles] };
   }
 
   applyStatus(action: PlanAction, ctx: { at: Date; reason?: string }): Result<PlanChange> {
@@ -197,6 +206,17 @@ export class PlannedActivity extends Entity<string> {
     if (Object.keys(change).length) this.touch();
     const reason = ctx.reason?.trim();
     return ok({ change, ...(reason ? { reason } : {}) });
+  }
+
+  /** Which kinds of file should prove this activity. A no-op change returns an empty change set. */
+  setRequiredFiles(types: ReadonlyArray<string>): Result<PlanChange> {
+    if (this.props.status === "CANCELLED") return err(DomainError.invalidTransition("A cancelled activity cannot be edited: restore it first"));
+    const files = normalizeRequiredFiles(types);
+    if (!files.ok) return files;
+    const change = diffFields({ requiredFiles: this.props.requiredFiles }, { requiredFiles: files.value });
+    this.props.requiredFiles = files.value;
+    if (Object.keys(change).length) this.touch();
+    return ok({ change });
   }
 
   /** Title, notes, place, logframe link and targets. A changed target asks for a reason when `reasonRequired` says so. */

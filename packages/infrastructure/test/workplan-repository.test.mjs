@@ -31,7 +31,7 @@ test("planned activities round-trip every field, including clearing optional one
   try {
     await inRollback(prisma, async (tx) => {
       const repo = new PrismaPlannedActivityRepository(tx);
-      const item = make({ location: "Ward 4", description: "Door to door", logframeActivityId: "n1", outputId: "o1", targetParticipants: 30, targetCount: 4, people: { ownerUserId: "u2", supportUserIds: ["u3"] }, seriesId: "s1", recurrence: { every: "MONTH", interval: 1, until: "2026-12-31" } });
+      const item = make({ location: "Ward 4", description: "Door to door", logframeActivityId: "n1", outputId: "o1", targetParticipants: 30, targetCount: 4, requiredFiles: ["ATTENDANCE_SHEET", "PHOTO"], people: { ownerUserId: "u2", supportUserIds: ["u3"] }, seriesId: "s1", recurrence: { every: "MONTH", interval: 1, until: "2026-12-31" } });
       await repo.create(item);
       const back = (await repo.findById("pa1", T)).value;
       assert.deepEqual(plain(back.snapshot()), plain(item.snapshot()));
@@ -40,12 +40,14 @@ test("planned activities round-trip every field, including clearing optional one
       // every mutable field persists
       item.reschedule({ start: "2026-03-11", end: "2026-03-13" }, { today: "2026-03-01", reportUsesIt: false });
       item.assign({ ownerUserId: "u4", supportUserIds: [] });
+      item.setRequiredFiles(["PHOTO"]);
       item.updateDetails({ title: "Renamed", description: "x", location: undefined, targetCount: 5, targetParticipants: undefined }, { today: "2026-03-01", reportUsesIt: false });
       item.applyStatus("CANCEL", { at: new Date("2026-03-02T10:00:00Z"), reason: "Funding cut" });
       await repo.update(item);
       const changed = (await repo.findById("pa1", T)).value;
       assert.deepEqual(plain(changed.snapshot()), plain(item.snapshot()));
       assert.equal(changed.snapshot().location, undefined, "cleared");
+      assert.deepEqual(changed.snapshot().requiredFiles, ["PHOTO"], "the list of files we will need persists");
       assert.equal(changed.snapshot().targetParticipants, undefined, "cleared");
       assert.equal(changed.originalStart, "2026-03-10", "original dates never move");
       item.applyStatus("RESTORE", { at: new Date() });
@@ -88,8 +90,10 @@ test("delivery facts count live completed activities per planned activity and le
       await row("a2", "SUBMITTED", "2026-03-12");
       await row("a3", "WITHDRAWN", "2026-03-11");
       await row("a4", "ACCEPTED", "2026-03-11", null);
+      const file = (id, activityId, evidenceType) => tx.evidenceFile.create({ data: { id, tenantId: "tenant-wp", projectId: "p1", title: id, fileName: id, fileType: "x", fileSize: 1, fileUrl: "u", evidenceType, uploadedById: "u1", activityId } });
+      await file("f1", "a1", "PHOTO"); await file("f2", "a2", "PHOTO"); await file("f3", "a3", "ATTENDANCE_SHEET"); await file("f4", "a4", "DISTRIBUTION_LIST");
       const facts = (await new PrismaDeliveryFactsReader(tx).factsByPlannedActivity("p1", T)).value;
-      assert.deepEqual(facts.get("pa1"), { liveRecords: 2, acceptedRecords: 1, deliveredCount: 1, firstRecordDate: "2026-03-10", lastRecordDate: "2026-03-12" });
+      assert.deepEqual(facts.get("pa1"), { liveRecords: 2, acceptedRecords: 1, deliveredCount: 1, firstRecordDate: "2026-03-10", lastRecordDate: "2026-03-12", evidenceTypes: ["PHOTO"] }, "kinds of file on its live completed activities only: not the withdrawn one, not an unlinked one");
       assert.equal(facts.size, 1);
     });
   } finally { await prisma.$disconnect(); }

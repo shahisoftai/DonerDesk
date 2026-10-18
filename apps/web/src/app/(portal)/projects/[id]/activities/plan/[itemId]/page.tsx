@@ -10,6 +10,7 @@ import { showsButton } from "@/features/workplan/domain/role-surfaces";
 import { describeChanges } from "@/features/workplan/domain/plan-history-view";
 import { AskPanel } from "@/features/tasks/presentation/AskPanel";
 import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
+import { RequiredFilesEditor } from "@/features/workplan/presentation/RequiredFilesEditor";
 import { PlanItemMenu } from "@/features/workplan/presentation/PlanItemMenu";
 import { PlanStatusControl } from "@/features/workplan/presentation/PlanStatusControl";
 import { Badge } from "@/components/data/Badge";
@@ -77,6 +78,8 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
           <p><Link className="btn" href={`/projects/${id}/activities/new?planned=${row.id}`}>{WORKPLAN_COPY.addCompleted}</Link></p>
         )}
       </header>
+
+      <RequiredFilesEditor itemId={row.id} title={row.title} required={row.requiredFiles} stillNeeded={row.stillNeeded} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
 
       <section aria-labelledby="done-title">
         <h2 id="done-title" className="text-sm font-semibold">Completed activities</h2>

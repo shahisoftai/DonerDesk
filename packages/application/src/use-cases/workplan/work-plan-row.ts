@@ -1,5 +1,5 @@
 import {
-  DELIVERY_SIGNAL_LABEL, reasonRequired, deliveryReason, deliverySignal, deliveryState, suggestPlanStatus,
+  evidenceCoverage, DELIVERY_SIGNAL_LABEL, reasonRequired, deliveryReason, deliverySignal, deliveryState, suggestPlanStatus,
   type DeliveryFacts, type DeliverySignal, type DeliveryState, type PlainDate, type PlanStatus, type PlannedActivity,
 } from "@donordesk/domain";
 
@@ -28,6 +28,9 @@ export interface WorkPlanRowDto {
   /** "IN_PROGRESS" or "DONE" when completed activities suggest it; the person confirms. */
   suggestedStatus?: "IN_PROGRESS" | "DONE";
   seriesId?: string;
+  /** Kinds of file that should prove it, and the ones no completed activity has shown yet. */
+  requiredFiles: string[];
+  stillNeeded: string[];
   /** Moving or changing it needs a "Why?" (original end passed, or a report covers it). */
   reasonRequired: boolean;
 }
@@ -52,6 +55,9 @@ export function toWorkPlanRow(i: PlannedActivity, f: DeliveryFacts, today: Plain
     ...(snap.location ? { location: snap.location } : {}), ...(snap.targetCount !== undefined ? { targetCount: snap.targetCount } : {}),
     deliveredCount: f.deliveredCount, completedActivities: f.liveRecords, ...(suggested ? { suggestedStatus: suggested } : {}),
     ...(i.seriesId ? { seriesId: i.seriesId } : {}),
+    requiredFiles: [...i.requiredFiles],
+    // Across all its completed activities: a kind shown by any of them is no longer missing.
+    stillNeeded: f.liveRecords === 0 ? [] : evidenceCoverage(i.requiredFiles, f.evidenceTypes ?? []).stillNeeded,
     reasonRequired: reasonRequired({ originalEnd: i.originalEnd }, today, { reportUsesIt: reportCovers }),
   };
 }

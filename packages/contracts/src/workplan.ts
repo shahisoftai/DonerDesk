@@ -23,6 +23,8 @@ export const CreatePlannedActivitySchema = z.object({
   logframeActivityId: z.string().min(1).optional(),
   location: z.string().max(200).optional(),
   description: z.string().max(5000).optional(),
+  /** Kinds of file that should prove the activity ("Files we will need"); suggested in the form, never required. */
+  requiredFiles: z.array(z.string().min(1)).max(5).optional(),
   ...targets,
 });
 export type CreatePlannedActivityInput = z.infer<typeof CreatePlannedActivitySchema>;
@@ -35,6 +37,7 @@ export const UpdatePlannedActivitySchema = z.object({
   logframeActivityId: z.string().min(1).nullable().optional(),
   targetParticipants: z.number().int().positive().nullable().optional(),
   targetCount: z.number().int().positive().nullable().optional(),
+  requiredFiles: z.array(z.string().min(1)).max(5).optional(),
   reason: z.string().max(1000).optional(),
 });
 export type UpdatePlannedActivityInput = z.infer<typeof UpdatePlannedActivitySchema>;

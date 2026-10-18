@@ -37,6 +37,14 @@ export async function registerActivityRoutes(app: FastifyInstance) {
     return { items: r.value };
   });
 
+  // Which of the planned activity's "files we will need" this completed activity does not have yet (never blocks anything).
+  app.get("/v1/activities/:id/file-needs", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const r = await req.container.handlers.getActivityFileNeeds.handle({ tenant: req.tenant, requestId: req.id }, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.get("/v1/activities/:id", async (req) => {
     const id = (req.params as { id: string }).id;
     const ctx = { tenant: req.tenant, requestId: req.id };

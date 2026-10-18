@@ -259,3 +259,43 @@ test("copying a work plan keeps shape and offsets, never owners or statuses, and
   assert.deepEqual(out.skipped, [{ title: "B", reason: "it was cancelled" }, { title: "C", reason: "it falls after the new project ends" }]);
   assert.ok(out.items.every((i) => !("ownerUserId" in i) && !("status" in i)));
 });
+
+import { suggestRequiredFiles, normalizeRequiredFiles, evidenceCoverage, MAX_REQUIRED_FILES } from "../dist/index.js";
+test("files we will need: suggested from the activity's own words, never invented, never more than five", () => {
+  assert.deepEqual(suggestRequiredFiles("Hygiene training for mothers"), ["ATTENDANCE_SHEET", "PHOTO"]);
+  assert.deepEqual(suggestRequiredFiles("Outreach visits", "Mobile clinics"), ["ATTENDANCE_SHEET", "PHOTO"], "the logframe activity's words count too");
+  assert.deepEqual(suggestRequiredFiles("Food distribution, Ward 4"), ["DISTRIBUTION_LIST", "PHOTO"]);
+  assert.deepEqual(suggestRequiredFiles("Training and distribution day"), ["ATTENDANCE_SHEET", "PHOTO", "DISTRIBUTION_LIST"], "no repeats; the order is the table's");
+  assert.deepEqual(suggestRequiredFiles("Procurement of pumps"), ["PROCUREMENT_DOCUMENT", "PHOTO"]);
+  assert.deepEqual(suggestRequiredFiles("Quarterly review"), [], "nothing matches: nothing is asked for");
+  assert.deepEqual(suggestRequiredFiles(undefined, null, ""), []);
+  assert.ok(suggestRequiredFiles("training meeting distribution outreach monitoring survey procurement case study registration").length <= MAX_REQUIRED_FILES);
+});
+
+test("the stored list: known kinds only, no repeats, no 'Other', at most five", () => {
+  assert.deepEqual(normalizeRequiredFiles(["PHOTO", "PHOTO", "ATTENDANCE_SHEET"]).value, ["PHOTO", "ATTENDANCE_SHEET"]);
+  assert.deepEqual(normalizeRequiredFiles([]).value, []);
+  assert.equal(normalizeRequiredFiles(["SELFIE"]).ok, false);
+  assert.equal(normalizeRequiredFiles(["OTHER"]).ok, false);
+  assert.equal(normalizeRequiredFiles(["PHOTO", "ATTENDANCE_SHEET", "DISTRIBUTION_LIST", "TRAINING_RECORD", "FIELD_VISIT_REPORT", "MEETING_MINUTES"]).error.details.field, "requiredFiles");
+});
+
+test("coverage: what has a file and what is still needed", () => {
+  assert.deepEqual(evidenceCoverage(["ATTENDANCE_SHEET", "PHOTO"], ["PHOTO"]), { required: ["ATTENDANCE_SHEET", "PHOTO"], covered: ["PHOTO"], stillNeeded: ["ATTENDANCE_SHEET"] });
+  assert.deepEqual(evidenceCoverage(["PHOTO"], new Set(["PHOTO", "OTHER"])).stillNeeded, []);
+  assert.deepEqual(evidenceCoverage([], ["PHOTO"]), { required: [], covered: [], stillNeeded: [] });
+});
+
+test("a planned activity keeps its required files; changing them is a no-op when equal; a cancelled one cannot be edited", () => {
+  const p = PlannedActivity.create({ id: "pa", tenantId: "tenant-a", projectId: "p", title: "Training", plannedStart: "2026-03-01", plannedEnd: "2026-03-02", requiredFiles: ["ATTENDANCE_SHEET"], createdById: "u" });
+  assert.equal(p.ok, true);
+  const item = p.value;
+  assert.deepEqual(item.requiredFiles, ["ATTENDANCE_SHEET"]);
+  assert.deepEqual(item.setRequiredFiles(["ATTENDANCE_SHEET"]).value.change, {});
+  assert.deepEqual(item.setRequiredFiles(["ATTENDANCE_SHEET", "PHOTO"]).value.change, { requiredFiles: { from: ["ATTENDANCE_SHEET"], to: ["ATTENDANCE_SHEET", "PHOTO"] } });
+  assert.equal(item.setRequiredFiles(["NOPE"]).ok, false);
+  assert.deepEqual(item.requiredFiles, ["ATTENDANCE_SHEET", "PHOTO"], "a refused change is not kept");
+  assert.equal(PlannedActivity.create({ id: "x", tenantId: "t", projectId: "p", title: "T", plannedStart: "2026-03-01", plannedEnd: "2026-03-01", requiredFiles: ["OTHER"], createdById: "u" }).ok, false);
+  item.applyStatus("CANCEL", { at: new Date(), reason: "x" });
+  assert.equal(item.setRequiredFiles(["PHOTO"]).ok, false);
+});

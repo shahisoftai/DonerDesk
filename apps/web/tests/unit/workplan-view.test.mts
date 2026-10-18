@@ -155,3 +155,25 @@ test("the dialog offers only people who could do what is asked, the lead first",
   assert.deepEqual(peopleFor("OTHER", people).map((p) => p.label), ["Amina", "Joe", "Pat", "Zed"]);
   for (const kind of TASK_KIND_KEYS) for (const role of ROLES) assert.equal(canDo(kind, role), Permissions.can(role, TASK_KINDS[kind].requires), `${kind} for ${role}`);
 });
+
+import { fileWords, stillNeededLine, acceptQuestion, requirableTypes } from "../../src/features/workplan/domain/file-needs-view.ts";
+import { suggestRequiredFiles, EVIDENCE_TYPES } from "@donordesk/domain";
+test("files we will need in words: lists, the still-needed line, and the one accept question", () => {
+  assert.equal(fileWords(["ATTENDANCE_SHEET"]), "attendance sheet");
+  assert.equal(fileWords(["ATTENDANCE_SHEET", "PHOTO"]), "attendance sheet and photo");
+  assert.equal(fileWords(["ATTENDANCE_SHEET", "PHOTO", "DISTRIBUTION_LIST"]), "attendance sheet, photo and distribution list");
+  assert.equal(fileWords([]), "");
+  assert.equal(stillNeededLine(["ATTENDANCE_SHEET", "PHOTO"]), "Still needed: attendance sheet and photo");
+  assert.equal(stillNeededLine([]), "");
+  assert.equal(acceptQuestion(["ATTENDANCE_SHEET"]), "No attendance sheet yet. Accept anyway?");
+  assert.equal(acceptQuestion([]), "");
+  for (const t of [stillNeededLine(["KOBO_ODK_EXPORT"]), acceptQuestion(["FIELD_VISIT_REPORT"])]) assert.deepEqual(findRawTokens(t), [], t);
+});
+
+test("the choices offered match the domain's kinds, without 'Other'; a suggestion is always one of them", () => {
+  const offered = requirableTypes().map((t) => t.id).sort();
+  assert.deepEqual(offered, EVIDENCE_TYPES.filter((t) => t !== "OTHER").sort());
+  for (const title of ["Hygiene training", "Food distribution", "Procurement of pumps", "Field monitoring visit", "Baseline survey"]) {
+    for (const t of suggestRequiredFiles(title)) assert.ok(offered.includes(t), `${title}: ${t}`);
+  }
+});

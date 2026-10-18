@@ -94,6 +94,7 @@ import {
   ImportWorkPlanHandler,
   CopyWorkPlanHandler,
   GetMyWeekHandler,
+  GetActivityFileNeedsHandler,
   ProjectHealthService,
   VisibleProjects,
   GetDeliveryHealthHandler,
@@ -603,6 +604,7 @@ export interface Container {
     importWorkPlan: ImportWorkPlanHandler;
     copyWorkPlan: CopyWorkPlanHandler;
     getMyWeek: GetMyWeekHandler;
+    getActivityFileNeeds: GetActivityFileNeedsHandler;
     getDeliveryHealth: GetDeliveryHealthHandler;
     getPortfolioHealth: GetPortfolioHealthHandler;
     getRiskTrend: GetRiskTrendHandler;
@@ -1410,6 +1412,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     getDeliveryHealth: new GetDeliveryHealthHandler(projects, projectHealth, clock),
     getPortfolioHealth: new GetPortfolioHealthHandler(new VisibleProjects(projects, projectMembers), projectHealth, clock),
     getRiskTrend: new GetRiskTrendHandler(riskTrendStore, projects),
+    getActivityFileNeeds: new GetActivityFileNeedsHandler(activities, plannedActivities, evidence),
     getMyWeek: new GetMyWeekHandler(new PrismaMyWeekReader(prisma), new PrismaDeliveryFactsReader(prisma), clock),
     copyWorkPlan: new CopyWorkPlanHandler(projects, logframe, plannedActivities, ids, audits),
     importWorkPlan: new ImportWorkPlanHandler(ids, plannedActivities, planContext, new PrismaMemberDirectory(prisma), logframe, audits),
