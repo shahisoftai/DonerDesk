@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { TenantId, PlannedActivity } from "@donordesk/domain";
-import { BulkPlanActionHandler, AssignPlannedActivityHandler, ReschedulePlannedActivityHandler, ChangePlanStatusHandler, PlanAccess, PlanRecorder } from "../dist/index.js";
+import { UndoBulkPlanActionHandler, BULK_STRATEGIES, BulkPlanActionHandler, AssignPlannedActivityHandler, ReschedulePlannedActivityHandler, ChangePlanStatusHandler, PlanAccess, PlanRecorder } from "../dist/index.js";
 
 const tenantId = TenantId.create("tenant-a");
 const ctxFor = (userId, role) => ({ tenant: { tenantId, userId, role }, requestId: "r" });
@@ -32,12 +32,14 @@ function world({ today = "2026-03-01", reportUses = false } = {}) {
   for (const [id, title, start, end, owner] of [["a", "One", "2026-03-10", "2026-03-12", "fo"], ["b", "Two", "2026-03-20", "2026-03-21", "fo"], ["c", "Three", "2026-03-25", "2026-03-26", "me"]]) {
     store.set(id, PlannedActivity.create({ id, tenantId: "tenant-a", projectId: "p", title, plannedStart: start, plannedEnd: end, people: { ownerUserId: owner, supportUserIds: [] }, createdById: "pm" }).value);
   }
+  const bulk = new BulkPlanActionHandler(access, repo, context,
+    new AssignPlannedActivityHandler(access, repo, context, recorder),
+    new ReschedulePlannedActivityHandler(access, repo, context, recorder, clock, deps),
+    new ChangePlanStatusHandler(access, repo, recorder, clock), clock);
   return {
     store, revisions, audit,
-    bulk: new BulkPlanActionHandler(access, repo, context,
-      new AssignPlannedActivityHandler(access, repo, context, recorder),
-      new ReschedulePlannedActivityHandler(access, repo, context, recorder, clock, deps),
-      new ChangePlanStatusHandler(access, repo, recorder, clock), clock),
+    bulk,
+    undo: new UndoBulkPlanActionHandler(bulk),
   };
 }
 
@@ -76,4 +78,35 @@ test("cancelling a set needs a reason, and setting the lead of many is one step 
   const lead = await w.bulk.handle(PM, { ids: ["a", "b"], action: { kind: "SET_LEAD", leadUserId: "me" }, apply: true });
   assert.equal(lead.value.applied, 2);
   assert.equal(w.store.get("b").ownerUserId, "me");
+});
+
+test("a bulk change returns the steps that put each activity back, and undoing restores dates and leads", async () => {
+  const w = world();
+  const moved = await w.bulk.handle(PM, { ids: ["a", "b"], action: { kind: "SHIFT", days: 7 }, apply: true });
+  assert.deepEqual(moved.value.undo.map((u) => [u.id, u.action.days]), [["a", -7], ["b", -7]]);
+  assert.equal((await w.undo.handle(PM, moved.value.undo)).value.undone, 2);
+  assert.equal(w.store.get("a").plannedStart, "2026-03-10");
+
+  const lead = await w.bulk.handle(PM, { ids: ["a", "c"], action: { kind: "SET_LEAD", leadUserId: "pm" }, apply: true });
+  assert.deepEqual(lead.value.undo.map((u) => u.action.leadUserId), ["fo", "me"], "each activity goes back to its own lead");
+  await w.undo.handle(PM, lead.value.undo);
+  assert.equal(w.store.get("a").ownerUserId, "fo");
+  assert.equal(w.store.get("c").ownerUserId, "me");
+});
+
+test("only changes that can be reversed offer an undo step; a cancel is undone by a restore", async () => {
+  const w = world();
+  const started = await w.bulk.handle(PM, { ids: ["a"], action: { kind: "SET_STATUS", status: "START" }, apply: true });
+  assert.deepEqual(started.value.undo, [], "starting cannot be reversed");
+  const cancelled = await w.bulk.handle(PM, { ids: ["b"], action: { kind: "SET_STATUS", status: "CANCEL" }, reason: "Funding cut", apply: true });
+  assert.deepEqual(cancelled.value.undo, [{ id: "b", action: { kind: "SET_STATUS", status: "RESTORE" } }]);
+  await w.undo.handle(PM, cancelled.value.undo);
+  assert.equal(w.store.get("b").status, "PLANNED");
+  assert.equal((await w.undo.handle(PM, [])).ok, false);
+});
+
+test("every bulk action kind is a strategy with the five parts the handler needs", () => {
+  for (const [kind, s] of Object.entries(BULK_STRATEGIES)) {
+    for (const part of ["needs", "preview", "precheck", "apply", "inverse"]) assert.ok(s[part] !== undefined, `${kind} has ${part}`);
+  }
 });

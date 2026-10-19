@@ -144,13 +144,21 @@ export const AddBudgetExpenseSchema = z.object({
 export type AddBudgetExpenseInput = z.infer<typeof AddBudgetExpenseSchema>;
 
 /** Change many planned activities at once (phase 28.1-L). Without `apply` it only previews; nothing is saved until `apply` is true. */
+export const BulkActionSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("SHIFT"), days: z.number().int().min(-365).max(365) }),
+  z.object({ kind: z.literal("SET_LEAD"), leadUserId: z.string().min(1).nullable() }),
+  z.object({ kind: z.literal("SET_STATUS"), status: z.enum(["START", "COMPLETE", "REOPEN", "CANCEL", "RESTORE"]) }),
+]);
+
+/** The steps a bulk change returned, sent back to put each activity as it was. */
+export const UndoBulkPlanActionSchema = z.object({
+  steps: z.array(z.object({ id: z.string().min(1).max(64), action: BulkActionSchema })).min(1).max(100),
+}).strict();
+export type UndoBulkPlanActionInput = z.infer<typeof UndoBulkPlanActionSchema>;
+
 export const BulkPlanActionSchema = z.object({
   ids: z.array(z.string().min(1).max(64)).min(1).max(100),
-  action: z.discriminatedUnion("kind", [
-    z.object({ kind: z.literal("SHIFT"), days: z.number().int().min(-365).max(365) }),
-    z.object({ kind: z.literal("SET_LEAD"), leadUserId: z.string().min(1).nullable() }),
-    z.object({ kind: z.literal("SET_STATUS"), status: z.enum(["START", "COMPLETE", "REOPEN", "CANCEL", "RESTORE"]) }),
-  ]),
+  action: BulkActionSchema,
   reason: z.string().max(1000).optional(),
   apply: z.boolean().default(false),
 }).strict();

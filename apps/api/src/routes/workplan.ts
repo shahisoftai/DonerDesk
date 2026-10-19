@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   AssignPlannedActivitySchema, ImportWorkPlanSchema, SetWorkPlanningVisibilitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ListWorkPlanQuerySchema,
-  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, ChangeActivityPeopleSchema, CompletePlannedActivitySchema,
+  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, UndoBulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, ChangeActivityPeopleSchema, CompletePlannedActivitySchema,
 } from "@donordesk/contracts";
 
 /**
@@ -117,6 +117,14 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
   app.post("/v1/projects/:projectId/work-plan/bulk", async (req) => {
     const body = BulkPlanActionSchema.parse(req.body);
     const r = await req.container.handlers.bulkPlanAction.handle({ tenant: req.tenant, requestId: req.id }, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // Puts activities back as they were, from the steps a bulk change returned.
+  app.post("/v1/projects/:projectId/work-plan/bulk/undo", async (req) => {
+    const body = UndoBulkPlanActionSchema.parse(req.body);
+    const r = await req.container.handlers.undoBulkPlanAction.handle({ tenant: req.tenant, requestId: req.id }, body.steps);
     if (!r.ok) throw r.error;
     return r.value;
   });

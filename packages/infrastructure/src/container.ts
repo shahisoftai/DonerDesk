@@ -93,6 +93,7 @@ import {
   AddBudgetLineHandler,
   AddBudgetExpenseHandler,
   BulkPlanActionHandler,
+  UndoBulkPlanActionHandler,
   GetWorkloadHandler,
   SetCapacityHandler,
   SetAutomationRuleHandler,
@@ -643,6 +644,7 @@ export interface Container {
     getPortfolioIndicators: GetPortfolioIndicatorsHandler;
     addBudgetLine: AddBudgetLineHandler;
     bulkPlanAction: BulkPlanActionHandler;
+    undoBulkPlanAction: UndoBulkPlanActionHandler;
     getWorkload: GetWorkloadHandler;
     setAutomationRule: SetAutomationRuleHandler;
     listAutomationRules: ListAutomationRulesHandler;
@@ -1268,6 +1270,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const planLinks = new PlanLinkResolver(plannedActivities);
   const planAccess = new PlanAccess(plannedActivities);
   const planRecorder = new PlanRecorder(ids, planRevisions, audits, clock);
+  const bulkPlan = new BulkPlanActionHandler(planAccess, plannedActivities, planContext,
+    new AssignPlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder),
+    new ReschedulePlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder, clock, planDependencies),
+    new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock), clock);
   // Requests (Phase 28.3): the reconciler closes the ones the records show were met, and is told after the changes that meet them.
   const projectTasks = new PrismaProjectTaskRepository(prisma);
   const projectRoster = new PrismaProjectRoster(prisma);
@@ -1513,10 +1519,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler),
       new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock), clock),
     setCapacity: new SetCapacityHandler(memberCapacity, audits, clock),
-    bulkPlanAction: new BulkPlanActionHandler(planAccess, plannedActivities, planContext,
-      new AssignPlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder),
-      new ReschedulePlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder, clock, planDependencies),
-      new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock), clock),
+    bulkPlanAction: bulkPlan,
+    undoBulkPlanAction: new UndoBulkPlanActionHandler(bulkPlan),
     addBudgetExpense: new AddBudgetExpenseHandler(planAccess, budgets, ids, audits, clock),
     getPlanItemBudget: new GetPlanItemBudgetHandler(planAccess, budgets),
     getProjectBudget: new GetProjectBudgetHandler(plannedActivities, budgets, planContext),
