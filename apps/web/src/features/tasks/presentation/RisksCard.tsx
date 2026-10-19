@@ -31,6 +31,7 @@ export function RisksCard({ projectId, risks, people, userId, canRaise, today, p
   const hydrated = useHydrated();
   const [open, setOpen] = useState(false);
   const [all, setAll] = useState(false);
+  const [filterKind, setFilterKind] = useState<RiskKind | "">("");
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<RiskKind>("PROBLEM");
   const [seriousness, setSeriousness] = useState<"HIGH" | "MEDIUM" | "LOW">("MEDIUM");
@@ -40,8 +41,9 @@ export function RisksCard({ projectId, risks, people, userId, canRaise, today, p
   const [note, setNote] = useState("");
 
   const names = Object.fromEntries(people.map((p) => [p.id, p.label.replace(/ \(you\)$/, "")]));
-  const openOnes = risks.filter((r) => r.status === "OPEN");
-  const shown = all ? risks : openOnes.slice(0, 3);
+  const byKind = filterKind ? risks.filter((r) => r.kind === filterKind) : risks;
+  const openOnes = byKind.filter((r) => r.status === "OPEN");
+  const shown = all ? byKind : openOnes.slice(0, 3);
   if (risks.length === 0 && !canRaise) return null;
 
   async function raise(e: React.FormEvent) {
@@ -80,6 +82,15 @@ export function RisksCard({ projectId, risks, people, userId, canRaise, today, p
         </form>
       )}
 
+      {risks.length > 0 && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <label htmlFor="risk-kind-filter" className="text-xs text-slate-600 dark:text-slate-300">Show</label>
+          <Select id="risk-kind-filter" value={filterKind} onChange={(e) => { setFilterKind(e.target.value as RiskKind | ""); setAll(true); }}>
+            <option value="">Everything</option>
+            {RISK_KINDS.map((k) => <option key={k} value={k}>{RISK_KIND_LABEL[k]}</option>)}
+          </Select>
+        </div>
+      )}
       {risks.length === 0 ? (
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Nothing is open.</p>
       ) : (

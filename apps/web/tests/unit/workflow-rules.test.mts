@@ -7,11 +7,12 @@ test("the order of work is the documented ten steps, in order", () => {
   assert.deepEqual(WORKFLOW_ORDER.map((s) => s.key), ["project", "logframe", "indicators", "template", "period", "data", "evidence", "generate", "review", "export"]);
 });
 
-test("there are five rules, each tied to an existing tour step, with unique keys", () => {
-  assert.equal(WORKFLOW_RULES.length, 5);
-  assert.equal(new Set(WORKFLOW_RULES.map((r) => r.key)).size, 5);
+test("there are eight rules with unique keys; a rule with a tour step points at one that exists", () => {
+  assert.equal(WORKFLOW_RULES.length, 8);
+  assert.equal(new Set(WORKFLOW_RULES.map((r) => r.key)).size, 8);
   const ids = new Set(TOUR_STEPS.map((s) => s.id));
-  for (const r of WORKFLOW_RULES) assert.ok(ids.has(r.stepId), `${r.key} -> ${r.stepId}`);
+  for (const r of WORKFLOW_RULES) if (r.stepId) assert.ok(ids.has(r.stepId), `${r.key} -> ${r.stepId}`);
+  assert.deepEqual(WORKFLOW_RULES.filter((r) => !r.stepId).map((r) => r.key), ["plan-moves", "progress-log", "done-in-one-step"]);
 });
 
 test("tour steps are unique and follow the workflow: logframe before template before period before evidence before draft", () => {

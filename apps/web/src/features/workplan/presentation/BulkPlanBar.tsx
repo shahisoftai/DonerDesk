@@ -23,6 +23,7 @@ export function BulkPlanBar({ projectId, selected, leads, onClear }: {
   const state = useActionState();
   const [days, setDays] = useState("");
   const [lead, setLead] = useState("");
+  const [status, setStatus] = useState<"" | "START" | "CANCEL">("");
   const [reason, setReason] = useState("");
   const [preview, setPreview] = useState<BulkPlanResult | null>(null);
   const [pendingInput, setPendingInput] = useState<Record<string, unknown> | null>(null);
@@ -52,7 +53,16 @@ export function BulkPlanBar({ projectId, selected, leads, onClear }: {
         </div>
         <Button size="sm" variant="secondary" disabled={state.busy || !lead} onClick={() => run({ action: { kind: "SET_LEAD", leadUserId: lead === "__none__" ? null : lead } }, false)}>Preview lead</Button>
         <div className="space-y-1">
-          <label htmlFor="bulk-reason" className="block text-xs">Why (if a report uses these dates)</label>
+          <label htmlFor="bulk-status" className="block text-xs">Change status</label>
+          <Select id="bulk-status" value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
+            <option value="">Choose</option>
+            <option value="START">Start (under way)</option>
+            <option value="CANCEL">Cancel (needs a reason)</option>
+          </Select>
+        </div>
+        <Button size="sm" variant="secondary" disabled={state.busy || !status} onClick={() => run({ action: { kind: "SET_STATUS", status } }, false)}>Preview status</Button>
+        <div className="space-y-1">
+          <label htmlFor="bulk-reason" className="block text-xs">Why (if a report uses these dates, or to cancel)</label>
           <Input id="bulk-reason" value={reason} onChange={(e) => setReason(e.target.value)} />
         </div>
         <Button size="sm" variant="secondary" onClick={onClear}>Clear selection</Button>
