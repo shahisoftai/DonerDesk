@@ -108,11 +108,12 @@ import {
   SaveProgressHandler,
   PrepareProgressHandler,
   RemoveProgressHandler,
-  CompletePlannedActivityHandler,
   GetActivityPeopleHandler,
   ChangeActivityPeopleHandler,
   GetPlanItemBudgetHandler,
+  CompletePlannedActivityHandler,
   ListProjectFieldsHandler,
+  GetProjectBudgetHandler,
   GetPlanItemFieldsHandler,
   SetPlanItemFieldsHandler,
   AssignPlannedActivityHandler,
@@ -653,14 +654,15 @@ export interface Container {
     saveProgress: SaveProgressHandler;
     prepareProgress: PrepareProgressHandler;
     removeProgress: RemoveProgressHandler;
-    completePlannedActivity: CompletePlannedActivityHandler;
-    setCapacity: SetCapacityHandler;
     getActivityPeople: GetActivityPeopleHandler;
     changeActivityPeople: ChangeActivityPeopleHandler;
     addBudgetExpense: AddBudgetExpenseHandler;
     getPlanItemBudget: GetPlanItemBudgetHandler;
+    completePlannedActivity: CompletePlannedActivityHandler;
+    setCapacity: SetCapacityHandler;
     getPlanItemFields: GetPlanItemFieldsHandler;
     setPlanItemFields: SetPlanItemFieldsHandler;
+    getProjectBudget: GetProjectBudgetHandler;
     assignPlannedActivity: AssignPlannedActivityHandler;
     updatePlannedActivity: UpdatePlannedActivityHandler;
     startPlanFromLogframe: StartPlanFromLogframeHandler;
@@ -1515,6 +1517,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     getPlanItemFields: new GetPlanItemFieldsHandler(planAccess, projectFields, customFieldValues),
     setPlanItemFields: new SetPlanItemFieldsHandler(planAccess, projectFields, customFieldValues, audits, clock),
     assignPlannedActivity: new AssignPlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder),
+    getProjectBudget: new GetProjectBudgetHandler(plannedActivities, budgets, planContext),
     updatePlannedActivity: new UpdatePlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder, clock),
     startPlanFromLogframe: new StartPlanFromLogframeHandler(ids, plannedActivities, planContext, logframe, audits),
     listWorkPlan: new ListWorkPlanHandler(plannedActivities, new PrismaDeliveryFactsReader(prisma), planContext, clock, planDependencies),

@@ -181,13 +181,6 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  app.get("/v1/work-plan/:itemId/progress", async (req) => {
-    const r = await req.container.handlers.getProgress.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"));
-    if (!r.ok) throw r.error;
-    return r.value;
-  });
-
-  app.get("/v1/work-plan/:itemId/progress/prepare", async (req) => {
   app.get("/v1/work-plan/:itemId/people", async (req) => {
     const r = await req.container.handlers.getActivityPeople.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"));
     if (!r.ok) throw r.error;
@@ -208,6 +201,13 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     if (!r.ok) throw r.error;
     return r.value;
   });
+  app.get("/v1/work-plan/:itemId/progress", async (req) => {
+    const r = await req.container.handlers.getProgress.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/work-plan/:itemId/progress/prepare", async (req) => {
 
   app.post("/v1/work-plan/:itemId/progress", async (req) => {
     const body = SaveProgressSchema.parse(req.body);
@@ -229,6 +229,12 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
   });
 
   app.post("/v1/work-plan/:itemId/budget-lines", async (req) => {
+  app.get("/v1/projects/:projectId/budget", async (req) => {
+    const r = await req.container.handlers.getProjectBudget.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
     const body = AddBudgetLineSchema.parse(req.body);
     const r = await req.container.handlers.addBudgetLine.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
     if (!r.ok) throw r.error;

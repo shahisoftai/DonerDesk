@@ -49,3 +49,21 @@ test("money reads back with cents and a currency", () => {
   assert.equal(formatMinor(5, "EUR"), "0.05 EUR");
   assert.equal(formatMinor(-2050, "USD"), "-20.50 USD");
 });
+
+import { projectBudgetSummary } from "../dist/index.js";
+
+test("a project's budget is added up per currency, never across currencies, with one row per activity", () => {
+  const lines = [
+    { activityId: "a", activityTitle: "Training", currency: "USD", budgetedMinor: 100000, spentMinor: 40000 },
+    { activityId: "a", activityTitle: "Training", currency: "USD", budgetedMinor: 50000, spentMinor: 20000 },
+    { activityId: "b", activityTitle: "Clinic", currency: "USD", budgetedMinor: 30000, spentMinor: 35000 },
+    { activityId: "c", activityTitle: "Radio", currency: "EUR", budgetedMinor: 20000, spentMinor: 0 },
+  ];
+  const [eur, usd] = projectBudgetSummary(lines);
+  assert.equal(eur.currency, "EUR");
+  assert.deepEqual([eur.budgetedMinor, eur.spentMinor, eur.remainingMinor, eur.overspentActivities], [20000, 0, 20000, 0]);
+  assert.deepEqual([usd.budgetedMinor, usd.spentMinor, usd.remainingMinor], [180000, 95000, 85000]);
+  assert.equal(usd.overspentActivities, 1, "Clinic spent more than its budget");
+  assert.deepEqual(usd.byActivity.map((a) => [a.activityTitle, a.budgetedMinor, a.overspent]), [["Clinic", 30000, true], ["Training", 150000, false]]);
+  assert.deepEqual(projectBudgetSummary([]), []);
+});

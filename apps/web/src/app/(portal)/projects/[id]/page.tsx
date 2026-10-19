@@ -10,12 +10,13 @@ import { projectStatusTone, severityTone } from "@/lib/shared/tone";
 import { readinessHeadline } from "@/features/projects/application/readiness-view";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { RisksResponseSchema, DeliveryHealthSchema, type DeliveryHealthResponse, DataSheetResponseSchema, LogframeResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { ProjectBudgetSchema, RisksResponseSchema, DeliveryHealthSchema, type DeliveryHealthResponse, DataSheetResponseSchema, LogframeResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { planCounts, outputProgress } from "@/features/workplan/domain/delivery-overview";
 import { RisksCard } from "@/features/tasks/presentation/RisksCard";
 import { loadProjectPeople } from "@/features/tasks/application/project-people";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { PlanOverviewCards } from "@/features/workplan/presentation/PlanOverviewCards";
+import { ProjectBudgetCard } from "@/features/workplan/presentation/ProjectBudgetCard";
 import { DeleteDemoProjectButton } from "@/features/tour/presentation/DeleteDemoProjectButton";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ export default async function ProjectDetail({
   // Problems and risks: shown once there is a plan or anything was raised, so a project that uses neither looks as before.
   const risksResult = project.showWorkPlanning === false ? null : await gatewayRequest(`/v1/projects/${project.id}/risks`, RisksResponseSchema, ctx.token);
   const risks = risksResult?.ok ? risksResult.value.items : [];
+  const budgetResult = project.showWorkPlanning === false ? null : await gatewayRequest(`/v1/projects/${project.id}/budget`, ProjectBudgetSchema, ctx.token);
   const meId = decodeSessionPayload(ctx.token)?.sub ?? "";
   const showRisks = planRows.length > 0 || risks.length > 0;
   const riskPeople = showRisks ? await loadProjectPeople(ctx.token, project.id, meId) : [];
@@ -122,6 +124,7 @@ export default async function ProjectDetail({
       )}
 
       {planCards && <PlanOverviewCards projectId={project.id} counts={planCards.counts} outputs={planCards.outputs} health={planCards.health} />}
+      {budgetResult?.ok && <ProjectBudgetCard projectId={project.id} data={budgetResult.value.items} />}
 
       {readiness && (
         <section className="mt-8 grid gap-6 lg:grid-cols-2">

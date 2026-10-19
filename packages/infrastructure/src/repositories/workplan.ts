@@ -351,6 +351,11 @@ export class PrismaBudgetRepository implements IBudgetRepository {
     return ok(rows.map(PrismaBudgetRepository.line));
   }
 
+  async findLinesByProject(projectId: string, tenantId: TenantId): Promise<Result<BudgetLineRecord[], DomainError>> {
+    const rows = await this.prisma.budgetLine.findMany({ where: { tenantId: tenantId.toString(), projectId }, orderBy: { createdAt: "asc" } });
+    return ok(rows.map(PrismaBudgetRepository.line));
+  }
+
   async addExpense(e: BudgetExpenseRecord): Promise<Result<void, DomainError>> {
     await this.prisma.budgetExpense.create({
       data: { id: e.id, tenantId: e.tenantId, projectId: e.projectId, budgetLineId: e.budgetLineId, expenseDate: new Date(`${e.expenseDate}T00:00:00.000Z`), amountMinor: e.amountMinor, description: e.description, createdById: e.createdById, createdAt: e.createdAt },

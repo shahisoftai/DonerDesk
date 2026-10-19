@@ -136,6 +136,7 @@ export interface IBudgetRepository {
   countLines(plannedActivityId: string, tenantId: TenantId): Promise<Result<number>>;
   findLineById(id: string, tenantId: TenantId): Promise<Result<BudgetLineRecord | null>>;
   findLinesByItem(plannedActivityId: string, tenantId: TenantId): Promise<Result<BudgetLineRecord[]>>;
+  findLinesByProject(projectId: string, tenantId: TenantId): Promise<Result<BudgetLineRecord[]>>;
   addExpense(expense: BudgetExpenseRecord): Promise<Result<void>>;
   findExpensesByLines(lineIds: string[], tenantId: TenantId): Promise<Result<BudgetExpenseRecord[]>>;
 }

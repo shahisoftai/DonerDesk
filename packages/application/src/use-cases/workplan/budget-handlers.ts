@@ -1,7 +1,7 @@
-import { DomainError, MAX_BUDGET_LINES, budgetPosition, checkBudgetLine, checkExpense, err, ok, type BudgetCostCategory, type BudgetPosition, type Result } from "@donordesk/domain";
+import { DomainError, MAX_BUDGET_LINES, budgetPosition, checkBudgetLine, checkExpense, err, ok, projectBudgetSummary, type BudgetCostCategory, type BudgetPosition, type ProjectBudgetCurrency, type Result } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
-import type { BudgetExpenseRecord, BudgetLineRecord, IBudgetRepository } from "../../ports/workplan.js";
+import type { BudgetExpenseRecord, BudgetLineRecord, IBudgetRepository, IPlanContextReader, IPlannedActivityRepository } from "../../ports/workplan.js";
 import { PlanAccess } from "../../services/plan-access.js";
 
 export interface BudgetLineView {
@@ -89,4 +89,31 @@ function toView(line: BudgetLineRecord, expenses: BudgetExpenseRecord[]): Budget
     position: budgetPosition(line.amountMinor, expenses.map((e) => ({ date: e.expenseDate, amountMinor: e.amountMinor }))),
     expenses: expenses.map((e) => ({ id: e.id, date: e.expenseDate, amountMinor: e.amountMinor, description: e.description })).sort((a, b) => a.date.localeCompare(b.date)),
   };
+}
+
+/** A project's budget against spending, per currency and per activity. For people on the project (or an admin). */
+export class GetProjectBudgetHandler {
+  constructor(private readonly items: IPlannedActivityRepository, private readonly budgets: IBudgetRepository, private readonly context: IPlanContextReader) {}
+
+  async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<ProjectBudgetCurrency[], DomainError>> {
+    if (ctx.tenant.role !== "ADMIN") {
+      const members = await this.context.activeMemberIds(projectId, ctx.tenant.tenantId);
+      if (!members.ok) return members;
+      if (!members.value.has(ctx.tenant.userId)) return err(DomainError.forbidden("You are not on this project"));
+    }
+    const lines = await this.budgets.findLinesByProject(projectId, ctx.tenant.tenantId);
+    if (!lines.ok) return lines;
+    if (lines.value.length === 0) return ok([]);
+    const expenses = await this.budgets.findExpensesByLines(lines.value.map((l) => l.id), ctx.tenant.tenantId);
+    if (!expenses.ok) return expenses;
+    const items = await this.items.findByProject(projectId, ctx.tenant.tenantId);
+    if (!items.ok) return items;
+    const titles = new Map(items.value.map((i) => [i.id, i.title]));
+    const spent = new Map<string, number>();
+    for (const e of expenses.value) spent.set(e.budgetLineId, (spent.get(e.budgetLineId) ?? 0) + e.amountMinor);
+    return ok(projectBudgetSummary(lines.value.map((l) => ({
+      activityId: l.plannedActivityId, activityTitle: titles.get(l.plannedActivityId) ?? "An activity", currency: l.currency,
+      budgetedMinor: l.amountMinor, spentMinor: spent.get(l.id) ?? 0,
+    }))));
+  }
 }

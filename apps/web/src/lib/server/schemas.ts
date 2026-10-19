@@ -1541,3 +1541,16 @@ export const PreviewReviewSchema = z.object({
   likely: z.array(z.object({ line: z.number(), caseCode: z.string(), looksLike: z.array(z.string()) })),
 });
 export type PreviewReview = z.infer<typeof PreviewReviewSchema>;
+
+/** A project's budget against spending, per currency (never added across currencies) and per activity. */
+export const ProjectBudgetSchema = z.object({
+  items: z.array(z.object({
+    currency: z.string(),
+    budgetedMinor: z.number(),
+    spentMinor: z.number(),
+    remainingMinor: z.number(),
+    overspentActivities: z.number(),
+    byActivity: z.array(z.object({ activityId: z.string(), activityTitle: z.string(), budgetedMinor: z.number(), spentMinor: z.number(), remainingMinor: z.number(), overspent: z.boolean() })),
+  })),
+});
+export type ProjectBudget = z.infer<typeof ProjectBudgetSchema>;

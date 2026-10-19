@@ -98,3 +98,43 @@ export function formatMinor(minor: number, currency: string): string {
   const cents = String(Math.abs(minor) % 100).padStart(2, "0");
   return `${minor < 0 ? "-" : ""}${whole.toLocaleString("en-US")}.${cents} ${currency}`;
 }
+
+export interface ProjectBudgetLine { activityId: string; activityTitle: string; currency: string; budgetedMinor: number; spentMinor: number }
+
+export interface ProjectBudgetActivity { activityId: string; activityTitle: string; budgetedMinor: number; spentMinor: number; remainingMinor: number; overspent: boolean }
+
+export interface ProjectBudgetCurrency {
+  currency: string;
+  budgetedMinor: number;
+  spentMinor: number;
+  remainingMinor: number;
+  /** How many activities spent more than their budget in this currency. */
+  overspentActivities: number;
+  byActivity: ProjectBudgetActivity[];
+}
+
+/**
+ * A project's budget against what was spent, one block per currency (currencies are never added together) and one row per
+ * activity (its lines in that currency added up). Activities with nothing budgeted do not appear; this is a view of what has a budget.
+ */
+export function projectBudgetSummary(lines: ReadonlyArray<ProjectBudgetLine>): ProjectBudgetCurrency[] {
+  const byCurrency = new Map<string, Map<string, ProjectBudgetActivity>>();
+  for (const l of lines) {
+    const activities = byCurrency.get(l.currency) ?? new Map<string, ProjectBudgetActivity>();
+    const row = activities.get(l.activityId) ?? { activityId: l.activityId, activityTitle: l.activityTitle, budgetedMinor: 0, spentMinor: 0, remainingMinor: 0, overspent: false };
+    row.budgetedMinor += l.budgetedMinor;
+    row.spentMinor += l.spentMinor;
+    activities.set(l.activityId, row);
+    byCurrency.set(l.currency, activities);
+  }
+  return [...byCurrency.entries()]
+    .map(([currency, activities]) => {
+      const byActivity = [...activities.values()]
+        .map((a) => ({ ...a, remainingMinor: a.budgetedMinor - a.spentMinor, overspent: a.spentMinor > a.budgetedMinor }))
+        .sort((a, b) => a.activityTitle.localeCompare(b.activityTitle));
+      const budgetedMinor = byActivity.reduce((s, a) => s + a.budgetedMinor, 0);
+      const spentMinor = byActivity.reduce((s, a) => s + a.spentMinor, 0);
+      return { currency, budgetedMinor, spentMinor, remainingMinor: budgetedMinor - spentMinor, overspentActivities: byActivity.filter((a) => a.overspent).length, byActivity };
+    })
+    .sort((a, b) => a.currency.localeCompare(b.currency));
+}

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { TenantId, PlannedActivity } from "@donordesk/domain";
-import { AddBudgetLineHandler, AddBudgetExpenseHandler, GetPlanItemBudgetHandler, PlanAccess } from "../dist/index.js";
+import { AddBudgetLineHandler, AddBudgetExpenseHandler, GetPlanItemBudgetHandler, GetProjectBudgetHandler, PlanAccess } from "../dist/index.js";
 
 const tenantId = TenantId.create("tenant-a");
 const ctxFor = (userId, role) => ({ tenant: { tenantId, userId, role }, requestId: "r" });
@@ -27,6 +27,7 @@ function world() {
     countLines: async (itemId) => ok([...lines.values()].filter((l) => l.plannedActivityId === itemId).length),
     findLineById: async (id) => ok(lines.get(id) ?? null),
     findLinesByItem: async (itemId) => ok([...lines.values()].filter((l) => l.plannedActivityId === itemId)),
+    findLinesByProject: async (p) => ok([...lines.values()].filter((l) => l.projectId === p)),
     addExpense: async (e) => (expenses.push(e), ok(undefined)),
     findExpensesByLines: async (ids2) => ok(expenses.filter((e) => ids2.includes(e.budgetLineId))),
   };
@@ -39,6 +40,7 @@ function world() {
     addLine: new AddBudgetLineHandler(access, budgets, ids, auditLogger, clock),
     addExpense: new AddBudgetExpenseHandler(access, budgets, ids, auditLogger, clock),
     get: new GetPlanItemBudgetHandler(access, budgets),
+    project: new GetProjectBudgetHandler({ findByProject: async (p) => ok([...items.values()].filter((i) => i.projectId === p)) }, budgets, { activeMemberIds: async () => ok(new Set(["pm", "fo"])) }),
   };
 }
 
@@ -75,4 +77,19 @@ test("the position reads spent against the budget, and an overspend is flagged b
   assert.equal(view.position.overspent, true);
   assert.equal(w.expenses.length, 2, "an overspend is never blocked");
   assert.deepEqual(view.expenses.map((e) => e.date), ["2026-03-11", "2026-03-12"]);
+});
+
+test("the project budget adds up per currency and per activity, for people on the project only", async () => {
+  const w = world();
+  const a = (await w.addLine.handle(PM, "item1", line)).value.id;
+  await w.addLine.handle(PM, "item1", { ...line, code: "2.1-S", category: "SUPPLIES", amount: "250" });
+  const b = (await w.addLine.handle(PM, "item2", { ...line, currency: "EUR", amount: "100" })).value.id;
+  await w.addExpense.handle(LEAD, "item1", a, { date: "2026-03-11", amount: "150" });
+  await w.addExpense.handle(PM, "item2", b, { date: "2026-03-11", amount: "120" });
+  const res = await w.project.handle(PM, "p");
+  const [eur, usd] = res.value;
+  assert.deepEqual([eur.currency, eur.budgetedMinor, eur.spentMinor, eur.overspentActivities], ["EUR", 10000, 12000, 1]);
+  assert.deepEqual([usd.currency, usd.budgetedMinor, usd.spentMinor, usd.byActivity.length], ["USD", 75000, 15000, 1]);
+  assert.equal((await w.project.handle(STRANGER, "p")).ok, false, "not on the project");
+  assert.deepEqual((await w.project.handle(PM, "other")).value, [], "a project with no budget lines has nothing to show");
 });
