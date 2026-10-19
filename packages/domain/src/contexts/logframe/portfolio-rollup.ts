@@ -75,3 +75,24 @@ export function rollUpIndicators(rows: ReadonlyArray<PortfolioIndicatorValue>): 
 function toProject(r: PortfolioIndicatorValue): RollupProject {
   return { projectId: r.projectId, projectTitle: r.projectTitle, value: r.verifiedCumulative, target: r.target, asOf: r.verifiedAsOf };
 }
+
+export const ROLLUP_TABLE_HEADER = ["Donor", "Indicator code", "Indicator", "Unit", "Project", "Verified value", "As of", "Project target", "Total of the group", "Target of the group", "% of target", "Note"] as const;
+
+/**
+ * The roll-up as rows for a spreadsheet: one row per project in each group. A value nobody has verified reads "Not measured", never 0.
+ * A project whose unit or type differs is listed with a note and is not part of the group's total.
+ */
+export function rollupTable(groups: ReadonlyArray<RollupGroup>): string[][] {
+  const num = (n: number | null, empty: string): string => (n === null ? empty : String(n));
+  const rows: string[][] = [[...ROLLUP_TABLE_HEADER]];
+  for (const g of groups) {
+    const group = [num(g.total, "Not measured"), num(g.targetTotal, ""), g.percentOfTarget === null ? "" : `${g.percentOfTarget}%`];
+    for (const p of g.projects) {
+      rows.push([g.donorName, g.indicatorCode, g.indicatorName, g.unit ?? "", p.projectTitle, num(p.value, "Not measured"), p.asOf ?? "", num(p.target, ""), ...group, ""]);
+    }
+    for (const p of g.mismatched) {
+      rows.push([g.donorName, g.indicatorCode, g.indicatorName, g.unit ?? "", p.projectTitle, num(p.value, "Not measured"), p.asOf ?? "", num(p.target, ""), ...group, "Different unit or type: not added to the total"]);
+    }
+  }
+  return rows;
+}

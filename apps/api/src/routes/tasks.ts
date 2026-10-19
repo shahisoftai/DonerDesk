@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { rollupTable, toCsv } from "@donordesk/domain";
 import { SetEntryDueDaysSchema, CloseRiskSchema, CreateRiskSchema, UpdateRiskSchema, UpdateNotificationPreferencesSchema, CompleteTaskSchema, CreateTaskSchema, ListAssignmentsQuerySchema, SetOwnerSchema } from "@donordesk/contracts";
 
 /**
@@ -23,6 +24,15 @@ export async function registerTaskRoutes(app: FastifyInstance) {
   });
 
   // Indicators summed across the projects a person can see, per donor and code (phase 28.1-F). Only verified values count.
+  // The same roll-up as a CSV for donors: the same visibility rule (a person only gets the projects they are on), nothing recomputed.
+  app.get("/v1/portfolio/indicators/export", async (req, reply) => {
+    const r = await req.container.handlers.getPortfolioIndicators.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "text/csv; charset=utf-8");
+    reply.header("content-disposition", 'attachment; filename="indicators-across-projects.csv"');
+    return toCsv(rollupTable(r.value));
+  });
+
   app.get("/v1/portfolio/indicators", async (req) => {
     const r = await req.container.handlers.getPortfolioIndicators.handle({ tenant: req.tenant, requestId: req.id });
     if (!r.ok) throw r.error;

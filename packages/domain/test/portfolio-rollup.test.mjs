@@ -41,3 +41,23 @@ test("a percentage indicator has no percent of target, and groups sort by donor 
   assert.deepEqual(groups.map((g) => `${g.donorName} ${g.indicatorCode}`), ["AFD 1.1", "EU 2.1", "EU 10.1"]);
   assert.equal(groups.find((g) => g.indicatorCode === "10.1").percentOfTarget, null);
 });
+
+import { rollupTable, ROLLUP_TABLE_HEADER, toCsv } from "../dist/index.js";
+
+test("the roll-up becomes a sheet: a row per project, 'Not measured' for a missing value, and a note on one that is not added", () => {
+  const groups = rollUpIndicators([row("a"), row("b", { verifiedCumulative: null, verifiedAsOf: null }), row("c", { unit: "households", verifiedCumulative: 9 })]);
+  const table = rollupTable(groups);
+  assert.deepEqual(table[0], [...ROLLUP_TABLE_HEADER]);
+  assert.equal(table.length, 4, "header + three projects");
+  const byProject = Object.fromEntries(table.slice(1).map((r) => [r[4], r]));
+  assert.equal(byProject["Project a"][5], "40");
+  assert.equal(byProject["Project b"][5], "Not measured", "never 0");
+  assert.equal(byProject["Project a"][8], "40", "group total repeats on each row");
+  assert.match(byProject["Project c"][11], /not added to the total/);
+});
+
+test("a project title that looks like a formula stays text in the CSV", () => {
+  const groups = rollUpIndicators([row("a", { projectTitle: "=HYPERLINK(\"http://x\")" })]);
+  const csv = toCsv(rollupTable(groups));
+  assert.match(csv, /'=HYPERLINK/);
+});

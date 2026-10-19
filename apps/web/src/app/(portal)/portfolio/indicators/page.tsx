@@ -23,6 +23,7 @@ export default async function PortfolioIndicatorsPage({ searchParams }: { search
       <header>
         <h2 className="text-xl font-semibold tracking-tight">Indicators across projects</h2>
         <p className="mt-1 text-sm text-slate-500">Verified values added up per donor. Projects you are not on are not shown.</p>
+        <p className="mt-2"><a className="btn-secondary" href="/api/portfolio/indicators/export">Download as a spreadsheet (CSV)</a></p>
       </header>
       {donors.length > 1 && (
         <nav aria-label="Donor" className="flex flex-wrap gap-2 text-sm">
