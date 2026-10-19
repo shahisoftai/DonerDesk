@@ -5,33 +5,43 @@
 
 ---
 
-## 0. Status (updated 2026-10-19, after commit fbcfef5)
+## 0. Status (re-reviewed against the code, 2026-10-19, HEAD e2f317b)
 
-Committed on `0013-programme-management`: `1ab8abc` (batches A–L core), `ecb1053` + `807f381` (progress log, one-step Done), `6e57592` (navigation links), `02bd998` (Kobo/ODK saved mapping), `fbcfef5` (details panel, bulk status, risk kind filter, help). Not deployed.
+Every row below was checked against the code (file or symbol exists), not against earlier status text. "Owner" is the session that holds the open work; a session stages by path/hunk and commits within minutes so a sweep cannot catch half-edits.
 
-| Batch | Gap | State |
+| Batch | Built (committed) | Still open | Owner |
+|---|---|---|---|
+| A dependencies | links, cascade on move, blocked report, "Waiting for" label | timeline connector arrows; drag-confirm bar previewing cascaded moves | a9 (arrows); a6 (cascade preview) |
+| B targets per group | validation, editor, indicator page | targets beside actuals in the Data Center sheet, report tables, exports | a9 |
+| C custom fields | definitions, values, plan item form | list columns, filter, export (in progress, uncommitted) | a9 |
+| D budget | lines, expenses, overspend flag, project totals on Overview (4a432e4) | budget in exports; split of the 7-method budget port | a9 (exports); a6 (port split) |
+| E RAID | five kinds, kind filter (fbcfef5) | decision-log view | a6 |
+| F roll-up | page, donor filter, link from projects | roll-up in reports and exports | a6 |
+| G beneficiaries | register, consent, duplicate flag, link to activities, unique-people start (5326c65) | edit and remove a record | a6 |
+| H offline | static shell + offline page only | offline progress-log outbox; offline indicator; (decision pending) caching signed-in pages | a6 |
+| I Kobo/ODK import | CSV import, saved column mapping (02bd998), check-first review (e2f317b) | none known | done |
+| J workload | per person per week, limit in activities | capacity per activity | a6 |
+| K automations | two rules on/off per project | per-rule settings; run history screen | a6 |
+| L bulk edit | move, lead, status, preview (fbcfef5) | undo | a6 |
+| Progress log, one-step Done, details panel | built (ecb1053, 807f381, fbcfef5) | browser check with a real account | all |
+| Phase 28 leftovers | series-wide lead change (fccd00c) | indicator due-days setter (column exists, read-only); move a planned activity's logframe link; backfilled completion date | a6 |
+| Tests | domain, application and web unit suites cover every batch | database-backed repository tests for the new tables; Playwright e2e | a9 (DB tests) |
+
+### SOLID audit (concrete findings, not a claim of compliance)
+
+| Principle | Finding | Fix (owner) |
 |---|---|---|
-| A | Dependencies: finish-to-start, cascade, "Waiting for" marker | Built and tested. Missing: timeline connector arrows; drag confirm does not preview cascaded moves; DB repository tests. |
-| B | Breakdown targets per group | Built (validation, editor, indicator page). Missing: Data Center sheet, report tables, exports. |
-| C | Custom fields | Built (definitions, values, plan item form). Missing: list columns, filters, exports; DB tests. |
-| D | Budget lines and expenses | Built per activity. Missing: project totals; Data Center, exports, reports; DB tests. |
-| E | RAID kinds | Built; kind filter done (fbcfef5). Missing: decision-log view. |
-| F | Cross-project roll-up | Built; link on projects list. Missing: donor filter; reports and exports. |
-| G | Beneficiary register | Built (case codes, consent, duplicate flag). Missing: link to completed activities (unique counts); edit and remove; DB tests. |
-| H | Offline | Shell and offline page only. Missing: offline progress-log outbox; offline indicator. Signed-in pages not cached (decision pending). |
-| I | Kobo/ODK import | Built, with saved column mapping (02bd998). Missing: review screen for likely duplicates. |
-| J | Workload | Built per person, per week, for the Team page. Missing: capacity per activity; hours (not recorded). |
-| K | Automations | Two rules on/off. Missing: per-rule settings; history screen. |
-| L | Bulk edit | Move, lead, status, previewed (fbcfef5). Missing: undo. |
-| — | Progress log by day/week/month/end; one-step Done | Built (ecb1053, 807f381). Not browser-checked. |
-| — | Details panel | Built (fbcfef5). |
-| — | Phase 28 leftovers | Not built: indicator due days, logframe link move, series-wide lead change, backfilled completion date. |
+| Open-closed | `automationNotices` is an if-chain per rule; a new rule edits the function. | Rule registry: each rule is an entry with its own `evaluate`; the function iterates the registry (a6) |
+| Open-closed | `BulkPlanActionHandler` branches on `action.kind` in preview, checks and apply. | Strategy table keyed by kind (a6) |
+| Dependency inversion | `BulkPlanActionHandler` and `CompletePlannedActivityHandler` depend on other handler classes. | Depend on small interfaces (`IAssignPlan`, `IReschedulePlan`, `IChangePlanStatus`) (a6; a9 for Complete) |
+| Dependency inversion | `SetAutomationRuleHandler` takes `{ record(e: unknown) }` instead of `IAuditLogger`. | Use `IAuditLogger` (a6) |
+| Interface segregation | `IBudgetRepository` has 7 methods across two aggregates (lines, expenses). | Split into line and expense ports (a9 to confirm, a6 to do after a9 commits) |
+| Single responsibility | `container.ts` is 1,718 lines; `repositories/workplan.ts` holds a dozen repositories. | One module per aggregate for wiring and for repositories, done last when no session has uncommitted edits there (a6) |
+| Liskov | No inheritance in the new code; ports are structural. | No action |
 
-**Ownership of open work (2026-10-19):**
-- donerdesk-a9: timeline arrows, Data Center and report targets, project budget totals, beneficiary-to-activity link, custom fields in list and export, DB repository tests.
-- donerdesk-a6: import review screen for duplicates; automation settings and history; backfilled completion date; series-wide lead change; logframe link move; indicator due days; offline progress-log outbox; roll-up donor filter.
+"100% SOLID" is not something a test can prove. The above are the checkable violations; each fix keeps behaviour and has the existing tests as a safety net.
 
-**Deployment:** nothing after `13d76ee` is on Contabo. Migrations to apply in order after `20261020160000_beneficiary_records`: `20261020170000_progress_log`, `20261020180000_submission_mapping`, then any added later. Re-run `infra/postgres/rls.sql`. Gate and push are held by donerdesk-a9.
+**Deployment:** nothing after `13d76ee` is on Contabo. Migrations to apply in order after `20261020160000_beneficiary_records`: `20261020170000_progress_log`, `20261020180000_submission_mapping`, `20261020190000_beneficiary_activity_link`, then any later ones (a9 uses `20261020190000`–`20261020230000`; a6 uses `20261020240000` upward). Re-run `infra/postgres/rls.sql`. Gate, push and deploy are held by donerdesk-a9.
 
 ## 1. Principles for every batch
 
