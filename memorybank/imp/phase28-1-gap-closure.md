@@ -5,26 +5,33 @@
 
 ---
 
-## 0. Status
+## 0. Status (updated 2026-10-19, after commit fbcfef5)
+
+Committed on `0013-programme-management`: `1ab8abc` (batches A–L core), `ecb1053` + `807f381` (progress log, one-step Done), `6e57592` (navigation links), `02bd998` (Kobo/ODK saved mapping), `fbcfef5` (details panel, bulk status, risk kind filter, help). Not deployed.
 
 | Batch | Gap | State |
 |---|---|---|
-| 28.1-A | Dependencies between planned activities (finish-to-start, cascade on move) | **Domain rules built and tested** (`plan-dependencies.ts`). Persistence, handlers, API, UI: not started. |
-| 28.1-B | Source of verification and targets per breakdown on indicators | Not started |
-| 28.1-C | Custom fields per project | Not started |
-| 28.1-D | Budget lines per activity and budget-versus-actual | Not started (needs decisions §2) |
-| 28.1-E | RAID log: assumptions, decisions, project-level dependencies | Not started |
-| 28.1-F | Roll-up across projects (per donor, per indicator code) | Not started |
-| 28.1-G | Beneficiary records and duplicate checks | **Blocked on decision §2.1** (personal data) |
-| 28.1-H | Offline app opening and offline entry of logs | Not started (scope needs decision §2.3) |
-| 28.1-I | Import of KoboToolbox / ODK submissions | Not started, after 28.1-G decision |
-| 28.1-J | Workload and capacity on the Team tab | Not started |
-| 28.1-K | Automations ("when X, notify or assign Y") | Not started |
-| 28.1-L | Spreadsheet-style bulk edit of planned activities | Not started |
+| A | Dependencies: finish-to-start, cascade, "Waiting for" marker | Built and tested. Missing: timeline connector arrows; drag confirm does not preview cascaded moves; DB repository tests. |
+| B | Breakdown targets per group | Built (validation, editor, indicator page). Missing: Data Center sheet, report tables, exports. |
+| C | Custom fields | Built (definitions, values, plan item form). Missing: list columns, filters, exports; DB tests. |
+| D | Budget lines and expenses | Built per activity. Missing: project totals; Data Center, exports, reports; DB tests. |
+| E | RAID kinds | Built; kind filter done (fbcfef5). Missing: decision-log view. |
+| F | Cross-project roll-up | Built; link on projects list. Missing: donor filter; reports and exports. |
+| G | Beneficiary register | Built (case codes, consent, duplicate flag). Missing: link to completed activities (unique counts); edit and remove; DB tests. |
+| H | Offline | Shell and offline page only. Missing: offline progress-log outbox; offline indicator. Signed-in pages not cached (decision pending). |
+| I | Kobo/ODK import | Built, with saved column mapping (02bd998). Missing: review screen for likely duplicates. |
+| J | Workload | Built per person, per week, for the Team page. Missing: capacity per activity; hours (not recorded). |
+| K | Automations | Two rules on/off. Missing: per-rule settings; history screen. |
+| L | Bulk edit | Move, lead, status, previewed (fbcfef5). Missing: undo. |
+| — | Progress log by day/week/month/end; one-step Done | Built (ecb1053, 807f381). Not browser-checked. |
+| — | Details panel | Built (fbcfef5). |
+| — | Phase 28 leftovers | Not built: indicator due days, logframe link move, series-wide lead change, backfilled completion date. |
 
-Nothing in this phase is deployed. Each batch ships separately, with its own migration (additive only) and its own gate.
+**Ownership of open work (2026-10-19):**
+- donerdesk-a9: timeline arrows, Data Center and report targets, project budget totals, beneficiary-to-activity link, custom fields in list and export, DB repository tests.
+- donerdesk-a6: import review screen for duplicates; automation settings and history; backfilled completion date; series-wide lead change; logframe link move; indicator due days; offline progress-log outbox; roll-up donor filter.
 
----
+**Deployment:** nothing after `13d76ee` is on Contabo. Migrations to apply in order after `20261020160000_beneficiary_records`: `20261020170000_progress_log`, `20261020180000_submission_mapping`, then any added later. Re-run `infra/postgres/rls.sql`. Gate and push are held by donerdesk-a9.
 
 ## 1. Principles for every batch
 
