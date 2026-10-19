@@ -219,3 +219,22 @@ test("a final report judges the life-of-project figure against the target, not i
   assert.equal(finding.lifeOfProject.value, "100");
   assert.equal(finding.performanceEvaluation.type, "POSITIVE", "100 of 100 over the project, not 40 of 100");
 });
+
+test("a finding carries the targets set by group, and none when none were set", async () => {
+  const current = makePeriod("period-2", "2026-08-01");
+  const periodsRepo = { findById: async () => ({ ok: true, value: current }), findPreviousPeriods: async () => ({ ok: true, value: [] }) };
+  const run = async (indicator) => {
+    const updatesRepo = { findByReportingPeriod: async () => ({ ok: true, value: [verifiedUpdate("u2", "ind-1", "period-2", "40")] }) };
+    const service = new IndicatorAnalyticsService(periodsRepo, { findByProject: async () => ({ ok: true, value: [indicator] }) }, updatesRepo);
+    const result = await service.computeFindings({ reportingPeriodId: "period-2", projectId: "proj-1", tenantId: tenant });
+    assert.equal(result.ok, true);
+    return result.value[0];
+  };
+  const grouped = Indicator.create({
+    id: "ind-1", tenantId: "tenant-a", projectId: "proj-1", logframeItemId: "item-1", code: "IND-1", name: "Indicator IND-1",
+    type: "NUMBER", baseline: "0", target: "100", unit: "people",
+    targetBreakdowns: [{ dimension: "SEX", category: "Female", value: "60" }, { dimension: "SEX", category: "Male", value: "40" }],
+  });
+  assert.deepEqual((await run(grouped)).targetBreakdowns, [{ dimension: "SEX", category: "Female", value: "60" }, { dimension: "SEX", category: "Male", value: "40" }]);
+  assert.equal("targetBreakdowns" in (await run(makeIndicator())), false);
+});

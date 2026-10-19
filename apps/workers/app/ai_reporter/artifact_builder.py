@@ -194,6 +194,66 @@ def indicator_table(req: SectionDraftRequest) -> tuple[Artifact, str] | None:
     return artifact, "\n".join([header, separator, *md_rows])
 
 
+_GROUP_COLUMNS = [
+    ("code", "Code"),
+    ("indicator", "Indicator"),
+    ("group", "Group"),
+    ("target", "Group target"),
+    ("value", "This period"),
+]
+_GROUP_LIFE_COLUMN = ("cumulative", "Cumulative to date")
+_DIMENSION_LABEL = {"SEX": "Sex", "AGE_GROUP": "Age group", "DISABILITY": "Disability", "LOCATION": "Location", "OTHER": "Other"}
+
+
+def _group_key(entry: dict[str, Any]) -> tuple[str, str]:
+    return (str(entry.get("dimension") or ""), str(entry.get("category") or "").strip().lower())
+
+
+def _recorded(entries: list[dict[str, Any]] | None) -> dict[tuple[str, str], str]:
+    return {_group_key(e): str(e.get("value")) for e in entries or [] if e.get("value") not in (None, "")}
+
+
+def group_target_table(req: SectionDraftRequest) -> tuple[Artifact, str] | None:
+    """Targets set by group beside the figure recorded for that group.
+
+    A group nobody reported reads "Not measured", never 0. Only recorded figures are shown: no percent is derived
+    for a group, and a rate's group target is shown as the yardstick it is.
+    """
+    findings = [f for f in _scoped_findings(req) if f.targetBreakdowns]
+    if not findings:
+        return None
+    life = _has_life_of_project(req)
+    columns = [*_GROUP_COLUMNS, *([_GROUP_LIFE_COLUMN] if life else [])]
+    rows: list[dict[str, Any]] = []
+    md_rows: list[str] = []
+    for f in findings:
+        period = _recorded(f.disaggregation) if not _not_calculable(f) else {}
+        cumulative = _recorded(f.lifeOfProject.disaggregation) if f.lifeOfProject else {}
+        for entry in f.targetBreakdowns or []:
+            key = _group_key(entry)
+            label = f"{_DIMENSION_LABEL.get(key[0], key[0].title())}: {entry.get('category')}"
+            cells = [
+                f.indicatorCode,
+                f.indicatorName or "—",
+                label,
+                _cell(entry.get("value")),
+                period.get(key, "Not measured"),
+                *([cumulative.get(key, "Not measured")] if life else []),
+            ]
+            rows.append({"cells": cells, "sourceReferences": [_ref(f).model_dump()]})
+            md_rows.append("| " + " | ".join(c.replace("|", "/") for c in cells) + " |")
+    artifact = Artifact(
+        kind="TABLE",
+        caption="Results by group against group targets (verified findings)",
+        ordinal=0,
+        payload={"columns": [{"key": k, "label": label} for k, label in columns], "rows": rows},
+        sourceReferences=[_ref(f) for f in findings],
+    )
+    header = "| " + " | ".join(label for _, label in columns) + " |"
+    separator = "| " + " | ".join("---" for _ in columns) + " |"
+    return artifact, "\n".join([header, separator, *md_rows])
+
+
 _CUMULATIVE_COLUMNS = [
     ("code", "Code"),
     ("indicator", "Indicator"),
@@ -284,6 +344,11 @@ def attach(section: GeneratedSection, req: SectionDraftRequest, kind: str) -> Ge
             # The verified table is authoritative: drop any table the writer
             # typed itself (it can only be a paraphrase) and append ours.
             prose = "\n".join(line for line in content.splitlines() if not line.lstrip().startswith("|")).strip()
+            grouped = group_target_table(req)
+            if grouped is not None:
+                group_table, group_markdown = grouped
+                artifacts.insert(1, group_table)
+                markdown = f"{markdown}\n\n{group_markdown}"
             content = f"{markdown}\n\n{prose}".strip() if prose else markdown
     if is_cumulative_section(req, kind):
         built_cumulative = cumulative_table(req)

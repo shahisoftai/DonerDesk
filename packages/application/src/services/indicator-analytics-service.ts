@@ -132,7 +132,7 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
       });
       const level = levelByItem.get(ind.logframeItemId);
       const outcome = owningOutcome(logframeNodes, ind.logframeItemId);
-      findings.push({ ...finding, reportingPeriodId: input.reportingPeriodId, ...(level ? { level } : {}), ...(ind.frequency ? { frequency: ind.frequency } : {}), ...(outcome?.code ? { outcomeCode: outcome.code } : {}), ...(outcome ? { outcomeTitle: outcome.title } : {}) });
+      findings.push({ ...finding, reportingPeriodId: input.reportingPeriodId, ...(ind.targetBreakdowns.length ? { targetBreakdowns: ind.targetBreakdowns.map((e) => ({ ...e })) } : {}), ...(level ? { level } : {}), ...(ind.frequency ? { frequency: ind.frequency } : {}), ...(outcome?.code ? { outcomeCode: outcome.code } : {}), ...(outcome ? { outcomeTitle: outcome.title } : {}) });
     }
 
     if (LIFE_OF_PROJECT_REPORT_TYPES.has(periodResult.value.reportType)) {

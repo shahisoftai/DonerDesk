@@ -253,6 +253,8 @@ class Finding(BaseModel):
     lifeOfProject: LifeOfProject | None = None
     # Recorded breakdown (sex, age, ...) behind the value; absent when none was recorded.
     disaggregation: list[dict[str, Any]] | None = None
+    # Targets set by group (sex, age, ...) on the indicator; absent when none were set. Never a recorded value.
+    targetBreakdowns: list[dict[str, Any]] | None = None
 
 
 class IndicatorUpdate(BaseModel):

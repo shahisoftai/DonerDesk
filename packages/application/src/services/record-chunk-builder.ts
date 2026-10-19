@@ -242,6 +242,9 @@ export function recordChunksFromFindings(findings: ReadonlyArray<VerifiedFinding
       push(f.indicatorCode, i++, label, `${name}, recorded breakdown of the life-of-project ${f.lifeOfProject!.value}${unit}: ${f.lifeOfProject!.disaggregation!.map((e) => `${e.category} ${e.value}`).join(", ")}.`);
       push(f.indicatorCode, i++, label, `${name}: ${breakdownSentence(f.lifeOfProject!.value, unit, f.lifeOfProject!.disaggregation!)}`);
     }
+    if ((f.targetBreakdowns ?? []).length > 0) {
+      push(f.indicatorCode, i++, label, `${name}, targets set by group: ${f.targetBreakdowns!.map((e) => `${e.category} ${e.value}`).join(", ")}.`);
+    }
     if (f.performanceEvaluation?.type === "POSITIVE") push(f.indicatorCode, i++, label, `${name} is on track: it meets or exceeds its target.`);
     if (f.performanceEvaluation?.type === "NEGATIVE") push(f.indicatorCode, i++, label, `${name} is below expectation against its target.`);
   }

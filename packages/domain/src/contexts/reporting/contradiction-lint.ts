@@ -87,6 +87,7 @@ export function toLintFindingData(f: {
   priorCumulativeValue?: string;
   lifeOfProject?: { value: string; disaggregation?: ReadonlyArray<{ value: string }> } | null;
   disaggregation?: ReadonlyArray<{ value: string }>;
+  targetBreakdowns?: ReadonlyArray<{ value: string }>;
 }): ContradictionLintFindingData {
   return {
     indicatorCode: f.indicatorCode,
@@ -99,7 +100,7 @@ export function toLintFindingData(f: {
     cumulativeValue: f.cumulativeValue,
     priorCumulativeValue: f.priorCumulativeValue,
     lifeValue: f.lifeOfProject?.value,
-    breakdownValues: [...(f.disaggregation ?? []), ...(f.lifeOfProject?.disaggregation ?? [])].map((e) => e.value),
+    breakdownValues: [...(f.disaggregation ?? []), ...(f.lifeOfProject?.disaggregation ?? []), ...(f.targetBreakdowns ?? [])].map((e) => e.value),
   };
 }
 

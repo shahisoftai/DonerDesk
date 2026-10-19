@@ -430,6 +430,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         ...(f.lifeOfProject ? { lifeOfProject: f.lifeOfProject } : {}),
         // Only when a breakdown was recorded, so requests for findings without one are unchanged on the wire.
         ...(f.disaggregation?.length ? { disaggregation: f.disaggregation } : {}),
+        // Targets set by group, so the worker can show them beside the recorded figures; absent when none were set.
+        ...(f.targetBreakdowns?.length ? { targetBreakdowns: f.targetBreakdowns } : {}),
       })),
       indicatorUpdates: input.indicatorUpdates.map((u) => ({
         indicatorCode: u.indicatorCode,

@@ -80,6 +80,8 @@ export interface VerifiedFinding {
    * Absent when none was recorded; that, and only that, is what `MISSING_DISAGGREGATION` means.
    */
   disaggregation?: DisaggregationEntry[];
+  /** Targets set by group (sex, age, ...) on the indicator definition; absent when none were set. Never a recorded value. */
+  targetBreakdowns?: DisaggregationEntry[];
   unit?: string;
   calculationMethod: string;
   /** Resolved semantics snapshot consumed to produce this finding. */

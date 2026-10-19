@@ -291,6 +291,12 @@ test("life-of-project totals, their percent of target and both breakdowns are qu
   assert.deepEqual(states(r), []);
 });
 
+test("a target set by group is a figure the section may quote", () => {
+  const grouped = toLintFindingData({ indicatorCode: "IND-1", value: "240", target: "1200", unit: "children", qualityFlags: [], targetBreakdowns: [{ value: "700" }, { value: "500" }] });
+  const r = lintReportContradictions({ sections: [{ id: "s1", title: "Results", content: "The group targets are 700 female and 500 male children." }], findings: [grouped] });
+  assert.deepEqual(states(r), []);
+});
+
 test("a figure that is in no record is still a contradiction", () => {
   const r = quote("Enrolment closed at 1,500 children, with 700 female and 800 male.");
   assert.ok(states(r).includes("PROSE_VALUE_NOT_IN_VERIFIED_DATA"));

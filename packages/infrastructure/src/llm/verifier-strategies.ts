@@ -21,7 +21,7 @@ function describeAtomFailure(atom: NumericAtom, findings: VerifiedFinding[]): st
   const value = parseDecimal(atom.value);
   if (value === null) return `${atom.value} could not be read as a number`;
   const exact = findings.filter((f) =>
-    [f.value, f.cumulativeValue, f.lifeOfProject?.value, ...(f.disaggregation ?? []).map((e) => e.value), ...(f.lifeOfProject?.disaggregation ?? []).map((e) => e.value)].some((t) => t !== undefined && parseDecimal(t) !== null && decimalCompare(parseDecimal(t)!, value) === 0),
+    [f.value, f.cumulativeValue, f.lifeOfProject?.value, ...(f.disaggregation ?? []).map((e) => e.value), ...(f.lifeOfProject?.disaggregation ?? []).map((e) => e.value), ...(f.targetBreakdowns ?? []).map((e) => e.value)].some((t) => t !== undefined && parseDecimal(t) !== null && decimalCompare(parseDecimal(t)!, value) === 0),
   );
   if (exact.length > 0) {
     const codes = [...new Set(exact.map((f) => f.indicatorCode))].join(", ");
@@ -159,9 +159,9 @@ export class NumericAssertionVerifier {
       const parsed = parseDecimal(text);
       return parsed !== null && decimalCompare(parsed, value) === 0;
     };
-    // A recorded breakdown figure ("655 female") is as verified as the value it breaks down.
+    // A recorded breakdown figure ("655 female") is as verified as the value it breaks down; a group target is a stated figure too.
     let candidates = findings.filter(
-      (f) => equalsValue(f.value) || equalsValue(f.cumulativeValue) || equalsValue(f.lifeOfProject?.value) || (f.disaggregation ?? []).some((e) => equalsValue(e.value)) || (f.lifeOfProject?.disaggregation ?? []).some((e) => equalsValue(e.value)),
+      (f) => equalsValue(f.value) || equalsValue(f.cumulativeValue) || equalsValue(f.lifeOfProject?.value) || (f.disaggregation ?? []).some((e) => equalsValue(e.value)) || (f.lifeOfProject?.disaggregation ?? []).some((e) => equalsValue(e.value)) || (f.targetBreakdowns ?? []).some((e) => equalsValue(e.value)),
     );
 
     let derived = false;

@@ -277,6 +277,7 @@ function buildFindingsJson(input: GenerateReportDraftInput): string {
       comparisonPeriodId: f.comparisonPeriodId ?? null,
       ...(f.lifeOfProject ? { lifeOfProject: f.lifeOfProject } : {}),
       ...(f.disaggregation?.length ? { disaggregation: f.disaggregation } : {}),
+      ...(f.targetBreakdowns?.length ? { targetBreakdowns: f.targetBreakdowns } : {}),
     })),
     null,
   );
