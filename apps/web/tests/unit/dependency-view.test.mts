@@ -21,3 +21,27 @@ test("the choices exclude the activity itself, cancelled ones, those already lin
   assert.deepEqual(dependencyOptions("b", rows).map((o) => o.id), ["f", "a", "d"].sort((x, y) => rows.find((r) => r.id === x).plannedStart.localeCompare(rows.find((r) => r.id === y).plannedStart)).filter((id) => id !== "c"));
   assert.deepEqual(dependencyOptions("a", rows).map((o) => o.id), ["c", "b", "f"]);
 });
+
+import { dependencyLinks, elbowPath } from "../../src/features/workplan/domain/dependency-view.ts";
+
+test("an arrow is drawn only when both activities are on the timeline", () => {
+  const rows = [
+    { id: "b", comesAfter: [{ id: "a", finished: false }, { id: "z", finished: true }] },
+    { id: "c", comesAfter: [{ id: "b", finished: false }] },
+    { id: "d", comesAfter: [] },
+  ];
+  assert.deepEqual(dependencyLinks(rows, new Set(["a", "b", "c"])), [
+    { fromId: "a", toId: "b", finished: false },
+    { fromId: "b", toId: "c", finished: false },
+  ]);
+  assert.deepEqual(dependencyLinks(rows, new Set(["b"])), [], "a hidden activity draws nothing");
+});
+
+test("the arrow leaves the end of the first bar and enters the start of the next, with an elbow", () => {
+  const a = { x: 100, y: 0, width: 80, height: 28 };
+  const b = { x: 220, y: 32, width: 60, height: 28 };
+  assert.equal(elbowPath(a, b), "M 180 14 H 212 V 46 H 220");
+  // The next bar starts before the first ends: it still connects, routed between the rows.
+  const early = { x: 150, y: 32, width: 60, height: 28 };
+  assert.equal(elbowPath(a, early), "M 180 14 H 188 V 30 H 142 V 46 H 150");
+});

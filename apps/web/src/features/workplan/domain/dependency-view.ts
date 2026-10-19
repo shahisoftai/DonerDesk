@@ -29,3 +29,37 @@ export function dependencyOptions(
     .sort((a, b) => a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title))
     .map((r) => ({ id: r.id, title: r.title }));
 }
+
+export interface BoxPx { x: number; y: number; width: number; height: number }
+
+/** A link to draw: an arrow from the activity that comes first to the one that comes after. Only when both are on the timeline. */
+export function dependencyLinks(
+  rows: ReadonlyArray<{ id: string; comesAfter: ReadonlyArray<{ id: string; finished: boolean }> }>,
+  visibleIds: ReadonlySet<string>,
+): Array<{ fromId: string; toId: string; finished: boolean }> {
+  const out: Array<{ fromId: string; toId: string; finished: boolean }> = [];
+  for (const row of rows) {
+    if (!visibleIds.has(row.id)) continue;
+    for (const before of row.comesAfter) if (visibleIds.has(before.id)) out.push({ fromId: before.id, toId: row.id, finished: before.finished });
+  }
+  return out;
+}
+
+/**
+ * An elbow from the right edge of the first bar to the left edge of the next: out a little, down or up to the next bar's middle,
+ * then in. Coordinates are pixels inside the timeline. When the next bar starts before the first ends (a conflict) the line
+ * still runs, leaving by the end of the first bar and entering at the start of the next.
+ */
+export function elbowPath(from: BoxPx, to: BoxPx, gap = 8): string {
+  const x1 = from.x + from.width;
+  const y1 = from.y + from.height / 2;
+  const x2 = to.x;
+  const y2 = to.y + to.height / 2;
+  const outX = x1 + gap;
+  const inX = Math.max(outX, x2 - gap);
+  const r = (n: number) => Math.round(n * 10) / 10;
+  if (x2 >= outX + gap) return `M ${r(x1)} ${r(y1)} H ${r(inX)} V ${r(y2)} H ${r(x2)}`;
+  // The next bar starts too early to fit an elbow beside it: go out, down between the rows, then back in from the left.
+  const midY = y2 > y1 ? to.y - 2 : to.y + to.height + 2;
+  return `M ${r(x1)} ${r(y1)} H ${r(outX)} V ${r(midY)} H ${r(x2 - gap)} V ${r(y2)} H ${r(x2)}`;
+}

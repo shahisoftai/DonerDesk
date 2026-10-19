@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import type { WorkPlanRow } from "@/lib/server/schemas";
-import { waitingLine } from "../domain/dependency-view";
+import { dependencyLinks, elbowPath, waitingLine } from "../domain/dependency-view";
 import { reschedulePlannedActivityAction } from "@/lib/actions/workplan";
 import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
@@ -63,6 +63,33 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
   );
   const byId = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
   const pendingRow = pending ? byId.get(pending.id) : undefined;
+
+  // Arrows between activities that come after one another: drawn from where the bars actually are, so they follow zoom,
+  // resizing and a drag in progress. Decorative: the same information is in each bar's label ("Waiting for …").
+  const bars = useRef(new Map<string, HTMLElement>());
+  const [arrows, setArrows] = useState<Array<{ key: string; d: string; finished: boolean }>>([]);
+  const links = useMemo(() => dependencyLinks(rows, new Set(layout.groups.flatMap((g) => g.bars.map((b) => b.id)))), [rows, layout]);
+  useLayoutEffect(() => {
+    const draw = () => {
+      const box = track.current?.getBoundingClientRect();
+      if (!box) return;
+      const rel = (id: string) => {
+        const r = bars.current.get(id)?.getBoundingClientRect();
+        return r ? { x: r.left - box.left, y: r.top - box.top, width: r.width, height: r.height } : null;
+      };
+      setArrows(links.flatMap((l) => {
+        const a = rel(l.fromId);
+        const b = rel(l.toId);
+        return a && b ? [{ key: `${l.fromId}>${l.toId}`, d: elbowPath(a, b), finished: l.finished }] : [];
+      }));
+    };
+    draw();
+    const el = track.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(draw);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [links, layout, zoom]);
 
   function datesNow(id: string): { start: string; end: string } {
     if (pending?.id === id) return { start: pending.start, end: pending.end };
@@ -143,6 +170,16 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
           </div>
 
           <div ref={track} className="relative">
+            {arrows.length > 0 && (
+              <svg className="pointer-events-none absolute inset-0 z-[5] h-full w-full text-slate-500 dark:text-slate-400" aria-hidden="true">
+                <defs>
+                  <marker id="plan-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+                    <path d="M0 0 L8 4 L0 8 z" fill="currentColor" />
+                  </marker>
+                </defs>
+                {arrows.map((a) => <path key={a.key} d={a.d} fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray={a.finished ? "4 3" : undefined} markerEnd="url(#plan-arrow)" />)}
+              </svg>
+            )}
             {layout.todayPct !== null && <div className="pointer-events-none absolute inset-y-0 z-10 w-px bg-brand-500" style={{ left: `${layout.todayPct}%` }} aria-hidden="true" />}
             {layout.groups.length === 0 && <p className="py-6 text-center text-sm text-slate-500">Nothing is planned in this period.{layout.hidden > 0 ? ` ${layout.hidden} planned outside it.` : ""}</p>}
             {layout.groups.map((g) => (
@@ -157,6 +194,7 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
                       {b.original && <div className="absolute top-0 h-7 rounded border border-dashed border-slate-400/70" style={{ left: `${b.original.leftPct}%`, width: `${Math.max(b.original.widthPct, 0.8)}%` }} aria-hidden="true" />}
                       <button
                         type="button"
+                        ref={(el) => { if (el) bars.current.set(b.id, el); else bars.current.delete(b.id); }}
                         aria-label={b.label + (draggable ? ". Use the arrow keys to change the dates." : "")}
                         title={b.waiting ? `${b.label}. ${b.waiting}` : b.label}
                         onPointerDown={(e) => down(e, row)} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
