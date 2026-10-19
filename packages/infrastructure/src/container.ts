@@ -1,328 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { TenantId } from "@donordesk/domain";
 
-import {
-  UpdateTemplateRequirementsHandler,
-  UpdateTemplateMetadataHandler,
-  ReextractTemplateHandler,
-  MarkTemplateReviewedHandler,
-  GetTemplateHandler,
-  GetTemplateVersionHandler,
-  GetTemplateOriginalFileHandler,
-  SetTemplateLibraryHandler,
-  SetDefaultTemplateHandler,
-  ListLibraryTemplatesHandler,
-  CloneTemplateHandler,
-  ParseTemplateFileHandler,
-  PreviewTemplateBriefHandler,
-  TemplateExtractionRunner,
-  PeriodTemplateResolver,
-  type ITemplateExtractionService,
-  type ILLMProvider,
-  SignUpHandler,
-  LoginHandler,
-  InviteUserHandler,
-  ListPendingInvitationsHandler,
-  AcceptInvitationHandler,
-  ChangeRoleHandler,
-  ChangePasswordHandler,
-  RequestPasswordResetHandler,
-  ConfirmPasswordResetHandler,
-  UpdateOrganizationHandler,
-  UpdateOrganizationReportingDefaultsHandler,
-  ConnectGoogleDriveHandler,
-  GoogleSignInHandler,
-  LinkGoogleDriveEvidenceHandler,
-  ListUsersHandler,
-  CreateProjectHandler,
-  CreateDemoProjectHandler,
-  DeleteDemoProjectHandler,
-  UpdateProjectHandler,
-  ArchiveProjectHandler,
-  RestoreProjectHandler,
-  ListProjectsHandler,
-  GetProjectHandler,
-  AssignProjectMemberHandler,
-  UpdateProjectMemberHandler,
-  RemoveProjectMemberHandler,
-  ListProjectMembersHandler,
-  UploadTemplateHandler,
-  DetectTemplateRegionsHandler,
-  UpdateTemplateMappingHandler,
-  ApproveTemplateMappingHandler,
-  LockTemplateMappingHandler,
-  UpdateTemplateSectionsHandler,
-  DeleteTemplateHandler,
-  ListTemplatesHandler,
-  CreateLogframeItemHandler,
-  MoveLogframeItemHandler,
-  ImportLogframeHandler,
-  CopyProjectSetupHandler,
-  ImportIndicatorsHandler,
-  CreateIndicatorHandler,
-  UpdateIndicatorSemanticsHandler,
-  UpdateIndicatorHandler,
-  MoveIndicatorHandler,
-  ArchiveIndicatorHandler,
-  RestoreIndicatorHandler,
-  ListArchivedIndicatorsHandler,
-  IndicatorApprovalGuard,
-  ActivityApprovalGuard,
-  DefaultTemplateResolver,
-  ChangePeriodTemplateHandler,
-  ResubmitActivityHandler,
-  WithdrawActivityHandler,
-  RestoreActivityHandler,
-  BulkReviewActivitiesHandler,
-  GetDefaultTemplatesHandler,
-  CreateAllPeriodsHandler,
-  EvidenceLinkService,
-  ActivityLinkResolver,
-  PlanLinkResolver,
-  PlanAccess,
-  PlanRecorder,
-  PlanDeliveryService,
-  GetPlanStorySuggestionHandler,
-  CreatePlannedActivityHandler,
-  ChangePlanStatusHandler,
-  ReschedulePlannedActivityHandler,
-  AddPlanDependencyHandler,
-  RemovePlanDependencyHandler,
-  DefineProjectFieldHandler,
-  GetPortfolioIndicatorsHandler,
-  AddBudgetLineHandler,
-  AddBudgetExpenseHandler,
-  BulkPlanActionHandler,
-  UndoBulkPlanActionHandler,
-  GetWorkloadHandler,
-  SetCapacityHandler,
-  SetAutomationRuleHandler,
-  RunAutomationsHandler,
-  ListAutomationRulesHandler,
-  RegisterBeneficiaryHandler,
-  ListBeneficiariesHandler,
-  ImportSubmissionsHandler,
-  PreviewSubmissionsHandler,
-  GetSubmissionMappingHandler,
-  SaveSubmissionMappingHandler,
-  SetPlanIndicatorsHandler,
-  GetProgressHandler,
-  SaveProgressHandler,
-  PrepareProgressHandler,
-  RemoveProgressHandler,
-  GetActivityPeopleHandler,
-  ChangeActivityPeopleHandler,
-  CompletePlannedActivityHandler,
-  GetPlanItemBudgetHandler,
-  GetProjectBudgetHandler,
-  GetBreakdownProgressHandler,
-  ListProjectFieldsHandler,
-  GetPlanItemFieldsHandler,
-  ListProjectFieldValuesHandler,
-  SetPlanItemFieldsHandler,
-  AssignPlannedActivityHandler,
-  UpdatePlannedActivityHandler,
-  StartPlanFromLogframeHandler,
-  ListWorkPlanHandler,
-  ListPlanRevisionsHandler,
-  SetWorkPlanningVisibilityHandler,
-  ListProjectPeopleHandler,
-  ImportWorkPlanHandler,
-  CopyWorkPlanHandler,
-  GetMyWeekHandler,
-  CreateRiskHandler,
-  UpdateRiskHandler,
-  CloseRiskHandler,
-  ListRisksHandler,
-  GetActivityFileNeedsHandler,
-  ProjectHealthService,
-  VisibleProjects,
-  GetDeliveryHealthHandler,
-  GetPortfolioHealthHandler,
-  GetRiskTrendHandler,
-  RefreshProjectRiskHandler,
-  CreateTaskHandler,
-  CompleteTaskHandler,
-  CancelTaskHandler,
-  ListAssignmentsHandler,
-  ListTeamWorkHandler,
-  SetIndicatorOwnerHandler,
-  SetPeriodOwnerHandler,
-  AssignChecklistItemHandler,
-  AssignmentQueue,
-  TaskReconciler,
-  GetPeriodOptionsHandler,
-  PlanClosingReportHandler,
-  StartClosingReportHandler,
-  GetEvidenceSupportHandler,
-  ResolveSectionFlagsHandler,
-  ConfirmIndicatorSemanticsHandler,
-  VerifyPeriodIndicatorUpdatesHandler,
-  CreateIndicatorUpdateHandler,
-  BulkUpsertIndicatorUpdatesHandler,
-  ListPeriodIndicatorsHandler,
-  ParseIndicatorSheetHandler,
-  VerifyIndicatorUpdateHandler,
-  RequestIndicatorUpdateCorrectionHandler,
-  RejectIndicatorUpdateHandler,
-  ListIndicatorUpdatesHandler,
-  GetProjectDataSheetHandler,
-  SectionDataChartsHandler,
-  ReopenReportHandler,
-  ImportDataSheetHandler,
-  ListLogframeHandler,
-  ListIndicatorsHandler,
-  UploadEvidenceHandler,
-  ImportEvidenceHandler,
-  SuggestEvidenceTagsHandler,
-  AcceptEvidenceTagsHandler,
-  SetEvidencePeriodHandler,
-  PersistEvidenceTagsHandler,
-  VerifyEvidenceHandler,
-  SearchEvidenceHandler,
-  GetEvidenceHandler,
-  CreateActivityUpdateHandler,
-  ImportActivitiesHandler,
-  PolishActivityHandler,
-  ReviewActivityHandler,
-  ListActivitiesHandler,
-  GetActivityHandler,
-  UpdateActivityHandler,
-  AttachEvidenceHandler,
-  DetachEvidenceHandler,
-  SuggestEvidenceLinksHandler,
-  CreateReportingPeriodHandler,
-  EnsureAutoPeriodHandler,
-  ListReportingPeriodsHandler,
-  GenerateReportDraftHandler,
-  GetReportDraftHandler,
-  GetSmartReviewHandler,
-  UpdateReportSectionHandler,
-  CreateReportSectionHandler,
-  DeleteReportSectionHandler,
-  ReorderReportSectionsHandler,
-  UpdateReportSectionChartHandler,
-  RefreshSectionChartsHandler,
-  SectionChartService,
-  ApproveReportSectionHandler,
-  SubmitReportForReviewHandler,
-  CancelReportGenerationHandler,
-  ActivateReportDraftHandler,
-  ApproveReportHandler,
-  RejectReportHandler,
-  ResolveReportClaimHandler,
-  BulkResolveReportClaimHandler,
-  UpdateReportingPeriodStoryHandler,
-  UpdateReportingPeriodScopeHandler,
-  CancelReportingPeriodHandler,
-  MarkSummaryCurrentHandler,
-  ConfirmClaimMatchesIndicatorHandler,
-  SetStandingStatementHandler,
-  SetTemplateDefaultForTypeHandler,
-  SetRequireSecondApproverHandler,
-  BulkVerifyEvidenceHandler,
-  GetComplianceNotesHandler,
-  SaveSectionNoteHandler,
-  RestoreReportingPeriodHandler,
-  ConvertPeriodToFinalHandler,
-  FinanceInputsService,
-  GetPeriodFinanceHandler,
-  SavePeriodFinanceHandler,
-  PreviewPeriodFinanceImportHandler,
-  VerifyPeriodFinanceHandler,
-  ImportPeriodIndicatorValuesHandler,
-  ProposeFieldReportExtractionHandler,
-  ApplyFieldReportExtractionHandler,
-  DetectMissingEvidenceHandler,
-  ResolveChecklistItemHandler,
-  BulkResolveChecklistHandler,
-  ListChecklistHandler,
-  ListAiSectionRunsHandler,
-  RequestIdempotencyService,
-  ChecklistReconciler,
-  CalculateReadinessHandler,
-  RecomputeReadinessHandler,
-  GenerateChecklistHandler,
-  RewriteReportSectionHandler,
-  IndicatorAnalyticsService,
-  InferredReportPlanner,
-  CreateExportHandler,
-  GetExportPreflightHandler,
-  RunExportHandler,
-  RunRemindersHandler,
-  GetNotificationPreferencesHandler,
-  UpdateNotificationPreferencesHandler,
-  PersonNotifier,
-  AddCommentHandler,
-  ResolveCommentHandler,
-  ListCommentsHandler,
-  ListNotificationsHandler,
-  MarkNotificationReadHandler,
-  ListAuditLogHandler,
-  RecordLegalConsentHandler,
-  GetLegalConsentHandler,
-  GetProjectSetupHandler,
-  AcknowledgeProjectSetupHandler,
-  RetryProjectWorkspaceHandler,
-  RepairProjectWorkspaceHandler,
-  ListWorkspaceFilesHandler,
-  ProvisionTenantWorkspacesHandler,
-  ImportDriveFileHandler,
-  GetReportingProfileHandler,
-  UpsertReportingProfileHandler,
-  ProjectReadinessService,
-  UuidIdGenerator,
-  type SystemClock,
-  SystemClock as SystemClockImpl,
-  ProvisionTenantHandler,
-  EntitlementService,
-  CreateCheckoutHandler,
-  CreateTopupCheckoutHandler,
-  SubmitContactSalesInquiryHandler,
-  SubmitNonprofitVerificationHandler,
-  ApproveNonprofitVerificationHandler,
-  RejectNonprofitVerificationHandler,
-  ListPendingNonprofitVerificationsHandler,
-  ListCreditPacksHandler,
-  CompCreditPackHandler,
-  RefundCreditPackHandler,
-  CreateCustomerPortalHandler,
-  GetBillingSummaryHandler,
-  ProcessBillingWebhookHandler,
-  ExpireLocalTrialsHandler,
-  ReconcileBillingSubscriptionsHandler,
-  ReconcileManagedStorageUsageHandler,
-  ReleaseStaleUsageReservationsHandler,
-  RetryBillingInboxHandler,
-  RunGrandfatherCreditCutoverHandler,
-  RunGrandfatherByoLlmHandler,
-  BillingSubscriptionSynchronizer,
-  ReportRevisionService,
-  ReportAssuranceService,
-  RecordChunkBuilder,
-  LintGrounding,
-  GetReportAssuranceHandler,
-  ReassessReportRevisionHandler,
-  ResolveEffectiveRequirementsHandler,
-  UpsertRequirementPackHandler,
-  ActivateRequirementPackHandler,
-  UpsertAwardOverrideHandler,
-  CreateSubmissionSnapshotHandler,
-  RegenerateReportSectionHandler,
-  ReopenReportClaimHandler,
-  ApplyClaimSuggestionHandler,
-  GetClaimSuggestionHandler,
-  ListSectionRevisionsHandler,
-  ReportGenerationContextBuilder,
-  SectionGenerationService,
-  AiCreditGate,
-  UpdateAgentMemorySettingsHandler,
-  ExtractAgentMemoryHandler,
-  ListPendingAgentMemoryHandler,
-  ApproveAgentMemoryHandler,
-  RejectAgentMemoryHandler,
-  DeactivateAgentMemoryHandler,
-} from "@donordesk/application";
+import { UpdateTemplateRequirementsHandler, UpdateTemplateMetadataHandler, ReextractTemplateHandler, MarkTemplateReviewedHandler, GetTemplateHandler, GetTemplateVersionHandler, GetTemplateOriginalFileHandler, SetTemplateLibraryHandler, SetDefaultTemplateHandler, ListLibraryTemplatesHandler, CloneTemplateHandler, ParseTemplateFileHandler, PreviewTemplateBriefHandler, TemplateExtractionRunner, PeriodTemplateResolver, type ITemplateExtractionService, type ILLMProvider, SignUpHandler, LoginHandler, InviteUserHandler, ListPendingInvitationsHandler, AcceptInvitationHandler, ChangeRoleHandler, ChangePasswordHandler, RequestPasswordResetHandler, ConfirmPasswordResetHandler, UpdateOrganizationHandler, UpdateOrganizationReportingDefaultsHandler, ConnectGoogleDriveHandler, GoogleSignInHandler, LinkGoogleDriveEvidenceHandler, ListUsersHandler, CreateProjectHandler, CreateDemoProjectHandler, DeleteDemoProjectHandler, UpdateProjectHandler, ArchiveProjectHandler, RestoreProjectHandler, ListProjectsHandler, GetProjectHandler, AssignProjectMemberHandler, UpdateProjectMemberHandler, RemoveProjectMemberHandler, ListProjectMembersHandler, UploadTemplateHandler, DetectTemplateRegionsHandler, UpdateTemplateMappingHandler, ApproveTemplateMappingHandler, LockTemplateMappingHandler, UpdateTemplateSectionsHandler, DeleteTemplateHandler, ListTemplatesHandler, CreateLogframeItemHandler, MoveLogframeItemHandler, ImportLogframeHandler, CopyProjectSetupHandler, ImportIndicatorsHandler, CreateIndicatorHandler, UpdateIndicatorSemanticsHandler, UpdateIndicatorHandler, MoveIndicatorHandler, ArchiveIndicatorHandler, RestoreIndicatorHandler, ListArchivedIndicatorsHandler, IndicatorApprovalGuard, ActivityApprovalGuard, DefaultTemplateResolver, ChangePeriodTemplateHandler, ResubmitActivityHandler, WithdrawActivityHandler, RestoreActivityHandler, BulkReviewActivitiesHandler, GetDefaultTemplatesHandler, CreateAllPeriodsHandler, EvidenceLinkService, ActivityLinkResolver, PlanDeliveryService, GetPlanStorySuggestionHandler, GetPortfolioIndicatorsHandler, RunAutomationsHandler, SetWorkPlanningVisibilityHandler, ListProjectPeopleHandler, CreateRiskHandler, UpdateRiskHandler, CloseRiskHandler, ListRisksHandler, GetActivityFileNeedsHandler, ProjectHealthService, VisibleProjects, GetDeliveryHealthHandler, GetPortfolioHealthHandler, GetRiskTrendHandler, RefreshProjectRiskHandler, CreateTaskHandler, CompleteTaskHandler, CancelTaskHandler, ListAssignmentsHandler, ListTeamWorkHandler, SetIndicatorOwnerHandler, SetPeriodOwnerHandler, AssignChecklistItemHandler, AssignmentQueue, TaskReconciler, GetPeriodOptionsHandler, PlanClosingReportHandler, StartClosingReportHandler, GetEvidenceSupportHandler, ResolveSectionFlagsHandler, ConfirmIndicatorSemanticsHandler, VerifyPeriodIndicatorUpdatesHandler, CreateIndicatorUpdateHandler, BulkUpsertIndicatorUpdatesHandler, ListPeriodIndicatorsHandler, ParseIndicatorSheetHandler, VerifyIndicatorUpdateHandler, RequestIndicatorUpdateCorrectionHandler, RejectIndicatorUpdateHandler, ListIndicatorUpdatesHandler, GetProjectDataSheetHandler, SectionDataChartsHandler, ReopenReportHandler, ImportDataSheetHandler, ListLogframeHandler, ListIndicatorsHandler, UploadEvidenceHandler, ImportEvidenceHandler, SuggestEvidenceTagsHandler, AcceptEvidenceTagsHandler, SetEvidencePeriodHandler, PersistEvidenceTagsHandler, VerifyEvidenceHandler, SearchEvidenceHandler, GetEvidenceHandler, CreateActivityUpdateHandler, ImportActivitiesHandler, PolishActivityHandler, ReviewActivityHandler, ListActivitiesHandler, GetActivityHandler, UpdateActivityHandler, AttachEvidenceHandler, DetachEvidenceHandler, SuggestEvidenceLinksHandler, CreateReportingPeriodHandler, EnsureAutoPeriodHandler, ListReportingPeriodsHandler, GenerateReportDraftHandler, GetReportDraftHandler, GetSmartReviewHandler, UpdateReportSectionHandler, CreateReportSectionHandler, DeleteReportSectionHandler, ReorderReportSectionsHandler, UpdateReportSectionChartHandler, RefreshSectionChartsHandler, SectionChartService, ApproveReportSectionHandler, SubmitReportForReviewHandler, CancelReportGenerationHandler, ActivateReportDraftHandler, ApproveReportHandler, RejectReportHandler, ResolveReportClaimHandler, BulkResolveReportClaimHandler, UpdateReportingPeriodStoryHandler, UpdateReportingPeriodScopeHandler, CancelReportingPeriodHandler, MarkSummaryCurrentHandler, ConfirmClaimMatchesIndicatorHandler, SetStandingStatementHandler, SetTemplateDefaultForTypeHandler, SetRequireSecondApproverHandler, BulkVerifyEvidenceHandler, GetComplianceNotesHandler, SaveSectionNoteHandler, RestoreReportingPeriodHandler, ConvertPeriodToFinalHandler, FinanceInputsService, GetPeriodFinanceHandler, SavePeriodFinanceHandler, PreviewPeriodFinanceImportHandler, VerifyPeriodFinanceHandler, ImportPeriodIndicatorValuesHandler, ProposeFieldReportExtractionHandler, ApplyFieldReportExtractionHandler, DetectMissingEvidenceHandler, ResolveChecklistItemHandler, BulkResolveChecklistHandler, ListChecklistHandler, ListAiSectionRunsHandler, RequestIdempotencyService, ChecklistReconciler, CalculateReadinessHandler, RecomputeReadinessHandler, GenerateChecklistHandler, RewriteReportSectionHandler, IndicatorAnalyticsService, InferredReportPlanner, CreateExportHandler, GetExportPreflightHandler, RunExportHandler, RunRemindersHandler, GetNotificationPreferencesHandler, UpdateNotificationPreferencesHandler, PersonNotifier, AddCommentHandler, ResolveCommentHandler, ListCommentsHandler, ListNotificationsHandler, MarkNotificationReadHandler, ListAuditLogHandler, RecordLegalConsentHandler, GetLegalConsentHandler, GetProjectSetupHandler, AcknowledgeProjectSetupHandler, RetryProjectWorkspaceHandler, RepairProjectWorkspaceHandler, ListWorkspaceFilesHandler, ProvisionTenantWorkspacesHandler, ImportDriveFileHandler, GetReportingProfileHandler, UpsertReportingProfileHandler, ProjectReadinessService, UuidIdGenerator, type SystemClock, SystemClock as SystemClockImpl, ProvisionTenantHandler, EntitlementService, CreateCheckoutHandler, CreateTopupCheckoutHandler, SubmitContactSalesInquiryHandler, SubmitNonprofitVerificationHandler, ApproveNonprofitVerificationHandler, RejectNonprofitVerificationHandler, ListPendingNonprofitVerificationsHandler, ListCreditPacksHandler, CompCreditPackHandler, RefundCreditPackHandler, CreateCustomerPortalHandler, GetBillingSummaryHandler, ProcessBillingWebhookHandler, ExpireLocalTrialsHandler, ReconcileBillingSubscriptionsHandler, ReconcileManagedStorageUsageHandler, ReleaseStaleUsageReservationsHandler, RetryBillingInboxHandler, RunGrandfatherCreditCutoverHandler, RunGrandfatherByoLlmHandler, BillingSubscriptionSynchronizer, ReportRevisionService, ReportAssuranceService, RecordChunkBuilder, LintGrounding, GetReportAssuranceHandler, ReassessReportRevisionHandler, ResolveEffectiveRequirementsHandler, UpsertRequirementPackHandler, ActivateRequirementPackHandler, UpsertAwardOverrideHandler, CreateSubmissionSnapshotHandler, RegenerateReportSectionHandler, ReopenReportClaimHandler, ApplyClaimSuggestionHandler, GetClaimSuggestionHandler, ListSectionRevisionsHandler, ReportGenerationContextBuilder, SectionGenerationService, AiCreditGate, UpdateAgentMemorySettingsHandler, ExtractAgentMemoryHandler, ListPendingAgentMemoryHandler, ApproveAgentMemoryHandler, RejectAgentMemoryHandler, DeactivateAgentMemoryHandler } from "@donordesk/application";
 import type { IJobQueue, IReportDraftGenerator, INotificationPort, IAgentMemoryRepository, IAgentMemoryExtractor } from "@donordesk/application";
 import { EmailAdapter } from "./comms/email.js";
 import { PostmarkNotificationAdapter, FanOutNotificationAdapter } from "./comms/postmark-notification-adapter.js";
@@ -377,7 +56,7 @@ import { ChecklistAssignmentSource } from "./assignment-sources/checklist-source
 import { ReportDeadlineAssignmentSource } from "./assignment-sources/report-deadline-source.js";
 import { EvidenceReviewAssignmentSource, ActivityReviewAssignmentSource, ActivityFixAssignmentSource } from "./assignment-sources/review-sources.js";
 import { PrismaPortfolioValueReader } from "./repositories/portfolio.js";
-import { PrismaBeneficiaryLinkRepository, PrismaProjectSubmissionMappingRepository, PrismaPlannedActivityIndicatorRepository, PrismaProgressRepository, PrismaBeneficiaryRepository, PrismaAutomationSettings, PrismaBudgetRepository, PrismaMemberCapacityRepository, PrismaPlannedActivityRepository, PrismaPlanRevisionRepository, PrismaPlanContextReader, PrismaDeliveryFactsReader, PrismaMemberDirectory, PrismaMyWeekReader, PrismaPlanDependencyRepository, PrismaProjectFieldRepository, PrismaCustomFieldValueRepository } from "./repositories/workplan.js";
+import { PrismaDeliveryFactsReader } from "./repositories/workplan.js";
 import {
   PrismaReportingPeriodRepository,
   PrismaReportDraftRepository,
@@ -635,52 +314,9 @@ export interface Container {
     searchEvidence: SearchEvidenceHandler;
     getEvidence: GetEvidenceHandler;
     createActivityUpdate: CreateActivityUpdateHandler;
-    createPlannedActivity: CreatePlannedActivityHandler;
-    changePlanStatus: ChangePlanStatusHandler;
-    reschedulePlannedActivity: ReschedulePlannedActivityHandler;
-    addPlanDependency: AddPlanDependencyHandler;
-    removePlanDependency: RemovePlanDependencyHandler;
-    defineProjectField: DefineProjectFieldHandler;
-    listProjectFields: ListProjectFieldsHandler;
     getPortfolioIndicators: GetPortfolioIndicatorsHandler;
-    addBudgetLine: AddBudgetLineHandler;
-    bulkPlanAction: BulkPlanActionHandler;
-    undoBulkPlanAction: UndoBulkPlanActionHandler;
-    getWorkload: GetWorkloadHandler;
-    setAutomationRule: SetAutomationRuleHandler;
-    listAutomationRules: ListAutomationRulesHandler;
-    registerBeneficiary: RegisterBeneficiaryHandler;
-    listBeneficiaries: ListBeneficiariesHandler;
-    importSubmissions: ImportSubmissionsHandler;
-    previewSubmissions: PreviewSubmissionsHandler;
-    getSubmissionMapping: GetSubmissionMappingHandler;
-    saveSubmissionMapping: SaveSubmissionMappingHandler;
-    setPlanIndicators: SetPlanIndicatorsHandler;
-    getProgress: GetProgressHandler;
-    saveProgress: SaveProgressHandler;
-    prepareProgress: PrepareProgressHandler;
-    removeProgress: RemoveProgressHandler;
-    getActivityPeople: GetActivityPeopleHandler;
-    changeActivityPeople: ChangeActivityPeopleHandler;
-    completePlannedActivity: CompletePlannedActivityHandler;
-    setCapacity: SetCapacityHandler;
-    addBudgetExpense: AddBudgetExpenseHandler;
-    getPlanItemBudget: GetPlanItemBudgetHandler;
-    getProjectBudget: GetProjectBudgetHandler;
-    getBreakdownProgress: GetBreakdownProgressHandler;
-    getPlanItemFields: GetPlanItemFieldsHandler;
-    listProjectFieldValues: ListProjectFieldValuesHandler;
-    setPlanItemFields: SetPlanItemFieldsHandler;
-    assignPlannedActivity: AssignPlannedActivityHandler;
-    updatePlannedActivity: UpdatePlannedActivityHandler;
-    startPlanFromLogframe: StartPlanFromLogframeHandler;
-    listWorkPlan: ListWorkPlanHandler;
-    listPlanRevisions: ListPlanRevisionsHandler;
     setWorkPlanningVisibility: SetWorkPlanningVisibilityHandler;
     listProjectPeople: ListProjectPeopleHandler;
-    importWorkPlan: ImportWorkPlanHandler;
-    copyWorkPlan: CopyWorkPlanHandler;
-    getMyWeek: GetMyWeekHandler;
     createRisk: CreateRiskHandler;
     updateRisk: UpdateRiskHandler;
     closeRisk: CloseRiskHandler;
@@ -818,8 +454,10 @@ export interface Container {
     retryBillingInbox: RetryBillingInboxHandler;
     runGrandfatherCreditCutover: RunGrandfatherCreditCutoverHandler;
     runGrandfatherByoLlm: RunGrandfatherByoLlmHandler;
-  };
+  } & WorkplanHandlers;
 }
+
+import { createWorkplanModule, type WorkplanHandlers } from "./container/workplan-module.js";
 
 export function createContainer(options?: { tenantId?: string; useAdminConnection?: boolean }): Container {
   const baseUrl = options?.useAdminConnection ? process.env.DATABASE_ADMIN_URL : process.env.DATABASE_URL;
@@ -1255,35 +893,17 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const exportBuilder = new DefaultExportBuilder(storage, donorTemplateRenderer);
 
   const activityLinks = new ActivityLinkResolver(logframe);
-  const plannedActivities = new PrismaPlannedActivityRepository(prisma);
-  const planRevisions = new PrismaPlanRevisionRepository(prisma);
-  const planDependencies = new PrismaPlanDependencyRepository(prisma);
-  const projectFields = new PrismaProjectFieldRepository(prisma);
-  const customFieldValues = new PrismaCustomFieldValueRepository(prisma);
-  const budgets = new PrismaBudgetRepository(prisma);
-  const memberCapacity = new PrismaMemberCapacityRepository(prisma);
-  const automationSettings = new PrismaAutomationSettings(prisma);
-  const beneficiaries = new PrismaBeneficiaryRepository(prisma);
-  const submissionMappings = new PrismaProjectSubmissionMappingRepository(prisma);
-  const activityIndicators = new PrismaPlannedActivityIndicatorRepository(prisma);
-  const progressLog = new PrismaProgressRepository(prisma);
-  const beneficiaryLinks = new PrismaBeneficiaryLinkRepository(prisma);
-  const planContext = new PrismaPlanContextReader(prisma);
-  const planLinks = new PlanLinkResolver(plannedActivities);
-  const planAccess = new PlanAccess(plannedActivities);
-  const planRecorder = new PlanRecorder(ids, planRevisions, audits, clock);
-  const bulkPlan = new BulkPlanActionHandler(planAccess, plannedActivities, planContext,
-    new AssignPlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder),
-    new ReschedulePlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder, clock, planDependencies),
-    new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock), clock);
   // Requests (Phase 28.3): the reconciler closes the ones the records show were met, and is told after the changes that meet them.
   const projectTasks = new PrismaProjectTaskRepository(prisma);
   const projectRoster = new PrismaProjectRoster(prisma);
   const notificationPreferences = new PrismaNotificationPreferences(prisma);
   // Tells one person: an in-app note always, an email only when their setting allows it.
   const personNotifier = new PersonNotifier(ids, notifications, notify, notificationPreferences);
-  const runAutomations = new RunAutomationsHandler(projects, plannedActivities, new PrismaDeliveryFactsReader(prisma), automationSettings, new PrismaReminderAudience(prisma), new PrismaReminderLedger(prisma), personNotifier);
   const taskReconciler = new TaskReconciler(projectTasks, new PrismaTaskFactsReader(prisma), audits, clock);
+  // The work plan: repositories, services and handlers are built in one module (see container/workplan-module.ts).
+  const workplan = createWorkplanModule({ prisma, ids, clock, audits, logframe, indicators, indicatorUpdates, periods, projects, activities, activityLinks, taskReconciler });
+  const { plannedActivities, planRevisions, planContext, planLinks, automationSettings } = workplan;
+  const runAutomations = new RunAutomationsHandler(projects, plannedActivities, new PrismaDeliveryFactsReader(prisma), automationSettings, new PrismaReminderAudience(prisma), new PrismaReminderLedger(prisma), personNotifier);
   const projectRisks = new PrismaProjectRiskRepository(prisma);
   const collectionFacts = new PrismaCollectionFactsReader(prisma);
   const projectHealth = new ProjectHealthService(plannedActivities, new PrismaDeliveryFactsReader(prisma), collectionFacts);
@@ -1384,6 +1004,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const bulkUpsertIndicatorUpdates = new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker, taskReconciler);
   const sectionDataCharts = new SectionDataChartsHandler(sections, drafts, periods, reportArtifacts, getProjectDataSheet, ids, audits);
   const handlers: Container["handlers"] = {
+    ...workplan.handlers,
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
     login: new LoginHandler(users, auth, audits),
     googleSignIn: new GoogleSignInHandler(googleSignIn, users, organizations, auth, ids, audits, provisionTenant),
@@ -1491,50 +1112,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     searchEvidence: new SearchEvidenceHandler(evidence),
     getEvidence: new GetEvidenceHandler(evidence),
     createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler),
-    createPlannedActivity: new CreatePlannedActivityHandler(ids, plannedActivities, planContext, logframe, audits),
-    changePlanStatus: new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock),
-    reschedulePlannedActivity: new ReschedulePlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder, clock, planDependencies),
-    addPlanDependency: new AddPlanDependencyHandler(plannedActivities, planDependencies, ids, audits, clock),
-    removePlanDependency: new RemovePlanDependencyHandler(plannedActivities, planDependencies, audits),
-    defineProjectField: new DefineProjectFieldHandler(projectFields, ids, audits, clock),
-    listProjectFields: new ListProjectFieldsHandler(projectFields),
     getPortfolioIndicators: new GetPortfolioIndicatorsHandler(projects, projectMembers, new PrismaPortfolioValueReader(prisma)),
-    addBudgetLine: new AddBudgetLineHandler(planAccess, budgets, ids, audits, clock),
-    getWorkload: new GetWorkloadHandler(plannedActivities, planContext, memberCapacity, clock),
-    setAutomationRule: new SetAutomationRuleHandler(automationSettings, audits, clock),
-    listAutomationRules: new ListAutomationRulesHandler(automationSettings),
-    registerBeneficiary: new RegisterBeneficiaryHandler(beneficiaries, planContext, ids, audits, clock),
-    listBeneficiaries: new ListBeneficiariesHandler(beneficiaries, planContext),
-    importSubmissions: new ImportSubmissionsHandler(beneficiaries, planContext, ids, audits, clock, submissionMappings),
-    previewSubmissions: new PreviewSubmissionsHandler(beneficiaries, planContext, submissionMappings),
-    getSubmissionMapping: new GetSubmissionMappingHandler(submissionMappings),
-    saveSubmissionMapping: new SaveSubmissionMappingHandler(submissionMappings, audits, clock),
-    setPlanIndicators: new SetPlanIndicatorsHandler(planAccess, activityIndicators, indicators, audits, clock),
-    getProgress: new GetProgressHandler(planAccess, progressLog, activityIndicators, indicators),
-    prepareProgress: new PrepareProgressHandler(planAccess, progressLog, activityIndicators, indicators),
-    saveProgress: new SaveProgressHandler(planAccess, progressLog, activityIndicators, indicators, ids, audits, clock),
-    removeProgress: new RemoveProgressHandler(planAccess, progressLog, audits),
-    getActivityPeople: new GetActivityPeopleHandler(planAccess, beneficiaryLinks, beneficiaries),
-    changeActivityPeople: new ChangeActivityPeopleHandler(planAccess, beneficiaryLinks, beneficiaries, audits, clock),
-    completePlannedActivity: new CompletePlannedActivityHandler(
-      planAccess, periods,
-      new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler),
-      new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock), clock),
-    setCapacity: new SetCapacityHandler(memberCapacity, audits, clock),
-    bulkPlanAction: bulkPlan,
-    undoBulkPlanAction: new UndoBulkPlanActionHandler(bulkPlan),
-    addBudgetExpense: new AddBudgetExpenseHandler(planAccess, budgets, ids, audits, clock),
-    getPlanItemBudget: new GetPlanItemBudgetHandler(planAccess, budgets),
-    getProjectBudget: new GetProjectBudgetHandler(plannedActivities, budgets, planContext),
-    getBreakdownProgress: new GetBreakdownProgressHandler(indicators, indicatorUpdates, periods, planContext),
-    getPlanItemFields: new GetPlanItemFieldsHandler(planAccess, projectFields, customFieldValues),
-    listProjectFieldValues: new ListProjectFieldValuesHandler(projectFields, customFieldValues, planContext),
-    setPlanItemFields: new SetPlanItemFieldsHandler(planAccess, projectFields, customFieldValues, audits, clock),
-    assignPlannedActivity: new AssignPlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder),
-    updatePlannedActivity: new UpdatePlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder, clock),
-    startPlanFromLogframe: new StartPlanFromLogframeHandler(ids, plannedActivities, planContext, logframe, audits),
-    listWorkPlan: new ListWorkPlanHandler(plannedActivities, new PrismaDeliveryFactsReader(prisma), planContext, clock, planDependencies),
-    listPlanRevisions: new ListPlanRevisionsHandler(plannedActivities, planRevisions),
     setWorkPlanningVisibility: new SetWorkPlanningVisibilityHandler(projects, audits),
     listProjectPeople: new ListProjectPeopleHandler(projectMembers, users),
     createTask: new CreateTaskHandler(ids, projectTasks, new PrismaTaskSubjectResolver(prisma), projectRoster, personNotifier, audits, clock),
@@ -1554,9 +1132,6 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     closeRisk: new CloseRiskHandler(projectRisks, audits, clock),
     listRisks: new ListRisksHandler(projectRisks),
     planStorySuggestion: new GetPlanStorySuggestionHandler(periods, planDelivery),
-    getMyWeek: new GetMyWeekHandler(new PrismaMyWeekReader(prisma), new PrismaDeliveryFactsReader(prisma), clock),
-    copyWorkPlan: new CopyWorkPlanHandler(projects, logframe, plannedActivities, ids, audits),
-    importWorkPlan: new ImportWorkPlanHandler(ids, plannedActivities, planContext, new PrismaMemberDirectory(prisma), logframe, audits),
     importActivities: new ImportActivitiesHandler(ids, activities, logframe, indicators, periods, audits),
     polishActivity: new PolishActivityHandler(activities, activityPolisher),
     reviewActivity: new ReviewActivityHandler(activities, audits, activityApprovalGuard, taskReconciler),
