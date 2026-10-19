@@ -1464,6 +1464,8 @@ export type PlanItemBudget = z.infer<typeof PlanItemBudgetSchema>;
 export const BulkPlanResultSchema = z.object({
   preview: z.array(z.object({ id: z.string(), title: z.string(), before: z.string(), after: z.string() })),
   applied: z.number(),
+  /** The steps that put each activity back; sent to the undo endpoint as they are. */
+  undo: z.array(z.object({ id: z.string(), action: z.record(z.string(), z.unknown()) })).default([]),
 });
 export type BulkPlanResult = z.infer<typeof BulkPlanResultSchema>;
 

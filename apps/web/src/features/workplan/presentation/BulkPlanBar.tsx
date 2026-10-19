@@ -13,11 +13,13 @@ import { Select } from "@/components/ui/Select";
  * Change several selected activities at once (phase 28.1-L): move them by N days, or give them the same lead. Every change is
  * previewed first; nothing is saved until "Apply". A refusal names the reason and changes nothing.
  */
-export function BulkPlanBar({ projectId, selected, leads, onClear }: {
+export function BulkPlanBar({ projectId, selected, leads, onClear, onApplied }: {
   projectId: string;
   selected: string[];
   leads: Array<{ id: string; label: string }>;
   onClear: () => void;
+  /** Called after a change is applied, with the steps that would undo it, so the list can offer "Undo". */
+  onApplied?: (result: { applied: number; undo: BulkPlanResult["undo"] }) => void;
 }) {
   const router = useRouter();
   const state = useActionState();
@@ -31,7 +33,7 @@ export function BulkPlanBar({ projectId, selected, leads, onClear }: {
   async function run(input: Record<string, unknown>, apply: boolean) {
     const done = await state.run(() => bulkPlanAction(projectId, { ids: selected, ...input, ...(reason.trim() ? { reason } : {}), apply }));
     if (!done) return;
-    if (apply) { setPreview(null); setPendingInput(null); onClear(); router.refresh(); } else { setPreview(done); setPendingInput(input); }
+    if (apply) { setPreview(null); setPendingInput(null); onApplied?.({ applied: done.applied, undo: done.undo }); onClear(); router.refresh(); } else { setPreview(done); setPendingInput(input); }
   }
 
   return (

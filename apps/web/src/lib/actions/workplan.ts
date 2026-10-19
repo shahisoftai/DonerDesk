@@ -1,6 +1,6 @@
 "use server";
 
-import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema, ChangeActivityPeopleSchema } from "@donordesk/contracts";
+import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, UndoBulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema, ChangeActivityPeopleSchema } from "@donordesk/contracts";
 import type { ZodType } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -157,6 +157,14 @@ export async function bulkPlanAction(projectId: string, input: unknown): Promise
   return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/work-plan/bulk`, BulkPlanResultSchema, context.token, { method: "POST", body: p.data });
 }
 
+/** Puts activities back as they were, from the steps a bulk change returned. */
+export async function undoBulkPlanAction(projectId: string, steps: unknown): Promise<Result<{ undone: number }, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(UndoBulkPlanActionSchema, { steps });
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/work-plan/bulk/undo`, UndoneSchema, context.token, { method: "POST", body: p.data });
+}
+
 /** A person's weekly limit in activities; blank clears it. Managers only (the server checks). */
 export async function setCapacityAction(userId: string, activitiesPerWeek: number | null): Promise<Result<true, AppError>> {
   const context = await requireSession();
@@ -186,6 +194,7 @@ export async function registerBeneficiaryAction(projectId: string, input: unknow
 }
 
 const ImportedSchema = z.object({ added: z.number() });
+const UndoneSchema = z.object({ undone: z.number() });
 
 /** Adds the people in a KoboToolbox or ODK export (CSV text). Refused as a whole when any row is wrong. */
 export async function importSubmissionsAction(projectId: string, csv: string, mapping?: Record<string, string>): Promise<Result<{ added: number }, AppError>> {

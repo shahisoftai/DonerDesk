@@ -9,6 +9,8 @@ import { Badge } from "@/components/data/Badge";
 import { groupPlanList } from "../domain/plan-list-view";
 import { waitingLine } from "../domain/dependency-view";
 import { BulkPlanBar } from "./BulkPlanBar";
+import { UndoBulkBanner } from "./UndoBulkBanner";
+import type { BulkPlanResult } from "@/lib/server/schemas";
 import { MarkDoneButton } from "./MarkDoneButton";
 import { PlanStatusControl } from "./PlanStatusControl";
 
@@ -38,6 +40,7 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
 }) {
   const [mineOnly, setMineOnly] = useState(defaultMine);
   const [selected, setSelected] = useState<string[]>([]);
+  const [lastChange, setLastChange] = useState<{ applied: number; undo: BulkPlanResult["undo"] } | null>(null);
   const groups = groupPlanList(rows, today, { mineOnly, userId });
 
   return (
@@ -48,8 +51,9 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
         Only mine
       </label>
       {selected.length > 0 && (
-        <BulkPlanBar projectId={projectId} selected={selected} leads={Object.entries(names).map(([id, label]) => ({ id, label }))} onClear={() => setSelected([])} />
+        <BulkPlanBar projectId={projectId} selected={selected} leads={Object.entries(names).map(([id, label]) => ({ id, label }))} onClear={() => setSelected([])} onApplied={setLastChange} />
       )}
+      {lastChange && <UndoBulkBanner projectId={projectId} applied={lastChange.applied} undo={lastChange.undo} onDone={() => setLastChange(null)} />}
       {groups.length === 0 && <p className="text-sm text-slate-500">{mineOnly ? "Nothing planned for you." : "Nothing planned yet."}</p>}
       {groups.map((group) => (
         <section key={group.key} aria-labelledby={`plan-${group.key}`}>
