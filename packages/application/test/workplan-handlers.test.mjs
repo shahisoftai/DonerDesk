@@ -405,3 +405,29 @@ test("a lead change for a series applies from this activity onward; earlier and 
   assert.equal(w.store.get(second).ownerUserId, "me");
   assert.equal(w.store.get(first[3]).ownerUserId, "me", "later one changed");
 });
+
+test("the logframe link can be moved to another activity of the project, the output follows, and a bad node is refused", async () => {
+  const w = world();
+  const node = (id, level, parentId) => LogframeItem.create({ id, tenantId: "tenant-a", projectId: "p", level, parentId, code: id, title: id });
+  const nodes = [node("out1", "OUTPUT"), node("out2", "OUTPUT"), node("actA", "ACTIVITY", "out1"), node("actB", "ACTIVITY", "out2")];
+  const facts = (records) => ({ factsByPlannedActivity: async () => ok(new Map(records)) });
+  const repo = { findById: async (id) => ok(w.store.get(id) ?? null), update: async (i) => (w.store.set(i.id, i), ok(i)) };
+  const make = (f) => new UpdatePlannedActivityHandler(new PlanAccess(repo), repo, { reportUsesDates: async () => ok(false), activeMemberIds: async () => ok(new Set(["pm"])) },
+    new PlanRecorder({ generate: () => "r" }, { append: async () => ok(undefined) }, { record: async () => undefined }, { now: () => new Date("2026-03-01T09:00:00Z") }),
+    { now: () => new Date("2026-03-01T09:00:00Z") }, { findByProject: async () => ok(nodes) }, f);
+  const [id] = (await w.create.handle(PM, "p", input({ logframeActivityId: "act" }))).value.ids;
+  const update = make(facts([]));
+  assert.equal((await update.handle(PM, id, { logframeActivityId: "actB" })).ok, true);
+  assert.equal(w.store.get(id).logframeActivityId, "actB");
+  assert.equal(w.store.get(id).snapshot().outputId, "out2", "the output follows the activity");
+  assert.equal((await update.handle(PM, id, { logframeActivityId: "out1" })).ok, false, "only an ACTIVITY node");
+  assert.equal((await update.handle(PM, id, { logframeActivityId: null })).ok, true);
+  assert.equal(w.store.get(id).logframeActivityId, undefined);
+  assert.equal(w.store.get(id).snapshot().outputId, undefined);
+
+  const blocked = make(facts([[id, { liveRecords: 2 }]]));
+  const refused = await blocked.handle(PM, id, { logframeActivityId: "actA" });
+  assert.equal(refused.ok, false);
+  assert.match(refused.error.message, /2 completed activities are already recorded/);
+  assert.equal((await make(undefined).handle(PM, id, { logframeActivityId: "actA" })).ok, false, "without the readers the link cannot change");
+});

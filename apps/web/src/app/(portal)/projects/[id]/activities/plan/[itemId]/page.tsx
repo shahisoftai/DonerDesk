@@ -13,6 +13,7 @@ import { AskPanel } from "@/features/tasks/presentation/AskPanel";
 import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
 import { RequiredFilesEditor } from "@/features/workplan/presentation/RequiredFilesEditor";
 import { DependencyEditor } from "@/features/workplan/presentation/DependencyEditor";
+import { LogframeLinkEditor } from "@/features/workplan/presentation/LogframeLinkEditor";
 import { PlanItemFields } from "@/features/workplan/presentation/PlanItemFields";
 import { PlanItemBudget } from "@/features/workplan/presentation/PlanItemBudget";
 import { ProgressLog } from "@/features/workplan/presentation/ProgressLog";
@@ -94,6 +95,7 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
       </header>
 
       <RequiredFilesEditor itemId={row.id} title={row.title} required={row.requiredFiles} stillNeeded={row.stillNeeded} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
+      {logframe.ok && <LogframeLinkEditor itemId={row.id} current={row.logframeActivityId} options={logframe.value.items.filter((i) => i.level === "ACTIVITY").map((i) => ({ id: i.id, label: `${i.code ?? ""} ${i.title}`.trim() }))} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />}
 
       <DependencyEditor itemId={row.id} after={row.comesAfter} before={row.comesBefore} options={dependencyOptions(row.id, plan.value.items)} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
 

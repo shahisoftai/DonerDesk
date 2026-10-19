@@ -6,7 +6,7 @@ import type { AssignPlannedActivityInput, ChangePlanStatusInput, CreatePlannedAc
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { ILogframeRepository } from "../../ports/logframe.js";
-import type { IPlanContextReader, IPlanDependencyRepository, IPlannedActivityRepository } from "../../ports/workplan.js";
+import type { IDeliveryFactsReader, IPlanContextReader, IPlanDependencyRepository, IPlannedActivityRepository } from "../../ports/workplan.js";
 import { PlanAccess } from "../../services/plan-access.js";
 import { toDependencyItem, toDependencyLink } from "./plan-dependency-handlers.js";
 import type { PlanRecorder } from "../../services/plan-recorder.js";
@@ -220,7 +220,31 @@ export class UpdatePlannedActivityHandler {
   constructor(
     private readonly access: PlanAccess, private readonly repo: IPlannedActivityRepository, private readonly context: IPlanContextReader,
     private readonly recorder: PlanRecorder, private readonly clock: IClock,
+    /** Needed only to change the logframe link; without it the link cannot be changed here. */
+    private readonly logframe?: ILogframeRepository, private readonly facts?: IDeliveryFactsReader,
   ) {}
+
+  /**
+   * A new logframe link: null clears it; otherwise it must be an ACTIVITY node of this project, and the output follows from it.
+   * Refused once completed activities have been recorded against the activity, so their link and the plan's cannot drift apart.
+   */
+  private async resolveLink(ctx: AuthenticatedContext, item: PlannedActivity, wanted: string | null): Promise<Result<{ logframeActivityId: string | undefined; outputId: string | undefined }, DomainError>> {
+    const current = item.logframeActivityId ?? null;
+    if (wanted === current) return ok({ logframeActivityId: item.logframeActivityId, outputId: item.snapshot().outputId });
+    if (!this.logframe || !this.facts) return err(DomainError.validation("The logframe link cannot be changed here", { field: "logframeActivityId" }));
+    const facts = await this.facts.factsByPlannedActivity(item.projectId, ctx.tenant.tenantId);
+    if (!facts.ok) return facts;
+    const recorded = facts.value.get(item.id)?.liveRecords ?? 0;
+    if (recorded > 0) {
+      return err(DomainError.validation(`${recorded} completed ${recorded === 1 ? "activity is" : "activities are"} already recorded against this one, so its logframe link cannot change`, { field: "logframeActivityId" }));
+    }
+    if (wanted === null) return ok({ logframeActivityId: undefined, outputId: undefined });
+    const nodes = await this.logframe.findByProject(item.projectId, ctx.tenant.tenantId);
+    if (!nodes.ok) return nodes;
+    const node = nodes.value.find((n) => n.id === wanted);
+    if (!node || node.level !== "ACTIVITY") return err(DomainError.validation("Choose an activity from this project's logframe", { field: "logframeActivityId" }));
+    return ok({ logframeActivityId: node.id, outputId: node.parentId ?? undefined });
+  }
 
   async handle(ctx: AuthenticatedContext, itemId: string, input: UpdatePlannedActivityInput): Promise<Result<void, DomainError>> {
     const { reason, requiredFiles, ...fields } = input;
@@ -230,7 +254,13 @@ export class UpdatePlannedActivityHandler {
     const item = loaded.value;
     const used = await this.context.reportUsesDates(item.projectId, ctx.tenant.tenantId, { start: item.plannedStart, end: item.plannedEnd });
     if (!used.ok) return used;
-    const patch = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v === null ? undefined : v]));
+    const patch: Record<string, unknown> = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v === null ? undefined : v]));
+    if (fields.logframeActivityId !== undefined) {
+      const link = await this.resolveLink(ctx, item, fields.logframeActivityId);
+      if (!link.ok) return link;
+      patch.logframeActivityId = link.value.logframeActivityId;
+      patch.outputId = link.value.outputId;
+    }
     const changed = item.updateDetails(patch, { today: today(this.clock), reportUsesIt: used.value, ...(reason ? { reason } : {}) });
     if (!changed.ok) return changed;
     // Files we will need are part of the same edit and the same history entry.
