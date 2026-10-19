@@ -133,15 +133,30 @@ export interface BudgetExpenseRecord {
   createdAt: Date;
 }
 
-export interface IBudgetRepository {
+/** Adding a budget line. */
+export interface IBudgetLineWriter {
   addLine(line: BudgetLineRecord): Promise<Result<void>>;
   countLines(plannedActivityId: string, tenantId: TenantId): Promise<Result<number>>;
+}
+/** Reading budget lines. */
+export interface IBudgetLineReader {
   findLineById(id: string, tenantId: TenantId): Promise<Result<BudgetLineRecord | null>>;
   findLinesByItem(plannedActivityId: string, tenantId: TenantId): Promise<Result<BudgetLineRecord[]>>;
   findLinesByProject(projectId: string, tenantId: TenantId): Promise<Result<BudgetLineRecord[]>>;
+}
+/** Booking an expense against a line. */
+export interface IBudgetExpenseWriter {
   addExpense(expense: BudgetExpenseRecord): Promise<Result<void>>;
+}
+/** Reading the expenses booked against lines. */
+export interface IBudgetExpenseReader {
   findExpensesByLines(lineIds: string[], tenantId: TenantId): Promise<Result<BudgetExpenseRecord[]>>;
 }
+/**
+ * The whole budget store, for the class that implements it. A handler never asks for this: it names only the roles it uses
+ * (interface segregation), so a handler that adds a line cannot read expenses, and a fake in a test implements only what is read.
+ */
+export interface IBudgetRepository extends IBudgetLineWriter, IBudgetLineReader, IBudgetExpenseWriter, IBudgetExpenseReader {}
 
 /** How many planned activities a person can lead in a week; null = no limit (phase 28.1-J). */
 export interface IMemberCapacityRepository {

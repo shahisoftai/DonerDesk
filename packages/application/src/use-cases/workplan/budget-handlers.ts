@@ -1,7 +1,7 @@
 import { DomainError, MAX_BUDGET_LINES, budgetPosition, checkBudgetLine, checkExpense, err, ok, projectBudgetSummary, type BudgetCostCategory, type BudgetPosition, type ProjectBudgetCurrency, type Result } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
-import type { BudgetExpenseRecord, BudgetLineRecord, IBudgetRepository, IPlanContextReader, IPlannedActivityRepository } from "../../ports/workplan.js";
+import type { BudgetExpenseRecord, BudgetLineRecord, IBudgetExpenseReader, IBudgetExpenseWriter, IBudgetLineReader, IBudgetLineWriter, IPlanContextReader, IPlannedActivityRepository } from "../../ports/workplan.js";
 import { PlanAccess } from "../../services/plan-access.js";
 
 export interface BudgetLineView {
@@ -17,7 +17,7 @@ export interface BudgetLineView {
 
 /** A budget line on a planned activity. Managers only: the budget is set when the plan is made. */
 export class AddBudgetLineHandler {
-  constructor(private readonly access: PlanAccess, private readonly budgets: IBudgetRepository, private readonly ids: IIdGenerator, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+  constructor(private readonly access: PlanAccess, private readonly budgets: IBudgetLineWriter, private readonly ids: IIdGenerator, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
 
   async handle(ctx: AuthenticatedContext, itemId: string, input: { code: string; category: BudgetCostCategory; description?: string; donorName?: string; currency: string; amount: string }): Promise<Result<{ id: string }, DomainError>> {
     const item = await this.access.load(ctx, itemId, "EDIT");
@@ -43,7 +43,7 @@ export class AddBudgetLineHandler {
 
 /** An expense against one line. The lead of the activity or a manager may book one. */
 export class AddBudgetExpenseHandler {
-  constructor(private readonly access: PlanAccess, private readonly budgets: IBudgetRepository, private readonly ids: IIdGenerator, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+  constructor(private readonly access: PlanAccess, private readonly budgets: IBudgetLineReader & IBudgetExpenseWriter, private readonly ids: IIdGenerator, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
 
   async handle(ctx: AuthenticatedContext, itemId: string, lineId: string, input: { date: string; amount: string; description?: string }): Promise<Result<{ id: string }, DomainError>> {
     const item = await this.access.load(ctx, itemId, "EDIT_NOTES");
@@ -70,7 +70,7 @@ export class AddBudgetExpenseHandler {
 
 /** The budget of one planned activity: each line, what has been spent, and where it stands. Anyone who can see the plan. */
 export class GetPlanItemBudgetHandler {
-  constructor(private readonly access: PlanAccess, private readonly budgets: IBudgetRepository) {}
+  constructor(private readonly access: PlanAccess, private readonly budgets: IBudgetLineReader & IBudgetExpenseReader) {}
 
   async handle(ctx: AuthenticatedContext, itemId: string): Promise<Result<BudgetLineView[], DomainError>> {
     const item = await this.access.load(ctx, itemId, "VIEW");
@@ -93,7 +93,7 @@ function toView(line: BudgetLineRecord, expenses: BudgetExpenseRecord[]): Budget
 
 /** A project's budget against spending, per currency and per activity. For people on the project (or an admin). */
 export class GetProjectBudgetHandler {
-  constructor(private readonly items: IPlannedActivityRepository, private readonly budgets: IBudgetRepository, private readonly context: IPlanContextReader) {}
+  constructor(private readonly items: IPlannedActivityRepository, private readonly budgets: IBudgetLineReader & IBudgetExpenseReader, private readonly context: IPlanContextReader) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<ProjectBudgetCurrency[], DomainError>> {
     if (ctx.tenant.role !== "ADMIN") {
