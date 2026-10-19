@@ -431,3 +431,16 @@ test("the logframe link can be moved to another activity of the project, the out
   assert.match(refused.error.message, /2 completed activities are already recorded/);
   assert.equal((await make(undefined).handle(PM, id, { logframeActivityId: "actA" })).ok, false, "without the readers the link cannot change");
 });
+
+test("marking done can carry the day the work finished; a future day, or a day on another action, is refused", async () => {
+  const w = world({ today: "2026-03-20" });
+  const [id] = (await w.create.handle(PM, "p", input({ ownerUserId: "fo" }))).value.ids;
+  assert.equal((await w.status.handle(PM, id, { action: "COMPLETE", completedOn: "2026-03-25" })).ok, false, "not in the future");
+  assert.equal((await w.status.handle(PM, id, { action: "START", completedOn: "2026-03-12" })).ok, false, "only with COMPLETE");
+  assert.equal(w.store.get(id).status, "PLANNED", "nothing changed on refusal");
+  assert.equal((await w.status.handle(PM, id, { action: "COMPLETE", completedOn: "2026-03-12" })).ok, true);
+  assert.equal(w.store.get(id).completedOn, "2026-03-12");
+  const [other] = (await w.create.handle(PM, "p", input({ ownerUserId: "fo" }))).value.ids;
+  await w.status.handle(PM, other, { action: "COMPLETE" });
+  assert.equal(w.store.get(other).completedOn, "2026-03-20", "without a day it is today, as before");
+});

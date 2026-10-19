@@ -9,6 +9,8 @@ export interface PlanStatusOutboxPayload {
   itemId: string;
   action: "START" | "COMPLETE" | "REOPEN" | "CANCEL" | "RESTORE";
   reason?: string;
+  /** The day a "Done" was made on this device (YYYY-MM-DD), so a change sent later is still dated to when the work finished. */
+  completedOn?: string;
 }
 
 export function planStatusEntry(input: { id: string; title: string; payload: PlanStatusOutboxPayload; now: number }): OutboxEntry<PlanStatusOutboxPayload> {
@@ -16,7 +18,7 @@ export function planStatusEntry(input: { id: string; title: string; payload: Pla
 }
 
 export interface PlanStatusSendDeps {
-  changeStatus(itemId: string, input: { action: PlanStatusOutboxPayload["action"]; reason?: string }): Promise<Result<true, AppError>>;
+  changeStatus(itemId: string, input: { action: PlanStatusOutboxPayload["action"]; reason?: string; completedOn?: string }): Promise<Result<true, AppError>>;
 }
 
 /**
@@ -25,8 +27,8 @@ export interface PlanStatusSendDeps {
  */
 export function createPlanStatusSender(deps: PlanStatusSendDeps): OutboxSender {
   return async (entry): Promise<SendOutcome> => {
-    const { itemId, action, reason } = entry.payload as PlanStatusOutboxPayload;
-    const result = await deps.changeStatus(itemId, { action, ...(reason ? { reason } : {}) });
+    const { itemId, action, reason, completedOn } = entry.payload as PlanStatusOutboxPayload;
+    const result = await deps.changeStatus(itemId, { action, ...(reason ? { reason } : {}), ...(completedOn ? { completedOn } : {}) });
     if (result.ok) return { kind: "sent" };
     return result.error.kind === "unavailable" ? { kind: "offline", message: result.error.message } : { kind: "rejected", message: result.error.message };
   };

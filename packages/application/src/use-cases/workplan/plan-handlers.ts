@@ -79,11 +79,21 @@ export class CreatePlannedActivityHandler {
 export class ChangePlanStatusHandler {
   constructor(private readonly access: PlanAccess, private readonly repo: IPlannedActivityRepository, private readonly recorder: PlanRecorder, private readonly clock: IClock) {}
 
+  /** When the change took effect: now, or the day the work finished when the person says so (only for COMPLETE, never in the future). */
+  private completionTime(input: ChangePlanStatusInput): Result<Date, DomainError> {
+    if (input.completedOn === undefined) return ok(this.clock.now());
+    if (input.action !== "COMPLETE") return err(DomainError.validation("A finish day only goes with marking an activity done", { field: "completedOn" }));
+    if (input.completedOn > today(this.clock)) return err(DomainError.validation("The finish day cannot be in the future", { field: "completedOn" }));
+    return ok(new Date(`${input.completedOn}T12:00:00.000Z`));
+  }
+
   async handle(ctx: AuthenticatedContext, itemId: string, input: ChangePlanStatusInput): Promise<Result<void, DomainError>> {
     const loaded = await this.access.load(ctx, itemId, input.action === "CANCEL" ? "CANCEL" : "CHANGE_STATUS");
     if (!loaded.ok) return loaded;
     const item = loaded.value;
-    const changed = item.applyStatus(input.action as PlanAction, { at: this.clock.now(), ...(input.reason ? { reason: input.reason } : {}) });
+    const at = this.completionTime(input);
+    if (!at.ok) return at;
+    const changed = item.applyStatus(input.action as PlanAction, { at: at.value, ...(input.reason ? { reason: input.reason } : {}) });
     if (!changed.ok) return changed;
     const saved = await this.repo.update(item);
     if (!saved.ok) return saved;

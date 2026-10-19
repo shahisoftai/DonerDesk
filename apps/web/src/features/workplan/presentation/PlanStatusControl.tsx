@@ -35,14 +35,16 @@ export function PlanStatusControl({ itemId, status, suggested, canChange, queueO
     const action = planActionFor(status, to);
     if (!action) return;
     let offline: AppError | undefined;
+    // A "Done" is dated to the day it was made, so one that waits offline and is sent later is not counted as finishing late.
+    const completedOn = action === "COMPLETE" ? new Date().toISOString().slice(0, 10) : undefined;
     const done = await state.run(async () => {
-      const attempt = await guardNetwork(() => changePlanStatusAction(itemId, { action }));
+      const attempt = await guardNetwork(() => changePlanStatusAction(itemId, { action, ...(completedOn ? { completedOn } : {}) }));
       if (!attempt.ok && isOfflineFailure(attempt.error)) offline = attempt.error;
       return attempt;
     });
     if (done === true) { setQueued(false); router.refresh(); return; }
     if (offline && queueOffline && outbox.supported) {
-      await outbox.enqueue(planStatusEntry({ id: newIdempotencyKey(), title: queueOffline.title, payload: { itemId, action }, now: Date.now() }));
+      await outbox.enqueue(planStatusEntry({ id: newIdempotencyKey(), title: queueOffline.title, payload: { itemId, action, ...(completedOn ? { completedOn } : {}) }, now: Date.now() }));
       setQueued(true);
     }
   }

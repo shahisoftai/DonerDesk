@@ -53,6 +53,8 @@ export type ReschedulePlannedActivityInput = z.infer<typeof ReschedulePlannedAct
 export const ChangePlanStatusSchema = z.object({
   action: z.enum(["START", "COMPLETE", "REOPEN", "CANCEL", "RESTORE"]),
   reason: z.string().max(1000).optional(),
+  /** The day the work finished, for COMPLETE recorded after the fact. Defaults to today; cannot be in the future. */
+  completedOn: PlainDateSchema.optional(),
 });
 export type ChangePlanStatusInput = z.infer<typeof ChangePlanStatusSchema>;
 

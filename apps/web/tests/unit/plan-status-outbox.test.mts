@@ -26,3 +26,11 @@ test("the entry starts waiting with the title the banner shows", () => {
   const e = entry();
   assert.deepEqual([e.kind, e.state, e.attempts, e.title], ["plan-status", "waiting", 0, "Clinic visit"]);
 });
+
+test("a Done made offline keeps the day it was made, so sending it later does not make the work look late", async () => {
+  const calls: unknown[] = [];
+  const send = createPlanStatusSender({ changeStatus: async (itemId, input) => (calls.push([itemId, input]), { ok: true, value: true }) });
+  const done = planStatusEntry({ id: "e2", title: "Clinic visit", payload: { itemId: "pa1", action: "COMPLETE", completedOn: "2026-10-12" }, now: 1 });
+  await send(done, save);
+  assert.deepEqual(calls, [["pa1", { action: "COMPLETE", completedOn: "2026-10-12" }]]);
+});
