@@ -50,7 +50,7 @@ export function PlanItemMenu(p: PlanItemMenuProps) {
   async function done(result: true | undefined) { if (result === true) { close(); router.refresh(); } }
 
   const move = () => state.run(() => reschedulePlannedActivityAction(p.itemId, { plannedStart: start, plannedEnd: end || start, scope, ...(reason.trim() ? { reason } : {}) })).then((r) => done(r ? true : undefined));
-  const assign = () => state.run(() => assignPlannedActivityAction(p.itemId, { ownerUserId: lead || null, supportUserIds: [] })).then(done);
+  const assign = () => state.run(() => assignPlannedActivityAction(p.itemId, { ownerUserId: lead || null, supportUserIds: [], scope })).then(done);
   const cancel = () => state.run(() => changePlanStatusAction(p.itemId, { action: "CANCEL", reason })).then(done);
   const restore = () => state.run(() => changePlanStatusAction(p.itemId, { action: "RESTORE" })).then(done);
 
@@ -98,6 +98,12 @@ export function PlanItemMenu(p: PlanItemMenuProps) {
                   {p.leads.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
                 </Select>
               </Field>
+              {p.inSeries && (
+                <div role="radiogroup" aria-label="Which activities" className="space-y-1 text-sm">
+                  <label className="flex items-center gap-2"><input type="radio" className="h-4 w-4" checked={scope === "THIS"} onChange={() => setScope("THIS")} />{WORKPLAN_COPY.onlyThisOne}</label>
+                  <label className="flex items-center gap-2"><input type="radio" className="h-4 w-4" checked={scope === "SERIES_FROM_HERE"} onChange={() => setScope("SERIES_FROM_HERE")} />Change the lead of this and the later ones still open</label>
+                </div>
+              )}
               <div className="flex gap-2"><Button size="sm" onClick={assign} pending={state.busy}>Save</Button><Button size="sm" variant="secondary" onClick={close}>Cancel</Button></div>
             </>
           )}

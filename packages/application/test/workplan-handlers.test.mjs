@@ -395,3 +395,13 @@ test("for one completed activity: what its planned activity asks for and this on
   assert.deepEqual((await handler.handle(FIELD, "a3")).value.stillNeeded, ["ATTENDANCE_SHEET", "PHOTO"]);
   assert.equal((await handler.handle(FIELD, "nope")).error.code, "NOT_FOUND");
 });
+
+test("a lead change for a series applies from this activity onward; earlier and finished ones are left alone", async () => {
+  const w = world();
+  const first = (await w.create.handle(PM, "p", input({ plannedEnd: "2026-03-10", repeats: { every: "MONTH", until: "2026-06-30" }, ownerUserId: "fo" }))).value.ids;
+  const second = first[1];
+  assert.equal((await w.assign.handle(PM, second, { ownerUserId: "me", supportUserIds: [], scope: "SERIES_FROM_HERE" })).ok, true);
+  assert.equal(w.store.get(first[0]).ownerUserId, "fo", "earlier one unchanged");
+  assert.equal(w.store.get(second).ownerUserId, "me");
+  assert.equal(w.store.get(first[3]).ownerUserId, "me", "later one changed");
+});

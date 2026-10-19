@@ -60,6 +60,8 @@ export const AssignPlannedActivitySchema = z.object({
   ownerUserId: z.string().min(1).nullable(),
   supportUserIds: z.array(z.string().min(1)).max(10).default([]),
   reason: z.string().max(1000).optional(),
+  /** "THIS" (default) or "SERIES_FROM_HERE": this activity and the later ones of its repeating series, still open. */
+  scope: z.enum(["THIS", "SERIES_FROM_HERE"]).default("THIS"),
 });
 export type AssignPlannedActivityInput = z.infer<typeof AssignPlannedActivitySchema>;
 

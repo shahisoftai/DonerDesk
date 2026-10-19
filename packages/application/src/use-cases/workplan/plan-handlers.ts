@@ -186,17 +186,33 @@ export class AssignPlannedActivityHandler {
   async handle(ctx: AuthenticatedContext, itemId: string, input: AssignPlannedActivityInput): Promise<Result<void, DomainError>> {
     const loaded = await this.access.load(ctx, itemId, "ASSIGN");
     if (!loaded.ok) return loaded;
-    const item = loaded.value;
-    const members = await this.context.activeMemberIds(item.projectId, ctx.tenant.tenantId);
+    const first = loaded.value;
+    const members = await this.context.activeMemberIds(first.projectId, ctx.tenant.tenantId);
     if (!members.ok) return members;
     const people = checkAssignable({ ownerUserId: input.ownerUserId ?? undefined, supportUserIds: input.supportUserIds }, members.value);
     if (!people.ok) return people;
-    const changed = item.assign(people.value, { ...(input.reason ? { reason: input.reason } : {}) });
-    if (!changed.ok) return changed;
-    if (Object.keys(changed.value.change).length === 0) return ok(undefined);
-    const saved = await this.repo.update(item);
-    if (!saved.ok) return saved;
-    return this.recorder.record(ctx, item, changed.value, "workplan.item_assigned");
+    // Series: this activity and the later ones of its series that are still open. Each change is recorded on its own.
+    let targets = [first];
+    if (input.scope === "SERIES_FROM_HERE" && first.seriesId) {
+      const series = await this.repo.findBySeries(first.seriesId, ctx.tenant.tenantId);
+      if (!series.ok) return series;
+      targets = series.value.filter((i) => i.plannedStart >= first.plannedStart && (i.status === "PLANNED" || i.status === "IN_PROGRESS"));
+    }
+    // Check every change before saving any, so a refusal leaves the series untouched.
+    const changes = [];
+    for (const item of targets) {
+      const changed = item.assign(people.value, { ...(input.reason ? { reason: input.reason } : {}) });
+      if (!changed.ok) return changed;
+      changes.push({ item, changed: changed.value });
+    }
+    for (const { item, changed } of changes) {
+      if (Object.keys(changed.change).length === 0) continue;
+      const saved = await this.repo.update(item);
+      if (!saved.ok) return saved;
+      const recorded = await this.recorder.record(ctx, item, changed, "workplan.item_assigned");
+      if (!recorded.ok) return recorded;
+    }
+    return ok(undefined);
   }
 }
 

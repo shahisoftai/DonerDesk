@@ -83,7 +83,7 @@ export class BulkPlanActionHandler {
       });
     }
     if (action.kind === "SET_LEAD") {
-      return this.assign.handle(ctx, id, { ownerUserId: action.leadUserId, supportUserIds: [...s.supportUserIds], ...(reason ? { reason } : {}) });
+      return this.assign.handle(ctx, id, { ownerUserId: action.leadUserId, supportUserIds: [...s.supportUserIds], scope: "THIS", ...(reason ? { reason } : {}) });
     }
     return this.status.handle(ctx, id, { action: action.status, ...(reason ? { reason } : {}) });
   }
