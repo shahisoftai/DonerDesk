@@ -49,3 +49,7 @@
 - Re-run `infra/postgres/rls.sql`. `/ready` requires the new columns (see `apps/api/src/routes/health.ts`).
 - Ship api and web together (`SCOPE=both`). The reminders timer picks up the automations on its next hourly run.
 - Browser-verify with the owner's account after deploy; none of these screens has been opened on the live site yet.
+
+## 5. Deployed
+
+Release `20261019093235` (branch head `ee51780` plus `d556648`), `SCOPE=both`. Migrations applied as the migrator before the code: `20261020170000` progress log, `180000` submission mapping, `190000` beneficiary activity link, `240000` automation rule settings, `250000` plan effort; `rls.sql` re-run. `/ready` is green. Not built: targets by group in report tables (they pass through the writer contract and grounding). Not yet opened in a browser on the live site.
