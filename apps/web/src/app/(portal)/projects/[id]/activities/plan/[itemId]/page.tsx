@@ -5,7 +5,7 @@ import { countOf } from "@donordesk/domain/core/plural.js";
 import { canActOnPlanItem, formatShortDate, WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import type { Role } from "@/lib/shared/capabilities";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { LogframeResponseSchema, PlanItemBudgetSchema, PlanItemFieldsSchema, PlanRevisionsResponseSchema, ProgressResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { ActivityPeopleSchema, LogframeResponseSchema, PlanItemBudgetSchema, PlanItemFieldsSchema, PlanRevisionsResponseSchema, ProgressResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { loadPlanPageData } from "@/features/workplan/application/plan-page-data";
 import { showsButton } from "@/features/workplan/domain/role-surfaces";
 import { describeChanges } from "@/features/workplan/domain/plan-history-view";
@@ -16,6 +16,7 @@ import { DependencyEditor } from "@/features/workplan/presentation/DependencyEdi
 import { PlanItemFields } from "@/features/workplan/presentation/PlanItemFields";
 import { PlanItemBudget } from "@/features/workplan/presentation/PlanItemBudget";
 import { ProgressLog } from "@/features/workplan/presentation/ProgressLog";
+import { ActivityPeople } from "@/features/workplan/presentation/ActivityPeople";
 import { MarkDoneButton } from "@/features/workplan/presentation/MarkDoneButton";
 import { dependencyOptions } from "@/features/workplan/domain/dependency-view";
 import { PlanItemMenu } from "@/features/workplan/presentation/PlanItemMenu";
@@ -39,6 +40,7 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
   const budget = await gatewayRequest(`/v1/work-plan/${itemId}/budget`, PlanItemBudgetSchema, data.ctx.token);
   const progress = await gatewayRequest(`/v1/work-plan/${itemId}/progress`, ProgressResponseSchema, data.ctx.token);
   const logframe = await gatewayRequest(`/v1/projects/${id}/logframe`, LogframeResponseSchema, data.ctx.token);
+  const activityPeople = await gatewayRequest(`/v1/work-plan/${itemId}/people`, ActivityPeopleSchema, data.ctx.token);
   const row = plan.value.items.find((r) => r.id === itemId);
   if (!row) notFound();
 
@@ -96,7 +98,8 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
       <DependencyEditor itemId={row.id} after={row.comesAfter} before={row.comesBefore} options={dependencyOptions(row.id, plan.value.items)} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
 
       {fieldValues.ok && <PlanItemFields itemId={row.id} projectId={id} fields={fieldValues.value.fields} values={fieldValues.value.values} canEdit={canActOnPlanItem(actor, people, "EDIT_NOTES") && row.status !== "CANCELLED"} canDefine={canActOnPlanItem(actor, people, "EDIT")} />}
-      {progress.ok && <ProgressLog itemId={row.id} today={data.today} activity={{ start: row.plannedStart, end: row.plannedEnd }} data={progress.value} indicators={logframe.ok ? logframe.value.indicators.map((i) => ({ id: i.id, code: i.code, name: i.name })) : []} canEdit={canActOnPlanItem(actor, people, "EDIT_NOTES") && row.status !== "CANCELLED"} />}
+      {progress.ok && <ProgressLog itemId={row.id} today={data.today} activity={{ start: row.plannedStart, end: row.plannedEnd }} data={progress.value} indicators={logframe.ok ? logframe.value.indicators.map((i) => ({ id: i.id, code: i.code, name: i.name })) : []} canEdit={canActOnPlanItem(actor, people, "EDIT_NOTES") && row.status !== "CANCELLED"} uniquePeople={activityPeople.ok ? activityPeople.value.counts.total : null} />}
+      {activityPeople.ok && <ActivityPeople itemId={row.id} data={activityPeople.value} canEdit={canActOnPlanItem(actor, people, "EDIT_NOTES") && row.status !== "CANCELLED"} />}
 
       {budget.ok && <PlanItemBudget itemId={row.id} lines={budget.value.items} canManage={canActOnPlanItem(actor, people, "EDIT")} canSpend={canActOnPlanItem(actor, people, "EDIT_NOTES") && row.status !== "CANCELLED"} today={data.today} />}
 

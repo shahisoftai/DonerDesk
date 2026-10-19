@@ -214,3 +214,11 @@ export interface IProjectSubmissionMappingRepository {
   find(projectId: string, tenantId: TenantId): Promise<Result<Record<string, string> | null>>;
   save(projectId: string, mapping: Record<string, string>, by: { userId: string; now: Date }, tenantId: TenantId): Promise<Result<void>>;
 }
+
+/** The people (by case code) a planned activity reached. */
+export interface IBeneficiaryLinkRepository {
+  findBeneficiaryIds(plannedActivityId: string, tenantId: TenantId): Promise<Result<string[]>>;
+  /** Adds links in one statement; a person already linked is skipped. Returns how many were new. */
+  add(input: { tenantId: string; projectId: string; plannedActivityId: string; beneficiaryIds: string[]; userId: string; now: Date }): Promise<Result<number>>;
+  remove(plannedActivityId: string, beneficiaryIds: string[], tenantId: TenantId): Promise<Result<number>>;
+}

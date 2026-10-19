@@ -1525,3 +1525,19 @@ export type PrepareProgressResponse = z.infer<typeof PrepareProgressResponseSche
 
 /** The saved column mapping of a project, or none (phase 28.1-I). */
 export const SubmissionMappingResponseSchema = z.object({ mapping: z.record(z.string(), z.string()).nullable() });
+
+/** The people (by case code) an activity reached, each once, with counts by sex and age group. */
+export const ActivityPeopleSchema = z.object({
+  people: z.array(z.object({ id: z.string(), caseCode: z.string(), sex: z.string(), ageGroup: z.string() })),
+  counts: z.object({ total: z.number(), bySex: z.record(z.string(), z.number()), byAgeGroup: z.record(z.string(), z.number()) }),
+});
+export type ActivityPeople = z.infer<typeof ActivityPeopleSchema>;
+
+/** What an import would do, read from a file without saving (phase 28.1-I review). */
+export const PreviewReviewSchema = z.object({
+  ready: z.number(),
+  problems: z.array(z.object({ line: z.number(), message: z.string() })),
+  clashes: z.array(z.object({ line: z.number(), caseCode: z.string() })),
+  likely: z.array(z.object({ line: z.number(), caseCode: z.string(), looksLike: z.array(z.string()) })),
+});
+export type PreviewReview = z.infer<typeof PreviewReviewSchema>;

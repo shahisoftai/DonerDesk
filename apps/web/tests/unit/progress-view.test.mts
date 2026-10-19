@@ -47,3 +47,12 @@ test("people reached counts live entries only, and is blank when nothing is reco
   assert.equal(keyOf(entries[1]!), "2026-10");
   assert.equal(keyOf(entries[2]!), "");
 });
+
+test("the activity-end form starts unique people from the people linked by case code; none linked leaves it blank", () => {
+  const entries = [entry("m1", "MONTHLY", "2026-10-14", "2026-10-31", 20)];
+  const withPeople = draftFor("END", "", act, entries, fields, 12);
+  assert.equal(withPeople.unique, "12");
+  assert.match(withPeople.note, /12 linked/);
+  assert.equal(draftFor("END", "", act, entries, fields, null).unique, "");
+  assert.equal(draftFor("END", "", act, entries, fields, 0).unique, "", "none linked is not zero people");
+});

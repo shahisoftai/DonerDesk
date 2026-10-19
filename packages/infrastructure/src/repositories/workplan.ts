@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { PlannedActivity, ok, type AutomationRuleKey, type DeliveryFacts, type PlainDate, type PlanChangeSet, type PlanRevision, type PlanStatus, type RecurrenceRule, type Result, type TenantId, DomainError, toPlainDate } from "@donordesk/domain";
-import type { IMyWeekReader, MyWeekSentBack, IMemberDirectory, IDeliveryFactsReader, IPlanContextReader, IPlannedActivityRepository, IPlanRevisionRepository, IPlanDependencyRepository, PlanDependencyRecord, IProjectFieldRepository, ICustomFieldValueRepository, ProjectFieldRecord, IBudgetRepository, BudgetLineRecord, BudgetExpenseRecord, IMemberCapacityRepository, IAutomationSettings, IBeneficiaryRepository, BeneficiaryRecord, IProjectSubmissionMappingRepository, IPlannedActivityIndicatorRepository, IProgressRepository, ProgressEntryRecord } from "@donordesk/application";
+import type { IMyWeekReader, MyWeekSentBack, IMemberDirectory, IDeliveryFactsReader, IPlanContextReader, IPlannedActivityRepository, IPlanRevisionRepository, IPlanDependencyRepository, PlanDependencyRecord, IProjectFieldRepository, ICustomFieldValueRepository, ProjectFieldRecord, IBudgetRepository, BudgetLineRecord, BudgetExpenseRecord, IMemberCapacityRepository, IAutomationSettings, IBeneficiaryRepository, BeneficiaryRecord, IProjectSubmissionMappingRepository, IPlannedActivityIndicatorRepository, IProgressRepository, ProgressEntryRecord, IBeneficiaryLinkRepository } from "@donordesk/application";
 import { enabledFrom } from "@donordesk/application";
 
 /** Plan dates are stored as DATE: always a UTC midnight Date in, a "YYYY-MM-DD" out. */
@@ -545,5 +545,28 @@ export class PrismaProjectSubmissionMappingRepository implements IProjectSubmiss
       update: { mappingJson: JSON.stringify(mapping), updatedById: by.userId, updatedAt: by.now },
     });
     return ok(undefined);
+  }
+}
+
+/** The people (by case code) an activity reached. Adding a person already linked is skipped, so a person counts once. */
+export class PrismaBeneficiaryLinkRepository implements IBeneficiaryLinkRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async findBeneficiaryIds(plannedActivityId: string, tenantId: TenantId): Promise<Result<string[], DomainError>> {
+    const rows = await this.prisma.beneficiaryActivityLink.findMany({ where: { tenantId: tenantId.toString(), plannedActivityId }, select: { beneficiaryId: true } });
+    return ok(rows.map((r) => r.beneficiaryId));
+  }
+
+  async add(input: { tenantId: string; projectId: string; plannedActivityId: string; beneficiaryIds: string[]; userId: string; now: Date }): Promise<Result<number, DomainError>> {
+    const res = await this.prisma.beneficiaryActivityLink.createMany({
+      data: input.beneficiaryIds.map((beneficiaryId) => ({ id: `${input.plannedActivityId}:${beneficiaryId}`, tenantId: input.tenantId, projectId: input.projectId, plannedActivityId: input.plannedActivityId, beneficiaryId, createdById: input.userId, createdAt: input.now })),
+      skipDuplicates: true,
+    });
+    return ok(res.count);
+  }
+
+  async remove(plannedActivityId: string, beneficiaryIds: string[], tenantId: TenantId): Promise<Result<number, DomainError>> {
+    const res = await this.prisma.beneficiaryActivityLink.deleteMany({ where: { tenantId: tenantId.toString(), plannedActivityId, beneficiaryId: { in: beneficiaryIds } } });
+    return ok(res.count);
   }
 }

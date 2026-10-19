@@ -62,3 +62,8 @@ export function beneficiaryCounts(records: ReadonlyArray<{ sex: string; ageGroup
   }
   return { total: records.length, bySex, byAgeGroup };
 }
+
+/** Case codes pasted or typed in one box: separated by commas, semicolons, spaces or new lines; blanks and repeats dropped. */
+export function parseCaseCodes(text: string): string[] {
+  return [...new Set(text.split(/[\s,;]+/).map((c) => c.trim()).filter((c) => c !== ""))];
+}

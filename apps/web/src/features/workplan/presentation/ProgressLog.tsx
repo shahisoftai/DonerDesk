@@ -18,31 +18,33 @@ import type { ProgressKind } from "@donordesk/domain/contexts/workplan/index.js"
  * more. A monthly or activity-end form is filled from the entries it covers; a figure nobody recorded stays blank, never zero.
  * The breakdown fields come from the indicators the activity reports on.
  */
-export function ProgressLog({ itemId, today, activity, data, indicators, canEdit }: {
+export function ProgressLog({ itemId, today, activity, data, indicators, canEdit, uniquePeople = null }: {
   itemId: string;
   today: string;
   activity: { start: string; end: string };
   data: ProgressResponse;
   indicators: Array<{ id: string; code: string; name: string }>;
   canEdit: boolean;
+  /** People linked to the activity by case code, each once: where the activity-end "unique people" starts. */
+  uniquePeople?: number | null;
 }) {
   const router = useRouter();
   const state = useActionState();
   const hydrated = useHydrated();
   const dialog = useRef<HTMLDialogElement>(null);
   const [kind, setKind] = useState<ProgressKind>("DAILY");
-  const [draft, setDraft] = useState<ProgressDraft>(() => draftFor("DAILY", defaultKey("DAILY", today, activity), activity, data.entries, data.fields));
+  const [draft, setDraft] = useState<ProgressDraft>(() => draftFor("DAILY", defaultKey("DAILY", today, activity), activity, data.entries, data.fields, uniquePeople));
   const reached = reachedSoFar(data.entries);
 
   function open(k: ProgressKind, key: string) {
     setKind(k);
-    setDraft(draftFor(k, key, activity, data.entries, data.fields));
+    setDraft(draftFor(k, key, activity, data.entries, data.fields, uniquePeople));
     dialog.current?.showModal();
   }
 
   function change(k: ProgressKind, key: string) {
     setKind(k);
-    setDraft(draftFor(k, key, activity, data.entries, data.fields));
+    setDraft(draftFor(k, key, activity, data.entries, data.fields, uniquePeople));
   }
 
   async function save() {

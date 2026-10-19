@@ -286,6 +286,7 @@ export * from "./use-cases/workplan/beneficiary-handlers.js";
 export * from "./use-cases/workplan/submission-mapping-handlers.js";
 export * from "./use-cases/workplan/progress-handlers.js";
 export * from "./use-cases/workplan/complete-planned-activity.js";
+export * from "./use-cases/workplan/activity-people-handlers.js";
 export * from "./services/plan-link-resolver.js";
 export * from "./use-cases/workplan/start-plan-from-logframe.js";
 export * from "./use-cases/workplan/list-work-plan.js";

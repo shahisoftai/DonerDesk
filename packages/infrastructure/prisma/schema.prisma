@@ -1670,6 +1670,20 @@ model ProjectSubmissionMapping {
   @@index([tenantId])
 }
 
+/// A person (by case code) an activity reached. Counted once per activity.
+model BeneficiaryActivityLink {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  beneficiaryId     String
+  createdById       String
+  createdAt         DateTime @default(now())
+
+  @@unique([plannedActivityId, beneficiaryId])
+  @@index([tenantId, beneficiaryId])
+}
+
 model PlanRevision {
   id                String   @id
   tenantId          String

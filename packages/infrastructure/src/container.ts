@@ -109,6 +109,8 @@ import {
   PrepareProgressHandler,
   RemoveProgressHandler,
   CompletePlannedActivityHandler,
+  GetActivityPeopleHandler,
+  ChangeActivityPeopleHandler,
   GetPlanItemBudgetHandler,
   ListProjectFieldsHandler,
   GetPlanItemFieldsHandler,
@@ -370,7 +372,7 @@ import { ChecklistAssignmentSource } from "./assignment-sources/checklist-source
 import { ReportDeadlineAssignmentSource } from "./assignment-sources/report-deadline-source.js";
 import { EvidenceReviewAssignmentSource, ActivityReviewAssignmentSource, ActivityFixAssignmentSource } from "./assignment-sources/review-sources.js";
 import { PrismaPortfolioValueReader } from "./repositories/portfolio.js";
-import { PrismaProjectSubmissionMappingRepository, PrismaPlannedActivityIndicatorRepository, PrismaProgressRepository, PrismaBeneficiaryRepository, PrismaAutomationSettings, PrismaBudgetRepository, PrismaMemberCapacityRepository, PrismaPlannedActivityRepository, PrismaPlanRevisionRepository, PrismaPlanContextReader, PrismaDeliveryFactsReader, PrismaMemberDirectory, PrismaMyWeekReader, PrismaPlanDependencyRepository, PrismaProjectFieldRepository, PrismaCustomFieldValueRepository } from "./repositories/workplan.js";
+import { PrismaBeneficiaryLinkRepository, PrismaProjectSubmissionMappingRepository, PrismaPlannedActivityIndicatorRepository, PrismaProgressRepository, PrismaBeneficiaryRepository, PrismaAutomationSettings, PrismaBudgetRepository, PrismaMemberCapacityRepository, PrismaPlannedActivityRepository, PrismaPlanRevisionRepository, PrismaPlanContextReader, PrismaDeliveryFactsReader, PrismaMemberDirectory, PrismaMyWeekReader, PrismaPlanDependencyRepository, PrismaProjectFieldRepository, PrismaCustomFieldValueRepository } from "./repositories/workplan.js";
 import {
   PrismaReportingPeriodRepository,
   PrismaReportDraftRepository,
@@ -653,6 +655,8 @@ export interface Container {
     removeProgress: RemoveProgressHandler;
     completePlannedActivity: CompletePlannedActivityHandler;
     setCapacity: SetCapacityHandler;
+    getActivityPeople: GetActivityPeopleHandler;
+    changeActivityPeople: ChangeActivityPeopleHandler;
     addBudgetExpense: AddBudgetExpenseHandler;
     getPlanItemBudget: GetPlanItemBudgetHandler;
     getPlanItemFields: GetPlanItemFieldsHandler;
@@ -1255,6 +1259,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const progressLog = new PrismaProgressRepository(prisma);
   const planContext = new PrismaPlanContextReader(prisma);
   const planLinks = new PlanLinkResolver(plannedActivities);
+  const beneficiaryLinks = new PrismaBeneficiaryLinkRepository(prisma);
   const planAccess = new PlanAccess(plannedActivities);
   const planRecorder = new PlanRecorder(ids, planRevisions, audits, clock);
   // Requests (Phase 28.3): the reconciler closes the ones the records show were met, and is told after the changes that meet them.
@@ -1497,6 +1502,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     completePlannedActivity: new CompletePlannedActivityHandler(
       planAccess, periods,
       new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler),
+    getActivityPeople: new GetActivityPeopleHandler(planAccess, beneficiaryLinks, beneficiaries),
+    changeActivityPeople: new ChangeActivityPeopleHandler(planAccess, beneficiaryLinks, beneficiaries, audits, clock),
       new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock), clock),
     setCapacity: new SetCapacityHandler(memberCapacity, audits, clock),
     bulkPlanAction: new BulkPlanActionHandler(planAccess, plannedActivities, planContext,

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   AssignPlannedActivitySchema, ImportWorkPlanSchema, SetWorkPlanningVisibilitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ListWorkPlanQuerySchema,
-  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema,
+  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, ChangeActivityPeopleSchema, CompletePlannedActivitySchema,
 } from "@donordesk/contracts";
 
 /**
@@ -188,6 +188,19 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
   });
 
   app.get("/v1/work-plan/:itemId/progress/prepare", async (req) => {
+  app.get("/v1/work-plan/:itemId/people", async (req) => {
+    const r = await req.container.handlers.getActivityPeople.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/work-plan/:itemId/people", async (req) => {
+    const body = ChangeActivityPeopleSchema.parse(req.body);
+    const r = await req.container.handlers.changeActivityPeople.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
     const q = req.query as { kind?: string; key?: string };
     const kind = q.kind ?? "";
     if (!["DAILY", "WEEKLY", "MONTHLY", "END"].includes(kind)) throw new Error("Choose daily, weekly, monthly or activity end");

@@ -221,3 +221,10 @@ export const ImportSubmissionsWithMappingSchema = z.object({
   csv: z.string().min(1).max(2_000_000),
   mapping: SubmissionMappingSchema.optional(),
 }).strict();
+
+/** Add people to an activity by case code (pasted, separated by commas, spaces or new lines), or remove them by id. */
+export const ChangeActivityPeopleSchema = z.object({
+  addCaseCodes: z.string().max(20000).default(""),
+  removeIds: z.array(z.string().min(1).max(64)).max(500).default([]),
+}).strict();
+export type ChangeActivityPeopleInput = z.infer<typeof ChangeActivityPeopleSchema>;

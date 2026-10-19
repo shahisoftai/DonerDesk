@@ -20,6 +20,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "Beneficiary", field: "caseCode" },
   { model: "ProjectSubmissionMapping", field: "mappingJson" },
   { model: "ProgressEntry", field: "valuesJson" },
+  { model: "BeneficiaryActivityLink", field: "beneficiaryId" },
   { model: "PlannedActivityIndicator", field: "indicatorId" },
   { model: "ActivityUpdate", field: "plannedActivityId" },
   { model: "PlannedActivity", field: "plannedEnd" },

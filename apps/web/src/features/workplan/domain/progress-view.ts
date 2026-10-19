@@ -52,7 +52,11 @@ export function defaultKey(kind: ProgressKind, today: PlainDate, act: { start: P
 
 const blankNarrative: ProgressEntryView["narrative"] = { notes: "", summary: "", achievements: "", challenges: "", nextSteps: "", lessons: "" };
 
-export function draftFor(kind: ProgressKind, key: string, act: { start: PlainDate; end: PlainDate }, entries: ReadonlyArray<ProgressEntryView>, fields: ReadonlyArray<ProgressField>): ProgressDraft {
+export function draftFor(
+  kind: ProgressKind, key: string, act: { start: PlainDate; end: PlainDate }, entries: ReadonlyArray<ProgressEntryView>, fields: ReadonlyArray<ProgressField>,
+  /** People linked to the activity by case code, each once: the starting point for the activity-end "unique people". */
+  uniquePeople: number | null = null,
+): ProgressDraft {
   const blank = (error?: string, note = ""): ProgressDraft => ({
     key, total: "", breakdowns: Object.fromEntries(fields.map((f) => [f.key, ""])), sessions: "", unique: "", narrative: { ...blankNarrative },
     editingId: null, note, ...(error ? { error } : {}),
@@ -82,7 +86,8 @@ export function draftFor(kind: ProgressKind, key: string, act: { start: PlainDat
     : kind === "MONTHLY" ? "No daily or weekly entries cover this month yet. Enter the figures, or log the days first." : "No entries yet. Enter the whole-activity figures.";
   return {
     key, total: text(sum.total), breakdowns: Object.fromEntries(fields.map((f) => [f.key, text(sum.breakdowns[f.key] ?? null)])),
-    sessions: text(sum.sessions), unique: "", narrative: { ...blankNarrative }, editingId: null, note,
+    sessions: text(sum.sessions), unique: kind === "END" && uniquePeople ? String(uniquePeople) : "", narrative: { ...blankNarrative }, editingId: null,
+    note: kind === "END" && uniquePeople ? `${note} Unique people is the ${uniquePeople} linked to this activity by case code.` : note,
   };
 }
 

@@ -1,6 +1,6 @@
 "use server";
 
-import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema } from "@donordesk/contracts";
+import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema, ChangeActivityPeopleSchema } from "@donordesk/contracts";
 import type { ZodType } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -10,7 +10,7 @@ import type { AppError } from "@/lib/shared/app-error";
 import { idempotency, type CreateOptions } from "./_idempotency";
 import { z } from "zod";
 import { OkResponseSchema } from "./_schemas";
-import { SubmissionMappingResponseSchema, BulkPlanResultSchema, CreatedPlannedActivitiesSchema, ImportWorkPlanResponseSchema, PlanPreviewSchema, type BulkPlanResult, type ImportWorkPlanResponse, type PlanPreviewResponse } from "@/lib/server/schemas";
+import { PreviewReviewSchema, type PreviewReview, SubmissionMappingResponseSchema, BulkPlanResultSchema, CreatedPlannedActivitiesSchema, ImportWorkPlanResponseSchema, PlanPreviewReviewSchema, type BulkPlanResult, type ImportWorkPlanResponse, type PlanPreviewResponse } from "@/lib/server/schemas";
 
 const MovedResponseSchema = z.object({
   moved: z.number(),
@@ -86,7 +86,7 @@ export async function startPlanFromLogframeAction(projectId: string, input: unkn
   const context = await requireSession();
   const p = await parsed(StartPlanFromLogframeSchema, input);
   if (!p.ok) return p.result;
-  return gatewayRequest(`/v1/projects/${projectId}/work-plan/from-logframe`, PlanPreviewSchema, context.token, { method: "POST", body: p.data, ...(p.data.apply ? idempotency(options) : {}) });
+  return gatewayRequest(`/v1/projects/${projectId}/work-plan/from-logframe`, PlanPreviewReviewSchema, context.token, { method: "POST", body: p.data, ...(p.data.apply ? idempotency(options) : {}) });
 }
 
 export async function setWorkPlanningVisibilityAction(projectId: string, show: boolean): Promise<Result<true, AppError>> {
