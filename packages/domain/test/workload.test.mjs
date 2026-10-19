@@ -37,3 +37,23 @@ test("a capacity is a whole number from 1 to 30, or blank", () => {
   assert.equal(parseCapacity("2.5").ok, false);
   assert.equal(parseCapacity("31").ok, false);
 });
+
+import { PlannedActivity } from "../dist/index.js";
+
+test("load adds each open activity's effort; an unset effort counts as 1, and finished work counts nothing", () => {
+  const item = (effort, extra = {}) => ({ ownerUserId: "amina", plannedStart: "2026-10-21", plannedEnd: "2026-10-22", status: "PLANNED", ...(effort ? { effort } : {}), ...extra });
+  assert.equal(loadInWeek([item(), item(3), item(5, { status: "DONE" })], "amina", "2026-10-19"), 4, "1 + 3; the done one adds nothing");
+  const [row] = workloadGrid([item(3), item(2)], [{ userId: "amina", capacity: 4 }], ["2026-10-19"]);
+  assert.deepEqual([row.weeks[0].load, row.weeks[0].over], [5, true], "one heavy and one light activity exceed a limit of 4");
+});
+
+test("effort is a whole number from 1 to 5 on an activity", () => {
+  const make = (effort) => PlannedActivity.create({ id: "a", tenantId: "t", projectId: "p", title: "Visit", plannedStart: "2026-10-21", plannedEnd: "2026-10-21", createdById: "u", ...(effort === undefined ? {} : { effort }) });
+  assert.equal(make(undefined).ok, true);
+  assert.equal(make(3).value.snapshot().effort, 3);
+  for (const bad of [0, 6, 2.5]) assert.equal(make(bad).ok, false, `${bad} is refused`);
+  const act = make(2).value;
+  assert.equal(act.updateDetails({ effort: 5 }, { today: "2026-10-01", reportUsesIt: false }).ok, true);
+  assert.equal(act.snapshot().effort, 5);
+  assert.equal(act.updateDetails({ effort: 9 }, { today: "2026-10-01", reportUsesIt: false }).ok, false);
+});

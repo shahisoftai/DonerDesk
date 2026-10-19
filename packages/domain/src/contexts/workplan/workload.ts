@@ -23,16 +23,19 @@ export function upcomingWeeks(today: PlainDate, count = WORKLOAD_WEEKS): PlainDa
 
 export interface WorkloadItem {
   ownerUserId?: string;
+  /** 1 to 5; unset counts as 1. */
+  effort?: number;
   plannedStart: PlainDate;
   plannedEnd: PlainDate;
   status: string;
 }
 
-/** Open activities (not done, not cancelled) the person leads that overlap the week. */
+/** The weight of the open activities (not done, not cancelled) the person leads that overlap the week: each counts its effort, 1 when unset. */
 export function loadInWeek(items: ReadonlyArray<WorkloadItem>, userId: string, weekStart: PlainDate): number {
   const weekEnd = addDays(weekStart, 6);
-  return items.filter((i) => i.ownerUserId === userId && (i.status === "PLANNED" || i.status === "IN_PROGRESS")
-    && i.plannedStart <= weekEnd && i.plannedEnd >= weekStart).length;
+  return items
+    .filter((i) => i.ownerUserId === userId && (i.status === "PLANNED" || i.status === "IN_PROGRESS") && i.plannedStart <= weekEnd && i.plannedEnd >= weekStart)
+    .reduce((sum, i) => sum + (i.effort ?? 1), 0);
 }
 
 export interface WorkloadCell { weekStart: PlainDate; load: number; capacity: number | null; over: boolean }

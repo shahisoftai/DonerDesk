@@ -444,3 +444,22 @@ test("marking done can carry the day the work finished; a future day, or a day o
   await w.status.handle(PM, other, { action: "COMPLETE" });
   assert.equal(w.store.get(other).completedOn, "2026-03-20", "without a day it is today, as before");
 });
+
+import { GetWorkloadHandler } from "../dist/index.js";
+
+test("effort set when planning or changing an activity is what the workload adds up", async () => {
+  const w = world({ today: "2026-03-09" });
+  const [heavy] = (await w.create.handle(PM, "p", input({ ownerUserId: "fo", effort: 4 }))).value.ids;
+  const [light] = (await w.create.handle(PM, "p", input({ ownerUserId: "fo" }))).value.ids;
+  assert.equal(w.store.get(heavy).snapshot().effort, 4);
+  assert.equal(w.store.get(light).snapshot().effort, undefined, "unset stays unset");
+  assert.equal((await w.create.handle(PM, "p", input({ effort: 9 }))).ok, false);
+
+  const load = () => new GetWorkloadHandler({ findByProject: async () => ok([...w.store.values()]) }, { activeMemberIds: async () => ok(new Set(["pm", "fo"])) },
+    { findMany: async () => ok(new Map([["fo", 5]])) }, { now: () => new Date("2026-03-09T09:00:00Z") }).handle(PM, "p");
+  const first = (await load()).value.rows.find((r) => r.userId === "fo").weeks[0];
+  assert.deepEqual([first.load, first.over], [5, false], "4 + 1 against a limit of 5");
+  assert.equal((await w.update.handle(PM, light, { effort: 3 })).ok, true);
+  const second = (await load()).value.rows.find((r) => r.userId === "fo").weeks[0];
+  assert.deepEqual([second.load, second.over], [7, true], "4 + 3 against a limit of 5");
+});

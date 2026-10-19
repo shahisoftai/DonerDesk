@@ -23,6 +23,8 @@ export interface WorkPlanRowDto {
   outputId?: string;
   location?: string;
   targetCount?: number;
+  /** How heavy it is for its lead, 1 to 5 (1 when not set). */
+  effort: number;
   deliveredCount: number;
   completedActivities: number;
   /** "IN_PROGRESS" or "DONE" when completed activities suggest it; the person confirms. */
@@ -59,6 +61,7 @@ export function toWorkPlanRow(i: PlannedActivity, f: DeliveryFacts, today: Plain
     ...(i.ownerUserId ? { ownerUserId: i.ownerUserId } : {}), supportUserIds: [...i.supportUserIds],
     ...(i.logframeActivityId ? { logframeActivityId: i.logframeActivityId } : {}), ...(snap.outputId ? { outputId: snap.outputId } : {}),
     ...(snap.location ? { location: snap.location } : {}), ...(snap.targetCount !== undefined ? { targetCount: snap.targetCount } : {}),
+    effort: snap.effort ?? 1,
     deliveredCount: f.deliveredCount, completedActivities: f.liveRecords, ...(suggested ? { suggestedStatus: suggested } : {}),
     ...(i.seriesId ? { seriesId: i.seriesId } : {}),
     requiredFiles: [...i.requiredFiles],

@@ -25,6 +25,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "PlannedActivityIndicator", field: "indicatorId" },
   { model: "ActivityUpdate", field: "plannedActivityId" },
   { model: "PlannedActivity", field: "plannedEnd" },
+  { model: "PlannedActivity", field: "effort" },
   { model: "PlannedActivity", field: "ownerUserId" },
   { model: "PlannedActivity", field: "originalEnd" },
   { model: "Project", field: "showWorkPlanning" },

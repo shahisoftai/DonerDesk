@@ -19,7 +19,7 @@ export class GetWorkloadHandler {
     if (!items.ok) return items;
     const weeks = upcomingWeeks(toPlainDate(this.clock.now())!);
     const rows = workloadGrid(
-      items.value.map((i) => { const s = i.snapshot(); return { ownerUserId: s.ownerUserId, plannedStart: s.plannedStart, plannedEnd: s.plannedEnd, status: s.status }; }),
+      items.value.map((i) => { const s = i.snapshot(); return { ownerUserId: s.ownerUserId, effort: s.effort, plannedStart: s.plannedStart, plannedEnd: s.plannedEnd, status: s.status }; }),
       ids.map((id) => ({ userId: id, capacity: caps.value.get(id) ?? null })),
       weeks,
     );

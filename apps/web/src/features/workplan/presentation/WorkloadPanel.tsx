@@ -30,7 +30,7 @@ export function WorkloadPanel({ data, names, today, canManage }: { data: Workloa
   return (
     <section aria-labelledby="workload-title" className="space-y-3">
       <h3 id="workload-title" className="text-base font-semibold">Workload by week</h3>
-      <p className="text-sm text-slate-600 dark:text-slate-300">Open planned activities each person leads, counted per week. A limit is optional; over it is flagged in words.</p>
+      <p className="text-sm text-slate-600 dark:text-slate-300">Open planned activities each person leads, per week, each counted by its effort (1 to 5; a normal activity is 1). A limit is optional; over it is flagged in words.</p>
       {state.error && <p role="alert" className="text-sm text-danger-600">{state.error}</p>}
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">

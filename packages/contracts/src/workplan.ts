@@ -11,6 +11,7 @@ export const PlanRepeatsSchema = z.object({
 const targets = {
   targetParticipants: z.number().int().positive().optional(),
   targetCount: z.number().int().positive().optional(),
+  effort: z.number().int().min(1).max(5).optional(),
 };
 
 export const CreatePlannedActivitySchema = z.object({
@@ -37,6 +38,7 @@ export const UpdatePlannedActivitySchema = z.object({
   logframeActivityId: z.string().min(1).nullable().optional(),
   targetParticipants: z.number().int().positive().nullable().optional(),
   targetCount: z.number().int().positive().nullable().optional(),
+  effort: z.number().int().min(1).max(5).optional(),
   requiredFiles: z.array(z.string().min(1)).max(5).optional(),
   reason: z.string().max(1000).optional(),
 });

@@ -61,6 +61,7 @@ export class CreatePlannedActivityHandler {
         ...(outputId ? { outputId } : {}),
         ...(input.targetParticipants !== undefined ? { targetParticipants: input.targetParticipants } : {}),
         ...(input.targetCount !== undefined ? { targetCount: input.targetCount } : {}),
+        ...(input.effort !== undefined ? { effort: input.effort } : {}),
         ...(seriesId ? { seriesId } : {}), ...(recurrence ? { recurrence } : {}),
       });
       if (!created.ok) return created;

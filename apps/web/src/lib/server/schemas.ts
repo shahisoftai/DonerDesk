@@ -1278,6 +1278,8 @@ export const WorkPlanRowSchema = z.object({
   outputId: z.string().optional(),
   location: z.string().optional(),
   targetCount: z.number().optional(),
+  /** How heavy it is for its lead, 1 to 5. */
+  effort: z.number().default(1),
   deliveredCount: z.number(),
   completedActivities: z.number(),
   suggestedStatus: z.enum(["IN_PROGRESS", "DONE"]).optional(),

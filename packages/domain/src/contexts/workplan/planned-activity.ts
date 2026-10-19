@@ -19,6 +19,10 @@ import type { EvidenceType } from "../evidence/evidence-file.js";
 
 export type PlannedActivityKind = "ACTIVITY" | "MILESTONE";
 
+/** Effort is a weight for the workload: 1 is a normal activity, 5 takes most of a person's week. */
+export const MIN_EFFORT = 1;
+export const MAX_EFFORT = 5;
+
 export interface PlannedActivityDetails {
   title: string;
   description: string;
@@ -29,6 +33,8 @@ export interface PlannedActivityDetails {
   targetParticipants?: number;
   /** Planned number of sessions or visits for an activity that spans several days. */
   targetCount?: number;
+  /** How heavy the activity is for the person who leads it, 1 (light) to 5 (heavy). Unset means 1. The workload adds these up. */
+  effort?: number;
 }
 
 export interface PlannedActivityProps extends PlannedActivityDetails {
@@ -73,6 +79,9 @@ export interface ChangeContext {
 
 function validateDetails(d: Partial<PlannedActivityDetails>): Result<void> {
   if (d.title !== undefined && !d.title.trim()) return err(DomainError.validation("Give the activity a title"));
+  if (d.effort !== undefined && (!Number.isInteger(d.effort) || d.effort < MIN_EFFORT || d.effort > MAX_EFFORT)) {
+    return err(DomainError.validation(`Effort must be a whole number from ${MIN_EFFORT} to ${MAX_EFFORT}`, { field: "effort" }));
+  }
   for (const [key, label] of [["targetParticipants", "People expected"], ["targetCount", "Number of sessions"]] as const) {
     const v = d[key];
     if (v !== undefined && (!Number.isInteger(v) || v < 1)) return err(DomainError.validation(`${label} must be a whole number of 1 or more, or left blank`));
@@ -121,6 +130,7 @@ export class PlannedActivity extends Entity<string> {
         ...(input.outputId ? { outputId: input.outputId } : {}),
         ...(input.targetParticipants !== undefined ? { targetParticipants: input.targetParticipants } : {}),
         ...(input.targetCount !== undefined ? { targetCount: input.targetCount } : {}),
+        ...(input.effort !== undefined ? { effort: input.effort } : {}),
         ...(input.people?.ownerUserId ? { ownerUserId: input.people.ownerUserId } : {}),
         supportUserIds: [...(input.people?.supportUserIds ?? [])],
         requiredFiles: files.value,

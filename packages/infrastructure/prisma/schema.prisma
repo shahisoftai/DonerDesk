@@ -1479,6 +1479,8 @@ model PlannedActivity {
   originalEnd        DateTime  @db.Date
   targetParticipants Int?
   targetCount        Int?
+  /// How heavy the activity is for its lead, 1 to 5. The workload view adds these up.
+  effort             Int      @default(1)
   status             String    @default("PLANNED")
   statusReason       String?
   seriesId           String?
