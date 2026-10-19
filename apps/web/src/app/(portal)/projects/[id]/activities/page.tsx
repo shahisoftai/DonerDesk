@@ -76,7 +76,7 @@ function ActivitiesSwitch({ projectId, current }: { projectId: string; current: 
       {label}
     </Link>
   );
-  return <nav aria-label="Activities" className="mb-4 flex gap-2">{tab("planned", WORKPLAN_COPY.tabPlanned)}{tab("completed", WORKPLAN_COPY.tabCompleted)}</nav>;
+  return <nav aria-label="Activities" className="mb-4 flex flex-wrap items-center gap-2">{tab("planned", WORKPLAN_COPY.tabPlanned)}{tab("completed", WORKPLAN_COPY.tabCompleted)}<Link className="ml-auto text-sm text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${projectId}/beneficiaries`}>People reached</Link></nav>;
 }
 
 async function PlannedActivitiesView({ projectId }: { projectId: string }) {

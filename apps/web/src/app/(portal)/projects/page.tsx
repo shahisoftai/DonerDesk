@@ -65,7 +65,7 @@ export default async function ProjectsList({
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Projects</h1>
         <PermissionGate capabilities={ctx.capabilities} capability="project.create">
-          <Link className="btn" href="/projects/new">New project</Link>
+          <div className="flex gap-2"><Link className="btn-secondary" href="/portfolio/indicators">Indicators across projects</Link><Link className="btn" href="/projects/new">New project</Link></div>
         </PermissionGate>
       </header>
 
