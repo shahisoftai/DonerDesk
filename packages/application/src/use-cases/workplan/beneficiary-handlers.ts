@@ -1,7 +1,7 @@
-import { DomainError, Permissions, checkBeneficiary, duplicateCheck, beneficiaryCounts, parseSubmissions, err, ok, type Result, type Role } from "@donordesk/domain";
+import { DomainError, Permissions, checkBeneficiary, duplicateCheck, beneficiaryCounts, parseSubmissions, err, ok, type Result, type Role, type SubmissionMapping } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
-import type { BeneficiaryRecord, IBeneficiaryRepository, IPlanContextReader } from "../../ports/workplan.js";
+import type { BeneficiaryRecord, IBeneficiaryRepository, IPlanContextReader, IProjectSubmissionMappingRepository } from "../../ports/workplan.js";
 
 /** Only people on the project (or an admin) see or add its beneficiaries. */
 export async function onProject(ctx: AuthenticatedContext, context: IPlanContextReader, projectId: string): Promise<Result<void, DomainError>> {
@@ -55,13 +55,23 @@ export class ListBeneficiariesHandler {
  * refuses the whole file and names the line. Nothing is saved unless every row is right.
  */
 export class ImportSubmissionsHandler {
-  constructor(private readonly repo: IBeneficiaryRepository, private readonly context: IPlanContextReader, private readonly ids: IIdGenerator, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+  constructor(
+    private readonly repo: IBeneficiaryRepository, private readonly context: IPlanContextReader, private readonly ids: IIdGenerator, private readonly audit: IAuditLogger, private readonly clock: IClock,
+    private readonly mappings?: IProjectSubmissionMappingRepository,
+  ) {}
 
-  async handle(ctx: AuthenticatedContext, projectId: string, csv: string): Promise<Result<{ added: number }, DomainError>> {
+  /** `mapping` overrides the project's saved mapping for this file; without either, the headers are matched by name. */
+  async handle(ctx: AuthenticatedContext, projectId: string, csv: string, mapping?: SubmissionMapping): Promise<Result<{ added: number }, DomainError>> {
     if (!Permissions.can(ctx.tenant.role as Role, "activity.create")) return err(DomainError.forbidden("You cannot add people to this project"));
     const member = await onProject(ctx, this.context, projectId);
     if (!member.ok) return member;
-    const parsed = parseSubmissions(csv);
+    let chosen = mapping;
+    if (!chosen && this.mappings) {
+      const saved = await this.mappings.find(projectId, ctx.tenant.tenantId);
+      if (!saved.ok) return saved;
+      chosen = (saved.value ?? undefined) as SubmissionMapping | undefined;
+    }
+    const parsed = parseSubmissions(csv, chosen);
     if (!parsed.ok) return parsed;
     if (parsed.value.problems.length > 0) {
       const shown = parsed.value.problems.slice(0, 5).map((p) => p.message).join(". ");

@@ -205,3 +205,17 @@ export const CompletePlannedActivitySchema = z.object({
   note: z.string().max(5000).optional(),
 }).strict();
 export type CompletePlannedActivityInput = z.infer<typeof CompletePlannedActivitySchema>;
+
+/** The column for each import field, as the file names it (phase 28.1-I). Required fields must be set. */
+export const SubmissionMappingSchema = z.object({
+  case_code: z.string().min(1).max(200).optional(),
+  sex: z.string().min(1).max(200).optional(),
+  age_group: z.string().min(1).max(200).optional(),
+  location: z.string().min(1).max(200).optional(),
+  date: z.string().min(1).max(200).optional(),
+  consent: z.string().min(1).max(200).optional(),
+}).strict();
+export const ImportSubmissionsWithMappingSchema = z.object({
+  csv: z.string().min(1).max(2_000_000),
+  mapping: SubmissionMappingSchema.optional(),
+}).strict();

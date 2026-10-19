@@ -101,6 +101,8 @@ import {
   RegisterBeneficiaryHandler,
   ListBeneficiariesHandler,
   ImportSubmissionsHandler,
+  GetSubmissionMappingHandler,
+  SaveSubmissionMappingHandler,
   SetPlanIndicatorsHandler,
   GetProgressHandler,
   SaveProgressHandler,
@@ -368,7 +370,7 @@ import { ChecklistAssignmentSource } from "./assignment-sources/checklist-source
 import { ReportDeadlineAssignmentSource } from "./assignment-sources/report-deadline-source.js";
 import { EvidenceReviewAssignmentSource, ActivityReviewAssignmentSource, ActivityFixAssignmentSource } from "./assignment-sources/review-sources.js";
 import { PrismaPortfolioValueReader } from "./repositories/portfolio.js";
-import { PrismaPlannedActivityIndicatorRepository, PrismaProgressRepository, PrismaBeneficiaryRepository, PrismaAutomationSettings, PrismaBudgetRepository, PrismaMemberCapacityRepository, PrismaPlannedActivityRepository, PrismaPlanRevisionRepository, PrismaPlanContextReader, PrismaDeliveryFactsReader, PrismaMemberDirectory, PrismaMyWeekReader, PrismaPlanDependencyRepository, PrismaProjectFieldRepository, PrismaCustomFieldValueRepository } from "./repositories/workplan.js";
+import { PrismaProjectSubmissionMappingRepository, PrismaPlannedActivityIndicatorRepository, PrismaProgressRepository, PrismaBeneficiaryRepository, PrismaAutomationSettings, PrismaBudgetRepository, PrismaMemberCapacityRepository, PrismaPlannedActivityRepository, PrismaPlanRevisionRepository, PrismaPlanContextReader, PrismaDeliveryFactsReader, PrismaMemberDirectory, PrismaMyWeekReader, PrismaPlanDependencyRepository, PrismaProjectFieldRepository, PrismaCustomFieldValueRepository } from "./repositories/workplan.js";
 import {
   PrismaReportingPeriodRepository,
   PrismaReportDraftRepository,
@@ -642,6 +644,8 @@ export interface Container {
     registerBeneficiary: RegisterBeneficiaryHandler;
     listBeneficiaries: ListBeneficiariesHandler;
     importSubmissions: ImportSubmissionsHandler;
+    getSubmissionMapping: GetSubmissionMappingHandler;
+    saveSubmissionMapping: SaveSubmissionMappingHandler;
     setPlanIndicators: SetPlanIndicatorsHandler;
     getProgress: GetProgressHandler;
     saveProgress: SaveProgressHandler;
@@ -1246,6 +1250,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const memberCapacity = new PrismaMemberCapacityRepository(prisma);
   const automationSettings = new PrismaAutomationSettings(prisma);
   const beneficiaries = new PrismaBeneficiaryRepository(prisma);
+  const submissionMappings = new PrismaProjectSubmissionMappingRepository(prisma);
   const activityIndicators = new PrismaPlannedActivityIndicatorRepository(prisma);
   const progressLog = new PrismaProgressRepository(prisma);
   const planContext = new PrismaPlanContextReader(prisma);
@@ -1481,7 +1486,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listAutomationRules: new ListAutomationRulesHandler(automationSettings),
     registerBeneficiary: new RegisterBeneficiaryHandler(beneficiaries, planContext, ids, audits, clock),
     listBeneficiaries: new ListBeneficiariesHandler(beneficiaries, planContext),
-    importSubmissions: new ImportSubmissionsHandler(beneficiaries, planContext, ids, audits, clock),
+    importSubmissions: new ImportSubmissionsHandler(beneficiaries, planContext, ids, audits, clock, submissionMappings),
+    getSubmissionMapping: new GetSubmissionMappingHandler(submissionMappings),
+    saveSubmissionMapping: new SaveSubmissionMappingHandler(submissionMappings, audits, clock),
     setPlanIndicators: new SetPlanIndicatorsHandler(planAccess, activityIndicators, indicators, audits, clock),
     getProgress: new GetProgressHandler(planAccess, progressLog, activityIndicators, indicators),
     prepareProgress: new PrepareProgressHandler(planAccess, progressLog, activityIndicators, indicators),

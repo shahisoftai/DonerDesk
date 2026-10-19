@@ -1,9 +1,10 @@
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { BeneficiariesResponseSchema } from "@/lib/server/schemas";
+import { BeneficiariesResponseSchema, SubmissionMappingResponseSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
 import { BeneficiaryForm } from "@/features/workplan/presentation/BeneficiaryForm";
 import { SubmissionImport } from "@/features/workplan/presentation/SubmissionImport";
+import { hasCapability } from "@/lib/server/auth-context";
 import { BENEFICIARY_AGE_LABEL, BENEFICIARY_SEX_LABEL } from "@donordesk/domain/contexts/workplan/index.js";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export default async function BeneficiariesPage({ params }: { params: Promise<{ 
   const res = await gatewayRequest(`/v1/projects/${id}/beneficiaries`, BeneficiariesResponseSchema, ctx.token);
   if (!res.ok) return <InlineError title={res.error.message} referenceId={res.error.referenceId} />;
   const today = new Date().toISOString().slice(0, 10);
+  const saved = await gatewayRequest(`/v1/projects/${id}/submission-mapping`, SubmissionMappingResponseSchema, ctx.token);
   const { items, counts } = res.value;
   return (
     <div className="animate-fade-in space-y-6">
@@ -40,7 +42,7 @@ export default async function BeneficiariesPage({ params }: { params: Promise<{ 
         {items.length === 0 && <p className="py-4 text-sm text-slate-500">No one added yet.</p>}
       </div>
       <BeneficiaryForm projectId={id} today={today} />
-      <SubmissionImport projectId={id} />
+      <SubmissionImport projectId={id} savedMapping={saved.ok ? saved.value.mapping : null} canManage={hasCapability(ctx, "workplan.manage")} />
     </div>
   );
 }

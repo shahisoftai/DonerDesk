@@ -208,3 +208,9 @@ export interface IProgressRepository {
   /** Removes an entry and releases the entries it had absorbed, in one transaction. */
   remove(id: string, plannedActivityId: string, tenantId: TenantId): Promise<Result<boolean>>;
 }
+
+/** The column mapping a project saves for KoboToolbox/ODK imports (phase 28.1-I). */
+export interface IProjectSubmissionMappingRepository {
+  find(projectId: string, tenantId: TenantId): Promise<Result<Record<string, string> | null>>;
+  save(projectId: string, mapping: Record<string, string>, by: { userId: string; now: Date }, tenantId: TenantId): Promise<Result<void>>;
+}

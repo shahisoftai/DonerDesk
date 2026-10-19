@@ -28,3 +28,22 @@ test("a file without the needed columns is refused, and an empty file is refused
   assert.equal(parseSubmissions("name,age\nAmina,4").ok, false);
   assert.equal(parseSubmissions("case_code,sex,age_group,date,consent").ok, false, "no submissions");
 });
+
+import { suggestSubmissionMapping, checkSubmissionMapping, submissionHeaders } from "../dist/index.js";
+
+test("a saved mapping reads a file whose columns are named differently", () => {
+  const text = ["Form/Case ID,Gender,Age band,Ward,Visit date,Agreed", "NG-7,F,under 5,Ward 3,2026-10-14,yes"].join("\n");
+  const headers = submissionHeaders(text);
+  const mapping = { case_code: "Form/Case ID", sex: "Gender", age_group: "Age band", location: "Ward", date: "Visit date", consent: "Agreed" };
+  const res = parseSubmissions(text, mapping);
+  assert.equal(res.ok, true, res.error?.message);
+  assert.deepEqual([res.value.rows[0].caseCode, res.value.rows[0].sex, res.value.rows[0].ageGroup], ["NG-7", "FEMALE", "UNDER_5"]);
+  assert.deepEqual(suggestSubmissionMapping(headers), {});
+});
+
+test("a suggestion finds exact field names; a mapping missing a required field or naming an absent column is refused", () => {
+  const headers = ["group/case_code", "sex", "age_group", "date", "consent"];
+  assert.equal(suggestSubmissionMapping(headers).case_code, "group/case_code");
+  assert.equal(checkSubmissionMapping({ case_code: "x" }, headers).ok, false);
+  assert.equal(checkSubmissionMapping({ case_code: "nope", sex: "sex", age_group: "age_group", date: "date", consent: "consent" }, headers).ok, false);
+});

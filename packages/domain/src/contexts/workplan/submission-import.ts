@@ -37,14 +37,57 @@ const NO = new Set(["no", "false", "0", "n", ""]);
 /** The export's group prefix ("group_intro/case_code" → "case_code"). */
 const baseName = (header: string): string => (header.split("/").pop() ?? header).trim().toLowerCase().replace(/[\s-]+/g, "_");
 
-export function parseSubmissions(text: string): Result<{ rows: SubmissionRow[]; problems: SubmissionProblem[] }> {
+/** The fields the import needs, and the column in the file each one is read from (the file's own header, as written). */
+export const SUBMISSION_FIELDS = ["case_code", "sex", "age_group", "location", "date", "consent"] as const;
+export type SubmissionField = (typeof SUBMISSION_FIELDS)[number];
+export const REQUIRED_SUBMISSION_FIELDS: ReadonlyArray<SubmissionField> = ["case_code", "sex", "age_group", "date", "consent"];
+export type SubmissionMapping = Partial<Record<SubmissionField, string>>;
+
+/** The file's column headers, read the same way the parser reads them. */
+export function submissionHeaders(text: string): string[] {
+  const first = text.split(/\r?\n/).find((l) => l.trim() !== "") ?? "";
+  return splitDelimited(first, ",").map((h) => h.trim()).filter((h) => h !== "");
+}
+
+/**
+ * A starting mapping from the file's headers: each field takes the header whose normalised name matches it (case, spaces, dashes
+ * and group prefixes ignored). A person checks it before importing; nothing is saved from a suggestion alone.
+ */
+export function suggestSubmissionMapping(headers: ReadonlyArray<string>): SubmissionMapping {
+  const norm = (h: string) => baseName(h);
+  const mapping: SubmissionMapping = {};
+  for (const field of SUBMISSION_FIELDS) {
+    const hit = headers.find((h) => norm(h) === field);
+    if (hit) mapping[field] = hit;
+  }
+  return mapping;
+}
+
+/** Refuses a mapping that leaves a required field unset or points at a header the file does not have. */
+export function checkSubmissionMapping(mapping: SubmissionMapping, headers: ReadonlyArray<string>): Result<SubmissionMapping> {
+  for (const field of REQUIRED_SUBMISSION_FIELDS) {
+    const header = mapping[field];
+    if (!header) return err(DomainError.validation(`Choose the column for ${field.replace(/_/g, " ")}`, { field }));
+    if (!headers.includes(header)) return err(DomainError.validation(`The column ${header} is not in this file`, { field }));
+  }
+  for (const field of SUBMISSION_FIELDS) {
+    const header = mapping[field];
+    if (header !== undefined && !headers.includes(header)) return err(DomainError.validation(`The column ${header} is not in this file`, { field }));
+  }
+  return ok(mapping);
+}
+
+export function parseSubmissions(text: string, mapping?: SubmissionMapping): Result<{ rows: SubmissionRow[]; problems: SubmissionProblem[] }> {
   const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
   if (lines.length < 2) return err(DomainError.validation("The file has no submissions to import"));
-  const headers = splitDelimited(lines[0]!, ",").map(baseName);
-  const col = (name: string) => headers.indexOf(name);
-  for (const required of ["case_code", "sex", "age_group", "date", "consent"]) {
-    if (col(required) < 0) return err(DomainError.validation(`The file needs a column named ${required}`, { field: required }));
-  }
+  const rawHeaders = splitDelimited(lines[0]!, ",").map((h) => h.trim()).filter((h) => h !== "");
+  const headers = rawHeaders.map(baseName);
+  const chosen = mapping ?? suggestSubmissionMapping(rawHeaders);
+  const checked = checkSubmissionMapping(chosen, rawHeaders);
+  if (!checked.ok) return checked;
+  // Column positions in the file, by the field each one is mapped to.
+  const at = (field: SubmissionField) => (chosen[field] !== undefined ? rawHeaders.indexOf(chosen[field]!) : -1);
+  const col = (name: string) => (SUBMISSION_FIELDS.includes(name as SubmissionField) ? at(name as SubmissionField) : headers.indexOf(name));
   const rows: SubmissionRow[] = [];
   const problems: SubmissionProblem[] = [];
   lines.slice(1).forEach((raw, i) => {

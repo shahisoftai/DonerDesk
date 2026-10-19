@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { PlannedActivity, ok, type AutomationRuleKey, type DeliveryFacts, type PlainDate, type PlanChangeSet, type PlanRevision, type PlanStatus, type RecurrenceRule, type Result, type TenantId, DomainError, toPlainDate } from "@donordesk/domain";
-import type { IMyWeekReader, MyWeekSentBack, IMemberDirectory, IDeliveryFactsReader, IPlanContextReader, IPlannedActivityRepository, IPlanRevisionRepository, IPlanDependencyRepository, PlanDependencyRecord, IProjectFieldRepository, ICustomFieldValueRepository, ProjectFieldRecord, IBudgetRepository, BudgetLineRecord, BudgetExpenseRecord, IMemberCapacityRepository, IAutomationSettings, IBeneficiaryRepository, BeneficiaryRecord, IPlannedActivityIndicatorRepository, IProgressRepository, ProgressEntryRecord } from "@donordesk/application";
+import type { IMyWeekReader, MyWeekSentBack, IMemberDirectory, IDeliveryFactsReader, IPlanContextReader, IPlannedActivityRepository, IPlanRevisionRepository, IPlanDependencyRepository, PlanDependencyRecord, IProjectFieldRepository, ICustomFieldValueRepository, ProjectFieldRecord, IBudgetRepository, BudgetLineRecord, BudgetExpenseRecord, IMemberCapacityRepository, IAutomationSettings, IBeneficiaryRepository, BeneficiaryRecord, IProjectSubmissionMappingRepository, IPlannedActivityIndicatorRepository, IProgressRepository, ProgressEntryRecord } from "@donordesk/application";
 import { enabledFrom } from "@donordesk/application";
 
 /** Plan dates are stored as DATE: always a UTC midnight Date in, a "YYYY-MM-DD" out. */
@@ -525,5 +525,25 @@ export class PrismaProgressRepository implements IProgressRepository {
       this.prisma.progressEntry.deleteMany({ where: { id, tenantId: tenant, plannedActivityId } }),
     ]);
     return ok(deleted.count > 0);
+  }
+}
+
+/** The column mapping a project saves for imports (phase 28.1-I). One per project. */
+export class PrismaProjectSubmissionMappingRepository implements IProjectSubmissionMappingRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async find(projectId: string, tenantId: TenantId): Promise<Result<Record<string, string> | null, DomainError>> {
+    const row = await this.prisma.projectSubmissionMapping.findFirst({ where: { tenantId: tenantId.toString(), projectId } });
+    return ok(row ? (JSON.parse(row.mappingJson) as Record<string, string>) : null);
+  }
+
+  async save(projectId: string, mapping: Record<string, string>, by: { userId: string; now: Date }, tenantId: TenantId): Promise<Result<void, DomainError>> {
+    const tenant = tenantId.toString();
+    await this.prisma.projectSubmissionMapping.upsert({
+      where: { projectId },
+      create: { id: `${tenant}:${projectId}:submission-mapping`, tenantId: tenant, projectId, mappingJson: JSON.stringify(mapping), updatedById: by.userId, updatedAt: by.now },
+      update: { mappingJson: JSON.stringify(mapping), updatedById: by.userId, updatedAt: by.now },
+    });
+    return ok(undefined);
   }
 }

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   AssignPlannedActivitySchema, ImportWorkPlanSchema, SetWorkPlanningVisibilitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ListWorkPlanQuerySchema,
-  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema,
+  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema,
 } from "@donordesk/contracts";
 
 /**
@@ -147,9 +147,22 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.get("/v1/projects/:projectId/submission-mapping", async (req) => {
+    const r = await req.container.handlers.getSubmissionMapping.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/projects/:projectId/submission-mapping", async (req) => {
+    const body = SubmissionMappingSchema.parse(req.body);
+    const r = await req.container.handlers.saveSubmissionMapping.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"), body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
   app.post("/v1/projects/:projectId/beneficiaries/import", async (req) => {
-    const body = ImportSubmissionsSchema.parse(req.body);
-    const r = await req.container.handlers.importSubmissions.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"), body.csv);
+    const body = ImportSubmissionsWithMappingSchema.parse(req.body);
+    const r = await req.container.handlers.importSubmissions.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"), body.csv, body.mapping);
     if (!r.ok) throw r.error;
     return r.value;
   });

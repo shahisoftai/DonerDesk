@@ -1658,6 +1658,18 @@ model ProgressEntry {
   @@index([tenantId, plannedActivityId])
 }
 
+/// The column mapping a project saves for KoboToolbox/ODK imports (field name -> the file's column header).
+model ProjectSubmissionMapping {
+  id          String   @id
+  tenantId    String
+  projectId   String   @unique
+  mappingJson String
+  updatedById String
+  updatedAt   DateTime
+
+  @@index([tenantId])
+}
+
 model PlanRevision {
   id                String   @id
   tenantId          String

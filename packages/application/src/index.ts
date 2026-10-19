@@ -283,6 +283,7 @@ export * from "./use-cases/workplan/bulk-plan-action.js";
 export * from "./use-cases/workplan/workload-handlers.js";
 export * from "./use-cases/workplan/run-automations.js";
 export * from "./use-cases/workplan/beneficiary-handlers.js";
+export * from "./use-cases/workplan/submission-mapping-handlers.js";
 export * from "./use-cases/workplan/progress-handlers.js";
 export * from "./use-cases/workplan/complete-planned-activity.js";
 export * from "./services/plan-link-resolver.js";

@@ -1,6 +1,6 @@
 "use server";
 
-import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema } from "@donordesk/contracts";
+import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema } from "@donordesk/contracts";
 import type { ZodType } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -10,7 +10,7 @@ import type { AppError } from "@/lib/shared/app-error";
 import { idempotency, type CreateOptions } from "./_idempotency";
 import { z } from "zod";
 import { OkResponseSchema } from "./_schemas";
-import { BulkPlanResultSchema, CreatedPlannedActivitiesSchema, ImportWorkPlanResponseSchema, PlanPreviewSchema, type BulkPlanResult, type ImportWorkPlanResponse, type PlanPreviewResponse } from "@/lib/server/schemas";
+import { SubmissionMappingResponseSchema, BulkPlanResultSchema, CreatedPlannedActivitiesSchema, ImportWorkPlanResponseSchema, PlanPreviewSchema, type BulkPlanResult, type ImportWorkPlanResponse, type PlanPreviewResponse } from "@/lib/server/schemas";
 
 const MovedResponseSchema = z.object({
   moved: z.number(),
@@ -188,9 +188,9 @@ export async function registerBeneficiaryAction(projectId: string, input: unknow
 const ImportedSchema = z.object({ added: z.number() });
 
 /** Adds the people in a KoboToolbox or ODK export (CSV text). Refused as a whole when any row is wrong. */
-export async function importSubmissionsAction(projectId: string, csv: string): Promise<Result<{ added: number }, AppError>> {
+export async function importSubmissionsAction(projectId: string, csv: string, mapping?: Record<string, string>): Promise<Result<{ added: number }, AppError>> {
   const context = await requireSession();
-  const p = await parsed(ImportSubmissionsSchema, { csv });
+  const p = await parsed(ImportSubmissionsWithMappingSchema, { csv, ...(mapping ? { mapping } : {}) });
   if (!p.ok) return p.result;
   return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/beneficiaries/import`, ImportedSchema, context.token, { method: "POST", body: p.data });
 }
@@ -227,4 +227,19 @@ export async function completePlannedActivityAction(itemId: string, input: unkno
   const p = await parsed(CompletePlannedActivitySchema, input);
   if (!p.ok) return p.result;
   return gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/complete`, z.object({ activityId: z.string() }), context.token, { method: "POST", body: p.data });
+}
+
+/** The column mapping saved for this project's imports, or none. */
+export async function getSubmissionMappingAction(projectId: string): Promise<Result<{ mapping: Record<string, string> | null }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/submission-mapping`, SubmissionMappingResponseSchema, context.token);
+}
+
+/** Saves the column mapping for this project's imports. Managers only. */
+export async function saveSubmissionMappingAction(projectId: string, mapping: Record<string, string>): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(SubmissionMappingSchema, mapping);
+  if (!p.ok) return p.result;
+  const r = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/submission-mapping`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
+  return r.ok ? { ok: true, value: true } : r;
 }

@@ -1522,3 +1522,6 @@ export const PrepareProgressResponseSchema = z.object({
   sources: z.number(),
 });
 export type PrepareProgressResponse = z.infer<typeof PrepareProgressResponseSchema>;
+
+/** The saved column mapping of a project, or none (phase 28.1-I). */
+export const SubmissionMappingResponseSchema = z.object({ mapping: z.record(z.string(), z.string()).nullable() });
