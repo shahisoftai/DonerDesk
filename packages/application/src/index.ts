@@ -283,6 +283,7 @@ export * from "./use-cases/workplan/budget-handlers.js";
 export * from "./use-cases/workplan/bulk-plan-action.js";
 export * from "./use-cases/workplan/workload-handlers.js";
 export * from "./use-cases/workplan/run-automations.js";
+export * from "./use-cases/workplan/automation-settings-handlers.js";
 export * from "./use-cases/workplan/beneficiary-handlers.js";
 export * from "./use-cases/workplan/submission-mapping-handlers.js";
 export * from "./use-cases/workplan/submission-review-handler.js";

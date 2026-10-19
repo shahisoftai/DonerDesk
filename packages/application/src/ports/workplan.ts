@@ -245,3 +245,17 @@ export interface IBeneficiaryLinkRepository {
   add(input: { tenantId: string; projectId: string; plannedActivityId: string; beneficiaryIds: string[]; userId: string; now: Date }): Promise<Result<number>>;
   remove(plannedActivityId: string, beneficiaryIds: string[], tenantId: TenantId): Promise<Result<number>>;
 }
+
+/** The numbers a project has set for its automation rules (phase 28.1-K). A rule with none stored runs on its defaults. */
+export interface IAutomationRuleSettings {
+  storedSettings(projectId: string, tenantId: TenantId): Promise<Result<Record<string, Record<string, number>>>>;
+  setSettings(projectId: string, ruleKey: AutomationRuleKey, values: Record<string, number>, by: { userId: string; now: Date }, tenantId: TenantId): Promise<Result<void>>;
+}
+
+/** One automation notice that was sent: when, by which rule, about which activity, to whom. */
+export interface AutomationHistoryRow { sentOn: string; ruleKey: string; itemId: string; recipientId: string }
+
+/** What the automations sent for a project, newest first. */
+export interface IAutomationHistory {
+  recent(projectId: string, tenantId: TenantId, limit: number): Promise<Result<AutomationHistoryRow[]>>;
+}

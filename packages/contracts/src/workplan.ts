@@ -239,6 +239,10 @@ export const ChangeActivityPeopleSchema = z.object({
 }).strict();
 export type ChangeActivityPeopleInput = z.infer<typeof ChangeActivityPeopleSchema>;
 
+/** The numbers for one automation rule, by name. Each is checked against the rule's own range on the server. */
+export const SetAutomationRuleSettingsSchema = z.object({ values: z.record(z.string().min(1).max(40), z.number()) }).strict();
+export type SetAutomationRuleSettingsInput = z.infer<typeof SetAutomationRuleSettingsSchema>;
+
 /** Days after a period ends that a project's indicator values are due. Checked again on the server (whole number, 0 to 60). */
 export const SetEntryDueDaysSchema = z.object({ days: z.number() }).strict();
 export type SetEntryDueDaysInput = z.infer<typeof SetEntryDueDaysSchema>;

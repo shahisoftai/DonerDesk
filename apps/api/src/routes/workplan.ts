@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   AssignPlannedActivitySchema, ImportWorkPlanSchema, SetWorkPlanningVisibilitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ListWorkPlanQuerySchema,
-  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, UndoBulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, ChangeActivityPeopleSchema, CompletePlannedActivitySchema,
+  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, UndoBulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, SetAutomationRuleSettingsSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, ChangeActivityPeopleSchema, CompletePlannedActivitySchema,
 } from "@donordesk/contracts";
 
 /**
@@ -144,6 +144,19 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
 
   app.get("/v1/projects/:projectId/automations", async (req) => {
     const r = await req.container.handlers.listAutomationRules.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.put("/v1/projects/:projectId/automations/:ruleKey/settings", async (req) => {
+    const body = SetAutomationRuleSettingsSchema.parse(req.body);
+    const r = await req.container.handlers.setAutomationRuleSettings.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"), idOf(req, "ruleKey"), body.values);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/automation-history", async (req) => {
+    const r = await req.container.handlers.getAutomationHistory.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
     if (!r.ok) throw r.error;
     return { items: r.value };
   });

@@ -1597,6 +1597,8 @@ model ProjectAutomation {
   projectId   String
   ruleKey     String
   enabled     Boolean
+  /// The numbers the project set for this rule, as JSON (name -> whole number). Null means the rule's defaults.
+  settingsJson String?
   updatedById String
   updatedAt   DateTime
 

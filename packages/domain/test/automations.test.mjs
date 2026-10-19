@@ -53,3 +53,30 @@ test("a rule that finds nothing adds no notice, and a notice carries its rule ke
   assert.equal(n.ruleKey, "START_WITHOUT_LEAD");
   assert.equal(n.itemId, "s");
 });
+
+import { checkRuleSettings, resolveRuleSettings, ruleSettingDefinitions } from "../dist/index.js";
+
+test("a project's stored number changes when a rule fires; an invalid stored number falls back to the default", () => {
+  const soon = { id: "s", title: "Training", status: "PLANNED", plannedStart: "2026-10-27", plannedEnd: "2026-10-28", stillNeeded: [] };
+  assert.equal(automationNotices([soon], "2026-10-20", ON).length, 0, "7 days out is beyond the default 3");
+  assert.equal(automationNotices([soon], "2026-10-20", ON, { START_WITHOUT_LEAD: { days: 10 } }).length, 1, "a project that wants 10 days of warning");
+  assert.deepEqual(resolveRuleSettings("START_WITHOUT_LEAD", { days: 400 }), { days: 3 });
+  assert.deepEqual(resolveRuleSettings("START_WITHOUT_LEAD", { days: 2.5 }), { days: 3 });
+  assert.deepEqual(resolveRuleSettings("FILES_STILL_NEEDED", undefined), { days: 14 });
+});
+
+test("typed settings are refused outside the range, for the wrong rule field, or when not a whole number", () => {
+  assert.deepEqual(checkRuleSettings("START_WITHOUT_LEAD", { days: 7 }), { ok: true, value: { days: 7 } });
+  for (const bad of [{ days: 0 }, { days: 15 }, { days: 2.5 }, { days: "3" }, {}, { days: 3, colour: 1 }]) {
+    assert.equal(checkRuleSettings("START_WITHOUT_LEAD", bad).ok, false, JSON.stringify(bad));
+  }
+  assert.equal(checkRuleSettings("FILES_STILL_NEEDED", { days: 60 }).ok, true);
+});
+
+test("every rule's settings are described for the screen", () => {
+  for (const key of AUTOMATION_RULE_KEYS) {
+    const defs = ruleSettingDefinitions(key);
+    assert.ok(defs.length > 0);
+    for (const d of defs) assert.ok(d.min <= d.default && d.default <= d.max, `${key}.${d.name} default is in range`);
+  }
+});

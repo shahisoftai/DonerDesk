@@ -1,8 +1,8 @@
-import { AUTOMATION_RULES, AUTOMATION_RULE_KEYS, automationNotices, evidenceCoverage, noticeSubjectKey, NO_DELIVERY, DomainError, err, ok, type AutomationItem, type AutomationRuleKey, type PlainDate, type Result } from "@donordesk/domain";
+import { AUTOMATION_RULES, AUTOMATION_RULE_KEYS, automationNotices, resolveRuleSettings, ruleSettingDefinitions, evidenceCoverage, noticeSubjectKey, NO_DELIVERY, DomainError, err, ok, type AutomationItem, type AutomationRuleKey, type PlainDate, type Result } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock } from "../../ports/core.js";
 import type { IReminderAudience, IReminderLedger, IPersonNotifier } from "../../ports/reminders.js";
-import type { IAutomationSettings, IDeliveryFactsReader, IPlannedActivityRepository } from "../../ports/workplan.js";
+import type { IAutomationRuleSettings, IAutomationSettings, IDeliveryFactsReader, IPlannedActivityRepository } from "../../ports/workplan.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import { PlanAccess } from "../../services/plan-access.js";
 
@@ -37,6 +37,8 @@ export class RunAutomationsHandler {
     private readonly projects: IProjectRepository, private readonly items: IPlannedActivityRepository, private readonly facts: IDeliveryFactsReader,
     private readonly settings: IAutomationSettings, private readonly audience: IReminderAudience, private readonly ledger: IReminderLedger,
     private readonly notifier: IPersonNotifier,
+    /** The numbers a project set for its rules; without it every rule runs on its defaults. */
+    private readonly ruleSettings?: IAutomationRuleSettings,
   ) {}
 
   async runFor(ctx: AuthenticatedContext, today: PlainDate): Promise<Result<number, DomainError>> {
@@ -64,7 +66,9 @@ export class RunAutomationsHandler {
         };
       });
       const manager = managers.value.get(project.id);
-      for (const notice of automationNotices(view, today, enabled)) {
+      const numbers = this.ruleSettings ? await this.ruleSettings.storedSettings(project.id, tenantId) : ok({});
+      if (!numbers.ok) return numbers;
+      for (const notice of automationNotices(view, today, enabled, numbers.value)) {
         const recipient = notice.recipient === "LEAD" ? view.find((v) => v.id === notice.itemId)?.ownerUserId : manager;
         if (!recipient) continue;
         const subjectKey = noticeSubjectKey(notice);
@@ -85,13 +89,29 @@ export class RunAutomationsHandler {
 }
 
 /** The rules a project has, with their words and whether each is on. */
-export class ListAutomationRulesHandler {
-  constructor(private readonly settings: IAutomationSettings) {}
+export interface AutomationRuleView {
+  ruleKey: AutomationRuleKey;
+  label: string;
+  enabled: boolean;
+  /** The numbers the project may adjust, each with its range and the value now in force. */
+  settings: Array<{ name: string; label: string; min: number; max: number; default: number; value: number }>;
+}
 
-  async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<Array<{ ruleKey: AutomationRuleKey; label: string; enabled: boolean }>, DomainError>> {
+export class ListAutomationRulesHandler {
+  constructor(private readonly settings: IAutomationSettings, private readonly ruleSettings?: IAutomationRuleSettings) {}
+
+  async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<AutomationRuleView[], DomainError>> {
     const stored = await this.settings.stored(projectId, ctx.tenant.tenantId);
     if (!stored.ok) return stored;
+    const numbers = this.ruleSettings ? await this.ruleSettings.storedSettings(projectId, ctx.tenant.tenantId) : ok({} as Record<string, Record<string, number>>);
+    if (!numbers.ok) return numbers;
     const enabled = enabledFrom(stored.value);
-    return ok(AUTOMATION_RULE_KEYS.map((k) => ({ ruleKey: k, label: AUTOMATION_RULES[k].label, enabled: enabled.has(k) })));
+    return ok(AUTOMATION_RULE_KEYS.map((k) => {
+      const now = resolveRuleSettings(k, numbers.value[k]);
+      return {
+        ruleKey: k, label: AUTOMATION_RULES[k].label, enabled: enabled.has(k),
+        settings: ruleSettingDefinitions(k).map((d) => ({ name: d.name, label: d.label, min: d.min, max: d.max, default: d.default, value: now[d.name] ?? d.default })),
+      };
+    }));
   }
 }

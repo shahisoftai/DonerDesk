@@ -905,7 +905,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   // The work plan: repositories, services and handlers are built in one module (see container/workplan-module.ts).
   const workplan = createWorkplanModule({ prisma, ids, clock, audits, logframe, indicators, indicatorUpdates, periods, projects, activities, activityLinks, taskReconciler });
   const { plannedActivities, planRevisions, planContext, planLinks, automationSettings } = workplan;
-  const runAutomations = new RunAutomationsHandler(projects, plannedActivities, new PrismaDeliveryFactsReader(prisma), automationSettings, new PrismaReminderAudience(prisma), new PrismaReminderLedger(prisma), personNotifier);
+  const runAutomations = new RunAutomationsHandler(projects, plannedActivities, new PrismaDeliveryFactsReader(prisma), automationSettings, new PrismaReminderAudience(prisma), new PrismaReminderLedger(prisma), personNotifier, automationSettings);
   const projectRisks = new PrismaProjectRiskRepository(prisma);
   const collectionFacts = new PrismaCollectionFactsReader(prisma);
   const entryDueDays = new PrismaEntryDueDays(prisma);

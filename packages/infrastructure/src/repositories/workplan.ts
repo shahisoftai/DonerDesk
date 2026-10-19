@@ -1,5 +1,6 @@
 /** The work plan's Prisma repositories, one file per aggregate under ./work-plan. This barrel keeps the old import path. */
 export * from "./work-plan/automation-settings.js";
+export * from "./work-plan/automation-history.js";
 export * from "./work-plan/beneficiary.js";
 export * from "./work-plan/budget.js";
 export * from "./work-plan/custom-fields.js";

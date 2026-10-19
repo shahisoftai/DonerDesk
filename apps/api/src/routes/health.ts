@@ -17,6 +17,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "BudgetExpense", field: "amountMinor" },
   { model: "MemberCapacity", field: "activitiesPerWeek" },
   { model: "ProjectAutomation", field: "enabled" },
+  { model: "ProjectAutomation", field: "settingsJson" },
   { model: "Beneficiary", field: "caseCode" },
   { model: "ProjectSubmissionMapping", field: "mappingJson" },
   { model: "ProgressEntry", field: "valuesJson" },

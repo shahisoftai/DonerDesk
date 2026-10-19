@@ -1,7 +1,8 @@
 import { requireSession, hasCapability } from "@/lib/server/auth-context";
 import { getProjectMembers } from "@/lib/server/project-queries";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { AutomationRulesResponseSchema, TeamResponseSchema, WorkloadResponseSchema } from "@/lib/server/schemas";
+import { AutomationHistorySchema, AutomationRulesResponseSchema, TeamResponseSchema, WorkloadResponseSchema } from "@/lib/server/schemas";
+import { AutomationHistoryCard } from "@/features/workplan/presentation/AutomationHistoryCard";
 import { AutomationRulesCard } from "@/features/workplan/presentation/AutomationRulesCard";
 import { EntryDueDaysCard } from "@/features/workplan/presentation/EntryDueDaysCard";
 import { getEntryDueDaysAction } from "@/lib/actions/entry-due-days";
@@ -23,6 +24,7 @@ export default async function ProjectTeamPage({ params }: { params: Promise<{ id
     gatewayRequest("/v1/users", TeamResponseSchema, ctx.token),
     gatewayRequest(`/v1/projects/${resolvedParams.id}/workload`, WorkloadResponseSchema, ctx.token),
   ]);
+  const history = canManage ? await gatewayRequest(`/v1/projects/${resolvedParams.id}/automation-history`, AutomationHistorySchema, ctx.token) : null;
   const dueDays = canManage ? await getEntryDueDaysAction(resolvedParams.id) : null;
   const automations = canManage ? await gatewayRequest(`/v1/projects/${resolvedParams.id}/automations`, AutomationRulesResponseSchema, ctx.token) : null;
   const people = await loadProjectPeople(ctx.token, resolvedParams.id, decodeSessionPayload(ctx.token)?.sub ?? "");
@@ -54,6 +56,11 @@ export default async function ProjectTeamPage({ params }: { params: Promise<{ id
       {dueDays?.ok && (
         <div className="mt-8">
           <EntryDueDaysCard projectId={resolvedParams.id} days={dueDays.value.days} />
+        </div>
+      )}
+      {history?.ok && (
+        <div className="mt-8">
+          <AutomationHistoryCard data={history.value} names={names} />
         </div>
       )}
       {automations?.ok && (

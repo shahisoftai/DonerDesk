@@ -1484,8 +1484,20 @@ export type AutomationRulesResponse = z.infer<typeof AutomationRulesResponseSche
 
 /** The automation rules of a project and whether each is on (phase 28.1-K). */
 export const AutomationRulesResponseSchema = z.object({
-  items: z.array(z.object({ ruleKey: z.string(), label: z.string(), enabled: z.boolean() })),
+  items: z.array(z.object({
+    ruleKey: z.string(),
+    label: z.string(),
+    enabled: z.boolean(),
+    /** The numbers the project may adjust for this rule, each with its range and the value now in force. */
+    settings: z.array(z.object({ name: z.string(), label: z.string(), min: z.number(), max: z.number(), default: z.number(), value: z.number() })).default([]),
+  })),
 });
+
+/** What the automations sent for a project, newest first (phase 28.1-K). */
+export const AutomationHistorySchema = z.object({
+  items: z.array(z.object({ sentOn: z.string(), rule: z.string(), activity: z.string(), recipientId: z.string() })),
+});
+export type AutomationHistory = z.infer<typeof AutomationHistorySchema>;
 
 /** People a project reaches, by case code, with counts by sex and age group (phase 28.1-G). */
 export const BeneficiariesResponseSchema = z.object({
