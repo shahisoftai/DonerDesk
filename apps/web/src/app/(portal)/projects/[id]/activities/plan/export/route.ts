@@ -1,6 +1,6 @@
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { PlanFieldValuesSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { PlanFieldValuesSchema, ProjectBudgetSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { loadProjectPeople } from "@/features/tasks/application/project-people";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { planCsv } from "@/features/workplan/domain/plan-export";
@@ -11,9 +11,10 @@ export const dynamic = "force-dynamic";
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const { id } = await params;
   const ctx = await requireSession();
-  const [plan, fields, people] = await Promise.all([
+  const [plan, fields, budget, people] = await Promise.all([
     gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/work-plan`, WorkPlanResponseSchema, ctx.token),
     gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/plan-field-values`, PlanFieldValuesSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/budget`, ProjectBudgetSchema, ctx.token),
     loadProjectPeople(ctx.token, id, decodeSessionPayload(ctx.token)?.sub ?? ""),
   ]);
   if (!plan.ok) return new Response(plan.error.message, { status: 502, headers: { "content-type": "text/plain; charset=utf-8" } });
@@ -23,6 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     fields: fields.ok ? fields.value.fields : [],
     values: fields.ok ? fields.value.values : {},
     names,
+    budget: budget.ok ? budget.value.items : [],
   });
   return new Response(`﻿${csv}`, {
     headers: {

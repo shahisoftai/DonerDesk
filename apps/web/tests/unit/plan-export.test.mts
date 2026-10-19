@@ -31,3 +31,24 @@ test("a field chip is shown only for a field with a value", () => {
   assert.deepEqual(fieldChips(fields, undefined), []);
   assert.deepEqual(fieldChips(fields, { f1: "" }), []);
 });
+
+import { minorToDecimal } from "../../src/features/workplan/domain/plan-export.ts";
+
+test("budget and spending are added per currency; an activity with no budget in a currency has empty cells, never zeros", () => {
+  const rows = [
+    { id: "a", title: "Training", kind: "ACTIVITY", plannedStart: "2026-10-20", plannedEnd: "2026-10-21", status: "PLANNED", signalLabel: "On time", waitingFor: [] },
+    { id: "b", title: "Radio", kind: "ACTIVITY", plannedStart: "2026-11-01", plannedEnd: "2026-11-02", status: "PLANNED", signalLabel: "On time", waitingFor: [] },
+  ];
+  const csv = planCsv({
+    rows, fields: [], values: {}, names: {},
+    budget: [
+      { currency: "EUR", byActivity: [{ activityId: "b", budgetedMinor: 20000, spentMinor: 0 }] },
+      { currency: "USD", byActivity: [{ activityId: "a", budgetedMinor: 125050, spentMinor: 5 }] },
+    ],
+  });
+  const lines = csv.trim().split("\r\n");
+  assert.equal(lines[0], "Activity,Type,Starts,Ends,Status,Signal,Lead,Location,Waiting for,Budget (EUR),Spent (EUR),Budget (USD),Spent (USD)");
+  assert.equal(lines[1], "Training,Activity,2026-10-20,2026-10-21,Not started,On time,,,,,,1250.50,0.05");
+  assert.equal(lines[2], "Radio,Activity,2026-11-01,2026-11-02,Not started,On time,,,,200.00,0.00,,", "spent 0 is a real zero; no budget is blank");
+  assert.equal(minorToDecimal(-2050), "-20.50");
+});
