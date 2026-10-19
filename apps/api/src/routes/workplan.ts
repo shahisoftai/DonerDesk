@@ -160,6 +160,13 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  app.post("/v1/projects/:projectId/beneficiaries/import/preview", async (req) => {
+    const body = ImportSubmissionsWithMappingSchema.parse(req.body);
+    const r = await req.container.handlers.previewSubmissions.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"), body.csv, body.mapping);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.post("/v1/projects/:projectId/beneficiaries/import", async (req) => {
     const body = ImportSubmissionsWithMappingSchema.parse(req.body);
     const r = await req.container.handlers.importSubmissions.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"), body.csv, body.mapping);

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SUBMISSION_FIELDS, REQUIRED_SUBMISSION_FIELDS, submissionHeaders, suggestSubmissionMapping, type SubmissionMapping } from "@donordesk/domain/contexts/workplan/index.js";
-import { importSubmissionsAction, saveSubmissionMappingAction } from "@/lib/actions/workplan";
+import { importSubmissionsAction, previewSubmissionsAction, saveSubmissionMappingAction } from "@/lib/actions/workplan";
+import type { SubmissionReview } from "@/lib/server/schemas";
 import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -25,6 +26,7 @@ export function SubmissionImport({ projectId, savedMapping, canManage }: { proje
   const [mapping, setMapping] = useState<SubmissionMapping>({});
   const [added, setAdded] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
+  const [review, setReview] = useState<SubmissionReview | null>(null);
 
   function pick(file: File | undefined) {
     setAdded(null); setSaved(false);
@@ -43,6 +45,14 @@ export function SubmissionImport({ projectId, savedMapping, canManage }: { proje
   }
 
   const missing = REQUIRED_SUBMISSION_FIELDS.filter((f) => !mapping[f]);
+
+  async function check() {
+    if (!text || missing.length) return;
+    setReview(null);
+    const res = await previewSubmissionsAction(projectId, text, mapping as Record<string, string>);
+    if (res.ok) setReview(res.value);
+    else setReview(null);
+  }
 
   async function run() {
     if (!text || missing.length) return;
@@ -77,6 +87,24 @@ export function SubmissionImport({ projectId, savedMapping, canManage }: { proje
         </div>
       )}
 
+      {headers.length > 0 && !missing.length && text && (
+        <div className="space-y-2">
+          <Button variant="secondary" onClick={check} disabled={state.busy}>Check the file first</Button>
+          {review && (
+            <div role="region" aria-label="Check before importing" className="space-y-2 rounded-lg border border-slate-200 p-3 text-sm dark:border-white/10">
+              <p>{review.ready} ready to add{review.problems.length ? `, ${review.problems.length} row${review.problems.length === 1 ? "" : "s"} to fix` : ""}.</p>
+              {review.problems.map((p) => <p key={p.line} className="text-danger-600">{p.message}</p>)}
+              {review.clashes.map((c) => <p key={c.line} className="text-danger-600">Line {c.line}: case code {c.caseCode} is already used here. It will not be added.</p>)}
+              {review.likely.length > 0 && (
+                <div>
+                  <p className="font-medium">These may be people already on the register. They are not merged; check them:</p>
+                  <ul className="list-disc pl-5">{review.likely.map((l) => <li key={l.line}>Line {l.line} ({l.caseCode}) looks like {l.looksLike.join(", ")}</li>)}</ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       {state.error && <p role="alert" className="text-sm text-danger-600">{state.error}</p>}
       {added !== null && <p role="status" className="text-sm">Added {added} {added === 1 ? "person" : "people"}.</p>}
       {saved && <p role="status" className="text-sm">Saved as this project&apos;s column mapping.</p>}

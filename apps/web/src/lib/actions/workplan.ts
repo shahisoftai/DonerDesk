@@ -10,7 +10,7 @@ import type { AppError } from "@/lib/shared/app-error";
 import { idempotency, type CreateOptions } from "./_idempotency";
 import { z } from "zod";
 import { OkResponseSchema } from "./_schemas";
-import { PreviewReviewSchema, type PreviewReview, SubmissionMappingResponseSchema, BulkPlanResultSchema, CreatedPlannedActivitiesSchema, ImportWorkPlanResponseSchema, PlanPreviewReviewSchema, type BulkPlanResult, type ImportWorkPlanResponse, type PlanPreviewResponse } from "@/lib/server/schemas";
+import { SubmissionReviewSchema, type SubmissionReview, SubmissionMappingResponseSchema, BulkPlanResultSchema, CreatedPlannedActivitiesSchema, ImportWorkPlanResponseSchema, PlanPreviewSchema, type BulkPlanResult, type ImportWorkPlanResponse, type PlanPreviewResponse } from "@/lib/server/schemas";
 
 const MovedResponseSchema = z.object({
   moved: z.number(),
@@ -86,7 +86,7 @@ export async function startPlanFromLogframeAction(projectId: string, input: unkn
   const context = await requireSession();
   const p = await parsed(StartPlanFromLogframeSchema, input);
   if (!p.ok) return p.result;
-  return gatewayRequest(`/v1/projects/${projectId}/work-plan/from-logframe`, PlanPreviewReviewSchema, context.token, { method: "POST", body: p.data, ...(p.data.apply ? idempotency(options) : {}) });
+  return gatewayRequest(`/v1/projects/${projectId}/work-plan/from-logframe`, PlanPreviewSchema, context.token, { method: "POST", body: p.data, ...(p.data.apply ? idempotency(options) : {}) });
 }
 
 export async function setWorkPlanningVisibilityAction(projectId: string, show: boolean): Promise<Result<true, AppError>> {
@@ -242,4 +242,23 @@ export async function saveSubmissionMappingAction(projectId: string, mapping: Re
   if (!p.ok) return p.result;
   const r = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/submission-mapping`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
   return r.ok ? { ok: true, value: true } : r;
+}
+
+const ActivityPeopleChangedSchema = z.object({ added: z.number(), removed: z.number(), unknown: z.array(z.string()) });
+
+/** Adds people to an activity by pasted case codes, or removes them. A code not in the project is reported back. */
+export async function changeActivityPeopleAction(itemId: string, input: unknown): Promise<Result<{ added: number; removed: number; unknown: string[] }, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(ChangeActivityPeopleSchema, input);
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/people`, ActivityPeopleChangedSchema, context.token, { method: "PUT", body: p.data });
+}
+
+
+/** Reads a file and says what an import would do, without saving anything. */
+export async function previewSubmissionsAction(projectId: string, csv: string, mapping?: Record<string, string>): Promise<Result<SubmissionReview, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(ImportSubmissionsWithMappingSchema, { csv, ...(mapping ? { mapping } : {}) });
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/beneficiaries/import/preview`, SubmissionReviewSchema, context.token, { method: "POST", body: p.data });
 }

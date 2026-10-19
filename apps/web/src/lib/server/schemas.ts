@@ -1534,13 +1534,13 @@ export const ActivityPeopleSchema = z.object({
 export type ActivityPeople = z.infer<typeof ActivityPeopleSchema>;
 
 /** What an import would do, read from a file without saving (phase 28.1-I review). */
-export const PreviewReviewSchema = z.object({
+export const SubmissionReviewSchema = z.object({
   ready: z.number(),
   problems: z.array(z.object({ line: z.number(), message: z.string() })),
   clashes: z.array(z.object({ line: z.number(), caseCode: z.string() })),
   likely: z.array(z.object({ line: z.number(), caseCode: z.string(), looksLike: z.array(z.string()) })),
 });
-export type PreviewReview = z.infer<typeof PreviewReviewSchema>;
+export type SubmissionReview = z.infer<typeof SubmissionReviewSchema>;
 
 /** A project's budget against spending, per currency (never added across currencies) and per activity. */
 export const ProjectBudgetSchema = z.object({

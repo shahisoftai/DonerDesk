@@ -101,6 +101,7 @@ import {
   RegisterBeneficiaryHandler,
   ListBeneficiariesHandler,
   ImportSubmissionsHandler,
+  PreviewSubmissionsHandler,
   GetSubmissionMappingHandler,
   SaveSubmissionMappingHandler,
   SetPlanIndicatorsHandler,
@@ -647,6 +648,7 @@ export interface Container {
     registerBeneficiary: RegisterBeneficiaryHandler;
     listBeneficiaries: ListBeneficiariesHandler;
     importSubmissions: ImportSubmissionsHandler;
+    previewSubmissions: PreviewSubmissionsHandler;
     getSubmissionMapping: GetSubmissionMappingHandler;
     saveSubmissionMapping: SaveSubmissionMappingHandler;
     setPlanIndicators: SetPlanIndicatorsHandler;
@@ -1494,6 +1496,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     registerBeneficiary: new RegisterBeneficiaryHandler(beneficiaries, planContext, ids, audits, clock),
     listBeneficiaries: new ListBeneficiariesHandler(beneficiaries, planContext),
     importSubmissions: new ImportSubmissionsHandler(beneficiaries, planContext, ids, audits, clock, submissionMappings),
+    previewSubmissions: new PreviewSubmissionsHandler(beneficiaries, planContext, submissionMappings),
     getSubmissionMapping: new GetSubmissionMappingHandler(submissionMappings),
     saveSubmissionMapping: new SaveSubmissionMappingHandler(submissionMappings, audits, clock),
     setPlanIndicators: new SetPlanIndicatorsHandler(planAccess, activityIndicators, indicators, audits, clock),

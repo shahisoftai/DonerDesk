@@ -116,3 +116,24 @@ export function parseSubmissions(text: string, mapping?: SubmissionMapping): Res
   }
   return ok({ rows, problems });
 }
+
+/**
+ * Rows of a file that look like someone already on the register (same sex, age group, location and day, but a different case
+ * code). They are listed for a person to look at; they are not refused and not merged. A case code already used is a clash.
+ */
+export function reviewRows(
+  rows: ReadonlyArray<SubmissionRow>,
+  existing: ReadonlyArray<{ caseCode: string; sex: string; ageGroup: string; location: string; enrolledOn: string }>,
+): { clashes: Array<{ line: number; caseCode: string }>; likely: Array<{ line: number; caseCode: string; looksLike: string[] }> } {
+  const taken = new Set(existing.map((e) => e.caseCode));
+  const clashes: Array<{ line: number; caseCode: string }> = [];
+  const likely: Array<{ line: number; caseCode: string; looksLike: string[] }> = [];
+  for (const row of rows) {
+    if (taken.has(row.caseCode)) { clashes.push({ line: row.line, caseCode: row.caseCode }); continue; }
+    const looksLike = existing
+      .filter((e) => e.sex === row.sex && e.ageGroup === row.ageGroup && e.location === row.location && e.enrolledOn === row.enrolledOn)
+      .map((e) => e.caseCode);
+    if (looksLike.length) likely.push({ line: row.line, caseCode: row.caseCode, looksLike });
+  }
+  return { clashes, likely };
+}
