@@ -55,16 +55,15 @@ export default function LoginPage() {
         )}
         <input type="hidden" name="next" value={next} />
         <Field label="Email" htmlFor="email" error={fields.email?.[0]}>
-          <Input id="email" name="email" type="email" autoComplete="email" defaultValue="admin@example.org" invalid={Boolean(fields.email)} required />
+          <Input id="email" name="email" type="email" autoComplete="email" invalid={Boolean(fields.email)} required />
         </Field>
         <Field label="Password" htmlFor="password" error={fields.password?.[0]}>
-          <Input id="password" name="password" type="password" autoComplete="current-password" defaultValue="password123" invalid={Boolean(fields.password)} required />
+          <Input id="password" name="password" type="password" autoComplete="current-password" invalid={Boolean(fields.password)} required />
         </Field>
         {state?.error && (
           <InlineAlert tone="danger" title={state.error} />
         )}
         <SubmitButton />
-        <p className="text-xs text-slate-500 dark:text-slate-400">Demo: admin@example.org / password123</p>
       </form>
       <p className="mt-4 text-sm">
         New here?{" "}
