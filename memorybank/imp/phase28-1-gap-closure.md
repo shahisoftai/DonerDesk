@@ -12,7 +12,7 @@ Every row was checked against the code. Nothing after `13d76ee` is on Contabo.
 | Batch | Built (committed) | Still open |
 |---|---|---|
 | A dependencies | links, cascade on move, blocked report, "Waiting for" label, timeline arrows (55aefa4), cascade preview in the timeline confirm bar (a130f36) | browser check of the arrows |
-| B targets per group | validation, editor, indicator page, Data Center beside the verified figure (8d13569, 6cd43d0) | targets by group in the **report** tables: not done, because it changes the writer contract and its golden tests (needs the Python worker tests too) |
+| B targets per group | validation, editor, indicator page, Data Center beside the verified figure (8d13569, 6cd43d0); **report tables: a "Results by group against group targets" table follows the indicator table (worker `group_target_table`; `VerifiedFinding.targetBreakdowns`; record chunk, lint and verifier accept the figures; no writer-contract change, 2026-10-20)** | none known |
 | C custom fields | definitions, values, plan item form, list columns and spreadsheet (0c59907) | none known |
 | D budget | lines, expenses, overspend flag, project totals (4a432e4), spreadsheet columns (8cc5c34), port split into roles (5b9fd1f) | none known |
 | E RAID | five kinds, kind filter (fbcfef5), decision log on the Overview (ee51780) | none known |
@@ -166,9 +166,22 @@ Each batch's acceptance tests are listed in its section. Browser verification wi
 
 ---
 
-## 7. Build record (2026-10-19)
+## 7. Build record (2026-10-19) — SUPERSEDED by §0
 
-Status below is the state at the end of the build session. Nothing is committed, migrated or deployed.
+This is the first build session's record, kept for history. Its "Not built" list and "Nothing is committed" line are **out of date**: §0 (checked against the code on 2026-10-20) is the current status. Items 2–5, 8 (partly), 9–11, 13 and 14 below were built later (timeline arrows and cascade preview, navigation links, beneficiary-to-activity links, budget totals, custom-field columns, RAID kind filter, status in bulk edit, repository tests).
+
+### Verification run (2026-10-19, tree clean at 00235b7)
+- `pnpm -r typecheck` and `pnpm -r build`: green.
+- Domain 694, application 619, contracts 14, web unit 343, superadmin 3, workers (pytest) 212, architecture boundaries: all pass.
+- Infrastructure 414 pass, 0 fail **with `WORKPLAN_VERIFY_DATABASE_URL` set** (all 25+ migrations applied to a scratch database, `rls.sql` run with no errors, repository contract tests green). `prisma migrate diff` shows only the known unrelated drift (pgvector column, two index renames, one `ReportDraft` index, one `ReportRevision` FK).
+- Every new tenant table is listed in `infra/postgres/rls.sql` and has forced RLS; `/ready` requires the new columns.
+- Playwright e2e: 12 of 12 pass (needs `npx playwright install chromium` once per machine).
+- API: 3 tests fail only because they need a database login (`creem webhook`, `billing summary`, `RBAC before repository access`); not a code fault.
+- Older tables without RLS (`ProjectRiskTrend`, `LessonPattern`, `ConnectorRun`, and others from the initial commit) are not part of this phase; listed as a separate hardening item.
+
+The remaining open items are those in §0: the cross-project roll-up in the report documents (a report is per project, so there is no donor-level report to put it in; it stays a portfolio page and CSV), caching signed-in pages offline (privacy decision), hours in workload (not recorded), and a browser check of the new screens with a real account.
+
+Original record follows.
 
 ### Built (domain, application, infrastructure, API, web, tests)
 
