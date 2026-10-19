@@ -2,9 +2,10 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
+import { WORKPLAN_COPY, formatShortDate } from "@donordesk/domain/contexts/workplan/index.js";
 import type { WorkPlanRow } from "@/lib/server/schemas";
 import { dependencyLinks, elbowPath, waitingLine } from "../domain/dependency-view";
+import { cascadePreview } from "../domain/cascade-preview";
 import { reschedulePlannedActivityAction } from "@/lib/actions/workplan";
 import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
@@ -63,6 +64,8 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
   );
   const byId = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
   const pendingRow = pending ? byId.get(pending.id) : undefined;
+  // What else moves (or stays put) if this move is saved: the activities that wait for the moved one, by the domain's own rule.
+  const cascade = useMemo(() => (pending ? cascadePreview(rows, pending.id, pending.start, pending.end) : null), [pending, rows]);
 
   // Arrows between activities that come after one another: drawn from where the bars actually are, so they follow zoom,
   // resizing and a drag in progress. Decorative: the same information is in each bar's label ("Waiting for …").
@@ -218,6 +221,19 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
       {pending && pendingRow && (
         <div role="region" aria-label="Confirm the new dates" className="space-y-3 rounded-xl border border-brand-300 bg-brand-50 p-3 dark:border-brand-500/40 dark:bg-brand-500/10">
           <p className="text-sm font-medium">{pendingRow.title}: {confirmQuestion({ start: pending.start, end: pending.end }, today)}</p>
+          {cascade && cascade.moves.length > 0 && (
+            <div className="text-sm">
+              <p className="font-medium">These move too, because they wait for it:</p>
+              <ul className="list-disc pl-5">
+                {cascade.moves.map((m) => <li key={m.id}>{m.title}: {formatShortDate(m.from.start, today)} → {formatShortDate(m.to.start, today)}{m.to.end !== m.to.start ? ` to ${formatShortDate(m.to.end, today)}` : ""}</li>)}
+              </ul>
+            </div>
+          )}
+          {cascade && cascade.blocked.length > 0 && (
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              Stays where it is: {cascade.blocked.map((b) => `${b.title} (${b.reason === "DONE" ? "done" : "cancelled"})`).join(", ")}. It will start before the activity it waits for ends.
+            </p>
+          )}
           {pendingRow.seriesId && (
             <div role="radiogroup" aria-label="Which activities" className="space-y-1 text-sm">
               <label className="flex items-center gap-2"><input type="radio" className="h-4 w-4" checked={scope === "THIS"} onChange={() => setScope("THIS")} />{WORKPLAN_COPY.onlyThisOne}</label>
