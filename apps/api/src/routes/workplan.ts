@@ -81,6 +81,12 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.get("/v1/projects/:projectId/plan-field-values", async (req) => {
+    const r = await req.container.handlers.listProjectFieldValues.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.get("/v1/projects/:projectId/plan-fields", async (req) => {
     const r = await req.container.handlers.listProjectFields.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
     if (!r.ok) throw r.error;
@@ -201,13 +207,6 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     return r.value;
   });
 
-    const q = req.query as { kind?: string; key?: string };
-    const kind = q.kind ?? "";
-    if (!["DAILY", "WEEKLY", "MONTHLY", "END"].includes(kind)) throw new Error("Choose daily, weekly, monthly or activity end");
-    const r = await req.container.handlers.prepareProgress.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), kind as "DAILY" | "WEEKLY" | "MONTHLY" | "END", q.key ?? "");
-    if (!r.ok) throw r.error;
-    return r.value;
-  });
   app.get("/v1/work-plan/:itemId/progress", async (req) => {
     const r = await req.container.handlers.getProgress.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"));
     if (!r.ok) throw r.error;
@@ -215,6 +214,13 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
   });
 
   app.get("/v1/work-plan/:itemId/progress/prepare", async (req) => {
+    const q = req.query as { kind?: string; key?: string };
+    const kind = q.kind ?? "";
+    if (!["DAILY", "WEEKLY", "MONTHLY", "END"].includes(kind)) throw new Error("Choose daily, weekly, monthly or activity end");
+    const r = await req.container.handlers.prepareProgress.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), kind as "DAILY" | "WEEKLY" | "MONTHLY" | "END", q.key ?? "");
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
 
   app.post("/v1/work-plan/:itemId/progress", async (req) => {
     const body = SaveProgressSchema.parse(req.body);
@@ -229,6 +235,12 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  app.get("/v1/projects/:projectId/budget", async (req) => {
+    const r = await req.container.handlers.getProjectBudget.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
   app.get("/v1/work-plan/:itemId/budget", async (req) => {
     const r = await req.container.handlers.getPlanItemBudget.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"));
     if (!r.ok) throw r.error;
@@ -236,12 +248,6 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
   });
 
   app.post("/v1/work-plan/:itemId/budget-lines", async (req) => {
-  app.get("/v1/projects/:projectId/budget", async (req) => {
-    const r = await req.container.handlers.getProjectBudget.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
-    if (!r.ok) throw r.error;
-    return { items: r.value };
-  });
-
     const body = AddBudgetLineSchema.parse(req.body);
     const r = await req.container.handlers.addBudgetLine.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
     if (!r.ok) throw r.error;

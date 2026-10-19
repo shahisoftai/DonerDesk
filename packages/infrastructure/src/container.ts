@@ -111,11 +111,12 @@ import {
   RemoveProgressHandler,
   GetActivityPeopleHandler,
   ChangeActivityPeopleHandler,
-  GetPlanItemBudgetHandler,
   CompletePlannedActivityHandler,
-  ListProjectFieldsHandler,
+  GetPlanItemBudgetHandler,
   GetProjectBudgetHandler,
+  ListProjectFieldsHandler,
   GetPlanItemFieldsHandler,
+  ListProjectFieldValuesHandler,
   SetPlanItemFieldsHandler,
   AssignPlannedActivityHandler,
   UpdatePlannedActivityHandler,
@@ -658,13 +659,14 @@ export interface Container {
     removeProgress: RemoveProgressHandler;
     getActivityPeople: GetActivityPeopleHandler;
     changeActivityPeople: ChangeActivityPeopleHandler;
-    addBudgetExpense: AddBudgetExpenseHandler;
-    getPlanItemBudget: GetPlanItemBudgetHandler;
     completePlannedActivity: CompletePlannedActivityHandler;
     setCapacity: SetCapacityHandler;
-    getPlanItemFields: GetPlanItemFieldsHandler;
-    setPlanItemFields: SetPlanItemFieldsHandler;
+    addBudgetExpense: AddBudgetExpenseHandler;
+    getPlanItemBudget: GetPlanItemBudgetHandler;
     getProjectBudget: GetProjectBudgetHandler;
+    getPlanItemFields: GetPlanItemFieldsHandler;
+    listProjectFieldValues: ListProjectFieldValuesHandler;
+    setPlanItemFields: SetPlanItemFieldsHandler;
     assignPlannedActivity: AssignPlannedActivityHandler;
     updatePlannedActivity: UpdatePlannedActivityHandler;
     startPlanFromLogframe: StartPlanFromLogframeHandler;
@@ -1261,9 +1263,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const submissionMappings = new PrismaProjectSubmissionMappingRepository(prisma);
   const activityIndicators = new PrismaPlannedActivityIndicatorRepository(prisma);
   const progressLog = new PrismaProgressRepository(prisma);
+  const beneficiaryLinks = new PrismaBeneficiaryLinkRepository(prisma);
   const planContext = new PrismaPlanContextReader(prisma);
   const planLinks = new PlanLinkResolver(plannedActivities);
-  const beneficiaryLinks = new PrismaBeneficiaryLinkRepository(prisma);
   const planAccess = new PlanAccess(plannedActivities);
   const planRecorder = new PlanRecorder(ids, planRevisions, audits, clock);
   // Requests (Phase 28.3): the reconciler closes the ones the records show were met, and is told after the changes that meet them.
@@ -1504,11 +1506,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     prepareProgress: new PrepareProgressHandler(planAccess, progressLog, activityIndicators, indicators),
     saveProgress: new SaveProgressHandler(planAccess, progressLog, activityIndicators, indicators, ids, audits, clock),
     removeProgress: new RemoveProgressHandler(planAccess, progressLog, audits),
+    getActivityPeople: new GetActivityPeopleHandler(planAccess, beneficiaryLinks, beneficiaries),
+    changeActivityPeople: new ChangeActivityPeopleHandler(planAccess, beneficiaryLinks, beneficiaries, audits, clock),
     completePlannedActivity: new CompletePlannedActivityHandler(
       planAccess, periods,
       new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler),
-    getActivityPeople: new GetActivityPeopleHandler(planAccess, beneficiaryLinks, beneficiaries),
-    changeActivityPeople: new ChangeActivityPeopleHandler(planAccess, beneficiaryLinks, beneficiaries, audits, clock),
       new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock), clock),
     setCapacity: new SetCapacityHandler(memberCapacity, audits, clock),
     bulkPlanAction: new BulkPlanActionHandler(planAccess, plannedActivities, planContext,
@@ -1517,10 +1519,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock), clock),
     addBudgetExpense: new AddBudgetExpenseHandler(planAccess, budgets, ids, audits, clock),
     getPlanItemBudget: new GetPlanItemBudgetHandler(planAccess, budgets),
+    getProjectBudget: new GetProjectBudgetHandler(plannedActivities, budgets, planContext),
     getPlanItemFields: new GetPlanItemFieldsHandler(planAccess, projectFields, customFieldValues),
+    listProjectFieldValues: new ListProjectFieldValuesHandler(projectFields, customFieldValues, planContext),
     setPlanItemFields: new SetPlanItemFieldsHandler(planAccess, projectFields, customFieldValues, audits, clock),
     assignPlannedActivity: new AssignPlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder),
-    getProjectBudget: new GetProjectBudgetHandler(plannedActivities, budgets, planContext),
     updatePlannedActivity: new UpdatePlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder, clock),
     startPlanFromLogframe: new StartPlanFromLogframeHandler(ids, plannedActivities, planContext, logframe, audits),
     listWorkPlan: new ListWorkPlanHandler(plannedActivities, new PrismaDeliveryFactsReader(prisma), planContext, clock, planDependencies),

@@ -25,7 +25,7 @@ function leadName(row: WorkPlanRow, userId: string, names: Record<string, string
 }
 
 /** The List view: grouped This week / Next week / Later / Done. Buttons the person cannot use are not rendered. */
-export function PlanListView({ projectId, rows, today, userId, names, defaultMine, changeableIds }: {
+export function PlanListView({ projectId, rows, today, userId, names, defaultMine, changeableIds, fieldChips = {} }: {
   projectId: string;
   rows: WorkPlanRow[];
   today: string;
@@ -34,6 +34,7 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
   defaultMine: boolean;
   /** Ids of the activities this person may change the status of (decided on the server; plain data so it can cross to the browser). */
   changeableIds: string[];
+  fieldChips?: Record<string, string[]>;
 }) {
   const [mineOnly, setMineOnly] = useState(defaultMine);
   const [selected, setSelected] = useState<string[]>([]);
@@ -41,6 +42,7 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
 
   return (
     <div className="space-y-6">
+      <a href={`/projects/${projectId}/activities/plan/export`} className="float-right text-sm text-brand-700 underline dark:text-brand-300">Download as a spreadsheet (CSV)</a>
       <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
         <input type="checkbox" checked={mineOnly} onChange={(e) => setMineOnly(e.target.checked)} className="h-4 w-4" />
         Only mine
@@ -70,6 +72,7 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
                   <div className="min-w-0">
                     <Link href={`/projects/${projectId}/activities/plan/${row.id}`} className="font-medium text-brand-700 hover:underline dark:text-brand-300">{row.title}</Link>
                     {waitingLine(row.waitingFor) && <p className="text-xs font-medium text-amber-700 dark:text-amber-400">{waitingLine(row.waitingFor)}</p>}
+                    {(fieldChips[row.id] ?? []).length > 0 && <p className="text-xs text-slate-600 dark:text-slate-300">{(fieldChips[row.id] ?? []).join(" · ")}</p>}
                     <p className="text-xs text-slate-500">
                       {dates(row, today)}
                       {row.originalStart && row.originalEnd && (row.originalStart !== row.plannedStart || row.originalEnd !== row.plannedEnd) && (

@@ -1,7 +1,7 @@
 import { DomainError, checkCustomFieldValue, defineCustomField, err, ok, type CustomFieldDefinition, type Result, type TenantId } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
-import type { ICustomFieldValueRepository, IProjectFieldRepository, IPlannedActivityRepository, ProjectFieldRecord } from "../../ports/workplan.js";
+import type { ICustomFieldValueRepository, IPlanContextReader, IProjectFieldRepository, IPlannedActivityRepository, ProjectFieldRecord } from "../../ports/workplan.js";
 import { PlanAccess } from "../../services/plan-access.js";
 
 export const toDefinition = (f: ProjectFieldRecord): CustomFieldDefinition & { id: string } => ({
@@ -90,5 +90,24 @@ export class SetPlanItemFieldsHandler {
       projectId: item.value.projectId, newValue: JSON.stringify(checked.map((c) => c.fieldId)),
     });
     return ok(undefined);
+  }
+}
+
+/** A project's fields and every activity's values, in one read, for the plan list and the export. For people on the project or an admin. */
+export class ListProjectFieldValuesHandler {
+  constructor(private readonly fields: IProjectFieldRepository, private readonly values: ICustomFieldValueRepository, private readonly context: IPlanContextReader) {}
+
+  async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<{ fields: Array<CustomFieldDefinition & { id: string }>; values: Record<string, Record<string, string>> }, DomainError>> {
+    if (ctx.tenant.role !== "ADMIN") {
+      const members = await this.context.activeMemberIds(projectId, ctx.tenant.tenantId);
+      if (!members.ok) return members;
+      if (!members.value.has(ctx.tenant.userId)) return err(DomainError.forbidden("You are not on this project"));
+    }
+    const defs = await this.fields.findByProject(projectId, ctx.tenant.tenantId);
+    if (!defs.ok) return defs;
+    if (defs.value.length === 0) return ok({ fields: [], values: {} });
+    const values = await this.values.findByProject(projectId, ctx.tenant.tenantId);
+    if (!values.ok) return values;
+    return ok({ fields: defs.value.map(toDefinition), values: values.value });
   }
 }

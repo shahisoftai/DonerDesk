@@ -101,6 +101,8 @@ export interface ICustomFieldValueRepository {
   ): Promise<Result<void>>;
   /** Only the fields that have a value. */
   findByEntity(entityId: string, tenantId: TenantId): Promise<Result<Record<string, string>>>;
+  /** Every activity's values in a project: entityId -> fieldId -> value (only fields with a value). */
+  findByProject(projectId: string, tenantId: TenantId): Promise<Result<Record<string, Record<string, string>>>>;
 }
 
 /** A budget line on a planned activity (phase 28.1-D). Money in minor units. */

@@ -1554,3 +1554,9 @@ export const ProjectBudgetSchema = z.object({
   })),
 });
 export type ProjectBudget = z.infer<typeof ProjectBudgetSchema>;
+
+/** A project's custom fields and every activity's values (activity id -> field id -> value), for the plan list and the export. */
+export const PlanFieldValuesSchema = z.object({
+  fields: z.array(z.object({ id: z.string(), key: z.string(), label: z.string(), type: z.enum(["TEXT", "NUMBER", "DATE", "CHOICE"]), choices: z.array(z.string()).default([]) })),
+  values: z.record(z.string(), z.record(z.string(), z.string())),
+});

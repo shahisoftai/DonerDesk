@@ -25,11 +25,13 @@ export function PlannedViews(props: {
   project: DateRange;
   outputTitles: Record<string, string>;
   changeableIds: string[];
+  /** itemId -> "Label: value" for the project's own fields that have a value. */
+  fieldChips?: Record<string, string[]>;
   movableIds: string[];
 }) {
   const [view, setView] = useState<PlanViewKey>(props.initialView);
   const list = (
-    <PlanListView projectId={props.projectId} rows={props.rows} today={props.today} userId={props.userId} names={props.names} defaultMine={props.defaultMine} changeableIds={props.changeableIds} />
+    <PlanListView projectId={props.projectId} rows={props.rows} today={props.today} userId={props.userId} names={props.names} defaultMine={props.defaultMine} changeableIds={props.changeableIds} fieldChips={props.fieldChips ?? {}} />
   );
   return (
     <div className="space-y-4">

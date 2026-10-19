@@ -320,6 +320,13 @@ export class PrismaCustomFieldValueRepository implements ICustomFieldValueReposi
     return ok(undefined);
   }
 
+  async findByProject(projectId: string, tenantId: TenantId): Promise<Result<Record<string, Record<string, string>>, DomainError>> {
+    const rows = await this.prisma.customFieldValue.findMany({ where: { tenantId: tenantId.toString(), projectId } });
+    const out: Record<string, Record<string, string>> = {};
+    for (const r of rows) (out[r.entityId] ??= {})[r.fieldId] = r.value;
+    return ok(out);
+  }
+
   async findByEntity(entityId: string, tenantId: TenantId): Promise<Result<Record<string, string>, DomainError>> {
     const rows = await this.prisma.customFieldValue.findMany({ where: { tenantId: tenantId.toString(), entityId } });
     return ok(Object.fromEntries(rows.map((r) => [r.fieldId, r.value])));

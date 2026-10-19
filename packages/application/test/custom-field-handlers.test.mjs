@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { TenantId, PlannedActivity } from "@donordesk/domain";
-import { DefineProjectFieldHandler, ListProjectFieldsHandler, GetPlanItemFieldsHandler, SetPlanItemFieldsHandler, PlanAccess } from "../dist/index.js";
+import { DefineProjectFieldHandler, ListProjectFieldsHandler, GetPlanItemFieldsHandler, SetPlanItemFieldsHandler, ListProjectFieldValuesHandler, PlanAccess } from "../dist/index.js";
 
 const tenantId = TenantId.create("tenant-a");
 const ctxFor = (userId, role) => ({ tenant: { tenantId, userId, role }, requestId: "r" });
@@ -39,6 +39,11 @@ function world() {
       }
       return ok(undefined);
     },
+    findByProject: async (p) => {
+      const out = {};
+      for (const [k, v] of values) { const [fieldId, entityId] = k.split(":"); if (items.get(entityId)?.projectId === p) (out[entityId] ??= {})[fieldId] = v; }
+      return ok(out);
+    },
     findByEntity: async (entityId) => ok(Object.fromEntries([...values].filter(([k]) => k.endsWith(`:${entityId}`)).map(([k, v]) => [k.split(":")[0], v]))),
   };
   const auditLogger = { record: async (e) => void audit.push(e) };
@@ -53,6 +58,7 @@ function world() {
     list: new ListProjectFieldsHandler(fieldRepo),
     get: new GetPlanItemFieldsHandler(access, fieldRepo, valueRepo),
     set: new SetPlanItemFieldsHandler(access, fieldRepo, valueRepo, auditLogger, clock),
+    listValues: new ListProjectFieldValuesHandler(fieldRepo, valueRepo, { activeMemberIds: async () => ok(new Set(["pm", "fo"])) }),
   };
 }
 
@@ -88,4 +94,15 @@ test("an unknown field is refused, and the fields shown are the item's own proje
   const got = await w.get.handle(LEAD, "item1");
   assert.deepEqual(got.value.fields, []);
   assert.equal(w.audit.filter((e) => e.eventType === "workplan.fields_set").length, 0, "a refused save is not audited");
+});
+
+test("every activity's field values come back in one read for the list and the export, only for people on the project", async () => {
+  const w = world();
+  const code = (await w.define.handle(PM, "p", { label: "Donor code", type: "TEXT" })).value.id;
+  assert.deepEqual((await w.listValues.handle(PM, "p")).value.fields.length, 1);
+  await w.set.handle(LEAD, "item1", { values: [{ fieldId: code, value: "X1" }] });
+  const res = await w.listValues.handle(PM, "p");
+  assert.deepEqual(res.value.values, { item1: { [code]: "X1" } });
+  assert.equal((await w.listValues.handle(OTHER, "p")).ok, false, "not on the project");
+  assert.deepEqual((await w.listValues.handle(PM, "q")).value, { fields: [], values: {} }, "no fields, nothing to read");
 });
