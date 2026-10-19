@@ -5,43 +5,42 @@
 
 ---
 
-## 0. Status (re-reviewed against the code, 2026-10-19, HEAD e2f317b)
+## 0. Status (checked against the code, 2026-10-20, after commit e616439)
 
-Every row below was checked against the code (file or symbol exists), not against earlier status text. "Owner" is the session that holds the open work; a session stages by path/hunk and commits within minutes so a sweep cannot catch half-edits.
+Every row was checked against the code. Nothing after `13d76ee` is on Contabo.
 
-| Batch | Built (committed) | Still open | Owner |
-|---|---|---|---|
-| A dependencies | links, cascade on move, blocked report, "Waiting for" label | timeline connector arrows; drag-confirm bar previewing cascaded moves | a9 (arrows); a6 (cascade preview) |
-| B targets per group | validation, editor, indicator page | targets beside actuals in the Data Center sheet, report tables, exports | a9 |
-| C custom fields | definitions, values, plan item form | list columns, filter, export (in progress, uncommitted) | a9 |
-| D budget | lines, expenses, overspend flag, project totals on Overview (4a432e4) | budget in exports; split of the 7-method budget port | a9 (exports); a6 (port split) |
-| E RAID | five kinds, kind filter (fbcfef5) | decision-log view | a6 |
-| F roll-up | page, donor filter, link from projects | roll-up in reports and exports | a6 |
-| G beneficiaries | register, consent, duplicate flag, link to activities, unique-people start (5326c65) | edit and remove a record | a6 |
-| H offline | static shell + offline page only | offline progress-log outbox; offline indicator; (decision pending) caching signed-in pages | a6 |
-| I Kobo/ODK import | CSV import, saved column mapping (02bd998), check-first review (e2f317b) | none known | done |
-| J workload | per person per week, limit in activities | capacity per activity | a6 |
-| K automations | two rules on/off per project | per-rule settings; run history screen | a6 |
-| L bulk edit | move, lead, status, preview (fbcfef5) | undo | a6 |
-| Progress log, one-step Done, details panel | built (ecb1053, 807f381, fbcfef5) | browser check with a real account | all |
-| Phase 28 leftovers | series-wide lead change (fccd00c) | indicator due-days setter (column exists, read-only); move a planned activity's logframe link; backfilled completion date | a6 |
-| Tests | domain, application and web unit suites cover every batch | database-backed repository tests for the new tables; Playwright e2e | a9 (DB tests) |
-
-### SOLID audit (concrete findings, not a claim of compliance)
-
-| Principle | Finding | Fix (owner) |
+| Batch | Built (committed) | Still open |
 |---|---|---|
-| Open-closed | `automationNotices` is an if-chain per rule; a new rule edits the function. | Rule registry: each rule is an entry with its own `evaluate`; the function iterates the registry (a6) |
-| Open-closed | `BulkPlanActionHandler` branches on `action.kind` in preview, checks and apply. | Strategy table keyed by kind (a6) |
-| Dependency inversion | `BulkPlanActionHandler` and `CompletePlannedActivityHandler` depend on other handler classes. | Depend on small interfaces (`IAssignPlan`, `IReschedulePlan`, `IChangePlanStatus`) (a6; a9 for Complete) |
-| Dependency inversion | `SetAutomationRuleHandler` takes `{ record(e: unknown) }` instead of `IAuditLogger`. | Use `IAuditLogger` (a6) |
-| Interface segregation | `IBudgetRepository` has 7 methods across two aggregates (lines, expenses). | Split into line and expense ports (a9 to confirm, a6 to do after a9 commits) |
-| Single responsibility | `container.ts` is 1,718 lines; `repositories/workplan.ts` holds a dozen repositories. | One module per aggregate for wiring and for repositories, done last when no session has uncommitted edits there (a6) |
-| Liskov | No inheritance in the new code; ports are structural. | No action |
+| A dependencies | links, cascade on move, blocked report, "Waiting for" label, timeline arrows (55aefa4), cascade preview in the timeline confirm bar (a130f36) | browser check of the arrows |
+| B targets per group | validation, editor, indicator page, Data Center beside the verified figure (8d13569, 6cd43d0) | targets by group in the **report** tables: not done, because it changes the writer contract and its golden tests (needs the Python worker tests too) |
+| C custom fields | definitions, values, plan item form, list columns and spreadsheet (0c59907) | none known |
+| D budget | lines, expenses, overspend flag, project totals (4a432e4), spreadsheet columns (8cc5c34), port split into roles (5b9fd1f) | none known |
+| E RAID | five kinds, kind filter (fbcfef5), decision log on the Overview (ee51780) | none known |
+| F roll-up | page, donor filter (6183378), link from projects, CSV download (6414b26) | not in the donor **report** documents |
+| G beneficiaries | register, consent, duplicate flag, link to activities (5326c65), edit and remove (f5fb015) | none known |
+| H offline | static shell + offline page; the existing banner already shows the offline state; progress entries and Done are kept on the device and sent later (06e6be5, 7108c11) | caching signed-in pages (needs a privacy decision) |
+| I Kobo/ODK import | CSV import, saved column mapping (02bd998), check-first review (e2f317b) | none known |
+| J workload | per person per week, limit, effort weight 1 to 5 per activity (35c65d8) | hours (not recorded by the app) |
+| K automations | registry of rules with their own numbers, on/off, history screen (79f7d5c) | none known |
+| L bulk edit | move, lead, status, preview, undo (e47fcf5, 296711d) | none known |
+| Progress log, one-step Done, details panel | built (ecb1053, 807f381, fbcfef5) | browser check |
+| Phase 28 leftovers | series-wide lead change (fccd00c), due-days setting (e39f2a1), logframe link move (7804e81), dated Done (06e6be5) | partner access (phase 29) |
+| Tests | domain 694, application 619, web unit 343, infrastructure 344 + opt-in database tests (65 + 5) | Playwright e2e; browser check of every new screen with a real account |
 
-"100% SOLID" is not something a test can prove. The above are the checkable violations; each fix keeps behaviour and has the existing tests as a safety net.
+### SOLID pass (done)
 
-**Deployment:** nothing after `13d76ee` is on Contabo. Migrations to apply in order after `20261020160000_beneficiary_records`: `20261020170000_progress_log`, `20261020180000_submission_mapping`, `20261020190000_beneficiary_activity_link`, then any later ones (a9 uses `20261020190000`–`20261020230000`; a6 uses `20261020240000` upward). Re-run `infra/postgres/rls.sql`. Gate, push and deploy are held by donerdesk-a9.
+| Principle | Finding | Fix |
+|---|---|---|
+| Open-closed | automation rules were an if-chain | registry; each rule declares its label, default, numbers and evaluator (0cd810a, 79f7d5c) |
+| Open-closed | bulk action kinds were branches | strategy table; a new kind is one entry (e47fcf5) |
+| Dependency inversion | handlers depended on other handler classes; one took a loose audit type | small command interfaces (`IAssignPlan`, `IReschedulePlan`, `IChangePlanStatus`); `IAuditLogger` (e47fcf5, 0cd810a) |
+| Interface segregation | `IBudgetRepository` had seven methods over two aggregates | four role interfaces; each handler names the roles it uses (5b9fd1f) |
+| Single responsibility | `container.ts` 1,725 lines; one repositories file of 17 classes | work plan built in `container/workplan-module.ts` (container is 1,300 lines); one file per aggregate under `repositories/work-plan/` (eee43b3, 106364f) |
+| Liskov | no inheritance in the new code | no action |
+
+Remaining SOLID debt (honest): `container.ts` is still 1,300 lines for the other contexts, and `plan-handlers.ts` still holds several handlers per file, which is the repository's existing convention.
+
+**Deployment:** migrations after `20261020160000_beneficiary_records`, in order: `20261020170000_progress_log`, `20261020180000_submission_mapping`, `20261020190000_beneficiary_activity_link`, any later ones from donerdesk-a9, then `20261020240000_automation_rule_settings`, `20261020250000_plan_effort`. Re-run `infra/postgres/rls.sql`. `/ready` requires the new columns. Gate, push and deploy are held by donerdesk-a9.
 
 ## 1. Principles for every batch
 
