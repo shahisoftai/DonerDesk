@@ -1395,7 +1395,7 @@ export const FileNeedsSchema = z.object({ required: z.array(z.string()), provide
 // ---- Problems and risks (Phase 28.7) ----
 export const RiskSchema = z.object({
   id: z.string(),
-  kind: z.enum(["PROBLEM", "RISK"]),
+  kind: z.enum(["PROBLEM", "RISK", "ASSUMPTION", "DECISION", "DEPENDENCY"]),
   title: z.string(),
   seriousness: z.enum(["HIGH", "MEDIUM", "LOW"]),
   ownerId: z.string().optional(),

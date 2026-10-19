@@ -13,6 +13,7 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ProjectBudgetSchema, RisksResponseSchema, DeliveryHealthSchema, type DeliveryHealthResponse, DataSheetResponseSchema, LogframeResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { planCounts, outputProgress } from "@/features/workplan/domain/delivery-overview";
 import { RisksCard } from "@/features/tasks/presentation/RisksCard";
+import { DecisionLog } from "@/features/tasks/presentation/DecisionLog";
 import { loadProjectPeople } from "@/features/tasks/application/project-people";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { PlanOverviewCards } from "@/features/workplan/presentation/PlanOverviewCards";
@@ -122,6 +123,7 @@ export default async function ProjectDetail({
       {showRisks && (
         <div className="mt-4"><RisksCard projectId={project.id} risks={risks} people={riskPeople} userId={meId} canRaise={ctx.capabilities.has("risk.raise")} today={new Date().toISOString().slice(0, 10)} /></div>
       )}
+      {showRisks && <div className="mt-4"><DecisionLog risks={risks} people={riskPeople} /></div>}
 
       {planCards && <PlanOverviewCards projectId={project.id} counts={planCards.counts} outputs={planCards.outputs} health={planCards.health} />}
       {budgetResult?.ok && <ProjectBudgetCard projectId={project.id} data={budgetResult.value.items} />}
