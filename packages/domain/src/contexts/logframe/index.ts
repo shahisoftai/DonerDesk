@@ -16,3 +16,4 @@ export * from "./indicator-entry-suggestions.js";
 export * from "./setup-copy.js";
 export * from "./owning-outcome.js";
 export * from "./portfolio-rollup.js";
+export * from "./breakdown-progress.js";

@@ -278,6 +278,7 @@ export * from "./use-cases/workplan/plan-handlers.js";
 export * from "./use-cases/workplan/plan-dependency-handlers.js";
 export * from "./use-cases/workplan/custom-field-handlers.js";
 export * from "./use-cases/portfolio/get-portfolio-indicators.js";
+export * from "./use-cases/logframe/get-breakdown-progress.js";
 export * from "./use-cases/workplan/budget-handlers.js";
 export * from "./use-cases/workplan/bulk-plan-action.js";
 export * from "./use-cases/workplan/workload-handlers.js";

@@ -243,6 +243,13 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  // Targets by group beside the verified figure so far, per indicator that has them.
+  app.get("/v1/projects/:projectId/breakdown-progress", async (req) => {
+    const r = await req.container.handlers.getBreakdownProgress.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
   app.get("/v1/projects/:projectId/budget", async (req) => {
     const r = await req.container.handlers.getProjectBudget.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
     if (!r.ok) throw r.error;

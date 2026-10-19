@@ -115,6 +115,7 @@ import {
   CompletePlannedActivityHandler,
   GetPlanItemBudgetHandler,
   GetProjectBudgetHandler,
+  GetBreakdownProgressHandler,
   ListProjectFieldsHandler,
   GetPlanItemFieldsHandler,
   ListProjectFieldValuesHandler,
@@ -666,6 +667,7 @@ export interface Container {
     addBudgetExpense: AddBudgetExpenseHandler;
     getPlanItemBudget: GetPlanItemBudgetHandler;
     getProjectBudget: GetProjectBudgetHandler;
+    getBreakdownProgress: GetBreakdownProgressHandler;
     getPlanItemFields: GetPlanItemFieldsHandler;
     listProjectFieldValues: ListProjectFieldValuesHandler;
     setPlanItemFields: SetPlanItemFieldsHandler;
@@ -1524,6 +1526,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     addBudgetExpense: new AddBudgetExpenseHandler(planAccess, budgets, ids, audits, clock),
     getPlanItemBudget: new GetPlanItemBudgetHandler(planAccess, budgets),
     getProjectBudget: new GetProjectBudgetHandler(plannedActivities, budgets, planContext),
+    getBreakdownProgress: new GetBreakdownProgressHandler(indicators, indicatorUpdates, periods, planContext),
     getPlanItemFields: new GetPlanItemFieldsHandler(planAccess, projectFields, customFieldValues),
     listProjectFieldValues: new ListProjectFieldValuesHandler(projectFields, customFieldValues, planContext),
     setPlanItemFields: new SetPlanItemFieldsHandler(planAccess, projectFields, customFieldValues, audits, clock),
