@@ -6,6 +6,11 @@ import { formatShortDate } from "@donordesk/domain/contexts/workplan/index.js";
 import type { ProgressResponse } from "@/lib/server/schemas";
 import { removeProgressAction, saveProgressAction, setPlanIndicatorsAction } from "@/lib/actions/workplan";
 import { useActionState } from "@/lib/client/action-state";
+import { guardNetwork, isOfflineFailure } from "@/lib/shared/connectivity";
+import { newIdempotencyKey } from "@/lib/shared/create-retry";
+import type { AppError } from "@/lib/shared/app-error";
+import { useOutbox } from "@/features/offline/presentation/OutboxProvider";
+import { progressEntry } from "@/features/offline/domain/progress-outbox";
 import { useHydrated } from "@/lib/client/use-hydrated";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -18,8 +23,10 @@ import type { ProgressKind } from "@donordesk/domain/contexts/workplan/index.js"
  * more. A monthly or activity-end form is filled from the entries it covers; a figure nobody recorded stays blank, never zero.
  * The breakdown fields come from the indicators the activity reports on.
  */
-export function ProgressLog({ itemId, today, activity, data, indicators, canEdit, uniquePeople = null }: {
+export function ProgressLog({ itemId, title = "Activity", today, activity, data, indicators, canEdit, uniquePeople = null }: {
   itemId: string;
+  /** The activity's title, shown in the banner when an entry is kept on this device. */
+  title?: string;
   today: string;
   activity: { start: string; end: string };
   data: ProgressResponse;
@@ -35,6 +42,8 @@ export function ProgressLog({ itemId, today, activity, data, indicators, canEdit
   const [kind, setKind] = useState<ProgressKind>("DAILY");
   const [draft, setDraft] = useState<ProgressDraft>(() => draftFor("DAILY", defaultKey("DAILY", today, activity), activity, data.entries, data.fields, uniquePeople));
   const reached = reachedSoFar(data.entries);
+  const outbox = useOutbox();
+  const [queued, setQueued] = useState(false);
 
   function open(k: ProgressKind, key: string) {
     setKind(k);
@@ -48,12 +57,26 @@ export function ProgressLog({ itemId, today, activity, data, indicators, canEdit
   }
 
   async function save() {
-    const done = await state.run(() => saveProgressAction(itemId, {
+    const payload = {
       kind, key: draft.key,
       values: { total: draft.total, breakdowns: draft.breakdowns, sessions: draft.sessions, unique: draft.unique },
       narrative: draft.narrative,
-    }));
-    if (done) { dialog.current?.close(); router.refresh(); }
+      ...(draft.editingId ? { replaceId: draft.editingId } : {}),
+    };
+    let offline: AppError | undefined;
+    const done = await state.run(async () => {
+      const attempt = await guardNetwork(() => saveProgressAction(itemId, payload));
+      if (!attempt.ok && isOfflineFailure(attempt.error)) offline = attempt.error;
+      return attempt;
+    });
+    if (done) { dialog.current?.close(); router.refresh(); return; }
+    // No connection: keep the entry on this device. It is sent when the connection returns, and parked (never merged) if the day
+    // was meanwhile logged elsewhere.
+    if (offline && outbox.supported) {
+      await outbox.enqueue(progressEntry({ id: newIdempotencyKey(), title: `${title}: ${draft.key || "whole activity"}`, payload: { itemId, input: payload }, now: Date.now() }));
+      setQueued(true);
+      dialog.current?.close();
+    }
   }
 
   async function remove() {
@@ -110,6 +133,7 @@ export function ProgressLog({ itemId, today, activity, data, indicators, canEdit
           ))}
         </ul>
       )}
+      {queued && <p role="status" className="text-sm text-slate-600 dark:text-slate-300">Saved on this device. It will be sent when you are back online.</p>}
       {canEdit && <Button size="sm" onClick={() => open("DAILY", defaultKey("DAILY", today, activity))}>Log progress</Button>}
 
       <dialog ref={dialog} aria-labelledby="progress-dialog-title" className="w-[min(560px,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-xl backdrop:bg-slate-900/40 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">
