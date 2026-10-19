@@ -1622,6 +1622,42 @@ model Beneficiary {
   @@index([tenantId, projectId])
 }
 
+/// An indicator a planned activity reports on. Its breakdown fields are shown in the progress log.
+model PlannedActivityIndicator {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  indicatorId       String
+  createdById       String
+  createdAt         DateTime @default(now())
+
+  @@unique([plannedActivityId, indicatorId])
+  @@index([tenantId, projectId])
+}
+
+/// One progress record for a planned activity: a day, a week, a month, or the activity end.
+/// valuesJson: {total, breakdowns:{key:n}, sessions, unique}. narrativeJson: free text. Blank figures are null.
+model ProgressEntry {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  kind              String
+  fromDate          DateTime @db.Date
+  toDate            DateTime @db.Date
+  valuesJson        String
+  narrativeJson     String   @default("{}")
+  absorbedById      String?
+  createdById       String
+  updatedById       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime
+
+  @@unique([plannedActivityId, kind, fromDate])
+  @@index([tenantId, plannedActivityId])
+}
+
 model PlanRevision {
   id                String   @id
   tenantId          String

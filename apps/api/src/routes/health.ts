@@ -18,6 +18,8 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "MemberCapacity", field: "activitiesPerWeek" },
   { model: "ProjectAutomation", field: "enabled" },
   { model: "Beneficiary", field: "caseCode" },
+  { model: "ProgressEntry", field: "valuesJson" },
+  { model: "PlannedActivityIndicator", field: "indicatorId" },
   { model: "ActivityUpdate", field: "plannedActivityId" },
   { model: "PlannedActivity", field: "plannedEnd" },
   { model: "PlannedActivity", field: "ownerUserId" },

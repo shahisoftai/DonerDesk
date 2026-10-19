@@ -23,3 +23,4 @@ export * from "./workload.js";
 export * from "./automations.js";
 export * from "./beneficiary.js";
 export * from "./submission-import.js";
+export * from "./progress-log.js";

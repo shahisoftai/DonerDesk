@@ -1491,3 +1491,54 @@ export const BeneficiariesResponseSchema = z.object({
   counts: z.object({ total: z.number(), bySex: z.record(z.string(), z.number()), byAgeGroup: z.record(z.string(), z.number()) }),
 });
 export type BeneficiariesResponse = z.infer<typeof BeneficiariesResponseSchema>;
+
+/** The progress log of one planned activity: its breakdown fields, entries, and the indicators it reports on. */
+export const ProgressResponseSchema = z.object({
+  fields: z.array(z.object({ key: z.string(), label: z.string(), usedBy: z.array(z.string()) })),
+  indicatorIds: z.array(z.string()),
+  entries: z.array(z.object({
+    id: z.string(),
+    kind: z.enum(["DAILY", "WEEKLY", "MONTHLY", "END"]),
+    from: z.string(),
+    to: z.string(),
+    values: z.object({ total: z.number().nullable(), breakdowns: z.record(z.string(), z.number().nullable()), sessions: z.number().nullable(), unique: z.number().nullable() }),
+    narrative: z.object({ notes: z.string(), summary: z.string(), achievements: z.string(), challenges: z.string(), nextSteps: z.string(), lessons: z.string() }),
+    absorbedById: z.string().nullable(),
+  })),
+});
+export type ProgressResponse = z.infer<typeof ProgressResponseSchema>;
+
+/** The progress log of one planned activity: its breakdown fields and every entry (phase 28.1). */
+export const ProgressResponseSchema = z.object({
+  fields: z.array(z.object({ key: z.string(), label: z.string(), usedBy: z.array(z.string()) })),
+  entries: z.array(z.object({
+    id: z.string(),
+    kind: z.enum(["DAILY", "WEEKLY", "MONTHLY", "END"]),
+    from: z.string(),
+    to: z.string(),
+    values: z.object({
+      total: z.number().nullable(),
+      breakdowns: z.record(z.string(), z.number().nullable()),
+      sessions: z.number().nullable(),
+      unique: z.number().nullable(),
+    }),
+    narrative: z.record(z.string(), z.string()),
+    absorbedById: z.string().nullable(),
+  })),
+});
+export type ProgressResponse = z.infer<typeof ProgressResponseSchema>;
+
+/** What a form opens with for a kind and range: the sum of the live entries it covers, blank where nothing was recorded. */
+export const PrepareProgressResponseSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  fields: z.array(z.object({ key: z.string(), label: z.string(), usedBy: z.array(z.string()) })),
+  values: z.object({
+    total: z.number().nullable(),
+    breakdowns: z.record(z.string(), z.number().nullable()),
+    sessions: z.number().nullable(),
+    unique: z.number().nullable(),
+  }),
+  sources: z.number(),
+});
+export type PrepareProgressResponse = z.infer<typeof PrepareProgressResponseSchema>;

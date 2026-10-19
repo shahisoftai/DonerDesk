@@ -175,3 +175,36 @@ export interface IBeneficiaryRepository {
   addMany(records: BeneficiaryRecord[]): Promise<Result<void>>;
   findByProject(projectId: string, tenantId: TenantId): Promise<Result<BeneficiaryRecord[]>>;
 }
+
+/** Indicators a planned activity reports on (phase 28.1 gap closure). */
+export interface IPlannedActivityIndicatorRepository {
+  findIndicatorIds(plannedActivityId: string, tenantId: TenantId): Promise<Result<string[]>>;
+  /** Replaces the set in one transaction. */
+  replace(input: { tenantId: string; projectId: string; plannedActivityId: string; indicatorIds: string[]; userId: string; now: Date }): Promise<Result<void>>;
+}
+
+/** One progress record for a planned activity. Values are null when not recorded. */
+export interface ProgressEntryRecord {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  plannedActivityId: string;
+  kind: "DAILY" | "WEEKLY" | "MONTHLY" | "END";
+  from: string;
+  to: string;
+  values: { total: number | null; breakdowns: Record<string, number | null>; sessions: number | null; unique: number | null };
+  narrative: { notes: string; summary: string; achievements: string; challenges: string; nextSteps: string; lessons: string };
+  absorbedById: string | null;
+  createdById: string;
+  updatedById: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IProgressRepository {
+  findByItem(plannedActivityId: string, tenantId: TenantId): Promise<Result<ProgressEntryRecord[]>>;
+  /** Saves one entry and marks the entries it absorbs, in one transaction. A repeated day is a conflict. */
+  save(entry: ProgressEntryRecord, absorbIds: string[]): Promise<Result<void>>;
+  /** Removes an entry and releases the entries it had absorbed, in one transaction. */
+  remove(id: string, plannedActivityId: string, tenantId: TenantId): Promise<Result<boolean>>;
+}

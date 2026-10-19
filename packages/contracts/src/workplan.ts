@@ -175,3 +175,33 @@ export type RegisterBeneficiaryInput = z.infer<typeof RegisterBeneficiarySchema>
 /** A KoboToolbox or ODK export as text (CSV), one person per submission (phase 28.1-I). */
 export const ImportSubmissionsSchema = z.object({ csv: z.string().min(1).max(2_000_000) }).strict();
 export type ImportSubmissionsInput = z.infer<typeof ImportSubmissionsSchema>;
+
+/** Which indicators a planned activity reports on. Their breakdowns become the fields of its progress log. */
+export const SetPlanIndicatorsSchema = z.object({ indicatorIds: z.array(z.string().min(1).max(64)).max(30) }).strict();
+
+/** One progress entry: a day or week (key = date), a month (key = YYYY-MM) or the activity end (key empty). Figures as typed; blank stays blank. */
+export const SaveProgressSchema = z.object({
+  kind: z.enum(["DAILY", "WEEKLY", "MONTHLY", "END"]),
+  key: z.string().max(10),
+  values: z.object({
+    total: z.string().max(12),
+    breakdowns: z.record(z.string().max(160), z.string().max(12)),
+    sessions: z.string().max(12),
+    unique: z.string().max(12),
+  }),
+  narrative: z.object({
+    notes: z.string().max(2000), summary: z.string().max(2000), achievements: z.string().max(2000),
+    challenges: z.string().max(2000), nextSteps: z.string().max(2000), lessons: z.string().max(2000),
+  }).partial(),
+  /** Set only when changing the entry already logged for this kind and range. */
+  replaceId: z.string().min(1).max(64).optional(),
+}).strict();
+/** One step Done: the day it finished, people reached (blank stays blank), and an optional note. */
+export const MarkPlanDoneSchema = z.object({
+  finishedOn: PlainDateSchema,
+  people: z.string().max(12),
+  notes: z.string().max(2000),
+}).strict();
+export type MarkPlanDoneRequest = z.infer<typeof MarkPlanDoneSchema>;
+
+export type SaveProgressRequest = z.infer<typeof SaveProgressSchema>;

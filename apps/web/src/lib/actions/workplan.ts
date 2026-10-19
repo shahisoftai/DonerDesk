@@ -1,6 +1,6 @@
 "use server";
 
-import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema } from "@donordesk/contracts";
+import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, SetPlanIndicatorsSchema, SaveProgressSchema } from "@donordesk/contracts";
 import type { ZodType } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -193,4 +193,62 @@ export async function importSubmissionsAction(projectId: string, csv: string): P
   const p = await parsed(ImportSubmissionsSchema, { csv });
   if (!p.ok) return p.result;
   return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/beneficiaries/import`, ImportedSchema, context.token, { method: "POST", body: p.data });
+}
+
+/** Which indicators the activity reports on. Their breakdowns become the fields of its progress log. */
+export async function setPlanIndicatorsAction(itemId: string, indicatorIds: string[]): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(SetPlanIndicatorsSchema, { indicatorIds });
+  if (!p.ok) return p.result;
+  const r = await gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/indicators`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
+  return r.ok ? { ok: true, value: true } : r;
+}
+
+const ProgressSavedSchema = z.object({ id: z.string(), absorbed: z.number() });
+
+/** Saves one progress entry (day, week, month or activity end). Blank figures are sent blank. */
+export async function saveProgressAction(itemId: string, input: unknown): Promise<Result<{ id: string; absorbed: number }, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(SaveProgressSchema, input);
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/progress`, ProgressSavedSchema, context.token, { method: "POST", body: p.data });
+}
+
+/** Removes a progress entry; a monthly report's removal gives back the entries it had absorbed. */
+export async function removeProgressAction(itemId: string, entryId: string): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const r = await gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/progress/${encodeURIComponent(entryId)}`, OkResponseSchema, context.token, { method: "DELETE" });
+  return r.ok ? { ok: true, value: true } : r;
+}
+
+const ProgressSavedSchema = z.object({ id: z.string(), absorbed: z.number() });
+
+export async function markPlanDoneAction(itemId: string, input: unknown): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(MarkPlanDoneSchema, input);
+  if (!p.ok) return p.result;
+  const r = await gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/done`, OkResponseSchema, context.token, { method: "POST", body: p.data });
+  return r.ok ? { ok: true, value: true } : r;
+}
+
+/** Saves one progress entry. A monthly report absorbs the live daily and weekly entries in its month. */
+export async function saveProgressAction(itemId: string, input: unknown): Promise<Result<{ id: string; absorbed: number }, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(SaveProgressSchema, input);
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/progress`, ProgressSavedSchema, context.token, { method: "POST", body: p.data });
+}
+
+export async function removeProgressAction(itemId: string, entryId: string): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const r = await gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/progress/${encodeURIComponent(entryId)}`, OkResponseSchema, context.token, { method: "DELETE" });
+  return r.ok ? { ok: true, value: true } : r;
+}
+
+export async function setPlanIndicatorsAction(itemId: string, indicatorIds: string[]): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(SetPlanIndicatorsSchema, { indicatorIds });
+  if (!p.ok) return p.result;
+  const r = await gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/indicators`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
+  return r.ok ? { ok: true, value: true } : r;
 }

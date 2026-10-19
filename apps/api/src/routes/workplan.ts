@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   AssignPlannedActivitySchema, ImportWorkPlanSchema, SetWorkPlanningVisibilitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ListWorkPlanQuerySchema,
-  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema,
+  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, MarkPlanDoneSchema, SetPlanIndicatorsSchema, SaveProgressSchema,
 } from "@donordesk/contracts";
 
 /**
@@ -159,6 +159,48 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.registerBeneficiary.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"), body);
     if (!r.ok) throw r.error;
     return r.value;
+  });
+
+  app.put("/v1/work-plan/:itemId/indicators", async (req) => {
+    const body = SetPlanIndicatorsSchema.parse(req.body);
+    const r = await req.container.handlers.setPlanIndicators.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.get("/v1/work-plan/:itemId/progress", async (req) => {
+    const r = await req.container.handlers.getProgress.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/work-plan/:itemId/progress/prepare", async (req) => {
+    const q = req.query as { kind?: string; key?: string };
+    const kind = q.kind ?? "";
+    if (!["DAILY", "WEEKLY", "MONTHLY", "END"].includes(kind)) throw new Error("Choose daily, weekly, monthly or activity end");
+    const r = await req.container.handlers.prepareProgress.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), kind as "DAILY" | "WEEKLY" | "MONTHLY" | "END", q.key ?? "");
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/work-plan/:itemId/done", async (req) => {
+    const body = MarkPlanDoneSchema.parse(req.body);
+    const r = await req.container.handlers.markPlanDone.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.post("/v1/work-plan/:itemId/progress", async (req) => {
+    const body = SaveProgressSchema.parse(req.body);
+    const r = await req.container.handlers.saveProgress.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.delete("/v1/work-plan/:itemId/progress/:entryId", async (req) => {
+    const r = await req.container.handlers.removeProgress.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), idOf(req, "entryId"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
   });
 
   app.get("/v1/work-plan/:itemId/budget", async (req) => {

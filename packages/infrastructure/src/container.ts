@@ -101,6 +101,12 @@ import {
   RegisterBeneficiaryHandler,
   ListBeneficiariesHandler,
   ImportSubmissionsHandler,
+  SetPlanIndicatorsHandler,
+  GetProgressHandler,
+  SaveProgressHandler,
+  PrepareProgressHandler,
+  MarkPlanDoneHandler,
+  RemoveProgressHandler,
   GetPlanItemBudgetHandler,
   ListProjectFieldsHandler,
   GetPlanItemFieldsHandler,
@@ -362,7 +368,7 @@ import { ChecklistAssignmentSource } from "./assignment-sources/checklist-source
 import { ReportDeadlineAssignmentSource } from "./assignment-sources/report-deadline-source.js";
 import { EvidenceReviewAssignmentSource, ActivityReviewAssignmentSource, ActivityFixAssignmentSource } from "./assignment-sources/review-sources.js";
 import { PrismaPortfolioValueReader } from "./repositories/portfolio.js";
-import { PrismaBeneficiaryRepository, PrismaAutomationSettings, PrismaBudgetRepository, PrismaMemberCapacityRepository, PrismaPlannedActivityRepository, PrismaPlanRevisionRepository, PrismaPlanContextReader, PrismaDeliveryFactsReader, PrismaMemberDirectory, PrismaMyWeekReader, PrismaPlanDependencyRepository, PrismaProjectFieldRepository, PrismaCustomFieldValueRepository } from "./repositories/workplan.js";
+import { PrismaPlannedActivityIndicatorRepository, PrismaProgressRepository, PrismaBeneficiaryRepository, PrismaAutomationSettings, PrismaBudgetRepository, PrismaMemberCapacityRepository, PrismaPlannedActivityRepository, PrismaPlanRevisionRepository, PrismaPlanContextReader, PrismaDeliveryFactsReader, PrismaMemberDirectory, PrismaMyWeekReader, PrismaPlanDependencyRepository, PrismaProjectFieldRepository, PrismaCustomFieldValueRepository } from "./repositories/workplan.js";
 import {
   PrismaReportingPeriodRepository,
   PrismaReportDraftRepository,
@@ -636,6 +642,12 @@ export interface Container {
     registerBeneficiary: RegisterBeneficiaryHandler;
     listBeneficiaries: ListBeneficiariesHandler;
     importSubmissions: ImportSubmissionsHandler;
+    setPlanIndicators: SetPlanIndicatorsHandler;
+    getProgress: GetProgressHandler;
+    saveProgress: SaveProgressHandler;
+    prepareProgress: PrepareProgressHandler;
+    markPlanDone: MarkPlanDoneHandler;
+    removeProgress: RemoveProgressHandler;
     setCapacity: SetCapacityHandler;
     addBudgetExpense: AddBudgetExpenseHandler;
     getPlanItemBudget: GetPlanItemBudgetHandler;
@@ -1234,6 +1246,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const memberCapacity = new PrismaMemberCapacityRepository(prisma);
   const automationSettings = new PrismaAutomationSettings(prisma);
   const beneficiaries = new PrismaBeneficiaryRepository(prisma);
+  const activityIndicators = new PrismaPlannedActivityIndicatorRepository(prisma);
+  const progressLog = new PrismaProgressRepository(prisma);
   const planContext = new PrismaPlanContextReader(prisma);
   const planLinks = new PlanLinkResolver(plannedActivities);
   const planAccess = new PlanAccess(plannedActivities);
@@ -1468,6 +1482,12 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     registerBeneficiary: new RegisterBeneficiaryHandler(beneficiaries, planContext, ids, audits, clock),
     listBeneficiaries: new ListBeneficiariesHandler(beneficiaries, planContext),
     importSubmissions: new ImportSubmissionsHandler(beneficiaries, planContext, ids, audits, clock),
+    setPlanIndicators: new SetPlanIndicatorsHandler(planAccess, activityIndicators, indicators, audits, clock),
+    getProgress: new GetProgressHandler(planAccess, progressLog, activityIndicators, indicators),
+    prepareProgress: new PrepareProgressHandler(planAccess, progressLog, activityIndicators, indicators),
+    markPlanDone: new MarkPlanDoneHandler(planAccess, plannedActivities, planRecorder, new SaveProgressHandler(planAccess, progressLog, activityIndicators, indicators, ids, audits, clock), progressLog, clock),
+    saveProgress: new SaveProgressHandler(planAccess, progressLog, activityIndicators, indicators, ids, audits, clock),
+    removeProgress: new RemoveProgressHandler(planAccess, progressLog, audits),
     setCapacity: new SetCapacityHandler(memberCapacity, audits, clock),
     bulkPlanAction: new BulkPlanActionHandler(planAccess, plannedActivities, planContext,
       new AssignPlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder),
