@@ -36,3 +36,8 @@ export interface IRiskRefresh {
 export interface IEntryDueDays {
   forProject(projectId: string, tenantId: TenantId): Promise<number>;
 }
+
+/** Changing that number. Returns false when the project has no reporting profile yet (there is nothing to change). */
+export interface IEntryDueDaysWriter {
+  set(projectId: string, days: number, tenantId: TenantId): Promise<boolean>;
+}

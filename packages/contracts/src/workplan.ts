@@ -236,3 +236,7 @@ export const ChangeActivityPeopleSchema = z.object({
   removeIds: z.array(z.string().min(1).max(64)).max(500).default([]),
 }).strict();
 export type ChangeActivityPeopleInput = z.infer<typeof ChangeActivityPeopleSchema>;
+
+/** Days after a period ends that a project's indicator values are due. Checked again on the server (whole number, 0 to 60). */
+export const SetEntryDueDaysSchema = z.object({ days: z.number() }).strict();
+export type SetEntryDueDaysInput = z.infer<typeof SetEntryDueDaysSchema>;

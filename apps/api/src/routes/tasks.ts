@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CloseRiskSchema, CreateRiskSchema, UpdateRiskSchema, UpdateNotificationPreferencesSchema, CompleteTaskSchema, CreateTaskSchema, ListAssignmentsQuerySchema, SetOwnerSchema } from "@donordesk/contracts";
+import { SetEntryDueDaysSchema, CloseRiskSchema, CreateRiskSchema, UpdateRiskSchema, UpdateNotificationPreferencesSchema, CompleteTaskSchema, CreateTaskSchema, ListAssignmentsQuerySchema, SetOwnerSchema } from "@donordesk/contracts";
 
 /**
  * Requests, the assignment queue, the team view and the three "Lead" pickers. Thin: validate, call one handler, throw its error.
@@ -33,6 +33,20 @@ export async function registerTaskRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.getPortfolioHealth.handle({ tenant: req.tenant, requestId: req.id });
     if (!r.ok) throw r.error;
     return { items: r.value };
+  });
+
+  // Days after a period ends that indicator values are due (default 5). Anyone on the project reads it; project editors set it.
+  app.get("/v1/projects/:projectId/entry-due-days", async (req) => {
+    const r = await req.container.handlers.getEntryDueDays.handle({ tenant: req.tenant, requestId: req.id }, (req.params as { projectId: string }).projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/projects/:projectId/entry-due-days", async (req) => {
+    const body = SetEntryDueDaysSchema.parse(req.body);
+    const r = await req.container.handlers.setEntryDueDays.handle({ tenant: req.tenant, requestId: req.id }, (req.params as { projectId: string }).projectId, body.days);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.get("/v1/projects/:projectId/risk-trend", async (req) => {

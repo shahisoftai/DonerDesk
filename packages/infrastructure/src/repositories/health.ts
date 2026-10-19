@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_ENTRY_DUE_DAYS, ProjectRiskTrend, ok, recordedKey, type PlainDate, type RiskFactor, type TenantId } from "@donordesk/domain";
-import type { CollectionFacts, ICollectionFactsReader, IEntryDueDays, IRiskTrendStore } from "@donordesk/application";
+import type { CollectionFacts, ICollectionFactsReader, IEntryDueDays, IEntryDueDaysWriter, IRiskTrendStore } from "@donordesk/application";
 
 const toDay = (d: Date): PlainDate => d.toISOString().slice(0, 10);
 /** A report that is finished takes no more values. */
@@ -72,11 +72,17 @@ export class PrismaRiskTrendStore implements IRiskTrendStore {
 }
 
 /** The reporting profile's "days after a period ends that values are due" (5 when the project has no profile yet). */
-export class PrismaEntryDueDays implements IEntryDueDays {
+export class PrismaEntryDueDays implements IEntryDueDays, IEntryDueDaysWriter {
   constructor(private readonly prisma: PrismaClient) {}
 
   async forProject(projectId: string, tenantId: TenantId): Promise<number> {
     const p = await this.prisma.reportingProfile.findFirst({ where: { projectId, tenantId: tenantId.toString() }, select: { indicatorEntryDueDays: true } });
     return p?.indicatorEntryDueDays ?? DEFAULT_ENTRY_DUE_DAYS;
+  }
+
+  /** Changes the profile's value; false when the project has no profile (so nothing was changed). */
+  async set(projectId: string, days: number, tenantId: TenantId): Promise<boolean> {
+    const res = await this.prisma.reportingProfile.updateMany({ where: { projectId, tenantId: tenantId.toString() }, data: { indicatorEntryDueDays: days } });
+    return res.count > 0;
   }
 }

@@ -3,6 +3,8 @@ import { getProjectMembers } from "@/lib/server/project-queries";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { AutomationRulesResponseSchema, TeamResponseSchema, WorkloadResponseSchema } from "@/lib/server/schemas";
 import { AutomationRulesCard } from "@/features/workplan/presentation/AutomationRulesCard";
+import { EntryDueDaysCard } from "@/features/workplan/presentation/EntryDueDaysCard";
+import { getEntryDueDaysAction } from "@/lib/actions/entry-due-days";
 import { WorkloadPanel } from "@/features/workplan/presentation/WorkloadPanel";
 import { loadProjectPeople } from "@/features/tasks/application/project-people";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
@@ -21,6 +23,7 @@ export default async function ProjectTeamPage({ params }: { params: Promise<{ id
     gatewayRequest("/v1/users", TeamResponseSchema, ctx.token),
     gatewayRequest(`/v1/projects/${resolvedParams.id}/workload`, WorkloadResponseSchema, ctx.token),
   ]);
+  const dueDays = canManage ? await getEntryDueDaysAction(resolvedParams.id) : null;
   const automations = canManage ? await gatewayRequest(`/v1/projects/${resolvedParams.id}/automations`, AutomationRulesResponseSchema, ctx.token) : null;
   const people = await loadProjectPeople(ctx.token, resolvedParams.id, decodeSessionPayload(ctx.token)?.sub ?? "");
   const names = Object.fromEntries(people.map((p) => [p.id, p.label.replace(/ \(you\)$/, "")]));
@@ -46,6 +49,11 @@ export default async function ProjectTeamPage({ params }: { params: Promise<{ id
       {workload.ok && (
         <div className="mt-8">
           <WorkloadPanel data={workload.value} names={names} today={today} canManage={canManage} />
+        </div>
+      )}
+      {dueDays?.ok && (
+        <div className="mt-8">
+          <EntryDueDaysCard projectId={resolvedParams.id} days={dueDays.value.days} />
         </div>
       )}
       {automations?.ok && (
