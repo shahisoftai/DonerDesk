@@ -1,6 +1,6 @@
 import { AUTOMATION_RULES, AUTOMATION_RULE_KEYS, automationNotices, evidenceCoverage, noticeSubjectKey, NO_DELIVERY, DomainError, err, ok, type AutomationItem, type AutomationRuleKey, type PlainDate, type Result } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IClock } from "../../ports/core.js";
+import type { IAuditLogger, IClock } from "../../ports/core.js";
 import type { IReminderAudience, IReminderLedger, IPersonNotifier } from "../../ports/reminders.js";
 import type { IAutomationSettings, IDeliveryFactsReader, IPlannedActivityRepository } from "../../ports/workplan.js";
 import type { IProjectRepository } from "../../ports/projects.js";
@@ -12,7 +12,7 @@ export const enabledFrom = (stored: Record<string, boolean>): Set<AutomationRule
 
 /** Turns one rule on or off for a project. Managers only; audited. */
 export class SetAutomationRuleHandler {
-  constructor(private readonly settings: IAutomationSettings, private readonly audit: { record(e: unknown): Promise<void> }, private readonly clock: IClock) {}
+  constructor(private readonly settings: IAutomationSettings, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string, ruleKey: string, enabled: boolean): Promise<Result<void, DomainError>> {
     const allowed = PlanAccess.requireManage(ctx);

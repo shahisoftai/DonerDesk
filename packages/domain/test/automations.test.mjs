@@ -34,3 +34,22 @@ test("each notice has a key per item per rule, so the ledger stops a repeat on t
   assert.deepEqual(AUTOMATION_RULE_KEYS, ["START_WITHOUT_LEAD", "FILES_STILL_NEEDED"]);
   assert.equal(AUTOMATION_RULES.FILES_STILL_NEEDED.defaultOn, true);
 });
+
+import { AUTOMATION_REGISTRY } from "../dist/index.js";
+
+test("every registered rule has a label, a default and an evaluator, and the key list is the registry's own", () => {
+  assert.deepEqual(AUTOMATION_RULE_KEYS, Object.keys(AUTOMATION_REGISTRY));
+  for (const [key, rule] of Object.entries(AUTOMATION_REGISTRY)) {
+    assert.ok(rule.label.length > 0, `${key} has a label`);
+    assert.equal(typeof rule.defaultOn, "boolean", `${key} has a default`);
+    assert.equal(typeof rule.evaluate, "function", `${key} has an evaluator`);
+  }
+});
+
+test("a rule that finds nothing adds no notice, and a notice carries its rule key and item", () => {
+  const quiet = { id: "q", title: "Quiet", status: "PLANNED", plannedStart: "2026-12-01", plannedEnd: "2026-12-02", stillNeeded: [] };
+  assert.deepEqual(automationNotices([quiet], "2026-10-20", ON), []);
+  const [n] = automationNotices([{ ...quiet, id: "s", plannedStart: "2026-10-21" }], "2026-10-20", ON);
+  assert.equal(n.ruleKey, "START_WITHOUT_LEAD");
+  assert.equal(n.itemId, "s");
+});

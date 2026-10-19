@@ -6,18 +6,6 @@
 import { addDays, daysBetween, type PlainDate } from "./plain-date.js";
 import type { PlanStatus } from "./plan-status-transitions.js";
 
-export const AUTOMATION_RULES = {
-  /** An activity starts within the next few days and nobody leads it: tell the project manager. */
-  START_WITHOUT_LEAD: { label: "Tell the project manager when an activity starts soon with no lead", defaultOn: true },
-  /** A finished activity still has files it needs: tell its lead, for two weeks after it ended. */
-  FILES_STILL_NEEDED: { label: "Tell the lead when a finished activity still needs files", defaultOn: true },
-} as const;
-export type AutomationRuleKey = keyof typeof AUTOMATION_RULES;
-export const AUTOMATION_RULE_KEYS = Object.keys(AUTOMATION_RULES) as AutomationRuleKey[];
-
-export const START_SOON_DAYS = 3;
-export const FILES_WINDOW_DAYS = 14;
-
 export interface AutomationItem {
   id: string;
   title: string;
@@ -38,29 +26,70 @@ export interface AutomationNotice {
   message: string;
 }
 
+/** What a rule says about one item, or nothing. The registry adds the rule key and the item id. */
+export type AutomationFinding = Omit<AutomationNotice, "ruleKey" | "itemId">;
+
+interface AutomationRuleDefinition {
+  label: string;
+  defaultOn: boolean;
+  evaluate(item: AutomationItem, today: PlainDate): AutomationFinding | undefined;
+}
+
+export const START_SOON_DAYS = 3;
+export const FILES_WINDOW_DAYS = 14;
+
+/**
+ * The one list of automation rules. A rule is a label, a default, and a pure `evaluate`. Adding a rule is adding an entry here:
+ * the runner, the settings list and the notice builder read this registry and need no change.
+ */
+export const AUTOMATION_REGISTRY = {
+  /** An activity starts within the next few days and nobody leads it: tell the project manager. */
+  START_WITHOUT_LEAD: {
+    label: "Tell the project manager when an activity starts soon with no lead",
+    defaultOn: true,
+    evaluate(item, today) {
+      if (item.status !== "PLANNED" || item.ownerUserId) return undefined;
+      const until = daysBetween(today, item.plannedStart);
+      if (until < 0 || until > START_SOON_DAYS) return undefined;
+      return {
+        recipient: "MANAGER",
+        title: `${item.title} starts soon with no lead`,
+        message: until === 0
+          ? `${item.title} starts today and nobody leads it yet. Choose a lead on the plan.`
+          : `${item.title} starts in ${until} day${until === 1 ? "" : "s"} and nobody leads it yet. Choose a lead on the plan.`,
+      };
+    },
+  },
+  /** A finished activity still has files it needs: tell its lead, for two weeks after it ended. */
+  FILES_STILL_NEEDED: {
+    label: "Tell the lead when a finished activity still needs files",
+    defaultOn: true,
+    evaluate(item, today) {
+      if (item.status !== "DONE" || item.stillNeeded.length === 0) return undefined;
+      const sinceEnd = daysBetween(item.plannedEnd, today);
+      if (sinceEnd < 0 || sinceEnd > FILES_WINDOW_DAYS) return undefined;
+      return {
+        recipient: item.ownerUserId ? "LEAD" : "MANAGER",
+        title: `${item.title} still needs files`,
+        message: `Still needed for ${item.title}: ${item.stillNeeded.join(", ")}. Attach them to the completed activity.`,
+      };
+    },
+  },
+} satisfies Record<string, AutomationRuleDefinition>;
+
+export type AutomationRuleKey = keyof typeof AUTOMATION_REGISTRY;
+/** The registry under its earlier name: label and default per rule. */
+export const AUTOMATION_RULES = AUTOMATION_REGISTRY;
+export const AUTOMATION_RULE_KEYS = Object.keys(AUTOMATION_REGISTRY) as AutomationRuleKey[];
+
 /** Notices for the rules that are on. Pure: today is passed in. */
 export function automationNotices(items: ReadonlyArray<AutomationItem>, today: PlainDate, enabled: ReadonlySet<AutomationRuleKey>): AutomationNotice[] {
   const notices: AutomationNotice[] = [];
   for (const item of items) {
-    if (enabled.has("START_WITHOUT_LEAD") && item.status === "PLANNED" && !item.ownerUserId) {
-      const until = daysBetween(today, item.plannedStart);
-      if (until >= 0 && until <= START_SOON_DAYS) {
-        notices.push({
-          ruleKey: "START_WITHOUT_LEAD", itemId: item.id, recipient: "MANAGER",
-          title: `${item.title} starts soon with no lead`,
-          message: until === 0 ? `${item.title} starts today and nobody leads it yet. Choose a lead on the plan.` : `${item.title} starts in ${until} day${until === 1 ? "" : "s"} and nobody leads it yet. Choose a lead on the plan.`,
-        });
-      }
-    }
-    if (enabled.has("FILES_STILL_NEEDED") && item.status === "DONE" && item.stillNeeded.length > 0) {
-      const sinceEnd = daysBetween(item.plannedEnd, today);
-      if (sinceEnd >= 0 && sinceEnd <= FILES_WINDOW_DAYS) {
-        notices.push({
-          ruleKey: "FILES_STILL_NEEDED", itemId: item.id, recipient: item.ownerUserId ? "LEAD" : "MANAGER",
-          title: `${item.title} still needs files`,
-          message: `Still needed for ${item.title}: ${item.stillNeeded.join(", ")}. Attach them to the completed activity.`,
-        });
-      }
+    for (const key of AUTOMATION_RULE_KEYS) {
+      if (!enabled.has(key)) continue;
+      const finding = (AUTOMATION_REGISTRY[key] as AutomationRuleDefinition).evaluate(item, today);
+      if (finding) notices.push({ ruleKey: key, itemId: item.id, ...finding });
     }
   }
   return notices;
