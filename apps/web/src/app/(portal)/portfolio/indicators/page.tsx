@@ -11,17 +11,25 @@ const num = (n: number | null) => (n === null ? "Not measured" : n.toLocaleStrin
  * The same indicator across every project you can see, per donor. Only verified values are added up; a project with none is
  * shown as not measured, and a project whose unit or type differs is listed on its own and not added.
  */
-export default async function PortfolioIndicatorsPage() {
+export default async function PortfolioIndicatorsPage({ searchParams }: { searchParams: Promise<{ donor?: string }> }) {
+  const { donor } = await searchParams;
   const ctx = await requireSession();
   const res = await gatewayRequest("/v1/portfolio/indicators", PortfolioIndicatorsSchema, ctx.token);
   if (!res.ok) return <InlineError title={res.error.message} referenceId={res.error.referenceId} />;
-  const groups = res.value.items;
+  const donors = [...new Set(res.value.items.map((g) => g.donorName))].sort((a, b) => a.localeCompare(b));
+  const groups = donor ? res.value.items.filter((g) => g.donorName === donor) : res.value.items;
   return (
     <div className="animate-fade-in space-y-6">
       <header>
         <h2 className="text-xl font-semibold tracking-tight">Indicators across projects</h2>
         <p className="mt-1 text-sm text-slate-500">Verified values added up per donor. Projects you are not on are not shown.</p>
       </header>
+      {donors.length > 1 && (
+        <nav aria-label="Donor" className="flex flex-wrap gap-2 text-sm">
+          <a href="/portfolio/indicators" className={`rounded-lg border px-3 py-1 ${!donor ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 dark:border-white/15"}`}>All donors</a>
+          {donors.map((d) => <a key={d} href={`/portfolio/indicators?donor=${encodeURIComponent(d)}`} aria-current={donor === d ? "page" : undefined} className={`rounded-lg border px-3 py-1 ${donor === d ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 dark:border-white/15"}`}>{d}</a>)}
+        </nav>
+      )}
       {groups.length === 0 && <p className="text-sm text-slate-600 dark:text-slate-300">No indicators in the projects you can see yet.</p>}
       {groups.map((g) => (
         <section key={`${g.donorName}-${g.indicatorCode}`} className="card space-y-3" aria-label={`${g.donorName} ${g.indicatorCode}`}>
