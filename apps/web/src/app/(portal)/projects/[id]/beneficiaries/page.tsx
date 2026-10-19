@@ -3,6 +3,7 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { BeneficiariesResponseSchema, SubmissionMappingResponseSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
 import { BeneficiaryForm } from "@/features/workplan/presentation/BeneficiaryForm";
+import { BeneficiaryRow } from "@/features/workplan/presentation/BeneficiaryRow";
 import { SubmissionImport } from "@/features/workplan/presentation/SubmissionImport";
 import { hasCapability } from "@/lib/server/auth-context";
 import { BENEFICIARY_AGE_LABEL, BENEFICIARY_SEX_LABEL } from "@donordesk/domain/contexts/workplan/index.js";
@@ -20,6 +21,7 @@ export default async function BeneficiariesPage({ params }: { params: Promise<{ 
   const today = new Date().toISOString().slice(0, 10);
   const saved = await gatewayRequest(`/v1/projects/${id}/submission-mapping`, SubmissionMappingResponseSchema, ctx.token);
   const { items, counts } = res.value;
+  const canChange = hasCapability(ctx, "activity.create");
   return (
     <div className="animate-fade-in space-y-6">
       <header>
@@ -32,11 +34,9 @@ export default async function BeneficiariesPage({ params }: { params: Promise<{ 
       </dl>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead><tr className="text-left text-xs text-slate-500"><th scope="col" className="py-2 pr-3 font-medium">Case code</th><th scope="col" className="py-2 pr-3 font-medium">Sex</th><th scope="col" className="py-2 pr-3 font-medium">Age group</th><th scope="col" className="py-2 pr-3 font-medium">Location</th><th scope="col" className="py-2 pr-3 font-medium">Joined</th></tr></thead>
+          <thead><tr className="text-left text-xs text-slate-500"><th scope="col" className="py-2 pr-3 font-medium">Case code</th><th scope="col" className="py-2 pr-3 font-medium">Sex</th><th scope="col" className="py-2 pr-3 font-medium">Age group</th><th scope="col" className="py-2 pr-3 font-medium">Location</th><th scope="col" className="py-2 pr-3 font-medium">Joined</th><th scope="col" className="py-2 pr-3 font-medium"><span className="sr-only">Actions</span></th></tr></thead>
           <tbody className="divide-y divide-slate-200 dark:divide-white/10">
-            {items.map((b) => (
-              <tr key={b.id}><td className="py-2 pr-3 font-mono">{b.caseCode}</td><td className="py-2 pr-3">{BENEFICIARY_SEX_LABEL[b.sex as keyof typeof BENEFICIARY_SEX_LABEL] ?? b.sex}</td><td className="py-2 pr-3">{BENEFICIARY_AGE_LABEL[b.ageGroup as keyof typeof BENEFICIARY_AGE_LABEL] ?? b.ageGroup}</td><td className="py-2 pr-3">{b.location || "—"}</td><td className="py-2 pr-3">{b.enrolledOn}</td></tr>
-            ))}
+            {items.map((b) => <BeneficiaryRow key={b.id} person={b} canChange={canChange} />)}
           </tbody>
         </table>
         {items.length === 0 && <p className="py-4 text-sm text-slate-500">No one added yet.</p>}

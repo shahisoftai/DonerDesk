@@ -99,3 +99,51 @@ export class ImportSubmissionsHandler {
     return ok({ added: records.length });
   }
 }
+
+/** Corrects a person's case code or group. The case code may not match another person's in the project. */
+export class UpdateBeneficiaryHandler {
+  constructor(private readonly repo: IBeneficiaryRepository, private readonly context: IPlanContextReader, private readonly audit: IAuditLogger) {}
+
+  async handle(ctx: AuthenticatedContext, id: string, input: { caseCode: string; sex: string; ageGroup: string; location?: string; enrolledOn: string; consentRecorded: boolean }): Promise<Result<void, DomainError>> {
+    if (!Permissions.can(ctx.tenant.role as Role, "activity.create")) return err(DomainError.forbidden("You cannot change people on this project"));
+    const found = await this.repo.findById(id, ctx.tenant.tenantId);
+    if (!found.ok) return found;
+    if (!found.value) return err(DomainError.notFound("Person", id));
+    const member = await onProject(ctx, this.context, found.value.projectId);
+    if (!member.ok) return member;
+    const checked = checkBeneficiary(input as Parameters<typeof checkBeneficiary>[0]);
+    if (!checked.ok) return checked;
+    const all = await this.repo.findByProject(found.value.projectId, ctx.tenant.tenantId);
+    if (!all.ok) return all;
+    const check = duplicateCheck(checked.value, all.value.filter((e) => e.id !== id));
+    if (check.refused) return err(DomainError.conflict(check.message ?? "This case code is already used", { field: "caseCode" }));
+    const saved = await this.repo.update(id, ctx.tenant.tenantId, checked.value);
+    if (!saved.ok) return saved;
+    await this.audit.record({
+      tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "beneficiary.updated", entityType: "beneficiary", entityId: id, projectId: found.value.projectId,
+      newValue: JSON.stringify({ sex: checked.value.sex, ageGroup: checked.value.ageGroup }),
+    });
+    return ok(undefined);
+  }
+}
+
+/** Removes a person added by mistake, with the links to the activities they were counted in. Audited. */
+export class RemoveBeneficiaryHandler {
+  constructor(private readonly repo: IBeneficiaryRepository, private readonly context: IPlanContextReader, private readonly audit: IAuditLogger) {}
+
+  async handle(ctx: AuthenticatedContext, id: string): Promise<Result<void, DomainError>> {
+    if (!Permissions.can(ctx.tenant.role as Role, "activity.create")) return err(DomainError.forbidden("You cannot remove people from this project"));
+    const found = await this.repo.findById(id, ctx.tenant.tenantId);
+    if (!found.ok) return found;
+    if (!found.value) return err(DomainError.notFound("Person", id));
+    const member = await onProject(ctx, this.context, found.value.projectId);
+    if (!member.ok) return member;
+    const gone = await this.repo.remove(id, ctx.tenant.tenantId);
+    if (!gone.ok) return gone;
+    await this.audit.record({
+      tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "beneficiary.removed", entityType: "beneficiary", entityId: id, projectId: found.value.projectId,
+      oldValue: JSON.stringify({ sex: found.value.sex, ageGroup: found.value.ageGroup }),
+    });
+    return ok(undefined);
+  }
+}

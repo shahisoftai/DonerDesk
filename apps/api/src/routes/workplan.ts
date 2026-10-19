@@ -195,6 +195,19 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.put("/v1/beneficiaries/:id", async (req) => {
+    const body = RegisterBeneficiarySchema.parse(req.body);
+    const r = await req.container.handlers.updateBeneficiary.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "id"), body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.delete("/v1/beneficiaries/:id", async (req) => {
+    const r = await req.container.handlers.removeBeneficiary.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "id"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
   app.put("/v1/work-plan/:itemId/indicators", async (req) => {
     const body = SetPlanIndicatorsSchema.parse(req.body);
     const r = await req.container.handlers.setPlanIndicators.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);

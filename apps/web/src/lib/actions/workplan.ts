@@ -193,6 +193,22 @@ export async function registerBeneficiaryAction(projectId: string, input: unknow
   return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/beneficiaries`, BeneficiaryCreatedSchema, context.token, { method: "POST", body: p.data });
 }
 
+/** Corrects a person's case code or group. */
+export async function updateBeneficiaryAction(id: string, input: unknown): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(RegisterBeneficiarySchema, input);
+  if (!p.ok) return p.result;
+  const r = await gatewayRequest(`/v1/beneficiaries/${encodeURIComponent(id)}`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
+  return r.ok ? { ok: true, value: true } : r;
+}
+
+/** Removes a person added by mistake, with their links to activities. */
+export async function removeBeneficiaryAction(id: string): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const r = await gatewayRequest(`/v1/beneficiaries/${encodeURIComponent(id)}`, OkResponseSchema, context.token, { method: "DELETE" });
+  return r.ok ? { ok: true, value: true } : r;
+}
+
 const ImportedSchema = z.object({ added: z.number() });
 const UndoneSchema = z.object({ undone: z.number() });
 

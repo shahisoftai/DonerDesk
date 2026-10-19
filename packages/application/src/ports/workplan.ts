@@ -192,6 +192,11 @@ export interface IBeneficiaryRepository {
   /** All or none: one statement, so a clash on any case code saves nothing. */
   addMany(records: BeneficiaryRecord[]): Promise<Result<void>>;
   findByProject(projectId: string, tenantId: TenantId): Promise<Result<BeneficiaryRecord[]>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<BeneficiaryRecord | null>>;
+  /** Changes the group fields and case code; a clash with another person's case code is a conflict. */
+  update(id: string, tenantId: TenantId, fields: { caseCode: string; sex: string; ageGroup: string; location: string; enrolledOn: string }): Promise<Result<void>>;
+  /** Removes the person and the links to the activities they were counted in. */
+  remove(id: string, tenantId: TenantId): Promise<Result<void>>;
 }
 
 /** Indicators a planned activity reports on (phase 28.1 gap closure). */
