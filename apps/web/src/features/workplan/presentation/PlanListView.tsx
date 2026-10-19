@@ -9,6 +9,7 @@ import { Badge } from "@/components/data/Badge";
 import { groupPlanList } from "../domain/plan-list-view";
 import { waitingLine } from "../domain/dependency-view";
 import { BulkPlanBar } from "./BulkPlanBar";
+import { MarkDoneButton } from "./MarkDoneButton";
 import { PlanStatusControl } from "./PlanStatusControl";
 
 const SIGNAL_TONE = { ON_TIME: "success", LATE: "danger", DONE: "neutral", CANCELLED: "neutral" } as const;
@@ -80,6 +81,7 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge tone={SIGNAL_TONE[row.signal]} title={row.signalReason}>{row.signalLabel}</Badge>
+                    {changeableIds.includes(row.id) && (row.status === "PLANNED" || row.status === "IN_PROGRESS") && <MarkDoneButton itemId={row.id} title={row.title} today={today} />}
                     <PlanStatusControl itemId={row.id} status={row.status} suggested={row.suggestedStatus} canChange={changeableIds.includes(row.id)} />
                   </div>
                 </li>

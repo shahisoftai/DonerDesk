@@ -105,8 +105,8 @@ import {
   GetProgressHandler,
   SaveProgressHandler,
   PrepareProgressHandler,
-  MarkPlanDoneHandler,
   RemoveProgressHandler,
+  CompletePlannedActivityHandler,
   GetPlanItemBudgetHandler,
   ListProjectFieldsHandler,
   GetPlanItemFieldsHandler,
@@ -646,8 +646,8 @@ export interface Container {
     getProgress: GetProgressHandler;
     saveProgress: SaveProgressHandler;
     prepareProgress: PrepareProgressHandler;
-    markPlanDone: MarkPlanDoneHandler;
     removeProgress: RemoveProgressHandler;
+    completePlannedActivity: CompletePlannedActivityHandler;
     setCapacity: SetCapacityHandler;
     addBudgetExpense: AddBudgetExpenseHandler;
     getPlanItemBudget: GetPlanItemBudgetHandler;
@@ -1485,9 +1485,12 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     setPlanIndicators: new SetPlanIndicatorsHandler(planAccess, activityIndicators, indicators, audits, clock),
     getProgress: new GetProgressHandler(planAccess, progressLog, activityIndicators, indicators),
     prepareProgress: new PrepareProgressHandler(planAccess, progressLog, activityIndicators, indicators),
-    markPlanDone: new MarkPlanDoneHandler(planAccess, plannedActivities, planRecorder, new SaveProgressHandler(planAccess, progressLog, activityIndicators, indicators, ids, audits, clock), progressLog, clock),
     saveProgress: new SaveProgressHandler(planAccess, progressLog, activityIndicators, indicators, ids, audits, clock),
     removeProgress: new RemoveProgressHandler(planAccess, progressLog, audits),
+    completePlannedActivity: new CompletePlannedActivityHandler(
+      planAccess, periods,
+      new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler),
+      new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock), clock),
     setCapacity: new SetCapacityHandler(memberCapacity, audits, clock),
     bulkPlanAction: new BulkPlanActionHandler(planAccess, plannedActivities, planContext,
       new AssignPlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder),

@@ -284,7 +284,7 @@ export * from "./use-cases/workplan/workload-handlers.js";
 export * from "./use-cases/workplan/run-automations.js";
 export * from "./use-cases/workplan/beneficiary-handlers.js";
 export * from "./use-cases/workplan/progress-handlers.js";
-export * from "./use-cases/workplan/mark-plan-done.js";
+export * from "./use-cases/workplan/complete-planned-activity.js";
 export * from "./services/plan-link-resolver.js";
 export * from "./use-cases/workplan/start-plan-from-logframe.js";
 export * from "./use-cases/workplan/list-work-plan.js";

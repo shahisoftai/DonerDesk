@@ -1508,26 +1508,6 @@ export const ProgressResponseSchema = z.object({
 });
 export type ProgressResponse = z.infer<typeof ProgressResponseSchema>;
 
-/** The progress log of one planned activity: its breakdown fields and every entry (phase 28.1). */
-export const ProgressResponseSchema = z.object({
-  fields: z.array(z.object({ key: z.string(), label: z.string(), usedBy: z.array(z.string()) })),
-  entries: z.array(z.object({
-    id: z.string(),
-    kind: z.enum(["DAILY", "WEEKLY", "MONTHLY", "END"]),
-    from: z.string(),
-    to: z.string(),
-    values: z.object({
-      total: z.number().nullable(),
-      breakdowns: z.record(z.string(), z.number().nullable()),
-      sessions: z.number().nullable(),
-      unique: z.number().nullable(),
-    }),
-    narrative: z.record(z.string(), z.string()),
-    absorbedById: z.string().nullable(),
-  })),
-});
-export type ProgressResponse = z.infer<typeof ProgressResponseSchema>;
-
 /** What a form opens with for a kind and range: the sum of the live entries it covers, blank where nothing was recorded. */
 export const PrepareProgressResponseSchema = z.object({
   from: z.string(),

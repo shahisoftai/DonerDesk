@@ -196,12 +196,12 @@ export const SaveProgressSchema = z.object({
   /** Set only when changing the entry already logged for this kind and range. */
   replaceId: z.string().min(1).max(64).optional(),
 }).strict();
-/** One step Done: the day it finished, people reached (blank stays blank), and an optional note. */
-export const MarkPlanDoneSchema = z.object({
-  finishedOn: PlainDateSchema,
-  people: z.string().max(12),
-  notes: z.string().max(2000),
-}).strict();
-export type MarkPlanDoneRequest = z.infer<typeof MarkPlanDoneSchema>;
-
 export type SaveProgressRequest = z.infer<typeof SaveProgressSchema>;
+
+/** Mark a planned activity done in one step: the day it finished, how many people (optional), and a note (optional). */
+export const CompletePlannedActivitySchema = z.object({
+  finishedOn: PlainDateSchema,
+  people: z.string().max(12).optional(),
+  note: z.string().max(5000).optional(),
+}).strict();
+export type CompletePlannedActivityInput = z.infer<typeof CompletePlannedActivitySchema>;

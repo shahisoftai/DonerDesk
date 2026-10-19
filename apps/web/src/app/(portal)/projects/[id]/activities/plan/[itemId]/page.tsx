@@ -16,6 +16,7 @@ import { DependencyEditor } from "@/features/workplan/presentation/DependencyEdi
 import { PlanItemFields } from "@/features/workplan/presentation/PlanItemFields";
 import { PlanItemBudget } from "@/features/workplan/presentation/PlanItemBudget";
 import { ProgressLog } from "@/features/workplan/presentation/ProgressLog";
+import { MarkDoneButton } from "@/features/workplan/presentation/MarkDoneButton";
 import { dependencyOptions } from "@/features/workplan/domain/dependency-view";
 import { PlanItemMenu } from "@/features/workplan/presentation/PlanItemMenu";
 import { PlanStatusControl } from "@/features/workplan/presentation/PlanStatusControl";
@@ -61,6 +62,7 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
         <div className="flex flex-wrap items-center gap-3">
           <Badge tone={SIGNAL_TONE[row.signal]} title={row.signalReason}>{row.signalLabel}</Badge>
           {row.signalReason && <span className="text-xs text-slate-500">{row.signalReason}</span>}
+          {canChange && (row.status === "PLANNED" || row.status === "IN_PROGRESS") && <MarkDoneButton itemId={row.id} title={row.title} today={data.today} size="md" />}
           <PlanStatusControl itemId={row.id} status={row.status} suggested={row.suggestedStatus} canChange={canChange} />
         </div>
         <PlanItemMenu

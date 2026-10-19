@@ -132,25 +132,3 @@ test("the log is readable by anyone who can see the plan and changes by the lead
   assert.equal(read.ok, true);
   assert.equal(read.value.fields.length, 2);
 });
-
-import { MarkPlanDoneHandler, PlanRecorder } from "../dist/index.js";
-
-test("one step Done marks the activity done on the day it finished and records people reached once", async () => {
-  const w = world();
-  const audit = [];
-  const recorder = new PlanRecorder({ generate: () => "rev" }, { append: async () => ok(undefined) }, { record: async (e) => void audit.push(e) }, { now: () => new Date("2026-10-19T09:00:00Z") });
-  const access = new PlanAccess({ findById: async (id) => ok(w.items?.get(id) ?? null) });
-  const { PlannedActivity: PA } = await import("@donordesk/domain");
-  const act = PA.create({ id: "a2", tenantId: "tenant-a", projectId: "p", title: "Distribution", plannedStart: "2026-10-01", plannedEnd: "2026-10-30", people: { ownerUserId: "fo", supportUserIds: [] }, createdById: "pm" }).value;
-  const store = w.items;
-  store.set("a2", act);
-  const repo = { update: async (i) => (store.set(i.id, i), ok(i)), findById: async (id) => ok(store.get(id) ?? null) };
-  const access2 = new PlanAccess(repo);
-  const handler = new MarkPlanDoneHandler(access2, repo, recorder, w.save, { findByItem: async () => ok([]) }, { now: () => new Date("2026-10-19T09:00:00Z") });
-  const res = await handler.handle(LEAD, "a2", { finishedOn: "2026-10-12", people: "40", notes: "Done in two villages" });
-  assert.equal(res.ok, true, res.error?.message);
-  assert.equal(store.get("a2").status, "DONE");
-  assert.equal(store.get("a2").completedOn, "2026-10-12");
-  const bad = await handler.handle(LEAD, "a2", { finishedOn: "2026-02-30", people: "", notes: "" });
-  assert.equal(bad.ok, false);
-});

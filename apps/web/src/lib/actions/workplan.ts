@@ -1,6 +1,6 @@
 "use server";
 
-import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, SetPlanIndicatorsSchema, SaveProgressSchema } from "@donordesk/contracts";
+import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema } from "@donordesk/contracts";
 import type { ZodType } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -221,34 +221,10 @@ export async function removeProgressAction(itemId: string, entryId: string): Pro
   return r.ok ? { ok: true, value: true } : r;
 }
 
-const ProgressSavedSchema = z.object({ id: z.string(), absorbed: z.number() });
-
-export async function markPlanDoneAction(itemId: string, input: unknown): Promise<Result<true, AppError>> {
+/** Marks a planned activity done in one step: records the completed activity and sets the plan status. Refusals change nothing. */
+export async function completePlannedActivityAction(itemId: string, input: unknown): Promise<Result<{ activityId: string }, AppError>> {
   const context = await requireSession();
-  const p = await parsed(MarkPlanDoneSchema, input);
+  const p = await parsed(CompletePlannedActivitySchema, input);
   if (!p.ok) return p.result;
-  const r = await gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/done`, OkResponseSchema, context.token, { method: "POST", body: p.data });
-  return r.ok ? { ok: true, value: true } : r;
-}
-
-/** Saves one progress entry. A monthly report absorbs the live daily and weekly entries in its month. */
-export async function saveProgressAction(itemId: string, input: unknown): Promise<Result<{ id: string; absorbed: number }, AppError>> {
-  const context = await requireSession();
-  const p = await parsed(SaveProgressSchema, input);
-  if (!p.ok) return p.result;
-  return gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/progress`, ProgressSavedSchema, context.token, { method: "POST", body: p.data });
-}
-
-export async function removeProgressAction(itemId: string, entryId: string): Promise<Result<true, AppError>> {
-  const context = await requireSession();
-  const r = await gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/progress/${encodeURIComponent(entryId)}`, OkResponseSchema, context.token, { method: "DELETE" });
-  return r.ok ? { ok: true, value: true } : r;
-}
-
-export async function setPlanIndicatorsAction(itemId: string, indicatorIds: string[]): Promise<Result<true, AppError>> {
-  const context = await requireSession();
-  const p = await parsed(SetPlanIndicatorsSchema, { indicatorIds });
-  if (!p.ok) return p.result;
-  const r = await gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/indicators`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
-  return r.ok ? { ok: true, value: true } : r;
+  return gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/complete`, z.object({ activityId: z.string() }), context.token, { method: "POST", body: p.data });
 }

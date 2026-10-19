@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   AssignPlannedActivitySchema, ImportWorkPlanSchema, SetWorkPlanningVisibilitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ListWorkPlanQuerySchema,
-  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, MarkPlanDoneSchema, SetPlanIndicatorsSchema, SaveProgressSchema,
+  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema,
 } from "@donordesk/contracts";
 
 /**
@@ -183,13 +183,6 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     return r.value;
   });
 
-  app.post("/v1/work-plan/:itemId/done", async (req) => {
-    const body = MarkPlanDoneSchema.parse(req.body);
-    const r = await req.container.handlers.markPlanDone.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
-    if (!r.ok) throw r.error;
-    return { ok: true };
-  });
-
   app.post("/v1/work-plan/:itemId/progress", async (req) => {
     const body = SaveProgressSchema.parse(req.body);
     const r = await req.container.handlers.saveProgress.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
@@ -235,6 +228,14 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.removePlanDependency.handle({ tenant: req.tenant, requestId: req.id }, { predecessorId: params.predecessorId, successorId: params.successorId });
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  // One step: records the completed activity and marks the plan item done. Refusals change nothing.
+  app.post("/v1/work-plan/:itemId/complete", async (req) => {
+    const body = CompletePlannedActivitySchema.parse(req.body);
+    const r = await req.container.handlers.completePlannedActivity.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.post("/v1/work-plan/:itemId/assign", async (req) => {
