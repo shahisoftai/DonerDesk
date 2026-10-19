@@ -1,13 +1,14 @@
 import {
-  DomainError, PlannedActivity, addDays, daysBetween, checkAssignable, expandRecurrence, validateRecurrence, toPlainDate, ok, err,
+  DomainError, PlannedActivity, addDays, daysBetween, checkAssignable, expandRecurrence, validateRecurrence, toPlainDate, ok, err, cascadeAfterMove,
   type PlanAction, type Result, type PlainDate,
 } from "@donordesk/domain";
 import type { AssignPlannedActivityInput, ChangePlanStatusInput, CreatePlannedActivityInput, ReschedulePlannedActivityInput, UpdatePlannedActivityInput } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { ILogframeRepository } from "../../ports/logframe.js";
-import type { IPlanContextReader, IPlannedActivityRepository } from "../../ports/workplan.js";
+import type { IPlanContextReader, IPlanDependencyRepository, IPlannedActivityRepository } from "../../ports/workplan.js";
 import { PlanAccess } from "../../services/plan-access.js";
+import { toDependencyItem, toDependencyLink } from "./plan-dependency-handlers.js";
 import type { PlanRecorder } from "../../services/plan-recorder.js";
 
 const today = (clock: IClock): PlainDate => toPlainDate(clock.now())!;
@@ -90,13 +91,22 @@ export class ChangePlanStatusHandler {
   }
 }
 
+export interface RescheduleOutcome {
+  moved: number;
+  /** Activities pushed because an activity they wait for moved (phase 28.1-A). */
+  movedByDependency: Array<{ id: string; title: string; plannedStart: PlainDate; plannedEnd: PlainDate }>;
+  /** Activities that should have moved but are done or cancelled; the conflict is shown, not hidden. */
+  blockedByDependency: Array<{ id: string; title: string; reason: "DONE" | "CANCELLED" }>;
+}
+
 export class ReschedulePlannedActivityHandler {
   constructor(
     private readonly access: PlanAccess, private readonly repo: IPlannedActivityRepository, private readonly context: IPlanContextReader,
     private readonly recorder: PlanRecorder, private readonly clock: IClock,
+    private readonly dependencies?: IPlanDependencyRepository,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, itemId: string, input: ReschedulePlannedActivityInput): Promise<Result<{ moved: number }, DomainError>> {
+  async handle(ctx: AuthenticatedContext, itemId: string, input: ReschedulePlannedActivityInput): Promise<Result<RescheduleOutcome, DomainError>> {
     const loaded = await this.access.load(ctx, itemId, "MOVE");
     if (!loaded.ok) return loaded;
     const first = loaded.value;
@@ -121,7 +131,52 @@ export class ReschedulePlannedActivityHandler {
       const recorded = await this.recorder.record(ctx, item, moved.value, "workplan.item_rescheduled");
       if (!recorded.ok) return recorded;
     }
-    return ok({ moved: targets.length });
+    const cascade = await this.followDependencies(ctx, targets, input.reason);
+    if (!cascade.ok) return cascade;
+    return ok({ moved: targets.length, movedByDependency: cascade.value.moved, blockedByDependency: cascade.value.blocked });
+  }
+
+  /** Pushes activities that wait for a moved one (finish-to-start), recording each move with its cause. */
+  private async followDependencies(
+    ctx: AuthenticatedContext, roots: PlannedActivity[], reason: string | undefined,
+  ): Promise<Result<{ moved: RescheduleOutcome["movedByDependency"]; blocked: RescheduleOutcome["blockedByDependency"] }, DomainError>> {
+    const empty = { moved: [], blocked: [] };
+    if (!this.dependencies || roots.length === 0) return ok(empty);
+    const tenantId = ctx.tenant.tenantId;
+    const projectId = roots[0]!.projectId;
+    const links = await this.dependencies.findByProject(projectId, tenantId);
+    if (!links.ok) return links;
+    if (links.value.length === 0) return ok(empty);
+    const all = await this.repo.findByProject(projectId, tenantId);
+    if (!all.ok) return all;
+    const byId = new Map(all.value.map((i) => [i.id, i]));
+    let items = all.value.map(toDependencyItem);
+    const linkList = links.value.map(toDependencyLink);
+    const moved: RescheduleOutcome["movedByDependency"] = [];
+    const blocked: RescheduleOutcome["blockedByDependency"] = [];
+
+    for (const root of roots) {
+      const cascade = cascadeAfterMove(items, linkList, root.id);
+      for (const move of cascade.moves) {
+        const item = byId.get(move.id);
+        if (!item) continue;
+        const cause = byId.get(move.causedBy)?.title ?? "an earlier activity";
+        const used = await this.context.reportUsesDates(projectId, tenantId, { start: item.plannedStart, end: item.plannedEnd });
+        if (!used.ok) return used;
+        const change = item.reschedule({ start: move.plannedStart, end: move.plannedEnd }, {
+          today: today(this.clock), reportUsesIt: used.value, reason: reason?.trim() || `Moved to follow "${cause}"`,
+        });
+        if (!change.ok) return change;
+        const saved = await this.repo.update(item);
+        if (!saved.ok) return saved;
+        const recorded = await this.recorder.record(ctx, item, change.value, "workplan.item_moved_by_dependency");
+        if (!recorded.ok) return recorded;
+        moved.push({ id: item.id, title: item.title, plannedStart: move.plannedStart, plannedEnd: move.plannedEnd });
+        items = items.map((i) => (i.id === move.id ? { ...i, plannedStart: move.plannedStart, plannedEnd: move.plannedEnd } : i));
+      }
+      for (const b of cascade.blocked) blocked.push({ id: b.id, title: byId.get(b.id)?.title ?? "", reason: b.reason });
+    }
+    return ok({ moved, blocked });
   }
 }
 

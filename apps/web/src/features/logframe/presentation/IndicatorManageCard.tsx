@@ -11,6 +11,8 @@ import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import type { OutlineSource } from "@/features/logframe/domain/logframe-outline";
 import { LogframeItemSelect } from "./LogframeItemSelect";
+import { TargetBreakdownsEditor } from "./TargetBreakdownsEditor";
+import { completeBreakdownRows, type BreakdownTargetRow } from "../domain/target-breakdown-rows";
 
 export interface ManagedIndicator {
   id: string;
@@ -22,6 +24,7 @@ export interface ManagedIndicator {
   target: string;
   unit?: string;
   disaggregationRequired: boolean;
+  targetBreakdowns?: BreakdownTargetRow[];
 }
 
 /**
@@ -37,6 +40,7 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
   const [unit, setUnit] = useState(indicator.unit ?? "");
   const [breakdown, setBreakdown] = useState(indicator.disaggregationRequired);
   const [itemId, setItemId] = useState(indicator.logframeItemId ?? "");
+  const [breakdowns, setBreakdowns] = useState<BreakdownTargetRow[]>(indicator.targetBreakdowns ?? []);
   const [busy, setBusy] = useState<"save" | "move" | "remove" | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -53,6 +57,7 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
       target,
       unit: unit.trim() || undefined,
       disaggregationRequired: breakdown,
+      targetBreakdowns: completeBreakdownRows(breakdowns),
     });
     setBusy(null);
     if (!result.ok) return setMessage({ tone: "error", text: result.error.message });
@@ -101,6 +106,7 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
         <Checkbox checked={breakdown} onChange={(e) => setBreakdown(e.target.checked)} />
         <span>Record a breakdown by sex, age group and disability</span>
       </label>
+      <TargetBreakdownsEditor rows={breakdowns} onChange={setBreakdowns} disabled={busy !== null} />
       <div><Button onClick={() => void save()} pending={busy === "save"} disabled={busy !== null || !name.trim() || !code.trim()}>Save changes</Button></div>
 
       <div className="border-t border-slate-200 pt-4 dark:border-white/10">

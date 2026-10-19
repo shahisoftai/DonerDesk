@@ -1,4 +1,5 @@
 import { Entity } from "../../core/entity.js";
+import type { DisaggregationEntry } from "./indicator-disaggregation.js";
 import { DomainError } from "../../core/domain-error.js";
 import type { IndicatorSemantics } from "./indicator-semantics.js";
 
@@ -23,6 +24,8 @@ export interface IndicatorProps {
   semanticsJson?: string;
   /** Set when the indicator is retired but its recorded values must stay (reports that used it keep their history). */
   archivedAt?: Date;
+  /** The target for each breakdown category (phase 28.1-B), e.g. Women 150 within the total target. Validated like values. */
+  targetBreakdowns?: DisaggregationEntry[];
 }
 
 export class Indicator extends Entity<string> {
@@ -52,6 +55,7 @@ export class Indicator extends Entity<string> {
     frequency?: string;
     responsibleUserId?: string;
     disaggregationRequired?: boolean;
+    targetBreakdowns?: DisaggregationEntry[];
   }): Indicator {
     if (!input.code) throw DomainError.validation("Indicator code required");
     if (!input.name) throw DomainError.validation("Indicator name required");
@@ -63,6 +67,7 @@ export class Indicator extends Entity<string> {
       type: input.type,
       baseline: input.baseline ?? "",
       target: input.target ?? "",
+      targetBreakdowns: input.targetBreakdowns ?? [],
       unit: input.unit,
       meansOfVerification: input.meansOfVerification,
       dataSource: input.dataSource,
@@ -96,6 +101,7 @@ export class Indicator extends Entity<string> {
   get disaggregationRequired(): boolean { return this.props.disaggregationRequired; }
   get semanticsJson(): string | undefined { return this.props.semanticsJson; }
   get archivedAt(): Date | undefined { return this.props.archivedAt; }
+  get targetBreakdowns(): DisaggregationEntry[] { return this.props.targetBreakdowns ?? []; }
   get isArchived(): boolean { return this.props.archivedAt !== undefined; }
 
   get semantics(): IndicatorSemantics | undefined {

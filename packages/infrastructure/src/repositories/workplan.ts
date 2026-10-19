@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
-import { PlannedActivity, ok, type DeliveryFacts, type PlainDate, type PlanChangeSet, type PlanRevision, type PlanStatus, type RecurrenceRule, type Result, type TenantId, DomainError, toPlainDate } from "@donordesk/domain";
-import type { IMyWeekReader, MyWeekSentBack, IMemberDirectory, IDeliveryFactsReader, IPlanContextReader, IPlannedActivityRepository, IPlanRevisionRepository } from "@donordesk/application";
+import { PlannedActivity, ok, type AutomationRuleKey, type DeliveryFacts, type PlainDate, type PlanChangeSet, type PlanRevision, type PlanStatus, type RecurrenceRule, type Result, type TenantId, DomainError, toPlainDate } from "@donordesk/domain";
+import type { IMyWeekReader, MyWeekSentBack, IMemberDirectory, IDeliveryFactsReader, IPlanContextReader, IPlannedActivityRepository, IPlanRevisionRepository, IPlanDependencyRepository, PlanDependencyRecord, IProjectFieldRepository, ICustomFieldValueRepository, ProjectFieldRecord, IBudgetRepository, BudgetLineRecord, BudgetExpenseRecord, IMemberCapacityRepository, IAutomationSettings, IBeneficiaryRepository, BeneficiaryRecord } from "@donordesk/application";
+import { enabledFrom } from "@donordesk/application";
 
 /** Plan dates are stored as DATE: always a UTC midnight Date in, a "YYYY-MM-DD" out. */
 const toDate = (d: PlainDate): Date => new Date(`${d}T00:00:00.000Z`);
@@ -249,5 +250,207 @@ export class PrismaMyWeekReader implements IMyWeekReader {
       take: 50,
     });
     return ok(rows.map((r): MyWeekSentBack => ({ id: r.id, projectId: r.projectId, projectTitle: r.project.title, title: r.activityTitle, activityDate: toDay(r.activityDate), status: r.status as MyWeekSentBack["status"] })));
+  }
+}
+
+/** Finish-to-start links between planned activities (phase 28.1-A). A duplicate pair is a conflict. */
+export class PrismaPlanDependencyRepository implements IPlanDependencyRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async add(link: PlanDependencyRecord): Promise<Result<void, DomainError>> {
+    try {
+      await this.prisma.plannedActivityDependency.create({
+        data: { id: link.id, tenantId: link.tenantId, projectId: link.projectId, predecessorId: link.predecessorId, successorId: link.successorId, createdById: link.createdById, createdAt: link.createdAt },
+      });
+    } catch (e) {
+      if ((e as { code?: string }).code === "P2002") return { ok: false, error: DomainError.conflict("This link already exists") };
+      throw e;
+    }
+    return ok(undefined);
+  }
+
+  async remove(predecessorId: string, successorId: string, tenantId: TenantId): Promise<Result<boolean, DomainError>> {
+    const res = await this.prisma.plannedActivityDependency.deleteMany({ where: { tenantId: tenantId.toString(), predecessorId, successorId } });
+    return ok(res.count > 0);
+  }
+
+  async findByProject(projectId: string, tenantId: TenantId): Promise<Result<PlanDependencyRecord[], DomainError>> {
+    const rows = await this.prisma.plannedActivityDependency.findMany({ where: { tenantId: tenantId.toString(), projectId }, orderBy: { createdAt: "asc" } });
+    return ok(rows.map((r) => ({ id: r.id, tenantId: r.tenantId, projectId: r.projectId, predecessorId: r.predecessorId, successorId: r.successorId, createdById: r.createdById, createdAt: r.createdAt })));
+  }
+}
+
+/** Custom fields a project defines (phase 28.1-C). A repeated key is a conflict. */
+export class PrismaProjectFieldRepository implements IProjectFieldRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(f: ProjectFieldRecord): Promise<Result<void, DomainError>> {
+    try {
+      await this.prisma.projectField.create({
+        data: { id: f.id, tenantId: f.tenantId, projectId: f.projectId, key: f.key, label: f.label, type: f.type, choicesJson: JSON.stringify(f.choices), createdById: f.createdById, createdAt: f.createdAt },
+      });
+    } catch (e) {
+      if ((e as { code?: string }).code === "P2002") return { ok: false, error: DomainError.conflict("A field with this name already exists") };
+      throw e;
+    }
+    return ok(undefined);
+  }
+
+  async findByProject(projectId: string, tenantId: TenantId): Promise<Result<ProjectFieldRecord[], DomainError>> {
+    const rows = await this.prisma.projectField.findMany({ where: { tenantId: tenantId.toString(), projectId }, orderBy: { createdAt: "asc" } });
+    return ok(rows.map((r) => ({ id: r.id, tenantId: r.tenantId, projectId: r.projectId, key: r.key, label: r.label, type: r.type, choices: JSON.parse(r.choicesJson) as string[], createdById: r.createdById, createdAt: r.createdAt })));
+  }
+}
+
+/** Values on planned activities. A blank value removes the row, so blank stays blank. */
+export class PrismaCustomFieldValueRepository implements ICustomFieldValueRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async setValues(
+    entity: { tenantId: string; projectId: string; entityId: string; userId: string; now: Date },
+    values: ReadonlyArray<{ fieldId: string; value: string | null }>,
+  ): Promise<Result<void, DomainError>> {
+    await this.prisma.$transaction(values.map((v) => (v.value === null
+      ? this.prisma.customFieldValue.deleteMany({ where: { fieldId: v.fieldId, entityId: entity.entityId } })
+      : this.prisma.customFieldValue.upsert({
+        where: { fieldId_entityId: { fieldId: v.fieldId, entityId: entity.entityId } },
+        create: { id: `${v.fieldId}:${entity.entityId}`, tenantId: entity.tenantId, projectId: entity.projectId, fieldId: v.fieldId, entityId: entity.entityId, value: v.value, updatedById: entity.userId, updatedAt: entity.now },
+        update: { value: v.value, updatedById: entity.userId, updatedAt: entity.now },
+      }))));
+    return ok(undefined);
+  }
+
+  async findByEntity(entityId: string, tenantId: TenantId): Promise<Result<Record<string, string>, DomainError>> {
+    const rows = await this.prisma.customFieldValue.findMany({ where: { tenantId: tenantId.toString(), entityId } });
+    return ok(Object.fromEntries(rows.map((r) => [r.fieldId, r.value])));
+  }
+}
+
+/** Budget lines and expenses on planned activities (phase 28.1-D). */
+export class PrismaBudgetRepository implements IBudgetRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async addLine(l: BudgetLineRecord): Promise<Result<void, DomainError>> {
+    await this.prisma.budgetLine.create({
+      data: { id: l.id, tenantId: l.tenantId, projectId: l.projectId, plannedActivityId: l.plannedActivityId, code: l.code, category: l.category, description: l.description, donorName: l.donorName, currency: l.currency, amountMinor: l.amountMinor, createdById: l.createdById, createdAt: l.createdAt },
+    });
+    return ok(undefined);
+  }
+
+  async countLines(plannedActivityId: string, tenantId: TenantId): Promise<Result<number, DomainError>> {
+    return ok(await this.prisma.budgetLine.count({ where: { tenantId: tenantId.toString(), plannedActivityId } }));
+  }
+
+  async findLineById(id: string, tenantId: TenantId): Promise<Result<BudgetLineRecord | null, DomainError>> {
+    const r = await this.prisma.budgetLine.findFirst({ where: { id, tenantId: tenantId.toString() } });
+    return ok(r ? PrismaBudgetRepository.line(r) : null);
+  }
+
+  async findLinesByItem(plannedActivityId: string, tenantId: TenantId): Promise<Result<BudgetLineRecord[], DomainError>> {
+    const rows = await this.prisma.budgetLine.findMany({ where: { tenantId: tenantId.toString(), plannedActivityId }, orderBy: { createdAt: "asc" } });
+    return ok(rows.map(PrismaBudgetRepository.line));
+  }
+
+  async addExpense(e: BudgetExpenseRecord): Promise<Result<void, DomainError>> {
+    await this.prisma.budgetExpense.create({
+      data: { id: e.id, tenantId: e.tenantId, projectId: e.projectId, budgetLineId: e.budgetLineId, expenseDate: new Date(`${e.expenseDate}T00:00:00.000Z`), amountMinor: e.amountMinor, description: e.description, createdById: e.createdById, createdAt: e.createdAt },
+    });
+    return ok(undefined);
+  }
+
+  async findExpensesByLines(lineIds: string[], tenantId: TenantId): Promise<Result<BudgetExpenseRecord[], DomainError>> {
+    if (lineIds.length === 0) return ok([]);
+    const rows = await this.prisma.budgetExpense.findMany({ where: { tenantId: tenantId.toString(), budgetLineId: { in: lineIds } } });
+    return ok(rows.map((r) => ({
+      id: r.id, tenantId: r.tenantId, projectId: r.projectId, budgetLineId: r.budgetLineId, expenseDate: r.expenseDate.toISOString().slice(0, 10),
+      amountMinor: r.amountMinor, description: r.description, createdById: r.createdById, createdAt: r.createdAt,
+    })));
+  }
+
+  private static line(r: { id: string; tenantId: string; projectId: string; plannedActivityId: string; code: string; category: string; description: string; donorName: string; currency: string; amountMinor: number; createdById: string; createdAt: Date }): BudgetLineRecord {
+    return { id: r.id, tenantId: r.tenantId, projectId: r.projectId, plannedActivityId: r.plannedActivityId, code: r.code, category: r.category, description: r.description, donorName: r.donorName, currency: r.currency, amountMinor: r.amountMinor, createdById: r.createdById, createdAt: r.createdAt };
+  }
+}
+
+/** How many planned activities a person can lead in a week (phase 28.1-J). Blank is a null row value, never 0. */
+export class PrismaMemberCapacityRepository implements IMemberCapacityRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async findMany(userIds: string[], tenantId: TenantId): Promise<Result<Map<string, number | null>, DomainError>> {
+    const rows = userIds.length === 0 ? [] : await this.prisma.memberCapacity.findMany({ where: { tenantId: tenantId.toString(), userId: { in: userIds } } });
+    return ok(new Map(rows.map((r) => [r.userId, r.activitiesPerWeek])));
+  }
+
+  async set(userId: string, value: number | null, by: { userId: string; now: Date }, tenantId: TenantId): Promise<Result<void, DomainError>> {
+    const tenant = tenantId.toString();
+    await this.prisma.memberCapacity.upsert({
+      where: { tenantId_userId: { tenantId: tenant, userId } },
+      create: { id: `${tenant}:${userId}`, tenantId: tenant, userId, activitiesPerWeek: value, updatedById: by.userId, updatedAt: by.now },
+      update: { activitiesPerWeek: value, updatedById: by.userId, updatedAt: by.now },
+    });
+    return ok(undefined);
+  }
+}
+
+/** Automation rules a project has switched off (phase 28.1-K). A rule with no row is on. */
+export class PrismaAutomationSettings implements IAutomationSettings {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async stored(projectId: string, tenantId: TenantId): Promise<Result<Record<string, boolean>, DomainError>> {
+    const rows = await this.prisma.projectAutomation.findMany({ where: { tenantId: tenantId.toString(), projectId } });
+    return ok(Object.fromEntries(rows.map((r) => [r.ruleKey, r.enabled])));
+  }
+
+  async enabledRules(projectId: string, tenantId: TenantId): Promise<Result<Set<AutomationRuleKey>, DomainError>> {
+    const stored = await this.stored(projectId, tenantId);
+    if (!stored.ok) return stored;
+    return ok(enabledFrom(stored.value));
+  }
+
+  async set(projectId: string, ruleKey: AutomationRuleKey, enabled: boolean, by: { userId: string; now: Date }, tenantId: TenantId): Promise<Result<void, DomainError>> {
+    const tenant = tenantId.toString();
+    await this.prisma.projectAutomation.upsert({
+      where: { projectId_ruleKey: { projectId, ruleKey } },
+      create: { id: `${projectId}:${ruleKey}`, tenantId: tenant, projectId, ruleKey, enabled, updatedById: by.userId, updatedAt: by.now },
+      update: { enabled, updatedById: by.userId, updatedAt: by.now },
+    });
+    return ok(undefined);
+  }
+}
+
+/** Beneficiary records by case code (phase 28.1-G). A repeated case code in a project is refused by the handler and the unique key. */
+export class PrismaBeneficiaryRepository implements IBeneficiaryRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async add(b: BeneficiaryRecord): Promise<Result<void, DomainError>> {
+    try {
+      await this.prisma.beneficiary.create({
+        data: { id: b.id, tenantId: b.tenantId, projectId: b.projectId, caseCode: b.caseCode, sex: b.sex, ageGroup: b.ageGroup, location: b.location, enrolledOn: new Date(`${b.enrolledOn}T00:00:00.000Z`), consentRecordedById: b.consentRecordedById, createdById: b.createdById, createdAt: b.createdAt },
+      });
+    } catch (e) {
+      if ((e as { code?: string }).code === "P2002") return { ok: false, error: DomainError.conflict("This case code is already used in this project", { field: "caseCode" }) };
+      throw e;
+    }
+    return ok(undefined);
+  }
+
+  async addMany(list: BeneficiaryRecord[]): Promise<Result<void, DomainError>> {
+    try {
+      await this.prisma.beneficiary.createMany({
+        data: list.map((b) => ({ id: b.id, tenantId: b.tenantId, projectId: b.projectId, caseCode: b.caseCode, sex: b.sex, ageGroup: b.ageGroup, location: b.location, enrolledOn: new Date(`${b.enrolledOn}T00:00:00.000Z`), consentRecordedById: b.consentRecordedById, createdById: b.createdById, createdAt: b.createdAt })),
+      });
+    } catch (e) {
+      if ((e as { code?: string }).code === "P2002") return { ok: false, error: DomainError.conflict("A case code in this file is already used in this project") };
+      throw e;
+    }
+    return ok(undefined);
+  }
+
+  async findByProject(projectId: string, tenantId: TenantId): Promise<Result<BeneficiaryRecord[], DomainError>> {
+    const rows = await this.prisma.beneficiary.findMany({ where: { tenantId: tenantId.toString(), projectId }, orderBy: { caseCode: "asc" } });
+    return ok(rows.map((r) => ({
+      id: r.id, tenantId: r.tenantId, projectId: r.projectId, caseCode: r.caseCode, sex: r.sex, ageGroup: r.ageGroup, location: r.location,
+      enrolledOn: r.enrolledOn.toISOString().slice(0, 10), consentRecordedById: r.consentRecordedById, createdById: r.createdById, createdAt: r.createdAt,
+    })));
   }
 }

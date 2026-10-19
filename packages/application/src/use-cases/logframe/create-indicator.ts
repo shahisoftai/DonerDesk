@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, Indicator, describeSemantics, effectiveIndicatorSemantics, type IndicatorSemantics, type SemanticsDescription } from "@donordesk/domain";
+import { DomainError, Indicator, describeSemantics, effectiveIndicatorSemantics, validateTargetBreakdowns, type IndicatorSemantics, type SemanticsDescription } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorRepository } from "../../ports/logframe.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -9,6 +9,10 @@ export class CreateIndicatorHandler {
   constructor(private readonly ids: IIdGenerator, private readonly repo: IIndicatorRepository, private readonly audit: IAuditLogger) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateIndicatorInput): Promise<Result<{ id: string; semantics: IndicatorSemantics; semanticsDescription: SemanticsDescription }, DomainError>> {
+    const breakdowns = input.targetBreakdowns?.length
+      ? validateTargetBreakdowns(input.targetBreakdowns, { indicatorType: input.type, target: input.target ?? "" })
+      : { ok: true as const, value: [] };
+    if (!breakdowns.ok) return breakdowns;
     const id = this.ids.generate();
     const ind = Indicator.create({
       id,
@@ -26,6 +30,7 @@ export class CreateIndicatorHandler {
       frequency: input.frequency,
       responsibleUserId: input.responsibleUserId,
       disaggregationRequired: input.disaggregationRequired,
+      targetBreakdowns: breakdowns.value,
     });
     const saved = await this.repo.create(ind);
     if (!saved.ok) return saved;

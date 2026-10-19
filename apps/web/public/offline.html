@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline</title>
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #f4f6f2; color: #17201b; display: grid; min-height: 100vh; place-items: center; padding: 24px; box-sizing: border-box; }
+    main { max-width: 420px; display: grid; gap: 12px; }
+    h1 { font-size: 20px; margin: 0; }
+    p { margin: 0; line-height: 1.5; color: #4b5a52; }
+    button { justify-self: start; border: 1px solid #0b6b5c; background: #0b6b5c; color: #fff; border-radius: 9px; padding: 9px 14px; font: inherit; font-weight: 700; cursor: pointer; }
+    @media (prefers-color-scheme: dark) { body { background: #0f1512; color: #e7eee9; } p { color: #9aa9a0; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>You are offline</h1>
+    <p>DonorDesk needs a connection to load your projects. Nothing is cached on this device, so nothing from your projects is shown here. Reconnect and try again.</p>
+    <button type="button" onclick="location.reload()">Try again</button>
+  </main>
+</body>
+</html>

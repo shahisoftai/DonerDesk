@@ -7,6 +7,8 @@ import { formatShortDate } from "@donordesk/domain/contexts/workplan/index.js";
 import type { WorkPlanRow } from "@/lib/server/schemas";
 import { Badge } from "@/components/data/Badge";
 import { groupPlanList } from "../domain/plan-list-view";
+import { waitingLine } from "../domain/dependency-view";
+import { BulkPlanBar } from "./BulkPlanBar";
 import { PlanStatusControl } from "./PlanStatusControl";
 
 const SIGNAL_TONE = { ON_TIME: "success", LATE: "danger", DONE: "neutral", CANCELLED: "neutral" } as const;
@@ -33,6 +35,7 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
   changeableIds: string[];
 }) {
   const [mineOnly, setMineOnly] = useState(defaultMine);
+  const [selected, setSelected] = useState<string[]>([]);
   const groups = groupPlanList(rows, today, { mineOnly, userId });
 
   return (
@@ -41,6 +44,9 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
         <input type="checkbox" checked={mineOnly} onChange={(e) => setMineOnly(e.target.checked)} className="h-4 w-4" />
         Only mine
       </label>
+      {selected.length > 0 && (
+        <BulkPlanBar projectId={projectId} selected={selected} leads={Object.entries(names).map(([id, label]) => ({ id, label }))} onClear={() => setSelected([])} />
+      )}
       {groups.length === 0 && <p className="text-sm text-slate-500">{mineOnly ? "Nothing planned for you." : "Nothing planned yet."}</p>}
       {groups.map((group) => (
         <section key={group.key} aria-labelledby={`plan-${group.key}`}>
@@ -51,8 +57,18 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
             <ul className="mt-2 divide-y divide-slate-200 rounded-xl border border-slate-200 dark:divide-white/10 dark:border-white/10">
               {group.items.map((row) => (
                 <li key={row.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  {changeableIds.includes(row.id) && (
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 self-start"
+                      aria-label={`Select ${row.title}`}
+                      checked={selected.includes(row.id)}
+                      onChange={(e) => setSelected(e.target.checked ? [...selected, row.id] : selected.filter((x) => x !== row.id))}
+                    />
+                  )}
                   <div className="min-w-0">
                     <Link href={`/projects/${projectId}/activities/plan/${row.id}`} className="font-medium text-brand-700 hover:underline dark:text-brand-300">{row.title}</Link>
+                    {waitingLine(row.waitingFor) && <p className="text-xs font-medium text-amber-700 dark:text-amber-400">{waitingLine(row.waitingFor)}</p>}
                     <p className="text-xs text-slate-500">
                       {dates(row, today)}
                       {row.originalStart && row.originalEnd && (row.originalStart !== row.plannedStart || row.originalEnd !== row.plannedEnd) && (

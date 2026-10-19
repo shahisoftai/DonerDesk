@@ -1,4 +1,4 @@
-import { DomainError, applyMode, err, isSendHour, isSummaryMode, localDate, ok, planEscalations, renderSummary, summaryLines, type Assignment, type Result, type SummaryMode } from "@donordesk/domain";
+import { DomainError, applyMode, type PlainDate, err, isSendHour, isSummaryMode, localDate, ok, planEscalations, renderSummary, summaryLines, type Assignment, type Result, type SummaryMode } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock } from "../../ports/core.js";
 import type { IRiskRefresh } from "../../ports/health.js";
@@ -24,6 +24,7 @@ export class RunRemindersHandler {
     private readonly queue: AssignmentQueue, private readonly ledger: IReminderLedger, private readonly prefs: INotificationPreferences,
     private readonly audience: IReminderAudience, private readonly notifier: IPersonNotifier, private readonly audit: IAuditLogger, private readonly clock: IClock,
     private readonly risk?: IRiskRefresh,
+    private readonly automations?: { runFor(ctx: AuthenticatedContext, today: PlainDate): Promise<Result<number, DomainError>> },
   ) {}
 
   async handle(ctx: AuthenticatedContext, options: { force?: boolean } = {}): Promise<Result<RunRemindersResult, DomainError>> {
@@ -76,6 +77,11 @@ export class RunRemindersHandler {
 
     // Once a day, in the same run: keep each project's risk snapshot current (the history behind the health label).
     await this.risk?.refreshAll(tenantId, today);
+    // Automation notices (phase 28.1-K): one per item per rule per day, recorded in the same ledger.
+    if (this.automations) {
+      const sent = await this.automations.runFor(ctx, today);
+      if (!sent.ok) return sent;
+    }
 
     if (summariesSent + escalationsSent > 0) {
       await this.audit.record({

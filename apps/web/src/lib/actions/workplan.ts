@@ -1,6 +1,6 @@
 "use server";
 
-import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema } from "@donordesk/contracts";
+import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema } from "@donordesk/contracts";
 import type { ZodType } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -10,9 +10,20 @@ import type { AppError } from "@/lib/shared/app-error";
 import { idempotency, type CreateOptions } from "./_idempotency";
 import { z } from "zod";
 import { OkResponseSchema } from "./_schemas";
-import { CreatedPlannedActivitiesSchema, ImportWorkPlanResponseSchema, PlanPreviewSchema, type ImportWorkPlanResponse, type PlanPreviewResponse } from "@/lib/server/schemas";
+import { BulkPlanResultSchema, CreatedPlannedActivitiesSchema, ImportWorkPlanResponseSchema, PlanPreviewSchema, type BulkPlanResult, type ImportWorkPlanResponse, type PlanPreviewResponse } from "@/lib/server/schemas";
 
-const MovedResponseSchema = z.object({ moved: z.number() });
+const MovedResponseSchema = z.object({
+  moved: z.number(),
+  movedByDependency: z.array(z.object({ id: z.string(), title: z.string(), plannedStart: z.string(), plannedEnd: z.string() })).default([]),
+  blockedByDependency: z.array(z.object({ id: z.string(), title: z.string(), reason: z.enum(["DONE", "CANCELLED"]) })).default([]),
+});
+const DependencyCreatedSchema = z.object({ id: z.string() });
+
+/** What a move pushed along, and what it could not move because the activity was already done or cancelled. */
+export interface RescheduleOutcomeView {
+  movedByDependency: Array<{ title: string }>;
+  blockedByDependency: Array<{ title: string; reason: "DONE" | "CANCELLED" }>;
+}
 
 function invalid<T>(error: import("zod").ZodError): Result<T, AppError> {
   return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(error) } };
@@ -38,11 +49,27 @@ export async function changePlanStatusAction(itemId: string, input: unknown): Pr
   return r.ok ? { ok: true, value: true } : r;
 }
 
-export async function reschedulePlannedActivityAction(itemId: string, input: unknown): Promise<Result<true, AppError>> {
+export async function reschedulePlannedActivityAction(itemId: string, input: unknown): Promise<Result<RescheduleOutcomeView, AppError>> {
   const context = await requireSession();
   const p = await parsed(ReschedulePlannedActivitySchema, input);
   if (!p.ok) return p.result;
   const r = await gatewayRequest(`/v1/work-plan/${itemId}/reschedule`, MovedResponseSchema, context.token, { method: "POST", body: p.data });
+  if (!r.ok) return r;
+  return { ok: true, value: { movedByDependency: r.value.movedByDependency, blockedByDependency: r.value.blockedByDependency } };
+}
+
+/** "B comes after A". The server refuses a loop, a duplicate, a self link or another project. */
+export async function addPlanDependencyAction(predecessorId: string, successorId: string): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(AddPlanDependencySchema, { predecessorId, successorId });
+  if (!p.ok) return p.result;
+  const r = await gatewayRequest("/v1/work-plan/dependencies", DependencyCreatedSchema, context.token, { method: "POST", body: p.data });
+  return r.ok ? { ok: true, value: true } : r;
+}
+
+export async function removePlanDependencyAction(predecessorId: string, successorId: string): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const r = await gatewayRequest(`/v1/work-plan/dependencies/${encodeURIComponent(predecessorId)}/${encodeURIComponent(successorId)}`, OkResponseSchema, context.token, { method: "DELETE" });
   return r.ok ? { ok: true, value: true } : r;
 }
 
@@ -83,4 +110,87 @@ export async function updatePlannedActivityAction(itemId: string, input: unknown
   if (!p.ok) return p.result;
   const r = await gatewayRequest(`/v1/work-plan/${itemId}`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
   return r.ok ? { ok: true, value: true } : r;
+}
+
+const FieldCreatedSchema = z.object({ id: z.string() });
+
+/** A custom field for the project's planned activities (managers only; the server checks). */
+export async function defineProjectFieldAction(projectId: string, input: unknown): Promise<Result<{ id: string }, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(DefineProjectFieldSchema, input);
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/plan-fields`, FieldCreatedSchema, context.token, { method: "POST", body: p.data });
+}
+
+/** Values for a planned activity's fields. A blank value is sent as null, so it clears the stored one. */
+export async function setPlanItemFieldsAction(itemId: string, input: unknown): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(SetPlanItemFieldsSchema, input);
+  if (!p.ok) return p.result;
+  const r = await gatewayRequest(`/v1/work-plan/${itemId}/fields`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
+  return r.ok ? { ok: true, value: true } : r;
+}
+
+const IdCreatedSchema = z.object({ id: z.string() });
+
+/** A budget line on the activity (managers only; the amount is checked on the server). */
+export async function addBudgetLineAction(itemId: string, input: unknown): Promise<Result<{ id: string }, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(AddBudgetLineSchema, input);
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/budget-lines`, IdCreatedSchema, context.token, { method: "POST", body: p.data });
+}
+
+/** An expense against one of the activity's lines. */
+export async function addBudgetExpenseAction(itemId: string, lineId: string, input: unknown): Promise<Result<{ id: string }, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(AddBudgetExpenseSchema, input);
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/budget-lines/${encodeURIComponent(lineId)}/expenses`, IdCreatedSchema, context.token, { method: "POST", body: p.data });
+}
+
+/** Previews (apply false) or applies a change to many activities. Nothing is saved on a preview. */
+export async function bulkPlanAction(projectId: string, input: unknown): Promise<Result<BulkPlanResult, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(BulkPlanActionSchema, input);
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/work-plan/bulk`, BulkPlanResultSchema, context.token, { method: "POST", body: p.data });
+}
+
+/** A person's weekly limit in activities; blank clears it. Managers only (the server checks). */
+export async function setCapacityAction(userId: string, activitiesPerWeek: number | null): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(SetCapacitySchema, { activitiesPerWeek });
+  if (!p.ok) return p.result;
+  const r = await gatewayRequest(`/v1/users/${encodeURIComponent(userId)}/capacity`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
+  return r.ok ? { ok: true, value: true } : r;
+}
+
+/** Switches one automation rule on or off for a project. Managers only (the server checks). */
+export async function setAutomationRuleAction(projectId: string, ruleKey: string, enabled: boolean): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(SetAutomationRuleSchema, { enabled });
+  if (!p.ok) return p.result;
+  const r = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/automations/${encodeURIComponent(ruleKey)}`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
+  return r.ok ? { ok: true, value: true } : r;
+}
+
+const BeneficiaryCreatedSchema = z.object({ id: z.string(), probableDuplicates: z.array(z.string()) });
+
+/** Adds one person by case code, with consent recorded. Returns the case codes that look like the same person, for a decision. */
+export async function registerBeneficiaryAction(projectId: string, input: unknown): Promise<Result<{ id: string; probableDuplicates: string[] }, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(RegisterBeneficiarySchema, input);
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/beneficiaries`, BeneficiaryCreatedSchema, context.token, { method: "POST", body: p.data });
+}
+
+const ImportedSchema = z.object({ added: z.number() });
+
+/** Adds the people in a KoboToolbox or ODK export (CSV text). Refused as a whole when any row is wrong. */
+export async function importSubmissionsAction(projectId: string, csv: string): Promise<Result<{ added: number }, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(ImportSubmissionsSchema, { csv });
+  if (!p.ok) return p.result;
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/beneficiaries/import`, ImportedSchema, context.token, { method: "POST", body: p.data });
 }

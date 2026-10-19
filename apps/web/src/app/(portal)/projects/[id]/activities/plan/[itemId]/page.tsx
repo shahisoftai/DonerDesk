@@ -5,13 +5,17 @@ import { countOf } from "@donordesk/domain/core/plural.js";
 import { canActOnPlanItem, formatShortDate, WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import type { Role } from "@/lib/shared/capabilities";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { PlanRevisionsResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { PlanItemBudgetSchema, PlanItemFieldsSchema, PlanRevisionsResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { loadPlanPageData } from "@/features/workplan/application/plan-page-data";
 import { showsButton } from "@/features/workplan/domain/role-surfaces";
 import { describeChanges } from "@/features/workplan/domain/plan-history-view";
 import { AskPanel } from "@/features/tasks/presentation/AskPanel";
 import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
 import { RequiredFilesEditor } from "@/features/workplan/presentation/RequiredFilesEditor";
+import { DependencyEditor } from "@/features/workplan/presentation/DependencyEditor";
+import { PlanItemFields } from "@/features/workplan/presentation/PlanItemFields";
+import { PlanItemBudget } from "@/features/workplan/presentation/PlanItemBudget";
+import { dependencyOptions } from "@/features/workplan/domain/dependency-view";
 import { PlanItemMenu } from "@/features/workplan/presentation/PlanItemMenu";
 import { PlanStatusControl } from "@/features/workplan/presentation/PlanStatusControl";
 import { Badge } from "@/components/data/Badge";
@@ -29,6 +33,8 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
     gatewayRequest(`/v1/work-plan/${itemId}/revisions`, PlanRevisionsResponseSchema, data.ctx.token),
   ]);
   if (!plan.ok) return <InlineError title={plan.error.message} referenceId={plan.error.referenceId} />;
+  const fieldValues = await gatewayRequest(`/v1/work-plan/${itemId}/fields`, PlanItemFieldsSchema, data.ctx.token);
+  const budget = await gatewayRequest(`/v1/work-plan/${itemId}/budget`, PlanItemBudgetSchema, data.ctx.token);
   const row = plan.value.items.find((r) => r.id === itemId);
   if (!row) notFound();
 
@@ -81,6 +87,12 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
       </header>
 
       <RequiredFilesEditor itemId={row.id} title={row.title} required={row.requiredFiles} stillNeeded={row.stillNeeded} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
+
+      <DependencyEditor itemId={row.id} after={row.comesAfter} before={row.comesBefore} options={dependencyOptions(row.id, plan.value.items)} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
+
+      {fieldValues.ok && <PlanItemFields itemId={row.id} projectId={id} fields={fieldValues.value.fields} values={fieldValues.value.values} canEdit={canActOnPlanItem(actor, people, "EDIT_NOTES") && row.status !== "CANCELLED"} canDefine={canActOnPlanItem(actor, people, "EDIT")} />}
+
+      {budget.ok && <PlanItemBudget itemId={row.id} lines={budget.value.items} canManage={canActOnPlanItem(actor, people, "EDIT")} canSpend={canActOnPlanItem(actor, people, "EDIT_NOTES") && row.status !== "CANCELLED"} today={data.today} />}
 
       <section aria-labelledby="done-title">
         <h2 id="done-title" className="text-sm font-semibold">Completed activities</h2>

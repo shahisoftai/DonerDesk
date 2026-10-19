@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import type { ProjectPerson } from "../domain/ask-people";
 import { CommentsDisclosure } from "@/features/comments/presentation/CommentsDisclosure";
 import { riskKindWords, riskLine, seriousnessWords } from "../domain/risk-view";
+import { RISK_KINDS, RISK_KIND_LABEL, RISK_ACTION_HINT, type RiskKind } from "@donordesk/domain/contexts/risks/index.js";
 
 const TONE = { HIGH: "danger", MEDIUM: "warning", LOW: "neutral" } as const;
 
@@ -31,7 +32,7 @@ export function RisksCard({ projectId, risks, people, userId, canRaise, today, p
   const [open, setOpen] = useState(false);
   const [all, setAll] = useState(false);
   const [title, setTitle] = useState("");
-  const [kind, setKind] = useState<"PROBLEM" | "RISK">("PROBLEM");
+  const [kind, setKind] = useState<RiskKind>("PROBLEM");
   const [seriousness, setSeriousness] = useState<"HIGH" | "MEDIUM" | "LOW">("MEDIUM");
   const [owner, setOwner] = useState("");
   const [action, setAction] = useState("");
@@ -66,13 +67,13 @@ export function RisksCard({ projectId, risks, people, userId, canRaise, today, p
           <fieldset disabled={!hydrated || state.busy} className="space-y-3">
             <Field label="What is it?" error={err("title")}><Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} required /></Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Has it happened?"><Select value={kind} onChange={(e) => setKind(e.target.value as "PROBLEM" | "RISK")}><option value="PROBLEM">{riskKindWords("PROBLEM")}</option><option value="RISK">{riskKindWords("RISK")}</option></Select></Field>
+              <Field label="What kind is it?"><Select value={kind} onChange={(e) => setKind(e.target.value as RiskKind)}>{RISK_KINDS.map((k) => <option key={k} value={k}>{RISK_KIND_LABEL[k]}</option>)}</Select></Field>
               <Field label="How serious?"><Select value={seriousness} onChange={(e) => setSeriousness(e.target.value as "HIGH" | "MEDIUM" | "LOW")}>{(["HIGH", "MEDIUM", "LOW"] as const).map((s) => <option key={s} value={s}>{seriousnessWords(s)}</option>)}</Select></Field>
             </div>
             <Field label="Who is handling it?" error={err("ownerId")}>
               <Select value={owner} onChange={(e) => setOwner(e.target.value)}><option value="">Nobody yet</option>{people.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</Select>
             </Field>
-            <Field label="What are we doing about it?" error={err("action")}><Textarea dictate rows={2} maxLength={1000} value={action} onChange={(e) => setAction(e.target.value)} /></Field>
+            <Field label={RISK_ACTION_HINT[kind]} error={err("action")}><Textarea dictate rows={2} maxLength={1000} value={action} onChange={(e) => setAction(e.target.value)} /></Field>
           </fieldset>
           {state.error && <p role="alert" className="text-sm text-danger-600">{state.error}</p>}
           <div className="flex gap-2"><Button type="submit" size="sm" pending={state.busy} disabled={!hydrated}>Raise it</Button><Button type="button" size="sm" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button></div>

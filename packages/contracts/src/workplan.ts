@@ -100,3 +100,78 @@ export const ImportWorkPlanSchema = z.object({
   sourceName: z.string().max(300).optional(),
 });
 export type ImportWorkPlanInput = z.infer<typeof ImportWorkPlanSchema>;
+
+/** "B starts after A ends" (phase 28.1-A). Refused for a loop, a duplicate, a self link, or another project. */
+export const AddPlanDependencySchema = z.object({
+  predecessorId: z.string().min(1).max(64),
+  successorId: z.string().min(1).max(64),
+}).strict();
+export type AddPlanDependencyInput = z.infer<typeof AddPlanDependencySchema>;
+
+/** A custom field a project defines (phase 28.1-C): text, number, date, or one choice from a list. */
+export const DefineProjectFieldSchema = z.object({
+  label: z.string().trim().min(1).max(80),
+  type: z.enum(["TEXT", "NUMBER", "DATE", "CHOICE"]),
+  choices: z.array(z.string().max(100)).max(30).optional(),
+}).strict();
+export type DefineProjectFieldInput = z.infer<typeof DefineProjectFieldSchema>;
+
+/** Values for a planned activity's fields. A `null` or empty value clears the stored one. */
+export const SetPlanItemFieldsSchema = z.object({
+  values: z.array(z.object({ fieldId: z.string().min(1).max(64), value: z.string().max(500).nullable() })).max(20),
+}).strict();
+export type SetPlanItemFieldsInput = z.infer<typeof SetPlanItemFieldsSchema>;
+
+/** A budget line on a planned activity (phase 28.1-D). The amount is typed (e.g. "1200" or "12.50") and checked on the server. */
+export const AddBudgetLineSchema = z.object({
+  code: z.string().max(30),
+  category: z.enum(["PERSONNEL", "TRAVEL", "SUPPLIES", "EQUIPMENT", "SERVICES", "OTHER"]),
+  description: z.string().max(300).optional(),
+  donorName: z.string().max(200).optional(),
+  currency: z.string().max(3),
+  amount: z.string().max(20),
+}).strict();
+export type AddBudgetLineInput = z.infer<typeof AddBudgetLineSchema>;
+
+/** An expense booked against one budget line. */
+export const AddBudgetExpenseSchema = z.object({
+  date: PlainDateSchema,
+  amount: z.string().max(20),
+  description: z.string().max(300).optional(),
+}).strict();
+export type AddBudgetExpenseInput = z.infer<typeof AddBudgetExpenseSchema>;
+
+/** Change many planned activities at once (phase 28.1-L). Without `apply` it only previews; nothing is saved until `apply` is true. */
+export const BulkPlanActionSchema = z.object({
+  ids: z.array(z.string().min(1).max(64)).min(1).max(100),
+  action: z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("SHIFT"), days: z.number().int().min(-365).max(365) }),
+    z.object({ kind: z.literal("SET_LEAD"), leadUserId: z.string().min(1).nullable() }),
+    z.object({ kind: z.literal("SET_STATUS"), status: z.enum(["START", "COMPLETE", "REOPEN", "CANCEL", "RESTORE"]) }),
+  ]),
+  reason: z.string().max(1000).optional(),
+  apply: z.boolean().default(false),
+}).strict();
+export type BulkPlanActionInput = z.infer<typeof BulkPlanActionSchema>;
+
+/** How many planned activities a person can lead in a week; null clears the limit (phase 28.1-J). */
+export const SetCapacitySchema = z.object({ activitiesPerWeek: z.number().int().min(1).max(30).nullable() }).strict();
+export type SetCapacityInput = z.infer<typeof SetCapacitySchema>;
+
+/** Switch one automation rule on or off for a project (phase 28.1-K). */
+export const SetAutomationRuleSchema = z.object({ enabled: z.boolean() }).strict();
+
+/** A person a project reaches, by case code only (phase 28.1-G). No name, phone or ID is accepted. */
+export const RegisterBeneficiarySchema = z.object({
+  caseCode: z.string().max(30),
+  sex: z.enum(["FEMALE", "MALE"]),
+  ageGroup: z.enum(["UNDER_5", "AGE_5_17", "AGE_18_59", "AGE_60_PLUS"]),
+  location: z.string().max(200).optional(),
+  enrolledOn: PlainDateSchema,
+  consentRecorded: z.literal(true, { errorMap: () => ({ message: "Record consent before saving this person" }) }),
+}).strict();
+export type RegisterBeneficiaryInput = z.infer<typeof RegisterBeneficiarySchema>;
+
+/** A KoboToolbox or ODK export as text (CSV), one person per submission (phase 28.1-I). */
+export const ImportSubmissionsSchema = z.object({ csv: z.string().min(1).max(2_000_000) }).strict();
+export type ImportSubmissionsInput = z.infer<typeof ImportSubmissionsSchema>;

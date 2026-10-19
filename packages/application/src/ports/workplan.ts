@@ -1,4 +1,4 @@
-import type { PlannedActivity, PlanRevision, Result, TenantId, PlainDate } from "@donordesk/domain";
+import type { AutomationRuleKey, PlannedActivity, PlanRevision, Result, TenantId, PlainDate } from "@donordesk/domain";
 
 /** Persistence of the planned-activity aggregate. */
 export interface IPlannedActivityRepository {
@@ -53,4 +53,125 @@ export interface IMyWeekReader {
   openPlannedFor(userId: string, tenantId: TenantId, startsOnOrBefore: PlainDate): Promise<Result<Array<{ item: PlannedActivity; projectTitle: string }>>>;
   /** Completed activities the person submitted that a reviewer sent back. */
   sentBackFor(userId: string, tenantId: TenantId): Promise<Result<MyWeekSentBack[]>>;
+}
+
+/** A stored "predecessor must finish before successor starts" link (phase 28.1-A). */
+export interface PlanDependencyRecord {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  predecessorId: string;
+  successorId: string;
+  createdById: string;
+  createdAt: Date;
+}
+
+/** Finish-to-start links between planned activities of one project. */
+export interface IPlanDependencyRepository {
+  /** Refuses a duplicate pair with a conflict. */
+  add(link: PlanDependencyRecord): Promise<Result<void>>;
+  /** True when a link was removed. */
+  remove(predecessorId: string, successorId: string, tenantId: TenantId): Promise<Result<boolean>>;
+  findByProject(projectId: string, tenantId: TenantId): Promise<Result<PlanDependencyRecord[]>>;
+}
+
+/** A custom field a project defines for its planned activities (phase 28.1-C). */
+export interface ProjectFieldRecord {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  key: string;
+  label: string;
+  type: string;
+  choices: string[];
+  createdById: string;
+  createdAt: Date;
+}
+
+export interface IProjectFieldRepository {
+  create(field: ProjectFieldRecord): Promise<Result<void>>;
+  findByProject(projectId: string, tenantId: TenantId): Promise<Result<ProjectFieldRecord[]>>;
+}
+
+/** Values of custom fields on planned activities. A `null` value removes the stored one (blank stays blank). */
+export interface ICustomFieldValueRepository {
+  setValues(
+    entity: { tenantId: string; projectId: string; entityId: string; userId: string; now: Date },
+    values: ReadonlyArray<{ fieldId: string; value: string | null }>,
+  ): Promise<Result<void>>;
+  /** Only the fields that have a value. */
+  findByEntity(entityId: string, tenantId: TenantId): Promise<Result<Record<string, string>>>;
+}
+
+/** A budget line on a planned activity (phase 28.1-D). Money in minor units. */
+export interface BudgetLineRecord {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  plannedActivityId: string;
+  code: string;
+  category: string;
+  description: string;
+  donorName: string;
+  currency: string;
+  amountMinor: number;
+  createdById: string;
+  createdAt: Date;
+}
+
+export interface BudgetExpenseRecord {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  budgetLineId: string;
+  expenseDate: string;
+  amountMinor: number;
+  description: string;
+  createdById: string;
+  createdAt: Date;
+}
+
+export interface IBudgetRepository {
+  addLine(line: BudgetLineRecord): Promise<Result<void>>;
+  countLines(plannedActivityId: string, tenantId: TenantId): Promise<Result<number>>;
+  findLineById(id: string, tenantId: TenantId): Promise<Result<BudgetLineRecord | null>>;
+  findLinesByItem(plannedActivityId: string, tenantId: TenantId): Promise<Result<BudgetLineRecord[]>>;
+  addExpense(expense: BudgetExpenseRecord): Promise<Result<void>>;
+  findExpensesByLines(lineIds: string[], tenantId: TenantId): Promise<Result<BudgetExpenseRecord[]>>;
+}
+
+/** How many planned activities a person can lead in a week; null = no limit (phase 28.1-J). */
+export interface IMemberCapacityRepository {
+  findMany(userIds: string[], tenantId: TenantId): Promise<Result<Map<string, number | null>>>;
+  set(userId: string, value: number | null, by: { userId: string; now: Date }, tenantId: TenantId): Promise<Result<void>>;
+}
+
+/** Which automation rules a project has turned on. A rule with no stored choice is on by default (phase 28.1-K). */
+export interface IAutomationSettings {
+  enabledRules(projectId: string, tenantId: TenantId): Promise<Result<Set<AutomationRuleKey>>>;
+  set(projectId: string, ruleKey: AutomationRuleKey, enabled: boolean, by: { userId: string; now: Date }, tenantId: TenantId): Promise<Result<void>>;
+  /** Stored choices for a project: rule -> enabled. */
+  stored(projectId: string, tenantId: TenantId): Promise<Result<Record<string, boolean>>>;
+}
+
+/** A beneficiary record as stored: case code and group only (phase 28.1-G). */
+export interface BeneficiaryRecord {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  caseCode: string;
+  sex: string;
+  ageGroup: string;
+  location: string;
+  enrolledOn: string;
+  consentRecordedById: string;
+  createdById: string;
+  createdAt: Date;
+}
+
+export interface IBeneficiaryRepository {
+  add(record: BeneficiaryRecord): Promise<Result<void>>;
+  /** All or none: one statement, so a clash on any case code saves nothing. */
+  addMany(records: BeneficiaryRecord[]): Promise<Result<void>>;
+  findByProject(projectId: string, tenantId: TenantId): Promise<Result<BeneficiaryRecord[]>>;
 }

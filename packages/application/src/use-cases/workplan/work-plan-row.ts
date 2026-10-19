@@ -33,6 +33,12 @@ export interface WorkPlanRowDto {
   stillNeeded: string[];
   /** Moving or changing it needs a "Why?" (original end passed, or a report covers it). */
   reasonRequired: boolean;
+  /** "Comes after": activities that must finish first, and whether each is finished (phase 28.1-A). */
+  comesAfter?: Array<{ id: string; title: string; finished: boolean }>;
+  /** "Comes before": activities that wait for this one. */
+  comesBefore?: Array<{ id: string; title: string }>;
+  /** The unfinished ones among comesAfter: shown as "Waiting for …". */
+  waitingFor?: Array<{ id: string; title: string; finished: boolean }>;
 }
 
 /**

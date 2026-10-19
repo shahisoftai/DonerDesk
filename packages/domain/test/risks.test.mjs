@@ -19,7 +19,7 @@ test("the four fields a person fills in, in plain words, and nothing else is req
 });
 
 test("words: 'It has happened' and 'It might happen', High / Medium / Low; no codes", () => {
-  assert.deepEqual(Object.values(RISK_KIND_LABEL), ["It has happened", "It might happen"]);
+  assert.deepEqual(Object.values(RISK_KIND_LABEL), ["It has happened", "It might happen", "We are assuming", "We decided", "We depend on someone"]);
   assert.deepEqual(Object.values(SERIOUSNESS_LABEL), ["High", "Medium", "Low"]);
   for (const t of [...Object.values(RISK_KIND_LABEL), ...Object.values(SERIOUSNESS_LABEL), ASSIGNMENT_KINDS.RISK_REVIEW.label]) assert.deepEqual(findRawTokens(t), []);
 });

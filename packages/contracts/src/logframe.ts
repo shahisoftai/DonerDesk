@@ -45,6 +45,14 @@ export const ImportIndicatorsTextSchema = z.object({
 });
 export type ImportIndicatorsTextInput = z.infer<typeof ImportIndicatorsTextSchema>;
 
+/** A target for one breakdown category (phase 28.1-B). The value is a number as typed; validated against the total target. */
+export const TargetBreakdownSchema = z.object({
+  dimension: z.enum(["SEX", "AGE_GROUP", "DISABILITY", "LOCATION", "OTHER"]),
+  category: z.string().trim().min(1, "Name the group, e.g. Women").max(100),
+  value: z.string().trim().max(40),
+});
+export type TargetBreakdownInput = z.infer<typeof TargetBreakdownSchema>;
+
 export const CreateIndicatorSchema = z.object({
   projectId: z.string().min(1),
   logframeItemId: z.string().min(1),
@@ -59,6 +67,7 @@ export const CreateIndicatorSchema = z.object({
   frequency: z.string().max(50).optional(),
   responsibleUserId: z.string().optional(),
   disaggregationRequired: z.boolean().default(false),
+  targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
 });
 export type CreateIndicatorInput = z.infer<typeof CreateIndicatorSchema>;
 
@@ -75,6 +84,7 @@ export const UpdateIndicatorSchema = z.object({
   dataSource: z.string().max(500).optional(),
   frequency: z.string().max(50).optional(),
   disaggregationRequired: z.boolean().optional(),
+  targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
 });
 export type UpdateIndicatorInput = z.infer<typeof UpdateIndicatorSchema>;
 

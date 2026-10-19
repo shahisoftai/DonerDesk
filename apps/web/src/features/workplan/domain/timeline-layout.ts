@@ -20,6 +20,8 @@ export interface TimelineRow {
   signal: "ON_TIME" | "LATE" | "DONE" | "CANCELLED";
   signalLabel: string;
   outputId?: string;
+  /** "Waiting for …" when it waits for something unfinished (phase 28.1-A), worded by the caller. */
+  waitingLabel?: string;
   targetCount?: number;
   deliveredCount: number;
 }
@@ -47,6 +49,8 @@ export interface TimelineBar {
   /** The original dates, when the activity was moved and they are visible. */
   original?: { leftPct: number; widthPct: number };
   progressPct?: number;
+  /** "Waiting for …" when it waits for something unfinished. */
+  waiting?: string;
   signal: TimelineRow["signal"];
   status: TimelineRow["status"];
   /** Spoken label: "Outreach, 10 to 12 Mar, Late". */
@@ -146,6 +150,7 @@ export function layoutTimeline(input: {
       milestone,
       ...(original ? { original } : {}),
       ...(progress !== undefined ? { progressPct: progress } : {}),
+      ...(row.waitingLabel ? { waiting: row.waitingLabel } : {}),
       signal: row.signal, status: row.status,
       label: `${row.title}, ${dates}, ${row.signalLabel}`,
     };

@@ -345,6 +345,8 @@ export const IndicatorItemSchema = z.object({
   frequency: z.string().optional(),
   responsibleUserId: z.string().nullish(),
   disaggregationRequired: z.boolean().optional(),
+  /** Targets per breakdown category (phase 28.1-B). */
+  targetBreakdowns: z.array(z.object({ dimension: z.string(), category: z.string(), value: z.string() })).default([]),
   semantics: z
     .object({
       aggregation: z.string(),
@@ -1284,6 +1286,10 @@ export const WorkPlanRowSchema = z.object({
   requiredFiles: z.array(z.string()).default([]),
   stillNeeded: z.array(z.string()).default([]),
   reasonRequired: z.boolean(),
+  /** "Comes after" (must finish first) and "Comes before" (waits for this one); "waitingFor" = unfinished ones. */
+  comesAfter: z.array(z.object({ id: z.string(), title: z.string(), finished: z.boolean() })).default([]),
+  comesBefore: z.array(z.object({ id: z.string(), title: z.string() })).default([]),
+  waitingFor: z.array(z.object({ id: z.string(), title: z.string(), finished: z.boolean() })).default([]),
 });
 export type WorkPlanRow = z.infer<typeof WorkPlanRowSchema>;
 export const WorkPlanResponseSchema = z.object({ items: z.array(WorkPlanRowSchema) });
@@ -1403,3 +1409,85 @@ export const RiskSchema = z.object({
 });
 export type RiskItem = z.infer<typeof RiskSchema>;
 export const RisksResponseSchema = z.object({ items: z.array(RiskSchema) });
+
+/** The fields of one planned activity and the values filled so far (phase 28.1-C). */
+export const PlanItemFieldsSchema = z.object({
+  fields: z.array(z.object({
+    id: z.string(),
+    key: z.string(),
+    label: z.string(),
+    type: z.enum(["TEXT", "NUMBER", "DATE", "CHOICE"]),
+    choices: z.array(z.string()).default([]),
+  })),
+  values: z.record(z.string(), z.string()),
+});
+export type PlanItemFields = z.infer<typeof PlanItemFieldsSchema>;
+
+/** Indicators summed across the projects a person can see, per donor and code (phase 28.1-F). */
+export const PortfolioIndicatorsSchema = z.object({
+  items: z.array(z.object({
+    donorName: z.string(),
+    indicatorCode: z.string(),
+    indicatorName: z.string(),
+    unit: z.string().nullable(),
+    total: z.number().nullable(),
+    targetTotal: z.number().nullable(),
+    percentOfTarget: z.number().nullable(),
+    projects: z.array(z.object({ projectId: z.string(), projectTitle: z.string(), value: z.number().nullable(), target: z.number().nullable(), asOf: z.string().nullable() })),
+    mismatched: z.array(z.object({ projectId: z.string(), projectTitle: z.string(), value: z.number().nullable(), target: z.number().nullable(), asOf: z.string().nullable() })),
+  })),
+});
+
+/** The budget of one planned activity: each line, what is spent, and where it stands (phase 28.1-D). */
+export const PlanItemBudgetSchema = z.object({
+  items: z.array(z.object({
+    id: z.string(),
+    code: z.string(),
+    category: z.enum(["PERSONNEL", "TRAVEL", "SUPPLIES", "EQUIPMENT", "SERVICES", "OTHER"]),
+    description: z.string(),
+    donorName: z.string(),
+    currency: z.string(),
+    position: z.object({
+      budgetedMinor: z.number().nullable(),
+      spentMinor: z.number(),
+      remainingMinor: z.number().nullable(),
+      spentPercent: z.number().nullable(),
+      overspent: z.boolean(),
+      state: z.enum(["NO_BUDGET", "NOT_STARTED", "UNDER_SPENT", "FULLY_SPENT", "OVERSPENT"]),
+    }),
+    expenses: z.array(z.object({ id: z.string(), date: z.string(), amountMinor: z.number(), description: z.string() })),
+  })),
+});
+export type PlanItemBudget = z.infer<typeof PlanItemBudgetSchema>;
+
+/** What a bulk change would do (preview), or how many it did (apply) (phase 28.1-L). */
+export const BulkPlanResultSchema = z.object({
+  preview: z.array(z.object({ id: z.string(), title: z.string(), before: z.string(), after: z.string() })),
+  applied: z.number(),
+});
+export type BulkPlanResult = z.infer<typeof BulkPlanResultSchema>;
+
+/** Planned activities each person leads, week by week, against their limit (phase 28.1-J). */
+export const WorkloadResponseSchema = z.object({
+  weeks: z.array(z.string()),
+  rows: z.array(z.object({
+    userId: z.string(),
+    capacity: z.number().nullable(),
+    weeks: z.array(z.object({ weekStart: z.string(), load: z.number(), capacity: z.number().nullable(), over: z.boolean() })),
+  })),
+});
+
+export type WorkloadResponse = z.infer<typeof WorkloadResponseSchema>;
+export type AutomationRulesResponse = z.infer<typeof AutomationRulesResponseSchema>;
+
+/** The automation rules of a project and whether each is on (phase 28.1-K). */
+export const AutomationRulesResponseSchema = z.object({
+  items: z.array(z.object({ ruleKey: z.string(), label: z.string(), enabled: z.boolean() })),
+});
+
+/** People a project reaches, by case code, with counts by sex and age group (phase 28.1-G). */
+export const BeneficiariesResponseSchema = z.object({
+  items: z.array(z.object({ id: z.string(), caseCode: z.string(), sex: z.string(), ageGroup: z.string(), location: z.string(), enrolledOn: z.string() })),
+  counts: z.object({ total: z.number(), bySex: z.record(z.string(), z.number()), byAgeGroup: z.record(z.string(), z.number()) }),
+});
+export type BeneficiariesResponse = z.infer<typeof BeneficiariesResponseSchema>;

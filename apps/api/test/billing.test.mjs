@@ -6,6 +6,8 @@ process.env.DATABASE_URL ??= "postgresql://test:test@localhost:5432/donordesk";
 process.env.DATABASE_ADMIN_URL ??= process.env.DATABASE_URL;
 process.env.JWT_SECRET ??= "test-secret-that-is-at-least-32-characters";
 process.env.BILLING_PROVIDER ??= "stub";
+// The Creem webhook test signs with WEBHOOK_SECRET below; the server must verify with the same secret.
+process.env.CREEM_WEBHOOK_SECRET ??= "test-webhook-secret";
 
 const { buildServer } = await import("../dist/server.js");
 const { JwtAuthProvider } = await import("@donordesk/infrastructure");

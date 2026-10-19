@@ -418,6 +418,7 @@ model Indicator {
   responsibleUserId     String?
   disaggregationRequired Boolean @default(false)
   semanticsJson         String?
+  targetBreakdownsJson  String?
   archivedAt            DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
@@ -1498,6 +1499,129 @@ model PlannedActivity {
 }
 
 /// Append-only history of changes to a planned activity; the reasons are the project's decision history.
+model PlannedActivityDependency {
+  id            String   @id
+  tenantId      String
+  projectId     String
+  predecessorId String
+  successorId   String
+  createdById   String
+  createdAt     DateTime @default(now())
+
+  @@unique([predecessorId, successorId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, successorId])
+}
+
+model ProjectField {
+  id          String   @id
+  tenantId    String
+  projectId   String
+  key         String
+  label       String
+  type        String
+  choicesJson String   @default("[]")
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@unique([projectId, key])
+  @@index([tenantId, projectId])
+}
+
+/// A value a person typed for a custom field on a planned activity. A blank value is no row, never a zero.
+model CustomFieldValue {
+  id          String   @id
+  tenantId    String
+  projectId   String
+  fieldId     String
+  entityId    String
+  value       String
+  updatedById String
+  updatedAt   DateTime
+
+  @@unique([fieldId, entityId])
+  @@index([tenantId, entityId])
+}
+
+/// A budget line on a planned activity. Money in minor units (cents) as a whole number.
+model BudgetLine {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  code              String
+  category          String
+  description       String   @default("")
+  donorName         String   @default("")
+  currency          String
+  amountMinor       Int
+  createdById       String
+  createdAt         DateTime @default(now())
+
+  @@index([tenantId, plannedActivityId])
+  @@index([tenantId, projectId])
+}
+
+/// An expense booked against one budget line.
+model BudgetExpense {
+  id           String   @id
+  tenantId     String
+  projectId    String
+  budgetLineId String
+  expenseDate  DateTime @db.Date
+  amountMinor  Int
+  description  String   @default("")
+  createdById  String
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId, budgetLineId])
+  @@index([tenantId, projectId])
+}
+
+/// How many planned activities a person can lead in a week. Blank (null) means no limit has been set.
+model MemberCapacity {
+  id                String   @id
+  tenantId          String
+  userId            String
+  activitiesPerWeek Int?
+  updatedById       String
+  updatedAt         DateTime
+
+  @@unique([tenantId, userId])
+}
+
+/// An automation rule a project has switched on or off. No row means the rule's default (on).
+model ProjectAutomation {
+  id          String   @id
+  tenantId    String
+  projectId   String
+  ruleKey     String
+  enabled     Boolean
+  updatedById String
+  updatedAt   DateTime
+
+  @@unique([projectId, ruleKey])
+  @@index([tenantId, projectId])
+}
+
+/// A person a project reaches, by case code only (no name, phone or ID number). Consent is recorded when they are added.
+model Beneficiary {
+  id                  String   @id
+  tenantId            String
+  projectId           String
+  caseCode            String
+  sex                 String
+  ageGroup            String
+  location            String   @default("")
+  enrolledOn          DateTime @db.Date
+  consentRecordedById String
+  createdById         String
+  createdAt           DateTime @default(now())
+
+  @@unique([projectId, caseCode])
+  @@index([tenantId, projectId])
+}
+
 model PlanRevision {
   id                String   @id
   tenantId          String

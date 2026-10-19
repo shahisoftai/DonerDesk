@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   AssignPlannedActivitySchema, ImportWorkPlanSchema, SetWorkPlanningVisibilitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ListWorkPlanQuerySchema,
-  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema,
+  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema,
 } from "@donordesk/contracts";
 
 /**
@@ -79,6 +79,120 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.reschedulePlannedActivity.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
     if (!r.ok) throw r.error;
     return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/plan-fields", async (req) => {
+    const r = await req.container.handlers.listProjectFields.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.post("/v1/projects/:projectId/plan-fields", async (req) => {
+    const body = DefineProjectFieldSchema.parse(req.body);
+    const r = await req.container.handlers.defineProjectField.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"), body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/work-plan/:itemId/fields", async (req) => {
+    const r = await req.container.handlers.getPlanItemFields.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/work-plan/:itemId/fields", async (req) => {
+    const body = SetPlanItemFieldsSchema.parse(req.body);
+    const r = await req.container.handlers.setPlanItemFields.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  // Many activities at once: preview first (apply false), then apply. Refusals name the reason and change nothing.
+  app.post("/v1/projects/:projectId/work-plan/bulk", async (req) => {
+    const body = BulkPlanActionSchema.parse(req.body);
+    const r = await req.container.handlers.bulkPlanAction.handle({ tenant: req.tenant, requestId: req.id }, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/workload", async (req) => {
+    const r = await req.container.handlers.getWorkload.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/users/:userId/capacity", async (req) => {
+    const body = SetCapacitySchema.parse(req.body);
+    const r = await req.container.handlers.setCapacity.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "userId"), body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.get("/v1/projects/:projectId/automations", async (req) => {
+    const r = await req.container.handlers.listAutomationRules.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.put("/v1/projects/:projectId/automations/:ruleKey", async (req) => {
+    const body = SetAutomationRuleSchema.parse(req.body);
+    const r = await req.container.handlers.setAutomationRule.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"), idOf(req, "ruleKey"), body.enabled);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.get("/v1/projects/:projectId/beneficiaries", async (req) => {
+    const r = await req.container.handlers.listBeneficiaries.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/projects/:projectId/beneficiaries/import", async (req) => {
+    const body = ImportSubmissionsSchema.parse(req.body);
+    const r = await req.container.handlers.importSubmissions.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"), body.csv);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/projects/:projectId/beneficiaries", async (req) => {
+    const body = RegisterBeneficiarySchema.parse(req.body);
+    const r = await req.container.handlers.registerBeneficiary.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "projectId"), body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/work-plan/:itemId/budget", async (req) => {
+    const r = await req.container.handlers.getPlanItemBudget.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"));
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.post("/v1/work-plan/:itemId/budget-lines", async (req) => {
+    const body = AddBudgetLineSchema.parse(req.body);
+    const r = await req.container.handlers.addBudgetLine.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/work-plan/:itemId/budget-lines/:lineId/expenses", async (req) => {
+    const body = AddBudgetExpenseSchema.parse(req.body);
+    const r = await req.container.handlers.addBudgetExpense.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), idOf(req, "lineId"), body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/work-plan/dependencies", async (req) => {
+    const body = AddPlanDependencySchema.parse(req.body);
+    const r = await req.container.handlers.addPlanDependency.handle({ tenant: req.tenant, requestId: req.id }, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.delete("/v1/work-plan/dependencies/:predecessorId/:successorId", async (req) => {
+    const params = req.params as { predecessorId: string; successorId: string };
+    const r = await req.container.handlers.removePlanDependency.handle({ tenant: req.tenant, requestId: req.id }, { predecessorId: params.predecessorId, successorId: params.successorId });
+    if (!r.ok) throw r.error;
+    return { ok: true };
   });
 
   app.post("/v1/work-plan/:itemId/assign", async (req) => {

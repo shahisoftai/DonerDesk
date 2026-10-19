@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const RiskKindSchema = z.enum(["PROBLEM", "RISK"]);
+export const RiskKindSchema = z.enum(["PROBLEM", "RISK", "ASSUMPTION", "DECISION", "DEPENDENCY"]);
 export const SeriousnessSchema = z.enum(["HIGH", "MEDIUM", "LOW"]);
 
 /** The four things a person says: what it is (and whether it has happened), how serious, who handles it, what is being done. */

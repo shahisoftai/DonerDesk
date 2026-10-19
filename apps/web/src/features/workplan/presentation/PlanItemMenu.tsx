@@ -49,7 +49,7 @@ export function PlanItemMenu(p: PlanItemMenuProps) {
   const close = () => { setPanel(null); setReason(""); };
   async function done(result: true | undefined) { if (result === true) { close(); router.refresh(); } }
 
-  const move = () => state.run(() => reschedulePlannedActivityAction(p.itemId, { plannedStart: start, plannedEnd: end || start, scope, ...(reason.trim() ? { reason } : {}) })).then(done);
+  const move = () => state.run(() => reschedulePlannedActivityAction(p.itemId, { plannedStart: start, plannedEnd: end || start, scope, ...(reason.trim() ? { reason } : {}) })).then((r) => done(r ? true : undefined));
   const assign = () => state.run(() => assignPlannedActivityAction(p.itemId, { ownerUserId: lead || null, supportUserIds: [] })).then(done);
   const cancel = () => state.run(() => changePlanStatusAction(p.itemId, { action: "CANCEL", reason })).then(done);
   const restore = () => state.run(() => changePlanStatusAction(p.itemId, { action: "RESTORE" })).then(done);

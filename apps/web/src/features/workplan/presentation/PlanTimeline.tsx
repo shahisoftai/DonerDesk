@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import type { WorkPlanRow } from "@/lib/server/schemas";
+import { waitingLine } from "../domain/dependency-view";
 import { reschedulePlannedActivityAction } from "@/lib/actions/workplan";
 import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
@@ -57,7 +58,7 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
   const range = timelineRange(zoom, today, project);
   const shown = useMemo(() => rows.map((r) => (pending && pending.id === r.id ? { ...r, plannedStart: pending.start, plannedEnd: pending.end } : r)), [rows, pending]);
   const layout = useMemo(
-    () => layoutTimeline({ rows: shown, deadlines, range, zoom, today, outputTitles: new Map(Object.entries(outputTitles)) }),
+    () => layoutTimeline({ rows: shown.map((r) => ({ ...r, waitingLabel: waitingLine(r.waitingFor) })), deadlines, range, zoom, today, outputTitles: new Map(Object.entries(outputTitles)) }),
     [shown, deadlines, range, zoom, today, outputTitles],
   );
   const byId = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
@@ -112,7 +113,7 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
   async function save() {
     if (!pending) return;
     const done = await state.run(() => reschedulePlannedActivityAction(pending.id, { plannedStart: pending.start, plannedEnd: pending.end, scope: pendingRow?.seriesId ? scope : "THIS", ...(reason.trim() ? { reason } : {}) }));
-    if (done === true) { setPending(null); router.refresh(); }
+    if (done) { setPending(null); router.refresh(); }
   }
 
   return (
@@ -157,14 +158,14 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
                       <button
                         type="button"
                         aria-label={b.label + (draggable ? ". Use the arrow keys to change the dates." : "")}
-                        title={b.label}
+                        title={b.waiting ? `${b.label}. ${b.waiting}` : b.label}
                         onPointerDown={(e) => down(e, row)} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
                         onClick={() => click(row)} onKeyDown={(e) => key(e, row)}
                         className={`absolute top-0 flex h-7 items-center overflow-hidden px-2 text-left text-xs ${b.milestone ? "rounded-sm" : "rounded"} ${SIGNAL_CLASS[b.signal]} ${draggable ? "cursor-grab touch-none" : ""} ${isPending ? "opacity-60 ring-2 ring-brand-500" : ""}`}
                         style={{ left: `${b.leftPct}%`, width: `${Math.max(b.widthPct, 1.6)}%`, minWidth: b.milestone ? 18 : undefined }}
                       >
                         {b.progressPct !== undefined && <span className="pointer-events-none absolute inset-y-0 left-0 bg-black/20" style={{ width: `${b.progressPct}%` }} aria-hidden="true" />}
-                        <span className="relative truncate">{b.milestone ? "◆ " : ""}{b.title}</span>
+                        <span className="relative truncate">{b.milestone ? "◆ " : ""}{b.waiting ? "⧗ " : ""}{b.title}</span>
                       </button>
                     </div>
                   );

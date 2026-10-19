@@ -22,6 +22,13 @@ export async function registerTaskRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  // Indicators summed across the projects a person can see, per donor and code (phase 28.1-F). Only verified values count.
+  app.get("/v1/portfolio/indicators", async (req) => {
+    const r = await req.container.handlers.getPortfolioIndicators.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
   app.get("/v1/portfolio/health", async (req) => {
     const r = await req.container.handlers.getPortfolioHealth.handle({ tenant: req.tenant, requestId: req.id });
     if (!r.ok) throw r.error;

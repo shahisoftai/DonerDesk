@@ -6,7 +6,7 @@ import { RISK_KIND_LABEL, SERIOUSNESS_LABEL } from "@donordesk/domain/contexts/r
 import { formatShortDate } from "@donordesk/domain/contexts/workplan/index.js";
 
 export interface RiskShape {
-  kind: "PROBLEM" | "RISK";
+  kind: "PROBLEM" | "RISK" | "ASSUMPTION" | "DECISION" | "DEPENDENCY";
   seriousness: "HIGH" | "MEDIUM" | "LOW";
   ownerId?: string | undefined;
   action: string;

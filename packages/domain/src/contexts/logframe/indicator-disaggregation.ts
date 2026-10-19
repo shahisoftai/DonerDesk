@@ -96,3 +96,14 @@ export function parseDisaggregationJson(json: string | null | undefined): Disagg
     return [];
   }
 }
+
+/**
+ * Targets per breakdown (phase 28.1-B): the same rules as reported breakdowns, checked against the indicator's total target.
+ * A summable indicator's categories in each dimension must add up to the total target when it is a number.
+ */
+export function validateTargetBreakdowns(
+  entries: readonly DisaggregationEntry[],
+  context: { indicatorType: IndicatorType; target: string },
+): Result<DisaggregationEntry[], DomainError> {
+  return validateDisaggregation(entries, { indicatorType: context.indicatorType, periodAchievement: context.target });
+}

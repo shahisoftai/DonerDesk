@@ -1,22 +1,37 @@
 /**
- * "Problems and risks": a short list, not a register. What it is, whether it has happened or might, how serious (one choice), who
- * is handling it and what is being done. No likelihood matrix, no categories. A serious one that stays open is looked at again
- * every 30 days (it appears in its owner's work). Never part of a donor report: the writer never receives it.
+ * "Problems and risks" (the RAID log, phase 28.1-E): a short list, not a register. Each entry is a problem that has happened, a
+ * risk that might, an assumption we rely on, a decision taken, or a dependency on someone else. Each has what it is, how serious
+ * (one choice: its impact), who is handling it and what is being done. No likelihood matrix. A serious one that stays open is
+ * looked at again every 30 days (it appears in its owner's work). Never part of a donor report: the writer never receives it.
  */
 import { Entity } from "../../core/entity.js";
 import { DomainError } from "../../core/domain-error.js";
 import { err, ok, type Result } from "../../core/result.js";
 import { addDays, type PlainDate } from "../workplan/plain-date.js";
 
-export type RiskKind = "PROBLEM" | "RISK";
+export type RiskKind = "PROBLEM" | "RISK" | "ASSUMPTION" | "DECISION" | "DEPENDENCY";
 export type Seriousness = "HIGH" | "MEDIUM" | "LOW";
 export type RiskStatus = "OPEN" | "CLOSED";
 
-export const RISK_KINDS: RiskKind[] = ["PROBLEM", "RISK"];
+export const RISK_KINDS: RiskKind[] = ["PROBLEM", "RISK", "ASSUMPTION", "DECISION", "DEPENDENCY"];
 export const SERIOUSNESS_LEVELS: Seriousness[] = ["HIGH", "MEDIUM", "LOW"];
 
 /** What a person reads. "It has happened" / "It might happen", never PROBLEM / RISK. */
-export const RISK_KIND_LABEL: Readonly<Record<RiskKind, string>> = { PROBLEM: "It has happened", RISK: "It might happen" };
+export const RISK_KIND_LABEL: Readonly<Record<RiskKind, string>> = {
+  PROBLEM: "It has happened",
+  RISK: "It might happen",
+  ASSUMPTION: "We are assuming",
+  DECISION: "We decided",
+  DEPENDENCY: "We depend on someone",
+};
+/** The question asked for "what is being done", worded for each kind (phase 28.1-E). */
+export const RISK_ACTION_HINT: Readonly<Record<RiskKind, string>> = {
+  PROBLEM: "What is being done about it?",
+  RISK: "What will be done if it happens?",
+  ASSUMPTION: "How will we check it?",
+  DECISION: "Why was this decided?",
+  DEPENDENCY: "What do we need from them, and by when?",
+};
 export const SERIOUSNESS_LABEL: Readonly<Record<Seriousness, string>> = { HIGH: "High", MEDIUM: "Medium", LOW: "Low" };
 
 /** A serious open problem is looked at again this many days after it was raised or last updated. */

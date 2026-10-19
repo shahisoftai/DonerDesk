@@ -47,6 +47,7 @@ export class ListLogframeHandler {
           frequency: i.frequency,
           responsibleUserId: i.responsibleUserId,
           disaggregationRequired: i.disaggregationRequired,
+          targetBreakdowns: i.targetBreakdowns,
           semantics: i.semantics,
           semanticsDescription: describeSemantics(effectiveIndicatorSemantics(i), i.type),
         })),

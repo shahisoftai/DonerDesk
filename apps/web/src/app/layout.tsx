@@ -1,4 +1,5 @@
 import "./globals.css";
+import { ServiceWorkerRegistrar } from "@/features/offline/presentation/ServiceWorkerRegistrar";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { GeistSans } from "geist/font/sans";
@@ -99,6 +100,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={GeistSans.variable}>
       <body>
+        <ServiceWorkerRegistrar />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}

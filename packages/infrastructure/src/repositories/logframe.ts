@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import type { DisaggregationEntry } from "@donordesk/domain";
 import {
   LogframeItem,
   Indicator,
@@ -18,6 +19,17 @@ import type {
 
 function ok<T>(value: T): Result<T, DomainError> {
   return { ok: true, value };
+}
+
+/** Stored per-breakdown targets; a damaged value reads as none rather than failing the whole indicator list. */
+function parseTargetBreakdowns(json: string | null): DisaggregationEntry[] {
+  if (!json) return [];
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed as DisaggregationEntry[] : [];
+  } catch {
+    return [];
+  }
 }
 
 export class PrismaLogframeRepository implements ILogframeRepository {
@@ -118,6 +130,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         responsibleUserId: i.responsibleUserId,
         disaggregationRequired: i.disaggregationRequired,
         semanticsJson: i.semanticsJson,
+        targetBreakdownsJson: i.targetBreakdowns.length ? JSON.stringify(i.targetBreakdowns) : null,
       },
     });
     return ok(i);
@@ -141,6 +154,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         responsibleUserId: i.responsibleUserId ?? null,
         disaggregationRequired: i.disaggregationRequired,
         semanticsJson: i.semanticsJson,
+        targetBreakdownsJson: i.targetBreakdowns.length ? JSON.stringify(i.targetBreakdowns) : null,
       },
     });
     return ok(i);
@@ -182,6 +196,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     responsibleUserId: string | null;
     disaggregationRequired: boolean;
     semanticsJson: string | null;
+    targetBreakdownsJson: string | null;
     archivedAt: Date | null;
     createdAt: Date;
   }): Indicator {
@@ -204,6 +219,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         responsibleUserId: row.responsibleUserId ?? undefined,
         disaggregationRequired: row.disaggregationRequired,
         semanticsJson: row.semanticsJson ?? undefined,
+        targetBreakdowns: parseTargetBreakdowns(row.targetBreakdownsJson),
         archivedAt: row.archivedAt ?? undefined,
       },
     });
