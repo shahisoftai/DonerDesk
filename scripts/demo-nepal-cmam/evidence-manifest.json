@@ -1,0 +1,263 @@
+[
+ {
+  "m": 0,
+  "node": "A1.1",
+  "ind": "NP-OP1.1",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/01-A1.1-screening-register.csv",
+  "type": "Kobo/ODK export",
+  "sens": "Confidential",
+  "title": "Screening register extract, January 2026"
+ },
+ {
+  "m": 0,
+  "node": "A2.3",
+  "ind": "NP-OP2.3",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/01-A2.3-delivery-notes.csv",
+  "type": "Distribution list",
+  "sens": "Internal",
+  "title": "Therapeutic food delivery notes, January 2026"
+ },
+ {
+  "m": 0,
+  "node": "A1.4",
+  "ind": "NP-OP1.4",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/01-A1.4-attendance.csv",
+  "type": "Attendance sheet",
+  "sens": "Internal",
+  "title": "CMAM training attendance, January 2026"
+ },
+ {
+  "m": 0,
+  "node": "A2.1",
+  "ind": null,
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/01-A2.1-session-photo.jpg",
+  "type": "Photo",
+  "sens": "Internal",
+  "title": "Counselling session photo, January 2026"
+ },
+ {
+  "m": 1,
+  "node": "A1.1",
+  "ind": "NP-OP1.1",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/02-A1.1-screening-register.csv",
+  "type": "Kobo/ODK export",
+  "sens": "Confidential",
+  "title": "Screening register extract, February 2026"
+ },
+ {
+  "m": 1,
+  "node": "A2.3",
+  "ind": "NP-OP2.3",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/02-A2.3-delivery-notes.csv",
+  "type": "Distribution list",
+  "sens": "Internal",
+  "title": "Therapeutic food delivery notes, February 2026"
+ },
+ {
+  "m": 1,
+  "node": "A2.1",
+  "ind": null,
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/02-A2.1-session-photo.jpg",
+  "type": "Photo",
+  "sens": "Internal",
+  "title": "Counselling session photo, February 2026"
+ },
+ {
+  "m": 2,
+  "node": "A1.1",
+  "ind": "NP-OP1.1",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/03-A1.1-screening-register.csv",
+  "type": "Kobo/ODK export",
+  "sens": "Confidential",
+  "title": "Screening register extract, March 2026"
+ },
+ {
+  "m": 2,
+  "node": "A2.3",
+  "ind": "NP-OP2.3",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/03-A2.3-delivery-notes.csv",
+  "type": "Distribution list",
+  "sens": "Internal",
+  "title": "Therapeutic food delivery notes, March 2026"
+ },
+ {
+  "m": 2,
+  "node": "A1.4",
+  "ind": "NP-OP1.4",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/03-A1.4-attendance.csv",
+  "type": "Attendance sheet",
+  "sens": "Internal",
+  "title": "CMAM training attendance, March 2026"
+ },
+ {
+  "m": 2,
+  "node": "A2.1",
+  "ind": null,
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/03-A2.1-session-photo.jpg",
+  "type": "Photo",
+  "sens": "Internal",
+  "title": "Counselling session photo, March 2026"
+ },
+ {
+  "m": 3,
+  "node": "A1.1",
+  "ind": "NP-OP1.1",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/04-A1.1-screening-register.csv",
+  "type": "Kobo/ODK export",
+  "sens": "Confidential",
+  "title": "Screening register extract, April 2026"
+ },
+ {
+  "m": 3,
+  "node": "A2.3",
+  "ind": "NP-OP2.3",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/04-A2.3-delivery-notes.csv",
+  "type": "Distribution list",
+  "sens": "Internal",
+  "title": "Therapeutic food delivery notes, April 2026"
+ },
+ {
+  "m": 3,
+  "node": "A2.1",
+  "ind": null,
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/04-A2.1-session-photo.jpg",
+  "type": "Photo",
+  "sens": "Internal",
+  "title": "Counselling session photo, April 2026"
+ },
+ {
+  "m": 4,
+  "node": "A1.1",
+  "ind": "NP-OP1.1",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/05-A1.1-screening-register.csv",
+  "type": "Kobo/ODK export",
+  "sens": "Confidential",
+  "title": "Screening register extract, May 2026"
+ },
+ {
+  "m": 4,
+  "node": "A2.3",
+  "ind": "NP-OP2.3",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/05-A2.3-delivery-notes.csv",
+  "type": "Distribution list",
+  "sens": "Internal",
+  "title": "Therapeutic food delivery notes, May 2026"
+ },
+ {
+  "m": 4,
+  "node": "A1.4",
+  "ind": "NP-OP1.4",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/05-A1.4-attendance.csv",
+  "type": "Attendance sheet",
+  "sens": "Internal",
+  "title": "CMAM training attendance, May 2026"
+ },
+ {
+  "m": 4,
+  "node": "A2.1",
+  "ind": null,
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/05-A2.1-session-photo.jpg",
+  "type": "Photo",
+  "sens": "Internal",
+  "title": "Counselling session photo, May 2026"
+ },
+ {
+  "m": 5,
+  "node": "A1.1",
+  "ind": "NP-OP1.1",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/06-A1.1-screening-register.csv",
+  "type": "Kobo/ODK export",
+  "sens": "Confidential",
+  "title": "Screening register extract, June 2026"
+ },
+ {
+  "m": 5,
+  "node": "A2.3",
+  "ind": "NP-OP2.3",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/06-A2.3-delivery-notes.csv",
+  "type": "Distribution list",
+  "sens": "Internal",
+  "title": "Therapeutic food delivery notes, June 2026"
+ },
+ {
+  "m": 5,
+  "node": "A2.1",
+  "ind": null,
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/06-A2.1-session-photo.jpg",
+  "type": "Photo",
+  "sens": "Internal",
+  "title": "Counselling session photo, June 2026"
+ },
+ {
+  "m": 6,
+  "node": "A1.1",
+  "ind": "NP-OP1.1",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/07-A1.1-screening-register.csv",
+  "type": "Kobo/ODK export",
+  "sens": "Confidential",
+  "title": "Screening register extract, July 2026"
+ },
+ {
+  "m": 6,
+  "node": "A2.3",
+  "ind": "NP-OP2.3",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/07-A2.3-delivery-notes.csv",
+  "type": "Distribution list",
+  "sens": "Internal",
+  "title": "Therapeutic food delivery notes, July 2026"
+ },
+ {
+  "m": 6,
+  "node": "A1.4",
+  "ind": "NP-OP1.4",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/07-A1.4-attendance.csv",
+  "type": "Attendance sheet",
+  "sens": "Internal",
+  "title": "CMAM training attendance, July 2026"
+ },
+ {
+  "m": 6,
+  "node": "A2.1",
+  "ind": null,
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/07-A2.1-session-photo.jpg",
+  "type": "Photo",
+  "sens": "Internal",
+  "title": "Counselling session photo, July 2026"
+ },
+ {
+  "m": 7,
+  "node": "A1.1",
+  "ind": "NP-OP1.1",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/08-A1.1-screening-register.csv",
+  "type": "Kobo/ODK export",
+  "sens": "Confidential",
+  "title": "Screening register extract, August 2026"
+ },
+ {
+  "m": 7,
+  "node": "A2.3",
+  "ind": "NP-OP2.3",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/08-A2.3-delivery-notes.csv",
+  "type": "Distribution list",
+  "sens": "Internal",
+  "title": "Therapeutic food delivery notes, August 2026"
+ },
+ {
+  "m": 7,
+  "node": "A1.4",
+  "ind": "NP-OP1.4",
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/08-A1.4-attendance.csv",
+  "type": "Attendance sheet",
+  "sens": "Internal",
+  "title": "CMAM training attendance, August 2026"
+ },
+ {
+  "m": 7,
+  "node": "A2.1",
+  "ind": null,
+  "file": "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/scripts/demo-nepal-cmam/ev/08-A2.1-session-photo.jpg",
+  "type": "Photo",
+  "sens": "Internal",
+  "title": "Counselling session photo, August 2026"
+ }
+]

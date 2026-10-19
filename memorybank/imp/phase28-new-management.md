@@ -30,16 +30,16 @@ budget module. That is the overload this product exists to avoid. Rev. 2 keeps t
 | 28.0 | Website copy matches what is live; architecture and copy-word guard tests | **Built** (homepage, hero, stage tabs, role card; `test/architecture-boundaries.test.mjs`; copy-word test in `packages/domain/test/workplan.test.mjs`). Not done: support articles and `/features` not re-read for the same claims; deck not updated |
 | 28.1 | Plan the work: activities inside the Activities tab, *Start from my logframe* wizard, List view, records linked to activities | **Built** (domain, handlers, repos verified on scratch Postgres with RLS, migration `20261019100000_work_plan`, routes, List view, wizard, plan form, activity page with Move dates / Change lead / Cancel / Restore, planned-activity picker, import via `TextImportPanel` (any bad row blocks), Admin setting "Show work planning", names endpoint `GET /v1/projects/:id/people`, "copy work plan" option on copy-setup, tab-mode rule pinned for "no plan looks as before"). Not browser-checked or deployed |
 | 28.2 | Timeline (with report deadlines), *My week* for field officers, Overview cards | **Built** (Timeline with deadline lane, three zooms, drag + keyboard + confirm bar; My week with List / Week / Month; Overview *Delivery* and *Outputs* cards; offline `plan-status` outbox kind). Not browser-checked or deployed |
-| 28.3 | Who does what: leads on existing rows, one-click requests, My Work by person + Team tab | Not started |
-| 28.4 | See what is late: indicator values due, delivery health (three plain labels), risk trend wired | Not started |
-| 28.5 | Reminders without setup: one daily summary, escalation after 7 days, one setting | Not started |
-| 28.6 | Files the work needs (suggested), "still needed" warning, phone photo capture | Not started |
-| 28.7 | Problems and risks (four-field form, Overview card) | Not started |
-| 28.8 | Comments on records, indicators, activities and risks | Not started |
-| 28.9 | Reports read the plan (writer v6, advice only in readiness) | Not started |
+| 28.3 | Who does what: leads on existing rows, one-click requests, My Work by person + Team tab | **Built and deployed** (assignment queue with nine sources and one shared contract test, requests, My Work by person, Team tab, leads on indicators/periods/checklist items; `ask-people` uses domain permissions) |
+| 28.4 | See what is late: indicator values due, delivery health (three plain labels), risk trend wired | **Built and deployed** (indicator values due, delivery health three labels, `plan_slip`/`value_overdue` risk-trend factors; "behind target" deliberately left out) |
+| 28.5 | Reminders without setup: one daily summary, escalation after 7 days, one setting | **Built and deployed** (hourly timer, one summary per person at 07:00 organisation time, escalation after 7 days, ledger, one email setting; runbook `docs/runbooks/reminders.md`) |
+| 28.6 | Files the work needs (suggested), "still needed" warning, phone photo capture | **Built and deployed** (suggested required files, coverage, "Accept anyway" question; phone photo capture uses the existing "Take a photo") |
+| 28.7 | Problems and risks (four-field form, Overview card) | **Built and deployed** (four-field form, Overview card, 30-day review, close with how it ended) |
+| 28.8 | Comments on records, indicators, activities and risks | **Built and deployed** (`COMMENTABLE_ENTITIES`, `ICommentTargets`, `CommentsDisclosure` on four pages) |
+| 28.9 | Reports read the plan (writer v6, advice only in readiness) | **Built and deployed** (writer contract v6, `record:plan:*` chunks, "Suggested from your plan", readiness advice; production runs v6) |
 | 28.10 | Budget lines | Moved to Phase 29 |
 | 28.11 | Offline opening, partner access | Moved to Phase 29 |
-| 28.12 | Demo 9 with per-role simplicity measures; production browser check | Not started |
+| 28.12 | Demo 9 with per-role simplicity measures; production browser check | **Run** — demo 9 (CMAM Nepal, 8 months) in `demo/verification-demo-9.md` |
 
 Deferred to a later phase, on purpose: **beneficiary / participant register** (personal data, consent, retention and DPA work come first; counts stay on the activity record).
 
@@ -603,3 +603,54 @@ stands alone after 28.1).
 4. Public copy: restore "Plan it" wording and publish the support articles only after 1–3 (drafts are in `memorybank/docs/support/_unpublished-phase28/`; the deck is still v2.004 and says nothing about planning).
 
 **Next:** 28.3 (requests, My Work by person, Team tab), then 28.5 (reminders), 28.4, in the order of §9.
+
+---
+
+## 15. As built (28.3–28.9) and deployed 2026-10-18 — what differs from the plan
+
+**Release.** `releaseId=20261018172624`, `SCOPE=both`, branch `0013-programme-management`; migrations `20261019100000_work_plan`, `…110000_project_tasks`, `…120000_reminders`, `…130000_risk_register` applied by hand first (DB backup `/opt/donordesk/backups/db-pre-20261018-1725-phase28.dump`), `rls.sql` re-run (five tables, RLS forced), reminders script + timer installed by hand, worker restarted by `deploy-fast.sh` because its environment said contract 5 and `workers.env` said 6. Details: `CONTABO-DEPLOY.md`. Feature doc: `Features/24-Programme-Management.md`.
+
+| Plan said | As built | Why |
+|---|---|---|
+| "Behind target" in delivery health | Not included | The per-period analytics own "behind target"; a second signal would disagree |
+| Dashboard cards on the new queue | Dashboard still uses `loadWorkItems`; *My Work* and Home use the queue | Smaller change; the cards are scheduled to move with the Dashboard rework |
+| Reminder route replaces the deadline route | `/internal/reminders/deadline` kept as a thin deprecated alias; old handler deleted | Kestra flows may still call it |
+| Reminders script shipped by deploy | Installed by hand (`docs/runbooks/reminders.md`) | `deploy-fast.sh` does not ship `scripts/` |
+| Risks also on a portfolio page | Overview only | Simplicity rule §1a: no new page |
+| Comments on records, indicators, activities, risks | Same, through one table and a disclosure link; three older entity types unchanged | OCP: one row per commentable thing |
+| Readiness advice (28.9) | One rule worth 1 point; only while drafting or in review | It must never move a score or the SUBMISSION golden |
+| Production switches to v6 after demo 9 compares cleanly | Switched at deploy; demo 9's reports were written under v6 | One less release; v6 only adds three rules and a block that is absent without a plan |
+
+**Found in demo 9 and fixed in the same phase:** consent from the invite page was rejected by the API (`CONSENT_SOURCES`), plan-link suggestions did not use the typed title, "files we will need" history wording and acronym casing. **Open (not fixed):** see `demo/verification-demo-9.md` ("Open findings") and `pending.md`.
+
+## 16. UX review against other planners (2026-10-19) — changes to simplicity rules 6, 7 and 10
+
+**Method.** Web search only, not hands-on testing. Most sources are vendor community forums or third-party blogs, some dated, so treat them as direction, not fact.
+
+| Tool | How done is marked | How planned vs actual is shown |
+|---|---|---|
+| MS Project | Enter an *Actual Finish* date: scheduled finish moves to it and the task is 100% complete. Warns that % complete alone hides late finishes | Baseline set once (up to 11); Tracking Gantt with a Variance table |
+| TeamGantt | Progress on the bar | Baseline bar (original dates + % complete at the time it was saved) drawn under the live bar |
+| Xurrent | Status | Grey overlay of the original plan behind current tasks; shows behind/ahead |
+| Tempo | Status | Dotted baseline bars under the task bar |
+| Smartsheet | % Complete drives the bar fill | No native baseline on the Gantt (community answers); users add baseline columns |
+| Asana | Tick the box (timestamp is set, cannot be backdated) | Not native; users export and compare |
+| Monday | "Done" in a status column; Progress column fills the bar; drag a bar end to change dates | Not native; status history is a requested feature |
+| Teamwork | Completion % in Gantt | No baseline described |
+| TolaData / ActivityInfo / Kobo | Not Gantt-first | Users ask for a clear target-vs-achieved split |
+
+**What this says.**
+1. Most planners mark done **on the bar or row, with one field** (an actual date or a status), not in a second form. That supports the "one Done action" change.
+2. Planned-vs-actual is a **ghost of the original bar** in the timeline (TeamGantt, Xurrent, Tempo), not text. That was deferred in rule 10; the evidence now supports building it.
+3. An actual date is the completion record (MS Project). Our Done form already captures it.
+4. Nobody offers a Baseline button as the main path. Our "first dates are the original dates" rule matches.
+5. NGO tools are weak on schedule vs actuals; target vs achieved is a real, unmet need. Our plan + completed split already covers it.
+
+**Updated rules (replace 6 and 7 wording, extend 10):**
+- **6. Done is one action on the bar or row.** "Done" opens a short form: actual end date (default today), people, a note, files. Saving creates the completed activity and sets Done in one save. No separate "Mark activity done?" step.
+- **7. Moves show as a ghost.** In the timeline, an activity moved from its original dates shows a thin outline of the original bar behind the live bar, with "moved from 12 Mar" on hover. The text stays in the list. Still "Why?" only when required.
+- **10. Planned-vs-actual on the timeline is built** as the ghost bar above (one toggle, on by default for managers). Board and workload strip remain out of scope.
+
+**Not changed:** three statuses, no Baseline button, no new tab, no new screen, reason rules, revisions and audit.
+
+**Build order (proposed):** (a) combined Done save use case + one Done form on the bar/row; (b) remove "Ask for completed activity" from the item page (keep it in My Work); (c) ghost bar in `timeline-layout.ts` (pure, table-tested); (d) Completed becomes a filter on the Planned tab, with the Completed page read-only.

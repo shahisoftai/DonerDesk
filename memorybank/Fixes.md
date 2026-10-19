@@ -2,7 +2,16 @@
 
 **DonorDesk Version 1.93**
 
-Record of fixes applied to DonorDesk. Last updated: 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
+Record of fixes applied to DonorDesk. Last updated: 2026-10-18 (demo 9 findings fixed after the Phase 28 deploy); previously 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
+
+## Demo 9 (Nepal CMAM, Phase 28 on production) — defects found and fixed (2026-10-18)
+
+Found by driving the deployed Phase 28 build in a visible browser with the user's own account and four invited demo users. Each has a regression test.
+- **Invited users were stuck on onboarding (blocking).** Accepting an invitation posted legal consent with `source: "invitation"`; `POST /v1/legal/consent` only accepted `onboarding | portal | api`, so the request failed with 400, the failure was swallowed ("best effort") and the invitee was never recorded as having accepted the Terms. Every page then redirected to `/onboarding` ("Accept Terms of Service: Not accepted"). Phase 27 had added the Terms tick to the invite page without a test through the real route. Fixed: `RecordConsentSchema` and `CONSENT_SOURCES` in `packages/contracts/src/legal.ts` (the route and the contract test share it; the test names every source the web sends). Workaround before the fix: accept at `/onboarding`.
+- **The planned activity the person means was often not offered.** "Which planned activity is this?" listed three suggestions ranked by owner, same logframe activity, then date. With six planned activities in the same week and no logframe activity chosen yet, the one whose title the person had just typed was not among the three, and three January records ended up unlinked. `suggestPlanLinks` now ranks a planned activity whose title the typed title repeats before date distance; the form passes the title typed so far.
+- **History of a "files we will need" change read "details: changed to changed".** `describeChanges` now has a label and wording for `requiredFiles`, and an acronym kind keeps its capitals ("Kobo/ODK export", not "kobo/odk export").
+
+**Open from demo 9 (not fixed):** see `demo/verification-demo-9.md` "Open findings" and `pending.md`.
 
 ## Work plan (Phase 28, Batches 28.0–28.2) — bugs found while building (2026-10-19)
 

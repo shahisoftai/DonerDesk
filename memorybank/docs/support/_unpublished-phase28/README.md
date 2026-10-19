@@ -1,6 +1,6 @@
 # Support articles for the work plan — NOT PUBLISHED
 
-These articles describe features that are **built but not deployed** (Phase 28, Batches 28.0–28.2). They are deliberately outside the folders the Support Center reads, so nothing here is public. Publishing them before the features are live would repeat the overclaim that Batch 28.0 removed from the website.
+These articles describe features of Phase 28 (Batches 28.0–28.9). **The features were deployed on 2026-10-18 and driven in a browser in demo 9; the articles are published only after the open findings in `demo/verification-demo-9.md` that touch them are settled.** They are deliberately outside the folders the Support Center reads, so nothing here is public. Publishing them before the features are live would repeat the overclaim that Batch 28.0 removed from the website.
 
 ## Publish checklist (do all of it at deploy, after the browser check)
 
@@ -19,6 +19,10 @@ These articles describe features that are **built but not deployed** (Phase 28, 
 | `how-to-use-the-timeline.md` | How-To › Reporting | moving dates, drag, keyboard, "Why?" |
 | `how-to-use-my-week.md` | How-To › Navigation | field officer landing, offline |
 | `how-to-import-your-plan.md` | How-To › Projects | import screen |
+| `how-to-ask-for-work-and-use-my-work.md` | How-To › Navigation | requests, My Work, Team tab, leads |
+| `how-to-record-problems-and-risks.md` | How-To › Projects | Overview "Problems and risks" |
+| `how-to-add-comments-and-ask-for-files.md` | How-To › Reporting | comments, files we will need |
+| `reference-daily-summary-and-reminders.md` | Reference | daily summary, escalation, email setting |
 
 ## Edits to existing articles (apply at deploy)
 

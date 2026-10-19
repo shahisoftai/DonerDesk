@@ -2,18 +2,20 @@
 
 **DonorDesk Version 1.93**
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-19.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-18.
 
-## Work plan (Phase 28) — before deploy, and what is next (2026-10-19)
+## Programme management (Phase 28) — deployed 2026-10-18; what is left (updated 2026-10-18)
 
-- [x] 28.0 copy corrections and architecture guards; 28.1 work plan; 28.2 Timeline, My week, Overview cards (see `imp/phase28-new-management.md` §0 and §14).
-- [ ] **Browser check on a real project** (nothing interactive has been driven in a browser): wizard, List, Timeline drag and keyboard, confirm bar with and without "Why?", My week at 360 px, month calendar, dark mode.
-- [ ] **Offline check:** change a status in My week with the network off, reload, reconnect, confirm it sends; confirm a refused change is parked.
-- [ ] **Deploy** (plan §11): back up, apply migration `20261019100000_work_plan`, re-run `infra/postgres/rls.sql`, `deploy-fast.sh` with `SCOPE=both`, `/ready` green, browser check on production with the user's own account, record the release id in `CONTABO-DEPLOY.md`.
-- [ ] **Publish the support articles** in `docs/support/_unpublished-phase28/` (add to `FILE_MAP` and `wikiCategories.tsx`, move into place, apply the edits listed in its README) and restore "Plan it" wording on the site only after the browser checks pass.
-- [ ] Update the deck (still v2.004, says nothing about planning) and `/features` when the above is live.
-- [ ] Next batches: 28.3 requests and My Work by person, 28.5 reminders, 28.4 delivery health, 28.6 files the work needs, 28.7 problems and risks, 28.8 comments, 28.9 writer v6, 28.12 demo 9.
-- [ ] Known small gaps: leads show a name only (no photo or email); the month calendar needs a wide screen (the phone gets List and Week); the Timeline is not offered under 640 px by design.
+- [x] 28.0–28.9 built, tested and **deployed** (`releaseId=20261018172624`; `CONTABO-DEPLOY.md`; plan §15; `Features/23-Work-Plan.md`, `Features/24-Programme-Management.md`). Writer contract v6 is live.
+- [x] 28.12 **Demo 9** (CMAM, Nepal, 8 months) run on production in a visible browser; findings, simplicity measures per role and artifacts in `demo/verification-demo-9.md`.
+- [x] Fixed after demo 9 (see `Fixes.md`): invite consent rejected by the API, plan-link suggestions ignoring the typed title, files-we-will-need history wording.
+- [ ] **Open findings from demo 9** (details and severity in `demo/verification-demo-9.md`): Timeline "Whole project" is unreadable for monthly series (no grouping, truncated labels); Change lead is per activity only (a monthly series needs 8 edits); a completed activity does not show which planned activity it delivers and the link cannot be changed; backfilled activities read "done N days late" (no completion date); logframe import parents by list order only (a flat Outputs-then-Activities file mis-parents everything; re-parenting needs the reorder flag, off in production); a planned activity keeps its output when its logframe activity is moved; production login page prints demo credentials.
+- [ ] **Offline check:** change a status in My week with the network off, reload, reconnect, confirm it sends; confirm a refused change is parked (not covered by demo 9).
+- [ ] **Publish the support articles** in `docs/support/_unpublished-phase28/` (eight drafts) and restore "Plan it" wording on the site, after the open findings that touch them are settled; update the deck (still v2.004) and `/features` in the same release.
+- [ ] Reminders: confirm the first real 07:00 send on production (the timer is enabled; the first manual run answered `ran:false` outside 07:00).
+- [ ] Dashboard cards still use the old `loadWorkItems` (My Work and Home use the new queue).
+- [ ] Phase 29: budget lines, offline app opening (service worker), partner access.
+- [ ] Known small gaps: leads show a name only; the month calendar needs a wide screen; the Timeline is not offered under 640 px by design.
 
 ## Charts (2026-10-05)
 
