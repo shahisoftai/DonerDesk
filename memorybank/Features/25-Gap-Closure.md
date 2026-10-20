@@ -10,7 +10,7 @@
 | Progress log | Record what was reached by day, week or month, then the activity end. Monthly is filled from the days inside it and replaces them. Blank stays blank | Plan item page → Progress |
 | Done in one step | Pick the day it finished and (optionally) people reached; the completed activity and the plan status are saved together | "Done" on the plan item page and on list rows |
 | Indicators per activity | Tick the indicators an activity reports on; their per-group targets become the log's breakdown fields | Plan item page → Progress |
-| Targets per group | A target for each group (Women 150, Girls under 5 60 …), checked against the total target | Indicator page |
+| Targets per group | A target for each group (Women 150, Girls under 5 60 …), checked against the total target | Indicator page; in report tables as "Results by group against group targets" beside the recorded figure for each group |
 | Custom fields | A project's own text, number, date or choice fields on each planned activity | Plan item page |
 | Budget | Budget lines per activity, expenses against them, overspend flagged (never blocked) | Plan item page |
 | Problems, risks, assumptions, decisions, dependencies | One short list, filterable by kind | Project Overview |
@@ -26,6 +26,7 @@
 
 - **Blank is not zero.** An unrecorded figure is `null` in storage, empty in the form, "not recorded" when read. Pinned in `progress-log.ts`, `custom-fields.ts`, `budget.ts`, `portfolio-rollup.ts`.
 - **One live entry covers each day.** A monthly progress report absorbs the daily and weekly entries inside it (`absorbedById`); totals never add an absorbed entry. A week may not cross a month end. Logging a saved day edits it.
+- **Report tables show group targets.** A finding carries its indicator's group targets; the report's indicator section adds a table with each group's target beside its recorded figure. A group nobody reported reads "Not measured", never 0. Roll-up reports add a cumulative column. No writer-contract change; the figures are grounded like any other.
 - **Fields come from indicators.** `progressFields()` derives the breakdown fields from the linked indicators' `targetBreakdowns`; two indicators needing the same group share one field and name both.
 - **Done is checked before it changes anything.** `CompletePlannedActivityHandler` validates the day, the reporting period and the status first; the completed activity is created before the status, so a failure leaves an open item, never a done one with nothing behind it.
 - **Dependencies are a minimum.** `cascadeAfterMove` pushes successors by the fewest days and never pulls; done or cancelled successors are reported as blocked.
@@ -52,4 +53,8 @@
 
 ## 5. Deployed
 
-Release `20261019093235` (branch head `ee51780` plus `d556648`), `SCOPE=both`. Migrations applied as the migrator before the code: `20261020170000` progress log, `180000` submission mapping, `190000` beneficiary activity link, `240000` automation rule settings, `250000` plan effort; `rls.sql` re-run. `/ready` is green. Not built: targets by group in report tables (they pass through the writer contract and grounding). Not yet opened in a browser on the live site.
+- Release `20261019093235` (branch head `ee51780` plus `d556648`), `SCOPE=both`. Migrations applied as the migrator before the code: `20261020170000` progress log, `180000` submission mapping, `190000` beneficiary activity link, `240000` automation rule settings, `250000` plan effort; `rls.sql` re-run. `/ready` green.
+- Release `20261019104006` (commits `4fda743`, `548d68c`), `SCOPE=both`, no migration: targets by group in report tables.
+- Verified before deploy: typecheck and build clean; domain 695, application 620, infrastructure 345, contracts 14 pass; worker 216 pass; mypy clean. Repository tests were run against a scratch Postgres with all migrations and `rls.sql` (414 pass).
+- Not built: the cross-project roll-up inside donor report documents (a report belongs to one project; the roll-up stays a portfolio page with a CSV download).
+- Not yet opened in a browser on the live site. Browser-verify with the owner's account.

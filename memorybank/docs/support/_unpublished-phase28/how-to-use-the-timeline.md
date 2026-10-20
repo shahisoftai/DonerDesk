@@ -24,6 +24,8 @@ If you are allowed to move it (see below):
 
 Done and cancelled activities cannot be dragged. If you cannot move an activity, its bar has no drag handles.
 
+An activity that has been moved shows a dashed outline of its original dates behind its current bar, so you can see how far it has slipped. Hover over the bar to see "moved from …".
+
 ## Who can move activities
 
 Admins, Project Managers and M&E Officers. A lead who is not one of those can change an activity's status and notes, but not its dates.

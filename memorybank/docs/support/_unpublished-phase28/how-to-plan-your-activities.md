@@ -33,11 +33,15 @@ Each planned activity shows one signal:
 - **Late**: it has not started when it should have, or it is past its end date. Hover over the signal to see why ("past its end date 3 Mar").
 - **Done**, or **Cancelled**.
 
-The signal comes from the activity's dates and from the completed activities linked to it. You set the status yourself: **Not started**, **Under way** or **Done**. When a completed activity is linked to a planned one, DonorDesk may offer **Mark activity done?**. It never changes the status on its own.
+The signal comes from the activity's dates and from the completed activities linked to it. You set the status yourself: **Not started**, **Under way** or **Done**.
+
+To finish an activity, choose **Done**. You are asked the day it finished, the people reached and an optional note. DonorDesk saves the completed activity and the status together. If a completed activity is linked to a planned one, DonorDesk may suggest that it is done; it never changes the status without you confirming.
 
 ## Move, hand over or cancel
 
-Open a planned activity to **Move dates**, **Change lead** or **Cancel activity**. If the original end date has already passed, or a report already covers the activity, you are asked **Why?**. Every change is kept with its reason on the activity's page. A cancelled activity can be restored.
+Open a planned activity to **Move dates**, **Change lead** or **Cancel activity**. If the original end date has already passed, or a report already covers the activity, you are asked **Why?**. Every change is kept with its reason on the activity's page. A moved activity keeps its first dates, shown as a dashed outline on the timeline and as "moved from …" on the page. A cancelled activity can be restored.
+
+To make an activity come after another, open it and choose **Comes after**. When you move the earlier one later, the ones that wait for it move too, and DonorDesk says which it could not move (for example, one that is already done).
 
 ## Show or hide planning for a project
 

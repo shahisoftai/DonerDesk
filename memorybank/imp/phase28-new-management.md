@@ -2,7 +2,7 @@
 
 **DonorDesk Version 2.005 (proposed)** · branch `0013-programme-management` (from `0012-demo8-fixes` once merged)
 
-**Status (2026-10-19): 28.0, 28.1 and 28.2 built and committed on branch `0013-programme-management`. Not deployed. The interactive parts (drag, keyboard, offline queue, phone layout) have unit-tested logic but have not been driven in a browser; see §14.**
+**Status (2026-10-19): every batch 28.0–28.9 is built and deployed (2026-10-18, release `20261018172624`). Phase 28.1 gap closure is built and deployed (2026-10-19, releases `20261019093235` and `20261019104006`; see `imp/phase28-1-gap-closure.md` §0). Still open: a live-site browser check of the interactive parts with a real account, the offline check, and the §16 items listed in §16 below. The support articles stay unpublished until that check (see §0 and `docs/support/_unpublished-phase28/README.md`).**
 Sources: the review of the public positioning against the code (website `https://donordesk.online`, `/features`) and the gap list worked out from it.
 
 **Goal.** The product should earn what the homepage says: an NGO can **plan** its programme work, **assign** it to people, **see delivery against plan** while it can still change, and
@@ -27,9 +27,9 @@ budget module. That is the overload this product exists to avoid. Rev. 2 keeps t
 
 | Batch | Scope | Status |
 |---|---|---|
-| 28.0 | Website copy matches what is live; architecture and copy-word guard tests | **Built** (homepage, hero, stage tabs, role card; `test/architecture-boundaries.test.mjs`; copy-word test in `packages/domain/test/workplan.test.mjs`). Not done: support articles and `/features` not re-read for the same claims; deck not updated |
-| 28.1 | Plan the work: activities inside the Activities tab, *Start from my logframe* wizard, List view, records linked to activities | **Built** (domain, handlers, repos verified on scratch Postgres with RLS, migration `20261019100000_work_plan`, routes, List view, wizard, plan form, activity page with Move dates / Change lead / Cancel / Restore, planned-activity picker, import via `TextImportPanel` (any bad row blocks), Admin setting "Show work planning", names endpoint `GET /v1/projects/:id/people`, "copy work plan" option on copy-setup, tab-mode rule pinned for "no plan looks as before"). Not browser-checked or deployed |
-| 28.2 | Timeline (with report deadlines), *My week* for field officers, Overview cards | **Built** (Timeline with deadline lane, three zooms, drag + keyboard + confirm bar; My week with List / Week / Month; Overview *Delivery* and *Outputs* cards; offline `plan-status` outbox kind). Not browser-checked or deployed |
+| 28.0 | Website copy matches what is live; architecture and copy-word guard tests | **Built.** Guard tests in place. Still open: support articles and `/features` not re-read for the same claims (the site still says "Set it up" until the browser check passes); deck not updated |
+| 28.1 | Plan the work: activities inside the Activities tab, *Start from my logframe* wizard, List view, records linked to activities | **Built and deployed 2026-10-18** (migration `20261019100000_work_plan`, handlers, List view, wizard, plan form, activity page, planned-activity picker, import via `TextImportPanel`, Admin setting "Show work planning", `GET /v1/projects/:id/people`, "copy work plan" on copy-setup). Demo 9 drove the main flows; the live-site check is still open |
+| 28.2 | Timeline (with report deadlines), *My week* for field officers, Overview cards | **Built and deployed 2026-10-18.** Timeline with deadline lane, three zooms, drag + keyboard + confirm bar, dashed ghost of moved dates (§16c); My week with List / Week / Month; Overview *Delivery* and *Outputs* cards; offline `plan-status` outbox kind. Offline check still open |
 | 28.3 | Who does what: leads on existing rows, one-click requests, My Work by person + Team tab | **Built and deployed** (assignment queue with nine sources and one shared contract test, requests, My Work by person, Team tab, leads on indicators/periods/checklist items; `ask-people` uses domain permissions) |
 | 28.4 | See what is late: indicator values due, delivery health (three plain labels), risk trend wired | **Built and deployed** (indicator values due, delivery health three labels, `plan_slip`/`value_overdue` risk-trend factors; "behind target" deliberately left out) |
 | 28.5 | Reminders without setup: one daily summary, escalation after 7 days, one setting | **Built and deployed** (hourly timer, one summary per person at 07:00 organisation time, escalation after 7 days, ledger, one email setting; runbook `docs/runbooks/reminders.md`) |
@@ -37,9 +37,11 @@ budget module. That is the overload this product exists to avoid. Rev. 2 keeps t
 | 28.7 | Problems and risks (four-field form, Overview card) | **Built and deployed** (four-field form, Overview card, 30-day review, close with how it ended) |
 | 28.8 | Comments on records, indicators, activities and risks | **Built and deployed** (`COMMENTABLE_ENTITIES`, `ICommentTargets`, `CommentsDisclosure` on four pages) |
 | 28.9 | Reports read the plan (writer v6, advice only in readiness) | **Built and deployed** (writer contract v6, `record:plan:*` chunks, "Suggested from your plan", readiness advice; production runs v6) |
-| 28.10 | Budget lines | Moved to Phase 29 |
+| 28.10 | Budget lines | Built in the gap closure (per planned activity, expenses, overspend flagged; 2026-10-19). Its design in §3.9 is superseded by `imp/phase28-1-gap-closure.md` §3 batch D |
 | 28.11 | Offline opening, partner access | Moved to Phase 29 |
 | 28.12 | Demo 9 with per-role simplicity measures; production browser check | **Run** — demo 9 (CMAM Nepal, 8 months) in `demo/verification-demo-9.md` |
+| §16 | UX review: one Done action, ghost bar, Completed folded into Planned | **Partly built** (see §16 status) |
+| 28.1-gap | Dependencies, progress log, custom fields, budget, RAID kinds, roll-up, people reached, workload, automations, bulk edit, offline shell | **Built and deployed 2026-10-19**; plan and per-batch status in `imp/phase28-1-gap-closure.md` §0 |
 
 Deferred to a later phase, on purpose: **beneficiary / participant register** (personal data, consent, retention and DPA work come first; counts stay on the activity record).
 
@@ -80,7 +82,7 @@ Labels: **Exists**, **Partial** (built in part or not wired), **Missing**.
 ## 1a. Simplicity rules (user-facing; they decide every screen in this phase)
 
 Today: 7 global nav items (Home, My Work, Projects, Reports, Download Center, Evidence, Compliance + Team/Settings by role) and 9 project tabs. **Phase 28 adds no global nav item and
-no project tab.**
+no project tab.** (The gap closure also adds none: the portfolio page and people-reached page are reached from the project list and the Activities tab.)
 
 1. **No new places to go.** Planning lives inside the existing **Activities** tab (views *Planned* and *Completed*); risks live on **Overview**; delivery health is a card on Overview and
    Home. Tasks and reminders appear where the person already is (My Work, the item, the email digest).
@@ -654,3 +656,22 @@ stands alone after 28.1).
 **Not changed:** three statuses, no Baseline button, no new tab, no new screen, reason rules, revisions and audit.
 
 **Build order (proposed):** (a) combined Done save use case + one Done form on the bar/row; (b) remove "Ask for completed activity" from the item page (keep it in My Work); (c) ghost bar in `timeline-layout.ts` (pure, table-tested); (d) Completed becomes a filter on the Planned tab, with the Completed page read-only.
+
+### 16a. Build status of §16 (checked against the code, 2026-10-19)
+
+| Build step | State | Where |
+|---|---|---|
+| (a) One Done action with a short form (day, people, note, files), saved in one step | **Built** (gap closure, 06e6be5 dated Done; `MarkDoneButton`, `CompletePlannedActivityHandler` validates first) | Plan item page, list rows |
+| (b) Remove "Ask for completed activity" from the item page (keep it in My Work) | **Not built.** The item page still shows it (`activities/plan/[itemId]/page.tsx`, `AskPanel … "Ask for completed activity"`). Decide: remove it from the page, or keep it, before editing | Plan item page |
+| (c) Ghost bar for moved activities in the Timeline | **Built.** Dashed outline of the original dates behind the live bar (`timeline-layout.ts` `original`, `PlanTimeline.tsx`). "moved from …" on hover is the remaining copy check | Timeline |
+| (d) Completed becomes a filter on the Planned tab; Completed page read-only | **Not built.** Activities still has two tabs, Planned and Completed | Activities tab |
+
+Also not built from §16: the planned-vs-actual toggle "on by default for managers" (the ghost is always drawn when a date has moved; no toggle yet).
+
+## 17. Status summary (2026-10-19)
+
+- Built and deployed: 28.0–28.9 (production release `20261018172624`), gap closure (`20261019093235`), targets by group in report tables (`20261019104006`).
+- Built, not yet checked on the live site: the interactive screens (wizard, drag, keyboard, My week on a phone, month calendar, dark mode), the offline status change and its refusal path, and the gap-closure screens.
+- Open from §16: items (b) and (d).
+- Public copy: unchanged ("Set it up"). The support drafts in `docs/support/_unpublished-phase28/` are updated to the built behaviour but stay unpublished until the live check passes.
+

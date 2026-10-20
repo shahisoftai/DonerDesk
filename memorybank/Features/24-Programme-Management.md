@@ -3,7 +3,7 @@
 **DonorDesk Version 2.005**
 
 **Author:** Claude (agent) · **Date:** 2026-10-18
-**Status:** Batches 28.3–28.9 IMPLEMENTED and **deployed 2026-10-18** (`releaseId=20261018172624`, `SCOPE=both`; migrations `20261019110000_project_tasks`, `20261019120000_reminders`, `20261019130000_risk_register`; writer contract v6). Browser-verified in **demo 9** (`../demo/verification-demo-9.md`). Builds on [Feature 23](23-Work-Plan.md); plan: [`../imp/phase28-new-management.md`].
+**Status:** Batches 28.3–28.9 IMPLEMENTED and **deployed 2026-10-18** (`releaseId=20261018172624`, `SCOPE=both`; migrations `20261019110000_project_tasks`, `20261019120000_reminders`, `20261019130000_risk_register`; writer contract v6). Browser-verified in **demo 9** (`../demo/verification-demo-9.md`). Builds on [Feature 23](23-Work-Plan.md); plan: [`../imp/phase28-new-management.md`]. The gap-closure work after it is in [Feature 25](25-Gap-Closure.md).
 
 ## 1. What a person gets
 

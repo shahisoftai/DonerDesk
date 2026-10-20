@@ -13,7 +13,7 @@ Choose **List**, **Week** or **Month** to see the same work as a list or on a ca
 
 ## Update an activity
 
-Use the status buttons on each row: **Not started**, **Under way**, **Done**. If DonorDesk offers **Mark activity done?** because you have entered completed activities for it, one tap confirms.
+Use the status buttons on each row: **Not started**, **Under way**, **Done**. Choosing **Done** asks for the day it finished, the people reached and a note, then saves it in one step. If you are offline, the change is kept on your device and sent when the connection returns; if the server refuses it later, it waits for someone to look at it and is not sent again by itself.
 
 ## Without a connection
 

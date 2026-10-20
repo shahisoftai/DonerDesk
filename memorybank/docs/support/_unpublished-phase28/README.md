@@ -1,10 +1,10 @@
 # Support articles for the work plan — NOT PUBLISHED
 
-These articles describe features of Phase 28 (Batches 28.0–28.9). **The features were deployed on 2026-10-18 and driven in a browser in demo 9; the articles are published only after the open findings in `demo/verification-demo-9.md` that touch them are settled.** They are deliberately outside the folders the Support Center reads, so nothing here is public. Publishing them before the features are live would repeat the overclaim that Batch 28.0 removed from the website.
+These articles describe features of Phase 28 (Batches 28.0–28.9) and of the gap closure (2026-10-19). **The features are deployed (2026-10-18 and 2026-10-19). Demo 9 drove the main flows in a browser; the articles stay unpublished until (a) the interactive screens are checked on the live site with the owner's account, and (b) the open findings in `demo/verification-demo-9.md` that touch them are settled.** They are deliberately outside the folders the Support Center reads, so nothing here is public. Publishing them before the features are live would repeat the overclaim that Batch 28.0 removed from the website.
 
 ## Publish checklist (do all of it at deploy, after the browser check)
 
-1. Deploy 28.1 + 28.2 and check them in a browser with a real login (`pending.md`, "Work plan (Phase 28)").
+1. Check the screens these articles describe in a browser with a real login on the live site (`pending.md`, "Programme management (Phase 28)"). The features themselves are already deployed.
 2. Move each file below into `memorybank/docs/support/how-to/` (the folder already uses the `how-to-` prefix).
 3. Register each article in **both** places (see `docs/support/INDEX.md`): `FILE_MAP` in `apps/web/src/app/support/how-to/[article]/page.tsx` and the list in `apps/web/src/components/support/wikiCategories.tsx`. Add them to the sitemap if it is not generated.
 4. Apply the edits to existing articles listed below.
@@ -23,6 +23,8 @@ These articles describe features of Phase 28 (Batches 28.0–28.9). **The featur
 | `how-to-record-problems-and-risks.md` | How-To › Projects | Overview "Problems and risks" |
 | `how-to-add-comments-and-ask-for-files.md` | How-To › Reporting | comments, files we will need |
 | `reference-daily-summary-and-reminders.md` | Reference | daily summary, escalation, email setting |
+| `how-to-log-progress-and-finish-an-activity.md` | How-To › Projects | progress log, one-step Done, offline Done (gap closure) |
+| `how-to-track-dependencies-budget-and-people-reached.md` | How-To › Projects | comes after, budget lines, people reached and Kobo/ODK import, workload (gap closure) |
 
 ## Edits to existing articles (apply at deploy)
 
@@ -33,3 +35,6 @@ These articles describe features of Phase 28 (Batches 28.0–28.9). **The featur
 - **`how-to/how-to-log-activities.md`** — add a step: *If your project has a plan, choose which planned activity this is. DonorDesk suggests up to three and says why. Choose "None of these" if it was not planned.*
 - **`reference-keyboard-shortcuts.md`** — add (Timeline): focus a bar, then ← and → move it a day, Shift+← and Shift+→ change its end date; a bar then asks "Move to …?" and the Save button confirms; Esc cancels.
 - **`how-to/how-to-use-the-dashboard.md`** — add: field officers with planned work see **My week** at the top of Home.
+- **`how-to/how-to-use-the-data-center.md`** — add: a report's indicator section shows a table of each group's target beside the figure recorded for that group; a group with no figure reads "Not measured", never 0.
+- **`how-to/how-to-use-bulk-actions.md`** — add: on the Activities list you can tick several planned activities to move them by a number of days, set the lead, or start or cancel them; a preview shows every change before you save.
+- Any article that mentions "Mark activity done?" should say instead that **Done** is one step (see the new progress article).

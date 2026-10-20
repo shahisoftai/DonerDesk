@@ -614,3 +614,13 @@ whatever installer the host actually has, verified read-only first.)
 | Build fails with `ELIFECYCLE` on `pnpm install` | Lockfile drift | `cd packages/infrastructure && pnpm install --no-frozen-lockfile` then re-run the deploy. |
 | `hostname contains invalid characters` | Local hostname has odd chars; gzip embeds it | The script sanitises and sets `GZIP=-n`. If you still see it, set `HOSTNAME=donordesk-deploy` in your shell. |
 | `donordesk-workers` crash-loops after a deploy that touched `requirements.txt` | New Python dependency not installed — the deploy script never touches `.venv/` | §9a — install the new dependency into the host venv, then restart, before assuming the deploy itself is broken. |
+
+## 11. Release record: Phase 28.1 gap closure (2026-10-19)
+
+| Release | Scope | Contents | Notes |
+|---|---|---|---|
+| `20261019093235` | `SCOPE=both` | Dependencies, progress log, one-step Done, custom fields, budgets, RAID kinds, roll-up, people reached, workload, automations, bulk edit, offline shell | Migrations `20261020170000` progress log, `180000` submission mapping, `190000` beneficiary activity link, `240000` automation rule settings, `250000` plan effort applied as the migrator before the code; `rls.sql` re-run; `/ready` green |
+| `20261019104006` | `SCOPE=both` | Targets by group in report tables (`group_target_table`, `VerifiedFinding.targetBreakdowns`) | No migration. Checked after deploy: `/ready` 200 (database, Prisma client, AI worker ok); api, web and workers active; worker environment `AI_REPORTER_CONTRACT_VERSION=6`; no error-level journal entries in the 5 minutes after deploy |
+
+Earlier releases: §10 and `imp/phase28-new-management.md` §15 (`20261018172624`).
+

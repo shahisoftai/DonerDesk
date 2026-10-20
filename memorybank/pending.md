@@ -2,16 +2,20 @@
 
 **DonorDesk Version 1.93**
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-18.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-19.
 
-## Programme management (Phase 28) — deployed 2026-10-18; what is left (updated 2026-10-18)
+## Programme management (Phase 28) — deployed; what is left (updated 2026-10-19)
 
 - [x] 28.0–28.9 built, tested and **deployed** (`releaseId=20261018172624`; `CONTABO-DEPLOY.md`; plan §15; `Features/23-Work-Plan.md`, `Features/24-Programme-Management.md`). Writer contract v6 is live.
+- [x] **Gap closure (Phase 28.1)** deployed 2026-10-19: `20261019093235` (dependencies, progress log, one-step Done, custom fields, budgets, RAID kinds, roll-up, people reached, workload, automations, bulk edit, offline shell) and `20261019104006` (targets by group in report tables, no migration). Plan and per-batch status: `imp/phase28-1-gap-closure.md` §0; `Features/25-Gap-Closure.md`.
+- [ ] **Live-site browser check** with the owner's account of the screens built in 28.1–28.9 and the gap closure: wizard, List, Timeline drag and keyboard, My week on a phone, Done form, Progress log, budget, dependencies, people reached and Kobo import, Team workload, bulk edit, and a report's group-target table.
+- [ ] **Plan §16 (UX review) still open:** (b) remove or keep "Ask for completed activity" on the activity page (decide first); (d) fold Completed into a filter on the Planned tab. Built: one Done action (a), ghost of moved dates (c). See `imp/phase28-new-management.md` §16a.
+- [ ] **Support articles:** eight Phase 28 drafts plus two gap-closure drafts in `docs/support/_unpublished-phase28/` are updated to the built behaviour. Publish them, apply the edits listed in its README, and restore "Plan it" on the site, only after the live-site check passes.
 - [x] 28.12 **Demo 9** (CMAM, Nepal, 8 months) run on production in a visible browser; findings, simplicity measures per role and artifacts in `demo/verification-demo-9.md`.
 - [x] Fixed after demo 9 (see `Fixes.md`): invite consent rejected by the API, plan-link suggestions ignoring the typed title, files-we-will-need history wording.
 - [ ] **Open findings from demo 9** (details and severity in `demo/verification-demo-9.md`): Timeline "Whole project" is unreadable for monthly series (no grouping, truncated labels); Change lead is per activity only (a monthly series needs 8 edits); a completed activity does not show which planned activity it delivers and the link cannot be changed; backfilled activities read "done N days late" (no completion date); logframe import parents by list order only (a flat Outputs-then-Activities file mis-parents everything; re-parenting needs the reorder flag, off in production); a planned activity keeps its output when its logframe activity is moved; production login page prints demo credentials.
 - [ ] **Offline check:** change a status in My week with the network off, reload, reconnect, confirm it sends; confirm a refused change is parked (not covered by demo 9).
-- [ ] **Publish the support articles** in `docs/support/_unpublished-phase28/` (eight drafts) and restore "Plan it" wording on the site, after the open findings that touch them are settled; update the deck (still v2.004) and `/features` in the same release.
+- [ ] Update the deck (still v2.004) and `/features` in the same release as the support articles.
 - [ ] Reminders: confirm the first real 07:00 send on production (the timer is enabled; the first manual run answered `ran:false` outside 07:00).
 - [ ] Dashboard cards still use the old `loadWorkItems` (My Work and Home use the new queue).
 - [ ] Phase 29: budget lines, offline app opening (service worker), partner access.

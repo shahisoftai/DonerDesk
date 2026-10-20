@@ -3,7 +3,7 @@
 **DonorDesk Version 2.005 (in development)**
 
 **Author:** Claude (agent) · **Date:** 2026-10-19
-**Status:** Batches 28.0, 28.1 and 28.2 IMPLEMENTED and committed on branch `0013-programme-management`. **Not deployed. Not browser-checked.** Plan and decisions: [`../imp/phase28-new-management.md`](../imp/phase28-new-management.md) (§14 lists deviations and what is unproven).
+**Status:** Batches 28.0–28.2 **deployed 2026-10-18** (release `20261018172624`, with 28.3–28.9). Demo 9 drove the main flows on production. **Still open:** the live-site check of the interactive screens with a real account, the offline status change, and §16 items (b) and (d) (see plan §16a). Plan and decisions: [`../imp/phase28-new-management.md`](../imp/phase28-new-management.md). Gap closure added dependencies, a progress log, budgets and bulk edit to this feature: [Feature 25](25-Gap-Closure.md).
 
 ## 1. What it is
 
@@ -26,7 +26,7 @@ Buttons a role cannot use are not shown. One table (`ROLE_SURFACES`) decides, an
 ## 3. Rules that matter
 
 - **Delivery state is derived**, never stored: Upcoming, Due soon, In progress, Late start, Overdue, Done, Done late, Cancelled; a person sees one signal (On time / Late / Done / Cancelled) with the reason on hover ("past its end date 3 Mar", "done 4 days late").
-- **Status** moves only through `PLAN_STATUS_TRANSITIONS`; completed activities *suggest* ("Mark activity done?"), a person confirms; cancelling needs a reason.
+- **Status** moves only through `PLAN_STATUS_TRANSITIONS`. Choosing **Done** is one action on the row or bar: it asks for the day it finished, the people reached and a note, and saves the completed activity and the status together (gap closure). A completed activity linked to a planned one may suggest that it is done; a person confirms. Cancelling needs a reason.
 - **"Why?" is asked only when it matters** (original end passed, or a report covers the activity). Every change is stored as an append-only revision: the project's decision history, shown on the activity page.
 - **Dates are plain days.** The first dates saved are kept as the original dates ("moved from 12 Mar").
 - **Linking** a completed activity to a planned one fills an empty logframe link and never overwrites.
@@ -50,6 +50,6 @@ Buttons a role cannot use are not shown. One table (`ROLE_SURFACES`) decides, an
 
 Domain table tests (every state, transition, recurrence edge, parser case), application tests with in-memory fakes (permissions, audit, revisions, series moves, import, copy), Prisma repository contract tests on a scratch Postgres with RLS (opt-in via `WORKPLAN_VERIFY_DATABASE_URL`), web unit tests for the pure layout, drag, calendar, role surfaces and outbox, and the architecture and server-to-client guards. Counts at commit time are in the plan, §14.
 
-## 7. Not built (later batches)
+## 7. Not built
 
-Requests and an assignment queue (28.3), delivery health labels and indicator due dates (28.4), reminders (28.5), required files (28.6), problems and risks (28.7), comments on more things (28.8), report writer v6 (28.9), demo 9 (28.12). Phase 29: budget lines, opening the app offline, partner access. Deferred on purpose: a beneficiary register.
+From the UX review (plan §16): the Ask-for-completed-activity button on the item page is still there (to remove or keep, decide first), and Completed is still a separate tab rather than a filter on Planned. Phase 29: opening the app offline (a service worker), partner access. Built since: budget lines (gap closure), the beneficiary register (gap closure, case codes only, no names).
