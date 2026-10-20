@@ -793,7 +793,7 @@ cd apps/workers && .venv/bin/python -m pytest -q
 
 ---
 
-## 13. P0 batch 2 — the rest of §8 P0 (2026-10-21, built and tested, **not yet deployed**)
+## 13. P0 batch 2 — the rest of §8 P0 (2026-10-21, committed `694a0ec`, **deployed 2026-10-20 13:08 UTC, releaseId=20261020130857**)
 
 Items 8, 10 and 12 of the §8 P0 list. Items 1–7, 9 and 11 were closed in §10.
 
@@ -875,3 +875,10 @@ Deployed to `srv.gec5.com` (Contabo) in three releases. The order mattered: a re
 ---
 
 *Audit performed 2026-10-20 on branch `0013-programme-management` at `548d68c`. Seven parallel code audits (one per register category) plus a direct audit of the live public site, the CI pipeline and the production record. Every finding is anchored to a file and line; every verdict that could not be decided from the evidence is marked UNVERIFIED rather than assumed. §10 records the implementation that followed, in three batches: deny-by-default authorisation, 8 more RLS-protected tables and the three orphaned suites in the CI gate; the worker lint, evidence confidentiality at read time and the PII firewall on the production AI path; and the second-approver rule on the seal path, CI building from the checked-in migrations, a scheduled and restore-tested backup, an append-only audit log, a working SCIM endpoint and a public site that says what the code does. §11 is the implementation notes and §12 the production deployment. Eight of the nine criticals are closed.*
+
+### 13.1 Production deployment of batch 2 — releaseId `20261020130857`
+
+Restore point `20261020T130755Z` taken first; both migrations applied as `donordesk_migrator`; `deploy-fast.sh SCOPE=both`.
+Verified: `/ready` 200 (database, Prisma client, worker), four services active, worker contract v6, audit-verify timer installed
+and run once (3 organisations, 0 broken), worker `/v1/parse` returns `EXTRACTED`/`EMPTY` and 413 over 20 MB, unauthenticated 401.
+**Not browser-verified:** the breakdown on the single-value path, the "Reviewer:" note and the evidence "words not read" notice need the user's account.
