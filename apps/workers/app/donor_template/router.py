@@ -13,6 +13,7 @@ failure to fall back on.
 from __future__ import annotations
 
 import base64
+import logging
 
 from fastapi import APIRouter, HTTPException
 
@@ -25,6 +26,8 @@ from .models import (
 from .placeholder_inserter import insert_placeholders
 from .renderer import render as render_docx
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/donor-template", tags=["donor-template"])
 
 
@@ -34,7 +37,8 @@ def insert_placeholders_route(req: InsertPlaceholdersRequest) -> InsertPlacehold
         original_bytes = base64.b64decode(req.originalDocxBase64)
         templated_bytes = insert_placeholders(original_bytes, req.regions)
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=422, detail=f"placeholder insertion failed: {exc}") from exc
+        logger.exception("placeholder insertion failed")
+        raise HTTPException(status_code=422, detail="Placeholders could not be inserted into this template.") from exc
     return InsertPlaceholdersResponse(templatedDocxBase64=base64.b64encode(templated_bytes).decode("ascii"))
 
 
@@ -44,5 +48,6 @@ def render_route(req: RenderRequest) -> RenderResponse:
         templated_bytes = base64.b64decode(req.templatedDocxBase64)
         rendered_bytes = render_docx(templated_bytes, req.context)
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=422, detail=f"docxtpl render failed: {exc}") from exc
+        logger.exception("donor template render failed")
+        raise HTTPException(status_code=422, detail="The donor template could not be filled in.") from exc
     return RenderResponse(renderedDocxBase64=base64.b64encode(rendered_bytes).decode("ascii"))

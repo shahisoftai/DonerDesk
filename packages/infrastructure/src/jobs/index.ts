@@ -17,5 +17,6 @@ export function createJobQueue(logger: ILogger): IJobQueue {
 }
 
 export { JobDispatcher, type JobQueueMode } from "./dispatcher.js";
+export { JobRetryRunner, MAX_JOB_ATTEMPTS, retryDelayMs } from "./retry-runner.js";
 export { KestraJobQueue, type KestraJobQueueOptions, type KestraFlowRef } from "./kestra-job-queue.js";
 export { BullMQJobQueue, redisConfigFromEnv, type PriorityQueueSeam } from "./bullmq-job-queue.js";

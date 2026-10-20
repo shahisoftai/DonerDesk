@@ -546,6 +546,12 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.get("/v1/reporting-requirement-packs", async (req) => {
+    const r = await req.container.handlers.listRequirementPacks.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.post("/v1/reporting-requirement-packs", async (req) => {
     const body = UpsertRequirementPackSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };

@@ -9,7 +9,7 @@ test("authentication contracts reject malformed edge input", () => {
 
 test("organization contracts validate data residency", () => {
   const signup = SignUpSchema.parse({
-    name: "Admin User", email: "admin@example.org", password: "password123",
+    name: "Admin User", email: "admin@example.org", password: "Correct-Horse-9-Battery",
     organization: { name: "Example NGO", organizationType: "LOCAL_NGO", country: "PK", primarySector: "WASH" },
   });
   assert.equal(signup.organization.dataResidency, "DEFAULT");

@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, validateDisaggregation } from "@donordesk/domain";
+import { DomainError, isPeriodLocked, periodLockedMessage, validateDisaggregation } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -26,8 +26,8 @@ export class CreateIndicatorUpdateHandler {
     const period = await this.periods.findById(input.reportingPeriodId, ctx.tenant.tenantId);
     if (!period.ok) return period;
     if (!period.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", input.reportingPeriodId) };
-    if (period.value.status.value === "CLOSED") {
-      return { ok: false, error: DomainError.conflict("Indicator data cannot be edited once a reporting period is closed") };
+    if (isPeriodLocked(period.value.status.value)) {
+      return { ok: false, error: DomainError.conflict(periodLockedMessage(period.value.status.value)) };
     }
     const indicator = await this.indicators.findById(input.indicatorId, ctx.tenant.tenantId);
     if (!indicator.ok) return indicator;

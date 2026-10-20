@@ -94,13 +94,13 @@ test("accept-invitation creates the member at the invited role and marks the inv
   const { handler, usersRepo, invitationsRepo, auth } = handlerFakes();
   // Rebuild handler with the audit fake we can inspect.
   const h = new AcceptInvitationHandler(fakeIds("u"), usersRepo, invitationsRepo, auth, audit, makeEntitlementService([]));
-  const result = await h.handle({ token: "token-abc123456", name: "New Member", password: "password123" });
+  const result = await h.handle({ token: "token-abc123456", name: "New Member", password: "Correct-Horse-9-Battery" });
   assert.equal(result.ok, true);
   assert.equal(usersRepo.created.length, 1);
   const created = usersRepo.created[0];
   assert.equal(created.status, "ACTIVE");
   assert.equal(created.role, "PROJECT_MANAGER");
-  assert.equal(created.passwordHash, "hash:password123");
+  assert.equal(created.passwordHash, "hash:Correct-Horse-9-Battery");
   assert.equal(invitationsRepo.stored.isAccepted(), true);
   assert.ok(invitationsRepo.updated >= 1);
   assert.equal(audit.events[0].eventType, "identity.invitation_accepted");
@@ -110,7 +110,7 @@ test("accept-invitation creates the member at the invited role and marks the inv
 test("accept-invitation blocks a full-seat tenant (plan limit, SEATS)", async () => {
   const existing = [memberUser("a", "ADMIN"), memberUser("b", "PROJECT_MANAGER")];
   const { handler } = handlerFakes({ users: existing });
-  const result = await handler.handle({ token: "token-abc123456", name: "New Member", password: "password123" });
+  const result = await handler.handle({ token: "token-abc123456", name: "New Member", password: "Correct-Horse-9-Battery" });
   assert.equal(result.ok, false);
   assert.equal(result.error.code, "PLAN_LIMIT_REACHED");
   assert.equal(result.error.details?.resource, "SEATS");
@@ -122,7 +122,7 @@ test("accept-invitation lets a VIEWER join via the viewer pool even when full se
     users: existing,
     invitation: invitationFixture({ role: "VIEWER", email: Email.create("viewer@example.com") }),
   });
-  const result = await handler.handle({ token: "token-abc123456", name: "New Viewer", password: "password123" });
+  const result = await handler.handle({ token: "token-abc123456", name: "New Viewer", password: "Correct-Horse-9-Battery" });
   assert.equal(result.ok, true);
   assert.equal(usersRepo.created[0].role, "VIEWER");
   assert.equal(result.value.role, "VIEWER");
@@ -137,7 +137,7 @@ test("accept-invitation enforces the viewer cap (STARTER: 2 viewers)", async () 
     users: existing,
     invitation: invitationFixture({ role: "VIEWER", email: Email.create("viewer3@example.com") }),
   });
-  const result = await handler.handle({ token: "token-abc123456", name: "Third Viewer", password: "password123" });
+  const result = await handler.handle({ token: "token-abc123456", name: "Third Viewer", password: "Correct-Horse-9-Battery" });
   assert.equal(result.ok, false);
   assert.equal(result.error.code, "PLAN_LIMIT_REACHED");
   assert.equal(result.error.details?.resource, "VIEWERS");
@@ -156,7 +156,7 @@ test("accept-invitation rejects a duplicate email (sign in instead)", async () =
   });
   existing[0].activate();
   const { handler } = handlerFakes({ users: existing });
-  const result = await handler.handle({ token: "token-abc123456", name: "New Member", password: "password123" });
+  const result = await handler.handle({ token: "token-abc123456", name: "New Member", password: "Correct-Horse-9-Battery" });
   assert.equal(result.ok, false);
   assert.equal(result.error.code, "CONFLICT");
 });
@@ -164,9 +164,9 @@ test("accept-invitation rejects a duplicate email (sign in instead)", async () =
 test("accept-invitation is single-use (second accept fails, user not created twice)", async () => {
   const invitation = invitationFixture();
   const { handler, usersRepo } = handlerFakes({ invitation });
-  const first = await handler.handle({ token: "token-abc123456", name: "New Member", password: "password123" });
+  const first = await handler.handle({ token: "token-abc123456", name: "New Member", password: "Correct-Horse-9-Battery" });
   assert.equal(first.ok, true);
-  const second = await handler.handle({ token: "token-abc123456", name: "New Member", password: "password123" });
+  const second = await handler.handle({ token: "token-abc123456", name: "New Member", password: "Correct-Horse-9-Battery" });
   assert.equal(second.ok, false);
   assert.equal(second.error.code, "INVALID_STATE_TRANSITION");
   assert.equal(usersRepo.created.length, 1);
@@ -175,7 +175,7 @@ test("accept-invitation is single-use (second accept fails, user not created twi
 test("accept-invitation rejects an expired invitation", async () => {
   const expired = invitationFixture({ ttlDays: -1 });
   const { handler, usersRepo } = handlerFakes({ invitation: expired });
-  const result = await handler.handle({ token: "token-abc123456", name: "New Member", password: "password123" });
+  const result = await handler.handle({ token: "token-abc123456", name: "New Member", password: "Correct-Horse-9-Battery" });
   assert.equal(result.ok, false);
   assert.equal(result.error.code, "INVALID_STATE_TRANSITION");
   assert.equal(usersRepo.created.length, 0);
@@ -187,5 +187,14 @@ test("accept-invitation preview returns invite metadata without mutating anythin
   assert.equal(result.ok, true);
   assert.equal(result.value.email, "invitee@example.com");
   assert.equal(result.value.role, "PROJECT_MANAGER");
+  assert.equal(invitationsRepo.updated, 0);
+});
+
+test("H-12: a weak password is refused and nothing is created", async () => {
+  const { handler, usersRepo, invitationsRepo } = handlerFakes();
+  const result = await handler.handle({ token: "token-abc123456", name: "New Member", password: "short1A!" });
+  assert.equal(result.ok, false);
+  assert.equal(result.error.code, "VALIDATION_FAILED");
+  assert.equal(usersRepo.created.length, 0);
   assert.equal(invitationsRepo.updated, 0);
 });

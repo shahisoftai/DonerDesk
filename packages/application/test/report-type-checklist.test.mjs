@@ -177,3 +177,20 @@ test("a writing-style instruction is guidance for the writer, not a checklist it
   const items = donorRequirementItems({ compliance: [{ id: "a", text: "Use the formal register, third person.", severity: "WARN" }, { id: "b", text: "Submit within 30 days of the end date.", severity: "BLOCK" }] });
   assert.deepEqual(items.map((i) => i.relatedEntityId), ["b"]);
 });
+
+// --- H-9 ---
+import { varianceItems } from "../dist/services/report-type-checklist.js";
+
+test("H-9: a closing report raises one item per indicator that missed its target by more than 20%", () => {
+  const mk = (id, code, value) => ({
+    indicatorId: id, indicatorCode: code, indicatorName: `${code} name`, value, status: "REPORTED", indicatorType: "NUMBER", target: "100",
+    semantics: { status: "CONFIGURED", direction: "HIGHER_IS_BETTER", aggregation: "SUM" },
+    lifeOfProject: { value, basis: "COMPUTED", periodsCovered: 4, asOf: "2026-09-30" },
+  });
+  const items = varianceItems([mk("a", "OUT-1", "40"), mk("b", "OUT-2", "95")], "FINAL");
+  assert.equal(items.length, 1);
+  assert.equal(items[0].type, "VARIANCE_UNEXPLAINED");
+  assert.equal(items[0].relatedEntityId, "a");
+  assert.match(items[0].title, /OUT-1/);
+  assert.equal(varianceItems([mk("a", "OUT-1", "40")], "QUARTERLY").length, 0);
+});

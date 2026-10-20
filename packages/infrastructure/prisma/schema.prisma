@@ -164,6 +164,8 @@ model User {
   lastLoginAt   DateTime?
   assignedProjectIds String @default("[]")
   passwordChangedAt DateTime?
+  failedLoginCount Int @default(0)
+  lockedUntil   DateTime?
   /// How the person wants to be emailed: DAILY_SUMMARY (default), URGENT_ONLY, NEVER.
   emailSummaryMode String @default("DAILY_SUMMARY")
   createdAt     DateTime @default(now())
@@ -1792,3 +1794,41 @@ model ProjectRisk {
   @@index([tenantId, projectId, status])
   @@index([tenantId, ownerId, status])
 }
+
+/// A job the API could not hand to the queue (Kestra down, network error). Kept so it is retried with backoff and, after
+/// the last attempt, dead-lettered where it can be seen, instead of being logged and lost.
+model JobOutbox {
+  id            String   @id
+  tenantId      String
+  jobName       String
+  payloadJson   String   @db.Text
+  status        String   @default("PENDING") // PENDING | DONE | DEAD
+  attempts      Int      @default(0)
+  lastError     String?
+  nextAttemptAt DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([tenantId])
+}
+
+/// The results framework of a project as it stood after one change: append-only, so a target that moved, or a report
+/// approved against an earlier framework, can be shown. `approvedAt` marks a version a person signed off as the agreed one.
+model LogframeVersion {
+  id           String    @id
+  tenantId     String
+  projectId    String
+  version      Int
+  snapshotJson String    @db.Text
+  contentHash  String
+  summary      String
+  createdById  String
+  createdAt    DateTime  @default(now())
+  approvedById String?
+  approvedAt   DateTime?
+
+  @@unique([tenantId, projectId, version])
+  @@index([tenantId, projectId])
+}
+

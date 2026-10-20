@@ -70,3 +70,28 @@ def test_upload_over_the_limit_is_refused(client, monkeypatch) -> None:
     small = client.post("/v1/parse", files={"file": ("ok.txt", b"hello", "text/plain")}, headers=auth)
     assert small.status_code == 200
     assert small.json()["status"] == "EXTRACTED"
+
+
+def test_corrupt_docx_is_reported_as_failed_without_the_library_error() -> None:
+    docx = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    res = parse(b"this is not a zip file", "broken.docx", docx)
+    assert res["text"] == ""
+    assert res["status"] == "FAILED"
+    assert "broken.docx" in res["message"]
+    assert "zip" not in res["message"].lower() and "Traceback" not in res["message"]
+
+
+def test_corrupt_xlsx_is_reported_as_failed() -> None:
+    xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    res = parse(b"nope", "broken.xlsx", xlsx)
+    assert res["status"] == "FAILED"
+
+
+def test_template_render_failure_does_not_leak_the_exception(client) -> None:
+    res = client.post(
+        "/v1/donor-template/render",
+        json={"templatedDocxBase64": "bm90IGEgZG9jeA==", "context": {}},
+        headers={"x-internal-token": "test-internal-token"},
+    )
+    assert res.status_code == 422
+    assert res.json()["detail"] == "The donor template could not be filled in."

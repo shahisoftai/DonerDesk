@@ -176,6 +176,8 @@ export class PrismaUserRepository implements IUserRepository {
           lastLoginAt: user.lastLoginAt,
           assignedProjectIds: JSON.stringify(user.assignedProjectIds),
           passwordChangedAt: user.passwordChangedAt,
+          failedLoginCount: user.failedLoginCount,
+          lockedUntil: user.lockedUntil,
         },
       });
       return ok(user);
@@ -197,6 +199,8 @@ export class PrismaUserRepository implements IUserRepository {
           lastLoginAt: user.lastLoginAt,
           assignedProjectIds: JSON.stringify(user.assignedProjectIds),
           passwordChangedAt: user.passwordChangedAt,
+          failedLoginCount: user.failedLoginCount,
+          lockedUntil: user.lockedUntil,
         },
       });
       return ok(user);
@@ -209,7 +213,7 @@ export class PrismaUserRepository implements IUserRepository {
     try {
       const updated = await this.prisma.user.update({
         where: { id: userId },
-        data: { passwordHash, passwordChangedAt: new Date() },
+        data: { passwordHash, passwordChangedAt: new Date(), failedLoginCount: 0, lockedUntil: null },
       });
       if (updated.tenantId !== tenantId.toString()) {
         return err(DomainError.notFound("User", userId));
@@ -270,6 +274,8 @@ export class PrismaUserRepository implements IUserRepository {
     lastLoginAt: Date | null;
     assignedProjectIds: string;
     passwordChangedAt?: Date | null;
+    failedLoginCount?: number;
+    lockedUntil?: Date | null;
     createdAt: Date;
   }): User {
     return User.rehydrate({
@@ -285,6 +291,8 @@ export class PrismaUserRepository implements IUserRepository {
         lastLoginAt: row.lastLoginAt ?? undefined,
         assignedProjectIds: JSON.parse(row.assignedProjectIds),
         passwordChangedAt: row.passwordChangedAt ?? null,
+        failedLoginCount: row.failedLoginCount ?? 0,
+        lockedUntil: row.lockedUntil ?? null,
       },
     });
   }

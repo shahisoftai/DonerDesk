@@ -35,6 +35,34 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  // The history of the results framework: every change leaves a version; a manager can sign one off as the agreed framework.
+  app.get("/v1/projects/:projectId/logframe/versions", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const r = await req.container.handlers.listLogframeVersions.handle({ tenant: req.tenant, requestId: req.id }, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/logframe/versions/:version/changes", async (req) => {
+    const { projectId, version } = req.params as { projectId: string; version: string };
+    const from = (req.query as { from?: string }).from;
+    const r = await req.container.handlers.getLogframeChanges.handle(
+      { tenant: req.tenant, requestId: req.id },
+      projectId,
+      Number(version),
+      from === undefined ? undefined : Number(from),
+    );
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/projects/:projectId/logframe/versions/approve", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const r = await req.container.handlers.approveLogframeVersion.handle({ tenant: req.tenant, requestId: req.id }, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.post("/v1/logframe-items", async (req) => {
     const body = CreateLogframeItemSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };

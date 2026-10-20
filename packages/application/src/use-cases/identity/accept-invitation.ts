@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, Email, TenantId, User, UserId } from "@donordesk/domain";
+import { DomainError, Email, PasswordPolicy, TenantId, User, UserId } from "@donordesk/domain";
 import type { Role } from "@donordesk/domain";
 import type { IInvitationRepository, IUserRepository, IAuthProvider } from "../../ports/identity.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -105,6 +105,8 @@ export class AcceptInvitationHandler {
       }
     }
 
+    const policy = PasswordPolicy.validate(cmd.password);
+    if (!policy.ok) return { ok: false, error: DomainError.validation(policy.errors[0] ?? "Password does not meet policy", { errors: policy.errors }) };
     let passwordHash: string;
     try {
       passwordHash = await this.auth.hashPassword(cmd.password);

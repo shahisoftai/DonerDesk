@@ -68,3 +68,18 @@ test("approving a report tells its author", async () => {
   assert.equal((await h.handle(ctx("pm"), "d")).ok, true);
   assert.deepEqual(told, [["pm", "author"]]);
 });
+
+test("H-1: the approval's audit record names the framework version it was approved against", async () => {
+  const { ApproveReportHandler } = await import("../dist/index.js");
+  const audits = [];
+  const draft = { id: "d", projectId: "p", reportingPeriodId: "per", createdById: "author", approve() {} };
+  const h = new ApproveReportHandler(
+    { findById: async () => ok(draft), update: async (d) => ok(d) },
+    { findById: async () => ok({ advanceStatus() {} }), update: async (p) => ok(p) },
+    {}, {}, {}, {}, {}, { record: async (e) => { audits.push(e); } }, undefined, undefined, undefined, undefined,
+    { latest: async () => ok({ version: 4, approvedAt: new Date() }) },
+  );
+  h.evaluateGate = async () => ok({ approvalBlocked: false, blockReasons: [] });
+  await h.handle(ctx("pm"), "d");
+  assert.deepEqual(JSON.parse(audits.find((a) => a.eventType === "report.approved").newValue), { logframeVersion: 4, logframeApproved: true });
+});

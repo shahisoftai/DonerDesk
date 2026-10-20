@@ -1,5 +1,6 @@
 import type { Result, DomainError } from "@donordesk/domain";
-import { Project, ProjectSetup, ReportingProfile, ProjectWorkspaceProvisionRequested } from "@donordesk/domain";
+import { Project, ProjectMember, ProjectSetup, ReportingProfile, ProjectWorkspaceProvisionRequested, type Role } from "@donordesk/domain";
+import type { IProjectMemberRepository } from "../../ports/project-members.js";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IProjectSetupRepository, IReportingProfileRepository } from "../../ports/setup.js";
@@ -21,6 +22,8 @@ export class CreateProjectHandler {
     private readonly events: IEventBus,
     private readonly audit: IAuditLogger,
     private readonly entitlements: EntitlementService,
+    /** With this, a non-administrator who creates a project is its first member: membership is what lets them open it. */
+    private readonly members?: IProjectMemberRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateProjectInput): Promise<Result<{ id: string }, DomainError>> {
@@ -75,6 +78,13 @@ export class CreateProjectHandler {
     });
     const saved = await this.projects.create(project);
     if (!saved.ok) return saved;
+
+    if (this.members && ctx.tenant.role !== "ADMIN") {
+      const member = await this.members.create(
+        ProjectMember.create({ id: this.ids.generate(), tenantId: ctx.tenant.tenantId, projectId: id, userId: ctx.tenant.userId, role: ctx.tenant.role as Role, assignedById: ctx.tenant.userId }),
+      );
+      if (!member.ok) return member;
+    }
 
     // Provisioning intent: never roll back project creation on storage failure.
     // The workspace status defaults to PENDING; LOCAL/R2 providers are marked

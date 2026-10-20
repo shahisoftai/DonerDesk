@@ -1,6 +1,6 @@
 import type { ActivityUpdate, Indicator, ChecklistItemType, ReportingPeriod, Severity, VerifiedFinding } from "@donordesk/domain";
 import type { FinanceStatus } from "./finance-inputs.js";
-import { isOpenActivity, effectiveIndicatorSemantics, missingCumulativeFields, comparableReportTypes, periodComparability, selectComparablePeriods } from "@donordesk/domain";
+import { isOpenActivity, offTargetFindings, effectiveIndicatorSemantics, missingCumulativeFields, comparableReportTypes, periodComparability, selectComparablePeriods } from "@donordesk/domain";
 
 /** A checklist item the detector proposes for a reporting period. */
 export interface ChecklistSuggestion {
@@ -64,6 +64,21 @@ export function cumulativeDataItems(findings: ReadonlyArray<VerifiedFinding>, re
     });
   }
   return items;
+}
+
+/**
+ * A closing report whose indicator finished far from its target must say why. One item per such indicator; it closes once
+ * the report's story records a variance explanation (or the figures no longer miss the target).
+ */
+export function varianceItems(findings: ReadonlyArray<VerifiedFinding>, reportType: string): ChecklistSuggestion[] {
+  return offTargetFindings(findings, reportType).map((f) => ({
+    type: "VARIANCE_UNEXPLAINED" as const,
+    title: `Explain the result for ${f.indicatorCode}`,
+    description: `${f.indicatorCode}${f.indicatorName ? ` (${f.indicatorName})` : ""} finished well away from its target and the report does not yet say why. Add the reason under "What explains results above or below target" in the story.`,
+    severity: "MEDIUM" as const,
+    relatedEntityType: "indicator",
+    relatedEntityId: f.indicatorId,
+  }));
 }
 
 /** What the "previous report" check needs to know about an earlier period. */

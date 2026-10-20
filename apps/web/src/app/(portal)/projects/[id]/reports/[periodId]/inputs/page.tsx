@@ -8,6 +8,7 @@ import { ActivitiesResponseSchema, TemplatesResponseSchema, ExportPreflightSchem
 import { PeriodFinanceResponseSchema, PlanSuggestionResponseSchema, StoryContextResponseSchema } from "@/lib/actions/_schemas";
 import { loadPeriodIndicatorsAction } from "@/lib/actions/indicators";
 import { InlineError } from "@/components/feedback/PageState";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { IndicatorEntryGrid } from "@/features/reporting/presentation/IndicatorEntryGrid";
 import { StoryInputs } from "@/features/report-editor/presentation/inputs/StoryInputs";
 import { getComplianceNotesAction } from "@/lib/actions/reporting";
@@ -55,6 +56,8 @@ export default async function ReportInputsPage({
   if (!indicatorsResult.ok && indicatorsResult.error.kind === "not_found") notFound();
 
   const period = periodsResult.ok ? periodsResult.value.items.find((p) => p.id === periodId) : undefined;
+  // Mirrors `isPeriodLocked` (domain): an approved, submitted or closed report's figures cannot change; the server enforces it.
+  const figuresLocked = ["APPROVED", "SUBMITTED", "CLOSED"].includes(period?.status ?? "");
   // Activity, situation and custom reports name what they cover; that is edited on its own tab.
   const hasScope = period?.reportType === "ACTIVITY" || period?.reportType === "SITUATION" || period?.reportType === "CUSTOM";
   // Quarterly, half-year, annual and final reports have a financial section that can carry figures.
@@ -133,6 +136,12 @@ export default async function ReportInputsPage({
         ))}
       </nav>
 
+      {tab === "indicators" && figuresLocked && (
+        <InlineAlert tone="info" title="This report's figures are locked">
+          The report is {period?.status === "SUBMITTED" ? "submitted" : period?.status === "CLOSED" ? "closed" : "approved"}, so the figures it was approved on cannot change. To correct one, reopen the report from its page (you will be asked why, and it is recorded).
+        </InlineAlert>
+      )}
+
       {tab === "indicators" &&
         (indicatorsResult.ok ? (
           <IndicatorEntryGrid
@@ -140,8 +149,8 @@ export default async function ReportInputsPage({
             periodId={periodId}
             rows={indicatorsResult.value.indicators}
             reportType={period?.reportType}
-            canEdit={ctx.capabilities.has("indicator.update")}
-            canVerify={ctx.capabilities.has("indicator.verify")}
+            canEdit={ctx.capabilities.has("indicator.update") && !figuresLocked}
+            canVerify={ctx.capabilities.has("indicator.verify") && !figuresLocked}
             today={new Date().toISOString().slice(0, 10)}
             userId={decodeSessionPayload(ctx.token)?.sub ?? ""}
             names={Object.fromEntries((await loadProjectPeople(ctx.token, projectId, "")).map((p) => [p.id, p.label]))}

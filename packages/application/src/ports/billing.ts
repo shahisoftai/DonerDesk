@@ -247,4 +247,8 @@ export interface ILlmUsageRepository {
   }): Promise<Result<{ id: string }>>;
   /** The most recent runs of one kind for a tenant, newest first (the administrator's AI usage view). */
   listRecent(tenantId: string, operationType: string, limit: number): Promise<Result<import("@donordesk/domain").AiRunRecord[]>>;
+  /** Estimated provider spend for one tenant since `since`, and the number of calls whose model had no price. */
+  costSince(tenantId: string, since: Date): Promise<Result<number>>;
+  /** Estimated spend per tenant since `since`, largest first (the operator's spend alert; needs the admin connection). */
+  costByTenantSince(since: Date): Promise<Result<Array<{ tenantId: string; costUsd: number; calls: number }>>>;
 }

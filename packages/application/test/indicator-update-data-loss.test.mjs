@@ -102,3 +102,24 @@ test("ME-12: the edit audit records the value it replaced, and verifying clears 
   h.store.row.verify("user-2");
   assert.equal(h.store.row.reviewNote, undefined);
 });
+
+// --- H-4: approval locks the period's figures ---
+for (const status of ["APPROVED", "SUBMITTED", "CLOSED"]) {
+  test(`H-4: a ${status} period refuses new and changed figures, and says how to correct them`, async () => {
+    const h = harness();
+    h.periodStatus = status;
+    const locked = { findById: async () => ({ ok: true, value: { projectId: "proj-1", status: { value: status } } }) };
+    const create = new CreateIndicatorUpdateHandler({ generate: () => "u" }, { findByIndicatorAndPeriod: async () => ({ ok: true, value: null }), create: async (u) => ({ ok: true, value: u }) }, { record: async () => {} }, { findById: async () => ({ ok: true, value: indicator }), findByProject: async () => ({ ok: true, value: [indicator] }) }, locked);
+    const r = await create.handle(ctx, base);
+    assert.equal(r.ok, false);
+    assert.equal(r.error.code, "CONFLICT");
+    if (status !== "CLOSED") assert.match(r.error.message, /Reopen the report/);
+    const bulk = new BulkUpsertIndicatorUpdatesHandler({ generate: () => "u" }, {}, { findByProject: async () => ({ ok: true, value: [indicator] }) }, locked, { record: async () => {} });
+    assert.equal((await bulk.handle(ctx, { reportingPeriodId: "period-1", updates: [{ indicatorId: "ind-1", periodAchievement: "1", cumulativeAchievement: "1" }] })).ok, false);
+  });
+}
+
+test("H-4: a report still being written is not locked", async () => {
+  const { isPeriodLocked } = await import("@donordesk/domain");
+  for (const s of ["NOT_STARTED", "IN_PROGRESS", "EVIDENCE_COLLECTION", "DRAFT_GENERATED", "UNDER_REVIEW"]) assert.equal(isPeriodLocked(s), false, s);
+});

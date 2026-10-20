@@ -45,7 +45,7 @@ export const EmailSchema = z.string().email().max(254);
 export const SignUpSchema = z.object({
   name: z.string().min(2).max(120),
   email: EmailSchema,
-  password: z.string().min(8).max(200),
+  password: z.string().min(12, "Password must be at least 12 characters.").max(128),
   requestedPlan: z.enum(["STARTER", "TEAM", "GROWTH"]).optional(),
   startTrial: z.boolean().optional(),
   organization: z.object({
@@ -77,7 +77,7 @@ export type GoogleSignInInput = z.infer<typeof GoogleSignInSchema>;
 export const AcceptInvitationSchema = z.object({
   token: z.string().min(10).max(200),
   name: z.string().min(2).max(120),
-  password: z.string().min(8).max(200),
+  password: z.string().min(12, "Password must be at least 12 characters.").max(128),
 });
 export type AcceptInvitationInput = z.infer<typeof AcceptInvitationSchema>;
 

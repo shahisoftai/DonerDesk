@@ -699,6 +699,8 @@ export interface IRequirementPackRepository {
   create(pack: ReportingRequirementPack): Promise<Result<ReportingRequirementPack>>;
   update(pack: ReportingRequirementPack): Promise<Result<ReportingRequirementPack>>;
   findById(id: string, tenantId: string | undefined): Promise<Result<ReportingRequirementPack | null>>;
+  /** The organisation's own packs, newest first. */
+  listByTenant(tenantId: string): Promise<Result<ReportingRequirementPack[]>>;
   findActiveByMechanism(input: {
     donorKey: string;
     mechanismKey: string;

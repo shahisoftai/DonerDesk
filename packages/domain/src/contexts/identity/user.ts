@@ -4,6 +4,7 @@ import { TenantId } from "../../value-objects/tenant-id.js";
 import { UserId } from "../../value-objects/user-id.js";
 import { Email } from "../../value-objects/email.js";
 import type { Role, UserStatus } from "./role.js";
+import { MAX_FAILED_LOGINS, lockoutUntil } from "../../policies/login-lockout.js";
 
 export interface UserProps {
   email: Email;
@@ -14,6 +15,10 @@ export interface UserProps {
   lastLoginAt?: Date;
   assignedProjectIds: string[];
   passwordChangedAt?: Date | null;
+  /** Wrong passwords since the last good sign-in. */
+  failedLoginCount?: number;
+  /** Sign-in is refused until this time. */
+  lockedUntil?: Date | null;
 }
 
 export class User extends Entity<UserId> {
@@ -63,6 +68,24 @@ export class User extends Entity<UserId> {
   get assignedProjectIds(): string[] { return [...this.props.assignedProjectIds]; }
   get lastLoginAt(): Date | undefined { return this.props.lastLoginAt; }
   get passwordChangedAt(): Date | null { return this.props.passwordChangedAt ?? null; }
+  get failedLoginCount(): number { return this.props.failedLoginCount ?? 0; }
+  get lockedUntil(): Date | null { return this.props.lockedUntil ?? null; }
+
+  /** The end of the lock if one is in force at `now`, else null. */
+  lockedAt(now: Date): Date | null {
+    const until = this.props.lockedUntil;
+    return until && until.getTime() > now.getTime() ? until : null;
+  }
+
+  /** Counts a wrong password; the fifth in a row (since any lock ended) locks sign-in. Returns the lock end when it locked. */
+  recordFailedLogin(now: Date): Date | null {
+    const expired = this.props.lockedUntil && this.props.lockedUntil.getTime() <= now.getTime();
+    const count = (expired ? 0 : this.props.failedLoginCount ?? 0) + 1;
+    this.props.failedLoginCount = count;
+    this.props.lockedUntil = count >= MAX_FAILED_LOGINS ? lockoutUntil(now) : null;
+    this.touch();
+    return this.props.lockedUntil ?? null;
+  }
 
   activate(): void {
     if (this.props.status === "REMOVED") throw DomainError.invalidTransition("Cannot activate removed user");
@@ -112,11 +135,15 @@ export class User extends Entity<UserId> {
     if (!hash) throw DomainError.validation("Password hash required");
     this.props.passwordHash = hash;
     this.props.passwordChangedAt = new Date();
+    this.props.failedLoginCount = 0;
+    this.props.lockedUntil = null;
     this.touch();
   }
 
   recordLogin(): void {
     this.props.lastLoginAt = new Date();
+    this.props.failedLoginCount = 0;
+    this.props.lockedUntil = null;
     this.touch();
   }
 }

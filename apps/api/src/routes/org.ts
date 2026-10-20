@@ -46,6 +46,17 @@ export async function registerOrgRoutes(app: FastifyInstance) {
     };
   });
 
+  // The whole organisation as one ZIP of newline-delimited JSON (and, with ?files=1, the evidence files). Administrators only.
+  app.get("/v1/organization/export", async (req, reply) => {
+    const includeFiles = (req.query as { files?: string }).files === "1";
+    const r = await req.container.handlers.exportOrganization.handle({ tenant: req.tenant, requestId: req.id }, { includeFiles });
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "application/zip");
+    reply.header("content-disposition", `attachment; filename="${r.value.fileName}"`);
+    reply.header("cache-control", "private, no-store");
+    return reply.send(r.value.stream);
+  });
+
   app.put("/v1/organization", async (req) => {
     const body = OrganizationProfileSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };

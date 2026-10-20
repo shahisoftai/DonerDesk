@@ -41,7 +41,27 @@ export default async function SettingsPage() {
           Plan &amp; billing
         </Link>
       </div>
+      {ctx.capabilities.has("template.edit") && (
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          <Link className="font-medium underline" href="/settings/requirement-packs">Donor requirements</Link>: list what a donor requires of a report so it is checked before approval.
+        </p>
+      )}
       <SettingsPanel org={result.value} capabilities={Array.from(ctx.capabilities)} />
+      {ctx.capabilities.has("org.manage") && (
+        <section className="card mt-6 max-w-2xl" aria-labelledby="export-title">
+          <h2 id="export-title" className="text-sm font-semibold">Take your data with you</h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+            Download everything your organization has put into DonorDesk — projects, results, activities, evidence records, reports and the audit trail — as one ZIP of readable data files. Passwords and sign-in links are never included.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <a className="btn" href="/api/organization/export">Download records</a>
+            <a className="btn" href="/api/organization/export?files=1">Download records and evidence files</a>
+          </div>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            The version with files can be large and takes longer to prepare. Files kept in Google Drive stay in Drive and are listed in the download.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

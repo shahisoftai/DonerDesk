@@ -9,6 +9,8 @@ import { TenantId, DomainError, type Role } from "@donordesk/domain";
 
 import { authMiddleware } from "./middleware/auth.js";
 import { authorizationMiddleware } from "./middleware/authorization.js";
+import { checkAiSpend } from "@donordesk/infrastructure";
+import { projectBoundaryMiddleware } from "./middleware/project-boundary.js";
 import { dataResidencyMiddleware } from "./middleware/data-residency.js";
 import { idempotencyBegin, idempotencyFinish } from "./middleware/idempotency.js";
 import { registerAuthRoutes } from "./routes/auth.js";
@@ -165,6 +167,7 @@ export async function buildServer(): Promise<FastifyInstance> {
       req.container = createContainer({ tenantId: req.tenant.tenantId.toString() });
     });
     instance.addHook("preHandler", authorizationMiddleware);
+    instance.addHook("preHandler", projectBoundaryMiddleware);
     instance.addHook("preHandler", dataResidencyMiddleware);
     instance.addHook("preHandler", idempotencyBegin);
     instance.addHook("onSend", idempotencyFinish);
@@ -248,6 +251,25 @@ export async function start() {
   const port = Number(process.env.PORT ?? 4000);
   // Bind loopback by default (contabo-ops §4/§10); override with HOST if needed.
   await app.listen({ port, host: process.env.HOST ?? "127.0.0.1" });
+
+  // Jobs the api could not hand to the queue (Kestra restarting, a network blip) are kept in JobOutbox; hand them over
+  // again with backoff until they are accepted or dead-lettered. 0 turns the loop off.
+  const retryEvery = Number(process.env.JOB_RETRY_INTERVAL_MS ?? 60_000);
+  if (retryEvery > 0) {
+    const timer = setInterval(() => {
+      app.container.jobRetry.runOnce().catch((error: unknown) => app.log.error({ err: error }, "job retry run failed"));
+    }, retryEvery);
+    timer.unref();
+    app.addHook("onClose", async () => clearInterval(timer));
+  }
+
+  // Plan limits bound how much people draft, not what the provider charges: tell the operator when an organisation's
+  // estimated AI spend this month passes AI_MONTHLY_COST_ALERT_USD (default 25; 0 turns it off). Hourly.
+  const spendTimer = setInterval(() => {
+    checkAiSpend(app.container.llmUsage, app.container.logger).catch((error: unknown) => app.log.error({ err: error }, "ai spend check failed"));
+  }, 60 * 60_000);
+  spendTimer.unref();
+  app.addHook("onClose", async () => clearInterval(spendTimer));
 
   // Runtime-provisioning backfill: on api boot, make sure any GLOBAL LLM
   // configuration saved in the SuperAdmin control plane is reflected in the

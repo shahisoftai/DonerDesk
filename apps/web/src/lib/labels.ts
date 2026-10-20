@@ -326,6 +326,7 @@ export const CHECKLIST_ITEM_TYPE_LABEL: Record<string, string> = {
   ACTIVITY_RECORD_ACCEPTED: "Activity record to accept",
   CUMULATIVE_DATA_COMPLETE: "Cumulative data incomplete",
   PRIOR_REPORT_LINKED: "Previous report not approved",
+  VARIANCE_UNEXPLAINED: "Result to explain",
   FINANCE_FIGURES_PROVIDED: "Financial figures missing",
   INDICATOR_SEMANTICS_UNREVIEWED: "Indicator calculation to confirm",
 };
@@ -351,6 +352,7 @@ export const CHECKLIST_ITEM_TYPE_HINT: Record<string, string> = {
   AFFECTED_FIGURES_CONFIRMED: "Figures on affected people and needs change fast — confirm they are current and from a named source before release.",
   ACTIVITY_RECORD_ACCEPTED: "An activity report should rest on accepted activity records — review and accept this activity update.",
   CUMULATIVE_DATA_COMPLETE: "Enter or verify the baseline, target and cumulative value for this indicator so progress since the project started can be reported.",
+  VARIANCE_UNEXPLAINED: "An indicator finished well away from its target and the report does not say why. Add the reason in the story so a donor does not have to ask.",
   PRIOR_REPORT_LINKED: "The report this one builds on is not approved yet — approve or submit it so the comparison rests on a finished report.",
   FINANCE_FIGURES_PROVIDED: "Enter or import this period's budget and expenditure so the financial section can report real figures.",
   INDICATOR_SEMANTICS_UNREVIEWED: "Confirm how this indicator is calculated (summed, latest value, rate…) so the report can say whether it is on track.",

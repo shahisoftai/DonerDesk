@@ -762,9 +762,19 @@ export class PrismaLlmUsageRepository implements ILlmUsageRepository {
       where: { tenantId, operationType },
       orderBy: { createdAt: "desc" },
       take: Math.max(1, Math.min(200, Math.floor(limit))),
-      select: { id: true, status: true, errorMessage: true, responseText: true, latencyMs: true, inputTokens: true, outputTokens: true, createdAt: true },
+      select: { id: true, status: true, errorMessage: true, responseText: true, latencyMs: true, inputTokens: true, outputTokens: true, costUsd: true, createdAt: true },
     });
     return ok(rows);
+  }
+
+  async costSince(tenantId: string, since: Date): Promise<Result<number, DomainError>> {
+    const total = await this.prisma.llmRun.aggregate({ where: { tenantId, createdAt: { gte: since } }, _sum: { costUsd: true } });
+    return ok(total._sum.costUsd ?? 0);
+  }
+
+  async costByTenantSince(since: Date): Promise<Result<Array<{ tenantId: string; costUsd: number; calls: number }>, DomainError>> {
+    const rows = await this.prisma.llmRun.groupBy({ by: ["tenantId"], where: { createdAt: { gte: since } }, _sum: { costUsd: true }, _count: { _all: true } });
+    return ok(rows.map((r) => ({ tenantId: r.tenantId, costUsd: r._sum.costUsd ?? 0, calls: r._count._all })).sort((a, b) => b.costUsd - a.costUsd));
   }
 
   async recordRun(input: {

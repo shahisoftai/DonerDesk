@@ -358,6 +358,11 @@ export class PrismaRequirementPackRepository implements IRequirementPackReposito
     return ok(this.toDomain(row));
   }
 
+  async listByTenant(tenantId: string): Promise<Result<ReportingRequirementPack[], DomainError>> {
+    const rows = await this.prisma.reportingRequirementPack.findMany({ where: { tenantId }, orderBy: { updatedAt: "desc" }, take: 200 });
+    return ok(rows.map((r) => this.toDomain(r)));
+  }
+
   async findActiveByMechanism(input: {
     donorKey: string;
     mechanismKey: string;

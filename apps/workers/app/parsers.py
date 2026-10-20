@@ -8,12 +8,15 @@ per-format extraction logic lives here as small, single-responsibility helpers.
 from __future__ import annotations
 
 import io
+import logging
 import os
 from typing import Any
 
 from fastapi import HTTPException
 
 from ._strategy_data import PARSE_ROUTES
+
+logger = logging.getLogger(__name__)
 
 
 def route_file(filename: str, content_type: str | None) -> str:
@@ -113,17 +116,23 @@ def parse(data: bytes, filename: str, content_type: str | None) -> dict[str, Any
         elif handler == "docx":
             try:
                 text = _parse_docx(data)
-            except Exception as exc:
-                raise HTTPException(status_code=400, detail=f"docx parse failed: {exc}") from exc
+            except Exception:
+                logger.exception("docx parse failed for %s", filename)
+                text = ""
+                failed = True
         elif handler == "xlsx":
             try:
                 text = _parse_xlsx(data)
-            except Exception as exc:
-                raise HTTPException(status_code=400, detail=f"xlsx parse failed: {exc}") from exc
+            except Exception:
+                logger.exception("xlsx parse failed for %s", filename)
+                text = ""
+                failed = True
         else:
             text = _parse_text(data)
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"parse failed: {exc}") from exc
+        # The technical reason goes to the log, never to the caller (it can carry file paths and library internals).
+        logger.exception("parse failed for %s", filename)
+        raise HTTPException(status_code=400, detail="The file could not be processed.") from exc
     return {"text": text, "filename": filename, "size": len(data), **assess_extraction(filename, text, failed)}

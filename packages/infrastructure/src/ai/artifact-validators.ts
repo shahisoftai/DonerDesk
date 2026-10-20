@@ -378,6 +378,9 @@ export function assertArtifactOrdering(section: GeneratedSection): ValidationRes
 }
 
 export interface RunAllOptions {
+  /** The section title (canonical when translated) and the tables the donor requires in it. */
+  sectionTitle?: string;
+  requiredTables?: ReadonlyArray<{ title: string; columns: ReadonlyArray<string> }>;
   /** Legacy "every figure restated" check (only for sections that must restate all figures). */
   verifiedNumbers?: ReadonlySet<string>;
   /** Normalised numbers the inputs contain (see `allowedNumbers`); enables the grounding check. */
@@ -391,6 +394,51 @@ export interface RunAllOptions {
   synthesis?: boolean;
   minWords?: number;
   maxWords?: number;
+}
+
+const MARKDOWN_TABLE_ROW = /^\s*\|.*\|.*\|\s*$/;
+const MARKDOWN_SEPARATOR = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+const ANNEX_TITLE = /annex/i;
+const ANNEX_TABLE_KIND = /indicator|performance|evidence|document|file/i;
+
+/** Mirror of the worker's `assert_required_table_present`: an indicator/evidence annex must contain a markdown table. */
+export function assertRequiredTablePresent(section: GeneratedSection, sectionTitle: string | undefined): ValidationResult {
+  const title = sectionTitle ?? "";
+  if (!ANNEX_TITLE.test(title) || !ANNEX_TABLE_KIND.test(title)) return ok();
+  const rows = (section.content ?? "").split(/\r?\n/).filter((l) => MARKDOWN_TABLE_ROW.test(l));
+  return rows.length < 2
+    ? { ok: false, issues: ["MISSING_TABLE: annex section requires a markdown table (header + rows) but content contains prose only"] }
+    : ok();
+}
+
+/** The header cells (lower-cased) of every markdown table in the content: a pipe row followed by a separator row. */
+export function markdownTableHeaders(content: string): Array<Set<string>> {
+  const lines = (content ?? "").split(/\r?\n/);
+  const headers: Array<Set<string>> = [];
+  for (let i = 0; i < lines.length - 1; i += 1) {
+    if (MARKDOWN_TABLE_ROW.test(lines[i] ?? "") && MARKDOWN_SEPARATOR.test(lines[i + 1] ?? "")) {
+      headers.push(new Set((lines[i] ?? "").trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim().toLowerCase()).filter(Boolean)));
+    }
+  }
+  return headers;
+}
+
+/** Titles of the donor-required tables that no markdown table in the section satisfies (mirror of the worker's `missing_required_tables`). */
+export function missingRequiredTables(section: GeneratedSection, requiredTables: ReadonlyArray<{ title: string; columns: ReadonlyArray<string> }>): string[] {
+  if (requiredTables.length === 0) return [];
+  const found = markdownTableHeaders(section.content ?? "");
+  return requiredTables
+    .filter((t) => {
+      const wanted = t.columns.map((c) => c.trim().toLowerCase()).filter(Boolean);
+      return !found.some((header) => wanted.every((c) => header.has(c)));
+    })
+    .map((t) => t.title);
+}
+
+/** A warning (never an issue) per missing donor table: the tables are built deterministically, so a retry cannot add one. */
+export function assertRequiredTablesPresent(section: GeneratedSection, requiredTables: ReadonlyArray<{ title: string; columns: ReadonlyArray<string> }>): ValidationResult {
+  const missing = missingRequiredTables(section, requiredTables);
+  return { ok: true, issues: [], warnings: missing.map((title) => `MISSING_REQUIRED_TABLE: the donor asks for the table "${title}" and no table in this section has its columns`) };
 }
 
 export function runAll(section: GeneratedSection, opts: RunAllOptions = {}): ValidationResult {
@@ -409,6 +457,8 @@ export function runAll(section: GeneratedSection, opts: RunAllOptions = {}): Val
     assertNoWorkflowVocabulary(section),
     assertNoInternalIds(section),
     assertArtifactOrdering(section),
+    assertRequiredTablePresent(section, opts.sectionTitle),
+    assertRequiredTablesPresent(section, opts.requiredTables ?? []),
     assertDonorVoice(section),
   ];
   const issues: string[] = [];

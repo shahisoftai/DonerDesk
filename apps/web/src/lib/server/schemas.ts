@@ -1167,8 +1167,10 @@ export const AiSectionRunsResponseSchema = z.object({
       attempts: z.number(),
       latencyMs: z.number(),
       tokens: z.number(),
+      costUsd: z.number().default(0),
     }),
   ),
+  monthCostUsd: z.number().default(0),
 });
 export type AiSectionRunsResponse = z.infer<typeof AiSectionRunsResponseSchema>;
 
@@ -1583,3 +1585,21 @@ export const PlanFieldValuesSchema = z.object({
   fields: z.array(z.object({ id: z.string(), key: z.string(), label: z.string(), type: z.enum(["TEXT", "NUMBER", "DATE", "CHOICE"]), choices: z.array(z.string()).default([]) })),
   values: z.record(z.string(), z.record(z.string(), z.string())),
 });
+
+export const LogframeVersionsResponseSchema = z.object({
+  items: z.array(z.object({ version: z.number(), summary: z.string(), createdAt: z.string(), createdById: z.string(), approvedAt: z.string().nullable(), approvedById: z.string().nullable() })),
+});
+
+export const LogframeChangesResponseSchema = z.object({
+  from: z.number().nullable(),
+  to: z.number(),
+  changes: z.array(z.object({ text: z.string() })),
+});
+
+export const RequirementPacksResponseSchema = z.object({
+  items: z.array(z.object({
+    id: z.string(), name: z.string(), donorKey: z.string(), mechanismKey: z.string(), reportType: z.string(), status: z.string(), version: z.number(),
+    requirements: z.array(z.object({ key: z.string(), kind: z.string(), required: z.boolean() })),
+  })),
+});
+

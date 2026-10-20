@@ -291,6 +291,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         synthesis: request.section.synthesis,
         maxWords: section.wordLimit?.max,
         minWords: section.wordLimit?.min,
+        sectionTitle: section.canonicalTitle ?? section.title,
+        requiredTables: section.requiredTables ?? [],
       };
       const validatorResult = runArtifactValidators(generatedSection, validatorOpts);
       if (!validatorResult.ok || workerIssues.length > 0) {

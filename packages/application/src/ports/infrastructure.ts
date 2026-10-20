@@ -157,6 +157,27 @@ export interface IJobQueue {
   enqueue(name: string, payload: Record<string, unknown>): Promise<void>;
 }
 
+/** A whole-organisation export as a stream (a ZIP), so a large organisation is never held in memory. */
+export interface OrganizationExport {
+  stream: import("node:stream").Readable;
+  fileName: string;
+}
+
+export interface IOrganizationExporter {
+  export(tenantId: string, options: { includeFiles: boolean }): Promise<OrganizationExport>;
+}
+
+/** A job that could not be handed to the queue, kept so it is retried with backoff and dead-lettered visibly. */
+export interface IFailedJobStore {
+  record(input: { tenantId: string; jobName: string; payload: Record<string, unknown>; error: string; now: Date }): Promise<void>;
+  /** Takes up to `limit` jobs that are due and holds them for a few minutes so a second runner does not repeat them. */
+  claimDue(now: Date, limit: number): Promise<Array<{ id: string; jobName: string; payload: Record<string, unknown>; attempts: number }>>;
+  markDone(id: string): Promise<void>;
+  /** `nextAttemptAt` null = give up (dead-letter). */
+  markFailed(id: string, error: string, nextAttemptAt: Date | null): Promise<void>;
+  countDead(): Promise<number>;
+}
+
 /**
  * Durable idempotency guard. Callers acquire a key before a write; a duplicate
  * key is rejected so retried / duplicate deliveries do not double-apply.

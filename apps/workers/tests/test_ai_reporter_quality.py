@@ -787,3 +787,55 @@ def test_delivery_plan_block_appears_only_when_sent_and_its_counts_are_grounded(
     allowed = allowed_numbers(req)
     assert ungrounded_numbers("38 of the 41 planned sessions were held; 3 were not, and 4 were moved.", allowed) == []
     assert ungrounded_numbers("Held 39 of 41 sessions.", allowed) == ["39"]
+
+
+# --- H-8: donor-required tables -------------------------------------------------------------------------------
+
+
+def _donor_req(*tables):
+    from types import SimpleNamespace
+
+    required = [SimpleNamespace(title=t, columns=cols) for t, cols in tables]
+    return SimpleNamespace(section=SimpleNamespace(requiredTables=required, title="Results", canonicalTitle=None))
+
+
+def _section_with(content):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(content=content)
+
+
+def test_required_table_found_by_columns_in_any_order_with_extras():
+    from app.ai_reporter.artifact_validators import assert_required_tables_present, missing_required_tables
+
+    content = "Intro.\n\n| Indicator | Target | Actual | % |\n|---|---|---|---|\n| A | 10 | 8 | 80 |\n"
+    req = _donor_req(("Results", ["actual", "Indicator"]))
+    assert missing_required_tables(_section_with(content), req) == []
+    assert assert_required_tables_present(_section_with(content), req).warnings == ()
+
+
+def test_missing_required_table_is_a_named_warning_not_a_blocking_issue():
+    from app.ai_reporter.artifact_validators import assert_required_tables_present
+
+    req = _donor_req(("Beneficiaries by sex", ["Female", "Male"]), ("Results", ["Indicator"]))
+    content = "| Indicator | Target |\n|---|---|\n| A | 10 |\n"
+    result = assert_required_tables_present(_section_with(content), req)
+    assert result.ok is True
+    assert result.issues == ()
+    assert len(result.warnings) == 1
+    assert "Beneficiaries by sex" in result.warnings[0]
+    assert result.warnings[0].startswith("MISSING_REQUIRED_TABLE")
+
+
+def test_prose_and_a_table_without_a_separator_row_do_not_count():
+    from app.ai_reporter.artifact_validators import missing_required_tables
+
+    req = _donor_req(("Results", ["Indicator"]))
+    assert missing_required_tables(_section_with("The table shows indicator results."), req) == ["Results"]
+    assert missing_required_tables(_section_with("| Indicator | Target |\n| A | 10 |\n"), req) == ["Results"]
+
+
+def test_no_required_tables_means_nothing_is_missing():
+    from app.ai_reporter.artifact_validators import missing_required_tables
+
+    assert missing_required_tables(_section_with("anything"), _donor_req()) == []

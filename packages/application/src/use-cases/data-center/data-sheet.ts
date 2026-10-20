@@ -1,5 +1,5 @@
 import type { Result, DataSheet, DataSheetImportPreview } from "@donordesk/domain";
-import { DomainError, isRateIndicator, periodSheetLabel, previewDataSheetImport, financeAppliesTo } from "@donordesk/domain";
+import { DomainError, isPeriodLocked, isRateIndicator, periodSheetLabel, previewDataSheetImport, financeAppliesTo } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -72,7 +72,7 @@ export class GetProjectDataSheetHandler {
         periods: periods.map((p) => {
           const start = isoDay(p.duration.start);
           const end = isoDay(p.duration.end);
-          return { id: p.id, label: periodSheetLabel(start, end), start, end, reportType: p.reportType, locked: p.status.value === "CLOSED", reportStatus: p.status.value };
+          return { id: p.id, label: periodSheetLabel(start, end), start, end, reportType: p.reportType, locked: isPeriodLocked(p.status.value), reportStatus: p.status.value };
         }),
         indicators: indicatorsResult.value.map((i) => ({
           id: i.id,

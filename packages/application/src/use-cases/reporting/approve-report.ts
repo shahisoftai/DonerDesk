@@ -17,6 +17,7 @@ import type { IProjectRepository } from "../../ports/projects.js";
 import type { IProjectMemberRepository } from "../../ports/project-members.js";
 import type { IAuditLogger } from "../../ports/core.js";
 import type { IReportNotifier } from "../../services/report-notifier.js";
+import type { ILogframeVersionRepository } from "../../ports/logframe.js";
 
 /**
  * Approves a report when the aggregate gate passes. The gate consumes
@@ -47,6 +48,8 @@ export class ApproveReportHandler {
     private readonly signOff?: { profiles: IReportingProfileRepository; projects: IProjectRepository; members: IProjectMemberRepository },
     /** Tells the author their report was approved. */
     private readonly notifier?: IReportNotifier,
+    /** With this, the audit record says which version of the results framework the report was approved against. */
+    private readonly logframeVersions?: ILogframeVersionRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, draftId: string): Promise<Result<void, DomainError>> {
@@ -89,6 +92,7 @@ export class ApproveReportHandler {
       entityType: "report_draft",
       entityId: draftId,
       projectId: draft.projectId,
+      ...(await this.frameworkNote(ctx, draft.projectId)),
     });
     // Working alone is allowed, but openly: the author approved their own report.
     if (approver.value.selfApproval) {
@@ -103,6 +107,14 @@ export class ApproveReportHandler {
     }
     await this.notifier?.approved(ctx.tenant.tenantId, ctx.tenant.userId, draft);
     return { ok: true, value: undefined };
+  }
+
+  /** The framework version in force at approval (and whether it was signed off), so "what did the framework say then?" has an answer. */
+  private async frameworkNote(ctx: AuthenticatedContext, projectId: string): Promise<{ newValue?: string }> {
+    if (!this.logframeVersions) return {};
+    const latest = await this.logframeVersions.latest(projectId, ctx.tenant.tenantId);
+    if (!latest.ok || !latest.value) return {};
+    return { newValue: JSON.stringify({ logframeVersion: latest.value.version, logframeApproved: Boolean(latest.value.approvedAt) }) };
   }
 
   /**

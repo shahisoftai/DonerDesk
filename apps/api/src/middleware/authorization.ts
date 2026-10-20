@@ -21,6 +21,10 @@ export const RULES: ReadonlyArray<{
 }> = [
   { method: "GET", route: /^\/v1\/organization$/, permission: "project.view" },
   { method: "PUT", route: /^\/v1\/organization$/, permission: "org.manage" },
+  { method: "GET", route: /^\/v1\/organization\/export$/, permission: "org.manage" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/logframe\/versions$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/logframe\/versions\/[^/]+\/changes$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/logframe\/versions\/approve$/, permission: "project.edit" },
   { method: "GET", route: /^\/v1\/billing\/summary$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/ai\/section-runs$/, permission: "org.manage" },
   { method: "POST", route: /^\/v1\/billing\/(checkout|topup|portal|nonprofit-verification)$/, permission: "billing.manage" },
@@ -173,6 +177,7 @@ export const RULES: ReadonlyArray<{
   { method: "GET", route: /^\/v1\/report-drafts\/[^/]+\/assurance$/, permission: "report.edit" },
   { method: "POST", route: /^\/v1\/report-sections\/[^/]+\/reassess$/, permission: "report.edit" },
   { method: "POST", route: /^\/v1\/reporting-periods\/[^/]+\/resolve-requirements$/, permission: "report.edit" },
+  { method: "GET", route: /^\/v1\/reporting-requirement-packs$/, permission: "template.manage" },
   { method: "POST", route: /^\/v1\/reporting-requirement-packs$/, permission: "template.manage" },
   { method: "POST", route: /^\/v1\/reporting-requirement-packs\/[^/]+\/activate$/, permission: "template.manage" },
   { method: "POST", route: /^\/v1\/award-reporting-overrides$/, permission: "template.manage" },

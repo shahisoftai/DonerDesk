@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, validateDisaggregation } from "@donordesk/domain";
+import { DomainError, isPeriodLocked, periodLockedMessage, validateDisaggregation } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorUpdateRepository, IIndicatorRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -32,8 +32,8 @@ export class BulkUpsertIndicatorUpdatesHandler {
     const periodResult = await this.periods.findById(input.reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", input.reportingPeriodId) };
-    if (periodResult.value.status.value === "CLOSED") {
-      return { ok: false, error: DomainError.conflict("Indicator data cannot be edited once a reporting period is closed") };
+    if (isPeriodLocked(periodResult.value.status.value)) {
+      return { ok: false, error: DomainError.conflict(periodLockedMessage(periodResult.value.status.value)) };
     }
 
     const indicatorsResult = await this.indicators.findByProject(periodResult.value.projectId, ctx.tenant.tenantId);

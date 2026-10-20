@@ -10,6 +10,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./contexts/reporting/pack-authoring.js": {
+      "types": "./dist/contexts/reporting/pack-authoring.d.ts",
+      "import": "./dist/contexts/reporting/pack-authoring.js"
+    },
     "./contexts/reporting/data-sheet.js": {
       "types": "./dist/contexts/reporting/data-sheet.d.ts",
       "import": "./dist/contexts/reporting/data-sheet.js"
