@@ -9,6 +9,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: [
           "/api/",
+          "/scim/",
           "/dashboard",
           "/projects",
           "/reports",
