@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ProgressBar } from "@/components/data/ProgressBar";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import type { Tone } from "@/lib/shared/tone";
-import type { ReadinessBreakdown } from "@/features/projects/application/project-overview-read-model";
+import type { ReadinessBreakdown } from "@/features/projects/application/overview-read-model";
 import { blockerActionHref } from "@/features/projects/application/readiness-view";
 
 type Dimension = "sections" | "indicators" | "evidence" | "checklist" | "approval";

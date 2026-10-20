@@ -1,27 +1,31 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
-import { loadProjectOverview } from "@/features/projects/application/project-overview-read-model";
+import { loadProjectOverviewV2 } from "@/features/projects/application/overview-read-model";
 import { InlineError, EmptyState } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
-import { ReadinessGauge } from "@/components/data/ReadinessGauge";
-import { ReadinessBreakdownList } from "@/features/projects/presentation/ReadinessBreakdownList";
 import { PeriodSwitcher } from "@/features/projects/presentation/PeriodSwitcher";
-import { projectStatusTone, severityTone } from "@/lib/shared/tone";
-import { readinessHeadline } from "@/features/projects/application/readiness-view";
-import { REPORT_TYPE_LABEL } from "@/lib/labels";
-import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ProjectBudgetSchema, RisksResponseSchema, DeliveryHealthSchema, type DeliveryHealthResponse, DataSheetResponseSchema, LogframeResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
-import { planCounts, outputProgress } from "@/features/workplan/domain/delivery-overview";
+import { projectStatusTone } from "@/lib/shared/tone";
+import { LifecycleStrip } from "@/features/projects/presentation/overview/LifecycleStrip";
+import { NeedsYouSection } from "@/features/projects/presentation/overview/NeedsYouSection";
+import { PulseSection } from "@/features/projects/presentation/overview/PulseSection";
+import { CalendarSection } from "@/features/projects/presentation/overview/CalendarSection";
+import { ReportingSection } from "@/features/projects/presentation/overview/ReportingSection";
+import { DeliverySection } from "@/features/projects/presentation/overview/DeliverySection";
+import { ResultsMoneySection } from "@/features/projects/presentation/overview/ResultsMoneySection";
+import { TeamSection } from "@/features/projects/presentation/overview/TeamSection";
 import { RisksCard } from "@/features/tasks/presentation/RisksCard";
 import { DecisionLog } from "@/features/tasks/presentation/DecisionLog";
-import { loadProjectPeople } from "@/features/tasks/application/project-people";
-import { decodeSessionPayload } from "@/lib/shared/jwt-session";
-import { PlanOverviewCards } from "@/features/workplan/presentation/PlanOverviewCards";
-import { ProjectBudgetCard } from "@/features/workplan/presentation/ProjectBudgetCard";
+import { CloseOutSection } from "@/features/projects/presentation/overview/CloseOutSection";
+import { SetupSection } from "@/features/projects/presentation/overview/SetupSection";
 import { DeleteDemoProjectButton } from "@/features/tour/presentation/DeleteDemoProjectButton";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * The project Overview: one page composed of sections, each showing only to the roles that need it
+ * (`sectionsFor`). It reads; every action on it is a link to the surface that owns the work.
+ */
 export default async function ProjectDetail({
   params,
   searchParams,
@@ -31,163 +35,119 @@ export default async function ProjectDetail({
 }) {
   const [resolvedParams, { period }] = await Promise.all([params, searchParams]);
   const ctx = await requireSession();
-  const load = await loadProjectOverview(ctx.token, resolvedParams.id, period);
+  const today = new Date().toISOString().slice(0, 10);
+  const meId = decodeSessionPayload(ctx.token)?.sub ?? "";
+  const load = await loadProjectOverviewV2(ctx.token, resolvedParams.id, {
+    role: ctx.role,
+    capabilities: ctx.capabilities,
+    today,
+    meId,
+  });
 
-  if (!load.ok) {
+  if (!load.ok || !load.value) {
     return <InlineError title={load.error?.message ?? "Project could not be loaded."} referenceId={load.error?.referenceId} />;
   }
-  const overview = load.value;
-  if (!overview) {
-    return <InlineError title="Project could not be loaded." />;
-  }
-  const { project, periods, readiness, checklist, pendingEvidence, activityCount, activePeriodId } = overview;
-  const openChecklist = checklist.filter((c) => c.status !== "RESOLVED" && c.status !== "ACCEPTED_RISK" && c.status !== "NOT_APPLICABLE");
-  const hasPeriod = periods.length > 0;
-
-  // The plan cards appear only when a plan exists and work planning is shown; otherwise this page is exactly as before.
-  const planResult = project.showWorkPlanning === false ? null : await gatewayRequest(`/v1/projects/${project.id}/work-plan`, WorkPlanResponseSchema, ctx.token);
-  const planRows = planResult?.ok ? planResult.value.items : [];
-  // Problems and risks: shown once there is a plan or anything was raised, so a project that uses neither looks as before.
-  const risksResult = project.showWorkPlanning === false ? null : await gatewayRequest(`/v1/projects/${project.id}/risks`, RisksResponseSchema, ctx.token);
-  const risks = risksResult?.ok ? risksResult.value.items : [];
-  const budgetResult = project.showWorkPlanning === false ? null : await gatewayRequest(`/v1/projects/${project.id}/budget`, ProjectBudgetSchema, ctx.token);
-  const meId = decodeSessionPayload(ctx.token)?.sub ?? "";
-  const showRisks = planRows.length > 0 || risks.length > 0;
-  const riskPeople = showRisks ? await loadProjectPeople(ctx.token, project.id, meId) : [];
-  let planCards: { health: DeliveryHealthResponse | undefined; counts: ReturnType<typeof planCounts>; outputs: ReturnType<typeof outputProgress> } | null = null;
-  if (planRows.length > 0) {
-    const [logframe, sheet, healthResult] = await Promise.all([
-      gatewayRequest(`/v1/projects/${project.id}/logframe`, LogframeResponseSchema, ctx.token),
-      gatewayRequest(`/v1/projects/${project.id}/data-sheet`, DataSheetResponseSchema, ctx.token),
-      gatewayRequest(`/v1/projects/${project.id}/delivery-health`, DeliveryHealthSchema, ctx.token),
-    ]);
-    const items = logframe.ok ? logframe.value.items : [];
-    planCards = {
-      health: healthResult.ok ? healthResult.value : undefined,
-      counts: planCounts(planRows),
-      outputs: outputProgress({
-        rows: planRows,
-        outputs: items.filter((i) => i.level === "OUTPUT").map((i) => ({ id: i.id, title: i.code ? `${i.code} ${i.title}` : i.title })),
-        indicators: logframe.ok ? logframe.value.indicators.map((i) => ({ id: i.id, logframeItemId: i.logframeItemId })) : [],
-        parentOf: new Map(items.map((i) => [i.id, i.parentId ?? undefined])),
-        sheet: sheet.ok ? sheet.value : undefined,
-        otherTitle: "Other activities",
-      }),
-    };
-  }
+  const data = load.value;
+  const { identity, life, sections } = data;
+  const has = (section: (typeof sections)[number]) => sections.includes(section);
+  const periods = data.reporting.ok ? data.reporting.value.periods : [];
+  const activePeriodId = data.reporting.ok ? data.reporting.value.activePeriodId : null;
+  const riskPeople = data.risks.ok ? data.risks.value.people : [];
+  const planPeople = data.delivery.ok ? data.delivery.value.people : [];
 
   return (
     <div data-tour-id="demo-project-card">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-slate-600 dark:text-slate-400">
-          {project.donorName} · {project.country} · {project.sector.replace(/_/g, " ")}
+          {identity.donorName} · {identity.country} · {identity.sector.replace(/_/g, " ")}
         </div>
         <div className="flex gap-2">
-          {project.isDemo ? <Badge tone="info">Demo</Badge> : null}
-          <Badge tone={projectStatusTone(project.status)}>{project.status.replace(/_/g, " ")}</Badge>
-          <Badge tone="neutral">{project.reportingFrequency.toLowerCase().replace("_", " ")}</Badge>
+          {identity.isDemo ? <Badge tone="info">Demo</Badge> : null}
+          <Badge tone={projectStatusTone(identity.status)}>{identity.status.replace(/_/g, " ")}</Badge>
+          <Badge tone="neutral">{identity.reportingFrequency.toLowerCase().replace("_", " ")}</Badge>
         </div>
       </div>
 
-      {project.isDemo ? (
+      {identity.isDemo ? (
         <div className="mt-3">
-          <DeleteDemoProjectButton projectId={project.id} />
+          <DeleteDemoProjectButton projectId={identity.id} />
         </div>
       ) : null}
 
-      {periods.length > 0 && (
+      <LifecycleStrip life={life} />
+
+      {periods.length > 0 ? (
         <section className="mt-4" aria-label="Reporting period">
           <label className="text-xs font-medium text-slate-500 dark:text-slate-400" htmlFor="period-select">Reporting period</label>
-          <PeriodSwitcher periods={periods} value={activePeriodId ?? ""} />
+          <PeriodSwitcher periods={periods.map((p) => ({ id: p.id, reportType: p.reportType, status: p.status }))} value={activePeriodId ?? ""} />
         </section>
-      )}
+      ) : null}
 
-      {!hasPeriod && (
+      {!has("REPORTING") ? (
         <section className="mt-6">
           <div className="card">
             <h2 className="font-medium">Set up your reporting period</h2>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
               Create a reporting period to start collecting evidence and generating a report.
             </p>
-            <Link className="btn mt-3" href={`/projects/${project.id}/reports/new`}>Create reporting period</Link>
+            <Link className="btn mt-3" href={`/projects/${identity.id}/reports/new`}>Create reporting period</Link>
           </div>
         </section>
-      )}
+      ) : null}
 
-      <section className="mt-6 grid gap-4 sm:grid-cols-3">
-        <Stat label="Days remaining" value={String(project.daysRemaining)} />
-        <Stat label="Pending evidence" value={pendingEvidence === 0 ? "0" : String(pendingEvidence)} />
-        <Stat label="Activities" value={String(activityCount)} />
-      </section>
+      {has("NEEDS_YOU") && data.needsYou.ok ? (
+        <NeedsYouSection items={data.needsYou.value} projectId={identity.id} />
+      ) : null}
 
-      {showRisks && (
-        <div className="mt-4"><RisksCard projectId={project.id} risks={risks} people={riskPeople} userId={meId} canRaise={ctx.capabilities.has("risk.raise")} today={new Date().toISOString().slice(0, 10)} /></div>
-      )}
-      {showRisks && <div className="mt-4"><DecisionLog risks={risks} people={riskPeople} /></div>}
+      {has("PULSE") && data.pulse.ok ? <PulseSection pulse={data.pulse.value} projectId={identity.id} /> : null}
 
-      {planCards && <PlanOverviewCards projectId={project.id} counts={planCards.counts} outputs={planCards.outputs} health={planCards.health} />}
-      {budgetResult?.ok && <ProjectBudgetCard projectId={project.id} data={budgetResult.value.items} />}
+      {has("CALENDAR") && data.calendar.ok ? <CalendarSection items={data.calendar.value} projectId={identity.id} /> : null}
 
-      {readiness && (
-        <section className="mt-8 grid gap-6 lg:grid-cols-2">
-          <div className="card">
-            <h2 className="font-medium">Report readiness</h2>
-            <div className="mt-4"><ReadinessGauge value={readiness.overall} label={`${REPORT_TYPE_LABEL[periods.find((p) => p.id === activePeriodId)?.reportType ?? ""] ?? "Report"} · ${readinessHeadline(readiness.overall, readiness.stage, (readiness.totalSections ?? 1) > 0)}`} /></div>
-            {activePeriodId && <ReadinessBreakdownList readiness={readiness} projectId={project.id} periodId={activePeriodId} />}
-            <Link className="mt-4 inline-block text-sm text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${project.id}/reports/${activePeriodId ?? ""}`}>
-              Open report workspace →
-            </Link>
+      {has("REPORTING") && data.reporting.ok ? <ReportingSection reporting={data.reporting.value} projectId={identity.id} /> : null}
+
+      {has("DELIVERY") && data.delivery.ok ? <DeliverySection delivery={data.delivery.value} projectId={identity.id} /> : null}
+
+      {has("RESULTS") && data.results.ok ? <ResultsMoneySection results={data.results.value} projectId={identity.id} /> : null}
+
+      {has("TEAM") && data.team.ok ? (
+        <TeamSection
+          team={data.team.value}
+          people={riskPeople}
+          projectId={identity.id}
+          today={today}
+          periods={periods.map((p) => ({ id: p.id, label: p.title }))}
+        />
+      ) : null}
+
+      {has("RISKS") && data.risks.ok ? (
+        <>
+          <div className="mt-8">
+            <RisksCard
+              projectId={identity.id}
+              risks={data.risks.value.items}
+              people={riskPeople}
+              userId={meId}
+              canRaise={ctx.capabilities.has("risk.raise")}
+              today={today}
+            />
           </div>
-
-          <div className="space-y-6">
-            <div className="card">
-              <h2 className="font-medium">Compliance gaps</h2>
-              {openChecklist.length === 0 && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">No open compliance items.</p>}
-              {openChecklist.length > 0 && (
-                <ul className="mt-3 space-y-2">
-                  {openChecklist.slice(0, 6).map((c) => (
-                    <li key={c.id} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="min-w-0 break-words leading-5">{c.title}</span>
-                      <Badge tone={severityTone(c.severity)}>{c.severity.toLowerCase()}</Badge>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <Link className="mt-3 inline-block text-sm text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${project.id}/compliance`}>
-                Open compliance →
-              </Link>
-            </div>
+          <div className="mt-4">
+            <DecisionLog risks={data.risks.value.items} people={riskPeople} />
           </div>
-        </section>
-      )}
+        </>
+      ) : null}
 
-      {!readiness && hasPeriod && (
-        <div className="mt-8"><EmptyState>Readiness for this reporting period is not available.</EmptyState></div>
-      )}
+      {has("CLOSEOUT") && data.closeOut.ok ? <CloseOutSection closeOut={data.closeOut.value} projectId={identity.id} /> : null}
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-2">
-        <div className="card">
-          <h2 className="font-medium">Donor templates</h2>
-          <Link className="mt-2 inline-block text-sm text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${project.id}/templates`}>
-            Manage templates →
-          </Link>
+      {has("SETUP") && data.setup.ok ? <SetupSection setup={data.setup.value} projectId={identity.id} /> : null}
+
+      {has("REPORTING") && !data.reporting.ok ? (
+        <div className="mt-8">
+          <EmptyState>Readiness for this reporting period is not available.</EmptyState>
         </div>
-        <div className="card">
-          <h2 className="font-medium">Logframe</h2>
-          <Link className="mt-2 inline-block text-sm text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${project.id}/logframe`}>
-            Manage logframe →
-          </Link>
-        </div>
-      </section>
-    </div>
-  );
-}
+      ) : null}
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="card">
-      <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="mt-1 bg-gradient-to-r from-brand-500 to-accent-400 bg-clip-text text-2xl font-semibold tracking-tight text-transparent">{value}</div>
+      {planPeople.length > 0 ? <span className="sr-only">{planPeople.length} people on this project</span> : null}
     </div>
   );
 }

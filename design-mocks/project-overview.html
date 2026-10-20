@@ -1,0 +1,878 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Project Overview v2 — Programme Manager mock</title>
+<style>
+  :root {
+    --background: #f1f4f1;
+    --surface: rgba(255, 255, 255, 0.8);
+    --surface-strong: #ffffff;
+    --border: rgba(15, 23, 42, 0.1);
+    --border-strong: rgba(15, 23, 42, 0.18);
+    --text: #0e1a16;
+    --text-secondary: #3d4f48;
+    --text-muted: #6b7d75;
+    --brand-glow: rgba(242, 181, 68, 0.16);
+    --cyan-glow: rgba(63, 193, 166, 0.12);
+    --grid-line: rgba(15, 23, 42, 0.05);
+    --brand: #8a5610;
+    --brand-strong: #6e4310;
+    --saffron: #f2b544;
+    --accent: #2a9d84;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --sidebar-bg: #0b1614;
+    --sidebar-text: #a3b5ad;
+  }
+  body.dark {
+    --background: #0b1614;
+    --surface: rgba(255, 255, 255, 0.04);
+    --surface-strong: rgba(255, 255, 255, 0.07);
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #f1f5f9;
+    --text-secondary: #a3b5ad;
+    --text-muted: #7d918a;
+    --brand-glow: rgba(242, 181, 68, 0.32);
+    --cyan-glow: rgba(63, 193, 166, 0.2);
+    --grid-line: rgba(255, 255, 255, 0.04);
+    --brand: #f2c95f;
+    --brand-strong: #f2b544;
+    --sidebar-bg: #10221e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background-color: var(--background);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+    background:
+      radial-gradient(60% 40% at 85% -10%, var(--brand-glow), transparent 62%),
+      radial-gradient(55% 40% at 0% 110%, var(--cyan-glow), transparent 62%);
+  }
+  body::after {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black, transparent 85%);
+    -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black, transparent 85%);
+  }
+  a { color: inherit; text-decoration: none; }
+  a.link { color: var(--brand); font-weight: 500; }
+  a.link:hover { text-decoration: underline; }
+
+  /* ---------- shell ---------- */
+  .shell { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 224px; flex-shrink: 0; background: var(--sidebar-bg); color: var(--sidebar-text);
+    padding: 18px 14px; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .sidebar .brand { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 700; letter-spacing: -0.01em; padding: 2px 8px 14px; }
+  .sidebar .dot { width: 18px; height: 18px; border-radius: 6px; background: linear-gradient(135deg, var(--saffron), var(--accent)); }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; font-size: 13px; margin-bottom: 2px; }
+  .nav-item.active { background: rgba(242, 181, 68, 0.14); color: #f7e1a4; font-weight: 600; }
+  .nav-item:not(.active):hover { background: rgba(255,255,255,0.05); color: #e8eeea; }
+  .nav-gap { height: 16px; }
+  .nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; padding: 8px 10px 4px; color: #56706a; }
+  main { flex: 1; min-width: 0; padding: 22px 28px 64px; }
+  .mock-banner {
+    margin-bottom: 16px; border: 1px dashed rgba(168, 106, 20, 0.5); background: rgba(251, 240, 210, 0.55);
+    border-radius: 10px; padding: 8px 14px; font-size: 12.5px; color: #6e4310;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  body.dark .mock-banner { background: rgba(242, 181, 68, 0.08); color: #f2c95f; }
+  .mock-banner .btn-mini { margin-left: auto; }
+
+  /* ---------- header ---------- */
+  .breadcrumbs { font-size: 12px; color: var(--text-muted); }
+  .project-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
+  .project-head h1 { margin: 2px 0 0; font-size: 20px; font-weight: 650; letter-spacing: -0.015em; }
+  .project-head .meta { margin-top: 3px; font-size: 13px; color: var(--text-secondary); }
+  .project-head .meta-2 { margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+  .head-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-top: 14px; flex-wrap: wrap; }
+  .tab { padding: 8px 13px; font-size: 13.5px; font-weight: 500; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: var(--brand); border-color: var(--brand-strong); font-weight: 600; }
+  .tab.secondary { color: var(--text-muted); }
+
+  /* lifecycle phase strip */
+  .phases { display: flex; align-items: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; font-size: 12.5px; }
+  .phase { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-muted); background: var(--surface-strong); }
+  body.dark .phase { background: rgba(255,255,255,0.04); }
+  .phase.done { color: var(--success); border-color: rgba(22,163,74,.3); }
+  .phase.current { color: var(--brand); border-color: rgba(168,106,20,.5); font-weight: 650; box-shadow: 0 0 0 3px rgba(242,181,68,.12); }
+  .phase-arrow { color: var(--text-muted); font-size: 11px; }
+
+  /* ---------- primitives ---------- */
+  .card {
+    background: var(--surface-strong); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  }
+  body.dark .card { background: rgba(255,255,255,0.04); }
+  .card h3 { margin: 0; font-size: 13.5px; font-weight: 600; }
+  .card .sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; flex-wrap: wrap; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 2px 9px;
+    font-size: 11px; font-weight: 600; border: 1px solid transparent; white-space: nowrap;
+  }
+  .badge.success { background: rgba(22,163,74,.1); color: #15803d; border-color: rgba(22,163,74,.25); }
+  .badge.warning { background: rgba(217,119,6,.1); color: #b45309; border-color: rgba(217,119,6,.25); }
+  .badge.danger  { background: rgba(220,38,38,.1); color: #b91c1c; border-color: rgba(220,38,38,.25); }
+  .badge.neutral { background: rgba(107,125,117,.1); color: var(--text-secondary); border-color: var(--border-strong); }
+  .badge.info    { background: rgba(168,106,20,.09); color: var(--brand); border-color: rgba(168,106,20,.25); }
+  body.dark .badge.success { color: #4ade80; } body.dark .badge.warning { color: #fbbf24; }
+  body.dark .badge.danger { color: #f87171; } body.dark .badge.info { color: #f2c95f; }
+  body.dark .badge.neutral { color: #a3b5ad; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 7px 13px;
+    background: var(--brand); color: #fff; font-size: 13px; font-weight: 600; border: none; cursor: pointer;
+  }
+  .btn:hover { background: var(--brand-strong); }
+  body.dark .btn { color: #142019; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 7px 13px;
+    background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500;
+    border: 1px solid var(--border-strong); cursor: pointer;
+  }
+  .btn-secondary:hover { border-color: var(--saffron); color: var(--brand); }
+  .btn-mini {
+    border-radius: 6px; padding: 3px 9px; font-size: 11.5px; font-weight: 600; cursor: pointer;
+    border: 1px solid rgba(168,106,20,.4); background: transparent; color: var(--brand);
+  }
+
+  .bar { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 999px; }
+  .bar.success > i, i.success { background: #22c55e; }
+  .bar.warning > i, i.warning { background: #f59e0b; }
+  .bar.danger > i, i.danger { background: #ef4444; }
+  .bar.brand > i, i.brand { background: linear-gradient(90deg, var(--saffron), var(--accent)); }
+  .duo { position: relative; height: 6px; border-radius: 999px; background: var(--border); }
+  .duo .pace, .duo .res { position: absolute; top: 0; height: 100%; border-radius: 999px; }
+  .duo .pace { left: 0; background: var(--border-strong); }
+  .duo .res { top: -3px; height: 12px; background: var(--saffron); opacity: .95; border: 1px solid rgba(110,67,16,.35); }
+
+  .section { margin-top: 26px; }
+  .section-title { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .section-title .kicker { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; color: var(--brand); text-transform: uppercase; }
+  .section-title h2 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
+  .section-title .see-all { margin-left: auto; font-size: 12px; }
+
+  .grid { display: grid; gap: 12px; }
+  .cols-6 { grid-template-columns: repeat(6, minmax(0,1fr)); }
+  .cols-5 { grid-template-columns: repeat(5, minmax(0,1fr)); }
+  .cols-4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+  .cols-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .cols-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .cols-2-1 { grid-template-columns: 2fr 1fr; }
+  .cols-1-2 { grid-template-columns: 1fr 2fr; }
+  @media (max-width: 1100px) {
+    .cols-6 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .cols-5, .cols-4 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .cols-3, .cols-2, .cols-2-1, .cols-1-2 { grid-template-columns: minmax(0,1fr); }
+    .sidebar { display: none; }
+  }
+
+  table.t { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.t th { text-align: left; font-size: 11px; font-weight: 600; color: var(--text-muted); padding: 6px 10px 6px 0; border-bottom: 1px solid var(--border); }
+  table.t td { padding: 7px 10px 7px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.t tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+
+  .avatar {
+    width: 26px; height: 26px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10.5px; font-weight: 700; color: #fff; background: #38473f; flex-shrink: 0;
+  }
+  .avatar.warn { background: #b45309; }
+  .stack { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+
+  .pulse .value { font-size: 21px; font-weight: 680; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-top: 6px; }
+  .pulse .hint { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+  .pulse { min-width: 0; }
+
+  /* decision queue */
+  .queue-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .queue-item:last-child { border-bottom: none; }
+  .queue-item .q-what { min-width: 0; flex: 1; }
+  .queue-item .q-what b { font-weight: 600; }
+  .queue-item .q-why { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+  .queue-item .q-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  /* calendar strip */
+  .cal { position: relative; margin-top: 10px; padding: 0 2px 6px; }
+  .cal .track { position: relative; height: 46px; }
+  .cal .line { position: absolute; left: 0; right: 0; top: 21px; height: 2px; background: var(--border); border-radius: 2px; }
+  .cal .tick { position: absolute; top: 0; width: 150px; margin-left: -75px; text-align: center; }
+  .cal .tick .d { font-size: 11px; font-weight: 700; color: var(--text-secondary); }
+  .cal .tick .w { font-size: 10.5px; color: var(--text-muted); line-height: 1.3; }
+  .cal .pin { width: 11px; height: 11px; border-radius: 999px; margin: 16px auto 4px; border: 2px solid var(--surface-strong); box-shadow: 0 0 0 2px var(--border); background: var(--text-muted); }
+  .cal .pin.danger { background: #ef4444; } .cal .pin.warning { background: #f59e0b; }
+  .cal .pin.brand { background: var(--saffron); } .cal .pin.accent { background: #2a9d84; }
+  .cal .now { position: absolute; top: 8px; width: 2px; height: 28px; background: var(--danger); }
+  .cal .now::after { content: "today"; position: absolute; top: -12px; left: -14px; font-size: 9.5px; font-weight: 800; color: var(--danger); text-transform: uppercase; letter-spacing: .06em; }
+
+  /* pipeline */
+  .pipeline { display: flex; align-items: stretch; gap: 6px; overflow-x: auto; padding: 4px 0 2px; }
+  .stage { flex: 1 1 0; min-width: 128px; border: 1px solid var(--border); border-radius: 9px; padding: 9px 11px; position: relative; }
+  .stage.current { border-color: rgba(168,106,20,.55); box-shadow: 0 0 0 3px rgba(242,181,68,.14); }
+  .stage .p-label { font-size: 12.5px; font-weight: 600; }
+  .stage .p-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .stage .p-state { margin-top: 7px; }
+  .connector { align-self: center; color: var(--text-muted); font-size: 11px; flex: 0 0 auto; }
+
+  .gauge { text-align: center; }
+  .gauge .pct { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .gauge .pct.warning { color: var(--warning); }
+
+  .chart-x { display: flex; align-items: flex-end; gap: 8px; height: 96px; }
+  .chart-x .col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; height: 100%; }
+  .chart-x .v { width: 100%; max-width: 34px; border-radius: 5px 5px 0 0; background: linear-gradient(180deg, var(--saffron), #d99a2b); }
+  .chart-x .alt { background: linear-gradient(180deg, #3fc1a6, #2a9d84); }
+  .chart-x .l { font-size: 10px; color: var(--text-muted); }
+
+  .chart-line { position: relative; height: 104px; }
+  .chart-line svg { width: 100%; height: 100%; overflow: visible; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-muted); }
+  .legend .sw { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+  .list-plain { list-style: none; margin: 8px 0 0; padding: 0; }
+  .list-plain li { padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .list-plain li:last-child { border-bottom: none; }
+
+  /* design-note annotations */
+  .note-target { position: relative; }
+  body.notes .note-target {
+    outline: 2px dashed rgba(168, 106, 20, 0.65); outline-offset: 3px; border-radius: 10px;
+  }
+  .note-tag {
+    display: none; position: absolute; top: -9px; left: 10px; background: var(--saffron); color: #142019;
+    font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 1px 7px; border-radius: 5px; z-index: 5;
+  }
+  body.notes .note-tag { display: inline-block; }
+
+  .theme-toggle { position: fixed; right: 18px; bottom: 18px; z-index: 50; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" aria-label="Primary">
+    <div class="brand"><span class="dot"></span> DonorDesk</div>
+    <div class="nav-item">Home</div>
+    <div class="nav-item">My Work</div>
+    <div class="nav-item active">Projects</div>
+    <div class="nav-item">Reports</div>
+    <div class="nav-item">Download Center</div>
+    <div class="nav-item">Evidence</div>
+    <div class="nav-item">Compliance</div>
+    <div class="nav-gap"></div>
+    <div class="nav-label">Workspace</div>
+    <div class="nav-item">Team</div>
+    <div class="nav-item">Settings</div>
+  </aside>
+
+  <main>
+    <div class="mock-banner">
+      <strong>Design mock — Project Overview v2, Programme Manager lens.</strong>
+      Static sample data. A field officer would land on My week instead; this page is for the person who runs the programme start to finish.
+      <button class="btn-mini" id="notes-toggle" type="button">Show design notes</button>
+    </div>
+
+    <!-- Breadcrumbs + project head -->
+    <nav class="breadcrumbs" aria-label="Breadcrumb">Projects / Sahel Resilience Programme</nav>
+    <div class="project-head">
+      <div>
+        <h1>Sahel Resilience Programme</h1>
+        <div class="meta">MLI-2025-014 · USAID / BHA · Mali · Food security</div>
+        <div class="meta-2">1 Apr 2025 – 31 Mar 2027 · quarterly reporting</div>
+      </div>
+      <div class="head-actions">
+        <span class="badge neutral">Active</span>
+        <span class="badge info">Work planning on</span>
+        <button class="btn-secondary btn-sm" type="button">Ask for something</button>
+        <button class="btn-secondary btn-sm" type="button">Raise a problem</button>
+        <button class="btn btn-sm" type="button">Create reporting period</button>
+      </div>
+    </div>
+
+    <nav class="tabs" aria-label="Project sections">
+      <span class="tab">Reporting</span>
+      <span class="tab active">Overview</span>
+      <span class="tab">Logframe</span>
+      <span class="tab">Activities</span>
+      <span class="tab">Data</span>
+      <span class="tab secondary">Evidence</span>
+      <span class="tab secondary">Templates</span>
+      <span class="tab secondary">Team</span>
+      <span class="tab secondary">Settings</span>
+    </nav>
+
+    <!-- ============ 0. LIFECYCLE ============ -->
+    <div class="phases note-target" aria-label="Programme lifecycle">
+      <span class="note-tag">New — lifecycle, start to finish</span>
+      <span class="phase done">✓ Setup · logframe, templates, profile</span>
+      <span class="phase-arrow">→</span>
+      <span class="phase current">In implementation · quarter 6 of 8</span>
+      <span class="phase-arrow">→</span>
+      <span class="phase">Close-out from Jan 2027 · final report + handover</span>
+    </div>
+
+    <!-- ============ 1. NEEDS YOU ============ -->
+    <section class="section note-target" aria-label="Needs your decision">
+      <span class="note-tag">New — decisions first, with inline actions</span>
+      <div class="section-title">
+        <span class="kicker">Needs you</span>
+        <h2>Waiting on your decision or review</h2>
+        <a class="link see-all" href="#">My work on this project →</a>
+      </div>
+      <div class="card">
+        <div class="queue-item">
+          <span class="badge warning" style="flex:0 0 auto">Approve</span>
+          <div class="q-what"><b>Q3 report waits on your approval</b>
+            <span class="q-why">Second approver · readiness 62% · submitted by Ibrahim Diarra · deadline 30 Oct</span>
+          </div>
+          <div class="q-actions"><button class="btn btn-sm" type="button">Review &amp; approve</button></div>
+        </div>
+        <div class="queue-item">
+          <span class="badge info" style="flex:0 0 auto">Accept</span>
+          <div class="q-what"><b>2 completed activities to accept</b>
+            <span class="q-why">Nutrition screening, Ménaka (17 Oct) · Shelter kit distribution, Gao (18 Oct) — because you approve records</span>
+          </div>
+          <div class="q-actions"><button class="btn-secondary btn-sm" type="button">Accept both</button><button class="btn-secondary btn-sm" type="button">Open</button></div>
+        </div>
+        <div class="queue-item">
+          <span class="badge neutral" style="flex:0 0 auto">Verify</span>
+          <div class="q-what"><b>5 evidence files cited by the Q3 report are pending verification</b>
+            <span class="q-why">2 restricted · verification blocks submission, not drafting</span>
+          </div>
+          <div class="q-actions"><button class="btn-secondary btn-sm" type="button">Verify files</button></div>
+        </div>
+        <div class="queue-item">
+          <span class="badge danger" style="flex:0 0 auto">Overdue</span>
+          <div class="q-what"><b>1 indicator value overdue · IND-019 children receiving treatment</b>
+            <span class="q-why">Due 15 Oct · owner Aisha Kone · asked twice already</span>
+          </div>
+          <div class="q-actions"><button class="btn-secondary btn-sm" type="button">Chase</button><button class="btn-secondary btn-sm" type="button">Reassign</button></div>
+        </div>
+        <div class="queue-item">
+          <span class="badge warning" style="flex:0 0 auto">Review</span>
+          <div class="q-what"><b>Risk review overdue: “Road access to Ménaka cut”</b>
+            <span class="q-why">Raised 27 Sep · high seriousness · review by 27 Oct</span>
+          </div>
+          <div class="q-actions"><button class="btn-secondary btn-sm" type="button">Open risk</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2. PULSE ============ -->
+    <section class="section note-target" aria-label="Programme pulse">
+      <span class="note-tag">Changed — pace against time, not just counts</span>
+      <div class="section-title">
+        <span class="kicker">Pulse</span>
+        <h2>Where the programme stands today</h2>
+      </div>
+      <div class="grid cols-6">
+        <div class="card pulse">
+          <div class="card-head"><h3>Delivery</h3><span class="badge warning">Needs attention</span></div>
+          <div class="hint" style="margin-top:6px">2 activities late · 1 indicator value overdue</div>
+          <div class="value">34 <span style="font-size:13px;font-weight:500;color:var(--text-muted)">of 48 planned done</span></div>
+          <div class="bar brand" style="margin-top:8px"><i style="width:71%"></i></div>
+        </div>
+        <div class="card pulse">
+          <div class="card-head"><h3>Results pace</h3><span class="badge warning">Watch</span></div>
+          <div class="value">72<span style="font-size:13px;font-weight:500;color:var(--text-muted)">% of target</span></div>
+          <div class="duo" style="margin-top:10px"><span class="pace" style="width:78%"></span><span class="res" style="left:0;width:0;border:none"></span></div>
+          <div class="bar brand" style="margin-top:5px"><i style="width:72%"></i></div>
+          <div class="hint">grey = time elapsed 78% · colour = target reached 72%</div>
+        </div>
+        <div class="card pulse">
+          <div class="card-head"><h3>Budget pace (USD)</h3><span class="badge success">Underspending</span></div>
+          <div class="value">61<span style="font-size:13px;font-weight:500;color:var(--text-muted)">% spent</span></div>
+          <div class="duo" style="margin-top:10px"><span class="pace" style="width:78%"></span><span class="res" style="left:0;width:0;border:none"></span></div>
+          <div class="bar success" style="margin-top:5px"><i style="width:61%"></i></div>
+          <div class="hint">412,500 of 680,000 · 17 points behind the clock</div>
+        </div>
+        <div class="card pulse">
+          <div class="card-head"><h3>Next deadline</h3><span class="badge warning">30 Oct · 9 days</span></div>
+          <div class="value">62<span style="font-size:13px;font-weight:500;color:var(--text-muted)">%</span> <span style="font-size:13px;font-weight:500;color:var(--text-muted)">ready</span></div>
+          <div class="bar warning" style="margin-top:8px"><i style="width:62%"></i></div>
+          <div class="hint">Q3 report · in review · waiting on approval</div>
+        </div>
+        <div class="card pulse">
+          <div class="card-head"><h3>People reached</h3></div>
+          <div class="value">12,480</div>
+          <div class="hint" style="margin-top:6px">5,412 female · 7,068 male · each counted once</div>
+        </div>
+        <div class="card pulse">
+          <div class="card-head"><h3>Compliance</h3><span class="badge warning">2 open</span></div>
+          <div class="value" style="font-size:17px;margin-top:8px">2 items need a person</div>
+          <div class="hint" style="margin-top:6px">1 item was settled by data · nothing blocked submission yet</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3. CALENDAR ============ -->
+    <section class="section note-target" aria-label="Everything due">
+      <span class="note-tag">New — one calendar across all streams</span>
+      <div class="section-title">
+        <span class="kicker">Calendar</span>
+        <h2>Everything due, next six weeks</h2>
+        <a class="link see-all" href="#">Open the plan calendar →</a>
+      </div>
+      <div class="card">
+        <div class="cal">
+          <div class="track">
+            <div class="line"></div>
+            <div class="now" style="left:4%"></div>
+            <div class="tick" style="left:8%">
+              <div class="pin danger"></div>
+              <div class="d">22 Oct</div>
+              <div class="w">Request overdue<br>Fatou Traoré</div>
+            </div>
+            <div class="tick" style="left:22%">
+              <div class="pin warning"></div>
+              <div class="d">24 Oct</div>
+              <div class="w">PDM milestone<br>Fatou Traoré</div>
+            </div>
+            <div class="tick" style="left:36%">
+              <div class="pin danger"></div>
+              <div class="d">27 Oct</div>
+              <div class="w">Risk review<br>Ménaka road access</div>
+            </div>
+            <div class="tick" style="left:52%">
+              <div class="pin brand"></div>
+              <div class="d">30 Oct</div>
+              <div class="w">Q3 report due<br>62% ready</div>
+            </div>
+            <div class="tick" style="left:66%">
+              <div class="pin accent"></div>
+              <div class="d">4 Nov</div>
+              <div class="w">Indicator values due<br>3 indicators · Q3</div>
+            </div>
+            <div class="tick" style="left:84%">
+              <div class="pin accent"></div>
+              <div class="d">14 Nov</div>
+              <div class="w">Q4 plan items start<br>2 activities</div>
+            </div>
+          </div>
+        </div>
+        <div class="legend" style="margin-top:6px">
+          <span><span class="sw" style="background:#ef4444"></span>overdue</span>
+          <span><span class="sw" style="background:#f59e0b"></span>this week</span>
+          <span><span class="sw" style="background:var(--saffron)"></span>report deadline</span>
+          <span><span class="sw" style="background:#2a9d84"></span>later</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4. REPORTING ============ -->
+    <section class="section" aria-label="Reporting">
+      <div class="section-title">
+        <span class="kicker">Reporting</span>
+        <h2>Where reporting stands</h2>
+        <a class="link see-all" href="#">All reports →</a>
+      </div>
+      <div class="grid cols-2-1">
+        <div class="card">
+          <div class="card-head">
+            <h3>Period pipeline</h3>
+            <span class="sub">each period moves only forward</span>
+          </div>
+          <div class="pipeline" style="margin-top:12px">
+            <div class="stage">
+              <div class="p-label">Q1 2025 report</div>
+              <div class="p-sub">Jan – Mar 2025</div>
+              <div class="p-state"><span class="badge success">Approved</span></div>
+            </div>
+            <span class="connector">→</span>
+            <div class="stage">
+              <div class="p-label">Q2 2025 report</div>
+              <div class="p-sub">Apr – Jun 2025</div>
+              <div class="p-state"><span class="badge neutral">Submitted</span></div>
+            </div>
+            <span class="connector">→</span>
+            <div class="stage current">
+              <div class="p-label">Q3 2026 report</div>
+              <div class="p-sub">Jul – Sep · due 30 Oct</div>
+              <div class="p-state"><span class="badge warning">Awaiting approval</span></div>
+            </div>
+            <span class="connector">→</span>
+            <div class="stage">
+              <div class="p-label">Q4 2026 report</div>
+              <div class="p-sub">Oct – Dec</div>
+              <div class="p-state"><span class="badge neutral">Not started</span></div>
+            </div>
+            <span class="connector">→</span>
+            <div class="stage">
+              <div class="p-label">Annual 2026</div>
+              <div class="p-sub">Roll-up</div>
+              <div class="p-state"><span class="badge neutral">Not started</span></div>
+            </div>
+          </div>
+          <hr class="divider" />
+          <div class="grid cols-2">
+            <div>
+              <h3 style="font-size:12.5px;color:var(--text-muted);font-weight:600">Q3 readiness</h3>
+              <div class="gauge" style="padding:6px 0 2px">
+                <div class="pct warning">62%</div>
+                <div class="sub" style="margin-top:2px">In review · 9 days to deadline</div>
+                <div class="bar warning" style="margin-top:10px"><i style="width:62%"></i></div>
+              </div>
+            </div>
+            <div>
+              <h3 style="font-size:12.5px;color:var(--text-muted);font-weight:600">What stands in the way</h3>
+              <ul class="list-plain" style="font-size:12.5px">
+                <li class="row"><span class="badge warning" style="flex:0 0 auto">Inputs</span><span>3 indicator values are not verified yet</span></li>
+                <li class="row"><span class="badge danger" style="flex:0 0 auto">Checklist</span><span>A confidentiality check is still open</span></li>
+                <li class="row"><span class="badge neutral" style="flex:0 0 auto">Evidence</span><span>2 cited files are still pending review</span></li>
+              </ul>
+              <a class="link" style="font-size:12.5px" href="#">Open the Q3 workspace →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Compliance</h3>
+            <span class="badge warning">2 open</span>
+          </div>
+          <ul class="list-plain" style="font-size:12.5px">
+            <li class="row" style="justify-content:space-between"><span>Final procurement records available</span><span class="badge success">Settled by data</span></li>
+            <li class="row" style="justify-content:space-between"><span>Conflict-sensitive approach confirmed</span><span class="badge warning">Needs a person</span></li>
+            <li class="row" style="justify-content:space-between"><span>Safeguarding report attached</span><span class="badge warning">Needs a person</span></li>
+          </ul>
+          <a class="link" style="font-size:12.5px" href="#">Open compliance →</a>
+          <hr class="divider" />
+          <h3 style="font-size:12.5px;color:var(--text-muted);font-weight:600">Tell the story</h3>
+          <div class="sub" style="margin-top:4px">2 of 5 story answers saved for Q3.</div>
+          <a class="link" style="font-size:12.5px" href="#">Answer the rest →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5. DELIVERY ============ -->
+    <section class="section note-target" aria-label="Delivery and plan integrity">
+      <span class="note-tag">Changed — movements and the whole team's week</span>
+      <div class="section-title">
+        <span class="kicker">Delivery</span>
+        <h2>Plan against reality</h2>
+        <a class="link see-all" href="#">See the plan →</a>
+      </div>
+      <div class="grid cols-4">
+        <div class="card">
+          <div class="card-head"><h3>Plan summary</h3><span class="badge warning">2 late</span></div>
+          <div class="value" style="font-size:21px;font-weight:680;margin-top:8px">34 <span style="font-size:13px;font-weight:500;color:var(--text-muted)">of 48 done</span></div>
+          <div class="bar brand" style="margin-top:8px"><i style="width:71%"></i></div>
+          <ul class="list-plain" style="font-size:12.5px">
+            <li class="row" style="justify-content:space-between"><span>Under way</span><span class="mono">6</span></li>
+            <li class="row" style="justify-content:space-between"><span>Cancelled (counted apart)</span><span class="mono">4</span></li>
+            <li class="row" style="justify-content:space-between"><span>Indicator values overdue</span><span class="mono" style="color:var(--danger);font-weight:700">1</span></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Movements this quarter</h3><span class="badge neutral">3 moved</span></div>
+          <ul class="list-plain" style="font-size:12.5px">
+            <li>
+              <strong>Water point rehabilitation, Ansongo</strong>
+              <div class="sub">Moved from 24 Sep to 15 Oct — ground conditions · decided by you</div>
+            </li>
+            <li>
+              <strong>Seed distribution round 3</strong>
+              <div class="sub">Moved from 30 Sep to 9 Oct — access route cut · decided by Aisha Kone</div>
+            </li>
+            <li>
+              <strong>Market feasibility study</strong>
+              <div class="sub">Moved from 3 Oct to 20 Oct — partner reporting delays</div>
+            </li>
+          </ul>
+          <a class="link" style="font-size:12.5px" href="#">Why things moved →</a>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>The team's week</h3><span class="sub">week of 20 Oct</span></div>
+          <ul class="list-plain" style="font-size:12.5px">
+            <li>
+              <div class="row"><span class="avatar warn">AK</span><span style="min-width:0;flex:1">Seed distribution — Ansongo<span style="display:block;font-size:11px;color:var(--text-muted)">Aisha Kone · planned end 21 Oct</span></span><span class="badge danger">Late</span></div>
+            </li>
+            <li>
+              <div class="row"><span class="avatar">MO</span><span style="min-width:0;flex:1">WASH cluster coordination<span style="display:block;font-size:11px;color:var(--text-muted)">Moussa Ouédraogo · 23 Oct</span></span><span class="badge neutral">On time</span></div>
+            </li>
+            <li>
+              <div class="row"><span class="avatar">FT</span><span style="min-width:0;flex:1">Post-distribution monitoring, round 2<span style="display:block;font-size:11px;color:var(--text-muted)">Fatou Traoré · 24 Oct · milestone</span></span><span class="badge neutral">On time</span></div>
+            </li>
+          </ul>
+          <a class="link" style="font-size:12.5px" href="#">Open the plan →</a>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Outputs</h3><span class="sub">done of planned, beside indicators</span></div>
+          <ul class="list-plain" style="font-size:12.5px">
+            <li>
+              <div class="row" style="justify-content:space-between"><strong>1.1 Emergency food assistance</strong><span class="mono">12 of 15</span></div>
+              <div class="sub" style="margin-top:2px">IND-004 households reached: <b>72%</b> of target</div>
+              <div class="bar brand" style="margin-top:5px"><i style="width:72%"></i></div>
+            </li>
+            <li>
+              <div class="row" style="justify-content:space-between"><strong>1.2 Livestock support</strong><span class="mono">9 of 14</span></div>
+              <div class="sub" style="margin-top:2px">IND-011 feed distributed: <b>54%</b> of target · IND-019: not measured</div>
+              <div class="bar warning" style="margin-top:5px"><i style="width:54%"></i></div>
+            </li>
+            <li>
+              <div class="row" style="justify-content:space-between"><strong>2.1 Water points rehabilitated</strong><span class="mono">13 of 13</span></div>
+              <div class="sub" style="margin-top:2px">IND-007 functioning rate: <b>—</b> (a rate is not judged as % of target)</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 6. RESULTS & MONEY ============ -->
+    <section class="section note-target" aria-label="Results and money">
+      <span class="note-tag">Changed — pace beside every number</span>
+      <div class="section-title">
+        <span class="kicker">Results &amp; money</span>
+        <h2>Will we deliver, and will the money last</h2>
+        <a class="link see-all" href="#">Open the Data Center →</a>
+      </div>
+      <div class="grid cols-3">
+        <div class="card">
+          <div class="card-head">
+            <h3>Progress against targets</h3>
+            <span class="sub">beside time elapsed 78%</span>
+          </div>
+          <ul class="list-plain" style="font-size:12.5px">
+            <li>
+              <div class="row" style="justify-content:space-between"><span class="mono">IND-004</span><span>Households reached</span><b class="mono" style="margin-left:auto">72%</b><span class="badge warning">behind clock</span></div>
+              <div class="bar brand" style="margin-top:5px"><i style="width:72%"></i></div>
+            </li>
+            <li>
+              <div class="row" style="justify-content:space-between"><span class="mono">IND-011</span><span>Livestock feed (t)</span><b class="mono" style="margin-left:auto">54%</b><span class="badge danger">gap 24 pts</span></div>
+              <div class="bar danger" style="margin-top:5px"><i style="width:54%"></i></div>
+            </li>
+            <li>
+              <div class="row" style="justify-content:space-between"><span class="mono">IND-007</span><span>Water points functioning (rate)</span><b class="mono" style="margin-left:auto">—</b></div>
+              <div class="sub" style="margin-top:2px">Baseline 68% · target 90% · latest 81%</div>
+            </li>
+            <li>
+              <div class="row" style="justify-content:space-between"><span class="mono">IND-019</span><span>Children receiving treatment</span><span class="badge neutral">Not measured</span></div>
+            </li>
+          </ul>
+          <div class="sub" style="margin-top:8px">No projection is invented: the gap to the clock is shown, the judgement stays yours.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Cumulative achievement by quarter</h3></div>
+          <div class="chart-x" style="margin-top:14px" role="img" aria-label="Bar chart of cumulative percent of target by quarter">
+            <div class="col"><span class="l">Q1</span><i class="v" style="height:38%"></i><span class="l">31%</span></div>
+            <div class="col"><span class="l">Q2</span><i class="v" style="height:52%"></i><span class="l">43%</span></div>
+            <div class="col"><span class="l">Q3</span><i class="v" style="height:64%"></i><span class="l">52%</span></div>
+            <div class="col"><span class="l">Q4</span><i class="v" style="height:74%"></i><span class="l">61%</span></div>
+            <div class="col"><span class="l">Q1</span><i class="v" style="height:82%"></i><span class="l">67%</span></div>
+            <div class="col"><span class="l">Q2</span><i class="v alt" style="height:88%"></i><span class="l">72%</span></div>
+          </div>
+          <div class="legend" style="margin-top:10px">
+            <span><span class="sw" style="background:var(--saffron)"></span>IND-004 · % of target</span>
+            <span><span class="sw" style="background:#3fc1a6"></span>latest</span>
+          </div>
+          <div class="sub" style="margin-top:8px">Trend is rising quarter on quarter — pace, not a projection.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Money by quarter</h3>
+            <span class="badge success">Within budget</span>
+          </div>
+          <table class="t" style="margin-top:8px">
+            <thead><tr><th>Period</th><th class="num">Budget</th><th class="num">Spent</th><th class="num">Burn</th></tr></thead>
+            <tbody>
+              <tr><td>Q1 2025 <span class="badge success">Verified</span></td><td class="num mono">165,000</td><td class="num mono">148,200</td><td class="num">90%</td></tr>
+              <tr><td>Q2 2025 <span class="badge success">Verified</span></td><td class="num mono">170,000</td><td class="num mono">151,900</td><td class="num">89%</td></tr>
+              <tr><td>Q3 2026 <span class="badge warning">Draft</span></td><td class="num mono">172,500</td><td class="num mono">112,400</td><td class="num">65%</td></tr>
+            </tbody>
+          </table>
+          <div class="sub" style="margin-top:8px">Only verified figures reach a report. Plan activity budgets roll up separately below.</div>
+          <ul class="list-plain" style="font-size:12.5px">
+            <li class="row" style="justify-content:space-between"><span>Activity budgets (plan)</span><span class="mono">540,000 budgeted · 1 activity over</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 7. TEAM ============ -->
+    <section class="section note-target" aria-label="Team and requests">
+      <span class="note-tag">Changed — who needs help, and one place to ask</span>
+      <div class="section-title">
+        <span class="kicker">Team</span>
+        <h2>Who is carrying what, who needs help</h2>
+        <a class="link see-all" href="#">Project team →</a>
+      </div>
+      <div class="grid cols-2-1">
+        <div class="card">
+          <div class="card-head"><h3>Workload and lateness</h3><span class="sub">open · late · due this week</span></div>
+          <table class="t" style="margin-top:6px">
+            <thead><tr><th>Person</th><th>Role</th><th class="num">Open</th><th class="num">Late</th><th class="num">This week</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><span class="row"><span class="avatar warn">AK</span>Aisha Kone</span></td><td>Field officer</td><td class="num mono">9</td><td class="num mono" style="color:var(--danger);font-weight:700">2</td><td class="num mono">3</td><td><button class="btn-secondary btn-sm" type="button">Talk</button></td></tr>
+              <tr><td><span class="row"><span class="avatar">MO</span>Moussa Ouédraogo</span></td><td>Field officer</td><td class="num mono">6</td><td class="num mono">0</td><td class="num mono">2</td><td></td></tr>
+              <tr><td><span class="row"><span class="avatar">FT</span>Fatou Traoré</span></td><td>Field officer</td><td class="num mono">7</td><td class="num mono">1</td><td class="num mono">4</td><td><button class="btn-secondary btn-sm" type="button">Talk</button></td></tr>
+              <tr><td><span class="row"><span class="avatar">ID</span>Ibrahim Diarra</span></td><td>M&amp;E officer</td><td class="num mono">4</td><td class="num mono">0</td><td class="num mono">1</td><td></td></tr>
+            </tbody>
+          </table>
+          <div class="sub" style="margin-top:6px">“Talk” opens a note to the person — never a reassignment without their knowing.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Requests</h3><span class="badge info">3 open</span></div>
+          <ul class="list-plain" style="font-size:12.5px">
+            <li>
+              <div class="row"><span class="avatar">MO</span><span style="min-width:0;flex:1">Share Q2 distribution site list<span style="display:block;font-size:11px;color:var(--text-muted)">Moussa Ouédraogo · due 22 Oct</span></span><span class="badge neutral">Open</span></div>
+            </li>
+            <li>
+              <div class="row"><span class="avatar">FT</span><span style="min-width:0;flex:1">Confirm shelter kit counts<span style="display:block;font-size:11px;color:var(--text-muted)">Fatou Traoré · due 19 Oct</span></span><span class="badge danger">Overdue</span></div>
+            </li>
+          </ul>
+          <button class="btn-secondary btn-sm" style="margin-top:8px" type="button">Ask for something</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 8. RISKS & DECISIONS ============ -->
+    <section class="section" aria-label="Risks and decisions">
+      <div class="section-title">
+        <span class="kicker">Risks &amp; decisions</span>
+        <h2>Problems, risks and how they ended</h2>
+      </div>
+      <div class="grid cols-2">
+        <div class="card">
+          <div class="card-head"><h3>Open</h3><span class="badge warning">3 open · 1 unowned</span></div>
+          <ul class="list-plain" style="font-size:12.5px">
+            <li>
+              <div class="row" style="justify-content:space-between"><span style="min-width:0"><strong>Road access to Ménako cut</strong><span style="display:block;font-size:11px;color:var(--text-muted)">Problem · Aisha Kone · review overdue</span></span><span class="badge danger">High</span></div>
+              <div class="sub" style="margin-top:3px">Switching to local transporters; cost impact being assessed.</div>
+            </li>
+            <li>
+              <div class="row" style="justify-content:space-between"><span style="min-width:0"><strong>Rainy season may delay construction</strong><span style="display:block;font-size:11px;color:var(--text-muted)">Risk · <b style="color:var(--warning)">nobody owns it yet</b></span></span><span class="badge warning">Medium</span></div>
+            </li>
+            <li>
+              <div class="row" style="justify-content:space-between"><span style="min-width:0"><strong>Partner reporting delays</strong><span style="display:block;font-size:11px;color:var(--text-muted)">Dependency · Moussa Ouédraogo · reviewed 18 Oct</span></span><span class="badge neutral">Low</span></div>
+            </li>
+          </ul>
+          <button class="btn-secondary btn-sm" style="margin-top:8px" type="button">Raise a problem</button>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Decision log</h3><span class="sub">the project's decision history</span></div>
+          <ul class="list-plain" style="font-size:12.5px">
+            <li>
+              <div><strong>Re-tendered the transport contract</strong></div>
+              <div class="sub">Decision · 12 Oct · closed 18 Oct — two bids received, local firm chosen.</div>
+            </li>
+            <li>
+              <div><strong>Moved water point rehabilitation to Q4</strong></div>
+              <div class="sub">Decision · 30 Sep · closed 3 Oct — ground conditions; reason recorded.</div>
+            </li>
+            <li>
+              <div><strong>Added cash top-up for 400 households</strong></div>
+              <div class="sub">Decision · 8 Sep · closed 21 Sep — donor no-cost extension approved.</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 9. CLOSE-OUT ============ -->
+    <section class="section note-target" aria-label="Closing the programme">
+      <span class="note-tag">New — close-out in view from the start</span>
+      <div class="section-title">
+        <span class="kicker">Close-out</span>
+        <h2>Five months to the end — what closing will need</h2>
+        <a class="link see-all" href="#">Closing report plan →</a>
+      </div>
+      <div class="card">
+        <div class="grid cols-5">
+          <div>
+            <span class="badge success">Ready</span>
+            <div style="font-size:12.5px;margin-top:6px"><strong>Final period planned</strong></div>
+            <div class="sub">Q1 2027 closes the cadence · no overlap</div>
+          </div>
+          <div>
+            <span class="badge warning">2 missing</span>
+            <div style="font-size:12.5px;margin-top:6px"><strong>Cumulative fields</strong></div>
+            <div class="sub">Semi-annual roll-ups need life-of-project values</div>
+          </div>
+          <div>
+            <span class="badge warning">In progress</span>
+            <div style="font-size:12.5px;margin-top:6px"><strong>Finance verified</strong></div>
+            <div class="sub">Through Q2 · Q3 draft · Q4 pending</div>
+          </div>
+          <div>
+            <span class="badge neutral">Later</span>
+            <div style="font-size:12.5px;margin-top:6px"><strong>Evidence pack</strong></div>
+            <div class="sub">Assembled at submission · 2 restricted files to clear</div>
+          </div>
+          <div>
+            <span class="badge neutral">Not started</span>
+            <div style="font-size:12.5px;margin-top:6px"><strong>Handover note</strong></div>
+            <div class="sub">Write with the final report</div>
+          </div>
+        </div>
+        <div class="sub" style="margin-top:12px">Shown once the project enters its final year; before that the closing plan lives one click away.</div>
+      </div>
+    </section>
+
+    <!-- ============ 10. SETUP ============ -->
+    <section class="section" aria-label="Setup and links">
+      <div class="section-title">
+        <span class="kicker">Setup</span>
+        <h2>Definitions the report draws on</h2>
+      </div>
+      <div class="grid cols-3">
+        <div class="card row" style="justify-content:space-between">
+          <div><h3>Logframe</h3><div class="sub">3 outcomes · 5 outputs · 14 indicators (2 archived)</div></div>
+          <span class="badge neutral">Open →</span>
+        </div>
+        <div class="card row" style="justify-content:space-between">
+          <div><h3>Donor templates</h3><div class="sub">2 reviewed · 1 used as default for quarterly</div></div>
+          <span class="badge neutral">Open →</span>
+        </div>
+        <div class="card row" style="justify-content:space-between">
+          <div><h3>Reporting profile</h3><div class="sub">Auto-create on · second approver required</div></div>
+          <span class="badge neutral">Open →</span>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<button class="btn-secondary theme-toggle" id="theme-toggle" type="button">Dark / light</button>
+
+<script>
+  document.getElementById("theme-toggle").addEventListener("click", () => document.body.classList.toggle("dark"));
+  const notesBtn = document.getElementById("notes-toggle");
+  notesBtn.addEventListener("click", () => {
+    const on = document.body.classList.toggle("notes");
+    notesBtn.textContent = on ? "Hide design notes" : "Show design notes";
+  });
+</script>
+</body>
+</html>
