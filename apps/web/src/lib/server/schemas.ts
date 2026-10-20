@@ -154,6 +154,7 @@ export const TeamMemberSchema = z.object({
   email: z.string(),
   role: z.string(),
   status: z.string(),
+  external: z.boolean().default(false),
 });
 
 export const TeamResponseSchema = z.object({ items: z.array(TeamMemberSchema) });
@@ -1603,3 +1604,22 @@ export const RequirementPacksResponseSchema = z.object({
   })),
 });
 
+
+const FundedProjectSchema = z.object({
+  id: z.string(), title: z.string(), status: z.string(),
+  budget: z.object({ amount: z.union([z.number(), z.string()]), currency: z.string() }).optional(),
+});
+const FundingTotalsSchema = z.object({
+  projectCount: z.number(), activeProjectCount: z.number(),
+  budgetByCurrency: z.record(z.string(), z.number()), awardedByCurrency: z.record(z.string(), z.number()),
+});
+const GrantSchema = z.object({
+  id: z.string(), title: z.string(), donorName: z.string(), awardNumber: z.string().optional(), amount: z.string().optional(), currency: z.string().optional(),
+  startDate: z.string().optional(), endDate: z.string().optional(), status: z.string(), programmeId: z.string().optional(),
+});
+export const FundingResponseSchema = z.object({
+  programmes: z.array(z.object({ id: z.string(), name: z.string(), code: z.string().optional(), description: z.string().optional(), status: z.string(), grants: z.array(GrantSchema), projects: z.array(FundedProjectSchema), totals: FundingTotalsSchema })),
+  looseGrants: z.array(GrantSchema.extend({ projects: z.array(FundedProjectSchema), totals: FundingTotalsSchema })),
+  unplacedProjects: z.array(FundedProjectSchema),
+});
+export type FundingResponse = z.infer<typeof FundingResponseSchema>;

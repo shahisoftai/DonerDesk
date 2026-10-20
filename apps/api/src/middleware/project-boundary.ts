@@ -73,16 +73,26 @@ export async function projectOf(prisma: Record<string, unknown>, scope: ScopeLoo
   }
 }
 
-export async function projectBoundaryMiddleware(req: FastifyRequest, _reply: FastifyReply) {
-  if (req.tenant.role === "ADMIN") return;
-  const scope = projectScopeOf(req.url);
-  if (!scope) return;
-  const prisma = req.container.prisma as unknown as Record<string, unknown> & {
-    projectMember: { findFirst(args: unknown): Promise<unknown | null> };
-    project: { findFirst(args: unknown): Promise<{ projectManagerId: string | null; meOfficerId: string | null; reportingOfficerId: string | null } | null> };
-  };
-  const projectId = await projectOf(prisma, scope);
-  if (!projectId) return;
+type Db = Record<string, unknown> & {
+  projectMember: { findFirst(args: unknown): Promise<unknown | null> };
+  project: { findFirst(args: unknown): Promise<{ projectManagerId: string | null; meOfficerId: string | null; reportingOfficerId: string | null } | null> };
+};
+
+/** Projects named in a JSON request body: `projectId` itself, and the project of a `reportingPeriodId` or `indicatorId`. */
+export function bodyScopes(body: unknown): ScopeLookup[] {
+  if (!body || typeof body !== "object") return [];
+  const b = body as Record<string, unknown>;
+  const scopes: ScopeLookup[] = [];
+  if (typeof b.projectId === "string" && b.projectId) scopes.push({ kind: "project", id: b.projectId });
+  if (typeof b.reportingPeriodId === "string" && b.reportingPeriodId) scopes.push({ kind: "entity", entity: "reportingPeriod", id: b.reportingPeriodId });
+  if (typeof b.indicatorId === "string" && b.indicatorId) scopes.push({ kind: "entity", entity: "indicator", id: b.indicatorId });
+  return scopes;
+}
+
+/** Throws "not found" unless the person is on the project (administrators always are). Used by the middleware and by routes that read the project from a multipart body. */
+export async function assertProjectAccess(req: FastifyRequest, projectId: string | undefined): Promise<void> {
+  if (!projectId || req.tenant.role === "ADMIN") return;
+  const prisma = req.container.prisma as unknown as Db;
   const tenantId = req.tenant.tenantId.toString();
   const userId = req.tenant.userId;
   const member = await prisma.projectMember.findFirst({ where: { tenantId, projectId, userId, status: "ACTIVE" }, select: { id: true } });
@@ -91,4 +101,17 @@ export async function projectBoundaryMiddleware(req: FastifyRequest, _reply: Fas
   if (!project) return; // not found: the handler answers
   if ([project.projectManagerId, project.meOfficerId, project.reportingOfficerId].includes(userId)) return;
   throw DomainError.notFound("Project", projectId);
+}
+
+export async function projectBoundaryMiddleware(req: FastifyRequest, _reply: FastifyReply) {
+  if (req.tenant.role === "ADMIN") return;
+  const scopes: ScopeLookup[] = [];
+  const fromPath = projectScopeOf(req.url);
+  if (fromPath) scopes.push(fromPath);
+  scopes.push(...bodyScopes(req.body));
+  const prisma = req.container.prisma as unknown as Db;
+  for (const scope of scopes) {
+    const projectId = await projectOf(prisma, scope);
+    await assertProjectAccess(req, projectId ?? undefined);
+  }
 }

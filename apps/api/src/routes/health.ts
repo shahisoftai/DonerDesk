@@ -11,6 +11,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "IndicatorUpdate", field: "reviewNote" },
   { model: "EvidenceFile", field: "textExtractionStatus" },
   { model: "User", field: "lockedUntil" },
+  { model: "User", field: "external" },
   { model: "JobOutbox", field: "nextAttemptAt" },
   { model: "ActivityUpdate", field: "supersededById" },
   { model: "ActivityUpdate", field: "activityEndDate" },

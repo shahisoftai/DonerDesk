@@ -19,6 +19,8 @@ export interface UserProps {
   failedLoginCount?: number;
   /** Sign-in is refused until this time. */
   lockedUntil?: Date | null;
+  /** An outside implementing partner (limited access; see the external-access rules in the api). */
+  external?: boolean;
 }
 
 export class User extends Entity<UserId> {
@@ -39,6 +41,7 @@ export class User extends Entity<UserId> {
     passwordHash: string;
     role: Role;
     assignedProjectIds?: string[];
+    external?: boolean;
   }): User {
     if (!input.name || input.name.trim().length < 2) throw DomainError.validation("User name required");
     return new User(input.id, input.tenantId, {
@@ -48,6 +51,7 @@ export class User extends Entity<UserId> {
       role: input.role,
       status: "INVITED",
       assignedProjectIds: input.assignedProjectIds ?? [],
+      external: input.external === true,
     });
   }
 
@@ -70,6 +74,7 @@ export class User extends Entity<UserId> {
   get passwordChangedAt(): Date | null { return this.props.passwordChangedAt ?? null; }
   get failedLoginCount(): number { return this.props.failedLoginCount ?? 0; }
   get lockedUntil(): Date | null { return this.props.lockedUntil ?? null; }
+  get external(): boolean { return this.props.external === true; }
 
   /** The end of the lock if one is in force at `now`, else null. */
   lockedAt(now: Date): Date | null {

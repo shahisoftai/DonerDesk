@@ -20,8 +20,11 @@ export function TeamPanel({
   members,
   capabilities,
   pendingInvitations = [],
+  projects = [],
 }: {
   members: TeamMember[];
+  /** Projects an outside partner can be given. */
+  projects?: Array<{ id: string; title: string }>;
   pendingInvitations?: PendingInvitation[];
   capabilities: readonly Capability[];
 }) {
@@ -33,6 +36,8 @@ export function TeamPanel({
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("FIELD_OFFICER");
   const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [inviteExternal, setInviteExternal] = useState(false);
+  const [inviteProjects, setInviteProjects] = useState<string[]>([]);
   const [roleChange, setRoleChange] = useState<{ user: TeamMember; target: string } | null>(null);
   const [localErrors, setLocalErrors] = useState<Record<string, string[]>>({});
 
@@ -60,12 +65,13 @@ export function TeamPanel({
     e.preventDefault();
     const next: Record<string, string[]> = {};
     if (!inviteEmail.trim()) next.email = ["Email is required."];
+    if (inviteExternal && inviteProjects.length === 0) next.projects = ["Choose at least one project. A partner sees nothing else."];
     if (Object.keys(next).length > 0) {
       setLocalErrors(next);
       return;
     }
     setLocalErrors({});
-    const result = await actionState.run(() => inviteUserAction({ email: inviteEmail.trim(), role: inviteRole, projectIds: [] }));
+    const result = await actionState.run(() => inviteUserAction({ email: inviteEmail.trim(), role: inviteExternal && inviteRole !== "VIEWER" ? "FIELD_OFFICER" : inviteRole, projectIds: inviteExternal ? inviteProjects : [], external: inviteExternal }));
     if (result) {
       setInviteToken(result.token);
       setInviteEmail("");
@@ -103,11 +109,30 @@ export function TeamPanel({
             </Field>
             <Field label="Role" htmlFor="invite-role" error={fields.role?.[0]}>
               <Select id="invite-role" value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}>
-                {ROLE_OPTIONS.map((r) => (
+                {ROLE_OPTIONS.filter((r) => !inviteExternal || r === "FIELD_OFFICER" || r === "VIEWER").map((r) => (
                   <option key={r} value={r}>{ROLE_LABEL[r as keyof typeof ROLE_LABEL] ?? r}</option>
                 ))}
               </Select>
             </Field>
+          </div>
+          <div>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" className="mt-1" checked={inviteExternal} onChange={(e) => { setInviteExternal(e.target.checked); if (e.target.checked && inviteRole !== "VIEWER") setInviteRole("FIELD_OFFICER"); }} />
+              <span><strong>Outside partner.</strong> Someone from another organization who reports on, or reads, only the projects you choose. They cannot see the rest of your organization.</span>
+            </label>
+            {inviteExternal && (
+              <Field label="Projects they may see" htmlFor="invite-projects" error={fields.projects?.[0]}>
+                <div id="invite-projects" role="group" className="max-h-40 space-y-1 overflow-auto rounded border border-slate-200 p-2 dark:border-white/10">
+                  {projects.length === 0 && <p className="text-xs text-slate-500">There are no projects to choose from yet.</p>}
+                  {projects.map((p) => (
+                    <label key={p.id} className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={inviteProjects.includes(p.id)} onChange={(e) => setInviteProjects((cur) => (e.target.checked ? [...cur, p.id] : cur.filter((x) => x !== p.id)))} />
+                      {p.title}
+                    </label>
+                  ))}
+                </div>
+              </Field>
+            )}
           </div>
           <div className="flex justify-end">
             <Button type="submit" size="sm" pending={actionState.busy}>Send invite</Button>
@@ -184,6 +209,7 @@ export function TeamPanel({
                 <td className="px-3 py-2">{ROLE_LABEL[u.role as keyof typeof ROLE_LABEL] ?? u.role}</td>
                 <td className="px-3 py-2">
                   <Badge tone={u.status === "ACTIVE" ? "success" : u.status === "INVITED" ? "info" : "warning"}>{u.status.replace(/_/g, " ")}</Badge>
+                  {u.external ? <Badge tone="neutral">Outside partner</Badge> : null}
                 </td>
                 {canManage && (
                   <td className="px-3 py-2 text-right">

@@ -831,6 +831,42 @@ the known pgvector column.
 `EvidenceFile.textExtractionStatus`; ship api, web and workers together (`SCOPE=both`); install the audit-verify timer by hand
 (`deploy-fast.sh` does not install units).
 
+
+---
+
+## 14. The High findings (H-1 to H-21): status after batch 3 (2026-10-21)
+
+Built, tested and committed; **deployed only once §14.1 records it**.
+
+| # | Status | What changed |
+|---|---|---|
+| H-1 | ✅ built | Logframe versioning: `LogframeVersion` snapshot per framework change (decorator `withLogframeVersioning`, project found before the call), plain-language diff, sign-off, history page; the approval audit names the framework version |
+| H-2 | ✅ built | `Programme` and `Grant` tables; `Project.programmeId/grantId` written only by `PrismaFundingRepository.placeProject` (never `Project.update`); `/programmes`; totals keep currencies apart. The donor stays free text on a project that is not placed |
+| H-3 | ✅ (batch 2) | Atomic audit + nightly verification |
+| H-4 | ✅ built | APPROVED/SUBMITTED/CLOSED lock a period's figures (`isPeriodLocked`); reopening is the audited correction path; the entry grid says so |
+| H-5 | ✅ (batch 2) | Report notifications |
+| H-6 | ✅ (batch 1) | Orphaned suites in CI |
+| H-7 | ✅ partly | Offline corpus in CI (batch 1); **nightly live run** `ai-live-eval.yml` + `apps/workers/scripts/live_eval.py` (needs the `AI_EVAL_API_KEY` secret and `AI_EVAL_PROVIDER`/`AI_EVAL_MODEL` variables; non-gating by design) |
+| H-8 | ✅ built | Donor `requiredTables` checked in worker and TS mirror as a named warning (never a blocker: tables are built deterministically) |
+| H-9 | ✅ built | `VARIANCE_UNEXPLAINED` checklist item: a closing report whose result is >20% unfavourably off target, until the story explains it |
+| H-10 | ✅ built | The pinned template's required annexes are a `TEMPLATE` layer in the resolver; `/settings/requirement-packs` authoring screen. Compliance statements stay checklist items |
+| H-11 | ✅ built | Admin whole-organisation ZIP (NDJSON per table, optional evidence files); every tenant table is exported or excluded with a reason (tested) |
+| H-12 | ✅ partly | 12-char policy at sign-up and invitation, durable lockout, role/status re-checked per request. **MFA is not built** |
+| H-13 | decided | Closed by C-5 for the donor seal; section approval is an assurance step. The second-approver rule stays opt-in because it blocks one-person teams |
+| H-14 | ✅ built | Project membership is an access boundary for project, entity and body-borne project ids (multipart uploads checked in the route) |
+| H-15 | ✅ built | Outside partners: `User.external`, FIELD_OFFICER/VIEWER only, named projects, strict route allow-list, files only from their projects. No new role. The web shows the full menu; screens outside the allow-list answer "not part of your account" |
+| H-16 | ✅ document | `memorybank/docs/security/assurance-readiness.md` |
+| H-17 | ✅ built | `real-stack.test.mjs` (real container + Postgres: sign-up → project → framework → period → value → verification → lock → audit chain → export) and the DB-backed repository tests run in CI |
+| H-18 | ✅ (this batch) | `JobOutbox` retry with backoff and dead-letter |
+| H-19 | ✅ (this batch) | AI cost, usage page, spend alert |
+| H-20, H-21 | ✅ | Parser statuses; worker errors no longer leak |
+| SE-09 | ✅ document | `memorybank/docs/runbooks/incident-response.md` (severity model, 72-hour workflow, breach register). Confirm the `privacy@` mailbox exists, then run the drill once |
+| C-8 | **open** | Needs your browser check: `memorybank/docs/marketing/phase28-publish-pack.md` |
+
+**Still not built:** MFA for tenant users; OCR; application-level encryption of evidence at rest; off-host backup copy; partner-specific screens (the web menu is unchanged); atomic audit beyond `ATOMIC_HANDLERS`.
+
+**Deploy:** migrations `20261021160000_login_lockout`, `20261021170000_job_outbox`, `20261021180000_logframe_versions`, `20261021190000_programmes_and_grants`, `20261021200000_external_partners` (all additive; apply before the code), then re-run `infra/postgres/rls.sql` (adds `JobOutbox`, `LogframeVersion`, `Programme`, `Grant`); `/ready` requires `User.lockedUntil`, `User.external`, `JobOutbox.nextAttemptAt`. Optional env: `LLM_PRICES_JSON`, `AI_MONTHLY_COST_ALERT_USD`, `JOB_RETRY_INTERVAL_MS`.
+
 ---
 
 ## 12. Production deployment — 2026-10-20

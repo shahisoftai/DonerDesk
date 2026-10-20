@@ -51,6 +51,17 @@ jobs:
       # never ran them. They are part of the gate.
       - run: pnpm --filter @donordesk/web test:unit
       - run: pnpm --filter @donordesk/infrastructure test:journey
+      # The core reporting workflow on the real stack (real container, real Postgres, no fakes), and the repositories whose
+      # correctness only shows against a database: the unit of work, the job retry store, funding and the organisation export.
+      - run: pnpm --filter @donordesk/infrastructure test:journey-db
+        env:
+          UOW_VERIFY_DATABASE_URL: postgresql://donordesk:donordesk-dev@localhost:5432/donordesk
+      - run: >-
+          pnpm --filter @donordesk/infrastructure exec node --test
+          test/unit-of-work.integration.test.mjs test/failed-jobs.integration.test.mjs
+          test/funding.integration.test.mjs test/organization-export.test.mjs
+        env:
+          UOW_VERIFY_DATABASE_URL: postgresql://donordesk:donordesk-dev@localhost:5432/donordesk
       - run: pnpm --filter @donordesk/infrastructure reporting:eval
       - run: pnpm --filter @donordesk/infrastructure ai:eval
       # Lint runs after the tests so a test failure is reported before a style

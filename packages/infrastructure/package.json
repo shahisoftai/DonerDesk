@@ -30,6 +30,7 @@
     "superadmin:bootstrap": "node dist/platform/bootstrap-cli.js",
     "embedding:backfill": "node dist/llm/embedding-backfill-cli.js",
     "postinstall": "prisma generate",
+    "test:journey-db": "node --test test/journey/real-stack.test.mjs",
     "test:journey": "node --test test/journey/*.test.mjs",
     "db:migrate:deploy": "tsx src/db/migrate-deploy.ts"
   },

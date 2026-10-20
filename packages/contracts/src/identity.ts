@@ -113,6 +113,8 @@ export const InviteUserSchema = z.object({
   email: EmailSchema,
   role: RoleSchema,
   projectIds: z.array(z.string()).default([]),
+  /** An outside implementing partner: sees only the listed projects, and only through a limited set of screens. */
+  external: z.boolean().default(false),
 });
 export type InviteUserInput = z.infer<typeof InviteUserSchema>;
 

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { assertProjectAccess } from "../middleware/project-boundary.js";
 import { registerParseFileRoute } from "./parse-file.js";
 import { EvidenceSearchSchema, AcceptEvidenceTagsSchema, ImportEvidenceTextSchema, SetEvidencePeriodSchema, BulkVerifyEvidenceSchema } from "@donordesk/contracts";
 import { buildEvidenceTemplate, EVIDENCE_TEMPLATE_FILENAME } from "@donordesk/infrastructure";
@@ -25,6 +26,8 @@ export async function registerEvidenceRoutes(app: FastifyInstance) {
     if (!data) throw new Error("file required");
     const buffer = await data.toBuffer();
     const fields = data.fields as Record<string, { value?: string } | undefined>;
+    // The project is in the multipart body, so the membership check the middleware does for paths and JSON is done here.
+    await assertProjectAccess(req, fields.projectId?.value);
     const payload = {
       projectId: fields.projectId?.value,
       title: fields.title?.value,

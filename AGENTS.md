@@ -401,3 +401,17 @@ in-process default), stub LLM (dev default), pino logs, console email.
 - **Whether a file's words were read is `assessTextExtraction`** (domain) / `assess_extraction` (worker), one rule with one message table, kept in lockstep. Every `…/parse-file` route is `registerParseFileRoute`; a parser result with no readable text is a refusal with a plain sentence, never an empty box and never the technical error. Evidence carries `textExtractionStatus/Note`, set by the persist-tags callback.
 - **Audit chain verification is scheduled** (`donordesk-audit-verify.timer`, `audit:verify --all`, exit 1 on a break). Runbook: `memorybank/docs/runbooks/audit-verification.md`.
 - Deploy: migrations `20261021140000_indicator_update_review_note`, `20261021150000_evidence_text_extraction_status` (additive, before the code); `/ready` requires `IndicatorUpdate.reviewNote`, `EvidenceFile.textExtractionStatus`; install the audit-verify units by hand.
+
+## Audit High findings batch 3 invariants (2026-10-21; see `memorybank/imp/product-gap-audit-2026-10-20.md` §14)
+- **A project is reached through membership.** `project-boundary.ts` checks the project named in a path, in an entity route (`ENTITY_ROUTES`) or in a JSON body (`bodyScopes`); a multipart body is checked in its route with `assertProjectAccess`. Denied = "not found". A new entity route that carries a record id belongs in `ENTITY_ROUTES`.
+- **An outside partner is `User.external`, not a role.** FIELD_OFFICER or VIEWER, named projects only (invitation `projectIds` become `ProjectMember` rows on accept), and only the routes in `EXTERNAL_ALLOWED` (`external-access.ts`; a route added later is closed to partners until listed, and every listed route must also have a normal rule).
+- **Approved figures do not change under a report.** `isPeriodLocked` (APPROVED/SUBMITTED/CLOSED) is checked by every indicator-value write; the correction path is `ReopenReportHandler`.
+- **The framework has a memory.** Every handler that changes it is wrapped by `withLogframeVersioning` in the container; add a new one there. A save that changes nothing writes no version (`contentHash`).
+- **Project funding placement is written only by `PrismaFundingRepository.placeProject`.** `Project.update` must never write `programmeId`/`grantId`.
+- **Sign-in is throttled in the database** (`User.failedLoginCount/lockedUntil`, `login-lockout.ts`); a reset or good sign-in clears it. Passwords for new accounts follow `PasswordPolicy` (12+).
+- **A job that cannot be queued is kept** (`JobOutbox`, `JobRetryRunner`, api loop `JOB_RETRY_INTERVAL_MS`); timestamps in raw SQL are converted to UTC explicitly (the host is CEST).
+- **AI cost is estimated** (`llm-pricing.ts`, `LLM_PRICES_JSON` overrides; an unpriced model costs 0 and is reported unpriced). The built-in `glm-5.3-flash` rate is an estimate from third-party summaries.
+- **The organisation export lists every tenant table** unless `ORG_EXPORT_EXCLUDED` gives a reason (test-enforced); secrets are never exported.
+- **DB-backed tests run in CI** (`test:journey-db` and the integration files, `UOW_VERIFY_DATABASE_URL`). A `"use server"` file may only export async functions: put schemas in `lib/server/schemas.ts`.
+- Deploy: migrations `20261021160000`–`20261021200000` (login_lockout, job_outbox, logframe_versions, programmes_and_grants, external_partners), then re-run `rls.sql`; `/ready` requires `User.lockedUntil`, `User.external`, `JobOutbox.nextAttemptAt`.
+

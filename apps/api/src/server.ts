@@ -11,6 +11,7 @@ import { authMiddleware } from "./middleware/auth.js";
 import { authorizationMiddleware } from "./middleware/authorization.js";
 import { checkAiSpend } from "@donordesk/infrastructure";
 import { projectBoundaryMiddleware } from "./middleware/project-boundary.js";
+import { externalAccessMiddleware } from "./middleware/external-access.js";
 import { dataResidencyMiddleware } from "./middleware/data-residency.js";
 import { idempotencyBegin, idempotencyFinish } from "./middleware/idempotency.js";
 import { registerAuthRoutes } from "./routes/auth.js";
@@ -50,7 +51,7 @@ import { registerCollaborationWebSocket } from "./websocket/register.js";
 
 declare module "fastify" {
   interface FastifyRequest {
-    tenant: { tenantId: TenantId; userId: string; role: Role; email: string; name: string };
+    tenant: { tenantId: TenantId; userId: string; role: Role; email: string; name: string; external?: boolean };
     requestId: string;
     container: ReturnType<typeof createContainer>;
   }
@@ -167,6 +168,7 @@ export async function buildServer(): Promise<FastifyInstance> {
       req.container = createContainer({ tenantId: req.tenant.tenantId.toString() });
     });
     instance.addHook("preHandler", authorizationMiddleware);
+    instance.addHook("preHandler", externalAccessMiddleware);
     instance.addHook("preHandler", projectBoundaryMiddleware);
     instance.addHook("preHandler", dataResidencyMiddleware);
     instance.addHook("preHandler", idempotencyBegin);

@@ -1,7 +1,7 @@
 import { requireSession } from "@/lib/server/auth-context";
 import { hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { PendingInvitationsResponseSchema, TeamResponseSchema } from "@/lib/server/schemas";
+import { PendingInvitationsResponseSchema, TeamResponseSchema, ProjectsResponseSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
 import { TeamPanel } from "@/features/team/presentation/TeamPanel";
 
@@ -33,6 +33,7 @@ export default async function TeamPage() {
 
   // Outstanding invitations are a convenience beside the team; the page works without them.
   const pending = await gatewayRequest("/v1/users/invitations", PendingInvitationsResponseSchema, ctx.token);
+  const projects = await gatewayRequest("/v1/projects", ProjectsResponseSchema, ctx.token);
 
   return (
     <div className="animate-fade-in">
@@ -42,6 +43,7 @@ export default async function TeamPage() {
           pendingInvitations={pending.ok ? pending.value.items : []}
           members={result.value.items}
           capabilities={Array.from(ctx.capabilities)}
+          projects={projects.ok ? projects.value.items.map((p) => ({ id: p.id, title: p.title })) : []}
         />
       </div>
     </div>

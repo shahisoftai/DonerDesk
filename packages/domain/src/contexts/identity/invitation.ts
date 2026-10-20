@@ -12,6 +12,7 @@ export interface InvitationProps {
   expiresAt: Date;
   acceptedAt?: Date;
   projectIds: string[];
+  external?: boolean;
 }
 
 export class Invitation extends Entity<string> {
@@ -32,6 +33,7 @@ export class Invitation extends Entity<string> {
     invitedById: string;
     token: string;
     projectIds?: string[];
+    external?: boolean;
     ttlDays?: number;
   }): Invitation {
     const ttl = input.ttlDays ?? 7;
@@ -42,6 +44,7 @@ export class Invitation extends Entity<string> {
       token: input.token,
       expiresAt: new Date(Date.now() + ttl * 24 * 60 * 60 * 1000),
       projectIds: input.projectIds ?? [],
+      external: input.external === true,
     });
   }
 
@@ -61,6 +64,7 @@ export class Invitation extends Entity<string> {
   get expiresAt(): Date { return new Date(this.props.expiresAt.getTime()); }
   get acceptedAt(): Date | undefined { return this.props.acceptedAt; }
   get projectIds(): string[] { return [...this.props.projectIds]; }
+  get external(): boolean { return this.props.external === true; }
 
   isExpired(): boolean {
     return this.props.expiresAt.getTime() < Date.now();

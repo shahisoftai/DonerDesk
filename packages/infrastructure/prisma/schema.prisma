@@ -166,6 +166,8 @@ model User {
   passwordChangedAt DateTime?
   failedLoginCount Int @default(0)
   lockedUntil   DateTime?
+  /// An outside implementing partner: reaches only the projects they are a member of, through an allow-listed set of routes.
+  external      Boolean  @default(false)
   /// How the person wants to be emailed: DAILY_SUMMARY (default), URGENT_ONLY, NEVER.
   emailSummaryMode String @default("DAILY_SUMMARY")
   createdAt     DateTime @default(now())
@@ -202,6 +204,7 @@ model Invitation {
   token         String   @unique
   expiresAt     DateTime
   acceptedAt    DateTime?
+  external   Boolean  @default(false)
   projectIds    String   @default("[]")
   createdAt     DateTime @default(now())
 
@@ -269,6 +272,9 @@ model Project {
   /// Admin setting: false hides the work plan screens and keeps the data.
   showWorkPlanning      Boolean  @default(true)
   timeZone              String?
+  /// Optional funding hierarchy (programme > grant > project); managed by the funding repository, never by Project.update.
+  programmeId           String?
+  grantId               String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -1830,5 +1836,42 @@ model LogframeVersion {
 
   @@unique([tenantId, projectId, version])
   @@index([tenantId, projectId])
+}
+
+/// A programme groups related grants and projects (a country programme, a thematic portfolio).
+model Programme {
+  id          String   @id
+  tenantId    String
+  name        String
+  code        String?
+  description String?
+  status      String   @default("ACTIVE") // ACTIVE | CLOSED
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+/// A funding award: who funds, how much, for how long. Projects delivered under it point at it.
+model Grant {
+  id          String    @id
+  tenantId    String
+  programmeId String?
+  title       String
+  donorName   String
+  awardNumber String?
+  amount      String? // decimal string, with currency
+  currency    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      String    @default("ACTIVE") // ACTIVE | CLOSED
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, programmeId])
 }
 

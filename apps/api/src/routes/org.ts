@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema } from "@donordesk/contracts";
+import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema, SaveProgrammeSchema, SaveGrantSchema, PlaceProjectSchema } from "@donordesk/contracts";
 import { isTruthyFlag } from "@donordesk/infrastructure";
 
 // Resolved once per process, mirroring container.ts's own read of the same
@@ -55,6 +55,48 @@ export async function registerOrgRoutes(app: FastifyInstance) {
     reply.header("content-disposition", `attachment; filename="${r.value.fileName}"`);
     reply.header("cache-control", "private, no-store");
     return reply.send(r.value.stream);
+  });
+
+  // Programmes > grants > projects: the funding hierarchy and what each level adds up to.
+  app.get("/v1/funding", async (req) => {
+    const r = await req.container.handlers.listFunding.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/programmes", async (req) => {
+    const body = SaveProgrammeSchema.parse(req.body);
+    const r = await req.container.handlers.saveProgramme.handle({ tenant: req.tenant, requestId: req.id }, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/programmes/:id", async (req) => {
+    const body = SaveProgrammeSchema.parse(req.body);
+    const r = await req.container.handlers.saveProgramme.handle({ tenant: req.tenant, requestId: req.id }, { ...body, id: (req.params as { id: string }).id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/grants", async (req) => {
+    const body = SaveGrantSchema.parse(req.body);
+    const r = await req.container.handlers.saveGrant.handle({ tenant: req.tenant, requestId: req.id }, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/grants/:id", async (req) => {
+    const body = SaveGrantSchema.parse(req.body);
+    const r = await req.container.handlers.saveGrant.handle({ tenant: req.tenant, requestId: req.id }, { ...body, id: (req.params as { id: string }).id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/projects/:projectId/funding", async (req) => {
+    const body = PlaceProjectSchema.parse(req.body);
+    const r = await req.container.handlers.placeProject.handle({ tenant: req.tenant, requestId: req.id }, (req.params as { projectId: string }).projectId, body);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.put("/v1/organization", async (req) => {

@@ -10,6 +10,7 @@ export * from "./contexts/projects/index.js";
 export * from "./contexts/templates/index.js";
 export * from "./contexts/logframe/index.js";
 export * from "./contexts/evidence/index.js";
+export * from "./contexts/funding/index.js";
 export * from "./contexts/activities/index.js";
 export * from "./contexts/reporting/index.js";
 export * from "./contexts/compliance/index.js";

@@ -76,3 +76,32 @@ export const UpdateProjectSchema = z
     }
   });
 export type UpdateProjectInput = z.infer<typeof UpdateProjectSchema>;
+
+/** Programmes group grants and projects (see the funding module in the domain). Text is cleaned by the domain, not here. */
+export const SaveProgrammeSchema = z.object({
+  name: z.string().max(200),
+  code: z.string().max(60).optional(),
+  description: z.string().max(4000).optional(),
+  status: z.enum(["ACTIVE", "CLOSED"]).optional(),
+});
+export type SaveProgrammeInput = z.infer<typeof SaveProgrammeSchema>;
+
+export const SaveGrantSchema = z.object({
+  title: z.string().max(300),
+  donorName: z.string().max(200),
+  programmeId: z.string().max(100).optional(),
+  awardNumber: z.string().max(100).optional(),
+  amount: z.string().max(40).optional(),
+  currency: z.string().max(8).optional(),
+  startDate: z.string().max(40).optional(),
+  endDate: z.string().max(40).optional(),
+  status: z.enum(["ACTIVE", "CLOSED"]).optional(),
+});
+export type SaveGrantInput = z.infer<typeof SaveGrantSchema>;
+
+/** Where a project sits; `null` takes it out. A grant that belongs to a programme brings the programme with it. */
+export const PlaceProjectSchema = z.object({
+  programmeId: z.string().max(100).nullable().optional(),
+  grantId: z.string().max(100).nullable().optional(),
+});
+export type PlaceProjectInput = z.infer<typeof PlaceProjectSchema>;

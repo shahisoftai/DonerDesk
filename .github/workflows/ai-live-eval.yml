@@ -1,0 +1,42 @@
+name: ai-live-eval
+
+# Nightly, NOT a merge gate. Runs the real AI writer pipeline against a real model over fixed scenarios and keeps the
+# report, so a prompt or provider regression shows up as a trend instead of in a customer's report. A model is not
+# deterministic and a provider can be down, so a bad night is information, not a failed build.
+on:
+  schedule:
+    - cron: "41 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-eval:
+    runs-on: ubuntu-latest
+    env:
+      AI_REPORTER_PROVIDER: ${{ vars.AI_EVAL_PROVIDER }}
+      AI_REPORTER_MODEL: ${{ vars.AI_EVAL_MODEL }}
+      AI_REPORTER_API_KEY: ${{ secrets.AI_EVAL_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Skip when no key is configured
+        id: gate
+        run: |
+          if [ -z "$AI_REPORTER_API_KEY" ]; then echo "No AI_EVAL_API_KEY secret; nothing to evaluate."; echo "run=false" >> "$GITHUB_OUTPUT"; else echo "run=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.gate.outputs.run == 'true'
+        run: |
+          python -m venv apps/workers/.venv
+          apps/workers/.venv/bin/pip install -r apps/workers/requirements-dev.txt
+      - if: steps.gate.outputs.run == 'true'
+        continue-on-error: true
+        working-directory: apps/workers
+        run: .venv/bin/python scripts/live_eval.py live-eval.json
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-live-eval-${{ github.run_id }}
+          path: apps/workers/live-eval.json
+          if-no-files-found: ignore

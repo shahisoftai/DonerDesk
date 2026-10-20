@@ -22,7 +22,7 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
     try {
       const row = await req.server.container.prisma.user.findFirst({
         where: { id: user.userId, tenantId: user.tenantId.toString() },
-        select: { passwordChangedAt: true, role: true, status: true },
+        select: { passwordChangedAt: true, role: true, status: true, external: true },
       });
       // The token only proves who signed in. What the person may do is what the directory says now: a demoted,
       // suspended or removed user loses access on the next request, not when the 7-day token expires.
@@ -35,6 +35,7 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
         });
       }
       if (row?.role) req.tenant.role = row.role as typeof req.tenant.role;
+      if (row?.external) req.tenant.external = true;
       if (row?.passwordChangedAt) {
         const floorSeconds = Math.floor(row.passwordChangedAt.getTime() / 1000);
         if (user.iat < floorSeconds) {

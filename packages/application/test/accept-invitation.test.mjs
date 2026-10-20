@@ -198,3 +198,16 @@ test("H-12: a weak password is refused and nothing is created", async () => {
   assert.equal(usersRepo.created.length, 0);
   assert.equal(invitationsRepo.updated, 0);
 });
+
+test("H-15: the projects an invitation names become the new member's project memberships, and the external flag is kept", async () => {
+  const { handler: _unused, usersRepo, invitationsRepo, auth } = handlerFakes();
+  const members = [];
+  const invitation = invitationFixture({ role: "FIELD_OFFICER", projectIds: ["p1", "p2"], external: true });
+  const repo = { ...invitationsRepo, findByToken: async () => ({ ok: true, value: invitation }) };
+  const h = new AcceptInvitationHandler(fakeIds("u"), usersRepo, repo, auth, fakeAudit(), makeEntitlementService([]),
+    { create: async (m) => { members.push(m); return { ok: true, value: m }; } });
+  const result = await h.handle({ token: "token-abc123456", name: "Partner Person", password: "Correct-Horse-9-Battery" });
+  assert.equal(result.ok, true);
+  assert.equal(usersRepo.created[0].external, true);
+  assert.deepEqual(members.map((m) => [m.projectId, m.role, m.userId === result.value.userId]), [["p1", "FIELD_OFFICER", true], ["p2", "FIELD_OFFICER", true]]);
+});

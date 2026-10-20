@@ -1,5 +1,6 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, Email, PasswordPolicy, TenantId, User, UserId } from "@donordesk/domain";
+import { DomainError, Email, PasswordPolicy, ProjectMember, TenantId, User, UserId } from "@donordesk/domain";
+import type { IProjectMemberRepository } from "../../ports/project-members.js";
 import type { Role } from "@donordesk/domain";
 import type { IInvitationRepository, IUserRepository, IAuthProvider } from "../../ports/identity.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -43,6 +44,8 @@ export class AcceptInvitationHandler {
     private readonly auth: IAuthProvider,
     private readonly audit: IAuditLogger,
     private readonly entitlements: EntitlementService,
+    /** With this, the projects an invitation names become the new member's project memberships (what lets them open those projects). */
+    private readonly members?: IProjectMemberRepository,
   ) {}
 
   /** Read-side preview for the accept page: who was invited, where, as what. */
@@ -122,10 +125,22 @@ export class AcceptInvitationHandler {
       passwordHash,
       role: invitation.role,
       assignedProjectIds: invitation.projectIds,
+      external: invitation.external,
     });
     user.activate();
     const created = await this.users.create(user);
     if (!created.ok) return created;
+
+    // The projects the invitation named are the person's projects: membership is what opens a project, and what keeps an
+    // outside partner to exactly those.
+    if (this.members) {
+      for (const projectId of invitation.projectIds) {
+        const member = await this.members.create(
+          ProjectMember.create({ id: this.ids.generate(), tenantId, projectId, userId, role: invitation.role, assignedById: invitation.invitedById }),
+        );
+        if (!member.ok) return member;
+      }
+    }
 
     // Single-use: the aggregate throws on a second accept or an expired one.
     try {
@@ -143,7 +158,7 @@ export class AcceptInvitationHandler {
       eventType: "identity.invitation_accepted",
       entityType: "invitation",
       entityId: invitation.id,
-      newValue: JSON.stringify({ email: invitation.email.toString(), role: invitation.role, invitedById: invitation.invitedById }),
+      newValue: JSON.stringify({ email: invitation.email.toString(), role: invitation.role, invitedById: invitation.invitedById, external: invitation.external }),
     });
 
     const token = await this.auth.sign(

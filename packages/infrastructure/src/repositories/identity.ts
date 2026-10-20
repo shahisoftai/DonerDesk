@@ -178,6 +178,7 @@ export class PrismaUserRepository implements IUserRepository {
           passwordChangedAt: user.passwordChangedAt,
           failedLoginCount: user.failedLoginCount,
           lockedUntil: user.lockedUntil,
+          external: user.external,
         },
       });
       return ok(user);
@@ -201,6 +202,7 @@ export class PrismaUserRepository implements IUserRepository {
           passwordChangedAt: user.passwordChangedAt,
           failedLoginCount: user.failedLoginCount,
           lockedUntil: user.lockedUntil,
+          external: user.external,
         },
       });
       return ok(user);
@@ -276,6 +278,7 @@ export class PrismaUserRepository implements IUserRepository {
     passwordChangedAt?: Date | null;
     failedLoginCount?: number;
     lockedUntil?: Date | null;
+    external?: boolean;
     createdAt: Date;
   }): User {
     return User.rehydrate({
@@ -293,6 +296,7 @@ export class PrismaUserRepository implements IUserRepository {
         passwordChangedAt: row.passwordChangedAt ?? null,
         failedLoginCount: row.failedLoginCount ?? 0,
         lockedUntil: row.lockedUntil ?? null,
+        external: row.external === true,
       },
     });
   }
@@ -314,6 +318,7 @@ export class PrismaInvitationRepository implements IInvitationRepository {
           expiresAt: invitation.expiresAt,
           acceptedAt: invitation.acceptedAt,
           projectIds: JSON.stringify(invitation.projectIds),
+          external: invitation.external,
         },
       });
       return ok(invitation);
@@ -341,6 +346,7 @@ export class PrismaInvitationRepository implements IInvitationRepository {
             expiresAt: row.expiresAt,
             acceptedAt: undefined,
             projectIds: JSON.parse(row.projectIds) as string[],
+            external: row.external === true,
           },
         }),
       ),
@@ -362,6 +368,7 @@ export class PrismaInvitationRepository implements IInvitationRepository {
         expiresAt: row.expiresAt,
         acceptedAt: row.acceptedAt ?? undefined,
         projectIds: JSON.parse(row.projectIds) as string[],
+        external: row.external === true,
       },
     }));
   }

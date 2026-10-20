@@ -113,3 +113,18 @@ export interface IProjectReadinessService {
   compute(projectId: string, tenantId: TenantId): Promise<Result<ProjectReadiness, DomainError>>;
   snapshot(projectId: string, tenantId: TenantId): Promise<Result<ProjectReadinessSnapshot, DomainError>>;
 }
+
+/** Programmes, grants and which project sits under which (see the funding module in the domain). */
+export interface IFundingRepository {
+  listProgrammes(tenantId: TenantId): Promise<Result<import("@donordesk/domain").ProgrammeRecord[]>>;
+  findProgramme(id: string, tenantId: TenantId): Promise<Result<import("@donordesk/domain").ProgrammeRecord | null>>;
+  createProgramme(record: import("@donordesk/domain").ProgrammeRecord): Promise<Result<import("@donordesk/domain").ProgrammeRecord>>;
+  updateProgramme(id: string, tenantId: TenantId, changes: { name: string; code?: string | undefined; description?: string | undefined; status: import("@donordesk/domain").FundingStatus }): Promise<Result<void>>;
+  listGrants(tenantId: TenantId): Promise<Result<import("@donordesk/domain").GrantRecord[]>>;
+  findGrant(id: string, tenantId: TenantId): Promise<Result<import("@donordesk/domain").GrantRecord | null>>;
+  createGrant(record: import("@donordesk/domain").GrantRecord): Promise<Result<import("@donordesk/domain").GrantRecord>>;
+  updateGrant(id: string, tenantId: TenantId, changes: import("@donordesk/domain").CleanGrant): Promise<Result<void>>;
+  /** Where each project of the organisation sits (only projects that are placed). */
+  projectPlacements(tenantId: TenantId): Promise<Result<Map<string, { programmeId: string | null; grantId: string | null }>>>;
+  placeProject(projectId: string, tenantId: TenantId, placement: { programmeId: string | null; grantId: string | null }): Promise<Result<void>>;
+}

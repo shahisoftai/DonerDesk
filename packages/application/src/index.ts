@@ -324,3 +324,4 @@ export * from "./use-cases/activities/get-activity-file-needs.js";
 export * from "./ports/risks.js";
 export * from "./use-cases/risks/risk-handlers.js";
 export * from "./ports/portfolio.js";
+export * from "./use-cases/funding/funding-handlers.js";
