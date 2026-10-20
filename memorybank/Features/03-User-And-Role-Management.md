@@ -99,3 +99,9 @@ Implemented via `packages/application/src/permissions/`:
 ## Notes
 
 User role changes are logged in the audit log per architecture rules. All API mutations write to `audit_events`.
+
+## Batch 3 update (2026-10-21) — outside partners and project access
+
+- An **outside partner** is a field officer or viewer from another organisation, given only named projects ([Feature 28](28-Outside-Partners.md)).
+- Project access follows membership for everyone except administrators, and a removed member gets "not found" for the project ([Feature 31](31-Account-Security-And-Access.md)).
+- A change of role or suspension takes effect on the person's next request.

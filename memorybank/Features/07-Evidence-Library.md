@@ -170,3 +170,10 @@ Report generation only sees evidence attached to an ActivityUpdate/IndicatorUpda
 **Report generation (2026-09-26):** SENSITIVE / HIGHLY_SENSITIVE evidence is withheld from the AI writer (`excludeRestrictedEvidence`), so it is never quoted in donor prose.
 
 Evidence files respect confidentiality levels. The `sensitivityWarning` flag is set by AI tagging. Sensitive evidence should be excluded from export unless intentionally selected per privacy requirements.
+
+## Batch 3 update (2026-10-21) — whether a file's words were read
+
+- Every uploaded file's text is judged **EXTRACTED, EMPTY, FAILED or UNSUPPORTED**. A scanned or damaged file now says so on its evidence page ("The words in this file were not read") instead of looking as if its content is in the system.
+- Import screens (upload, paste or dictate) refuse a file that cannot be read, with a plain sentence, and refuse files over 20 MB before reading them.
+- The worker refuses uploads over 20 MB with HTTP 413.
+- OCR is not built: a scanned PDF is flagged, not read.

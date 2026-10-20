@@ -74,7 +74,7 @@ export function varianceItems(findings: ReadonlyArray<VerifiedFinding>, reportTy
   return offTargetFindings(findings, reportType).map((f) => ({
     type: "VARIANCE_UNEXPLAINED" as const,
     title: `Explain the result for ${f.indicatorCode}`,
-    description: `${f.indicatorCode}${f.indicatorName ? ` (${f.indicatorName})` : ""} finished well away from its target and the report does not yet say why. Add the reason under "What explains results above or below target" in the story.`,
+    description: `${f.indicatorCode}${f.indicatorName ? ` (${f.indicatorName})` : ""} finished well away from its target and the report does not yet say why. Add the reason in the story, under "Why were important targets over or under achieved?".`,
     severity: "MEDIUM" as const,
     relatedEntityType: "indicator",
     relatedEntityId: f.indicatorId,

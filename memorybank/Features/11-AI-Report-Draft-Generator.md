@@ -513,3 +513,8 @@ activities. See Feature 10 "Report types & scope".
 numeric claims. Bare numbers are unchanged. Before this, a section naturally restating an activity date was rejected as `UNGROUNDED_NUMBER` and
 fell back to deterministic text. Also: never title a section "Overview" (worker `outline.py` treats it as an Executive Summary) — see Feature 10.
 
+## Batch 3 update (2026-10-21) — cost, donor tables and warnings
+
+- **Cost:** each draft's estimated provider cost is recorded and shown on the AI usage page, with the month's total; an operator alert fires above a monthly threshold ([Feature 33](33-AI-Cost-And-Usage.md)). The built-in price is an estimate until `LLM_PRICES_JSON` is set.
+- **Donor tables:** when the donor requires a table with specific columns and the section does not contain it, the section carries a named warning. It is not a blocker ([Feature 30](30-Donor-Requirements.md)).
+- **Worker errors** no longer reach the user as raw exception text; the technical reason is logged.

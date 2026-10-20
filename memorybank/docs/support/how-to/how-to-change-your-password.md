@@ -8,12 +8,12 @@
 
 ## If you forgot it
 
-Use **Forgot password** on the sign-in page. The reset link expires after 60 minutes. See [How to log in](/support/how-to/log-in).
+Use **Forgot your password?** on the sign-in page. The reset link expires after 60 minutes. See [How to log in](/support/how-to/log-in).
 
 ## Tips
 
 - Use a long, unique password. A password manager helps.
-- If you signed up with Google, you can still set a DonorDesk password through **Forgot password**.
+- If you signed up with Google, you can still set a DonorDesk password through **Forgot your password?**.
 - If you suspect someone else has access, change your password immediately and tell your Admin.
 
 DonorDesk does not currently offer two-factor authentication.

@@ -6,7 +6,7 @@ DonorDesk explains problems in plain language on the page. This guide lists the 
 
 | Message | What to do |
 |---|---|
-| Invalid credentials | Check email and password or use **Forgot password**. |
+| Invalid credentials | Check email and password or use **Forgot your password?**. |
 | Google Sign-In failed. Please try again… | Retry or use email and password. |
 | The sign-in link expired. | Start sign-in again. |
 | This reset link is invalid or has expired | Request a new reset link (they last 60 minutes). |
@@ -76,3 +76,6 @@ See [Troubleshooting export issues](/support/troubleshooting/export-issues).
 | Could not read the spreadsheet | Share the Google Sheet with the connected Google account. |
 
 If a page shows a **Reference** ID, include it when you contact [support](/support/contact).
+| Too many failed sign-in attempts. Try again in N minutes | Sign-in is paused after five wrong passwords | Wait, or use Forgot password |
+| The words in this file were not read | The file could not be read (scan, damaged or unsupported) | Paste the text, or upload a fresh copy |
+| This report's figures are locked | The report is approved, submitted or closed | Reopen the report to correct them |

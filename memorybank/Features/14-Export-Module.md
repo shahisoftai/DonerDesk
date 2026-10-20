@@ -145,3 +145,7 @@ type ExportType =
 Export history is retained per reliability requirements. AI failures should not block manual report editing.
 
 Sensitive evidence is included only when intentionally selected per privacy requirements.
+
+## Batch 3 update (2026-10-21) — whole-organisation export
+
+- Report exports are unchanged. For everything the organisation holds, administrators use **Take your data with you** on the Settings page ([Feature 29](29-Organisation-Export.md)).

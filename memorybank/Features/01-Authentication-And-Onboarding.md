@@ -117,3 +117,9 @@ Steps:
 ## Notes
 
 The `LlmModel` and `LlmPrompt` tables are global (no `tenantId`) and intentionally not RLS-tenant-isolated per `memorybank/pending.md`.
+
+## Batch 3 update (2026-10-21) — password rules and sign-in lockout
+
+- New passwords (sign-up, invitation, change, reset) need **12+ characters**, three of four character classes, no spaces. Earlier 8-character passwords still work until changed.
+- **Five wrong passwords in a row lock sign-in for 15 minutes**; a reset or a correct sign-in clears the count. An unknown address gets the same message as a wrong password.
+- Details and limits: [Feature 31](31-Account-Security-And-Access.md). MFA is not built.

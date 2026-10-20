@@ -342,3 +342,7 @@ Plan: [`imp/REPORT-TYPE-QUALITY-GAPS-IMPLEMENTATION-PLAN.md`](../imp/REPORT-TYPE
 ## Notes
 
 The reporting period is the central context for report generation. All evidence, activity updates, and indicator updates are associated with a reporting period. Indicator data entry (2026-08-16) is a per-period spreadsheet grid — see "Indicator Data Entry" above.
+
+## Batch 3 update (2026-10-21) — locked figures after approval
+
+- Approval, submission and closing lock the period's indicator figures. The inputs page says so and disables editing; reopening the report is the audited way back ([Feature 32](32-Report-Locks-And-Reopening.md)).

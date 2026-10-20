@@ -5,7 +5,7 @@
 Your email or password is wrong.
 
 1. Check for typos, caps lock and extra spaces. Emails are matched to your account exactly.
-2. Reset it with **Forgot password** on the sign-in page. The reset link expires after **60 minutes**.
+2. Reset it with **Forgot your password?** on the sign-in page. The reset link expires after **60 minutes**.
 3. If you were invited but never finished, use your invitation link to set a password.
 
 ## I did not get the password reset email
@@ -33,3 +33,7 @@ Sessions expire. Sign in again. If it happens constantly, clear cookies for dono
 ## Still stuck
 
 Email support@donordesk.online from your registered address with what you see (a screenshot helps). See [Contact support](/support/contact).
+
+## Locked out after several wrong passwords
+
+After five wrong passwords in a row, sign-in to that account pauses for 15 minutes. Wait for the time shown, or use **Forgot your password?** on the sign-in page to set a new password, which clears the pause.

@@ -37,3 +37,7 @@ Fundamentals, donor-specific guides (UNHCR, DG ECHO, USAID, Global Fund, GCF, FC
 
 ## Unpublished (Phase 28 work plan)
 `_unpublished-phase28/` holds nine draft how-tos and references (plan your activities, the timeline, My week, import your plan, asking for work and My Work, problems and risks, comments and files, daily summary and reminders, progress and one-step Done, dependencies/budget/people reached) and a README with the exact edits to apply to existing articles. The features are **deployed**, but the articles are not public yet: they wait for a live browser check with the owner's account. They are not routed, not in `FILE_MAP`, not in `wikiCategories.tsx`. Publish them, and make those edits, once that check passes (checklist in that README).
+
+## Unpublished (batch 3, 2026-10-21)
+`_unpublished-batch3/` holds nine drafts (framework history, programmes and grants, outside partners, taking your data with you, donor requirements, report locks, sign-in and passwords, AI usage and cost, files that could not be read) and a README with the publish checklist. The features are deployed; the articles wait for a browser check on the live site.
+

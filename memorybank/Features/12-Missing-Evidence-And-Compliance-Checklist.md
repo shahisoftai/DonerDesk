@@ -157,3 +157,8 @@ Activity counts for readiness/detection come from `resolvePeriodActivities`. See
 Per `memorybank/pending.md`, the AI checklist detector uses a stub. Critical checklist items must be resolved or accepted before final export.
 
 Dashboard displays "High-risk compliance gaps" as a key metric.
+
+## Batch 3 update (2026-10-21) — result to explain
+
+- A closing report with an indicator more than 20% unfavourably off its target raises **Result to explain** until the story explains it ([Feature 30](30-Donor-Requirements.md)).
+- Jobs that could not be queued are kept and retried, so a checklist item is not lost when the background system is down ([Feature 34](34-Background-Jobs-And-Retries.md)).

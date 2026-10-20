@@ -184,3 +184,9 @@ M&E Officer can update:
 Indicator updates are linked to reporting periods and can have evidence attached. Verification follows the approval workflow pattern.
 
 Phase 20 details: `../imp/Phase20_setup_logframe.md`.
+
+## Batch 3 update (2026-10-21) — framework history and locked figures
+
+- Every change to the framework is kept as a version, with a plain sentence for each change; a manager can sign off the version the donor approved ([Feature 26](26-Logframe-Versioning.md)).
+- Indicator values for an approved, submitted or closed report are locked; reopen the report to correct them ([Feature 32](32-Report-Locks-And-Reopening.md)).
+- The single-value API now keeps a breakdown (it used to drop it silently) and validates it the same way the grid does.

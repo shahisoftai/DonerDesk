@@ -156,3 +156,10 @@ See `../imp/RECOVERY-PLAN-IMPLEMENTATION.md`. Changes to this feature:
 All approval actions are logged to `audit_events` per architecture rules. Every API mutation writes to `audit_events`.
 
 Report approval is required before export. The approval score (10% weight) factors into the readiness score.
+
+## Batch 3 update (2026-10-21) — notifications and the framework version
+
+- Sending a report for review now **tells the project's approvers**; approving or sending it back **tells the author**, with the reviewer's reason ("REPORT_APPROVED" and "REPORT_RETURNED" notifications).
+- The approval record names the framework version in force ([Feature 26](26-Logframe-Versioning.md)).
+- An approved report's figures are locked ([Feature 32](32-Report-Locks-And-Reopening.md)).
+- A reviewer's reason is kept apart from the officer's own note, so saving the grid no longer erases it.

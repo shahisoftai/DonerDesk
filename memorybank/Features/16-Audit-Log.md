@@ -125,3 +125,9 @@ type AuditEventType =
 Per architecture rules: Every API mutation writes to `audit_events`. The outbox pattern is wired in `PrismaAuditRepository.record()`.
 
 RLS policies apply to audit logs - users see only permitted logs based on their role and project assignments.
+
+## Batch 3 update (2026-10-21) — atomic writes, verification and what is recorded
+
+- For sign-off, role, period and indicator-review actions, the audit row and the change are written in **one transaction**: either both happen or neither does.
+- The hash chain is checked **every night** (`donordesk-audit-verify.timer`, 03:41 UTC); a break makes the unit fail and is explained in `memorybank/docs/runbooks/audit-verification.md`.
+- New audited events: `logframe.version.approved`, `organization.exported`, `programme.*`, `grant.*`, `project.funding.placed`, `identity.user.locked`, `identity.user.login_failed`, `report.approved` (with the framework version).

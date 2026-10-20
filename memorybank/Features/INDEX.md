@@ -153,3 +153,20 @@ Dashboard ← Audit Log
     ↑
 Settings
 ```
+
+## Batch 3 features (2026-10-21)
+
+| # | Feature | Status | Source |
+|---|---|---|---|
+| 26 | [Logframe versioning](26-Logframe-Versioning.md) | Built, tested, deployed 2026-10-20; history page browser check pending | H-1 |
+| 27 | [Programmes and grants](27-Programmes-And-Grants.md) | Built, tested, deployed 2026-10-20; browser check pending | H-2 |
+| 28 | [Outside partners](28-Outside-Partners.md) | Built, tested, deployed 2026-10-20; partner screens and trimmed menu open | H-15 |
+| 29 | [Organisation export](29-Organisation-Export.md) | Built, tested, deployed 2026-10-20 | H-11 |
+| 30 | [Donor requirements](30-Donor-Requirements.md) | Built, tested, deployed 2026-10-20; authoring page check pending | H-8, H-9, H-10 |
+| 31 | [Account security and project access](31-Account-Security-And-Access.md) | Built, tested, deployed 2026-10-20; MFA open | H-12, H-14 |
+| 32 | [Report locks and reopening](32-Report-Locks-And-Reopening.md) | Built, tested, deployed 2026-10-20 | H-4 |
+| 33 | [AI cost and usage](33-AI-Cost-And-Usage.md) | Built, tested, deployed 2026-10-20; price is an estimate until set | H-19 |
+| 34 | [Background jobs and retries](34-Background-Jobs-And-Retries.md) | Built, tested, deployed 2026-10-20; default queue still in-process | H-18 |
+
+Existing features updated for batch 3: 01, 03, 06, 07, 10, 11, 12, 13, 14, 16, 25. Plan and status of every High finding: `memorybank/imp/product-gap-audit-2026-10-20.md` §5.2 and §14.
+

@@ -58,3 +58,7 @@
 - Verified before deploy: typecheck and build clean; domain 695, application 620, infrastructure 345, contracts 14 pass; worker 216 pass; mypy clean. Repository tests were run against a scratch Postgres with all migrations and `rls.sql` (414 pass).
 - Not built: the cross-project roll-up inside donor report documents (a report belongs to one project; the roll-up stays a portfolio page with a CSV download).
 - Not yet opened in a browser on the live site. Browser-verify with the owner's account.
+
+## Batch 3 update (2026-10-21) — audit High findings closed in batch 3
+
+The High findings of the 2026-10-20 product gap audit are recorded in `memorybank/imp/product-gap-audit-2026-10-20.md` §14, with their status. The features they produced are [Feature 26](26-Logframe-Versioning.md) to [Feature 34](34-Background-Jobs-And-Retries.md). Still open: C-8 (the website's programme-management claims need a browser check), MFA, OCR, off-host backup copy, dashboard for the portfolio, evidence-before-verified.

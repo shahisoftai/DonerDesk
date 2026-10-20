@@ -21,7 +21,7 @@ Note: DonorDesk currently does not send invitation emails automatically. Your Ad
 
 ## Forgot your password
 
-1. Click **Forgot password** on the sign-in page and enter your email.
+1. Click **Forgot your password?** on the sign-in page and enter your email.
 2. If an account exists, a reset link is created. It **expires after 60 minutes**.
 3. Open it, choose a new password and confirm.
 
