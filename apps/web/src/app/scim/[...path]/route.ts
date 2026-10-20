@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * /scim/v2/Schemas) travel the same way, as the standard requires.
  */
 async function forward(request: Request, method: "GET" | "POST" | "PUT" | "DELETE", path: string[]): Promise<Response> {
-  const upstream = await fetch(`${apiBaseUrl()}/scim/v2/${path.map(encodeURIComponent).join("/")}`, {
+  const upstream = await fetch(`${apiBaseUrl()}/scim/${path.map(encodeURIComponent).join("/")}`, {
     method,
     headers: {
       authorization: request.headers.get("authorization") ?? "",
