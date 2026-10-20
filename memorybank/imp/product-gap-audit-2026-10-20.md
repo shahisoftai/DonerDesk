@@ -867,6 +867,16 @@ Built, tested and committed; **deployed only once §14.1 records it**.
 
 **Deploy:** migrations `20261021160000_login_lockout`, `20261021170000_job_outbox`, `20261021180000_logframe_versions`, `20261021190000_programmes_and_grants`, `20261021200000_external_partners` (all additive; apply before the code), then re-run `infra/postgres/rls.sql` (adds `JobOutbox`, `LogframeVersion`, `Programme`, `Grant`); `/ready` requires `User.lockedUntil`, `User.external`, `JobOutbox.nextAttemptAt`. Optional env: `LLM_PRICES_JSON`, `AI_MONTHLY_COST_ALERT_USD`, `JOB_RETRY_INTERVAL_MS`.
 
+### 14.1 Deployment of batch 3, and the outage it caused (2026-10-20)
+
+Order followed: encrypted backup (`20261020T152858Z`) → the five migrations as `donordesk_migrator` (none unfinished) → `rls.sql` as the superuser (77 forced-RLS tables, was 73) → `deploy-fast.sh SCOPE=both`.
+
+**The API was down for about 7 minutes (≈17:40–17:47 CEST).** `start()` in `apps/api/src/server.ts` called `app.addHook("onClose", …)` for the new job-retry and spend timers *after* `app.listen`; Fastify refuses hooks once listening (`FST_ERR_INSTANCE_ALREADY_LISTENING`), so the process exited and systemd restarted it in a loop (50 restarts). The unit tests build the server with `buildServer()`, never `start()`, so nothing caught it; `deploy-fast.sh` detected the failed health check but does not roll back. The web app stayed up; every API call failed during the window.
+
+Fix: the timers now stop on `app.server.once("close", …)`. The first redeploy attempt (`SCOPE=api SKIP_TYPECHECK=1`) aborted in the script before shipping (the build-log directory is not created in that mode), so the corrected compiled `server.js` was copied to the host directly (the previous file is kept at `/opt/donordesk/backups/server.js.crashloop-20261020`) and the API restarted: `/ready` 200, no errors since, SCIM back to 401. Prevention: `apps/api/test/boot.test.mjs` starts the real entry point and fails on exactly this error (verified by reintroducing the bug).
+
+Open follow-ups: `deploy-fast.sh` should roll the previous tree back automatically when `/ready` does not come up (OP-11 already notes the rollback script targets a layout the deploy script never creates), and `SKIP_TYPECHECK=1` should not skip creating the work directory.
+
 ---
 
 ## 12. Production deployment — 2026-10-20

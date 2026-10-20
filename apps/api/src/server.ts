@@ -262,7 +262,8 @@ export async function start() {
       app.container.jobRetry.runOnce().catch((error: unknown) => app.log.error({ err: error }, "job retry run failed"));
     }, retryEvery);
     timer.unref();
-    app.addHook("onClose", async () => clearInterval(timer));
+    // Fastify refuses hooks once it is listening, so stop the timers on the server's own close event.
+    app.server.once("close", () => clearInterval(timer));
   }
 
   // Plan limits bound how much people draft, not what the provider charges: tell the operator when an organisation's
@@ -271,7 +272,7 @@ export async function start() {
     checkAiSpend(app.container.llmUsage, app.container.logger).catch((error: unknown) => app.log.error({ err: error }, "ai spend check failed"));
   }, 60 * 60_000);
   spendTimer.unref();
-  app.addHook("onClose", async () => clearInterval(spendTimer));
+  app.server.once("close", () => clearInterval(spendTimer));
 
   // Runtime-provisioning backfill: on api boot, make sure any GLOBAL LLM
   // configuration saved in the SuperAdmin control plane is reflected in the

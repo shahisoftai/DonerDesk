@@ -414,4 +414,4 @@ in-process default), stub LLM (dev default), pino logs, console email.
 - **The organisation export lists every tenant table** unless `ORG_EXPORT_EXCLUDED` gives a reason (test-enforced); secrets are never exported.
 - **DB-backed tests run in CI** (`test:journey-db` and the integration files, `UOW_VERIFY_DATABASE_URL`). A `"use server"` file may only export async functions: put schemas in `lib/server/schemas.ts`.
 - Deploy: migrations `20261021160000`–`20261021200000` (login_lockout, job_outbox, logframe_versions, programmes_and_grants, external_partners), then re-run `rls.sql`; `/ready` requires `User.lockedUntil`, `User.external`, `JobOutbox.nextAttemptAt`.
-
+- **Fastify refuses `addHook` after `listen`.** Anything `start()` does after listening (timers, loops) registers cleanup with `app.server.once("close", …)`. `apps/api/test/boot.test.mjs` starts the real `dist/server.js`; keep it in the suite. `deploy-fast.sh` does not roll back on a failed `/ready`: read its verify output and fix forward or restore the snapshot at once.
