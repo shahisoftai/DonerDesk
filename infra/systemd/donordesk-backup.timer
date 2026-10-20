@@ -1,0 +1,14 @@
+[Unit]
+Description=Take the DonorDesk backup every night
+
+[Timer]
+# 02:17 UTC: an odd minute, so a nightly job elsewhere on the host does not
+# collide with it. Persistent: a missed run (the host was down) is made up at
+# boot.
+OnCalendar=*-*-* 02:17:00
+Persistent=true
+# Give the host a moment to settle after a reboot before dumping the database.
+RandomizedDelaySec=15min
+
+[Install]
+WantedBy=timers.target

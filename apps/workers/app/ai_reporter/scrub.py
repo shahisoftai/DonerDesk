@@ -4,6 +4,7 @@ Two things the model keeps doing despite the contract (demo 7): it narrates the 
 carries a neutral evaluation, so the report records no performance judgement") and it echoes the donor's mandatory
 question as a heading. Neither belongs in donor text, so both are removed here rather than asked for again.
 """
+
 from __future__ import annotations
 
 import re
@@ -56,7 +57,8 @@ _NEAR_NAME = 0.86
 
 
 def restore_proper_names(content: str, names: list[str]) -> str:
-    """Puts a mangled donor, organisation or project name back to exactly as given ("Resilient Fund" -> "Resilience Fund").
+    """Puts a mangled donor, organisation or project name back to exactly as given
+    ("Resilient Fund" -> "Resilience Fund").
 
     The model sometimes re-spells a long name by one word. A name of at least three words is looked for in the text as a
     run of the same number of words that is *almost* the name (same first word, similarity >= 0.86) and replaced by the
@@ -76,7 +78,12 @@ def restore_proper_names(content: str, names: list[str]) -> str:
             start, end = spans[i][0], spans[i + count - 1][1]
             window = text[start:end]
             # the run must be plain words separated by single spaces, so it is a phrase and not words from two sentences
-            if re.fullmatch(r"[^\s]+(?: [^\s]+)*", window) and window != name and window.lower().split()[0] == lowered.split()[0] and SequenceMatcher(None, window.lower(), lowered).ratio() >= _NEAR_NAME:
+            if (
+                re.fullmatch(r"[^\s]+(?: [^\s]+)*", window)
+                and window != name
+                and window.lower().split()[0] == lowered.split()[0]
+                and SequenceMatcher(None, window.lower(), lowered).ratio() >= _NEAR_NAME
+            ):
                 replacements.append((start, end))
                 i += count
             else:
@@ -89,13 +96,30 @@ def restore_proper_names(content: str, names: list[str]) -> str:
 def scrub_section(section: GeneratedSection, req: SectionDraftRequest) -> GeneratedSection:
     cleaned = scrub_content(section.content, list(req.section.mandatoryQuestions or []))
     project = req.context.project if req.context else None
-    names = [n for n in (project.donorName, project.implementingOrganization, project.partnerOrganization, project.title) if n] if project else []
+    names = (
+        [
+            n
+            for n in (project.donorName, project.implementingOrganization, project.partnerOrganization, project.title)
+            if n
+        ]
+        if project
+        else []
+    )
     cleaned = restore_proper_names(cleaned, names)
     return section if cleaned == section.content else section.model_copy(update={"content": cleaned})
 
 
 def _count(text: str) -> int:
-    return len([w for w in re.split(r"\s+", "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("|")).strip()) if w])
+    return len(
+        [
+            w
+            for w in re.split(
+                r"\s+",
+                "\n".join(line for line in text.splitlines() if not line.lstrip().startswith("|")).strip(),
+            )
+            if w
+        ]
+    )
 
 
 def trim_to_word_limit(content: str, max_words: int | None) -> str:
@@ -115,7 +139,7 @@ def trim_to_word_limit(content: str, max_words: int | None) -> str:
         for si in range(len(sentences) - 1, -1, -1):
             if re.search(r"\d", sentences[si]):
                 continue
-            candidate = sentences[:si] + sentences[si + 1:]
+            candidate = sentences[:si] + sentences[si + 1 :]
             lines[li] = " ".join(candidate)
             sentences = candidate
             if _count("\n".join(lines)) <= max_words:

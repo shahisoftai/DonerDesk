@@ -5,6 +5,7 @@ Strict, additive over the v1 wire format. v1 models (`SectionDraftRequest`,
 are preserved verbatim; v2 adds the optional `artifacts`, `qa`, `chartSpec`,
 `deltaFromPrior` fields plus their typed payloads.
 """
+
 from __future__ import annotations
 
 import os
@@ -12,13 +13,11 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # --------------------------------------------------------------------------- #
 # Writer contract version (mirrors `packages/infrastructure/.../contract.ts`)
 # --------------------------------------------------------------------------- #
 
 WRITER_CONTRACT_VERSION = int(os.getenv("AI_REPORTER_CONTRACT_VERSION", "4"))
-
 
 
 # --------------------------------------------------------------------------- #
@@ -42,10 +41,10 @@ class SectionBrief(BaseModel):
     evidenceNeeds: list[str] = Field(default_factory=list)
     relatedLogframeElement: str | None = None
     # AI Reporter 2 additions (optional, ignored by v1 consumers)
-    numericTable: list["NumericRow"] | None = None
+    numericTable: list[NumericRow] | None = None
     priorSectionsSummary: list[str] | None = None
-    chartSuggestion: "ChartPayload | None" = None
-    outlineSlots: list["OutlineSlot"] | None = None
+    chartSuggestion: ChartPayload | None = None
+    outlineSlots: list[OutlineSlot] | None = None
     mandatesTable: bool | None = None
     mandatesChart: bool | None = None
     # Quality remediation WS1 — donor requirement guidance from the resolved
@@ -72,7 +71,7 @@ class SectionBrief(BaseModel):
     # own standing guidance. Mirrors the TS `AiReporterSectionBrief`; only sent
     # when present so earlier prompts stay byte-stable.
     donorInstructions: str | None = Field(default=None, max_length=8000)
-    requiredTables: list["RequiredTableBrief"] | None = None
+    requiredTables: list[RequiredTableBrief] | None = None
     authorInstructions: str | None = Field(default=None, max_length=4000)
     pageLimit: int | None = None
 
@@ -135,7 +134,7 @@ class ContextProfile(BaseModel):
 
 
 class ContextStory(BaseModel):
-    """"Tell the Story" narrative context recorded by the reporting officer."""
+    """ "Tell the Story" narrative context recorded by the reporting officer."""
 
     model_config = ConfigDict(extra="forbid")
     achievements: str | None = None
@@ -188,7 +187,8 @@ class NotMeasured(BaseModel):
 
 
 class ContextDeliveryPlan(BaseModel):
-    """Contract v6: what the work plan says about the period. Counts and recorded reasons only: no names, no statuses."""
+    """Contract v6: what the work plan says about the period. Counts and recorded reasons only:
+    no names, no statuses."""
 
     model_config = ConfigDict(extra="forbid")
     planned: int
@@ -238,7 +238,8 @@ class Finding(BaseModel):
     indicatorType: str | None = None
     # GOAL / OUTCOME / OUTPUT / ACTIVITY level of the indicator's logframe item (keeps outcome and output tables apart).
     logframeLevel: str | None = None
-    # The outcome the indicator belongs to (its own item or nearest outcome ancestor): keeps one section per outcome apart.
+    # The outcome the indicator belongs to (its own item or nearest outcome ancestor):
+    # keeps one section per outcome apart.
     outcomeCode: str | None = None
     outcomeTitle: str | None = None
     calculationMethod: str | None = None
@@ -362,10 +363,10 @@ class GeneratedSection(BaseModel):
     claims: list[Claim] = Field(default_factory=list)
     sourceReferences: list[SourceReference] = Field(default_factory=list)
     # AI Reporter 2 additions
-    artifacts: list["Artifact"] = Field(default_factory=list)
-    qa: list["QaPayload"] = Field(default_factory=list)
-    chartSpec: "ChartPayload | None" = None
-    deltaFromPrior: "DeltaPayload | None" = None
+    artifacts: list[Artifact] = Field(default_factory=list)
+    qa: list[QaPayload] = Field(default_factory=list)
+    chartSpec: ChartPayload | None = None
+    deltaFromPrior: DeltaPayload | None = None
 
 
 class SectionDraftResponse(BaseModel):
@@ -374,10 +375,10 @@ class SectionDraftResponse(BaseModel):
     content: str
     claims: list[Claim] = Field(default_factory=list)
     sourceReferences: list[SourceReference] = Field(default_factory=list)
-    artifacts: list["Artifact"] = Field(default_factory=list)
-    qa: list["QaPayload"] = Field(default_factory=list)
-    chartSpec: "ChartPayload | None" = None
-    deltaFromPrior: "DeltaPayload | None" = None
+    artifacts: list[Artifact] = Field(default_factory=list)
+    qa: list[QaPayload] = Field(default_factory=list)
+    chartSpec: ChartPayload | None = None
+    deltaFromPrior: DeltaPayload | None = None
     telemetry: dict[str, Any] = Field(default_factory=dict)
 
 

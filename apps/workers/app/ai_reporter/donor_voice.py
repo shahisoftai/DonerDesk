@@ -9,6 +9,7 @@ not be allowed to discard a factually correct section.
 Mirrored in TypeScript at `packages/infrastructure/src/ai/donor-voice.ts`
 (used by the golden-corpus evaluator).
 """
+
 from __future__ import annotations
 
 import re
@@ -21,7 +22,8 @@ _PASSIVE_RE = re.compile(
     re.IGNORECASE,
 )
 _TOPIC_LABEL_OPENING_RE = re.compile(
-    r"^\s*(?:regarding|in terms of|with regards? to|as regards|as for|concerning|this section|the following section|in this section)\b",
+    r"^\s*(?:regarding|in terms of|with regards? to|as regards|as for|concerning|this section|the following "
+    r"section|in this section)\b",
     re.IGNORECASE,
 )
 FILLER_PHRASES: tuple[str, ...] = (
@@ -62,12 +64,16 @@ def assess(text: str) -> DonorVoiceReport:
     passive = sum(1 for s in sentences if _PASSIVE_RE.search(s))
     passive_ratio = passive / len(sentences)
     if passive_ratio > PASSIVE_RATIO_WARN:
-        warnings.append(f"VOICE_PASSIVE: {passive}/{len(sentences)} sentences are passive; name the actor in the active voice")
+        warnings.append(
+            f"VOICE_PASSIVE: {passive}/{len(sentences)} sentences are passive; name the actor in the active voice"
+        )
         penalty += min(0.3, passive_ratio - PASSIVE_RATIO_WARN)
 
     long_sents = [s for s in sentences if len(s.split()) > LONG_SENTENCE_WORDS]
     if len(long_sents) / len(sentences) > LONG_RATIO_WARN:
-        warnings.append(f"VOICE_LONG_SENTENCES: {len(long_sents)} sentences exceed {LONG_SENTENCE_WORDS} words; split them")
+        warnings.append(
+            f"VOICE_LONG_SENTENCES: {len(long_sents)} sentences exceed {LONG_SENTENCE_WORDS} words; split them"
+        )
         penalty += 0.15
 
     if _TOPIC_LABEL_OPENING_RE.search(sentences[0]):
@@ -81,7 +87,9 @@ def assess(text: str) -> DonorVoiceReport:
 
     vague = [p for p in VAGUE_QUANTIFIERS if p in lower]
     if vague:
-        warnings.append(f"VOICE_VAGUE: replace vague quantifiers with recorded figures or remove them ({', '.join(vague)})")
+        warnings.append(
+            f"VOICE_VAGUE: replace vague quantifiers with recorded figures or remove them ({', '.join(vague)})"
+        )
         penalty += 0.05 * len(vague)
 
     return DonorVoiceReport(score=max(0.0, round(1.0 - penalty, 3)), warnings=tuple(warnings))

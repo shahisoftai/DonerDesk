@@ -87,6 +87,22 @@ export class User extends Entity<UserId> {
     this.touch();
   }
 
+  /** The person's display name, as the directory holds it. */
+  rename(name: string): void {
+    if (!name || name.trim().length < 2) throw DomainError.validation("User name required");
+    if (this.props.status === "REMOVED") throw DomainError.invalidTransition("Cannot rename removed user");
+    this.props.name = name.trim();
+    this.touch();
+  }
+
+  /** The address the person signs in with. */
+  changeEmail(email: Email): void {
+    if (this.props.status === "REMOVED") throw DomainError.invalidTransition("Cannot change the email of removed user");
+    if (this.props.email.equals(email)) return;
+    this.props.email = email;
+    this.touch();
+  }
+
   assignProjects(ids: string[]): void {
     this.props.assignedProjectIds = Array.from(new Set(ids));
     this.touch();

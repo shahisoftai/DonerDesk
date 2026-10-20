@@ -6,6 +6,7 @@ Backwards-compatible with v1 internals: `_resolve_llm`, `_chat`, `_extract_json`
 v1 callers; v2 callers receive the additive `artifacts/qa/chartSpec/deltaFromPrior`
 fields.
 """
+
 from __future__ import annotations
 
 import json
@@ -118,9 +119,9 @@ def _resolve_llm(model: ModelConfig) -> tuple[str, str, str, str]:
     if not model_name and provider == "anthropic":
         model_name = DEFAULT_CLAUDE_MODEL
     base_url = model.baseUrl or (os.getenv("AI_REPORTER_BASE_URL", "") if same_as_env else "") or ""
-    api_key = model.apiKey or (
-        os.getenv("AI_REPORTER_API_KEY", os.getenv("OPENAI_API_KEY", "")) if same_as_env else ""
-    ) or ""
+    api_key = (
+        model.apiKey or (os.getenv("AI_REPORTER_API_KEY", os.getenv("OPENAI_API_KEY", "")) if same_as_env else "") or ""
+    )
     if not base_url and provider not in {"anthropic"}:
         if provider == "ollama":
             base_url = (os.getenv("OLLAMA_BASE_URL", "http://localhost:11434") or "http://localhost:11434") + "/v1"
@@ -178,12 +179,27 @@ def _chat(
         # The env var still overrides.
         max_tokens = int(os.getenv("AI_REPORTER_MAX_TOKENS", "16384"))
     if provider == "anthropic":
-        return _chat_anthropic(system, user, model_name=model_name, base_url=base_url, api_key=api_key,
-                               max_tokens=max_tokens, effort=model.effort, cache_prefix=cache_prefix,
-                               timeout_s=http_timeout_s())
+        return _chat_anthropic(
+            system,
+            user,
+            model_name=model_name,
+            base_url=base_url,
+            api_key=api_key,
+            max_tokens=max_tokens,
+            effort=model.effort,
+            cache_prefix=cache_prefix,
+            timeout_s=http_timeout_s(),
+        )
     return _chat_openai_compatible(
-        system, user, provider=provider, model_name=model_name, base_url=base_url, api_key=api_key,
-        temperature=temperature, max_tokens=max_tokens, json_mode=json_mode and provider not in _NO_JSON_MODE,
+        system,
+        user,
+        provider=provider,
+        model_name=model_name,
+        base_url=base_url,
+        api_key=api_key,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        json_mode=json_mode and provider not in _NO_JSON_MODE,
         timeout_s=http_timeout_s(),
     )
 
@@ -270,7 +286,7 @@ def _claude_user_content(user: str, cache_prefix: str | None) -> Any:
         return user
     return [
         {"type": "text", "text": cache_prefix, "cache_control": {"type": "ephemeral"}},
-        {"type": "text", "text": user[len(cache_prefix):]},
+        {"type": "text", "text": user[len(cache_prefix) :]},
     ]
 
 
@@ -330,7 +346,9 @@ def _chat_anthropic(
         raise TransientProviderError(429, retry_after, "anthropic rate limited") from exc
     except anthropic.APIStatusError as exc:
         if exc.status_code >= 500:  # includes 529 overloaded
-            raise TransientProviderError(exc.status_code, None, f"anthropic returned transient HTTP {exc.status_code}") from exc
+            raise TransientProviderError(
+                exc.status_code, None, f"anthropic returned transient HTTP {exc.status_code}"
+            ) from exc
         raise
     except anthropic.APIConnectionError as exc:  # includes APITimeoutError
         raise TransientProviderError(503, None, "anthropic connection error") from exc
@@ -401,8 +419,7 @@ def extract_json(text: str) -> Any:
         import sys as _sys
 
         _sys.stderr.write(
-            f"[llm_gateway] extraction failed; len={len(cleaned)} "
-            f"head={cleaned[:160]!r} tail={cleaned[-160:]!r}\n"
+            f"[llm_gateway] extraction failed; len={len(cleaned)} head={cleaned[:160]!r} tail={cleaned[-160:]!r}\n"
         )
     raise ValueError("could not extract valid JSON from model output")
 

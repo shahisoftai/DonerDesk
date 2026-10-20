@@ -3,6 +3,7 @@
 Rules (keywords, confidences, sensitive terms, match prefixes) are loaded from
 the shared strategy so this service cannot drift from the TypeScript API.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -56,10 +57,14 @@ def suggest_tags(req: SuggestTagsRequest) -> dict[str, Any]:
 
     hits = [kw for kw in SENSITIVE_KEYWORDS if kw in haystack]
     warning = (
-        "This file may contain sensitive personal data ("
-        + ", ".join(hits[:3])
-        + "). Please verify access level before sharing or exporting."
-    ) if hits else None
+        (
+            "This file may contain sensitive personal data ("
+            + ", ".join(hits[:3])
+            + "). Please verify access level before sharing or exporting."
+        )
+        if hits
+        else None
+    )
 
     return {
         "summary": "Suggested classification based on filename and extracted text.",

@@ -4,6 +4,7 @@ Routing (which parser handles a file) is data-driven from the shared strategy
 (`_strategy_data.py`), so it stays in lockstep with the TypeScript parser. The
 per-format extraction logic lives here as small, single-responsibility helpers.
 """
+
 from __future__ import annotations
 
 import io

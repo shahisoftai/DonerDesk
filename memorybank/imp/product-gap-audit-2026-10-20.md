@@ -17,6 +17,8 @@
 | **MISSING** | **15** | 11% | No implementation found. |
 | **UNVERIFIED** | **0** | 0% | Not one item was undecidable: the code and its tests were rich enough to settle every one. |
 
+**Eight of the nine critical findings are now closed** — see §10 and §11. The ninth (C-8, the programme-management product being invisible on the website) is a publishing task, not an engineering one. |
+
 **All 141 items were decided. None was left open.** The headline is not "DonorDesk is missing a lot" — it is that **two thirds of the register is already built and working, and the problem is a thin, unverified layer on top of a strong core**.
 
 The 15 items that are genuinely absent:
@@ -401,15 +403,15 @@ Severity here is **business impact**, not effort. "Smallest acceptable fix" is t
 
 | # | Gap | Evidence | Business impact | Smallest acceptable fix |
 |---|---|---|---|---|
-| C-1 | **API authorisation is allow-by-default. 117 of 301 registered routes have no permission rule**, and four route files (`workplan.ts`, `templates.ts`, `donor-template-mapping.ts`, `evidence.ts`) contain **no inline permission checks at all**. | `apps/api/src/middleware/authorization.ts:175-178` — `const rule = RULES.find(...); if (rule) Permissions.require(...)`: a route with no matching rule proceeds unchecked. 165 rules against 301 routes. Unguarded: all 39 work-plan routes (including `POST /v1/work-plan/:itemId/complete`, budget lines, beneficiary import, automations, capacity), all 15 template routes (including `POST /v1/templates/:id/review`, `PUT /v1/templates/:id/requirements`, `PUT /v1/templates/:id/default`), all 6 donor-template-mapping routes (including `POST /v1/mappings/:id/approve` and `POST /v1/reporting-periods/:id/lock-template-mapping`), `GET /v1/files/:key`, `PATCH /v1/activities/:id`, `POST /v1/evidence/:id/period`, `POST /v1/tasks/:taskId/complete`, `PUT /v1/risks/:riskId`. | A read-only Viewer can approve a donor template, lock it onto a reporting period, complete planned activities, write budget lines, import beneficiaries, edit automations and retag evidence. In a multi-tenant product selling to compliance-minded NGOs, one account with the wrong role is enough — and the demo/portfolio screens already treat Viewer as a real, purchasable, unlimited role. | Invert the default: make `authorizationMiddleware` **deny** when no rule matches, and add an explicit `PERMIT` escape for the public routes. Then add the missing rules. Ship a test that fails when a registered route has no rule. |
-| C-2 | **Evidence confidentiality is not enforced at read time.** `confidentialityLevel` gates the AI writer and the report view, but not the API. | `packages/infrastructure/src/repositories/evidence.ts:80-84`; `apps/api/src/middleware/authorization.ts:102` (`GET /v1/evidence/:id` → `project.view` only); `apps/api/src/routes/files.ts:22-26` (tenant-prefix check only); the ABAC `sensitivityLevel` masking in `packages/domain/src/policies/abac-field-policy.ts:53-57` is **never called** | The most sensitive humanitarian material in the product — case files, safeguarding records, beneficiary registers — is readable and downloadable by any Viewer in the tenant. `HIGHLY_SENSITIVE` is a label with no enforcement behind it. | Filter `findById` and the file read by `confidentialityLevel` against the caller's role, and wire the existing ABAC sensitivity rules. |
-| C-3 | **The PII firewall does not run on the production AI path.** The Python worker posts the raw prompt to the LLM provider. | `apps/workers/app/ai_reporter/llm_gateway.py:210,219` (no filter); `packages/infrastructure/src/ai/pii-firewall.ts` (227 lines, tested) wired only into `packages/infrastructure/src/llm/factory.ts:132-160`, which serves the **legacy** narrator; zero redaction code in `apps/workers/app/ai_reporter/*.py` (independently confirmed twice) | Beneficiary names, phone numbers, IDs and addresses in evidence, activity records and the story form go to a third-party model unredacted. A donor with a "no beneficiary identifiers in third-party AI" clause has **no technical protection** — only a promise. | Apply the same redaction in the worker before the provider call, driven by the tenant's `LLM_PII_POLICY`, and pin it with a worker test. |
-| C-4 | **Backups are unscheduled and never restore-tested, and there is no continuity plan.** | `scripts/backup.sh:6` ("BEFORE enabling in cron"); `infra/systemd/` ships only `donordesk-reminders.timer`; `memorybank/docs/runbooks/DISASTER-RECOVERY.md:16-19` ("not yet scheduled"); `BackupRun.restoreTestedAt` is never written; `packages/infrastructure/src/security/replica-router.ts` is defined and never used; `packages/infrastructure/src/container.ts:464-470` builds one Prisma client | Production is a **single Contabo host** with local filesystem storage. A host loss is total customer-data loss. Meanwhile `/terms` promises "regular backups" and the DPA promises backup deletion "in the normal backup cycle" — a commitment with no mechanism behind it. | Add a systemd timer for `backup.sh`, enable encryption by default, and run one recorded restore test into a scratch database. |
-| C-5 | **The second-approver rule can be bypassed on the donor-submission path.** | `packages/application/src/use-cases/reporting/create-submission-snapshot.ts:51-93` (sealing) never calls `checkApprover`; the rule lives only in `packages/application/src/use-cases/reporting/approve-report.ts:116-141`; the rule also defaults **off** (`approve-report.ts:134`) | A report can be sealed and exported to a donor with every section approved by one person, defeating the segregation of duties an organisation configured. The whole "a person approves" claim rests on this rule. | Call `checkApprover` inside the sealing path and make the second-approver rule default **on** when the project requires it. |
-| C-6 | **Eight tenant-scoped tables carry no row-level security, and one is queried with no application-level tenant filter either.** | `infra/postgres/rls.sql:6-18` lists 65 tables; 8 tenant models are absent: `ConnectorRun` (schema:142), `SectorTemplatePack` (1063), `ProjectRiskTrend` (1087), `OrganizationBranding` (1108), `LessonPattern` (1125), `ABACFieldPolicy` (1150), `MultiRegionBookmark` (1166), `BillingEventInbox`. `packages/infrastructure/src/repositories/billing.ts:452-473` selects and updates `BillingEventInbox` with **no tenant predicate** | The published `/security` claim — "RLS is enabled and forced on every tenant table, so a bug in application code cannot leak one organization's data into another's request" — is **false**. For `BillingEventInbox` there is no second line of defence at all. | Add the 8 tables to `rls.sql`, tenant-scope the billing queries, and add a test that fails when a tenant-scoped Prisma model has no RLS entry — that missing test is what allowed the drift. |
-| C-7 | **Three published security claims are not supported by the code**, and one sold Enterprise feature is not wired. | `/security:30-35` (RLS on every tenant table); `/privacy:371-373` ("immutable, chained audit log that records every mutation"); `/terms:330` ("we provide regular backups"); `/privacy:358` ("encryption … at rest"); `/pricing` and `/features` (SCIM) — `apps/api/src/scim/routes.ts` defines `registerScimRoutes` and `apps/api/src/server.ts` **never imports it** | These are legal commitments to customers, and a sales or procurement review that checks them will find they are untrue. The SCIM claim is a paid Enterprise feature that a prospect can contract on and not receive. | Correct the three legal sentences to match the code, and either mount SCIM or remove it from the pricing and features pages. |
+| C-1 ✅ | **API authorisation is allow-by-default. 117 of 301 registered routes have no permission rule**, and four route files (`workplan.ts`, `templates.ts`, `donor-template-mapping.ts`, `evidence.ts`) contain **no inline permission checks at all**. | `apps/api/src/middleware/authorization.ts:175-178` — `const rule = RULES.find(...); if (rule) Permissions.require(...)`: a route with no matching rule proceeds unchecked. 165 rules against 301 routes. Unguarded: all 39 work-plan routes (including `POST /v1/work-plan/:itemId/complete`, budget lines, beneficiary import, automations, capacity), all 15 template routes (including `POST /v1/templates/:id/review`, `PUT /v1/templates/:id/requirements`, `PUT /v1/templates/:id/default`), all 6 donor-template-mapping routes (including `POST /v1/mappings/:id/approve` and `POST /v1/reporting-periods/:id/lock-template-mapping`), `GET /v1/files/:key`, `PATCH /v1/activities/:id`, `POST /v1/evidence/:id/period`, `POST /v1/tasks/:taskId/complete`, `PUT /v1/risks/:riskId`. | A read-only Viewer can approve a donor template, lock it onto a reporting period, complete planned activities, write budget lines, import beneficiaries, edit automations and retag evidence. In a multi-tenant product selling to compliance-minded NGOs, one account with the wrong role is enough — and the demo/portfolio screens already treat Viewer as a real, purchasable, unlimited role. | **Done (§10.1).** The middleware now refuses a route with no rule; the 99 missing rules were added; `apps/api/test/authorization-coverage.test.mjs` fails when a registered route has no rule. |
+| C-2 ✅ | **Evidence confidentiality is not enforced at read time.** `confidentialityLevel` gates the AI writer and the report view, but not the API. | `packages/infrastructure/src/repositories/evidence.ts:80-84`; `apps/api/src/middleware/authorization.ts:102` (`GET /v1/evidence/:id` → `project.view` only); `apps/api/src/routes/files.ts:22-26` (tenant-prefix check only); the ABAC `sensitivityLevel` masking in `packages/domain/src/policies/abac-field-policy.ts:53-57` is **never called** | The most sensitive humanitarian material in the product — case files, safeguarding records, beneficiary registers — is readable and downloadable by any Viewer in the tenant. `HIGHLY_SENSITIVE` is a label with no enforcement behind it. | **Done (§10.5).** `packages/domain/src/contexts/evidence/confidentiality.ts` is the one table; the record, the list and the bytes all obey it. |
+| C-3 ✅ | **The PII firewall does not run on the production AI path.** The Python worker posts the raw prompt to the LLM provider. | `apps/workers/app/ai_reporter/llm_gateway.py:210,219` (no filter); `packages/infrastructure/src/ai/pii-firewall.ts` (227 lines, tested) wired only into `packages/infrastructure/src/llm/factory.ts:132-160`, which serves the **legacy** narrator; zero redaction code in `apps/workers/app/ai_reporter/*.py` (independently confirmed twice) | Beneficiary names, phone numbers, IDs and addresses in evidence, activity records and the story form go to a third-party model unredacted. A donor with a "no beneficiary identifiers in third-party AI" clause has **no technical protection** — only a promise. | **Done (§10.6).** One implementation in the domain, applied where the text becomes model input, with the verifier reading the same redacted text. |
+| C-4 ✅ | **Backups are unscheduled and never restore-tested, and there is no continuity plan.** | `scripts/backup.sh:6` ("BEFORE enabling in cron"); `infra/systemd/` ships only `donordesk-reminders.timer`; `memorybank/docs/runbooks/DISASTER-RECOVERY.md:16-19` ("not yet scheduled"); `BackupRun.restoreTestedAt` is never written; `packages/infrastructure/src/security/replica-router.ts` is defined and never used; `packages/infrastructure/src/container.ts:464-470` builds one Prisma client | Production is a **single Contabo host** with local filesystem storage. A host loss is total customer-data loss. Meanwhile `/terms` promises "regular backups" and the DPA promises backup deletion "in the normal backup cycle" — a commitment with no mechanism behind it. | **Done (§10.11).** `scripts/backup.sh` refuses to write an unencrypted backup, rotates old copies and records a `BackupRun` row; `scripts/restore-backup.sh` restores and records `restoreTestedAt`; `donordesk-backup.timer` runs it nightly. |
+| C-5 ✅ | **The second-approver rule can be bypassed on the donor-submission path.** | `packages/application/src/use-cases/reporting/create-submission-snapshot.ts:51-93` (sealing) never calls `checkApprover`; the rule lives only in `packages/application/src/use-cases/reporting/approve-report.ts:116-141`; the rule also defaults **off** (`approve-report.ts:134`) | A report can be sealed and exported to a donor with every section approved by one person, defeating the segregation of duties an organisation configured. The whole "a person approves" claim rests on this rule. | **Done (§10.9).** The seal path requires an approved draft and re-checks the rule against whoever approved it. |
+| C-6 ✅ | **Eight tenant-scoped tables carry no row-level security, and one is queried with no application-level tenant filter either.** | `infra/postgres/rls.sql:6-18` lists 65 tables; 8 tenant models are absent: `ConnectorRun` (schema:142), `SectorTemplatePack` (1063), `ProjectRiskTrend` (1087), `OrganizationBranding` (1108), `LessonPattern` (1125), `ABACFieldPolicy` (1150), `MultiRegionBookmark` (1166), `BillingEventInbox`. `packages/infrastructure/src/repositories/billing.ts:452-473` selects and updates `BillingEventInbox` with **no tenant predicate** | The published `/security` claim — "RLS is enabled and forced on every tenant table, so a bug in application code cannot leak one organization's data into another's request" — is **false**. For `BillingEventInbox` there is no second line of defence at all. | **Done (§10.2).** The 7 dormant tenant tables are policy-protected, `BillingEventInbox` is a documented global table, and `packages/infrastructure/test/rls-coverage.test.mjs` fails on any future drift. |
+| C-7 ✅ | **Three published security claims are not supported by the code**, and one sold Enterprise feature is not wired. | `/security:30-35` (RLS on every tenant table); `/privacy:371-373` ("immutable, chained audit log that records every mutation"); `/terms:330` ("we provide regular backups"); `/privacy:358` ("encryption … at rest"); `/pricing` and `/features` (SCIM) — `apps/api/src/scim/routes.ts` defines `registerScimRoutes` and `apps/api/src/server.ts` **never imports it** | These are legal commitments to customers, and a sales or procurement review that checks them will find they are untrue. The SCIM claim is a paid Enterprise feature that a prospect can contract on and not receive. | **Done (§10.13).** The audit log is append-only by privilege, SCIM is mounted with a per-organization credential, and the legal pages now say what the code does. |
 | C-8 | **The programme-management product is invisible on the public website.** | Zero occurrences of work plan, timeline, milestone, risk, dependency, beneficiary, workload, budget, planned activity or My Week in `apps/web/src/components/landing/` or the `/features` page. The eleven features listed on `/features` contain none of the Phase 28 capability. `memorybank/pending.md:11` lists the live-site browser check as still open. | A buyer comparing DonorDesk with ActivityInfo or DevResults sees a reporting product. The capability that justifies the positioning is invisible, and the positioning therefore cannot be paid for. The hold is deliberate and prudent — but it now has a quantified cost. | Finish the outstanding live-site browser check, then publish the Phase 28 features and the eight unpublished support articles. |
-| C-9 | **The checked-in database migrations are never executed by any test, and CI runs `prisma db push --accept-data-loss`.** | `packages/infrastructure/src/db/migrate.ts:5` — `execSync("pnpm exec prisma db push --skip-generate --accept-data-loss")`; `.github/workflows/ci.yml:43` calls exactly that. 58 migration directories exist in `packages/infrastructure/prisma/migrations/` and none is ever parsed or run. `memorybank/contabo-ops.md:269` forbids `db push` in production. | A broken or destructive migration ships undetected: the CI database is built by `db push`, not by the migrations that will run on the host. `--accept-data-loss` will silently drop a column and the 58 migration files will be proved wrong only in production. This is the mechanism by which a schema change takes the product down — and there is no schema rollback path (`scripts/rollback.sh` never reverses the schema). | Point CI at `prisma migrate deploy` against a scratch database, so the checked-in SQL is the thing that is tested. Keep `db push` out of the pipeline entirely. |
+| C-9 ✅ | **The checked-in database migrations are never executed by any test, and CI runs `prisma db push --accept-data-loss`.** | `packages/infrastructure/src/db/migrate.ts:5` — `execSync("pnpm exec prisma db push --skip-generate --accept-data-loss")`; `.github/workflows/ci.yml:43` calls exactly that. 58 migration directories exist in `packages/infrastructure/prisma/migrations/` and none is ever parsed or run. `memorybank/contabo-ops.md:269` forbids `db push` in production. | A broken or destructive migration ships undetected: the CI database is built by `db push`, not by the migrations that will run on the host. `--accept-data-loss` will silently drop a column and the 58 migration files will be proved wrong only in production. This is the mechanism by which a schema change takes the product down — and there is no schema rollback path (`scripts/rollback.sh` never reverses the schema). | **Done (§10.10).** CI applies the migrations, the drift is closed by a new migration, and `scripts/check-migration-drift.sh` fails on any future divergence. |
 
 ### 5.2 High
 
@@ -532,4 +534,260 @@ Three findings in this report are not product defects. They are **process** defe
 
 ---
 
-*Audit performed 2026-10-20 on branch `0013-programme-management` at `548d68c` plus the uncommitted Phase 28.1 work. Seven parallel code audits (one per register category) plus a direct audit of the live public site, the CI pipeline and the production record. Every finding is anchored to a file and line; every verdict that could not be decided from the evidence is marked UNVERIFIED rather than assumed.*
+## 10. P0 batch 1 — what was closed on 2026-10-20
+
+Three of the gaps named in §5 are now closed. Each was implemented, verified, and is protected by a test that fails if it regresses.
+
+### 10.1 C-1 — the authorisation table is now exhaustive by construction ✅
+
+`apps/api/src/middleware/authorization.ts` now **refuses** a request that matches no rule, instead of allowing it. 99 rules were added, covering every route registered inside the authenticated scope that previously fell through (the whole Phase 28 work-plan surface, all 15 template routes, all 6 donor-template-mapping routes, the file download, evidence retagging, the agent-memory and risk endpoints, and the dashboards).
+
+Two details matter:
+
+- **HEAD inherits GET's rule.** Fastify serves HEAD for every GET route; without this, every HEAD request would have been refused.
+- **Item-level routes carry the lowest permission that could legitimately reach them**, because the handler holds the real check: `workplan.update-own` for a plan item the caller owns (`canActOnPlanItem`), `risk.raise` for a risk they raised (`canActOnRisk`), `project.view` for a request assigned to them. The route table is a coarse first gate, not the decision.
+
+**`apps/api/test/authorization-coverage.test.mjs`** builds the server, reads the routes it actually registers (`app.scopedRoutes`, collected by an `onRoute` hook in `server.ts`) and fails when one has no rule. Verified non-vacuous: removing the `/v1/files/:key` rule makes it fail naming that route.
+
+### 10.2 C-6 — 8 unprotected tables, and the test that stops the drift ✅
+
+`infra/postgres/rls.sql` now policy-protects `ConnectorRun`, `SectorTemplatePack`, `ProjectRiskTrend`, `OrganizationBranding`, `LessonPattern`, `ABACFieldPolicy` and `MultiRegionBookmark` — **72 tables forced-RLS, up from 65**.
+
+`BillingEventInbox` is deliberately **not** tenant-isolated, and the reason is now written down rather than implied: its `tenantId` is nullable because the tenant is resolved *after* the provider event arrives, so a tenant policy would hide every unresolved event from the session that has to recover it. It is granted explicitly as a global table.
+
+**`packages/infrastructure/test/rls-coverage.test.mjs`** compares `schema.prisma` with `rls.sql` and fails when a tenant-scoped model is in neither, when the policy list names a table the schema does not define, or when a table is both protected and global.
+
+**Proven against a real database** (scratch Postgres, schema pushed, `rls.sql` applied, two tenants seeded):
+
+| Check | Result |
+|---|---|
+| `donordesk_app` with `app.current_tenant='tenant-a'` | sees 1 of 2 rows in each newly protected table — its own |
+| `donordesk_app` with `app.current_tenant='tenant-b'` | sees 1 of 2 — its own |
+| `donordesk_app` with no tenant set | sees **0** — deny by default |
+| `donordesk_app` writing a row for another tenant | **refused**: "new row violates row-level security policy" |
+| admin connection (superuser) | sees all 2 — the SuperAdmin control plane is unaffected |
+
+The admin path was checked because `donordesk_migrator` has neither `SUPERUSER` nor `BYPASSRLS`; the runtime `DATABASE_ADMIN_URL` uses a superuser role, which is why the control plane's cross-tenant reads still work.
+
+### 10.3 H-6 — the orphaned suites are in the gate ✅
+
+`.github/workflows/ci.yml` now runs the three suites that `pnpm -r test` never reached:
+
+| Suite | Cases | Was in CI? |
+|---|---|---|
+| `pnpm --filter @donordesk/web test:unit` | 383 | No |
+| `pnpm --filter @donordesk/infrastructure test:journey` | 1 | No |
+| `pnpm --filter @donordesk/infrastructure reporting:eval` | 28 | No |
+
+Lint moved **after** the tests so a test failure is reported before a style failure.
+
+### 10.4 The finding this surfaced: CI has been red for two months
+
+While wiring the gate I checked the pipeline's own history: **the last 100 CI runs failed, on every branch, back to 2026-08-19.** Locally, `pnpm -r lint` failed on the workers package with 177 ruff findings on committed code (140 of them `E501`, concentrated in the AI Reporter's long contract and prompt strings).
+
+That is the mechanism behind most of this report. A gate that is red every day is not a gate, which is how 117 unguarded routes, 8 unprotected tables, 74 orphaned test files and 3 orphaned suites could all accumulate without anyone noticing.
+
+**Fixing the worker lint is deliberately left out of this change.** `ruff format` would reformat 40 files (~1085 lines) and the remaining ~40 `E501` findings sit inside byte-stable prompt strings that a mirror test pins — too much blast radius to bundle with an authorisation change. It wants its own reviewable change. Until then the pipeline stays red on the lint step.
+
+### 10.5 C-2 — evidence confidentiality is now enforced at read time ✅
+
+The audit found that `confidentialityLevel` gated the AI writer and the report view but **not the API**: `GET /v1/evidence/:id` needed only `project.view`, and `GET /v1/files/:key` checked only the tenant prefix, so a VIEWER could read and download a `HIGHLY_SENSITIVE` file.
+
+**`packages/domain/src/contexts/evidence/confidentiality.ts`** is now the one table: a level names the permission that opens it.
+
+| Level | Opens for |
+|---|---|
+| PUBLIC, INTERNAL | anyone who may view the project |
+| SENSITIVE | `evidence.upload` — the roles that may bring evidence in |
+| HIGHLY_SENSITIVE | `evidence.verify` (accountable for what is verified) or `report.override-confidentiality` (may put it in a donor report, so must be able to open it) |
+
+The uploader may always open their own file. A VIEWER holds none of those permissions, so a viewer can browse ordinary evidence and never opens a restricted one.
+
+The rule now governs **all three** read paths: the record, the list (the repository filters by the caller's readable levels, so a restricted file is never *listed* either) and the bytes. The BFF download route now forwards the API's reason instead of calling every failure "File not found".
+
+### 10.6 C-3 — the PII firewall now runs on the production AI path ✅
+
+The audit found the firewall wired only into the legacy TypeScript provider while the Python worker called the provider with the raw prompt.
+
+**One implementation, in the domain.** `packages/infrastructure/src/ai/pii-firewall.ts` moved to `packages/domain/src/core/pii-firewall.ts` (the domain is pure TypeScript by rule; the application layer needs it and may not import infrastructure). `redactForLlm` and `resolvePiiPolicy` are the shared entry points, and `LLM_PII_POLICY` (reject | redact | transform | allow, default `redact`) decides — `allow` sends the text unchanged.
+
+**Redaction happens where the text becomes model input, and the verifier reads the same text.** This was the hard part: a claim's quoted text is compared against the chunk it came from, so redacting only the model's copy would make every claim from that record fail its source check.
+
+- The **evidence text** is redacted inside `EvidencePackageBuilder` — the one place evidence text becomes model input, and the packages the writer *and* the claim verifier both read. The hash still covers the **stored** text, so a later edit to the document is still detected.
+- The **officer's narrative** (activity summary, achievements, challenges, lessons, next steps, location, the story form, the project description, the situation scope, indicator comments) is redacted in the AI Reporter's request **and** in `buildRecordChunks` — the chunks a claim is grounded against — by the same function, so the two stay identical.
+
+The project title, donor name, indicator codes and structured participant figures are deliberately **not** redacted: a report must name its donor and project exactly, and the figures come from the verified findings, not from free text.
+
+### 10.7 The worker lint — CI is green again ✅
+
+The 177 ruff findings are fixed: `ruff format` and `ruff check --fix` for the mechanical ones, and hand-splitting for the ~40 long string literals that a formatter cannot break.
+
+**The writer contract is byte-identical.** A SHA-256 of every contract list and every `system_prompt(v)` was captured before the change and re-checked after: `d071aaae0b7c60c4987d5a57b7e129fc58286322bb3e20468c38b4b33d34f4c5`, unchanged. The contract's own mirror test passes.
+
+The long contract strings were split with implicit concatenation at a plain space that is not part of an escape sequence, so the pieces re-join to exactly the same characters. Two real code findings were fixed rather than silenced: a closure over a loop variable in `router.py` (bound explicitly) and an unused loop variable; `isinstance` tuples were modernised and an ambiguous name renamed.
+
+### 10.9 C-5 — the second-approver rule can no longer be bypassed ✅
+
+The seal path checked only that each *section* was APPROVED, so a report its own author approved section by section could still be sealed and exported to a donor — the draft-level approval, which is the action the second-approver rule governs, was never required.
+
+`CreateSubmissionSnapshotHandler` now refuses to seal unless the **draft** is approved, and re-checks the rule against the person who approved it (`ApproveReportHandler.checkApprovedDraftApprover`). A rule turned on *after* the approval still applies, so a report cannot be sealed by the person who wrote it.
+
+### 10.10 C-9 — CI builds its database from the checked-in migrations ✅
+
+CI ran `prisma db push --accept-data-loss`, so the 58 migration files were never executed and a divergence between them and the schema stayed invisible. It had already diverged: a relation declared in `schema.prisma` had **no foreign key** in the database, two indexes carried names from an older Prisma naming rule, and a migration had deliberately created an index the schema no longer declared.
+
+- **CI now applies the migrations.** `pnpm db:migrate:deploy` runs `prisma migrate deploy`, then `rls.sql`, `pgvector.sql` and the backfill. `db push` is the local-development convenience only.
+- **The drift is closed.** A new migration adds the missing `ReportRevision → ReportSection` foreign key and renames the two indexes; `schema.prisma` regains the `@@index([supersededAt])` that a migration had created.
+- **A new check keeps it closed.** `scripts/check-migration-drift.sh` fails when the database differs from `schema.prisma` in any way the raw SQL steps do not explain (the pgvector column and its HNSW index are Prisma's blind spot, and are the only exception). Verified: it passes on a freshly migrated database and fails on an injected column.
+- **CI's Postgres image had no pgvector.** The `postgres:16.4-alpine` service image cannot load the `vector` extension, so the migration step could never have succeeded on it. It is now `pgvector/pgvector:pg16`, the image the dev compose already uses.
+
+### 10.11 C-4 — the backup is scheduled, encrypted and proven ✅
+
+`scripts/backup.sh` existed but was never scheduled, left encryption optional and had no rotation; no restore script existed at all; and the runbook was 400 lines of Aurora, Route 53 and kubectl for a deployment that does not exist.
+
+- **`scripts/backup.sh`** now **refuses** to write an unencrypted backup unless `ALLOW_UNENCRYPTED=1` is set explicitly, rotates old copies (`BACKUP_RETENTION_DAYS`, `BACKUP_MIN_KEEP`), pushes off-host when `OFFHOST_TARGET` is set, and records a `BackupRun` row (status, size, checksum, error).
+- **`scripts/restore-backup.sh`** is new: it verifies the checksums, decrypts into a temporary directory (the backup on disk stays encrypted), restores into a **scratch** database by default, counts the tables, projects and evidence files, compares the restored storage file count with the archive, and records `restoreTestedAt` and `restoreStatus`.
+- **Both were run end to end against a real database**: a backup was taken, encrypted, checksummed and recorded; the restore verified the checksums, restored 80 tables and 4 projects, restored and counted 2 evidence files, and wrote `restoreTestedAt`.
+- **It is scheduled.** `infra/systemd/donordesk-backup.{service,timer}` runs it nightly at 02:17 UTC, persistent across reboots.
+- **The runbook now describes the real deployment.** `memorybank/docs/runbooks/DISASTER-RECOVERY.md` was rewritten for the Contabo single host: what is where, honest recovery objectives (**RPO 24 hours, RTO ~1 hour**), how to install and check the timer, the monthly restore drill, and step-by-step recovery for both a damaged database and a lost host. It also states what the runbook does **not** cover (no point-in-time recovery, the WALs are not archived, the passphrase has one copy).
+
+### 10.13 C-7 — the false public claims are now true, or corrected ✅
+
+Three published security claims did not match the code, and one sold Enterprise feature was not wired. Each is now either
+implemented or the sentence is corrected.
+
+**The audit log is now append-only, not merely tamper-evident.** The chain of hashes made an edit *detectable*; nothing
+stopped the application role from making one. `infra/postgres/rls.sql` now revokes `UPDATE` and `DELETE` on `AuditEvent`
+and `PlatformAuditEvent` from the runtime role, so a correction is a new event rather than an edit. Verified against a
+real database: the app role is refused (`permission denied for table AuditEvent`) while the DBA repair path still works,
+and the tamper-detection integration test is unaffected.
+
+**SCIM is now mounted and working.** The route handlers, the SCIM 2.0 contract and the discovery endpoints were already
+written but never registered, and there was no way to issue a credential. Now:
+
+- `ScimCredential` (a model, a migration, RLS coverage) holds a per-organization credential; only the **hash** of the
+  token is stored, and the token is shown once.
+- `POST /v1/scim/credentials`, `GET` and `DELETE` (admin, `users.manage`) issue, list and revoke them.
+- `/scim/v2/Users` is mounted with its own authentication, outside the user-authenticated scope, and supports list,
+  create, read, update, deactivate and delete plus `ServiceProviderConfig`, `ResourceTypes` and `Schemas`.
+- Two defects were found and fixed on the way: the SCIM authentication hook was added to the **root** Fastify instance
+  and so guarded *every* route on the server (it is now encapsulated), and `PrismaUserRepository.setStatus` updated a
+  user by id **before** checking the tenant — a cross-tenant write that only reported the mistake afterwards.
+
+**The legal pages now say what the code does.** `/security` was rewritten: the RLS claim is precise about the one
+documented exception (the inbound billing inbox, whose tenant is resolved after the event arrives); encryption, access
+control, the audit trail, backups and recovery, vulnerability management and incident notification are described
+honestly — including that multi-factor authentication is **not** available for tenant accounts and that there is no
+point-in-time recovery. `/privacy` no longer claims an "immutable audit log that records every mutation" and no longer
+implies the platform encrypts file contents. The pages also no longer promise an organisation-wide export the product
+does not have. `/terms`' "regular backups" claim is now backed by a scheduled, encrypted, restore-tested backup.
+
+**The small inconsistencies are gone.** One version label (`LEGAL.updated`) is used on every legal page, and privacy
+matters point at `privacy@donordesk.online` while contractual notices keep `legal@donordesk.online`.
+
+### 10.14 Verification
+
+| Suite | Result |
+|---|---|
+| `packages/domain` | **703 / 703** pass |
+| `packages/application` | **637 / 637** pass (including the new SCIM credential tests) |
+| `packages/contracts` | 14 / 14 pass |
+| `packages/infrastructure` | 354 pass, 0 fail |
+| `apps/api` | **54 / 54** pass (including the new SCIM contract tests) |
+| `apps/web` unit | 383 / 383 pass |
+| `apps/workers` (pytest) | **216 / 216** pass |
+| journey | 1 / 1 pass |
+| `reporting:eval` | 28 / 28 golden cases behaved as expected |
+| `test/architecture-boundaries` | 3 / 3 pass |
+| `pnpm -r typecheck` | clean (every package) |
+| `pnpm -r lint` | clean for the whole monorepo |
+| `prisma migrate deploy` on a fresh database | all 60 migrations apply; the drift check passes |
+| audit log immutability | the app role is refused; the DBA repair path works |
+
+**Still open from §5:** C-8 (the programme-management product is invisible on the website), SE-09 (there is still no
+written incident runbook behind the notification commitment, although the commitment, the channel and the deadline are
+now published), and H-2 through H-21.
+
+
+
+
+---
+
+## 11. Implementation notes
+
+What was changed, where, and how to check it. The audit is the diagnosis; this is the treatment.
+
+### 11.1 Change map
+
+| Area | Files | What changed |
+|---|---|---|
+| **Authorisation** | `apps/api/src/middleware/authorization.ts`, `apps/api/src/server.ts`, `apps/api/test/authorization-coverage.test.mjs` | 99 rules added; a request matching no rule is now **refused**; `app.scopedRoutes` exposes the routes the server actually registers so a test can prove the table is exhaustive. HEAD inherits GET. |
+| **Row-level security** | `infra/postgres/rls.sql`, `packages/infrastructure/test/rls-coverage.test.mjs` | 7 dormant tenant tables policy-protected (65 → 73 forced); `BillingEventInbox` documented as the one global table; the runtime role loses `UPDATE`/`DELETE` on the audit tables. A test compares `schema.prisma` with `rls.sql` both ways. |
+| **Evidence confidentiality** | `packages/domain/src/contexts/evidence/confidentiality.ts`, `packages/application/src/use-cases/evidence/{get-evidence,search-evidence}.ts`, `packages/infrastructure/src/repositories/evidence.ts`, `apps/api/src/routes/files.ts` | One table names the permission that opens each level; the record, the list and the bytes all obey it. |
+| **PII firewall** | `packages/domain/src/core/pii-firewall.ts` (moved from infrastructure), `packages/infrastructure/src/ai/evidence-package-builder.ts`, `packages/infrastructure/src/llm/ai-reporter-draft-generator.ts`, `packages/application/src/services/record-chunk-builder.ts` | One implementation in the domain, applied where text becomes model input; the writer and the verifier read the same redacted text. |
+| **Second approver** | `packages/application/src/use-cases/reporting/{approve-report,create-submission-snapshot}.ts` | The seal path requires an approved draft and re-checks the rule against whoever approved it. |
+| **Migrations** | `packages/infrastructure/src/db/migrate-deploy.ts`, `scripts/check-migration-drift.sh`, `.github/workflows/ci.yml`, two new migration directories | CI applies the checked-in migrations and fails on drift; the drift that had already accumulated (a missing foreign key, two stale index names, a lost index declaration) is closed. |
+| **Backups** | `scripts/backup.sh`, `scripts/restore-backup.sh`, `infra/systemd/donordesk-backup.{service,timer}`, `memorybank/docs/runbooks/DISASTER-RECOVERY.md` | Encryption required, rotation, off-host push, a `BackupRun` row, a restore script that proves the backup, a nightly timer, and a runbook for the deployment that actually exists. |
+| **SCIM** | `apps/api/src/scim/*`, `apps/api/src/routes/scim-admin.ts`, `packages/domain/src/contexts/identity/scim-credential.ts`, `packages/application/src/use-cases/identity/scim-credentials.ts`, `packages/infrastructure/src/repositories/identity.ts` | The endpoint is mounted with its own authentication; credentials are issued, listed and revoked, and only their hash is stored. |
+| **Public pages** | `apps/web/src/app/{security,privacy,terms,cookies}/page.tsx`, `apps/web/src/lib/legal-entity.ts` | Every sentence now matches the code; one version label and one address per purpose. |
+| **Worker lint** | 40 files under `apps/workers/` | `ruff format` and `ruff check --fix`, plus hand-splitting for the long string literals. The writer contract is byte-identical. |
+
+### 11.2 The invariants this introduced
+
+1. **A route with no authorisation rule is refused, not allowed** — and a test fails the build if one is added without a rule.
+2. **A tenant-scoped model with no RLS policy fails the build** — and a table cannot be both protected and global.
+3. **A level of confidentiality names the permission that opens it** — for the record, the list and the bytes alike.
+4. **Personal identifiers are redacted where the text becomes model input**, and the verifier reads the same redacted text.
+5. **The audit log is append-only by privilege**, not only by hash.
+6. **A donor copy cannot be sealed without an approved draft**, and the second-approver rule is re-checked at the seal.
+7. **CI builds its database from the checked-in migrations** and fails when the result differs from the schema.
+8. **A backup is not a backup until it has been restored**, and the restore test is recorded.
+9. **A public page may only claim what the code does.**
+
+### 11.3 Tests added
+
+| Test | Proves |
+|---|---|
+| `apps/api/test/authorization-coverage.test.mjs` | Every route in the authenticated scope has a rule (verified non-vacuous: removing one fails the test and names it). |
+| `packages/infrastructure/test/rls-coverage.test.mjs` | Every tenant-scoped model is policy-protected or a named global table; the policy list names no table the schema lacks. |
+| `packages/domain/test/evidence-confidentiality.test.mjs` | Which role may open which level, including the uploader's own file. |
+| `packages/application/test/evidence-confidentiality.test.mjs` | A viewer cannot open restricted evidence; the list leaves it out. |
+| `packages/infrastructure/test/pii-on-the-ai-reporter-path.test.mjs` | The request the worker receives carries no email or phone number, and `LLM_PII_POLICY=allow` sends it unchanged. |
+| `packages/application/test/record-chunks-pii.test.mjs` | The chunks a claim is grounded against are redacted the same way. |
+| `apps/api/test/scim.test.mjs` | The SCIM contract: authentication, filter, pagination, the verbs, discovery — and that its hook does not guard the other routes. |
+| `packages/application/test/scim-credentials.test.mjs` | A token is shown once, only its hash is stored, and revocation works. |
+| `packages/application/test/create-submission-snapshot.test.mjs` (extended) | A report nobody approved, or one approved by the forbidden person, cannot be sealed. |
+| `packages/application/test/approve-second-approver.test.mjs` (extended) | The rule is re-checked against an approved draft. |
+
+### 11.4 How to re-run the verification
+
+```bash
+pnpm -r typecheck && pnpm -r lint && pnpm -r build
+pnpm -r test                                                    # domain, application, contracts, infrastructure, api
+pnpm --filter @donordesk/web test:unit
+pnpm --filter @donordesk/infrastructure test:journey
+pnpm --filter @donordesk/infrastructure reporting:eval
+node --test test/architecture-boundaries.test.mjs
+cd apps/workers && .venv/bin/python -m pytest -q
+```
+
+### 11.5 Two defects found while implementing, not by the audit
+
+- **`app.addHook` in the SCIM module guarded every route on the server.** The SCIM authentication hook was added to the root Fastify instance, so `/health` began answering 401. The existing API test suite caught it immediately. SCIM now lives in its own encapsulated context.
+- **`PrismaUserRepository.setStatus` wrote before it checked.** It updated the user by id and only then looked the tenant up, so a caller could change another organisation's user and be told afterwards that the user did not exist. The tenant is now checked first.
+
+### 11.6 Deliberately not done, and why
+
+| Not done | Why |
+|---|---|
+| The worker lint in a separate commit from the security work | `ruff format` reformats 40 files (~1085 lines) and the remaining long lines sit inside byte-stable prompt strings. It wanted its own reviewable change; it was done second, with the contract's SHA-256 captured before and after. |
+| Rewriting the 21 high findings (H-2 – H-21) | They are a mix of schema work (logframe versioning, evidence versioning, retention, target schedules) and product work (partner access, DHIS2, evaluation). Each needs its own design, not a place in a security batch. |
+| An incident-response runbook (SE-09) | The commitment, the channel and the deadline are now published, but the runbook behind them — severity model, workflow, breach register — is a process artefact rather than code, and it is still open. |
+| The off-host backup copy | There is no second host to copy to. The nightly backup, the encryption, the rotation and the restore test are all in place and proven; the copy off the host needs a destination the organisation controls. |
+| A web UI for SCIM credentials | The endpoint issues them; an administrator can use it, and support can issue one on request. A screen is a nicety, not a claim. |
+
+---
+
+
+
+*Audit performed 2026-10-20 on branch `0013-programme-management` at `548d68c`. Seven parallel code audits (one per register category) plus a direct audit of the live public site, the CI pipeline and the production record. Every finding is anchored to a file and line; every verdict that could not be decided from the evidence is marked UNVERIFIED rather than assumed. §10 records the implementation that followed, in three batches: deny-by-default authorisation, 8 more RLS-protected tables and the three orphaned suites in the CI gate; the worker lint, evidence confidentiality at read time and the PII firewall on the production AI path; and the second-approver rule on the seal path, CI building from the checked-in migrations, a scheduled and restore-tested backup, an append-only audit log, a working SCIM endpoint and a public site that says what the code does. §11 is the implementation notes. Eight of the nine criticals are closed.*

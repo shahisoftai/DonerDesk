@@ -3,14 +3,14 @@
 Behaviour preserved from v1 `_refine`. Exactly one pass; if no issues the
 draft is returned unchanged.
 """
+
 from __future__ import annotations
 
+from . import timeouts
 from .draft_writer import build_user_prompt
 from .llm_gateway import _chat, coerce_section, extract_json
 from .models import GeneratedSection, SectionDraftRequest
 from .writer_contract import system_prompt
-from . import timeouts
-
 
 _REFINE_PROMPT = (
     "You are a precise report editor. Fix the drafted section according to the reviewer's issues. "
@@ -35,9 +35,7 @@ def refine(
         + "\n\n# Reviewer issues:\n"
         + "\n".join(f"- {i}" for i in issues)
     )
-    content, _ = timeouts.run_with_section_timeout(
-        lambda: _chat(system, user, model=req.model)
-    )
+    content, _ = timeouts.run_with_section_timeout(lambda: _chat(system, user, model=req.model))
     try:
         raw = extract_json(content)
     except Exception:

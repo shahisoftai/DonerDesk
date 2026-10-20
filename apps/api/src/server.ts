@@ -14,6 +14,9 @@ import { idempotencyBegin, idempotencyFinish } from "./middleware/idempotency.js
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerOrgRoutes } from "./routes/org.js";
 import { registerUserRoutes } from "./routes/users.js";
+import { registerScimAdminRoutes } from "./routes/scim-admin.js";
+import { registerScimRoutes } from "./scim/routes.js";
+import { scimRouteOptions } from "./scim/service.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerProjectSetupRoutes } from "./routes/project-setup.js";
 import { registerTemplateRoutes } from "./routes/templates.js";
@@ -142,7 +145,21 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerHealthRoutes(app);
   await registerAuthRoutes(app);
   await registerSalesRoutes(app);
+  // SCIM has its own authentication (a per-organisation bearer token), so it sits
+  // outside the authenticated scope.
+  await registerScimRoutes(app, scimRouteOptions(container));
+  // The routes registered inside the scope below are the ones that go through
+  // authMiddleware + authorizationMiddleware. They are collected here so
+  // test/authorization-coverage.test.mjs can assert the authorisation table
+  // covers every one of them (the table is exhaustive by construction).
+  const scopedRoutes: Array<{ method: string; url: string }> = [];
   await app.register(async (instance) => {
+    instance.addHook("onRoute", (route) => {
+      const methods = Array.isArray(route.method) ? route.method : [route.method];
+      for (const method of methods) {
+        scopedRoutes.push({ method: String(method), url: route.url });
+      }
+    });
     instance.addHook("preHandler", authMiddleware);
     instance.addHook("preHandler", async (req) => {
       req.container = createContainer({ tenantId: req.tenant.tenantId.toString() });
@@ -160,6 +177,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     });
     await registerOrgRoutes(instance);
     await registerUserRoutes(instance);
+    await registerScimAdminRoutes(instance);
     await registerProjectRoutes(instance);
     await registerProjectSetupRoutes(instance);
     await registerTemplateRoutes(instance);
@@ -182,6 +200,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerFileRoutes(instance);
     await registerBillingRoutes(instance);
   });
+  app.decorate("scopedRoutes", scopedRoutes);
 
   return app;
 }
@@ -219,6 +238,8 @@ function errorToHttpStatus(code: string): number {
 declare module "fastify" {
   interface FastifyInstance {
     container: ReturnType<typeof createContainer>;
+    /** The routes registered inside the authenticated scope (see buildServer). */
+    scopedRoutes: Array<{ method: string; url: string }>;
   }
 }
 

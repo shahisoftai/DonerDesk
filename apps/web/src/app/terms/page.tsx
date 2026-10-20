@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { LegalLayout } from "@/components/legal/LegalLayout";
+import { LEGAL } from "@/lib/legal-entity";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/terms" },
@@ -41,7 +42,7 @@ export default function TermsPage() {
     <LegalLayout
       title="Terms of Service"
       subtitle="Legal"
-      updated="7 October 2026 (Version 1.1)"
+      updated={LEGAL.updated}
       toc={TOC}
     >
       <Section id="agreement" title="1. Agreement and scope">

@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { ILLMProvider, LLMCompletionInput } from "@donordesk/application";
 import { StubLLMProvider } from "./stub.js";
 import { OllamaProvider } from "../ai/ollama.js";
-import { createPiiFirewall, type PiiPolicy } from "../ai/pii-firewall.js";
+import { createPiiFirewall, type PiiPolicy } from "@donordesk/domain";
 
 export type LLMProviderName = "stub" | "openai" | "anthropic" | "gemini" | "ollama" | "deepseek" | "minimax" | "glm";
 

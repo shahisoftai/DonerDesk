@@ -1,4 +1,4 @@
-import { planDeliverySentences, type FinanceSummaryView, type PlanDeliverySummary, type ReportScope, type Result, type TenantId, type VerifiedFinding } from "@donordesk/domain";
+import { planDeliverySentences, redactForLlm, resolvePiiPolicy, type FinanceSummaryView, type PlanDeliverySummary, type PiiPolicy, type ReportScope, type Result, type TenantId, type VerifiedFinding } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
 import type { IRecordChunkBuilder, IReportingPeriodRepository, RecordChunk } from "../ports/reporting.js";
 import type { IProjectRepository } from "../ports/projects.js";
@@ -93,13 +93,20 @@ export function scopeStatements(scope: ReportScope | undefined): string[] {
  * or qualitative claim that restates one of them ("rainy-season delays were managed through early
  * ordering") is supported by the record it came from, even though no evidence file says it.
  */
-export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
+export function buildRecordChunks(sources: RecordSources, piiPolicy: PiiPolicy = resolvePiiPolicy(process.env.LLM_PII_POLICY)): RecordChunk[] {
   const chunks: RecordChunk[] = [];
   const add = (kind: string, owner: string, label: string, texts: Array<string | undefined>): void => {
     texts.forEach((text, i) => {
       if (text && text.trim() && chunks.length < MAX_CHUNKS) chunks.push({ chunkId: `record:${kind}:${owner}:${i}`, label, text: text.trim() });
     });
   };
+  /**
+   * The officer's own words are redacted for the model (LLM_PII_POLICY). The
+   * writer and the claim verifier both read these chunks, so a redacted
+   * sentence still grounds a claim that quotes it.
+   */
+  const words = (text: string | undefined): string | undefined =>
+    text === undefined ? undefined : redactForLlm(text, piiPolicy);
 
   const p = sources.project;
   const place = [p.district, p.region, p.country].filter(Boolean).join(", ");
@@ -109,7 +116,7 @@ export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
     `${p.implementingOrganization} implements the project${p.partnerOrganization ? ` with ${p.partnerOrganization}` : ""} in ${place}.`,
     `The project runs from ${bothDates(p.duration.start)} to ${bothDates(p.duration.end)}.`,
     p.budget ? `The project budget is ${p.budget.amount} ${p.budget.currency}.` : undefined,
-    ...recordSentences(p.description),
+    ...recordSentences(words(p.description)),
   ]);
   add("period", "dates", "Reporting period", [
     `This ${sources.period.reportType.toLowerCase().replace(/_/g, "-")} report covers ${bothDates(sources.period.duration.start)} to ${bothDates(sources.period.duration.end)}.`,
@@ -121,10 +128,10 @@ export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
   if (s) {
     const STORY_LABEL: Record<string, string> = { achievements: "the achievements", challenges: "the challenges", varianceExplanations: "the reason for any variance or unspent balance", adaptations: "the adaptations made", lessons: "the lessons learned" };
     for (const [index, text] of Object.values(s.sectionNotes ?? {}).entries()) {
-      add("story", `sectionNote${index}`, "Reporting officer's statement for a compliance section", recordSentences(text).map((sentence) => `The reporting officer recorded: ${sentence}`));
+      add("story", `sectionNote${index}`, "Reporting officer's statement for a compliance section", recordSentences(words(text)).map((sentence) => `The reporting officer recorded: ${sentence}`));
     }
     for (const [field, text] of Object.entries(s).filter(([k]) => k !== "sectionNotes") as Array<[string, string | undefined]>) {
-      add("story", field, `Reporting officer's story: ${field}`, recordSentences(text).map((sentence) => `The reporting officer recorded ${STORY_LABEL[field] ?? field}: ${sentence}`));
+      add("story", field, `Reporting officer's story: ${field}`, recordSentences(words(text)).map((sentence) => `The reporting officer recorded ${STORY_LABEL[field] ?? field}: ${sentence}`));
     }
   }
 
@@ -138,19 +145,19 @@ export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
       a.participantsDisability !== undefined ? `${a.participantsDisability} with disabilities` : undefined,
     ].filter(Boolean);
     add("activity", a.id, label, [
-      `${a.activityTitle}${a.location ? ` at ${a.location}` : ""} ${a.activityEndDate ? `from ${bothDates(a.activityDate)} to ${bothDates(a.activityEndDate)}` : `on ${bothDates(a.activityDate)}`}.`,
+      `${a.activityTitle}${a.location ? ` at ${words(a.location)}` : ""} ${a.activityEndDate ? `from ${bothDates(a.activityDate)} to ${bothDates(a.activityEndDate)}` : `on ${bothDates(a.activityDate)}`}.`,
       participants.length ? `Participants: ${participants.join(", ")}.` : undefined,
-      ...recordSentences(a.summary),
-      ...recordSentences(a.achievements),
-      ...recordSentences(a.challenges),
-      ...recordSentences(a.lessonsLearned),
-      ...recordSentences(a.nextSteps),
+      ...recordSentences(words(a.summary)),
+      ...recordSentences(words(a.achievements)),
+      ...recordSentences(words(a.challenges)),
+      ...recordSentences(words(a.lessonsLearned)),
+      ...recordSentences(words(a.nextSteps)),
     ]);
   }
 
   const seen = new Set<string>();
   sources.indicatorUpdates.forEach((u, i) => {
-    const texts = [u.comments && recordSentences(u.comments).join(" "), u.dataSource ? `${u.indicatorCode} data source: ${u.dataSource}.` : undefined];
+    const texts = [u.comments && recordSentences(words(u.comments)).join(" "), u.dataSource ? `${u.indicatorCode} data source: ${words(u.dataSource)}.` : undefined];
     const key = texts.join("|");
     if (seen.has(key)) return;
     seen.add(key);

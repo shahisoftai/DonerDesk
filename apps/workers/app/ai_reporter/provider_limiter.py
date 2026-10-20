@@ -11,6 +11,7 @@ Three controls, shared by every section of every report this worker drafts:
 
 `acquire()` waits for all three and is bounded by the caller's own budget.
 """
+
 from __future__ import annotations
 
 import os

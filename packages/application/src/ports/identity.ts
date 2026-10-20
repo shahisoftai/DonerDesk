@@ -2,6 +2,7 @@ import type { Result, TenantId } from "@donordesk/domain";
 import {
   Organization,
   PasswordResetToken,
+  ScimCredential,
   type Invitation,
   type User,
   type Role,
@@ -57,6 +58,15 @@ export interface IPasswordResetTokenRepository {
   create(token: PasswordResetToken): Promise<Result<PasswordResetToken>>;
   findActiveByHash(tokenHash: string): Promise<Result<PasswordResetToken | null>>;
   markUsed(id: string, tenantId: TenantId): Promise<Result<PasswordResetToken>>;
+}
+
+export interface IScimCredentialRepository {
+  create(credential: ScimCredential): Promise<Result<ScimCredential>>;
+  update(credential: ScimCredential): Promise<Result<ScimCredential>>;
+  /** The credential for a bearer token, whichever organisation owns it. Used by the SCIM endpoint before a tenant is known. */
+  findByTokenHash(tokenHash: string): Promise<Result<ScimCredential | null>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<ScimCredential | null>>;
+  listByTenant(tenantId: TenantId): Promise<Result<ScimCredential[]>>;
 }
 
 export interface IPasswordResetRateLimiter {

@@ -14,6 +14,7 @@ functions of the verified findings, so they are grounded by construction:
 
 The writer only writes prose; `attach` merges these onto its section.
 """
+
 from __future__ import annotations
 
 import re
@@ -50,7 +51,8 @@ def _not_calculable(f: Finding) -> bool:
 
 
 def _is_rate(f: Finding) -> bool:
-    """A value that is itself a percentage (coverage, rate): "percent of target" is the wrong yardstick; baseline and target are shown instead."""
+    """A value that is itself a percentage (coverage, rate): "percent of target" is the wrong
+    yardstick; baseline and target are shown instead."""
     return (f.indicatorType or "").strip().lower() == "percentage" or (f.unit or "").strip() == "%"
 
 
@@ -202,7 +204,13 @@ _GROUP_COLUMNS = [
     ("value", "This period"),
 ]
 _GROUP_LIFE_COLUMN = ("cumulative", "Cumulative to date")
-_DIMENSION_LABEL = {"SEX": "Sex", "AGE_GROUP": "Age group", "DISABILITY": "Disability", "LOCATION": "Location", "OTHER": "Other"}
+_DIMENSION_LABEL = {
+    "SEX": "Sex",
+    "AGE_GROUP": "Age group",
+    "DISABILITY": "Disability",
+    "LOCATION": "Location",
+    "OTHER": "Other",
+}
 
 
 def _group_key(entry: dict[str, Any]) -> tuple[str, str]:
@@ -360,7 +368,13 @@ def attach(section: GeneratedSection, req: SectionDraftRequest, kind: str) -> Ge
     delta = period_delta(req) if kind in DELTA_KINDS else None
     if delta is not None:
         artifacts.append(
-            Artifact(kind="DELTA", caption="Change from previous period", ordinal=0, payload=delta.model_dump(), sourceReferences=delta.sourceReferences)
+            Artifact(
+                kind="DELTA",
+                caption="Change from previous period",
+                ordinal=0,
+                payload=delta.model_dump(),
+                sourceReferences=delta.sourceReferences,
+            )
         )
     for i, art in enumerate(artifacts):
         art.ordinal = i

@@ -9,6 +9,7 @@ ai_reporter. Errors are returned as 422 with a plain message rather than
 propagating a raw 500, so the TS caller's Result-based client gets a clean
 failure to fall back on.
 """
+
 from __future__ import annotations
 
 import base64

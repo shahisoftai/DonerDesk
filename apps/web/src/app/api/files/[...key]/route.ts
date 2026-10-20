@@ -63,7 +63,16 @@ export async function GET(
   }
 
   if (!upstream.ok) {
-    return new Response("File not found", { status: upstream.status });
+    // The API says why (a restricted file, a missing one). Pass the reason on
+    // rather than calling every failure "not found".
+    let title = "File not found";
+    try {
+      const problem = (await upstream.json()) as { title?: string };
+      if (problem?.title) title = problem.title;
+    } catch {
+      // A non-JSON error body is fine; the default message stands.
+    }
+    return new Response(title, { status: upstream.status });
   }
 
   const body = await upstream.arrayBuffer();

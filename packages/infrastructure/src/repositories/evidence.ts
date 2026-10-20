@@ -83,6 +83,12 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
     return ok(this.toDomain(row));
   }
 
+  async findByStorageKey(storageKey: string, tenantId: TenantId): Promise<Result<EvidenceFile | null, DomainError>> {
+    const row = await this.prisma.evidenceFile.findFirst({ where: { storageKey, tenantId: tenantId.toString() } });
+    if (!row) return ok(null);
+    return ok(this.toDomain(row));
+  }
+
   async search(filter: EvidenceFilter, tenantId: TenantId): Promise<Result<EvidenceListResult, DomainError>> {
     const page = filter.page ?? 1;
     const pageSize = filter.pageSize ?? 20;
@@ -96,7 +102,16 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
     if (filter.location) where.location = { contains: filter.location };
     if (filter.uploadedById) where.uploadedById = filter.uploadedById;
     if (filter.verificationStatus) where.verificationStatus = filter.verificationStatus;
-    if (filter.confidentialityLevel) where.confidentialityLevel = filter.confidentialityLevel;
+    // A level the caller may not open is never returned, so the list cannot
+    // show a file whose download would be refused.
+    const allowed = filter.allowedConfidentialityLevels;
+    if (allowed) {
+      const wanted = filter.confidentialityLevel ? [filter.confidentialityLevel] : allowed;
+      const permitted = wanted.filter((level) => allowed.includes(level));
+      where.confidentialityLevel = permitted.length > 0 ? { in: permitted } : { in: ["__none__"] };
+    } else if (filter.confidentialityLevel) {
+      where.confidentialityLevel = filter.confidentialityLevel;
+    }
     if (filter.dateFrom || filter.dateTo) {
       where.activityDate = {};
       if (filter.dateFrom) (where.activityDate as { gte?: Date }).gte = filter.dateFrom;

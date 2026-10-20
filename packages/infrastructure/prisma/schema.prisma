@@ -206,6 +206,21 @@ model Invitation {
   @@index([tenantId])
 }
 
+/// A credential an identity provider uses to provision this organisation's
+/// users over SCIM. Only the hash of the token is stored.
+model ScimCredential {
+  id          String   @id
+  tenantId    String
+  name        String
+  tokenHash   String   @unique
+  createdById String
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+}
+
 model ProjectMember {
   id            String   @id
   tenantId      String
@@ -607,6 +622,7 @@ model ReportDraft {
   generationRuns  ReportGenerationRun[]
   @@index([tenantId])
   @@index([reportingPeriodId])
+  @@index([supersededAt])
 }
 
 model ReportSection {

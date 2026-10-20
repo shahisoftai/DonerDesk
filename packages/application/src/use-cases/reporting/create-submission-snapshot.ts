@@ -48,6 +48,23 @@ export class CreateSubmissionSnapshotHandler {
     const draft = draftResult.value;
     if (!draft) return { ok: false, error: DomainError.notFound("ReportDraft", draftId) };
 
+    // The report must have been approved at draft level: that is the action
+    // the project's second-approver rule governs. Approving the sections one
+    // by one is not a substitute, so a donor copy cannot be sealed by a report
+    // its own author approved.
+    if (draft.status !== "APPROVED" && draft.status !== "SUBMITTED" && draft.status !== "EXPORTED") {
+      return {
+        ok: false,
+        error: DomainError.reportGateBlocked("The report has to be approved before the donor copy can be sealed. Approve the report, then try again."),
+      };
+    }
+    const approverCheck = await this.gate.checkApprovedDraftApprover(ctx, {
+      projectId: draft.projectId,
+      createdById: draft.createdById,
+      approvedById: draft.approvedById,
+    });
+    if (!approverCheck.ok) return approverCheck;
+
     const gateResult = await this.gate.evaluateGate(ctx, draft.reportingPeriodId, draftId);
     if (!gateResult.ok) return gateResult;
     if (gateResult.value.submitBlocked || gateResult.value.submitNeedsDecision || gateResult.value.approvalBlocked) {

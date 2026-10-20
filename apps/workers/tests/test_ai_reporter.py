@@ -3,6 +3,7 @@
 These run without an LLM. They exercise the deterministic surfaces that the
 worker relies on.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -19,12 +20,10 @@ from app.ai_reporter.models import (
     Activity,
     Context,
     ContextProfile,
-    Finding,
     GeneratedSection,
     SectionBrief,
     SectionDraftRequest,
 )
-
 
 # --------------------------------------------------------------------------- #
 # writer_contract
@@ -100,10 +99,12 @@ def test_chart_suggester_returns_none_when_no_indicators() -> None:
 
 
 def test_chart_suggester_picks_line_when_prior_value_present() -> None:
-    spec = chart_suggester.suggest({
-        "indicators": [{"code": "IND-1", "value": "1200", "target": "1500", "baseline": "0"}],
-        "priorValues": {"IND-1": "900"},
-    })
+    spec = chart_suggester.suggest(
+        {
+            "indicators": [{"code": "IND-1", "value": "1200", "target": "1500", "baseline": "0"}],
+            "priorValues": {"IND-1": "900"},
+        }
+    )
     assert spec is not None
     assert spec.type == "LINE"
     assert spec.dataBinding == "INDICATOR_ACHIEVEMENT"
@@ -111,40 +112,48 @@ def test_chart_suggester_picks_line_when_prior_value_present() -> None:
 
 
 def test_chart_suggester_picks_pie_when_three_statuses() -> None:
-    spec = chart_suggester.suggest({
-        "claimStatusCounts": {"VERIFIED": 12, "NEEDS_REVIEW": 3, "DRAFT": 1},
-    })
+    spec = chart_suggester.suggest(
+        {
+            "claimStatusCounts": {"VERIFIED": 12, "NEEDS_REVIEW": 3, "DRAFT": 1},
+        }
+    )
     assert spec is not None
     assert spec.type == "PIE"
 
 
 def test_chart_suggester_picks_bar_when_three_disaggregations() -> None:
-    spec = chart_suggester.suggest({
-        "disaggregations": [
-            {"label": "Female", "value": 600},
-            {"label": "Male", "value": 500},
-            {"label": "Other", "value": 100},
-        ],
-    })
+    spec = chart_suggester.suggest(
+        {
+            "disaggregations": [
+                {"label": "Female", "value": 600},
+                {"label": "Male", "value": 500},
+                {"label": "Other", "value": 100},
+            ],
+        }
+    )
     assert spec is not None
     assert spec.type == "BAR"
 
 
 def test_chart_suggester_picks_comparison_bar_for_baseline_target_value() -> None:
-    spec = chart_suggester.suggest({
-        "indicators": [
-            {"code": "IND-1", "baseline": "100", "target": "500", "value": "480"},
-        ],
-    })
+    spec = chart_suggester.suggest(
+        {
+            "indicators": [
+                {"code": "IND-1", "baseline": "100", "target": "500", "value": "480"},
+            ],
+        }
+    )
     assert spec is not None
     assert spec.type == "BAR"
     assert spec.dataBinding == "INDICATOR_COMPARISON"
 
 
 def test_chart_suggester_picks_gauge_for_activity_output_vs_target() -> None:
-    spec = chart_suggester.suggest({
-        "activityOutputVsTarget": {"output": 80, "target": 100},
-    })
+    spec = chart_suggester.suggest(
+        {
+            "activityOutputVsTarget": {"output": 80, "target": 100},
+        }
+    )
     assert spec is not None
     assert spec.type == "GAUGE"
 
@@ -197,11 +206,15 @@ def test_assert_word_count_min_is_a_warning_and_max_is_hard() -> None:
     req = _request()
     req.section.minWords = 10
     req.section.maxWords = 20
-    short = artifact_validators.assert_word_count(GeneratedSection(sectionId="s", title="A", content="one two three"), req)
+    short = artifact_validators.assert_word_count(
+        GeneratedSection(sectionId="s", title="A", content="one two three"), req
+    )
     assert short.ok
     assert any("minWords" in w for w in short.warnings)
     req.section.maxWords = 2
-    long = artifact_validators.assert_word_count(GeneratedSection(sectionId="s", title="A", content="one two three"), req)
+    long = artifact_validators.assert_word_count(
+        GeneratedSection(sectionId="s", title="A", content="one two three"), req
+    )
     assert not long.ok
 
 
@@ -433,7 +446,7 @@ def test_strip_think_blocks_removes_reasoning_and_keeps_json() -> None:
     from app.ai_reporter.llm_gateway import strip_think_blocks
 
     raw = (
-        "<think>\nThe user wants a report section. I should use {\"title\": ...} shape.\n"
+        '<think>\nThe user wants a report section. I should use {"title": ...} shape.\n'
         "</think>\n\n"
         '{"title":"Executive Summary","content":"Reach was 9,772 of 12,000."}'
     )
@@ -445,7 +458,7 @@ def test_strip_think_blocks_removes_reasoning_and_keeps_json() -> None:
 def test_strip_think_blocks_handles_unclosed_think() -> None:
     from app.ai_reporter.llm_gateway import strip_think_blocks
 
-    raw = '<think>\nreasoning that never ends because tokens ran out'
+    raw = "<think>\nreasoning that never ends because tokens ran out"
     assert strip_think_blocks(raw) == ""
 
 
@@ -457,7 +470,7 @@ def test_extract_json_parses_minimax_style_output() -> None:
     from app.ai_reporter.llm_gateway import extract_json, strip_think_blocks
 
     raw = (
-        "<think>\nDraft must include {\"claims\": [..]} and satisfy the QPR "
+        '<think>\nDraft must include {"claims": [..]} and satisfy the QPR '
         "requirements {SECTION, QUESTION, DECLARATION, INDICATOR}.\n</think>\n"
         '{"title":"Safeguarding and PSEA","content":"No concerns were recorded.",'
         '"claims":[{"text":"No safeguarding concerns were recorded this period.",'
@@ -474,14 +487,10 @@ def test_extract_json_tolerates_raw_newlines_in_strings() -> None:
     which reasoning models emit frequently (live prod failure 2026-09-02)."""
     from app.ai_reporter.llm_gateway import extract_json
 
-    raw = (
-        '{"title":"Progress","content":"Line one\nLine two continues\n'
-        'and the paragraph ends."}'
-    )
+    raw = '{"title":"Progress","content":"Line one\nLine two continues\nand the paragraph ends."}'
     parsed = extract_json(raw)
     assert "Line one" in parsed["content"]
     assert parsed["content"].endswith("ends.")
-
 
 
 # --------------------------------------------------------------------------- #
@@ -608,7 +617,10 @@ def test_pipeline_retries_once_when_model_returns_no_json(monkeypatch: pytest.Mo
     replies = iter(
         [
             ("", {"inputTokens": 1, "outputTokens": 0, "latencyMs": 1, "parseOutcome": "VALID"}),
-            ('{"title":"Results","content":"Ok."}', {"inputTokens": 1, "outputTokens": 5, "latencyMs": 1, "parseOutcome": "VALID"}),
+            (
+                '{"title":"Results","content":"Ok."}',
+                {"inputTokens": 1, "outputTokens": 5, "latencyMs": 1, "parseOutcome": "VALID"},
+            ),
         ]
     )
     monkeypatch.setattr(draft_writer, "_chat", lambda *a, **k: next(replies))
@@ -635,6 +647,10 @@ def test_draft_makes_exactly_one_provider_call(monkeypatch: pytest.MonkeyPatch) 
 def test_draft_raises_when_model_never_returns_json(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.ai_reporter import draft_writer
 
-    monkeypatch.setattr(draft_writer, "_chat", lambda *a, **k: ("", {"inputTokens": 1, "outputTokens": 0, "latencyMs": 1, "parseOutcome": "VALID"}))
+    monkeypatch.setattr(
+        draft_writer,
+        "_chat",
+        lambda *a, **k: ("", {"inputTokens": 1, "outputTokens": 0, "latencyMs": 1, "parseOutcome": "VALID"}),
+    )
     with pytest.raises(ValueError):
         draft_writer.draft(_request())

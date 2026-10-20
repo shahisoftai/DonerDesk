@@ -325,6 +325,20 @@ backup restore.
 ```bash
 # As root/operator with migrator credentials (root-only; never in api.env):
 set -a; . <migrator-env>; set +a
+DATABASE_ADMIN_URL="$DATABASE_ADMIN_URL" pnpm db:migrate:deploy
+```
+
+That runs `prisma migrate deploy` (the checked-in migration files), then
+`infra/postgres/rls.sql`, `infra/postgres/pgvector.sql` and the baseline
+backfill, then `scripts/check-migration-drift.sh` — which fails when the
+database built from the migrations differs from `schema.prisma`. A migration
+that does not sum to the schema must not ship.
+
+To do it by hand instead:
+
+```bash
+# As root/operator with migrator credentials (root-only; never in api.env):
+set -a; . <migrator-env>; set +a
 DATABASE_URL="$DATABASE_ADMIN_URL" \
   /opt/donordesk/app/packages/infrastructure/node_modules/.bin/prisma \
   migrate deploy --schema /opt/donordesk/app/packages/infrastructure/prisma/schema.prisma
@@ -334,6 +348,11 @@ DATABASE_URL="$DATABASE_ADMIN_URL" \
 
 Use expand/migrate/contract. Destructive migrations need an approved window
 and a tested restore point. Never `prisma db push`/`--accept-data-loss`.
+
+Backups, the restore drill and the host-loss recovery are in
+`memorybank/docs/runbooks/DISASTER-RECOVERY.md` (the backup runs nightly from
+`donordesk-backup.timer`; `restoreTestedAt` on the newest `BackupRun` says
+whether the data has actually been proven recoverable).
 
 ## 16. Rollback
 

@@ -8,6 +8,7 @@ time (see `chart_suggester_parity_test.py`).
 Returns a `ChartPayload` (a suggestion) or `None`. The writer is *required* to
 emit a CHART artifact when this returns non-None; otherwise no chart.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -103,7 +104,11 @@ def suggest(finding_summary: dict[str, Any]) -> ChartPayload | None:
             )
 
     # 5. Indicator comparison bar when one or more indicators have all of baseline/target/value.
-    comparable = [i for i in indicators if i.get("baseline") is not None and i.get("target") is not None and i.get("value") is not None]
+    comparable = [
+        i
+        for i in indicators
+        if i.get("baseline") is not None and i.get("target") is not None and i.get("value") is not None
+    ]
     if comparable:
         unit = next((i.get("unit") for i in comparable if i.get("unit")), None)
         return ChartPayload(
@@ -127,7 +132,7 @@ def _to_number(value: Any) -> float | str | None:
     """Defensive numeric coercion mirroring TS `parse`."""
     if value is None:
         return None
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return float(value)
     s = str(value).strip()
     if not s:

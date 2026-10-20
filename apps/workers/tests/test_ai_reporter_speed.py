@@ -1,6 +1,7 @@
 """Generation-speed controls: provider slot/cooldown handling, the capped HTTP
 timeout, reasoning switched off for GLM, the cacheable prompt prefix, and the
 pipeline's retry policy. No network: HTTP is faked."""
+
 from __future__ import annotations
 
 import json

@@ -1,4 +1,5 @@
 """A finding's recorded breakdown (sex, age, ...) reaches the writer and its figures are grounded."""
+
 from __future__ import annotations
 
 from app.ai_reporter import grounding

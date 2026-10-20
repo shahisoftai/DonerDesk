@@ -51,8 +51,7 @@ test("rule on and nobody else assigned: the refusal says what to do", async () =
   assert.match(r.error.message, /nobody else is assigned/);
 });
 
-test("approverEligibility tells the UI whether to offer Approve, with the same reason the refusal gives", async () => {
-  const { h } = build({ requireSecondApprover: true, members: [pm] });
+test("approverEligibility tells the UI whether to offer Approve, with the same reason the refusal gives", async () => {  const { h } = build({ requireSecondApprover: true, members: [pm] });
   const self = await h.approverEligibility(as("author"), "p", "author");
   assert.equal(self.ok, true);
   assert.equal(self.value.canApprove, false);
@@ -65,4 +64,37 @@ test("a team of one with the rule off may approve (recorded as a self sign-off e
   const { h } = build({ requireSecondApprover: false });
   const r = await h.approverEligibility(as("author"), "p", "author");
   assert.deepEqual(r.value, { canApprove: true });
+});
+
+test("an approved draft is re-checked against the rule, so the seal cannot be bypassed", async () => {
+  // The author approved the report themselves; the rule was on when they
+  // pressed Approve only because the draft was approved before the rule
+  // existed, or because the sections were approved one by one. The seal
+  // re-checks the rule against the person who approved the draft.
+  const { h } = build({ requireSecondApprover: true, members: [pm] });
+  const own = await h.checkApprovedDraftApprover(as("author"), { projectId: "p", createdById: "author", approvedById: "author" });
+  assert.equal(own.ok, false);
+  assert.match(own.error.message, /other than you/);
+
+  const other = await h.checkApprovedDraftApprover(as("pm"), { projectId: "p", createdById: "author", approvedById: "pm" });
+  assert.equal(other.ok, true);
+});
+
+test("a rule turned on after the approval still applies to the seal", async () => {
+  const { h } = build({ requireSecondApprover: true, members: [pm] });
+  const r = await h.checkApprovedDraftApprover(as("author"), { projectId: "p", createdById: "author", approvedById: "author" });
+  assert.equal(r.ok, false);
+});
+
+test("with the rule off, the author's own approval still seals", async () => {
+  const { h } = build({ requireSecondApprover: false });
+  const r = await h.checkApprovedDraftApprover(as("author"), { projectId: "p", createdById: "author", approvedById: "author" });
+  assert.equal(r.ok, true);
+});
+
+test("a draft with no recorded approver cannot be sealed", async () => {
+  const { h } = build({ requireSecondApprover: false });
+  const r = await h.checkApprovedDraftApprover(as("author"), { projectId: "p", createdById: "author", approvedById: undefined });
+  assert.equal(r.ok, false);
+  assert.match(r.error.message, /not been approved/);
 });

@@ -4,6 +4,7 @@ Every `/v1/*` route requires a valid `X-Internal-Token` matching `INTERNAL_TOKEN
 Liveness (`/health`) and readiness (`/ready`) probes are intentionally exempt so
 systemd can health-check the service without a secret.
 """
+
 from __future__ import annotations
 
 import hmac

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { LegalLayout } from "@/components/legal/LegalLayout";
+import { LEGAL } from "@/lib/legal-entity";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
@@ -35,7 +36,7 @@ export default function PrivacyPage() {
     <LegalLayout
       title="Privacy Policy"
       subtitle="Legal"
-      updated="7 October 2026 (Version 1.1)"
+      updated={LEGAL.updated}
       toc={TOC}
     >
       <Section id="who-we-are" title="1. Who we are">
@@ -55,7 +56,7 @@ export default function PrivacyPage() {
         </P>
         <P>
           For any privacy question or request, contact our privacy team at{" "}
-          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>.
+          <A href={`mailto:${LEGAL.privacyEmail}`}>{LEGAL.privacyEmail}</A>.
         </P>
       </Section>
 
@@ -212,7 +213,7 @@ export default function PrivacyPage() {
           Where the GDPR or other applicable law requires a{" "}
           <B>data processing agreement</B> or equivalent safeguards, we make
           available a data processing addendum. Contact{" "}
-          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>{" "}
+          <A href={`mailto:${LEGAL.privacyEmail}`}>{LEGAL.privacyEmail}</A>{" "}
           to request a copy.
         </P>
       </Section>
@@ -300,7 +301,7 @@ export default function PrivacyPage() {
         <P>
           If you would like to know more about the safeguards we apply to
           international transfers, or to obtain a copy where available, contact{" "}
-          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>.
+          <A href={`mailto:${LEGAL.privacyEmail}`}>{LEGAL.privacyEmail}</A>.
         </P>
       </Section>
 
@@ -355,21 +356,36 @@ export default function PrivacyPage() {
         </P>
         <Ul>
           <Li>
-            Encryption of data in transit (TLS) and at rest where supported by our
-            storage infrastructure.
+            Encryption of data in transit (TLS), and at rest for passwords
+            (one-way bcrypt) and for platform secrets (AES-256-GCM). Evidence
+            files are held on encrypted host volumes; we do not apply a second
+            layer of encryption to file contents, so a tenant that needs its
+            files encrypted with a key only it holds should link its own Google
+            Drive rather than let us store them.
           </Li>
           <Li>
             Multi-tenant architecture with tenant-scoped access control and
-            row-level security, so that one organization's data is never visible
-            to another.
+            forced row-level security, so that one organization&apos;s data is
+            never visible to another. One internal table — the inbound billing
+            inbox, which holds provider events before the customer is known —
+            is deliberately not tenant-isolated, is written only by our billing
+            service, and is never read through a customer-facing route.
           </Li>
           <Li>
             Role-based access controls and least-privilege permissions for both
-            our users and our staff.
+            our users and our staff, with sensitive files withheld from roles
+            that are not cleared for them.
           </Li>
           <Li>
-            An immutable, chained audit log that records every mutation with
-            checksums, supporting verification and accountability.
+            An append-only, chained audit log: each entry carries a checksum of
+            the entry before it, so a change to the history breaks the chain and
+            is detectable, and the application role may add to the log but
+            cannot alter or erase it.
+          </Li>
+          <Li>
+            Nightly encrypted backups of the databases and the evidence store,
+            copied off the host, restored into a scratch database on a schedule
+            so that the backup is known to work.
           </Li>
           <Li>
             Access controls, security monitoring, and incident-response
@@ -400,7 +416,7 @@ export default function PrivacyPage() {
         </Ul>
         <P>
           To exercise any of these rights, email{" "}
-          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>.
+          <A href={`mailto:${LEGAL.privacyEmail}`}>{LEGAL.privacyEmail}</A>.
           We will respond within the time period required by applicable law
           (typically 30 days, with extensions permitted by law) and may ask you to
           verify your identity or your authority to make the request.
@@ -430,7 +446,7 @@ export default function PrivacyPage() {
           personal information (subject to lawful exceptions), and correct
           inaccurate information. You may also exercise these rights through an
           authorized agent. Contact{" "}
-          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>{" "}
+          <A href={`mailto:${LEGAL.privacyEmail}`}>{LEGAL.privacyEmail}</A>{" "}
           to make a request. We will not discriminate against you for exercising
           your privacy rights.
         </P>
@@ -449,7 +465,7 @@ export default function PrivacyPage() {
         <P>
           If you believe we have unintentionally collected personal information
           from a child, contact{" "}
-          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>{" "}
+          <A href={`mailto:${LEGAL.privacyEmail}`}>{LEGAL.privacyEmail}</A>{" "}
           and we will take reasonable steps to delete it.
         </P>
       </Section>
@@ -506,7 +522,7 @@ export default function PrivacyPage() {
           We welcome responsible disclosure of security vulnerabilities in the
           Service. If you discover a potential vulnerability, please report it
           privately to{" "}
-          <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>{" "}
+          <A href={`mailto:${LEGAL.privacyEmail}`}>{LEGAL.privacyEmail}</A>{" "}
           with sufficient detail to allow us to reproduce and assess it. Please
           do not test in a way that degrades the Service or accesses other users'
           data. We will respond to valid reports and will not pursue legal action
@@ -536,7 +552,7 @@ export default function PrivacyPage() {
           <p className="font-semibold text-white">DonorDesk.Online — Privacy Team</p>
           <p className="mt-1 text-slate-300">
             Email:{" "}
-            <A href="mailto:legal@donordesk.online">legal@donordesk.online</A>
+            <A href={`mailto:${LEGAL.privacyEmail}`}>{LEGAL.privacyEmail}</A>
           </p>
           <p className="mt-1 text-slate-300">
             Service: <span className="text-brand-300">https://donordesk.online</span>

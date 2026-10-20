@@ -9,6 +9,7 @@ Each test pins one defect found in the 2026-09 quality audit:
   - the executive summary could not synthesise drafted sections;
   - rewrite could silently change figures.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -35,10 +36,25 @@ from app.ai_reporter.router import rewrite_issues
 
 def _findings() -> list[Finding]:
     return [
-        Finding(indicatorCode="OUT-1", indicatorId="ind-1", indicatorName="Centres rehabilitated", baseline="0", target="120",
-                value="96", comparisonValue="60", performanceEvaluation={"type": "POSITIVE"}),
-        Finding(indicatorCode="OUT-2", indicatorId="ind-2", indicatorName="Caregivers counselled", target="1,000",
-                value=None, valueStatus="NOT_CALCULABLE", qualityFlags=["MISSING_DENOMINATOR"]),
+        Finding(
+            indicatorCode="OUT-1",
+            indicatorId="ind-1",
+            indicatorName="Centres rehabilitated",
+            baseline="0",
+            target="120",
+            value="96",
+            comparisonValue="60",
+            performanceEvaluation={"type": "POSITIVE"},
+        ),
+        Finding(
+            indicatorCode="OUT-2",
+            indicatorId="ind-2",
+            indicatorName="Caregivers counselled",
+            target="1,000",
+            value=None,
+            valueStatus="NOT_CALCULABLE",
+            qualityFlags=["MISSING_DENOMINATOR"],
+        ),
     ]
 
 
@@ -48,7 +64,9 @@ def _req(title: str = "Results and progress", **brief: object) -> SectionDraftRe
         context=Context(profile=ContextProfile(tone="FORMAL", language="English")),
         verifiedFindings=_findings(),
         indicatorUpdates=[IndicatorUpdate(indicatorCode="OUT-1", indicatorId="ind-1", dataSource="Site register")],
-        activities=[Activity(title="IYCF counselling", activityId="act-14", participantsTotal=142, participantsFemale=97)],
+        activities=[
+            Activity(title="IYCF counselling", activityId="act-14", participantsTotal=142, participantsFemale=97)
+        ],
     )
 
 
@@ -66,8 +84,14 @@ def test_coerce_section_passes_through_qa_and_drops_malformed_items() -> None:
             {"question": "Q2?", "answer": "No verified information was recorded."},
             {"answer": "missing question"},
         ],
-        "deltaFromPrior": {"metric": "OUT-1", "fromValue": "60", "toValue": "96", "direction": "UP",
-                           "evidenceSummary": "x", "sourceReferences": [{"type": "indicator", "id": "ind-1"}]},
+        "deltaFromPrior": {
+            "metric": "OUT-1",
+            "fromValue": "60",
+            "toValue": "96",
+            "direction": "UP",
+            "evidenceSummary": "x",
+            "sourceReferences": [{"type": "indicator", "id": "ind-1"}],
+        },
         "artifacts": [{"kind": "LIST", "ordinal": 0, "payload": {"items": []}}, {"bad": True}],
     }
     section = coerce_section(raw, "Results")
@@ -84,7 +108,10 @@ def test_coerce_section_passes_through_qa_and_drops_malformed_items() -> None:
 def test_grounding_allows_recorded_and_percent_of_target_but_not_invented() -> None:
     req = _req()
     allowed = grounding.allowed_numbers(req)
-    text = "The project rehabilitated 96 centres (80% of target), up from 60. It counselled 142 caregivers, 97 of them women. It reached 3,400 people."
+    text = (
+        "The project rehabilitated 96 centres (80% of target), up from 60. "
+        "It counselled 142 caregivers, 97 of them women. It reached 3,400 people."
+    )
     assert grounding.ungrounded_numbers(text, allowed) == ["3,400"]
 
 
@@ -115,10 +142,16 @@ def test_mandatory_questions_match_ignoring_punctuation_and_allow_honest_gaps() 
         title="Results",
         content="x",
         qa=[
-            {"question": "what changed for women", "answer": "97 women were counselled.",
-             "sourceReferences": [{"type": "activity", "id": "act-14"}]},
-            {"question": "Were any complaints received?", "answer": "No complaints data was recorded this period.",
-             "sourceReferences": []},
+            {
+                "question": "what changed for women",
+                "answer": "97 women were counselled.",
+                "sourceReferences": [{"type": "activity", "id": "act-14"}],
+            },
+            {
+                "question": "Were any complaints received?",
+                "answer": "No complaints data was recorded this period.",
+                "sourceReferences": [],
+            },
         ],
     )
     assert artifact_validators.assert_mandatory_questions_answered(section, req).ok
@@ -134,16 +167,23 @@ def test_repetition_catches_paraphrase_with_shared_phrasing() -> None:
     section = GeneratedSection(
         sectionId="s",
         title="Achievements",
-        content="During the quarter, the project rehabilitated 96 learning centres across the three districts in total.",
+        content="During the quarter, the project rehabilitated 96 learning centres across the three districts in "
+        "total.",
     )
     assert not artifact_validators.assert_repetition(section, prior).ok
 
 
 def test_repetition_is_skipped_for_synthesis_sections() -> None:
-    req = _req(title="Executive Summary", synthesis=True,
-               priorSectionsSummary=["The project rehabilitated 96 centres against a target of 120 centres this period."])
-    section = GeneratedSection(sectionId="s", title="Executive Summary",
-                               content="The project rehabilitated 96 centres against a target of 120 centres this period.")
+    req = _req(
+        title="Executive Summary",
+        synthesis=True,
+        priorSectionsSummary=["The project rehabilitated 96 centres against a target of 120 centres this period."],
+    )
+    section = GeneratedSection(
+        sectionId="s",
+        title="Executive Summary",
+        content="The project rehabilitated 96 centres against a target of 120 centres this period.",
+    )
     assert not any(i.startswith("DUPLICATE") for i in artifact_validators.run_all(section, req).issues)
 
 
@@ -171,7 +211,9 @@ def test_donor_voice_warns_on_passive_topic_opening_and_filler() -> None:
 
 def test_section_kind_classifies_real_template_titles() -> None:
     assert section_kind(SectionBrief(title="Executive Summary")) == "EXECUTIVE_SUMMARY"
-    assert section_kind(SectionBrief(title="Annex A: Indicator Performance Table", inputType="ANNEX")) == "INDICATOR_TABLE"
+    assert (
+        section_kind(SectionBrief(title="Annex A: Indicator Performance Table", inputType="ANNEX")) == "INDICATOR_TABLE"
+    )
     assert section_kind(SectionBrief(title="Challenges and mitigation measures")) == "CHALLENGE"
     assert section_kind(SectionBrief(title="Progress against results")) == "ACHIEVEMENT"
     assert section_kind(SectionBrief(title="Conclusion", synthesis=True)) == "EXECUTIVE_SUMMARY"
@@ -179,9 +221,15 @@ def test_section_kind_classifies_real_template_titles() -> None:
 
 def test_attach_builds_verified_indicator_table_and_replaces_model_table() -> None:
     req = _req(title="Annex A: Indicator Performance", inputType="ANNEX")
-    written = GeneratedSection(sectionId="s", title="Annex A", content="| Code | Value |\n| --- | --- |\n| OUT-1 | 99 |\nData quality notes: OUT-2 could not be calculated.")
+    written = GeneratedSection(
+        sectionId="s",
+        title="Annex A",
+        content="| Code | Value |\n| --- | --- |\n| OUT-1 | 99 |\nData quality notes: OUT-2 could not be calculated.",
+    )
     section = artifact_builder.attach(written, req, "INDICATOR_TABLE")
-    assert "| OUT-1 | Centres rehabilitated | — | 0 | 120 | 96 | 60 | 80% | On track | Site register |" in section.content
+    assert (
+        "| OUT-1 | Centres rehabilitated | — | 0 | 120 | 96 | 60 | 80% | On track | Site register |" in section.content
+    )
     assert "| OUT-2 |" in section.content and "Not calculable" in section.content
     assert "99" not in section.content  # the writer's paraphrased table is gone
     assert section.artifacts[0].kind == "TABLE"
@@ -206,7 +254,10 @@ def test_attach_adds_the_delta_but_no_chart_for_results_sections() -> None:
 def test_prompt_renders_story_visibility_guidance_tone_and_ids() -> None:
     req = _req(sectionGuidance=["Write 2-3 flowing paragraphs."])
     req.context.story = ContextStory(varianceExplanations="Rains delayed construction in two districts.")
-    req.context.visibility = ["# Attribution and visibility (mandatory)", "- Use exactly: \"Funded by the European Union.\""]
+    req.context.visibility = [
+        "# Attribution and visibility (mandatory)",
+        '- Use exactly: "Funded by the European Union."',
+    ]
     prompt = build_user_prompt(req)
     assert "Write 2-3 flowing paragraphs." in prompt
     assert "Why targets were over/under achieved: Rains delayed construction" in prompt
@@ -217,7 +268,11 @@ def test_prompt_renders_story_visibility_guidance_tone_and_ids() -> None:
 
 
 def test_prompt_synthesis_mode_lists_drafted_sections_to_summarise() -> None:
-    req = _req(title="Executive Summary", synthesis=True, priorSectionsSummary=["## Results\nThe project rehabilitated 96 centres."])
+    req = _req(
+        title="Executive Summary",
+        synthesis=True,
+        priorSectionsSummary=["## Results\nThe project rehabilitated 96 centres."],
+    )
     prompt = build_user_prompt(req)
     assert "Drafted report sections to synthesise" in prompt
     assert "Already-written sibling sections" not in prompt
@@ -241,7 +296,11 @@ def test_pipeline_retries_with_feedback_and_keeps_fixed_draft(monkeypatch) -> No
 
     def fake_draft(req, **kw):
         calls.append(kw)
-        text = "The project reached 5,000 households." if "feedback" not in kw else "The project rehabilitated 96 centres, up from 60."
+        text = (
+            "The project reached 5,000 households."
+            if "feedback" not in kw
+            else "The project rehabilitated 96 centres, up from 60."
+        )
         return GeneratedSection(sectionId="s", title=req.section.title, content=text)
 
     monkeypatch.setattr(pipeline, "draft", fake_draft)
@@ -256,7 +315,8 @@ def test_pipeline_retries_with_feedback_and_keeps_fixed_draft(monkeypatch) -> No
 
 def test_pipeline_signals_fallback_when_invented_number_persists(monkeypatch) -> None:
     monkeypatch.setattr(
-        pipeline, "draft",
+        pipeline,
+        "draft",
         lambda req, **kw: GeneratedSection(sectionId="s", title="R", content="The project reached 5,000 households."),
     )
     _, telemetry = pipeline.run_pipeline(_req())
@@ -266,8 +326,11 @@ def test_pipeline_signals_fallback_when_invented_number_persists(monkeypatch) ->
 
 def test_pipeline_keeps_ai_prose_when_only_style_issues_remain(monkeypatch) -> None:
     monkeypatch.setattr(
-        pipeline, "draft",
-        lambda req, **kw: GeneratedSection(sectionId="s", title="R", content="The project delivered remarkable results in 96 centres."),
+        pipeline,
+        "draft",
+        lambda req, **kw: GeneratedSection(
+            sectionId="s", title="R", content="The project delivered remarkable results in 96 centres."
+        ),
     )
     section, telemetry = pipeline.run_pipeline(_req())
     assert "usedFallback" not in telemetry
@@ -279,8 +342,11 @@ def test_pipeline_does_not_demand_delta_without_comparable_finding(monkeypatch) 
     req = _req(title="Lessons learned")
     req.priorNarrative = [PriorNarrative(periodLabel="Q1", content="Prior text.", sourceSectionTitle="Lessons")]
     monkeypatch.setattr(
-        pipeline, "draft",
-        lambda r, **kw: GeneratedSection(sectionId="s", title="Lessons", content="Staff learned to schedule sessions earlier."),
+        pipeline,
+        "draft",
+        lambda r, **kw: GeneratedSection(
+            sectionId="s", title="Lessons", content="Staff learned to schedule sessions earlier."
+        ),
     )
     _, telemetry = pipeline.run_pipeline(req)
     assert telemetry["validatorIssues"] == []
@@ -309,9 +375,19 @@ def test_ts_contract_mirror_is_string_identical() -> None:
     import json
     import pathlib
 
-    ts = (pathlib.Path(__file__).resolve().parents[3] / "packages/infrastructure/src/llm/ai-reporter/contract.ts").read_text()
+    ts = (
+        pathlib.Path(__file__).resolve().parents[3] / "packages/infrastructure/src/llm/ai-reporter/contract.ts"
+    ).read_text()
     assert f"WRITER_CONTRACT_VERSION = {writer_contract.WRITER_CONTRACT_VERSION} as const" in ts
-    for items in (writer_contract._WRITER_RULES_V4, writer_contract._WRITER_RULES_V5_ADDITIONS, writer_contract._WRITER_RULES_V6_ADDITIONS, writer_contract.BANNED_PHRASES, writer_contract.LANGUAGE_CRAFT_RULES, writer_contract.WRITER_EXCLUDED_PERIOD_KEYS, writer_contract.WORKFLOW_VOCABULARY):
+    for items in (
+        writer_contract._WRITER_RULES_V4,
+        writer_contract._WRITER_RULES_V5_ADDITIONS,
+        writer_contract._WRITER_RULES_V6_ADDITIONS,
+        writer_contract.BANNED_PHRASES,
+        writer_contract.LANGUAGE_CRAFT_RULES,
+        writer_contract.WRITER_EXCLUDED_PERIOD_KEYS,
+        writer_contract.WORKFLOW_VOCABULARY,
+    ):
         for item in items:
             assert json.dumps(item, ensure_ascii=False) in ts, item
 
@@ -343,7 +419,13 @@ def test_prompt_renders_donor_instructions_tables_and_org_guidance_when_present(
 
 def test_prompt_is_unchanged_when_template_guidance_is_absent() -> None:
     prompt = build_user_prompt(_req())
-    for marker in ("Donor instructions", "Tables the donor requires", "Organisation guidance", "Page limit set by the donor", "report-wide instructions"):
+    for marker in (
+        "Donor instructions",
+        "Tables the donor requires",
+        "Organisation guidance",
+        "Page limit set by the donor",
+        "report-wide instructions",
+    ):
         assert marker not in prompt
 
 
@@ -365,7 +447,12 @@ def test_section_kind_uses_the_canonical_title_for_translated_sections() -> None
     from app.ai_reporter.models import SectionBrief
     from app.ai_reporter.outline import section_kind
 
-    assert section_kind(SectionBrief(title="Difficultés et enseignements tirés", canonicalTitle="Challenges and Lessons Learned")) == "CHALLENGE"
+    assert (
+        section_kind(
+            SectionBrief(title="Difficultés et enseignements tirés", canonicalTitle="Challenges and Lessons Learned")
+        )
+        == "CHALLENGE"
+    )
     assert section_kind(SectionBrief(title="Difficultés et enseignements tirés")) == "NARRATIVE"
     assert section_kind(SectionBrief(title="Prochaines étapes", canonicalTitle="Next Steps")) == "NEXT_PERIOD"
 
@@ -375,7 +462,9 @@ def test_workflow_state_never_reaches_the_prompt() -> None:
     from app.ai_reporter.models import ContextPeriod
 
     req = _req()
-    req.context.period = ContextPeriod(reportType="FINAL", startDate="2026-03-01", endDate="2026-08-31", readinessScore=0.0)
+    req.context.period = ContextPeriod(
+        reportType="FINAL", startDate="2026-03-01", endDate="2026-08-31", readinessScore=0.0
+    )
     prompt = build_user_prompt(req)
     assert "reportType: FINAL" in prompt
     for key in writer_contract.WRITER_EXCLUDED_PERIOD_KEYS:
@@ -386,11 +475,18 @@ def test_workflow_state_never_reaches_the_prompt() -> None:
 @pytest.mark.parametrize(
     "text, hit",
     [
-        ("Readiness scoring for this final report stands at 0.0, so the report requires verification before approval.", True),
+        (
+            "Readiness scoring for this final report stands at 0.0, so the report requires verification before "
+            "approval.",
+            True,
+        ),
         ("The report has three open checklist items.", True),
         ("Gate issues remain.", True),
         ("The ministry gave its approval for the borehole sites.", False),
-        ("Communities were ready to take over the water points; verification of each test was completed on site.", False),
+        (
+            "Communities were ready to take over the water points; verification of each test was completed on site.",
+            False,
+        ),
         ("The checklist used by field teams covers 12 sanitation criteria.", False),
     ],
 )
@@ -471,7 +567,9 @@ def test_other_sections_over_the_limit_keep_one_call_and_report_it(monkeypatch) 
 
 
 def test_a_synthesis_section_still_over_after_the_retry_keeps_the_prose_and_reports_the_count(monkeypatch) -> None:
-    monkeypatch.setattr(pipeline, "draft", lambda req, **kw: GeneratedSection(sectionId="s", title="Executive Summary", content=_LONG))
+    monkeypatch.setattr(
+        pipeline, "draft", lambda req, **kw: GeneratedSection(sectionId="s", title="Executive Summary", content=_LONG)
+    )
     section, telemetry = pipeline.run_pipeline(_req(title="Executive Summary", synthesis=True, maxWords=20))
     assert section.content == _LONG
     assert "usedFallback" not in telemetry, "length alone never swaps in the stub"
@@ -493,7 +591,9 @@ def test_v5_prompt_blocks_appear_only_when_sent() -> None:
     assert "Report structure" not in plain and "Not measured this period" not in plain
     req = _req()
     req.context.structure = ContextStructure(sectionTitles=["Results", "Challenges"], indicatorCodes=["OUT-1"])
-    req.context.notMeasured = [NotMeasured(indicatorCode="HL-OC2a", indicatorName="Quarterly survey", frequency="quarterly")]
+    req.context.notMeasured = [
+        NotMeasured(indicatorCode="HL-OC2a", indicatorName="Quarterly survey", frequency="quarterly")
+    ]
     prompt = build_user_prompt(req)
     assert "Report structure" in prompt and "Challenges" in prompt
     assert "- HL-OC2a (Quarterly survey), measured quarterly" in prompt
@@ -501,7 +601,9 @@ def test_v5_prompt_blocks_appear_only_when_sent() -> None:
 
 def test_officer_note_is_a_compliance_sections_only_source() -> None:
     assert "Reporting officer's statement" not in build_user_prompt(_req())
-    prompt = build_user_prompt(_req(title="Environmental Compliance", officerNote="  Waste was sorted at all three sites.  "))
+    prompt = build_user_prompt(
+        _req(title="Environmental Compliance", officerNote="  Waste was sorted at all three sites.  ")
+    )
     assert "ONLY source" in prompt and "Waste was sorted at all three sites." in prompt
 
 
@@ -520,10 +622,29 @@ def _leveled_req(title: str):
 
     req = _req(title=title, inputType="INDICATOR_TABLE")
     req.verifiedFindings = [
-        Finding(indicatorCode="OC1", indicatorName="Coverage", indicatorType="PERCENTAGE", unit="%", value=60, target=70, logframeLevel="OUTCOME"),
-        Finding(indicatorCode="OP1", indicatorName="Trained", indicatorType="NUMBER", unit="people", value=40, target=240, logframeLevel="OUTPUT"),
+        Finding(
+            indicatorCode="OC1",
+            indicatorName="Coverage",
+            indicatorType="PERCENTAGE",
+            unit="%",
+            value=60,
+            target=70,
+            logframeLevel="OUTCOME",
+        ),
+        Finding(
+            indicatorCode="OP1",
+            indicatorName="Trained",
+            indicatorType="NUMBER",
+            unit="people",
+            value=40,
+            target=240,
+            logframeLevel="OUTPUT",
+        ),
     ]
-    req.context.structure = ContextStructure(sectionTitles=["Progress Against Expected Results", "Outcome Indicators and Data Quality"], indicatorCodes=["OC1", "OP1"])
+    req.context.structure = ContextStructure(
+        sectionTitles=["Progress Against Expected Results", "Outcome Indicators and Data Quality"],
+        indicatorCodes=["OC1", "OP1"],
+    )
     return req
 
 
@@ -545,12 +666,51 @@ def _per_outcome_req(title: str):
 
     req = _req(title=title, inputType="INDICATOR_TABLE")
     req.verifiedFindings = [
-        Finding(indicatorCode="OC1a", indicatorName="Water use", indicatorType="PERCENTAGE", unit="%", value=58, target=75, logframeLevel="OUTCOME", outcomeCode="O1"),
-        Finding(indicatorCode="OP1.1", indicatorName="Water points", indicatorType="NUMBER", unit="points", value=6, target=20, logframeLevel="OUTPUT", outcomeCode="O1"),
-        Finding(indicatorCode="OC2a", indicatorName="Handwashing", indicatorType="PERCENTAGE", unit="%", value=41, target=60, logframeLevel="OUTCOME", outcomeCode="O2"),
-        Finding(indicatorCode="OP2.1", indicatorName="People reached", indicatorType="NUMBER", unit="people", value=9200, target=24000, logframeLevel="OUTPUT", outcomeCode="O2"),
+        Finding(
+            indicatorCode="OC1a",
+            indicatorName="Water use",
+            indicatorType="PERCENTAGE",
+            unit="%",
+            value=58,
+            target=75,
+            logframeLevel="OUTCOME",
+            outcomeCode="O1",
+        ),
+        Finding(
+            indicatorCode="OP1.1",
+            indicatorName="Water points",
+            indicatorType="NUMBER",
+            unit="points",
+            value=6,
+            target=20,
+            logframeLevel="OUTPUT",
+            outcomeCode="O1",
+        ),
+        Finding(
+            indicatorCode="OC2a",
+            indicatorName="Handwashing",
+            indicatorType="PERCENTAGE",
+            unit="%",
+            value=41,
+            target=60,
+            logframeLevel="OUTCOME",
+            outcomeCode="O2",
+        ),
+        Finding(
+            indicatorCode="OP2.1",
+            indicatorName="People reached",
+            indicatorType="NUMBER",
+            unit="people",
+            value=9200,
+            target=24000,
+            logframeLevel="OUTPUT",
+            outcomeCode="O2",
+        ),
     ]
-    req.context.structure = ContextStructure(sectionTitles=["Results by Outcome", "Outcome 1: Safe water", "Outcome 2: Hygiene"], indicatorCodes=["OC1a", "OP1.1", "OC2a", "OP2.1"])
+    req.context.structure = ContextStructure(
+        sectionTitles=["Results by Outcome", "Outcome 1: Safe water", "Outcome 2: Hygiene"],
+        indicatorCodes=["OC1a", "OP1.1", "OC2a", "OP2.1"],
+    )
     return req
 
 
@@ -571,9 +731,20 @@ def test_a_roll_up_report_has_no_previous_period_delta() -> None:
     from app.ai_reporter.models import Finding, LifeOfProject
 
     req = _req(title="Executive Summary")
-    req.verifiedFindings = [Finding(indicatorCode="OC1a", indicatorType="PERCENTAGE", unit="%", value=72, comparisonValue=58, lifeOfProject=LifeOfProject(value="72", basis="LATEST"))]
+    req.verifiedFindings = [
+        Finding(
+            indicatorCode="OC1a",
+            indicatorType="PERCENTAGE",
+            unit="%",
+            value=72,
+            comparisonValue=58,
+            lifeOfProject=LifeOfProject(value="72", basis="LATEST"),
+        )
+    ]
     assert artifact_builder.period_delta(req) is None
-    req.verifiedFindings = [Finding(indicatorCode="OC1a", indicatorType="PERCENTAGE", unit="%", value=72, comparisonValue=58)]
+    req.verifiedFindings = [
+        Finding(indicatorCode="OC1a", indicatorType="PERCENTAGE", unit="%", value=72, comparisonValue=58)
+    ]
     assert artifact_builder.period_delta(req) is not None
 
 
@@ -581,7 +752,17 @@ def test_finance_block_uses_thousands_separators_and_states_the_basis() -> None:
     from app.ai_reporter.draft_writer import _finance_block
     from app.ai_reporter.models import ContextFinance, FinanceLine
 
-    block = _finance_block("Financial figures", ContextFinance(currency="USD", budget="720000", expenditure="295000", balance="425000", burnRatePercent="41", lines=[FinanceLine(budgetLine="Water", budget="260000", expenditure="118000", balance="142000")]))
+    block = _finance_block(
+        "Financial figures",
+        ContextFinance(
+            currency="USD",
+            budget="720000",
+            expenditure="295000",
+            balance="425000",
+            burnRatePercent="41",
+            lines=[FinanceLine(budgetLine="Water", budget="260000", expenditure="118000", balance="142000")],
+        ),
+    )
     assert '"expenditure": "295,000"' in block and '"budget": "720,000"' in block and '"balance": "142,000"' in block
     assert "cumulative to the end of the period" in block
     assert '"burnRatePercent": "41"' in block
@@ -599,7 +780,9 @@ def test_delivery_plan_block_appears_only_when_sent_and_its_counts_are_grounded(
 
     assert "Work plan for this period" not in build_user_prompt(_req())
     req = _req()
-    req.context.deliveryPlan = ContextDeliveryPlan(planned=41, held=38, notHeld=3, cancelled=1, moved=4, movedReasons=["Flooding closed the road"])
+    req.context.deliveryPlan = ContextDeliveryPlan(
+        planned=41, held=38, notHeld=3, cancelled=1, moved=4, movedReasons=["Flooding closed the road"]
+    )
     assert "Work plan for this period" in build_user_prompt(req)
     allowed = allowed_numbers(req)
     assert ungrounded_numbers("38 of the 41 planned sessions were held; 3 were not, and 4 were moved.", allowed) == []

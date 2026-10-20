@@ -11,6 +11,7 @@ Routes:
 Every `/v1/*` route requires `X-Internal-Token` (see app.security). All routes
 are intended to be invoked through Kestra flows on a loopback-bound process.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -18,8 +19,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, FastAPI, File, UploadFile
 
 from .ai_reporter.router import router as ai_reporter_router
-from .donor_template.router import router as donor_template_router
 from .compliance import DetectChecklistRequest, RewriteSectionRequest, detect_checklist, rewrite_section
+from .donor_template.router import router as donor_template_router
 from .drafting import DraftSectionRequest, draft_section
 from .parsers import parse
 from .polishing import PolishRequest, polish

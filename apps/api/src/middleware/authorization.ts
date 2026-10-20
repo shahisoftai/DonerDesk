@@ -1,7 +1,20 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { Permissions, type Permission } from "@donordesk/domain";
+import { DomainError, Permissions, type Permission } from "@donordesk/domain";
 
-const RULES: ReadonlyArray<{
+/**
+ * Every route in the authenticated scope must appear here.
+ *
+ * The table is **exhaustive by construction**: a request that matches no rule
+ * is refused, not allowed. A route that carries no coarse role permission
+ * still needs a rule — either the permission its handler enforces, or the
+ * lowest permission that could legitimately reach it when the handler applies
+ * a finer-grained rule of its own (a plan item the caller owns, a request
+ * assigned to them, a risk they raised).
+ *
+ * `test/authorization-coverage.test.mjs` enumerates the routes the server
+ * actually registers and fails when one is missing from this table.
+ */
+export const RULES: ReadonlyArray<{
   method: string;
   route: RegExp;
   permission: Permission;
@@ -171,10 +184,144 @@ const RULES: ReadonlyArray<{
   { method: "GET", route: /^\/v1\/audit-log$/, permission: "audit.view" },
   { method: "GET", route: /^\/v1\/legal\/consent$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/legal\/consent$/, permission: "project.view" },
+
+  // ── Donor template manager ────────────────────────────────────────────────
+  // The library and the uploaded original are readable by anyone who may read
+  // the project; everything that changes a template needs template.manage.
+  { method: "GET", route: /^\/v1\/templates\/library$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/templates\/[^/]+$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/templates\/[^/]+\/versions\/[^/]+$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/templates\/[^/]+\/original$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/templates\/[^/]+\/brief-preview$/, permission: "project.view" },
+  { method: "PATCH", route: /^\/v1\/templates\/[^/]+$/, permission: "template.manage" },
+  { method: "PUT", route: /^\/v1\/templates\/[^/]+\/requirements$/, permission: "template.manage" },
+  { method: "POST", route: /^\/v1\/templates\/[^/]+\/extract$/, permission: "template.manage" },
+  { method: "POST", route: /^\/v1\/templates\/[^/]+\/review$/, permission: "template.manage" },
+  { method: "PUT", route: /^\/v1\/templates\/[^/]+\/library$/, permission: "template.manage" },
+  { method: "PUT", route: /^\/v1\/templates\/[^/]+\/default$/, permission: "template.manage" },
+  { method: "POST", route: /^\/v1\/templates\/[^/]+\/clone$/, permission: "template.manage" },
+
+  // Template-to-data mapping: reading a mapping is a project read, but the
+  // regions, the approval and locking it onto a period are template work.
+  { method: "POST", route: /^\/v1\/templates\/[^/]+\/mappings\/detect$/, permission: "template.manage" },
+  { method: "GET", route: /^\/v1\/templates\/[^/]+\/mappings$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/templates\/[^/]+\/mappings\/[^/]+$/, permission: "project.view" },
+  { method: "PUT", route: /^\/v1\/mappings\/[^/]+\/regions$/, permission: "template.manage" },
+  { method: "POST", route: /^\/v1\/mappings\/[^/]+\/approve$/, permission: "template.manage" },
+  { method: "POST", route: /^\/v1\/reporting-periods\/[^/]+\/lock-template-mapping$/, permission: "template.manage" },
+
+  // ── Organisation, users, agent memory ─────────────────────────────────────
+  { method: "PUT", route: /^\/v1\/organization\/agent-memory-settings$/, permission: "report.manage-agent-memory" },
+  { method: "GET", route: /^\/v1\/users\/invitations$/, permission: "users.manage" },
+  { method: "GET", route: /^\/v1\/scim\/credentials$/, permission: "users.manage" },
+  { method: "POST", route: /^\/v1\/scim\/credentials$/, permission: "users.manage" },
+  { method: "DELETE", route: /^\/v1\/scim\/credentials\/[^/]+$/, permission: "users.manage" },
+  { method: "GET", route: /^\/v1\/agent-memory$/, permission: "report.manage-agent-memory" },
+  { method: "POST", route: /^\/v1\/agent-memory\/[^/]+\/approve$/, permission: "report.manage-agent-memory" },
+  { method: "POST", route: /^\/v1\/agent-memory\/[^/]+\/reject$/, permission: "report.manage-agent-memory" },
+  { method: "POST", route: /^\/v1\/agent-memory\/[^/]+\/deactivate$/, permission: "report.manage-agent-memory" },
+
+  // ── Import templates and logframe copy ────────────────────────────────────
+  { method: "GET", route: /^\/api\/templates\/(logframe|activities|evidence)$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/logframe\/template$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/copy-setup$/, permission: "project.edit" },
+
+  // ── Evidence ──────────────────────────────────────────────────────────────
+  { method: "POST", route: /^\/v1\/evidence\/search$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/evidence\/[^/]+\/suggest-links$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/evidence\/[^/]+\/period$/, permission: "evidence.upload" },
+
+  // ── Activity records ──────────────────────────────────────────────────────
+  { method: "PATCH", route: /^\/v1\/activities\/[^/]+$/, permission: "activity.create" },
+  { method: "POST", route: /^\/v1\/activities\/(attach|detach)-evidence$/, permission: "evidence.upload" },
+
+  // ── Work plan ─────────────────────────────────────────────────────────────
+  // Item-level writes are gated on workplan.update-own (the permission a lead
+  // holds) and then narrowed by the handler's canActOnPlanItem check, which
+  // only lets someone act on an item they own or support.
+  { method: "GET", route: /^\/v1\/me\/week$/, permission: "project.view" },
+  { method: "PUT", route: /^\/v1\/work-plan\/[^/]+$/, permission: "workplan.update-own" },
+  { method: "POST", route: /^\/v1\/work-plan\/[^/]+\/status$/, permission: "workplan.update-own" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/plan-field-values$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/plan-fields$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/plan-fields$/, permission: "workplan.manage" },
+  { method: "GET", route: /^\/v1\/work-plan\/[^/]+\/fields$/, permission: "project.view" },
+  { method: "PUT", route: /^\/v1\/work-plan\/[^/]+\/fields$/, permission: "workplan.manage" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/work-plan\/bulk$/, permission: "workplan.manage" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/work-plan\/bulk\/undo$/, permission: "workplan.manage" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/workload$/, permission: "team.view-work" },
+  { method: "PUT", route: /^\/v1\/users\/[^/]+\/capacity$/, permission: "workplan.manage" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/automations$/, permission: "workplan.manage" },
+  { method: "PUT", route: /^\/v1\/projects\/[^/]+\/automations\/[^/]+\/settings$/, permission: "workplan.manage" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/automation-history$/, permission: "workplan.manage" },
+  { method: "PUT", route: /^\/v1\/projects\/[^/]+\/automations\/[^/]+$/, permission: "workplan.manage" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/beneficiaries$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/submission-mapping$/, permission: "activity.create" },
+  { method: "PUT", route: /^\/v1\/projects\/[^/]+\/submission-mapping$/, permission: "workplan.manage" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/beneficiaries\/import\/preview$/, permission: "activity.create" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/beneficiaries\/import$/, permission: "activity.create" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/beneficiaries$/, permission: "activity.create" },
+  { method: "PUT", route: /^\/v1\/beneficiaries\/[^/]+$/, permission: "activity.create" },
+  { method: "DELETE", route: /^\/v1\/beneficiaries\/[^/]+$/, permission: "activity.create" },
+  { method: "PUT", route: /^\/v1\/work-plan\/[^/]+\/indicators$/, permission: "workplan.update-own" },
+  { method: "GET", route: /^\/v1\/work-plan\/[^/]+\/people$/, permission: "project.view" },
+  { method: "PUT", route: /^\/v1\/work-plan\/[^/]+\/people$/, permission: "workplan.update-own" },
+  { method: "GET", route: /^\/v1\/work-plan\/[^/]+\/progress$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/work-plan\/[^/]+\/progress\/prepare$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/work-plan\/[^/]+\/progress$/, permission: "workplan.update-own" },
+  { method: "DELETE", route: /^\/v1\/work-plan\/[^/]+\/progress\/[^/]+$/, permission: "workplan.update-own" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/breakdown-progress$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/budget$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/work-plan\/[^/]+\/budget$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/work-plan\/[^/]+\/budget-lines$/, permission: "workplan.update-own" },
+  { method: "POST", route: /^\/v1\/work-plan\/[^/]+\/budget-lines\/[^/]+\/expenses$/, permission: "workplan.update-own" },
+  { method: "POST", route: /^\/v1\/work-plan\/dependencies$/, permission: "workplan.manage" },
+  { method: "DELETE", route: /^\/v1\/work-plan\/dependencies\/[^/]+\/[^/]+$/, permission: "workplan.manage" },
+  { method: "POST", route: /^\/v1\/work-plan\/[^/]+\/complete$/, permission: "activity.create" },
+
+  // ── Assignments, portfolio, requests, risks ───────────────────────────────
+  { method: "GET", route: /^\/v1\/me\/assignments$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/me\/notification-preferences$/, permission: "project.view" },
+  { method: "PUT", route: /^\/v1\/me\/notification-preferences$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/portfolio\/indicators$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/portfolio\/indicators\/export$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/portfolio\/health$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/entry-due-days$/, permission: "project.view" },
+  { method: "PUT", route: /^\/v1\/projects\/[^/]+\/entry-due-days$/, permission: "project.edit" },
+  // The assignee (or the person who asked) closes a request; the handler
+  // checks that, so the route only requires a signed-in member of the tenant.
+  { method: "POST", route: /^\/v1\/tasks\/[^/]+\/complete$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/tasks\/[^/]+\/cancel$/, permission: "project.view" },
+  { method: "PUT", route: /^\/v1\/risks\/[^/]+$/, permission: "risk.raise" },
+  { method: "POST", route: /^\/v1\/risks\/[^/]+\/close$/, permission: "risk.raise" },
+
+  // ── Reporting periods, compliance, dashboards ─────────────────────────────
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/reporting-periods\/ensure-auto$/, permission: "report.edit" },
+  { method: "GET", route: /^\/v1\/reporting-periods\/[^/]+\/finance$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/reporting-periods\/[^/]+\/story$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/reporting-periods\/[^/]+\/plan-suggestion$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/reporting-periods\/[^/]+\/smart-review$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/reporting-periods\/[^/]+\/checklist$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/reporting-periods\/[^/]+\/readiness$/, permission: "project.view" },
+
+  // ── Comments, notifications, dashboards, files ────────────────────────────
+  { method: "GET", route: /^\/v1\/comments$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/notifications$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/notifications\/[^/]+\/read$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/dashboard$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/dashboard$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/files\/[^/]+$/, permission: "project.view" },
 ];
 
 export async function authorizationMiddleware(req: FastifyRequest, _reply: FastifyReply) {
   const path = req.url.split("?", 1)[0] ?? req.url;
-  const rule = RULES.find((candidate) => candidate.method === req.method && candidate.route.test(path));
-  if (rule) Permissions.require(req.tenant.role, rule.permission);
+  // Fastify serves HEAD for every GET route. HEAD is the same request without
+  // a body, so it carries the same permission.
+  const method = req.method === "HEAD" ? "GET" : req.method;
+  const rule = RULES.find((candidate) => candidate.method === method && candidate.route.test(path));
+  // Deny by default: a route with no rule is an oversight, not a free pass.
+  if (!rule) {
+    throw DomainError.forbidden("This endpoint is not authorised", { method: req.method, path });
+  }
+  Permissions.require(req.tenant.role, rule.permission);
 }

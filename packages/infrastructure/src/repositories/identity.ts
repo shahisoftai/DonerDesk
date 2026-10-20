@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import {
   Organization,
   PasswordResetToken,
+  ScimCredential,
   TenantId,
   User,
   Email,
@@ -17,6 +18,7 @@ import type {
   IUserRepository,
   IInvitationRepository,
   IPasswordResetTokenRepository,
+  IScimCredentialRepository,
 } from "@donordesk/application";
 
 function ok<T>(value: T): Result<T, DomainError> {
@@ -248,10 +250,12 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async setStatus(id: string, tenantId: TenantId, status: UserStatus): Promise<Result<User, DomainError>> {
-    await this.prisma.user.update({ where: { id }, data: { status } });
+    // Check the tenant before writing: updating by id alone would let a caller
+    // change another organisation's user and only then be told it was not found.
     const found = await this.findById(id, tenantId);
     if (!found.ok) return { ok: false, error: found.error };
     if (!found.value) return { ok: false, error: DomainError.notFound("User", id) };
+    await this.prisma.user.update({ where: { id, tenantId: tenantId.toString() }, data: { status } });
     return { ok: true, value: found.value };
   }
 
@@ -435,5 +439,109 @@ export class PrismaPasswordResetTokenRepository implements IPasswordResetTokenRe
         userAgent: row.userAgent,
       },
     });
+  }
+}
+
+export class PrismaScimCredentialRepository implements IScimCredentialRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(credential: ScimCredential): Promise<Result<ScimCredential, DomainError>> {
+    try {
+      await this.prisma.scimCredential.create({
+        data: {
+          id: credential.id,
+          tenantId: credential.tenantId.toString(),
+          name: credential.name,
+          tokenHash: credential.tokenHash,
+          createdById: credential.createdById,
+          lastUsedAt: credential.lastUsedAt,
+          revokedAt: credential.revokedAt,
+        },
+      });
+      return ok(credential);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  async update(credential: ScimCredential): Promise<Result<ScimCredential, DomainError>> {
+    try {
+      await this.prisma.scimCredential.update({
+        where: { id: credential.id },
+        data: { name: credential.name, lastUsedAt: credential.lastUsedAt, revokedAt: credential.revokedAt },
+      });
+      return ok(credential);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  /**
+   * By token hash, across organisations: the caller does not yet know which
+   * organisation it is, and the token is what tells it. Run on the admin
+   * connection, because the runtime role is bound to one tenant.
+   */
+  async findByTokenHash(tokenHash: string): Promise<Result<ScimCredential | null, DomainError>> {
+    const row = await this.prisma.scimCredential.findFirst({ where: { tokenHash } });
+    if (!row) return ok(null);
+    return ok(
+      ScimCredential.rehydrate({
+        id: row.id,
+        tenantId: TenantId.create(row.tenantId),
+        createdAt: row.createdAt,
+        props: {
+          tenantId: row.tenantId,
+          name: row.name,
+          tokenHash: row.tokenHash,
+          createdById: row.createdById,
+          lastUsedAt: row.lastUsedAt,
+          revokedAt: row.revokedAt,
+        },
+      }),
+    );
+  }
+
+  async findById(id: string, tenantId: TenantId): Promise<Result<ScimCredential | null, DomainError>> {
+    const row = await this.prisma.scimCredential.findFirst({ where: { id, tenantId: tenantId.toString() } });
+    if (!row) return ok(null);
+    return ok(
+      ScimCredential.rehydrate({
+        id: row.id,
+        tenantId: TenantId.create(row.tenantId),
+        createdAt: row.createdAt,
+        props: {
+          tenantId: row.tenantId,
+          name: row.name,
+          tokenHash: row.tokenHash,
+          createdById: row.createdById,
+          lastUsedAt: row.lastUsedAt,
+          revokedAt: row.revokedAt,
+        },
+      }),
+    );
+  }
+
+  async listByTenant(tenantId: TenantId): Promise<Result<ScimCredential[], DomainError>> {
+    const rows = await this.prisma.scimCredential.findMany({
+      where: { tenantId: tenantId.toString() },
+      orderBy: { createdAt: "desc" },
+    });
+    return ok(
+      rows.map((row) =>
+        ScimCredential.rehydrate({
+          id: row.id,
+          tenantId: TenantId.create(row.tenantId),
+          createdAt: row.createdAt,
+          props: {
+            tenantId: row.tenantId,
+            name: row.name,
+            tokenHash: row.tokenHash,
+            createdById: row.createdById,
+            lastUsedAt: row.lastUsedAt,
+            revokedAt: row.revokedAt,
+          },
+        }),
+      ),
+    );
   }
 }

@@ -140,6 +140,45 @@ export class ApproveReportHandler {
     return { ok: true, value: { selfApproval: check.selfApproval } };
   }
 
+  /**
+   * The same rule, applied to a draft that has already been approved: was the
+   * person who approved it entitled to? A second-approver rule turned on
+   * after the approval still applies, so the donor copy cannot be sealed by a
+   * report the author approved themselves.
+   */
+  async checkApprovedDraftApprover(
+    ctx: AuthenticatedContext,
+    draft: { projectId: string; createdById: string; approvedById?: string },
+  ): Promise<Result<void, DomainError>> {
+    if (!this.signOff) return { ok: true, value: undefined };
+    if (!draft.approvedById) {
+      return { ok: false, error: DomainError.forbidden("This report has not been approved yet.") };
+    }
+    const tenantId = ctx.tenant.tenantId;
+    const [profile, project, members] = await Promise.all([
+      this.signOff.profiles.findByProject(draft.projectId, tenantId),
+      this.signOff.projects.findById(draft.projectId, tenantId),
+      this.signOff.members.findByProject(draft.projectId, tenantId),
+    ]);
+    if (!profile.ok) return profile;
+    if (!project.ok) return project;
+    if (!members.ok) return members;
+    const roles = signOffRoles({
+      projectManagerId: project.value?.projectManagerId,
+      meOfficerId: project.value?.meOfficerId,
+      reportingOfficerId: project.value?.reportingOfficerId,
+      members: members.value.map((m) => ({ userId: m.userId, role: m.role, status: m.status })),
+    });
+    const check = checkApprover({
+      requireSecondApprover: profile.value?.requireSecondApprover ?? false,
+      authorId: draft.createdById,
+      approverId: draft.approvedById,
+      otherApproverCount: roles.approverIds.filter((id) => id !== draft.approvedById).length,
+    });
+    if (!check.ok) return { ok: false, error: DomainError.forbidden(check.reason) };
+    return { ok: true, value: undefined };
+  }
+
   async evaluateGate(ctx: AuthenticatedContext, reportingPeriodId: string, draftId: string): Promise<Result<{
     approvalBlocked: boolean;
     submitBlocked: boolean;

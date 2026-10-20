@@ -44,6 +44,7 @@ export * from "./use-cases/identity/login.js";
 export * from "./use-cases/identity/invite-user.js";
 export * from "./use-cases/identity/accept-invitation.js";
 export * from "./use-cases/identity/change-role.js";
+export * from "./use-cases/identity/scim-credentials.js";
 export * from "./use-cases/identity/change-password.js";
 export * from "./use-cases/identity/request-password-reset.js";
 export * from "./use-cases/identity/confirm-password-reset.js";

@@ -22,6 +22,7 @@ is aligned with what the deterministic validators actually enforce:
   - word minimums are never a reason to pad.
 v2/v3 prompts are unchanged.
 """
+
 from __future__ import annotations
 
 from .models import WRITER_CONTRACT_VERSION
@@ -132,22 +133,12 @@ _WRITER_RULES: list[str] = [
         "MUST NOT invent causes, challenges, mitigations, lessons, future "
         "activities, targets, dates, partners, incidents, or outcomes."
     ),
-    (
-        "A null value with valueStatus NOT_CALCULABLE means unknown, never zero."
-    ),
-    (
-        "MUST distinguish achievement from explanation, and evidence from "
-        "interpretation."
-    ),
-    (
-        "MUST identify gaps rather than fill them; state clearly when no "
-        "verified information was recorded."
-    ),
+    ("A null value with valueStatus NOT_CALCULABLE means unknown, never zero."),
+    ("MUST distinguish achievement from explanation, and evidence from interpretation."),
+    ("MUST identify gaps rather than fill them; state clearly when no verified information was recorded."),
     (
         "MUST avoid generic humanitarian cliches and inflated impact language. "
-        "The following phrases are BANNED and will fail validation: "
-        + ", ".join(_V2_BANNED_PHRASES)
-        + "."
+        "The following phrases are BANNED and will fail validation: " + ", ".join(_V2_BANNED_PHRASES) + "."
     ),
     (
         "MUST NOT repeat the same information across sections. If the same fact "
@@ -165,9 +156,7 @@ _WRITER_RULES: list[str] = [
         "evidence chunks. Every numeric value, table row, chart data point, and "
         "Q&A answer must carry at least one sourceReference."
     ),
-    (
-        "MUST preserve every caveat, limitation, and 'needs verification' marker."
-    ),
+    ("MUST preserve every caveat, limitation, and 'needs verification' marker."),
     (
         "MUST honour the per-section input type: INDICATOR_TABLE sections must "
         "emit a TABLE artifact with at least 3 rows; ANNEX sections must list "
@@ -184,10 +173,7 @@ _WRITER_RULES: list[str] = [
         "MUST respect the brief's word limits. The `content` field total must "
         "satisfy minWords <= words <= maxWords when those bounds are provided."
     ),
-    (
-        "Output STRICT JSON matching the requested schema. No markdown fences, "
-        "no preamble, no commentary."
-    ),
+    ("Output STRICT JSON matching the requested schema. No markdown fences, no preamble, no commentary."),
     (
         "Before producing the final answer, silently self-review the draft against "
         "every rule above: verify each number is exactly present in the inputs, "
@@ -278,18 +264,12 @@ _WRITER_RULES_V4: list[str] = [
         "Stay consistent with the prior approved narrative. If no prior narrative is "
         "provided, treat this as the baseline period."
     ),
-    (
-        "Describe the project, never the reporting process, the platform, or the AI."
-    ),
+    ("Describe the project, never the reporting process, the platform, or the AI."),
     (
         "Stay within maxWords. Never pad to reach minWords: a shorter, fully grounded "
         "section is better than a longer speculative one."
     ),
-    (
-        "The following inflated phrases are BANNED and fail validation: "
-        + ", ".join(BANNED_PHRASES)
-        + "."
-    ),
+    ("The following inflated phrases are BANNED and fail validation: " + ", ".join(BANNED_PHRASES) + "."),
     # Citation + output
     (
         "List in `sourceReferences` every indicator (by indicatorId), activity (by "
@@ -297,10 +277,7 @@ _WRITER_RULES_V4: list[str] = [
         "as given. Claims may cite evidence only by evidenceId + chunkId from the "
         "provided chunks."
     ),
-    (
-        "Output STRICT JSON matching the requested schema. No markdown fences, no "
-        "preamble, no commentary."
-    ),
+    ("Output STRICT JSON matching the requested schema. No markdown fences, no preamble, no commentary."),
     (
         "Before answering, silently check every number against the inputs, every "
         "caveat, every mandatory question, the banned phrases, and the word limit; fix "
@@ -311,32 +288,62 @@ _WRITER_RULES_V4: list[str] = [
 
 # Contract v5: v4 plus these rules (v2-v4 prompts stay byte-stable). Mirrored in contract.ts.
 _WRITER_RULES_V5_ADDITIONS: list[str] = [
-    "State a cumulative or derived percentage only when it is given in the inputs or is a finding's percent of target (of its value, its recorded cumulative value or its life-of-project value); never calculate any other percentage or total.",
-    "Never count indicators or records (\"17 indicators\") unless that exact number appears in the inputs.",
+    "State a cumulative or derived percentage only when it is given in the inputs or is a finding's percent of target "
+    "(of its value, its recorded cumulative value or its life-of-project value); never calculate any other percentage "
+    ""
+    "or total.",
+    'Never count indicators or records ("17 indicators") unless that exact number appears in the inputs.',
     "Quote lifeOfProject values only in a semi-annual, annual or final report.",
-    "Use only the section titles and indicator or outcome codes listed under \"Report structure\"; never invent labels (such as IR1, IR2) or refer to a section that is not listed.",
-    "An indicator listed under \"Not measured this period\" has no figure: say it was not measured this period and give no value for it.",
-    "For an indicator whose value is itself a percentage (a rate or coverage), give the value, its baseline and its target and the change from the baseline in percentage points; never quote its percent of target, and never rank or compare indicators by percent of target.",
-    "A finding whose performanceEvaluation type is NEUTRAL is to be described plainly without praise or criticism; never mention the evaluation, the word neutral or a performance judgement in the text.",
-    "An activity record has a date, and an endDate when it covers a span: write \"from <date> to <endDate>\" or \"during the month\" for a span. When there is no endDate and its figures are monthly totals (clinics held, women reached, households assisted), say they happened during the month and never on that date.",
-    "Give a previous-period value only beside its own indicator, as in \"56 percent, up from 53 percent in December\"; never list several previous values together (\"up from 53, 60 and 39 respectively\").",
-    "Financial figures are cumulative to the end of the period (the balance and burn rate are against the whole budget): say \"to date\" or \"by the end of <period>\", never \"in the quarter\" or \"in the month\"; write amounts with thousands separators (295,000 USD); never explain why a budget line is over or under spent unless the officer's own note says so.",
-    "Never write a file name, a file stem or a hyphenated document label (such as 01-A1.3-attendance or sit-flood-photo); describe the source in words (\"the water quality log\", \"the rapid assessment\").",
-    "Write the donor's name and the project's name exactly as given in the project details; never abbreviate, translate or re-spell them.",
+    'Use only the section titles and indicator or outcome codes listed under "Report structure"; never invent labels '
+    "(such as IR1, IR2) or refer to a section that is not listed.",
+    'An indicator listed under "Not measured this period" has no figure: say it was not measured this period and give '
+    "no value for it.",
+    "For an indicator whose value is itself a percentage (a rate or coverage), give the value, its baseline and its "
+    "target and the change from the baseline in percentage points; never quote its percent of target, and never rank "
+    "or compare indicators by percent of target.",
+    "A finding whose performanceEvaluation type is NEUTRAL is to be described plainly without praise or criticism; "
+    "never mention the evaluation, the word neutral or a performance judgement in the text.",
+    'An activity record has a date, and an endDate when it covers a span: write "from <date> to <endDate>" or "during '
+    'the month" for a span. When there is no endDate and its figures are monthly totals (clinics held, women reached, '
+    ""
+    "households assisted), say they happened during the month and never on that date.",
+    'Give a previous-period value only beside its own indicator, as in "56 percent, up from 53 percent in December"; '
+    'never list several previous values together ("up from 53, 60 and 39 respectively").',
+    "Financial figures are cumulative to the end of the period (the balance and burn rate are against the whole "
+    'budget): say "to date" or "by the end of <period>", never "in the quarter" or "in the month"; write amounts with '
+    ""
+    "thousands separators (295,000 USD); never explain why a budget line is over or under spent unless the "
+    "officer's own note says so.",
+    "Never write a file name, a file stem or a hyphenated document label (such as 01-A1.3-attendance or "
+    'sit-flood-photo); describe the source in words ("the water quality log", "the rapid assessment").',
+    "Write the donor's name and the project's name exactly as given in the project details; never abbreviate, "
+    "translate or re-spell them.",
 ]
 
 
 # Contract v6: v5 plus these rules (v2-v5 prompts stay byte-stable). Mirrored in contract.ts.
 _WRITER_RULES_V6_ADDITIONS: list[str] = [
-    "The \"Work plan for this period\" block gives how many activities were planned, held, not held, moved and cancelled, and the reasons the officer recorded; state those counts exactly as given and never calculate any other count or percentage from them.",
-    "Explain a delay, a move or a cancellation only with a reason from the \"Work plan for this period\" block or the officer's own note; never guess a cause, never name who led an activity, and never call an activity late, overdue or behind.",
+    'The "Work plan for this period" block gives how many activities were planned, held, not held, moved and '
+    "cancelled, and the reasons the officer recorded; state those counts exactly as given and never calculate any "
+    "other count or percentage from them.",
+    'Explain a delay, a move or a cancellation only with a reason from the "Work plan for this period" block or the '
+    "officer's own note; never guess a cause, never name who led an activity, and never call an activity late, "
+    "overdue or behind.",
     "When the block is absent, say nothing about what was planned.",
 ]
 
 
 def system_prompt(version: int = WRITER_CONTRACT_VERSION) -> str:
     """Deterministic system prompt for a given contract version."""
-    rules = _WRITER_RULES_V4 + _WRITER_RULES_V5_ADDITIONS + _WRITER_RULES_V6_ADDITIONS if version >= 6 else _WRITER_RULES_V4 + _WRITER_RULES_V5_ADDITIONS if version >= 5 else _WRITER_RULES_V4 if version >= 4 else _WRITER_RULES
+    rules = (
+        _WRITER_RULES_V4 + _WRITER_RULES_V5_ADDITIONS + _WRITER_RULES_V6_ADDITIONS
+        if version >= 6
+        else _WRITER_RULES_V4 + _WRITER_RULES_V5_ADDITIONS
+        if version >= 5
+        else _WRITER_RULES_V4
+        if version >= 4
+        else _WRITER_RULES
+    )
     base = "\n".join(f"- {r}" for r in rules)
     craft = ""
     if version >= 3:
@@ -359,10 +366,11 @@ def donor_token_blocklist() -> list[str]:
 # --------------------------------------------------------------------------- #
 
 LANGUAGE_CRAFT_RULES: list[str] = [
-    "Write in the active voice and name the actor (\"The project trained 30 volunteers\"), never the passive (\"30 volunteers were trained\").",
-    "Prefer plain, concrete words over bureaucratic vocabulary; no filler (\"it is worth noting\", \"in order to\").",
+    'Write in the active voice and name the actor ("The project trained 30 volunteers"), never the passive ("30 '
+    'volunteers were trained").',
+    'Prefer plain, concrete words over bureaucratic vocabulary; no filler ("it is worth noting", "in order to").',
     "Front-load each sentence: state the outcome and its number first, context after.",
     "Keep one idea per sentence; keep sentences under about 25 words.",
-    "Open sections with the result (\"School attendance rose...\"), never with a topic label (\"Regarding education...\").",
+    'Open sections with the result ("School attendance rose..."), never with a topic label ("Regarding education...").',
     "Never use the future tense for completed work; never use the present tense for finished delivery.",
 ]

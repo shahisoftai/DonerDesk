@@ -1,0 +1,23 @@
+# Takes the encrypted off-host backup of the DonorDesk and Kestra databases
+# and the evidence storage. Triggered by donordesk-backup.timer.
+#
+# The configuration (BACKUP_DIR, DONORDESK_DB_ADMIN_URL, STORAGE_ROOT, ENC_KEY
+# and OFFHOST_TARGET) lives in /opt/donordesk/shared/backup.env, which must be
+# mode 0600 and owned by root: the encryption passphrase is in it.
+#
+# See memorybank/docs/runbooks/DISASTER-RECOVERY.md for the install steps and
+# for how a restore test is run.
+[Unit]
+Description=DonorDesk encrypted backup (databases and evidence storage)
+After=network.target donordesk-api.service
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/opt/donordesk/shared/backup.env
+ExecStart=/opt/donordesk/shared/bin/backup.sh
+# A backup of a large tenant's storage can take a while.
+TimeoutStartSec=3600
+# The dump is written to BACKUP_DIR; nothing else is touched.
+PrivateTmp=true
+NoNewPrivileges=true

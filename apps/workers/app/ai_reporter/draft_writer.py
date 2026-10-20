@@ -10,11 +10,12 @@ synthesis mode for the executive summary. The output schema is prose-only
 (content, claims, sourceReferences, qa): tables/charts/deltas are attached
 deterministically by `artifact_builder`, so the model no longer re-types them.
 """
+
 from __future__ import annotations
 
 import json
-import re
 import os
+import re
 import threading
 from typing import Any
 
@@ -93,7 +94,9 @@ def _finance_block(title: str, finance: Any) -> str:
     for line in data.get("lines", []):
         for key in _MONEY_KEYS & line.keys():
             line[key] = _with_thousands(line[key])
-    data["basis"] = "Expenditure is cumulative to the end of the period; balance and burn rate are against the whole budget."
+    data["basis"] = (
+        "Expenditure is cumulative to the end of the period; balance and burn rate are against the whole budget."
+    )
     return f"# {title} (JSON):\n" + json.dumps(data, ensure_ascii=False)
 
 
@@ -128,9 +131,21 @@ def _shared_prompt(req: SectionDraftRequest) -> str:
     if ctx.visibility:
         parts.append("\n".join(ctx.visibility))
     if ctx.project:
-        parts.append(_bullets("Project context:", [f"{k}: {v}" for k, v in ctx.project.model_dump(exclude_none=True).items()]))
+        parts.append(
+            _bullets("Project context:", [f"{k}: {v}" for k, v in ctx.project.model_dump(exclude_none=True).items()])
+        )
     if ctx.period:
-        parts.append(_bullets("Reporting period:", [f"{k}: {v}" for k, v in ctx.period.model_dump(exclude_none=True, exclude=set(WRITER_EXCLUDED_PERIOD_KEYS)).items()]))
+        parts.append(
+            _bullets(
+                "Reporting period:",
+                [
+                    f"{k}: {v}"
+                    for k, v in ctx.period.model_dump(
+                        exclude_none=True, exclude=set(WRITER_EXCLUDED_PERIOD_KEYS)
+                    ).items()
+                ],
+            )
+        )
     if ctx.template:
         template_lists = {
             "generalInstructions": "Donor's report-wide instructions (MUST be honoured):",
@@ -146,10 +161,18 @@ def _shared_prompt(req: SectionDraftRequest) -> str:
             if items:
                 parts.append(_bullets(title, items))
     if ctx.story:
-        story = [f"{_STORY_LABELS[k]}: {v.strip()}" for k, v in ctx.story.model_dump(exclude_none=True).items() if v and v.strip()]
+        story = [
+            f"{_STORY_LABELS[k]}: {v.strip()}"
+            for k, v in ctx.story.model_dump(exclude_none=True).items()
+            if v and v.strip()
+        ]
         if story:
             parts.append(
-                _bullets("Tell the Story (officer's narrative context — the ONLY permitted source of explanations beyond activity records):", story)
+                _bullets(
+                    "Tell the Story (officer's narrative context — the ONLY permitted source of explanations beyond "
+                    "activity records):",
+                    story,
+                )
             )
 
     if ctx.finance:
@@ -158,12 +181,28 @@ def _shared_prompt(req: SectionDraftRequest) -> str:
         )
 
     if ctx.deliveryPlan:
-        parts.append(_object_block("Work plan for this period (counts and the officer's recorded reasons; the only plan facts you may state)", ctx.deliveryPlan))
+        parts.append(
+            _object_block(
+                "Work plan for this period (counts and the officer's recorded reasons; the only plan facts you may "
+                "state)",
+                ctx.deliveryPlan,
+            )
+        )
 
     if ctx.structure and (ctx.structure.sectionTitles or ctx.structure.indicatorCodes):
         parts.append(_object_block("Report structure (the only section titles and codes you may name)", ctx.structure))
     if ctx.notMeasured:
-        parts.append(_bullets("Not measured this period (give no figure for these):", [f"{n.indicatorCode}" + (f" ({n.indicatorName})" if n.indicatorName else "") + (f", measured {n.frequency}" if n.frequency else "") for n in ctx.notMeasured]))
+        parts.append(
+            _bullets(
+                "Not measured this period (give no figure for these):",
+                [
+                    f"{n.indicatorCode}"
+                    + (f" ({n.indicatorName})" if n.indicatorName else "")
+                    + (f", measured {n.frequency}" if n.frequency else "")
+                    for n in ctx.notMeasured
+                ],
+            )
+        )
 
     parts.append(_json_block("Verified findings", req.verifiedFindings))
     parts.append(_json_block("Indicator updates", req.indicatorUpdates))
@@ -180,7 +219,9 @@ def _section_prompt(req: SectionDraftRequest) -> str:
         f"# Input type: {s.inputType or 'NARRATIVE'} (editorial kind: {kind})",
     ]
     if s.minWords is not None or s.maxWords is not None:
-        parts.append(f"# Length: {s.minWords or 0}-{s.maxWords or 'no limit'} words of prose (never pad; tables do not count)")
+        parts.append(
+            f"# Length: {s.minWords or 0}-{s.maxWords or 'no limit'} words of prose (never pad; tables do not count)"
+        )
     if s.pageLimit is not None:
         parts.append(f"# Page limit set by the donor: {s.pageLimit} page(s)")
     if s.donorInstructions and s.donorInstructions.strip():
@@ -191,9 +232,11 @@ def _section_prompt(req: SectionDraftRequest) -> str:
     if s.requiredTables:
         parts.append(
             "# Tables the donor requires in this section (render each as a markdown table in `content` with exactly "
-            "these columns; fill cells only from the inputs and write 'Not reported' where no verified value exists):\n"
+            "these columns; fill cells only from the inputs and write 'Not reported' where no verified value "
+            "exists):\n"
             + "\n".join(
-                f"- {t.title}: | {' | '.join(t.columns)} |" + (f" ({t.notes})" if t.notes else "") for t in s.requiredTables
+                f"- {t.title}: | {' | '.join(t.columns)} |" + (f" ({t.notes})" if t.notes else "")
+                for t in s.requiredTables
             )
         )
     if s.authorInstructions and s.authorInstructions.strip():
@@ -205,7 +248,9 @@ def _section_prompt(req: SectionDraftRequest) -> str:
     slots = s.outlineSlots or outline_for(kind)
     parts.append(
         "# Outline slots (address every required slot, in order):\n"
-        + "\n".join(f"- [{x.id}] (required={x.required}) {x.intent}" + (f" Hint: {x.hint}" if x.hint else "") for x in slots)
+        + "\n".join(
+            f"- [{x.id}] (required={x.required}) {x.intent}" + (f" Hint: {x.hint}" if x.hint else "") for x in slots
+        )
     )
     if s.sectionGuidance:
         parts.append(_bullets("Section-specific guidance (mandatory):", s.sectionGuidance))
@@ -213,7 +258,10 @@ def _section_prompt(req: SectionDraftRequest) -> str:
         parts.append(_bullets("Donor requirement guidance (MUST be honoured):", s.requirementGuidance))
     if s.mandatoryQuestions:
         parts.append(
-            _bullets("Mandatory questions (answer each in the prose AND in `qa`, question text copied exactly):", s.mandatoryQuestions)
+            _bullets(
+                "Mandatory questions (answer each in the prose AND in `qa`, question text copied exactly):",
+                s.mandatoryQuestions,
+            )
         )
     if s.evidenceNeeds:
         parts.append(_bullets("Evidence needs:", s.evidenceNeeds))
@@ -228,7 +276,12 @@ def _section_prompt(req: SectionDraftRequest) -> str:
                 + "\n\n".join(s.priorSectionsSummary)
             )
         else:
-            parts.append(_bullets("Already-written sibling sections (do NOT restate their facts; refer to them by name):", s.priorSectionsSummary))
+            parts.append(
+                _bullets(
+                    "Already-written sibling sections (do NOT restate their facts; refer to them by name):",
+                    s.priorSectionsSummary,
+                )
+            )
 
     if s.userInstruction and s.userInstruction.strip():
         parts.append(
@@ -238,7 +291,8 @@ def _section_prompt(req: SectionDraftRequest) -> str:
 
     if s.officerNote and s.officerNote.strip():
         parts.append(
-            "# Reporting officer's statement for this section (the ONLY source for what this section says: write it up as "
+            "# Reporting officer's statement for this section (the ONLY source for what this section says: write it "
+            "up as "
             "the reporting officer's statement, add no facts, figures or claims beyond it):\n" + s.officerNote.strip()
         )
 

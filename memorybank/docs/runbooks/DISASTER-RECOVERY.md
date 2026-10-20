@@ -1,406 +1,167 @@
-# DonorDesk Disaster Recovery Runbook
+# Runbook — Disaster recovery (backup, restore, host loss)
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 2.005**
 
-## Document Info
-- **Version**: 1.0
-- **Last Updated**: 2026-08-12
-- **Owner**: Platform Engineering
-- **Classification**: INTERNAL - CONFIDENTIAL
+What it covers: how the data is backed up, how it is restored, and what to do when the host is gone. The deployment is **one Contabo
+host** (Ubuntu 24.04, HestiaCP + nginx, PostgreSQL 16 native cluster, local filesystem storage). There is no second region and no
+replication: the backup is the recovery path.
 
----
+> Superseded: an earlier version of this runbook described Aurora Global, Route 53, S3 CRR and kubectl. **None of that is deployed.**
+> It was a future managed-cloud design, and following it at 3am would have wasted the incident. The AWS material is kept in
+> `memorybank/architecture/multi-region.md` for the day the deployment changes.
 
-> **Current production reality (2026-08-13):** DonorDesk is deployed on **Contabo**
-> (single host) with **PostgreSQL 16** (native cluster, database `donordesk`) and
-> **local filesystem** storage (`/opt/donordesk/shared/storage`) — not Aurora/S3.
-> Off-host backup is **prepared** (`scripts/backup.sh`, encrypted, incl.
-> `donordesk_kestra` DB) but **not yet scheduled**; no production data has been
-> accepted yet. See `contabo-ops.md` §9/§14. The AWS/Aurora runbook below is the
-> future managed-cloud target, not the current deployment.
+## What is on the host, and where
 
-## 1. Recovery Objectives
+| Piece | Where |
+|---|---|
+| Runtime tree | `/opt/donordesk/app/` (api, web, superadmin, packages) |
+| Workers (AI Reporter) | `/opt/donordesk/workers/`, systemd `donordesk-workers` on `127.0.0.1:8092` |
+| Kestra | `/opt/donordesk/kestra/`, systemd `donordesk-kestra` on `127.0.0.1:8093/8094` |
+| Shared secrets (mode 0600) | `/opt/donordesk/shared/` — `api.env`, `backup.env` |
+| Database | PostgreSQL 16, native cluster `16/main` on `:5432`, database `donordesk` (Kestra: `donordesk_kestra`) |
+| Evidence storage | `/opt/donordesk/shared/storage` (local filesystem; Google Drive and R2 are per-tenant alternatives) |
+| Public web | `donordesk.online` → nginx → `127.0.0.1:3002`; API on `127.0.0.1:4001`; SuperAdmin on `127.0.0.1:3012` |
+| Host | `srv.gec5.com` (`109.123.248.253`) |
 
-| Metric | Target | Notes |
-|--------|--------|-------|
-| **RPO** (Recovery Point Objective) | 5 minutes | Aurora Global DB replication lag |
-| **RTO** (Recovery Time Objective) | 30 minutes | Time to fail over and serve traffic |
-| **RLO** (Recovery Level Objective) | Last 5 minutes of transactions | Evidence files in S3 CRR |
+## Recovery objectives — what is actually true
 
----
+| Measure | Value | Why |
+|---|---|---|
+| **RPO** | **24 hours** | The backup runs once a night (02:17 UTC). A host lost between runs loses up to a day of work. |
+| **RTO** | **~1 hour** | Provision a host, restore the database and the storage, point the domain at it, start the services. |
+| **Evidence loss window** | Same 24 hours | The evidence archive is in the same backup. |
+| **Tested** | Monthly restore drill (below) | A backup that has never been restored is a hypothesis. |
 
-## 2. Data Residency Regions
+These numbers are the honest ones for a single host. They are what `/terms` ("we provide regular backups") and the DPA
+("deleted in the normal backup cycle") should be read against.
 
-| Region Label | Primary Region | Secondary Region | Backup Region |
-|--------------|----------------|------------------|---------------|
-| EU | eu-west-1 | eu-central-1 | us-east-1 |
-| US | us-east-1 | us-west-2 | eu-west-1 |
-| AFRICA | af-south-1 | af-north-1 | eu-west-1 |
-| ASIA | ap-southeast-1 | ap-south-1 | us-east-1 |
+## The backup
 
----
+| Piece | Where |
+|---|---|
+| Script | `/opt/donordesk/shared/bin/backup.sh` (from `scripts/backup.sh`; **not** shipped by `deploy-fast.sh`) |
+| Units | `/etc/systemd/system/donordesk-backup.service` + `.timer` (from `infra/systemd/`), `OnCalendar=*-*-* 02:17:00`, `Persistent=true` |
+| Configuration | `/opt/donordesk/shared/backup.env`, mode 0600, owned by root |
+| What it takes | `pg_dump` of `donordesk` and `donordesk_kestra`, `tar` of the evidence storage, SHA-256 per file, GPG encryption |
+| Rotation | `BACKUP_RETENTION_DAYS` (14) and `BACKUP_MIN_KEEP` (7) |
+| Record | A row in `BackupRun` (status, size, checksum) — visible in the SuperAdmin overview |
 
-## 3. Failover Procedures
+`backup.env`:
 
-### 3.1 Aurora Global Database Failover
-
-```bash
-#!/bin/bash
-# aurora-global-failover.sh
-# Run from control plane or jump host with AWS CLI configured
-
-set -euo pipefail
-
-NEW_PRIMARY_REGION="${1:?target region is required}"
-ENVIRONMENT="${2:?environment is required}"
-
-echo "=== Initiating Aurora Global Failover to ${NEW_PRIMARY_REGION} ==="
-
-# 1. Verify current primary
-CURRENT_PRIMARY=$(aws rds describe-global-clusters \
-  --global-cluster-identifier "donordesk-${ENVIRONMENT}-global" \
-  --query 'GlobalClusters[0].GlobalClusterMembers[?IsWriter==true].AvailabilityZone' \
-  --output text)
-
-echo "Current primary: ${CURRENT_PRIMARY}"
-
-# 2. Perform managed planned failover
-aws rds failover-global-cluster \
-  --global-cluster-identifier "donordesk-${ENVIRONMENT}-global" \
-  --target-region "${NEW_PRIMARY_REGION}" \
-  --cli-connect-timeout 300
-
-# 3. Wait for replication to complete
-echo "Waiting for failover completion..."
-aws rds wait global-cluster-available \
-  --global-cluster-identifier "donordesk-${ENVIRONMENT}-global" \
-  --region "${NEW_PRIMARY_REGION}"
-
-# 4. Verify new primary
-NEW_WRITER=$(aws rds describe-global-clusters \
-  --global-cluster-identifier "donordesk-${ENVIRONMENT}-global" \
-  --region "${NEW_PRIMARY_REGION}" \
-  --query 'GlobalClusters[0].GlobalClusterMembers[?IsWriter==true].AvailabilityZone' \
-  --output text)
-
-echo "=== Failover complete. New primary: ${NEW_WRITER} ==="
+```
+BACKUP_DIR=/backup/donordesk
+DONORDESK_DB_ADMIN_URL=postgresql://donordesk_migrator:...@localhost:5432/donordesk
+STORAGE_ROOT=/opt/donordesk/shared/storage
+ENC_KEY=<the passphrase>
+OFFHOST_TARGET=donordesk@offhost:/backups/donordesk
 ```
 
-### 3.2 DNS Failover (Route 53)
+**`ENC_KEY` is not optional.** The script refuses to write an unencrypted backup unless `ALLOW_UNENCRYPTED=1` is set explicitly, and
+`OFFHOST_TARGET` is what makes the copy survive the loss of this host. A backup that stays on the machine it protects is not a backup.
+
+### Install or reinstall
 
 ```bash
-#!/bin/bash
-# dns-failover.sh
-# Updates Route 53 health checks and routing policy
-
-set -euo pipefail
-
-TARGET_REGION="${1:?target region is required}"
-ENVIRONMENT="${2:?environment is required}"
-TARGET_API_ENDPOINT="${3:?healthy regional API endpoint is required}"
-HOSTED_ZONE_ID="${HOSTED_ZONE_ID:?Route 53 hosted-zone ID is required}"
-
-# Never point the public API DNS record at an RDS endpoint. This value must be
-# the validated regional API load-balancer hostname.
-NEW_ENDPOINT="${TARGET_API_ENDPOINT}"
-
-# Update Route 53 record sets
-aws route53 change-resource-record-sets \
-  --hosted-zone-id "${HOSTED_ZONE_ID}" \
-  --change-batch "{
-    \"Changes\": [{
-      \"Action\": \"UPSERT\",
-      \"ResourceRecordSet\": {
-        \"Name\": \"api.donordesk.com\",
-        \"Type\": \"CNAME\",
-        \"TTL\": 60,
-        \"ResourceRecords\": [{\"Value\": \"${NEW_ENDPOINT}\"}]
-      }
-    }]
-  }"
-
-echo "=== DNS failover complete. API now pointing to ${NEW_ENDPOINT} ==="
+scp scripts/backup.sh contabo:/opt/donordesk/shared/bin/backup.sh          # mkdir -p /opt/donordesk/shared/bin first
+scp scripts/restore-backup.sh contabo:/opt/donordesk/shared/bin/restore-backup.sh
+scp infra/systemd/donordesk-backup.{service,timer} contabo:/etc/systemd/system/
+ssh contabo 'chmod 0755 /opt/donordesk/shared/bin/{backup,restore-backup}.sh && systemctl daemon-reload && systemctl enable --now donordesk-backup.timer'
 ```
 
-### 3.3 S3 Evidence Bucket Failover
+### Check it
 
 ```bash
-#!/bin/bash
-# s3-failover.sh
-# When primary region fails, promote secondary bucket to primary
-
-set -euo pipefail
-
-SOURCE_REGION="${1:?source region is required}"
-TARGET_REGION="${2:?target region is required}"
-ENVIRONMENT="${3:?environment is required}"
-
-ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
-
-# Source bucket name
-SOURCE_BUCKET="donordesk-${ENVIRONMENT}-evidence-primary-${ACCOUNT_ID}"
-# Target bucket (new primary)
-TARGET_BUCKET="donordesk-${ENVIRONMENT}-evidence-${TARGET_REGION}-${ACCOUNT_ID}"
-
-echo "=== Syncing evidence from ${SOURCE_BUCKET} to ${TARGET_BUCKET} ==="
-
-# Fail closed if the source cannot be inspected. An empty/unreachable source
-# must never be allowed to erase a healthy replica.
-aws s3api head-bucket --bucket "${SOURCE_BUCKET}" --region "${SOURCE_REGION}"
-aws s3api head-bucket --bucket "${TARGET_BUCKET}" --region "${TARGET_REGION}"
-
-# Start cross-region copy (S3 batch operations for large datasets)
-aws s3 sync "s3://${SOURCE_BUCKET}/" "s3://${TARGET_BUCKET}/" \
-  --source-region "${SOURCE_REGION}" \
-  --region "${TARGET_REGION}" \
-  --storage-class STANDARD_IA
-
-# Verify sync completion
-SOURCE_COUNT=$(aws s3api list-objects-v2 \
-  --bucket "${SOURCE_BUCKET}" \
-  --region "${SOURCE_REGION}" \
-  --query 'length(Contents)' \
-  --output text)
-
-TARGET_COUNT=$(aws s3api list-objects-v2 \
-  --bucket "${TARGET_BUCKET}" \
-  --region "${TARGET_REGION}" \
-  --query 'length(Contents)' \
-  --output text)
-
-echo "Source objects: ${SOURCE_COUNT}, Target objects: ${TARGET_COUNT}"
-
-if [[ "${SOURCE_COUNT}" == "${TARGET_COUNT}" ]]; then
-  echo "=== S3 sync verified. Evidence bucket failover complete. ==="
-else
-  echo "WARNING: Object count mismatch. Manual verification required."
-  exit 1
-fi
+ssh contabo 'systemctl list-timers donordesk-backup.timer; journalctl -u donordesk-backup -n 40 --no-pager'
+ssh contabo 'ls -l /backup/donordesk | tail -5'          # the stamped directories
+ssh contabo "sudo -u postgres psql donordesk -c 'SELECT id, status, \"sizeBytes\", \"restoreStatus\", \"restoreTestedAt\" FROM \"BackupRun\" ORDER BY \"startedAt\" DESC LIMIT 5'"
 ```
 
----
+`status = SUCCEEDED` and a `restoreTestedAt` in the last month means the data is recoverable. `restoreTestedAt` is empty means it has
+never been proven.
 
-## 4. Regional Failover Runbook
+## The restore
 
-### Phase 1: Detection (0-5 minutes)
-1. **Alert fires**: PagerDuty alert for Aurora cluster unavailable OR API health check failure
-2. **On-call engineer acknowledges** within 5 minutes
-3. **Verify the issue**:
+`restore-backup.sh` restores into a **scratch** database by default, so a test never touches the live one.
+
+```bash
+# The drill (safe: restores into donordesk_restore_test and records the result)
+ssh contabo '/opt/donordesk/shared/bin/restore-backup.sh /backup/donordesk/20261020T021700Z --record'
+
+# A real restore onto a fresh host
+ssh contabo '/opt/donordesk/shared/bin/restore-backup.sh /backup/donordesk/20261020T021700Z --target-db postgresql://donordesk_migrator:...@localhost:5432/donordesk'
+```
+
+It verifies the checksums, decrypts into a temporary directory (the backup on disk stays encrypted), restores the dump, counts the
+tables, projects and evidence files, compares the restored storage file count with the archive, and — with `--record` — writes
+`restoreTestedAt` and `restoreStatus` onto the backup run.
+
+**The drill is the point.** Run it monthly, and after any change to the schema.
+
+## Host loss: the whole recovery
+
+The host is gone. Nothing is running. Do this:
+
+1. **Provision a new host** with the same shape (6 vCPU, 12 GB RAM, 100 GB disk) and the same Ubuntu 24.04. Point `donordesk.online`
+   at it in DNS (the domain is registered at Hestia; the TTL is short enough for a same-day cutover).
+2. **Install the stack**: PostgreSQL 16, Node 22, Python 3.12, nginx, and the `donordesk` system user.
+3. **Bring the secrets across**: `/opt/donordesk/shared/api.env` and `backup.env` from the off-host copy. They are mode 0600; keep them
+   that way.
+4. **Restore the database**:
    ```bash
-   # Check Aurora global cluster status
-   aws rds describe-global-clusters \
-     --global-cluster-identifier "donordesk-prod-global"
-
-   # Check API pod status
-   kubectl get pods -n donordesk -l app=donordesk-api
-
-   # Check CloudWatch metrics
-   aws cloudwatch get-metric-statistics \
-     --namespace AWS/RDS \
-     --metric-name DatabaseConnections \
-     --dimensions Name=DBClusterIdentifier,Value="donordesk-prod-global" \
-     --start-time 2026-08-12T00:00:00Z \
-     --end-time 2026-08-12T12:00:00Z \
-     --period 300 \
-     --statistics Average
+   /opt/donordesk/shared/bin/restore-backup.sh /backup/donordesk/<stamp> --target-db "postgresql://donordesk_migrator:...@localhost:5432/donordesk"
    ```
-
-### Phase 2: Decision (5-10 minutes)
-1. **Determine failure scope**:
-   - Is it the primary database region?
-   - Is it a single AZ failure (handled automatically by Aurora)?
-   - Is it a network/connectivity issue?
-   - Is it a data residency violation?
-
-2. **Check data residency constraints**:
-   - If tenant's `dataResidency` is set, failover must stay within allowed region pair
-   - Reference: `infra/terraform/multi-region.tf` variable `data_residency_regions`
-
-3. **Decision matrix**:
-   | Scenario | Action |
-   |----------|--------|
-   | Single AZ failure | No action needed (Aurora handles automatically) |
-   | Primary region failure | Initiate Aurora global failover |
-   | Prolonged regional outage (>30 min) | Activate DR region, update DNS |
-   | Data residency violation detected | Failover to compliant region immediately |
-
-### Phase 3: Failover Execution (10-25 minutes)
-
-#### For Aurora Global Database:
-```bash
-# 1. Execute Aurora failover
-./scripts/aurora-global-failover.sh eu-west-1 prod
-
-# 2. Verify new primary is accepting connections
-aws rds execute-statement \
-  --resource-arn "arn:aws:rds:eu-west-1:${ACCOUNT_ID}:cluster:donordesk-prod-global-eu-west-1" \
-  --database donordesk \
-  --sql "SELECT 1"
-
-# 3. Update application environment variables
-kubectl set env deployment/donordesk-api DATABASE_URL="postgresql://..." -n donordesk
-
-# 4. Restart API pods to pick up new connection
-kubectl rollout restart deployment/donordesk-api -n donordesk
-```
-
-#### For S3 Evidence:
-```bash
-# Sync evidence files if primary region is down
-./scripts/s3-failover.sh us-east-1 eu-west-1 prod
-
-# Verify evidence integrity
-./scripts/verify-evidence-integrity.sh prod
-```
-
-#### For API Servers:
-```bash
-# If API pods are in failed region, cordon the node
-kubectl cordon node -l topology.kubernetes.io/region=us-east-1
-
-# Drain pods from failed region
-kubectl drain node -l topology.kubernetes.io/region=us-east-1 --ignore-daemonsets --delete-emptydir-data
-
-# Scale up in healthy regions
-kubectl scale deployment donordesk-api --replicas=6 -n donordesk
-```
-
-### Phase 4: Post-Failover (25-30 minutes)
-1. **Verify API health**:
+   Then re-apply the policies and the vector column, and check the schema agrees:
    ```bash
-   curl https://api.donordesk.com/health
-   # Expected: {"status":"ok","region":"eu-west-1","version":"1.x.x"}
+   psql "postgresql://donordesk_migrator:...@localhost:5432/donordesk" -f infra/postgres/rls.sql
+   psql "postgresql://donordesk_migrator:...@localhost:5432/donordesk" -f infra/postgres/pgvector.sql
+   ./scripts/check-migration-drift.sh "postgresql://donordesk_migrator:...@localhost:5432/donordesk"
    ```
+5. **Restore the evidence storage** into `/opt/donordesk/shared/storage` (the archive is in the backup; if the evidence was on Google
+   Drive or R2 instead, it is still there and only the archive needs restoring).
+6. **Deploy the application**: `scripts/deploy-fast.sh` builds and restarts `donordesk-api`, `donordesk-web`, `donordesk-superadmin` and
+   `donordesk-workers`. The Prisma client is regenerated against the shipped schema.
+7. **Verify**:
+   ```bash
+   curl -fsS https://donordesk.online/api/health
+   curl -fsS https://donordesk.online/api/ready     # 200 means the Prisma client matches the schema
+   journalctl -u donordesk-api -n 50 --no-pager
+   ```
+8. **Tell the customers** what was lost: the RPO is the age of the backup, so say that plainly rather than "nothing was lost".
 
-2. **Notify stakeholders**:
-   - Update status page (statuspage.io)
-   - Send Slack notification to #incidents channel
-   - Email affected tenant contacts
+## If only the database is damaged
 
-3. **Monitor for issues**:
-   - Watch error rates in Grafana
-   - Monitor database connection counts
-   - Watch for replication lag on remaining secondaries
-
----
-
-## 5. Evidence Integrity Verification
+Restore the database into a fresh name, check it, then swap:
 
 ```bash
-#!/bin/bash
-# verify-evidence-integrity.sh
-
-ENVIRONMENT="${1:-prod}"
-ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
-
-echo "=== Verifying evidence file integrity ==="
-
-# Get file counts per region
-for region in us-east-1 eu-west-1 af-south-1 ap-southeast-1; do
-  COUNT=$(aws s3api list-objects-v2 \
-    --bucket "donordesk-${ENVIRONMENT}-evidence-${region}-${ACCOUNT_ID}" \
-    --region "${region}" \
-    --query 'length(Contents)' \
-    --output text 2>/dev/null || echo "0")
-  echo "${region}: ${COUNT} files"
-done
-
-# Verify replication lag
-for region in eu-west-1 af-south-1 ap-southeast-1; do
-  LAG=$(aws cloudwatch get-metric-statistics \
-    --namespace AWS/S3 \
-    --metric-name ReplicationLatency \
-    --start-time $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ) \
-    --end-time $(date -u +%Y-%m-%dT%H:%M:%SZ) \
-    --period 300 \
-    --statistics Average \
-    --dimensions Name=BucketName,Value="donordesk-${ENVIRONMENT}-evidence-primary-${ACCOUNT_ID}" Name=ReplicationDirection,Value=Replica Name=DestinationRegion,Value="${region}" \
-    --region us-east-1 \
-    --query 'Datapoints[0].Average' \
-    --output text 2>/dev/null || echo "N/A")
-  echo "Replication lag to ${region}: ${LAG}s"
-done
-
-echo "=== Integrity verification complete ==="
+psql "postgresql://donordesk_migrator:...@localhost:5432/postgres" -c "CREATE DATABASE donordesk_restored;"
+/opt/donordesk/shared/bin/restore-backup.sh /backup/donordesk/<stamp> --target-db "postgresql://donordesk_migrator:...@localhost:5432/donordesk_restored"
+# compare, then:
+psql "postgresql://donordesk_migrator:...@localhost:5432/postgres" -c "ALTER DATABASE donordesk RENAME TO donordesk_broken;"
+psql "postgresql://donordesk_migrator:...@localhost:5432/postgres" -c "ALTER DATABASE donordesk_restored RENAME TO donordesk;"
+systemctl restart donordesk-api donordesk-workers
 ```
 
----
+## Quarterly checklist
 
-## 6. Quarterly Game Day Checklist
+- [ ] A restore drill was run and recorded (`restoreTestedAt` is set on the newest backup run)
+- [ ] The newest backup is **off-host** and its checksum was verified from the off-host copy
+- [ ] `ENC_KEY` is in `backup.env` and the file is mode 0600
+- [ ] `BACKUP_MIN_KEEP` backups are present and readable
+- [ ] A new host was provisioned and the recovery steps above were walked through once
+- [ ] The SuperAdmin overview shows no failed backup in the last month
 
-### Pre-Game Day
-- [ ] Schedule game day with at least 2 weeks notice
-- [ ] Notify all tenants of potential brief unavailability
-- [ ] Prepare rollback plan for each test
-- [ ] Assign roles: Commander, Scribe, Observer
+## What this does not cover
 
-### Game Day Tests
+- **A region-wide outage.** There is no second region to fail over to; the recovery is a new host.
+- **Point-in-time recovery.** The backup is a nightly dump, so a mistake made during the day is recovered to the previous night's
+  state, not to the minute it happened. The PostgreSQL WALs on the host are not archived.
+- **Encryption key custody.** The passphrase in `backup.env` is the only copy; losing it makes the backups unreadable. Keep a copy in the
+  organisation's password manager, not only on the host.
 
-#### Test 1: Aurora Global Failover
-```bash
-# Simulate primary failure by stopping writer instance
-aws rds stop-db-instance --db-instance-identifier "donordesk-prod-global-us-east-1-primary-0"
+## Related
 
-# Verify automatic failover completes within 60 seconds
-# Verify no data loss
-
-# Restore
-aws rds start-db-instance --db-instance-identifier "donordesk-prod-global-us-east-1-primary-0"
-```
-
-#### Test 2: API Pod Evacuation
-```bash
-# Cordon all nodes in one AZ
-kubectl cordon nodes -l topology.kubernetes.io/zone=us-east-1a
-
-# Verify pods reschedule automatically
-# Verify no traffic disruption (load balancer health checks)
-
-# Uncordon
-kubectl uncordon nodes -l topology.kubernetes.io/zone=us-east-1a
-```
-
-#### Test 3: S3 Replication Lag Recovery
-```bash
-# Upload 1000 test files to primary
-# Verify all files replicate within 15 minutes
-# Delete source files and verify replica integrity
-```
-
-#### Test 4: DNS Failover
-```bash
-# Manually update Route 53 to point to secondary
-# Verify traffic redirects within TTL (60 seconds)
-# Rollback
-```
-
-### Post-Game Day
-- [ ] Document all findings and gaps
-- [ ] Update runbook with lessons learned
-- [ ] Schedule remediation for any failed checks
-- [ ] Share summary with engineering team
-
----
-
-## 7. Contacts & Escalation
-
-| Role | Name | Contact |
-|------|------|---------|
-| Primary On-Call | Platform Engineering | oncall@donordesk.com |
-| Secondary On-Call | Infrastructure Lead | infra-lead@donordesk.com |
-| Database Expert | Senior DBA | dba@donordesk.com |
-| CTO | - | cto@donordesk.com |
-
-### External Contacts
-| Service | Contact | SLA |
-|---------|---------|-----|
-| AWS Support | Business Support | <1 hour response |
-| Datadog | Account Team | <4 hour response |
-
----
-
-## 8. Related Documents
-
-- [Multi-Region Architecture](../architecture/multi-region.md)
-- [Data Residency Policies](../../policies/donordesk/data_residency.rego)
-- [BYOC Deployment Guide](./BYOC-DEPLOYMENT.md)
-- [Helm Charts Reference](../helm)
+- `memorybank/contabo-ops.md` — the host, its services and the deploy procedure
+- `memorybank/docs/runbooks/alerts.md` — what is monitored
+- `memorybank/docs/runbooks/key-rotation.md` — rotating the audit chain and PII keys
+- `scripts/backup.sh`, `scripts/restore-backup.sh` — the scripts themselves
+- `memorybank/architecture/multi-region.md` — the future managed-cloud design (not deployed)

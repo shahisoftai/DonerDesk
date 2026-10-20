@@ -25,8 +25,11 @@ import {
   isSynthesisSection,
   isTransientFallback,
   recoveryInstruction,
+  redactForLlm,
+  resolvePiiPolicy,
   ungroundedFiguresFromIssues,
   visibilityPromptBlock,
+  type PiiPolicy,
 } from "@donordesk/domain";
 import type { StubReportDraftGenerator } from "./report-draft-generator.js";
 import { sectionOfficerNote } from "./section-note.js";
@@ -99,6 +102,8 @@ export function isTimeoutError(message: string): boolean {
 
 export class AiReporterDraftGenerator implements IReportDraftGenerator {
   readonly model: LlmGeneratorModelInfo;
+  /** Personal identifiers are redacted before anything leaves for a third-party model. */
+  private readonly piiPolicy: PiiPolicy;
 
   constructor(
     private readonly worker: IWorkerClient,
@@ -121,6 +126,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
      */
     private readonly agentMemoryLookup?: (sectionTitle: string, donorTemplateId?: string) => Promise<string[]>,
   ) {
+    this.piiPolicy = resolvePiiPolicy(process.env.LLM_PII_POLICY);
     // modelVersion is recorded in llm_runs; it must never include the key.
     this.model = {
       modelId: "ai-reporter",
@@ -438,8 +444,8 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         indicatorId: u.indicatorId,
         periodAchievement: u.periodAchievement,
         cumulativeAchievement: u.cumulativeAchievement,
-        comments: u.comments,
-        dataSource: u.dataSource,
+        comments: this.words(u.comments),
+        dataSource: this.words(u.dataSource),
       })),
       activities: input.activities.map((a) => ({
         title: a.activityTitle,
@@ -447,17 +453,17 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
         attachedEvidenceIds: a.attachedEvidenceIds,
         date: a.activityDate.toISOString().slice(0, 10),
         ...(a.activityEndDate ? { endDate: a.activityEndDate.toISOString().slice(0, 10) } : {}),
-        location: a.location,
+        location: this.words(a.location),
         participantsTotal: a.participantsTotal,
         participantsMale: a.participantsMale,
         participantsFemale: a.participantsFemale,
         participantsChildren: a.participantsChildren,
         participantsDisability: a.participantsDisability,
-        summary: a.summary,
-        achievements: a.achievements,
-        challenges: a.challenges,
-        lessonsLearned: a.lessonsLearned,
-        nextSteps: a.nextSteps,
+        summary: this.words(a.summary),
+        achievements: this.words(a.achievements),
+        challenges: this.words(a.challenges),
+        lessonsLearned: this.words(a.lessonsLearned),
+        nextSteps: this.words(a.nextSteps),
       })),
       retrievedEvidence: retrieved,
       priorNarrative: prior,
@@ -520,6 +526,11 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
     return groupByEvidence(ranked, input, MAX_EVIDENCE_PACKAGES, MAX_CHUNKS_PER_PACKAGE, MAX_CHARS_PER_CHUNK);
   }
 
+  /** The officer's own words, redacted for the model. The claim verifier reads the same redacted text. */
+  private words(text: string | undefined): string | undefined {
+    return text === undefined ? undefined : redactForLlm(text, this.piiPolicy);
+  }
+
   private buildContext(input: GenerateReportDraftInput): AiReporterContext {
     const ctx = input.reportContext;
     return {
@@ -533,7 +544,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
             country: ctx.project.country,
             location: [ctx.project.region, ctx.project.district].filter(Boolean).join(", ") || undefined,
             sector: ctx.project.sector,
-            description: ctx.project.description,
+            description: this.words(ctx.project.description),
             budget: ctx.project.budgetAmount !== undefined ? `${ctx.project.budgetAmount} ${ctx.project.budgetCurrency ?? "USD"}` : undefined,
             reportingFrequency: ctx.project.reportingFrequency,
           }
@@ -541,7 +552,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
       period: ctx?.period
         ? {
             reportType: ctx.period.reportType,
-            ...(ctx.period.scope ? { scope: ctx.period.scope } : {}),
+            ...(ctx.period.scope ? { scope: this.words(ctx.period.scope) } : {}),
             startDate: ctx.period.startDate,
             endDate: ctx.period.endDate,
             deadline: ctx.period.deadline,
@@ -570,11 +581,11 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
       },
       story: ctx?.storyContext
         ? {
-            achievements: ctx.storyContext.achievements,
-            challenges: ctx.storyContext.challenges,
-            varianceExplanations: ctx.storyContext.varianceExplanations,
-            adaptations: ctx.storyContext.adaptations,
-            lessons: ctx.storyContext.lessons,
+            achievements: this.words(ctx.storyContext.achievements),
+            challenges: this.words(ctx.storyContext.challenges),
+            varianceExplanations: this.words(ctx.storyContext.varianceExplanations),
+            adaptations: this.words(ctx.storyContext.adaptations),
+            lessons: this.words(ctx.storyContext.lessons),
           }
         : undefined,
       visibility: (() => {

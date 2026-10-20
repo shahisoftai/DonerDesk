@@ -225,3 +225,32 @@ export class PiiFirewall {
 export function createPiiFirewall(policy?: PiiPolicy): PiiFirewall {
   return new PiiFirewall(DEFAULT_RECOGNIZERS, policy ?? "redact");
 }
+
+/** The policy used when nothing is configured. */
+export const DEFAULT_PII_POLICY: PiiPolicy = "redact";
+
+/**
+ * Validates a configured policy. One place, so the provider factory, the
+ * evidence package builder and the record chunks cannot disagree about what
+ * the setting means.
+ */
+export function resolvePiiPolicy(raw: string | undefined): PiiPolicy {
+  const policy = (raw ?? DEFAULT_PII_POLICY) as PiiPolicy;
+  if (!["reject", "redact", "transform", "allow"].includes(policy)) {
+    throw new Error(`Invalid LLM_PII_POLICY: ${policy}`);
+  }
+  return policy;
+}
+
+/** Redacts text for a model, honouring the policy. "allow" sends it unchanged. */
+export function redactForLlm(text: string, policy: PiiPolicy = DEFAULT_PII_POLICY): string {
+  if (!text) return text;
+  if (policy === "allow") return text;
+  if (policy === "reject") {
+    const firewall = createPiiFirewall(policy);
+    const result = firewall.apply(text, policy);
+    if (result.hasPii) throw new Error("LLM request rejected because it contains PII");
+    return text;
+  }
+  return createPiiFirewall(policy).redact(text);
+}

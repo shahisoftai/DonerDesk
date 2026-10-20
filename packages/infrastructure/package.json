@@ -30,7 +30,8 @@
     "superadmin:bootstrap": "node dist/platform/bootstrap-cli.js",
     "embedding:backfill": "node dist/llm/embedding-backfill-cli.js",
     "postinstall": "prisma generate",
-    "test:journey": "node --test test/journey/*.test.mjs"
+    "test:journey": "node --test test/journey/*.test.mjs",
+    "db:migrate:deploy": "tsx src/db/migrate-deploy.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
