@@ -790,4 +790,47 @@ cd apps/workers && .venv/bin/python -m pytest -q
 
 
 
-*Audit performed 2026-10-20 on branch `0013-programme-management` at `548d68c`. Seven parallel code audits (one per register category) plus a direct audit of the live public site, the CI pipeline and the production record. Every finding is anchored to a file and line; every verdict that could not be decided from the evidence is marked UNVERIFIED rather than assumed. §10 records the implementation that followed, in three batches: deny-by-default authorisation, 8 more RLS-protected tables and the three orphaned suites in the CI gate; the worker lint, evidence confidentiality at read time and the PII firewall on the production AI path; and the second-approver rule on the seal path, CI building from the checked-in migrations, a scheduled and restore-tested backup, an append-only audit log, a working SCIM endpoint and a public site that says what the code does. §11 is the implementation notes. Eight of the nine criticals are closed.*
+---
+
+## 12. Production deployment — 2026-10-20
+
+Deployed to `srv.gec5.com` (Contabo) in three releases. The order mattered: a restore point first, then the schema, then the code.
+
+### 12.1 What was done, in order
+
+| # | Step | Result |
+|---|---|---|
+| 1 | **Read the host's state first.** Four services active, the reminders timer installed, no backup timer, 58 migrations applied, 81 tables, and **one migration recorded as unfinished** (`20260901170000_password_reset_tokens`, applied_steps_count 0). | The unfinished row was a bookkeeping artefact: the host's database had been built with `db push`, so that migration's objects (the `PasswordResetToken` table, its 4 indexes, the foreign key and `User.passwordChangedAt`) were all present but never marked finished. `migrate deploy` would have re-run it and failed. |
+| 2 | **Took a restore point before touching the schema.** Installed `backup.sh` and `restore-backup.sh`, wrote `/opt/donordesk/shared/backup.env` (mode 0600, a freshly generated passphrase), and ran the backup. | 23.8 MB, encrypted, checksummed. |
+| 3 | **Proved the backup restores.** | 83 tables, 29 projects, 536 evidence files restored; 622 evidence files restored and counted. `restoreTestedAt` recorded. |
+| 4 | **Fixed the migration bookkeeping** — marked the finished-in-fact migration as applied, after backing up `_prisma_migrations`. | 0 unfinished migrations. |
+| 5 | **Applied the two new migrations** with `migrate deploy` as the migrator role. | `20261021120000_schema_drift_closure` and `20261021130000_scim_credentials`, applied cleanly. |
+| 6 | **Applied `rls.sql` and `pgvector.sql`.** The first attempt failed: `ConnectorRun` is owned by `postgres`, and the `vector` extension needs a superuser. Re-run as the superuser. | **73** tables now forced-RLS (was 65). The `vector` extension and the `embedding` column were created — they had never been added to this host. |
+| 7 | **Deployed the code** — `RELEASE_ID=20261020112500 SCOPE=both`. The deploy script regenerates the Prisma client against the shipped schema and verifies `/ready`. | `/ready` → 200 `{"status":"ready","checks":{"database":"ok","prismaClient":"ok","aiWorker":"ok"}}`; the worker on contract version 6. |
+| 8 | **Found that SCIM was not reachable from the internet.** The public domain proxies everything to the web app; the API is loopback-only. Added a BFF route under `/scim/` that forwards the `Authorization` header untouched, and deployed it twice (the first attempt doubled the `v2` segment). | `GET https://donordesk.online/scim/v2/Users` with no credentials → 401; with a wrong token → a SCIM error body. |
+| 9 | **Proved SCIM end to end in production**: a credential issued for one tenant, used over the public internet. | It returned exactly that tenant's 21 users and no one else's. The test credential was deleted afterwards. |
+| 10 | **Installed the backup timer** and ran the backup through systemd exactly as the timer will. | The timer fires at 02:17 UTC; `OnCalendar` without a zone would have followed the host's clock, so it now says UTC explicitly. Two backup runs are recorded as `SUCCEEDED` / `RESTORED` with a `restoreTestedAt`. |
+
+### 12.2 Verified in production after the deploy
+
+| Check | Result |
+|---|---|
+| `/ready` | 200 — database, Prisma client and AI worker all `ok` |
+| `donordesk-api`, `donordesk-web`, `donordesk-workers`, `donordesk-superadmin` | all `active` |
+| Forced-RLS tables | **73** (was 65) |
+| Audit log for the runtime role | `UPDATE` refused, `DELETE` refused, `INSERT` allowed — append-only |
+| SCIM over the internet | authenticates; a tenant's credential sees only that tenant's users |
+| `/scim/v2/Users` without credentials | 401 |
+| Backup + restore drill | 83 tables, 29 projects, 536 evidence files, 622 storage files; `restoreTestedAt` recorded |
+| Backup timer | enabled, next run 02:17 UTC |
+| The public `/security` page | live with the new wording (append-only audit trail, the documented exception, no MFA for tenant accounts, no point-in-time recovery) |
+
+### 12.3 Left undone, deliberately
+
+- **The off-host copy of the backup.** `OFFHOST_TARGET` is unset because there is no second host. The nightly backup, the encryption, the rotation and the restore drill are all in place and proven; the copy off the host needs a destination the organisation controls, and the passphrase in `backup.env` needs a copy somewhere other than that host — **if it is lost, the existing backups cannot be read.**
+- **A SCIM screen.** The endpoint issues credentials; there is no web page for it yet.
+- **The incident-response runbook** behind the now-published notification commitment (SE-09).
+
+---
+
+*Audit performed 2026-10-20 on branch `0013-programme-management` at `548d68c`. Seven parallel code audits (one per register category) plus a direct audit of the live public site, the CI pipeline and the production record. Every finding is anchored to a file and line; every verdict that could not be decided from the evidence is marked UNVERIFIED rather than assumed. §10 records the implementation that followed, in three batches: deny-by-default authorisation, 8 more RLS-protected tables and the three orphaned suites in the CI gate; the worker lint, evidence confidentiality at read time and the PII firewall on the production AI path; and the second-approver rule on the seal path, CI building from the checked-in migrations, a scheduled and restore-tested backup, an append-only audit log, a working SCIM endpoint and a public site that says what the code does. §11 is the implementation notes and §12 the production deployment. Eight of the nine criticals are closed.*
