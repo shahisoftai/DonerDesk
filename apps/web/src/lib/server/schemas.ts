@@ -45,6 +45,8 @@ export const ProjectDetailSchema = z.object({
   isDemo: z.boolean().optional(),
   /** Admin setting: false hides the work plan screens (the data is kept). */
   showWorkPlanning: z.boolean().optional(),
+  /** Optional IANA zone for this project's own "today"; absent means the organisation's. */
+  timeZone: z.string().optional(),
 });
 export type ProjectDetail = z.infer<typeof ProjectDetailSchema>;
 
@@ -64,6 +66,7 @@ export const ProjectMembersResponseSchema = z.object({ items: z.array(ProjectMem
 export const OrganizationSchema = z.object({
   id: z.string().optional(),
   name: z.string().default(""),
+  timeZone: z.string().optional(),
   aiEnabled: z.boolean().optional(),
   storageProvider: z.string().default("LOCAL"),
 });

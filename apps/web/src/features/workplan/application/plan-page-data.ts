@@ -3,7 +3,8 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { requireSession, type AuthContext } from "@/lib/server/auth-context";
 import { getProject } from "@/lib/server/project-queries";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
-import { LogframeResponseSchema } from "@/lib/server/schemas";
+import { LogframeResponseSchema, OrganizationSchema } from "@/lib/server/schemas";
+import { todayInZone } from "../domain/today-in-zone";
 import { loadProjectPeople } from "@/features/tasks/application/project-people";
 import type { ProjectPerson } from "@/features/tasks/domain/ask-people";
 import type { PlanFormOption } from "../presentation/PlanActivityForm";
@@ -31,14 +32,16 @@ export interface PlanPageData {
 export async function loadPlanPageData(projectId: string): Promise<PlanPageData> {
   const ctx = await requireSession();
   const userId = decodeSessionPayload(ctx.token)?.sub ?? "";
-  const [project, people, logframe] = await Promise.all([
+  const [project, people, logframe, org] = await Promise.all([
     getProject(ctx.token, projectId),
     loadProjectPeople(ctx.token, projectId, userId),
     gatewayRequest(`/v1/projects/${projectId}/logframe`, LogframeResponseSchema, ctx.token),
+    gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
   ]);
   const names: Record<string, string> = Object.fromEntries(people.map((p) => [p.id, p.label.replace(/ \(you\)$/, "")]));
   const items = logframe.ok ? logframe.value.items : [];
-  const today = new Date().toISOString().slice(0, 10);
+  // The same "today" the server uses for what is late: the project's own time zone, else the organisation's, else UTC.
+  const today = todayInZone(new Date(), (project.ok ? project.value.timeZone : undefined) || (org.ok ? org.value.timeZone : undefined));
   const titleOf = new Map(items.map((i) => [i.id, i.title]));
   return {
     ctx,

@@ -20,6 +20,9 @@ import { ActivityBulkList } from "@/features/activities/presentation/ActivityBul
 
 export const dynamic = "force-dynamic";
 
+// The links to plan/start, plan/new and plan/import are plain anchors on purpose: a client-side Link is caught by the
+// @panel/(.)plan/[itemId] interception, which reads "start" as an activity id and shows a 404.
+
 export default async function ActivitiesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ view?: string }> }) {
   const resolvedParams = await params;
   const { view } = await searchParams;
@@ -104,8 +107,8 @@ async function PlannedActivitiesView({ projectId }: { projectId: string }) {
         <h1 className="text-xl font-semibold tracking-tight">Planned activities</h1>
         {canPlan && rows.length > 0 && (
           <div className="flex gap-2">
-            <Link className="btn-secondary text-xs" href={`/projects/${projectId}/activities/plan/import`}>{WORKPLAN_COPY.importSheet}</Link>
-            <Link className="btn" href={`/projects/${projectId}/activities/plan/new`}>{WORKPLAN_COPY.addPlanned}</Link>
+            <a className="btn-secondary text-xs" href={`/projects/${projectId}/activities/plan/import`}>{WORKPLAN_COPY.importSheet}</a>
+            <a className="btn" href={`/projects/${projectId}/activities/plan/new`}>{WORKPLAN_COPY.addPlanned}</a>
           </div>
         )}
       </header>

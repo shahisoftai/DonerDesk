@@ -67,6 +67,8 @@ export const UpdateProjectSchema = z
     meOfficerId: z.string().optional(),
     reportingOfficerId: z.string().optional(),
     status: ProjectStatusSchema.optional(),
+    /** An IANA zone for this project's own "today"; null or empty clears it (the organisation zone applies). */
+    timeZone: z.string().max(64).nullable().optional(),
   })
   .superRefine((d, ctx) => {
     if (d.startDate && d.endDate && new Date(d.endDate).getTime() < new Date(d.startDate).getTime()) {

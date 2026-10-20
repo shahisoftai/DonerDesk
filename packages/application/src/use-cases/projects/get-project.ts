@@ -38,6 +38,7 @@ export class GetProjectHandler {
         workspaceRootId: p.workspaceRootId,
         isDemo: p.isDemo,
         showWorkPlanning: p.showWorkPlanning,
+        timeZone: p.timeZone,
       },
     };
   }

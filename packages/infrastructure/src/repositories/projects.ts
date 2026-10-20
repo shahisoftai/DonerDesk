@@ -52,6 +52,7 @@ export class PrismaProjectRepository implements IProjectRepository {
           archivedAt: p.archivedAt,
           isDemo: p.isDemo,
           showWorkPlanning: p.showWorkPlanning,
+          timeZone: p.timeZone ?? null,
         },
       });
       return ok(p);
@@ -87,6 +88,7 @@ export class PrismaProjectRepository implements IProjectRepository {
           status: p.status,
           archivedAt: p.archivedAt,
           showWorkPlanning: p.showWorkPlanning,
+          timeZone: p.timeZone ?? null,
         },
       });
       return ok(p);
@@ -132,6 +134,7 @@ export class PrismaProjectRepository implements IProjectRepository {
     archivedAt: Date | null;
     isDemo: boolean;
     showWorkPlanning: boolean;
+    timeZone?: string | null;
     createdAt: Date;
   }): Project {
     const props: ProjectProps = {
@@ -159,6 +162,7 @@ export class PrismaProjectRepository implements IProjectRepository {
       archivedAt: row.archivedAt ?? undefined,
       isDemo: row.isDemo,
       showWorkPlanning: row.showWorkPlanning,
+      ...(row.timeZone ? { timeZone: row.timeZone } : {}),
     };
     return Project.rehydrate({
       id: row.id,

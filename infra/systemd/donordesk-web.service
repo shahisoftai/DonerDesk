@@ -1,0 +1,29 @@
+[Unit]
+Description=DonorDesk Web
+After=network-online.target donordesk-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=donordesk
+Group=donordesk
+WorkingDirectory=/opt/donordesk/app/apps/web
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3002
+# API_INTERNAL_URL is set by the drop-in /etc/systemd/system/donordesk-web.service.d/api-url.conf
+ExecStart=/usr/bin/node .next/standalone/apps/web/server.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+# Next's image optimiser writes its cache under .next/cache. With ProtectSystem=strict the tree is read-only, which logged
+# "ENOENT ... .next/standalone/apps/web/.next/cache" about once a minute. "-" keeps the unit starting if the directory is absent.
+ReadWritePaths=-/opt/donordesk/app/apps/web/.next/standalone/apps/web/.next/cache
+ExecStartPre=+/usr/bin/install -d -o donordesk -g donordesk -m 0755 /opt/donordesk/app/apps/web/.next/standalone/apps/web/.next/cache
+
+[Install]
+WantedBy=multi-user.target

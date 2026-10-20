@@ -16,8 +16,8 @@ export interface WizardActivity { id: string; title: string; outputTitle: string
 interface Row { ticked: boolean; monthly: boolean; start: string; end: string; lead: string }
 
 /**
- * Start from my logframe, in three steps with nothing saved until Finish: (1) which activities, (2) when, (3) who leads.
- * The dates are suggested by the server's `proposePlanDates` (one rule), then edited here; Finish previews the count, Create saves.
+ * Start from my logframe, in three steps with nothing saved until Create: (1) which activities, (2) when, (3) who leads.
+ * The dates are suggested by the server's `proposePlanDates` (one rule), then edited here; Review shows the count, Create saves.
  */
 export function StartFromLogframeWizard({ projectId, activities, leads }: { projectId: string; activities: WizardActivity[]; leads: PlanFormOption[] }) {
   const router = useRouter();
@@ -124,7 +124,7 @@ export function StartFromLogframeWizard({ projectId, activities, leads }: { proj
               </Select>
             </label>
           ))}
-          <div className="flex gap-2"><Button variant="secondary" onClick={() => setStep(2)}>Back</Button><Button onClick={finish} pending={state.busy}>Finish</Button></div>
+          <div className="flex gap-2"><Button variant="secondary" onClick={() => setStep(2)}>Back</Button><Button onClick={finish} pending={state.busy}>Review</Button></div>
         </div>
       )}
 

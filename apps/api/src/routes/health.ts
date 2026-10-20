@@ -29,6 +29,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "PlannedActivity", field: "ownerUserId" },
   { model: "PlannedActivity", field: "originalEnd" },
   { model: "Project", field: "showWorkPlanning" },
+  { model: "Project", field: "timeZone" },
   { model: "ProjectTask", field: "assigneeId" },
   { model: "ProjectRisk", field: "seriousness" },
   { model: "ReminderLedgerEntry", field: "ruleKey" },

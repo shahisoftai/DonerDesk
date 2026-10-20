@@ -68,15 +68,15 @@ export function PlanActivityForm({ projectId, leads, activities }: { projectId: 
         <Field label="Title" error={err("title")}><Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={300} required /></Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Starts" error={err("plannedStart")}><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} required /></Field>
-          <Field label="Ends (leave empty for one day)" error={err("plannedEnd")}><Input type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} /></Field>
+          <Field label="Ends (leave empty for one day)" description={repeat ? "The end of each repeat, not of the series. Set the last repeat in Until." : undefined} error={err("plannedEnd")}><Input type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Repeats">
+          <Field label="Repeats" description="Repeating creates one activity for each week or month. Choose the last day in Until.">
             <Select value={repeat} onChange={(e) => setRepeat(e.target.value as "" | "WEEK" | "MONTH")}>
               <option value="">No</option><option value="WEEK">Every week</option><option value="MONTH">Every month</option>
             </Select>
           </Field>
-          {repeat && <Field label="Until" error={err("repeats.until")}><Input type="date" value={until} min={start} onChange={(e) => setUntil(e.target.value)} required /></Field>}
+          {repeat && <Field label="Until (last repeat)" error={err("repeats.until")}><Input type="date" value={until} min={start} onChange={(e) => setUntil(e.target.value)} required /></Field>}
         </div>
         <Field label="Lead">
           <Select value={lead} onChange={(e) => setLead(e.target.value)}>

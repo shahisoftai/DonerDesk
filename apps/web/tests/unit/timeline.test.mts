@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { layoutTimeline, timelineRange, TIMELINE_ZOOMS, OTHER_OUTPUT_TITLE, type TimelineRow } from "../../src/features/workplan/domain/timeline-layout.ts";
+import { layoutTimeline, timelineRange, fullRange, chartWidthPx, monthBands, PIXELS_PER_DAY, TIMELINE_ZOOMS, OTHER_OUTPUT_TITLE, type TimelineRow } from "../../src/features/workplan/domain/timeline-layout.ts";
 import { pixelsToDays, applyDrag, keyboardDrag, isDraggable, confirmQuestion, sameDates } from "../../src/features/workplan/domain/timeline-drag.ts";
 import { weekCells, monthCells } from "../../src/features/workplan/domain/calendar-layout.ts";
 import { groupMyWeek } from "../../src/features/workplan/domain/my-week.ts";
@@ -18,7 +18,7 @@ test("zoom ranges: the month and quarter containing today, or the whole project"
   assert.deepEqual(timelineRange("QUARTER", "2026-05-20", { start: "2026-01-01", end: "2026-12-31" }), { start: "2026-04-01", end: "2026-06-30" });
   assert.deepEqual(timelineRange("QUARTER", "2026-12-31", { start: "2026-01-01", end: "2026-12-31" }), { start: "2026-10-01", end: "2026-12-31" });
   assert.deepEqual(timelineRange("PROJECT", "2026-05-20", { start: "2026-01-01", end: "2027-06-30" }), { start: "2026-01-01", end: "2027-06-30" });
-  assert.equal(TIMELINE_ZOOMS.length, 3);
+  assert.equal(TIMELINE_ZOOMS.length, 4);
 });
 
 test("a bar is placed as percentages of the visible range, including both end days", () => {
@@ -200,4 +200,43 @@ test("beside an indicator row: due or overdue with the person, nothing once reco
   assert.equal(collectionText({ dueBy: "2026-11-05", state: "RECORDED", ownerId: "u2" }, "2026-11-10", "me", names), "");
   assert.equal(collectionText({ dueBy: "2026-11-05", state: "NOT_DUE", ownerId: "u2" }, "2026-11-01", "me", names), "");
   assert.equal(collectionText(undefined, "2026-11-01", "me", names), "");
+});
+
+test("the full range covers the project, every activity and every deadline, with a little air", () => {
+  const rows = [row("early", "2026-10-25", "2026-10-26"), row("late", "2027-05-02", "2027-05-04")];
+  assert.deepEqual(fullRange({ project: { start: "2026-11-01", end: "2027-04-30" }, rows }), { start: "2026-10-22", end: "2027-05-07" });
+  assert.deepEqual(fullRange({ project: { start: "2026-11-01", end: "2027-04-30" }, rows: [], deadlines: [{ date: "2027-06-10", label: "x", kind: "DEADLINE" }] }, 0), { start: "2026-11-01", end: "2027-06-10" });
+});
+
+test("the chart is as wide as its days at the chosen scale; the whole-project zoom fits the screen", () => {
+  assert.equal(chartWidthPx("WEEK", 100, 1000), 100 * PIXELS_PER_DAY.WEEK);
+  assert.equal(chartWidthPx("MONTH", 200, 1000), 200 * PIXELS_PER_DAY.MONTH);
+  assert.equal(chartWidthPx("PROJECT", 200, 1200), 1200);
+  assert.equal(chartWidthPx("PROJECT", 2000, 1200), 4000, "never narrower than two pixels a day");
+});
+
+test("month bands are clipped to the range and name the year at the start and each January", () => {
+  const bands = monthBands({ start: "2026-11-15", end: "2027-02-10" });
+  assert.deepEqual(bands.map((b) => b.label), ["Nov 2026", "Dec", "Jan 2027", "Feb"]);
+  assert.equal(bands[0]!.leftPct, 0);
+  const sum = bands.reduce((t, b) => t + b.widthPct, 0);
+  assert.ok(Math.abs(sum - 100) < 0.2, `bands fill the range (${sum})`);
+});
+
+test("repeats of one series share a line and say how many there are; single activities have their own", () => {
+  const rows = [
+    row("w1", "2026-03-02", "2026-03-02", { seriesId: "s", title: "Visits" }), row("w2", "2026-03-09", "2026-03-09", { seriesId: "s", title: "Visits" }),
+    row("w3", "2026-04-06", "2026-04-06", { seriesId: "s", title: "Visits" }), row("solo", "2026-03-05", "2026-03-06"),
+  ];
+  const g = layout(rows).groups[0]!;
+  assert.equal(g.bars.length, 3, "w3 is outside March");
+  assert.deepEqual(g.lanes.map((l) => [l.title, l.bars.length, l.repeats]), [["Visits", 2, 3], ["solo", 1, 1]]);
+  assert.equal(layout([row("a", "2026-03-02", "2026-03-03", { seriesId: "only" })]).groups[0]!.lanes[0]!.repeats, 1, "a series of one is a plain line");
+});
+
+test("a bar carries its dates and lead for the name column", () => {
+  const b = layout([row("a", "2026-03-10", "2026-03-12", { ownerUserId: "u1" })]).groups[0]!.bars[0]!;
+  assert.equal(b.ownerUserId, "u1");
+  assert.match(b.dates, /to/);
+  assert.equal(b.signalLabel, "On time");
 });

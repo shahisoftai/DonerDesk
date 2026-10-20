@@ -463,3 +463,33 @@ test("effort set when planning or changing an activity is what the workload adds
   const second = (await load()).value.rows.find((r) => r.userId === "fo").weeks[0];
   assert.deepEqual([second.load, second.over], [7, true], "4 + 3 against a limit of 5");
 });
+
+test("the list reads today in the project's own time zone, else the organisation's", async () => {
+  const w = world({ today: "2026-03-20" });
+  await w.create.handle(PM, "p", input({ title: "Ends 20 March", plannedStart: "2026-03-20", plannedEnd: "2026-03-20", ownerUserId: "fo" }));
+  const repo = { findByProject: async (p) => ok([...w.store.values()].filter((i) => i.projectId === p)) };
+  const facts = { factsByPlannedActivity: async () => ok(new Map()) };
+  // 21:30 UTC on 20 March is already 21 March in Addis Ababa: the item ended "yesterday" there.
+  const at = { now: () => new Date("2026-03-20T21:30:00Z") };
+  const listIn = (zone) => new ListWorkPlanHandler(repo, facts, { reportCoveredRanges: async () => ok([]), timeZoneFor: zone ? async () => ok(zone) : undefined }, at);
+  assert.equal((await listIn("UTC").handle(PM, "p")).value[0].signal, "ON_TIME");
+  assert.equal((await listIn("Africa/Addis_Ababa").handle(PM, "p")).value[0].signal, "LATE");
+  assert.equal((await listIn(undefined).handle(PM, "p")).value[0].signal, "ON_TIME", "no reader: the UTC day");
+});
+
+import { UpdateProjectHandler } from "../dist/index.js";
+test("a project's own time zone is optional, validated, and cleared by an empty value", async () => {
+  const project = {
+    status: "ACTIVE", duration: { start: new Date("2026-01-01"), end: new Date("2026-12-31") }, timeZone: undefined, budget: undefined,
+    updateDetails() {}, assignStaff() {}, setTimeZone(z) { this.timeZone = z; },
+  };
+  const audit = [];
+  const handler = new UpdateProjectHandler({ findById: async () => ok(project), update: async (p) => ok(p) }, { findByProject: async () => ok([]) }, { record: async (e) => void audit.push(e) });
+  assert.equal((await handler.handle(PM, "p", { timeZone: "Not/AZone" })).ok, false);
+  assert.equal(project.timeZone, undefined, "an invalid name changes nothing");
+  assert.equal((await handler.handle(PM, "p", { timeZone: " Africa/Addis_Ababa " })).ok, true);
+  assert.equal(project.timeZone, "Africa/Addis_Ababa");
+  assert.equal((await handler.handle(PM, "p", { timeZone: null })).ok, true);
+  assert.equal(project.timeZone, undefined, "null clears it: the organisation's zone applies again");
+  assert.equal((await handler.handle(PM, "p", {})).ok, true);
+});

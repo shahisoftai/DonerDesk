@@ -43,6 +43,8 @@ export interface ProjectProps {
   isDemo: boolean;
   /** Admin setting: false hides the work plan screens and keeps the data. Absent means shown. */
   showWorkPlanning?: boolean;
+  /** Optional IANA time zone for this project's own "today" (plan dates, late). Absent means the organisation's zone is used. */
+  timeZone?: string;
 }
 
 export class Project extends Entity<string> {
@@ -202,6 +204,14 @@ export class Project extends Entity<string> {
       ...patch,
       duration: patch.duration ? DateRange.create(patch.duration.start, patch.duration.end) : this.props.duration,
     };
+    this.touch();
+  }
+
+  get timeZone(): string | undefined { return this.props.timeZone; }
+
+  /** Set or clear (undefined) the project's own time zone. The caller validates the name. */
+  setTimeZone(timeZone: string | undefined): void {
+    if (timeZone === undefined) delete this.props.timeZone; else this.props.timeZone = timeZone;
     this.touch();
   }
 

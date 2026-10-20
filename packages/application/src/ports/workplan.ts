@@ -26,6 +26,8 @@ export interface IPlanContextReader {
   /** The date ranges of the project's non-cancelled periods that have a generated report draft (one query for a whole list). */
   reportCoveredRanges(projectId: string, tenantId: TenantId): Promise<Result<ReadonlyArray<{ start: PlainDate; end: PlainDate }>>>;
   projectDates(projectId: string, tenantId: TenantId): Promise<Result<{ start: PlainDate; end: PlainDate } | null>>;
+  /** The project's own time zone, else the organisation's, else UTC: the zone in which "today" is read for this project. */
+  timeZoneFor?(projectId: string, tenantId: TenantId): Promise<Result<string>>;
 }
 
 /** Completed activities per planned activity (withdrawn ones already left out), for the delivery state. */

@@ -1,4 +1,4 @@
-import { DomainError, NO_DELIVERY, toPlainDate, ok, type Result } from "@donordesk/domain";
+import { DomainError, NO_DELIVERY, localDate, toPlainDate, ok, type Result } from "@donordesk/domain";
 import type { ListWorkPlanQuery } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IClock } from "../../ports/core.js";
@@ -19,7 +19,9 @@ export class ListWorkPlanHandler {
     if (!facts.ok) return facts;
     const covered = await this.context.reportCoveredRanges(projectId, ctx.tenant.tenantId);
     if (!covered.ok) return covered;
-    const today = toPlainDate(this.clock.now())!;
+    // "Today" is read in the project's own time zone (else the organisation's); without the reader it is the UTC day.
+    const zone = this.context.timeZoneFor ? await this.context.timeZoneFor(projectId, ctx.tenant.tenantId) : undefined;
+    const today = zone?.ok ? localDate(this.clock.now(), zone.value) : toPlainDate(this.clock.now())!;
     const links = this.dependencies ? await this.dependencies.findByProject(projectId, ctx.tenant.tenantId) : ok([]);
     if (!links.ok) return links;
     const byId = new Map(items.value.map((i) => [i.id, i]));

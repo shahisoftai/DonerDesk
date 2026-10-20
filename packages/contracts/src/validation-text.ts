@@ -12,6 +12,7 @@ export interface ValidationIssueLike {
 
 /** Field labels, most specific path first. A row is matched by the path with numeric segments removed. */
 const FIELD_LABELS: ReadonlyArray<readonly [string, string]> = [
+  ["timeZone", "Time zone"],
   ["scope.affectedPopulation.group", "Affected population: who"],
   ["scope.affectedPopulation.figure", "Affected population: figure"],
   ["scope.affectedPopulation.source", "Affected population: source"],

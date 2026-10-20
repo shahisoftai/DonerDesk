@@ -46,7 +46,7 @@ export function PlannedViews(props: {
       {view === "LIST" ? list : (
         <>
           <div className="hidden sm:block">
-            <PlanTimeline projectId={props.projectId} rows={props.rows} deadlines={props.deadlines} project={props.project} today={props.today} outputTitles={props.outputTitles} movableIds={props.movableIds} />
+            <PlanTimeline projectId={props.projectId} rows={props.rows} deadlines={props.deadlines} project={props.project} today={props.today} outputTitles={props.outputTitles} movableIds={props.movableIds} names={props.names} userId={props.userId} />
           </div>
           <div className="sm:hidden">{list}</div>
         </>

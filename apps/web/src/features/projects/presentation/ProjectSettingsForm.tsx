@@ -42,6 +42,7 @@ export function ProjectSettingsForm({ project }: { project: ProjectDetail }) {
   const [description, setDescription] = useState(project.description ?? "");
   const [primaryContactName, setPrimaryContactName] = useState(project.primaryContactName ?? "");
   const [status, setStatus] = useState(project.status);
+  const [timeZone, setTimeZone] = useState(project.timeZone ?? "");
   const [saved, setSaved] = useState(false);
 
   async function save(e: React.FormEvent) {
@@ -72,6 +73,8 @@ export function ProjectSettingsForm({ project }: { project: ProjectDetail }) {
     if (budgetCurrency) payload.budgetCurrency = budgetCurrency;
     if (description.trim()) payload.description = description.trim();
     if (primaryContactName.trim()) payload.primaryContactName = primaryContactName.trim();
+    // Optional: empty clears it, and the organisation's time zone applies.
+    payload.timeZone = timeZone.trim() || null;
 
     const result = await actionState.run(() => updateProjectAction(project.id, payload));
     if (result !== undefined) {
@@ -169,6 +172,9 @@ export function ProjectSettingsForm({ project }: { project: ProjectDetail }) {
           </Field>
           <Field label="Primary contact" htmlFor="settings-contact">
             <Input id="settings-contact" value={primaryContactName} onChange={(e) => setPrimaryContactName(e.target.value)} />
+          </Field>
+          <Field label="Time zone (optional)" htmlFor="settings-tz" description="Used for this project's own day (what is late). Leave empty to use the organisation's time zone, for example Africa/Addis_Ababa." error={fields.timeZone?.[0]}>
+            <Input id="settings-tz" value={timeZone} onChange={(e) => setTimeZone(e.target.value)} placeholder="Organisation's time zone" />
           </Field>
           <Field label="Status" htmlFor="settings-status" error={fields.status?.[0]}>
             <Select id="settings-status" value={status} onChange={(e) => setStatus(e.target.value)}>

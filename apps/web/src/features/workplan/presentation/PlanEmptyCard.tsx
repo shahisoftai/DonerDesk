@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 
@@ -28,9 +27,9 @@ export function PlanEmptyCard({ projectId, canPlan }: { projectId: string; canPl
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{WORKPLAN_COPY.emptyCardBody}</p>
       {canPlan ? (
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Link className="btn" href={`/projects/${projectId}/activities/plan/start`}>{WORKPLAN_COPY.startFromLogframe}</Link>
-          <Link className="btn-secondary" href={`/projects/${projectId}/activities/plan/new`}>{WORKPLAN_COPY.addPlanned}</Link>
-          <Link className="btn-secondary" href={`/projects/${projectId}/activities/plan/import`}>{WORKPLAN_COPY.importSheet}</Link>
+          <a className="btn" href={`/projects/${projectId}/activities/plan/start`}>{WORKPLAN_COPY.startFromLogframe}</a>
+          <a className="btn-secondary" href={`/projects/${projectId}/activities/plan/new`}>{WORKPLAN_COPY.addPlanned}</a>
+          <a className="btn-secondary" href={`/projects/${projectId}/activities/plan/import`}>{WORKPLAN_COPY.importSheet}</a>
           <button type="button" className="text-sm text-slate-500 underline" onClick={dismiss}>{WORKPLAN_COPY.notNow}</button>
         </div>
       ) : (

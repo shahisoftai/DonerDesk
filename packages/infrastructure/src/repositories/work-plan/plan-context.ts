@@ -35,4 +35,11 @@ export class PrismaPlanContextReader implements IPlanContextReader {
     const p = await this.prisma.project.findFirst({ where: { id: projectId, tenantId: tenantId.toString() }, select: { startDate: true, endDate: true } });
     return ok(p ? { start: toPlainDate(p.startDate)!, end: toPlainDate(p.endDate)! } : null);
   }
+
+  async timeZoneFor(projectId: string, tenantId: TenantId) {
+    const p = await this.prisma.project.findFirst({ where: { id: projectId, tenantId: tenantId.toString() }, select: { timeZone: true } });
+    if (p?.timeZone) return ok(p.timeZone);
+    const org = await this.prisma.organization.findUnique({ where: { tenantId: tenantId.toString() }, select: { timeZone: true } });
+    return ok(org?.timeZone || "UTC");
+  }
 }
