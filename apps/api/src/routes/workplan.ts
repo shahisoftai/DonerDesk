@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { registerParseFileRoute } from "./parse-file.js";
 import {
   AssignPlannedActivitySchema, ImportWorkPlanSchema, SetWorkPlanningVisibilitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ListWorkPlanQuerySchema,
   ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, UndoBulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, SetAutomationRuleSettingsSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, ChangeActivityPeopleSchema, CompletePlannedActivitySchema,
@@ -47,12 +48,7 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
   });
 
   // Same pattern as the other imports: a file becomes text, which the person can edit before importing.
-  app.post("/v1/work-plan/parse-file", async (req) => {
-    const data = await req.file();
-    if (!data) throw new Error("file required");
-    const result = await req.container.parser.parse({ buffer: await data.toBuffer(), fileName: data.filename ?? "upload", fileType: data.mimetype ?? "application/octet-stream" });
-    return { text: result.text, metadata: result.metadata };
-  });
+  registerParseFileRoute(app, "/v1/work-plan/parse-file");
 
   app.get("/v1/work-plan/:itemId/revisions", async (req) => {
     const r = await req.container.handlers.listPlanRevisions.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"));

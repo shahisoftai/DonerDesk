@@ -790,6 +790,47 @@ cd apps/workers && .venv/bin/python -m pytest -q
 
 
 
+
+---
+
+## 13. P0 batch 2 — the rest of §8 P0 (2026-10-21, built and tested, **not yet deployed**)
+
+Items 8, 10 and 12 of the §8 P0 list. Items 1–7, 9 and 11 were closed in §10.
+
+| Item | Gap | What changed | Test |
+|---|---|---|---|
+| 8 | **ME-04** a breakdown posted to `POST /v1/indicator-updates` was stripped with a 200 | `CreateIndicatorUpdateSchema` carries `disaggregation`; `CreateIndicatorUpdateHandler` validates it with `validateDisaggregation` against the indicator (the same rule as the grid), refuses a closed period and an indicator from another project | `indicator-update-data-loss.test.mjs` |
+| 8 | **ME-12** a reviewer's reason lived in `comments` and was overwritten by the next save (and reached the report writer as the officer's note) | `IndicatorUpdate.reviewNote` is its own column (migration `20261021140000_indicator_update_review_note`, which also moves existing reasons out of `comments`). `requestCorrection`/`reject` write it, `verify` clears it, a save never touches it. A field the caller omits keeps its stored value, an empty string clears it. The value-edit audit now records `oldValue`. The grid and history panel show "Reviewer: …" | same, plus domain `indicator-update.test.mjs` |
+| 10 | **H-5** `REPORT_APPROVED` / `REPORT_RETURNED` never emitted | `ReportNotifier` (application service): sending for review tells the project's approvers (`signOffRoles.approverIds`), approving/returning tells the author, with the reviewer's reason; nobody is told about their own action; it never fails the change | `report-notifications.test.mjs` |
+| 10 | **H-3** audit write not atomic with the business write | `UnitOfWork` (`packages/infrastructure/src/db/unit-of-work.ts`): the container's Prisma client is a transaction-aware proxy; `ATOMIC_HANDLERS` (20 sign-off, role, period and indicator-review use cases) run in one transaction with their audit row. A throw rolls both back; a returned failed `Result` commits as before; background tasks wait for the commit (`UnitOfWork.afterCommit`) | `unit-of-work.integration.test.mjs` (opt-in `UOW_VERIFY_DATABASE_URL`; run on a scratch Postgres: 5/5) |
+| 10 | **H-3** chain verification was a manual CLI nobody ran | `audit:verify --all` checks every organisation and exits 1 on a break; `donordesk-audit-verify.timer` runs it nightly at 03:41 UTC; runbook `memorybank/docs/runbooks/audit-verification.md`. (The append-only privilege was already done in §10.) | run against the scratch DB |
+| 12 | **H-20** the document parser failed silently; the worker had no upload limit | `assessTextExtraction` (domain, one rule) → `EXTRACTED / EMPTY / FAILED / UNSUPPORTED` with a plain sentence. `ParseUploadedFileHandler` serves all five `…/parse-file` routes (one `registerParseFileRoute`), refuses an empty file, a file over 20 MB and a file with no readable words, and never shows the technical error. The worker's `/v1/parse` returns `status`/`message` and refuses over 20 MB (413). `EvidenceFile.textExtractionStatus/Note` (migration `20261021150000_evidence_text_extraction_status`) is set by the persist-tags callback (`extractionStatus` in the body) and shown on the evidence page | `parse-extraction.test.mjs`, `text-extraction.test.mjs`, `test_parsers.py` |
+
+**A defect found while doing H-20:** `PrismaEvidenceRepository.update` never wrote `extractedText`, so text delivered by the
+persist-tags callback was dropped. It is written now.
+
+**Limits, stated plainly.**
+- Atomicity covers the 20 use cases in `ATOMIC_HANDLERS`, not every mutation. A repository that catches a database error and
+  carries on (the unique-key retry loops in report revisions and intelligence, billing) must not be added, because Postgres
+  aborts the whole transaction on the first error. Add a name to `ATOMIC_HANDLERS`; never wrap elsewhere. Notifications and
+  e-mail sent inside a rolled-back unit have already gone out.
+- The tenant audit chain is serialised by one advisory lock per organisation; inside a unit of work it is held until commit.
+  The units are short and database-only, but a very long approval (a large gate evaluation) holds it for that long.
+- No Kestra flow in this repository calls `/v1/parse` or the persist-tags callback; an external flow must forward the worker's
+  `status` as `extractionStatus` for the evidence status to be set. Until it does the status stays "not attempted".
+- OCR is still absent (AI-03): a scanned PDF is now refused or flagged, not read.
+
+**Verification (2026-10-21).** `packages/domain` 708/708, `application` 664/664, `contracts` 14/14, `infrastructure` 354 pass
+0 fail (72 opt-in skipped; the new integration test run separately, 5/5), `apps/api` 54/54, `apps/web` unit 383/383,
+`apps/workers` 221/221 (ruff clean), journey 1/1, `reporting:eval` exit 0, architecture 3/3, `pnpm -r build` and
+`pnpm -r typecheck` clean. `prisma migrate deploy` applies both new migrations on a fresh database; the drift check shows only
+the known pgvector column.
+
+**Deploy.** Migrations `20261021140000_indicator_update_review_note` and `20261021150000_evidence_text_extraction_status`
+(additive, apply before the code, as `donordesk_migrator`); `/ready` now requires `IndicatorUpdate.reviewNote` and
+`EvidenceFile.textExtractionStatus`; ship api, web and workers together (`SCOPE=both`); install the audit-verify timer by hand
+(`deploy-fast.sh` does not install units).
+
 ---
 
 ## 12. Production deployment — 2026-10-20

@@ -18,6 +18,8 @@ export interface IndicatorUpdateProps {
   periodAchievement: string;
   cumulativeAchievement: string;
   comments?: string;
+  /** The reviewer's reason for a correction or rejection. Kept apart from `comments` (the submitter's own note) so a save never overwrites it and it never reaches a report. */
+  reviewNote?: string;
   dataSource?: string;
   attachedEvidenceIds: string[];
   /** Validated by `validateDisaggregation` before it reaches the aggregate. */
@@ -79,6 +81,7 @@ export class IndicatorUpdate extends Entity<string> {
   get periodAchievement(): string { return this.props.periodAchievement; }
   get cumulativeAchievement(): string { return this.props.cumulativeAchievement; }
   get comments(): string | undefined { return this.props.comments; }
+  get reviewNote(): string | undefined { return this.props.reviewNote; }
   get dataSource(): string | undefined { return this.props.dataSource; }
   get attachedEvidenceIds(): string[] { return [...this.props.attachedEvidenceIds]; }
   get disaggregation(): DisaggregationEntry[] { return (this.props.disaggregation ?? []).map((e) => ({ ...e })); }
@@ -107,6 +110,7 @@ export class IndicatorUpdate extends Entity<string> {
       throw DomainError.invalidTransition("Only submitted updates can be verified");
     }
     this.props.verificationStatus = "VERIFIED";
+    this.props.reviewNote = undefined;
     this.props.verifiedById = by;
     this.props.verifiedAt = new Date();
     this.touch();
@@ -120,7 +124,7 @@ export class IndicatorUpdate extends Entity<string> {
     const reason = notes.trim();
     if (!reason) throw DomainError.validation("A reason is required to request a correction");
     this.props.verificationStatus = "NEEDS_CORRECTION";
-    this.props.comments = reason;
+    this.props.reviewNote = reason;
     this.props.verifiedById = undefined;
     this.props.verifiedAt = undefined;
     this.touch();
@@ -133,7 +137,7 @@ export class IndicatorUpdate extends Entity<string> {
     const trimmed = reason.trim();
     if (!trimmed) throw DomainError.validation("A reason is required to reject an update");
     this.props.verificationStatus = "REJECTED";
-    this.props.comments = trimmed;
+    this.props.reviewNote = trimmed;
     this.touch();
   }
 

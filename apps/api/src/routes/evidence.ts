@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { registerParseFileRoute } from "./parse-file.js";
 import { EvidenceSearchSchema, AcceptEvidenceTagsSchema, ImportEvidenceTextSchema, SetEvidencePeriodSchema, BulkVerifyEvidenceSchema } from "@donordesk/contracts";
 import { buildEvidenceTemplate, EVIDENCE_TEMPLATE_FILENAME } from "@donordesk/infrastructure";
 
@@ -18,17 +19,7 @@ export async function registerEvidenceRoutes(app: FastifyInstance) {
     return r.value;
   });
 
-  app.post("/v1/evidence/parse-file", async (req) => {
-    const data = await req.file();
-    if (!data) throw new Error("file required");
-    const buffer = await data.toBuffer();
-    const result = await req.container.parser.parse({
-      buffer,
-      fileName: data.filename ?? "upload",
-      fileType: data.mimetype ?? "application/octet-stream",
-    });
-    return { text: result.text, metadata: result.metadata };
-  });
+  registerParseFileRoute(app, "/v1/evidence/parse-file");
   app.post("/v1/evidence/upload", async (req) => {
     const data = await req.file();
     if (!data) throw new Error("file required");

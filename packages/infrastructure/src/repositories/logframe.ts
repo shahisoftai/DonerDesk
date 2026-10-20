@@ -238,6 +238,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
         periodAchievement: u.periodAchievement,
         cumulativeAchievement: u.cumulativeAchievement,
         comments: u.comments,
+        reviewNote: u.reviewNote,
         dataSource: u.dataSource,
         attachedEvidenceIds: JSON.stringify(u.attachedEvidenceIds),
         disaggregationJson: JSON.stringify(u.disaggregation),
@@ -255,8 +256,10 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
       data: {
         periodAchievement: u.periodAchievement,
         cumulativeAchievement: u.cumulativeAchievement,
-        comments: u.comments,
-        dataSource: u.dataSource,
+        // null (not undefined) so clearing a note really clears it.
+        comments: u.comments ?? null,
+        reviewNote: u.reviewNote ?? null,
+        dataSource: u.dataSource ?? null,
         attachedEvidenceIds: JSON.stringify(u.attachedEvidenceIds),
         disaggregationJson: JSON.stringify(u.disaggregation),
         verificationStatus: u.verificationStatus,
@@ -301,6 +304,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
     periodAchievement: string;
     cumulativeAchievement: string;
     comments: string | null;
+    reviewNote: string | null;
     dataSource: string | null;
     attachedEvidenceIds: string;
     disaggregationJson: string;
@@ -320,6 +324,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
         periodAchievement: row.periodAchievement,
         cumulativeAchievement: row.cumulativeAchievement,
         comments: row.comments ?? undefined,
+        reviewNote: row.reviewNote ?? undefined,
         dataSource: row.dataSource ?? undefined,
         attachedEvidenceIds: JSON.parse(row.attachedEvidenceIds),
         disaggregation: parseDisaggregationJson(row.disaggregationJson),

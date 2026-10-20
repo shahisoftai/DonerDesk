@@ -1,7 +1,8 @@
 import { PrismaClient } from "@prisma/client";
+import { UnitOfWork } from "./db/unit-of-work.js";
 import { TenantId } from "@donordesk/domain";
 
-import { UpdateTemplateRequirementsHandler, UpdateTemplateMetadataHandler, ReextractTemplateHandler, MarkTemplateReviewedHandler, GetTemplateHandler, GetTemplateVersionHandler, GetTemplateOriginalFileHandler, SetTemplateLibraryHandler, SetDefaultTemplateHandler, ListLibraryTemplatesHandler, CloneTemplateHandler, ParseTemplateFileHandler, PreviewTemplateBriefHandler, TemplateExtractionRunner, PeriodTemplateResolver, type ITemplateExtractionService, type ILLMProvider, SignUpHandler, LoginHandler, InviteUserHandler, ListPendingInvitationsHandler, AcceptInvitationHandler, ChangeRoleHandler, ChangePasswordHandler, RequestPasswordResetHandler, ConfirmPasswordResetHandler, UpdateOrganizationHandler, UpdateOrganizationReportingDefaultsHandler, ConnectGoogleDriveHandler, GoogleSignInHandler, LinkGoogleDriveEvidenceHandler, ListUsersHandler, IssueScimCredentialHandler, ListScimCredentialsHandler, RevokeScimCredentialHandler, CreateProjectHandler, CreateDemoProjectHandler, DeleteDemoProjectHandler, UpdateProjectHandler, ArchiveProjectHandler, RestoreProjectHandler, ListProjectsHandler, GetProjectHandler, AssignProjectMemberHandler, UpdateProjectMemberHandler, RemoveProjectMemberHandler, ListProjectMembersHandler, UploadTemplateHandler, DetectTemplateRegionsHandler, UpdateTemplateMappingHandler, ApproveTemplateMappingHandler, LockTemplateMappingHandler, UpdateTemplateSectionsHandler, DeleteTemplateHandler, ListTemplatesHandler, CreateLogframeItemHandler, MoveLogframeItemHandler, ImportLogframeHandler, CopyProjectSetupHandler, ImportIndicatorsHandler, CreateIndicatorHandler, UpdateIndicatorSemanticsHandler, UpdateIndicatorHandler, MoveIndicatorHandler, ArchiveIndicatorHandler, RestoreIndicatorHandler, ListArchivedIndicatorsHandler, IndicatorApprovalGuard, ActivityApprovalGuard, DefaultTemplateResolver, ChangePeriodTemplateHandler, ResubmitActivityHandler, WithdrawActivityHandler, RestoreActivityHandler, BulkReviewActivitiesHandler, GetDefaultTemplatesHandler, CreateAllPeriodsHandler, EvidenceLinkService, ActivityLinkResolver, PlanDeliveryService, GetPlanStorySuggestionHandler, GetPortfolioIndicatorsHandler, RunAutomationsHandler, SetWorkPlanningVisibilityHandler, ListProjectPeopleHandler, CreateRiskHandler, UpdateRiskHandler, CloseRiskHandler, ListRisksHandler, GetActivityFileNeedsHandler, ProjectHealthService, VisibleProjects, GetDeliveryHealthHandler, GetEntryDueDaysHandler, SetEntryDueDaysHandler, GetPortfolioHealthHandler, GetRiskTrendHandler, RefreshProjectRiskHandler, CreateTaskHandler, CompleteTaskHandler, CancelTaskHandler, ListAssignmentsHandler, ListTeamWorkHandler, SetIndicatorOwnerHandler, SetPeriodOwnerHandler, AssignChecklistItemHandler, AssignmentQueue, TaskReconciler, GetPeriodOptionsHandler, PlanClosingReportHandler, StartClosingReportHandler, GetEvidenceSupportHandler, ResolveSectionFlagsHandler, ConfirmIndicatorSemanticsHandler, VerifyPeriodIndicatorUpdatesHandler, CreateIndicatorUpdateHandler, BulkUpsertIndicatorUpdatesHandler, ListPeriodIndicatorsHandler, ParseIndicatorSheetHandler, VerifyIndicatorUpdateHandler, RequestIndicatorUpdateCorrectionHandler, RejectIndicatorUpdateHandler, ListIndicatorUpdatesHandler, GetProjectDataSheetHandler, SectionDataChartsHandler, ReopenReportHandler, ImportDataSheetHandler, ListLogframeHandler, ListIndicatorsHandler, UploadEvidenceHandler, ImportEvidenceHandler, SuggestEvidenceTagsHandler, AcceptEvidenceTagsHandler, SetEvidencePeriodHandler, PersistEvidenceTagsHandler, VerifyEvidenceHandler, SearchEvidenceHandler, GetEvidenceHandler, CreateActivityUpdateHandler, ImportActivitiesHandler, PolishActivityHandler, ReviewActivityHandler, ListActivitiesHandler, GetActivityHandler, UpdateActivityHandler, AttachEvidenceHandler, DetachEvidenceHandler, SuggestEvidenceLinksHandler, CreateReportingPeriodHandler, EnsureAutoPeriodHandler, ListReportingPeriodsHandler, GenerateReportDraftHandler, GetReportDraftHandler, GetSmartReviewHandler, UpdateReportSectionHandler, CreateReportSectionHandler, DeleteReportSectionHandler, ReorderReportSectionsHandler, UpdateReportSectionChartHandler, RefreshSectionChartsHandler, SectionChartService, ApproveReportSectionHandler, SubmitReportForReviewHandler, CancelReportGenerationHandler, ActivateReportDraftHandler, ApproveReportHandler, RejectReportHandler, ResolveReportClaimHandler, BulkResolveReportClaimHandler, UpdateReportingPeriodStoryHandler, UpdateReportingPeriodScopeHandler, CancelReportingPeriodHandler, MarkSummaryCurrentHandler, ConfirmClaimMatchesIndicatorHandler, SetStandingStatementHandler, SetTemplateDefaultForTypeHandler, SetRequireSecondApproverHandler, BulkVerifyEvidenceHandler, GetComplianceNotesHandler, SaveSectionNoteHandler, RestoreReportingPeriodHandler, ConvertPeriodToFinalHandler, FinanceInputsService, GetPeriodFinanceHandler, SavePeriodFinanceHandler, PreviewPeriodFinanceImportHandler, VerifyPeriodFinanceHandler, ImportPeriodIndicatorValuesHandler, ProposeFieldReportExtractionHandler, ApplyFieldReportExtractionHandler, DetectMissingEvidenceHandler, ResolveChecklistItemHandler, BulkResolveChecklistHandler, ListChecklistHandler, ListAiSectionRunsHandler, RequestIdempotencyService, ChecklistReconciler, CalculateReadinessHandler, RecomputeReadinessHandler, GenerateChecklistHandler, RewriteReportSectionHandler, IndicatorAnalyticsService, InferredReportPlanner, CreateExportHandler, GetExportPreflightHandler, RunExportHandler, RunRemindersHandler, GetNotificationPreferencesHandler, UpdateNotificationPreferencesHandler, PersonNotifier, AddCommentHandler, ResolveCommentHandler, ListCommentsHandler, ListNotificationsHandler, MarkNotificationReadHandler, ListAuditLogHandler, RecordLegalConsentHandler, GetLegalConsentHandler, GetProjectSetupHandler, AcknowledgeProjectSetupHandler, RetryProjectWorkspaceHandler, RepairProjectWorkspaceHandler, ListWorkspaceFilesHandler, ProvisionTenantWorkspacesHandler, ImportDriveFileHandler, GetReportingProfileHandler, UpsertReportingProfileHandler, ProjectReadinessService, UuidIdGenerator, type SystemClock, SystemClock as SystemClockImpl, ProvisionTenantHandler, EntitlementService, CreateCheckoutHandler, CreateTopupCheckoutHandler, SubmitContactSalesInquiryHandler, SubmitNonprofitVerificationHandler, ApproveNonprofitVerificationHandler, RejectNonprofitVerificationHandler, ListPendingNonprofitVerificationsHandler, ListCreditPacksHandler, CompCreditPackHandler, RefundCreditPackHandler, CreateCustomerPortalHandler, GetBillingSummaryHandler, ProcessBillingWebhookHandler, ExpireLocalTrialsHandler, ReconcileBillingSubscriptionsHandler, ReconcileManagedStorageUsageHandler, ReleaseStaleUsageReservationsHandler, RetryBillingInboxHandler, RunGrandfatherCreditCutoverHandler, RunGrandfatherByoLlmHandler, BillingSubscriptionSynchronizer, ReportRevisionService, ReportAssuranceService, RecordChunkBuilder, LintGrounding, GetReportAssuranceHandler, ReassessReportRevisionHandler, ResolveEffectiveRequirementsHandler, UpsertRequirementPackHandler, ActivateRequirementPackHandler, UpsertAwardOverrideHandler, CreateSubmissionSnapshotHandler, RegenerateReportSectionHandler, ReopenReportClaimHandler, ApplyClaimSuggestionHandler, GetClaimSuggestionHandler, ListSectionRevisionsHandler, ReportGenerationContextBuilder, SectionGenerationService, AiCreditGate, UpdateAgentMemorySettingsHandler, ExtractAgentMemoryHandler, ListPendingAgentMemoryHandler, ApproveAgentMemoryHandler, RejectAgentMemoryHandler, DeactivateAgentMemoryHandler } from "@donordesk/application";
+import { UpdateTemplateRequirementsHandler, UpdateTemplateMetadataHandler, ReextractTemplateHandler, MarkTemplateReviewedHandler, GetTemplateHandler, GetTemplateVersionHandler, GetTemplateOriginalFileHandler, SetTemplateLibraryHandler, SetDefaultTemplateHandler, ListLibraryTemplatesHandler, CloneTemplateHandler, ParseTemplateFileHandler, PreviewTemplateBriefHandler, TemplateExtractionRunner, PeriodTemplateResolver, type ITemplateExtractionService, type ILLMProvider, SignUpHandler, LoginHandler, InviteUserHandler, ListPendingInvitationsHandler, AcceptInvitationHandler, ChangeRoleHandler, ChangePasswordHandler, RequestPasswordResetHandler, ConfirmPasswordResetHandler, UpdateOrganizationHandler, UpdateOrganizationReportingDefaultsHandler, ConnectGoogleDriveHandler, GoogleSignInHandler, LinkGoogleDriveEvidenceHandler, ListUsersHandler, IssueScimCredentialHandler, ListScimCredentialsHandler, RevokeScimCredentialHandler, CreateProjectHandler, CreateDemoProjectHandler, DeleteDemoProjectHandler, UpdateProjectHandler, ArchiveProjectHandler, RestoreProjectHandler, ListProjectsHandler, GetProjectHandler, AssignProjectMemberHandler, UpdateProjectMemberHandler, RemoveProjectMemberHandler, ListProjectMembersHandler, UploadTemplateHandler, DetectTemplateRegionsHandler, UpdateTemplateMappingHandler, ApproveTemplateMappingHandler, LockTemplateMappingHandler, UpdateTemplateSectionsHandler, DeleteTemplateHandler, ListTemplatesHandler, CreateLogframeItemHandler, MoveLogframeItemHandler, ImportLogframeHandler, CopyProjectSetupHandler, ImportIndicatorsHandler, CreateIndicatorHandler, UpdateIndicatorSemanticsHandler, UpdateIndicatorHandler, MoveIndicatorHandler, ArchiveIndicatorHandler, RestoreIndicatorHandler, ListArchivedIndicatorsHandler, IndicatorApprovalGuard, ActivityApprovalGuard, DefaultTemplateResolver, ChangePeriodTemplateHandler, ResubmitActivityHandler, WithdrawActivityHandler, RestoreActivityHandler, BulkReviewActivitiesHandler, GetDefaultTemplatesHandler, CreateAllPeriodsHandler, EvidenceLinkService, ActivityLinkResolver, PlanDeliveryService, GetPlanStorySuggestionHandler, GetPortfolioIndicatorsHandler, RunAutomationsHandler, SetWorkPlanningVisibilityHandler, ListProjectPeopleHandler, CreateRiskHandler, UpdateRiskHandler, CloseRiskHandler, ListRisksHandler, GetActivityFileNeedsHandler, ProjectHealthService, VisibleProjects, GetDeliveryHealthHandler, GetEntryDueDaysHandler, SetEntryDueDaysHandler, GetPortfolioHealthHandler, GetRiskTrendHandler, RefreshProjectRiskHandler, CreateTaskHandler, CompleteTaskHandler, CancelTaskHandler, ListAssignmentsHandler, ListTeamWorkHandler, SetIndicatorOwnerHandler, SetPeriodOwnerHandler, AssignChecklistItemHandler, AssignmentQueue, TaskReconciler, GetPeriodOptionsHandler, PlanClosingReportHandler, StartClosingReportHandler, GetEvidenceSupportHandler, ResolveSectionFlagsHandler, ConfirmIndicatorSemanticsHandler, VerifyPeriodIndicatorUpdatesHandler, CreateIndicatorUpdateHandler, ParseUploadedFileHandler, BulkUpsertIndicatorUpdatesHandler, ListPeriodIndicatorsHandler, ParseIndicatorSheetHandler, VerifyIndicatorUpdateHandler, RequestIndicatorUpdateCorrectionHandler, RejectIndicatorUpdateHandler, ListIndicatorUpdatesHandler, GetProjectDataSheetHandler, SectionDataChartsHandler, ReopenReportHandler, ImportDataSheetHandler, ListLogframeHandler, ListIndicatorsHandler, UploadEvidenceHandler, ImportEvidenceHandler, SuggestEvidenceTagsHandler, AcceptEvidenceTagsHandler, SetEvidencePeriodHandler, PersistEvidenceTagsHandler, VerifyEvidenceHandler, SearchEvidenceHandler, GetEvidenceHandler, CreateActivityUpdateHandler, ImportActivitiesHandler, PolishActivityHandler, ReviewActivityHandler, ListActivitiesHandler, GetActivityHandler, UpdateActivityHandler, AttachEvidenceHandler, DetachEvidenceHandler, SuggestEvidenceLinksHandler, CreateReportingPeriodHandler, EnsureAutoPeriodHandler, ListReportingPeriodsHandler, GenerateReportDraftHandler, GetReportDraftHandler, GetSmartReviewHandler, UpdateReportSectionHandler, CreateReportSectionHandler, DeleteReportSectionHandler, ReorderReportSectionsHandler, UpdateReportSectionChartHandler, RefreshSectionChartsHandler, SectionChartService, ApproveReportSectionHandler, SubmitReportForReviewHandler, CancelReportGenerationHandler, ActivateReportDraftHandler, ApproveReportHandler, RejectReportHandler, ResolveReportClaimHandler, BulkResolveReportClaimHandler, UpdateReportingPeriodStoryHandler, UpdateReportingPeriodScopeHandler, CancelReportingPeriodHandler, MarkSummaryCurrentHandler, ConfirmClaimMatchesIndicatorHandler, SetStandingStatementHandler, SetTemplateDefaultForTypeHandler, SetRequireSecondApproverHandler, BulkVerifyEvidenceHandler, GetComplianceNotesHandler, SaveSectionNoteHandler, RestoreReportingPeriodHandler, ConvertPeriodToFinalHandler, FinanceInputsService, GetPeriodFinanceHandler, SavePeriodFinanceHandler, PreviewPeriodFinanceImportHandler, VerifyPeriodFinanceHandler, ImportPeriodIndicatorValuesHandler, ProposeFieldReportExtractionHandler, ApplyFieldReportExtractionHandler, DetectMissingEvidenceHandler, ResolveChecklistItemHandler, BulkResolveChecklistHandler, ListChecklistHandler, ListAiSectionRunsHandler, RequestIdempotencyService, ChecklistReconciler, CalculateReadinessHandler, RecomputeReadinessHandler, GenerateChecklistHandler, RewriteReportSectionHandler, IndicatorAnalyticsService, InferredReportPlanner, CreateExportHandler, GetExportPreflightHandler, RunExportHandler, RunRemindersHandler, GetNotificationPreferencesHandler, UpdateNotificationPreferencesHandler, PersonNotifier, ReportNotifier, AddCommentHandler, ResolveCommentHandler, ListCommentsHandler, ListNotificationsHandler, MarkNotificationReadHandler, ListAuditLogHandler, RecordLegalConsentHandler, GetLegalConsentHandler, GetProjectSetupHandler, AcknowledgeProjectSetupHandler, RetryProjectWorkspaceHandler, RepairProjectWorkspaceHandler, ListWorkspaceFilesHandler, ProvisionTenantWorkspacesHandler, ImportDriveFileHandler, GetReportingProfileHandler, UpsertReportingProfileHandler, ProjectReadinessService, UuidIdGenerator, type SystemClock, SystemClock as SystemClockImpl, ProvisionTenantHandler, EntitlementService, CreateCheckoutHandler, CreateTopupCheckoutHandler, SubmitContactSalesInquiryHandler, SubmitNonprofitVerificationHandler, ApproveNonprofitVerificationHandler, RejectNonprofitVerificationHandler, ListPendingNonprofitVerificationsHandler, ListCreditPacksHandler, CompCreditPackHandler, RefundCreditPackHandler, CreateCustomerPortalHandler, GetBillingSummaryHandler, ProcessBillingWebhookHandler, ExpireLocalTrialsHandler, ReconcileBillingSubscriptionsHandler, ReconcileManagedStorageUsageHandler, ReleaseStaleUsageReservationsHandler, RetryBillingInboxHandler, RunGrandfatherCreditCutoverHandler, RunGrandfatherByoLlmHandler, BillingSubscriptionSynchronizer, ReportRevisionService, ReportAssuranceService, RecordChunkBuilder, LintGrounding, GetReportAssuranceHandler, ReassessReportRevisionHandler, ResolveEffectiveRequirementsHandler, UpsertRequirementPackHandler, ActivateRequirementPackHandler, UpsertAwardOverrideHandler, CreateSubmissionSnapshotHandler, RegenerateReportSectionHandler, ReopenReportClaimHandler, ApplyClaimSuggestionHandler, GetClaimSuggestionHandler, ListSectionRevisionsHandler, ReportGenerationContextBuilder, SectionGenerationService, AiCreditGate, UpdateAgentMemorySettingsHandler, ExtractAgentMemoryHandler, ListPendingAgentMemoryHandler, ApproveAgentMemoryHandler, RejectAgentMemoryHandler, DeactivateAgentMemoryHandler } from "@donordesk/application";
 import type { IJobQueue, IReportDraftGenerator, INotificationPort, IAgentMemoryRepository, IAgentMemoryExtractor } from "@donordesk/application";
 import { EmailAdapter } from "./comms/email.js";
 import { PostmarkNotificationAdapter, FanOutNotificationAdapter } from "./comms/postmark-notification-adapter.js";
@@ -298,6 +299,7 @@ export interface Container {
     confirmIndicatorSemantics: ConfirmIndicatorSemanticsHandler;
     verifyPeriodIndicatorUpdates: VerifyPeriodIndicatorUpdatesHandler;
     createIndicatorUpdate: CreateIndicatorUpdateHandler;
+    parseUploadedFile: ParseUploadedFileHandler;
     bulkUpsertIndicatorUpdates: BulkUpsertIndicatorUpdatesHandler;
     listPeriodIndicators: ListPeriodIndicatorsHandler;
     parseIndicatorSheet: ParseIndicatorSheetHandler;
@@ -466,13 +468,40 @@ export interface Container {
 
 import { createWorkplanModule, type WorkplanHandlers } from "./container/workplan-module.js";
 
+/** Use cases that run in one transaction with their audit row (H-3). Add a name here, never a wrapper elsewhere. */
+export const ATOMIC_HANDLERS = [
+  "changeRole",
+  "setRequireSecondApprover",
+  "createIndicatorUpdate",
+  "bulkUpsertIndicatorUpdates",
+  "verifyIndicatorUpdate",
+  "requestIndicatorUpdateCorrection",
+  "rejectIndicatorUpdate",
+  "verifyPeriodIndicatorUpdates",
+  "approveReportSection",
+  "submitReportForReview",
+  "approveReport",
+  "rejectReport",
+  "reviewActivity",
+  "bulkReviewActivities",
+  "resolveChecklistItem",
+  "cancelReportingPeriod",
+  "restoreReportingPeriod",
+  "convertPeriodToFinal",
+  "archiveIndicator",
+  "restoreIndicator",
+] as const satisfies ReadonlyArray<keyof Container["handlers"]>;
+
 export function createContainer(options?: { tenantId?: string; useAdminConnection?: boolean }): Container {
   const baseUrl = options?.useAdminConnection ? process.env.DATABASE_ADMIN_URL : process.env.DATABASE_URL;
   const tenantUrl = baseUrl && options?.tenantId ? withTenantSession(baseUrl, options.tenantId) : baseUrl;
-  const prisma = new PrismaClient({
+  const basePrisma = new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
     ...(tenantUrl ? { datasources: { db: { url: tenantUrl } } } : {}),
   });
+  // Every repository gets this client: outside a unit of work it is the plain client, inside one it is the open transaction.
+  const unitOfWork = new UnitOfWork(basePrisma);
+  const prisma = unitOfWork.client;
   const logger = createLogger();
   const auth = process.env.AUTH_PROVIDER === "oidc" ? new OidcAuthProvider() : new JwtAuthProvider();
   const googleSignIn = new GoogleSignInConnector();
@@ -936,10 +965,16 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const sectionRegenerationTracker = new InMemorySectionRegenerationTracker();
   const backgroundTasks = new Set<Promise<void>>();
   const runInBackground = (task: () => Promise<void>): void => {
-    const running: Promise<void> = task()
-      .catch((error: unknown) => logger.error("Background task failed", { error: error instanceof Error ? error.message : String(error) }))
-      .finally(() => backgroundTasks.delete(running));
-    backgroundTasks.add(running);
+    // Started inside a unit of work, a task waits for the commit: it must see what the request wrote, and it must
+    // never hold on to a transaction that has closed.
+    const start = (): void => {
+      const running: Promise<void> = Promise.resolve()
+        .then(() => task())
+        .catch((error: unknown) => logger.error("Background task failed", { error: error instanceof Error ? error.message : String(error) }))
+        .finally(() => backgroundTasks.delete(running));
+      backgroundTasks.add(running);
+    };
+    UnitOfWork.afterCommit(start);
   };
   const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);
   const planDelivery = new PlanDeliveryService(plannedActivities, planRevisions);
@@ -1002,7 +1037,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const updateTemplateMappingHandler = new UpdateTemplateMappingHandler(donorTemplateMappings, audits);
   const approveTemplateMappingHandler = new ApproveTemplateMappingHandler(donorTemplateMappings, donorTemplateRenderer, storage, audits);
   const lockTemplateMappingHandler = new LockTemplateMappingHandler(periods, donorTemplateMappings, audits);
-  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding, { profiles: reportingProfiles, projects, members: projectMembers });
+  const reportNotifier = new ReportNotifier(personNotifier, projects, projectMembers);
+  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding, { profiles: reportingProfiles, projects, members: projectMembers }, reportNotifier);
   const defaultTemplateResolver = new DefaultTemplateResolver(templates, reportingProfiles);
   const closingPlanHandler = new PlanClosingReportHandler(projects, periods, drafts, indicators, indicatorUpdates, activities, reportingProfiles, templates, financeInputs, defaultTemplateResolver, projectMembers);
   const createReportingPeriodHandler = new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events, activities, defaultTemplateResolver);
@@ -1101,7 +1137,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listArchivedIndicators: new ListArchivedIndicatorsHandler(indicators),
     confirmIndicatorSemantics: new ConfirmIndicatorSemanticsHandler(indicators, audits),
     verifyPeriodIndicatorUpdates: new VerifyPeriodIndicatorUpdatesHandler(indicatorUpdates, indicators, periods, activities, audits),
-    createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits, evidenceLinker, taskReconciler),
+    parseUploadedFile: new ParseUploadedFileHandler(parser),
+    createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits, indicators, periods, evidenceLinker, taskReconciler),
     bulkUpsertIndicatorUpdates,
     getProjectDataSheet,
     importDataSheet: new ImportDataSheetHandler(getProjectDataSheet, bulkUpsertIndicatorUpdates),
@@ -1226,9 +1263,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       getReportDraftGenerator, revisionService, assuranceService, generationRuns, audits, reportArtifacts,
     ),
     approveReportSection: new ApproveReportSectionHandler(sections, reportClaims, reportRevisions, audits),
-    submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),
+    submitReportForReview: new SubmitReportForReviewHandler(drafts, audits, reportNotifier),
     approveReport: approveReportHandler,
-    rejectReport: new RejectReportHandler(drafts, audits),
+    rejectReport: new RejectReportHandler(drafts, audits, reportNotifier),
     resolveReportClaim: new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService),
     resolveSectionFlags: new ResolveSectionFlagsHandler(sections, reportClaims, new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService), new ApproveReportSectionHandler(sections, reportClaims, reportRevisions, audits), audits),
     bulkResolveReportClaims: new BulkResolveReportClaimHandler(new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService)),
@@ -1291,6 +1328,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     runGrandfatherCreditCutover: new RunGrandfatherCreditCutoverHandler(billingSubscriptions, entitlementGrants, usageCounters, audits, clock, planCatalog),
     runGrandfatherByoLlm: new RunGrandfatherByoLlmHandler(platformLlmConfigs, entitlementGrants, entitlements, audits, clock, planCatalog),
   };
+
+  // Sign-off, role and indicator-review use cases: the change and its audit row commit together or not at all.
+  // Only short, database-only use cases belong here (see UnitOfWork): nothing that calls a model or a payment provider,
+  // and nothing whose repository catches a database error and carries on.
+  for (const name of ATOMIC_HANDLERS) unitOfWork.atomic(handlers[name]);
 
   return {
     prisma,

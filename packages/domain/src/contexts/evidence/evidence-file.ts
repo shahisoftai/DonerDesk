@@ -1,4 +1,5 @@
 import { Entity } from "../../core/entity.js";
+import type { TextExtractionStatus } from "./text-extraction.js";
 import { DomainError } from "../../core/domain-error.js";
 
 export type EvidenceType =
@@ -96,6 +97,10 @@ export interface EvidenceFileProps {
   notes?: string;
   aiSummary?: string;
   extractedText?: string;
+  /** Whether the file's words were read; undefined = not attempted yet. */
+  textExtractionStatus?: TextExtractionStatus;
+  /** Why not, in a sentence for the person. */
+  textExtractionNote?: string;
   aiSuggestedTags: SuggestedTag[];
   sensitivityWarning?: string;
 }
@@ -197,6 +202,8 @@ export class EvidenceFile extends Entity<string> {
   get notes(): string | undefined { return this.props.notes; }
   get aiSummary(): string | undefined { return this.props.aiSummary; }
   get extractedText(): string | undefined { return this.props.extractedText; }
+  get textExtractionStatus(): TextExtractionStatus | undefined { return this.props.textExtractionStatus; }
+  get textExtractionNote(): string | undefined { return this.props.textExtractionNote; }
   get aiSuggestedTags(): SuggestedTag[] { return [...this.props.aiSuggestedTags]; }
   get sensitivityWarning(): string | undefined { return this.props.sensitivityWarning; }
 
@@ -221,6 +228,16 @@ export class EvidenceFile extends Entity<string> {
 
   setExtractedText(text: string): void {
     this.props.extractedText = text;
+    this.touch();
+  }
+
+  /**
+   * Records whether the file's words were read. EXTRACTED clears any earlier note; any other status keeps the
+   * sentence that tells the person what to do, so a scan nobody could read is never mistaken for evidence that was.
+   */
+  recordTextExtraction(status: TextExtractionStatus, note?: string): void {
+    this.props.textExtractionStatus = status;
+    this.props.textExtractionNote = status === "EXTRACTED" ? undefined : note;
     this.touch();
   }
 

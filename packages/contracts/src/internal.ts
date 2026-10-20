@@ -45,6 +45,8 @@ export const InternalEvidenceResponseSchema = z.object({
   notes: z.string().optional(),
   aiSummary: z.string().optional(),
   extractedText: z.string().optional(),
+  textExtractionStatus: z.string().optional(),
+  textExtractionNote: z.string().optional(),
   aiSuggestedTags: z.array(SuggestedTagSchema).default([]),
 });
 export type InternalEvidenceResponse = z.infer<typeof InternalEvidenceResponseSchema>;
@@ -59,6 +61,8 @@ export const PersistTagsBodySchema = z.object({
   sensitivityWarning: z.string().optional(),
   model: z.string().optional(),
   extractedText: z.string().optional(),
+  /** What the parser reported: EXTRACTED, EMPTY, FAILED or UNSUPPORTED. */
+  extractionStatus: z.enum(["EXTRACTED", "EMPTY", "FAILED", "UNSUPPORTED"]).optional(),
   idempotencyKey: z.string().min(1).optional(),
 });
 export type PersistTagsBody = z.infer<typeof PersistTagsBodySchema>;

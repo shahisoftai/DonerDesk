@@ -117,17 +117,6 @@ export const VerifyPeriodIndicatorUpdatesSchema = z.object({
 });
 export type VerifyPeriodIndicatorUpdatesInput = z.infer<typeof VerifyPeriodIndicatorUpdatesSchema>;
 
-export const CreateIndicatorUpdateSchema = z.object({
-  indicatorId: z.string().min(1),
-  reportingPeriodId: z.string().min(1),
-  periodAchievement: z.string(),
-  cumulativeAchievement: z.string(),
-  comments: z.string().optional(),
-  dataSource: z.string().optional(),
-  attachedEvidenceIds: z.array(z.string()).default([]),
-});
-export type CreateIndicatorUpdateInput = z.infer<typeof CreateIndicatorUpdateSchema>;
-
 export const DisaggregationDimensionSchema = z.enum(["SEX", "AGE_GROUP", "DISABILITY", "LOCATION", "OTHER"]);
 
 /** One category's value in an indicator breakdown (e.g. SEX / Female / 120). */
@@ -137,6 +126,19 @@ export const DisaggregationEntrySchema = z.object({
   value: z.string().trim().min(1).max(50),
 });
 export type DisaggregationEntryInput = z.infer<typeof DisaggregationEntrySchema>;
+
+export const CreateIndicatorUpdateSchema = z.object({
+  indicatorId: z.string().min(1),
+  reportingPeriodId: z.string().min(1),
+  periodAchievement: z.string(),
+  cumulativeAchievement: z.string(),
+  comments: z.string().optional(),
+  dataSource: z.string().optional(),
+  /** A breakdown of the value. It is validated against the indicator exactly as on the grid; it is never silently dropped. */
+  disaggregation: z.array(DisaggregationEntrySchema).max(50).optional(),
+  attachedEvidenceIds: z.array(z.string()).default([]),
+});
+export type CreateIndicatorUpdateInput = z.infer<typeof CreateIndicatorUpdateSchema>;
 
 /** One row of the spreadsheet-style indicator data entry grid. */
 export const UpsertIndicatorUpdateSchema = z.object({

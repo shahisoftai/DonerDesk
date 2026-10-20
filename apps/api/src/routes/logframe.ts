@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { registerParseFileRoute } from "./parse-file.js";
 import {
   CreateLogframeItemSchema,
   MoveLogframeItemSchema,
@@ -79,17 +80,7 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     return r.value;
   });
 
-  app.post("/v1/logframe/parse-file", async (req) => {
-    const data = await req.file();
-    if (!data) throw new Error("file required");
-    const buffer = await data.toBuffer();
-    const result = await req.container.parser.parse({
-      buffer,
-      fileName: data.filename ?? "upload",
-      fileType: data.mimetype ?? "application/octet-stream",
-    });
-    return { text: result.text, metadata: result.metadata };
-  });
+  registerParseFileRoute(app, "/v1/logframe/parse-file");
 
   app.post("/v1/indicators", async (req) => {
     const body = CreateIndicatorSchema.parse(req.body);
@@ -167,17 +158,7 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     return r.value;
   });
 
-  app.post("/v1/indicators/parse-file", async (req) => {
-    const data = await req.file();
-    if (!data) throw new Error("file required");
-    const buffer = await data.toBuffer();
-    const result = await req.container.parser.parse({
-      buffer,
-      fileName: data.filename ?? "upload",
-      fileType: data.mimetype ?? "application/octet-stream",
-    });
-    return { text: result.text, metadata: result.metadata };
-  });
+  registerParseFileRoute(app, "/v1/indicators/parse-file");
 
   app.post("/v1/indicator-updates", async (req) => {
     const body = CreateIndicatorUpdateSchema.parse(req.body);

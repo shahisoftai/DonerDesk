@@ -455,6 +455,7 @@ model IndicatorUpdate {
   periodAchievement     String
   cumulativeAchievement String
   comments              String?
+  reviewNote            String? // the reviewer's reason for a correction/rejection; never overwritten by a save
   dataSource            String?
   attachedEvidenceIds   String   @default("[]")
   disaggregationJson    String   @default("[]") // JSON array of DisaggregationEntry
@@ -537,6 +538,8 @@ model EvidenceFile {
   notes               String?
   aiSummary           String?
   extractedText       String?   @db.Text
+  textExtractionStatus String? // EXTRACTED | EMPTY | FAILED | UNSUPPORTED; null = not attempted yet
+  textExtractionNote  String?
   aiSuggestedTagsJson String   @default("[]")
   sensitivityWarning  String?
   createdAt           DateTime @default(now())

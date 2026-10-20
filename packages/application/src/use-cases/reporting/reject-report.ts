@@ -3,13 +3,14 @@ import { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportDraftRepository } from "../../ports/reporting.js";
 import type { IAuditLogger } from "../../ports/core.js";
+import type { IReportNotifier } from "../../services/report-notifier.js";
 
 /**
  * Rejects a report under review and returns it to DRAFT so gate blocks are
  * actionable. The rejection reason is captured in the audit trail.
  */
 export class RejectReportHandler {
-  constructor(private readonly drafts: IReportDraftRepository, private readonly audit: IAuditLogger) {}
+  constructor(private readonly drafts: IReportDraftRepository, private readonly audit: IAuditLogger, private readonly notifier?: IReportNotifier) {}
 
   async handle(ctx: AuthenticatedContext, draftId: string, notes?: string): Promise<Result<void, DomainError>> {
     const r = await this.drafts.findById(draftId, ctx.tenant.tenantId);
@@ -28,6 +29,7 @@ export class RejectReportHandler {
       projectId: draft.projectId,
       newValue: JSON.stringify({ notes: notes ?? "" }),
     });
+    await this.notifier?.returned(ctx.tenant.tenantId, ctx.tenant.userId, draft, notes);
     return { ok: true, value: undefined };
   }
 }

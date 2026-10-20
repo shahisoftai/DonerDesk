@@ -8,6 +8,7 @@ per-format extraction logic lives here as small, single-responsibility helpers.
 from __future__ import annotations
 
 import io
+import os
 from typing import Any
 
 from fastapi import HTTPException
@@ -57,20 +58,58 @@ def _parse_pdf(data: bytes) -> str:
     return "\n".join(page.extract_text() or "" for page in reader.pages)
 
 
+#: Largest upload `POST /v1/parse` reads. Mirrors `MAX_PARSE_FILE_BYTES` in the TypeScript domain.
+MAX_PARSE_BYTES = int(os.environ.get("WORKER_MAX_PARSE_BYTES", str(20 * 1024 * 1024)))
+
+_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "bmp", "tif", "tiff", "heic", "heif", "svg"}
+
+_MESSAGES = {
+    "FAILED": (
+        "We could not read {name}. The file may be damaged or password-protected. "
+        "Paste the text instead, or upload a fresh copy."
+    ),
+    "UNSUPPORTED": "{name} is an image or a file type we cannot read words from. Type or paste the text instead.",
+    "EMPTY": "No readable text was found in {name}. If it is a scanned document, paste the text instead.",
+}
+
+
+def assess_extraction(filename: str, text: str, failed: bool = False) -> dict[str, Any]:
+    """Whether a file's words were read (the same rule as `assessTextExtraction` in the TypeScript domain).
+
+    Returns `{"status": EXTRACTED|EMPTY|FAILED|UNSUPPORTED, "message": ...}`; the message is a sentence for the person
+    and is absent for EXTRACTED. A caller (the evidence flow) forwards both so a scan nobody could read is never
+    recorded as evidence that was.
+    """
+    ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+    stripped = text.strip()
+    if failed:
+        status = "FAILED"
+    elif ext in _IMAGE_EXTENSIONS or (stripped and stripped.lower() == filename.strip().lower()):
+        status = "UNSUPPORTED"
+    elif not stripped:
+        status = "EMPTY"
+    else:
+        return {"status": "EXTRACTED"}
+    return {"status": status, "message": _MESSAGES[status].format(name=filename)}
+
+
 def parse(data: bytes, filename: str, content_type: str | None) -> dict[str, Any]:
     """Parse a file's bytes into extracted text (used by `POST /v1/parse`).
 
-    This is the module the Kestra flow references (`from app.parsers import parse`).
+    This is the module the Kestra flow references (`from app.parsers import parse`). The response always says whether
+    the words were read (`status`, and a `message` when they were not).
     """
     handler = route_file(filename, content_type)
+    failed = False
     try:
         if handler == "filename":
             text = filename
         elif handler == "pdf":
             try:
                 text = _parse_pdf(data)
-            except Exception:  # pdf-parse is best-effort: fall back to empty text.
+            except Exception:  # best-effort, but never silent: the response says it failed.
                 text = ""
+                failed = True
         elif handler == "docx":
             try:
                 text = _parse_docx(data)
@@ -87,4 +126,4 @@ def parse(data: bytes, filename: str, content_type: str | None) -> dict[str, Any
         raise
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"parse failed: {exc}") from exc
-    return {"text": text, "filename": filename, "size": len(data)}
+    return {"text": text, "filename": filename, "size": len(data), **assess_extraction(filename, text, failed)}

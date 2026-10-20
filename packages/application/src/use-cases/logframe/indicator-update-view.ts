@@ -5,6 +5,8 @@ export interface IndicatorUpdateView {
   periodAchievement: string;
   cumulativeAchievement: string;
   comments?: string;
+  /** Why a reviewer sent this value back or rejected it. */
+  reviewNote?: string;
   dataSource?: string;
   verificationStatus: string;
   verifiedAt: Date | null;
@@ -20,6 +22,7 @@ export function toIndicatorUpdateView(update: IndicatorUpdate): IndicatorUpdateV
     periodAchievement: update.periodAchievement,
     cumulativeAchievement: update.cumulativeAchievement,
     comments: update.comments,
+    reviewNote: update.reviewNote,
     dataSource: update.dataSource,
     verificationStatus: update.verificationStatus,
     verifiedAt: update.verifiedAt ?? null,

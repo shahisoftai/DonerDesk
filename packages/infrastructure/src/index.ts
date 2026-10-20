@@ -1,4 +1,5 @@
-export { createContainer } from "./container.js";
+export { createContainer, ATOMIC_HANDLERS } from "./container.js";
+export { UnitOfWork } from "./db/unit-of-work.js";
 export type { Container } from "./container.js";
 export { isTruthyFlag } from "./observability/feature-flags.js";
 export { prisma } from "./db/prisma.js";

@@ -52,6 +52,8 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         notes?: string;
         aiSummary?: string;
         extractedText?: string;
+        textExtractionStatus?: string;
+        textExtractionNote?: string;
         aiSuggestedTags: unknown[];
       };
       const storageKey = dto.fileUrl.startsWith("/v1/files/")
@@ -81,6 +83,8 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         notes: dto.notes,
         aiSummary: dto.aiSummary,
         extractedText: dto.extractedText,
+        textExtractionStatus: dto.textExtractionStatus,
+        textExtractionNote: dto.textExtractionNote,
         aiSuggestedTags: dto.aiSuggestedTags,
       });
     });
@@ -123,6 +127,7 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         sensitivityWarning: body.sensitivityWarning,
         model: body.model,
         extractedText: body.extractedText,
+        extractionStatus: body.extractionStatus,
         idempotencyKey: body.idempotencyKey,
       });
       if (!r.ok) throw r.error;

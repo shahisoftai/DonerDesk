@@ -26,6 +26,10 @@ export interface EvidenceDto {
   notes?: string;
   aiSummary?: string;
   extractedText?: string;
+  /** Whether the file's words were read: EXTRACTED, EMPTY, FAILED, UNSUPPORTED; absent while not attempted. */
+  textExtractionStatus?: string;
+  /** What to do about it, when the words could not be read. */
+  textExtractionNote?: string;
   aiSuggestedTags: unknown[];
   sensitivityWarning?: string;
 }
@@ -56,6 +60,8 @@ export function toEvidenceDto(e: EvidenceFile): EvidenceDto {
     notes: e.notes,
     aiSummary: e.aiSummary,
     extractedText: e.extractedText,
+    textExtractionStatus: e.textExtractionStatus,
+    textExtractionNote: e.textExtractionNote,
     aiSuggestedTags: e.aiSuggestedTags,
     sensitivityWarning: e.sensitivityWarning,
   };

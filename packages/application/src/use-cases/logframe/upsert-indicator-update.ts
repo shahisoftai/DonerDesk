@@ -7,13 +7,15 @@ export interface UpsertOutcome {
   id: string;
   created: boolean;
   changed: boolean;
+  /** The value the row held before this save (undefined when it was just created). */
+  previousValue?: string;
 }
 
 /**
  * Shared upsert used by the single-create and bulk-save indicator entry flows.
  * Creates a DRAFT update when none exists for the indicator+period; otherwise
  * applies the edit to the existing draft. Verified updates are intentionally
- * left untouched so approved figures cannot be silently overwritten.
+ * left untouched; fields the input leaves out keep their stored value so approved figures cannot be silently overwritten.
  * Callers validate `input.disaggregation` against the indicator first.
  */
 export async function upsertIndicatorUpdate(
@@ -34,16 +36,18 @@ export async function upsertIndicatorUpdate(
     if (existing.verificationStatus === "VERIFIED") {
       return { ok: true, value: { id: existing.id, created: false, changed: false } };
     }
+    const previousValue = existing.periodAchievement;
+    // A field the caller did not send keeps what is stored; an empty string clears it.
     existing.edit({
       periodAchievement: input.periodAchievement,
       cumulativeAchievement: input.cumulativeAchievement,
-      comments: input.comments,
-      dataSource: input.dataSource,
+      ...(input.comments !== undefined ? { comments: input.comments.trim() || undefined } : {}),
+      ...(input.dataSource !== undefined ? { dataSource: input.dataSource.trim() || undefined } : {}),
       ...(input.disaggregation ? { disaggregation: input.disaggregation } : {}),
     });
     const saved = await repo.update(existing);
     if (!saved.ok) return saved;
-    return { ok: true, value: { id: existing.id, created: false, changed: true } };
+    return { ok: true, value: { id: existing.id, created: false, changed: true, previousValue } };
   }
 
   const id = ids.generate();

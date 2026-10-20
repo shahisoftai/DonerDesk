@@ -179,8 +179,8 @@ export function IndicatorEntryGrid({
             indicatorId: row.id,
             periodAchievement: v.periodAchievement,
             cumulativeAchievement: v.cumulativeAchievement,
-            comments: v.comments || undefined,
-            dataSource: v.dataSource || undefined,
+            comments: v.comments,
+            dataSource: v.dataSource,
             ...(hasBreakdown(row, v)
               ? { disaggregation: v.disaggregation.filter((entry) => entry.category.trim() || entry.value.trim()) }
               : {}),
@@ -597,9 +597,16 @@ function LevelGroupRows({
               </td>
               <td className="px-3 py-2">
                 {row.update ? (
-                  <Badge tone={indicatorVerificationTone(row.update.verificationStatus)}>
-                    {INDICATOR_VERIFICATION_LABEL[row.update.verificationStatus] ?? row.update.verificationStatus}
-                  </Badge>
+                  <div className="flex flex-col gap-1">
+                    <Badge tone={indicatorVerificationTone(row.update.verificationStatus)}>
+                      {INDICATOR_VERIFICATION_LABEL[row.update.verificationStatus] ?? row.update.verificationStatus}
+                    </Badge>
+                    {row.update.reviewNote && row.update.verificationStatus !== "VERIFIED" ? (
+                      <span className="max-w-[220px] text-xs text-amber-700 dark:text-amber-300">
+                        Reviewer: {row.update.reviewNote}
+                      </span>
+                    ) : null}
+                  </div>
                 ) : (
                   <span className="text-xs text-slate-400">Not entered</span>
                 )}

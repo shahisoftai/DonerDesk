@@ -82,6 +82,7 @@ export class BulkUpsertIndicatorUpdatesHandler {
         eventType: "logframe.indicator.updated",
         entityType: "indicator_update",
         entityId: result.value.id,
+        oldValue: result.value.previousValue,
         newValue: row.periodAchievement,
       });
     }

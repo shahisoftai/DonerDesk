@@ -389,6 +389,7 @@ export const PeriodIndicatorUpdateSchema = z.object({
   periodAchievement: z.string(),
   cumulativeAchievement: z.string(),
   comments: z.string().optional(),
+  reviewNote: z.string().optional(),
   dataSource: z.string().optional(),
   verificationStatus: z.string(),
   verifiedAt: z.string().nullable().optional(),
@@ -592,6 +593,9 @@ export const EvidenceDetailSchema = z.object({
   confidentialityLevel: z.string(),
   notes: z.string().optional(),
   aiSummary: z.string().optional(),
+  /** EXTRACTED, EMPTY, FAILED or UNSUPPORTED; absent while reading has not been attempted. */
+  textExtractionStatus: z.string().optional(),
+  textExtractionNote: z.string().optional(),
   aiSuggestedTags: z
     .array(
       z.object({

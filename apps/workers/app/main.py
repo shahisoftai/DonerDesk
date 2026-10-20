@@ -16,13 +16,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, FastAPI, File, UploadFile
+from fastapi import APIRouter, Depends, FastAPI, File, HTTPException, UploadFile
 
 from .ai_reporter.router import router as ai_reporter_router
 from .compliance import DetectChecklistRequest, RewriteSectionRequest, detect_checklist, rewrite_section
 from .donor_template.router import router as donor_template_router
 from .drafting import DraftSectionRequest, draft_section
-from .parsers import parse
+from .parsers import MAX_PARSE_BYTES, parse
 from .polishing import PolishRequest, polish
 from .security import require_internal_token
 from .tagging import SuggestTagsRequest, suggest_tags
@@ -44,7 +44,10 @@ def ready() -> dict[str, Any]:
 
 @v1.post("/parse")
 async def parse_document(file: UploadFile = File(...)) -> dict[str, Any]:
-    data = await file.read()
+    # Read one byte past the limit so an oversized upload is refused without holding all of it in memory.
+    data = await file.read(MAX_PARSE_BYTES + 1)
+    if len(data) > MAX_PARSE_BYTES:
+        raise HTTPException(status_code=413, detail=f"file is larger than {MAX_PARSE_BYTES // (1024 * 1024)} MB")
     return parse(data, file.filename or "upload.bin", file.content_type)
 
 

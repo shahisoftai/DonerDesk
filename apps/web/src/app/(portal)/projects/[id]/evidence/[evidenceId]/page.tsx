@@ -130,6 +130,15 @@ export default async function EvidenceDetailPage({
         )}
       </section>
 
+      {evidence.textExtractionStatus && evidence.textExtractionStatus !== "EXTRACTED" && (
+        <section className="card border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950" role="status" aria-label="Text not read">
+          <h2 className="text-sm font-medium text-amber-900 dark:text-amber-100">The words in this file were not read</h2>
+          <p className="mt-2 text-sm text-amber-900 dark:text-amber-100">
+            {evidence.textExtractionNote ?? "No readable text was found in this file."} Until then it cannot be searched, suggested for an activity or quoted in a report.
+          </p>
+        </section>
+      )}
+
       {evidence.aiSummary && (
         <section className="card" aria-label="AI summary">
           <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">AI summary</h2>

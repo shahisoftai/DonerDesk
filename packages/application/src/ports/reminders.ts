@@ -35,7 +35,7 @@ export interface IReminderAudience {
 export interface PersonNotification {
   tenantId: TenantId;
   recipientId: string;
-  type: "ASSIGNMENT" | "DEADLINE_REMINDER" | "CHECKLIST_ASSIGNED" | "COMMENT_MENTION";
+  type: "ASSIGNMENT" | "DEADLINE_REMINDER" | "CHECKLIST_ASSIGNED" | "COMMENT_MENTION" | "REPORT_APPROVED" | "REPORT_RETURNED";
   title: string;
   message: string;
   relatedEntityType?: string;

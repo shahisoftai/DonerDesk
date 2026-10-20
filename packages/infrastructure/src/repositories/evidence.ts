@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import {
   EvidenceFile,
+  isTextExtractionStatus,
   TenantId,
   DomainError,
   type Result,
@@ -47,6 +48,8 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         notes: e.notes,
         aiSummary: e.aiSummary,
         extractedText: e.extractedText,
+        textExtractionStatus: e.textExtractionStatus ?? null,
+        textExtractionNote: e.textExtractionNote ?? null,
         aiSuggestedTagsJson: JSON.stringify(e.aiSuggestedTags),
         sensitivityWarning: e.sensitivityWarning,
       },
@@ -70,6 +73,10 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         confidentialityLevel: e.confidentialityLevel,
         notes: e.notes,
         aiSummary: e.aiSummary,
+        // Persisted on update too: the text callback arrives after the row exists, and it used to be dropped here.
+        extractedText: e.extractedText ?? null,
+        textExtractionStatus: e.textExtractionStatus ?? null,
+        textExtractionNote: e.textExtractionNote ?? null,
         aiSuggestedTagsJson: JSON.stringify(e.aiSuggestedTags),
         sensitivityWarning: e.sensitivityWarning,
       },
@@ -184,6 +191,8 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
     notes: string | null;
     aiSummary: string | null;
     extractedText: string | null;
+    textExtractionStatus: string | null;
+    textExtractionNote: string | null;
     aiSuggestedTagsJson: string;
     sensitivityWarning: string | null;
     createdAt: Date;
@@ -216,6 +225,8 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         notes: row.notes ?? undefined,
         aiSummary: row.aiSummary ?? undefined,
         extractedText: row.extractedText ?? undefined,
+        textExtractionStatus: isTextExtractionStatus(row.textExtractionStatus) ? row.textExtractionStatus : undefined,
+        textExtractionNote: row.textExtractionNote ?? undefined,
         aiSuggestedTags: JSON.parse(row.aiSuggestedTagsJson) as SuggestedTag[],
         sensitivityWarning: row.sensitivityWarning ?? undefined,
       },

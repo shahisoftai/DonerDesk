@@ -8,6 +8,8 @@ import { metrics } from "../observability.js";
 const REQUIRED_PRISMA_FIELDS = [
   { model: "Organization", field: "storageProvider" },
   { model: "Indicator", field: "archivedAt" },
+  { model: "IndicatorUpdate", field: "reviewNote" },
+  { model: "EvidenceFile", field: "textExtractionStatus" },
   { model: "ActivityUpdate", field: "supersededById" },
   { model: "ActivityUpdate", field: "activityEndDate" },
   { model: "PlannedActivityDependency", field: "predecessorId" },
