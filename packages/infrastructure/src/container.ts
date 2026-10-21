@@ -5,6 +5,7 @@ import { TenantId, configureLlmPrices, pricesFromEnv, type DomainError, type Res
 import { UpdateTemplateRequirementsHandler, UpdateTemplateMetadataHandler, ReextractTemplateHandler, MarkTemplateReviewedHandler, GetTemplateHandler, GetTemplateVersionHandler, GetTemplateOriginalFileHandler, SetTemplateLibraryHandler, SetDefaultTemplateHandler, ListLibraryTemplatesHandler, CloneTemplateHandler, ParseTemplateFileHandler, PreviewTemplateBriefHandler, TemplateExtractionRunner, PeriodTemplateResolver, type ITemplateExtractionService, type ILLMProvider, SignUpHandler, LoginHandler, InviteUserHandler, ListPendingInvitationsHandler, AcceptInvitationHandler, ChangeRoleHandler, ChangePasswordHandler, RequestPasswordResetHandler, ConfirmPasswordResetHandler, UpdateOrganizationHandler, UpdateOrganizationReportingDefaultsHandler, ConnectGoogleDriveHandler, GoogleSignInHandler, LinkGoogleDriveEvidenceHandler, ListUsersHandler, IssueScimCredentialHandler, ListScimCredentialsHandler, RevokeScimCredentialHandler, CreateProjectHandler, CreateDemoProjectHandler, DeleteDemoProjectHandler, UpdateProjectHandler, ArchiveProjectHandler, RestoreProjectHandler, ListProjectsHandler, GetProjectHandler, AssignProjectMemberHandler, UpdateProjectMemberHandler, RemoveProjectMemberHandler, ListProjectMembersHandler, UploadTemplateHandler, DetectTemplateRegionsHandler, UpdateTemplateMappingHandler, ApproveTemplateMappingHandler, LockTemplateMappingHandler, UpdateTemplateSectionsHandler, DeleteTemplateHandler, ListTemplatesHandler, CreateLogframeItemHandler, MoveLogframeItemHandler, ImportLogframeHandler, CopyProjectSetupHandler, ImportIndicatorsHandler, CreateIndicatorHandler, UpdateIndicatorSemanticsHandler, UpdateIndicatorHandler, MoveIndicatorHandler, ArchiveIndicatorHandler, RestoreIndicatorHandler, ListArchivedIndicatorsHandler, IndicatorApprovalGuard, ActivityApprovalGuard, DefaultTemplateResolver, ChangePeriodTemplateHandler, ResubmitActivityHandler, WithdrawActivityHandler, RestoreActivityHandler, BulkReviewActivitiesHandler, GetDefaultTemplatesHandler, CreateAllPeriodsHandler, EvidenceLinkService, ActivityLinkResolver, PlanDeliveryService, GetPlanStorySuggestionHandler, GetPortfolioIndicatorsHandler, RunAutomationsHandler, SetWorkPlanningVisibilityHandler, ListProjectPeopleHandler, CreateRiskHandler, UpdateRiskHandler, CloseRiskHandler, ListRisksHandler, GetActivityFileNeedsHandler, ProjectHealthService, VisibleProjects, GetDeliveryHealthHandler, GetEntryDueDaysHandler, SetEntryDueDaysHandler, GetPortfolioHealthHandler, GetRiskTrendHandler, RefreshProjectRiskHandler, CreateTaskHandler, CompleteTaskHandler, CancelTaskHandler, ListAssignmentsHandler, ListTeamWorkHandler, SetIndicatorOwnerHandler, SetPeriodOwnerHandler, AssignChecklistItemHandler, AssignmentQueue, TaskReconciler, GetPeriodOptionsHandler, PlanClosingReportHandler, StartClosingReportHandler, GetEvidenceSupportHandler, ResolveSectionFlagsHandler, ConfirmIndicatorSemanticsHandler, VerifyPeriodIndicatorUpdatesHandler, CreateIndicatorUpdateHandler, ParseUploadedFileHandler, ExportOrganizationHandler, LogframeVersioner, withLogframeVersioning, ListLogframeVersionsHandler, GetLogframeChangesHandler, ApproveLogframeVersionHandler, SetRequireEvidenceForVerificationHandler, VerificationEvidencePolicy, CompleteMfaLoginHandler, GetMfaStatusHandler, BeginMfaEnrollmentHandler, EnableMfaHandler, DisableMfaHandler, ResetUserMfaHandler, ListFundingHandler, SaveProgrammeHandler, SaveGrantHandler, PlaceProjectHandler, BulkUpsertIndicatorUpdatesHandler, ListPeriodIndicatorsHandler, ParseIndicatorSheetHandler, VerifyIndicatorUpdateHandler, RequestIndicatorUpdateCorrectionHandler, RejectIndicatorUpdateHandler, ListIndicatorUpdatesHandler, GetProjectDataSheetHandler, SectionDataChartsHandler, ReopenReportHandler, ImportDataSheetHandler, ListLogframeHandler, ListIndicatorsHandler, UploadEvidenceHandler, ImportEvidenceHandler, SuggestEvidenceTagsHandler, AcceptEvidenceTagsHandler, SetEvidencePeriodHandler, PersistEvidenceTagsHandler, VerifyEvidenceHandler, SearchEvidenceHandler, GetEvidenceHandler, CreateActivityUpdateHandler, ImportActivitiesHandler, PolishActivityHandler, ReviewActivityHandler, ListActivitiesHandler, GetActivityHandler, UpdateActivityHandler, AttachEvidenceHandler, DetachEvidenceHandler, SuggestEvidenceLinksHandler, CreateReportingPeriodHandler, EnsureAutoPeriodHandler, ListReportingPeriodsHandler, GenerateReportDraftHandler, GetReportDraftHandler, GetSmartReviewHandler, UpdateReportSectionHandler, CreateReportSectionHandler, DeleteReportSectionHandler, ReorderReportSectionsHandler, UpdateReportSectionChartHandler, RefreshSectionChartsHandler, SectionChartService, ApproveReportSectionHandler, SubmitReportForReviewHandler, CancelReportGenerationHandler, ActivateReportDraftHandler, ApproveReportHandler, RejectReportHandler, ResolveReportClaimHandler, BulkResolveReportClaimHandler, UpdateReportingPeriodStoryHandler, UpdateReportingPeriodScopeHandler, CancelReportingPeriodHandler, MarkSummaryCurrentHandler, ConfirmClaimMatchesIndicatorHandler, SetStandingStatementHandler, SetTemplateDefaultForTypeHandler, SetRequireSecondApproverHandler, BulkVerifyEvidenceHandler, GetComplianceNotesHandler, SaveSectionNoteHandler, RestoreReportingPeriodHandler, ConvertPeriodToFinalHandler, FinanceInputsService, GetPeriodFinanceHandler, SavePeriodFinanceHandler, PreviewPeriodFinanceImportHandler, VerifyPeriodFinanceHandler, ImportPeriodIndicatorValuesHandler, ProposeFieldReportExtractionHandler, ApplyFieldReportExtractionHandler, DetectMissingEvidenceHandler, ResolveChecklistItemHandler, BulkResolveChecklistHandler, ListChecklistHandler, ListAiSectionRunsHandler, RequestIdempotencyService, ChecklistReconciler, CalculateReadinessHandler, RecomputeReadinessHandler, GenerateChecklistHandler, RewriteReportSectionHandler, IndicatorAnalyticsService, InferredReportPlanner, CreateExportHandler, GetExportPreflightHandler, RunExportHandler, RunRemindersHandler, GetNotificationPreferencesHandler, UpdateNotificationPreferencesHandler, PersonNotifier, ReportNotifier, AddCommentHandler, ResolveCommentHandler, ListCommentsHandler, ListNotificationsHandler, MarkNotificationReadHandler, ListAuditLogHandler, RecordLegalConsentHandler, GetLegalConsentHandler, GetProjectSetupHandler, AcknowledgeProjectSetupHandler, RetryProjectWorkspaceHandler, RepairProjectWorkspaceHandler, ListWorkspaceFilesHandler, ProvisionTenantWorkspacesHandler, ImportDriveFileHandler, GetReportingProfileHandler, UpsertReportingProfileHandler, ProjectReadinessService, UuidIdGenerator, type SystemClock, SystemClock as SystemClockImpl, ProvisionTenantHandler, EntitlementService, CreateCheckoutHandler, CreateTopupCheckoutHandler, SubmitContactSalesInquiryHandler, SubmitNonprofitVerificationHandler, ApproveNonprofitVerificationHandler, RejectNonprofitVerificationHandler, ListPendingNonprofitVerificationsHandler, ListCreditPacksHandler, CompCreditPackHandler, RefundCreditPackHandler, CreateCustomerPortalHandler, GetBillingSummaryHandler, ProcessBillingWebhookHandler, ExpireLocalTrialsHandler, ReconcileBillingSubscriptionsHandler, ReconcileManagedStorageUsageHandler, ReleaseStaleUsageReservationsHandler, RetryBillingInboxHandler, RunGrandfatherCreditCutoverHandler, RunGrandfatherByoLlmHandler, BillingSubscriptionSynchronizer, ReportRevisionService, ReportAssuranceService, RecordChunkBuilder, LintGrounding, GetReportAssuranceHandler, ReassessReportRevisionHandler, ResolveEffectiveRequirementsHandler, UpsertRequirementPackHandler, ListRequirementPacksHandler, ActivateRequirementPackHandler, UpsertAwardOverrideHandler, CreateSubmissionSnapshotHandler, RegenerateReportSectionHandler, ReopenReportClaimHandler, ApplyClaimSuggestionHandler, GetClaimSuggestionHandler, ListSectionRevisionsHandler, ReportGenerationContextBuilder, SectionGenerationService, AiCreditGate, UpdateAgentMemorySettingsHandler, ExtractAgentMemoryHandler, ListPendingAgentMemoryHandler, ApproveAgentMemoryHandler, RejectAgentMemoryHandler, DeactivateAgentMemoryHandler } from "@donordesk/application";
 import type { IJobQueue, IReportDraftGenerator, INotificationPort, IAgentMemoryRepository, IAgentMemoryExtractor } from "@donordesk/application";
 import { EmailAdapter } from "./comms/email.js";
+import { SendmailEmailAdapter } from "./comms/sendmail-email.js";
 import { PostmarkNotificationAdapter, FanOutNotificationAdapter } from "./comms/postmark-notification-adapter.js";
 import { ConsoleContactSalesNotifier } from "./comms/console-contact-sales-notifier.js";
 import { EmailContactSalesNotifier } from "./comms/email-contact-sales-notifier.js";
@@ -518,6 +519,16 @@ export const ATOMIC_HANDLERS = [
   "restoreIndicator",
 ] as const satisfies ReadonlyArray<keyof Container["handlers"]>;
 
+/** The outgoing mail sender chosen by EMAIL_PROVIDER: "sendmail" (the host's own mail system) or "postmark"; none means mail is only logged. */
+function createEmailSender(): EmailAdapter | null {
+  const fromAddress = process.env.EMAIL_FROM_ADDRESS ?? "notifications@donordesk.online";
+  if (process.env.EMAIL_PROVIDER === "sendmail") return new SendmailEmailAdapter({ fromAddress });
+  if (process.env.EMAIL_PROVIDER === "postmark" && process.env.POSTMARK_SERVER_TOKEN) {
+    return new EmailAdapter({ smtpHost: "", smtpPort: 0, smtpUser: process.env.POSTMARK_SERVER_TOKEN, smtpPassword: "", fromAddress });
+  }
+  return null;
+}
+
 export function createContainer(options?: { tenantId?: string; useAdminConnection?: boolean }): Container {
   const baseUrl = options?.useAdminConnection ? process.env.DATABASE_ADMIN_URL : process.env.DATABASE_URL;
   const tenantUrl = baseUrl && options?.tenantId ? withTenantSession(baseUrl, options.tenantId) : baseUrl;
@@ -622,23 +633,10 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const organizations = new PrismaOrganizationRepository(prisma);
   const users = new PrismaUserRepository(prisma);
   const loggingNotifier = new LoggingNotificationAdapter(logger);
-  const notify: INotificationPort =
-    process.env.EMAIL_PROVIDER === "postmark" && process.env.POSTMARK_SERVER_TOKEN
-      ? new FanOutNotificationAdapter([
-          loggingNotifier,
-          new PostmarkNotificationAdapter(
-            new EmailAdapter({
-              smtpHost: "",
-              smtpPort: 0,
-              smtpUser: process.env.POSTMARK_SERVER_TOKEN,
-              smtpPassword: "",
-              fromAddress: process.env.EMAIL_FROM_ADDRESS ?? "notifications@donordesk.online",
-            }),
-            users,
-            logger,
-          ),
-        ])
-      : loggingNotifier;
+  const emailSender = createEmailSender();
+  const notify: INotificationPort = emailSender
+    ? new FanOutNotificationAdapter([loggingNotifier, new PostmarkNotificationAdapter(emailSender, users, logger)])
+    : loggingNotifier;
   const invitations = new PrismaInvitationRepository(prisma);
   const passwordResetTokens = new PrismaPasswordResetTokenRepository(prisma);
   const scimCredentials = new PrismaScimCredentialRepository(prisma);
@@ -1360,17 +1358,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createCheckout: new CreateCheckoutHandler(billingProvider, organizations, billingSubscriptions, ids, audits),
     createTopupCheckout: new CreateTopupCheckoutHandler(billingProvider, organizations, entitlements, audits, purchasedCreditPacks),
     submitContactSalesInquiry: new SubmitContactSalesInquiryHandler(
-      process.env.EMAIL_PROVIDER === "postmark" && process.env.POSTMARK_SERVER_TOKEN
-        ? new EmailContactSalesNotifier(
-            new EmailAdapter({
-              smtpHost: "",
-              smtpPort: 0,
-              smtpUser: process.env.POSTMARK_SERVER_TOKEN,
-              smtpPassword: "",
-              fromAddress: process.env.EMAIL_FROM_ADDRESS ?? "notifications@donordesk.online",
-            }),
-            process.env.SALES_INBOX_EMAIL ?? "support@donordesk.online",
-          )
+      emailSender
+        ? new EmailContactSalesNotifier(emailSender, process.env.SALES_INBOX_EMAIL ?? "support@donordesk.online")
         : new ConsoleContactSalesNotifier(logger),
       audits,
     ),
