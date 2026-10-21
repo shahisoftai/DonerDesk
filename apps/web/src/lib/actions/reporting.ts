@@ -682,6 +682,9 @@ export type SectionRevision = {
   byAi: boolean;
   isCurrent: boolean;
   content: string;
+  modelId: string | null;
+  promptVersion: number | null;
+  changeSummary: string | null;
 };
 
 export type ListSectionRevisionsResult = Result<{ items: SectionRevision[] }, AppError>;

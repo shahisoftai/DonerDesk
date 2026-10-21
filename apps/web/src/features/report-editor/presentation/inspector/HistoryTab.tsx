@@ -71,7 +71,11 @@ export function HistoryTab({
                 {formatDateTime(rev.createdAt)}
               </time>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{ORIGIN_LABEL[rev.changeOrigin] ?? "Saved"}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {ORIGIN_LABEL[rev.changeOrigin] ?? "Saved"}
+              {rev.modelId && <span> · model {rev.modelId}{rev.promptVersion !== null ? `, writing rules v${rev.promptVersion}` : ""}</span>}
+            </p>
+            {rev.changeSummary && <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{rev.changeSummary}</p>}
             <p className="mt-1.5 line-clamp-3 text-slate-700 dark:text-slate-200">
               {text ? (text.length > PREVIEW_CHARS ? `${text.slice(0, PREVIEW_CHARS)}…` : text) : <em className="text-slate-400">Empty</em>}
             </p>

@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, describeRevisionChange, summariseRevisionChange } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportSectionRepository, IReportRevisionRepository } from "../../ports/reporting.js";
 
@@ -14,6 +14,11 @@ export interface SectionRevisionView {
   byAi: boolean;
   isCurrent: boolean;
   content: string;
+  /** The AI model and the writing-rules version that produced this version, when it was written by the AI. */
+  modelId: string | null;
+  promptVersion: number | null;
+  /** What changed since the version before, in a sentence; null for the first version. */
+  changeSummary: string | null;
 }
 
 /**
@@ -35,6 +40,7 @@ export class ListSectionRevisionsHandler {
 
     const revisionsResult = await this.revisions.findBySection(sectionId, ctx.tenant.tenantId);
     if (!revisionsResult.ok) return revisionsResult;
+    const byNumber = new Map(revisionsResult.value.map((r) => [r.revisionNumber, r]));
     const items = [...revisionsResult.value]
       .sort((a, b) => b.revisionNumber - a.revisionNumber)
       .slice(0, SECTION_HISTORY_LIMIT)
@@ -46,6 +52,9 @@ export class ListSectionRevisionsHandler {
         byAi: Boolean(rev.modelId),
         isCurrent: rev.id === section.currentRevisionId,
         content: rev.content,
+        modelId: rev.modelId ?? null,
+        promptVersion: rev.promptVersion ?? null,
+        changeSummary: byNumber.has(rev.revisionNumber - 1) ? describeRevisionChange(summariseRevisionChange(byNumber.get(rev.revisionNumber - 1)!.content, rev.content)) : null,
       }));
     return { ok: true, value: { items } };
   }

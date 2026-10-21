@@ -125,6 +125,9 @@ export const SectionRevisionsResponseSchema = z.object({
       byAi: z.boolean(),
       isCurrent: z.boolean(),
       content: z.string(),
+      modelId: z.string().nullable().default(null),
+      promptVersion: z.number().nullable().default(null),
+      changeSummary: z.string().nullable().default(null),
     }),
   ),
 });
