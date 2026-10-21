@@ -45,4 +45,19 @@ test("the demo project has a reporting period, verified values and accepted acti
 
   // asking again returns the same demo, not a second one
   assert.equal(must(await h.createDemoProject.handle(ctx), "again").reused, true);
+
+  // a draft report with revisions: the old hand-kept delete list failed on exactly this (ReportRevision_sectionId_fkey)
+  const draft = must(await h.generateReportDraft.handle(ctx, list[0].id), "generate a draft");
+  assert.ok(draft.draftId ?? draft.id ?? draft, "a draft exists");
+
+  await c.settleBackgroundWork();
+  const revisions = await c.prisma.reportRevision.count({ where: { tenantId: ctx.tenant.tenantId.toString(), section: { reportDraft: { projectId: demo.id } } } });
+  assert.ok(revisions > 0, "the draft has revisions to delete");
+  must(await h.deleteDemoProject.handle(ctx, demo.id), "delete the demo");
+  const gone = await c.projects.findById(demo.id, ctx.tenant.tenantId);
+  assert.equal(gone.ok && gone.value === null, true, "the project is gone");
+  const left = await c.prisma.indicatorUpdate.count({ where: { tenantId: ctx.tenant.tenantId.toString(), indicator: { projectId: demo.id } } });
+  assert.equal(left, 0, "its values are gone too");
+  // and a new one can be made
+  assert.equal(must(await h.createDemoProject.handle(ctx), "recreate").reused, false);
 });
