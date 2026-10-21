@@ -939,7 +939,7 @@ and run once (3 organisations, 0 broken), worker `/v1/parse` returns `EXTRACTED`
 |---|---|
 | H-12 MFA | ✅ built (TOTP), committed; secrets omitted from the organisation export (regression caught by the H-11 test) |
 | ME-05/09 evidence before VERIFIED | ✅ built, committed (project profile toggle) |
-| MK-10 contact-sales email | ✅ `EmailContactSalesNotifier` (Postmark) to `SALES_INBOX_EMAIL`, default `support@donordesk.online`; `support@` is also the privacy mailbox, SE-09 runbook updated. Needs `EMAIL_PROVIDER=postmark` + `POSTMARK_SERVER_TOKEN` in `api.env` |
+| MK-10 contact-sales email | ✅ `EmailContactSalesNotifier` (Postmark) to `SALES_INBOX_EMAIL`, default `support@donordesk.online`; `support@` is also the privacy mailbox, SE-09 runbook updated. Live since 2026-10-21 through the host's Exim (`EMAIL_PROVIDER=smtp`, loopback, sender `support@donordesk.online`); no outside provider needed |
 | RP-08 PDF indicator lines | ✅ use `indicatorExportColumns`/`indicatorExportCell` like Word and Excel |
 | OP-11 deploy rollback | ✅ already in `deploy-fast.sh` (`rollback_to_snapshot`) |
 | SE-06 off-host copy | ✅ live: host rclone remote `gdrive` (scope `drive.file`), `OFFHOST_TARGET=rclone:gdrive:donordesk-backups` in `backup.env`; first run copied 4 files / 23,828,362 bytes, matching the local copy. Still open: keep the backup passphrase somewhere other than the host |
