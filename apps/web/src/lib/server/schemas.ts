@@ -1653,3 +1653,20 @@ export const PortfolioOverviewSchema = z.object({
     }),
   ),
 });
+
+/** The indicators a donor's template asks for, each with the project indicator that answers it (or why none does). */
+export const DonorIndicatorMappingSchema = z.object({
+  templateId: z.string(),
+  indicators: z.array(z.object({ id: z.string(), code: z.string(), name: z.string() })),
+  summary: z.object({ total: z.number(), mapped: z.number(), suggested: z.number(), unmapped: z.number(), notTracked: z.number() }),
+  rows: z.array(z.object({
+    requirementId: z.string(),
+    text: z.string(),
+    status: z.enum(["MAPPED", "SUGGESTED", "UNMAPPED", "NOT_TRACKED"]),
+    indicatorId: z.string().nullable(),
+    indicatorCode: z.string().nullable(),
+    indicatorName: z.string().nullable(),
+    basis: z.string(),
+    alternatives: z.array(z.string()),
+  })),
+});

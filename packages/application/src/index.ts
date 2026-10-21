@@ -325,6 +325,8 @@ export * from "./use-cases/health/portfolio-overview.js";
 export * from "./use-cases/health/entry-due-days-handlers.js";
 export * from "./use-cases/activities/get-activity-file-needs.js";
 export * from "./ports/risks.js";
+export * from "./ports/donor-indicator-mapping.js";
+export * from "./use-cases/templates/donor-indicator-mapping.js";
 export * from "./use-cases/risks/risk-handlers.js";
 export * from "./ports/portfolio.js";
 export * from "./use-cases/funding/funding-handlers.js";

@@ -1,5 +1,6 @@
+import type { GetDonorIndicatorMappingHandler } from "../templates/donor-indicator-mapping.js";
 import type { Result, ReportingPeriod, EvidenceFile } from "@donordesk/domain";
-import { DomainError, type GateKind } from "@donordesk/domain";
+import { DomainError, openDonorIndicatorQuestions, type GateKind } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type {
   IReportingPeriodRepository,
@@ -79,6 +80,8 @@ export class GetExportPreflightHandler {
     private readonly activities?: IActivityUpdateRepository,
     /** Reads the charts people added from the Data Center, to warn about ones that are out of date. */
     private readonly dataCharts?: SectionDataChartsHandler,
+    /** Reads which of the donor's indicators have no project indicator behind them. */
+    private readonly donorIndicators?: GetDonorIndicatorMappingHandler,
   ) {}
 
   /** Charts from the Data Center in the current draft: how many show old data, cannot be redrawn, or plot unverified values. */
@@ -348,6 +351,17 @@ export class GetExportPreflightHandler {
         message: `${sensitiveCount} sensitive file(s) are excluded by default and will only be included if you opt in.`,
         overridable: true,
       });
+    }
+    if (this.donorIndicators && period.donorTemplateId) {
+      const mapping = await this.donorIndicators.handle(ctx, period.donorTemplateId);
+      const open = mapping.ok ? openDonorIndicatorQuestions(mapping.value.rows) : 0;
+      if (open > 0) {
+        warnings.push({
+          code: "DONOR_INDICATORS_UNMAPPED",
+          message: `${open} indicator${open === 1 ? "" : "s"} the donor asks for ${open === 1 ? "has" : "have"} no confirmed project indicator behind ${open === 1 ? "it" : "them"}. Match them, or say they will not be reported, on the template page.`,
+          overridable: true,
+        });
+      }
     }
     if (annexGapCount > 0) {
       warnings.push({

@@ -208,6 +208,8 @@ export const RULES: ReadonlyArray<{
   { method: "GET", route: /^\/v1\/templates\/[^/]+\/brief-preview$/, permission: "project.view" },
   { method: "PATCH", route: /^\/v1\/templates\/[^/]+$/, permission: "template.manage" },
   { method: "PUT", route: /^\/v1\/templates\/[^/]+\/requirements$/, permission: "template.manage" },
+  { method: "GET", route: /^\/v1\/templates\/[^/]+\/indicator-mapping$/, permission: "project.view" },
+  { method: "PUT", route: /^\/v1\/templates\/[^/]+\/indicator-mapping\/[^/]+$/, permission: "template.manage" },
   { method: "POST", route: /^\/v1\/templates\/[^/]+\/extract$/, permission: "template.manage" },
   { method: "POST", route: /^\/v1\/templates\/[^/]+\/review$/, permission: "template.manage" },
   { method: "PUT", route: /^\/v1\/templates\/[^/]+\/library$/, permission: "template.manage" },

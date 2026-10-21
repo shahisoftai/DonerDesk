@@ -1,6 +1,7 @@
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { LogframeResponseSchema, TemplateDetailSchema } from "@/lib/server/schemas";
+import { DonorIndicatorMappingSchema, LogframeResponseSchema, TemplateDetailSchema } from "@/lib/server/schemas";
+import { DonorIndicatorMappingPanel } from "@/features/templates/presentation/DonorIndicatorMappingPanel";
 import { InlineError } from "@/components/feedback/PageState";
 import { TemplateWorkspace } from "@/features/templates/presentation/TemplateWorkspace";
 
@@ -9,9 +10,10 @@ export const dynamic = "force-dynamic";
 export default async function TemplateEditorPage({ params }: { params: Promise<{ id: string; templateId: string }> }) {
   const { id, templateId } = await params;
   const ctx = await requireSession();
-  const [result, logframe] = await Promise.all([
+  const [result, logframe, mapping] = await Promise.all([
     gatewayRequest(`/v1/templates/${encodeURIComponent(templateId)}`, TemplateDetailSchema, ctx.token),
     gatewayRequest(`/v1/projects/${id}/logframe`, LogframeResponseSchema, ctx.token),
+    gatewayRequest(`/v1/templates/${encodeURIComponent(templateId)}/indicator-mapping`, DonorIndicatorMappingSchema, ctx.token),
   ]);
   if (!result.ok) {
     return <div className="animate-fade-in"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>;
@@ -22,5 +24,10 @@ export default async function TemplateEditorPage({ params }: { params: Promise<{
         return { value: label, label: `${item.level}: ${label}` };
       })
     : [];
-  return <TemplateWorkspace projectId={id} template={result.value} logframeOptions={logframeOptions} />;
+  return (
+    <>
+      <TemplateWorkspace projectId={id} template={result.value} logframeOptions={logframeOptions} />
+      {mapping.ok && mapping.value.rows.length > 0 && <DonorIndicatorMappingPanel templateId={templateId} mapping={mapping.value} />}
+    </>
+  );
 }

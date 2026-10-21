@@ -23,7 +23,7 @@ BEGIN
     'PasswordResetToken','PeriodFinancialSummary',
     'PlannedActivity','PlanRevision','ProjectTask','ReminderLedgerEntry','ProjectRisk','PlannedActivityDependency','ProjectField','CustomFieldValue','BudgetLine','BudgetExpense','MemberCapacity','ProjectAutomation','Beneficiary','ProjectSubmissionMapping','PlannedActivityIndicator','ProgressEntry','BeneficiaryActivityLink',
     'ConnectorRun','SectorTemplatePack','ProjectRiskTrend','OrganizationBranding','LessonPattern','ABACFieldPolicy','MultiRegionBookmark',
-    'ScimCredential','JobOutbox','LogframeVersion','Programme','Grant'
+    'ScimCredential','JobOutbox','LogframeVersion','Programme','Grant','DonorIndicatorMapping'
   ] LOOP
     EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE %I TO donordesk_app', table_name);
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', table_name);

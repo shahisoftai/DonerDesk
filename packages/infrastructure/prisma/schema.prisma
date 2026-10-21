@@ -1885,3 +1885,18 @@ model Grant {
   @@index([tenantId, programmeId])
 }
 
+
+/// A person's decision about one indicator a donor's template asks for: the project indicator that answers it, or null for
+/// "this project will not report it". Automatic matches are not stored; only decisions are.
+model DonorIndicatorMapping {
+  id            String   @id
+  tenantId      String
+  templateId    String
+  requirementId String
+  indicatorId   String?
+  decidedById   String
+  decidedAt     DateTime @default(now())
+
+  @@unique([templateId, requirementId])
+  @@index([tenantId])
+}

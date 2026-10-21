@@ -127,6 +127,23 @@ export async function setTemplateDefaultForTypeAction(templateId: string, report
   return { ok: true, value: undefined };
 }
 
+/** Confirms which project indicator answers one indicator the donor asks for, says it will not be reported, or goes back to the automatic match. */
+export async function setDonorIndicatorMappingAction(
+  templateId: string,
+  requirementId: string,
+  decision: { action: "MAP"; indicatorId: string } | { action: "NOT_TRACKED" } | { action: "CLEAR" },
+): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(
+    `/v1/templates/${encodeURIComponent(templateId)}/indicator-mapping/${encodeURIComponent(requirementId)}`,
+    OkResponseSchema,
+    context.token,
+    { method: "PUT", body: decision },
+  );
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
 export async function cloneTemplateAction(templateId: string, projectId: string): Promise<Result<{ id: string }, AppError>> {
   const context = await requireSession();
   const parsed = CloneTemplateSchema.safeParse({ projectId });
