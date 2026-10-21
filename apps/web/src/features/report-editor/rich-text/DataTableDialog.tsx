@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { buildDataTable, DATA_TABLE_LAYOUTS, type DataTableLayout, type DataTableSpec } from "@donordesk/domain/contexts/reporting/data-tables.js";
-import { PIVOT_MEASURE_LABEL, type PivotMeasure } from "@donordesk/domain/contexts/reporting/data-sheet.js";
+import { CHART_MEASURES, PIVOT_MEASURE_LABEL, type ChartMeasure } from "@donordesk/domain/contexts/reporting/data-sheet.js";
 import { getDataSheetAction } from "@/lib/actions/data-charts";
 import type { DataSheetResponse } from "@/lib/server/schemas";
 import { Dialog } from "@/components/feedback/Dialog";
@@ -76,8 +76,8 @@ export function DataTableDialog({ projectId, open, onClose, onInsert }: { projec
             {spec.layout === "OVER_TIME" && (
               <label className="block text-xs text-slate-500">
                 Show
-                <Select className="mt-1" value={spec.measure} onChange={(e) => update({ measure: e.target.value as PivotMeasure })}>
-                  {(Object.keys(PIVOT_MEASURE_LABEL) as PivotMeasure[]).map((m) => <option key={m} value={m}>{PIVOT_MEASURE_LABEL[m]}</option>)}
+                <Select className="mt-1" value={spec.measure} onChange={(e) => update({ measure: e.target.value as ChartMeasure })}>
+                  {CHART_MEASURES.map((m) => <option key={m} value={m}>{PIVOT_MEASURE_LABEL[m]}</option>)}
                 </Select>
               </label>
             )}

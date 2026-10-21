@@ -1,4 +1,4 @@
-import { cellPercentOfTarget, indexCells, PIVOT_MEASURE_LABEL, type DataSheet, type DataSheetCell, type DataSheetIndicator, type PivotMeasure } from "./data-sheet.js";
+import { cellPercentOfTarget, indexCells, PIVOT_MEASURE_LABEL, type DataSheet, type DataSheetCell, type DataSheetIndicator, type ChartMeasure } from "./data-sheet.js";
 import { periodsInRange } from "./data-charts.js";
 
 /**
@@ -14,7 +14,7 @@ export interface DataTableSpec {
   layout: DataTableLayout;
   indicatorIds: string[];
   /** OVER_TIME only: what each period column shows. */
-  measure: PivotMeasure;
+  measure: ChartMeasure;
   fromPeriodId?: string | undefined;
   toPeriodId?: string | undefined;
 }

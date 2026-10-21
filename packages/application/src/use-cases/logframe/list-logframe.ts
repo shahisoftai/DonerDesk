@@ -48,6 +48,7 @@ export class ListLogframeHandler {
           responsibleUserId: i.responsibleUserId,
           disaggregationRequired: i.disaggregationRequired,
           targetBreakdowns: i.targetBreakdowns,
+          targetSchedule: i.targetSchedule,
           semantics: i.semantics,
           semanticsDescription: describeSemantics(effectiveIndicatorSemantics(i), i.type),
         })),

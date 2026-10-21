@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { buildDataChart, CHART_PALETTES, DATA_CHART_TEMPLATES, DATA_CHART_TEMPLATE_ORDER, type DataChartResult, type DataChartSpec, type DataChartTemplate } from "@donordesk/domain/contexts/reporting/data-charts.js";
-import { PIVOT_MEASURE_LABEL, type PivotMeasure } from "@donordesk/domain/contexts/reporting/data-sheet.js";
+import { CHART_MEASURES, PIVOT_MEASURE_LABEL, type ChartMeasure } from "@donordesk/domain/contexts/reporting/data-sheet.js";
 import type { ChartType } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import type { DataSheetResponse } from "@/lib/server/schemas";
 import { EChartFigure } from "@/features/reporting/presentation/ChartFigure";
@@ -143,8 +143,8 @@ export function DataChartBuilder({
         {info.usesMeasure && (
           <label className="block text-xs text-slate-500">
             Measure
-            <Select className="mt-1" value={spec.measure} onChange={(e) => update({ measure: e.target.value as PivotMeasure })}>
-              {(Object.keys(PIVOT_MEASURE_LABEL) as PivotMeasure[]).map((m) => <option key={m} value={m}>{PIVOT_MEASURE_LABEL[m]}</option>)}
+            <Select className="mt-1" value={spec.measure} onChange={(e) => update({ measure: e.target.value as ChartMeasure })}>
+              {CHART_MEASURES.map((m) => <option key={m} value={m}>{PIVOT_MEASURE_LABEL[m]}</option>)}
             </Select>
           </label>
         )}

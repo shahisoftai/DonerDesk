@@ -52,6 +52,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "ReportingProfile", field: "defaultTemplateByTypeJson" },
   { model: "ReportingProfile", field: "requireSecondApprover" },
   { model: "ReportingProfile", field: "requireEvidenceForVerification" },
+  { model: "Indicator", field: "targetScheduleJson" },
   { model: "ReportingProfile", field: "standingStatementsJson" },
   { model: "ChecklistItem", field: "attestedById" },
   { model: "ReportDraft", field: "supersededAt" },

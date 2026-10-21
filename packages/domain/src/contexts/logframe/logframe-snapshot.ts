@@ -30,6 +30,8 @@ export interface SnapshotIndicator {
   archived: boolean;
   semantics: unknown;
   targetBreakdowns: unknown;
+  /** Present only when a schedule is set, so a framework without one keeps the same content hash as before. */
+  targetSchedule?: unknown;
 }
 
 export interface LogframeSnapshot {
@@ -63,6 +65,7 @@ interface IndicatorLike {
   isArchived: boolean;
   semantics?: unknown;
   targetBreakdowns: unknown;
+  targetSchedule?: ReadonlyArray<unknown>;
 }
 
 export function buildLogframeSnapshot(items: ReadonlyArray<ItemLike>, indicators: ReadonlyArray<IndicatorLike>): LogframeSnapshot {
@@ -95,6 +98,7 @@ export function buildLogframeSnapshot(items: ReadonlyArray<ItemLike>, indicators
         archived: i.isArchived,
         semantics: i.semantics ?? null,
         targetBreakdowns: i.targetBreakdowns ?? [],
+        ...(i.targetSchedule?.length ? { targetSchedule: i.targetSchedule } : {}),
       }))
       .sort((a, b) => a.code.localeCompare(b.code) || a.id.localeCompare(b.id)),
   };
@@ -146,6 +150,7 @@ const INDICATOR_FIELDS: ReadonlyArray<[keyof SnapshotIndicator, string]> = [
   ["disaggregationRequired", "breakdown required"],
   ["semantics", "how it is read"],
   ["targetBreakdowns", "targets by group"],
+  ["targetSchedule", "target schedule"],
   ["logframeItemId", "output it belongs to"],
   ["archived", "retired"],
 ];

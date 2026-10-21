@@ -84,6 +84,7 @@ export class GetProjectDataSheetHandler {
           baseline: i.baseline,
           target: i.target,
           isRate: isRateIndicator({ type: i.type, unit: i.unit }),
+          ...(i.targetSchedule?.length ? { targetSchedule: i.targetSchedule } : {}),
         })),
         cells: values.value
           .filter((u) => liveIds.has(u.indicatorId))

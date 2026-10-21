@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { cellPercentOfTarget, indexCells, indicatorSheetRows, INDICATOR_SHEET_HEADERS, pivotSheet, PIVOT_MEASURE_LABEL, toCsv, type PivotMeasure } from "@donordesk/domain/contexts/reporting/data-sheet.js";
+import { cellPercentOfTarget, cellVariance, indexCells, indicatorSheetRows, INDICATOR_SHEET_HEADERS, pivotSheet, PIVOT_MEASURE_LABEL, toCsv, type PivotMeasure } from "@donordesk/domain/contexts/reporting/data-sheet.js";
 import type { DataSheetResponse } from "@/lib/server/schemas";
 import { Badge } from "@/components/data/Badge";
 import { Button } from "@/components/ui/Button";
@@ -126,7 +126,7 @@ export function DataSheetTable({ projectId, sheet, canEdit }: { projectId: strin
                   <td className={`${td} text-right tabular-nums`}>{i.target}</td>
                   {sheet.periods.map((p) => {
                     const cell = cells.get(`${i.id}|${p.id}`);
-                    const value = !cell ? "" : measure === "PERIOD" ? cell.periodValue : measure === "CUMULATIVE" ? cell.cumulativeValue : cellPercentOfTarget(i, cell);
+                    const value = !cell ? "" : measure === "PERIOD" ? cell.periodValue : measure === "CUMULATIVE" ? cell.cumulativeValue : measure === "VARIANCE" ? cellVariance(i, p, cell) : cellPercentOfTarget(i, cell);
                     return (
                       <td key={p.id} className={`${td} text-right tabular-nums`} title={cell ? INDICATOR_VERIFICATION_LABEL[cell.status] ?? cell.status : "Nothing recorded"}>
                         {value === "" ? <span className="text-slate-300">—</span> : <span className={cell?.status === "VERIFIED" ? "font-medium" : "text-slate-600 dark:text-slate-300"}>{value}</span>}

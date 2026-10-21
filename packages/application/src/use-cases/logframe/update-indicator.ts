@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, checkIndicatorEdit, validateTargetBreakdowns } from "@donordesk/domain";
+import { DomainError, checkIndicatorEdit, validateTargetBreakdowns, targetScheduleProblems, sortedTargetSchedule } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IAuditLogger } from "../../ports/core.js";
@@ -30,6 +30,11 @@ export class UpdateIndicatorHandler {
       const breakdowns = validateTargetBreakdowns(fields.targetBreakdowns, { indicatorType: fields.type ?? indicator.type, target: fields.target ?? indicator.target });
       if (!breakdowns.ok) return breakdowns;
       fields.targetBreakdowns = breakdowns.value;
+    }
+    if (fields.targetSchedule !== undefined) {
+      const problem = targetScheduleProblems(fields.targetSchedule)[0];
+      if (problem) return { ok: false, error: DomainError.validation(`Target schedule, line ${problem.row}: ${problem.message}`) };
+      fields.targetSchedule = sortedTargetSchedule(fields.targetSchedule);
     }
     const patch = Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined));
     if (Object.keys(patch).length === 0) return { ok: true, value: { id: indicator.id } };

@@ -1,5 +1,5 @@
 import type { OutcomeNode, Result, VerifiedFinding, IndicatorUpdate, ReportingPeriod, TenantId } from "@donordesk/domain";
-import { CADENCE_REPORT_TYPES, DomainError, LIFE_OF_PROJECT_REPORT_TYPES, comparableReportTypes, computeLifeOfProject, computeIndicator, evaluatePerformance, inferIndicatorSemantics, owningOutcome, periodComparability, selectComparablePeriods } from "@donordesk/domain";
+import { CADENCE_REPORT_TYPES, DomainError, LIFE_OF_PROJECT_REPORT_TYPES, comparableReportTypes, computeLifeOfProject, computeIndicator, evaluatePerformance, inferIndicatorSemantics, owningOutcome, periodComparability, selectComparablePeriods, varianceAgainst, withPeriodTarget } from "@donordesk/domain";
 import type { IIndicatorAnalyticsService } from "../ports/reporting.js";
 import type { IReportingPeriodRepository } from "../ports/reporting.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository, ILogframeRepository } from "../ports/logframe.js";
@@ -132,7 +132,8 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
       });
       const level = levelByItem.get(ind.logframeItemId);
       const outcome = owningOutcome(logframeNodes, ind.logframeItemId);
-      findings.push({ ...finding, reportingPeriodId: input.reportingPeriodId, ...(ind.targetBreakdowns.length ? { targetBreakdowns: ind.targetBreakdowns.map((e) => ({ ...e })) } : {}), ...(level ? { level } : {}), ...(ind.frequency ? { frequency: ind.frequency } : {}), ...(outcome?.code ? { outcomeCode: outcome.code } : {}), ...(outcome ? { outcomeTitle: outcome.title } : {}) });
+      const periodEndDay = periodResult.value.duration.end.toISOString().slice(0, 10);
+      findings.push({ ...withPeriodTarget(finding, ind.targetSchedule, periodEndDay), reportingPeriodId: input.reportingPeriodId, ...(ind.targetBreakdowns.length ? { targetBreakdowns: ind.targetBreakdowns.map((e) => ({ ...e })) } : {}), ...(level ? { level } : {}), ...(ind.frequency ? { frequency: ind.frequency } : {}), ...(outcome?.code ? { outcomeCode: outcome.code } : {}), ...(outcome ? { outcomeTitle: outcome.title } : {}) });
     }
 
     if (LIFE_OF_PROJECT_REPORT_TYPES.has(periodResult.value.reportType)) {
@@ -182,7 +183,7 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
       // target measures, and would read "below expectation" for an indicator that met its target.
       enriched.push(
         lifeOfProject
-          ? { ...finding, status: "REPORTED" as const, lifeOfProject, performanceEvaluation: evaluatePerformance({ value: lifeOfProject.value, baseline: finding.baseline, target: finding.target, semantics }) }
+          ? { ...finding, status: "REPORTED" as const, lifeOfProject, performanceEvaluation: evaluatePerformance({ value: lifeOfProject.value, baseline: finding.baseline, target: finding.periodTarget?.target ?? finding.target, semantics }), ...(finding.periodTarget ? (() => { const v = varianceAgainst(lifeOfProject.value, finding.periodTarget.target); return v ? { variance: v } : {}; })() : {}) }
           : finding,
       );
     }

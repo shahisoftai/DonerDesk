@@ -352,6 +352,8 @@ export const IndicatorItemSchema = z.object({
   disaggregationRequired: z.boolean().optional(),
   /** Targets per breakdown category (phase 28.1-B). */
   targetBreakdowns: z.array(z.object({ dimension: z.string(), category: z.string(), value: z.string() })).default([]),
+  /** The cumulative target due by each date; empty = the project target applies. */
+  targetSchedule: z.array(z.object({ asOf: z.string(), target: z.string() })).default([]),
   semantics: z
     .object({
       aggregation: z.string(),
@@ -1192,6 +1194,7 @@ export const DataSheetResponseSchema = z.object({
       baseline: z.string(),
       target: z.string(),
       isRate: z.boolean(),
+      targetSchedule: z.array(z.object({ asOf: z.string(), target: z.string() })).optional(),
     }),
   ),
   cells: z.array(

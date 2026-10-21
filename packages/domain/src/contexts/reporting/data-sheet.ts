@@ -1,4 +1,5 @@
 import { percentOfTarget } from "./export-indicator-columns.js";
+import { describeVariance, targetForPeriod, varianceAgainst, type TargetScheduleEntry } from "../logframe/target-schedule.js";
 
 /**
  * The Data Center sheet: every indicator value (and finance figure) of a project across all its reporting periods, in one
@@ -31,6 +32,8 @@ export interface DataSheetIndicator {
   target: string;
   /** Percentage/ratio indicators: "% of target" is not meaningful. */
   isRate: boolean;
+  /** The cumulative target due by each date, when the indicator has one. */
+  targetSchedule?: TargetScheduleEntry[] | undefined;
 }
 
 export interface DataSheetCell {
@@ -114,6 +117,19 @@ export function cellPercentOfTarget(indicator: DataSheetIndicator, cell: DataShe
   return percentOfTarget(basis, indicator.target);
 }
 
+/**
+ * How far a period's progress is from the target scheduled for it ("+20 (+10%)"). Empty without a schedule entry for the period, for
+ * a rate, or when nothing is recorded: a missing value is never read as 0.
+ */
+export function cellVariance(indicator: DataSheetIndicator, period: Pick<DataSheetPeriod, "end">, cell: DataSheetCell | undefined): string {
+  if (!cell || indicator.isRate || !indicator.targetSchedule?.length) return "";
+  const scheduled = targetForPeriod(indicator.targetSchedule, indicator.target, period.end);
+  if (scheduled.source !== "SCHEDULE") return "";
+  const basis = cell.cumulativeValue.trim() !== "" ? cell.cumulativeValue : cell.periodValue;
+  const variance = varianceAgainst(basis, scheduled.target);
+  return variance ? describeVariance(variance) : "";
+}
+
 /** One row per indicator per period (blank where nothing is recorded), so the exported file doubles as a template to fill in. */
 export function indicatorSheetRows(sheet: DataSheet): string[][] {
   const cells = indexCells(sheet);
@@ -144,12 +160,17 @@ export function indicatorSheetRows(sheet: DataSheet): string[][] {
   return rows;
 }
 
-export type PivotMeasure = "PERIOD" | "CUMULATIVE" | "PERCENT_OF_TARGET";
+/** The measures a chart or an inserted table can use. */
+export type ChartMeasure = "PERIOD" | "CUMULATIVE" | "PERCENT_OF_TARGET";
+export const CHART_MEASURES: ReadonlyArray<ChartMeasure> = ["PERIOD", "CUMULATIVE", "PERCENT_OF_TARGET"];
+/** The Data Center grid also offers the variance from the scheduled target, which is not charted. */
+export type PivotMeasure = ChartMeasure | "VARIANCE";
 
 export const PIVOT_MEASURE_LABEL: Record<PivotMeasure, string> = {
   PERIOD: "Period value",
   CUMULATIVE: "Cumulative value",
   PERCENT_OF_TARGET: "% of target",
+  VARIANCE: "Variance from scheduled target",
 };
 
 /** Indicators down the side, periods across the top: the "all months at a glance" view. */
@@ -167,6 +188,7 @@ export function pivotSheet(sheet: DataSheet, measure: PivotMeasure): { headers: 
       if (!cell) return "";
       if (measure === "PERIOD") return cell.periodValue;
       if (measure === "CUMULATIVE") return cell.cumulativeValue;
+      if (measure === "VARIANCE") return cellVariance(indicator, period, cell);
       return cellPercentOfTarget(indicator, cell);
     }),
   ]);

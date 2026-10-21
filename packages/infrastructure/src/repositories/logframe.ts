@@ -7,6 +7,7 @@ import {
   TenantId,
   DomainError,
   parseDisaggregationJson,
+  parseTargetSchedule,
   type Result,
   type IndicatorType,
   type VerificationStatus,
@@ -131,6 +132,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         disaggregationRequired: i.disaggregationRequired,
         semanticsJson: i.semanticsJson,
         targetBreakdownsJson: i.targetBreakdowns.length ? JSON.stringify(i.targetBreakdowns) : null,
+        targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
       },
     });
     return ok(i);
@@ -155,6 +157,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         disaggregationRequired: i.disaggregationRequired,
         semanticsJson: i.semanticsJson,
         targetBreakdownsJson: i.targetBreakdowns.length ? JSON.stringify(i.targetBreakdowns) : null,
+        targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
       },
     });
     return ok(i);
@@ -197,6 +200,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     disaggregationRequired: boolean;
     semanticsJson: string | null;
     targetBreakdownsJson: string | null;
+    targetScheduleJson: string | null;
     archivedAt: Date | null;
     createdAt: Date;
   }): Indicator {
@@ -220,6 +224,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         disaggregationRequired: row.disaggregationRequired,
         semanticsJson: row.semanticsJson ?? undefined,
         targetBreakdowns: parseTargetBreakdowns(row.targetBreakdownsJson),
+        targetSchedule: parseTargetSchedule(row.targetScheduleJson),
         archivedAt: row.archivedAt ?? undefined,
       },
     });

@@ -451,6 +451,7 @@ model Indicator {
   disaggregationRequired Boolean @default(false)
   semanticsJson         String?
   targetBreakdownsJson  String?
+  targetScheduleJson    String? // [{asOf, target}]: the cumulative target due by each date; absent = the project target applies
   archivedAt            DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt

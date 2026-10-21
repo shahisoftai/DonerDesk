@@ -1,5 +1,7 @@
 "use client";
 
+import { formatTargetScheduleText, parseTargetScheduleText } from "@donordesk/domain";
+import { Textarea } from "@/components/ui/Textarea";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { archiveIndicatorAction, moveIndicatorAction, updateIndicatorAction } from "@/lib/actions/indicators";
@@ -25,6 +27,7 @@ export interface ManagedIndicator {
   unit?: string;
   disaggregationRequired: boolean;
   targetBreakdowns?: BreakdownTargetRow[];
+  targetSchedule?: { asOf: string; target: string }[];
 }
 
 /**
@@ -41,12 +44,18 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
   const [breakdown, setBreakdown] = useState(indicator.disaggregationRequired);
   const [itemId, setItemId] = useState(indicator.logframeItemId ?? "");
   const [breakdowns, setBreakdowns] = useState<BreakdownTargetRow[]>(indicator.targetBreakdowns ?? []);
+  const [scheduleText, setScheduleText] = useState(formatTargetScheduleText(indicator.targetSchedule ?? []));
   const [busy, setBusy] = useState<"save" | "move" | "remove" | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   async function save() {
     if (busy) return;
+    const parsedSchedule = parseTargetScheduleText(scheduleText);
+    if (parsedSchedule.problems.length > 0) {
+      const first = parsedSchedule.problems[0]!;
+      return setMessage({ tone: "error", text: `Target schedule, line ${first.row}: ${first.message}` });
+    }
     setBusy("save");
     setMessage(null);
     const result = await updateIndicatorAction({
@@ -58,6 +67,7 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
       unit: unit.trim() || undefined,
       disaggregationRequired: breakdown,
       targetBreakdowns: completeBreakdownRows(breakdowns),
+      targetSchedule: parsedSchedule.schedule,
     });
     setBusy(null);
     if (!result.ok) return setMessage({ tone: "error", text: result.error.message });
@@ -106,6 +116,9 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
         <Checkbox checked={breakdown} onChange={(e) => setBreakdown(e.target.checked)} />
         <span>Record a breakdown by sex, age group and disability</span>
       </label>
+      <Field label="Target schedule (optional)" htmlFor="manage-schedule" description="The cumulative target due by each date, one per line, for example 2026-03-31: 250. A period is then judged against what was due by then. Leave empty to judge against the target above.">
+        <Textarea id="manage-schedule" rows={4} value={scheduleText} onChange={(e) => setScheduleText(e.target.value)} disabled={busy !== null} />
+      </Field>
       <TargetBreakdownsEditor rows={breakdowns} onChange={setBreakdowns} disabled={busy !== null} />
       <div><Button onClick={() => void save()} pending={busy === "save"} disabled={busy !== null || !name.trim() || !code.trim()}>Save changes</Button></div>
 

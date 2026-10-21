@@ -2,6 +2,7 @@ import type { IndicatorType } from "../logframe/indicator.js";
 import type { AggregationMethod, IndicatorSemantics, PerformanceDirection } from "../logframe/indicator-semantics.js";
 import type { DisaggregationEntry } from "../logframe/indicator-disaggregation.js";
 import type { LifeOfProjectValue } from "./life-of-project.js";
+import type { Variance } from "../logframe/target-schedule.js";
 
 export type FindingQualityFlag =
   | "LOW_COVERAGE"
@@ -61,6 +62,13 @@ export interface VerifiedFinding {
   /** Baseline and target from the indicator definition (decimal strings). */
   baseline?: string;
   target?: string;
+  /**
+   * The scheduled target that applied to this period (a cumulative target due by `asOf`), when the indicator has a target schedule.
+   * Not sent to the writer: it judges `performanceEvaluation` and feeds `variance` only.
+   */
+  periodTarget?: { target: string; asOf: string };
+  /** How far the compared figure is from `periodTarget`. Absent when there is no schedule or no reported figure; never computed from a missing value. */
+  variance?: Variance;
   /** Absent on snapshots persisted before Phase 25; read it through `findingStatus`. */
   status?: FindingStatus;
   /** Decimal string; a placeholder (`"0"`) unless the finding is REPORTED, see `findingStatus`. */

@@ -1,5 +1,5 @@
 import { optionForType, type ChartType, type ResolvedChartData } from "./chart-config.js";
-import { indexCells, type DataSheet, type DataSheetIndicator, type DataSheetPeriod, type PivotMeasure } from "./data-sheet.js";
+import { indexCells, type DataSheet, type DataSheetIndicator, type DataSheetPeriod, type ChartMeasure } from "./data-sheet.js";
 
 /**
  * Data Center charts: a chart is a small spec (template + indicators + measure + period range) drawn from the project's
@@ -19,7 +19,7 @@ export type DataChartTemplate =
 export interface DataChartSpec {
   template: DataChartTemplate;
   indicatorIds: string[];
-  measure: PivotMeasure;
+  measure: ChartMeasure;
   type: ChartType;
   fromPeriodId?: string | undefined;
   toPeriodId?: string | undefined;
@@ -150,7 +150,7 @@ function draw(spec: DataChartSpec, data: Omit<ResolvedChartData, "type" | "dataB
 }
 
 /** The value of one cell under a measure, as a number (null when not recorded or not meaningful). */
-function measureValue(cells: ReturnType<typeof indexCells>, indicator: DataSheetIndicator, period: DataSheetPeriod, measure: PivotMeasure): number | null {
+function measureValue(cells: ReturnType<typeof indexCells>, indicator: DataSheetIndicator, period: DataSheetPeriod, measure: ChartMeasure): number | null {
   const cell = cells.get(`${indicator.id}|${period.id}`);
   if (!cell) return null;
   if (measure === "PERIOD") return num(cell.periodValue);
@@ -177,7 +177,7 @@ function plottedProvenance(sheet: DataSheet, spec: DataChartSpec): DataChartProv
   const chosen = spec.indicatorIds.map((id) => sheet.indicators.find((i) => i.id === id)).filter((i): i is DataSheetIndicator => Boolean(i));
   let points = 0;
   let unverified = 0;
-  const count = (indicator: DataSheetIndicator, period: DataSheetPeriod, measure: PivotMeasure): boolean => {
+  const count = (indicator: DataSheetIndicator, period: DataSheetPeriod, measure: ChartMeasure): boolean => {
     if (measureValue(cells, indicator, period, measure) === null) return false;
     points += 1;
     if (cells.get(`${indicator.id}|${period.id}`)?.status !== "VERIFIED") unverified += 1;
@@ -191,7 +191,7 @@ function plottedProvenance(sheet: DataSheet, spec: DataChartSpec): DataChartProv
     }
     case "INDICATORS_OVER_TIME": {
       const mixed = new Set(chosen.map(unitOf)).size > 1;
-      const measure: PivotMeasure = mixed && spec.measure !== "PERCENT_OF_TARGET" ? "PERCENT_OF_TARGET" : spec.measure;
+      const measure: ChartMeasure = mixed && spec.measure !== "PERCENT_OF_TARGET" ? "PERCENT_OF_TARGET" : spec.measure;
       for (const i of chosen) if (!(measure === "PERCENT_OF_TARGET" && i.isRate)) for (const p of periods) count(i, p, measure);
       break;
     }
@@ -296,7 +296,7 @@ function buildDataChartCore(sheet: DataSheet, spec: DataChartSpec): DataChartRes
     case "INDICATORS_OVER_TIME": {
       const units = new Set(chosen.map(unitOf));
       const mixed = units.size > 1;
-      const measure: PivotMeasure = mixed && spec.measure !== "PERCENT_OF_TARGET" ? "PERCENT_OF_TARGET" : spec.measure;
+      const measure: ChartMeasure = mixed && spec.measure !== "PERCENT_OF_TARGET" ? "PERCENT_OF_TARGET" : spec.measure;
       const series = chosen
         .filter((i) => !(measure === "PERCENT_OF_TARGET" && i.isRate))
         .map((i) => ({ name: i.code, data: periods.map((p) => measureValue(cells, i, p, measure)) }))

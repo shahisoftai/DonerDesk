@@ -53,6 +53,12 @@ export const TargetBreakdownSchema = z.object({
 });
 export type TargetBreakdownInput = z.infer<typeof TargetBreakdownSchema>;
 
+/** One step of a target schedule: the cumulative target due by a date. Whether the dates are real days is checked by the use case. */
+export const TargetScheduleEntrySchema = z.object({
+  asOf: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Write the date as YYYY-MM-DD"),
+  target: z.string().trim().min(1, "Give the target").max(40),
+});
+
 export const CreateIndicatorSchema = z.object({
   projectId: z.string().min(1),
   logframeItemId: z.string().min(1),
@@ -68,6 +74,7 @@ export const CreateIndicatorSchema = z.object({
   responsibleUserId: z.string().optional(),
   disaggregationRequired: z.boolean().default(false),
   targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
+  targetSchedule: z.array(TargetScheduleEntrySchema).max(60).optional(),
 });
 export type CreateIndicatorInput = z.infer<typeof CreateIndicatorSchema>;
 
@@ -85,6 +92,7 @@ export const UpdateIndicatorSchema = z.object({
   frequency: z.string().max(50).optional(),
   disaggregationRequired: z.boolean().optional(),
   targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
+  targetSchedule: z.array(TargetScheduleEntrySchema).max(60).optional(),
 });
 export type UpdateIndicatorInput = z.infer<typeof UpdateIndicatorSchema>;
 

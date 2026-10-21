@@ -19,3 +19,4 @@ export * from "./portfolio-rollup.js";
 export * from "./breakdown-progress.js";
 export * from "./logframe-snapshot.js";
 export * from "./indicator-value-rules.js";
+export * from "./target-schedule.js";
