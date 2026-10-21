@@ -415,3 +415,13 @@ in-process default), stub LLM (dev default), pino logs, console email.
 - **DB-backed tests run in CI** (`test:journey-db` and the integration files, `UOW_VERIFY_DATABASE_URL`). A `"use server"` file may only export async functions: put schemas in `lib/server/schemas.ts`.
 - Deploy: migrations `20261021160000`–`20261021200000` (login_lockout, job_outbox, logframe_versions, programmes_and_grants, external_partners), then re-run `rls.sql`; `/ready` requires `User.lockedUntil`, `User.external`, `JobOutbox.nextAttemptAt`.
 - **Fastify refuses `addHook` after `listen`.** Anything `start()` does after listening (timers, loops) registers cleanup with `app.server.once("close", …)`. `apps/api/test/boot.test.mjs` starts the real `dist/server.js`; keep it in the suite. `deploy-fast.sh` does not roll back on a failed `/ready`: read its verify output and fix forward or restore the snapshot at once.
+
+## Gap closure batch 5 (2026-10-21; `memorybank/demo/verification-demo-10.md`)
+- **A scheduled target is cumulative, so a SUM period total is judged through its cumulative figure** (`withPeriodTarget`, `targetForPeriod`); a missing value has no variance; `periodTarget`/`variance` are not sent to the writer (the worker's `Finding` forbids extra fields). Chart and table measures stay `ChartMeasure`; `VARIANCE` exists only in the Data Center grid.
+- **Never import `@donordesk/domain` (the root) from a `"use client"` file**: it pulls `node:crypto` into the browser bundle and the web build fails. Use a subpath export (`packages/domain/package.json` `exports`).
+- **Portfolio**: `GetPortfolioOverviewHandler` reads the same `ProjectHealthService` as the project card; no combined score. An indicator marked `countedElsewhere` is listed and never added; an overlap warning (same country + overlapping dates) never changes a total.
+- **Donor indicator mapping**: automatic matches are not stored, only people's decisions (`DonorIndicatorMapping`); "not tracked" is an answer, not a gap.
+- **OCR is a fallback, never a first read** (`ocr.py`, `OcrFallbackDocumentParser`); `assessTextExtraction({ readByOcr })`; run off the event loop with one scan at a time. The host venv needs the pip packages installed by hand.
+- **Encryption at rest** (`EVIDENCE_ENCRYPTION_KEYS`, `at-rest-encryption.ts`) is off until the key has a copy off the host; storage key is the authenticated data; legacy plaintext stays readable until `storage:encrypt`.
+- **Deleting a demo project** follows the database's foreign keys (children first, one transaction): do not go back to a hand-kept table list.
+- Running `pnpm -r --filter=./packages/* build` from inside `packages/` matches nothing and leaves `dist/` stale: build from the repo root.
