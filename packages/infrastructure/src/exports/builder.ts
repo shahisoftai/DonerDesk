@@ -232,12 +232,12 @@ export class DefaultExportBuilder implements IExportBuilder {
     }
     doc.fontSize(14).font("Helvetica-Bold").text("Indicator Progress");
     doc.font("Helvetica").fontSize(10);
+    const indicatorColumns = indicatorExportColumns(input.indicators);
     for (const i of input.indicators) {
-      doc.text(
-        isRollUpIndicatorTable(input.indicators)
-          ? `${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, this period ${i.periodValue || "not measured"}, life of project to date ${i.lifeOfProjectValue || "not measured"}${i.percentOfTarget ? `, ${i.percentOfTarget} of target` : ""}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`
-          : `${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, achievement ${i.achievement || "not measured"}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`,
-      );
+      const cells = indicatorColumns
+        .filter((c) => c.key !== "code" && c.key !== "name")
+        .map((c) => `${c.header}: ${indicatorExportCell(i, c.key, { notMeasured: NOT_MEASURED_LABEL })}`.trim());
+      doc.text(`${i.code} — ${i.name} (${cells.join(", ")})`);
     }
     doc.moveDown();
     doc.fontSize(14).text("Compliance Checklist");
