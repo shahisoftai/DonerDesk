@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from .ai_reporter.router import router as ai_reporter_router
 from .compliance import DetectChecklistRequest, RewriteSectionRequest, detect_checklist, rewrite_section
@@ -48,7 +49,8 @@ async def parse_document(file: UploadFile = File(...)) -> dict[str, Any]:
     data = await file.read(MAX_PARSE_BYTES + 1)
     if len(data) > MAX_PARSE_BYTES:
         raise HTTPException(status_code=413, detail=f"file is larger than {MAX_PARSE_BYTES // (1024 * 1024)} MB")
-    return parse(data, file.filename or "upload.bin", file.content_type)
+    # Parsing (and OCR for scans) is CPU work: run it off the event loop so drafting requests are not held up.
+    return await run_in_threadpool(parse, data, file.filename or "upload.bin", file.content_type)
 
 
 @v1.post("/suggest-tags")

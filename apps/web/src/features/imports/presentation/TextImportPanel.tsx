@@ -53,6 +53,8 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
   const [busy, setBusy] = useState(false);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<R | null>(null);
+  /** Set when the words were read from a scan by text recognition: the person is told to check them. */
+  const [scanNote, setScanNote] = useState<string | null>(null);
   const [plural, singular] = [props.noun[1], props.noun[0]];
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -61,6 +63,7 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
     setBusy(true);
     setError(null);
     setResult(null);
+    setScanNote(null);
     const parsed = await parseFileAction(props.kind, file);
     setBusy(false);
     if (!parsed.ok) {
@@ -69,6 +72,8 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
     }
     setText(parsed.value.text);
     setFileName(file.name);
+    const note = parsed.value.metadata?.ocrNote;
+    setScanNote(typeof note === "string" ? note : null);
   }
 
   async function createRecords() {
@@ -106,6 +111,7 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
           {props.templateHref && <a className="btn-secondary text-xs" href={props.templateHref}>Download template</a>}
         </div>
 
+        {!result && scanNote && <p role="note" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">{scanNote}</p>}
         {!result && (
           <Field label="Or paste or dictate it here" htmlFor={`${props.kind}Text`} description="Edit anything before creating the records. A file you upload appears here too.">
             <Textarea

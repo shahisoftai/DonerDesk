@@ -15,6 +15,8 @@ from typing import Any
 from fastapi import HTTPException
 
 from ._strategy_data import PARSE_ROUTES
+from .ocr import IMAGE_EXTENSIONS as _OCR_IMAGE_EXTENSIONS
+from .ocr import OcrResult, OcrUnavailableError, describe, ocr_file
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +78,7 @@ _MESSAGES = {
 }
 
 
-def assess_extraction(filename: str, text: str, failed: bool = False) -> dict[str, Any]:
+def assess_extraction(filename: str, text: str, failed: bool = False, ocr: OcrResult | None = None) -> dict[str, Any]:
     """Whether a file's words were read (the same rule as `assessTextExtraction` in the TypeScript domain).
 
     Returns `{"status": EXTRACTED|EMPTY|FAILED|UNSUPPORTED, "message": ...}`; the message is a sentence for the person
@@ -85,6 +87,10 @@ def assess_extraction(filename: str, text: str, failed: bool = False) -> dict[st
     """
     ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
     stripped = text.strip()
+    if ocr is not None and stripped:
+        # Read by machine: usable, but the person is told to check it against the original.
+        details = {"confidence": ocr.confidence, "pagesRead": ocr.pages_read, "pagesTotal": ocr.pages_total}
+        return {"status": "EXTRACTED", "note": describe(ocr), "ocr": details}
     if failed:
         status = "FAILED"
     elif ext in _IMAGE_EXTENSIONS or (stripped and stripped.lower() == filename.strip().lower()):
@@ -94,6 +100,25 @@ def assess_extraction(filename: str, text: str, failed: bool = False) -> dict[st
     else:
         return {"status": "EXTRACTED"}
     return {"status": status, "message": _MESSAGES[status].format(name=filename)}
+
+
+def _needs_ocr(handler: str, filename: str, text: str) -> bool:
+    """A scan: a PDF with no text layer, or a photographed page. Files that already gave words are never read twice."""
+    ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+    if handler == "pdf":
+        return not text.strip()
+    return ext in _OCR_IMAGE_EXTENSIONS
+
+
+def _try_ocr(filename: str, data: bytes) -> OcrResult | None:
+    """OCR is a best effort: when it is unavailable or fails, the file is reported as unreadable exactly as before."""
+    try:
+        return ocr_file(filename, data)
+    except OcrUnavailableError:
+        logger.info("OCR is not available; %s is reported as unreadable", filename)
+    except Exception:
+        logger.exception("OCR failed for %s", filename)
+    return None
 
 
 def parse(data: bytes, filename: str, content_type: str | None) -> dict[str, Any]:
@@ -135,4 +160,11 @@ def parse(data: bytes, filename: str, content_type: str | None) -> dict[str, Any
         # The technical reason goes to the log, never to the caller (it can carry file paths and library internals).
         logger.exception("parse failed for %s", filename)
         raise HTTPException(status_code=400, detail="The file could not be processed.") from exc
-    return {"text": text, "filename": filename, "size": len(data), **assess_extraction(filename, text, failed)}
+    ocr = None
+    if _needs_ocr(handler, filename, text):
+        ocr = _try_ocr(filename, data)
+        if ocr is not None and ocr.text.strip():
+            text, failed = ocr.text, False
+        else:
+            ocr = None
+    return {"text": text, "filename": filename, "size": len(data), **assess_extraction(filename, text, failed, ocr)}

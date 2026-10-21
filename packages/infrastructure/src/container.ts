@@ -104,6 +104,7 @@ import { GoogleDriveFileReader } from "./storage/google-drive.js";
 import { GoogleSheetsReader } from "./storage/google-sheets-reader.js";
 import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credentials.js";
 import { TolerantDocumentParser } from "./parsers/document-parser.js";
+import { OcrFallbackDocumentParser } from "./parsers/ocr-fallback-parser.js";
 import { MammothDonorTemplateStructureParser } from "./parsers/donor-template-structure-parser.js";
 import { HttpDonorTemplateWorkerClient } from "./llm/donor-template-worker-client.js";
 import { FallbackTemplateExtractionService, HeuristicTemplateExtractor, LlmTemplateExtractor, TemplateExtractionQuota, TEMPLATE_EXTRACTION_OPERATION, TocTemplateExtractor } from "./llm/template-extraction/index.js";
@@ -163,7 +164,7 @@ export interface Container {
   googleDriveOAuth: GoogleDriveOAuthConnector;
   googleDriveCredentials: PrismaGoogleDriveCredentialStore;
   driveFileReader: GoogleDriveFileReader;
-  parser: TolerantDocumentParser;
+  parser: OcrFallbackDocumentParser;
   logger: ReturnType<typeof createLogger>;
   ids: UuidIdGenerator;
   clock: SystemClock;
@@ -589,7 +590,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     undefined, // R2 config: wired via env in production; see memorybank/gdrive.md
     projectWorkspace,
   );
-  const parser = new TolerantDocumentParser();
+  const parser = new OcrFallbackDocumentParser(new TolerantDocumentParser());
   const ids = new UuidIdGenerator();
   const clock = new SystemClockImpl();
   const jobQueue = createJobQueue(logger);
