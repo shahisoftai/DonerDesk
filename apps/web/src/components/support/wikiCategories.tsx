@@ -221,4 +221,3 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
   },
 ];
 
-export const MEMORYBANK_BASE = "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/memorybank/docs/support";
