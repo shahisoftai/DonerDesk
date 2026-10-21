@@ -27,3 +27,16 @@ export type UpdateRiskInput = z.infer<typeof UpdateRiskSchema>;
 
 export const CloseRiskSchema = z.object({ note: z.string().max(1000).optional() });
 export type CloseRiskInput = z.infer<typeof CloseRiskSchema>;
+
+/** A change of plan, recorded: what changed, why, and what it did to the results; optionally the activity, indicator or report it touches. */
+export const RecordAdaptationSchema = z.object({
+  recordedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Write the day as YYYY-MM-DD"),
+  whatChanged: z.string().trim().min(1).max(500),
+  why: z.string().trim().min(1).max(1000),
+  effectOnResults: z.string().trim().max(1000).optional(),
+  plannedActivityId: z.string().optional(),
+  indicatorId: z.string().optional(),
+  reportingPeriodId: z.string().optional(),
+});
+export type RecordAdaptationInput = z.infer<typeof RecordAdaptationSchema>;
+export const UpdateAdaptationSchema = RecordAdaptationSchema.partial();

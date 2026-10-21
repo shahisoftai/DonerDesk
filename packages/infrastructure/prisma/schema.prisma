@@ -1905,3 +1905,24 @@ model DonorIndicatorMapping {
   @@unique([templateId, requirementId])
   @@index([tenantId])
 }
+
+/// A change to what the project planned or does: what changed, why, and what it did to the results. Pointers are plain ids so a
+/// removed activity or indicator never blocks the record.
+model ProjectAdaptation {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  recordedOn        DateTime @db.Date
+  whatChanged       String
+  why               String
+  effectOnResults   String?
+  plannedActivityId String?
+  indicatorId       String?
+  reportingPeriodId String?
+  recordedById      String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([projectId, recordedOn])
+}

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { managementReportCsv, rollupTable, toCsv } from "@donordesk/domain";
-import { SetEntryDueDaysSchema, CloseRiskSchema, CreateRiskSchema, UpdateRiskSchema, UpdateNotificationPreferencesSchema, CompleteTaskSchema, CreateTaskSchema, ListAssignmentsQuerySchema, SetOwnerSchema } from "@donordesk/contracts";
+import { RecordAdaptationSchema, UpdateAdaptationSchema, SetEntryDueDaysSchema, CloseRiskSchema, CreateRiskSchema, UpdateRiskSchema, UpdateNotificationPreferencesSchema, CompleteTaskSchema, CreateTaskSchema, ListAssignmentsQuerySchema, SetOwnerSchema } from "@donordesk/contracts";
 
 /**
  * Requests, the assignment queue, the team view and the three "Lead" pickers. Thin: validate, call one handler, throw its error.
@@ -150,6 +150,27 @@ export async function registerTaskRoutes(app: FastifyInstance) {
 
   // Problems and risks: a short list on the project Overview. Who may change one is decided in the handler (the person
   // handling it, the one who raised it, or a manager), so only the list and raising are in the permission table.
+  // Changes of plan, kept as records: what changed, why, and what it did to the results.
+  app.get("/v1/projects/:projectId/adaptations", async (req) => {
+    const r = await req.container.handlers.listAdaptations.handle({ tenant: req.tenant, requestId: req.id }, (req.params as { projectId: string }).projectId);
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.post("/v1/projects/:projectId/adaptations", async (req) => {
+    const body = RecordAdaptationSchema.parse(req.body);
+    const r = await req.container.handlers.recordAdaptation.handle({ tenant: req.tenant, requestId: req.id }, (req.params as { projectId: string }).projectId, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/adaptations/:id", async (req) => {
+    const body = UpdateAdaptationSchema.parse(req.body);
+    const r = await req.container.handlers.updateAdaptation.handle({ tenant: req.tenant, requestId: req.id }, (req.params as { id: string }).id, body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
   app.get("/v1/projects/:projectId/risks", async (req) => {
     const r = await req.container.handlers.listRisks.handle({ tenant: req.tenant, requestId: req.id }, param(req, "projectId"));
     if (!r.ok) throw r.error;

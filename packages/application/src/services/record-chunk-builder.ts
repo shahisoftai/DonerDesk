@@ -1,4 +1,4 @@
-import { planDeliverySentences, redactForLlm, resolvePiiPolicy, type FinanceSummaryView, type PlanDeliverySummary, type PiiPolicy, type ReportScope, type Result, type TenantId, type VerifiedFinding } from "@donordesk/domain";
+import { adaptationSentence, planDeliverySentences, redactForLlm, toPlainDate, resolvePiiPolicy, type FinanceSummaryView, type PlanDeliverySummary, type PiiPolicy, type ReportScope, type Result, type TenantId, type VerifiedFinding } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
 import type { IRecordChunkBuilder, IReportingPeriodRepository, RecordChunk } from "../ports/reporting.js";
 import type { IProjectRepository } from "../ports/projects.js";
@@ -6,6 +6,7 @@ import type { IActivityUpdateRepository } from "../ports/activities.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../ports/logframe.js";
 import type { IEvidenceRepository } from "../ports/evidence.js";
 import type { IPlanDelivery } from "./plan-delivery-service.js";
+import type { IAdaptationRepository } from "../ports/adaptations.js";
 import { resolveGenerationActivities } from "./period-activities.js";
 import { taggedEvidenceIds } from "./period-evidence.js";
 
@@ -218,6 +219,11 @@ export function recordChunksFromPlan(summary: PlanDeliverySummary | undefined): 
   return planDeliverySentences(summary).map((text, i) => ({ chunkId: `record:plan:${i}`, label: "The work plan for this period", text }));
 }
 
+/** Pure. The adaptations recorded for the period, as statements a claim about a change of plan can be supported by (never cited as evidence). */
+export function recordChunksFromAdaptations(list: ReadonlyArray<Parameters<typeof adaptationSentence>[0]>): RecordChunk[] {
+  return list.map((a, i) => ({ chunkId: `record:adaptation:${i}`, label: "A recorded change of plan", text: adaptationSentence(a) }));
+}
+
 export function recordChunksFromFindings(findings: ReadonlyArray<VerifiedFinding>): RecordChunk[] {
   const chunks: RecordChunk[] = [];
   const push = (code: string, i: number, label: string, text: string): void => {
@@ -332,6 +338,8 @@ export class RecordChunkBuilder implements IRecordChunkBuilder {
     private readonly evidenceFiles?: IEvidenceRepository,
     /** Absent: the work plan is not a record (a project without a plan reports exactly as before). */
     private readonly plan?: IPlanDelivery,
+    /** Absent: changes of plan are not a record (a project without any reports exactly as before). */
+    private readonly adaptations?: IAdaptationRepository,
   ) {}
 
   async evidenceIds(input: { tenantId: TenantId; projectId: string; reportingPeriodId: string }): Promise<Result<string[], DomainError>> {
@@ -368,6 +376,10 @@ export class RecordChunkBuilder implements IRecordChunkBuilder {
 
     const planned = this.plan ? await this.plan.forPeriod({ tenantId: input.tenantId, projectId: input.projectId, start: period.duration.start, end: period.duration.end }) : undefined;
 
+    const adapted = this.adaptations
+      ? await this.adaptations.findInRange(input.projectId, toPlainDate(period.duration.start)!, toPlainDate(period.duration.end)!, input.tenantId)
+      : undefined;
+
     return {
       ok: true,
       value: [...buildRecordChunks({
@@ -377,7 +389,7 @@ export class RecordChunkBuilder implements IRecordChunkBuilder {
         activities: activities.value,
         indicatorDefinitions: indicators.value.map((i) => ({ code: i.code, name: i.name, meansOfVerification: i.meansOfVerification })),
         indicatorUpdates: updates.value.map((u) => ({ indicatorCode: codeById.get(u.indicatorId) ?? u.indicatorId, comments: u.comments, dataSource: u.dataSource })),
-      }), ...(planned?.ok ? recordChunksFromPlan(planned.value) : [])],
+      }), ...(planned?.ok ? recordChunksFromPlan(planned.value) : []), ...(adapted?.ok ? recordChunksFromAdaptations(adapted.value) : [])],
     };
   }
 }

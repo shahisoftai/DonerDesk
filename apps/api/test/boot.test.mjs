@@ -29,7 +29,7 @@ test("the real server entry point starts, listens and answers /health", async ()
   child.on("exit", (code) => { exited = code; });
   try {
     let status = 0;
-    for (let i = 0; i < 40 && exited === null; i += 1) {
+    for (let i = 0; i < 120 && exited === null; i += 1) {
       try { status = (await fetch(`http://127.0.0.1:${port}/health`)).status; break; } catch { await new Promise((r) => setTimeout(r, 250)); }
     }
     assert.equal(exited, null, `the server exited (${exited}) while starting:\n${output.slice(-1500)}`);

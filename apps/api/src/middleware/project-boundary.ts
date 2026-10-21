@@ -17,7 +17,7 @@ export type ScopeLookup =
 
 export type EntityName =
   | "reportingPeriod" | "reportDraft" | "reportSection" | "reportClaim" | "evidenceFile"
-  | "activityUpdate" | "indicator" | "indicatorUpdate" | "plannedActivity";
+  | "activityUpdate" | "indicator" | "indicatorUpdate" | "plannedActivity" | "projectAdaptation";
 
 /** The first path segment after /v1/ that names a record, and what it names. */
 export const ENTITY_ROUTES: Readonly<Record<string, EntityName>> = {
@@ -30,6 +30,7 @@ export const ENTITY_ROUTES: Readonly<Record<string, EntityName>> = {
   indicators: "indicator",
   "indicator-updates": "indicatorUpdate",
   "work-plan": "plannedActivity",
+  adaptations: "projectAdaptation",
 };
 
 /** Words that sit where an id would in routes that act on no single record. */
@@ -61,6 +62,7 @@ export async function projectOf(prisma: Record<string, unknown>, scope: ScopeLoo
     case "evidenceFile": return (await table("evidenceFile").findFirst({ where: { id: scope.id }, select: { projectId: true } }))?.projectId ?? null;
     case "activityUpdate": return (await table("activityUpdate").findFirst({ where: { id: scope.id }, select: { projectId: true } }))?.projectId ?? null;
     case "indicator": return (await table("indicator").findFirst({ where: { id: scope.id }, select: { projectId: true } }))?.projectId ?? null;
+    case "projectAdaptation": return (await table("projectAdaptation").findFirst({ where: { id: scope.id }, select: { projectId: true } }))?.projectId ?? null;
     case "plannedActivity": return (await table("plannedActivity").findFirst({ where: { id: scope.id }, select: { projectId: true } }))?.projectId ?? null;
     case "reportSection": {
       const section = await table("reportSection").findFirst({ where: { id: scope.id }, select: { reportDraftId: true } });

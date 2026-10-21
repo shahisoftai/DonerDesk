@@ -1685,3 +1685,20 @@ export const ManagementReportSchema = z.object({
   projectTitle: z.string(),
   sections: z.array(z.object({ title: z.string(), summary: z.string(), headers: z.array(z.string()), rows: z.array(z.array(z.string())) })),
 });
+
+/** The adaptation log: each change of plan with what changed, why, and its effect on the results. */
+export const AdaptationsResponseSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      recordedOn: z.string(),
+      whatChanged: z.string(),
+      why: z.string(),
+      effectOnResults: z.string().optional(),
+      plannedActivityId: z.string().optional(),
+      indicatorId: z.string().optional(),
+      reportingPeriodId: z.string().optional(),
+      recordedById: z.string(),
+    }),
+  ),
+});
