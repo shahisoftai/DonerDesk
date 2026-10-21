@@ -94,8 +94,17 @@ done < <(find "${BACKUP_DIR}" -maxdepth 1 -mindepth 1 -type d -name '20*' -mtime
 
 if [[ -n "${OFFHOST_TARGET}" ]]; then
   echo "Pushing off-host to ${OFFHOST_TARGET}..."
-  rsync -az --delete "${STAMP}/" "${OFFHOST_TARGET}/" \
-    || cleanup_failed "the off-host push failed"
+  # "rclone:<remote>:<path>" (for example rclone:gdrive:donordesk-backups) copies to any rclone remote, Google Drive included.
+  # Anything else is an rsync destination. Remote copies older than the retention window are pruned after a successful push.
+  if [[ "${OFFHOST_TARGET}" == rclone:* ]]; then
+    rclone copy "${STAMP}" "${OFFHOST_TARGET#rclone:}/${DATE}" \
+      || cleanup_failed "the off-host push failed"
+    rclone delete "${OFFHOST_TARGET#rclone:}" --min-age "${RETENTION_DAYS}d" --rmdirs \
+      || echo "WARNING: pruning old off-host copies failed; the new copy is in place." >&2
+  else
+    rsync -az --delete "${STAMP}/" "${OFFHOST_TARGET}/" \
+      || cleanup_failed "the off-host push failed"
+  fi
 else
   echo "NOTE: OFFHOST_TARGET is not set; the backup stayed on this host."
 fi
