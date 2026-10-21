@@ -95,6 +95,8 @@ export interface EvidenceFileProps {
   verificationStatus: EvidenceVerificationStatus;
   confidentialityLevel: ConfidentialityLevel;
   notes?: string;
+  /** Why a reviewer asked for a correction or rejected the file; cleared when it is verified or brought back. */
+  reviewNote?: string;
   aiSummary?: string;
   extractedText?: string;
   /** Whether the file's words were read; undefined = not attempted yet. */
@@ -200,6 +202,7 @@ export class EvidenceFile extends Entity<string> {
   get verificationStatus(): EvidenceVerificationStatus { return this.props.verificationStatus; }
   get confidentialityLevel(): ConfidentialityLevel { return this.props.confidentialityLevel; }
   get notes(): string | undefined { return this.props.notes; }
+  get reviewNote(): string | undefined { return this.props.reviewNote; }
   get aiSummary(): string | undefined { return this.props.aiSummary; }
   get extractedText(): string | undefined { return this.props.extractedText; }
   get textExtractionStatus(): TextExtractionStatus | undefined { return this.props.textExtractionStatus; }
@@ -271,6 +274,13 @@ export class EvidenceFile extends Entity<string> {
 
   archive(): void {
     this.props.verificationStatus = "ARCHIVED";
+    this.touch();
+  }
+
+  /** Sets the state a reviewer moved the file to (the rules live in `checkEvidenceReview`) and the reason, if any. */
+  applyReview(to: EvidenceVerificationStatus, note: string | undefined): void {
+    this.props.verificationStatus = to;
+    this.props.reviewNote = note && note.trim() !== "" ? note.trim() : undefined;
     this.touch();
   }
 

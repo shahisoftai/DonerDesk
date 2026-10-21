@@ -602,6 +602,8 @@ export const EvidenceDetailSchema = z.object({
   /** EXTRACTED, EMPTY, FAILED or UNSUPPORTED; absent while reading has not been attempted. */
   textExtractionStatus: z.string().optional(),
   textExtractionNote: z.string().optional(),
+  /** Why a reviewer asked for a correction or rejected the file. */
+  reviewNote: z.string().optional(),
   aiSuggestedTags: z
     .array(
       z.object({

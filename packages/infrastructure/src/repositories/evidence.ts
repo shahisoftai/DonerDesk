@@ -11,7 +11,7 @@ import {
   type SuggestedTag,
   type StorageProvider,
 } from "@donordesk/domain";
-import type { IEvidenceRepository, EvidenceFilter, EvidenceListResult } from "@donordesk/application";
+import type { IEvidenceRepository, IEvidenceUseGuard, EvidenceFilter, EvidenceListResult } from "@donordesk/application";
 
 function ok<T>(value: T): Result<T, DomainError> {
   return { ok: true, value };
@@ -46,6 +46,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         verificationStatus: e.verificationStatus,
         confidentialityLevel: e.confidentialityLevel,
         notes: e.notes,
+        reviewNote: e.reviewNote ?? null,
         aiSummary: e.aiSummary,
         extractedText: e.extractedText,
         textExtractionStatus: e.textExtractionStatus ?? null,
@@ -72,6 +73,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         verificationStatus: e.verificationStatus,
         confidentialityLevel: e.confidentialityLevel,
         notes: e.notes,
+        reviewNote: e.reviewNote ?? null,
         aiSummary: e.aiSummary,
         // Persisted on update too: the text callback arrives after the row exists, and it used to be dropped here.
         extractedText: e.extractedText ?? null,
@@ -189,6 +191,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
     verificationStatus: string;
     confidentialityLevel: string;
     notes: string | null;
+    reviewNote: string | null;
     aiSummary: string | null;
     extractedText: string | null;
     textExtractionStatus: string | null;
@@ -223,6 +226,7 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         verificationStatus: row.verificationStatus as EvidenceVerificationStatus,
         confidentialityLevel: row.confidentialityLevel as ConfidentialityLevel,
         notes: row.notes ?? undefined,
+        reviewNote: row.reviewNote ?? undefined,
         aiSummary: row.aiSummary ?? undefined,
         extractedText: row.extractedText ?? undefined,
         textExtractionStatus: isTextExtractionStatus(row.textExtractionStatus) ? row.textExtractionStatus : undefined,
@@ -231,5 +235,22 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         sensitivityWarning: row.sensitivityWarning ?? undefined,
       },
     });
+  }
+}
+
+/** An approved, exported or sent report that cites a file in a section's sources. */
+export class PrismaEvidenceUseGuard implements IEvidenceUseGuard {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async reportUsing(evidenceId: string, tenantId: TenantId): Promise<Result<{ reportTitle: string } | null, DomainError>> {
+    const section = await this.prisma.reportSection.findFirst({
+      where: {
+        tenantId: tenantId.toString(),
+        sourceReferencesJson: { contains: evidenceId },
+        reportDraft: { status: { in: ["APPROVED", "EXPORTED", "SUBMITTED"] } },
+      },
+      select: { reportDraft: { select: { title: true } } },
+    });
+    return ok(section ? { reportTitle: section.reportDraft.title } : null);
   }
 }

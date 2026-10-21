@@ -61,3 +61,8 @@ export interface IEvidenceTagger {
 export interface IDocumentParser {
   parse(input: { buffer: Buffer; fileType: string; fileName: string }): Promise<{ text: string; metadata?: Record<string, unknown> }>;
 }
+
+/** Which approved or sent report relies on a piece of evidence, so taking it out of use is refused naming that report. */
+export interface IEvidenceUseGuard {
+  reportUsing(evidenceId: string, tenantId: TenantId): Promise<Result<{ reportTitle: string } | null>>;
+}

@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, statusAfterRepoint } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -34,7 +34,10 @@ export class SetEvidencePeriodHandler {
       }
     }
 
+    const wasVerified = evidence.verificationStatus === "VERIFIED" && evidence.reportingPeriodId !== (input.reportingPeriodId ?? undefined);
     evidence.updateMetadata({ reportingPeriodId: input.reportingPeriodId ?? undefined });
+    // Pointing a verified file at another period is a change someone must look at again, not a silent edit.
+    if (wasVerified) evidence.applyReview(statusAfterRepoint("VERIFIED"), undefined);
     const saved = await this.evidence.update(evidence);
     if (!saved.ok) return saved;
 

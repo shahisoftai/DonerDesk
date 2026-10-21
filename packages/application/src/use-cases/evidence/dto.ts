@@ -24,6 +24,8 @@ export interface EvidenceDto {
   verificationStatus: string;
   confidentialityLevel: string;
   notes?: string;
+  /** Why a reviewer asked for a correction or rejected the file. */
+  reviewNote?: string;
   aiSummary?: string;
   extractedText?: string;
   /** Whether the file's words were read: EXTRACTED, EMPTY, FAILED, UNSUPPORTED; absent while not attempted. */
@@ -58,6 +60,7 @@ export function toEvidenceDto(e: EvidenceFile): EvidenceDto {
     verificationStatus: e.verificationStatus,
     confidentialityLevel: e.confidentialityLevel,
     notes: e.notes,
+    reviewNote: e.reviewNote,
     aiSummary: e.aiSummary,
     extractedText: e.extractedText,
     textExtractionStatus: e.textExtractionStatus,

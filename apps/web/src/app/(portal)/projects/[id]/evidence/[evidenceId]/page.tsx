@@ -168,6 +168,7 @@ export default async function EvidenceDetailPage({
           evidenceId={evidence.id}
           verificationStatus={evidence.verificationStatus}
           sensitive={sensitive}
+          reviewNote={evidence.reviewNote}
         />
       )}
 

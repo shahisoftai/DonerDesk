@@ -558,6 +558,7 @@ model EvidenceFile {
   extractedText       String?   @db.Text
   textExtractionStatus String? // EXTRACTED | EMPTY | FAILED | UNSUPPORTED; null = not attempted yet
   textExtractionNote  String?
+  reviewNote          String? // why a reviewer asked for a correction or rejected the file
   aiSuggestedTagsJson String   @default("[]")
   sensitivityWarning  String?
   createdAt           DateTime @default(now())

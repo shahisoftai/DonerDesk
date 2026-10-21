@@ -96,6 +96,7 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/evidence\/[^/]+\/accept-tags$/, permission: "evidence.upload" },
   { method: "POST", route: /^\/v1\/evidence\/[^/]+\/verify$/, permission: "evidence.verify" },
   { method: "POST", route: /^\/v1\/evidence\/bulk-verify$/, permission: "evidence.verify" },
+  { method: "POST", route: /^\/v1\/evidence\/[^/]+\/review$/, permission: "evidence.verify" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/work-plan$/, permission: "project.view" },
   { method: "PUT", route: /^\/v1\/projects\/[^/]+\/work-planning$/, permission: "org.manage" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/team-work$/, permission: "team.view-work" },
