@@ -1,6 +1,6 @@
 import type { Result } from "@donordesk/domain";
 import { DomainError, Email, minutesUntil } from "@donordesk/domain";
-import type { IUserRepository, IAuthProvider } from "../../ports/identity.js";
+import type { IUserRepository, IAuthProvider, IMfaService } from "../../ports/identity.js";
 import type { IAuditLogger } from "../../ports/core.js";
 
 export interface LoginCommand {
@@ -8,14 +8,21 @@ export interface LoginCommand {
   password: string;
 }
 
+/** A signed-in person's session, or — when two-step sign-in is on — the challenge to answer with a code. */
+export type LoginOutcome =
+  | { userId: string; tenantId: string; token: string; role: string; name: string }
+  | { mfaRequired: true; challenge: string };
+
 export class LoginHandler {
   constructor(
     private readonly users: IUserRepository,
     private readonly auth: IAuthProvider,
     private readonly audit: IAuditLogger,
+    /** With this, a person who turned on two-step sign-in is asked for a code after the password. */
+    private readonly mfa?: IMfaService,
   ) {}
 
-  async handle(cmd: LoginCommand): Promise<Result<{ userId: string; tenantId: string; token: string; role: string; name: string }, DomainError>> {
+  async handle(cmd: LoginCommand): Promise<Result<LoginOutcome, DomainError>> {
     let email: Email;
     try {
       email = Email.create(cmd.email);
@@ -52,6 +59,12 @@ export class LoginHandler {
       return { ok: false, error: DomainError.forbidden("Invalid credentials") };
     }
 
+    // The password was right. With two-step sign-in on, that is not yet a sign-in: hand back a short-lived challenge and
+    // finish in `CompleteMfaLoginHandler`. Nothing is recorded as a login until the code is right.
+    if (user.mfaEnabled && this.mfa) {
+      return { ok: true, value: { mfaRequired: true, challenge: this.mfa.issueChallenge(user.id.toString(), user.tenantId.toString(), now) } };
+    }
+
     user.recordLogin();
     await this.users.update(user);
 
@@ -70,6 +83,7 @@ export class LoginHandler {
         role: user.role,
         name: user.name,
         email: user.email.toString(),
+        ...(user.external ? { ext: true } : {}),
       },
       60 * 60 * 24 * 7,
     );

@@ -4,6 +4,8 @@ export type SessionClaims = {
   role?: string;
   name?: string;
   email?: string;
+  /** An outside partner: limited to the projects they were given. */
+  ext?: boolean;
   exp?: number;
 };
 

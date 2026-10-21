@@ -511,7 +511,7 @@ The brief's own ordering was: freeze feature expansion, verify P0 and P1, close 
 - ☐ **Wire the contact-sales form to real email** and decide the trial flag (MK-10) — the two highest-value conversion moments are silently disabled.
 - ☐ **Move the support articles into the app tree** and give them freshness metadata (UX-10).
 - ✅ **Add an organisation-wide data export** (SE-13, built in batch 3). ☐ **A dashboard for the portfolio** (PM-08) is not built.
-- ☐ **Require evidence before an indicator value is VERIFIED**, and add range and plausibility validation at entry (ME-05, ME-09) — on one shared validator for all three entry paths.
+- ◐ **Require evidence before an indicator value is VERIFIED** (built 2026-10-21, uncommitted: `verification-evidence-policy.ts`, `indicator-value-rules.ts`, migration `20261022110000`, profile toggle; plausibility rules in the domain; not yet committed or deployed), and add range and plausibility validation at entry (ME-05, ME-09) — on one shared validator for all three entry paths.
 - ☐ **Add a periodic target schedule** so a monthly value is judged against the target due that period (ME-02) and a variance figure is computed (ME-11).
 
 ### P2 — broader programme capability
@@ -853,7 +853,7 @@ Built, tested and committed; **deployed only once §14.1 records it**.
 | H-9 | ✅ built | `VARIANCE_UNEXPLAINED` checklist item: a closing report whose result is >20% unfavourably off target, until the story explains it |
 | H-10 | ✅ built | The pinned template's required annexes are a `TEMPLATE` layer in the resolver; `/settings/requirement-packs` authoring screen. Compliance statements stay checklist items |
 | H-11 | ✅ built | Admin whole-organisation ZIP (NDJSON per table, optional evidence files); every tenant table is exported or excluded with a reason (tested) |
-| H-12 | ◐ partly | 12-char policy at sign-up and invitation, durable lockout, role/status re-checked per request. **MFA is not built** |
+| H-12 | ◐ partly | 12-char policy at sign-up and invitation, durable lockout, role/status re-checked per request. **MFA is built but uncommitted** (TOTP: `totp-mfa-service.ts`, `mfa-handlers.ts`, `MfaPanel.tsx`, migration `20261022100000_user_mfa`); org export must omit its secret columns first |
 | H-13 | decided | Closed by C-5 for the donor seal; section approval is an assurance step. The second-approver rule stays opt-in because it blocks one-person teams |
 | H-14 | ✅ built | Project membership is an access boundary for project, entity and body-borne project ids (multipart uploads checked in the route) |
 | H-15 | ✅ built | Outside partners: `User.external`, FIELD_OFFICER/VIEWER only, named projects, strict route allow-list, files only from their projects. No new role. The web shows the full menu; screens outside the allow-list answer "not part of your account" |

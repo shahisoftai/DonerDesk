@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { UpsertReportingProfileSchema, AcknowledgeProjectSetupSchema, SetStandingStatementSchema, SetRequireSecondApproverSchema } from "@donordesk/contracts";
+import { UpsertReportingProfileSchema, AcknowledgeProjectSetupSchema, SetStandingStatementSchema, SetRequireSecondApproverSchema, SetRequireEvidenceForVerificationSchema } from "@donordesk/contracts";
 
 /**
  * Feature 18 project setup + reporting profile routes. Registered inside the
@@ -11,6 +11,15 @@ export async function registerProjectSetupRoutes(app: FastifyInstance) {
     const body = SetStandingStatementSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.setStandingStatement.handle(ctx, projectId, body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.put("/v1/projects/:projectId/evidence-for-verification", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const body = SetRequireEvidenceForVerificationSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.setRequireEvidenceForVerification.handle(ctx, projectId, body.value);
     if (!r.ok) throw r.error;
     return { ok: true };
   });

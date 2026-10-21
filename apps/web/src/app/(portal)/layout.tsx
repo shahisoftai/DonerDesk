@@ -45,20 +45,24 @@ export default async function PortalLayout({ children }: { children: ReactNode }
     read: n.read ?? false,
   }));
 
-  const navItems: Array<{ href: string; label: string }> = [{ href: "/dashboard", label: "Home" }, { href: "/my-work", label: "My Work" }];
-  navItems.push({ href: "/projects", label: "Projects" });
-  navItems.push({ href: "/reports", label: "Reports" });
-  navItems.push({ href: "/downloads", label: "Download Center" });
-  navItems.push({ href: "/evidence", label: "Evidence" });
-  navItems.push({ href: "/compliance", label: "Compliance" });
-  if (hasCapability(ctx, "team.manage") || hasCapability(ctx, "team.invite")) {
+  // An outside partner sees only their projects: every other page would answer "not part of your account".
+  const navItems: Array<{ href: string; label: string }> = ctx.external ? [{ href: "/projects", label: "My projects" }] : [{ href: "/dashboard", label: "Home" }, { href: "/my-work", label: "My Work" }];
+  if (!ctx.external) navItems.push({ href: "/projects", label: "Projects" });
+  if (!ctx.external) {
+    navItems.push({ href: "/reports", label: "Reports" });
+    navItems.push({ href: "/downloads", label: "Download Center" });
+    navItems.push({ href: "/evidence", label: "Evidence" });
+    navItems.push({ href: "/compliance", label: "Compliance" });
+  }
+  if (!ctx.external && (hasCapability(ctx, "team.manage") || hasCapability(ctx, "team.invite"))) {
     navItems.push({ href: "/team", label: "Team" });
   }
   if (
+    !ctx.external && (
     hasCapability(ctx, "project.create") ||
     hasCapability(ctx, "audit.view") ||
     hasCapability(ctx, "settings.view") ||
-    hasCapability(ctx, "org.manage")
+    hasCapability(ctx, "org.manage"))
   ) {
     navItems.push({ href: "/settings", label: "Settings" });
   }

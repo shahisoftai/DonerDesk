@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 
 export default function LoginPage() {
-  const [state, formAction] = useFormState<{ error: string | null; fields?: Record<string, string[]> }, FormData>(
+  const [state, formAction] = useFormState<{ error: string | null; fields?: Record<string, string[]>; mfaChallenge?: string }, FormData>(
     loginAction,
     { error: null },
   );
@@ -54,12 +54,26 @@ export default function LoginPage() {
           <InlineAlert tone="danger" title={oauthError} />
         )}
         <input type="hidden" name="next" value={next} />
-        <Field label="Email" htmlFor="email" error={fields.email?.[0]}>
-          <Input id="email" name="email" type="email" autoComplete="email" invalid={Boolean(fields.email)} required />
-        </Field>
-        <Field label="Password" htmlFor="password" error={fields.password?.[0]}>
-          <Input id="password" name="password" type="password" autoComplete="current-password" invalid={Boolean(fields.password)} required />
-        </Field>
+        {state?.mfaChallenge ? (
+          <>
+            <input type="hidden" name="challenge" value={state.mfaChallenge} />
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Your password is right. Enter the 6-digit code from your authenticator app to finish signing in. If you have lost your phone, enter one of your recovery codes instead.
+            </p>
+            <Field label="Code" htmlFor="code" error={fields.code?.[0]}>
+              <Input id="code" name="code" inputMode="text" autoComplete="one-time-code" autoFocus invalid={Boolean(fields.code)} required />
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field label="Email" htmlFor="email" error={fields.email?.[0]}>
+              <Input id="email" name="email" type="email" autoComplete="email" invalid={Boolean(fields.email)} required />
+            </Field>
+            <Field label="Password" htmlFor="password" error={fields.password?.[0]}>
+              <Input id="password" name="password" type="password" autoComplete="current-password" invalid={Boolean(fields.password)} required />
+            </Field>
+          </>
+        )}
         {state?.error && (
           <InlineAlert tone="danger" title={state.error} />
         )}

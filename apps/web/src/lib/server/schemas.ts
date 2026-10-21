@@ -155,6 +155,7 @@ export const TeamMemberSchema = z.object({
   role: z.string(),
   status: z.string(),
   external: z.boolean().default(false),
+  mfaEnabled: z.boolean().default(false),
 });
 
 export const TeamResponseSchema = z.object({ items: z.array(TeamMemberSchema) });
@@ -1092,6 +1093,7 @@ export const ReportingProfileSchema = z.object({
   /** The template explicitly made the default for each report type. */
   defaultTemplateByType: z.record(z.string()).default({}),
   requireSecondApprover: z.boolean().default(false),
+  requireEvidenceForVerification: z.boolean().default(false),
   standingStatements: z.record(z.string()).default({}),
   version: z.number(),
   createdAt: z.string(),
@@ -1623,3 +1625,7 @@ export const FundingResponseSchema = z.object({
   unplacedProjects: z.array(FundedProjectSchema),
 });
 export type FundingResponse = z.infer<typeof FundingResponseSchema>;
+
+export const MfaStatusSchema = z.object({ enabled: z.boolean(), enabledAt: z.string().nullable(), recoveryCodesLeft: z.number() });
+export const MfaSetupSchema = z.object({ secret: z.string(), otpauthUri: z.string() });
+export const MfaEnabledSchema = z.object({ recoveryCodes: z.array(z.string()) });

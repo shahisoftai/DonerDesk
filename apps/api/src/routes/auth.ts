@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { SignUpSchema, LoginSchema, GoogleSignInSchema, ChangePasswordSchema, RequestPasswordResetSchema, ConfirmPasswordResetSchema, PasswordResetValidationResponseSchema, PasswordResetAcceptedResponseSchema, AcceptInvitationSchema, AcceptInvitationResponseSchema, InvitationPreviewSchema } from "@donordesk/contracts";
+import { SignUpSchema, LoginSchema, GoogleSignInSchema, ChangePasswordSchema, RequestPasswordResetSchema, ConfirmPasswordResetSchema, PasswordResetValidationResponseSchema, PasswordResetAcceptedResponseSchema, AcceptInvitationSchema, AcceptInvitationResponseSchema, InvitationPreviewSchema, LoginMfaSchema, MfaEnableSchema, MfaDisableSchema } from "@donordesk/contracts";
 import { DomainError, PasswordResetToken } from "@donordesk/domain";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireResidencyMatch } from "../middleware/data-residency.js";
@@ -20,6 +20,46 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const result = await app.container.handlers.login.handle(body);
     if (!result.ok) throw result.error;
     return result.value;
+  });
+
+  // Second step of sign-in for people who turned on two-step sign-in: the challenge from the password step plus a code.
+  app.post("/v1/auth/login/mfa", async (req) => {
+    if (process.env.AUTH_PROVIDER === "oidc") throw DomainError.forbidden("Local login is disabled when OIDC is enabled");
+    const body = LoginMfaSchema.parse(req.body);
+    const result = await app.container.handlers.completeMfaLogin.handle(body);
+    if (!result.ok) throw result.error;
+    return result.value;
+  });
+
+  // Managing one's own two-step sign-in. With organization SSO the identity provider owns this, so it is off here.
+  const ownMfa = { preHandler: authMiddleware };
+  const ctxOf = (req: { tenant: unknown; ip: string; id: string }) => ({ tenant: req.tenant as never, ipAddress: req.ip, requestId: req.id });
+  const noSso = () => { if (process.env.AUTH_PROVIDER === "oidc") throw DomainError.forbidden("Two-step sign-in is managed by your organization's single sign-on."); };
+
+  app.get("/v1/auth/mfa", ownMfa, async (req) => {
+    const r = await req.container.handlers.getMfaStatus.handle(ctxOf(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/auth/mfa/setup", ownMfa, async (req) => {
+    noSso();
+    const r = await req.container.handlers.beginMfaEnrollment.handle(ctxOf(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/auth/mfa/enable", ownMfa, async (req) => {
+    noSso();
+    const body = MfaEnableSchema.parse(req.body);
+    const r = await req.container.handlers.enableMfa.handle(ctxOf(req), body.code);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/auth/mfa/disable", ownMfa, async (req) => {
+    noSso();
+    const body = MfaDisableSchema.parse(req.body);
+    const r = await req.container.handlers.disableMfa.handle(ctxOf(req), body);
+    if (!r.ok) throw r.error;
+    return { disabled: true };
   });
 
   app.post("/v1/auth/google", async (req) => {

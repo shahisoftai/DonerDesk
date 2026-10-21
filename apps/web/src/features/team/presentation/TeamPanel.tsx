@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { changeRoleAction, inviteUserAction } from "@/lib/actions/team";
+import { resetUserMfaAction } from "@/lib/actions/mfa";
 import { useActionState } from "@/lib/client/action-state";
 import { can, capabilitiesForRole, type Capability } from "@/lib/shared/capabilities";
 import { Badge } from "@/components/data/Badge";
@@ -210,6 +211,7 @@ export function TeamPanel({
                 <td className="px-3 py-2">
                   <Badge tone={u.status === "ACTIVE" ? "success" : u.status === "INVITED" ? "info" : "warning"}>{u.status.replace(/_/g, " ")}</Badge>
                   {u.external ? <Badge tone="neutral">Outside partner</Badge> : null}
+                  {u.mfaEnabled ? <Badge tone="info">Two-step</Badge> : null}
                 </td>
                 {canManage && (
                   <td className="px-3 py-2 text-right">
@@ -220,6 +222,19 @@ export function TeamPanel({
                     >
                       Change role
                     </button>
+                    {u.mfaEnabled && (
+                      <button
+                        type="button"
+                        className="btn-secondary ml-2 py-1 text-xs"
+                        onClick={() => {
+                          if (window.confirm(`Clear two-step sign-in for ${u.name}? They will sign in with their password and can set it up again.`)) {
+                            void actionState.run(() => resetUserMfaAction(u.id)).then((done) => { if (done) router.refresh(); });
+                          }
+                        }}
+                      >
+                        Reset two-step
+                      </button>
+                    )}
                   </td>
                 )}
               </tr>

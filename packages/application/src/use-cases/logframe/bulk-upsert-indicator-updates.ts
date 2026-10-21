@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, isPeriodLocked, periodLockedMessage, validateDisaggregation } from "@donordesk/domain";
+import { DomainError, indicatorValueProblem, isPeriodLocked, periodLockedMessage, validateDisaggregation } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorUpdateRepository, IIndicatorRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -45,6 +45,10 @@ export class BulkUpsertIndicatorUpdatesHandler {
     for (const row of input.updates) {
       const indicator = indicatorsById.get(row.indicatorId);
       if (!indicator) continue;
+      // A value that cannot be right is refused here, before any row of the sheet is written.
+      const problem =
+        indicatorValueProblem(indicator, row.periodAchievement, "period") ?? indicatorValueProblem(indicator, row.cumulativeAchievement, "cumulative");
+      if (problem) return { ok: false, error: DomainError.validation(problem) };
       if (!row.disaggregation) {
         rows.push(row);
         continue;

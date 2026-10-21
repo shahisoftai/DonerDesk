@@ -186,3 +186,14 @@ export const OrganizationProfileSchema = z.object({
   storageProvider: StorageProviderSchema.default("LOCAL"),
 });
 export type OrganizationProfileInput = z.infer<typeof OrganizationProfileSchema>;
+
+/** Second step of sign-in: the challenge from the password step plus a code from the app (six digits) or a recovery code. */
+export const LoginMfaSchema = z.object({
+  challenge: z.string().min(10).max(2000),
+  code: z.string().min(6).max(30),
+});
+export type LoginMfaInput = z.infer<typeof LoginMfaSchema>;
+
+export const MfaEnableSchema = z.object({ code: z.string().min(6).max(30) });
+export const MfaDisableSchema = z.object({ password: z.string().min(1).max(200), code: z.string().min(6).max(30) });
+

@@ -22,7 +22,7 @@ export class JwtAuthProvider implements IAuthProvider {
   }
 
   async sign(
-    payload: { sub: string; tid: string; role: Role; name: string; email: string },
+    payload: { sub: string; tid: string; role: Role; name: string; email: string; ext?: boolean },
     ttlSeconds: number,
   ): Promise<string> {
     return jwt.sign(payload, SECRET, {

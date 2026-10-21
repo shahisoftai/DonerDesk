@@ -97,6 +97,8 @@ export * from "./use-cases/templates/template-library.js";
 export * from "./use-cases/templates/parse-template-file.js";
 export * from "./use-cases/files/parse-uploaded-file.js";
 export * from "./use-cases/organization/export-organization.js";
+export * from "./services/verification-evidence-policy.js";
+export * from "./use-cases/identity/mfa-handlers.js";
 export * from "./use-cases/logframe/logframe-version-handlers.js";
 export * from "./services/logframe-versioning.js";
 export * from "./use-cases/templates/preview-template-brief.js";

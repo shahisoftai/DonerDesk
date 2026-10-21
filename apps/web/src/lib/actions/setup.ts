@@ -90,3 +90,11 @@ export async function setRequireSecondApproverAction(projectId: string, value: b
   const result = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/second-approver`, z.object({ ok: z.boolean() }), context.token, { method: "PUT", body: { value } });
   return result.ok ? { ok: true, value: undefined } : result;
 }
+
+/** Whether an indicator value needs an attached file before it can be verified. */
+export async function setRequireEvidenceForVerificationAction(projectId: string, value: boolean): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/evidence-for-verification`, z.object({ ok: z.boolean() }), context.token, { method: "PUT", body: { value } });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+

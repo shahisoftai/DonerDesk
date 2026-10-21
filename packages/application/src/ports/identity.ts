@@ -96,6 +96,22 @@ export interface AuthenticatedUser {
 export interface IAuthProvider {
   hashPassword(plain: string): Promise<string>;
   verifyPassword(plain: string, hash: string): Promise<boolean>;
-  sign(payload: { sub: string; tid: string; role: Role; name: string; email: string }, ttlSeconds: number): Promise<string>;
+  sign(payload: { sub: string; tid: string; role: Role; name: string; email: string; ext?: boolean }, ttlSeconds: number): Promise<string>;
   verify(token: string): Promise<AuthenticatedUser | null>;
+}
+
+/** Time-based one-time passwords for tenant users (see `TotpMfaService`). The application never touches the cryptography. */
+export interface IMfaService {
+  /** A new shared secret, base32, for an authenticator app. */
+  newSecret(): string;
+  encrypt(plain: string): string;
+  decrypt(encrypted: string): string;
+  /** The time step the code matches (within one step of `now`), or null when it matches none. */
+  matchingStep(secret: string, code: string, now: Date): number | null;
+  otpauthUri(secret: string, account: string, issuer: string): string;
+  newRecoveryCodes(): { codes: string[]; hashes: string[] };
+  hashRecoveryCode(code: string): string;
+  /** Proof that the password step succeeded: short-lived, signed, and not a session. */
+  issueChallenge(userId: string, tenantId: string, now: Date): string;
+  readChallenge(token: string, now: Date): { userId: string; tenantId: string } | null;
 }

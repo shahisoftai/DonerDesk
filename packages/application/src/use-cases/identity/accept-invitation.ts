@@ -162,7 +162,7 @@ export class AcceptInvitationHandler {
     });
 
     const token = await this.auth.sign(
-      { sub: userId, tid: tenantId.toString(), role: invitation.role, name: cmd.name, email: invitation.email.toString() },
+      { sub: userId, tid: tenantId.toString(), role: invitation.role, name: cmd.name, email: invitation.email.toString(), ...(invitation.external ? { ext: true } : {}) },
       60 * 60 * 24 * 7,
     );
 

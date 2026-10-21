@@ -7,6 +7,7 @@ import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IAuditLogger } from "../../ports/core.js";
 import type { VerifyPeriodIndicatorUpdatesInput } from "@donordesk/contracts";
 import { periodIndicatorScope, inIndicatorScope } from "../../services/period-activities.js";
+import { EVIDENCE_REQUIRED_MESSAGE, type VerificationEvidencePolicy } from "../../services/verification-evidence-policy.js";
 import { reviewIndicatorUpdate } from "./review-indicator-update.js";
 
 export interface VerifyPeriodOutcome {
@@ -27,6 +28,8 @@ export class VerifyPeriodIndicatorUpdatesHandler {
     private readonly periods: IReportingPeriodRepository,
     private readonly activities: IActivityUpdateRepository,
     private readonly audit: IAuditLogger,
+    /** With this, a project that requires evidence for verified values is held to it, row by row. */
+    private readonly evidencePolicy?: VerificationEvidencePolicy,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: VerifyPeriodIndicatorUpdatesInput): Promise<Result<VerifyPeriodOutcome, DomainError>> {
@@ -51,6 +54,7 @@ export class VerifyPeriodIndicatorUpdatesHandler {
     if (!indicatorsResult.ok) return indicatorsResult;
     const codeById = new Map(indicatorsResult.value.map((i) => [i.id, i.code]));
 
+    const evidenceRequired = this.evidencePolicy ? await this.evidencePolicy.requiredForProject(period.projectId, ctx.tenant.tenantId) : false;
     let verified = 0;
     const failed: VerifyPeriodOutcome["failed"] = [];
     for (const target of targets) {
@@ -58,6 +62,7 @@ export class VerifyPeriodIndicatorUpdatesHandler {
         eventType: "logframe.indicator.verified",
         systemNote: "Verified with 'verify all'",
         apply: (update, reviewerId) => {
+          if (evidenceRequired && update.attachedEvidenceIds.length === 0) throw DomainError.validation(EVIDENCE_REQUIRED_MESSAGE);
           update.submit();
           update.verify(reviewerId);
         },

@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, isPeriodLocked, periodLockedMessage, validateDisaggregation } from "@donordesk/domain";
+import { DomainError, indicatorValueProblem, isPeriodLocked, periodLockedMessage, validateDisaggregation } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -34,6 +34,9 @@ export class CreateIndicatorUpdateHandler {
     if (!indicator.value || indicator.value.projectId !== period.value.projectId) {
       return { ok: false, error: DomainError.notFound("Indicator", input.indicatorId) };
     }
+    const problem =
+      indicatorValueProblem(indicator.value, input.periodAchievement, "period") ?? indicatorValueProblem(indicator.value, input.cumulativeAchievement, "cumulative");
+    if (problem) return { ok: false, error: DomainError.validation(problem) };
     let row = input;
     if (input.disaggregation) {
       const checked = validateDisaggregation(input.disaggregation, {

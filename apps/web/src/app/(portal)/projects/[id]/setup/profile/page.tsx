@@ -5,6 +5,7 @@ import { loadReportingProfileAction } from "@/lib/actions/setup";
 import { InlineError } from "@/components/feedback/PageState";
 import { ReportingProfileForm } from "./ReportingProfileForm";
 import { SecondApproverToggle } from "./SecondApproverToggle";
+import { EvidenceForVerificationToggle } from "./EvidenceForVerificationToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export default async function ProjectReportingProfilePage({ params }: { params: 
       </p>
       <div className="mt-6 space-y-6">
         <SecondApproverToggle projectId={id} initial={result.value.profile?.requireSecondApprover ?? false} />
+        <EvidenceForVerificationToggle projectId={id} initial={result.value.profile?.requireEvidenceForVerification ?? false} />
         <ReportingProfileForm projectId={id} initialProfile={result.value.profile} />
       </div>
     </div>

@@ -168,6 +168,12 @@ model User {
   lockedUntil   DateTime?
   /// An outside implementing partner: reaches only the projects they are a member of, through an allow-listed set of routes.
   external      Boolean  @default(false)
+  /// Two-step sign-in (TOTP). The secret is sealed (AES-GCM); recovery codes are stored as hashes.
+  mfaSecretEnc        String?
+  mfaPendingSecretEnc String?
+  mfaEnabledAt        DateTime?
+  mfaRecoveryHashes   String   @default("[]")
+  mfaLastStep         Int?
   /// How the person wants to be emailed: DAILY_SUMMARY (default), URGENT_ONLY, NEVER.
   emailSummaryMode String @default("DAILY_SUMMARY")
   createdAt     DateTime @default(now())
@@ -341,6 +347,8 @@ model ReportingProfile {
   defaultTemplateByTypeJson String  @default("{}")
   /// When on, the author of a report cannot approve it.
   requireSecondApprover    Boolean  @default(false)
+  /// When on, an indicator value needs an attached file before it can be verified.
+  requireEvidenceForVerification Boolean @default(false)
   /// JSON {key: text}: statements that hold for every period (branding policy, waste procedure).
   standingStatementsJson   String   @default("{}")
   version                  Int      @default(1)

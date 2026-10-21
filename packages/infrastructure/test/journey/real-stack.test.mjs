@@ -7,6 +7,7 @@ import { TenantId } from "@donordesk/domain";
 
 const url = process.env.UOW_VERIFY_DATABASE_URL;
 const skip = url ? false : "set UOW_VERIFY_DATABASE_URL to a migrated scratch database";
+process.env.JWT_SECRET ??= "test-secret-that-is-at-least-32-characters";
 if (url) {
   process.env.DATABASE_URL = url;
   process.env.DATABASE_ADMIN_URL = url;
@@ -83,4 +84,40 @@ test("journey: sign up, project, framework, period, values, verification, framew
   assert.ok((await zip.file("data/Project.ndjson").async("string")).includes("Clean Water Journey"));
   assert.ok((await zip.file("data/IndicatorUpdate.ndjson").async("string")).includes('"periodAchievement":"40"'));
   assert.ok(!(await zip.file("data/User.ndjson").async("string")).includes("passwordHash"));
+});
+
+test("journey: two-step sign-in on the real stack (enrol, password gives a challenge, code gives a session, replay refused)", { skip }, async (t) => {
+  const { createContainer } = await import("../../dist/container.js");
+  const { hotp, base32Decode, timeStep } = await import("../../dist/auth/totp-mfa-service.js");
+  const c = createContainer({ useAdminConnection: true });
+  t.after(async () => { await c.settleBackgroundWork(); await c.prisma.$disconnect(); });
+  const h = c.handlers;
+  const stamp = Date.now();
+  const email = `mfa-${stamp}@example.org`;
+  const password = "Correct-Horse-9-Battery";
+  const signedUp = must(await h.signUp.handle({ name: "Mfa Admin", email, password, organization: { name: `Mfa Org ${stamp}`, organizationType: "LOCAL_NGO", country: "Kenya", primarySector: "WASH" } }), "sign up");
+  const ctx = { tenant: { tenantId: TenantId.create(signedUp.tenantId), userId: signedUp.userId, role: "ADMIN" }, requestId: "mfa" };
+  const code = (secret, offset = 0) => hotp(base32Decode(secret), timeStep(new Date()) + offset);
+
+  assert.equal("token" in must(await h.login.handle({ email, password }), "plain login"), true, "no second step until it is turned on");
+
+  const setup = must(await h.beginMfaEnrollment.handle(ctx), "begin");
+  const enabled = must(await h.enableMfa.handle(ctx, code(setup.secret)), "enable");
+  assert.equal(enabled.recoveryCodes.length, 8);
+  const stored = await c.prisma.user.findFirst({ where: { id: signedUp.userId }, select: { mfaSecretEnc: true, mfaEnabledAt: true, mfaRecoveryHashes: true } });
+  assert.ok(stored.mfaEnabledAt);
+  assert.ok(stored.mfaSecretEnc && !stored.mfaSecretEnc.includes(setup.secret), "the secret is stored sealed");
+  assert.equal(JSON.parse(stored.mfaRecoveryHashes).length, 8);
+  assert.ok(!stored.mfaRecoveryHashes.includes(enabled.recoveryCodes[0].replace("-", "")), "recovery codes are stored as hashes");
+
+  const first = must(await h.login.handle({ email, password }), "login after enrol");
+  assert.equal(first.mfaRequired, true);
+  const session = must(await h.completeMfaLogin.handle({ challenge: first.challenge, code: code(setup.secret, 1) }), "complete");
+  assert.ok(session.token);
+  const replay = await h.completeMfaLogin.handle({ challenge: first.challenge, code: code(setup.secret, 1) });
+  assert.equal(replay.ok, false, "the same code is refused the second time");
+  assert.equal(must(await h.getMfaStatus.handle(ctx), "status").recoveryCodesLeft, 8);
+
+  must(await h.resetUserMfa.handle(ctx, signedUp.userId), "admin reset");
+  assert.equal("token" in must(await h.login.handle({ email, password }), "login after reset"), true);
 });

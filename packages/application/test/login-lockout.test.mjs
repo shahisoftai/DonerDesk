@@ -78,3 +78,18 @@ test("H-12: sign-up and invitation acceptance enforce the 12-character policy", 
   assert.equal(r.error.code, "VALIDATION_FAILED");
   assert.match(r.error.message, /at least 12/);
 });
+
+test("H-15: an outside partner's session carries the 'ext' claim; an ordinary user's does not", async () => {
+  const partner = User.create({ id: UserId.create("p1"), tenantId: TenantId.create("tenant-1"), email: Email.create("p@partner.org"), name: "Pat Partner", passwordHash: "hash", role: "FIELD_OFFICER", external: true });
+  partner.activate();
+  const signed = [];
+  const handler = (u) => new LoginHandler(
+    { findByEmailGlobal: async () => ({ ok: true, value: u }), update: async (x) => ({ ok: true, value: x }) },
+    { verifyPassword: async () => true, sign: async (claims) => { signed.push(claims); return "tok"; } },
+    { record: async () => {} },
+  );
+  await handler(partner).handle({ email: "p@partner.org", password: "x" });
+  await handler(user()).handle({ email: "a@b.org", password: "x" });
+  assert.equal(signed[0].ext, true);
+  assert.equal("ext" in signed[1], false);
+});

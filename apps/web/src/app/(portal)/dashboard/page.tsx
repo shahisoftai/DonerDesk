@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { loadDashboard, type DashboardWidget } from "@/features/dashboard/application/dashboard-read-model";
 import type { DeadlineBand } from "@/features/dashboard/presentation/deadline-bands";
@@ -29,6 +30,8 @@ const BAND_LABEL: Record<DeadlineBand, string> = {
 
 export default async function Dashboard() {
   const ctx = await requireSession();
+  // An outside partner has no organisation-wide home: their projects are the page.
+  if (ctx.external) redirect("/projects");
   const landing = surfaceFor(ctx.role).home;
   const canSeeHealth = ctx.capabilities.has("team.view-work");
   const [snapshot, work, myWeek, portfolio] = await Promise.all([

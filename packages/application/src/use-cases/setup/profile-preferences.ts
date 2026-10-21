@@ -101,3 +101,23 @@ export class SetRequireSecondApproverHandler {
     return { ok: true, value: undefined };
   }
 }
+
+/** Whether an indicator value needs an attached file before it can be verified. Off by default. */
+export class SetRequireEvidenceForVerificationHandler {
+  private readonly access: ProfileAccess;
+  constructor(ids: IIdGenerator, profiles: IReportingProfileRepository, private readonly audit: IAuditLogger) {
+    this.access = new ProfileAccess(ids, profiles);
+  }
+
+  async handle(ctx: AuthenticatedContext, projectId: string, value: boolean): Promise<Result<void, DomainError>> {
+    const loaded = await this.access.loadOrCreate(ctx, projectId);
+    if (!loaded.ok) return loaded;
+    const { profile, created } = loaded.value;
+    if (!created && profile.requireEvidenceForVerification === value) return { ok: true, value: undefined };
+    profile.setRequireEvidenceForVerification(value, ctx.tenant.userId);
+    const saved = await this.access.save(profile, created);
+    if (!saved.ok) return saved;
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "reporting_profile.evidence_for_verification_set", entityType: "reporting_profile", entityId: profile.id, projectId, newValue: JSON.stringify({ requireEvidenceForVerification: value }) });
+    return { ok: true, value: undefined };
+  }
+}

@@ -179,6 +179,11 @@ export class PrismaUserRepository implements IUserRepository {
           failedLoginCount: user.failedLoginCount,
           lockedUntil: user.lockedUntil,
           external: user.external,
+          mfaSecretEnc: user.mfaSecretEnc,
+          mfaPendingSecretEnc: user.mfaPendingSecretEnc,
+          mfaEnabledAt: user.mfaEnabledAt,
+          mfaRecoveryHashes: JSON.stringify(user.mfaRecoveryHashes),
+          mfaLastStep: user.mfaLastStep,
         },
       });
       return ok(user);
@@ -203,6 +208,11 @@ export class PrismaUserRepository implements IUserRepository {
           failedLoginCount: user.failedLoginCount,
           lockedUntil: user.lockedUntil,
           external: user.external,
+          mfaSecretEnc: user.mfaSecretEnc,
+          mfaPendingSecretEnc: user.mfaPendingSecretEnc,
+          mfaEnabledAt: user.mfaEnabledAt,
+          mfaRecoveryHashes: JSON.stringify(user.mfaRecoveryHashes),
+          mfaLastStep: user.mfaLastStep,
         },
       });
       return ok(user);
@@ -279,6 +289,11 @@ export class PrismaUserRepository implements IUserRepository {
     failedLoginCount?: number;
     lockedUntil?: Date | null;
     external?: boolean;
+    mfaSecretEnc?: string | null;
+    mfaPendingSecretEnc?: string | null;
+    mfaEnabledAt?: Date | null;
+    mfaRecoveryHashes?: string;
+    mfaLastStep?: number | null;
     createdAt: Date;
   }): User {
     return User.rehydrate({
@@ -297,8 +312,22 @@ export class PrismaUserRepository implements IUserRepository {
         failedLoginCount: row.failedLoginCount ?? 0,
         lockedUntil: row.lockedUntil ?? null,
         external: row.external === true,
+        mfaSecretEnc: row.mfaSecretEnc ?? null,
+        mfaPendingSecretEnc: row.mfaPendingSecretEnc ?? null,
+        mfaEnabledAt: row.mfaEnabledAt ?? null,
+        mfaRecoveryHashes: parseHashes(row.mfaRecoveryHashes),
+        mfaLastStep: row.mfaLastStep ?? null,
       },
     });
+  }
+}
+
+function parseHashes(json: string | undefined): string[] {
+  try {
+    const parsed = JSON.parse(json ?? "[]") as unknown;
+    return Array.isArray(parsed) ? parsed.filter((h): h is string => typeof h === "string") : [];
+  } catch {
+    return [];
   }
 }
 

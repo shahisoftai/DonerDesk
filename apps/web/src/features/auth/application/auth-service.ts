@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { apiBaseUrl } from "@/lib/server/api-gateway";
-import { AuthResponseSchema, type AuthFormState } from "./auth-schemas";
+import { AuthResponseSchema, MfaChallengeResponseSchema, type AuthFormState } from "./auth-schemas";
 
 const GENERIC_LOGIN_ERROR = "Unable to sign you in. Please check your email and password and try again.";
 const GENERIC_SIGNUP_ERROR = "We could not create your account. Please check your details and try again.";
@@ -9,7 +9,8 @@ const GENERIC_SIGNUP_ERROR = "We could not create your account. Please check you
 export class AuthService {
   private readonly baseUrl = apiBaseUrl();
 
-  async login(email: string, password: string): Promise<{ token: string }> {
+  /** A session, or — when the person has two-step sign-in on — the challenge to answer with a code. */
+  async login(email: string, password: string): Promise<{ token: string } | { mfaChallenge: string }> {
     const body = z.object({ email: z.string(), password: z.string() }).parse({ email, password });
     const response = await fetch(`${this.baseUrl}/v1/auth/login`, {
       method: "POST",
@@ -17,7 +18,23 @@ export class AuthService {
       body: JSON.stringify(body),
       cache: "no-store",
     });
+    if (response.ok) {
+      const data: unknown = await response.clone().json().catch(() => null);
+      const challenge = MfaChallengeResponseSchema.safeParse(data);
+      if (challenge.success) return { mfaChallenge: challenge.data.challenge };
+    }
     return await this.parseAuthResponse(response, GENERIC_LOGIN_ERROR);
+  }
+
+  /** Second step: the challenge from `login` and a code from the authenticator app (or a recovery code). */
+  async loginMfa(challenge: string, code: string): Promise<{ token: string }> {
+    const response = await fetch(`${this.baseUrl}/v1/auth/login/mfa`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ challenge, code }),
+      cache: "no-store",
+    });
+    return await this.parseAuthResponse(response, "That code did not work. Please try again.");
   }
 
   async googleSignIn(code: string, requestedPlan?: "STARTER" | "TEAM" | "GROWTH"): Promise<{ token: string; provisioned: boolean }> {

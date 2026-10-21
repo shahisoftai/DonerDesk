@@ -23,6 +23,7 @@ export interface ReportingProfileDto {
   financeDataMode: string;
   defaultTemplateByType: Record<string, string>;
   requireSecondApprover: boolean;
+  requireEvidenceForVerification: boolean;
   standingStatements: Record<string, string>;
   version: number;
   createdAt: string;
@@ -46,6 +47,7 @@ export function toReportingProfileDto(p: ReportingProfile): ReportingProfileDto 
     financeDataMode: p.financeDataMode,
     defaultTemplateByType: p.defaultTemplateByType,
     requireSecondApprover: p.requireSecondApprover,
+    requireEvidenceForVerification: p.requireEvidenceForVerification,
     standingStatements: p.standingStatements,
     version: p.version,
     createdAt: p.createdAt.toISOString(),

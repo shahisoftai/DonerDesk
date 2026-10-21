@@ -21,6 +21,15 @@ export interface UserProps {
   lockedUntil?: Date | null;
   /** An outside implementing partner (limited access; see the external-access rules in the api). */
   external?: boolean;
+  /** The sealed TOTP secret once multi-factor sign-in is on. */
+  mfaSecretEnc?: string | null;
+  /** A secret shown to the person but not yet proven with a code. */
+  mfaPendingSecretEnc?: string | null;
+  mfaEnabledAt?: Date | null;
+  /** Hashes of the unused one-time recovery codes. */
+  mfaRecoveryHashes?: string[];
+  /** The last accepted time step, so a code cannot be used twice. */
+  mfaLastStep?: number | null;
 }
 
 export class User extends Entity<UserId> {
@@ -75,6 +84,56 @@ export class User extends Entity<UserId> {
   get failedLoginCount(): number { return this.props.failedLoginCount ?? 0; }
   get lockedUntil(): Date | null { return this.props.lockedUntil ?? null; }
   get external(): boolean { return this.props.external === true; }
+  get mfaEnabled(): boolean { return Boolean(this.props.mfaSecretEnc && this.props.mfaEnabledAt); }
+  get mfaSecretEnc(): string | null { return this.props.mfaSecretEnc ?? null; }
+  get mfaPendingSecretEnc(): string | null { return this.props.mfaPendingSecretEnc ?? null; }
+  get mfaEnabledAt(): Date | null { return this.props.mfaEnabledAt ?? null; }
+  get mfaRecoveryHashes(): string[] { return [...(this.props.mfaRecoveryHashes ?? [])]; }
+  get mfaLastStep(): number | null { return this.props.mfaLastStep ?? null; }
+
+  /** Starts (or restarts) enrolment: the secret is kept sealed until a code proves the person's app has it. */
+  beginMfaEnrollment(pendingSecretEnc: string): void {
+    if (this.mfaEnabled) throw DomainError.conflict("Two-step sign-in is already on. Turn it off first to set it up again.");
+    this.props.mfaPendingSecretEnc = pendingSecretEnc;
+    this.touch();
+  }
+
+  /** The code proved it: the pending secret becomes the secret, with a fresh set of recovery codes. */
+  enableMfa(now: Date, recoveryHashes: string[], step: number): void {
+    if (!this.props.mfaPendingSecretEnc) throw DomainError.validation("Start the setup first.");
+    this.props.mfaSecretEnc = this.props.mfaPendingSecretEnc;
+    this.props.mfaPendingSecretEnc = null;
+    this.props.mfaEnabledAt = now;
+    this.props.mfaRecoveryHashes = [...recoveryHashes];
+    this.props.mfaLastStep = step;
+    this.touch();
+  }
+
+  disableMfa(): void {
+    this.props.mfaSecretEnc = null;
+    this.props.mfaPendingSecretEnc = null;
+    this.props.mfaEnabledAt = null;
+    this.props.mfaRecoveryHashes = [];
+    this.props.mfaLastStep = null;
+    this.touch();
+  }
+
+  /** Accepts a time step only if it is newer than the last one used: the same code cannot sign in twice. */
+  acceptMfaStep(step: number): boolean {
+    if (this.props.mfaLastStep !== null && this.props.mfaLastStep !== undefined && step <= this.props.mfaLastStep) return false;
+    this.props.mfaLastStep = step;
+    this.touch();
+    return true;
+  }
+
+  /** A recovery code works once: it is removed when used. */
+  useRecoveryCode(hash: string): boolean {
+    const hashes = this.props.mfaRecoveryHashes ?? [];
+    if (!hashes.includes(hash)) return false;
+    this.props.mfaRecoveryHashes = hashes.filter((h) => h !== hash);
+    this.touch();
+    return true;
+  }
 
   /** The end of the lock if one is in force at `now`, else null. */
   lockedAt(now: Date): Date | null {

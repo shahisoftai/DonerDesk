@@ -29,9 +29,9 @@ export const ORG_EXPORT_EXCLUDED: Readonly<Record<string, string>> = {
   UsageCounter: "internal metering",
 };
 
-/** Columns left out of an exported table: a person's password hash and an invitation's secret link token. */
+/** Columns left out of an exported table: a person's password hash, MFA secrets and an invitation's secret link token. */
 export const ORG_EXPORT_OMITTED_FIELDS: Readonly<Record<string, readonly string[]>> = {
-  User: ["passwordHash"],
+  User: ["passwordHash", "mfaSecretEnc", "mfaPendingSecretEnc"],
   Invitation: ["token"],
 };
 

@@ -123,3 +123,25 @@ test("H-4: a report still being written is not locked", async () => {
   const { isPeriodLocked } = await import("@donordesk/domain");
   for (const s of ["NOT_STARTED", "IN_PROGRESS", "EVIDENCE_COLLECTION", "DRAFT_GENERATED", "UNDER_REVIEW"]) assert.equal(isPeriodLocked(s), false, s);
 });
+
+// --- ME-05: a value that cannot be right is refused on every entry path ---
+test("ME-05: the grid and the single-value path refuse a percentage of 450 and a count of 'abc', and write nothing", async () => {
+  const pct = Indicator.create({ id: "ind-p", tenantId: "tenant-a", projectId: "proj-1", logframeItemId: "item-1", code: "IND-P", name: "Attendance", type: "PERCENTAGE", baseline: "0", target: "90" });
+  const build = () => {
+    const writes = [];
+    const repo = { findByIndicatorAndPeriod: async () => ({ ok: true, value: null }), create: async (u) => { writes.push(u); return { ok: true, value: u }; }, update: async (u) => ({ ok: true, value: u }) };
+    const periods = { findById: async () => ({ ok: true, value: period() }) };
+    const indicators = { findById: async (id) => ({ ok: true, value: id === "ind-p" ? pct : indicator }), findByProject: async () => ({ ok: true, value: [pct, indicator] }) };
+    const audit = { record: async () => {} };
+    return { writes, bulk: new BulkUpsertIndicatorUpdatesHandler({ generate: () => "u" }, repo, indicators, periods, audit), create: new CreateIndicatorUpdateHandler({ generate: () => "u" }, repo, audit, indicators, periods) };
+  };
+  const w = build();
+  const bulk = await w.bulk.handle(ctx, { reportingPeriodId: "period-1", updates: [{ indicatorId: "ind-1", periodAchievement: "10", cumulativeAchievement: "10" }, { indicatorId: "ind-p", periodAchievement: "450", cumulativeAchievement: "" }] });
+  assert.equal(bulk.ok, false);
+  assert.match(bulk.error.message, /IND-P: the period value "450" is not a possible percentage/);
+  assert.equal(w.writes.length, 0, "the good row of the same sheet is not written either");
+  const single = await w.create.handle(ctx, { indicatorId: "ind-1", reportingPeriodId: "period-1", periodAchievement: "abc", cumulativeAchievement: "", attachedEvidenceIds: [] });
+  assert.equal(single.ok, false);
+  assert.match(single.error.message, /OUT|IND-1: the period value "abc" is not a number/);
+  assert.equal((await w.create.handle(ctx, { indicatorId: "ind-p", reportingPeriodId: "period-1", periodAchievement: "85%", cumulativeAchievement: "", attachedEvidenceIds: [] })).ok, true);
+});

@@ -34,6 +34,9 @@ REMOTE_APP="${REMOTE_APP:-${REMOTE_BASE}/app}"
 REMOTE_WORKERS="${REMOTE_WORKERS:-${REMOTE_BASE}/workers}"
 REMOTE_BACKUPS="${REMOTE_BACKUPS:-${REMOTE_BASE}/backups}"
 
+mkdir -p "${WORK}"
+ROLLBACK_ON_FAIL="${ROLLBACK_ON_FAIL:-1}"
+
 echo "==> Release: ${RELEASE_ID}  scope=${SCOPE}  host=contabo"
 
 # --------------------------------------------------------------------------- #
@@ -434,8 +437,36 @@ echo "    restart: $(($(date +%s)-ACTIVATE_START))s"
 # --------------------------------------------------------------------------- #
 
 VERIFY_START=$(date +%s)
+
+# A failed verify used to leave the broken tree running (the 2026-10-20 crash loop). The snapshot taken before the deploy
+# is the previous tree: put it back, restart, and say so. Database migrations are additive, so the old code runs on the new
+# schema. ROLLBACK_ON_FAIL=0 keeps the failed tree in place for diagnosis.
+rollback_to_snapshot() {
+  echo "==> VERIFY FAILED: restoring the previous tree from the pre-deploy snapshot" >&2
+  if [[ "${NO_BACKUP}" == "1" ]]; then
+    echo "    No snapshot was taken (NO_BACKUP=1); fix forward or restore a snapshot by hand." >&2
+    return 1
+  fi
+  ${SSH} "
+    set -eu
+    SNAP=${REMOTE_BACKUPS}/dd-app-pre-${RELEASE_ID}.tgz
+    if [ ! -f \"\${SNAP}\" ]; then echo 'no snapshot for this release; nothing to restore'; exit 1; fi
+    systemctl stop ${SERVICES}
+    rm -rf ${REMOTE_BASE}/app.failed-${RELEASE_ID}
+    mv ${REMOTE_APP} ${REMOTE_BASE}/app.failed-${RELEASE_ID}
+    tar -xzf \"\${SNAP}\" -C ${BASE}
+    systemctl start ${SERVICES}
+    OK=0
+    for i in \$(seq 1 30); do
+      if curl -fsS --max-time 5 http://127.0.0.1:4001/ready >/dev/null 2>&1; then OK=1; break; fi
+      sleep 2
+    done
+    if [ \"\${OK}\" = '1' ]; then echo 'previous tree restored; /ready is OK'; else echo 'previous tree restored but /ready is NOT OK: look at journalctl -u donordesk-api'; exit 1; fi
+  " >&2
+}
+
 echo "==> Verify"
-${SSH} "
+if ! ${SSH} "
   set -eu
   echo '--- systemd ---'
   systemctl is-active ${SERVICES}
@@ -484,7 +515,15 @@ ${SSH} "
     fi
     echo \"\${KEY}=\${HAVE}\"
   done
-"
+"; then
+  if [[ "${ROLLBACK_ON_FAIL}" == "1" ]]; then
+    rollback_to_snapshot || true
+    echo "==> Deploy ${RELEASE_ID} FAILED verification and was rolled back (failed tree kept at ${REMOTE_BASE}/app.failed-${RELEASE_ID})." >&2
+  else
+    echo "==> Deploy ${RELEASE_ID} FAILED verification; ROLLBACK_ON_FAIL=0, the failed tree is left running." >&2
+  fi
+  exit 1
+fi
 echo "    verify: $(($(date +%s)-VERIFY_START))s"
 
 # --------------------------------------------------------------------------- #
