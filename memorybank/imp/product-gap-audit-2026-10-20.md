@@ -943,3 +943,19 @@ and run once (3 organisations, 0 broken), worker `/v1/parse` returns `EXTRACTED`
 | RP-08 PDF indicator lines | ✅ use `indicatorExportColumns`/`indicatorExportCell` like Word and Excel |
 | OP-11 deploy rollback | ✅ already in `deploy-fast.sh` (`rollback_to_snapshot`) |
 | SE-06 off-host copy | ✅ live: host rclone remote `gdrive` (scope `drive.file`), `OFFHOST_TARGET=rclone:gdrive:donordesk-backups` in `backup.env`; first run copied 4 files / 23,828,362 bytes, matching the local copy. Still open: keep the backup passphrase somewhere other than the host |
+
+## 16. Gap closure, batch 5 (2026-10-21, deployed; verified in `demo/verification-demo-10.md`)
+
+| Item | Status |
+|---|---|
+| ME-02/11 target schedule + variance | ✅ `Indicator.targetScheduleJson`; period judged against the target due by then; Data Center "Variance from scheduled target"; versioned with the framework; not sent to the writer |
+| PM-08 portfolio dashboard | ✅ `/portfolio`, `GET /v1/portfolio/overview` (one ranked row per live project: delivery, problems and risks, next report) |
+| ME-07 double-count guard | ✅ `Indicator.countedElsewhere` (listed, not added) + automatic overlap warning (same country, overlapping dates) |
+| AI-04 donor indicator mapping | ✅ `DonorIndicatorMapping` (RLS), matcher by code / close wording, decisions audited, non-blocking export warning `DONOR_INDICATORS_UNMAPPED` |
+| AI-03 OCR | ✅ worker `app/ocr.py` (pypdfium2 + rapidocr-onnxruntime, pip only, run off the event loop, one scan at a time); API fallback parser; the person is told to check names and numbers. The host venv needed `pip install` by hand (deploy-fast does not install Python packages) |
+| SE-03 encryption at rest | ◐ built and tested (AES-256-GCM, per-organisation key, rotation, `storage:encrypt`); **off** until `EVIDENCE_ENCRYPTION_KEYS` is set and a copy of the key is kept off the host |
+| AI-14/15 | ✅ model + writing-rules version and a "what changed" sentence per section version |
+| UX-03 demo with a first quarter | ✅ period, verified values, two accepted activities; delete follows foreign keys |
+| UX-10 help articles | ✅ in `apps/web/content/support` |
+
+Deploy notes: migrations `20261022120000_indicator_target_schedule`, `20261022130000_indicator_counted_elsewhere`, `20261022140000_donor_indicator_mapping`, then `rls.sql` (78 forced-RLS tables); `/ready` requires `Indicator.targetScheduleJson` and `Indicator.countedElsewhere`.
