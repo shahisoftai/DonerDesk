@@ -12,9 +12,9 @@ export class ConsoleContactSalesNotifier implements IContactSalesNotifier {
 
   async notify(inquiry: ContactSalesInquiry): Promise<Result<void, DomainError>> {
     if (this.logger) {
-      this.logger.info("Enterprise contact-sales inquiry received", { to: "sales@donordesk.online", inquiry });
+      this.logger.info("Enterprise contact-sales inquiry received", { to: "support@donordesk.online", inquiry });
     } else {
-      console.info("Enterprise contact-sales inquiry received", { to: "sales@donordesk.online", inquiry });
+      console.info("Enterprise contact-sales inquiry received", { to: "support@donordesk.online", inquiry });
     }
     return { ok: true, value: undefined };
   }

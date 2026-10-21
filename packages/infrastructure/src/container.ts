@@ -7,6 +7,7 @@ import type { IJobQueue, IReportDraftGenerator, INotificationPort, IAgentMemoryR
 import { EmailAdapter } from "./comms/email.js";
 import { PostmarkNotificationAdapter, FanOutNotificationAdapter } from "./comms/postmark-notification-adapter.js";
 import { ConsoleContactSalesNotifier } from "./comms/console-contact-sales-notifier.js";
+import { EmailContactSalesNotifier } from "./comms/email-contact-sales-notifier.js";
 
 import {
   PrismaOrganizationRepository,
@@ -1358,7 +1359,21 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     getLegalConsent: new GetLegalConsentHandler(audits),
     createCheckout: new CreateCheckoutHandler(billingProvider, organizations, billingSubscriptions, ids, audits),
     createTopupCheckout: new CreateTopupCheckoutHandler(billingProvider, organizations, entitlements, audits, purchasedCreditPacks),
-    submitContactSalesInquiry: new SubmitContactSalesInquiryHandler(new ConsoleContactSalesNotifier(logger), audits),
+    submitContactSalesInquiry: new SubmitContactSalesInquiryHandler(
+      process.env.EMAIL_PROVIDER === "postmark" && process.env.POSTMARK_SERVER_TOKEN
+        ? new EmailContactSalesNotifier(
+            new EmailAdapter({
+              smtpHost: "",
+              smtpPort: 0,
+              smtpUser: process.env.POSTMARK_SERVER_TOKEN,
+              smtpPassword: "",
+              fromAddress: process.env.EMAIL_FROM_ADDRESS ?? "notifications@donordesk.online",
+            }),
+            process.env.SALES_INBOX_EMAIL ?? "support@donordesk.online",
+          )
+        : new ConsoleContactSalesNotifier(logger),
+      audits,
+    ),
     submitNonprofitVerification: new SubmitNonprofitVerificationHandler(ids, nonprofitVerifications, audits),
     listPendingNonprofitVerifications: new ListPendingNonprofitVerificationsHandler(nonprofitVerifications),
     listCreditPacks: new ListCreditPacksHandler(purchasedCreditPacks),

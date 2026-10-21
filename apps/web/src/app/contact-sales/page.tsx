@@ -20,8 +20,8 @@ export default function ContactSalesPage() {
       </div>
       <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
         Prefer email?{" "}
-        <a className="text-brand-600 hover:underline dark:text-brand-400" href="mailto:sales@donordesk.online">
-          sales@donordesk.online
+        <a className="text-brand-600 hover:underline dark:text-brand-400" href="mailto:support@donordesk.online">
+          support@donordesk.online
         </a>
       </p>
       <p className="mt-6 text-sm">

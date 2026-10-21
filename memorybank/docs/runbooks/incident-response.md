@@ -2,7 +2,7 @@
 
 The commitment this runbook makes true: the Privacy Policy (§16) says DonorDesk will notify affected customers "without undue delay where required by applicable law", and the DPA (§8) says "without undue delay (and aim for within 72 hours)" after becoming aware of a personal data breach affecting Customer Personal Data. This is how that happens, who does it, and what is recorded.
 
-Channel for reports: `privacy@donordesk.online` (security reports and customer contact), `legal@donordesk.online` (contractual notices). Check that both mailboxes exist before relying on this (the code marks `privacyEmail` "TO CONFIRM").
+Channel for reports: `support@donordesk.online` (security reports, privacy, sales and customer contact; the single mailbox the product publishes).
 
 ## 1. Roles
 
@@ -41,7 +41,7 @@ Also notify: the sub-processor chain only as needed to contain; law-enforcement 
 
 ## 5. The notice
 
-Send from `privacy@donordesk.online` to each affected organisation's administrator and contact address. Plain words, no jargon. Include: what happened and when; what data and which people it concerned (or "we are still establishing this"); what we have done; what we recommend they do; who to talk to; when we will update them next. If facts are incomplete, say so and send what is known; the DPA allows information to follow in phases. Never include another customer's name or data.
+Send from `support@donordesk.online` to each affected organisation's administrator and contact address. Plain words, no jargon. Include: what happened and when; what data and which people it concerned (or "we are still establishing this"); what we have done; what we recommend they do; who to talk to; when we will update them next. If facts are incomplete, say so and send what is known; the DPA allows information to follow in phases. Never include another customer's name or data.
 
 Template:
 
@@ -51,7 +51,7 @@ Template:
 > **What happened:** …  **When:** … (we became aware on …)
 > **What it involved:** …  **What it did not involve:** …
 > **What we have done:** …  **What we suggest you do:** …
-> We will write again by [date/time] with what we have learned. Contact: privacy@donordesk.online.
+> We will write again by [date/time] with what we have learned. Contact: support@donordesk.online.
 
 ## 6. The breach register
 

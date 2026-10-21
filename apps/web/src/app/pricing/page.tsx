@@ -411,7 +411,7 @@ export default function PricingPage() {
                 <li><Link href="/#features" className="transition hover:text-white">Features</Link></li>
                 <li><Link href="/pricing" className="text-brand-300 transition hover:text-white">Pricing & plans</Link></li>
                 <li><Link href="/#security" className="transition hover:text-white">Security</Link></li>
-                <li><a href="mailto:sales@donordesk.online" className="transition hover:text-white">Sales: sales@donordesk.online</a></li>
+                <li><a href="mailto:support@donordesk.online" className="transition hover:text-white">Sales: support@donordesk.online</a></li>
               </ul>
             </div>
 

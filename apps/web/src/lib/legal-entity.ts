@@ -8,7 +8,7 @@ export const LEGAL = {
   /** Contractual notices (the Terms). */
   legalEmail: "legal@donordesk.online",
   /** Privacy questions, data requests, security reports and the DPA. */
-  privacyEmail: "privacy@donordesk.online", // TO CONFIRM mailbox exists
+  privacyEmail: "support@donordesk.online", // privacy and sales requests share the support mailbox
   hostingLocation: "Contabo data centre",
   /** One label for every legal page, so the pages do not carry several versions. */
   updated: "Product version 1.93 · 7 October 2026",
