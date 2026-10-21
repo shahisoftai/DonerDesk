@@ -56,6 +56,8 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "Indicator", field: "countedElsewhere" },
   { model: "EvidenceFile", field: "reviewNote" },
   { model: "Comment", field: "parentId" },
+  { model: "ProjectAdaptation", field: "whatChanged" },
+  { model: "DonorIndicatorMapping", field: "requirementId" },
   { model: "ReportingProfile", field: "standingStatementsJson" },
   { model: "ChecklistItem", field: "attestedById" },
   { model: "ReportDraft", field: "supersededAt" },
