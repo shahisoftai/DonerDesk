@@ -105,6 +105,7 @@ import { GoogleSheetsReader } from "./storage/google-sheets-reader.js";
 import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credentials.js";
 import { TolerantDocumentParser } from "./parsers/document-parser.js";
 import { OcrFallbackDocumentParser } from "./parsers/ocr-fallback-parser.js";
+import { withEncryptionAtRest } from "./storage/at-rest-encryption.js";
 import { MammothDonorTemplateStructureParser } from "./parsers/donor-template-structure-parser.js";
 import { HttpDonorTemplateWorkerClient } from "./llm/donor-template-worker-client.js";
 import { FallbackTemplateExtractionService, HeuristicTemplateExtractor, LlmTemplateExtractor, TemplateExtractionQuota, TEMPLATE_EXTRACTION_OPERATION, TocTemplateExtractor } from "./llm/template-extraction/index.js";
@@ -547,7 +548,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const logger = createLogger();
   const auth = process.env.AUTH_PROVIDER === "oidc" ? new OidcAuthProvider() : new JwtAuthProvider();
   const googleSignIn = new GoogleSignInConnector();
-  const storage = new LocalStorage();
+  // Stored files are encrypted at rest when EVIDENCE_ENCRYPTION_KEYS is set; older plaintext files stay readable until `storage:encrypt` runs.
+  const storage = withEncryptionAtRest(new LocalStorage());
   const googleDriveCredentials = new PrismaGoogleDriveCredentialStore(
     prisma,
     process.env.PLATFORM_MASTER_KEY ? Buffer.from(process.env.PLATFORM_MASTER_KEY, "base64") : Buffer.alloc(0),
