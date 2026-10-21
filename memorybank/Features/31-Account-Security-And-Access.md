@@ -40,3 +40,16 @@ A person who is not on a project gets "not found" for it, so the answer does not
 - **MFA is not built.** Tenant users sign in with a password only (SSO, where configured, is the alternative).
 - The password policy applies to new passwords; existing passwords are not forced to change.
 - Project membership does not yet control reading the audit trail or the team directory for non-administrators (both are administrator-only today).
+
+
+## Addendum (2026-10-21): two-step sign-in, sign-in lockout, password policy
+
+Shipped in release `20261021034848` and fixed in `20261021040309` (audit H-12).
+
+- **Two-step sign-in (TOTP):** a person turns it on in Settings → Security by scanning or typing a key into an authenticator app and entering a 6-digit code. Eight single-use recovery codes are shown once. Signing in then asks for the code (or a recovery code) after the password. It is turned off with the password and a current code. Organisations on single sign-on manage this at their identity provider, so the switch is hidden for them.
+- **Secrets never leave the server:** the TOTP secrets (`User.mfaSecretEnc`, `mfaPendingSecretEnc`) are encrypted and are left out of the organisation export.
+- **Lockout:** repeated wrong passwords lock the account for a period (`User.failedLoginCount`, `lockedUntil`, `login-lockout.ts`); a good sign-in or a reset clears it.
+- **Password policy:** 12 or more characters at sign-up and invitation (`PasswordPolicy`).
+- **Session checks:** role and status are checked on every request (batch 3).
+- **Left over:** no MFA for outside partners; no hardware keys; no MFA-enforcement setting per organisation; the recovery-code regeneration screen is not built.
+- Code: `packages/infrastructure/src/auth/totp-mfa-service.ts`, `packages/application/src/use-cases/identity/mfa-handlers.ts`, `apps/web/src/features/settings/presentation/MfaPanel.tsx`. Tests: `packages/infrastructure/test/totp-mfa.test.mjs`, `mfa-flow.test.mjs`.

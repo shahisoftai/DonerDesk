@@ -330,3 +330,11 @@ memorybank/
 | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) | Architecture questions, adding new features |
 | [`contabo-ops.md`](contabo-ops.md) | Looking up live-host facts during deploy or troubleshooting |
 | [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) | Deploying to Contabo (single fastest procedure) |
+
+
+## 2026-10-21: gap-closure features (Version 2.007)
+
+- Feature docs 35–42 in `Features/` and the addendum to 31 (two-step sign-in, lockout). The index is `Features/INDEX.md`.
+- Status ledger for every audit item, with left-over tasks and open decisions: `imp/product-gap-audit-2026-10-20.md` §18.
+- Support articles for these features: `docs/support/how-to/` (source), served from `apps/web/content/support/how-to/`. See `docs/support/README.md`.
+- Operator notes: `runbooks/evidence-encryption.md`, `CONTABO-DEPLOY.md` (2026-10-21 entries), `demo/verification-demo-10.md`.

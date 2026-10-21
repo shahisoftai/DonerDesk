@@ -170,3 +170,22 @@ Settings
 
 Existing features updated for batch 3: 01, 03, 06, 07, 10, 11, 12, 13, 14, 16, 25. Plan and status of every High finding: `memorybank/imp/product-gap-audit-2026-10-20.md` §5.2 and §14.
 
+
+
+## Gap-closure features (2026-10-21, Version 2.007)
+
+Built from `../imp/product-gap-audit-2026-10-20.md` (status ledger in §18). Each doc lists what is built, the rules that matter, the code map and what is left over.
+
+| # | Feature | Audit items | Doc |
+|---|---|---|---|
+| 35 | Target schedule and variance | ME-02, ME-11 | [35-Target-Schedule-And-Variance.md](./35-Target-Schedule-And-Variance.md) |
+| 36 | Portfolio dashboard and double-count guard | PM-07, PM-08, ME-07 | [36-Portfolio-Dashboard-And-Roll-Up-Guard.md](./36-Portfolio-Dashboard-And-Roll-Up-Guard.md) |
+| 37 | Donor indicator mapping | AI-04 | [37-Donor-Indicator-Mapping.md](./37-Donor-Indicator-Mapping.md) |
+| 38 | Scanned documents (OCR) and encryption at rest | AI-03, SE-03 | [38-Scanned-Documents-And-Encryption-At-Rest.md](./38-Scanned-Documents-And-Encryption-At-Rest.md) |
+| 39 | Evidence review and evidence filters | EV-06, RP-06 | [39-Evidence-Review-And-Filters.md](./39-Evidence-Review-And-Filters.md) |
+| 40 | Comment threads | CG-10 | [40-Comment-Threads.md](./40-Comment-Threads.md) |
+| 41 | Management report and changes of plan | RP-05, PM-09 | [41-Management-Report-And-Changes-Of-Plan.md](./41-Management-Report-And-Changes-Of-Plan.md) |
+| 42 | Demo project with a first quarter | UX-03 | [42-Demo-Project-Content.md](./42-Demo-Project-Content.md) |
+| 31 | (addendum) two-step sign-in, lockout | H-12 | [31-Account-Security-And-Access.md](./31-Account-Security-And-Access.md) |
+
+Also in this batch, documented in the audit and `CONTABO-DEPLOY.md` rather than a feature file: off-host backup to Google Drive (SE-06), help articles inside the app (UX-10), sales and privacy mail through the host's mail server (MK-10, SE-09), PDF indicator lines on the shared column definition (RP-08), and the audit-verification schedule (CG-07). Support-centre articles for these features are in `../docs/support/`.

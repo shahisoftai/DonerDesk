@@ -435,7 +435,7 @@ Severity here is **business impact**, not effort. "Smallest acceptable fix" is t
 | H-9 ✅ | A materially off-target indicator with no recorded variance explanation raises no checklist item and no warning. | No rule in `packages/domain/src/contexts/reporting/gate-rules.ts` or `report-type-checklist.ts`; `packages/contracts/src/reporting.ts:84` captures the input but nothing checks it | Add a rule: target missed by more than the threshold and no explanation recorded → a checklist item. |
 | H-10 ✅ | The requirements extracted from an uploaded donor template never reach the blocking gate, and requirement packs have no UI. | `packages/infrastructure/src/llm/requirement-resolver.ts:39-62` layers only award overrides and donor packs; no `apps/web` code references requirement packs | Include the pinned template's own requirements in the resolver; add a minimal authoring screen. |
 | H-11 ✅ | No organisation-wide data export. | `packages/application/src/use-cases/exports/create-export.ts` is report-shaped; `apps/web/src/app/api/portfolio/indicators/export/route.ts` is project-scoped | Add a workspace export (records, documents and report history) in a machine-readable bundle. |
-| H-12 ◐ | No MFA, no login lockout, no session revocation for tenant users, and an 8-character password floor at sign-up despite a tested 12-character policy existing. | `packages/domain/src/policies/password-policy.ts` (tested) not applied in `packages/application/src/use-cases/identity/sign-up.ts:48` or `accept-invitation.ts:110`; `packages/contracts/src/identity.ts:48,80`; role lives in a 7-day JWT (`packages/infrastructure/src/auth/jwt.ts:24-34`) | Apply `PasswordPolicy` at sign-up and invitation; add a per-account lockout; re-check role on each request or shorten the JWT. |
+| H-12 ✅ | No MFA, no login lockout, no session revocation for tenant users, and an 8-character password floor at sign-up despite a tested 12-character policy existing. | `packages/domain/src/policies/password-policy.ts` (tested) not applied in `packages/application/src/use-cases/identity/sign-up.ts:48` or `accept-invitation.ts:110`; `packages/contracts/src/identity.ts:48,80`; role lives in a 7-day JWT (`packages/infrastructure/src/auth/jwt.ts:24-34`) | Apply `PasswordPolicy` at sign-up and invitation; add a per-account lockout; re-check role on each request or shorten the JWT. |
 | H-13 ✅ | A second-approver rule exists but is off by default, and section-level approval has no author check. | `approve-report.ts:134`; `approve-report-section.ts:21-77` | Default the rule on when the project requires it; add the author check to section approval. |
 | H-14 ✅ | Project membership is not an access-control boundary — removing someone from a project leaves full API access to it. | `apps/api/src/middleware/authorization.ts:179`; `packages/application/src/use-cases/projects/get-project.ts:9-13`; `packages/domain/src/policies/abac-field-policy.ts:67` (exported, never called) | Call the existing ABAC engine in the authorisation middleware. The controls are written; only the wiring is missing. |
 | H-15 ✅ | No implementing-partner access model. | `packages/domain/src/contexts/identity/role.ts:1-8`; `Project.partnerOrganization` is free text | Add a scoped external user with per-project grants. |
@@ -505,18 +505,18 @@ The brief's own ordering was: freeze feature expansion, verify P0 and P1, close 
 
 ### P1 — adoption and daily usability
 
-- ☐ **Populate the demo project** with a reporting period, indicator values, two activities and evidence (UX-03) — the highest-intent surface in the funnel currently shows an empty project.
+- ✅ **Populate the demo project** with a reporting period, indicator values, two activities and evidence (UX-03) — the highest-intent surface in the funnel currently shows an empty project.
 - ☐ **Publish customer proof** (MK-09): the demo-9 CMAM run is real, usable evidence.
 - ☐ **Finish the live-site browser check and publish the Phase 28 features** (C-8): open, pack in `memorybank/docs/marketing/phase28-publish-pack.md` — this is the whole programme-management position.
-- ☐ **Wire the contact-sales form to real email** and decide the trial flag (MK-10) — the two highest-value conversion moments are silently disabled.
-- ☐ **Move the support articles into the app tree** and give them freshness metadata (UX-10).
-- ✅ **Add an organisation-wide data export** (SE-13, built in batch 3). ☐ **A dashboard for the portfolio** (PM-08) is not built.
-- ◐ **Require evidence before an indicator value is VERIFIED** (built 2026-10-21, uncommitted: `verification-evidence-policy.ts`, `indicator-value-rules.ts`, migration `20261022110000`, profile toggle; plausibility rules in the domain; not yet committed or deployed), and add range and plausibility validation at entry (ME-05, ME-09) — on one shared validator for all three entry paths.
-- ☐ **Add a periodic target schedule** so a monthly value is judged against the target due that period (ME-02) and a variance figure is computed (ME-11).
+- ◐ **Wire the contact-sales form to real email** and decide the trial flag (MK-10) — the two highest-value conversion moments are silently disabled.
+- ◐ **Move the support articles into the app tree** and give them freshness metadata (UX-10).
+- ✅ **Add an organisation-wide data export** (SE-13, built in batch 3). ✅ **A dashboard for the portfolio** (PM-08) built 2026-10-21 (`/portfolio`).
+- ✅ **Require evidence before an indicator value is VERIFIED** (built 2026-10-21, uncommitted: `verification-evidence-policy.ts`, `indicator-value-rules.ts`, migration `20261022110000`, profile toggle; plausibility rules in the domain; not yet committed or deployed), and add range and plausibility validation at entry (ME-05, ME-09) — on one shared validator for all three entry paths.
+- ✅ **Add a periodic target schedule** so a monthly value is judged against the target due that period (ME-02) and a variance figure is computed (ME-11).
 
 ### P2 — broader programme capability
 
-☐ Portfolio aggregation with a real double-count guard and country/region/sector dimensions (ME-07); ✅ the `Programme` and `Grant` entities (PM-01, built in batch 3); ☐ donor-indicator → project-indicator mapping (AI-04); ✅ a donor-required-table validator (AI-12, warning level); ✅ a missing-variance check (AI-09); ✅ partner access (CG-12, built in batch 3); ☐ Kobo/ODK mapping to indicators and activities (IN-04); ☐ bulk migration (IN-08); ☐ outbound webhooks (IN-07).
+◐ Portfolio aggregation with a real double-count guard (✅ guard; ☐ region and sector dimensions) and country/region/sector dimensions (ME-07); ✅ the `Programme` and `Grant` entities (PM-01, built in batch 3); ✅ donor-indicator → project-indicator mapping (AI-04); ✅ a donor-required-table validator (AI-12, warning level); ✅ a missing-variance check (AI-09); ✅ partner access (CG-12, built in batch 3); ☐ Kobo/ODK mapping to indicators and activities (IN-04); ☐ bulk migration (IN-08); ☐ outbound webhooks (IN-07).
 
 ### P3 — only on proven demand
 
@@ -853,7 +853,7 @@ Built, tested and committed; **deployed only once §14.1 records it**.
 | H-9 | ✅ built | `VARIANCE_UNEXPLAINED` checklist item: a closing report whose result is >20% unfavourably off target, until the story explains it |
 | H-10 | ✅ built | The pinned template's required annexes are a `TEMPLATE` layer in the resolver; `/settings/requirement-packs` authoring screen. Compliance statements stay checklist items |
 | H-11 | ✅ built | Admin whole-organisation ZIP (NDJSON per table, optional evidence files); every tenant table is exported or excluded with a reason (tested) |
-| H-12 | ◐ partly | 12-char policy at sign-up and invitation, durable lockout, role/status re-checked per request. **MFA is built but uncommitted** (TOTP: `totp-mfa-service.ts`, `mfa-handlers.ts`, `MfaPanel.tsx`, migration `20261022100000_user_mfa`); org export must omit its secret columns first |
+| H-12 | ✅ | 12-char policy at sign-up and invitation, durable lockout, role/status re-checked per request. **MFA is built and deployed** (TOTP: `totp-mfa-service.ts`, `mfa-handlers.ts`, `MfaPanel.tsx`, migration `20261022100000_user_mfa`); org export must omit its secret columns first |
 | H-13 | decided | Closed by C-5 for the donor seal; section approval is an assurance step. The second-approver rule stays opt-in because it blocks one-person teams |
 | H-14 | ✅ built | Project membership is an access boundary for project, entity and body-borne project ids (multipart uploads checked in the route) |
 | H-15 | ✅ built | Outside partners: `User.external`, FIELD_OFFICER/VIEWER only, named projects, strict route allow-list, files only from their projects. No new role. The web shows the full menu; screens outside the allow-list answer "not part of your account" |
@@ -865,7 +865,7 @@ Built, tested and committed; **deployed only once §14.1 records it**.
 | SE-09 | ◐ document (runbook written; the mailbox check and the first drill are open) | `memorybank/docs/runbooks/incident-response.md` (severity model, 72-hour workflow, breach register). Confirm the `privacy@` mailbox exists, then run the drill once |
 | C-8 | ☐ **open** | Needs your browser check: `memorybank/docs/marketing/phase28-publish-pack.md` |
 
-**Still not built:** MFA for tenant users; OCR; application-level encryption of evidence at rest; off-host backup copy; partner-specific screens (the web menu is unchanged); atomic audit beyond `ATOMIC_HANDLERS`.
+**Still not built (as of batch 3; see §18 for the current list):** partner-specific screens; atomic audit beyond `ATOMIC_HANDLERS`. MFA, OCR and encryption at rest have since been built (§16).
 
 **Deploy:** migrations `20261021160000_login_lockout`, `20261021170000_job_outbox`, `20261021180000_logframe_versions`, `20261021190000_programmes_and_grants`, `20261021200000_external_partners` (all additive; apply before the code), then re-run `infra/postgres/rls.sql` (adds `JobOutbox`, `LogframeVersion`, `Programme`, `Grant`); `/ready` requires `User.lockedUntil`, `User.external`, `JobOutbox.nextAttemptAt`. Optional env: `LLM_PRICES_JSON`, `AI_MONTHLY_COST_ALERT_USD`, `JOB_RETRY_INTERVAL_MS`.
 
@@ -971,3 +971,58 @@ Deploy notes: migrations `20261022120000_indicator_target_schedule`, `2026102213
 | PM-09 adaptations | ✅ `ProjectAdaptation` (RLS): what changed, why, effect on results, links; log page; record chunks for claim checks. Edit screen not built (API only) |
 
 Deploy: migrations `20261022150000_evidence_review_note`, `20261022160000_comment_threads`, `20261022170000_project_adaptations`, then `rls.sql` (79 forced-RLS tables); `/ready` also requires `EvidenceFile.reviewNote`, `Comment.parentId`, `ProjectAdaptation.whatChanged`, `DonorIndicatorMapping.requirementId`.
+
+
+## 18. Status ledger (2026-10-21, after batch 6)
+
+Legend: ✅ built, tested and deployed (or deployed as stated) · ◐ partly built (open part named) · ☐ not built. Last full gate on the branch: domain, application, contracts, infrastructure, web unit (390), workers (238) and architecture green; the API boot test needed a longer wait on a loaded machine (now 30 s). Items not re-verified in a browser are marked.
+
+### 18.1 Completed
+- ✅ **Critical C-1 to C-7, C-9** (batch 1 and 2): deny-by-default authorisation; evidence confidentiality at read time; PII firewall on the AI path; scheduled, encrypted, restore-tested backups; second-approver rule on seal; RLS on every tenant table with a coverage test; legal pages match the code; CI builds from migrations.
+- ✅ **High H-1 to H-6, H-8 to H-11, H-13 to H-21** (batches 2 and 3): logframe versioning; programmes and grants; atomic audit for the listed use cases; period lock; report notifications; orphaned suites in CI; donor required tables; variance check; requirement packs UI; organisation export; project membership boundary; outside partners; parser statuses; job outbox; AI cost and spend alert; live-eval workflow (see H-7 below).
+- ✅ **H-12** account security: 12-character policy, lockout, per-request role checks, two-step sign-in (TOTP, recovery codes). Partner-user MFA not built.
+- ✅ **ME-02 and ME-11** target schedule and variance (`Features/35`).
+- ✅ **ME-05 and ME-09** evidence required before VERIFIED (project setting); range and plausibility at entry (`indicator-value-rules.ts`) on the create and grid paths.
+- ✅ **ME-04, ME-12** (batch 2).
+- ✅ **PM-07 and PM-08 dashboard** (`Features/36`); ✅ **ME-07 guard** (counted-elsewhere mark and overlap warning).
+- ✅ **AI-04** donor indicator mapping (`Features/37`).
+- ✅ **AI-03** scanned PDFs and images read by OCR (`Features/38`). ✅ **AI-14** model, writing-rules version on section history. ✅ **AI-15** what changed, as figures and word counts (`Features/41`-adjacent; a word-level diff is not built).
+- ✅ **EV-06** evidence review (`Features/39`). ✅ **RP-06** evidence and project filters (`Features/39`). ✅ **RP-05** management report (`Features/41`). ✅ **RP-08** PDF indicator lines (not re-verified in a browser).
+- ✅ **CG-10** comment threads (`Features/40`). ✅ **PM-09** changes of plan (`Features/41`; edit screen not built).
+- ✅ **UX-03** demo project with a first quarter (`Features/42`). ✅ **UX-10** help articles inside the app (`docs/support/`).
+- ✅ **MK-10 and SE-09 mail**: sales inquiries and privacy mail go through the host's mail server (`CONTABO-DEPLOY.md`). Runbook exists; the drill is open.
+- ✅ **SE-06** off-host backup copy to Google Drive (nightly; encrypted; the passphrase still needs an off-host copy).
+- ✅ **OP-11** rollback on failed verify (`deploy-fast.sh`).
+- ✅ **C-8 code side**: Phase 28 features are live and most were browser-checked (`marketing/phase28-publish-pack.md` §5).
+
+### 18.2 Partly built (the open part)
+- ◐ **C-8** publish Phase 28 features: the remaining browser checks (Timeline drag, My week offline, requests and reminders, milestones, grants placement, partner invite, "target changed from X to Y") and the website copy stay unpublished until they pass.
+- ◐ **H-7** live AI evaluation: nightly workflow exists; needs the `AI_EVAL_API_KEY` secret set on the repository.
+- ◐ **SE-03** encryption at rest: built and tested, **off** in production until a key is made and a copy kept off the host (`Features/38`).
+- ◐ **SE-09** incident response: runbook written; the `support@` mailbox is the contact now; the first drill is open.
+- ◐ **MK-09** customer proof: needs a customer's permission and results; nothing published.
+- ◐ **MK-10** trial flag: the sales form is live; the decision on the trial default is open.
+- ◐ **AI-03** spreadsheets are still flattened to text; scanned tables come out as lines.
+- ◐ **ME-07** roll-up: no region or sector dimensions.
+- ◐ **PM-09** changes of plan: no edit screen (API only); not yet shown in the report text.
+- ◐ **AI-15** change summary is figures and word counts, not a word-level diff.
+- ◐ **OP-04** `db push` is local-only; production uses migrations; the host's migration bookkeeping was fixed earlier.
+- ◐ **OP-05** the AI eval is outside the merge gate (nightly only).
+
+### 18.3 Not built
+- ☐ **Products deferred until a customer asks:** IN-05 DHIS2, IN-07 outbound webhooks, IN-06 public API with keys, IN-04 Kobo/ODK mapping to indicators, IN-08 bulk migration, IN-09 location and partner registries, IN-10 per-row rejection reports for four imports.
+- ☐ **ME-10** evaluation and learning (decided as out of scope for now; reclassify if a pilot asks).
+- ☐ **Offline app opening** (EV-11, EV-12); the app is capture-only offline.
+- ☐ **Evidence:** version history (EV-07), retention and deletion (EV-10), partner submissions (EV-13), duplicate and staleness detection (EV-05), full-text search of file contents (EV-09).
+- ☐ **Reporting:** scheduled report generation (RP-09), sealed snapshot bundling into exports (RP-10), side-by-side period comparison (RP-12), a management report in Word or PDF.
+- ☐ **AI:** terminology enforced, not advisory (AI-11); extracted deadlines enforced (AI-13).
+- ☐ **Security and resilience:** business continuity beyond the single host (SE-07), certification path (SE-15), data residency per organisation (SE-02), in-memory password-reset limiter (SE-05), retention periods (SE-10), tenant self-service offboarding (SE-14).
+- ☐ **Experience:** accessibility scan (UX-08), right-to-left and localisation (UX-09), a ticket system (UX-12), product analytics (UX-11), competitive comparison (MK-11), help-article freshness dates.
+- ☐ **Operations:** alert receivers (OP-08), a load test (OP-09).
+- ☐ **Programme:** handover at closing (PM-10), lessons-learned miner wired to nothing (PM-10).
+
+### 18.4 Decisions waiting on you
+1. Turn encryption at rest on (needs a key and a copy kept off the host).
+2. Browser checks that need extra people or records, then publish the Phase 28 copy.
+3. Trial default (MK-10) and the first customer proof (MK-09).
+4. Whether webhooks, DHIS2 or the public API are wanted now.
