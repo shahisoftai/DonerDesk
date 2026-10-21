@@ -18,8 +18,8 @@ export class PrismaPortfolioValueReader implements IPortfolioValueReader {
   async indicatorValues(projectIds: string[], tenantId: TenantId): Promise<Result<PortfolioIndicatorRow[], DomainError>> {
     const tenant = tenantId.toString();
     const [indicators, projects] = await Promise.all([
-      this.prisma.indicator.findMany({ where: { tenantId: tenant, projectId: { in: projectIds }, archivedAt: null }, select: { id: true, projectId: true, code: true, name: true, type: true, unit: true, target: true } }),
-      this.prisma.project.findMany({ where: { tenantId: tenant, id: { in: projectIds } }, select: { id: true, title: true, donorName: true } }),
+      this.prisma.indicator.findMany({ where: { tenantId: tenant, projectId: { in: projectIds }, archivedAt: null }, select: { id: true, projectId: true, code: true, name: true, type: true, unit: true, target: true, countedElsewhere: true } }),
+      this.prisma.project.findMany({ where: { tenantId: tenant, id: { in: projectIds } }, select: { id: true, title: true, donorName: true, country: true, startDate: true, endDate: true } }),
     ]);
     if (indicators.length === 0) return ok([]);
     const updates = await this.prisma.indicatorUpdate.findMany({
@@ -47,6 +47,8 @@ export class PrismaPortfolioValueReader implements IPortfolioValueReader {
         projectId: i.projectId, projectTitle: project?.title ?? "", donorName: project?.donorName ?? "",
         indicatorCode: i.code, indicatorName: i.name, unit: i.unit ?? null, type: i.type, target: parseAmount(i.target),
         verifiedCumulative: v?.value ?? null, verifiedAsOf: v?.asOf ?? null,
+        countedElsewhere: i.countedElsewhere, country: project?.country ?? "",
+        startDate: project?.startDate.toISOString().slice(0, 10) ?? "", endDate: project?.endDate.toISOString().slice(0, 10) ?? "",
       };
     }));
   }

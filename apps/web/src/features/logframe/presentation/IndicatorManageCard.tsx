@@ -28,6 +28,7 @@ export interface ManagedIndicator {
   disaggregationRequired: boolean;
   targetBreakdowns?: BreakdownTargetRow[];
   targetSchedule?: { asOf: string; target: string }[];
+  countedElsewhere?: boolean;
 }
 
 /**
@@ -45,6 +46,7 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
   const [itemId, setItemId] = useState(indicator.logframeItemId ?? "");
   const [breakdowns, setBreakdowns] = useState<BreakdownTargetRow[]>(indicator.targetBreakdowns ?? []);
   const [scheduleText, setScheduleText] = useState(formatTargetScheduleText(indicator.targetSchedule ?? []));
+  const [countedElsewhere, setCountedElsewhere] = useState(indicator.countedElsewhere ?? false);
   const [busy, setBusy] = useState<"save" | "move" | "remove" | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -68,6 +70,7 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
       disaggregationRequired: breakdown,
       targetBreakdowns: completeBreakdownRows(breakdowns),
       targetSchedule: parsedSchedule.schedule,
+      countedElsewhere,
     });
     setBusy(null);
     if (!result.ok) return setMessage({ tone: "error", text: result.error.message });
@@ -115,6 +118,10 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
       <label className="flex items-center gap-2 text-sm">
         <Checkbox checked={breakdown} onChange={(e) => setBreakdown(e.target.checked)} />
         <span>Record a breakdown by sex, age group and disability</span>
+      </label>
+      <label className="flex items-start gap-2 text-sm">
+        <Checkbox checked={countedElsewhere} onChange={(e) => setCountedElsewhere(e.target.checked)} />
+        <span>Another project also counts these people or things. Show it in the portfolio but do not add it to the totals, so nobody is counted twice.</span>
       </label>
       <Field label="Target schedule (optional)" htmlFor="manage-schedule" description="The cumulative target due by each date, one per line, for example 2026-03-31: 250. A period is then judged against what was due by then. Leave empty to judge against the target above.">
         <Textarea id="manage-schedule" rows={4} value={scheduleText} onChange={(e) => setScheduleText(e.target.value)} disabled={busy !== null} />

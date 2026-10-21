@@ -34,6 +34,7 @@ export class CreateIndicatorHandler {
       disaggregationRequired: input.disaggregationRequired,
       targetBreakdowns: breakdowns.value,
       targetSchedule: sortedTargetSchedule(input.targetSchedule ?? []),
+      countedElsewhere: input.countedElsewhere ?? false,
     });
     const saved = await this.repo.create(ind);
     if (!saved.ok) return saved;

@@ -16,6 +16,12 @@ export interface PortfolioIndicatorValue {
   verifiedCumulative: number | null;
   /** The reporting-period end the verified value belongs to (YYYY-MM-DD). */
   verifiedAsOf: string | null;
+  /** Set on the indicator when what it counts is also counted by another project: it is listed, never added. */
+  countedElsewhere?: boolean | undefined;
+  /** Where and when the project works; two projects that share both may be counting the same people. */
+  country?: string | undefined;
+  startDate?: string | undefined;
+  endDate?: string | undefined;
 }
 
 export interface RollupProject {
@@ -40,6 +46,31 @@ export interface RollupGroup {
   projects: RollupProject[];
   /** Projects whose unit or type differs from the rest of the group: listed, not summed. */
   mismatched: RollupProject[];
+  /** Projects whose indicator is marked as counted by another project: listed, not summed. */
+  countedElsewhere: RollupProject[];
+  /** Counted projects that share a country and overlapping dates: if they reach the same people, the total counts them twice. */
+  possibleOverlap: { projects: string[]; message: string } | null;
+}
+
+const overlaps = (a: { startDate?: string | undefined; endDate?: string | undefined }, b: { startDate?: string | undefined; endDate?: string | undefined }): boolean =>
+  !!a.startDate && !!a.endDate && !!b.startDate && !!b.endDate && a.startDate <= b.endDate && b.startDate <= a.endDate;
+
+/** Counted projects in the same country whose dates overlap. Never changes a total: it only says the total may count a person twice. */
+export function findPossibleOverlap(counted: ReadonlyArray<PortfolioIndicatorValue>): { projects: string[]; message: string } | null {
+  const titles = new Set<string>();
+  for (let i = 0; i < counted.length; i += 1) {
+    for (let j = i + 1; j < counted.length; j += 1) {
+      const a = counted[i]!;
+      const b = counted[j]!;
+      if (!a.country || !b.country || a.country.trim().toLowerCase() !== b.country.trim().toLowerCase()) continue;
+      if (!overlaps(a, b)) continue;
+      titles.add(a.projectTitle);
+      titles.add(b.projectTitle);
+    }
+  }
+  if (titles.size === 0) return null;
+  const projects = [...titles].sort((x, y) => x.localeCompare(y));
+  return { projects, message: "These projects work in the same country at the same time. If they reach the same people, the total counts them twice: mark the indicator on one of them as counted by another project." };
 }
 
 const sumOrNull = (xs: Array<number | null>): number | null => {
@@ -58,7 +89,8 @@ export function rollUpIndicators(rows: ReadonlyArray<PortfolioIndicatorValue>): 
     .map((members) => {
       const head = members[0]!;
       const sameAs = (r: PortfolioIndicatorValue) => (r.unit ?? "") === (head.unit ?? "") && r.type === head.type;
-      const counted = members.filter(sameAs);
+      const counted = members.filter((r) => sameAs(r) && !r.countedElsewhere);
+      const countedElsewhere = members.filter((r) => sameAs(r) && r.countedElsewhere).map(toProject);
       const mismatched = members.filter((r) => !sameAs(r)).map(toProject);
       const projects = counted.map(toProject);
       const total = sumOrNull(counted.map((r) => r.verifiedCumulative));
@@ -66,7 +98,7 @@ export function rollUpIndicators(rows: ReadonlyArray<PortfolioIndicatorValue>): 
       const percentOfTarget = total !== null && targetTotal && head.type !== "PERCENTAGE" ? Math.round((total / targetTotal) * 1000) / 10 : null;
       return {
         donorName: head.donorName, indicatorCode: head.indicatorCode, indicatorName: head.indicatorName, unit: head.unit,
-        total, targetTotal, percentOfTarget, projects, mismatched,
+        total, targetTotal, percentOfTarget, projects, mismatched, countedElsewhere, possibleOverlap: findPossibleOverlap(counted),
       };
     })
     .sort((a, b) => a.donorName.localeCompare(b.donorName) || a.indicatorCode.localeCompare(b.indicatorCode, undefined, { numeric: true }));
@@ -90,9 +122,13 @@ export function rollupTable(groups: ReadonlyArray<RollupGroup>): string[][] {
     for (const p of g.projects) {
       rows.push([g.donorName, g.indicatorCode, g.indicatorName, g.unit ?? "", p.projectTitle, num(p.value, "Not measured"), p.asOf ?? "", num(p.target, ""), ...group, ""]);
     }
+    for (const p of g.countedElsewhere) {
+      rows.push([g.donorName, g.indicatorCode, g.indicatorName, g.unit ?? "", p.projectTitle, num(p.value, "Not measured"), p.asOf ?? "", num(p.target, ""), ...group, "Counted by another project: not added to the total"]);
+    }
     for (const p of g.mismatched) {
       rows.push([g.donorName, g.indicatorCode, g.indicatorName, g.unit ?? "", p.projectTitle, num(p.value, "Not measured"), p.asOf ?? "", num(p.target, ""), ...group, "Different unit or type: not added to the total"]);
     }
+    if (g.possibleOverlap) rows.push([g.donorName, g.indicatorCode, g.indicatorName, "", g.possibleOverlap.projects.join("; "), "", "", "", ...group, "Possible double count: " + g.possibleOverlap.message]);
   }
   return rows;
 }

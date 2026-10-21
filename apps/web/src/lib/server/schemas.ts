@@ -354,6 +354,8 @@ export const IndicatorItemSchema = z.object({
   targetBreakdowns: z.array(z.object({ dimension: z.string(), category: z.string(), value: z.string() })).default([]),
   /** The cumulative target due by each date; empty = the project target applies. */
   targetSchedule: z.array(z.object({ asOf: z.string(), target: z.string() })).default([]),
+  /** Counted by another project too: left out of the portfolio totals. */
+  countedElsewhere: z.boolean().default(false),
   semantics: z
     .object({
       aggregation: z.string(),
@@ -1452,6 +1454,8 @@ export const PortfolioIndicatorsSchema = z.object({
     percentOfTarget: z.number().nullable(),
     projects: z.array(z.object({ projectId: z.string(), projectTitle: z.string(), value: z.number().nullable(), target: z.number().nullable(), asOf: z.string().nullable() })),
     mismatched: z.array(z.object({ projectId: z.string(), projectTitle: z.string(), value: z.number().nullable(), target: z.number().nullable(), asOf: z.string().nullable() })),
+    countedElsewhere: z.array(z.object({ projectId: z.string(), projectTitle: z.string(), value: z.number().nullable(), target: z.number().nullable(), asOf: z.string().nullable() })).default([]),
+    possibleOverlap: z.object({ projects: z.array(z.string()), message: z.string() }).nullable().default(null),
   })),
 });
 
@@ -1632,3 +1636,20 @@ export type FundingResponse = z.infer<typeof FundingResponseSchema>;
 export const MfaStatusSchema = z.object({ enabled: z.boolean(), enabledAt: z.string().nullable(), recoveryCodesLeft: z.number() });
 export const MfaSetupSchema = z.object({ secret: z.string(), otpauthUri: z.string() });
 export const MfaEnabledSchema = z.object({ recoveryCodes: z.array(z.string()) });
+
+export const PortfolioOverviewSchema = z.object({
+  totals: z.object({ projects: z.number(), behind: z.number(), needAttention: z.number(), openRisks: z.number(), highRisks: z.number(), reportsOverdue: z.number() }),
+  rows: z.array(
+    z.object({
+      projectId: z.string(),
+      title: z.string(),
+      donorName: z.string(),
+      country: z.string(),
+      status: z.string(),
+      delivery: z.object({ band: z.enum(["ON_TRACK", "AT_RISK", "OFF_TRACK", "NO_PLAN"]), label: z.string(), reason: z.string().nullable(), lateActivities: z.number(), valuesOverdue: z.number() }),
+      risks: z.object({ open: z.number(), high: z.number(), reviewOverdue: z.number() }),
+      reporting: z.object({ periodId: z.string(), deadline: z.string(), daysUntil: z.number(), status: z.string(), readinessScore: z.number() }).nullable(),
+      reportsOverdue: z.number(),
+    }),
+  ),
+});

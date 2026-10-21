@@ -52,6 +52,12 @@ export default async function PortfolioIndicatorsPage({ searchParams }: { search
                 <span className="font-mono text-slate-600 dark:text-slate-300">{num(p.value)}{p.asOf ? ` · as of ${p.asOf}` : ""}</span>
               </li>
             ))}
+            {g.countedElsewhere.map((p) => (
+              <li key={`c-${p.projectId}`} className="flex flex-wrap justify-between gap-2 py-2 text-slate-500">
+                <span>{p.projectTitle} (counted by another project, not added)</span>
+                <span className="font-mono">{num(p.value)}</span>
+              </li>
+            ))}
             {g.mismatched.map((p) => (
               <li key={`m-${p.projectId}`} className="flex flex-wrap justify-between gap-2 py-2 text-amber-700 dark:text-amber-400">
                 <span>{p.projectTitle} (different unit or type, not added)</span>
@@ -59,6 +65,11 @@ export default async function PortfolioIndicatorsPage({ searchParams }: { search
               </li>
             ))}
           </ul>
+          {g.possibleOverlap && (
+            <p role="note" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+              <strong>Possible double count:</strong> {g.possibleOverlap.projects.join(", ")}. {g.possibleOverlap.message}
+            </p>
+          )}
         </section>
       ))}
     </div>

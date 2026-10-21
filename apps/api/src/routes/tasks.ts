@@ -45,6 +45,13 @@ export async function registerTaskRoutes(app: FastifyInstance) {
     return { items: r.value };
   });
 
+  // The portfolio dashboard: delivery, problems and risks, and reporting, one row per project the person can see.
+  app.get("/v1/portfolio/overview", async (req) => {
+    const r = await req.container.handlers.getPortfolioOverview.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   // Days after a period ends that indicator values are due (default 5). Anyone on the project reads it; project editors set it.
   app.get("/v1/projects/:projectId/entry-due-days", async (req) => {
     const r = await req.container.handlers.getEntryDueDays.handle({ tenant: req.tenant, requestId: req.id }, (req.params as { projectId: string }).projectId);

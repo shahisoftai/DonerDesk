@@ -299,6 +299,7 @@ export const RULES: ReadonlyArray<{
   { method: "GET", route: /^\/v1\/portfolio\/indicators$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/portfolio\/indicators\/export$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/portfolio\/health$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/portfolio\/overview$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/entry-due-days$/, permission: "project.view" },
   { method: "PUT", route: /^\/v1\/projects\/[^/]+\/entry-due-days$/, permission: "project.edit" },
   // The assignee (or the person who asked) closes a request; the handler

@@ -61,3 +61,35 @@ test("a project title that looks like a formula stays text in the CSV", () => {
   const csv = toCsv(rollupTable(groups));
   assert.match(csv, /'=HYPERLINK/);
 });
+
+// ---- double-count guard -----------------------------------------------------------------------------------------------
+const gbase = { donorName: "D", indicatorCode: "O1", indicatorName: "People reached", unit: "people", type: "NUMBER", target: 100, verifiedAsOf: "2026-06-30" };
+const grow = (projectId, over = {}) => ({ ...gbase, projectId, projectTitle: projectId.toUpperCase(), verifiedCumulative: 50, country: "KE", startDate: "2026-01-01", endDate: "2026-12-31", ...over });
+
+test("an indicator marked as counted by another project is listed, not added", () => {
+  const [g] = rollUpIndicators([grow("a"), grow("b", { countedElsewhere: true })]);
+  assert.equal(g.total, 50);
+  assert.equal(g.targetTotal, 100);
+  assert.deepEqual(g.projects.map((p) => p.projectId), ["a"]);
+  assert.deepEqual(g.countedElsewhere.map((p) => p.projectId), ["b"]);
+  assert.equal(g.possibleOverlap, null); // only one project is counted, so there is nothing to double
+});
+
+test("two counted projects in the same country with overlapping dates are flagged, and the total is left as it is", () => {
+  const [g] = rollUpIndicators([grow("a"), grow("b", { startDate: "2026-06-01", endDate: "2027-05-31" })]);
+  assert.equal(g.total, 100);
+  assert.deepEqual(g.possibleOverlap.projects, ["A", "B"]);
+  assert.match(g.possibleOverlap.message, /counts them twice/);
+});
+
+test("different countries, disjoint dates or missing dates are not flagged", () => {
+  assert.equal(rollUpIndicators([grow("a"), grow("b", { country: "UG" })])[0].possibleOverlap, null);
+  assert.equal(rollUpIndicators([grow("a", { endDate: "2026-03-31" }), grow("b", { startDate: "2026-04-01" })])[0].possibleOverlap, null);
+  assert.equal(rollUpIndicators([grow("a"), grow("b", { startDate: undefined })])[0].possibleOverlap, null);
+});
+
+test("the spreadsheet says why a row is not added and names a possible double count", () => {
+  const rows = rollupTable(rollUpIndicators([grow("a"), grow("b", { countedElsewhere: true }), grow("c")]));
+  assert.ok(rows.some((r) => r[4] === "B" && /Counted by another project/.test(r[r.length - 1])));
+  assert.ok(rows.some((r) => /Possible double count/.test(r[r.length - 1])));
+});

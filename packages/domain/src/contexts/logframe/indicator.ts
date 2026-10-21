@@ -29,6 +29,8 @@ export interface IndicatorProps {
   targetBreakdowns?: DisaggregationEntry[];
   /** The cumulative target due by given dates, so a period is judged against what was due by then (empty: the project target applies). */
   targetSchedule?: TargetScheduleEntry[];
+  /** What this indicator counts is also counted by another project, so the portfolio roll-up lists it but does not add it. */
+  countedElsewhere?: boolean;
 }
 
 export class Indicator extends Entity<string> {
@@ -60,6 +62,7 @@ export class Indicator extends Entity<string> {
     disaggregationRequired?: boolean;
     targetBreakdowns?: DisaggregationEntry[];
     targetSchedule?: TargetScheduleEntry[];
+    countedElsewhere?: boolean;
   }): Indicator {
     if (!input.code) throw DomainError.validation("Indicator code required");
     if (!input.name) throw DomainError.validation("Indicator name required");
@@ -73,6 +76,7 @@ export class Indicator extends Entity<string> {
       target: input.target ?? "",
       targetBreakdowns: input.targetBreakdowns ?? [],
       targetSchedule: input.targetSchedule ?? [],
+      countedElsewhere: input.countedElsewhere ?? false,
       unit: input.unit,
       meansOfVerification: input.meansOfVerification,
       dataSource: input.dataSource,
@@ -108,6 +112,7 @@ export class Indicator extends Entity<string> {
   get archivedAt(): Date | undefined { return this.props.archivedAt; }
   get targetBreakdowns(): DisaggregationEntry[] { return this.props.targetBreakdowns ?? []; }
   get targetSchedule(): TargetScheduleEntry[] { return this.props.targetSchedule ?? []; }
+  get countedElsewhere(): boolean { return this.props.countedElsewhere ?? false; }
   get isArchived(): boolean { return this.props.archivedAt !== undefined; }
 
   get semantics(): IndicatorSemantics | undefined {

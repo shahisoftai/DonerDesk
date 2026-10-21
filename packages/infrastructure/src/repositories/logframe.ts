@@ -133,6 +133,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         semanticsJson: i.semanticsJson,
         targetBreakdownsJson: i.targetBreakdowns.length ? JSON.stringify(i.targetBreakdowns) : null,
         targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
+        countedElsewhere: i.countedElsewhere,
       },
     });
     return ok(i);
@@ -158,6 +159,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         semanticsJson: i.semanticsJson,
         targetBreakdownsJson: i.targetBreakdowns.length ? JSON.stringify(i.targetBreakdowns) : null,
         targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
+        countedElsewhere: i.countedElsewhere,
       },
     });
     return ok(i);
@@ -201,6 +203,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     semanticsJson: string | null;
     targetBreakdownsJson: string | null;
     targetScheduleJson: string | null;
+    countedElsewhere: boolean;
     archivedAt: Date | null;
     createdAt: Date;
   }): Indicator {
@@ -225,6 +228,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         semanticsJson: row.semanticsJson ?? undefined,
         targetBreakdowns: parseTargetBreakdowns(row.targetBreakdownsJson),
         targetSchedule: parseTargetSchedule(row.targetScheduleJson),
+        countedElsewhere: row.countedElsewhere,
         archivedAt: row.archivedAt ?? undefined,
       },
     });

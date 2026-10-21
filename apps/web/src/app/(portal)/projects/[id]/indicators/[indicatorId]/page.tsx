@@ -57,7 +57,7 @@ export default async function IndicatorDetailPage({ params }: { params: Promise<
     />
     {ctx.capabilities.has("logframe.edit") && (
       <IndicatorManageCard
-        indicator={{ id: indicator.id, projectId: id, logframeItemId: indicator.logframeItemId, name: indicator.name, code: indicator.code, baseline: indicator.baseline, target: indicator.target, unit: indicator.unit ?? undefined, disaggregationRequired: indicator.disaggregationRequired ?? false, targetBreakdowns: indicator.targetBreakdowns, targetSchedule: indicator.targetSchedule }}
+        indicator={{ id: indicator.id, projectId: id, logframeItemId: indicator.logframeItemId, name: indicator.name, code: indicator.code, baseline: indicator.baseline, target: indicator.target, unit: indicator.unit ?? undefined, disaggregationRequired: indicator.disaggregationRequired ?? false, targetBreakdowns: indicator.targetBreakdowns, targetSchedule: indicator.targetSchedule, countedElsewhere: indicator.countedElsewhere }}
         items={result.value.items}
       />
     )}

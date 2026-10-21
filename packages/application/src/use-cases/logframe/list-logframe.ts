@@ -49,6 +49,7 @@ export class ListLogframeHandler {
           disaggregationRequired: i.disaggregationRequired,
           targetBreakdowns: i.targetBreakdowns,
           targetSchedule: i.targetSchedule,
+          countedElsewhere: i.countedElsewhere,
           semantics: i.semantics,
           semanticsDescription: describeSemantics(effectiveIndicatorSemantics(i), i.type),
         })),

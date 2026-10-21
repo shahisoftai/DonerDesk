@@ -75,6 +75,7 @@ export const CreateIndicatorSchema = z.object({
   disaggregationRequired: z.boolean().default(false),
   targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
   targetSchedule: z.array(TargetScheduleEntrySchema).max(60).optional(),
+  countedElsewhere: z.boolean().optional(),
 });
 export type CreateIndicatorInput = z.infer<typeof CreateIndicatorSchema>;
 
@@ -93,6 +94,7 @@ export const UpdateIndicatorSchema = z.object({
   disaggregationRequired: z.boolean().optional(),
   targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
   targetSchedule: z.array(TargetScheduleEntrySchema).max(60).optional(),
+  countedElsewhere: z.boolean().optional(),
 });
 export type UpdateIndicatorInput = z.infer<typeof UpdateIndicatorSchema>;
 

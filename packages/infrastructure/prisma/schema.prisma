@@ -452,6 +452,7 @@ model Indicator {
   semanticsJson         String?
   targetBreakdownsJson  String?
   targetScheduleJson    String? // [{asOf, target}]: the cumulative target due by each date; absent = the project target applies
+  countedElsewhere      Boolean  @default(false) // what it counts is also counted by another project: left out of portfolio totals
   archivedAt            DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt

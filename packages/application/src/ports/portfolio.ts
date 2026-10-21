@@ -12,6 +12,10 @@ export interface PortfolioIndicatorRow {
   target: number | null;
   verifiedCumulative: number | null;
   verifiedAsOf: string | null;
+  countedElsewhere: boolean;
+  country: string;
+  startDate: string;
+  endDate: string;
 }
 
 /** Live (not archived) indicators of the given projects, each with the latest verified cumulative value. */
