@@ -56,7 +56,9 @@ export function useActionState(): ActionState {
         }
         return undefined;
       }
-      return result.value;
+      // An action that succeeds without a value (resolve, verify, toggle) must not look like a failure: callers read `undefined` as "it
+      // did not work". Success with nothing to return reports `true`.
+      return (result.value === undefined ? (true as unknown as T) : result.value);
     } finally {
       inFlight.current = false;
       setBusy(false);
