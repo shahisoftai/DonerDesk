@@ -99,7 +99,8 @@ if [[ -n "${OFFHOST_TARGET}" ]]; then
   if [[ "${OFFHOST_TARGET}" == rclone:* ]]; then
     rclone copy "${STAMP}" "${OFFHOST_TARGET#rclone:}/${DATE}" \
       || cleanup_failed "the off-host push failed"
-    rclone delete "${OFFHOST_TARGET#rclone:}" --min-age "${RETENTION_DAYS}d" --rmdirs \
+    { rclone delete "${OFFHOST_TARGET#rclone:}" --min-age "${RETENTION_DAYS}d" \
+        && rclone rmdirs "${OFFHOST_TARGET#rclone:}" --leave-root; } \
       || echo "WARNING: pruning old off-host copies failed; the new copy is in place." >&2
   else
     rsync -az --delete "${STAMP}/" "${OFFHOST_TARGET}/" \
