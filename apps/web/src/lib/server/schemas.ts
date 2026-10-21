@@ -1678,3 +1678,10 @@ export const DonorIndicatorMappingSchema = z.object({
     alternatives: z.array(z.string()),
   })),
 });
+
+/** The standard management report of one project: titled tables with a sentence each. */
+export const ManagementReportSchema = z.object({
+  today: z.string(),
+  projectTitle: z.string(),
+  sections: z.array(z.object({ title: z.string(), summary: z.string(), headers: z.array(z.string()), rows: z.array(z.array(z.string())) })),
+});

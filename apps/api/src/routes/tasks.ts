@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { rollupTable, toCsv } from "@donordesk/domain";
+import { managementReportCsv, rollupTable, toCsv } from "@donordesk/domain";
 import { SetEntryDueDaysSchema, CloseRiskSchema, CreateRiskSchema, UpdateRiskSchema, UpdateNotificationPreferencesSchema, CompleteTaskSchema, CreateTaskSchema, ListAssignmentsQuerySchema, SetOwnerSchema } from "@donordesk/contracts";
 
 /**
@@ -31,6 +31,21 @@ export async function registerTaskRoutes(app: FastifyInstance) {
     reply.header("content-type", "text/csv; charset=utf-8");
     reply.header("content-disposition", 'attachment; filename="indicators-across-projects.csv"');
     return toCsv(rollupTable(r.value));
+  });
+
+  // The standard management report of one project: as tables, and as a CSV.
+  app.get("/v1/projects/:projectId/management-report", async (req) => {
+    const r = await req.container.handlers.getManagementReport.handle({ tenant: req.tenant, requestId: req.id }, (req.params as { projectId: string }).projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/management-report/export", async (req, reply) => {
+    const r = await req.container.handlers.getManagementReport.handle({ tenant: req.tenant, requestId: req.id }, (req.params as { projectId: string }).projectId);
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "text/csv; charset=utf-8");
+    reply.header("content-disposition", `attachment; filename="management-report-${r.value.today}.csv"`);
+    return managementReportCsv(r.value.sections);
   });
 
   app.get("/v1/portfolio/indicators", async (req) => {
