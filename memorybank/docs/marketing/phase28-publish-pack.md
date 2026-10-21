@@ -40,3 +40,9 @@ The drafts are in `memorybank/docs/support/_unpublished-phase28/`. Register each
 ## 4. Then
 
 Flip the AGENTS.md line about "Set it up, not Plan it", update `memorybank/pending.md:11`, and mark C-8 closed in the audit.
+
+## 5. Browser check on production, 2026-10-21 (demo tenant mnpiracha@gmail.com, WASH project)
+
+Passed: **1** Plan wizard (dates proposed, 6 activities created, list shows "Late", "No lead yet"); **2** Timeline renders with no page errors (drag not exercised); **3** Mark done records a completed activity (needs a reporting period covering the finished date, and says so otherwise) and moves the plan item to Done; the Overview shows "Behind 1 of 6, 5 activities late"; **5** a problem raised with four fields shows on the Overview and closes with "how it ended"; **9** "Sign off the framework" saves Version 1 with plain-language entries; **8 (part)** a programme and a grant can be added (project placement was not run).
+
+Not yet checked: drag on the Timeline, My week and offline, requests and reminders (needs a team member), milestones and dependencies, "Suggested from your plan", placing a project under a grant, outside-partner invite, "target changed from X to Y". **Do not publish those lines yet.** Note: "This week" in the List also holds late and under-way items, by design.
