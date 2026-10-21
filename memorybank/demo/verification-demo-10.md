@@ -38,3 +38,22 @@ The WASH project's plan (6 planned activities, one done), a closed problem, a si
 - **Encryption at rest** is built and tested but off in production until the master key has a copy outside the host (`docs/runbooks/evidence-encryption.md`).
 - Not clicked in the browser: Timeline dragging, My week offline, requests and reminders, milestones and dependencies, "Suggested from your plan", placing a project under a grant, the outside-partner invite (those need extra people or records), PDF download.
 - The section "what changed" sentence needs a section with two versions.
+
+## Addendum: the five medium items (same day, releases `20261021075101` and `…080953`)
+
+| Item | What was checked on production | Result |
+|---|---|---|
+| **EV-06** evidence review | A verified file: "Ask for a correction" is refused without a reason; with one the file reads "A correction was asked for. Reviewer: …"; "Verify evidence" returns it to verified; both change the screen without a reload | ✅ |
+| **CG-10** comment threads | Comment, reply under it, Resolve ("Resolved by … · time"), Reopen; each refreshes by itself | ✅ |
+| **RP-06** filters | `/evidence?donor=…` shows the donor chip and only that donor's files; project page offers Reporting period and Collected in; `/projects?country=Pakistan` gives 6 of 23 | ✅ |
+| **RP-05** management report | Six sections render, CSV downloads (`text/csv`, starts with the project section) | ✅ |
+| **PM-09** changes of plan | Recorded a change with an indicator link; it appears in the log and the report's claim checks read it as a record (record chunk, covered by tests, not exercised in a live draft) | ✅ / ◐ |
+
+### Found and fixed while verifying
+1. **Buttons that did their work and then looked as if nothing happened.** `useActionState.run` returned `undefined` for an action that succeeded with no value, and callers read `undefined` as failure, so Resolve, Verify and similar buttons never refreshed the screen. Success with no value now reports `true`; this repairs every screen that relied on the old behaviour.
+2. The API boot test waited 10 s for the server on a busy machine; it now waits 30 s.
+3. A hydration warning on comment dates (server and browser time zones); the dates are marked so the browser's wins.
+
+### Still not done
+- Webhooks, DHIS2, evaluation and learning, a public API and an offline app: each needs an outside system or a customer who asks; none is built.
+- The adaptation log can be edited through the API (`PUT /v1/adaptations/:id`) but has no edit screen yet.

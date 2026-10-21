@@ -425,3 +425,7 @@ in-process default), stub LLM (dev default), pino logs, console email.
 - **Encryption at rest** (`EVIDENCE_ENCRYPTION_KEYS`, `at-rest-encryption.ts`) is off until the key has a copy off the host; storage key is the authenticated data; legacy plaintext stays readable until `storage:encrypt`.
 - **Deleting a demo project** follows the database's foreign keys (children first, one transaction): do not go back to a hand-kept table list.
 - Running `pnpm -r --filter=./packages/* build` from inside `packages/` matches nothing and leaves `dist/` stale: build from the repo root.
+- **`useActionState().run` returns `true` for an action that succeeded with no value** (`undefined` always means "it did not work"). Do not write a new caller that treats `undefined` as success.
+- **A comment on a report statement hangs from `<sectionId>:<fingerprint>`, never the claim id** (claims are recreated on every re-check). Threads are one level deep; a resolved thread takes no replies until reopened.
+- **Evidence review is `checkEvidenceReview`**: a correction request and a rejection need a reason; reject and archive are refused while an approved, exported or submitted report cites the file.
+- **Changes of plan are records** (`ProjectAdaptation`, `adaptationSentence`): dated sentences the claim checker may read; never sent to the writer.

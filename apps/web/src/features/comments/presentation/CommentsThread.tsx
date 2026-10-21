@@ -134,7 +134,7 @@ export function CommentsThread({
         {threads.map((t) => (
           <li key={t.root.id} className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs text-slate-500 dark:text-slate-400">{who(t.root.authorId)} · {formatDateTime(t.root.createdAt.toISOString())}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400" suppressHydrationWarning>{who(t.root.authorId)} · {formatDateTime(t.root.createdAt.toISOString())}</span>
               <Badge tone={t.status === "RESOLVED" ? "success" : "info"}>{t.status === "RESOLVED" ? "Resolved" : "Open"}</Badge>
             </div>
             <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{t.root.commentText}</p>
@@ -143,7 +143,7 @@ export function CommentsThread({
               <ul className="mt-2 space-y-2 border-l-2 border-slate-200 pl-3 dark:border-white/10">
                 {t.replies.map((r) => (
                   <li key={r.id}>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">{who(r.authorId)} · {formatDateTime(r.createdAt.toISOString())}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400" suppressHydrationWarning>{who(r.authorId)} · {formatDateTime(r.createdAt.toISOString())}</span>
                     <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{r.commentText}</p>
                   </li>
                 ))}
@@ -151,7 +151,7 @@ export function CommentsThread({
             )}
 
             {t.status === "RESOLVED" && t.resolvedAt && (
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Resolved by {who(t.resolvedById)} · {formatDateTime(t.resolvedAt.toISOString())}</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400" suppressHydrationWarning>Resolved by {who(t.resolvedById)} · {formatDateTime(t.resolvedAt.toISOString())}</p>
             )}
 
             <div className="mt-2 flex flex-wrap gap-2">

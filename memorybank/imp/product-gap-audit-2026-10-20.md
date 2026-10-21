@@ -959,3 +959,15 @@ and run once (3 organisations, 0 broken), worker `/v1/parse` returns `EXTRACTED`
 | UX-10 help articles | ✅ in `apps/web/content/support` |
 
 Deploy notes: migrations `20261022120000_indicator_target_schedule`, `20261022130000_indicator_counted_elsewhere`, `20261022140000_donor_indicator_mapping`, then `rls.sql` (78 forced-RLS tables); `/ready` requires `Indicator.targetScheduleJson` and `Indicator.countedElsewhere`.
+
+## 17. Gap closure, batch 6 (2026-10-21, deployed; `demo/verification-demo-10.md`, addendum)
+
+| Item | Status |
+|---|---|
+| EV-06 evidence review | ✅ `checkEvidenceReview` (one table), reviewer's reason on the file (`EvidenceFile.reviewNote`), a file an approved or sent report relies on cannot be rejected or archived (names the report), re-pointing a verified file sends it back for review |
+| CG-10 comment threads | ✅ `Comment.parentId/resolvedById/resolvedAt`, one level of replies, reopen, comments on a report statement (keyed by section + wording fingerprint so they survive a re-check) |
+| RP-06 filters | ✅ evidence by project, period, location, donor, country; projects by donor and country |
+| RP-05 management report | ✅ `GET /v1/projects/:id/management-report` (+ `/export` CSV), page and download |
+| PM-09 adaptations | ✅ `ProjectAdaptation` (RLS): what changed, why, effect on results, links; log page; record chunks for claim checks. Edit screen not built (API only) |
+
+Deploy: migrations `20261022150000_evidence_review_note`, `20261022160000_comment_threads`, `20261022170000_project_adaptations`, then `rls.sql` (79 forced-RLS tables); `/ready` also requires `EvidenceFile.reviewNote`, `Comment.parentId`, `ProjectAdaptation.whatChanged`, `DonorIndicatorMapping.requirementId`.
