@@ -930,3 +930,16 @@ Restore point `20261020T130755Z` taken first; both migrations applied as `donord
 Verified: `/ready` 200 (database, Prisma client, worker), four services active, worker contract v6, audit-verify timer installed
 and run once (3 organisations, 0 broken), worker `/v1/parse` returns `EXTRACTED`/`EMPTY` and 413 over 20 MB, unauthenticated 401.
 **Not browser-verified:** the breakdown on the single-value path, the "Reviewer:" note and the evidence "words not read" notice need the user's account.
+
+---
+
+## 15. Gap closure, batch 4 (2026-10-21, committed, **not deployed**)
+
+| Item | Status |
+|---|---|
+| H-12 MFA | ✅ built (TOTP), committed; secrets omitted from the organisation export (regression caught by the H-11 test) |
+| ME-05/09 evidence before VERIFIED | ✅ built, committed (project profile toggle) |
+| MK-10 contact-sales email | ✅ `EmailContactSalesNotifier` (Postmark) to `SALES_INBOX_EMAIL`, default `support@donordesk.online`; `support@` is also the privacy mailbox, SE-09 runbook updated. Needs `EMAIL_PROVIDER=postmark` + `POSTMARK_SERVER_TOKEN` in `api.env` |
+| RP-08 PDF indicator lines | ✅ use `indicatorExportColumns`/`indicatorExportCell` like Word and Excel |
+| OP-11 deploy rollback | ✅ already in `deploy-fast.sh` (`rollback_to_snapshot`) |
+| SE-06 off-host copy | ◐ `backup.sh` accepts `OFFHOST_TARGET=rclone:<remote>:<path>` (Drive); the host still needs an authorised rclone remote |
