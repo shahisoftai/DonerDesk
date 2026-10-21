@@ -14,6 +14,10 @@
       "types": "./dist/contexts/reporting/pack-authoring.d.ts",
       "import": "./dist/contexts/reporting/pack-authoring.js"
     },
+    "./contexts/logframe/target-schedule.js": {
+      "types": "./dist/contexts/logframe/target-schedule.d.ts",
+      "import": "./dist/contexts/logframe/target-schedule.js"
+    },
     "./contexts/reporting/data-sheet.js": {
       "types": "./dist/contexts/reporting/data-sheet.d.ts",
       "import": "./dist/contexts/reporting/data-sheet.js"

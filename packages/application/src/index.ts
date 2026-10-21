@@ -9,6 +9,7 @@ export * from "./ports/logframe.js";
 export * from "./ports/evidence.js";
 export * from "./ports/evidence-linker.js";
 export * from "./services/activity-link-resolver.js";
+export * from "./services/demo-content-seeder.js";
 export * from "./use-cases/evidence/get-evidence-support.js";
 export * from "./services/evidence-link-service.js";
 export * from "./ports/activities.js";

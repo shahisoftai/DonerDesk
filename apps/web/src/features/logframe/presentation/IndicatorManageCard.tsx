@@ -1,6 +1,6 @@
 "use client";
 
-import { formatTargetScheduleText, parseTargetScheduleText } from "@donordesk/domain";
+import { formatTargetScheduleText, parseTargetScheduleText } from "@donordesk/domain/contexts/logframe/target-schedule.js";
 import { Textarea } from "@/components/ui/Textarea";
 import { useState } from "react";
 import { useRouter } from "next/navigation";

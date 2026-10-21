@@ -29,7 +29,8 @@ def _render(count: int, total: int | None = None):
 
 
 def test_lines_are_read_in_reading_order_and_scored():
-    engine = FakeEngine([[OcrLine("second row", 0.9, 10, 40), OcrLine("right", 0.4, 300, 10), OcrLine("left", 0.95, 10, 12)]])
+    lines = [OcrLine("second row", 0.9, 10, 40), OcrLine("right", 0.4, 300, 10), OcrLine("left", 0.95, 10, 12)]
+    engine = FakeEngine([lines])
     result = ocr.ocr_pdf(b"x", engine, render=_render(1))
     assert result.text.splitlines() == ["left", "right", "second row"]
     assert result.uncertain_lines == 1
