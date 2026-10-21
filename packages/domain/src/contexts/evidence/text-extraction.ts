@@ -41,10 +41,13 @@ export function extractionMessage(status: Exclude<TextExtractionStatus, "EXTRACT
 
 /**
  * Judges a parser's result. `failed` is true when the parser reported an error; a result whose text is only the file's
- * own name is the placeholder given to files with no readable words (images and unknown types).
+ * own name is the placeholder given to files with no readable words (images and unknown types). `readByOcr` says the text
+ * came from text recognition of a scan, so an image or a scanned PDF that gave words counts as read.
  */
-export function assessTextExtraction(input: { fileName: string; text: string; failed?: boolean }): TextExtractionAssessment {
+export function assessTextExtraction(input: { fileName: string; text: string; failed?: boolean; readByOcr?: boolean }): TextExtractionAssessment {
   const text = input.text.trim();
+  // Words read from a scan by text recognition are words: the person is told to check them (a note), the file is not refused.
+  if (input.readByOcr && text.length > 0 && !input.failed) return { status: "EXTRACTED" };
   if (input.failed) return { status: "FAILED", message: extractionMessage("FAILED", input.fileName) };
   if (IMAGE_EXTENSIONS.has(extensionOf(input.fileName)) || (text.length > 0 && text.toLowerCase() === input.fileName.trim().toLowerCase())) {
     return { status: "UNSUPPORTED", message: extractionMessage("UNSUPPORTED", input.fileName) };

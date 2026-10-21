@@ -30,3 +30,12 @@ test("every non-extracted status has a sentence", () => {
   assert.equal(isTextExtractionStatus("FAILED"), true);
   assert.equal(isTextExtractionStatus("nope"), false);
 });
+
+test("words read from a scan by text recognition count as read, even for an image", () => {
+  assert.equal(assessTextExtraction({ fileName: "photo.png", text: "Sign-in sheet: 24 present", readByOcr: true }).status, "EXTRACTED");
+  assert.equal(assessTextExtraction({ fileName: "scan.pdf", text: "Wells drilled: 12", readByOcr: true }).status, "EXTRACTED");
+  // recognition that found nothing is not read
+  assert.equal(assessTextExtraction({ fileName: "photo.png", text: "  ", readByOcr: true }).status, "UNSUPPORTED");
+  // without recognition an image is still not readable
+  assert.equal(assessTextExtraction({ fileName: "photo.png", text: "Sign-in sheet" }).status, "UNSUPPORTED");
+});

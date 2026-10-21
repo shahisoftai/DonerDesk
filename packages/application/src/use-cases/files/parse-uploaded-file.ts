@@ -22,7 +22,7 @@ export class ParseUploadedFileHandler {
     }
     const parsed = await this.parser.parse(input);
     const failed = typeof parsed.metadata?.parseError === "string" && parsed.metadata.parseError.length > 0;
-    const verdict = assessTextExtraction({ fileName: input.fileName, text: parsed.text, failed });
+    const verdict = assessTextExtraction({ fileName: input.fileName, text: parsed.text, failed, readByOcr: parsed.metadata?.ocr !== undefined });
     if (verdict.status !== "EXTRACTED") {
       return { ok: false, error: DomainError.validation(verdict.message ?? "No readable text was found in this file.", { reason: verdict.status }) };
     }

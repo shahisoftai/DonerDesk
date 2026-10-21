@@ -87,3 +87,11 @@ test("H-20: a callback that says nothing about extraction leaves it not attempte
   await persist(ev).handle(ctx, "e1", base);
   assert.equal(ev.textExtractionStatus, undefined);
 });
+
+test("a photographed page read by text recognition is accepted and carries its note", async () => {
+  const handler = new ParseUploadedFileHandler({ parse: async () => ({ text: "Sign-in sheet: 24 present", metadata: { ocr: { confidence: 0.9, pagesRead: 1, pagesTotal: 1 }, ocrNote: "check it" } }) });
+  const r = await handler.handle({ buffer: Buffer.from("x"), fileName: "photo.png", fileType: "image/png" });
+  assert.equal(r.ok, true);
+  assert.equal(r.value.text, "Sign-in sheet: 24 present");
+  assert.equal(r.value.metadata.ocrNote, "check it");
+});
