@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { SignUpSchema, LoginSchema, GoogleSignInSchema, ChangePasswordSchema, RequestPasswordResetSchema, ConfirmPasswordResetSchema, PasswordResetValidationResponseSchema, PasswordResetAcceptedResponseSchema, AcceptInvitationSchema, AcceptInvitationResponseSchema, InvitationPreviewSchema, LoginMfaSchema, MfaEnableSchema, MfaDisableSchema } from "@donordesk/contracts";
 import { DomainError, PasswordResetToken } from "@donordesk/domain";
+import { createContainer } from "@donordesk/infrastructure";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireResidencyMatch } from "../middleware/data-residency.js";
 
@@ -32,7 +33,19 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   });
 
   // Managing one's own two-step sign-in. With organization SSO the identity provider owns this, so it is off here.
-  const ownMfa = { preHandler: authMiddleware };
+  // These routes sit outside the authenticated scope in server.ts, so they build the caller's tenant container themselves.
+  const ownMfa = {
+    preHandler: [
+      authMiddleware,
+      async (req: { tenant: { tenantId: { toString(): string } }; container: unknown }) => {
+        req.container = createContainer({ tenantId: req.tenant.tenantId.toString() });
+      },
+    ] as never,
+    onResponse: async (req: { container?: { settleBackgroundWork(): Promise<void>; prisma: { $disconnect(): Promise<void> } } }) => {
+      await req.container?.settleBackgroundWork();
+      await req.container?.prisma.$disconnect();
+    },
+  };
   const ctxOf = (req: { tenant: unknown; ip: string; id: string }) => ({ tenant: req.tenant as never, ipAddress: req.ip, requestId: req.id });
   const noSso = () => { if (process.env.AUTH_PROVIDER === "oidc") throw DomainError.forbidden("Two-step sign-in is managed by your organization's single sign-on."); };
 
@@ -70,7 +83,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return result.value;
   });
 
-  app.post("/v1/auth/password/change", { preHandler: authMiddleware }, async (req, reply) => {
+  app.post("/v1/auth/password/change", ownMfa, async (req, reply) => {
     if (process.env.AUTH_PROVIDER === "oidc") throw DomainError.forbidden("Local password change is disabled when OIDC is enabled");
     const body = ChangePasswordSchema.parse(req.body);
     const result = await req.container.handlers.changePassword.handle(
