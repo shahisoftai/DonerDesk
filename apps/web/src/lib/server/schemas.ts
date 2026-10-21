@@ -741,6 +741,8 @@ export const ReportClaimSchema = z.object({
   verificationReasonCode: z.string().nullable().optional(),
   /** MATERIAL claims gate approval; NOT_MATERIAL ones never do. */
   materiality: z.string().nullable().optional(),
+  /** Follows the statement's wording, not its id (ids change on every re-check): what a comment on it hangs from. */
+  fingerprint: z.string().optional(),
   /** "Your report is wrong" (REPORT_ERROR) vs "our checker could not confirm" (UNCONFIRMED); presentation only. */
   flagClass: z.enum(["REPORT_ERROR", "NEEDS_DECISION", "UNCONFIRMED"]).optional(),
   /** Span of the statement in the section markdown when it was checked. */
@@ -911,6 +913,10 @@ export const CommentItemSchema = z.object({
   authorId: z.string().optional(),
   mentionedUserId: z.string().optional(),
   status: z.string().default("OPEN"),
+  /** Set on a reply: the first comment of its thread. */
+  parentId: z.string().optional(),
+  resolvedById: z.string().optional(),
+  resolvedAt: z.string().optional(),
   createdAt: z.string().optional(),
 });
 

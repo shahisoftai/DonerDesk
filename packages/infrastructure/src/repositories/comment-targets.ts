@@ -48,6 +48,14 @@ export class PrismaCommentTargets implements ICommentTargets {
         const r = await this.prisma.checklistItem.findFirst({ where });
         return r ? { title: "Checklist item", owners: [] } : null;
       }
+      case "report_claim": {
+        // A statement is named by its section and the fingerprint of its wording ("<sectionId>:<fingerprint>"), because claim ids are
+        // recreated on every re-check and a comment must survive that.
+        const [sectionId, fingerprint] = id.split(":");
+        if (!sectionId || !fingerprint) return null;
+        const section = await this.prisma.reportSection.findFirst({ where: { id: sectionId, tenantId: tenantId.toString() }, select: { sectionTitle: true } });
+        return section ? { title: `A statement in "${section.sectionTitle}"`, owners: [] } : null;
+      }
       default:
         return null;
     }

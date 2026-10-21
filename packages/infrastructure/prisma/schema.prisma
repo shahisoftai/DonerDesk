@@ -921,11 +921,15 @@ model Comment {
   authorId        String
   mentionedUserId String?
   status          String   @default("OPEN")
+  parentId        String? // a reply: the first comment of its thread (threads are one level deep)
+  resolvedById    String?
+  resolvedAt      DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([tenantId])
   @@index([entityType, entityId])
+  @@index([parentId])
 }
 
 model Notification {

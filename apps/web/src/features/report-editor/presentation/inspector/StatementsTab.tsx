@@ -1,5 +1,6 @@
 "use client";
 
+import { CommentsDisclosure } from "@/features/comments/presentation/CommentsDisclosure";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/data/Badge";
 import { Button } from "@/components/ui/Button";
@@ -276,6 +277,11 @@ function StatementCard({
               {decision === "keep" ? "Keep with note" : "Leave out"}
             </Button>
           </div>
+        </div>
+      )}
+      {claim.fingerprint && (
+        <div className="mt-2">
+          <CommentsDisclosure entityType="report_claim" entityId={`${claim.sectionId}:${claim.fingerprint}`} heading="Comments on this statement" />
         </div>
       )}
     </li>

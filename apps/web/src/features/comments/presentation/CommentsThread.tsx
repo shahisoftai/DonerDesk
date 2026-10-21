@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { addCommentAction, listCommentsAction, resolveCommentAction } from "@/lib/actions/comments";
+import { addCommentAction, listCommentsAction, reopenCommentAction, resolveCommentAction } from "@/lib/actions/comments";
 import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { Badge } from "@/components/data/Badge";
 import { formatDateTime } from "@/lib/shared/dates";
+import { buildThreads } from "@donordesk/domain/contexts/tasks/comment-thread.js";
 
 export type CommentableEntityType =
   | "report_section"
@@ -17,16 +18,26 @@ export type CommentableEntityType =
   | "activity_update"
   | "indicator"
   | "planned_activity"
-  | "project_risk";
+  | "project_risk"
+  | "report_claim";
 
 export type CommentItem = {
   id: string;
   commentText: string;
   authorId?: string;
   status?: string;
+  parentId?: string;
+  resolvedById?: string;
+  resolvedAt?: string;
   createdAt?: string;
 };
 
+const who = (id?: string): string => (id ? `User ${id.slice(0, 8)}` : "User");
+
+/**
+ * Comments as conversations: a first comment and the replies under it. A thread is resolved or reopened as a whole, and says who
+ * resolved it and when; a resolved thread takes no replies until it is reopened.
+ */
 export function CommentsThread({
   entityType,
   entityId,
@@ -41,8 +52,16 @@ export function CommentsThread({
   const router = useRouter();
   const actionState = useActionState();
   const [text, setText] = useState("");
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
   const [comments, setComments] = useState<CommentItem[]>(initialComments ?? []);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  async function reload() {
+    const r = await listCommentsAction(entityType, entityId);
+    if (r.ok) setComments(r.value as CommentItem[]);
+    router.refresh();
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -62,26 +81,46 @@ export function CommentsThread({
     };
   }, [entityType, entityId, initialComments]);
 
+  const threads = useMemo(
+    () =>
+      buildThreads(
+        comments.map(({ resolvedAt, ...c }) => ({
+          ...c,
+          status: (c.status === "RESOLVED" ? "RESOLVED" : "OPEN") as "OPEN" | "RESOLVED",
+          authorId: c.authorId ?? "",
+          createdAt: new Date(c.createdAt ?? 0),
+          ...(resolvedAt ? { resolvedAt: new Date(resolvedAt) } : {}),
+        })),
+      ),
+    [comments],
+  );
+
   async function add(e: React.FormEvent) {
     e.preventDefault();
     const value = text.trim();
     if (!value) return;
-    const result = await actionState.run(() =>
-      addCommentAction({ entityType, entityId, commentText: value }),
-    );
+    const result = await actionState.run(() => addCommentAction({ entityType, entityId, commentText: value }));
     if (result) {
       setText("");
-      setComments((prev) => [...prev, { id: result.id, commentText: value, status: "OPEN" }]);
-      router.refresh();
+      await reload();
     }
   }
 
-  async function resolve(id: string) {
-    const result = await actionState.run(() => resolveCommentAction(id));
-    if (result !== undefined) {
-      setComments((prev) => prev.map((c) => (c.id === id ? { ...c, status: "RESOLVED" } : c)));
-      router.refresh();
+  async function reply(e: React.FormEvent, parentId: string) {
+    e.preventDefault();
+    const value = replyText.trim();
+    if (!value) return;
+    const result = await actionState.run(() => addCommentAction({ entityType, entityId, commentText: value, parentId }));
+    if (result) {
+      setReplyText("");
+      setReplyTo(null);
+      await reload();
     }
+  }
+
+  async function change(id: string, action: typeof resolveCommentAction) {
+    const result = await actionState.run(() => action(id));
+    if (result !== undefined) await reload();
   }
 
   return (
@@ -91,24 +130,46 @@ export function CommentsThread({
       </h2>
       {loadError && <p className="mt-2 text-sm text-danger-700 dark:text-danger-400">{loadError}</p>}
       <ul className="mt-3 space-y-3">
-        {comments.length === 0 && (
-          <li className="text-sm text-slate-500 dark:text-slate-400">No comments yet.</li>
-        )}
-        {comments.map((c) => (
-          <li key={c.id} className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
+        {threads.length === 0 && <li className="text-sm text-slate-500 dark:text-slate-400">No comments yet.</li>}
+        {threads.map((t) => (
+          <li key={t.root.id} className="rounded-lg border border-slate-200 p-3 dark:border-white/10">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                {c.authorId ? `User ${c.authorId.slice(0, 8)}` : "User"} · {formatDateTime(c.createdAt)}
-              </span>
-              <Badge tone={c.status === "RESOLVED" ? "success" : "info"}>
-                {c.status === "RESOLVED" ? "Resolved" : "Open"}
-              </Badge>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{who(t.root.authorId)} · {formatDateTime(t.root.createdAt.toISOString())}</span>
+              <Badge tone={t.status === "RESOLVED" ? "success" : "info"}>{t.status === "RESOLVED" ? "Resolved" : "Open"}</Badge>
             </div>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{c.commentText}</p>
-            {c.status !== "RESOLVED" && (
-              <Button size="sm" variant="ghost" className="mt-2" onClick={() => resolve(c.id)}>
-                Resolve
-              </Button>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{t.root.commentText}</p>
+
+            {t.replies.length > 0 && (
+              <ul className="mt-2 space-y-2 border-l-2 border-slate-200 pl-3 dark:border-white/10">
+                {t.replies.map((r) => (
+                  <li key={r.id}>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{who(r.authorId)} · {formatDateTime(r.createdAt.toISOString())}</span>
+                    <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{r.commentText}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {t.status === "RESOLVED" && t.resolvedAt && (
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Resolved by {who(t.resolvedById)} · {formatDateTime(t.resolvedAt.toISOString())}</p>
+            )}
+
+            <div className="mt-2 flex flex-wrap gap-2">
+              {t.status === "OPEN" ? (
+                <>
+                  <Button size="sm" variant="ghost" onClick={() => setReplyTo(replyTo === t.root.id ? null : t.root.id)}>Reply</Button>
+                  <Button size="sm" variant="ghost" onClick={() => void change(t.root.id, resolveCommentAction)}>Resolve</Button>
+                </>
+              ) : (
+                <Button size="sm" variant="ghost" onClick={() => void change(t.root.id, reopenCommentAction)}>Reopen</Button>
+              )}
+            </div>
+
+            {replyTo === t.root.id && t.status === "OPEN" && (
+              <form onSubmit={(e) => void reply(e, t.root.id)} className="mt-2 space-y-2">
+                <Textarea aria-label="Your reply" rows={2} value={replyText} onChange={(e) => setReplyText(e.target.value)} maxLength={5000} placeholder="Reply…" />
+                <Button type="submit" size="sm" pending={actionState.busy} disabled={!replyText.trim()}>Send reply</Button>
+              </form>
             )}
           </li>
         ))}

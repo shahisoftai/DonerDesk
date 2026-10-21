@@ -11,13 +11,34 @@ function err<T = never>(e: DomainError): Result<T, DomainError> {
   return { ok: false, error: e };
 }
 
+type CommentRow = NonNullable<Awaited<ReturnType<PrismaClient["comment"]["findFirst"]>>>;
+
+function toCommentRecord(row: CommentRow): CommentRecord {
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    entityType: row.entityType,
+    entityId: row.entityId,
+    commentText: row.commentText,
+    authorId: row.authorId,
+    ...(row.mentionedUserId ? { mentionedUserId: row.mentionedUserId } : {}),
+    status: row.status as "OPEN" | "RESOLVED",
+    ...(row.parentId ? { parentId: row.parentId } : {}),
+    ...(row.resolvedById ? { resolvedById: row.resolvedById } : {}),
+    ...(row.resolvedAt ? { resolvedAt: row.resolvedAt } : {}),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
 export class PrismaCommentRepository implements ICommentRepository, ICommentCounter {
   constructor(private readonly prisma: PrismaClient) {}
+  /** Open threads: replies belong to their first comment and are not counted on their own. */
   async countOpenByEntities(entityType: string, entityIds: readonly string[], tenantId: TenantId): Promise<Result<Record<string, number>, DomainError>> {
     if (entityIds.length === 0) return ok({});
     const rows = await this.prisma.comment.groupBy({
       by: ["entityId"],
-      where: { tenantId: tenantId.toString(), entityType, entityId: { in: [...entityIds] }, status: "OPEN" },
+      where: { tenantId: tenantId.toString(), entityType, entityId: { in: [...entityIds] }, status: "OPEN", parentId: null },
       _count: { _all: true },
     });
     return ok(Object.fromEntries(rows.map((r) => [r.entityId, r._count._all])));
@@ -33,57 +54,32 @@ export class PrismaCommentRepository implements ICommentRepository, ICommentCoun
         authorId: c.authorId,
         mentionedUserId: c.mentionedUserId,
         status: c.status,
+        parentId: c.parentId ?? null,
       },
     });
     return ok(c);
   }
-  async resolve(id: string, tenantId: TenantId): Promise<Result<CommentRecord, DomainError>> {
-    await this.prisma.comment.updateMany({ where: { id, tenantId: tenantId.toString() }, data: { status: "RESOLVED" } });
+  async resolve(id: string, tenantId: TenantId, byUserId: string): Promise<Result<CommentRecord, DomainError>> {
+    await this.prisma.comment.updateMany({ where: { id, tenantId: tenantId.toString() }, data: { status: "RESOLVED", resolvedById: byUserId, resolvedAt: new Date() } });
+    return this.reload(id, tenantId);
+  }
+  async reopen(id: string, tenantId: TenantId): Promise<Result<CommentRecord, DomainError>> {
+    // null (not undefined) so the old resolver really is forgotten
+    await this.prisma.comment.updateMany({ where: { id, tenantId: tenantId.toString() }, data: { status: "OPEN", resolvedById: null, resolvedAt: null } });
+    return this.reload(id, tenantId);
+  }
+  private async reload(id: string, tenantId: TenantId): Promise<Result<CommentRecord, DomainError>> {
     const row = await this.prisma.comment.findFirst({ where: { id, tenantId: tenantId.toString() } });
     if (!row) return err(DomainError.notFound("Comment", id));
-    return ok({
-      id: row.id,
-      tenantId: row.tenantId,
-      entityType: row.entityType,
-      entityId: row.entityId,
-      commentText: row.commentText,
-      authorId: row.authorId,
-      mentionedUserId: row.mentionedUserId ?? undefined,
-      status: row.status as "OPEN" | "RESOLVED",
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-    });
+    return ok(toCommentRecord(row));
   }
   async findById(id: string, tenantId: TenantId): Promise<Result<CommentRecord | null, DomainError>> {
     const row = await this.prisma.comment.findFirst({ where: { id, tenantId: tenantId.toString() } });
-    if (!row) return ok(null);
-    return ok({
-      id: row.id,
-      tenantId: row.tenantId,
-      entityType: row.entityType,
-      entityId: row.entityId,
-      commentText: row.commentText,
-      authorId: row.authorId,
-      mentionedUserId: row.mentionedUserId ?? undefined,
-      status: row.status as "OPEN" | "RESOLVED",
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-    });
+    return ok(row ? toCommentRecord(row) : null);
   }
   async findByEntity(entityType: string, entityId: string, tenantId: TenantId): Promise<Result<CommentRecord[], DomainError>> {
     const rows = await this.prisma.comment.findMany({ where: { entityType, entityId, tenantId: tenantId.toString() }, orderBy: { createdAt: "asc" } });
-    return ok(rows.map((row) => ({
-      id: row.id,
-      tenantId: row.tenantId,
-      entityType: row.entityType,
-      entityId: row.entityId,
-      commentText: row.commentText,
-      authorId: row.authorId,
-      mentionedUserId: row.mentionedUserId ?? undefined,
-      status: row.status as "OPEN" | "RESOLVED",
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-    })));
+    return ok(rows.map(toCommentRecord));
   }
 }
 

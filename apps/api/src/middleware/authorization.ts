@@ -194,7 +194,7 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/exports$/, permission: "report.export" },
   { method: "GET", route: /^\/v1\/reporting-periods\/[^/]+\/export-preflight$/, permission: "report.export" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/exports$/, permission: "report.export" },
-  { method: "POST", route: /^\/v1\/comments(?:\/[^/]+\/resolve)?$/, permission: "comment.create" },
+  { method: "POST", route: /^\/v1\/comments(?:\/[^/]+\/(?:resolve|reopen))?$/, permission: "comment.create" },
   { method: "GET", route: /^\/v1\/audit-log$/, permission: "audit.view" },
   { method: "GET", route: /^\/v1\/legal\/consent$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/legal\/consent$/, permission: "project.view" },

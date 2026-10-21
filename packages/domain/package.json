@@ -14,6 +14,10 @@
       "types": "./dist/contexts/reporting/pack-authoring.d.ts",
       "import": "./dist/contexts/reporting/pack-authoring.js"
     },
+    "./contexts/tasks/comment-thread.js": {
+      "types": "./dist/contexts/tasks/comment-thread.d.ts",
+      "import": "./dist/contexts/tasks/comment-thread.js"
+    },
     "./contexts/logframe/target-schedule.js": {
       "types": "./dist/contexts/logframe/target-schedule.d.ts",
       "import": "./dist/contexts/logframe/target-schedule.js"

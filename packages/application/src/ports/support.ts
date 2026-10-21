@@ -9,13 +9,20 @@ export interface CommentRecord {
   authorId: string;
   mentionedUserId?: string;
   status: "OPEN" | "RESOLVED";
+  /** Set on a reply: the first comment of its thread. */
+  parentId?: string;
+  resolvedById?: string;
+  resolvedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface ICommentRepository {
   create(c: CommentRecord): Promise<Result<CommentRecord>>;
-  resolve(id: string, tenantId: TenantId): Promise<Result<CommentRecord>>;
+  /** Marks the thread resolved by this person, now. */
+  resolve(id: string, tenantId: TenantId, byUserId: string): Promise<Result<CommentRecord>>;
+  /** Opens a resolved thread again and forgets who resolved it. */
+  reopen(id: string, tenantId: TenantId): Promise<Result<CommentRecord>>;
   findById(id: string, tenantId: TenantId): Promise<Result<CommentRecord | null>>;
   findByEntity(entityType: string, entityId: string, tenantId: TenantId): Promise<Result<CommentRecord[]>>;
 }

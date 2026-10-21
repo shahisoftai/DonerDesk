@@ -28,10 +28,11 @@ export async function listCommentsAction(
 export type AddCommentResult = Result<{ id: string }, AppError>;
 
 export async function addCommentAction(input: {
-  entityType: "report_section" | "evidence" | "indicator_update" | "checklist_item" | "activity_update" | "indicator" | "planned_activity" | "project_risk";
+  entityType: "report_section" | "evidence" | "indicator_update" | "checklist_item" | "activity_update" | "indicator" | "planned_activity" | "project_risk" | "report_claim";
   entityId: string;
   commentText: string;
   mentionedUserId?: string;
+  parentId?: string;
 }): Promise<AddCommentResult> {
   const context = await requireSession();
   const parsed = CreateCommentSchema.safeParse(input);
@@ -54,6 +55,14 @@ export async function resolveCommentAction(id: string): Promise<ResolveCommentRe
   const result = await gatewayRequest(`/v1/comments/${id}/resolve`, OkResponseSchema, context.token, {
     method: "POST",
   });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+/** Opens a resolved thread again so the conversation can continue. */
+export async function reopenCommentAction(id: string): Promise<ResolveCommentResult> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/comments/${id}/reopen`, OkResponseSchema, context.token, { method: "POST" });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
 }

@@ -140,6 +140,7 @@ export class GetReportDraftHandler {
           verificationDetail: c.verificationDetail,
           verificationReasonCode: c.verificationReasonCode,
           materiality: c.materiality,
+          fingerprint: c.fingerprint,
           flagClass: flagClassOf(c),
           charStart: c.charStart,
           charEnd: c.charEnd,
