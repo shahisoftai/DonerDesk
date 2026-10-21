@@ -55,6 +55,8 @@ export default async function EvidencePage({
         verificationStatus: filters.verificationStatus,
         confidentialityLevel: filters.confidentialityLevel,
         evidenceType: filters.evidenceType,
+        reportingPeriodId: filters.reportingPeriodId,
+        location: filters.location,
         page: filters.page ?? 1,
         pageSize: PAGE_SIZE,
       },
@@ -128,7 +130,7 @@ export default async function EvidencePage({
       </header>
 
       <div className="mt-4">
-        <EvidenceFilterBar baseUrl={baseUrl} current={queryString} />
+        <EvidenceFilterBar baseUrl={baseUrl} current={queryString} options={{ periods: periodOptions, location: true }} />
       </div>
 
       <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">{total} file(s).</p>

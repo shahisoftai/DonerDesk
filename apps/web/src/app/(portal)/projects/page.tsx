@@ -36,6 +36,8 @@ export default async function ProjectsList({
     query: raw("q") || DEFAULT_PROJECT_FILTERS.query,
     status: raw("status") || DEFAULT_PROJECT_FILTERS.status,
     sector: raw("sector") || DEFAULT_PROJECT_FILTERS.sector,
+    donor: raw("donor") || DEFAULT_PROJECT_FILTERS.donor,
+    country: raw("country") || DEFAULT_PROJECT_FILTERS.country,
     sort: isSort(raw("sort")) ? (raw("sort") as ProjectFilters["sort"]) : DEFAULT_PROJECT_FILTERS.sort,
     page: Math.max(1, Number.parseInt(raw("page"), 10) || 1),
     archived: raw("archived") === "true",
@@ -43,6 +45,8 @@ export default async function ProjectsList({
 
   const projects: PortfolioProject[] = result.ok ? result.value.items : [];
   const sectors = [...new Set(projects.map((p) => p.sector).filter((s): s is string => Boolean(s)))];
+  const donors = [...new Set(projects.map((p) => p.donorName).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const countries = [...new Set(projects.map((p) => p.country).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   const filtered = result.ok ? filterProjects(projects, filters) : [];
   const sorted = result.ok ? sortProjects(filtered, filters.sort) : [];
   const total = sorted.length;
@@ -54,6 +58,8 @@ export default async function ProjectsList({
     if (next.query) url.set("q", next.query);
     if (next.status !== "all") url.set("status", next.status);
     if (next.sector !== "all") url.set("sector", next.sector);
+    if (next.donor !== "all") url.set("donor", next.donor);
+    if (next.country !== "all") url.set("country", next.country);
     if (next.sort !== "deadline") url.set("sort", next.sort);
     if (next.page > 1) url.set("page", String(next.page));
     if (next.archived) url.set("archived", "true");
@@ -89,6 +95,20 @@ export default async function ProjectsList({
           </select>
         </label>
         <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          Donor
+          <select name="donor" defaultValue={filters.donor} className="input mt-1">
+            <option value="all">All</option>
+            {donors.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </label>
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          Country
+          <select name="country" defaultValue={filters.country} className="input mt-1">
+            <option value="all">All</option>
+            {countries.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
           Sort
           <select name="sort" defaultValue={filters.sort} className="input mt-1">
             <option value="deadline">Soonest deadline</option>
@@ -101,7 +121,7 @@ export default async function ProjectsList({
           Show archived
         </label>
         <button className="btn" type="submit">Apply</button>
-        {filters.query || filters.status !== "all" || filters.sector !== "all" || filters.archived ? (
+        {filters.query || filters.status !== "all" || filters.sector !== "all" || filters.donor !== "all" || filters.country !== "all" || filters.archived ? (
           <Link className="btn-secondary" href="/projects">Clear</Link>
         ) : null}
       </form>

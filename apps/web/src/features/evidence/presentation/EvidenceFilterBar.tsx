@@ -26,22 +26,34 @@ function toParams(current: string): EvidenceSearchParams {
   return parseEvidenceFilters(new URLSearchParams(qs));
 }
 
-export function EvidenceFilterBar({ baseUrl, current }: { baseUrl: string; current: string }) {
+export interface EvidenceFilterOptions {
+  /** Reporting periods of one project (the project page). */
+  periods?: Array<{ id: string; label: string }>;
+  /** Projects to choose from (the library across projects). */
+  projects?: Array<{ id: string; label: string }>;
+  donors?: string[];
+  countries?: string[];
+  /** Offer a "where it was collected" box. */
+  location?: boolean;
+}
+
+export function EvidenceFilterBar({ baseUrl, current, options = {} }: { baseUrl: string; current: string; options?: EvidenceFilterOptions }) {
   const router = useRouter();
   const params = toParams(current);
   const [query, setQuery] = useState(params.query ?? "");
+  const [location, setLocation] = useState(params.location ?? "");
 
   function navigate(next: EvidenceSearchParams) {
     router.push(`${baseUrl}${serializeEvidenceFilters(next)}`);
   }
 
-  function update(key: "verificationStatus" | "confidentialityLevel" | "evidenceType", value: string) {
+  function update(key: "verificationStatus" | "confidentialityLevel" | "evidenceType" | "projectId" | "reportingPeriodId" | "donor" | "country", value: string) {
     navigate(withEvidenceFilter(params, key, value || undefined));
   }
 
   function submitQuery(e: React.FormEvent) {
     e.preventDefault();
-    navigate(withEvidenceFilter(params, "query", query || undefined));
+    navigate(withEvidenceFilter(withEvidenceFilter(params, "location", location.trim() || undefined), "query", query || undefined));
   }
 
   const chips: Array<{ label: string; removeHref: string }> = [];
@@ -49,6 +61,13 @@ export function EvidenceFilterBar({ baseUrl, current }: { baseUrl: string; curre
   if (params.verificationStatus) chips.push({ label: EVIDENCE_VERIFICATION_LABEL[params.verificationStatus] ?? params.verificationStatus, removeHref: `${baseUrl}${serializeEvidenceFilters(withEvidenceFilter(params, "verificationStatus", undefined))}` });
   if (params.confidentialityLevel) chips.push({ label: CONFIDENTIALITY_LABEL[params.confidentialityLevel] ?? params.confidentialityLevel, removeHref: `${baseUrl}${serializeEvidenceFilters(withEvidenceFilter(params, "confidentialityLevel", undefined))}` });
   if (params.evidenceType) chips.push({ label: EVIDENCE_TYPE_LABEL[params.evidenceType] ?? params.evidenceType, removeHref: `${baseUrl}${serializeEvidenceFilters(withEvidenceFilter(params, "evidenceType", undefined))}` });
+
+  const chip = (label: string, key: Parameters<typeof withEvidenceFilter>[1]) => chips.push({ label, removeHref: `${baseUrl}${serializeEvidenceFilters(withEvidenceFilter(params, key, undefined))}` });
+  if (params.projectId) chip(`Project: ${options.projects?.find((p) => p.id === params.projectId)?.label ?? "chosen"}`, "projectId");
+  if (params.reportingPeriodId) chip(`Period: ${options.periods?.find((p) => p.id === params.reportingPeriodId)?.label ?? "chosen"}`, "reportingPeriodId");
+  if (params.donor) chip(`Donor: ${params.donor}`, "donor");
+  if (params.country) chip(`Country: ${params.country}`, "country");
+  if (params.location) chip(`Where: ${params.location}`, "location");
 
   return (
     <div className="space-y-3">
@@ -89,6 +108,48 @@ export function EvidenceFilterBar({ baseUrl, current }: { baseUrl: string; curre
             ))}
           </Select>
         </div>
+        {options.projects && (
+          <div>
+            <label className="label" htmlFor="evidence-project">Project</label>
+            <Select id="evidence-project" value={params.projectId ?? ""} onChange={(e) => update("projectId", e.target.value)}>
+              <option value="">All</option>
+              {options.projects.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </Select>
+          </div>
+        )}
+        {options.periods && (
+          <div>
+            <label className="label" htmlFor="evidence-period">Reporting period</label>
+            <Select id="evidence-period" value={params.reportingPeriodId ?? ""} onChange={(e) => update("reportingPeriodId", e.target.value)}>
+              <option value="">All</option>
+              {options.periods.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </Select>
+          </div>
+        )}
+        {options.donors && options.donors.length > 0 && (
+          <div>
+            <label className="label" htmlFor="evidence-donor">Donor</label>
+            <Select id="evidence-donor" value={params.donor ?? ""} onChange={(e) => update("donor", e.target.value)}>
+              <option value="">All</option>
+              {options.donors.map((d) => <option key={d} value={d}>{d}</option>)}
+            </Select>
+          </div>
+        )}
+        {options.countries && options.countries.length > 0 && (
+          <div>
+            <label className="label" htmlFor="evidence-country">Country</label>
+            <Select id="evidence-country" value={params.country ?? ""} onChange={(e) => update("country", e.target.value)}>
+              <option value="">All</option>
+              {options.countries.map((c) => <option key={c} value={c}>{c}</option>)}
+            </Select>
+          </div>
+        )}
+        {options.location && (
+          <div>
+            <label className="label" htmlFor="evidence-location">Collected in</label>
+            <Input id="evidence-location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Village or district" />
+          </div>
+        )}
         <Button type="submit" variant="secondary">Apply</Button>
       </form>
 
