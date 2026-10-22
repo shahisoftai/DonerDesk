@@ -37,4 +37,4 @@ Use **Manage subscription**. The change takes effect at the end of the billing p
 Check payment history in the portal to see whether it was a renewal, an AI credit pack or a standing balance purchase. If you do not recognise it, email support@donordesk.online with the date and amount.
 
 ## Refunds
-Refunds are reviewed case by case. Send your registered email, the receipt number and the reason to support@donordesk.online.
+Refunds are reviewed case by case. Send your registered email, the receipt number and the reason to support@donordesk.online. We acknowledge a request within 5 business days and send you our decision within 15. The [Refund & Cancellation Policy](/refunds) lists when a payment is refunded and what happens to your data and AI credits.

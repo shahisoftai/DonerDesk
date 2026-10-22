@@ -152,6 +152,7 @@ export function WikiLayout({
             <Link href="/support" className="transition hover:text-mist">Support</Link>
             <Link href="/privacy" className="transition hover:text-mist">Privacy</Link>
             <Link href="/terms" className="transition hover:text-mist">Terms</Link>
+            <Link href="/refunds" className="transition hover:text-mist">Refunds</Link>
           </div>
         </div>
       </footer>

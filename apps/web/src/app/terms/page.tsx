@@ -261,7 +261,8 @@ export default function TermsPage() {
           The Service may be offered free of charge during an initial or demo
           period. Where we offer paid plans, fees will be described on our
           pricing materials or in a separate order form, and payment terms will
-          be as stated there. Fees are non-refundable except as required by law
+          be as stated there. Fees are non-refundable except as required by law,
+          as set out in our <A href="/refunds">Refund &amp; Cancellation Policy</A>,
           or as expressly stated in an order form.
         </P>
         <P>
@@ -269,7 +270,8 @@ export default function TermsPage() {
           of record and whose terms apply to the transaction. Paid
           subscriptions renew automatically for the same period until you
           cancel before the renewal date; cancellation takes effect at the end
-          of the paid period and no partial-period refunds are given. Fees are
+          of the paid period, and refunds are governed by our{" "}
+          <A href="/refunds">Refund &amp; Cancellation Policy</A>. Fees are
           exclusive of taxes, duties, and bank charges, which you are
           responsible for. We may suspend paid features for non-payment.
         </P>

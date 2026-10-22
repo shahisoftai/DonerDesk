@@ -420,6 +420,7 @@ export default function PricingPage() {
               <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
                 <li><Link href="/privacy" className="transition hover:text-white">Privacy Policy</Link></li>
                 <li><Link href="/terms" className="transition hover:text-white">Terms of Service</Link></li>
+                <li><Link href="/refunds" className="transition hover:text-white">Refund &amp; Cancellation</Link></li>
                 <li><Link href="/cookies" className="transition hover:text-white">Cookie Policy</Link></li>
                 <li><Link href="/security" className="transition hover:text-white">Security</Link></li>
               </ul>

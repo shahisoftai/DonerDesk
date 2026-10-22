@@ -24,7 +24,7 @@ Top-up packs (Team and Growth) and Growth standing balances are one-off purchase
 
 ## Refunds
 
-Refunds are handled case by case. Email support@donordesk.online with your registered email, the receipt number and the reason.
+Refunds are handled case by case. Email support@donordesk.online with your registered email, the receipt number and the reason. The [Refund & Cancellation Policy](/refunds) lists when a payment is refunded, how long a request takes, and what happens to your data and AI credits.
 
 ## Something looks wrong
 

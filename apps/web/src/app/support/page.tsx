@@ -443,6 +443,7 @@ export default function SupportPage() {
             <Link href="/signup" className="transition hover:text-white">Get started</Link>
             <Link href="/privacy" className="transition hover:text-white">Privacy</Link>
             <Link href="/terms" className="transition hover:text-white">Terms</Link>
+            <Link href="/refunds" className="transition hover:text-white">Refunds</Link>
             <Link href="/support" className="transition hover:text-white text-saffron">Support</Link>
           </div>
         </div>
