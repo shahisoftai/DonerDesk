@@ -9,6 +9,7 @@ import { useOutbox } from "@/features/offline/presentation/OutboxProvider";
 import { activityEntry } from "@/features/offline/domain/activity-outbox";
 import { uploadEvidenceAction } from "@/lib/actions/evidence";
 import { useActionState } from "@/lib/client/action-state";
+import { useToast } from "@/components/feedback/Toast";
 import { validateParticipantBreakdown } from "@/lib/shared/participants";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
@@ -69,6 +70,7 @@ function NewActivityFormInner({
   onQueued: (title: string) => void;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const actionState = useActionState();
   const outbox = useOutbox();
 
@@ -335,7 +337,9 @@ function NewActivityFormInner({
       if (failed.length > 0) return;
     }
     setLeaving(true);
-    router.push(`/projects/${projectId}/activities`);
+    // Say it was saved and show where it is: the record is on the Completed tab, waiting for a reviewer.
+    toast.push({ title: "Activity saved", description: "It is on the Completed tab, waiting to be accepted.", tone: "success" });
+    router.push(`/projects/${projectId}/activities?view=completed`);
     router.refresh();
   }
 
@@ -454,6 +458,7 @@ function NewActivityFormInner({
             items={logframeItems}
             value={logframeActivityId}
             onChange={setLogframeActivityId}
+            selectableLevels={["ACTIVITY"]}
             emptyLabel="Not linked to a planned activity"
           />
         </Field>
@@ -747,7 +752,7 @@ function NewActivityFormInner({
             disabled={leaving || uploading}
             onClick={() => {
               setLeaving(true);
-              router.push(`/projects/${projectId}/activities`);
+              router.push(`/projects/${projectId}/activities?view=completed`);
               router.refresh();
             }}
           >

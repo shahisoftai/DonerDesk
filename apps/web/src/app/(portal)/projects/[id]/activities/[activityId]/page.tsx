@@ -26,6 +26,9 @@ import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
 import { FileNeedsSchema } from "@/lib/server/schemas";
 import { stillNeededLine } from "@/features/workplan/domain/file-needs-view";
 import { ActivityEvidencePanel } from "@/features/activities/presentation/ActivityEvidencePanel";
+import { PlanLinkPanel } from "@/features/activities/presentation/PlanLinkPanel";
+import { WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { dependencyLabel } from "@/features/workplan/domain/dependency-view";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +86,11 @@ export default async function ActivityDetailPage({
   // Files the planned activity asked for that this one does not have yet: said once, never blocking.
   const needs = activity.plannedActivityId ? await gatewayRequest(`/v1/activities/${activity.id}/file-needs`, FileNeedsSchema, ctx.token) : null;
   const stillNeeded = needs?.ok ? needs.value.stillNeeded : [];
+  // The planned activity it delivers: shown on every record, changeable only while the record can still be edited.
+  const planResult = await gatewayRequest(`/v1/projects/${resolvedParams.id}/work-plan`, WorkPlanResponseSchema, ctx.token);
+  const planItems = planResult.ok ? planResult.value.items.filter((i) => i.status !== "CANCELLED") : [];
+  const linkedPlan = planItems.find((i) => i.id === activity.plannedActivityId);
+  const canEditLink = hasCapability(ctx, "activity.create") && canApplyActivityAction(status, "EDIT");
   const canAsk = hasCapability(ctx, "task.assign") && activity.status === "SUBMITTED";
   const canAskFile = hasCapability(ctx, "task.assign") && stillNeeded.length > 0 && activity.status !== "WITHDRAWN";
   const me = decodeSessionPayload(ctx.token)?.sub ?? "";
@@ -125,6 +133,18 @@ export default async function ActivityDetailPage({
           subject={{ type: "activityUpdate", id: activity.id }}
           people={askPeople}
           suggestedDue={suggestTaskDueDate("REVIEW_RECORD", { today: new Date().toISOString().slice(0, 10) })}
+        />
+      )}
+
+      {planResult.ok && (
+        <PlanLinkPanel
+          activityId={activity.id}
+          current={linkedPlan ? dependencyLabel(linkedPlan.title, linkedPlan.plannedStart, linkedPlan.plannedEnd) : undefined}
+          options={[...planItems]
+            .sort((a, b) => a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title))
+            .map((i) => ({ id: i.id, label: dependencyLabel(i.title, i.plannedStart, i.plannedEnd), selected: i.id === activity.plannedActivityId }))}
+          canEdit={canEditLink}
+          lockedReason={!canEditLink && activity.status === "ACCEPTED" ? "This record is accepted. To change the link, send it back for revision first." : undefined}
         />
       )}
 

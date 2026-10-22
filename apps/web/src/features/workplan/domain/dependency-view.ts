@@ -4,7 +4,27 @@
  */
 import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 
-export interface DependencyOption { id: string; title: string }
+export interface DependencyOption {
+  id: string;
+  title: string;
+  /** What the picker shows: the title and its dates, because a monthly series has one title for every month. */
+  label: string;
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "1 Dec 2026" from a plain day; anything else is returned as it came. */
+function shortDay(day: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(day);
+  return match ? `${Number(match[3])} ${MONTHS[Number(match[2]) - 1]} ${match[1]}` : day;
+}
+
+/** "Monthly outreach clinics (1 Dec 2026 to 7 Dec 2026)": the title with the days it is planned for. */
+export function dependencyLabel(title: string, plannedStart: string, plannedEnd?: string): string {
+  const start = shortDay(plannedStart);
+  const end = plannedEnd && plannedEnd !== plannedStart ? shortDay(plannedEnd) : undefined;
+  return `${title} (${end ? `${start} to ${end}` : start})`;
+}
 
 /** "Waiting for Survey and Training", or undefined when nothing it waits for is unfinished. */
 export function waitingLine(waitingFor: ReadonlyArray<{ title: string }>): string | undefined {
@@ -20,14 +40,14 @@ export function waitingLine(waitingFor: ReadonlyArray<{ title: string }>): strin
  */
 export function dependencyOptions(
   itemId: string,
-  rows: ReadonlyArray<{ id: string; title: string; status: string; plannedStart: string; comesAfter: ReadonlyArray<{ id: string }>; comesBefore: ReadonlyArray<{ id: string }> }>,
+  rows: ReadonlyArray<{ id: string; title: string; status: string; plannedStart: string; plannedEnd?: string; comesAfter: ReadonlyArray<{ id: string }>; comesBefore: ReadonlyArray<{ id: string }> }>,
 ): DependencyOption[] {
   const linked = new Set(rows.find((r) => r.id === itemId)?.comesAfter.map((a) => a.id) ?? []);
   const successors = new Set(rows.find((r) => r.id === itemId)?.comesBefore.map((b) => b.id) ?? []);
   return rows
     .filter((r) => r.id !== itemId && r.status !== "CANCELLED" && !linked.has(r.id) && !successors.has(r.id))
     .sort((a, b) => a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title))
-    .map((r) => ({ id: r.id, title: r.title }));
+    .map((r) => ({ id: r.id, title: r.title, label: dependencyLabel(r.title, r.plannedStart, r.plannedEnd) }));
 }
 
 export interface BoxPx { x: number; y: number; width: number; height: number }

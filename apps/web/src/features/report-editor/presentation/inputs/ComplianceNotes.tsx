@@ -20,6 +20,8 @@ export function ComplianceNotes({ periodId, projectId, initial, canEdit }: { per
   const [saved, setSaved] = useState<Record<string, string>>(() => Object.fromEntries(initial.sections.map((r) => [r.key, r.note])));
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // A statement copied from last month, until it is edited: it still describes last month's dates and figures.
+  const [copied, setCopied] = useState<Record<string, string>>({});
   // Typing saves after a short pause, so a statement is not lost when the user leaves the page without leaving the field.
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   useEffect(() => () => { Object.values(timers.current).forEach(clearTimeout); }, []);
@@ -79,7 +81,7 @@ export function ComplianceNotes({ periodId, projectId, initial, canEdit }: { per
           />
           <div className="mt-1 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
             {canEdit && row.previousNote && row.previousNote !== row.note && (
-              <Button size="sm" variant="ghost" onClick={() => { change(row.key, row.previousNote ?? ""); void save(row.key, row.previousNote ?? ""); }}>
+              <Button size="sm" variant="ghost" onClick={() => { setCopied((c) => ({ ...c, [row.key]: row.previousNote ?? "" })); change(row.key, row.previousNote ?? ""); void save(row.key, row.previousNote ?? ""); }}>
                 Same as last month
               </Button>
             )}
@@ -92,6 +94,11 @@ export function ComplianceNotes({ periodId, projectId, initial, canEdit }: { per
               <Button size="sm" variant="ghost" onClick={() => void saveStanding(row.key, row.note)}>
                 Save as standing statement
               </Button>
+            )}
+            {copied[row.key] !== undefined && copied[row.key] === row.note && (
+              <span role="status" className="text-warning-700 dark:text-warning-400">
+                Copied from last month. Check every date and figure: they may describe last month, not this one.
+              </span>
             )}
             {busyKey === row.key && <span role="status">Saving…</span>}
           </div>

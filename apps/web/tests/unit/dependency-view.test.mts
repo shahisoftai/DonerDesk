@@ -45,3 +45,17 @@ test("the arrow leaves the end of the first bar and enters the start of the next
   const early = { x: 150, y: 32, width: 60, height: 28 };
   assert.equal(elbowPath(a, early), "M 180 14 H 188 V 30 H 142 V 46 H 150");
 });
+
+import { dependencyLabel } from "../../src/features/workplan/domain/dependency-view.ts";
+
+test("a monthly series is told apart in the picker by the days each one is planned for", () => {
+  assert.equal(dependencyLabel("Monthly outreach clinics", "2026-12-01", "2026-12-07"), "Monthly outreach clinics (1 Dec 2026 to 7 Dec 2026)");
+  assert.equal(dependencyLabel("Monthly outreach clinics", "2027-01-01", "2027-01-07"), "Monthly outreach clinics (1 Jan 2027 to 7 Jan 2027)");
+  assert.equal(dependencyLabel("Launch", "2027-02-10", "2027-02-10"), "Launch (10 Feb 2027)");
+  assert.equal(dependencyLabel("No dates", "soon"), "No dates (soon)");
+});
+
+test("each choice carries its label with the dates", () => {
+  const rows = [{ id: "a", title: "Survey", status: "PLANNED", plannedStart: "2026-11-02", plannedEnd: "2026-11-20", comesAfter: [], comesBefore: [] }, { id: "b", title: "Training", status: "PLANNED", plannedStart: "2026-11-09", plannedEnd: "2026-11-14", comesAfter: [], comesBefore: [] }];
+  assert.deepEqual(dependencyOptions("a", rows), [{ id: "b", title: "Training", label: "Training (9 Nov 2026 to 14 Nov 2026)" }]);
+});

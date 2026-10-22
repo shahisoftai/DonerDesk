@@ -65,7 +65,7 @@ export function DependencyEditor({ itemId, after, before, options, canEdit }: {
             <label htmlFor="dep-pick" className="block text-sm font-medium">{WORKPLAN_COPY.addDependency}</label>
             <select id="dep-pick" value={pick} onChange={(e) => setPick(e.target.value)} className="min-h-[38px] rounded-lg border border-slate-300 bg-white px-2 text-sm dark:border-white/15 dark:bg-slate-900">
               <option value="">Choose an activity</option>
-              {options.map((o) => <option key={o.id} value={o.id}>{o.title}</option>)}
+              {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
             </select>
           </div>
           <Button size="sm" onClick={add} pending={state.busy} disabled={!hydrated || !pick}>Add</Button>

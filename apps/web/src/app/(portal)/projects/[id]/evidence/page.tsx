@@ -24,6 +24,7 @@ import { periodOptionLabel, recentFirst } from "@/lib/shared/option-labels";
 import { EvidencePeriodPicker } from "@/features/evidence/presentation/EvidencePeriodPicker";
 import { EvidenceLinkSuggestions } from "@/features/evidence/presentation/EvidenceLinkSuggestions";
 import { EvidenceBulkBar, EvidenceSelectBox, EvidenceSelectionProvider } from "@/features/evidence/presentation/EvidenceBulkVerify";
+import { isAwaitingVerification } from "@/features/evidence/domain/awaiting-verification";
 import { EvidenceLinkManager, type LinkTarget } from "@/features/evidence/presentation/EvidenceLinkManager";
 
 export const dynamic = "force-dynamic";
@@ -146,7 +147,7 @@ export default async function EvidencePage({
         </div>
       ) : (
         <EvidenceSelectionProvider>
-          <EvidenceBulkBar pendingIds={items.filter((e) => e.verificationStatus !== "VERIFIED").map((e) => e.id)} canVerify={ctx.capabilities.has("evidence.verify")} />
+          <EvidenceBulkBar pendingIds={items.filter((e) => isAwaitingVerification(e.verificationStatus)).map((e) => e.id)} canVerify={ctx.capabilities.has("evidence.verify")} />
           <div className="table-shell mt-4 overflow-x-auto">
             <table className="w-full text-sm">
               <caption className="sr-only">Evidence files in this project</caption>

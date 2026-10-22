@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { PlanItemFields as PlanItemFieldsView } from "@/lib/server/schemas";
 import { defineProjectFieldAction, setPlanItemFieldsAction } from "@/lib/actions/workplan";
 import { useActionState } from "@/lib/client/action-state";
+import { useToast } from "@/components/feedback/Toast";
 import { useHydrated } from "@/lib/client/use-hydrated";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -18,6 +19,7 @@ import { fieldDraft, fieldPayload, fieldTypeWords, parseChoiceLines } from "../d
 export function PlanItemFields({ itemId, projectId, fields, values, canEdit, canDefine }: PlanItemFieldsView & { itemId: string; projectId: string; canEdit: boolean; canDefine: boolean }) {
   const router = useRouter();
   const state = useActionState();
+  const toast = useToast();
   const hydrated = useHydrated();
   const [draft, setDraft] = useState<Record<string, string>>(() => fieldDraft(fields, values));
   const [label, setLabel] = useState("");
@@ -26,12 +28,18 @@ export function PlanItemFields({ itemId, projectId, fields, values, canEdit, can
 
   async function save() {
     const done = await state.run(() => setPlanItemFieldsAction(itemId, { values: fieldPayload(fields, draft) }));
-    if (done === true) router.refresh();
+    if (done === true) {
+      toast.push({ title: "Fields saved", tone: "success" });
+      router.refresh();
+    }
   }
 
   async function define() {
     const done = await state.run(() => defineProjectFieldAction(projectId, { label, type, ...(type === "CHOICE" ? { choices: parseChoiceLines(choices) } : {}) }));
-    if (done) { setLabel(""); setChoices(""); setType("TEXT"); router.refresh(); }
+    if (done) {
+      toast.push({ title: `Field "${label.trim()}" added`, tone: "success" });
+      setLabel(""); setChoices(""); setType("TEXT"); router.refresh();
+    }
   }
 
   if (fields.length === 0 && !canDefine) return null;
