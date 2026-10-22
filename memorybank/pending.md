@@ -2,7 +2,78 @@
 
 **DonorDesk Version 1.93**
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-19.
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-22 (audited and host-verified; release 20261022073456; see the priority board below).
+
+## Priority board (audited 2026-10-22)
+
+Each open item was checked against the code, docs or git history where possible. Ticked items are complete, and each tick carries its evidence. Items are named here by title, so the board does not depend on line numbers. Items marked *unverified* need a host or live-site check that this audit could not run.
+
+### P0: fix now (verified on the host 2026-10-22)
+- [x] **Audit chain verification** (fixed 2026-10-22). The nightly job failed from 05:49 because platform jobs write audit events under the pseudo-tenant `"*"`, which `TenantId.create` rejects. `verify-tenants.ts` (`auditTenantId`) now reads that chain the way the writers record it, and `verify-cli.ts` reports an unreadable tenant id instead of aborting the other checks. Test: `packages/infrastructure/test/audit-verify-tenants.test.mjs`. Shipped to the host as the two dist files only (the old CLI is kept as `verify-cli.js.bak-20261022`); the service now reports `checked:4, broken:0` and the failed state is cleared. *Committed (`0ae7776`) and deployed in release `20261022073456`; re-verified on production after the release: `checked:4, broken:0`.*
+- [x] **Kestra** (fixed and deployed 2026-10-22; unit committed in `0ae7776`; after release `20261022073456` it is still active with `Restart=always`). Cause: the unattended upgrade restarted PostgreSQL at 06:28, Kestra lost its queue connection and exited cleanly (status 0) at 06:29, and `Restart=on-failure` never restarted it. `infra/systemd/donordesk-kestra.service` now has `Restart=always`; installed on the host (old unit kept as `.bak-20261022`; the host also gets the repo's `KillMode`/`TimeoutStopSec`/`SuccessExitStatus` lines it was missing). Kestra is up on 8093, and an external SIGTERM test proved it restarts itself. All seven flows the API dispatches (`donor_desk.phase1`) are deployed. The job outbox is empty, so nothing was lost.
+- **Creem is in live mode.** `CREEM_TEST_MODE=false` on production, but the pending file said "test mode". Confirm the live products, prices and webhook URL in the Creem dashboard before taking real payments. The key and webhook secret are set. *Open.*
+- **Rotate the GLM API key.** It was printed in an operator session on 2026-10-22 while checking `workers.env`. Rotate it in the provider console and update `workers.env` and `api.env`. *Open.*
+- **PostgreSQL `pg_hba.conf` trusts 127.0.0.1 over IPv4** (`host all all 127.0.0.1/32 trust`); IPv6 uses scram. *Open (host change, needs a tested window).*
+- **`donordesk-api` does not restart after a clean exit.** The unit has `Restart=on-failure`. *Open.*
+
+**Closed by the host check (2026-10-22):**
+- **Login page prints demo credentials:** not in the served login page HTML (HTTP 200, no "demo" text). *Closed; re-check after any login change.*
+- **Off-host backups:** running. The nightly job pushes to `rclone:gdrive:donordesk-backups`; the latest archive `20261022T021757Z` is on Drive, with `.last-success` set.
+- **Restore test recorded:** two `BackupRun` rows have `restoreTestedAt`.
+- **SSH password login disabled:** effective config is `passwordauthentication no`. Root key login is still allowed (`permitrootlogin without-password`); decide whether to tighten further.
+- **Email delivery:** `EMAIL_PROVIDER=smtp` in production.
+- **Demo 9 settings:** `AI_REPORTER_MAX_TOKENS=16384` is present in `workers.env`; `AI_REPORTER_HTTP_TIMEOUT_MS=240000` is in `api.env`; `AI_REPORTER_CONTRACT_VERSION=6` in both.
+
+**Still to decide or confirm:**
+- **Draft timeout:** `workers.env` has `AI_REPORTER_DRAFT_TIMEOUT_MS=170000`, but AGENTS.md says 90000 per LLM call. Decide which is intended.
+- [x] **First real reminder send:** confirmed. All organisations are UTC, so the send hour is 07:00 UTC = 09:00 CEST. The 09:00 run on 2026-10-22 returned `ran:true` and sent 4 summaries for one organisation.
+- **Evidence encryption:** `EVIDENCE_ENCRYPTION_KEYS` is absent, so encryption at rest is off, as the feature doc says.
+
+**Release `20261022073456` (2026-10-22, `SCOPE=both`, branch `0013-programme-management`):** commits `0ae7776` (audit verifier and Kestra unit), `7653941` (role-based home and navigation), `767ff9c` (refund-policy links, legal facts, support layout), `f67b120` (docs), `bc4c8e1` (demo scripts). Gate before deploy: typecheck and build green; contracts 14, domain 789, application 717, infrastructure 408, api 67, web unit 400, Playwright 12, Python workers all passing. The dashboard e2e test was updated for the new home (it looked for a retired heading). No migration (host already at `20261022170000_project_adaptations`). Production check after the release: all five services active, `/ready` ok, no failed `donordesk-*` units, no api/web errors in the journal, login/pricing/refunds/support pages 200, the security article shows the two-step wording, unauthenticated `/dashboard` redirects to login. *Not exercised: the signed-in home and navigation (needs a browser with a real account, per the existing live-site check item).*
+
+### P1: customer-visible gaps and publish gates
+- **Live-site browser check** of the Phase 28 screens and Project Overview v2 (a publish gate for the "Plan it" wording and the support articles).
+- **Support articles, deck and `/features`** updated and registered in the same release. The public security page still says two-factor is unavailable for tenant accounts (see `memorybank/docs/marketing/05-overhaul-changelog.md`).
+- **Demo 9 findings:** Timeline "Whole project" unreadable for monthly series; lead change per activity only; a completed activity does not show or change its planned activity; backfilled activities have no completion date; logframe import parents by list order; a planned activity keeps its output when its logframe activity moves.
+- **`attach-evidence` overwrites `evidence.indicatorId`** with the update id (one field, two meanings).
+- **Dashboard cards** still use `loadWorkItems` (still imported by the Home, Portfolio, Field and Reviewer components).
+- **Offline check** for My week status changes, and the reminder check: the first real 07:00 send on production.
+- **Plan §16 decisions** (b) and (d) on the activity page.
+- **Browser-verify the 2026-10-04 report-type work** (Annual/Final, Situation, finance, scope edit).
+- **Session management UI** and a per-person data export (GDPR). The organisation export exists (admin only). *Partly built; the per-person part is unverified.*
+- **Right-to-left export** (Arabic-script PDF does not render). Priority P1 only for ar/ur/ps customers.
+- **Percentage indicator** with no numerator and denominator reads "needs review" (add "reported as a rate").
+
+### P2: AI quality, translation and cleanup
+- **EERP Q2 follow-ups:** "insufficient evidence" is the dominant review flag (entailment scorer); DeepSeek truncates long sections; link the Q2 indicator updates to evidence; triage the stale `UNSUPPORTED_REPORT_CLAIM` items; review draft v11.
+- **Host env checks:** `workers.env` timeout (`AI_REPORTER_DRAFT_TIMEOUT_MS`), `api.env` `AI_REPORTER_HTTP_TIMEOUT_MS`, and the `llm_runs` check after deploy. *Unverified (host).* The "what rewrote `workers.env`" item may be obsolete, because `runtime-provisioner.ts` now owns the contract version. Confirm before closing.
+- **Embeddings:** set `EMBEDDING_PROVIDER` and run `embedding:backfill`.
+- **Evidence tagging:** real confidence scoring and sensitivity detection (currently heuristic).
+- **AI polishing:** wire a real LLM provider.
+- **Attestation kind:** report a sensitive-data attestation as its own kind, not as a confidentiality violation.
+- **Native-speaker review** of ar/ur/ps titles and finance headers; the official French attribution wording; translate the fixed export strings.
+- **Roll-up overlap** (donor quarterly alongside monthly reports): a product decision.
+- **Production demo clean-up:** the `[DEMO] Learning Recovery` project and the archived builds; the EU nutrition verification records.
+- **API tests need a local Postgres.** CI now runs the DB-backed tests (AGENTS.md). Confirm they run green in CI, then close.
+- **Mention notifications, review deadlines, reminders for pending reviews** (in-app notes exist; confirm what is missing).
+- **Kestra:** confirm the plugin flows load, and provision the connector credentials.
+- **Creem:** Enterprise custom contract provisioning (the entitlement model exists; provisioning does not).
+- **R2 storage env wiring** for production.
+- **Chart sources** beyond the three table kinds, and the hand-made chart question.
+
+### P3: backlog and later
+- Delete the unused `apps/workers/app/ai_reporter/critique_writer.py` (still present).
+- Interactive ECharts view; photo gallery; zip upload; video and audio; evidence batch operations; customisable dashboard widgets; comparative metrics; export progress and automatic export on period close; export to Drive or Dropbox.
+- Donor portal and external reviewer access (signed links exist in code but are not wired to a route).
+- LLM judge; AI logframe structuring from pasted text; Google OCR by `driveFileId`.
+- BullMQ/Redis queue (the default is in-memory; a deployment choice).
+- OpenTelemetry and Loki (both off by default).
+- Sign-up with Google (auto-provisioning); email verification at sign-up; onboarding progress persistence.
+
+### Close as superseded (confirm, then remove)
+- **Deadline reminders via Kestra** (the `deadline_reminders` items and the "wiring to reporting profile" item). The flow exists in Kestra, but it has no schedule trigger of its own (it runs only when the API dispatches `reminder.deadline`), and reminders now run through `POST /internal/reminders/run` (Batch 28.5). `/internal/reminders/deadline` is a deprecated alias.
+- **"Deadline reminder notifications are console-only"** (the email path is wired; see the ticked email items).
+- **NeureCore backend restarts** sits in this file but belongs to the NeureCore project (its own AGENTS.md). Move it there.
 
 ## Programme management (Phase 28) — deployed; what is left (updated 2026-10-19)
 
@@ -17,9 +88,10 @@ Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-19.
 - [ ] **Open findings from demo 9** (details and severity in `demo/verification-demo-9.md`): Timeline "Whole project" is unreadable for monthly series (no grouping, truncated labels); Change lead is per activity only (a monthly series needs 8 edits); a completed activity does not show which planned activity it delivers and the link cannot be changed; backfilled activities read "done N days late" (no completion date); logframe import parents by list order only (a flat Outputs-then-Activities file mis-parents everything; re-parenting needs the reorder flag, off in production); a planned activity keeps its output when its logframe activity is moved; production login page prints demo credentials.
 - [ ] **Offline check:** change a status in My week with the network off, reload, reconnect, confirm it sends; confirm a refused change is parked (not covered by demo 9).
 - [ ] Update the deck (still v2.004) and `/features` in the same release as the support articles.
-- [ ] Reminders: confirm the first real 07:00 send on production (the timer is enabled; the first manual run answered `ran:false` outside 07:00).
+- [x] Reminders: confirm the first real 07:00 send on production (the timer is enabled; the first manual run answered `ran:false` outside 07:00).
+  _Verified 2026-10-22: the 09:00 CEST (07:00 UTC) run sent 4 summaries (`ran:true`)._
 - [ ] Dashboard cards still use the old `loadWorkItems` (My Work and Home use the new queue).
-- [ ] Phase 29: budget lines, offline app opening (service worker), partner access.
+- [ ] Phase 29 remainder: offline app opening (service worker) and budget as a finance system (no ledger). Budget lines per activity and outside partners are built (Features 25, 28).
 - [ ] Known small gaps: leads show a name only; the month calendar needs a wide screen; the Timeline is not offered under 640 px by design.
 
 ## Charts (2026-10-05)
@@ -395,7 +467,8 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
 
 ## EERP Q2 run — follow-ups (added 2026-09-26)
 
-- [ ] **Commit** the EERP Q2 run fixes. They are deployed, but at the time of writing they were uncommitted on branch `0007-ai-report`.
+- [x] **Commit** the EERP Q2 run fixes. They are deployed, but at the time of writing they were uncommitted on branch `0007-ai-report`.
+  _Verified complete 2026-10-22: Commit `ffd131b` ("EERP Q2 follow-ups") exists in git history._
 - [ ] Confirm the worker **draft retry-on-no-JSON** deploy reached the host (see `CONTABO-DEPLOY.md`), then regenerate EERP Q2 and check that 9/9 sections are AI-written (no "drafted without AI" banner; no `ai-reporter/section … 500` in the worker journal).
 - [ ] Find what rewrote `workers.env` at 18:11 on 2026-09-26 and dropped `AI_REPORTER_MAX_TOKENS`. Likely `RuntimeProvisioner` (it lists the key in `WORKERS_PRESERVED_KEYS`, so check why it was not carried forward). Also strip the leading space in `AI_REPORTER_MODEL= deepseek-flash`.
 - [ ] DeepSeek still occasionally truncates below 16384 output tokens on long sections (Programme Overview, Annex A). Consider trimming `proposedSources` in the v4 contract, or asking for sources before artifacts.
@@ -450,7 +523,8 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
 - [x] **Versioned migrations committed.** Migrations ARE tracked at
   `packages/infrastructure/prisma/migrations/20260812000000_init/migration.sql`.
   The pending.md previously claimed they were untracked — corrected 2026-08-12.
-- [ ] **Off-host backups configured.** `scripts/backup.sh` (encrypted, off-host,
+- [x] **Off-host backups configured.** `scripts/backup.sh` (encrypted, off-host,
+  _Host check 2026-10-22: running; off-host copy on `rclone:gdrive:donordesk-backups` (latest `20261022T021757Z`); restore test recorded (`BackupRun.restoreTestedAt`, 2 rows)._
   incl. Kestra DB + storage) is **prepared**; execution + rotation + restore-test
   remain a gated operator step. Record destination, retention, last success,
   checksum, and restore-test evidence. Local WAL archive is not DR.
@@ -458,7 +532,8 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
   `20260819090000` release; `api.env` now sources cleanly in bash
   (`DATABASE_ADMIN_URL` reachable). Backup at
   `api.env.bak-strayO-20260819`.
-- [ ] **Add the RLS step to the release procedure.** The RLS grants + policy were
+- [x] **Add the RLS step to the release procedure.** The RLS grants + policy were
+  _Verified complete 2026-10-22: `scripts/deploy-fast.sh` runs `infra/postgres/rls.sql` (line 238)._
   applied manually during the 2026-08-12 fix. Bake `infra/postgres/rls.sql`
   (applied to 21 tenant tables) into the deployment runbook so it runs on
   every release, and keep `infra/postgres/rls.sql` in sync with the schema.
@@ -468,6 +543,7 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
   the deployment doc so future releases build web with
   `API_INTERNAL_URL=http://127.0.0.1:4001` and keep `src/middleware.ts`.
 - [ ] **Supervise `donordesk-api` so clean exits self-heal.** On 2026-08-28 the
+  _Host check 2026-10-22: still open: unit has `Restart=on-failure`, which does not restart after exit 0._
   service was found `inactive (dead)` for ~7 days (exited cleanly `status=0`),
   so `Restart=on-failure` never fired and all `/api/*` returned 503 while web
   stayed up. Restarted manually. Add a watchdog (e.g. a systemd timer that
@@ -478,6 +554,7 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
 ## Medium priority — async / AI features (Stage B)
 
 - [ ] **Wire BullMQ / Redis.** `InMemoryJobQueue` is always selected. BullMQ
+  _Host check 2026-10-22: production sets `JOB_QUEUE=kestra`, not BullMQ. This item is superseded unless BullMQ is wanted._
   adapter exists at `packages/infrastructure/src/security/priority-queue.ts` but
   `container.ts:209` always instantiates `InMemoryJobQueue`. Create a dedicated
   Redis ACL user (`dd:*`), wire and test the BullMQ factory, and set
@@ -512,7 +589,8 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
   (`EnvGoogleDriveTokenStore`); the `PrismaGoogleDriveCredentialStore` persists the
   tenant refresh token encrypted. Point the resolver's token store at the
   credential store so per-tenant tokens are used.
-- [ ] **Wire email/notification delivery.** Postmark adapter exists at
+- [x] **Wire email/notification delivery.** Postmark adapter exists at
+  _Verified complete 2026-10-22: `EMAIL_PROVIDER=smtp` (host mail server) and `postmark` adapters are wired in `container.ts:535-540`; production uses smtp per the ops notes._
   `packages/infrastructure/src/comms/email.ts` but `container.ts` wires
   `LoggingNotificationAdapter` which only logs. Wire Postmark and set
   `EMAIL_PROVIDER=postmark` only when ready.
@@ -562,9 +640,11 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
 ## Lower priority / shared-host hardening (separate, reviewed changes)
 
 - [ ] **PostgreSQL loopback trust → SCRAM.** `pg_hba.conf` trusts all IPv4
+  _Host check 2026-10-22: still open: `/etc/postgresql/16/main/pg_hba.conf` has `host all all 127.0.0.1/32 trust`; IPv6 is scram._
   loopback. Change to `scram-sha-256` in a separately tested window (affects all
   colocated apps).
 - [ ] **SSH hardening.** Root login + password auth enabled. Schedule a tested,
+  _Host check 2026-10-22: root password login and password auth are off; root key login remains allowed. Open: decide whether to restrict root further._
   recovery-safe change.
 - [ ] **Investigate NeureCore backend restarts** (4,822 observed) before relying
   on aggregate host headroom.
@@ -590,7 +670,8 @@ actually supports; unsupported controls are omitted rather than simulated.
   `20260815060000_onboarding_reporting_defaults`.
 - [ ] Sign-up with Google (auto-provisioning) — needs a `googleSubject` column +
   org creation flow
-- [ ] Complete password reset flow with email delivery
+- [x] Complete password reset flow with email delivery
+  _Verified complete 2026-10-22: Forgot/reset pages exist (`apps/web/src/app/forgot-password`, `reset-password`); mail goes through `EMAIL_PROVIDER` (`container.ts:538`)._
 - [ ] Email verification on signup
 - [ ] Onboarding wizard progress persistence
 - **Frontend:** login/signup hardened, honest forgot-password guidance, derived
@@ -809,13 +890,15 @@ Enhancements" list under this heading (stale paths/claims removed).
   Exclude actions and an idempotent unsupported-claim projector (resolved items
   are never recreated), replacing the former "wall of checklist items" flow.
   See `Features/12-Missing-Evidence-And-Compliance-Checklist.md`.
-- [ ] Executive summary auto-generation
+- [x] Executive summary auto-generation
+  _Verified complete 2026-10-22: Built: synthesis sections (executive summary, conclusion) are drafted automatically after other sections (AGENTS.md, Report Editor / AI Reporter notes)._
 - [ ] Donor-specific tone adjustment
 - **Frontend:** generate/regenerate AI draft + manual blank fallback; section-level
   and statement-level source references, accurately labeled (Phase 5 + 2026-08-17).
 
 ### Feature 12 — Missing Evidence and Compliance Checklist
-- [ ] Automated checklist generation on period start
+- [x] Automated checklist generation on period start
+  _Verified complete 2026-10-22: Built: checklist auto-generation (Feature 12, status line)._
 - [ ] Real-time checklist updates as evidence uploaded
 - [ ] Checklist item templates by donor type
 - [ ] Email notifications for critical items
@@ -866,8 +949,10 @@ Enhancements" list under this heading (stale paths/claims removed).
   My Work queue, project portfolio (Phase 3). Widgets/charts remain roadmap.
 
 ### Feature 17 — Basic Settings
-- [ ] Email notification delivery (currently logs only)
-- [ ] Two-factor authentication
+- [x] Email notification delivery (currently logs only)
+  _Verified complete 2026-10-22: Same as above: smtp/postmark delivery is wired; the logs-only default applies only when `EMAIL_PROVIDER` is unset._
+- [x] Two-factor authentication
+  _Verified complete 2026-10-22: Built: TOTP two-step sign-in (Feature 31 addendum; `totp-mfa-service.ts`; `/v1/auth/mfa/*`). Not available to outside partners._
 - [ ] Session management UI
 - [ ] Data export (GDPR compliance)
 - **Frontend:** org profile + AI-enabled control, capability-gated (Phase 7).
@@ -907,11 +992,13 @@ Remaining follow-ups (tracked here, not claimed):
   `IndicatorProgressCard`. The per-period grid
   (`GET /v1/reporting-periods/:id/indicators`) remains the primary data-entry
   read path.
-- [ ] **Automatic recurring reporting periods** — `autoPeriodCreation` flag stored
+- [x] **Automatic recurring reporting periods** — `autoPeriodCreation` flag stored
+  _Verified complete 2026-10-22: Runtime use: `packages/application/src/use-cases/reporting/ensure-auto-period.ts`._
   on the profile; scheduling job not yet implemented (Feature 18 §5.5).
 - [ ] **Deadline-reminder wiring to the reporting profile** — `deadlineOffsetDays`
   stored; `generate-deadline-reminders` not yet profile-aware (Feature 18 §5.5).
-- [ ] **Per-project membership ABAC enforcement** — `ProjectMember` is fully
+- [x] **Per-project membership ABAC enforcement** — `ProjectMember` is fully
+  _Verified complete 2026-10-22: Built: project boundary and membership rule (Feature 31; `project-boundary.ts`)._
   implemented (role + status, repo, API, Team UI, audit; 2026-08-16) but
   `list-projects` is still tenant-wide, not filtered by membership (Feature 18
   §5.4, FE-B03).
@@ -937,7 +1024,8 @@ Remaining follow-ups (tracked here, not claimed):
   logframe. See `imp/Phase20_setup_logframe.md` §"A1 — why it is blocked" for
   the two proposed alternatives (curated pack library, or "copy logframe from
   an existing project").
-- [ ] **`PUT /v1/indicators/:id/semantics` has no permission rule** — found
+- [x] **`PUT /v1/indicators/:id/semantics` has no permission rule** — found
+  _Verified complete 2026-10-22: Rule exists: `apps/api/src/middleware/authorization.ts:77` (`logframe.manage`)._
   during the Phase 20 audit; any authenticated user can currently change an
   indicator's calculation semantics. Left unchanged pending a decision on
   whether to restrict it to `logframe.manage` (would need to confirm today's
@@ -970,6 +1058,7 @@ Implemented:
 
 Remaining (tracked here, not claimed):
 - [ ] **Fix live product prices on creem.io** — live products are priced
+  _Host check 2026-10-22: `CREEM_TEST_MODE=false` on production (live). Product IDs are set; prices still need checking in the Creem dashboard._
   $59.99/$590.99/$149.99 (Growth Yearly is correct at $1,490) but the catalog
   (`PLAN_CATALOG` in `packages/domain/src/contexts/billing/plan.ts`) and the
   pricing UI advertise $59/$590/$149/$1,490. Align creem.io prices to 5900 /
