@@ -1,5 +1,5 @@
 import { optionForType, type ChartType, type ResolvedChartData } from "./chart-config.js";
-import { indexCells, type DataSheet, type DataSheetIndicator, type DataSheetPeriod, type ChartMeasure } from "./data-sheet.js";
+import { hasShareOfTarget, indexCells, type DataSheet, type DataSheetIndicator, type DataSheetPeriod, type ChartMeasure } from "./data-sheet.js";
 
 /**
  * Data Center charts: a chart is a small spec (template + indicators + measure + period range) drawn from the project's
@@ -155,7 +155,8 @@ function measureValue(cells: ReturnType<typeof indexCells>, indicator: DataSheet
   if (!cell) return null;
   if (measure === "PERIOD") return num(cell.periodValue);
   if (measure === "CUMULATIVE") return num(cell.cumulativeValue);
-  if (indicator.isRate) return null;
+  // A rate, or an indicator where lower is better (its target is a ceiling), has no share of target.
+  if (!hasShareOfTarget(indicator)) return null;
   return pct(num(cell.cumulativeValue) ?? num(cell.periodValue), num(indicator.target));
 }
 
@@ -192,7 +193,7 @@ function plottedProvenance(sheet: DataSheet, spec: DataChartSpec): DataChartProv
     case "INDICATORS_OVER_TIME": {
       const mixed = new Set(chosen.map(unitOf)).size > 1;
       const measure: ChartMeasure = mixed && spec.measure !== "PERCENT_OF_TARGET" ? "PERCENT_OF_TARGET" : spec.measure;
-      for (const i of chosen) if (!(measure === "PERCENT_OF_TARGET" && i.isRate)) for (const p of periods) count(i, p, measure);
+      for (const i of chosen) if (!(measure === "PERCENT_OF_TARGET" && !hasShareOfTarget(i))) for (const p of periods) count(i, p, measure);
       break;
     }
     case "INDICATOR_VS_TARGET": {
@@ -204,7 +205,7 @@ function plottedProvenance(sheet: DataSheet, spec: DataChartSpec): DataChartProv
       break;
     }
     case "INDICATORS_PROGRESS":
-      for (const i of chosen) if (!i.isRate) for (const p of [...periods].reverse()) if (count(i, p, "PERCENT_OF_TARGET")) break;
+      for (const i of chosen) if (hasShareOfTarget(i)) for (const p of [...periods].reverse()) if (count(i, p, "PERCENT_OF_TARGET")) break;
       break;
     case "FINANCE_BUDGET_VS_SPEND":
     case "FINANCE_BURN_RATE": {
@@ -278,8 +279,8 @@ function buildDataChartCore(sheet: DataSheet, spec: DataChartSpec): DataChartRes
     }
 
     case "INDICATORS_PROGRESS": {
-      const usable = chosen.filter((i) => !i.isRate);
-      const skipped = chosen.filter((i) => i.isRate).map((i) => i.code);
+      const usable = chosen.filter((i) => hasShareOfTarget(i));
+      const skipped = chosen.filter((i) => !hasShareOfTarget(i)).map((i) => i.code);
       const rows = usable
         .map((i) => {
           const latest = [...periods].reverse().map((p) => measureValue(cells, i, p, "PERCENT_OF_TARGET")).find((v) => v !== null) ?? null;
@@ -288,7 +289,7 @@ function buildDataChartCore(sheet: DataSheet, spec: DataChartSpec): DataChartRes
         .filter((r) => r.value !== null);
       if (rows.length === 0) return { ok: false, reason: "None of the chosen indicators has a value and a numeric target to compare." };
       const result = draw(spec, { categories: rows.map((r) => r.code), series: [{ name: "% of target", data: rows.map((r) => r.value) }], unit: "%", referenceLine: { name: "Target (100%)", value: 100 } }, "Progress against target (% of target)");
-      if (result.ok && skipped.length > 0) result.notes.push(`Left out because they are rates, not progress toward a count: ${skipped.join(", ")}.`);
+      if (result.ok && skipped.length > 0) result.notes.push(`Left out because they have no share of target (a rate, or an indicator where lower is better): ${skipped.join(", ")}.`);
       if (result.ok && rows.length < usable.length) result.notes.push("Indicators with no recorded value or numeric target are left out.");
       return result;
     }
@@ -298,7 +299,7 @@ function buildDataChartCore(sheet: DataSheet, spec: DataChartSpec): DataChartRes
       const mixed = units.size > 1;
       const measure: ChartMeasure = mixed && spec.measure !== "PERCENT_OF_TARGET" ? "PERCENT_OF_TARGET" : spec.measure;
       const series = chosen
-        .filter((i) => !(measure === "PERCENT_OF_TARGET" && i.isRate))
+        .filter((i) => !(measure === "PERCENT_OF_TARGET" && !hasShareOfTarget(i)))
         .map((i) => ({ name: i.code, data: periods.map((p) => measureValue(cells, i, p, measure)) }))
         .filter((s) => s.data.some((d) => d !== null));
       if (series.length === 0) return { ok: false, reason: "No values are recorded for the chosen indicators in these periods." };

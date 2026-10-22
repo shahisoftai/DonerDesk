@@ -29,6 +29,7 @@ export interface ManagedIndicator {
   targetBreakdowns?: BreakdownTargetRow[];
   targetSchedule?: { asOf: string; target: string }[];
   countedElsewhere?: boolean;
+  frequency?: string | undefined;
 }
 
 /**
@@ -42,6 +43,7 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
   const [baseline, setBaseline] = useState(indicator.baseline);
   const [target, setTarget] = useState(indicator.target);
   const [unit, setUnit] = useState(indicator.unit ?? "");
+  const [frequency, setFrequency] = useState(indicator.frequency ?? "");
   const [breakdown, setBreakdown] = useState(indicator.disaggregationRequired);
   const [itemId, setItemId] = useState(indicator.logframeItemId ?? "");
   const [breakdowns, setBreakdowns] = useState<BreakdownTargetRow[]>(indicator.targetBreakdowns ?? []);
@@ -67,6 +69,7 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
       baseline,
       target,
       unit: unit.trim() || undefined,
+      frequency: frequency.trim() || undefined,
       disaggregationRequired: breakdown,
       targetBreakdowns: completeBreakdownRows(breakdowns),
       targetSchedule: parsedSchedule.schedule,
@@ -111,6 +114,13 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
         <Field label="Unit" htmlFor="manage-unit"><Input id="manage-unit" value={unit} onChange={(e) => setUnit(e.target.value)} /></Field>
       </div>
       <Field label="Name" htmlFor="manage-name"><Input id="manage-name" value={name} onChange={(e) => setName(e.target.value)} /></Field>
+      <Field
+        label="Frequency"
+        htmlFor="manage-frequency"
+        hint="How often it is measured, for example monthly, quarterly, every 6 months, annual or baseline and endline. Text that is not recognised means every period."
+      >
+        <Input id="manage-frequency" value={frequency} maxLength={50} onChange={(e) => setFrequency(e.target.value)} />
+      </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Baseline" htmlFor="manage-baseline"><Input id="manage-baseline" value={baseline} onChange={(e) => setBaseline(e.target.value)} /></Field>
         <Field label="Target" htmlFor="manage-target"><Input id="manage-target" value={target} onChange={(e) => setTarget(e.target.value)} /></Field>
