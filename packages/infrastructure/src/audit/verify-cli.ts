@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { TenantId } from "@donordesk/domain";
 import { PrismaAuditRepository } from "../repositories/support.js";
+import { auditTenantId } from "./verify-tenants.js";
 
 /**
  * Verifies the audit hash chain.
@@ -25,9 +25,15 @@ if (!arg) {
       : [arg];
     let broken = 0;
     for (const tenantId of tenants) {
-      const result = await audits.verifyChain(TenantId.create(tenantId));
-      console.log(JSON.stringify({ tenantId, ...result }));
-      if (!result.valid) broken += 1;
+      // One unreadable tenant id is reported and counted; it must not stop the other chains from being checked.
+      try {
+        const result = await audits.verifyChain(auditTenantId(tenantId));
+        console.log(JSON.stringify({ tenantId, ...result }));
+        if (!result.valid) broken += 1;
+      } catch (error) {
+        console.log(JSON.stringify({ tenantId, valid: false, error: error instanceof Error ? error.message : String(error) }));
+        broken += 1;
+      }
     }
     if (all) console.log(JSON.stringify({ checked: tenants.length, broken }));
     if (broken > 0) process.exitCode = 1;
