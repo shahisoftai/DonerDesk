@@ -42,18 +42,23 @@ export function EvidenceFilterBar({ baseUrl, current, options = {} }: { baseUrl:
   const params = toParams(current);
   const [query, setQuery] = useState(params.query ?? "");
   const [location, setLocation] = useState(params.location ?? "");
+  // The filters just chosen, until the page has re-rendered with them. A filter applies as soon as it is chosen, so a click on
+  // "Apply" a moment later must build on it instead of on the previous address (that used to drop the choice).
+  const [pending, setPending] = useState<{ from: string; params: EvidenceSearchParams } | null>(null);
+  const base = pending && pending.from === current ? pending.params : params;
 
   function navigate(next: EvidenceSearchParams) {
+    setPending({ from: current, params: next });
     router.push(`${baseUrl}${serializeEvidenceFilters(next)}`);
   }
 
   function update(key: "verificationStatus" | "confidentialityLevel" | "evidenceType" | "projectId" | "reportingPeriodId" | "donor" | "country", value: string) {
-    navigate(withEvidenceFilter(params, key, value || undefined));
+    navigate(withEvidenceFilter(base, key, value || undefined));
   }
 
   function submitQuery(e: React.FormEvent) {
     e.preventDefault();
-    navigate(withEvidenceFilter(withEvidenceFilter(params, "location", location.trim() || undefined), "query", query || undefined));
+    navigate(withEvidenceFilter(withEvidenceFilter(base, "location", location.trim() || undefined), "query", query || undefined));
   }
 
   const chips: Array<{ label: string; removeHref: string }> = [];
