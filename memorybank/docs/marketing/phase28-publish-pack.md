@@ -31,11 +31,11 @@ Add to `/features` (and the landing page "what you get" list), in the product's 
 - **A framework with a memory.** Every change to targets and indicators is kept; sign off the version the donor approved; each approved report notes the version it was approved against.
 - **Partners, in their own lane.** Outside partners see only the projects you give them.
 
-Do not claim: offline app opening (only capture is offline), budget lines (not built), partner self-service portals beyond the allow-listed screens, MFA, or any certification.
+Do not claim: offline app opening (only capture is offline), budget as a finance system (budget lines exist per activity; there is no ledger), partner self-service portals beyond the allow-listed screens, multi-factor sign-in for outside partners, or any certification. Two-step sign-in for tenant users is built and may be described once checked on the live site.
 
 ## 3. Support articles
 
-The drafts are in `memorybank/docs/support/_unpublished-phase28/`. Register each (`FILE_MAP` and `wikiCategories.tsx`) only after its section above has passed. Add short new articles for: programmes and grants, framework history, and inviting an outside partner.
+The work-plan drafts are in `memorybank/docs/support/_unpublished-phase28/` (including `how-to-add-fields-and-automatic-reminders.md`, added 2026-10-22). The batch-3 drafts (programmes and grants, framework history, outside partners, organisation export, donor requirements, locks, sign-in lockout, AI usage, unreadable files) are in `apps/web/content/support/_unpublished-batch3/`, with their own publish checklist. Register each (`FILE_MAP` and `wikiCategories.tsx`) only after its section above has passed.
 
 ## 4. Then
 

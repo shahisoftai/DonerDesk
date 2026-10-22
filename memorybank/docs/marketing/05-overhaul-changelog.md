@@ -4,6 +4,21 @@
 system whose main output is donor reporting. This overhaul moves the positioning, the site, the support
 library and the deck to match the product, using only claims verified against the code.
 
+## Update 2026-10-22: feature inventory brought up to the built product
+
+Audit of every built feature (Features 01–42, portal routes, API routes) against the marketing, support and feature docs.
+
+| Area | What changed |
+|---|---|
+| Feature inventory (`02`) | Status key redefined: `BUILT-NOT-LIVE` = not yet checked in a browser on the live site, whether or not deployed. Work plan rows now carry their own status (planned activities, start from the logframe, On time / Late / Done, overview cards and mark done are LIVE; the rest are not yet). New sections 17–19 cover programme management, the gap-closure features and the batch-3 features (programmes and grants, framework history, outside partners, target schedule and variance, portfolio, donor indicator mapping, management report, changes of plan, comment threads, evidence review, scanned documents, AI usage). Section 14 adds two-step sign-in, password and access rules, and the organisation export. |
+| "Not built" list | Corrected. Budget lines, people reached, requests, reminders, risks, delivery-health labels and partner access are built. Still not built: a full offline app, budget as a finance system, MFA for partners, enforced encryption at rest. |
+| Support (source) | `docs/support/README.md` lists every unpublished draft and where it lives. `_unpublished-phase28/` gains `how-to-add-fields-and-automatic-reminders.md`. |
+| Support (served) | `security-best-practices.md` no longer says two-factor sign-in is unavailable. The batch-3 sign-in draft and the outside-partner draft were corrected the same way. |
+| Feature docs | `Features/INDEX.md` and Feature 01 and 31 no longer say MFA is not built; two-step sign-in is built, optional, and not available to outside partners. |
+| Publish pack | §3 points to where each draft is; the "do not claim" list is updated. |
+
+**Open (site code, not changed here):** `apps/web/src/app/security/page.tsx` (around line 55) says multi-factor authentication is "not currently required or available for tenant accounts". That is no longer true: two-step sign-in is available to tenant users. Correct it with the next web deploy, once the sign-in is checked on the live site. The rest of the public site (`apps/web/src/components/landing/`, `/features`) was not re-read. The unpublished articles are not registered. Registration is a code change and a deploy, so it was not done.
+
 ## Update 2026-10-19: copy made honest ahead of the work plan (Phase 28, Batch 28.0)
 
 | Area | What changed |

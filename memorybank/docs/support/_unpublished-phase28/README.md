@@ -25,6 +25,7 @@ These articles describe features of Phase 28 (Batches 28.0–28.9) and of the ga
 | `reference-daily-summary-and-reminders.md` | Reference | daily summary, escalation, email setting |
 | `how-to-log-progress-and-finish-an-activity.md` | How-To › Projects | progress log, one-step Done, offline Done (gap closure) |
 | `how-to-track-dependencies-budget-and-people-reached.md` | How-To › Projects | comes after, budget lines, people reached and Kobo/ODK import, workload (gap closure) |
+| `how-to-add-fields-and-automatic-reminders.md` | How-To › Projects | custom fields, automatic reminders (Team tab), bulk change, details panel |
 
 ## Edits to existing articles (apply at deploy)
 

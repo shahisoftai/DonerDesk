@@ -29,3 +29,4 @@ On the Team page, change the person's role or remove them. Their access ends at 
 
 - A partner's screens are the same as everyone else's; a shorter menu for partners is not available yet.
 - Partners are not set to expire automatically.
+- Two-step sign-in is not available to outside partners yet. Protect the partner's password and remove their access when the work ends.

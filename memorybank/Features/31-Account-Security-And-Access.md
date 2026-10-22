@@ -3,7 +3,7 @@
 **DonorDesk Version 2.006**
 
 **Author:** Claude (agent) · **Date:** 2026-10-21
-**Status:** Built, tested and deployed 2026-10-20 (batch 3, audit findings H-12 and H-14). **Multi-factor sign-in is not built** (open). Builds on [Feature 01](01-Authentication-And-Onboarding.md) and [Feature 03](03-User-And-Role-Management.md).
+**Status:** Built, tested and deployed 2026-10-20 (batch 3, audit findings H-12 and H-14). Two-step sign-in (TOTP) is built (see the addendum); multi-factor for outside partners is not. Builds on [Feature 01](01-Authentication-And-Onboarding.md) and [Feature 03](03-User-And-Role-Management.md).
 
 ## 1. What a user gets
 
@@ -37,7 +37,7 @@ A person who is not on a project gets "not found" for it, so the answer does not
 
 ## 4. Limits
 
-- **MFA is not built.** Tenant users sign in with a password only (SSO, where configured, is the alternative).
+- **Two-step sign-in is optional, per person.** Tenant users may turn it on (addendum below). It is not enforced by the organisation, and it is not available to outside partners. SSO, where configured, is the alternative and manages its own sign-in.
 - The password policy applies to new passwords; existing passwords are not forced to change.
 - Project membership does not yet control reading the audit trail or the team directory for non-administrators (both are administrator-only today).
 
@@ -51,5 +51,5 @@ Shipped in release `20261021034848` and fixed in `20261021040309` (audit H-12).
 - **Lockout:** repeated wrong passwords lock the account for a period (`User.failedLoginCount`, `lockedUntil`, `login-lockout.ts`); a good sign-in or a reset clears it.
 - **Password policy:** 12 or more characters at sign-up and invitation (`PasswordPolicy`).
 - **Session checks:** role and status are checked on every request (batch 3).
-- **Left over:** no MFA for outside partners; no hardware keys; no MFA-enforcement setting per organisation; the recovery-code regeneration screen is not built.
+- **Left over:** no two-step sign-in for outside partners; no organisation-wide enforcement; no hardware keys; no MFA-enforcement setting per organisation; the recovery-code regeneration screen is not built.
 - Code: `packages/infrastructure/src/auth/totp-mfa-service.ts`, `packages/application/src/use-cases/identity/mfa-handlers.ts`, `apps/web/src/features/settings/presentation/MfaPanel.tsx`. Tests: `packages/infrastructure/test/totp-mfa.test.mjs`, `mfa-flow.test.mjs`.
