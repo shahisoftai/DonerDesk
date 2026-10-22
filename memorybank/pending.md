@@ -2,7 +2,7 @@
 
 **DonorDesk Version 1.93**
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-22 (audited and host-verified; release 20261022073456; see the priority board below).
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-22 (audited and host-verified; latest release 20261022115803; see the priority board below).
 
 ## Priority board (audited 2026-10-22)
 
@@ -30,6 +30,14 @@ Each open item was checked against the code, docs or git history where possible.
 - **Evidence encryption:** `EVIDENCE_ENCRYPTION_KEYS` is absent, so encryption at rest is off, as the feature doc says.
 
 **Release `20261022073456` (2026-10-22, `SCOPE=both`, branch `0013-programme-management`):** commits `0ae7776` (audit verifier and Kestra unit), `7653941` (role-based home and navigation), `767ff9c` (refund-policy links, legal facts, support layout), `f67b120` (docs), `bc4c8e1` (demo scripts). Gate before deploy: typecheck and build green; contracts 14, domain 789, application 717, infrastructure 408, api 67, web unit 400, Playwright 12, Python workers all passing. The dashboard e2e test was updated for the new home (it looked for a retired heading). No migration (host already at `20261022170000_project_adaptations`). Production check after the release: all five services active, `/ready` ok, no failed `donordesk-*` units, no api/web errors in the journal, login/pricing/refunds/support pages 200, the security article shows the two-step wording, unauthenticated `/dashboard` redirects to login. *Not exercised: the signed-in home and navigation (needs a browser with a real account, per the existing live-site check item).*
+
+### Demo 11, month 2 (December) — done 2026-10-22; what is left
+Run log, findings and ids: `demo/verification-demo-11.md` §18. Four releases went out that day (`20261022073456`, `…094518`, `…112732`, `…115803`); 24 findings from the run are fixed and live.
+- [ ] **Second approvals:** the November and December reports wait for a project manager or M&E officer other than the author (the account used here). Needs a second sign-in.
+- [ ] **Open findings:** F-11 (two "Done" controls on every plan row, plus two December rows set Done at 08:38 UTC without an attributable click), F-15 (the results table's "This period" shows the cumulative value for summed indicators; fix in the worker's `artifact_builder.py` and its golden tests), F-16 (flag reason copy).
+- [ ] **Period status of the two demo reports** still reads "draft generated" (only new submissions advance it). A one-line data repair was blocked as a direct production write; see D-11 in the run log.
+- [ ] **Not exercised on the live site:** a second account (Field Officer My week, outside-partner view), two-step sign-in set-up, offline use, the organisation export download, January's Situation report.
+- [ ] **AI usage page:** runs before 2026-10-22 keep cost 0 (the AI Reporter was priced at 0); only new runs are costed.
 
 ### P1: customer-visible gaps and publish gates
 - **Live-site browser check** of the Phase 28 screens and Project Overview v2 (a publish gate for the "Plan it" wording and the support articles).
