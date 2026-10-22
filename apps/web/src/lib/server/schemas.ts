@@ -911,11 +911,14 @@ export const CommentItemSchema = z.object({
   entityId: z.string(),
   commentText: z.string(),
   authorId: z.string().optional(),
+  /** The author's name, resolved by the server. The id is only a fallback. */
+  authorName: z.string().optional(),
   mentionedUserId: z.string().optional(),
   status: z.string().default("OPEN"),
   /** Set on a reply: the first comment of its thread. */
   parentId: z.string().optional(),
   resolvedById: z.string().optional(),
+  resolvedByName: z.string().optional(),
   resolvedAt: z.string().optional(),
   createdAt: z.string().optional(),
 });

@@ -1382,7 +1382,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     addComment: new AddCommentHandler(ids, comments, audits, personNotifier, new PrismaCommentTargets(prisma)),
     resolveComment: new ResolveCommentHandler(comments, audits),
     reopenComment: new ReopenCommentHandler(comments, audits),
-    listComments: new ListCommentsHandler(comments),
+    listComments: new ListCommentsHandler(comments, users),
     listNotifications: new ListNotificationsHandler(notifications),
     markNotificationRead: new MarkNotificationReadHandler(notifications, audits),
     listAuditLog: new ListAuditLogHandler(audits),
