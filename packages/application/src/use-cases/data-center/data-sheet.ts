@@ -1,5 +1,5 @@
 import type { Result, DataSheet, DataSheetImportPreview } from "@donordesk/domain";
-import { DomainError, isPeriodLocked, isRateIndicator, periodSheetLabel, previewDataSheetImport, financeAppliesTo } from "@donordesk/domain";
+import { DomainError, effectiveIndicatorSemantics, isPeriodLocked, isRateIndicator, periodSheetLabel, previewDataSheetImport, financeAppliesTo } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -84,6 +84,7 @@ export class GetProjectDataSheetHandler {
           baseline: i.baseline,
           target: i.target,
           isRate: isRateIndicator({ type: i.type, unit: i.unit }),
+          ...(effectiveIndicatorSemantics({ type: i.type, name: i.name, unit: i.unit, semantics: i.semantics }).direction === "LOWER_IS_BETTER" ? { lowerIsBetter: true } : {}),
           ...(i.targetSchedule?.length ? { targetSchedule: i.targetSchedule } : {}),
         })),
         cells: values.value

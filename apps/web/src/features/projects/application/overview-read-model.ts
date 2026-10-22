@@ -25,6 +25,7 @@ import {
 } from "@/lib/server/schemas";
 import type { AppError } from "@/lib/shared/app-error";
 import type { Capability } from "@/lib/shared/capabilities";
+import { hasShareOfTarget } from "@donordesk/domain/contexts/reporting/data-sheet.js";
 import { sectionsFor, type OverviewFacts, type OverviewSection } from "@/features/projects/domain/overview-sections";
 import {
   budgetPace,
@@ -32,6 +33,7 @@ import {
   closeOut,
   headlineIndicator,
   latestPercentOfTarget,
+  latestRecordedCell,
   lifecycle,
   movedThisQuarter,
   needsYouItems,
@@ -330,14 +332,14 @@ export const loadProjectOverviewV2 = cache(
       ? ok<ResultsData>({
           indicators: sheet.indicators.map((indicator): ResultsIndicatorView => {
             const percent = latestPercentOfTarget(sheet, indicator);
-            const cells = sheet.cells.filter((c) => c.indicatorId === indicator.id);
-            const latest = cells.find((c) => c.periodId === [...sheet.periods].sort((a, b) => b.end.localeCompare(a.end))[0]?.id);
+            const latest = latestRecordedCell(sheet, indicator.id);
             return {
               id: indicator.id,
               code: indicator.code,
               name: indicator.name,
               level: indicator.level,
-              isRate: indicator.isRate,
+              // A rate, or an indicator where lower is better, has no "% of target": it shows baseline, target and latest.
+              isRate: !hasShareOfTarget(indicator),
               percent,
               baseline: indicator.baseline,
               target: indicator.target,

@@ -32,6 +32,11 @@ export interface DataSheetIndicator {
   target: string;
   /** Percentage/ratio indicators: "% of target" is not meaningful. */
   isRate: boolean;
+  /**
+   * The indicator is configured so that a lower figure is better (deaths, stock-out days). Its target is a ceiling, so "% of target"
+   * would read a worse result as further ahead: it has none.
+   */
+  lowerIsBetter?: boolean | undefined;
   /** The cumulative target due by each date, when the indicator has one. */
   targetSchedule?: TargetScheduleEntry[] | undefined;
 }
@@ -111,8 +116,13 @@ export function indexCells(sheet: DataSheet): Map<string, DataSheetCell> {
 }
 
 /** What a sheet shows as the indicator's progress for a period: cumulative to date against the target, unless it is a rate. */
+/** Whether "% of target" can be read for this indicator: not a rate, and not one where lower is better. */
+export function hasShareOfTarget(indicator: Pick<DataSheetIndicator, "isRate" | "lowerIsBetter">): boolean {
+  return !indicator.isRate && !indicator.lowerIsBetter;
+}
+
 export function cellPercentOfTarget(indicator: DataSheetIndicator, cell: DataSheetCell | undefined): string {
-  if (!cell || indicator.isRate) return "";
+  if (!cell || !hasShareOfTarget(indicator)) return "";
   const basis = cell.cumulativeValue.trim() !== "" ? cell.cumulativeValue : cell.periodValue;
   return percentOfTarget(basis, indicator.target);
 }

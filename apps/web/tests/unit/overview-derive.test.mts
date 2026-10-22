@@ -7,6 +7,7 @@ import {
   closeOut,
   headlineIndicator,
   latestPercentOfTarget,
+  latestRecordedCell,
   lifecycle,
   movedThisQuarter,
   needsYouItems,
@@ -293,4 +294,41 @@ test("close-out counts the months that are left", () => {
   assert.equal(closing.finalYear, true);
   assert.equal(closeOut("2025-01-01", "2025-12-31", "2025-11-15").finalYear, true);
   assert.equal(closeOut("2025-01-01", "2027-12-31", "2025-07-15").finalYear, false);
+});
+
+
+/* ---- lower-is-better indicators and the latest recorded value (demo 11 findings) ---- */
+
+const twoMonths = (): DataSheet => ({
+  projectId: "p2",
+  periods: [
+    { id: "nov", label: "Nov 2026", start: "2026-11-01", end: "2026-11-30", reportType: "MONTHLY", locked: false },
+    { id: "dec", label: "Dec 2026", start: "2026-12-01", end: "2026-12-31", reportType: "MONTHLY", locked: false },
+    { id: "jan", label: "Jan 2027", start: "2027-01-01", end: "2027-01-31", reportType: "MONTHLY", locked: false },
+  ],
+  indicators: [
+    { id: "stock", code: "OP1-3", name: "Stock-out days", level: "OUTPUT", type: "NUMBER", baseline: "4", target: "2", isRate: false, lowerIsBetter: true },
+    { id: "trained", code: "OP1-1", name: "Trained", level: "OUTPUT", type: "NUMBER", baseline: "0", target: "100", isRate: false },
+  ],
+  cells: [
+    { indicatorId: "stock", periodId: "nov", periodValue: "2.5", cumulativeValue: "", status: "VERIFIED" },
+    { indicatorId: "trained", periodId: "nov", periodValue: "40", cumulativeValue: "40", status: "VERIFIED" },
+    { indicatorId: "trained", periodId: "dec", periodValue: "30", cumulativeValue: "70", status: "VERIFIED" },
+  ],
+  finance: [],
+} as unknown as DataSheet);
+
+test("an indicator where lower is better has no share of target, so a worse result is never read as ahead", () => {
+  const s = twoMonths();
+  assert.equal(latestPercentOfTarget(s, s.indicators[0]!), null);
+  const pace = resultsPace(s, 50);
+  assert.equal(pace.measured, 1, "only the higher-is-better indicator is read as a share of target");
+  assert.equal(latestPercentOfTarget(s, s.indicators[1]!), 70);
+});
+
+test("the latest value is the most recent period that has one, not the last period on the calendar", () => {
+  const s = twoMonths();
+  assert.equal(latestRecordedCell(s, "trained")?.cumulativeValue, "70");
+  assert.equal(latestRecordedCell(s, "stock")?.periodValue, "2.5");
+  assert.equal(latestRecordedCell(s, "unknown"), undefined);
 });

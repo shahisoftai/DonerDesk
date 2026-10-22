@@ -1,4 +1,4 @@
-import { cellPercentOfTarget, indexCells, type DataSheet, type DataSheetIndicator } from "@donordesk/domain/contexts/reporting/data-sheet.js";
+import { cellPercentOfTarget, hasShareOfTarget, indexCells, type DataSheet, type DataSheetCell, type DataSheetIndicator } from "@donordesk/domain/contexts/reporting/data-sheet.js";
 import { addDays, addMonths, compareDates, daysBetween, type PlainDate } from "@donordesk/domain/contexts/workplan/index.js";
 
 /**
@@ -121,9 +121,20 @@ function percentNumber(percent: string): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
+/** The cell of the most recent period that has a recorded value. The last period on the calendar is usually still empty and must not hide it. */
+export function latestRecordedCell(sheet: DataSheet, indicatorId: string): DataSheetCell | undefined {
+  const cells = indexCells(sheet);
+  const periods = [...sheet.periods].sort((a, b) => b.end.localeCompare(a.end));
+  for (const period of periods) {
+    const cell = cells.get(`${indicatorId}|${period.id}`);
+    if (cell && (cell.cumulativeValue.trim() !== "" || cell.periodValue.trim() !== "")) return cell;
+  }
+  return undefined;
+}
+
 /** The latest recorded share of target for one indicator, or null when it was never measured. */
 export function latestPercentOfTarget(sheet: DataSheet, indicator: DataSheetIndicator): number | null {
-  if (indicator.isRate) return null;
+  if (!hasShareOfTarget(indicator)) return null;
   const cells = indexCells(sheet);
   const periods = [...sheet.periods].sort((a, b) => b.end.localeCompare(a.end));
   for (const period of periods) {
@@ -137,7 +148,7 @@ export function resultsPace(sheet: DataSheet, timeElapsedPercent: number): Resul
   const measured: number[] = [];
   let notMeasured = 0;
   for (const indicator of sheet.indicators) {
-    if (indicator.isRate) continue;
+    if (!hasShareOfTarget(indicator)) continue;
     const percent = latestPercentOfTarget(sheet, indicator);
     if (percent === null) {
       notMeasured += 1;
@@ -216,7 +227,7 @@ export function headlineIndicator(sheet: DataSheet): HeadlineIndicator | null {
   const cells = indexCells(sheet);
   const periods = [...sheet.periods].sort((a, b) => a.end.localeCompare(b.end));
   const candidates = sheet.indicators
-    .filter((indicator) => !indicator.isRate)
+    .filter((indicator) => hasShareOfTarget(indicator))
     .map((indicator) => {
       const points = periods.map((period) => {
         const percent = percentNumber(cellPercentOfTarget(indicator, cells.get(`${indicator.id}|${period.id}`)));
