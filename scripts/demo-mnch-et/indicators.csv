@@ -1,0 +1,16 @@
+Code,Name,Type,Baseline,Target,Unit,Frequency,Disaggregated,Logframe Code,Data source
+GI-1,Institutional maternal deaths at supported facilities,NUMBER,4,2,deaths,Final,,G,"Facility registers, maternal death review minutes"
+OC1a,Deliveries at supported facilities attended by a skilled birth attendant,PERCENTAGE,46,65,%,Monthly,,OC1,Delivery registers
+OC1b,Newborns with a postnatal care check within 48 hours of birth,PERCENTAGE,28,55,%,Monthly,,OC1,PNC registers
+OC1c,Pregnant women attending four or more ANC visits,PERCENTAGE,37,55,%,Monthly,,OC1,ANC registers
+OC1d,Children under one year receiving Penta3 vaccine,PERCENTAGE,62,78,%,Monthly,,OC1,EPI registers
+OP1-1,"Health workers and HEWs trained in BEmONC, ENC and ANC/PNC",NUMBER,0,132,people,Monthly,yes,1.1,Training attendance sheets
+OP1-2a,Women staying at a maternity waiting home before delivery,NUMBER,0,240,women,Monthly,,1.2,MWH registers
+OP1-2b,Emergency obstetric and newborn referrals completed by project-supported transport,NUMBER,0,120,referrals,Monthly,,1.2,"Referral slips, transport log"
+OP1-3,Tracer MNCH medicine stock-out days (average per supported facility in the month),NUMBER,4,2,days,Monthly,,1.3,"Stock cards (oxytocin, misoprostol, amoxicillin, RDT)"
+OP1-4,"Women reached by integrated outreach clinics (ANC, PNC, immunisation)",NUMBER,0,3600,women,Monthly,,1.4,Outreach tally sheets
+OP2-1,WDA team leaders oriented and active,NUMBER,0,360,people,Monthly,,2.1,Orientation attendance
+OP2-2,People reached by community education on maternal and newborn health,NUMBER,0,12000,people,Monthly,yes,2.2,"Session registers, radio log"
+OP2-3,Woreda MNCH data review meetings held,NUMBER,0,12,meetings,Monthly,,2.3,Meeting minutes
+OC2a,Recently delivered women who know at least three newborn danger signs,PERCENTAGE,24,45,%,Survey,,OC2,Household survey
+OC2b,Mothers who attended ANC in the first trimester (most recent birth),PERCENTAGE,31,50,%,Survey,,OC2,Household survey
