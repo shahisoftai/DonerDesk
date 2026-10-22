@@ -35,6 +35,7 @@ import {
   latestPercentOfTarget,
   latestRecordedCell,
   lifecycle,
+  periodTitle,
   movedThisQuarter,
   needsYouItems,
   resultsPace,
@@ -226,7 +227,7 @@ export const loadProjectOverviewV2 = cache(
         budget: sheet && pace.length > 0 ? { pace, timeElapsedPercent: life.timeElapsedPercent } : null,
         nextDeadline: nextPeriod
           ? {
-              title: `${REPORT_TYPE_LABEL[nextPeriod.reportType] ?? "Project"} report`,
+              title: periodTitle(REPORT_TYPE_LABEL[nextPeriod.reportType] ?? "Report", nextPeriod.startDate, nextPeriod.endDate),
               date: nextPeriod.deadline,
               days: nextPeriod.daysUntilDeadline,
               readiness: nextPeriod.readinessScore,
@@ -283,7 +284,7 @@ export const loadProjectOverviewV2 = cache(
       ? ok<ReportingData>({
           periods: periods.map((p) => ({
             id: p.id,
-            title: `${REPORT_TYPE_LABEL[p.reportType] ?? "Project"} report`,
+            title: periodTitle(REPORT_TYPE_LABEL[p.reportType] ?? "Report", p.startDate, p.endDate),
             reportType: p.reportType,
             status: p.status,
             readiness: p.readinessScore,
@@ -361,9 +362,18 @@ export const loadProjectOverviewV2 = cache(
       : failed;
 
     /* ---- team ---- */
-    const requests = assignments
-      .filter((a) => a.projectId === projectId && (a.kind === "TASK" || a.kind === "INDICATOR_VALUE"))
-      .map((a) => ({ key: a.key, title: a.title, dueDate: a.dueDate ?? null, state: a.state, href: a.href, urgent: a.urgent }));
+    // Every open request on the project, whoever it is for: the card is "Requests", not "my requests".
+    const requests = teamWorkResult.ok
+      ? teamWorkResult.value.requests.map((r) => ({
+          key: r.key,
+          title: r.title,
+          dueDate: r.dueDate ?? null,
+          state: r.state,
+          href: r.href,
+          urgent: r.urgent,
+          assignee: people.find((p) => p.userId === r.assigneeId)?.name ?? "",
+        }))
+      : [];
     const team: SectionData<TeamData> = teamWorkResult.ok
       ? ok<TeamData>({
           rows: teamWorkResult.value.rows.map((row) => ({

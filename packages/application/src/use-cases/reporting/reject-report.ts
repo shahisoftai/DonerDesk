@@ -1,7 +1,7 @@
 import type { Result } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
-import type { IReportDraftRepository } from "../../ports/reporting.js";
+import type { IReportDraftRepository, IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IAuditLogger } from "../../ports/core.js";
 import type { IReportNotifier } from "../../services/report-notifier.js";
 
@@ -10,7 +10,7 @@ import type { IReportNotifier } from "../../services/report-notifier.js";
  * actionable. The rejection reason is captured in the audit trail.
  */
 export class RejectReportHandler {
-  constructor(private readonly drafts: IReportDraftRepository, private readonly audit: IAuditLogger, private readonly notifier?: IReportNotifier) {}
+  constructor(private readonly drafts: IReportDraftRepository, private readonly audit: IAuditLogger, private readonly notifier?: IReportNotifier, private readonly periods?: IReportingPeriodRepository) {}
 
   async handle(ctx: AuthenticatedContext, draftId: string, notes?: string): Promise<Result<void, DomainError>> {
     const r = await this.drafts.findById(draftId, ctx.tenant.tenantId);
@@ -20,6 +20,14 @@ export class RejectReportHandler {
     draft.reject();
     const saved = await this.drafts.update(draft);
     if (!saved.ok) return saved;
+    // A returned report is being changed again, so its period reads "draft generated" again.
+    if (this.periods) {
+      const period = await this.periods.findById(draft.reportingPeriodId, ctx.tenant.tenantId);
+      if (period.ok && period.value) {
+        period.value.returnToDraftStatus();
+        await this.periods.update(period.value);
+      }
+    }
     await this.audit.record({
       tenantId: ctx.tenant.tenantId,
       actorId: ctx.tenant.userId,

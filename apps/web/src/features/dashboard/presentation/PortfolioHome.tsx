@@ -6,6 +6,7 @@ import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { loadDashboard } from "../application/dashboard-read-model";
 import { loadWorkItems } from "@/features/work-items/application/work-items-read-model";
 import { Badge } from "@/components/data/Badge";
+import { workItemHref, workItemMeta, workItemTitle } from "@/features/work-items/presentation/work-items-view";
 import { InlineError } from "@/components/feedback/PageState";
 import { dueLabel, healthCounts, homeHeadline, needsYouItems, reportsDueWithin, upcomingReports } from "../domain/home-derive";
 import { loadHomeInsights } from "../application/home-insights";
@@ -154,7 +155,12 @@ export async function PortfolioHome({ ctx, variant }: { ctx: Ctx; variant: "DIRE
           {items.length === 0 ? <p className="text-sm text-slate-500 dark:text-slate-400">No urgent work items right now.</p> : (
             <ul className="space-y-2">
               {items.slice(0, 4).map((i) => (
-                <li key={`${i.kind}-${i.id}`}><Link href="/my-work" className="card block transition hover:border-brand-400/40"><Badge tone="info" className="mr-2">{i.kind}</Badge><span className="text-sm font-medium">Open in My Work</span></Link></li>
+                <li key={`${i.kind}-${i.id}`}>
+                  <Link href={workItemHref(i)} className="card block transition hover:border-brand-400/40">
+                    <Badge tone="info" className="mr-2">{i.kind}</Badge><span className="text-sm font-medium">{workItemTitle(i)}</span>
+                    <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{workItemMeta(i)}</div>
+                  </Link>
+                </li>
               ))}
             </ul>
           )}

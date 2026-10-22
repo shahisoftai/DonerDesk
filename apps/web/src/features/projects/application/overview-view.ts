@@ -103,7 +103,7 @@ export interface ResultsData {
 
 export interface TeamData {
   rows: { userId: string; name: string; role: string; open: number; late: number; dueThisWeek: number }[];
-  requests: { key: string; title: string; dueDate: string | null; state: string; href: string; urgent: boolean }[];
+  requests: { key: string; title: string; dueDate: string | null; state: string; href: string; urgent: boolean; /** Who it is for, by name. */ assignee: string }[];
 }
 
 export interface RisksData {

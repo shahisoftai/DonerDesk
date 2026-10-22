@@ -1,6 +1,6 @@
 import { chartArtifactsForSection, dataCenterChartsToKeep } from "./section-chart-service.js";
 import type { Result, ReportPlan, ReportPlanSection, ReportSection, ChangeOrigin } from "@donordesk/domain";
-import { DomainError, estimateCostUsd, attributionSectionTitle, attributionSentences, normalizeReportLanguage, placeAttribution } from "@donordesk/domain";
+import { DomainError, estimateCostUsd, pricedModelId, attributionSectionTitle, attributionSentences, normalizeReportLanguage, placeAttribution } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../context.js";
 import type {
   IReportDraftGenerator,
@@ -104,7 +104,7 @@ export class SectionGenerationService {
         inputTokens: t.inputTokens,
         outputTokens: t.outputTokens,
         totalTokens: t.inputTokens + t.outputTokens,
-        costUsd: estimateCostUsd(request.generator.model.modelId, t.inputTokens, t.outputTokens),
+        costUsd: estimateCostUsd(pricedModelId(request.generator.model.modelId, request.generator.model.modelVersion), t.inputTokens, t.outputTokens),
         latencyMs: t.latencyMs,
         status,
         promptVersion: request.generator.model.promptVersion,

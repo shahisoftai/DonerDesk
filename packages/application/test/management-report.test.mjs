@@ -28,6 +28,7 @@ function handler(over = {}) {
     { search: async (f) => ok({ total: f.verificationStatus === "VERIFIED" ? 4 : 0, items: [] }) },
     { findByProject: async () => ok([{ status: "ACCEPTED", participantsTotal: 640 }, { status: "SUBMITTED", participantsTotal: 20 }]) },
     { now: () => new Date("2026-10-21T10:00:00Z") },
+    over.readiness,
   );
 }
 
@@ -54,4 +55,17 @@ test("delivery, reports, risks and evidence come from what the product already k
 test("an unknown project is not found", async () => {
   const h = new GetManagementReportHandler({ findById: async () => ok(null) }, {}, {}, {}, {}, {}, {}, { now: () => new Date() });
   assert.equal((await h.handle(ctx, "nope")).ok, false);
+});
+
+test("the Ready column is the live readiness, not the stored score that is not refreshed after review", async () => {
+  const live = { handle: async () => ok({ overall: 95 }) };
+  const r = await handler({ readiness: live }).handle(ctx, "p");
+  const reports = r.value.sections.find((s) => s.title === "Reports");
+  assert.equal(reports.rows[0][5], "95%");
+});
+
+test("without a readiness service the stored score is shown, as before", async () => {
+  const r = await handler().handle(ctx, "p");
+  const reports = r.value.sections.find((s) => s.title === "Reports");
+  assert.match(reports.rows[0][5], /^\d+%$/);
 });

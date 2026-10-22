@@ -1,3 +1,5 @@
+import { AGGREGATION_COPY, DIRECTION_COPY } from "./indicator-semantics-description.js";
+
 /**
  * The results framework as it stood at one moment, and what changed between two moments. Editing a target used to
  * overwrite the row, so nothing could show what the framework said when a report was approved or why a figure moved.
@@ -155,8 +157,30 @@ const INDICATOR_FIELDS: ReadonlyArray<[keyof SnapshotIndicator, string]> = [
   ["archived", "retired"],
 ];
 
-const show = (value: unknown): string =>
-  value === null || value === undefined || value === "" ? "(none)" : typeof value === "object" ? JSON.stringify(value) : String(value);
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+
+/**
+ * A value as a reader sees it in the history: plain words, never a code or a JSON object. How an indicator is read, its targets by
+ * group and its schedule are objects and lists; a yes/no flag is "yes" or "no". JSON is only the last resort for a shape not known here.
+ */
+function show(key: string, value: unknown): string {
+  if (value === null || value === undefined || value === "") return "(none)";
+  if (typeof value === "boolean") return value ? "yes" : "no";
+  if (key === "semantics" && isRecord(value)) {
+    const aggregation = AGGREGATION_COPY[value.aggregation as keyof typeof AGGREGATION_COPY];
+    const direction = DIRECTION_COPY[value.direction as keyof typeof DIRECTION_COPY];
+    if (aggregation && direction) return `${aggregation}; ${direction.toLowerCase()}`;
+  }
+  if (key === "targetSchedule" && Array.isArray(value)) {
+    const entries = value.filter((e): e is { asOf: string; target: string } => isRecord(e) && typeof e.asOf === "string" && typeof e.target === "string");
+    if (entries.length === value.length) return entries.length === 0 ? "(none)" : entries.map((e) => `${e.target} by ${e.asOf}`).join("; ");
+  }
+  if (key === "targetBreakdowns" && Array.isArray(value)) {
+    const entries = value.filter((e): e is { category: string; value: string } => isRecord(e) && typeof e.category === "string" && typeof e.value === "string");
+    if (entries.length === value.length) return entries.length === 0 ? "(none)" : entries.map((e) => `${e.category} ${e.value}`).join(", ");
+  }
+  return typeof value === "object" ? JSON.stringify(value) : String(value);
+}
 
 /** What changed from `before` to `after` (before = null means the framework did not exist yet). Reordering alone is not a change. */
 export function diffLogframeSnapshots(before: LogframeSnapshot | null, after: LogframeSnapshot): LogframeChange[] {
@@ -173,7 +197,7 @@ export function diffLogframeSnapshots(before: LogframeSnapshot | null, after: Lo
     }
     for (const [key, name] of ITEM_FIELDS) {
       if (JSON.stringify(was[key]) !== JSON.stringify(item[key])) {
-        changes.push({ kind: "ITEM_CHANGED", label: label(item), field: name, from: show(was[key]), to: show(item[key]) });
+        changes.push({ kind: "ITEM_CHANGED", label: label(item), field: name, from: show(key, was[key]), to: show(key, item[key]) });
       }
     }
   }
@@ -188,7 +212,7 @@ export function diffLogframeSnapshots(before: LogframeSnapshot | null, after: Lo
     }
     for (const [key, name] of INDICATOR_FIELDS) {
       if (JSON.stringify(was[key]) !== JSON.stringify(indicator[key])) {
-        changes.push({ kind: "INDICATOR_CHANGED", label: indicator.code, field: name, from: show(was[key]), to: show(indicator[key]) });
+        changes.push({ kind: "INDICATOR_CHANGED", label: indicator.code, field: name, from: show(key, was[key]), to: show(key, indicator[key]) });
       }
     }
   }

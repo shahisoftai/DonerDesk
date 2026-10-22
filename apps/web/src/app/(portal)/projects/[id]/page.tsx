@@ -79,7 +79,7 @@ export default async function ProjectDetail({
       {periods.length > 0 ? (
         <section className="mt-4" aria-label="Reporting period">
           <label className="text-xs font-medium text-slate-500 dark:text-slate-400" htmlFor="period-select">Reporting period</label>
-          <PeriodSwitcher periods={periods.map((p) => ({ id: p.id, reportType: p.reportType, status: p.status }))} value={activePeriodId ?? ""} />
+          <PeriodSwitcher periods={periods.map((p) => ({ id: p.id, label: p.title, status: p.status }))} value={activePeriodId ?? ""} />
         </section>
       ) : null}
 

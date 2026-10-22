@@ -82,7 +82,13 @@ export function TeamSection({
                     </Link>
                     <Badge tone={request.state === "LATE" ? "danger" : "neutral"}>{request.state === "LATE" ? "Overdue" : "Open"}</Badge>
                   </div>
-                  {request.dueDate ? <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">due {formatDate(request.dueDate)}</p> : null}
+                  {request.dueDate || request.assignee ? (
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                      {request.assignee ? `for ${request.assignee}` : ""}
+                      {request.assignee && request.dueDate ? " · " : ""}
+                      {request.dueDate ? `due ${formatDate(request.dueDate)}` : ""}
+                    </p>
+                  ) : null}
                 </li>
               ))}
             </ul>

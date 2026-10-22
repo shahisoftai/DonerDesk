@@ -1,4 +1,4 @@
-import { cellPercentOfTarget, hasShareOfTarget, indexCells, type DataSheet, type DataSheetCell, type DataSheetIndicator } from "@donordesk/domain/contexts/reporting/data-sheet.js";
+import { periodSheetLabel, cellPercentOfTarget, hasShareOfTarget, indexCells, type DataSheet, type DataSheetCell, type DataSheetIndicator } from "@donordesk/domain/contexts/reporting/data-sheet.js";
 import { addDays, addMonths, compareDates, daysBetween, type PlainDate } from "@donordesk/domain/contexts/workplan/index.js";
 
 /**
@@ -119,6 +119,11 @@ const PACE_TOLERANCE_POINTS = 2;
 function percentNumber(percent: string): number | null {
   const value = Number.parseFloat(percent.replace("%", ""));
   return Number.isFinite(value) ? value : null;
+}
+
+/** "Monthly report · Dec 2026": which report it is and which period it covers, so two periods are never given the same name. */
+export function periodTitle(typeLabel: string, startIso: string, endIso: string): string {
+  return `${typeLabel} · ${periodSheetLabel(startIso.slice(0, 10), endIso.slice(0, 10))}`;
 }
 
 /** The cell of the most recent period that has a recorded value. The last period on the calendar is usually still empty and must not hide it. */

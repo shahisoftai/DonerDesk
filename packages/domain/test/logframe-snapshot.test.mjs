@@ -36,3 +36,23 @@ test("H-1: a long change list is shortened in the title", () => {
   const many = snap([item()], Array.from({ length: 6 }, (_, i) => ind({ id: `n${i}`, code: `IND-${i}` })));
   assert.match(summarizeLogframeChanges(diffLogframeSnapshots(null, many)), /^7 changes: .*; …$/);
 });
+
+test("a change to how an indicator is read is told in words, never as a JSON object", () => {
+  const semantics = { aggregation: "SUM", direction: "HIGHER_IS_BETTER", reportingBasis: "CUMULATIVE", status: "CONFIGURED" };
+  const [change] = diffLogframeSnapshots(snap(), snap([item()], [ind({ semantics })]));
+  assert.equal(change.field, "how it is read");
+  assert.equal(change.from, "(none)");
+  assert.equal(change.to, "summed across periods; higher is better");
+  assert.doesNotMatch(summarizeLogframeChanges([change]), /[{}"]|HIGHER_IS_BETTER|SUM/);
+});
+
+test("targets by group, a target schedule and yes/no settings are told in words", () => {
+  const breakdowns = [{ dimension: "SEX", category: "Women", value: "150" }, { dimension: "SEX", category: "Men", value: "50" }];
+  const schedule = [{ asOf: "2026-06-30", target: "100" }, { asOf: "2026-12-31", target: "200" }];
+  const changes = diffLogframeSnapshots(snap(), snap([item()], [ind({ targetBreakdowns: breakdowns, targetSchedule: schedule, disaggregationRequired: true })]));
+  const by = Object.fromEntries(changes.map((c) => [c.field, c]));
+  assert.equal(by["targets by group"].to, "Women 150, Men 50");
+  assert.equal(by["target schedule"].to, "100 by 2026-06-30; 200 by 2026-12-31");
+  assert.equal(by["breakdown required"].from, "no");
+  assert.equal(by["breakdown required"].to, "yes");
+});

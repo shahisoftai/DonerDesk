@@ -203,6 +203,16 @@ export class ReportingPeriod extends Entity<string> {
   }
 
   /**
+   * A report returned for changes takes its period back from "under review" to "draft generated", so the reports list and the
+   * gates see a report that is being changed again. Any other status is left alone.
+   */
+  returnToDraftStatus(): void {
+    if (this.props.status.value !== "UNDER_REVIEW") return;
+    this.props.status = ReportStatus.create("DRAFT_GENERATED");
+    this.touch();
+  }
+
+  /**
    * A reopened report takes its period back from approved/submitted to "draft generated", so the reports list and the gates see
    * a report that is being changed again. Status otherwise only moves forward (`advanceStatus`); a closed period is left alone.
    */

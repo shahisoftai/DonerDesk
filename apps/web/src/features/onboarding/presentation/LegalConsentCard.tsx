@@ -70,7 +70,7 @@ export function LegalConsentCard({
         <InlineAlert tone="success" title="Terms accepted">
           You accepted the Terms of Service ({consent.termsVersion}) and Privacy
           Policy ({consent.privacyVersion}) on{" "}
-          {consent.acceptedAt ? new Date(consent.acceptedAt).toLocaleString() : "record"}. This
+          <span suppressHydrationWarning>{consent.acceptedAt ? new Date(consent.acceptedAt).toLocaleString() : "record"}</span>. This
           consent is recorded in your workspace's immutable audit trail.
         </InlineAlert>
       </div>

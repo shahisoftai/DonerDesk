@@ -36,6 +36,8 @@ export class ListAssignmentsHandler {
 export interface TeamWorkDto {
   today: PlainDate;
   rows: TeamWorkRow[];
+  /** The requests still open on the project, whoever they are for (a manager asked, so a manager must see them). */
+  requests: Array<Pick<Assignment, "key" | "title" | "assigneeId" | "state" | "urgent" | "href"> & { dueDate?: PlainDate }>;
 }
 
 /** People × counts for one project (late, due this week, open), for the people who manage the work. */
@@ -48,6 +50,9 @@ export class ListTeamWorkHandler {
     const today = toPlainDate(this.clock.now())!;
     const list = await this.queue.list({ tenantId: ctx.tenant.tenantId, today, projectId });
     if (!list.ok) return list;
-    return ok({ today, rows: teamWorkSummary(list.value, today) });
+    const requests = list.value
+      .filter((a) => a.kind === "TASK" || a.kind === "INDICATOR_VALUE")
+      .map((a) => ({ key: a.key, title: a.title, assigneeId: a.assigneeId, state: a.state, urgent: a.urgent, href: a.href, ...(a.dueDate ? { dueDate: a.dueDate } : {}) }));
+    return ok({ today, rows: teamWorkSummary(list.value, today), requests });
   }
 }

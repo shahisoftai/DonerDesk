@@ -119,6 +119,8 @@ export type LegalConsent = z.infer<typeof LegalConsentSchema>;
 export const AuditLogSchema = z.object({
   id: z.string(),
   actorId: z.string(),
+  /** The actor's name, resolved by the server; absent for a platform job or a person who no longer exists. */
+  actorName: z.string().optional(),
   eventType: z.string(),
   entityType: z.string(),
   entityId: z.string(),
@@ -1207,6 +1209,8 @@ export const DataSheetResponseSchema = z.object({
       baseline: z.string(),
       target: z.string(),
       isRate: z.boolean(),
+      /** Lower is better (deaths, stock-out days): the target is a ceiling, so there is no share of target. */
+      lowerIsBetter: z.boolean().optional(),
       targetSchedule: z.array(z.object({ asOf: z.string(), target: z.string() })).optional(),
     }),
   ),
@@ -1403,6 +1407,10 @@ export type AssignmentsResponse = z.infer<typeof AssignmentsResponseSchema>;
 export const TeamWorkResponseSchema = z.object({
   today: z.string(),
   rows: z.array(z.object({ assigneeId: z.string(), open: z.number(), late: z.number(), dueThisWeek: z.number() })),
+  /** The open requests on the project, whoever they are for. */
+  requests: z
+    .array(z.object({ key: z.string(), title: z.string(), assigneeId: z.string(), dueDate: z.string().optional(), state: z.string(), urgent: z.boolean(), href: z.string() }))
+    .default([]),
 });
 
 export const NotificationPreferencesSchema = z.object({ emailSummaryMode: z.enum(["DAILY_SUMMARY", "URGENT_ONLY", "NEVER"]) });

@@ -344,7 +344,7 @@ export function optionForType(resolved: ResolvedChartData, type: ChartType): Rec
   // A Data Center target line outside the data range would sit off the chart, so the axis is stretched to include it.
   const stretch =
     resolved.dataBinding === "DATA_CENTER" && resolved.referenceLine
-      ? { max: Math.max(0, ...resolved.series.flatMap((s) => s.data.map(numeric)), resolved.referenceLine.value) * 1.05 }
+      ? { max: niceCeiling(Math.max(0, ...resolved.series.flatMap((s) => s.data.map(numeric)), resolved.referenceLine.value) * 1.05) }
       : {};
 
   return {
@@ -365,4 +365,11 @@ export function optionForType(resolved: ResolvedChartData, type: ChartType): Rec
  */
 export function buildChartOption(input: ChartIndicatorInput[], config: ChartConfig): Record<string, unknown> {
   return optionFromResolved(resolveChartData(input, config), config.type);
+}
+
+/** Rounds a stretched axis maximum up to a tidy number (114.55 -> 120), so the axis never ends on a long decimal. */
+export function niceCeiling(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return value;
+  const step = 10 ** Math.floor(Math.log10(value)) / 10;
+  return Math.round(Math.ceil(value / step) * step * 1e9) / 1e9;
 }

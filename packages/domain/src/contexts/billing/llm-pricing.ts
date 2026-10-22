@@ -66,3 +66,14 @@ export function estimateCostUsd(model: string, inputTokens: number, outputTokens
   const cost = (Math.max(0, inputTokens) * price.inputPerMTok + Math.max(0, outputTokens) * price.outputPerMTok) / 1_000_000;
   return Math.round(cost * 1e6) / 1e6;
 }
+
+/**
+ * The model a call is priced by. The AI Reporter is one pipeline name ("ai-reporter") over a provider's model, which it records
+ * as "provider/model" in the version, so a call named after the pipeline is priced by the model underneath. Without this every
+ * section the AI Reporter wrote was costed at 0 and the month's estimate read "none recorded".
+ */
+export function pricedModelId(modelId: string, modelVersion?: string, table: LlmPriceTable = {}): string {
+  if (isPriced(modelId, table) || !modelVersion) return modelId;
+  const underlying = modelVersion.includes("/") ? modelVersion.slice(modelVersion.indexOf("/") + 1) : modelVersion;
+  return isPriced(underlying, table) ? underlying : modelId;
+}

@@ -10,6 +10,7 @@ import type { IProjectRepository } from "../../ports/projects.js";
 import type { IProjectRiskRepository } from "../../ports/risks.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { ProjectHealthService } from "../../services/project-health-service.js";
+import type { CalculateReadinessHandler } from "../compliance/calculate-readiness.js";
 
 type SheetReader = { handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<DataSheet, DomainError>> };
 
@@ -22,6 +23,8 @@ export class GetManagementReportHandler {
     private readonly projects: IProjectRepository, private readonly health: ProjectHealthService, private readonly sheet: SheetReader,
     private readonly risks: IProjectRiskRepository, private readonly periods: IReportingPeriodRepository, private readonly evidence: IEvidenceRepository,
     private readonly activities: IActivityUpdateRepository, private readonly clock: IClock,
+    /** Readiness is derived live, like the reports list: the stored score is not refreshed when a report is reviewed or submitted. */
+    private readonly readiness?: CalculateReadinessHandler,
   ) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<{ sections: ManagementReportSection[]; today: string; projectTitle: string }, DomainError>> {
@@ -72,6 +75,20 @@ export class GetManagementReportHandler {
       };
     });
 
+    const livePeriods: ManagementReportInput["periods"] = await Promise.all(
+      periods.value
+        .filter((p) => !p.isCancelled)
+        .sort((a, b) => a.duration.start.getTime() - b.duration.start.getTime())
+        .map(async (p) => {
+          const live = this.readiness ? await this.readiness.handle(ctx, p.id) : undefined;
+          return {
+            label: periodById.get(p.id)?.label ?? toPlainDate(p.duration.start)!, reportType: p.reportType, status: p.status.toString(),
+            deadline: toPlainDate(p.deadline)!, daysUntil: daysBetween(today, toPlainDate(p.deadline)!),
+            readiness: live?.ok ? live.value.overall : p.readinessScore,
+          };
+        }),
+    );
+
     const accepted = activities.value.filter((a) => a.status === "ACCEPTED");
     const sections = buildManagementReport({
       project: {
@@ -83,13 +100,7 @@ export class GetManagementReportHandler {
         ? { label: h.label, reasons: h.reasons, planned: h.health.planned, lateActivities: lateActivities(h.health), valuesOverdue: h.health.valuesOverdue }
         : { label: "No plan yet", reasons: [], planned: 0, lateActivities: 0, valuesOverdue: 0 },
       indicators,
-      periods: periods.value
-        .filter((p) => !p.isCancelled)
-        .sort((a, b) => a.duration.start.getTime() - b.duration.start.getTime())
-        .map((p) => ({
-          label: periodById.get(p.id)?.label ?? toPlainDate(p.duration.start)!, reportType: p.reportType, status: p.status.toString(),
-          deadline: toPlainDate(p.deadline)!, daysUntil: daysBetween(today, toPlainDate(p.deadline)!), readiness: p.readinessScore,
-        })),
+      periods: livePeriods,
       risks: risks.value.map((r) => ({ title: r.title, kind: r.snapshot().kind, seriousness: r.seriousness, status: r.status, reviewBy: r.reviewBy })),
       evidence: { total, byStatus },
       activities: { total: activities.value.length, accepted: accepted.length, participants: accepted.reduce((n, a) => n + (a.participantsTotal ?? 0), 0) },

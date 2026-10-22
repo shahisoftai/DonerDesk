@@ -17,7 +17,7 @@ export interface SemanticsDescription {
   reasons: string[];
 }
 
-const AGGREGATION_COPY: Record<AggregationMethod, string> = {
+export const AGGREGATION_COPY: Record<AggregationMethod, string> = {
   SUM: "summed across periods",
   AVERAGE: "averaged across periods",
   LATEST: "latest reported value",
@@ -27,7 +27,7 @@ const AGGREGATION_COPY: Record<AggregationMethod, string> = {
   PERCENTAGE: "calculated as numerator ÷ denominator (%)",
 };
 
-const DIRECTION_COPY: Record<PerformanceDirection, string> = {
+export const DIRECTION_COPY: Record<PerformanceDirection, string> = {
   HIGHER_IS_BETTER: "Higher is better",
   LOWER_IS_BETTER: "Lower is better",
   NEUTRAL: "Not evaluated against the target",

@@ -8,6 +8,7 @@ import {
   headlineIndicator,
   latestPercentOfTarget,
   latestRecordedCell,
+  periodTitle,
   lifecycle,
   movedThisQuarter,
   needsYouItems,
@@ -331,4 +332,13 @@ test("the latest value is the most recent period that has one, not the last peri
   assert.equal(latestRecordedCell(s, "trained")?.cumulativeValue, "70");
   assert.equal(latestRecordedCell(s, "stock")?.periodValue, "2.5");
   assert.equal(latestRecordedCell(s, "unknown"), undefined);
+});
+
+test("a period is named by its type and its month, so two periods never share a name", () => {
+  assert.equal(periodTitle("Monthly report", "2026-12-01T00:00:00.000Z", "2026-12-31T00:00:00.000Z"), "Monthly report · Dec 2026");
+  assert.equal(periodTitle("Situation report", "2027-01-15", "2027-01-22"), "Situation report · 15 Jan 2027 – 22 Jan 2027");
+  assert.notEqual(
+    periodTitle("Monthly report", "2026-11-01", "2026-11-30"),
+    periodTitle("Monthly report", "2026-12-01", "2026-12-31"),
+  );
 });
