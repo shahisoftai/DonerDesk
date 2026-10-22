@@ -15,7 +15,7 @@ export function SideNav({
   activeHref,
   onNavigate,
 }: {
-  items: Array<{ href: string; label: string; active?: boolean }>;
+  items: Array<{ href: string; label: string; group?: string; active?: boolean }>;
   activeHref?: string;
   onNavigate?: () => void;
 }) {
@@ -30,10 +30,12 @@ export function SideNav({
   return (
     <nav aria-label="Primary">
       <ul className="space-y-1">
-        {items.map((item) => {
+        {items.map((item, index) => {
           const active = isActive(item);
+          const heading = item.group && item.group !== items[index - 1]?.group && index > 0 ? item.group : null;
           return (
-            <li key={item.href}>
+            <li key={item.href} className={heading ? "pt-3" : undefined}>
+              {heading && <p className="px-3 pb-1 text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">{heading}</p>}
               <Link
                 href={item.href}
                 onClick={onNavigate}

@@ -26,7 +26,7 @@ export function AppShell({
 }: {
   orgName: string;
   user: { name: string; email: string } | null;
-  navItems: Array<{ href: string; label: string }>;
+  navItems: Array<{ href: string; label: string; group?: string }>;
   canCreate: boolean;
   bellItems: BellItem[];
   children: ReactNode;

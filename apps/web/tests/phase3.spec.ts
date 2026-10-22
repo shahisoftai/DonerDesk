@@ -15,7 +15,8 @@ test.beforeEach(async ({ context }) => {
 
 test("dashboard home renders with My Work and notification links", async ({ page }) => {
   await page.goto("/dashboard");
-  await expect(page.getByRole("heading", { name: "What needs your attention" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(/Welcome back/);
+  await expect(page.getByRole("heading", { name: "Your work" })).toBeVisible();
   await expect(page.getByRole("link", { name: /My Work|my work/i })).toBeVisible().catch(() => undefined);
   await page.goto("/my-work");
   await expect(page.getByRole("heading", { name: "My work" })).toBeVisible();
