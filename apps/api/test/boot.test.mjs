@@ -29,7 +29,8 @@ test("the real server entry point starts, listens and answers /health", async ()
   child.on("exit", (code) => { exited = code; });
   try {
     let status = 0;
-    for (let i = 0; i < 120 && exited === null; i += 1) {
+    // The server needs ~20 s to load on a busy machine; a crash is caught at once by `exited`, so only a hang waits the full 90 s.
+    for (let i = 0; i < 360 && exited === null; i += 1) {
       try { status = (await fetch(`http://127.0.0.1:${port}/health`)).status; break; } catch { await new Promise((r) => setTimeout(r, 250)); }
     }
     assert.equal(exited, null, `the server exited (${exited}) while starting:\n${output.slice(-1500)}`);
