@@ -1,11 +1,10 @@
-import { surfaceFor } from "./role-surfaces.ts";
-
 /**
- * What the Activities tab shows: the Planned / Completed switch and which side opens. A project with no plan and nobody
- * who can start one gets no switch and today's page unchanged; hiding work planning (Admin setting) does the same.
+ * What the Activities tab shows (plan §16d): the plan is the one surface — when there is one, everyone opens on it,
+ * for every role — and "Completed" is a filter on it. The records page keeps its address (old bookmarks, the quiet
+ * link) and answers with the way back. A project with no plan and nobody who can start one shows today's page
+ * unchanged; hiding work planning (Admin setting) does the same, and the data is kept.
  */
 export interface ActivitiesTabInput {
-  role: string | null | undefined;
   planningVisible: boolean;
   plannedCount: number;
   canPlan: boolean;
@@ -13,14 +12,15 @@ export interface ActivitiesTabInput {
 }
 
 export interface ActivitiesTabMode {
-  showSwitch: boolean;
   planned: boolean;
+  /** The quiet link to the other side, exactly when the old switch offered one. */
+  otherSide: "RECORDS" | "PLAN" | null;
 }
 
 export function activitiesTabMode(input: ActivitiesTabInput): ActivitiesTabMode {
-  const showSwitch = input.planningVisible && (input.plannedCount > 0 || input.canPlan);
-  if (!showSwitch) return { showSwitch: false, planned: false };
-  if (input.view === "planned") return { showSwitch, planned: true };
-  if (input.view === "completed") return { showSwitch, planned: false };
-  return { showSwitch, planned: surfaceFor(input.role).activitiesTab === "PLANNED" && input.plannedCount > 0 };
+  if (!input.planningVisible) return { planned: false, otherSide: null };
+  const anythingToReach = input.plannedCount > 0 || input.canPlan;
+  if (input.view === "completed") return { planned: false, otherSide: anythingToReach ? "PLAN" : null };
+  if (anythingToReach) return { planned: true, otherSide: "RECORDS" };
+  return { planned: false, otherSide: null };
 }

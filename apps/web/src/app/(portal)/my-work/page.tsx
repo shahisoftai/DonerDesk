@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { AssignmentsResponseSchema, NotificationsResponseSchema, ProjectsResponseSchema, TeamWorkResponseSchema } from "@/lib/server/schemas";
+import { AssignmentsResponseSchema, NotificationsResponseSchema, ProjectsResponseSchema, TeamWorkResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
+import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import { InlineError } from "@/components/feedback/PageState";
 import { loadProjectPeople } from "@/features/tasks/application/project-people";
 import { MyWorkPanel } from "@/features/tasks/presentation/MyWorkPanel";
@@ -75,11 +76,14 @@ async function TeamTab({ heading, token, userId, canAsk, projectId, personId }: 
   const chosen = list.find((p) => p.id === projectId) ?? list[0];
   if (!chosen) return <div className="animate-fade-in">{heading}<p className="mt-6 text-sm text-slate-600 dark:text-slate-300">There are no active projects.</p></div>;
 
-  const [team, people, theirs] = await Promise.all([
+  const [team, people, theirs, plan] = await Promise.all([
     gatewayRequest(`/v1/projects/${chosen.id}/team-work`, TeamWorkResponseSchema, token),
     loadProjectPeople(token, chosen.id, userId),
     personId ? gatewayRequest(`/v1/me/assignments?userId=${encodeURIComponent(personId)}&projectId=${encodeURIComponent(chosen.id)}`, AssignmentsResponseSchema, token) : Promise.resolve(null),
+    canAsk ? gatewayRequest(`/v1/projects/${chosen.id}/work-plan`, WorkPlanResponseSchema, token) : Promise.resolve(null),
   ]);
+  // "Ask for completed activity" lives here (plan §16b), not on the item page: the manager picks one of the open activities.
+  const openItems = plan?.ok ? plan.value.items.filter((i) => i.status === "PLANNED" || i.status === "IN_PROGRESS") : [];
   const names: Record<string, string> = Object.fromEntries(people.map((p) => [p.id, p.label.replace(/ \(you\)$/, "")]));
   const today = new Date().toISOString().slice(0, 10);
 
@@ -121,7 +125,12 @@ async function TeamTab({ heading, token, userId, canAsk, projectId, personId }: 
 
       {canAsk && (
         <section className="mt-8" aria-label="Ask someone">
-          <AskPanel projectId={chosen.id} kind="OTHER" buttonLabel="Ask someone…" people={people} suggestedDue={suggestTaskDueDate("OTHER", { today })} />
+          <div className="flex flex-wrap gap-3">
+            <AskPanel projectId={chosen.id} kind="OTHER" buttonLabel="Ask someone…" people={people} suggestedDue={suggestTaskDueDate("OTHER", { today })} />
+            {openItems.length > 0 && (
+              <AskPanel projectId={chosen.id} kind="RECORD_ACTIVITY" buttonLabel={WORKPLAN_COPY.askForCompleted} subjects={openItems.map((i) => ({ id: i.id, title: i.title }))} people={people} suggestedDue={suggestTaskDueDate("RECORD_ACTIVITY", { today })} />
+            )}
+          </div>
         </section>
       )}
     </div>

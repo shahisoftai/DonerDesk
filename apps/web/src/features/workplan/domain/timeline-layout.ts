@@ -201,6 +201,8 @@ export function layoutTimeline(input: {
   zoom: TimelineZoom;
   today: PlainDate;
   outputTitles: ReadonlyMap<string, string>;
+  /** Planned versus actual (plan §16): the ghost of the original dates. A toggle, on by default for managers. */
+  showOriginal?: boolean;
 }): TimelineLayout {
   const { range, today } = input;
   const total = inclusiveDays(range);
@@ -213,7 +215,7 @@ export function layoutTimeline(input: {
     if (!spot) { hidden += 1; continue; }
     const milestone = row.plannedStart === row.plannedEnd;
     const moved = row.originalStart && row.originalEnd && (row.originalStart !== row.plannedStart || row.originalEnd !== row.plannedEnd);
-    const original = moved ? place(row.originalStart!, row.originalEnd!, range, total) : null;
+    const original = moved && input.showOriginal !== false ? place(row.originalStart!, row.originalEnd!, range, total) : null;
     const progress = row.status === "DONE" ? 100 : row.targetCount ? Math.min(100, Math.round((row.deliveredCount / row.targetCount) * 100)) : undefined;
     const dates = milestone ? formatShortDate(row.plannedStart, today) : `${formatShortDate(row.plannedStart, today)} to ${formatShortDate(row.plannedEnd, today)}`;
     const bar: TimelineBar = {

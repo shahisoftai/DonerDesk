@@ -17,6 +17,7 @@ import { chartWidthPx, fullRange, layoutTimeline, TIMELINE_ZOOMS, TIMELINE_ZOOM_
 import { LANE_ROW_PX, NO_FILTER, filterRows, flattenLayout, groupKey, isFiltering, linesHeight, type TimelineFilter } from "../domain/timeline-rows";
 
 const ZOOM_KEY = "donordesk.timeline-zoom";
+const ACTUALS_KEY = "donordesk.timeline-actuals";
 const HANDLE_PX = 8;
 /** The name column's width: it stays in view while the chart scrolls sideways. */
 const LABEL_PX = 280;
@@ -42,9 +43,10 @@ interface Gesture { id: string; mode: DragMode; startX: number; start: string; e
 /**
  * Timeline: one bar per planned activity, grouped by output, with the report deadlines on top. A bar can be dragged (move),
  * or its ends dragged (change dates); nothing is saved until Save in the confirm bar. The keyboard does the same:
- * ←/→ move a day, Shift+←/→ change the end, Enter opens the confirm bar.
+ * ←/→ move a day, Shift+←/→ change the end, Enter opens the confirm bar. The ghost of a moved activity's original dates
+ * (planned versus actual) is a toggle, on by default for the plan's managers (§16); each person's choice is remembered.
  */
-export function PlanTimeline({ projectId, rows, deadlines, project, today, outputTitles, movableIds, names = NO_NAMES, userId }: {
+export function PlanTimeline({ projectId, rows, deadlines, project, today, outputTitles, movableIds, names = NO_NAMES, userId, defaultActuals = true }: {
   projectId: string;
   rows: WorkPlanRow[];
   deadlines: TimelineDeadline[];
@@ -57,6 +59,7 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
   names?: Record<string, string>;
   /** The signed-in person, for the "Mine" filter. */
   userId?: string;
+  defaultActuals?: boolean;
 }) {
   const router = useRouter();
   const state = useActionState();
@@ -64,13 +67,19 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
   const gesture = useRef<Gesture | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState<TimelineZoom>("MONTH");
+  const [actuals, setActuals] = useState(defaultActuals);
   const [pending, setPending] = useState<Pending | null>(null);
   const [scope, setScope] = useState<"THIS" | "SERIES_FROM_HERE">("THIS");
   const [reason, setReason] = useState("");
 
   useEffect(() => {
     try { const saved = window.localStorage.getItem(ZOOM_KEY); if (saved && (TIMELINE_ZOOMS as readonly string[]).includes(saved)) { placed.current = false; setZoom(saved as TimelineZoom); } } catch { /* storage blocked: keep the default */ }
+    try { const saved = window.localStorage.getItem(ACTUALS_KEY); if (saved === "on" || saved === "off") setActuals(saved === "on"); } catch { /* storage blocked: keep the default */ }
   }, []);
+  const chooseActuals = (on: boolean) => {
+    setActuals(on);
+    try { window.localStorage.setItem(ACTUALS_KEY, on ? "on" : "off"); } catch { /* remembered next time only if storage works */ }
+  };
   // Changing the scale keeps the middle of what you were looking at in the middle (as a share of the whole plan).
   const keepCentre = useRef<number | null>(null);
   const chooseZoom = (z: TimelineZoom) => {
@@ -91,8 +100,8 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
   const visibleRows = useMemo(() => filterRows(rows, filter, names), [rows, filter, names]);
   const shown = useMemo(() => visibleRows.map((r) => (pending && pending.id === r.id ? { ...r, plannedStart: pending.start, plannedEnd: pending.end } : r)), [visibleRows, pending]);
   const layout = useMemo(
-    () => layoutTimeline({ rows: shown.map((r) => ({ ...r, waitingLabel: waitingLine(r.waitingFor) })), deadlines, range, zoom, today, outputTitles: new Map(Object.entries(outputTitles)) }),
-    [shown, deadlines, range, zoom, today, outputTitles],
+    () => layoutTimeline({ rows: shown.map((r) => ({ ...r, waitingLabel: waitingLine(r.waitingFor) })), deadlines, range, zoom, today, outputTitles: new Map(Object.entries(outputTitles)), showOriginal: actuals }),
+    [shown, deadlines, range, zoom, today, outputTitles, actuals],
   );
   const chartPx = chartWidthPx(zoom, layout.days, viewportPx - LABEL_PX - 2);
   const lines = useMemo(() => flattenLayout(layout, collapsed), [layout, collapsed]);
@@ -255,16 +264,18 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
     const row = byId.get(b.id)!;
     const draggable = isDraggable(row.status, movableIds.includes(row.id));
     const isPending = pending?.id === b.id;
+    const moved = actuals && row.originalStart && row.originalEnd && (row.originalStart !== row.plannedStart || row.originalEnd !== row.plannedEnd);
+    const spoken = b.label + (moved ? ` — ${WORKPLAN_COPY.movedFrom} ${formatShortDate(row.originalStart!, today)}` : "");
     const widthPx = b.milestone ? MILESTONE_PX : Math.max((b.widthPct / 100) * chartPx, MIN_BAR_PX);
     const leftPx = (b.leftPct / 100) * chartPx;
     return (
       <div key={b.id} className="contents">
-        {b.original && <div className="absolute top-[7px] h-6 rounded border border-dashed border-slate-400/70" style={{ left: `${b.original.leftPct}%`, width: `${Math.max(b.original.widthPct, 0.3)}%` }} aria-hidden="true" />}
+        {actuals && b.original && <div className="absolute top-[7px] h-6 rounded border border-dashed border-slate-400/70" style={{ left: `${b.original.leftPct}%`, width: `${Math.max(b.original.widthPct, 0.3)}%` }} aria-hidden="true" />}
         <button
           type="button"
           ref={(el) => { if (el) bars.current.set(b.id, el); else bars.current.delete(b.id); }}
-          aria-label={b.label + (draggable ? ". Use the arrow keys to change the dates." : "")}
-          title={b.waiting ? `${b.label}. ${b.waiting}` : b.label}
+          aria-label={spoken + (draggable ? ". Use the arrow keys to change the dates." : "")}
+          title={b.waiting ? `${spoken}. ${b.waiting}` : spoken}
           onPointerDown={(e) => down(e, row)} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
           onClick={() => click(row)} onKeyDown={(e) => key(e, row)}
           className={`absolute top-[7px] flex h-6 items-center overflow-hidden text-left text-[11px] ${b.milestone ? "justify-center rounded-sm" : "rounded px-1.5"} ${SIGNAL_CLASS[b.signal]} ${draggable ? "cursor-grab touch-none" : ""} ${isPending ? "opacity-60 ring-2 ring-brand-500" : ""} ${b.clippedStart ? "rounded-l-none" : ""} ${b.clippedEnd ? "rounded-r-none" : ""}`}
@@ -299,7 +310,9 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
             aria-label="Find an activity or person" className="min-h-[32px] w-48 rounded-lg border border-slate-300 bg-white px-2 text-xs dark:border-white/15 dark:bg-slate-900/40" />
           {userId && <FilterChip on={mineOn} onClick={() => setFilter({ ...filter, ...(mineOn ? { mineUserId: undefined } : { mineUserId: userId }) })}>Mine</FilterChip>}
           <FilterChip on={filter.lateOnly} onClick={() => setFilter({ ...filter, lateOnly: !filter.lateOnly })}>Late</FilterChip>
+          <FilterChip on={filter.completedOnly} onClick={() => setFilter({ ...filter, completedOnly: !filter.completedOnly })}>{WORKPLAN_COPY.tabCompleted}</FilterChip>
           <FilterChip on={filter.hideFinished} onClick={() => setFilter({ ...filter, hideFinished: !filter.hideFinished })}>Hide done</FilterChip>
+          <FilterChip on={actuals} title="Show where moved activities were first planned" onClick={() => chooseActuals(!actuals)}>{WORKPLAN_COPY.originalDates}</FilterChip>
           {filtering && <button type="button" className="text-xs text-brand-700 underline dark:text-brand-300" onClick={() => setFilter(NO_FILTER)}>Clear</button>}
           <button type="button" className="min-h-[32px] rounded-lg border border-slate-300 bg-white px-2.5 text-xs dark:border-white/15 dark:bg-slate-900/40"
             onClick={() => setCollapsed(collapsed.size === allKeys.length ? new Set() : new Set(allKeys))}>
@@ -382,7 +395,7 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
         </div>
       </div>
 
-      <Legend />
+      <Legend original={actuals} />
       {filtering && <p className="text-xs text-slate-500">{rows.length - visibleRows.length} activities are hidden by the filter.</p>}
 
       {pending && pendingRow && (
@@ -423,9 +436,9 @@ export function PlanTimeline({ projectId, rows, deadlines, project, today, outpu
   );
 }
 
-function FilterChip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+function FilterChip({ on, onClick, title, children }: { on: boolean; onClick: () => void; title?: string; children: React.ReactNode }) {
   return (
-    <button type="button" aria-pressed={on} onClick={onClick}
+    <button type="button" aria-pressed={on} onClick={onClick} title={title}
       className={`min-h-[32px] rounded-full border px-3 text-xs font-medium ${on ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 bg-white text-slate-700 dark:border-white/15 dark:bg-slate-900/40 dark:text-slate-200"}`}>
       {children}
     </button>
@@ -453,12 +466,13 @@ function LaneName({ projectId, lane, names, today }: { projectId: string; lane: 
   );
 }
 
-function Legend() {
+function Legend({ original }: { original: boolean }) {
   const item = (cls: string, text: string) => <span className="inline-flex items-center gap-1"><span className={`inline-block h-2.5 w-4 rounded-sm ${cls}`} aria-hidden="true" />{text}</span>;
   return (
     <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500" aria-label="What the colours mean">
       {item("bg-emerald-500/80", "On time")}{item("bg-red-500/85", "Late")}{item("bg-slate-400/80", "Done")}{item("bg-slate-300/70", "Cancelled")}
-      <span>◆ one-day activity</span><span>⧗ waiting for another</span><span><span className="inline-block h-2.5 w-4 rounded-sm border border-dashed border-slate-400" aria-hidden="true" /> where it was first planned</span>
+      <span>◆ one-day activity</span><span>⧗ waiting for another</span>
+      {original && <span><span className="inline-block h-2.5 w-4 rounded-sm border border-dashed border-slate-400" aria-hidden="true" /> where it was first planned</span>}
       <span><span className="text-red-600">▼</span> report due</span><span>Drag a bar to move it, its ends to change the dates, or the empty chart to scroll.</span>
     </p>
   );

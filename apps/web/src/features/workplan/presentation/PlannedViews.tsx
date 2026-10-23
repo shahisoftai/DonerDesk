@@ -21,6 +21,8 @@ export function PlannedViews(props: {
   names: Record<string, string>;
   initialView: PlanViewKey;
   defaultMine: boolean;
+  /** The planned-versus-actual ghost opens on for the plan's managers (§16); each person's choice is remembered. */
+  defaultActuals?: boolean;
   deadlines: TimelineDeadline[];
   project: DateRange;
   outputTitles: Record<string, string>;
@@ -46,7 +48,7 @@ export function PlannedViews(props: {
       {view === "LIST" ? list : (
         <>
           <div className="hidden sm:block">
-            <PlanTimeline projectId={props.projectId} rows={props.rows} deadlines={props.deadlines} project={props.project} today={props.today} outputTitles={props.outputTitles} movableIds={props.movableIds} names={props.names} userId={props.userId} />
+            <PlanTimeline projectId={props.projectId} rows={props.rows} deadlines={props.deadlines} project={props.project} today={props.today} outputTitles={props.outputTitles} movableIds={props.movableIds} names={props.names} userId={props.userId} defaultActuals={props.defaultActuals} />
           </div>
           <div className="sm:hidden">{list}</div>
         </>

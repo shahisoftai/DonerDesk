@@ -2,13 +2,13 @@
 
 Planning is optional. If you plan your activities, DonorDesk can show what is due, what is late, and who leads what, while there is still time to act. If you do not, nothing changes: your project works as before.
 
-You plan activities on the **Activities** tab. Choose **Planned** at the top (the other side, **Completed**, is the list of activities people have finished and entered).
+You plan activities on the **Activities** tab. It opens on the plan. A **Completed** filter shows the activities that are done or cancelled, and the **Completed activities** link above the plan opens the list of activities people have finished and entered.
 
 ## Start from your logframe
 
 If your logframe already lists activities, this is the quickest way.
 
-1. Open **Activities**, choose **Planned**, and select **Start from my logframe**.
+1. Open **Activities** and select **Start from my logframe**.
 2. **Which activities.** All of your logframe's activities are ticked. Untick any you do not want to plan.
 3. **When.** Each activity gets suggested dates, spread across the project. Change any date. Tick **Monthly** for work that repeats every month; it then starts at the beginning of the project and repeats to its end.
 4. **Who leads.** Choose a lead for each, or leave **Skip for now**.

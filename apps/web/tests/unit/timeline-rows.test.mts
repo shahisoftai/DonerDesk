@@ -26,20 +26,23 @@ test("a group counts its late activities and ignores cancelled ones in its perce
   assert.ok(g.kind === "GROUP" && g.lateCount === 1 && g.donePct === 50);
 });
 
-test("filters: text matches title or lead, mine, late only, hide finished; none means no filtering", () => {
+test("filters: text matches title or lead, mine, late only, hide finished, completed only; none means no filtering", () => {
   const rows = [
     row("Training", { ownerUserId: "u1" }), row("Survey", { ownerUserId: "u2", signal: "LATE" }),
     row("Report", { ownerUserId: "u2", status: "DONE", signal: "DONE" }),
+    row("Dropped", { ownerUserId: "u2", status: "CANCELLED", signal: "CANCELLED" }),
   ];
   const names = { u1: "Amara Okafor", u2: "Grace Achieng" };
   assert.equal(isFiltering(NO_FILTER), false);
-  assert.equal(filterRows(rows, NO_FILTER, names).length, 3);
-  assert.deepEqual(filterRows(rows, { ...NO_FILTER, query: "grace" }, names).map((r) => r.title), ["Survey", "Report"]);
+  assert.equal(filterRows(rows, NO_FILTER, names).length, 4);
+  assert.deepEqual(filterRows(rows, { ...NO_FILTER, query: "grace" }, names).map((r) => r.title), ["Survey", "Report", "Dropped"]);
   assert.deepEqual(filterRows(rows, { ...NO_FILTER, query: "TRAIN" }, names).map((r) => r.title), ["Training"]);
   assert.deepEqual(filterRows(rows, { ...NO_FILTER, mineUserId: "u1" }, names).map((r) => r.title), ["Training"]);
   assert.deepEqual(filterRows(rows, { ...NO_FILTER, lateOnly: true }, names).map((r) => r.title), ["Survey"]);
   assert.deepEqual(filterRows(rows, { ...NO_FILTER, hideFinished: true }, names).map((r) => r.title), ["Training", "Survey"]);
+  assert.deepEqual(filterRows(rows, { ...NO_FILTER, completedOnly: true }, names).map((r) => r.title), ["Report", "Dropped"], "§16d: done and cancelled");
   assert.equal(isFiltering({ ...NO_FILTER, lateOnly: true }), true);
+  assert.equal(isFiltering({ ...NO_FILTER, completedOnly: true }), true);
   const helper = [{ ...row("Helped"), ownerUserId: "x", supportUserIds: ["u1"] }];
   assert.equal(filterRows(helper, { ...NO_FILTER, mineUserId: "u1" }, names).length, 1, "a helper counts as mine");
 });

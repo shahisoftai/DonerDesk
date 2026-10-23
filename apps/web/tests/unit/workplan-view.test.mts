@@ -58,6 +58,14 @@ test("'Mine' keeps the person's own and helped activities; empty groups are not 
   assert.deepEqual(Object.values(PLAN_GROUP_LABEL).flatMap(findForbiddenWorkplanTerms), []);
 });
 
+test("'Completed' keeps only the done and cancelled activities, with the Done group open (§16d)", () => {
+  const items = [item("open", "2026-03-13", "2026-03-14"), item("done", "2026-02-01", "2026-02-02", { status: "DONE", signal: "DONE" }), item("cancelled", "2026-03-12", "2026-03-12", { status: "CANCELLED", signal: "CANCELLED" })];
+  const groups = groupPlanList(items, "2026-03-11", { completedOnly: true });
+  assert.deepEqual(groups.map((g) => [g.key, g.items.map((i) => i.id), g.collapsed]), [["DONE", ["cancelled", "done"], false]]);
+  assert.equal(groupPlanList(items, "2026-03-11").find((g) => g.key === "DONE")!.collapsed, true, "folded again without the filter");
+  assert.deepEqual(groupPlanList(items, "2026-03-11", { mineOnly: true, userId: "u1", completedOnly: true }), [], "the filters combine");
+});
+
 test("the work plan copy is clean of raw tokens and forbidden words", () => {
   for (const text of [...allWorkplanCopy(), ...Object.values(PLAN_GROUP_LABEL)]) {
     assert.deepEqual(findRawTokens(text), [], text);
@@ -66,29 +74,38 @@ test("the work plan copy is clean of raw tokens and forbidden words", () => {
 });
 
 import { activitiesTabMode } from "../../src/features/workplan/domain/activities-tab-mode.ts";
+import { managesPlan } from "../../src/features/workplan/domain/role-surfaces.ts";
 
-test("a project without a plan looks exactly as before, for every role", () => {
+test("the plan is the Activities tab (§16d): everyone opens on it when there is one, for every role", () => {
   for (const role of ROLES) {
     const canPlan = ROLE_SURFACES[role].buttons.includes("ADD_PLANNED");
-    const mode = activitiesTabMode({ role, planningVisible: true, plannedCount: 0, canPlan, view: undefined });
-    assert.equal(mode.planned, false, `${role} sees today's page`);
-    assert.equal(mode.showSwitch, canPlan, `${role}: the switch exists only for people who can start a plan`);
+    assert.deepEqual(activitiesTabMode({ planningVisible: true, plannedCount: 5, canPlan, view: undefined }), { planned: true, otherSide: "RECORDS" }, role);
+  }
+  assert.deepEqual(activitiesTabMode({ planningVisible: true, plannedCount: 5, canPlan: true, view: "planned" }), { planned: true, otherSide: "RECORDS" });
+});
+
+test("the records page keeps its address: an explicit view wins, with the way back", () => {
+  assert.deepEqual(activitiesTabMode({ planningVisible: true, plannedCount: 5, canPlan: true, view: "completed" }), { planned: false, otherSide: "PLAN" });
+  assert.deepEqual(activitiesTabMode({ planningVisible: true, plannedCount: 0, canPlan: true, view: "completed" }), { planned: false, otherSide: "PLAN" }, "completed activities can exist before any planning");
+});
+
+test("a project without a plan: the optional card for who can start one, today's page for everyone else", () => {
+  for (const role of ROLES) {
+    const canPlan = ROLE_SURFACES[role].buttons.includes("ADD_PLANNED");
+    const mode = activitiesTabMode({ planningVisible: true, plannedCount: 0, canPlan, view: undefined });
+    assert.deepEqual(mode, canPlan ? { planned: true, otherSide: "RECORDS" } : { planned: false, otherSide: null }, role);
   }
 });
 
-test("hiding work planning removes the switch even when a plan exists; the data is kept", () => {
-  const hidden = activitiesTabMode({ role: "PROJECT_MANAGER", planningVisible: false, plannedCount: 12, canPlan: true, view: "planned" });
-  assert.deepEqual(hidden, { showSwitch: false, planned: false });
+test("hiding work planning removes the plan and the links even when a plan exists; the data is kept", () => {
+  assert.deepEqual(activitiesTabMode({ planningVisible: false, plannedCount: 12, canPlan: true, view: "planned" }), { planned: false, otherSide: null });
+  assert.deepEqual(activitiesTabMode({ planningVisible: false, plannedCount: 12, canPlan: true, view: "completed" }), { planned: false, otherSide: null });
 });
 
-test("with a plan, each role opens on its own side, and an explicit view wins", () => {
-  const open = (role: string, view?: string) => activitiesTabMode({ role, planningVisible: true, plannedCount: 5, canPlan: role === "PROJECT_MANAGER", view }).planned;
-  assert.equal(open("FIELD_OFFICER"), true);
-  assert.equal(open("VIEWER"), true);
-  assert.equal(open("PROJECT_MANAGER"), true);
-  assert.equal(open("COMPLIANCE_OFFICER"), false, "compliance keeps the completed list, as today");
-  assert.equal(open("FIELD_OFFICER", "completed"), false);
-  assert.equal(open("COMPLIANCE_OFFICER", "planned"), true);
+test("the planned-versus-actual toggle opens on for the plan's managers (§16)", () => {
+  assert.deepEqual(ROLES.filter((r) => managesPlan(r)).sort(), ["ADMIN", "ME_OFFICER", "PROJECT_MANAGER"]);
+  assert.equal(managesPlan(null), false);
+  assert.equal(managesPlan("FIELD_OFFICER"), false);
 });
 
 import { shouldShowMyWeek } from "../../src/features/workplan/domain/my-week.ts";

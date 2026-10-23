@@ -47,6 +47,7 @@ export const WORKPLAN_COPY = {
   whichPlanned: "Which planned activity is this?",
   noneOfThese: "None of these",
   showWorkPlanning: "Show work planning",
+  originalDates: "Original dates",
   linkYouLead: "You lead it",
   linkSameLogframe: "Same logframe activity",
   linkPlannedFor: "Planned for",

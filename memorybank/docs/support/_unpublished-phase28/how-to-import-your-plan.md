@@ -1,6 +1,6 @@
 # How to Import Your Plan
 
-If your plan is already in a spreadsheet, you can bring it in instead of typing it. Open **Activities**, choose **Planned**, and select **Import a sheet**.
+If your plan is already in a spreadsheet, you can bring it in instead of typing it. Open **Activities** and select **Import a sheet**.
 
 ## Bring it in
 

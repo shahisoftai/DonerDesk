@@ -40,7 +40,7 @@ budget module. That is the overload this product exists to avoid. Rev. 2 keeps t
 | 28.10 | Budget lines | Built in the gap closure (per planned activity, expenses, overspend flagged; 2026-10-19). Its design in §3.9 is superseded by `imp/phase28-1-gap-closure.md` §3 batch D |
 | 28.11 | Offline opening, partner access | Moved to Phase 29 |
 | 28.12 | Demo 9 with per-role simplicity measures; production browser check | **Run** — demo 9 (CMAM Nepal, 8 months) in `demo/verification-demo-9.md` |
-| §16 | UX review: one Done action, ghost bar, Completed folded into Planned | **Partly built** (see §16 status) |
+| §16 | UX review: one Done action, ghost bar, Completed folded into Planned | **Built** (see §16a status; the live-site check is still the gate for the public copy) |
 | 28.1-gap | Dependencies, progress log, custom fields, budget, RAID kinds, roll-up, people reached, workload, automations, bulk edit, offline shell | **Built and deployed 2026-10-19**; plan and per-batch status in `imp/phase28-1-gap-closure.md` §0 |
 
 Deferred to a later phase, on purpose: **beneficiary / participant register** (personal data, consent, retention and DPA work come first; counts stay on the activity record).
@@ -657,21 +657,20 @@ stands alone after 28.1).
 
 **Build order (proposed):** (a) combined Done save use case + one Done form on the bar/row; (b) remove "Ask for completed activity" from the item page (keep it in My Work); (c) ghost bar in `timeline-layout.ts` (pure, table-tested); (d) Completed becomes a filter on the Planned tab, with the Completed page read-only.
 
-### 16a. Build status of §16 (checked against the code, 2026-10-19)
+### 16a. Build status of §16 (checked against the code, 2026-10-19; (b), (c), (d) and the toggle built 2026-10-23)
 
 | Build step | State | Where |
 |---|---|---|
 | (a) One Done action with a short form (day, people, note, files), saved in one step | **Built** (gap closure, 06e6be5 dated Done; `MarkDoneButton`, `CompletePlannedActivityHandler` validates first) | Plan item page, list rows |
-| (b) Remove "Ask for completed activity" from the item page (keep it in My Work) | **Not built.** The item page still shows it (`activities/plan/[itemId]/page.tsx`, `AskPanel … "Ask for completed activity"`). Decide: remove it from the page, or keep it, before editing | Plan item page |
-| (c) Ghost bar for moved activities in the Timeline | **Built.** Dashed outline of the original dates behind the live bar (`timeline-layout.ts` `original`, `PlanTimeline.tsx`). "moved from …" on hover is the remaining copy check | Timeline |
-| (d) Completed becomes a filter on the Planned tab; Completed page read-only | **Not built.** Activities still has two tabs, Planned and Completed | Activities tab |
+| (b) Remove "Ask for completed activity" from the item page (keep it in My Work) | **Built** (2026-10-23). The item page keeps "Ask for a file"; the ask lives on My Work's Team tab (`AskPanel` gained the `subjects` picker, "Which planned activity is this?"), where the manager picks one of the open activities | Plan item page, My Work › Team |
+| (c) Ghost bar for moved activities in the Timeline | **Built.** Dashed outline of the original dates behind the live bar (`timeline-layout.ts` `original`, `PlanTimeline.tsx`); hover/aria now says "moved from …" | Timeline |
+| (d) Completed becomes a filter on the Planned tab; Completed page read-only | **Built** (2026-10-23). Everyone opens on the plan when one exists (`activitiesTabMode`, no role default any more); a "Completed" filter on the List and the Timeline shows the done and cancelled activities (Done group open). The records page keeps its address (`?view=completed`) and its review actions — the acceptance workflow lives there — reached by a quiet "Completed activities" link, and answers with a "Planned activities" back-link | Activities tab, `plan-list-view.ts`, `timeline-rows.ts` |
 
-Also not built from §16: the planned-vs-actual toggle "on by default for managers" (the ghost is always drawn when a date has moved; no toggle yet).
+Also built (2026-10-23): the planned-vs-actual toggle ("Original dates", on by default for the plan's managers — `managesPlan`; each person's choice remembered in local storage; off hides the ghost and the legend line).
 
-## 17. Status summary (2026-10-19)
+## 17. Status summary (2026-10-23)
 
 - Built and deployed: 28.0–28.9 (production release `20261018172624`), gap closure (`20261019093235`), targets by group in report tables (`20261019104006`).
-- Built, not yet checked on the live site: the interactive screens (wizard, drag, keyboard, My week on a phone, month calendar, dark mode), the offline status change and its refusal path, and the gap-closure screens.
-- Open from §16: items (b) and (d).
-- Public copy: unchanged ("Set it up"). The support drafts in `docs/support/_unpublished-phase28/` are updated to the built behaviour but stay unpublished until the live check passes.
+- Built (2026-10-23, needs a deploy): the §16 items — (b) the ask for a completed activity moved from the item page to My Work's Team tab, (c) "moved from …" on the bar, (d) one Activities surface with "Completed" as a filter, and the planned-vs-actual toggle. All plan items from §16 are now built.
+- Still gated on the live-site check (by plan §0/§14, deliberately not done from code): the interactive screens with a real account (wizard, drag, keyboard, My week on a phone, month calendar, dark mode), the offline status change and its refusal path, the gap-closure screens, the public copy ("Set it up" stays until the check passes) and the support articles (drafts in `docs/support/_unpublished-phase28/`).
 

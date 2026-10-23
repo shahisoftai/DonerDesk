@@ -9,7 +9,7 @@
 
 | Batch | In plain words | Where it shows |
 |---|---|---|
-| 28.3 Who does what | One list of everything that is yours, by when it is due; ask someone for a completed activity, an indicator value or a file in one click; a lead on indicators, reports and checklist items; a **Team** tab with each person's open work | *My Work*, planned-activity page ("Ask for completed activity", "Ask for a file"), indicator page, project **Team** |
+| 28.3 Who does what | One list of everything that is yours, by when it is due; ask someone for a completed activity, an indicator value or a file in one click; a lead on indicators, reports and checklist items; a **Team** tab with each person's open work | *My Work* (Team tab: "Ask for completed activity", "Ask someone…"), planned-activity page ("Ask for a file"), indicator page, project **Team** |
 | 28.4 What is late | Three plain labels for delivery health (On track / Needs attention / Behind), indicator values due, plan slip and overdue values feeding the risk trend | Project Overview "Delivery", Home portfolio, indicator pages |
 | 28.5 Reminders | One morning summary per person, one escalation after 7 days late, one email setting | Notifications page (setting), bell, email |
 | 28.6 Files the work needs | Suggested kinds of file per planned activity ("Files we will need"), "Still needed" on the activity, one question when accepting without them | Planned-activity page, planned-activity form ("More details"), review panel |

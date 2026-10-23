@@ -8,7 +8,7 @@ import { fieldChips } from "@/features/workplan/domain/plan-export";
 import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import { activitiesTabMode } from "@/features/workplan/domain/activities-tab-mode";
 import { getProject } from "@/lib/server/project-queries";
-import { showsButton, surfaceFor } from "@/features/workplan/domain/role-surfaces";
+import { showsButton, surfaceFor, managesPlan } from "@/features/workplan/domain/role-surfaces";
 import { PlanEmptyCard } from "@/features/workplan/presentation/PlanEmptyCard";
 import { PlannedViews } from "@/features/workplan/presentation/PlannedViews";
 import { deadlinesFromPeriods } from "@/features/workplan/domain/timeline-deadlines";
@@ -32,14 +32,13 @@ export default async function ActivitiesPage({ params, searchParams }: { params:
     getProject(ctx.token, resolvedParams.id),
     gatewayRequest(`/v1/projects/${resolvedParams.id}/work-plan`, WorkPlanResponseSchema, ctx.token),
   ]);
-  const { showSwitch, planned } = activitiesTabMode({
-    role: ctx.role,
+  const mode = activitiesTabMode({
     planningVisible: !project.ok || project.value.showWorkPlanning !== false,
     plannedCount: plan.ok ? plan.value.items.length : 0,
     canPlan: showsButton(ctx.role, ctx.capabilities, "ADD_PLANNED"),
     view,
   });
-  if (planned) return <PlannedActivitiesView projectId={resolvedParams.id} />;
+  if (mode.planned) return <PlannedActivitiesView projectId={resolvedParams.id} otherSide={mode.otherSide} />;
   const result = await gatewayRequest(`/v1/projects/${resolvedParams.id}/activities`, ActivitiesResponseSchema, ctx.token);
   if (!result.ok) {
     return (
@@ -56,7 +55,9 @@ export default async function ActivitiesPage({ params, searchParams }: { params:
 
   return (
     <div className="animate-fade-in">
-      {showSwitch && <ActivitiesSwitch projectId={resolvedParams.id} current="completed" />}
+      {mode.otherSide === "PLAN" && (
+        <p className="mb-4"><Link className="text-sm text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${resolvedParams.id}/activities?view=planned`}>Planned activities</Link></p>
+      )}
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Activity updates</h1>
         <div className="flex gap-2">
@@ -70,20 +71,7 @@ export default async function ActivitiesPage({ params, searchParams }: { params:
   );
 }
 
-function ActivitiesSwitch({ projectId, current }: { projectId: string; current: "planned" | "completed" }) {
-  const tab = (key: "planned" | "completed", label: string) => (
-    <Link
-      href={`/projects/${projectId}/activities?view=${key}`}
-      aria-current={current === key ? "page" : undefined}
-      className={`rounded-full px-3 py-1 text-sm ${current === key ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200"}`}
-    >
-      {label}
-    </Link>
-  );
-  return <nav aria-label="Activities" className="mb-4 flex flex-wrap items-center gap-2">{tab("planned", WORKPLAN_COPY.tabPlanned)}{tab("completed", WORKPLAN_COPY.tabCompleted)}<Link className="ml-auto text-sm text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${projectId}/beneficiaries`}>People reached</Link></nav>;
-}
-
-async function PlannedActivitiesView({ projectId }: { projectId: string }) {
+async function PlannedActivitiesView({ projectId, otherSide }: { projectId: string; otherSide: "RECORDS" | "PLAN" | null }) {
   const data = await loadPlanPageData(projectId);
   const [plan, periods, planFields] = await Promise.all([
     gatewayRequest(`/v1/projects/${projectId}/work-plan`, WorkPlanResponseSchema, data.ctx.token),
@@ -102,7 +90,6 @@ async function PlannedActivitiesView({ projectId }: { projectId: string }) {
   const actor = { userId: data.userId, role: (data.ctx.role ?? "VIEWER") as Role };
   return (
     <div className="animate-fade-in">
-      <ActivitiesSwitch projectId={projectId} current="planned" />
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Planned activities</h1>
         {canPlan && rows.length > 0 && (
@@ -112,6 +99,10 @@ async function PlannedActivitiesView({ projectId }: { projectId: string }) {
           </div>
         )}
       </header>
+      <p className="mt-2 flex flex-wrap gap-x-4 text-sm">
+        {otherSide === "RECORDS" && <Link className="text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${projectId}/activities?view=completed`}>Completed activities</Link>}
+        <Link className="text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${projectId}/beneficiaries`}>People reached</Link>
+      </p>
       <div className="mt-4">
         {!plan.ok ? (
           <InlineError title={plan.error.message} referenceId={plan.error.referenceId} />
@@ -127,6 +118,7 @@ async function PlannedActivitiesView({ projectId }: { projectId: string }) {
             fieldChips={chips}
             initialView={surface.planView}
             defaultMine={surface.mineFilter}
+            defaultActuals={managesPlan(data.ctx.role)}
             deadlines={deadlinesFromPeriods(periods.ok ? periods.value.items : [])}
             project={data.projectRange}
             outputTitles={data.outputTitles}

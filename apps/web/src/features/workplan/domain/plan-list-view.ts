@@ -54,14 +54,15 @@ export function isMine(item: PlanListItem, userId: string | undefined): boolean 
   return userId !== undefined && (item.ownerUserId === userId || item.supportUserIds.includes(userId));
 }
 
-export function groupPlanList<T extends PlanListItem>(items: ReadonlyArray<T>, today: string, options: { mineOnly?: boolean; userId?: string } = {}): PlanGroup<T>[] {
-  const visible = options.mineOnly ? items.filter((i) => isMine(i, options.userId)) : items;
+export function groupPlanList<T extends PlanListItem>(items: ReadonlyArray<T>, today: string, options: { mineOnly?: boolean; userId?: string; completedOnly?: boolean } = {}): PlanGroup<T>[] {
+  let visible = options.mineOnly ? items.filter((i) => isMine(i, options.userId)) : items;
+  if (options.completedOnly) visible = visible.filter((i) => i.status === "DONE" || i.status === "CANCELLED");
   return GROUP_ORDER.map((key) => ({
     key,
     label: PLAN_GROUP_LABEL[key],
     items: visible
       .filter((i) => groupFor(i, today) === key)
       .sort((a, b) => (key === "DONE" ? b.plannedEnd.localeCompare(a.plannedEnd) : a.plannedStart.localeCompare(b.plannedStart)) || a.title.localeCompare(b.title)),
-    collapsed: key === "DONE",
+    collapsed: key === "DONE" && !options.completedOnly,
   })).filter((g) => g.items.length > 0);
 }

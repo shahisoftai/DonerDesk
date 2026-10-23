@@ -55,6 +55,12 @@ test("a milestone is one day wide and flagged; moved activities carry their orig
   assert.equal(bars.find((b) => b.id === "same")!.original, undefined, "an unmoved activity has no outline");
 });
 
+test("planned versus actual is a toggle (§16): the ghost shows by default, and a person can turn it off", () => {
+  const rows = [row("mv", "2026-03-20", "2026-03-22", { originalStart: "2026-03-10", originalEnd: "2026-03-12" })];
+  assert.ok(layout(rows).groups[0]!.bars[0]!.original, "on by default");
+  assert.equal(layout(rows, { showOriginal: false }).groups[0]!.bars[0]!.original, undefined, "off: no ghost, the bar itself is unchanged");
+});
+
 test("progress: delivered of target, full when done, absent when unknown; each bar has a spoken label", () => {
   const l = layout([
     row("t", "2026-03-02", "2026-03-30", { targetCount: 4, deliveredCount: 1 }),

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { countOf } from "@donordesk/domain/core/plural.js";
-import { formatShortDate } from "@donordesk/domain/contexts/workplan/index.js";
+import { WORKPLAN_COPY, formatShortDate } from "@donordesk/domain/contexts/workplan/index.js";
 import type { WorkPlanRow } from "@/lib/server/schemas";
 import { Badge } from "@/components/data/Badge";
 import { groupPlanList } from "../domain/plan-list-view";
@@ -39,22 +39,29 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
   fieldChips?: Record<string, string[]>;
 }) {
   const [mineOnly, setMineOnly] = useState(defaultMine);
+  const [completedOnly, setCompletedOnly] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [lastChange, setLastChange] = useState<{ applied: number; undo: BulkPlanResult["undo"] } | null>(null);
-  const groups = groupPlanList(rows, today, { mineOnly, userId });
+  const groups = groupPlanList(rows, today, { mineOnly, userId, completedOnly });
 
   return (
     <div className="space-y-6">
       <a href={`/projects/${projectId}/activities/plan/export`} className="float-right text-sm text-brand-700 underline dark:text-brand-300">Download as a spreadsheet (CSV)</a>
-      <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
-        <input type="checkbox" checked={mineOnly} onChange={(e) => setMineOnly(e.target.checked)} className="h-4 w-4" />
-        Only mine
-      </label>
+      <div className="flex flex-wrap gap-4">
+        <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+          <input type="checkbox" checked={mineOnly} onChange={(e) => setMineOnly(e.target.checked)} className="h-4 w-4" />
+          Only mine
+        </label>
+        <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+          <input type="checkbox" checked={completedOnly} onChange={(e) => setCompletedOnly(e.target.checked)} className="h-4 w-4" />
+          {WORKPLAN_COPY.tabCompleted}
+        </label>
+      </div>
       {selected.length > 0 && (
         <BulkPlanBar projectId={projectId} selected={selected} leads={Object.entries(names).map(([id, label]) => ({ id, label }))} onClear={() => setSelected([])} onApplied={setLastChange} />
       )}
       {lastChange && <UndoBulkBanner projectId={projectId} applied={lastChange.applied} undo={lastChange.undo} onDone={() => setLastChange(null)} />}
-      {groups.length === 0 && <p className="text-sm text-slate-500">{mineOnly ? "Nothing planned for you." : "Nothing planned yet."}</p>}
+      {groups.length === 0 && <p className="text-sm text-slate-500">{completedOnly ? "Nothing completed yet." : mineOnly ? "Nothing planned for you." : "Nothing planned yet."}</p>}
       {groups.map((group) => (
         <section key={group.key} aria-labelledby={`plan-${group.key}`}>
           <details open={!group.collapsed}>

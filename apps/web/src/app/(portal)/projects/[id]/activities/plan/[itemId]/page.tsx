@@ -84,9 +84,6 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
         />
         {data.ctx.capabilities.has("task.assign") && row.status !== "CANCELLED" && row.status !== "DONE" && (
           <div className="flex flex-wrap gap-2">
-            {row.completedActivities === 0 && (
-              <AskPanel projectId={id} kind="RECORD_ACTIVITY" buttonLabel="Ask for completed activity" subject={{ type: "plannedActivity", id: row.id }} people={data.people} leadId={row.ownerUserId} suggestedDue={suggestTaskDueDate("RECORD_ACTIVITY", { today: data.today, subjectEnd: row.plannedEnd })} />
-            )}
             <AskPanel projectId={id} kind="PROVIDE_EVIDENCE" buttonLabel="Ask for a file" subject={{ type: "plannedActivity", id: row.id }} people={data.people} leadId={row.ownerUserId} suggestedDue={suggestTaskDueDate("PROVIDE_EVIDENCE", { today: data.today, subjectEnd: row.plannedEnd })} />
           </div>
         )}

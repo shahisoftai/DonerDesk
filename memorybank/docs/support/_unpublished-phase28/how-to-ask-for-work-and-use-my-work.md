@@ -8,11 +8,10 @@ Open **My Work** in the sidebar. Late items come first, then this week, then lat
 
 ## Ask someone to do something
 
-Open the planned activity (or the indicator) and choose one of the buttons:
-
-- **Ask for completed activity** – ask the lead to enter what happened.
-- **Ask for a file** – ask for a photo, an attendance sheet or another kind of file.
+- **Ask for completed activity** – on My Work's **Team** tab, for the project you are looking at. Pick which planned activity it is about, then who should enter what happened.
+- **Ask for a file** – open the planned activity and choose the button.
 - **Ask for this value** (on an indicator page) – ask the person who collects it.
+- **Ask someone…** – on the Team tab, for anything else, in your own words.
 
 Choose **Who**, check **By when**, add a note if it helps, tick **Urgent** only when it cannot wait, and select **Send**. The person gets a note in the bell and sees it in My Work. A request closes by itself when the work is done: you do not need to tick it off.
 

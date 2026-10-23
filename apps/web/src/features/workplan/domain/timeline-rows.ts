@@ -44,12 +44,14 @@ export interface TimelineFilter {
   lateOnly: boolean;
   /** Leave out done and cancelled activities. */
   hideFinished: boolean;
+  /** Only done and cancelled activities: the "Completed" filter (plan §16d). */
+  completedOnly: boolean;
 }
 
-export const NO_FILTER: TimelineFilter = { query: "", lateOnly: false, hideFinished: false };
+export const NO_FILTER: TimelineFilter = { query: "", lateOnly: false, hideFinished: false, completedOnly: false };
 
 export function isFiltering(f: TimelineFilter): boolean {
-  return f.query.trim() !== "" || f.mineUserId !== undefined || f.lateOnly || f.hideFinished;
+  return f.query.trim() !== "" || f.mineUserId !== undefined || f.lateOnly || f.hideFinished || f.completedOnly;
 }
 
 type Filterable = Pick<TimelineRow, "title" | "signal" | "status" | "ownerUserId"> & { supportUserIds?: ReadonlyArray<string> };
@@ -61,6 +63,7 @@ export function filterRows<T extends Filterable>(rows: ReadonlyArray<T>, f: Time
     if (f.mineUserId !== undefined && r.ownerUserId !== f.mineUserId && !(r.supportUserIds ?? []).includes(f.mineUserId)) return false;
     if (f.lateOnly && r.signal !== "LATE") return false;
     if (f.hideFinished && (r.status === "DONE" || r.status === "CANCELLED")) return false;
+    if (f.completedOnly && r.status !== "DONE" && r.status !== "CANCELLED") return false;
     return true;
   });
 }

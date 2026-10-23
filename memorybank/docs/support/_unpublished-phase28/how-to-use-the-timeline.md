@@ -1,11 +1,12 @@
 # How to Use the Timeline
 
-The Timeline shows planned activities as bars on a calendar, grouped by output, so you can see overlaps and gaps at a glance. Open **Activities**, choose **Planned**, then **Timeline**. On a phone the Timeline is not shown; you get the List instead.
+The Timeline shows planned activities as bars on a calendar, grouped by output, so you can see overlaps and gaps at a glance. Open **Activities**, then choose **Timeline**. On a phone the Timeline is not shown; you get the List instead.
 
 ## Read it
 
 - Each bar is a planned activity. Its colour shows the signal (on time, late, done), and the signal is also in the bar's label.
-- A dashed outline shows where an activity was *before* it was moved.
+- A dashed outline shows where an activity was *before* it was moved. The **Original dates** button turns this outline on or off. It is on for Admins, Project Managers and M&E Officers, and DonorDesk remembers the choice you make.
+- Use the **Completed** filter to show only the done and cancelled activities; **Late** shows only the ones running behind.
 - A darker fill shows progress when you planned a number of sessions.
 - A diamond is a milestone (one date).
 - The line is today. Triangles along the top are your reports' due dates and internal review dates.
