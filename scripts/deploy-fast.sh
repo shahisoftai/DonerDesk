@@ -161,7 +161,7 @@ if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
   echo "==> Stage web artifact"
   # web tar ships from the standalone build output. The deploy script's
   # web stage is unchanged from §21.1 (apps/web deploys independently).
-  WEB_STAGE="${WORK}/web-stage"
+  WEB_STAGE="${WEB_STAGE:-/tmp/dd-web-stage}"  # persistent: local rsync is incremental
   mkdir -p "${WEB_STAGE}"
   rsync -a --delete "${ROOT}/apps/web/.next/standalone/" "${WEB_STAGE}/"
   rsync -a "${ROOT}/apps/web/.next/static/" "${WEB_STAGE}/apps/web/.next/static/" 2>/dev/null || true
@@ -169,8 +169,7 @@ if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
   rsync -a "${ROOT}/apps/web/content/" "${WEB_STAGE}/apps/web/content/"
   rsync -a "${ROOT}/apps/web/package.json" "${WEB_STAGE}/apps/web/package.json"
   rsync -a --delete "${ROOT}/node_modules/" "${WEB_STAGE}/node_modules/"
-  tar -C "${WEB_STAGE}" -czf "${WEB_TAR}" .
-  echo "    web tar: $(du -h "${WEB_TAR}" | cut -f1)  (standalone + .pnpm + static + public)"
+  echo "    web stage ready: $(du -sh "${WEB_STAGE}" | cut -f1) (shipped with rsync, only changes travel)"
 fi
 
 if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
@@ -213,12 +212,8 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
   # .pnpm/). Without this, fastify and friends fail to resolve. The store
   # lives at <workspace>/node_modules/.pnpm on local pnpm 10, but pnpm
   # install on the host regenerates the same layout.
-  echo "==> Stage pnpm store artifact"
-  (cd "${ROOT}" && \
-   tar --exclude='packages/*/node_modules' \
-       -czf "${PNPM_TAR}" \
-       node_modules/.pnpm)
-  echo "    pnpm tar: $(du -h "${PNPM_TAR}" | cut -f1)"
+  # (shipped with rsync in the transfer step: the store is content-addressed,
+  # so only packages that changed since the last deploy are sent)
 fi
 
 if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
@@ -252,12 +247,13 @@ if [[ "${NO_BACKUP}" != "1" ]]; then
     if ${SSH} "
       set -eu
       if [[ ! -d ${REMOTE_BACKUPS} ]]; then mkdir -p ${REMOTE_BACKUPS}; fi
-      ls -1t ${REMOTE_BACKUPS}/dd-app-pre-*.tgz 2>/dev/null | tail -n +4 | xargs -r rm -f
-      tar --exclude='apps/*/.next/cache' \
-          --exclude='node_modules/.cache' \
-          -czf ${REMOTE_BACKUPS}/dd-app-pre-${RELEASE_ID}.tgz \
-          -C ${BASE} app
-      ls -1t ${REMOTE_BACKUPS}/dd-app-pre-*.tgz | head -5
+      # Hardlink copy: instant and takes no extra space for unchanged files.
+      # Deploy steps unlink-and-replace files (never write in place), so the
+      # snapshot keeps the old content. Must be on the same filesystem as app/.
+      ls -1dt ${REMOTE_BACKUPS}/app-pre-* 2>/dev/null | tail -n +3 | xargs -r rm -rf
+      rm -rf ${REMOTE_BACKUPS}/app-pre-${RELEASE_ID}
+      cp -al ${BASE}/app ${REMOTE_BACKUPS}/app-pre-${RELEASE_ID}
+      ls -1dt ${REMOTE_BACKUPS}/app-pre-* | head -3
     " 2>&1; then
       SNAP_OK=1
       break
@@ -284,16 +280,10 @@ if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
   # apps/web/server.js at its top level), so it extracts into the systemd
   # unit's expected path: <app>/apps/web/.next/standalone/apps/web/server.js.
   echo "==> Ship web artifact -> ${REMOTE_APP}/apps/web/.next/standalone/"
-  scp -q "${WEB_TAR}" ${SCPTGT}/tmp/dd-web.tgz
-  ${SSH} "
-    set -eu
-    cd ${REMOTE_APP}/apps/web
-    rm -rf .next
-    mkdir -p .next/standalone
-    tar -xzf /tmp/dd-web.tgz -C ${REMOTE_APP}/apps/web/.next/standalone
-    rm -f /tmp/dd-web.tgz
-    chown -R donordesk:donordesk ${REMOTE_APP}/apps/web
-  "
+  ${SSH} "mkdir -p ${REMOTE_APP}/apps/web/.next/standalone"
+  rsync -a --delete --no-owner --no-group -e "ssh -o ConnectTimeout=15" \
+    "${WEB_STAGE}/" "contabo:${REMOTE_APP}/apps/web/.next/standalone/"
+  ${SSH} "chown -R donordesk:donordesk ${REMOTE_APP}/apps/web"
 fi
 
 if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
@@ -315,17 +305,12 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
 
   # Stage B: ship pnpm store contents. The api tar ships apps/api/node_modules
   # with only symlinks; the real package files live under node_modules/.pnpm/.
-  if [[ -f "${PNPM_TAR}" ]]; then
+  if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
     echo "==> Ship pnpm store -> ${REMOTE_APP}/node_modules/.pnpm/"
-    scp -q "${PNPM_TAR}" ${SCPTGT}/tmp/dd-pnpm.tgz
-    ${SSH} "
-      set -eu
-      cd ${REMOTE_APP}
-      rm -rf node_modules/.pnpm node_modules/.bin node_modules/.modules.yaml node_modules/.pnpm-workspace-state-v1.json
-      tar -xzf /tmp/dd-pnpm.tgz -C ${REMOTE_APP}
-      rm -f /tmp/dd-pnpm.tgz
-      chown -R donordesk:donordesk ${REMOTE_APP}/node_modules
-    "
+    ${SSH} "mkdir -p ${REMOTE_APP}/node_modules"
+    rsync -a --delete --no-owner --no-group -e "ssh -o ConnectTimeout=15" \
+      "${ROOT}/node_modules/.pnpm/" "contabo:${REMOTE_APP}/node_modules/.pnpm/"
+    ${SSH} "chown -R donordesk:donordesk ${REMOTE_APP}/node_modules"
   fi
 
   # Stage B2: regenerate the Prisma client on the host against the freshly
@@ -375,7 +360,7 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
     cd ${REMOTE_APP}/apps/api
     if [ -f package.json ]; then
       echo '  regenerating api symlink farm (pnpm install)'
-      CI=true npx -y pnpm@10.34.5 install --no-frozen-lockfile >/tmp/dd-api-pnpm-install.log 2>&1 \\
+      CI=true npx -y pnpm@10.34.5 install --no-frozen-lockfile --prefer-offline >/tmp/dd-api-pnpm-install.log 2>&1 \\
         || { echo '  WARNING: api pnpm install failed — deps may not resolve' >&2; cat /tmp/dd-api-pnpm-install.log >&2; }
       chown -R donordesk:donordesk node_modules
     fi
@@ -450,12 +435,12 @@ rollback_to_snapshot() {
   fi
   ${SSH} "
     set -eu
-    SNAP=${REMOTE_BACKUPS}/dd-app-pre-${RELEASE_ID}.tgz
-    if [ ! -f \"\${SNAP}\" ]; then echo 'no snapshot for this release; nothing to restore'; exit 1; fi
+    SNAP=${REMOTE_BACKUPS}/app-pre-${RELEASE_ID}
+    if [ ! -d \"\${SNAP}\" ]; then echo 'no snapshot for this release; nothing to restore'; exit 1; fi
     systemctl stop ${SERVICES}
     rm -rf ${REMOTE_BASE}/app.failed-${RELEASE_ID}
     mv ${REMOTE_APP} ${REMOTE_BASE}/app.failed-${RELEASE_ID}
-    tar -xzf \"\${SNAP}\" -C ${BASE}
+    mv \"\${SNAP}\" ${REMOTE_APP}
     systemctl start ${SERVICES}
     OK=0
     for i in \$(seq 1 30); do
