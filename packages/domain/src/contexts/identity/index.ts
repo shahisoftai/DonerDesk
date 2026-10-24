@@ -6,3 +6,4 @@ export * from "./invitation.js";
 export * from "./events.js";
 export * from "./password-reset-token.js";
 export * from "./scim-credential.js";
+export * from "./map-layer.js";

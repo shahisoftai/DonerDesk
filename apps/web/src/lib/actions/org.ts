@@ -7,6 +7,7 @@ import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { OkResponseSchema } from "./_schemas";
+import { MapLayerMetaResponseSchema } from "@/lib/server/schemas";
 
 export type UpdateOrganizationResult = Result<undefined, AppError>;
 
@@ -62,6 +63,29 @@ export async function updateAgentMemorySettingsAction(input: unknown): Promise<U
     method: "PUT",
     body: parsed.data,
   });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+export type UploadMapLayerResult = Result<{ name: string; featureCount: number }, AppError>;
+
+/** The workspace's own map boundaries (Phase 30.1): one GeoJSON file; a new upload replaces the old layer. */
+export async function uploadMapLayerAction(formData: FormData): Promise<UploadMapLayerResult> {
+  const context = await requireSession();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: { kind: "validation", message: "Choose a GeoJSON file to upload.", fields: {} } };
+  }
+  const body = new FormData();
+  body.set("file", file);
+  const result = await gatewayRequest("/v1/organization/map-layer", MapLayerMetaResponseSchema, context.token, { method: "POST", formData: body });
+  if (!result.ok) return result;
+  return { ok: true, value: { name: result.value.name, featureCount: result.value.featureCount } };
+}
+
+export async function removeMapLayerAction(): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest("/v1/organization/map-layer", OkResponseSchema, context.token, { method: "DELETE" });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
 }

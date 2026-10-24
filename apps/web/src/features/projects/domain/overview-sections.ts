@@ -14,6 +14,7 @@ export type OverviewSection =
   | "CALENDAR"
   | "REPORTING"
   | "DELIVERY"
+  | "LOCATION"
   | "RESULTS"
   | "TEAM"
   | "RISKS"
@@ -27,6 +28,7 @@ export const OVERVIEW_SECTION_ORDER: readonly OverviewSection[] = [
   "CALENDAR",
   "REPORTING",
   "DELIVERY",
+  "LOCATION",
   "RESULTS",
   "TEAM",
   "RISKS",
@@ -40,11 +42,11 @@ const ALL: readonly OverviewSection[] = OVERVIEW_SECTION_ORDER;
 export const OVERVIEW_ROLE_SECTIONS: Readonly<Record<Role, readonly OverviewSection[]>> = {
   ADMIN: ALL,
   PROJECT_MANAGER: ALL,
-  ME_OFFICER: ["NEEDS_YOU", "PULSE", "CALENDAR", "REPORTING", "DELIVERY", "RESULTS", "TEAM", "RISKS", "CLOSEOUT", "SETUP"],
-  GRANTS_OFFICER: ["NEEDS_YOU", "PULSE", "CALENDAR", "REPORTING", "RESULTS", "RISKS", "CLOSEOUT", "SETUP"],
-  COMPLIANCE_OFFICER: ["NEEDS_YOU", "PULSE", "CALENDAR", "REPORTING", "RESULTS", "RISKS", "CLOSEOUT", "SETUP"],
-  FIELD_OFFICER: ["NEEDS_YOU", "PULSE", "CALENDAR", "DELIVERY", "RISKS"],
-  VIEWER: ["PULSE", "REPORTING", "RESULTS", "SETUP"],
+  ME_OFFICER: ["NEEDS_YOU", "PULSE", "CALENDAR", "REPORTING", "DELIVERY", "LOCATION", "RESULTS", "TEAM", "RISKS", "CLOSEOUT", "SETUP"],
+  GRANTS_OFFICER: ["NEEDS_YOU", "PULSE", "CALENDAR", "REPORTING", "LOCATION", "RESULTS", "RISKS", "CLOSEOUT", "SETUP"],
+  COMPLIANCE_OFFICER: ["NEEDS_YOU", "PULSE", "CALENDAR", "REPORTING", "LOCATION", "RESULTS", "RISKS", "CLOSEOUT", "SETUP"],
+  FIELD_OFFICER: ["NEEDS_YOU", "PULSE", "CALENDAR", "DELIVERY", "LOCATION", "RISKS"],
+  VIEWER: ["PULSE", "REPORTING", "LOCATION", "RESULTS", "SETUP"],
 };
 
 /** The capability a part needs. `null` means the part is decided by the role and the project's facts. */
@@ -54,6 +56,7 @@ export const SECTION_CAPABILITY: Readonly<Record<OverviewSection, Capability | n
   CALENDAR: null,
   REPORTING: null,
   DELIVERY: null,
+  LOCATION: null,
   RESULTS: null,
   TEAM: "team.view-work",
   RISKS: null,
@@ -69,6 +72,8 @@ export interface OverviewFacts {
   hasPlan: boolean;
   /** Work planning is shown for this project. */
   planningVisible: boolean;
+  /** At least one planned activity's location matches a known place. */
+  hasSites: boolean;
   /** There is a risk to show, or the person may raise one. */
   hasRisks: boolean;
   /** The project is in its final year (closing is within six months). */
@@ -82,6 +87,9 @@ function fitsTheProject(section: OverviewSection, facts: OverviewFacts): boolean
       return facts.hasPeriods;
     case "DELIVERY":
       return facts.hasPlan && facts.planningVisible;
+    case "LOCATION":
+      // The sites come from the plan, so a project with planning hidden has no map either (Phase 28 rule).
+      return facts.hasSites && facts.planningVisible;
     case "RISKS":
       return facts.hasRisks;
     case "CLOSEOUT":
@@ -121,6 +129,7 @@ export const OVERVIEW_SECTION_LABEL: Readonly<Record<OverviewSection, string>> =
   CALENDAR: "Calendar",
   REPORTING: "Reporting",
   DELIVERY: "Delivery",
+  LOCATION: "Where we work",
   RESULTS: "Results and money",
   TEAM: "Team",
   RISKS: "Risks and decisions",

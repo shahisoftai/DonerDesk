@@ -57,6 +57,40 @@ export async function registerOrgRoutes(app: FastifyInstance) {
     return reply.send(r.value.stream);
   });
 
+  // The workspace's own map boundaries (Phase 30.1): one GeoJSON layer the site map draws. Upload and
+  // removal are administrator-only and audited; every member may read the boundaries their maps draw.
+  app.post("/v1/organization/map-layer", async (req, reply) => {
+    const data = await req.file();
+    if (!data) throw new Error("file required");
+    const buffer = await data.toBuffer();
+    const r = await req.container.handlers.uploadMapLayer.handle(
+      { tenant: req.tenant, requestId: req.id },
+      { fileName: data.filename, buffer },
+    );
+    if (!r.ok) throw r.error;
+    return reply.send(r.value);
+  });
+
+  app.get("/v1/organization/map-layer", async (req) => {
+    const r = await req.container.handlers.getMapLayer.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/organization/map-layer/data", async (req, reply) => {
+    const r = await req.container.handlers.readMapLayer.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "application/json; charset=utf-8");
+    reply.header("cache-control", "private, no-store");
+    return reply.send(r.value);
+  });
+
+  app.delete("/v1/organization/map-layer", async (req) => {
+    const r = await req.container.handlers.removeMapLayer.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   // Programmes > grants > projects: the funding hierarchy and what each level adds up to.
   app.get("/v1/funding", async (req) => {
     const r = await req.container.handlers.listFunding.handle({ tenant: req.tenant, requestId: req.id });

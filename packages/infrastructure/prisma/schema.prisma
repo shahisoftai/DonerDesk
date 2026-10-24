@@ -1510,6 +1510,9 @@ model PlannedActivity {
   title              String
   description        String    @default("")
   location           String?
+  /// A place the officer pinned by hand when no gazetteer name matches (WGS84).
+  latitude           Float?
+  longitude          Float?
   logframeActivityId String?
   outputId           String?
   ownerUserId        String?
@@ -1925,4 +1928,22 @@ model ProjectAdaptation {
 
   @@index([tenantId])
   @@index([projectId, recordedOn])
+}
+
+/// The workspace's own map boundaries: one uploaded GeoJSON layer (districts, sub-districts) that the
+/// site map draws instead of the bundled country outlines. One layer per organization; a new upload
+/// replaces it.
+model TenantMapLayer {
+  id           String   @id
+  tenantId     String   @unique
+  name         String
+  /// Where the GeoJSON bytes live (storage key, workspace-prefixed).
+  storageKey   String
+  sizeBytes    Int
+  featureCount Int
+  uploadedById String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId])
 }

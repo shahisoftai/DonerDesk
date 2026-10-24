@@ -335,3 +335,4 @@ export * from "./use-cases/templates/donor-indicator-mapping.js";
 export * from "./use-cases/risks/risk-handlers.js";
 export * from "./ports/portfolio.js";
 export * from "./use-cases/funding/funding-handlers.js";
+export * from "./use-cases/organization/map-layer-handlers.js";

@@ -339,3 +339,9 @@ memorybank/
 - Status ledger for every audit item, with left-over tasks and open decisions: `imp/product-gap-audit-2026-10-20.md` §18.
 - Support articles for these features: `docs/support/how-to/` (source), served from `apps/web/content/support/how-to/`. See `docs/support/README.md`.
 - Operator notes: `runbooks/evidence-encryption.md`, `CONTABO-DEPLOY.md` (2026-10-21 entries), `demo/verification-demo-10.md`.
+
+## 2026-10-24: site maps (Phase 30 + batch 30.1)
+
+- Feature doc 43 in `Features/` ([Features/43-Site-Maps.md](Features/43-Site-Maps.md)): the plan's **Map** view, the Overview's **"Where we work"** section, place resolution from the officer's own location text (bundled gazetteer, offline), hand-placed pins, and one uploaded GeoJSON of workspace boundaries per organisation. Plan and invariants: `imp/phase30-maps.md`, `AGENTS.md` → "Phase 30 invariants — maps".
+- Migration `20261024090000_map_layers_and_pins` (PlannedActivity.latitude/longitude + TenantMapLayer) + `rls.sql`; `/ready` requires the new fields. Ship api + web together.
+- Support articles for the feature, unpublished until the live-site check: `docs/support/_unpublished-phase30/` (README carries the publish checklist).

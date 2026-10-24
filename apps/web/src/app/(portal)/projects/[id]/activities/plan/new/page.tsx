@@ -13,7 +13,7 @@ export default async function NewPlannedActivityPage({ params }: { params: Promi
     <div className="animate-fade-in">
       <h1 className="text-xl font-semibold tracking-tight">Add planned activity</h1>
       <div className="mt-6">
-        <PlanActivityForm projectId={id} leads={data.leads} activities={data.logframeActivities.map((a) => ({ id: a.id, label: a.title }))} />
+        <PlanActivityForm projectId={id} leads={data.leads} activities={data.logframeActivities.map((a) => ({ id: a.id, label: a.title }))} country={data.country} customLayerUrl="/api/organization/map-layer/data" />
       </div>
     </div>
   );

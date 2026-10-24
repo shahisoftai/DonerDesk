@@ -11,6 +11,7 @@ import { PulseSection } from "@/features/projects/presentation/overview/PulseSec
 import { CalendarSection } from "@/features/projects/presentation/overview/CalendarSection";
 import { ReportingSection } from "@/features/projects/presentation/overview/ReportingSection";
 import { DeliverySection } from "@/features/projects/presentation/overview/DeliverySection";
+import { LocationSection } from "@/features/projects/presentation/overview/LocationSection";
 import { ResultsMoneySection } from "@/features/projects/presentation/overview/ResultsMoneySection";
 import { TeamSection } from "@/features/projects/presentation/overview/TeamSection";
 import { RisksCard } from "@/features/tasks/presentation/RisksCard";
@@ -106,6 +107,8 @@ export default async function ProjectDetail({
       {has("REPORTING") && data.reporting.ok ? <ReportingSection reporting={data.reporting.value} projectId={identity.id} /> : null}
 
       {has("DELIVERY") && data.delivery.ok ? <DeliverySection delivery={data.delivery.value} projectId={identity.id} /> : null}
+
+      {has("LOCATION") && data.location.ok ? <LocationSection location={data.location.value} projectId={identity.id} /> : null}
 
       {has("RESULTS") && data.results.ok ? <ResultsMoneySection results={data.results.value} projectId={identity.id} /> : null}
 

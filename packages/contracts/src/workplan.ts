@@ -23,6 +23,9 @@ export const CreatePlannedActivitySchema = z.object({
   supportUserIds: z.array(z.string().min(1)).max(10).default([]),
   logframeActivityId: z.string().min(1).optional(),
   location: z.string().max(200).optional(),
+  /** A hand-placed place when no gazetteer name matches; both together or neither (Phase 30.1). */
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
   description: z.string().max(5000).optional(),
   /** Kinds of file that should prove the activity ("Files we will need"); suggested in the form, never required. */
   requiredFiles: z.array(z.string().min(1)).max(5).optional(),
@@ -35,6 +38,9 @@ export const UpdatePlannedActivitySchema = z.object({
   title: z.string().trim().min(1).max(300).optional(),
   description: z.string().max(5000).optional(),
   location: z.string().max(200).nullable().optional(),
+  /** `null` clears a hand-placed place; both together or neither (Phase 30.1). */
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
   logframeActivityId: z.string().min(1).nullable().optional(),
   targetParticipants: z.number().int().positive().nullable().optional(),
   targetCount: z.number().int().positive().nullable().optional(),

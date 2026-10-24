@@ -23,10 +23,19 @@ export type PlannedActivityKind = "ACTIVITY" | "MILESTONE";
 export const MIN_EFFORT = 1;
 export const MAX_EFFORT = 5;
 
+/** WGS84 degree ranges for a hand-placed site (Phase 30.1). */
+export const MIN_LATITUDE = -90;
+export const MAX_LATITUDE = 90;
+export const MIN_LONGITUDE = -180;
+export const MAX_LONGITUDE = 180;
+
 export interface PlannedActivityDetails {
   title: string;
   description: string;
   location?: string;
+  /// A place the officer pinned by hand when no gazetteer name matches (WGS84 degrees). Both or neither.
+  latitude?: number;
+  longitude?: number;
   logframeActivityId?: string;
   outputId?: string;
   /** People expected; blank (never 0) when unknown. */
@@ -86,6 +95,15 @@ function validateDetails(d: Partial<PlannedActivityDetails>): Result<void> {
     const v = d[key];
     if (v !== undefined && (!Number.isInteger(v) || v < 1)) return err(DomainError.validation(`${label} must be a whole number of 1 or more, or left blank`));
   }
+  if ((d.latitude === undefined) !== (d.longitude === undefined)) {
+    return err(DomainError.validation("A pinned place needs both coordinates: pin it on the map again", { field: "latitude" }));
+  }
+  if (d.latitude !== undefined && (!Number.isFinite(d.latitude) || d.latitude < MIN_LATITUDE || d.latitude > MAX_LATITUDE)) {
+    return err(DomainError.validation(`Latitude must be a number from ${MIN_LATITUDE} to ${MAX_LATITUDE}`, { field: "latitude" }));
+  }
+  if (d.longitude !== undefined && (!Number.isFinite(d.longitude) || d.longitude < MIN_LONGITUDE || d.longitude > MAX_LONGITUDE)) {
+    return err(DomainError.validation(`Longitude must be a number from ${MIN_LONGITUDE} to ${MAX_LONGITUDE}`, { field: "longitude" }));
+  }
   return ok(undefined);
 }
 
@@ -126,6 +144,7 @@ export class PlannedActivity extends Entity<string> {
         title: input.title.trim(),
         description: input.description?.trim() ?? "",
         ...(input.location?.trim() ? { location: input.location.trim() } : {}),
+        ...(input.latitude !== undefined && input.longitude !== undefined ? { latitude: input.latitude, longitude: input.longitude } : {}),
         ...(input.logframeActivityId ? { logframeActivityId: input.logframeActivityId } : {}),
         ...(input.outputId ? { outputId: input.outputId } : {}),
         ...(input.targetParticipants !== undefined ? { targetParticipants: input.targetParticipants } : {}),

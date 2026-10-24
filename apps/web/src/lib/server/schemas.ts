@@ -1309,6 +1309,9 @@ export const WorkPlanRowSchema = z.object({
   logframeActivityId: z.string().optional(),
   outputId: z.string().optional(),
   location: z.string().optional(),
+  /** A hand-placed place when no gazetteer name matches (Phase 30.1). */
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
   targetCount: z.number().optional(),
   /** How heavy it is for its lead, 1 to 5. */
   effort: z.number().default(1),
@@ -1329,6 +1332,16 @@ export type WorkPlanRow = z.infer<typeof WorkPlanRowSchema>;
 export const WorkPlanResponseSchema = z.object({ items: z.array(WorkPlanRowSchema) });
 
 export const CreatedPlannedActivitiesSchema = z.object({ ids: z.array(z.string()), capped: z.boolean() });
+
+/** The workspace's uploaded map boundaries: metadata (the GeoJSON itself comes from the data route). */
+export const MapLayerMetaSchema = z.object({
+  name: z.string(),
+  sizeBytes: z.number(),
+  featureCount: z.number(),
+  uploadedAt: z.string(),
+});
+export type MapLayerMeta = z.infer<typeof MapLayerMetaSchema>;
+export const MapLayerMetaResponseSchema = MapLayerMetaSchema;
 
 export const PlanPreviewSchema = z.object({
   preview: z.object({

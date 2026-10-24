@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WORKPLAN_COPY, suggestRequiredFiles } from "@donordesk/domain/contexts/workplan/index.js";
 import { requirableTypes } from "../domain/file-needs-view";
@@ -12,11 +12,12 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
+import { LocationPickerFigure } from "./LocationPickerFigure";
 
 export interface PlanFormOption { id: string; label: string }
 
 /** Title · Dates · Repeats · Lead · Logframe activity; the rest under "More details". One date makes a milestone. */
-export function PlanActivityForm({ projectId, leads, activities }: { projectId: string; leads: PlanFormOption[]; activities: PlanFormOption[] }) {
+export function PlanActivityForm({ projectId, leads, activities, country, customLayerUrl }: { projectId: string; leads: PlanFormOption[]; activities: PlanFormOption[]; country?: string; customLayerUrl?: string }) {
   const router = useRouter();
   const state = useActionState();
   const hydrated = useHydrated();
@@ -34,6 +35,27 @@ export function PlanActivityForm({ projectId, leads, activities }: { projectId: 
   // Files we will need: suggested from the title until the person ticks or unticks anything themselves.
   const [files, setFiles] = useState<string[]>([]);
   const [filesTouched, setFilesTouched] = useState(false);
+  // Place suggestions come from the site map's gazetteer, loaded lazily on first use — never in this form's own bundle.
+  const [places, setPlaces] = useState<string[]>([]);
+  // A hand-placed place when no gazetteer name matches (Phase 30.1).
+  const [pin, setPin] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [pinOpen, setPinOpen] = useState(false);
+  useEffect(() => {
+    const text = location.trim();
+    if (text.length < 2) {
+      setPlaces([]);
+      return;
+    }
+    let alive = true;
+    void import("../domain/site-map")
+      .then(({ suggestPlaces }) => {
+        if (alive) setPlaces(suggestPlaces(text, country));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [location, country]);
   const logframeTitle = activities.find((a) => a.id === node)?.label;
   const suggested = suggestRequiredFiles(title, logframeTitle);
   const shownFiles = filesTouched ? files : suggested;
@@ -52,6 +74,7 @@ export function PlanActivityForm({ projectId, leads, activities }: { projectId: 
         ...(lead ? { ownerUserId: lead } : {}),
         ...(node ? { logframeActivityId: node } : {}),
         ...(location.trim() ? { location } : {}),
+        ...(pin ? { latitude: pin.latitude, longitude: pin.longitude } : {}),
         ...(description.trim() ? { description } : {}),
         ...(num(people) !== undefined ? { targetParticipants: num(people) } : {}),
         ...(num(sessions) !== undefined ? { targetCount: num(sessions) } : {}),
@@ -95,7 +118,51 @@ export function PlanActivityForm({ projectId, leads, activities }: { projectId: 
         <details>
           <summary className="cursor-pointer text-sm text-slate-600 dark:text-slate-300">More details</summary>
           <div className="mt-3 space-y-4">
-            <Field label="Location"><Input value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} /></Field>
+            <Field label="Location">
+              <Input list="plan-places" value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} />
+            </Field>
+            {places.length > 0 && (
+              <datalist id="plan-places">
+                {places.map((place) => (
+                  <option key={place} value={place} />
+                ))}
+              </datalist>
+            )}
+            {/* A place the gazetteer does not know can be pinned by hand (Phase 30.1). */}
+            <div>
+              {!pinOpen && !pin && (
+                <button type="button" className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400" onClick={() => setPinOpen(true)}>
+                  {WORKPLAN_COPY.placeOnMap}
+                </button>
+              )}
+              {(pinOpen || pin) && (
+                <div className="space-y-2">
+                  <LocationPickerFigure
+                    value={pin}
+                    country={country}
+                    customLayerUrl={customLayerUrl}
+                    onChange={(next) => {
+                      setPin(next);
+                      if (next) setPinOpen(true);
+                    }}
+                  />
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {pin ? `${pin.latitude}, ${pin.longitude}` : WORKPLAN_COPY.pinHint}
+                    </p>
+                    {pin && (
+                      <button
+                        type="button"
+                        className="text-sm font-medium text-slate-600 hover:underline dark:text-slate-300"
+                        onClick={() => setPin(null)}
+                      >
+                        {WORKPLAN_COPY.clearPin}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <Field label="Notes"><Textarea dictate rows={3} value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
             <fieldset className="space-y-1">
               <legend className="label">Files we will need</legend>

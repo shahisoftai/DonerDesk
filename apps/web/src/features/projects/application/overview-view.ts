@@ -1,5 +1,6 @@
 import type { BudgetPace, CalendarItem, HeadlineIndicator, Lifecycle, Movement, NeedsYouItem, ResultsPace, WeekItem } from "../domain/overview-derive";
 import type { OutputProgress, PlanCounts } from "@/features/workplan/domain/delivery-overview";
+import type { SiteMapData } from "@/features/workplan/domain/site-map";
 import type { RiskItem } from "@/lib/server/schemas";
 import type { ProjectPerson } from "@/features/tasks/domain/ask-people";
 import type { z } from "zod";
@@ -78,6 +79,15 @@ export interface DeliveryData {
   week: WeekItem[];
   outputs: OutputProgress[];
   people: ProjectPerson[];
+}
+
+/** "Where we work": the plan's sites on a map, colored by the same signals the Delivery section words use. */
+export interface LocationData {
+  country?: string;
+  region?: string;
+  /** The workspace's uploaded boundaries, drawn instead of the built-in outlines (Phase 30.1). */
+  mapLayerUrl?: string;
+  sites: SiteMapData;
 }
 
 export interface ResultsIndicatorView {

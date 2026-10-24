@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { gatewayRequest } from "@/lib/server/api-gateway";
+import { MapLayerMetaSchema } from "@/lib/server/schemas";
 import {
   ProjectDetailSchema,
   ReportingPeriodsResponseSchema,
@@ -47,6 +48,7 @@ import {
 import type {
   CloseOutData,
   DeliveryData,
+  LocationData,
   OverviewIdentity,
   PulseData,
   ReadinessBreakdown,
@@ -59,6 +61,7 @@ import type {
   TeamData,
 } from "./overview-view";
 import { planCounts, outputProgress } from "@/features/workplan/domain/delivery-overview";
+import { siteMapData } from "@/features/workplan/domain/site-map";
 import { loadProjectPeople } from "@/features/tasks/application/project-people";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import { BENEFICIARY_SEX_LABEL } from "@donordesk/domain/contexts/workplan/index.js";
@@ -74,6 +77,7 @@ export interface OverviewPageData {
   calendar: SectionData<CalendarItem[]>;
   reporting: SectionData<ReportingData>;
   delivery: SectionData<DeliveryData>;
+  location: SectionData<LocationData>;
   results: SectionData<ResultsData>;
   team: SectionData<TeamData>;
   risks: SectionData<RisksData>;
@@ -98,7 +102,7 @@ export const loadProjectOverviewV2 = cache(
     const project: ProjectDetail = projectResult.value;
     const planningVisible = project.showWorkPlanning !== false;
 
-    const [periodsResult, planResult, risksResult, sheetResult, healthResult, logframeResult, budgetResult, peopleResult, beneficiariesResult, teamWorkResult, assignmentsResult, closingResult, templatesResult, profileResult] =
+    const [periodsResult, planResult, risksResult, sheetResult, healthResult, logframeResult, budgetResult, peopleResult, beneficiariesResult, teamWorkResult, assignmentsResult, closingResult, templatesResult, profileResult, mapLayerResult] =
       await Promise.all([
         gatewayRequest(`/v1/projects/${projectId}/reporting-periods`, ReportingPeriodsResponseSchema, token),
         planningVisible ? gatewayRequest(`/v1/projects/${projectId}/work-plan`, WorkPlanResponseSchema, token) : Promise.resolve(null),
@@ -114,6 +118,7 @@ export const loadProjectOverviewV2 = cache(
         gatewayRequest(`/v1/projects/${projectId}/closing-report/plan`, ClosingPlanSchema, token),
         gatewayRequest(`/v1/projects/${projectId}/templates`, TemplatesResponseSchema, token),
         gatewayRequest(`/v1/projects/${projectId}/reporting-profile`, ReportingProfileResponseSchema, token),
+        gatewayRequest("/v1/organization/map-layer", MapLayerMetaSchema, token),
       ]);
 
     const periods = periodsResult.ok ? periodsResult.value.items.filter((p) => !p.cancelled) : [];
@@ -141,6 +146,13 @@ export const loadProjectOverviewV2 = cache(
 
     const planRows = planResult?.ok ? planResult.value.items : [];
     const riskItems = risksResult?.ok ? risksResult.value.items : [];
+    // Where the work happens (Phase 30): the plan's locations resolved against the project's own country.
+    const siteData = planRows.length
+      ? siteMapData(
+          planRows.map((r) => ({ id: r.id, title: r.title, location: r.location, signal: r.signal })),
+          { risks: riskItems.map((r) => ({ title: r.title, plannedActivityId: r.plannedActivityId, status: r.status })), country: project.country },
+        )
+      : null;
     const sheet = sheetResult.ok ? sheetResult.value : null;
     const people = peopleResult.ok ? peopleResult.value.items : [];
     const assignments = assignmentsResult.ok
@@ -151,6 +163,7 @@ export const loadProjectOverviewV2 = cache(
       hasPeriods: periods.length > 0,
       hasPlan: planRows.length > 0,
       planningVisible,
+      hasSites: (siteData?.points.length ?? 0) > 0,
       hasRisks: riskItems.length > 0 || capabilities.has("risk.raise"),
       finalYear: life.finalYear,
     };
@@ -328,6 +341,16 @@ export const loadProjectOverviewV2 = cache(
         })
       : failed;
 
+    /* ---- where we work ---- */
+    const location: SectionData<LocationData> = siteData && siteData.points.length > 0
+      ? ok<LocationData>({
+          country: project.country,
+          region: project.region,
+          ...(mapLayerResult.ok && mapLayerResult.value ? { mapLayerUrl: "/api/organization/map-layer/data" } : {}),
+          sites: siteData,
+        })
+      : failed;
+
     /* ---- results & money ---- */
     const results: SectionData<ResultsData> = sheet
       ? ok<ResultsData>({
@@ -444,6 +467,7 @@ export const loadProjectOverviewV2 = cache(
         calendar: ok(calendar),
         reporting,
         delivery,
+        location,
         results,
         team,
         risks,

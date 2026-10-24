@@ -26,6 +26,8 @@ export interface PlanPageData {
   outputTitles: Record<string, string>;
   /** The project's dates (the Timeline's whole-project range). */
   projectRange: { start: string; end: string };
+  /** The project's own country, so a location is matched at home first (site map). */
+  country?: string;
 }
 
 /** Everything the plan pages share: who the person is, who can lead, and the logframe's activities. One read, used by every plan page. */
@@ -49,6 +51,7 @@ export async function loadPlanPageData(projectId: string): Promise<PlanPageData>
     today,
     outputTitles: Object.fromEntries(items.filter((i) => i.level === "OUTPUT").map((i) => [i.id, i.code ? `${i.code} ${i.title}` : i.title])),
     projectRange: project.ok ? { start: project.value.startDate.slice(0, 10), end: project.value.endDate.slice(0, 10) } : { start: today, end: today },
+    country: project.ok ? project.value.country : undefined,
     planningVisible: project.ok ? project.value.showWorkPlanning !== false : true,
     people,
     leads: people.map((p) => ({ id: p.id, label: p.label })),

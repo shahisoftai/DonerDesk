@@ -34,6 +34,8 @@ const FIELD_LABELS: ReadonlyArray<readonly [string, string]> = [
   ["ownerUserId", "Lead"],
   ["supportUserIds", "Other people helping"],
   ["logframeActivityId", "Logframe activity"],
+  ["latitude", "Latitude"],
+  ["longitude", "Longitude"],
   ["plannedActivityId", "Planned activity"],
   ["targetParticipants", "People expected"],
   ["targetCount", "Number of sessions"],

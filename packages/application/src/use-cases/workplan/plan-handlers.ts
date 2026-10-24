@@ -57,6 +57,7 @@ export class CreatePlannedActivityHandler {
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.requiredFiles ? { requiredFiles: input.requiredFiles } : {}),
         ...(input.location !== undefined ? { location: input.location } : {}),
+        ...(input.latitude !== undefined && input.longitude !== undefined ? { latitude: input.latitude, longitude: input.longitude } : {}),
         ...(input.logframeActivityId ? { logframeActivityId: input.logframeActivityId } : {}),
         ...(outputId ? { outputId } : {}),
         ...(input.targetParticipants !== undefined ? { targetParticipants: input.targetParticipants } : {}),

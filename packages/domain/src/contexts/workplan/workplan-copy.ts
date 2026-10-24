@@ -51,6 +51,18 @@ export const WORKPLAN_COPY = {
   linkYouLead: "You lead it",
   linkSameLogframe: "Same logframe activity",
   linkPlannedFor: "Planned for",
+  viewMap: "Map",
+  mapLoading: "Loading the map…",
+  mapPinned: "Pinned place",
+  placeOnMap: "Place it on the map",
+  pinHint: "Click the map to drop the pin where the work happens.",
+  clearPin: "Remove the pin",
+  mapCaption: "Each dot is a place with planned activities; its color is how the work there is going.",
+  mapUnavailable: "The map could not be loaded right now. Try again later.",
+  mapUnplaced: "Not placed on the map (no matching place known):",
+  mapEverythingPlaced: "Every location matched a known place.",
+  mapLegend: "How the work there is going",
+  mapNoSites: "No location to map yet. Add a location on a planned activity.",
 } as const;
 
 /**

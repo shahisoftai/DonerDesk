@@ -1,17 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import type { WorkPlanRow } from "@/lib/server/schemas";
 import type { DateRange, TimelineDeadline } from "../domain/timeline-layout";
 import type { PlanViewKey } from "../domain/role-surfaces";
+import type { SiteRiskInput } from "../domain/site-map";
+import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import { PlanListView } from "./PlanListView";
 import { PlanTimeline } from "./PlanTimeline";
 
-const LABEL: Record<PlanViewKey, string> = { LIST: "List", TIMELINE: "Timeline" };
+const PlanMapView = lazy(() => import("./PlanMapView"));
+
+const NO_RISKS: SiteRiskInput[] = [];
+
+const LABEL: Record<PlanViewKey, string> = { LIST: "List", TIMELINE: "Timeline", MAP: WORKPLAN_COPY.viewMap };
 
 /**
- * List or Timeline for the Planned side. A person's role decides which opens first. Under 640 px the Timeline is not
- * offered at all: the List is shown, so there is never sideways scrolling on a phone.
+ * List, Timeline or Map for the Planned side. A person's role decides which opens first. Under 640 px the
+ * Timeline is not offered at all: the List is shown, so there is never sideways scrolling on a phone.
  */
 export function PlannedViews(props: {
   projectId: string;
@@ -30,6 +36,12 @@ export function PlannedViews(props: {
   /** itemId -> "Label: value" for the project's own fields that have a value. */
   fieldChips?: Record<string, string[]>;
   movableIds: string[];
+  /** Open risks, narrowed for the map: a risk sits where the activity it points at sits. */
+  siteRisks?: SiteRiskInput[];
+  /** The project's own country name, so a place is matched at home first. */
+  country?: string;
+  /** The workspace's uploaded boundaries, drawn instead of the built-in outlines (Phase 30.1). */
+  mapLayerUrl?: string;
 }) {
   const [view, setView] = useState<PlanViewKey>(props.initialView);
   const list = (
@@ -45,7 +57,11 @@ export function PlannedViews(props: {
           </button>
         ))}
       </div>
-      {view === "LIST" ? list : (
+      {view === "LIST" ? list : view === "MAP" ? (
+        <Suspense fallback={<p className="text-sm text-slate-500 dark:text-slate-400">{WORKPLAN_COPY.mapLoading}</p>}>
+          <PlanMapView projectId={props.projectId} rows={props.rows} risks={props.siteRisks ?? NO_RISKS} country={props.country} mapLayerUrl={props.mapLayerUrl} />
+        </Suspense>
+      ) : (
         <>
           <div className="hidden sm:block">
             <PlanTimeline projectId={props.projectId} rows={props.rows} deadlines={props.deadlines} project={props.project} today={props.today} outputTitles={props.outputTitles} movableIds={props.movableIds} names={props.names} userId={props.userId} defaultActuals={props.defaultActuals} />

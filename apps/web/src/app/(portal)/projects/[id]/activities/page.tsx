@@ -3,7 +3,7 @@ import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ActivitiesResponseSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
-import { PlanFieldValuesSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { MapLayerMetaSchema, PlanFieldValuesSchema, RisksResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { fieldChips } from "@/features/workplan/domain/plan-export";
 import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import { activitiesTabMode } from "@/features/workplan/domain/activities-tab-mode";
@@ -73,10 +73,12 @@ export default async function ActivitiesPage({ params, searchParams }: { params:
 
 async function PlannedActivitiesView({ projectId, otherSide }: { projectId: string; otherSide: "RECORDS" | "PLAN" | null }) {
   const data = await loadPlanPageData(projectId);
-  const [plan, periods, planFields] = await Promise.all([
+  const [plan, periods, planFields, risks, mapLayer] = await Promise.all([
     gatewayRequest(`/v1/projects/${projectId}/work-plan`, WorkPlanResponseSchema, data.ctx.token),
     gatewayRequest(`/v1/projects/${projectId}/reporting-periods`, ReportingPeriodsResponseSchema, data.ctx.token),
     gatewayRequest(`/v1/projects/${projectId}/plan-field-values`, PlanFieldValuesSchema, data.ctx.token),
+    gatewayRequest(`/v1/projects/${projectId}/risks`, RisksResponseSchema, data.ctx.token),
+    gatewayRequest("/v1/organization/map-layer", MapLayerMetaSchema, data.ctx.token),
   ]);
   // A few words per activity for the project's own fields: only fields that have a value.
   const chips: Record<string, string[]> = planFields.ok
@@ -124,6 +126,9 @@ async function PlannedActivitiesView({ projectId, otherSide }: { projectId: stri
             outputTitles={data.outputTitles}
             changeableIds={rows.filter((row) => canPlan || (canUpdateOwn && (row.ownerUserId === data.userId || row.supportUserIds.includes(data.userId)))).map((row) => row.id)}
             movableIds={rows.filter((row) => canActOnPlanItem(actor, { ownerUserId: row.ownerUserId, supportUserIds: row.supportUserIds }, "MOVE")).map((row) => row.id)}
+            siteRisks={risks.ok ? risks.value.items.map((r) => ({ title: r.title, plannedActivityId: r.plannedActivityId, status: r.status })) : []}
+            country={data.country}
+            mapLayerUrl={mapLayer.ok && mapLayer.value ? "/api/organization/map-layer/data" : undefined}
           />
         )}
       </div>

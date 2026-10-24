@@ -115,3 +115,21 @@ export interface IMfaService {
   issueChallenge(userId: string, tenantId: string, now: Date): string;
   readChallenge(token: string, now: Date): { userId: string; tenantId: string } | null;
 }
+
+/** The workspace's uploaded map boundaries: metadata only — the bytes live in storage (Phase 30.1). */
+export interface TenantMapLayerRecord {
+  id: string;
+  tenantId: TenantId;
+  name: string;
+  storageKey: string;
+  sizeBytes: number;
+  featureCount: number;
+  uploadedById: string;
+  updatedAt: Date;
+}
+
+export interface ITenantMapLayerRepository {
+  findByTenant(tenantId: TenantId): Promise<TenantMapLayerRecord | null>;
+  save(layer: TenantMapLayerRecord): Promise<void>;
+  remove(tenantId: TenantId): Promise<void>;
+}

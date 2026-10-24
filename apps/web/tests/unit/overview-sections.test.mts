@@ -14,6 +14,7 @@ const facts = (over: Partial<OverviewFacts> = {}): OverviewFacts => ({
   hasPeriods: true,
   hasPlan: true,
   planningVisible: true,
+  hasSites: true,
   hasRisks: true,
   finalYear: false,
   ...over,
@@ -47,7 +48,7 @@ test("a part that needs a capability is hidden when the person lacks it", () => 
 
 test("a field officer sees their own work, not the programme's administration", () => {
   const sections = sectionsFor("FIELD_OFFICER", capabilitiesForRole("FIELD_OFFICER"), facts());
-  assert.deepEqual(sections, ["NEEDS_YOU", "PULSE", "CALENDAR", "DELIVERY", "RISKS"]);
+  assert.deepEqual(sections, ["NEEDS_YOU", "PULSE", "CALENDAR", "DELIVERY", "LOCATION", "RISKS"]);
   assert.equal(sections.includes("TEAM"), false);
   assert.equal(sections.includes("REPORTING"), false);
   assert.equal(sections.includes("CLOSEOUT"), false);
@@ -55,7 +56,7 @@ test("a field officer sees their own work, not the programme's administration", 
 
 test("a viewer sees the programme read-only and never a queue", () => {
   const sections = sectionsFor("VIEWER", capabilitiesForRole("VIEWER"), facts());
-  assert.deepEqual(sections, ["PULSE", "REPORTING", "RESULTS", "SETUP"]);
+  assert.deepEqual(sections, ["PULSE", "REPORTING", "LOCATION", "RESULTS", "SETUP"]);
   assert.equal(sections.includes("NEEDS_YOU"), false);
   assert.equal(sections.includes("CALENDAR"), false);
 });
@@ -65,6 +66,14 @@ test("a project without a plan looks as it did before", () => {
   assert.equal(sections.includes("DELIVERY"), false);
   const hidden = sectionsFor("PROJECT_MANAGER", capabilitiesForRole("PROJECT_MANAGER"), facts({ planningVisible: false }));
   assert.equal(hidden.includes("DELIVERY"), false);
+});
+
+test("the map hides itself when no planned activity sits at a known place", () => {
+  const manager = capabilitiesForRole("PROJECT_MANAGER");
+  assert.equal(sectionsFor("PROJECT_MANAGER", manager, facts({ hasSites: false })).includes("LOCATION"), false);
+  assert.equal(sectionsFor("PROJECT_MANAGER", manager, facts({ hasSites: true })).includes("LOCATION"), true);
+  // The sites come from the plan: with work planning hidden, there is no map either.
+  assert.equal(sectionsFor("PROJECT_MANAGER", manager, facts({ hasSites: true, planningVisible: false })).includes("LOCATION"), false);
 });
 
 test("reporting needs a period and close-out needs the final year", () => {
@@ -83,6 +92,6 @@ test("the parts come back in one fixed order", () => {
 
 test("an unknown role is treated as a viewer", () => {
   const sections = sectionsFor("NOT_A_ROLE", capabilitiesForRole("NOT_A_ROLE"), facts());
-  assert.deepEqual(sections, ["PULSE", "REPORTING", "RESULTS", "SETUP"]);
-  assert.deepEqual(sectionsFor(null, new Set(), facts()), ["PULSE", "REPORTING", "RESULTS", "SETUP"]);
+  assert.deepEqual(sections, ["PULSE", "REPORTING", "LOCATION", "RESULTS", "SETUP"]);
+  assert.deepEqual(sectionsFor(null, new Set(), facts()), ["PULSE", "REPORTING", "LOCATION", "RESULTS", "SETUP"]);
 });

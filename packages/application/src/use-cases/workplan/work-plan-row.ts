@@ -22,6 +22,9 @@ export interface WorkPlanRowDto {
   logframeActivityId?: string;
   outputId?: string;
   location?: string;
+  /// A hand-placed place when no gazetteer name matches (both together, Phase 30.1).
+  latitude?: number;
+  longitude?: number;
   targetCount?: number;
   /** How heavy it is for its lead, 1 to 5 (1 when not set). */
   effort: number;
@@ -60,7 +63,9 @@ export function toWorkPlanRow(i: PlannedActivity, f: DeliveryFacts, today: Plain
     status: i.status, state, signal: deliverySignal(state), signalLabel: DELIVERY_SIGNAL_LABEL[deliverySignal(state)], ...(reason ? { signalReason: reason } : {}),
     ...(i.ownerUserId ? { ownerUserId: i.ownerUserId } : {}), supportUserIds: [...i.supportUserIds],
     ...(i.logframeActivityId ? { logframeActivityId: i.logframeActivityId } : {}), ...(snap.outputId ? { outputId: snap.outputId } : {}),
-    ...(snap.location ? { location: snap.location } : {}), ...(snap.targetCount !== undefined ? { targetCount: snap.targetCount } : {}),
+    ...(snap.location ? { location: snap.location } : {}),
+    ...(snap.latitude !== undefined && snap.longitude !== undefined ? { latitude: snap.latitude, longitude: snap.longitude } : {}),
+    ...(snap.targetCount !== undefined ? { targetCount: snap.targetCount } : {}),
     effort: snap.effort ?? 1,
     deliveredCount: f.deliveredCount, completedActivities: f.liveRecords, ...(suggested ? { suggestedStatus: suggested } : {}),
     ...(i.seriesId ? { seriesId: i.seriesId } : {}),

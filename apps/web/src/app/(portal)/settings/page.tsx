@@ -1,8 +1,9 @@
 import { requireSession, hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { OrganizationProfileSchema } from "@/lib/server/schemas";
+import { MapLayerMetaSchema, OrganizationProfileSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
 import { SettingsPanel } from "@/features/settings/presentation/SettingsPanel";
+import { MapLayerCard } from "@/features/settings/presentation/MapLayerCard";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,16 @@ export default async function SettingsPage() {
           </p>
         </section>
       )}
+      {ctx.capabilities.has("org.manage") && (
+        <MapLayerSettings />
+      )}
     </div>
   );
+}
+
+/** The workspace's own map boundaries (Phase 30.1) — administrators only. */
+async function MapLayerSettings() {
+  const ctx = await requireSession();
+  const layer = await gatewayRequest("/v1/organization/map-layer", MapLayerMetaSchema, ctx.token);
+  return <MapLayerCard layer={layer.ok ? layer.value : null} />;
 }

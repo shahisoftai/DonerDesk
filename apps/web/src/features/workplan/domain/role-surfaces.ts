@@ -14,7 +14,7 @@ export type PlanButton =
   | "ASSIGN_LEAD"
   | "CANCEL";
 
-export type PlanViewKey = "LIST" | "TIMELINE";
+export type PlanViewKey = "LIST" | "TIMELINE" | "MAP";
 /** What the person lands on in Home, above the usual cards. Later batches add rows (delivery health, indicator values due). */
 export type HomeLanding = "MY_WEEK" | "DEFAULT";
 
