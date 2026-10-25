@@ -115,6 +115,18 @@ test("a chart section draws from the shared chart engine and notes unverified po
   assert.match(pages[0], /not verified yet/i);
 });
 
+test("location rows render even when no location targets were planned; an unverified figure reads amber", async () => {
+  const config = configFromTemplate("OVERVIEW");
+  config.sections = [{ kind: "LOCATION_RESULTS" }, { kind: "LOCATION_COMPARISON" }];
+  const rowsInput = { ...input(config), data: { ...data, indicators: [{ ...data.indicators[0], targetBreakdowns: [], targetActual: { kind: "NO_LOCATION_TARGETS", rows: [] } }] } };
+  const withRows = await composeInfographicPages(rowsInput);
+  const page = withRows.join("\n");
+  assert.match(page, /#1 Gulu/, "the recorded location row is drawn, not skipped");
+  assert.match(page, /#1 Kitgum/);
+  assert.match(page, /Not planned/, "a location nobody planned a target for says so");
+  assert.match(page, /#92400e/, "an unverified figure reads amber");
+});
+
 test("the renderer produces a PNG and a PDF; PDF keeps multiple pages when content overflows", async () => {
   const renderer = new InfographicComposerRenderer();
   const config = configFromTemplate("OVERVIEW");

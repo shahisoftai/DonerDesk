@@ -179,19 +179,35 @@ function locationResultsSlot(data: ProjectInfographicDataDto, config: Infographi
   row += 12;
   const seen = new Set<string>();
   outer: for (const indicator of tracked) {
-    if (indicator.targetActual.kind !== "WITH_TARGETS") continue;
-    for (const row2 of indicator.targetActual.rows) {
-      const cellKey = `${indicator.id}|${row2.key}`;
-      if (seen.has(cellKey)) continue;
-      if (config.locationKeys?.length && !config.locationKeys.includes(row2.key)) continue;
-      seen.add(cellKey);
-      row += 27;
-      svg += text(16, row, `${indicator.code} ${row2.location}`, { size: 11.5, bold: true });
-      svg += text(width - 210, row, row2.target ?? "Not planned", { size: 11.5, anchor: "end", fill: row2.target ? INK : "#9ca3af" });
-      svg += text(width - 110, row, row2.actual ?? "Not reported", { size: 11.5, anchor: "end", fill: row2.actual ? INK : "#9ca3af" });
-      svg += text(width - 16, row, row2.percentOfTarget ? `${row2.percentOfTarget}%` : "—", { size: 11.5, anchor: "end", fill: row2.percentOfTarget ? INK : "#9ca3af" });
-      svg += `<line x1="12" y1="${row + 9}" x2="${width - 12}" y2="${row + 9}" stroke="${LINE}"/>`;
-      if (seen.size >= 18 || row > height + 26) break outer;
+    if (indicator.targetActual.kind === "WITH_TARGETS") {
+      for (const row2 of indicator.targetActual.rows) {
+        const cellKey = `${indicator.id}|${row2.key}`;
+        if (seen.has(cellKey)) continue;
+        if (config.locationKeys?.length && !config.locationKeys.includes(row2.key)) continue;
+        seen.add(cellKey);
+        row += 27;
+        svg += text(16, row, `${indicator.code} ${row2.location}`, { size: 11.5, bold: true });
+        svg += text(width - 210, row, row2.target ?? "Not planned", { size: 11.5, anchor: "end", fill: row2.target ? INK : "#9ca3af" });
+        svg += text(width - 110, row, row2.actual ?? "Not reported", { size: 11.5, anchor: "end", fill: row2.actual ? INK : "#9ca3af" });
+        svg += text(width - 16, row, row2.percentOfTarget ? `${row2.percentOfTarget}%` : "—", { size: 11.5, anchor: "end", fill: row2.percentOfTarget ? INK : "#9ca3af" });
+        svg += `<line x1="12" y1="${row + 9}" x2="${width - 12}" y2="${row + 9}" stroke="${LINE}"/>`;
+        if (seen.size >= 18 || row > height + 26) break outer;
+      }
+    } else if (indicator.location.kind !== "PROJECT_WIDE") {
+      // No location targets were planned: the recorded location rows still show, target and % honestly absent.
+      for (const row2 of indicator.location.rows) {
+        const cellKey = `${indicator.id}|${row2.key}`;
+        if (seen.has(cellKey)) continue;
+        if (config.locationKeys?.length && !config.locationKeys.includes(row2.key)) continue;
+        seen.add(cellKey);
+        row += 27;
+        svg += text(16, row, `${indicator.code} ${row2.location}`, { size: 11.5, bold: true });
+        svg += text(width - 210, row, "Not planned", { size: 11.5, anchor: "end", fill: "#9ca3af" });
+        svg += text(width - 110, row, row2.value, { size: 11.5, anchor: "end", fill: row2.verified ? INK : "#92400e" });
+        svg += text(width - 16, row, "—", { size: 11.5, anchor: "end", fill: "#9ca3af" });
+        svg += `<line x1="12" y1="${row + 9}" x2="${width - 12}" y2="${row + 9}" stroke="${LINE}"/>`;
+        if (seen.size >= 18 || row > height + 26) break outer;
+      }
     }
   }
   return { svg, height: 26 + height + 18, width };
