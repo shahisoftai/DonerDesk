@@ -502,3 +502,5 @@ Re-reading the run, several findings were **my driver's mistakes, not defects**,
 | F-35 | A project manager's Home lists "Report waiting for your approval" |
 | F-39/F-40 | A planned activity's place and pin can be edited on its own page; the pin map opens on the project's country |
 | F-1, F-8, F-14, F-24, F-5 | Start-from list hides duplicates and SUPERSEDED; Draft project shows "Draft" in Settings; library hides templates already in the project; table caption without UUID; template badge reads "Approved" |
+
+**Deployed:** release `20261025073627` (`SCOPE=both`, commits `6a008b4`, the date-range lint fix and `4f9560e`), `/ready` ok, worker contract v6. Checked live on the demo project: "Move to" present on the logframe (25 selects), the plan item shows its own "Where" editor, the map now places 4 of 6 locations (Ed Damazin added) and lists unplaced series once ("Mobile integrated outreach - Rabak — Rabak (6 activities)"). Rabak and Sinja still need a hand pin because the gazetteer has neither name.
