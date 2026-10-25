@@ -6,7 +6,9 @@ import {
   INFOGRAPHIC_TEMPLATES,
   knownTemplates,
   validateConfig,
+  reseedSectionCaptions,
   type InfographicConfig,
+  type InfographicLanguage,
   type InfographicSectionConfig,
 } from "@donordesk/domain/contexts/infographics/index.js";
 import type { DataSheet } from "@donordesk/domain/contexts/reporting/data-sheet.js";
@@ -118,6 +120,16 @@ export function InfographicStudio({
 
   const commit = useCallback((next: InfographicConfig, key?: string): void => setHistory((h) => pushState(h, next, Date.now(), key)), []);
   const patchConfig = useCallback((changes: Partial<InfographicConfig>, key?: string): void => setHistory((h) => pushState(h, { ...h.present, ...changes }, Date.now(), key)), []);
+  // Switching the design's language re-seeds number/funnel captions that still match a template
+  // default (never text the person has already retyped) into the new language, so a design built
+  // from a template and switched straight to Arabic does not keep English "People reached" etc.
+  const onDesignChange = useCallback(
+    (changes: Partial<InfographicConfig>): void => {
+      if (!changes.language) return patchConfig(changes);
+      setHistory((h) => pushState(h, { ...h.present, ...changes, sections: reseedSectionCaptions(h.present.sections, changes.language as InfographicLanguage) }, Date.now()));
+    },
+    [patchConfig],
+  );
   const patchSection = useCallback(
     (index: number, changes: Partial<InfographicSectionConfig>, key?: string): void =>
       setHistory((h) => pushState(h, { ...h.present, sections: h.present.sections.map((s, i) => (i === index ? { ...s, ...changes } : s)) }, Date.now(), key ?? `section-${index}-${Object.keys(changes).join(",")}`)),
@@ -380,7 +392,7 @@ export function InfographicStudio({
             ) : (
               <p className="text-sm text-slate-500">Choose a block in the list, or click it on the page, to change it.</p>
             ))}
-          {tab === "design" && <DesignPanel config={config} onChange={patchConfig} data={data} canEdit={canEdit} hasBrandKit={hasBrandKit} onOpenBrand={() => setBrandOpen(true)} scope={scope} />}
+          {tab === "design" && <DesignPanel config={config} onChange={onDesignChange} data={data} canEdit={canEdit} hasBrandKit={hasBrandKit} onOpenBrand={() => setBrandOpen(true)} scope={scope} />}
           {tab === "ideas" && <SuggestionsPanel projectId={projectId} language={config.language} canEdit={canEdit} onUseHeadline={(text) => patchConfig({ title: text.slice(0, 120) })} onUseMessages={useMessages} />}
           {tab === "check" && (
             <CheckPanel

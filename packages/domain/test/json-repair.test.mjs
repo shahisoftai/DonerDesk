@@ -39,3 +39,24 @@ test("repairUnescapedControlChars leaves already-valid JSON unchanged", () => {
   const valid = '{"a":"b\\nc"}';
   assert.equal(repairUnescapedControlChars(valid), valid);
 });
+
+test("reseedCaption translates a template-default caption and leaves an edited one unchanged", async () => {
+  const { reseedCaption, reseedSectionCaptions } = await import("../dist/index.js");
+  assert.equal(reseedCaption("People reached", "ar"), "الأشخاص الذين تم الوصول إليهم");
+  assert.equal(reseedCaption("People reached", "fr"), "Personnes atteintes");
+  // Round-trips back to English from any offered language.
+  assert.equal(reseedCaption("الأشخاص الذين تم الوصول إليهم", "en"), "People reached");
+  // A caption the officer retyped no longer matches any seed exactly, so it passes through.
+  assert.equal(reseedCaption("Children immunised in Kassala", "ar"), "Children immunised in Kassala");
+
+  const sections = [
+    { kind: "BIG_NUMBERS", numbers: [{ label: "People reached", source: "REACH_UNIQUE" }, { label: "Our own custom label", source: "MANUAL" }] },
+    { kind: "FUNNEL", stages: [{ label: "People in need" }, { label: "People reached", bind: "REACH_UNIQUE" }] },
+    { kind: "TEXT", text: "unaffected" },
+  ];
+  const out = reseedSectionCaptions(sections, "ar");
+  assert.equal(out[0].numbers[0].label, "الأشخاص الذين تم الوصول إليهم");
+  assert.equal(out[0].numbers[1].label, "Our own custom label");
+  assert.equal(out[1].stages[0].label, "الأشخاص المحتاجون");
+  assert.deepEqual(out[2], sections[2]);
+});

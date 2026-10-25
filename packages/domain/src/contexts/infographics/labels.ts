@@ -129,3 +129,54 @@ export function SECTION_LABELS_FOR_ALT(kind: string, language: string | undefine
   const key = map[kind];
   return key ? l[key] : kind === "HERO" || kind === "IMAGE" || kind === "BANNER" || kind === "DIVIDER" ? "" : fallback;
 }
+
+// ------------------------------------------------------------- template-seeded captions
+
+/**
+ * The fixed captions a template seeds into a new design's number and funnel-stage blocks (Phase
+ * 32 templates.ts: `num(...)`, `{ label: "People in need" }` and similar). These are stored as
+ * ordinary text in the design's config — a person can retype them, like a headline — so changing
+ * "Language of the fixed words" does not touch officer-typed text. But a caption nobody has edited
+ * yet is still the template's own English default, not something the person wrote, so it is
+ * re-seeded in the newly chosen language when it still matches one of these known defaults
+ * exactly; anything already edited (so no longer an exact match) is left alone.
+ */
+const SEED_CAPTIONS: ReadonlyArray<Readonly<Record<InfographicLanguage, string>>> = [
+  { en: "People reached", fr: "Personnes atteintes", es: "Personas alcanzadas", ar: "الأشخاص الذين تم الوصول إليهم" },
+  { en: "People registered", fr: "Personnes enregistrées", es: "Personas registradas", ar: "الأشخاص المسجّلون" },
+  { en: "People targeted", fr: "Personnes ciblées", es: "Personas objetivo", ar: "الأشخاص المستهدفون" },
+  { en: "People in need", fr: "Personnes dans le besoin", es: "Personas necesitadas", ar: "الأشخاص المحتاجون" },
+  { en: "Activities completed", fr: "Activités réalisées", es: "Actividades realizadas", ar: "الأنشطة المنجزة" },
+  { en: "Activities planned", fr: "Activités prévues", es: "Actividades previstas", ar: "الأنشطة المخططة" },
+  { en: "Approved budget", fr: "Budget approuvé", es: "Presupuesto aprobado", ar: "الميزانية المعتمدة" },
+  { en: "Verified expenditure", fr: "Dépenses vérifiées", es: "Gasto verificado", ar: "الإنفاق الموثّق" },
+  { en: "Balance", fr: "Solde", es: "Saldo", ar: "الرصيد" },
+];
+
+const seedCaptionRow = (label: string): Readonly<Record<InfographicLanguage, string>> | undefined =>
+  SEED_CAPTIONS.find((row) => INFOGRAPHIC_LANGUAGES.some((lang) => row[lang] === label));
+
+/** `label` translated to `language` if it is still exactly one of the template's own seed captions in any offered language; otherwise `label` unchanged (an officer's own edit is never touched). */
+export function reseedCaption(label: string, language: InfographicLanguage): string {
+  return seedCaptionRow(label)?.[language] ?? label;
+}
+
+/**
+ * Re-seeds every number and funnel-stage caption in `sections` that still matches a template
+ * default, into `language`. Called when a person switches the design's language; sections the
+ * person has already retyped (so no longer an exact match) pass through unchanged. Sections of any
+ * other kind, and every other field, are untouched — this only ever rewrites `label` strings.
+ */
+export function reseedSectionCaptions<
+  S extends { kind: string; numbers?: ReadonlyArray<{ label: string }>; stages?: ReadonlyArray<{ label: string }> },
+>(sections: readonly S[], language: InfographicLanguage): S[] {
+  return sections.map((section) => {
+    if (section.kind === "BIG_NUMBERS" && section.numbers?.length) {
+      return { ...section, numbers: section.numbers.map((item) => ({ ...item, label: reseedCaption(item.label, language) })) };
+    }
+    if (section.kind === "FUNNEL" && section.stages?.length) {
+      return { ...section, stages: section.stages.map((stage) => ({ ...stage, label: reseedCaption(stage.label, language) })) };
+    }
+    return section;
+  });
+}
