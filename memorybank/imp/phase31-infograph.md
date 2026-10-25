@@ -1,6 +1,6 @@
 # Phase 31 — Infographics Studio + location disaggregation
 
-**Status (2026-10-24): planned, not started.** Branch seed `0015-infographics`, Version 2.006.
+**Status (2026-10-25): Batches 31.1 + 31.2 built and deployed (`releaseId=20261025043802`, verified live on the demo tenant). Batch 31.3 hardening partly built (section show/hide/order, authored titles/text, per-section indicator selection, size all work); branding toggle, saved-config regeneration UX polish and perf passes not built.** Branch seed `0015-infographics` (work landed on `0014-maps`), Version 2.006.
 One additive migration; no new env; no external service (no geocoder, no tile server, no second
 database, no AI).
 
@@ -331,9 +331,7 @@ live Postgres and fail on the clean tree too).
    bytes.
 4. Web feature: list page, Studio, canvas preview, export dialog, `/api/**` proxy routes.
    Five location views + six templates, each with the incomplete-data states.
-5. Browser verification on the demo tenant: long titles/location names, many locations, missing
-   and unverified values, logo loading, high-dpi PNG, oversized PDF pagination, regenerate vs
-   published export immutability. **Deploy: SCOPE=both** (api + web + migration together).
+5. ~~Browser verification on the demo tenant~~ ✅ (2026-10-25, live on prod with `[DEMO-9]` Nepal CMAM: template → Studio → save → PNG + PDF export → list with export counts → regenerate keeps earlier exports byte-identical → delete-confirm; two prod fixes found and shipped: the brand reader must resolve the Organization by its `tenantId` column (`dc0c1f0`), and the export's results-by-location table must draw recorded rows when no location targets were planned (`abf4fa5`, regression-tested). **Deploy: SCOPE=both** ✅ — migration `20261026090000_project_infographics` piped as `donordesk_migrator` before the code, bookkeeping row inserted with the sha256, `rls.sql` applied to the two new tables (`ConnectorRun` is owned by `postgres` and aborts the DO block under `ON_ERROR_STOP` — apply per-table).
 
 ### Batch 31.3 — Customization and hardening
 
