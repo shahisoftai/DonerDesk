@@ -185,3 +185,42 @@ Not built / not checked:
 - **Deploy bug fixed**: the packages tar did not include `packages/infrastructure/assets` (the bundled fonts), so the first deploy had no fonts on the host; `deploy-fast.sh` now ships it (fonts were also copied by hand).
 - Left: browser check with the user's account on donordesk.online; commit.
 - Feature doc with the rules and routes: `memorybank/Features/44-Infographic-Studio.md`. Support drafts (unpublished): `memorybank/docs/support/_unpublished-phase32/`.
+
+### Update 3 — browser-verified as a user on production, three bugs found and fixed (2026-10-25)
+Signed in as the real user (mnpiracha@gmail.com, GEC tenant) on donordesk.online, opened DEMO-12
+(UNICEF MNCH Sudan), and worked through the Studio as a user would: created designs from many of
+the 22 templates (Humanitarian snapshot, Who does what where, Funding snapshot, Social card, Story,
+Annual poster), edited blocks, drafted wording, switched language, ran the Design check, published
+PNG and PDF, and exercised the review/approval workflow. Three real bugs were found and fixed,
+each committed, deployed and re-verified working in the same browser session:
+
+1. **Stuck preview with a Map block** (`eb95b97`): the Studio never finished drawing any design
+   that had a Map block — "Drawing the page..." forever, one renderer pinned near 100% CPU. Cause:
+   `portfolioCountries` defaulted to a fresh `[]` on every render, so the map-resolution effect
+   re-ran forever. Fixed with one stable empty-array constant.
+2. **AI-drafted wording failed on every real call** (`4969188`): "Draft wording with AI" always
+   said "didn't match your records," even on retry. `LlmRun` showed the calls succeeding
+   (glm-5.3-flash) but truncated at the 1200-token cap — a reasoning model spends part of its
+   budget on hidden thinking before writing the JSON. Ported a JSON-repair utility
+   (`packages/domain/src/core/json-repair.ts`) from the same resilience the report-draft generator
+   already has, and raised the budget to 4096.
+3. **Template captions stayed in English after switching language** (`2721e82`): headings
+   translated correctly to Arabic, but Big Numbers captions ("People reached", "Activities
+   completed", "Activities planned") stayed in English, because templates.ts bakes them in as
+   literal strings and there is no language choice at creation time. Fixed with
+   `reseedCaption`/`reseedSectionCaptions` (`labels.ts`): a caption is re-seeded into the new
+   language only while it still matches one of the template's own defaults exactly — anything the
+   person has typed or retyped is never touched. Verified round-trip (en→ar→en) in the browser.
+
+Also verified correct (no bug): the existing pre-Studio "Results & Impact" design still renders
+after the fix; Funding snapshot shows "Not yet reported" throughout (finance not verified for this
+project); an empty Key messages block is correctly left out of the export, matching its own Design
+check warning; the self-approval rule blocked approving a design the same person asked to review;
+exported PNG (224 KB) and PDF (40 KB, `%PDF-1.3`) are both valid files with the UN map disclaimer.
+Not exercised: creating a public share link (blocked by the permission classifier as an
+outward-facing production action — ask the user to do this one, or grant it explicitly).
+
+Deploys this session: `20261025131548` (map-block fix, web), `20261025133702` (AI-text fix, api),
+`20261025135826` (language-reseed fix, web). All test designs created during verification were
+deleted afterward (one had published exports and needed `?confirm=true`); the project's original
+"Results & Impact" design was left untouched.
