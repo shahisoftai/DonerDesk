@@ -127,7 +127,7 @@ export default function FeaturesPage() {
         <div className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl border border-brand-400/30 bg-gradient-to-br from-brand-600 via-brand-700 to-slate-900 px-6 py-16 text-center">
           <h2 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">See it on your own programme</h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-brand-100">
-            Start a free workspace, or take the narrated tour first. The demo project is included, and it uses no AI credits.
+            Start a free workspace, or take the tour first. The demo project is included, and it uses no AI credits.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
