@@ -96,7 +96,13 @@ export function HomeHero() {
           </div>
         </div>
 
-        <div className={styles.cycle} role="img" aria-label="One record connects four stages in a loop: set up, deliver, monitor and demonstrate. The next period starts from the record you already kept.">
+        <div className={styles.stack}>
+        <div
+          className={`${styles.visual} ${styles.cycle} ${index === 0 ? styles.visualOn : ""}`}
+          role="img"
+          aria-hidden={index !== 0}
+          aria-label="One record connects four stages in a loop: set up, deliver, monitor and demonstrate. The next period starts from the record you already kept."
+        >
           <svg viewBox="0 0 520 520" aria-hidden="true" focusable="false">
             <defs>
               <marker id="home-arrow-0" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#3fc1a6" /></marker>
@@ -144,6 +150,101 @@ export function HomeHero() {
               <small>Checklist, approval, reports</small>
             </div>
           </div>
+        </div>
+
+        <div
+          className={`${styles.visual} ${styles.pace} ${index === 2 ? styles.visualOn : ""}`}
+          role="img"
+          aria-hidden={index !== 2}
+          aria-label="Q3 progress against target: children vaccinated and health workers trained are on track, clinics supplied is behind, with 75% of the period gone."
+        >
+          <p className={styles.cardHead}>
+            <span>Q3 · Emergency Response</span>
+            <em>75% of period gone</em>
+          </p>
+              <div className={styles.paceRow}>
+                <div className={styles.paceMeta}>
+                  <span>Children vaccinated</span>
+                  <span className={styles.pill} style={{ ["--c" as string]: "var(--teal)" }}>On track</span>
+                </div>
+                <div className={styles.paceTrack}>
+                  <i className={styles.paceFill} style={{ ["--w" as string]: "83%", ["--c" as string]: "var(--teal)" }} />
+                  <b className={styles.paceMark} />
+                </div>
+                <small>1,240 / 1,500 · 83% of target</small>
+              </div>
+              <div className={styles.paceRow}>
+                <div className={styles.paceMeta}>
+                  <span>Health workers trained</span>
+                  <span className={styles.pill} style={{ ["--c" as string]: "var(--sky)" }}>On track</span>
+                </div>
+                <div className={styles.paceTrack}>
+                  <i className={styles.paceFill} style={{ ["--w" as string]: "80%", ["--c" as string]: "var(--sky)" }} />
+                  <b className={styles.paceMark} />
+                </div>
+                <small>64 / 80 · 80% of target</small>
+              </div>
+              <div className={styles.paceRow}>
+                <div className={styles.paceMeta}>
+                  <span>Clinics supplied</span>
+                  <span className={styles.pill} style={{ ["--c" as string]: "var(--coral)" }}>Behind</span>
+                </div>
+                <div className={styles.paceTrack}>
+                  <i className={styles.paceFill} style={{ ["--w" as string]: "50%", ["--c" as string]: "var(--coral)" }} />
+                  <b className={styles.paceMark} />
+                </div>
+                <small>9 / 18 · 50% of target</small>
+              </div>
+          <p className={styles.paceNote}>The marker is how far through the period we are. A bar past it is ahead of time.</p>
+        </div>
+
+        <div
+          className={`${styles.visual} ${styles.carry} ${index === 1 ? styles.visualOn : ""}`}
+          role="img"
+          aria-hidden={index !== 1}
+          aria-label="Children vaccinated is entered once in Q1 and carried forward into Q2 and Q3. The Q3 donor report is drafted from the same record, with no figures typed again."
+        >
+          <div className={styles.periods}>
+            <div className={styles.period}>
+              <p className={styles.periodHead}>Q1</p>
+              <div className={styles.periodCard}>
+                <span>Children vaccinated</span>
+                <strong>412</strong>
+                <em className={styles.entered}>Entered once</em>
+              </div>
+            </div>
+            <div className={styles.period}>
+              <p className={styles.periodHead}>Q2</p>
+              <div className={styles.periodCard}>
+                <span>Children vaccinated</span>
+                <strong>830</strong>
+                <em className={styles.carried}>Carried forward</em>
+              </div>
+            </div>
+            <div className={styles.period}>
+              <p className={styles.periodHead}>Q3</p>
+              <div className={styles.periodCard}>
+                <span>Children vaccinated</span>
+                <strong>1,240</strong>
+                <em className={styles.carried}>Carried forward</em>
+              </div>
+            </div>
+            <svg className={styles.carryArrows} viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true">
+              <path className={styles.carryPath} d="M28 10 H35" />
+              <path className={styles.carryPath} d="M65 10 H72" />
+            </svg>
+          </div>
+          <div className={styles.reportCard}>
+            <p className={styles.cardHead}>
+              <span>Q3 donor report</span>
+              <em>Drafted</em>
+            </p>
+            <p className={styles.reportLine}>
+              Children vaccinated rose to <mark>1,240</mark> in Q3, from 412 in Q1.
+            </p>
+            <small className={styles.reportNote}>Figures typed again: 0</small>
+          </div>
+        </div>
         </div>
       </div>
     </section>
