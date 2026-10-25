@@ -260,8 +260,8 @@
   background: var(--saffron);
 }
 
-/* Hero scene: one record, shown as the things it produces */
-.scene {
+/* Programme cycle: four numbered stages around one record */
+.cycle {
   position: relative;
   width: 100%;
   max-width: 520px;
@@ -271,323 +271,127 @@
   container-type: inline-size;
 }
 
-.threads {
+.cycle svg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+.guide {
   fill: none;
-  stroke: var(--saffron);
-  stroke-opacity: 0.45;
-  stroke-width: 1.5;
-  stroke-dasharray: 4 7;
-  animation: thread 14s linear infinite;
+  stroke: var(--line);
+  stroke-width: 1;
+  stroke-dasharray: 2 6;
 }
 
-@keyframes thread {
-  to {
-    stroke-dashoffset: -220;
-  }
-}
-
-.card {
-  position: absolute;
-  padding: 4cqw 4.4cqw;
-  border-radius: 3cqw;
-  background: linear-gradient(160deg, var(--bg-3), var(--bg-2));
-  border: 1px solid var(--line);
-  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
-  font-size: clamp(10px, 2.5cqw, 13px);
-  animation: bob 9s ease-in-out infinite;
-}
-
-@keyframes bob {
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
-.cardHead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 1.4em;
-  font: 500 0.85em var(--mono);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
-.cardHead em {
-  font-style: normal;
-  color: var(--saffron);
-  white-space: nowrap;
-}
-
-.cardIndicators {
-  left: 0;
-  top: 2%;
-  width: 57%;
-  z-index: 2;
-}
-
-.ind {
-  margin-bottom: 1.1em;
-}
-
-.ind div {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--muted);
-  margin-bottom: 0.45em;
-}
-
-.ind strong {
-  color: var(--ink);
-  font: 500 0.92em var(--mono);
-  white-space: nowrap;
-}
-
-.ind i {
-  display: block;
-  height: 0.5em;
-  border-radius: 1em;
-  background: rgba(238, 242, 236, 0.08);
-  overflow: hidden;
-}
-
-.ind i::after {
-  content: "";
-  display: block;
-  height: 100%;
-  width: var(--w);
-  border-radius: inherit;
-  background: var(--c);
-  transform-origin: left;
-  animation: fill 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-
-@keyframes fill {
-  from {
-    transform: scaleX(0);
-  }
-}
-
-.spark {
-  display: block;
-  width: 100%;
-  height: 3.4em;
-  margin-top: 0.4em;
-}
-
-.cardMap {
-  right: 0;
-  top: 0;
-  width: 42%;
-  animation-delay: -3s;
-}
-
-.mapArt {
-  position: relative;
-  aspect-ratio: 1.2;
-  border-radius: 1.2em;
-  background:
-    radial-gradient(circle at 30% 40%, rgba(63, 193, 166, 0.18), transparent 55%),
-    radial-gradient(circle at 75% 65%, rgba(116, 184, 230, 0.14), transparent 50%),
-    radial-gradient(rgba(238, 242, 236, 0.16) 1px, transparent 1.4px) 0 0 / 9px 9px,
-    var(--bg);
-  overflow: hidden;
-}
-
-.mapArt span {
-  position: absolute;
-  width: 1em;
-  height: 1em;
-  margin: -0.5em 0 0 -0.5em;
-  border-radius: 50%;
-  background: var(--c);
-  box-shadow: 0 0 0 0.35em color-mix(in srgb, var(--c) 28%, transparent);
-  animation: ping 3.2s ease-out infinite;
-}
-
-.mapArt span:nth-child(2n) {
-  animation-delay: -1.1s;
-}
-
-.mapArt span:nth-child(3n) {
-  animation-delay: -2.1s;
-}
-
-@keyframes ping {
-  50% {
-    box-shadow: 0 0 0 0.9em color-mix(in srgb, var(--c) 6%, transparent);
-  }
-}
-
-.legend {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-  margin: 0.9em 0 0;
-  color: var(--muted);
-  font-size: 0.9em;
-}
-
-.legend b {
-  width: 0.7em;
-  height: 0.7em;
-  border-radius: 50%;
-}
-
-.legend b:not(:first-child) {
-  margin-left: 0.8em;
-}
-
-.cardReport {
-  left: 6%;
-  bottom: 4%;
-  width: 52%;
-  z-index: 3;
-  background: #f4f1e8;
-  color: #1c2a25;
-  animation-delay: -5s;
-}
-
-.cardReport .cardHead {
-  color: #1c2a25;
-}
-
-.cardReport .cardHead em {
-  color: #a8710f;
-}
-
-.line {
-  display: block;
-  height: 0.5em;
-  border-radius: 1em;
-  background: rgba(28, 42, 37, 0.16);
-  margin-bottom: 0.9em;
-}
-
-.claim {
-  margin: 0 0 0.9em;
-  line-height: 1.45;
-}
-
-.claim mark {
-  background: rgba(242, 181, 68, 0.45);
-  color: inherit;
-  padding: 0.1em 0.25em;
-  border-radius: 0.3em;
-  font-weight: 500;
-}
-
-.claim small {
-  display: inline-flex;
-  gap: 0.4em;
-  margin-top: 0.6em;
-  padding: 0.25em 0.7em;
-  border-radius: 1em;
-  background: #1c2a25;
-  color: #bfeadf;
-  font: 0.82em var(--mono);
-}
-
-.claim small b {
-  color: var(--teal);
-}
-
-.cardReady {
-  right: 2%;
-  bottom: 12%;
-  display: flex;
-  align-items: center;
-  gap: 3cqw;
-  padding: 3.2cqw 4.4cqw 3.2cqw 3.2cqw;
-  z-index: 3;
-  animation-delay: -7s;
-}
-
-.cardReady svg {
-  width: 11cqw;
-  height: 11cqw;
-  transform: rotate(-90deg);
-}
-
-.dialTrack,
-.dialFill {
+.arcs path {
   fill: none;
-  stroke-width: 7;
-}
-
-.dialTrack {
-  stroke: rgba(238, 242, 236, 0.1);
-}
-
-.dialFill {
-  stroke: var(--teal);
+  stroke-width: 4;
   stroke-linecap: round;
-  stroke-dasharray: 163.4;
-  stroke-dashoffset: 13;
-  animation: dial 1.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  stroke-dasharray: 1 0;
 }
 
-@keyframes dial {
-  from {
-    stroke-dashoffset: 163.4;
-  }
-}
-
-.cardReady strong {
-  display: block;
-  font: 500 clamp(18px, 5.4cqw, 28px) var(--serif);
-  line-height: 1;
-  color: var(--ink);
-}
-
-.cardReady span {
-  display: block;
-  margin-top: 0.3em;
-  color: var(--muted);
-  font-size: clamp(10px, 2.3cqw, 12px);
-}
-
-.chip {
+.hub {
   position: absolute;
-  display: inline-flex;
+  left: 50%;
+  top: 50%;
+  width: 25%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.6em;
-  padding: 0.55em 1.1em;
-  border-radius: 2em;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  font: clamp(10px, 2.3cqw, 12px) var(--sans);
-  white-space: nowrap;
-  z-index: 4;
-}
-
-.chip b {
-  width: 0.7em;
-  height: 0.7em;
+  justify-content: center;
+  text-align: center;
+  padding: 3%;
   border-radius: 50%;
-  background: var(--teal);
+  background: radial-gradient(circle at 50% 35%, var(--bg-3), var(--bg-2));
+  border: 1px solid var(--line);
+  box-shadow: 0 0 0 1.6cqw rgba(242, 181, 68, 0.07), 0 20px 50px -20px rgba(0, 0, 0, 0.8);
 }
 
-.chipEvidence {
-  left: 4%;
-  top: 57%;
+.hub strong {
+  font: 500 clamp(14px, 4.2cqw, 22px) var(--serif);
+  line-height: 1.1;
+  color: var(--ink);
 }
 
-.chipActivity {
-  right: 2%;
-  top: 52%;
+.hub span {
+  margin-top: 0.4em;
+  font-size: clamp(9px, 2cqw, 11px);
+  line-height: 1.3;
+  color: var(--muted);
 }
 
-.chipActivity b {
-  background: var(--saffron);
+.stage {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 2.4cqw;
+  width: 32cqw;
+  transform: translateY(-50%);
+}
+
+.stage b {
+  display: block;
+  font: 500 clamp(12px, 3cqw, 15px) var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c);
+}
+
+.stage small {
+  display: block;
+  margin-top: 0.25em;
+  font-size: clamp(11px, 2.6cqw, 13.5px);
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 11.5cqw;
+  height: 11.5cqw;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--c);
+  box-shadow: 0 0 0 1.2cqw color-mix(in srgb, var(--c) 14%, transparent);
+  font: 500 clamp(16px, 5cqw, 26px) var(--serif);
+  color: var(--c);
+}
+
+/* Left-hand stages put the badge on the right, next to the ring. */
+.nodePlan,
+.nodeDemo {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.nodePlan {
+  --c: var(--teal);
+  left: calc(35% - 5.75cqw - 32cqw - 2.4cqw + 11.5cqw + 2.4cqw);
+  top: 35%;
+}
+
+.nodeDeliver {
+  --c: var(--saffron);
+  left: calc(65% - 5.75cqw);
+  top: 35%;
+}
+
+.nodeMonitor {
+  --c: var(--sky);
+  left: calc(65% - 5.75cqw);
+  top: 65%;
+}
+
+.nodeDemo {
+  --c: var(--coral);
+  left: calc(35% - 5.75cqw - 32cqw + 11.5cqw);
+  top: 65%;
 }
 
 /* Statement band */
@@ -1266,7 +1070,7 @@
     font-size: 30px;
   }
 
-  .scene {
+  .cycle {
     max-width: 460px;
   }
 
@@ -1280,23 +1084,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .threads,
-  .card,
-  .mapArt span,
-  .ind i::after,
-  .dialFill {
-    animation: none;
-  }
 
   .home *,
   .home *::before,
   .home *::after {
     transition: none !important;
-  }
-}
-
-@media (max-width: 600px) {
-  .chip {
-    display: none;
   }
 }
