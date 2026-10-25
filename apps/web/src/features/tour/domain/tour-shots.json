@@ -4,21 +4,27 @@
   "shots": {
     "dashboard-demo-project": null,
     "project-setup": null,
-    "donor-template": {
-      "x": 0.18888888888888888,
-      "y": 0.4288888888888889,
-      "w": 0.7875,
-      "h": 0.5311111111111111
-    },
+    "donor-template": null,
     "logframe-indicators": null,
     "evidence": null,
     "reporting-period": null,
+    "ai-draft": {
+      "x": 0.5423611111111111,
+      "y": 0.9511111111111111,
+      "w": 0.0763888888888889,
+      "h": 0.04888888888888889
+    },
     "report-editor": null,
     "activity-capture": null,
     "indicator-entry": null,
     "closing-report": null,
     "team": null,
     "compliance": null,
-    "export": null
+    "export": null,
+    "plan-timeline": null,
+    "data-center": null,
+    "infographics": null,
+    "my-work": null,
+    "portfolio": null
   }
 }

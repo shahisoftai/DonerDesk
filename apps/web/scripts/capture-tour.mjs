@@ -43,6 +43,11 @@ const STEPS = [
   ["team", "/team", "main"],
   ["compliance", "/compliance", '[data-tour-id="compliance-checklist"]'],
   ["export", "/reports/{P}/export", '[data-tour-id="export-report"]'],
+  ["plan-timeline", "/activities", "main"],
+  ["data-center", "/data", "main"],
+  ["infographics", "/infographics", "main"],
+  ["my-work", "@/my-work", "main"],
+  ["portfolio", "@/portfolio", "main"],
 ];
 
 const browser = CDP ? await chromium.connectOverCDP(CDP) : await chromium.launch();

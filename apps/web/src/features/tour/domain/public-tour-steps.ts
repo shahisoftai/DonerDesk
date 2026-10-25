@@ -27,12 +27,38 @@ const EXTRA: Record<string, TourStep> = {
     title: "The right people, the right access",
     body: "Invite colleagues, partners and viewers. Roles decide who can write, review, approve and export.",
   },
+  "plan-timeline": {
+    id: "plan-timeline", route: "/projects/{projectId}/activities", targetSelector: "",
+    title: "Plan the work on a timeline",
+    body: "Plan activities ahead as a list or a Gantt-style timeline. Late items are flagged on their own when their date passes, and you can move them by dragging. Each completed activity links back to the plan.",
+  },
+  "data-center": {
+    id: "data-center", route: "/projects/{projectId}/data", targetSelector: "",
+    title: "Every number on one sheet",
+    body: "The Data Center puts every indicator, period, target and recorded value in one table. Import a spreadsheet, export it, or chart any measure. A gap shows as Not measured, never as zero.",
+  },
+  "infographics": {
+    id: "infographics", route: "/projects/{projectId}/infographics", targetSelector: "",
+    title: "Infographics for donors and the public",
+    body: "Design a one-page infographic from your verified results in English, French, Spanish or Arabic. Export it as PNG, PDF or SVG, or share a link that expires.",
+  },
+  "my-work": {
+    id: "my-work", route: "/my-work", targetSelector: "",
+    title: "Your work, by when it is due",
+    body: "Everything that is yours in one list: planned activities, requests from colleagues, report deadlines and indicator values that are due.",
+  },
+  "portfolio": {
+    id: "portfolio", route: "/portfolio", targetSelector: "",
+    title: "Every project at a glance",
+    body: "For organisations with several projects. See delivery, problems and risks, and the next report for each live project, most pressing first.",
+  },
 };
 
 const ORDER = [
   "dashboard-demo-project", "project-setup", "logframe-indicators", "donor-template",
-  "activity-capture", "evidence", "reporting-period", "indicator-entry",
-  "ai-draft", "report-editor", "compliance", "export", "closing-report", "team",
+  "plan-timeline", "activity-capture", "evidence", "reporting-period", "indicator-entry",
+  "data-center", "ai-draft", "report-editor", "compliance", "export",
+  "infographics", "closing-report", "team", "my-work", "portfolio",
 ];
 
 export const PUBLIC_TOUR_STEPS: readonly TourStep[] = ORDER.map((id) => {
