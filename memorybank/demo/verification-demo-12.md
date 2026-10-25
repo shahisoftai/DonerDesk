@@ -401,4 +401,81 @@ Project wizard · logframe import · indicator import · semantics · location/s
 
 ---
 
-*Run log follows below as sections are completed (setup run log, month 1 run log, findings, ids).*
+## 18. Setup run log (2026-10-25, production, demo tenant, one visible browser, UI only)
+
+Driver: a headed Chromium on CDP port 9340 driven by Playwright scripts (the user's own Playwright-MCP browser is not reachable from Claude Code); a second profile on port 9341 is the invited approver. Repeatable inputs are in `scripts/demo-mnch-sd/`.
+
+**Two builds.** Build 1 (`98cb77a7-8412-4242-9697-7161a347e93d`, renamed `[DEMO-12-SUPERSEDED]`, code `SD-MNCH-20261101-B1`) was abandoned after F-12: the logframe pasted breadth-first (all outcomes, all outputs, all activities) was parented to the nearest earlier item, so every output sat under OC2 and every activity under output 2.3; its 48 plan rows inherited the wrong output and no screen can repair it (F-13). **Build 2 (live): `2da5dc08-fbd8-4054-a454-c30b79ff3d0c`**, logframe pasted depth-first.
+
+| Area | Result |
+| --- | --- |
+| Wizard | 3 steps; country pre-filled "Kenya" (labelled as suggested), currency "SDG" once Sudan was chosen, changed to USD by hand |
+| Logframe / indicators | 25 items and 17 indicators from one paste each; semantics one page each (17 visits); location group targets on 7 indicators |
+| Templates | Both DOCX extracted on build 1 (Monthly 8 sections, Final 22), approved, saved to the library, reused on build 2 ("Use in this project"); default for their type |
+| Profile / project | English, Formal, 15 days, second approver ON, **file behind every verified value ON**, finance typed, auto-create periods OFF; zone Africa/Khartoum; 9 members |
+| Invitations | Sara Mahgoub (Project Manager) accepted and approved the report in a second browser profile; the outside partner (Viewer, external) accepted and saw **only** the project it was invited to (it was invited to build 1; new project, other demos, Team and Settings are 404 / permission denied) |
+| Work plan | Wizard 48 rows (7 monthly series) + import 46 rows; a first import with one deliberate bad row was refused whole, naming the row (T-10 passed) |
+| Map | 3 of 6 locations placed (F-16); hand pin tried and found unusable (F-40) |
+| Calendar | "Create all 5 periods" Nov–Mar after the workspace folder was retried by hand (F-20); Gedaref Situation report (1–8 Feb, 5,200 people, named source) created; April left for the closing plan |
+| Setup | READY, marked complete, project ACTIVE |
+
+## 19. Month 1 run log — November 2026
+
+| Area | Result |
+| --- | --- |
+| Activity records | 21 through the activity form (the first by the plain-words fill-in), bulk-accepted in one click |
+| Evidence | 16 files uploaded inside the form (type, confidentiality, indicator per file) + 7 afterwards; 20 verified in bulk, 1 sent back with a reason (supply delivery notes), 3 sensitive ones still waiting (F-38) |
+| Indicator values | All 17 saved with location and sex breakdowns that reconcile to their totals; **17 of 17 verified** after every value had a file linked to its period (F-26, F-27) |
+| Plan | 20 plan rows ending in November marked Done |
+| Story | 5 of 5 answered and 2 compliance statements; autosaved and re-read after reload |
+| Report | AI Reporter wrote 8 sections in about 2 minutes; 4 true statements flagged and decided with a note; two submission blockers were date ranges read as figures (F-34); 8 of 8 sections approved; **submitted for review; approved by Sara** (second-approver rule, T-23 passed); exported as PDF (final copy, sealed), Word and Excel (internal copies); the 3 sensitive files were excluded by default |
+| Data Center | Sheet shows all 17 values; no by-location tab (the functions exist; not built) |
+| Infographic | "Results & Impact" designed and published as PNG: target vs actual and comparison tables by location are right; two key figures are wrong (F-36) |
+| Risks | 3 raised in plain words (supply route, flooded tracks, unlockable registers) |
+
+**What the November report says (checked against the data plan):** 1,420 reached, 410 zero-dose children vaccinated, 38 referrals, 54 + 60 trained, 3 centres handed over, rates 42/24/30/59 %, stock-out 3.1 days; every figure equals §11.
+
+## 20. Findings (H high, M medium, L low)
+
+| # | Sev | What happened | Status |
+| --- | --- | --- | --- |
+| F-7 | H | "Save profile" saved but showed "Received an unexpected response shape." | Fixed in code, committed `6a008b4`, **not deployed** |
+| F-12 | H | Logframe import parented outputs/activities to the nearest earlier item | Fixed in code (`inferParentByCode`) `6a008b4`, **not deployed** |
+| F-34 | H | A span of days ("15 to 30 November", "26 and 27 November") was read as a figure and blocked submission; a note cannot clear it | Fixed in code (`contradiction-lint.ts` + test), committed, **not deployed** |
+| F-27 | H | Evidence upload "Use as proof for → Indicator" has no reporting-period choice; the file does not count for an existing value and the grid does not say why | Open |
+| F-28 | H | Story panel said "20 of the 20 activities planned … were not held" while all 20 rows were Done; Overview says "Delivery 0 of 94", infographic "0 / 94 completed" | Open |
+| F-30 | H | Report results table shows "155 % of target" for a lower-is-better indicator (OP1-3); baseline readings labelled "Below expectation" | Open |
+| F-16 | M | Gazetteer misses "Ed Damazin", "Damazin", "Bur Sudan", Rabak, Sinja | Spellings fixed in code (`PLACE_SPELLINGS`) `6a008b4`; Rabak/Sinja open |
+| F-13 | M | Moving a logframe item is behind `LOGFRAME_DND_ENABLED` (off); a plan row's logframe link / location cannot be edited later | Open — decision |
+| F-39 | M | Plan item page says "Logframe activity: Not linked" for rows created from a code; location not editable | Open |
+| F-40 | M | "Place it on the map" is a world map; a click for Rabak landed in India | Open |
+| F-17 | M | "Not placed" list repeats a row per monthly repeat, no hint how to fix | Open |
+| F-20 | M | Workspace folder "being provisioned" until Retry was clicked | Open |
+| F-23 | M | Only 3 planned-activity suggestions; right row missing 3 of 6 times | Open |
+| F-25 | M | Breakdown editor makes the user type the six location names the indicator already has | Open |
+| F-26 | M | "Verify all" verified 10 of 17 and said nothing about the 7 | Open |
+| F-31 | M | Donor prose said "the supply delivery notes require verification" (workflow state leaked into the report) | Open |
+| F-32 | M | Flag decision offers "This matches a verified indicator" where it cannot work | Open |
+| F-35 | M | Second approver's Home says nothing is waiting while a notification says a report is | Open |
+| F-36 | M | Infographic key figures: "Locations 12" counts spellings; empty "Outcome statements" box printed | Open |
+| F-38 | M | Bulk evidence verify silently skips sensitive files | Open |
+| F-9 | M | Team page lists 21 expired invitations for existing members | Open |
+| F-3 | M | Setup blockers print raw codes (`WORKSPACE_PENDING`) | Open |
+| F-19 | M | "Create all 5 periods" offered before setup is complete, then fails five times | Open |
+| L | L | F-1, 2, 4, 5, 6, 8, 10, 14, 15, 21, 22, 24, 29, 33 (long "start from" list; country suggestion; two breakdown places; template Reviewed/Approved wording and intermittent approve; no confirmation after Save profile; Draft project shows Status ACTIVE; unsearchable invite project list; library offers used template; CSV column-shift message; plain-words date; duplicate DOM id `activityEndDate`; raw period UUID in grid heading; doubled "1 1" section number; no feedback on bulk approve) | Open |
+
+**Deployment:** the production deploy of the three code fixes was blocked by the permission classifier ("Production Deploy"), even after the user's go-ahead in chat; a Bash permission rule in settings is needed. Tests: `logframe-import.test.mjs`, `site-map.test.mts`, `contradiction-lint.test.mjs` pass.
+
+## 21. Not exercised in this run
+
+Programme/grant and budget lines, custom boundary layer (org-wide), Copy project setup, organisation export, Data Center import, offline queue, withdraw a record, plan Timeline drag, the Situation report generation, December–April, the guided Final report, and every test point after T-24 not named above.
+
+## 22. Ids
+
+| Item | Id |
+| --- | --- |
+| Project (live) | `2da5dc08-fbd8-4054-a454-c30b79ff3d0c` |
+| Project (superseded build 1) | `98cb77a7-8412-4242-9697-7161a347e93d` |
+| Period Nov / Dec / Jan / Feb / Mar | `5819d282-6bae-4f34-a4c3-8a95784e8998` / `676c9f10-58ee-4349-95c8-8f40c2a1b5a1` / `1307f19a-2deb-428e-b16f-b00827dea57e` / `7ea6b4a9-90ba-4255-96dc-c81020b98ff0` / `50c45dfe-0e60-48cb-bd15-530ddd8234bc` |
+| Situation report (Gedaref) | `dcc6738d-55d8-4384-ac30-556755e002e2` |
+| Infographic (Results & Impact) | `b1918c0d-ed78-4a0c-b11b-0f927fb22054` |
