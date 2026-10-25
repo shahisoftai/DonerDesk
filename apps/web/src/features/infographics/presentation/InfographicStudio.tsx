@@ -383,11 +383,11 @@ function SectionPreview({ section, data, sheet, rows }: { section: SectionDraft;
   }
   if (section.kind === "CHART" && section.chart) {
     const built = buildDataChart(sheet, { ...section.chart, fromPeriodId: undefined, toPeriodId: undefined, showTarget: section.chart.showTarget ?? false });
-    if (!built.ok) return <p className="text-sm italic text-slate-400">STUDIO_HINT.chartEmpty</p>;
+    if (!built.ok) return <p className="text-sm italic text-slate-400">{STUDIO_HINT.chartEmpty}</p>;
     return <EChartFigure option={built.option} caption={built.notes.join(" · ") || undefined} />;
   }
   if (section.kind === "LOCATION_RESULTS") {
-    if (rows.length === 0) return <p className="text-sm italic text-slate-400">STUDIO_HINT.resultsEmpty</p>;
+    if (rows.length === 0) return <p className="text-sm italic text-slate-400">{STUDIO_HINT.resultsEmpty}</p>;
     return (
       <table className="w-full text-sm">
         <thead>
@@ -416,7 +416,7 @@ function SectionPreview({ section, data, sheet, rows }: { section: SectionDraft;
   }
   if (section.kind === "LOCATION_COMPARISON") {
     const matrix = comparisonMatrix(data, section.locationKeys);
-    if (matrix.indicators.length === 0) return <p className="text-sm italic text-slate-400">STUDIO_HINT.comparisonEmpty</p>;
+    if (matrix.indicators.length === 0) return <p className="text-sm italic text-slate-400">{STUDIO_HINT.comparisonEmpty}</p>;
     const locationNames = new Map(matrix.locations.map((key) => [key, data.indicators.flatMap((indicator) => (indicator.location.kind === "PROJECT_WIDE" ? [] : indicator.location.rows)).find((row) => row.key === key)?.location ?? key]));
     return (
       <table className="w-full text-sm">
@@ -448,7 +448,7 @@ function SectionPreview({ section, data, sheet, rows }: { section: SectionDraft;
   }
   if (section.kind === "REACH") {
     const reach = data.reach;
-    if (reach.overallUnique === 0) return <p className="text-sm italic text-slate-400">STUDIO_HINT.reachEmpty</p>;
+    if (reach.overallUnique === 0) return <p className="text-sm italic text-slate-400">{STUDIO_HINT.reachEmpty}</p>;
     const max = Math.max(1, ...reach.registeredByLocation.map((row) => row.unique));
     const attendances = reach.attendancesByActivityLocation.reduce((total, row) => total + row.attendances, 0);
     return (
@@ -478,7 +478,7 @@ function SectionPreview({ section, data, sheet, rows }: { section: SectionDraft;
     );
   }
   if (section.kind === "ACTIVITIES_BY_LOCATION") {
-    if (data.activities.rows.length === 0 && data.activities.unlocated === 0) return <p className="text-sm italic text-slate-400">STUDIO_HINT.activitiesEmpty</p>;
+    if (data.activities.rows.length === 0 && data.activities.unlocated === 0) return <p className="text-sm italic text-slate-400">{STUDIO_HINT.activitiesEmpty}</p>;
     const max = Math.max(1, ...data.activities.rows.map((row) => row.planned));
     return (
       <div className="space-y-1.5">
@@ -497,12 +497,12 @@ function SectionPreview({ section, data, sheet, rows }: { section: SectionDraft;
   }
   if (section.kind === "MAP") {
     const points = mapPoints(data);
-    if (points.length === 0) return <p className="text-sm italic text-slate-400">STUDIO_HINT.mapEmpty</p>;
+    if (points.length === 0) return <p className="text-sm italic text-slate-400">{STUDIO_HINT.mapEmpty}</p>;
     const mapped = siteMapData(
       points.map((point) => ({ id: point.id, title: point.title, location: point.location, signal: point.signal })),
       { country: data.project.country },
     );
-    if (mapped.points.length === 0) return <p className="text-sm italic text-slate-400">STUDIO_HINT.mapUnplaced</p>;
+    if (mapped.points.length === 0) return <p className="text-sm italic text-slate-400">{STUDIO_HINT.mapUnplaced}</p>;
     return <SiteMapFigure points={mapped.points} country={data.project.country} caption={`${mapped.points.length} site${mapped.points.length === 1 ? "" : "s"}${mapped.unplaced.length > 0 ? ` · ${mapped.unplaced.length} not placed` : ""}`} />;
   }
   if (section.kind === "TEXT") {
