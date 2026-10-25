@@ -98,3 +98,26 @@ test("ImportLogframeHandler emits one audit event with counts", async () => {
   assert.equal(events[0].eventType, "logframe.items.imported");
   assert.ok(events[0].newValue.includes('"created":1'));
 });
+
+test("ImportLogframeHandler parents outputs and activities by their numbering when the list is flat", async () => {
+  const repo = makeRepo();
+  let n = 0;
+  const handler = new ImportLogframeHandler({ generate: () => `id-${++n}` }, repo, { record: async () => {} });
+  const text = [
+    "Level,Code,Title",
+    "GOAL,G,Goal",
+    "OUTCOME,OC1,First outcome",
+    "OUTCOME,OC2,Second outcome",
+    "OUTPUT,1.1,Output one",
+    "OUTPUT,2.1,Output two",
+    "ACTIVITY,A1.1.1,Activity of one",
+    "ACTIVITY,A2.1.1,Activity of two",
+  ].join("\n");
+  const result = await handler.handle(ctx, { projectId: "p1", text });
+  assert.equal(result.ok, true);
+  const by = Object.fromEntries(result.value.items.map((i) => [i.code, i]));
+  assert.equal(by["1.1"].parentId, by["OC1"].id);
+  assert.equal(by["2.1"].parentId, by["OC2"].id);
+  assert.equal(by["A1.1.1"].parentId, by["1.1"].id);
+  assert.equal(by["A2.1.1"].parentId, by["2.1"].id);
+});

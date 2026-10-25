@@ -67,6 +67,17 @@ const mostPopulated = (places: readonly GazetteerPlace[]): GazetteerPlace => {
 };
 
 /**
+ * Spellings an officer types that are the same place under another transliteration of the bundled gazetteer's name
+ * ("Ed Damazin" is "Ad Damazin"; Bur Sudan is Port Sudan in Arabic). Keys are normalised; only the same town, never a neighbour.
+ */
+const PLACE_SPELLINGS: ReadonlyMap<string, string> = new Map([
+  ["ed damazin", "ad damazin"],
+  ["el damazin", "ad damazin"],
+  ["damazin", "ad damazin"],
+  ["bur sudan", "port sudan"],
+]);
+
+/**
  * The place an officer's location text means, or `null` when nothing matches — the caller lists it
  * as unplaced. The project's country disambiguates ("Springfield" at home beats "Springfield"
  * abroad) but is not a jail: an exact match elsewhere still resolves.
@@ -82,12 +93,12 @@ export function resolveSitePoint(location: string, country?: string): GazetteerP
   };
   let key = normalizePlace(location);
   if (!key) return null;
-  let found = resolve(byName.get(key));
+  let found = resolve(byName.get(PLACE_SPELLINGS.get(key) ?? key));
   // "Kampala, Central" or "Gulu Uganda": drop trailing words until a name matches (never below one word).
   const words = key.split(" ");
   for (let end = words.length - 1; !found && end >= 1; end -= 1) {
     key = words.slice(0, end).join(" ");
-    found = resolve(byName.get(key));
+    found = resolve(byName.get(PLACE_SPELLINGS.get(key) ?? key));
   }
   return found;
 }

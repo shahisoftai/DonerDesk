@@ -339,3 +339,10 @@ test("the bundled gazetteer is sane: coordinates in range, names present, no dup
     seen.add(key);
   }
 });
+
+test("resolveSitePoint reads another transliteration of the same town as that town", () => {
+  assert.equal(resolveSitePoint("Ed Damazin", "Sudan")?.name, "Ad Damazin");
+  assert.equal(resolveSitePoint("Damazin", "Sudan")?.name, "Ad Damazin");
+  assert.equal(resolveSitePoint("Bur Sudan", "Sudan")?.name, "Port Sudan");
+  assert.equal(resolveSitePoint("Sinja", "Sudan"), null);
+});
