@@ -24,3 +24,4 @@ export * from "./automations.js";
 export * from "./beneficiary.js";
 export * from "./submission-import.js";
 export * from "./progress-log.js";
+export * from "./location-key.js";

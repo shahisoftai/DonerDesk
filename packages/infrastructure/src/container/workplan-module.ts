@@ -181,7 +181,7 @@ export function createWorkplanModule(deps: WorkplanModuleDeps) {
     importWorkPlan: new ImportWorkPlanHandler(ids, plannedActivities, planContext, new PrismaMemberDirectory(prisma), logframe, audits),
   };
 
-  return { plannedActivities, planRevisions, planContext, planLinks, automationSettings, handlers };
+  return { plannedActivities, planRevisions, planContext, planLinks, automationSettings, beneficiaries, beneficiaryLinks, handlers };
 }
 
 /** The work plan's handlers by name, for the container's `handlers` type. */

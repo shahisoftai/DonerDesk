@@ -22,6 +22,7 @@ export * from "./contexts/billing/index.js";
 export * from "./contexts/memory/index.js";
 export * from "./contexts/finance/index.js";
 export * from "./contexts/workplan/index.js";
+export * from "./contexts/infographics/index.js";
 export * from "./contexts/tasks/index.js";
 export * from "./contexts/risks/index.js";
 export * from "./policies/index.js";

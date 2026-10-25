@@ -114,6 +114,10 @@
       "types": "./dist/contexts/workplan/index.d.ts",
       "import": "./dist/contexts/workplan/index.js"
     },
+    "./contexts/infographics/index.js": {
+      "types": "./dist/contexts/infographics/index.d.ts",
+      "import": "./dist/contexts/infographics/index.js"
+    },
     "./core/exhaustive.js": {
       "types": "./dist/core/exhaustive.d.ts",
       "import": "./dist/core/exhaustive.js"

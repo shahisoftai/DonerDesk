@@ -3,10 +3,11 @@ import assert from "node:assert/strict";
 import { findRawTokens } from "@donordesk/domain/core/copy-lint.js";
 import * as labels from "../../src/lib/labels.ts";
 import { fallbackReasonCopy, verificationReasonCopy, verificationResultCopy, flagClassCopy } from "../../src/lib/reporting-copy.ts";
+import * as infographicsCopy from "../../src/features/infographics/domain/infographics-copy.ts";
 
 /**
- * 25.7 — no raw code, id or snake_case key in any string a person reads. Every `*_LABEL` / `*_HINT` table in labels.ts
- * and every reporting-copy function is scanned, so a new entry that leaks a code fails here.
+ * 25.7 — no raw code, id or snake_case key in any string a person reads. Every `*_LABEL` / `*_HINT` table in labels.ts,
+ * the infographics copy tables and every reporting-copy function is scanned, so a new entry that leaks a code fails here.
  */
 
 function entries(): Array<[string, string]> {
@@ -14,6 +15,14 @@ function entries(): Array<[string, string]> {
   for (const [name, value] of Object.entries(labels)) {
     if (!/_(LABEL|HINT)$/.test(name) || value === null || typeof value !== "object") continue;
     for (const [key, text] of Object.entries(value as Record<string, unknown>)) if (typeof text === "string") out.push([`${name}.${key}`, text]);
+  }
+  for (const [name, value] of Object.entries(infographicsCopy)) {
+    if (value === null || typeof value !== "object") continue;
+    if (/_(LABEL|HINT)$/.test(name)) {
+      for (const [key, text] of Object.entries(value as Record<string, unknown>)) if (typeof text === "string") out.push([`infographics.${name}.${key}`, text]);
+    } else if (typeof value === "object") {
+      for (const [key, text] of Object.entries(value as Record<string, unknown>)) if (typeof text === "string") out.push([`infographics.${name}.${key}`, text]);
+    }
   }
   return out;
 }

@@ -81,6 +81,11 @@ export class PrismaBeneficiaryLinkRepository implements IBeneficiaryLinkReposito
     return ok(rows.map((r) => r.beneficiaryId));
   }
 
+  async findByProject(projectId: string, tenantId: TenantId): Promise<Result<Array<{ plannedActivityId: string; beneficiaryId: string }>, DomainError>> {
+    const rows = await this.prisma.beneficiaryActivityLink.findMany({ where: { tenantId: tenantId.toString(), projectId }, select: { plannedActivityId: true, beneficiaryId: true } });
+    return ok(rows);
+  }
+
   async add(input: { tenantId: string; projectId: string; plannedActivityId: string; beneficiaryIds: string[]; userId: string; now: Date }): Promise<Result<number, DomainError>> {
     const res = await this.prisma.beneficiaryActivityLink.createMany({
       data: input.beneficiaryIds.map((beneficiaryId) => ({ id: `${input.plannedActivityId}:${beneficiaryId}`, tenantId: input.tenantId, projectId: input.projectId, plannedActivityId: input.plannedActivityId, beneficiaryId, createdById: input.userId, createdAt: input.now })),

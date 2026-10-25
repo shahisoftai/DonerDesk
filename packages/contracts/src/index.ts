@@ -21,3 +21,4 @@ export * from "./validation-text.js";
 export * from "./workplan.js";
 export * from "./tasks.js";
 export * from "./risks.js";
+export * from "./infographics.js";

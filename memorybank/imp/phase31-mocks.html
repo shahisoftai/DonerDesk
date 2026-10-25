@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DonorDesk Infographic Studio — template mocks (Phase 31)</title>
+<style>
+  :root{
+    --blue:#2f7be8; --amber:#f59e0b; --green:#10b981; --violet:#8b5cf6; --red:#ef4444; --cyan:#06b6d4;
+    --ink:#111827; --mut:#6b7280; --line:#e5e7eb; --bg:#f8fafc; --soft:#eef4fd;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:#d8dee7; font-family:Helvetica,Arial,sans-serif; color:var(--ink); padding:28px 0 60px;}
+  .wrap{width:794px; margin:0 auto 56px;}
+  .mocklabel{font-size:13px; color:#3b4657; margin:0 0 8px 2px; font-weight:bold; letter-spacing:.4px;}
+  .canvas{width:794px; height:1123px; background:#fff; box-shadow:0 6px 24px rgba(15,23,42,.25);
+    display:flex; flex-direction:column; padding:34px 38px 0; position:relative; overflow:hidden;}
+  .canvas > *:not(.ft){zoom:1.17;}
+  /* header / footer */
+  .hd{display:flex; align-items:center; gap:12px; border-bottom:3px solid var(--blue); padding-bottom:12px;}
+  .logo{width:40px; height:40px; border-radius:9px; background:linear-gradient(135deg,var(--blue),var(--cyan));
+    color:#fff; font-weight:bold; display:flex; align-items:center; justify-content:center; font-size:15px;}
+  .hd .org{font-size:11px; color:var(--mut); letter-spacing:1.2px; text-transform:uppercase;}
+  .hd .t{font-size:21px; font-weight:bold; line-height:1.15;}
+  .hd .right{margin-left:auto; text-align:right;}
+  .chip{display:inline-block; background:var(--soft); color:var(--blue); border:1px solid #cfe0fa;
+    font-size:11px; font-weight:bold; padding:4px 10px; border-radius:20px;}
+  .chip.grey{background:#f3f4f6; color:var(--mut); border-color:var(--line);}
+  .sub{font-size:11.5px; color:var(--mut); margin-top:5px;}
+  .ft{margin-top:auto; border-top:1px solid var(--line); padding:9px 0 12px; font-size:9.5px; color:var(--mut);
+    display:flex; justify-content:space-between; gap:12px;}
+  .ft b{color:#374151;}
+  /* generic sections */
+  .sec{margin-top:16px;}
+  .sec h3{font-size:12px; letter-spacing:1.1px; text-transform:uppercase; color:var(--blue); margin-bottom:8px;}
+  .sec h3 span{color:var(--mut); font-weight:normal; text-transform:none; letter-spacing:0;}
+  .grid{display:grid; gap:10px;}
+  .card{border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:#fff;}
+  .card.soft{background:var(--bg);}
+  .kpis{grid-template-columns:repeat(4,1fr);}
+  .kpi .n{font-size:26px; font-weight:bold; color:var(--ink); line-height:1.05;}
+  .kpi .n small{font-size:13px; color:var(--mut); font-weight:normal;}
+  .kpi .l{font-size:10.5px; color:var(--mut); margin-top:3px; line-height:1.25;}
+  .kpi .d{font-size:10px; margin-top:4px; font-weight:bold;}
+  .up{color:var(--green);} .warn{color:var(--amber);} .bad{color:var(--red);}
+  .cols2{grid-template-columns:1fr 1fr;} .cols32{grid-template-columns:1.35fr 1fr;} .cols23{grid-template-columns:1fr 1.35fr;}
+  /* bar rows */
+  .brow{display:flex; align-items:center; gap:8px; margin:7px 0;}
+  .brow .bl{width:128px; font-size:11px; color:#374151; text-align:right; line-height:1.15;}
+  .brow .track{flex:1; height:16px; background:var(--bg); border-radius:8px; overflow:hidden; position:relative;}
+  .brow .fill{height:100%; border-radius:8px;}
+  .brow .bv{width:150px; font-size:10.5px; color:var(--mut);}
+  .brow .bv b{color:var(--ink); font-size:11.5px;}
+  .target{position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink); opacity:.55;}
+  /* stacked bar (narrow cards) */
+  .mbrow{margin:9px 0 11px;}
+  .mbrow .mrow{display:flex; justify-content:space-between; font-size:11px; color:#374151; margin-bottom:4px;}
+  .mbrow .mrow b{font-variant-numeric:tabular-nums;}
+  .mbrow .track{height:14px; background:var(--bg); border-radius:7px; overflow:hidden;}
+  .mbrow .fill{height:100%; border-radius:7px;}
+  /* table */
+  table.mx{width:100%; border-collapse:collapse; font-size:10.5px;}
+  .mx th{font-size:9.5px; text-transform:uppercase; letter-spacing:.6px; color:var(--mut); text-align:left;
+    border-bottom:2px solid var(--line); padding:5px 6px;}
+  .mx td{border-bottom:1px solid var(--line); padding:6px; color:#1f2937;}
+  .mx td.num{text-align:right; font-variant-numeric:tabular-nums;}
+  .mx tr td:first-child{font-weight:bold;}
+  .nr{color:#9ca3af; font-style:italic;} .na{color:#9ca3af;}
+  .tick{color:var(--green); font-size:9px; vertical-align:super;} .dot{color:var(--amber); font-size:11px; vertical-align:super;}
+  /* legend + badges */
+  .legend{display:flex; gap:14px; flex-wrap:wrap; font-size:10px; color:var(--mut); margin-top:7px;}
+  .legend i{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px;}
+  .badge{display:inline-block; font-size:9px; font-weight:bold; padding:2px 7px; border-radius:9px; vertical-align:middle;}
+  .badge.unver{background:#fef3c7; color:#92400e; border:1px solid #fcd34d;}
+  .badge.plan{background:#e0e7ff; color:#3730a3; border:1px solid #c7d2fe;}
+  /* donut */
+  .donut{width:130px; height:130px; border-radius:50%; position:relative; margin:4px auto;}
+  .donut::after{content:""; position:absolute; inset:26px; background:#fff; border-radius:50%;}
+  .donut .c{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    z-index:2; font-size:19px; font-weight:bold;}
+  /* timeline */
+  .tl{position:relative; margin:26px 8px 14px;}
+  .tl .line{position:absolute; left:0; right:0; top:5px; height:3px; background:var(--line); border-radius:2px;}
+  .tl .done{position:absolute; left:0; top:5px; height:3px; background:var(--blue); border-radius:2px;}
+  .tl .pts{display:flex; justify-content:space-between; position:relative;}
+  .tl .pt{width:13px; height:13px; border-radius:50%; background:#fff; border:3px solid var(--blue); z-index:2;}
+  .tl .pt.grey{border-color:#cbd5e1;} .tl .pt.late{border-color:var(--red);}
+  .tl .lb{font-size:9.5px; color:var(--mut); text-align:center; margin-top:7px; width:86px;}
+  .tl .cols{display:flex; justify-content:space-between;}
+  /* map */
+  .map{background:#eaf2fb; border:1px solid #d7e4f5; border-radius:10px; position:relative; overflow:hidden;}
+  .map svg{display:block; width:100%;}
+  .pin{position:absolute; width:12px; height:12px; border-radius:50%; border:2.5px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.35);}
+  .map .mlabel{position:absolute; font-size:9px; color:#334155; font-weight:bold; text-shadow:0 0 3px #fff;}
+  ul.plain{list-style:none; font-size:11px; color:#374151;}
+  ul.plain li{padding:5px 0 5px 16px; position:relative; border-bottom:1px dashed var(--line); line-height:1.35;}
+  ul.plain li::before{content:"—"; position:absolute; left:0; color:var(--blue); font-weight:bold;}
+  .quote{border-left:3px solid var(--violet); padding:6px 10px; font-size:11px; color:#374151; font-style:italic; margin:8px 0;}
+  .note{font-size:9.5px; color:#92400e; background:#fef3c7; border:1px solid #fcd34d; border-radius:7px; padding:6px 9px; margin-top:8px; line-height:1.4;}
+  .chips{display:flex; gap:7px; flex-wrap:wrap;}
+  .legend.donut-lg{display:grid; grid-template-columns:repeat(2,auto); gap:5px 22px; justify-content:center; text-align:left;}
+  .dur{margin-top:10px;}
+  .dur .dtrack{height:10px; background:var(--bg); border-radius:5px; overflow:hidden; position:relative;}
+  .dur .dfill{height:100%; background:linear-gradient(90deg,var(--blue),var(--cyan)); border-radius:5px;}
+  .dur .dmarks{display:flex; justify-content:space-between; font-size:9.5px; color:var(--mut); margin-top:4px;}
+  /* ═══ Studio editor mocks ═══ */
+  .wrap.land{width:1120px;}
+  .canvas.land{width:1120px; height:760px; padding:0; display:block;}
+  .bchrm{background:#e2e8f0; padding:7px 14px; display:flex; align-items:center; gap:7px; border-radius:0;}
+  .bchrm i{width:10px; height:10px; border-radius:50%; display:inline-block;}
+  .bchrm .url{flex:1; background:#fff; border-radius:12px; font-size:10px; color:var(--mut); padding:4px 14px; text-align:center;}
+  .tbar{background:#fff; border-bottom:1px solid var(--line); padding:10px 16px; display:flex; align-items:center; gap:10px;}
+  .tbar .ttl{font-weight:bold; font-size:14px;}
+  .sel2{border:1px solid var(--line); border-radius:8px; font-size:11px; padding:6px 10px; color:#374151; background:#fff; display:inline-flex; gap:6px; align-items:center;}
+  .sel2 b{color:var(--ink);}
+  .btn{border-radius:8px; font-size:11px; font-weight:bold; padding:7px 13px; border:1px solid transparent; cursor:default;}
+  .btn.pri{background:var(--blue); color:#fff;}
+  .btn.sec{background:#fff; border-color:var(--line); color:#374151;}
+  .btn.gh{background:transparent; color:var(--mut); border-color:transparent;}
+  .tbar .right{margin-left:auto; display:flex; gap:8px; align-items:center;}
+  .app{display:grid; grid-template-columns:225px 1fr 262px; height:520px; background:var(--bg);}
+  .panel{background:#fff; border-right:1px solid var(--line); padding:12px; overflow:hidden;}
+  .panel.r{border-right:none; border-left:1px solid var(--line);}
+  .panel h4{font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--mut); margin:4px 0 9px;}
+  .sec-item{display:flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:8px; padding:8px 9px; font-size:11px; color:#374151; margin-bottom:6px; background:#fff;}
+  .sec-item .grip{color:#cbd5e1; letter-spacing:1px; font-size:10px;}
+  .sec-item .eye{margin-left:auto; color:#94a3b8; font-size:10px;}
+  .sec-item.on{border-color:var(--blue); box-shadow:0 0 0 2px #dbeafe; color:var(--ink); font-weight:bold;}
+  .addbtn{width:100%; border:1px dashed #cbd5e1; border-radius:8px; padding:7px; text-align:center; font-size:11px; color:var(--blue); background:transparent; margin-top:2px;}
+  .add-menu{border:1px solid var(--line); border-radius:8px; background:#fff; font-size:10.5px; color:#374151; margin-top:6px; overflow:hidden;}
+  .add-menu div{padding:6px 10px; border-bottom:1px solid var(--line); display:flex; gap:7px;}
+  .add-menu div:last-child{border-bottom:none;}
+  .add-menu .k{color:#94a3b8; width:14px; text-align:center;}
+  .stage{padding:18px 26px; display:flex; align-items:flex-start; justify-content:center; overflow:hidden; position:relative;}
+  .mini{width:470px; background:#fff; box-shadow:0 4px 18px rgba(15,23,42,.18); border-radius:4px; padding:20px 24px 14px; font-size:9px; position:relative;}
+  .mini .mhd{display:flex; align-items:center; gap:8px; border-bottom:2px solid var(--blue); padding-bottom:8px; margin-bottom:10px;}
+  .mini .mlogo{width:22px; height:22px; border-radius:5px; background:linear-gradient(135deg,var(--blue),var(--cyan)); color:#fff; font-weight:bold; display:flex; align-items:center; justify-content:center; font-size:9px;}
+  .mini .mt{font-size:12.5px; font-weight:bold; line-height:1.15;}
+  .mini .mchip{margin-left:auto; font-size:8px; background:var(--soft); color:var(--blue); border:1px solid #cfe0fa; border-radius:12px; padding:2px 8px; font-weight:bold;}
+  .mini .mkpis{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:10px;}
+  .mini .mkpi{border:1px solid var(--line); border-radius:7px; padding:7px 8px;}
+  .mini .mkpi .n{font-size:14px; font-weight:bold;}
+  .mini .mkpi .l{font-size:7.5px; color:var(--mut); line-height:1.25; margin-top:1px;}
+  .mini h5{font-size:8px; letter-spacing:.8px; text-transform:uppercase; color:var(--blue); margin:8px 0 5px;}
+  .mini .mbrow2{display:flex; align-items:center; gap:5px; margin:4px 0;}
+  .mini .mbrow2 .bl{width:74px; font-size:8px; color:#374151; text-align:right;}
+  .mini .mbrow2 .tk{flex:1; height:9px; background:var(--bg); border-radius:5px; position:relative; overflow:visible;}
+  .mini .mbrow2 .fl{height:100%; border-radius:5px;}
+  .mini .mbrow2 .tg{position:absolute; top:-2px; bottom:-2px; width:1.5px; background:#111827; opacity:.5;}
+  .mini .sel-outline{outline:2px dashed var(--blue); outline-offset:4px; border-radius:4px; position:relative;}
+  .mini .sel-tools{position:absolute; top:-18px; right:-4px; background:var(--blue); color:#fff; border-radius:6px; font-size:8px; padding:2px 7px; letter-spacing:2px;}
+  .mtab{width:100%; border-collapse:collapse; font-size:8px;}
+  .mtab th{color:var(--mut); text-align:left; border-bottom:1.5px solid var(--line); padding:3px 4px; font-size:7px; text-transform:uppercase;}
+  .mtab td{border-bottom:1px solid var(--line); padding:4px;}
+  .mtab td.r{text-align:right;}
+  .stage .cap{position:absolute; bottom:10px; left:0; right:0; text-align:center; font-size:10px; color:var(--mut);}
+  .prop{margin-bottom:11px;}
+  .prop label{display:block; font-size:9.5px; color:var(--mut); margin-bottom:4px; font-weight:bold;}
+  .prop .inp{border:1px solid var(--line); border-radius:7px; padding:6px 8px; font-size:11px; color:var(--ink); background:#fff;}
+  .prop .inp.focus{border-color:var(--blue); box-shadow:0 0 0 2px #dbeafe;}
+  .checks{border:1px solid var(--line); border-radius:7px; overflow:hidden; font-size:10.5px;}
+  .checks div{padding:6px 9px; border-bottom:1px solid var(--line); display:flex; gap:8px; align-items:center; color:#374151;}
+  .checks div:last-child{border-bottom:none;}
+  .checks .cb{width:13px; height:13px; border:1.5px solid #cbd5e1; border-radius:3.5px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:9px;}
+  .checks .cb.on{background:var(--blue); border-color:var(--blue);}
+  .checks .meta{margin-left:auto; color:#94a3b8; font-size:9px;}
+  .seg{display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; font-size:10.5px;}
+  .seg span{flex:1; text-align:center; padding:6px 4px; color:var(--mut); border-right:1px solid var(--line);}
+  .seg span:last-child{border-right:none;}
+  .seg .on{background:var(--soft); color:var(--blue); font-weight:bold;}
+  .tog{display:flex; align-items:center; gap:8px; font-size:11px; color:#374151;}
+  .tog .sw{width:30px; height:17px; border-radius:9px; background:var(--blue); position:relative; flex:none;}
+  .tog .sw::after{content:""; position:absolute; right:2px; top:2px; width:13px; height:13px; border-radius:50%; background:#fff;}
+  .tog .sw.off{background:#cbd5e1;} .tog .sw.off::after{right:auto; left:2px;}
+  .sbar{background:#fff; border-top:1px solid var(--line); padding:7px 16px; font-size:10px; color:var(--mut); display:flex; gap:18px; height:auto;}
+  .sbar b{color:#374151;}
+  /* saved designs list */
+  .sdlist{padding:18px 26px;}
+  .sdrow{display:flex; align-items:center; gap:14px; border:1px solid var(--line); border-radius:10px; background:#fff; padding:11px 14px; margin-bottom:9px;}
+  .thumb{width:74px; height:52px; border-radius:6px; border:1px solid var(--line); flex:none; padding:6px 7px; font-size:5px; color:#64748b; overflow:hidden; position:relative;}
+  .thumb .b{height:4px; border-radius:2px; background:var(--blue); margin-bottom:3px;}
+  .thumb .ln{height:2.5px; background:#e5e7eb; border-radius:2px; margin-bottom:2.5px;}
+  .thumb .kb{height:14px; border:1px solid var(--line); border-radius:2px; margin-bottom:2.5px; display:flex; gap:1.5px; padding:1.5px;}
+  .thumb .kb i{flex:1; background:var(--soft); border-radius:1.5px;}
+  .thumb.p2 .b{background:#10b981;} .thumb.p3 .b{background:#06b6d4;} .thumb.p4 .b{background:#f59e0b;} .thumb.p5 .b{background:#8b5cf6;}
+  .sdrow .ti{font-weight:bold; font-size:12.5px;}
+  .sdrow .me{font-size:10px; color:var(--mut); margin-top:2px;}
+  .sdrow .st{margin-left:auto; display:flex; align-items:center; gap:8px;}
+  .pill{font-size:9.5px; font-weight:bold; border-radius:10px; padding:3px 9px;}
+  .pill.d{background:#dcfce7; color:#166534;} .pill.s{background:#fef3c7; color:#92400e;} .pill.g{background:#f3f4f6; color:var(--mut);}
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ 1 · PROJECT OVERVIEW ═══════════════ -->
+<div class="wrap">
+<p class="mocklabel">TEMPLATE 1 · PROJECT OVERVIEW — planning or any stage</p>
+<div class="canvas" data-t="overview">
+  <div class="hd">
+    <div class="logo">OA</div>
+    <div><div class="org">Org name · Annual Report 2026</div><div class="t">Clean Water for Gulu District</div></div>
+    <div class="right"><span class="chip">Project Overview</span><div class="sub">UGA-2026-014 · WASH · 1 Jan 2026 – 31 Dec 2027</div></div>
+  </div>
+
+  <div class="sec">
+    <h3>Key figures <span>· since project start</span></h3>
+    <div class="grid kpis">
+      <div class="card kpi"><div class="n">12,480</div><div class="l">People reached (registered, unique)</div><div class="d warn">▲ 2,310 values not yet verified</div></div>
+      <div class="card kpi"><div class="n">18</div><div class="l">Communities served</div><div class="d up">6 districts</div></div>
+      <div class="card kpi"><div class="n">34 <small>/ 52</small></div><div class="l">Activities completed of planned</div><div class="d">9 in progress</div></div>
+      <div class="card kpi"><div class="n">€480k</div><div class="l">Approved budget</div><div class="d na">Finance not recorded</div></div>
+    </div>
+  </div>
+
+  <div class="sec grid cols32">
+    <div class="card map">
+      <svg viewBox="0 0 460 175" height="175">
+        <path d="M30,120 C60,60 140,30 220,45 C300,60 360,40 420,80 C440,120 400,160 330,155 C250,168 120,170 70,150 Z" fill="#d3e3f7" stroke="#b9d2ee"/>
+        <path d="M250,30 C300,15 380,25 430,55 L440,90 C390,70 320,60 270,60 Z" fill="#c2d8f2" stroke="#b9d2ee"/>
+      </svg>
+      <span class="pin" style="left:31%; top:38%; background:#10b981;"></span><span class="mlabel" style="left:33.5%; top:36%;">Gulu</span>
+      <span class="pin" style="left:48%; top:55%; background:#2f7be8;"></span><span class="mlabel" style="left:50.5%; top:53%;">Lira</span>
+      <span class="pin" style="left:63%; top:30%; background:#ef4444;"></span><span class="mlabel" style="left:65.5%; top:28%;">Kitgum</span>
+      <span class="pin" style="left:22%; top:60%; background:#10b981;"></span><span class="mlabel" style="left:24.5%; top:58%;">Amuru</span>
+      <span class="pin" style="left:55%; top:72%; background:#f59e0b;"></span><span class="mlabel" style="left:57.5%; top:70%;">Oyam</span>
+      <div class="legend" style="position:absolute; left:10px; bottom:8px; max-width:62%; gap:10px; font-size:9px;">
+        <span><i style="background:#10b981"></i>Done</span><span><i style="background:#2f7be8"></i>On track</span>
+        <span><i style="background:#f59e0b"></i>In progress</span><span><i style="background:#ef4444"></i>Late</span>
+      </div>
+      <div style="position:absolute; right:10px; top:8px; font-size:9px; color:#64748b; background:rgba(255,255,255,.75); border-radius:6px; padding:2px 7px;">1 site not placed: “Atlantis Valley”</div>
+    </div>
+    <div class="card soft">
+      <h3 style="margin-bottom:6px; color:#111827; letter-spacing:.3px; text-transform:none; font-size:13px;">Objective</h3>
+      <p style="font-size:11px; color:#374151; line-height:1.5;">Improve sustained access to safe water and sanitation for rural communities in the Acholi sub-region through borehole rehabilitation, community water committees and school hygiene programmes.</p>
+      <h3 style="margin:10px 0 6px; color:#111827; letter-spacing:.3px; text-transform:none; font-size:13px;">Target population</h3>
+      <p style="font-size:11px; color:#374151; line-height:1.5;">45,000 people across 18 communities; 60% women and girls.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>Key indicators <span>· latest verified values</span></h3>
+    <table class="mx">
+      <tr><th>Indicator</th><th style="text-align:right">Target</th><th style="text-align:right">Achieved</th><th style="text-align:right">% of target</th><th></th></tr>
+      <tr><td>#1 Boreholes rehabilitated</td><td class="num">120</td><td class="num">86</td><td class="num">72%</td><td class="num"><span class="tick">✓</span></td></tr>
+      <tr><td>#2 People with basic water access</td><td class="num">45,000</td><td class="num">26,310</td><td class="num">58%</td><td class="num"><span class="dot">•</span></td></tr>
+      <tr><td>% Water points functional <span class="na">(rate)</span></td><td class="num">≥ 90%</td><td class="num">87%</td><td class="num na">—</td><td class="num"><span class="tick">✓</span></td></tr>
+      <tr><td>#4 Schools with hygiene clubs</td><td class="num">40</td><td class="num nr">Not yet reported</td><td class="num nr">—</td><td></td></tr>
+    </table>
+    <div class="legend"><span><span class="tick">✓</span> verified value</span><span><span class="dot">•</span> latest value not yet verified</span><span>— not applicable for rate indicators</span></div>
+  </div>
+
+  <div class="sec grid cols2">
+    <div class="card">
+      <h3>Planned activities by output</h3>
+      <div class="mbrow"><div class="mrow"><span>Output 1 · Water points</span><b>18</b></div><div class="track"><div class="fill" style="width:100%; background:#2f7be8;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>Output 2 · Hygiene &amp; schools</span><b>14</b></div><div class="track"><div class="fill" style="width:78%; background:#06b6d4;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>Output 3 · Community committees</span><b>12</b></div><div class="track"><div class="fill" style="width:66%; background:#8b5cf6;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>Output 4 · Sector coordination</span><b>8</b></div><div class="track"><div class="fill" style="width:44%; background:#f59e0b;"></div></div></div>
+    </div>
+    <div class="card soft">
+      <h3>Duration &amp; stage</h3>
+      <div class="dur">
+        <div class="dtrack"><div class="dfill" style="width:50%;"></div></div>
+        <div class="dmarks"><span>Jan 2026<br>start</span><span><b>50% of time elapsed</b><br>today: Oct 2026</span><span>Dec 2027<br>end</span></div>
+      </div>
+      <ul class="plain" style="margin-top:10px;">
+        <li>6 reporting periods planned · 4 drafted, 2 approved</li>
+        <li>Donor: example donor · grant UGA-2026-014</li>
+        <li>Implementing: Org name · Partner: example partner</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="ft"><span><b>Provenance</b> · Data: project records · periods Jan 2026 – Jun 2026 · generated 24 Oct 2026</span><span>Illustrative mock-up · example figures only</span></div>
+</div>
+</div>
+
+<!-- ═══════════════ 2 · IMPLEMENTATION PROGRESS ═══════════════ -->
+<div class="wrap">
+<p class="mocklabel">TEMPLATE 2 · IMPLEMENTATION PROGRESS — activities, milestones, delays</p>
+<div class="canvas" data-t="progress">
+  <div class="hd">
+    <div class="logo">OA</div>
+    <div><div class="org">Org name · Clean Water for Gulu District</div><div class="t">Implementation Progress</div></div>
+    <div class="right"><span class="chip">Reporting period</span><div class="sub">Jan – Jun 2026 · prepared 24 Oct 2026</div></div>
+  </div>
+
+  <div class="sec grid kpis">
+    <div class="card kpi"><div class="n">52</div><div class="l">Activities planned this period</div></div>
+    <div class="card kpi"><div class="n">21</div><div class="l">Completed</div><div class="d up">40% of plan</div></div>
+    <div class="card kpi"><div class="n">9</div><div class="l">In progress</div><div class="d">on schedule</div></div>
+    <div class="card kpi"><div class="n">4</div><div class="l">Late</div><div class="d bad">reasons recorded in plan</div></div>
+  </div>
+
+  <div class="sec grid cols2">
+    <div class="card" style="text-align:center;">
+      <h3 style="text-align:left;">Activity status</h3>
+      <div class="donut" style="background:conic-gradient(#10b981 0 40%, #2f7be8 40% 57%, #f59e0b 57% 76%, #ef4444 76% 84%, #e5e7eb 84% 100%);">
+        <div class="c">52</div>
+      </div>
+      <div class="legend donut-lg" style="justify-content:center;">
+        <span><i style="background:#10b981"></i>Done 21</span><span><i style="background:#2f7be8"></i>On track 9</span>
+        <span><i style="background:#f59e0b"></i>Scheduled 10</span><span><i style="background:#ef4444"></i>Late 4</span>
+        <span><i style="background:#e5e7eb"></i>Cancelled 8</span>
+      </div>
+    </div>
+    <div class="card soft">
+      <h3>People reached this period</h3>
+      <div class="mbrow"><div class="mrow"><span>Attendances <span style="color:#9ca3af;">(every activity visit)</span></span><b>4,210</b></div><div class="track"><div class="fill" style="width:100%; background:#2f7be8;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>Unique people <span style="color:#9ca3af;">(registered, once)</span></span><b>1,860</b></div><div class="track"><div class="fill" style="width:44%; background:#10b981;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>of them female</span><b>52%</b></div><div class="track"><div class="fill" style="width:52%; background:#8b5cf6;"></div></div></div>
+      <p style="font-size:9.5px; color:#6b7280; margin-top:6px; line-height:1.45;">Attendances and unique people are distinct metrics and are never shown interchangeably.</p>
+    </div>
+  </div>
+
+  <div class="sec card">
+    <h3>Milestones</h3>
+    <div class="tl">
+      <div class="line"></div><div class="done" style="width:62%;"></div>
+      <div class="pts">
+        <div class="pt"></div><div class="pt"></div><div class="pt"></div><div class="pt late"></div><div class="pt grey"></div><div class="pt grey"></div>
+      </div>
+      <div class="cols">
+        <div class="lb">Inception<br><b>Mar 26</b></div>
+        <div class="lb">Baseline survey<br><b>Apr 26</b></div>
+        <div class="lb">18 boreholes done<br><b>Jun 26</b></div>
+        <div class="lb">Hygiene campaign<br><b>due Aug 26</b></div>
+        <div class="lb">Committees trained<br><b>Oct 26</b></div>
+        <div class="lb">Final evaluation<br><b>Dec 27</b></div>
+      </div>
+    </div>
+    <div class="note">Milestone “Hygiene campaign” is past its planned end — recorded reason: delayed fuel supply.</div>
+  </div>
+
+  <div class="sec">
+    <h3>Progress by location <span>· completed of planned</span></h3>
+    <div class="brow"><div class="bl">Gulu</div><div class="track"><div class="fill" style="width:78%; background:#2f7be8;"></div></div><div class="bv"><b>14 / 18</b> done</div></div>
+    <div class="brow"><div class="bl">Lira</div><div class="track"><div class="fill" style="width:52%; background:#2f7be8;"></div></div><div class="bv"><b>7 / 13</b> done</div></div>
+    <div class="brow"><div class="bl">Kitgum</div><div class="track"><div class="fill" style="width:60%; background:#f59e0b;"></div></div><div class="bv"><b>6 / 10</b> · 2 late</div></div>
+    <div class="brow"><div class="bl">Oyam</div><div class="track"><div class="fill" style="width:36%; background:#2f7be8;"></div></div><div class="bv"><b>4 / 11</b> done</div></div>
+    <div class="brow"><div class="bl">Not recorded</div><div class="track"><div class="fill" style="width:8%; background:repeating-linear-gradient(45deg,#e5e7eb,#e5e7eb 4px,#f3f4f6 4px,#f3f4f6 8px);"></div></div><div class="bv nr">location not stated on 2 activities</div></div>
+  </div>
+
+  <div class="sec grid cols2">
+    <div class="card">
+      <h3>Completed activities per month</h3>
+      <svg viewBox="0 0 340 96" width="100%" height="96">
+        <line x1="24" y1="76" x2="334" y2="76" stroke="#e5e7eb"/>
+        <rect x="36"  y="52" width="30" height="24" rx="3" fill="#10b981"/>
+        <rect x="88"  y="44" width="30" height="32" rx="3" fill="#10b981"/>
+        <rect x="140" y="36" width="30" height="40" rx="3" fill="#10b981"/>
+        <rect x="192" y="56" width="30" height="20" rx="3" fill="#10b981"/>
+        <rect x="244" y="60" width="30" height="16" rx="3" fill="#10b981"/>
+        <rect x="296" y="48" width="30" height="28" rx="3" fill="#10b981"/>
+        <text x="38" y="88" font-size="8.5" fill="#6b7280">Jan</text><text x="90" y="88" font-size="8.5" fill="#6b7280">Feb</text>
+        <text x="142" y="88" font-size="8.5" fill="#6b7280">Mar</text><text x="194" y="88" font-size="8.5" fill="#6b7280">Apr</text>
+        <text x="246" y="88" font-size="8.5" fill="#6b7280">May</text><text x="298" y="88" font-size="8.5" fill="#6b7280">Jun</text>
+      </svg>
+      <div class="legend"><span><i style="background:#10b981; border-radius:2px;"></i>Completed (21 total)</span></div>
+    </div>
+    <div class="card soft">
+      <h3>What happened this period</h3>
+      <ul class="plain">
+        <li>18 boreholes rehabilitated across Gulu and Amuru; water committees elected in all 18 communities. <span class="badge unver">3 records unverified</span></li>
+        <li>Baseline survey completed in 14 schools; hygiene clubs formed in 9.</li>
+        <li>Hygiene campaign postponed — fuel supply delayed; catch-up planned Aug.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="ft"><span><b>Provenance</b> · Sources: work plan + activity records · period Jan–Jun 2026 · 3 unverified values marked</span><span>Illustrative mock-up · example figures only</span></div>
+</div>
+</div>
+
+<!-- ═══════════════ 3 · RESULTS & IMPACT ═══════════════ -->
+<div class="wrap">
+<p class="mocklabel">TEMPLATE 3 · RESULTS &amp; IMPACT — targets, actuals, outcomes, trends</p>
+<div class="canvas" data-t="results">
+  <div class="hd">
+    <div class="logo">OA</div>
+    <div><div class="org">Org name · Clean Water for Gulu District</div><div class="t">Results &amp; Impact</div></div>
+    <div class="right"><span class="chip">Jan 2026 – Jun 2026</span><div class="sub">against full project targets · generated 24 Oct 2026</div></div>
+  </div>
+
+  <div class="sec grid kpis">
+    <div class="card kpi"><div class="n">72%</div><div class="l">Boreholes rehabilitated, of target</div><div class="d up">on pace for Dec 2027</div></div>
+    <div class="card kpi"><div class="n">26,310</div><div class="l">People with basic water access</div><div class="d warn">of 45,000 target · value unverified</div></div>
+    <div class="card kpi"><div class="n">87%</div><div class="l">Water points functional (rate)</div><div class="d na">rate — no % of target</div></div>
+    <div class="card kpi"><div class="n">2</div><div class="l">Outcomes with location data</div><div class="d">1 outcome project-wide only</div></div>
+  </div>
+
+  <div class="sec">
+    <h3>Target vs actual <span>· cumulative to 30 Jun 2026</span></h3>
+    <div class="brow"><div class="bl">Boreholes (#1)</div><div class="track"><div class="fill" style="width:72%; background:#2f7be8;"></div><div class="target" style="left:50%;"></div></div><div class="bv"><b>86</b> of 120 · <b>72%</b> <span style="color:#92400e;">(53% of period elapsed)</span></div></div>
+    <div class="brow"><div class="bl">Water access (#2)</div><div class="track"><div class="fill" style="width:58%; background:#06b6d4;"></div><div class="target" style="left:50%;"></div></div><div class="bv"><b>26,310</b> of 45,000 · <b>58%</b> <span class="dot">•</span></div></div>
+    <div class="brow"><div class="bl">Hygiene clubs (#3)</div><div class="track"><div class="fill" style="width:23%; background:#8b5cf6;"></div><div class="target" style="left:50%;"></div></div><div class="bv"><b>9</b> of 40 · <b>23%</b></div></div>
+    <div class="brow"><div class="bl">Committees (#5)</div><div class="track"><div class="fill" style="width:100%; background:#10b981;"></div></div><div class="bv"><b>36</b> of 36 · <b>100%</b> (target met)</div></div>
+    <div class="legend"><span style="width:128px;"></span><span style="flex:1;">▍ mark = cumulative target due 30 Jun 2026 (target schedule) · &gt;100% explained beside the figure when it occurs</span></div>
+  </div>
+
+  <div class="sec grid cols32">
+    <div class="card">
+      <h3>Trend <span>· people with basic water access, per period</span></h3>
+      <svg viewBox="0 0 430 130" width="100%" height="130">
+        <line x1="30" y1="110" x2="420" y2="110" stroke="#e5e7eb"/>
+        <line x1="30" y1="10" x2="30" y2="110" stroke="#e5e7eb"/>
+        <text x="8" y="24" font-size="9" fill="#6b7280">30k</text><text x="8" y="112" font-size="9" fill="#6b7280">0</text>
+        <polyline points="50,102 140,88 230,66 320,44 410,34" fill="none" stroke="#06b6d4" stroke-width="2.5"/>
+        <circle cx="50" cy="102" r="3.5" fill="#06b6d4"/><circle cx="140" cy="88" r="3.5" fill="#06b6d4"/>
+        <circle cx="230" cy="66" r="3.5" fill="#06b6d4"/><circle cx="320" cy="44" r="3.5" fill="#06b6d4" stroke="#f59e0b" stroke-width="2"/>
+        <text x="300" y="66" font-size="8.5" fill="#92400e">unverified</text>
+        <text x="40" y="122" font-size="8.5" fill="#6b7280">Q1 25</text><text x="130" y="122" font-size="8.5" fill="#6b7280">Q2 25</text>
+        <text x="220" y="122" font-size="8.5" fill="#6b7280">Q3 25</text><text x="310" y="122" font-size="8.5" fill="#6b7280">Q4 25</text><text x="392" y="122" font-size="8.5" fill="#6b7280">Q1 26</text>
+      </svg>
+    </div>
+    <div class="card soft">
+      <h3>Outcome statements</h3>
+      <p style="font-size:10.5px; color:#374151; line-height:1.5;"><b>Outcome 1 — Sustained safe water access.</b> Water-point functionality held at 87% (baseline 61%).<br><span style="color:#6b7280;">Outcome-level claim · supported by verified indicator #4 and activity records.</span></p>
+      <p style="font-size:10.5px; color:#374151; line-height:1.5; margin-top:8px;"><b>Outcome 2 — Community management.</b> 36 committees active; cost-recovery fees collected in 29.<br><span style="color:#6b7280;">Project-wide only — no location breakdown recorded.</span></p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>Results by location <span>· indicator #1 boreholes</span></h3>
+    <table class="mx">
+      <tr><th>District</th><th style="text-align:right">Target</th><th style="text-align:right">Achieved</th><th style="text-align:right">Gap</th><th style="text-align:right">% of target</th><th></th></tr>
+      <tr><td>Gulu</td><td class="num">40</td><td class="num">34</td><td class="num">6</td><td class="num">85%</td><td class="num"><span class="tick">✓</span></td></tr>
+      <tr><td>Kitgum</td><td class="num">30</td><td class="num">21</td><td class="num">9</td><td class="num">70%</td><td class="num"><span class="tick">✓</span></td></tr>
+      <tr><td>Lira</td><td class="num">30</td><td class="num">19</td><td class="num">11</td><td class="num">63%</td><td class="num"><span class="dot">•</span></td></tr>
+      <tr><td>Oyam</td><td class="num">20</td><td class="num">12</td><td class="num">8</td><td class="num">60%</td><td class="num"><span class="tick">✓</span></td></tr>
+      <tr><td>Amuru</td><td class="num nr">Not planned at district level</td><td class="num">0</td><td class="num nr">—</td><td class="num nr">—</td><td></td></tr>
+    </table>
+    <div class="note">Amuru has no district-level target (the project target was never divided by location) — its recorded figure stands alone. District targets come only from recorded group targets.</div>
+  </div>
+
+  <div class="ft"><span><b>Provenance</b> · Indicators #1–#5 · periods Q1 2025 – Q2 2026 · 2 unverified values marked •</span><span>Illustrative mock-up · example figures only</span></div>
+</div>
+</div>
+
+<!-- ═══════════════ 4 · BUDGET UTILIZATION ═══════════════ -->
+<div class="wrap">
+<p class="mocklabel">TEMPLATE 4 · BUDGET UTILIZATION — verified finance only, mode-gated</p>
+<div class="canvas" data-t="budget">
+  <div class="hd">
+    <div class="logo">OA</div>
+    <div><div class="org">Org name · Clean Water for Gulu District</div><div class="t">Budget Utilization</div></div>
+    <div class="right"><span class="chip grey">EUR</span><div class="sub">as of 30 Jun 2026 · verified figures</div></div>
+  </div>
+
+  <div class="sec grid kpis">
+    <div class="card kpi"><div class="n">€480,000</div><div class="l">Approved budget</div></div>
+    <div class="card kpi"><div class="n">€201,340</div><div class="l">Expenditure to date</div><div class="d">42% of budget</div></div>
+    <div class="card kpi"><div class="n">€36,200</div><div class="l">Committed (POs outstanding)</div></div>
+    <div class="card kpi"><div class="n">€242,460</div><div class="l">Balance</div><div class="d up">58% remaining · 53% of time elapsed</div></div>
+  </div>
+
+  <div class="sec">
+    <h3>Budget vs expenditure <span>· by reporting period</span></h3>
+    <svg viewBox="0 0 700 150" width="100%" height="150">
+      <line x1="36" y1="120" x2="690" y2="120" stroke="#e5e7eb"/>
+      <text x="4" y="30" font-size="9" fill="#6b7280">€120k</text><text x="10" y="80" font-size="9" fill="#6b7280">€60k</text><text x="16" y="123" font-size="9" fill="#6b7280">0</text>
+      <g><!-- Q1 25 --><rect x="60"  y="84" width="26" height="36" rx="3" fill="#2f7be8"/><rect x="90"  y="96" width="26" height="24" rx="3" fill="#f59e0b"/>
+      <!-- Q2 25 --><rect x="180" y="66" width="26" height="54" rx="3" fill="#2f7be8"/><rect x="210" y="78" width="26" height="42" rx="3" fill="#f59e0b"/>
+      <!-- Q3 25 --><rect x="300" y="54" width="26" height="66" rx="3" fill="#2f7be8"/><rect x="330" y="70" width="26" height="50" rx="3" fill="#f59e0b"/>
+      <!-- Q4 25 --><rect x="420" y="48" width="26" height="72" rx="3" fill="#2f7be8"/><rect x="450" y="62" width="26" height="58" rx="3" fill="#f59e0b"/>
+      <!-- Q1 26 --><rect x="540" y="40" width="26" height="80" rx="3" fill="#2f7be8"/><rect x="570" y="58" width="26" height="62" rx="3" fill="#f59e0b"/></g>
+      <text x="56" y="133" font-size="8.5" fill="#6b7280">Q1 25</text><text x="176" y="133" font-size="8.5" fill="#6b7280">Q2 25</text>
+      <text x="296" y="133" font-size="8.5" fill="#6b7280">Q3 25</text><text x="416" y="133" font-size="8.5" fill="#6b7280">Q4 25</text><text x="536" y="133" font-size="8.5" fill="#6b7280">Q1 26</text>
+    </svg>
+    <div class="legend"><span><i style="background:#2f7be8; border-radius:2px;"></i>Budget for period</span><span><i style="background:#f59e0b; border-radius:2px;"></i>Expenditure (verified)</span></div>
+  </div>
+
+  <div class="sec grid cols2">
+    <div class="card">
+      <h3>Burn rate over time</h3>
+      <svg viewBox="0 0 330 100" width="100%" height="100">
+        <line x1="30" y1="80" x2="320" y2="80" stroke="#e5e7eb"/><line x1="30" y1="20" x2="30" y2="80" stroke="#e5e7eb"/>
+        <line x1="30" y1="38" x2="320" y2="38" stroke="#c7d2fe" stroke-dasharray="4 3"/>
+        <text x="2" y="41" font-size="8" fill="#818cf8">53%</text><text x="8" y="83" font-size="8" fill="#6b7280">0</text>
+        <polyline points="50,74 130,64 210,52 290,42" fill="none" stroke="#10b981" stroke-width="2.5"/>
+        <circle cx="50" cy="74" r="3.5" fill="#10b981"/><circle cx="130" cy="64" r="3.5" fill="#10b981"/>
+        <circle cx="210" cy="52" r="3.5" fill="#10b981"/><circle cx="290" cy="42" r="3.5" fill="#10b981"/>
+        <text x="40" y="93" font-size="8.5" fill="#6b7280">Q1 25</text><text x="270" y="93" font-size="8.5" fill="#6b7280">Q1 26</text>
+      </svg>
+      <p style="font-size:10px; color:#6b7280; line-height:1.45;">Share of total budget spent, cumulative. Dashed line = share of project time elapsed (53%). Spending tracks slightly behind the clock.</p>
+    </div>
+    <div class="card">
+      <h3>Top budget lines</h3>
+      <table class="mx">
+        <tr><th>Line</th><th style="text-align:right">Budget</th><th style="text-align:right">Spent</th></tr>
+        <tr><td>Works &amp; materials</td><td class="num">264,000</td><td class="num">118,900</td></tr>
+        <tr><td>Staff</td><td class="num">120,000</td><td class="num">58,240</td></tr>
+        <tr><td>Transport</td><td class="num">48,000</td><td class="num">14,200</td></tr>
+        <tr><td>Training</td><td class="num">36,000</td><td class="num">10,000</td></tr>
+        <tr><td>M&amp;E</td><td class="num">12,000</td><td class="num nr">Not recorded</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>Spending by location</h3>
+    <div class="card soft" style="padding:10px 14px; font-size:10.5px; color:#6b7280; line-height:1.5;">
+      Not shown — financial records do not carry a location allocation. DonorDesk attributes expenditure to locations only where the finance records themselves support it; project-wide totals are shown above instead of a fabricated split.
+    </div>
+  </div>
+
+  <div class="sec grid cols2">
+    <div class="card">
+      <h3>Largest expenditure items <span>· this period</span></h3>
+      <div class="mbrow"><div class="mrow"><span>Drilling contractor — Kitgum batch</span><b>€18,400</b></div><div class="track"><div class="fill" style="width:100%; background:#f59e0b;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>Pipes &amp; fittings — Gulu</span><b>€11,240</b></div><div class="track"><div class="fill" style="width:61%; background:#f59e0b;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>Staff travel &amp; per diem</span><b>€6,980</b></div><div class="track"><div class="fill" style="width:38%; background:#f59e0b;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>Hygiene campaign materials</span><b>€3,120</b></div><div class="track"><div class="fill" style="width:17%; background:#f59e0b;"></div></div></div>
+    </div>
+    <div class="card soft">
+      <h3>Finance records</h3>
+      <ul class="plain">
+        <li>Currency: EUR · figures verified by the M&amp;E officer on 12 Jul 2026.</li>
+        <li>Source: typed finance summaries, imported bank statement for Q1 26.</li>
+        <li>Committed = purchase orders raised, not yet paid.</li>
+        <li>Expenditure attributed to locations only where records state it — none do, so no location split is drawn.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="ft"><span><b>Provenance</b> · Source: verified period finance summaries · Q1 2025 – Q1 2026 · currency EUR</span><span>Illustrative mock-up · example figures only</span></div>
+</div>
+</div>
+
+<!-- ═══════════════ 5 · THEMATIC / SECTOR SNAPSHOT ═══════════════ -->
+<div class="wrap">
+<p class="mocklabel">TEMPLATE 5 · THEMATIC / SECTOR SNAPSHOT — one sector across the project</p>
+<div class="canvas" data-t="thematic">
+  <div class="hd">
+    <div class="logo">OA</div>
+    <div><div class="org">Org name · Clean Water for Gulu District</div><div class="t">WASH Sector Snapshot</div></div>
+    <div class="right"><span class="chip">Sector: WASH</span><div class="sub">Jan – Jun 2026 · generated 24 Oct 2026</div></div>
+  </div>
+
+  <div class="sec grid kpis">
+    <div class="card kpi"><div class="n">86</div><div class="l">Water points rehabilitated</div><div class="d up">72% of target</div></div>
+    <div class="card kpi"><div class="n">9,140</div><div class="l">Hygiene kit distributions</div><div class="d na">items delivered — not people</div></div>
+    <div class="card kpi"><div class="n">5,860</div><div class="l">Unique individuals reached</div><div class="d">distinct registered beneficiaries</div></div>
+    <div class="card kpi"><div class="n">11,930</div><div class="l">Activity attendances</div><div class="d">a person may attend several</div></div>
+  </div>
+
+  <div class="sec grid cols23">
+    <div class="card">
+      <h3>Reach by sex &amp; age</h3>
+      <div class="mbrow"><div class="mrow"><span>Women / girls</span><b>3,634 · 62%</b></div><div class="track"><div class="fill" style="width:62%; background:#8b5cf6;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>Men / boys</span><b>2,226 · 38%</b></div><div class="track"><div class="fill" style="width:38%; background:#2f7be8;"></div></div></div>
+      <div style="border-top:1px dashed var(--line); margin:10px 0 2px;"></div>
+      <div class="mbrow"><div class="mrow"><span>Under 5</span><b>1,055</b></div><div class="track"><div class="fill" style="width:18%; background:#f59e0b;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>5–17</span><b>1,992</b></div><div class="track"><div class="fill" style="width:34%; background:#f59e0b;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>18–59</span><b>2,403</b></div><div class="track"><div class="fill" style="width:41%; background:#f59e0b;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>60+</span><b>410</b></div><div class="track"><div class="fill" style="width:7%; background:#f59e0b;"></div></div></div>
+      <div class="legend"><span>Unique registered people; a person appears once. Breakdowns as recorded at registration.</span></div>
+    </div>
+    <div class="card map">
+      <svg viewBox="0 0 460 165" height="165">
+        <path d="M30,115 C60,60 140,30 220,45 C300,60 360,40 420,80 C440,120 400,160 330,155 C250,168 120,170 70,150 Z" fill="#d3e3f7" stroke="#b9d2ee"/>
+        <path d="M250,30 C300,15 380,25 430,55 L440,90 C390,70 320,60 270,60 Z" fill="#c2d8f2" stroke="#b9d2ee"/>
+      </svg>
+      <span class="pin" style="left:31%; top:38%; background:#8b5cf6;"></span><span class="mlabel" style="left:33.5%; top:33%;">Gulu · 2,140</span>
+      <span class="pin" style="left:48%; top:55%; background:#8b5cf6;"></span><span class="mlabel" style="left:50.5%; top:50%;">Lira · 1,530</span>
+      <span class="pin" style="left:63%; top:30%; background:#8b5cf6;"></span><span class="mlabel" style="left:65.5%; top:25%;">Kitgum · 1,120</span>
+      <span class="pin" style="left:22%; top:60%; background:#8b5cf6;"></span><span class="mlabel" style="left:24.5%; top:55%;">Amuru · 640</span>
+      <span class="pin" style="left:55%; top:72%; background:#8b5cf6;"></span><span class="mlabel" style="left:57.5%; top:67%;">Oyam · 430</span>
+      <div style="position:absolute; right:10px; bottom:8px; font-size:9px; color:#64748b;">Unique people reached by district (registered location)</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>WASH indicators <span>· verified values this period</span></h3>
+    <table class="mx">
+      <tr><th>Indicator</th><th style="text-align:right">This period</th><th style="text-align:right">Cumulative</th><th style="text-align:right">Target</th><th style="text-align:right">% of target</th><th></th></tr>
+      <tr><td>Boreholes rehabilitated</td><td class="num">31</td><td class="num">86</td><td class="num">120</td><td class="num">72%</td><td class="num"><span class="tick">✓</span></td></tr>
+      <tr><td>Hygiene kits distributed <span class="na">(items)</span></td><td class="num">4,110</td><td class="num">9,140</td><td class="num nr">Not planned</td><td class="num nr">—</td><td class="num"><span class="tick">✓</span></td></tr>
+      <tr><td>Handwashing stations installed</td><td class="num">14</td><td class="num">52</td><td class="num">80</td><td class="num">65%</td><td class="num"><span class="dot">•</span></td></tr>
+      <tr><td>Households with treated water <span class="na">(households)</span></td><td class="num">1,240</td><td class="num">3,470</td><td class="num">6,000</td><td class="num">58%</td><td class="num"><span class="tick">✓</span></td></tr>
+      <tr><td>School hygiene clubs active</td><td class="num nr">Not yet reported</td><td class="num nr">Not yet reported</td><td class="num">40</td><td class="num nr">—</td><td></td></tr>
+    </table>
+  </div>
+
+  <div class="ft"><span><b>Provenance</b> · Sector WASH · beneficiary registry + activity records + indicators #1–#5 · 1 unverified value •</span><span>Illustrative mock-up · example figures only</span></div>
+</div>
+</div>
+
+<!-- ═══════════════ 6 · PROJECT CLOSURE ═══════════════ -->
+<div class="wrap">
+<p class="mocklabel">TEMPLATE 6 · PROJECT CLOSURE — final results where records exist</p>
+<div class="canvas" data-t="closure">
+  <div class="hd">
+    <div class="logo">OA</div>
+    <div><div class="org">Org name · 1 Jan 2024 – 31 Dec 2026</div><div class="t">Project Closure — Clean Water for Gulu District</div></div>
+    <div class="right"><span class="chip">Final</span><div class="sub">cumulative to 31 Dec 2026 · generated 24 Oct 2026</div></div>
+  </div>
+
+  <div class="sec grid kpis">
+    <div class="card kpi"><div class="n">94%</div><div class="l">Indicators at or above final target</div><div class="d">16 of 17 indicators</div></div>
+    <div class="card kpi"><div class="n">31,420</div><div class="l">People reached (unique, registered)</div><div class="d up">70% of 45,000 target</div></div>
+    <div class="card kpi"><div class="n">€462,880</div><div class="l">Total expenditure</div><div class="d">96% of €480,000 budget</div></div>
+    <div class="card kpi"><div class="n">48</div><div class="l">Communities served</div><div class="d">across 6 districts</div></div>
+  </div>
+
+  <div class="sec grid cols23">
+    <div class="card">
+      <h3>Final achievement by indicator</h3>
+      <div class="mbrow"><div class="mrow"><span>Boreholes (#1)</span><b>126 / 120 · 105%</b></div><div class="track"><div class="fill" style="width:100%; background:#10b981;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>Water access (#2)</span><b>31,420 / 45,000 · 70% <span class="dot">•</span></b></div><div class="track"><div class="fill" style="width:70%; background:#06b6d4;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>Functionality (#4) <span style="color:#9ca3af;">(rate)</span></span><b>92%</b></div><div class="track"><div class="fill" style="width:96%; background:#10b981;"></div></div></div>
+      <div class="mbrow"><div class="mrow"><span>Hygiene clubs (#3)</span><b>35 / 40 · 88%</b></div><div class="track"><div class="fill" style="width:88%; background:#10b981;"></div></div></div>
+      <div class="note">#2 closed at 70% — recorded cause: two communities relocated before works began. Indicator #7 has no final recorded value and is reported as “not measured”.</div>
+    </div>
+    <div class="card soft">
+      <h3>Lessons learned <span>· from activity records</span></h3>
+      <div class="quote">“Boreholes with a trained caretaker from day one needed 60% fewer repairs in year one.”</div>
+      <div class="quote">“School hygiene clubs sustained best where two teachers co-lead.”</div>
+      <h3 style="margin-top:10px;">Changes of plan</h3>
+      <p style="font-size:10.5px; color:#374151; line-height:1.5;"><b>Mar 2026</b> — Oyam sites consolidated after community relocation; targets shifted to Amuru with donor approval.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>Coverage and final delivery by location</h3>
+    <div class="brow"><div class="bl">Gulu</div><div class="track"><div class="fill" style="width:100%; background:#10b981;"></div></div><div class="bv"><b>40 / 40</b> works complete</div></div>
+    <div class="brow"><div class="bl">Kitgum</div><div class="track"><div class="fill" style="width:100%; background:#10b981;"></div></div><div class="bv"><b>30 / 30</b> complete</div></div>
+    <div class="brow"><div class="bl">Lira</div><div class="track"><div class="fill" style="width:63%; background:#2f7be8;"></div></div><div class="bv"><b>19 / 30</b> complete</div></div>
+    <div class="brow"><div class="bl">Oyam</div><div class="track"><div class="fill" style="width:60%; background:#f59e0b;"></div></div><div class="bv"><b>12 / 20</b> · plan revised Mar 26</div></div>
+  </div>
+
+  <div class="sec grid cols2">
+    <div class="card">
+      <h3>Expenditure summary</h3>
+      <table class="mx">
+        <tr><th></th><th style="text-align:right">Budget</th><th style="text-align:right">Actual</th></tr>
+        <tr><td>Works &amp; materials</td><td class="num">264,000</td><td class="num">261,400</td></tr>
+        <tr><td>Staff</td><td class="num">120,000</td><td class="num">117,880</td></tr>
+        <tr><td>Transport</td><td class="num">48,000</td><td class="num">44,600</td></tr>
+        <tr><td>Training</td><td class="num">36,000</td><td class="num">31,000</td></tr>
+        <tr><td>M&amp;E</td><td class="num">12,000</td><td class="num">8,000</td></tr>
+        <tr><td><b>Total</b></td><td class="num"><b>480,000</b></td><td class="num"><b>462,880</b></td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Hand-over status</h3>
+      <ul class="plain">
+        <li>Water systems handed to district water authority — signed Dec 2026.</li>
+        <li>36 community committees registered; 29 with active cost-recovery.</li>
+        <li>Spare-parts fund established with 12-month float.</li>
+        <li>Evaluation report and evidence pack archived with the final submission.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="ft"><span><b>Provenance</b> · All periods Jan 2024 – Dec 2026 · 1 unverified value • · 1 indicator not measured · adaptation records cited</span><span>Illustrative mock-up · example figures only</span></div>
+</div>
+</div>
+
+<!-- ═══════════════ 7 · INFOGRAPHIC STUDIO — EDITOR ═══════════════ -->
+<div class="wrap land">
+<p class="mocklabel">TEMPLATE 7 · INFOGRAPHIC STUDIO — manual builder (template-driven, no free canvas)</p>
+<div class="canvas land" data-t="studio">
+  <div class="bchrm">
+    <i style="background:#f87171"></i><i style="background:#fbbf24"></i><i style="background:#34d399"></i>
+    <span class="url">donordesk.app / projects / UGA-2026-014 / infographics / results-impact-q2-26 / edit</span>
+  </div>
+  <div class="tbar">
+    <span class="ttl">Results &amp; impact — Q2 2026</span>
+    <span class="chip grey" style="font-size:10px;">Draft</span>
+    <span class="sel2">Template <b>Results &amp; Impact ▾</b></span>
+    <span class="sel2">Periods <b>Q1 2025 – Q2 2026 ▾</b></span>
+    <span class="sel2">Locations <b>All districts ▾</b></span>
+    <div class="right">
+      <span class="tog"><span class="sw"></span> Org branding</span>
+      <span class="btn sec">Save</span>
+      <span class="btn sec">Export PDF</span>
+      <span class="btn pri">Export PNG</span>
+    </div>
+  </div>
+  <div class="app">
+    <div class="panel">
+      <h4>Sections</h4>
+      <div class="sec-item"><span class="grip">⠿</span> Header &amp; KPIs <span class="eye">👁</span></div>
+      <div class="sec-item on"><span class="grip">⠿</span> Target vs actual <span class="eye">👁</span></div>
+      <div class="sec-item"><span class="grip">⠿</span> Trend over time <span class="eye">👁</span></div>
+      <div class="sec-item"><span class="grip">⠿</span> Outcome statements <span class="eye" style="color:#cbd5e1;">🚫</span></div>
+      <div class="sec-item"><span class="grip">⠿</span> Results by location <span class="eye">👁</span></div>
+      <div class="sec-item" style="color:#9ca3af;"><span class="grip">⠿</span> Provenance footer <span class="eye" title="always on">🔒</span></div>
+      <div class="addbtn">+ Add section</div>
+      <div class="add-menu">
+        <div><span class="k">▦</span> Chart <span style="color:#94a3b8;">· from project indicators</span></div>
+        <div><span class="k">◉</span> KPI cards</div>
+        <div><span class="k">▦</span> Comparison table</div>
+        <div><span class="k">◈</span> Location map</div>
+        <div><span class="k">T</span> Text block</div>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="mini">
+        <div class="mhd">
+          <div class="mlogo">OA</div>
+          <div class="mt">Results &amp; Impact</div>
+          <span class="mchip">Jan 2026 – Jun 2026</span>
+        </div>
+        <div class="mkpis">
+          <div class="mkpi"><div class="n">72%</div><div class="l">Boreholes of target · on pace</div></div>
+          <div class="mkpi"><div class="n">26,310</div><div class="l">People with water access <span style="color:#92400e;">•</span></div></div>
+          <div class="mkpi"><div class="n">87%</div><div class="l">Functionality (rate — no %)</div></div>
+          <div class="mkpi"><div class="n">2</div><div class="l">Outcomes with location data</div></div>
+        </div>
+        <div class="sel-outline">
+          <span class="sel-tools">⠿ &nbsp;↑ ↓ &nbsp;👁 &nbsp;✕</span>
+          <h5 style="margin-top:2px;">Target vs actual · cumulative to 30 Jun 2026</h5>
+          <div class="mbrow2"><span class="bl">Boreholes (#1)</span><div class="tk"><div class="fl" style="width:72%; background:#2f7be8;"></div><div class="tg" style="left:50%;"></div></div></div>
+          <div class="mbrow2"><span class="bl">Water access (#2)</span><div class="tk"><div class="fl" style="width:58%; background:#06b6d4;"></div><div class="tg" style="left:50%;"></div></div></div>
+          <div class="mbrow2"><span class="bl">Hygiene clubs (#3)</span><div class="tk"><div class="fl" style="width:23%; background:#8b5cf6;"></div><div class="tg" style="left:50%;"></div></div></div>
+          <div class="mbrow2"><span class="bl">Committees (#5)</span><div class="tk"><div class="fl" style="width:100%; background:#10b981;"></div></div></div>
+        </div>
+        <h5>Trend · people with basic water access</h5>
+        <svg viewBox="0 0 420 54" width="100%" height="54">
+          <line x1="24" y1="46" x2="414" y2="46" stroke="#e5e7eb"/>
+          <polyline points="34,42 116,35 198,26 280,17 404,12" fill="none" stroke="#06b6d4" stroke-width="2"/>
+          <circle cx="34" cy="42" r="2.5" fill="#06b6d4"/><circle cx="116" cy="35" r="2.5" fill="#06b6d4"/>
+          <circle cx="198" cy="26" r="2.5" fill="#06b6d4"/><circle cx="280" cy="17" r="2.5" fill="#06b6d4" stroke="#f59e0b" stroke-width="1.5"/>
+        </svg>
+        <h5>Results by location · indicator #1</h5>
+        <table class="mtab">
+          <tr><th>District</th><th style="text-align:right">Target</th><th style="text-align:right">Achieved</th><th style="text-align:right">%</th></tr>
+          <tr><td>Gulu</td><td class="r">40</td><td class="r">34</td><td class="r">85% ✓</td></tr>
+          <tr><td>Lira</td><td class="r">30</td><td class="r">19</td><td class="r">63% •</td></tr>
+          <tr><td>Amuru</td><td class="r" style="color:#9ca3af; font-style:italic;">not planned</td><td class="r">0</td><td class="r">—</td></tr>
+        </table>
+        <div style="border-top:1px solid var(--line); margin-top:9px; padding-top:5px; font-size:7px; color:#9ca3af; display:flex; justify-content:space-between;">
+          <span><b>Provenance</b> · periods Q1 2025 – Q2 2026 · 2 unverified values •</span><span>illustrative</span>
+        </div>
+      </div>
+      <div class="cap">Live preview — regenerated from project records whenever the data changes; published exports stay frozen.</div>
+    </div>
+    <div class="panel r">
+      <h4>Section · Target vs actual</h4>
+      <div class="prop">
+        <label>Title</label>
+        <div class="inp focus">Target vs actual · cumulative to 30 Jun 2026</div>
+      </div>
+      <div class="prop">
+        <label>Indicators <span style="font-weight:normal;">(only ones with recorded values are listed)</span></label>
+        <div class="checks">
+          <div><span class="cb on">✓</span> #1 Boreholes rehabilitated <span class="meta">verified</span></div>
+          <div><span class="cb on">✓</span> #2 People with water access <span class="meta">1 unverified</span></div>
+          <div><span class="cb on">✓</span> #3 Hygiene clubs</div>
+          <div><span class="cb">·</span> #4 Functionality (rate) <span class="meta">— no % of target</span></div>
+          <div><span class="cb on">✓</span> #5 Committees</div>
+          <div style="color:#9ca3af; font-style:italic;">+ 2 indicators hidden (archived)</div>
+        </div>
+      </div>
+      <div class="prop">
+        <label>Measure</label>
+        <div class="seg"><span>Achievement</span><span class="on">% of target</span><span>Cumulative</span></div>
+      </div>
+      <div class="prop">
+        <label>&nbsp;</label>
+        <span class="tog"><span class="sw"></span> Show cumulative-target marks (▍)</span>
+      </div>
+      <div class="prop">
+        <label>&nbsp;</label>
+        <span class="tog"><span class="sw"></span> Break down by location</span>
+      </div>
+      <div class="prop">
+        <label>Size</label>
+        <div class="seg"><span>Third</span><span class="on">Half</span><span>Full width</span></div>
+      </div>
+      <div class="note" style="font-size:9px;">Sections marked • will badge unverified values in preview and export — they are never silently mixed with verified figures.</div>
+    </div>
+  </div>
+  <div class="sbar">
+    <span><b>Draft</b> · saved 13:42 by A. Officer</span>
+    <span>Data refreshed from project records · <b>just now</b></span>
+    <span>Regeneration keeps published exports frozen · <b>3 versions</b></span>
+    <span style="margin-left:auto;">Illustrative mock-up · example figures only</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════ 8 · SAVED INFOGRAPHICS LIST ═══════════════ -->
+<div class="wrap">
+<p class="mocklabel">TEMPLATE 8 · SAVED INFOGRAPHICS — list, regenerate, versions</p>
+<div class="canvas" data-t="saved">
+  <div class="hd">
+    <div class="logo">OA</div>
+    <div><div class="org">Project · Clean Water for Gulu District</div><div class="t">Infographics</div></div>
+    <div class="right"><span class="chip">8 saved designs</span><div class="sub">New from template ▾</div></div>
+  </div>
+
+  <div class="sec">
+    <div class="sdrow">
+      <div class="thumb"><div class="b"></div><div class="kb"><i></i><i></i><i></i><i></i></div><div class="ln"></div><div class="ln" style="width:80%;"></div><div class="ln"></div><div class="ln" style="width:60%;"></div></div>
+      <div><div class="ti">Project overview — donor pack</div><div class="me">Overview · all periods · 4 versions · updated 24 Oct 2026</div></div>
+      <div class="st"><span class="pill d">3 exports</span><span class="btn sec" style="font-size:10px;">Open</span></div>
+    </div>
+    <div class="sdrow" style="border-color:var(--blue); box-shadow:0 0 0 2px #dbeafe;">
+      <div class="thumb p3"><div class="b"></div><div class="kb"><i></i><i></i><i></i><i></i></div><div class="ln"></div><div class="ln" style="width:70%;"></div><div class="ln" style="width:85%;"></div><div class="ln"></div></div>
+      <div><div class="ti">Results &amp; impact — Q2 2026</div><div class="me">Results &amp; Impact · Q1 2025 – Q2 2026 · draft — edited 13:42 today</div></div>
+      <div class="st"><span class="pill s">Draft</span><span class="btn sec" style="font-size:10px;">Open</span></div>
+    </div>
+    <div class="sdrow">
+      <div class="thumb p4"><div class="b"></div><div class="kb"><i></i><i></i><i></i><i></i></div><div class="ln"></div><div class="ln" style="width:65%;"></div><div class="ln"></div><div class="ln" style="width:75%;"></div></div>
+      <div><div class="ti">Budget utilization — board meeting</div><div class="me">Budget · Q1 2025 – Q1 2026 · 2 versions · published 18 Oct 2026</div></div>
+      <div class="st"><span class="pill d">1 export</span><span class="btn sec" style="font-size:10px;">Open</span></div>
+    </div>
+    <div class="sdrow">
+      <div class="thumb p5"><div class="b"></div><div class="kb"><i></i><i></i><i></i><i></i></div><div class="ln"></div><div class="ln" style="width:78%;"></div><div class="ln" style="width:55%;"></div><div class="ln"></div></div>
+      <div><div class="ti">WASH sector snapshot — cluster submission</div><div class="me">Thematic · Jan – Jun 2026 · published 02 Oct 2026</div></div>
+      <div class="st"><span class="pill d">2 exports</span><span class="btn sec" style="font-size:10px;">Open</span></div>
+    </div>
+    <div class="sdrow">
+      <div class="thumb p2"><div class="b"></div><div class="kb"><i></i><i></i><i></i><i></i></div><div class="ln"></div><div class="ln" style="width:60%;"></div><div class="ln" style="width:70%;"></div><div class="ln"></div></div>
+      <div><div class="ti">Implementation progress — Sep</div><div class="me">Progress · Jul – Sep 2026 · planning stage — results not yet reported</div></div>
+      <div class="st"><span class="pill g">No exports</span><span class="btn sec" style="font-size:10px;">Open</span></div>
+    </div>
+  </div>
+
+  <div class="sec card soft" style="padding:12px 16px;">
+    <p style="font-size:11px; color:#374151; line-height:1.55;"><b>Regeneration.</b> “Open” always shows the saved design against <i>current</i> project data; “Export” freezes a version — a later data change never silently alters a PNG or PDF already sent to a donor. Every export records the periods, indicators and unverified-value count it was built from.</p>
+  </div>
+
+  <div class="ft"><span><b>DonorDesk</b> · Infographic Studio · project UGA-2026-014</span><span>Illustrative mock-up · example figures only</span></div>
+</div>
+</div>
+
+</body>
+</html>

@@ -60,3 +60,4 @@ export * from "./data-tables.js";
 export * from "./period-target.js";
 export * from "./revision-change.js";
 export * from "./management-report.js";
+export * from "./location-analytics.js";

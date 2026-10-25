@@ -243,6 +243,8 @@ export interface IProjectSubmissionMappingRepository {
 /** The people (by case code) a planned activity reached. */
 export interface IBeneficiaryLinkRepository {
   findBeneficiaryIds(plannedActivityId: string, tenantId: TenantId): Promise<Result<string[]>>;
+  /** Every link in the project, for reach analytics (unique reach, attendances by location). */
+  findByProject(projectId: string, tenantId: TenantId): Promise<Result<Array<{ plannedActivityId: string; beneficiaryId: string }>>>;
   /** Adds links in one statement; a person already linked is skipped. Returns how many were new. */
   add(input: { tenantId: string; projectId: string; plannedActivityId: string; beneficiaryIds: string[]; userId: string; now: Date }): Promise<Result<number>>;
   remove(plannedActivityId: string, beneficiaryIds: string[], tenantId: TenantId): Promise<Result<number>>;

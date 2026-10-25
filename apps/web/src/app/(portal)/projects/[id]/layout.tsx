@@ -29,6 +29,7 @@ export default async function ProjectLayout({ params, children }: { params: Prom
     { label: "Logframe", href: `/projects/${project.id}/logframe`, matchPrefixes: [`/projects/${project.id}/indicators`] },
     { label: "Activities", href: `/projects/${project.id}/activities` },
     { label: "Data", href: `/projects/${project.id}/data` },
+    { label: "Infographics", href: `/projects/${project.id}/infographics`, secondary: true },
     { label: "Evidence", href: `/projects/${project.id}/evidence`, secondary: true },
     // One-time setup; placed last so it reads as configuration, not a workflow.
     { label: "Templates", href: `/projects/${project.id}/templates`, secondary: true },

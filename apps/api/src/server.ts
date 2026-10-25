@@ -29,6 +29,7 @@ import { registerEvidenceRoutes } from "./routes/evidence.js";
 import { registerStorageRoutes } from "./routes/storage.js";
 import { registerActivityRoutes } from "./routes/activities.js";
 import { registerWorkPlanRoutes } from "./routes/workplan.js";
+import { registerInfographicsRoutes } from "./routes/infographics.js";
 import { registerTaskRoutes } from "./routes/tasks.js";
 import { registerReportingRoutes } from "./routes/reporting.js";
 import { registerAgentMemoryRoutes } from "./routes/agent-memory.js";
@@ -192,6 +193,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerStorageRoutes(instance);
     await registerActivityRoutes(instance);
     await registerWorkPlanRoutes(instance);
+    await registerInfographicsRoutes(instance);
     await registerTaskRoutes(instance);
     await registerReportingRoutes(instance);
     await registerAgentMemoryRoutes(instance);

@@ -1947,3 +1947,44 @@ model TenantMapLayer {
 
   @@index([tenantId])
 }
+
+/// A saved infographic (Phase 31): the composition — template, selections, authored text — never a
+/// copy of project data. Figures are read from project records at generation time.
+model ProjectInfographic {
+  id              String   @id
+  tenantId        String
+  projectId       String
+  title           String
+  templateId      String
+  templateVersion Int
+  /// The validated InfographicConfig as JSON.
+  configJson      String
+  createdById     String
+  updatedById     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId, projectId])
+}
+
+/// One published rendering of an infographic (PNG or PDF). The file lives in storage; the row keeps
+/// the exact inputs (snapshot) and provenance, so a published export stays reproducible while the
+/// live design keeps evolving.
+model InfographicExport {
+  id             String   @id
+  tenantId       String
+  infographicId  String
+  projectId      String
+  /// PNG | PDF
+  format         String
+  storageKey     String
+  sizeBytes      Int
+  /// The exact inputs used: period ids, indicator ids, config and data digests.
+  snapshotJson   String
+  /// The provenance stamp rendered into the footer.
+  provenanceJson String
+  generatedById  String
+  createdAt      DateTime @default(now())
+
+  @@index([tenantId, projectId, infographicId])
+}

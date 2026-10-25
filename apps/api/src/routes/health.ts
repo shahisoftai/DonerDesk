@@ -37,6 +37,8 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "PlannedActivity", field: "latitude" },
   { model: "PlannedActivity", field: "longitude" },
   { model: "TenantMapLayer", field: "storageKey" },
+  { model: "ProjectInfographic", field: "configJson" },
+  { model: "InfographicExport", field: "snapshotJson" },
   { model: "Project", field: "showWorkPlanning" },
   { model: "Project", field: "timeZone" },
   { model: "ProjectTask", field: "assigneeId" },

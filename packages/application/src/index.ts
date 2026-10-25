@@ -1,6 +1,7 @@
 export * from "./context.js";
 export * from "./ports/core.js";
 export * from "./ports/infrastructure.js";
+export * from "./ports/infographics.js";
 export * from "./ports/identity.js";
 export * from "./ports/projects.js";
 export * from "./ports/project-members.js";
@@ -277,6 +278,8 @@ export * from "./services/request-idempotency-service.js";
 export * from "./use-cases/evidence/bulk-verify-evidence.js";
 export * from "./use-cases/setup/profile-preferences.js";
 export * from "./use-cases/data-center/data-sheet.js";
+export * from "./use-cases/infographics/infographics.js";
+export * from "./use-cases/infographics/infographic-data.js";
 export * from "./use-cases/reporting/section-data-charts.js";
 export * from "./use-cases/reporting/reopen-report.js";
 export * from "./ports/workplan.js";

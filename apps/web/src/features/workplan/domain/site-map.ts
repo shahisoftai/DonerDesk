@@ -7,49 +7,17 @@
  * An unmatched place is listed as unplaced — never invented, never silently dropped. All geo data is
  * bundled; a location never leaves the tenant.
  */
-import { DELIVERY_SIGNAL_LABEL, WORKPLAN_COPY, type DeliverySignal } from "@donordesk/domain/contexts/workplan/index.js";
+import { DELIVERY_SIGNAL_LABEL, WORKPLAN_COPY, normalizeLocationKey, type DeliverySignal } from "@donordesk/domain/contexts/workplan/index.js";
 import { countOf } from "@donordesk/domain/core/plural.js";
 import { GAZETTEER, type GazetteerPlace } from "./geo/gazetteer.ts";
 import type { NamedGeoCollection } from "./geo/geo-types.ts";
 
-/** The words an officer appends to a place name that the gazetteer does not carry ("Gulu District" is "Gulu"). */
-const ADMIN_SUFFIXES = [
-  "district",
-  "sub county",
-  "sub-county",
-  "county",
-  "municipality",
-  "municipal",
-  "province",
-  "division",
-  "region",
-  "state",
-  "city",
-  "town",
-  "village",
-  "ward",
-];
-
-/** Folded, punctuation-free, admin suffixes stripped: the key every place name is matched by. */
-export function normalizePlace(value: string): string {
-  let out = value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-  let stripped = true;
-  while (stripped) {
-    stripped = false;
-    for (const suffix of ADMIN_SUFFIXES) {
-      if (out.endsWith(` ${suffix}`)) {
-        out = out.slice(0, out.length - suffix.length - 1).trim();
-        stripped = true;
-      }
-    }
-  }
-  return out;
-}
+/**
+ * Folded, punctuation-free, admin suffixes stripped: the key every place name is matched by.
+ * The one normalizer lives in the domain (`normalizeLocationKey`, Phase 31) so the map, the
+ * location analytics and every breakdown roll-up agree; this alias keeps the Phase 30 name.
+ */
+export const normalizePlace = normalizeLocationKey;
 
 interface GazetteerIndex {
   byName: Map<string, GazetteerPlace[]>;
