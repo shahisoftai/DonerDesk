@@ -420,6 +420,7 @@ export const PeriodIndicatorRowSchema = z.object({
   frequency: z.string().optional(),
   disaggregationRequired: z.boolean(),
   breakdownMustSum: z.boolean().optional(),
+  targetGroups: z.array(z.object({ dimension: z.string(), category: z.string() })).default([]),
   requiresDenominator: z.boolean(),
   /** False when the indicator's frequency says no value is expected in this period (and none is recorded). */
   dueThisPeriod: z.boolean().optional(),

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { DELIVERY_SIGNAL_LABEL, WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import type { DeliverySignal } from "@donordesk/domain/contexts/workplan/index.js";
 import { OVERVIEW_SECTION_LABEL } from "@/features/projects/domain/overview-sections";
-import { SITE_SIGNAL_COLOR, siteMapSummary } from "@/features/workplan/domain/site-map";
+import { SITE_SIGNAL_COLOR, groupUnplaced, siteMapSummary } from "@/features/workplan/domain/site-map";
 import type { LocationData } from "@/features/projects/application/overview-view";
 import { SiteMapFigure } from "@/features/workplan/presentation/SiteMapFigure";
 import { OverviewSection } from "./overview-pieces";
@@ -37,12 +37,12 @@ export function LocationSection({ location, projectId }: { location: LocationDat
           <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">
             <p>{WORKPLAN_COPY.mapUnplaced}</p>
             <ul className="mt-1 list-disc pl-5">
-              {sites.unplaced.slice(0, 5).map((item) => (
+              {groupUnplaced(sites.unplaced).slice(0, 5).map((item) => (
                 <li key={item.id}>
                   <Link className="hover:underline" href={`/projects/${projectId}/activities/plan/${item.id}`}>
                     {item.title}
                   </Link>
-                  {item.location ? ` — ${item.location}` : ""}
+                  {item.location ? ` — ${item.location}` : ""}{item.count > 1 ? ` (${item.count} activities)` : ""}
                 </li>
               ))}
             </ul>

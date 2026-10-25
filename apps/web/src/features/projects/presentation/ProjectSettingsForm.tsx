@@ -178,7 +178,8 @@ export function ProjectSettingsForm({ project }: { project: ProjectDetail }) {
           </Field>
           <Field label="Status" htmlFor="settings-status" error={fields.status?.[0]}>
             <Select id="settings-status" value={status} onChange={(e) => setStatus(e.target.value)}>
-              {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+              {project.status === "DRAFT" && <option value="DRAFT">Draft (activate it from the project page)</option>}
+              {STATUS_OPTIONS.map((s) => <option key={s} value={s} disabled={project.status === "DRAFT"}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>)}
             </Select>
           </Field>
         </div>

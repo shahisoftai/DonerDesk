@@ -9,6 +9,8 @@ export interface NeedsYouInput {
   evidenceToReview: number | null;
   activitiesToReview: number | null;
   checklistBlockers: number | null;
+  /** Reports under review that this person may approve; absent when they cannot approve. */
+  reportsToApprove?: number;
 }
 
 export interface NeedsYouItem { key: string; count: number; title: string; detail: string; href: string; tone: "danger" | "warning" | "info" }
@@ -17,6 +19,7 @@ export interface NeedsYouItem { key: string; count: number; title: string; detai
 export function needsYouItems(i: NeedsYouInput): NeedsYouItem[] {
   const all: Array<NeedsYouItem | null> = [
     i.reportsOverdue > 0 ? { key: "reports-overdue", count: i.reportsOverdue, title: i.reportsOverdue === 1 ? "Report is overdue" : "Reports are overdue", detail: "Open the reports list", href: "/reports?band=overdue", tone: "danger" } : null,
+    i.reportsToApprove ? { key: "reports-to-approve", count: i.reportsToApprove, title: i.reportsToApprove === 1 ? "Report is waiting for your approval" : "Reports are waiting for your approval", detail: "Read it, then approve or ask for changes", href: "/reports", tone: "warning" } : null,
     i.highRisks > 0 ? { key: "serious-risks", count: i.highRisks, title: i.highRisks === 1 ? "Serious problem or risk" : "Serious problems and risks", detail: "Across your portfolio", href: "/portfolio", tone: "danger" } : null,
     i.risksReviewOverdue > 0 ? { key: "risk-reviews", count: i.risksReviewOverdue, title: i.risksReviewOverdue === 1 ? "Risk review is overdue" : "Risk reviews are overdue", detail: "Review dates have passed", href: "/portfolio", tone: "warning" } : null,
     i.checklistBlockers ? { key: "checklist", count: i.checklistBlockers, title: i.checklistBlockers === 1 ? "Compliance blocker" : "Compliance blockers", detail: "Open checklist items", href: "/compliance", tone: "warning" } : null,

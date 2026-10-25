@@ -50,6 +50,12 @@ function titleRepeats(typed: string | undefined, planned: string | undefined): b
   return a.length >= 4 && b.length >= 4 && a.includes(b);
 }
 
+/** How many words (three letters or more) the typed title shares with the planned title: "Mobile outreach - Rabak" finds "Mobile integrated outreach - Rabak" among six sibling rows. */
+function sharedWords(typed: string | undefined, planned: string | undefined): number {
+  const a = new Set(words(typed ?? "").split(" ").filter((w) => w.length >= 3));
+  return words(planned ?? "").split(" ").filter((w) => w.length >= 3 && a.has(w)).length;
+}
+
 export function suggestPlanLinks(query: LinkQuery, candidates: ReadonlyArray<LinkCandidate>, limit = MAX_PLAN_LINK_SUGGESTIONS): PlanLinkSuggestion[] {
   return candidates
     .filter((c) => isOpenPlanStatus(c.status))
@@ -62,9 +68,9 @@ export function suggestPlanLinks(query: LinkQuery, candidates: ReadonlyArray<Lin
       if (sameNode) reasons.push(WORKPLAN_COPY.linkSameLogframe);
       const dates = c.plannedStart === c.plannedEnd ? formatShortDate(c.plannedStart, query.date) : `${formatShortDate(c.plannedStart, query.date)} to ${formatShortDate(c.plannedEnd, query.date)}`;
       reasons.push(`${WORKPLAN_COPY.linkPlannedFor} ${dates}`);
-      return { id: c.id, reasons, rank: [sameNode ? 0 : 1, sameTitle ? 0 : 1, mine ? 0 : 1, distance(c, query.date)] as const };
+      return { id: c.id, reasons, rank: [sameNode ? 0 : 1, sameTitle ? 0 : 1, -sharedWords(query.title, c.title), mine ? 0 : 1, distance(c, query.date)] as const };
     })
-    .sort((a, b) => a.rank[0] - b.rank[0] || a.rank[1] - b.rank[1] || a.rank[2] - b.rank[2] || a.rank[3] - b.rank[3] || a.id.localeCompare(b.id))
+    .sort((a, b) => a.rank[0] - b.rank[0] || a.rank[1] - b.rank[1] || a.rank[2] - b.rank[2] || a.rank[3] - b.rank[3] || a.rank[4] - b.rank[4] || a.id.localeCompare(b.id))
     .slice(0, limit)
     .map(({ id, reasons }) => ({ id, reasons }));
 }

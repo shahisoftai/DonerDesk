@@ -56,8 +56,14 @@ def _is_rate(f: Finding) -> bool:
     return (f.indicatorType or "").strip().lower() == "percentage" or (f.unit or "").strip() == "%"
 
 
+def _is_lower_better(f: Finding) -> bool:
+    """Deaths, stock-out days: the target is a ceiling, so "percent of target" (155 % for 3.1 days against 2) reads as ahead of plan.
+    The direction travels in `calculationMethod` ("average:lower-is-better:period")."""
+    return ":lower-is-better:" in (f.calculationMethod or "").lower()
+
+
 def _pct_cell(f: Finding) -> str:
-    if _not_calculable(f) or _is_rate(f):
+    if _not_calculable(f) or _is_rate(f) or _is_lower_better(f):
         return "—"
     pct = percent_of_target(f.value, f.target)
     return "—" if pct is None else f"{normalise_number(f'{pct:.1f}')}%"
@@ -94,7 +100,7 @@ def _life_value(f: Finding) -> str:
 
 
 def _life_pct_cell(f: Finding) -> str:
-    if _is_rate(f):
+    if _is_rate(f) or _is_lower_better(f):
         return "—"
     if f.lifeOfProject is None:
         return "—"

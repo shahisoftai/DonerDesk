@@ -189,6 +189,11 @@ export function EvidenceUploadQueue({
               </Field>
             )}
           </div>
+          {indicatorId && !activityId && !reportingPeriodId && periods.length > 0 && (
+            <p role="status" className="text-xs text-amber-700 dark:text-amber-300">
+              Choose a reporting period: without one the file supports the indicator in general, and no period's value counts it as proof.
+            </p>
+          )}
           {activityId && activities.find((a) => a.id === activityId)?.periodLabel && (
             <p role="status" className="text-xs text-slate-600 dark:text-slate-300">
               Reporting period: {activities.find((a) => a.id === activityId)?.periodLabel} (taken from the activity)

@@ -314,3 +314,11 @@ test("plan link suggestions: a person who leads many activities in the week can 
   assert.equal(suggestPlanLinks({ userId: "ram", date: "2026-03-05", logframeActivityId: "n4" }, rows)[0].id, "a4");
   assert.equal(suggestPlanLinks({ userId: "ram", date: "2026-03-05" }, rows)[0].id, "a1");
 });
+
+test("among sibling rows the one whose words the typed title shares comes first (demo 12)", () => {
+  const rows = ["Kassala", "Gedaref", "Ed Damazin", "Rabak", "Sinja", "Port Sudan"].map((place, i) => ({
+    id: `r${i}`, status: "PLANNED", plannedStart: "2026-11-09", plannedEnd: "2026-11-13", logframeActivityId: "lf1", title: `Mobile integrated outreach - ${place}`, ownerUserId: "u-other",
+  }));
+  const found = suggestPlanLinks({ userId: "me", date: "2026-11-09", logframeActivityId: "lf1", title: "Mobile outreach - Ed Damazin" }, rows);
+  assert.equal(found[0].id, "r2");
+});

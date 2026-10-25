@@ -479,3 +479,26 @@ Programme/grant and budget lines, custom boundary layer (org-wide), Copy project
 | Period Nov / Dec / Jan / Feb / Mar | `5819d282-6bae-4f34-a4c3-8a95784e8998` / `676c9f10-58ee-4349-95c8-8f40c2a1b5a1` / `1307f19a-2deb-428e-b16f-b00827dea57e` / `7ea6b4a9-90ba-4255-96dc-c81020b98ff0` / `50c45dfe-0e60-48cb-bd15-530ddd8234bc` |
 | Situation report (Gedaref) | `dcc6738d-55d8-4384-ac30-556755e002e2` |
 | Infographic (Results & Impact) | `b1918c0d-ed78-4a0c-b11b-0f927fb22054` |
+
+
+## 23. Fix round (2026-10-25, after the run)
+
+Re-reading the run, several findings were **my driver's mistakes, not defects**, and are withdrawn: F-26 (the grid does report skipped values, in a toast), F-27 as a defect (the upload form does offer "For reporting period" once an indicator is chosen; it now also warns when none is chosen), F-28 (my script clicked the big "Done" button, which opens a confirmation dialog, so no plan row was ever marked Done; the "not held" and "0 of 94" figures were correct), F-33 (the approve button has a pending state), F-36 key figures (twelve distinct location spellings were typed on purpose), F-38 (bulk verify reports failures), F-39 (the logframe link was shown correctly; it can be changed). Every other open finding was fixed in code:
+
+| # | Fix |
+| --- | --- |
+| F-3 | Setup blockers no longer print the raw code; the pending-workspace line says to press "Retry workspace" after a few minutes (F-20) |
+| F-9 | The Team page no longer lists invitations for people who already belong to the workspace |
+| F-13 | Drag and "Move to" on the logframe are on by default (`LOGFRAME_DND_ENABLED=0` turns them off) |
+| F-16/F-17 | "Ed Damazin", "Damazin", "Bur Sudan" are placed; the not-placed list shows one line per series ("n activities") with a hint |
+| F-19 | "Create all periods" says "Finish the project setup first" with a link, instead of failing five times |
+| F-21 | "From 2 to 4 November" fills the start date and "Through" |
+| F-22 | No duplicate DOM id on "Through (optional)" |
+| F-23 | Planned-activity suggestions also rank by words shared with the typed title (six sibling rows) |
+| F-25 | The breakdown editor offers the indicator's own location groups as the categories |
+| F-30 | A lower-is-better indicator shows "—" in "% of target" in the report table (direction read from the calculation method) |
+| F-31 | The writer no longer receives "needs review / unverified" for evidence files |
+| F-32 | The flag button "This matches a verified indicator" disappears after it has said it cannot be used |
+| F-35 | A project manager's Home lists "Report waiting for your approval" |
+| F-39/F-40 | A planned activity's place and pin can be edited on its own page; the pin map opens on the project's country |
+| F-1, F-8, F-14, F-24, F-5 | Start-from list hides duplicates and SUPERSEDED; Draft project shows "Draft" in Settings; library hides templates already in the project; table caption without UUID; template badge reads "Approved" |

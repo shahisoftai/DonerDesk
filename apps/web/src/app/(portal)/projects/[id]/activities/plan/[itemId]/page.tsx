@@ -14,6 +14,7 @@ import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
 import { RequiredFilesEditor } from "@/features/workplan/presentation/RequiredFilesEditor";
 import { DependencyEditor } from "@/features/workplan/presentation/DependencyEditor";
 import { LogframeLinkEditor } from "@/features/workplan/presentation/LogframeLinkEditor";
+import { LocationEditor } from "@/features/workplan/presentation/LocationEditor";
 import { EffortEditor } from "@/features/workplan/presentation/EffortEditor";
 import { PlanItemFields } from "@/features/workplan/presentation/PlanItemFields";
 import { PlanItemBudget } from "@/features/workplan/presentation/PlanItemBudget";
@@ -94,6 +95,7 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
 
       <RequiredFilesEditor itemId={row.id} title={row.title} required={row.requiredFiles} stillNeeded={row.stillNeeded} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
       {logframe.ok && <LogframeLinkEditor itemId={row.id} current={row.logframeActivityId} options={logframe.value.items.filter((i) => i.level === "ACTIVITY").map((i) => ({ id: i.id, label: `${i.code ?? ""} ${i.title}`.trim() }))} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />}
+      <LocationEditor itemId={row.id} location={row.location} latitude={row.latitude} longitude={row.longitude} country={data.country} customLayerUrl="/api/organization/map-layer/data" canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
       <EffortEditor itemId={row.id} current={row.effort} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
 
       <DependencyEditor itemId={row.id} after={row.comesAfter} before={row.comesBefore} options={dependencyOptions(row.id, plan.value.items)} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />

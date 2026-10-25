@@ -51,7 +51,9 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
     );
   }
   const items = result.value.items;
-  const libraryItems = library.ok ? library.value.items.filter((t) => t.projectId !== id) : [];
+  // A template already in this project (same name) is not offered again.
+  const hereNames = new Set(items.map((t) => t.templateName.toLowerCase()));
+  const libraryItems = library.ok ? library.value.items.filter((t) => t.projectId !== id && !hereNames.has(t.templateName.toLowerCase())) : [];
 
   return (
     <div className="animate-fade-in" data-tour-id="donor-template-review">

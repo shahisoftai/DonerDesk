@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { WorkPlanRow } from "@/lib/server/schemas";
 import { DELIVERY_SIGNAL_LABEL, WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import type { DeliverySignal } from "@donordesk/domain/contexts/workplan/index.js";
-import { SITE_SIGNAL_COLOR, siteMapData, siteMapSummary, type SiteRiskInput } from "../domain/site-map";
+import { SITE_SIGNAL_COLOR, groupUnplaced, siteMapData, siteMapSummary, type SiteRiskInput } from "../domain/site-map";
 import { SiteMapFigure } from "./SiteMapFigure";
 
 const SIGNALS: readonly DeliverySignal[] = ["LATE", "ON_TIME", "DONE", "CANCELLED"];
@@ -46,13 +46,14 @@ export default function PlanMapView({ projectId, rows, risks, country, mapLayerU
       {data.unplaced.length > 0 && (
         <div className="text-sm text-slate-600 dark:text-slate-300">
           <p>{WORKPLAN_COPY.mapUnplaced}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Type the place the way the suggestions spell it, or open the activity and drop a pin by hand.</p>
           <ul className="mt-1 list-disc pl-5">
-            {data.unplaced.map((item) => (
+            {groupUnplaced(data.unplaced).map((item) => (
               <li key={item.id}>
                 <Link className="hover:underline" href={`/projects/${projectId}/activities/plan/${item.id}`}>
                   {item.title}
                 </Link>
-                {item.location ? ` — ${item.location}` : ""}
+                {item.location ? ` — ${item.location}` : ""}{item.count > 1 ? ` (${item.count} activities)` : ""}
               </li>
             ))}
           </ul>

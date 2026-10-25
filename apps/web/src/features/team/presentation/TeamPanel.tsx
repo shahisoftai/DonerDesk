@@ -47,6 +47,9 @@ export function TeamPanel({
 
   const [statusFilter, setStatusFilter] = useState("");
   const [sortBy, setSortBy] = useState<"NAME" | "NAME_DESC" | "EMAIL" | "ROLE" | "STATUS">("NAME");
+  // An invitation to someone who already belongs to the workspace is history, not something still to do.
+  const memberEmails = useMemo(() => new Set(members.map((m) => m.email.toLowerCase())), [members]);
+  const openInvitations = useMemo(() => pendingInvitations.filter((i) => !memberEmails.has(i.email.toLowerCase())), [pendingInvitations, memberEmails]);
   const statuses = useMemo(() => [...new Set(members.map((m) => m.status))].sort(), [members]);
   const filtered = useMemo(() => {
     const roleName = (r: string) => ROLE_LABEL[r as keyof typeof ROLE_LABEL] ?? r;
@@ -243,7 +246,7 @@ export function TeamPanel({
         </table>
       </div>
 
-      {pendingInvitations.length > 0 && <PendingInvitations invitations={pendingInvitations} />}
+      {openInvitations.length > 0 && <PendingInvitations invitations={openInvitations} />}
 
       {roleChange && canManage && (
         <RoleChangeDialog

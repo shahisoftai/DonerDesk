@@ -656,7 +656,8 @@ function groupByEvidence(
         evidenceId: item.evidenceId,
         title: pkg.title,
         evidenceType: pkg.evidenceType,
-        verificationStatus: pkg.verificationStatus,
+        // Only a verified file is described as such: the writer never learns that a file is waiting for review (workflow state must not reach donor prose).
+        ...(pkg.verificationStatus === "VERIFIED" ? { verificationStatus: pkg.verificationStatus } : {}),
         confidentialityLevel: pkg.confidentialityLevel,
         chunks: [],
       };

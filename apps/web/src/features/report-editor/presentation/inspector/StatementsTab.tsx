@@ -225,7 +225,7 @@ function StatementCard({
           )}
           {canResolve && (
             <>
-              {/\d/.test(claim.text) && !confidential && (
+              {/\d/.test(claim.text) && !confidential && !matchError && (
                 <Button size="sm" variant="secondary" disabled={busy || matching} pending={matching} onClick={() => void confirmMatch()}>
                   This matches a verified indicator
                 </Button>
@@ -238,7 +238,7 @@ function StatementCard({
               </Button>
             </>
           )}
-          {matchError && <p role="alert" className="w-full text-xs text-danger-700 dark:text-danger-400">{matchError}</p>}
+          {matchError && <p role="alert" className="w-full text-xs text-slate-700 dark:text-slate-200">{matchError}</p>}
           {!canResolve && !suggestion && <p className="text-xs text-slate-500 dark:text-slate-400">A report manager decides on flagged statements.</p>}
           {suggestion && !canCorrect && correctBlockedReason && <p className="w-full text-xs text-slate-500 dark:text-slate-400">{correctBlockedReason}</p>}
         </div>

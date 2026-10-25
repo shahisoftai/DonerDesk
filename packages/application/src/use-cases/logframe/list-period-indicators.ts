@@ -24,6 +24,8 @@ export interface PeriodIndicatorRow {
   disaggregationRequired: boolean;
   /** Each breakdown dimension must add up to the period value (counts and amounts, not rates). */
   breakdownMustSum: boolean;
+  /** Groups the indicator carries targets for (e.g. the six locations), so the entry grid can offer them as the breakdown categories. */
+  targetGroups: Array<{ dimension: string; category: string }>;
   /** Percentage/ratio indicators without a configured denominator indicator
    * cannot be independently calculated; their result stays unverifiable. */
   requiresDenominator: boolean;
@@ -145,6 +147,7 @@ export class ListPeriodIndicatorsHandler {
         frequency: ind.frequency,
         disaggregationRequired: ind.disaggregationRequired,
         breakdownMustSum: disaggregationMustSum(ind.type),
+        targetGroups: (ind.targetBreakdowns ?? []).map((g) => ({ dimension: g.dimension, category: g.category })),
         requiresDenominator,
         logframeLevel: item?.level ?? null,
         logframeCode: item?.code ?? null,

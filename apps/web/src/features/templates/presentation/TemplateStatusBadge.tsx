@@ -4,7 +4,7 @@ import type { Tone } from "@/lib/shared/tone";
 const STATUS: Record<string, { label: string; tone: Tone }> = {
   EXTRACTING: { label: "Analysing…", tone: "ai" },
   NEEDS_REVIEW: { label: "Needs review", tone: "warning" },
-  REVIEWED: { label: "Reviewed", tone: "success" },
+  REVIEWED: { label: "Approved", tone: "success" },
   EXTRACTION_FAILED: { label: "Extraction failed", tone: "danger" },
 };
 

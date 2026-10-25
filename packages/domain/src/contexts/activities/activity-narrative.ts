@@ -9,6 +9,8 @@ export interface ProposedActivityFields {
   activityTitle?: string;
   /** ISO calendar date, YYYY-MM-DD. */
   activityDate?: string;
+  /** ISO date the activity ran through, when the words give a span ("from 2 to 4 November"). */
+  activityEndDate?: string;
   location?: string;
   participantsTotal?: number;
   participantsMale?: number;
@@ -30,6 +32,16 @@ const iso = (y: number, m: number, d: number): string | undefined => {
   const date = new Date(Date.UTC(y, m, d));
   return date.getUTCFullYear() === y && date.getUTCMonth() === m && date.getUTCDate() === d ? date.toISOString().slice(0, 10) : undefined;
 };
+
+/** "2 to 4 November", "from 9-13 Nov 2026": the first and last day of a span inside one month. */
+export function findActivityRange(text: string, today: Date): { start: string; end: string } | undefined {
+  const m = text.match(new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s*(?:to|-|–|until|through|and)\\s*(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?${MONTH_PATTERN}(?:,?\\s+(\\d{4}))?`, "i"));
+  if (!m) return undefined;
+  const year = Number(m[4] ?? today.getUTCFullYear());
+  const start = iso(year, monthIndex(m[3]!), Number(m[1]));
+  const end = iso(year, monthIndex(m[3]!), Number(m[2]));
+  return start && end && start < end ? { start, end } : undefined;
+}
 
 export function findActivityDate(text: string, today: Date): string | undefined {
   const isoMatch = text.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
@@ -128,8 +140,10 @@ export function proposeActivityFromNarrative(narrative: string, options: { today
   const out: ProposedActivityFields = {};
   const title = titleFrom(lead || sections.summary || text);
   if (title) out.activityTitle = title;
-  const date = findActivityDate(text, options.today);
+  const range = findActivityRange(text, options.today);
+  const date = range?.start ?? findActivityDate(text, options.today);
   if (date) out.activityDate = date;
+  if (range) out.activityEndDate = range.end;
   const location = findLocation(text);
   if (location) out.location = location;
   Object.assign(out, findParticipantCounts(text));

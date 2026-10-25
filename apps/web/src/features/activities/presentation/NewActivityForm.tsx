@@ -134,6 +134,7 @@ function NewActivityFormInner({
     const { next, filled, kept } = applyNarrativeProposal(currentDraft, proposal);
     setActivityTitle(next.activityTitle);
     setActivityDate(next.activityDate);
+    setActivityEndDate(next.activityEndDate);
     setLocation(next.location);
     setParticipantsTotal(next.participantsTotal);
     setParticipantsMale(next.participantsMale);
@@ -481,7 +482,7 @@ function NewActivityFormInner({
           />
         </Field>
         <Field label="Through (optional)" htmlFor="activityEndDate" error={fields.activityEndDate?.[0]} hint="Leave empty if it happened on one day. For monthly totals (clinics held, women reached) pick the last day of the month.">
-          <div className="flex gap-2">
+          <div id="activityEndDate-group" className="flex gap-2">
             <Input
               id="activityEndDate"
               name="activityEndDate"

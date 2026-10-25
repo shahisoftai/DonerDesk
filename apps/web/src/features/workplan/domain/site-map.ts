@@ -273,6 +273,18 @@ export function siteMapData(
 }
 
 /** The one sentence under the map: what the dots say, in the words of the plan list. */
+/** Rows of one series (same title and place) are listed once with how many there are, so six monthly repeats are one line. */
+export function groupUnplaced(unplaced: ReadonlyArray<{ id: string; title: string; location: string }>): Array<{ id: string; title: string; location: string; count: number }> {
+  const groups = new Map<string, { id: string; title: string; location: string; count: number }>();
+  for (const item of unplaced) {
+    const key = `${item.title}|${item.location}`;
+    const found = groups.get(key);
+    if (found) found.count += 1;
+    else groups.set(key, { ...item, count: 1 });
+  }
+  return [...groups.values()];
+}
+
 export function siteMapSummary(data: SiteMapData): string {
   const parts: string[] = [countOf(data.counts.sites, "site")];
   if (data.counts.late) parts.push(`${countOf(data.counts.late, "site")} late`);

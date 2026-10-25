@@ -42,6 +42,7 @@ export async function PortfolioHome({ ctx, variant }: { ctx: Ctx; variant: "DIRE
     evidenceToReview: snapshot.pendingEvidence.ok ? snapshot.pendingEvidence.value : null,
     activitiesToReview: work.ok ? items.filter((i) => i.kind === "activity").length : null,
     checklistBlockers: work.ok ? items.filter((i) => i.kind === "checklist").length : null,
+    ...(ctx.capabilities.has("report.approve") ? { reportsToApprove: extra.periods.filter((p) => p.status === "UNDER_REVIEW").length } : {}),
   });
   const health = healthCounts(rows);
   const upcoming = upcomingReports(rows, 5);

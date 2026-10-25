@@ -55,3 +55,9 @@ test("a long first sentence is shortened for the title only", () => {
   assert.ok(out.activityTitle.length <= 120);
   assert.equal(out.summary, long.trim());
 });
+
+test("a span of days gives the first day and the day it ran through (demo 12)", () => {
+  const p = propose("From 2 to 4 November 2026 we trained 27 enumerators in Kassala for the baseline coverage survey.", { today: new Date(Date.UTC(2026, 9, 25)) });
+  assert.equal(p.activityDate, "2026-11-02");
+  assert.equal(p.activityEndDate, "2026-11-04");
+});

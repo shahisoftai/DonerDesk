@@ -38,6 +38,9 @@ export function LocationPickerFigure({
       if (mapName === "donordesk-picker-world" && !mod.getMap(mapName)) registerNamedMap(mod, mapName, world);
       const chart = instance.current ?? mod.init(ref.current);
       instance.current = chart;
+      // Open on the project's own country: a world map is too coarse to place a village by hand.
+      const { countryView } = await import("../domain/site-map");
+      const focus = usingCustom || !country ? null : countryView(world, country);
       chart.setOption(
         {
           animation: false,
@@ -45,6 +48,7 @@ export function LocationPickerFigure({
           geo: {
             map: mapName,
             roam: true,
+            ...(focus ? { center: focus.center, zoom: focus.zoom } : {}),
             scaleLimit: { min: 0.8, max: 40 },
             layoutCenter: ["50%", "50%"],
             layoutSize: "100%",

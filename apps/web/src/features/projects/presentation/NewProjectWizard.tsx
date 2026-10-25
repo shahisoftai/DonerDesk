@@ -217,7 +217,7 @@ export function NewProjectWizard({
               <Field label="Start from an earlier project (optional)" htmlFor="start-from-project" hint="Copies the donor, country, sector and reporting cadence. The title, code and dates stay yours to enter.">
                 <Select id="start-from-project" defaultValue="" onChange={(e) => copyFrom(e.target.value)}>
                   <option value="">Start from scratch</option>
-                  {startFrom.map((p) => (
+                  {startFrom.filter((p, i, all) => !/SUPERSEDED/i.test(p.title) && all.findIndex((q) => q.title === p.title) === i).map((p) => (
                     <option key={p.id} value={p.id}>{p.title}</option>
                   ))}
                 </Select>

@@ -406,7 +406,7 @@ export function IndicatorEntryGrid({
       ) : (
         <div className="table-shell overflow-x-auto">
           <table className="w-full text-sm">
-            <caption className="sr-only">Indicator values for reporting period {periodId}</caption>
+            <caption className="sr-only">Indicator values for this reporting period</caption>
             <thead className="thead">
               <tr>
                 <th className="px-3 py-2 text-left">Level</th>
@@ -628,6 +628,7 @@ function LevelGroupRows({
                     disabled={!editable}
                     total={v.periodAchievement}
                     summable={row.breakdownMustSum ?? false}
+                    targetGroups={row.targetGroups}
                     label={`Breakdown for ${row.code}`}
                   />
                 </td>

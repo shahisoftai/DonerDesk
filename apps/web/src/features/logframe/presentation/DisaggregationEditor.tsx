@@ -17,6 +17,7 @@ export function DisaggregationEditor({
   total,
   summable,
   label,
+  targetGroups = [],
 }: {
   entries: DisaggregationEntryInput[];
   onChange: (entries: DisaggregationEntryInput[]) => void;
@@ -24,13 +25,16 @@ export function DisaggregationEditor({
   total: string;
   summable: boolean;
   label: string;
+  /** Groups the indicator has targets for: offered as the categories of their dimension. */
+  targetGroups?: ReadonlyArray<{ dimension: string; category: string }>;
 }) {
   const set = (index: number, patch: Partial<DisaggregationEntryInput>) =>
     onChange(entries.map((entry, i) => (i === index ? { ...entry, ...patch } : entry)));
 
   function addPreset(dimension: DisaggregationEntryInput["dimension"]) {
     const existing = new Set(entries.filter((e) => e.dimension === dimension).map((e) => e.category.toLowerCase()));
-    const additions = (DISAGGREGATION_PRESETS[dimension] ?? [""])
+    const fromTargets = targetGroups.filter((g) => g.dimension === dimension).map((g) => g.category);
+    const additions = (fromTargets.length > 0 ? fromTargets : DISAGGREGATION_PRESETS[dimension] ?? [""])
       .filter((category) => !category || !existing.has(category.toLowerCase()))
       .map((category) => ({ dimension, category, value: "" }));
     onChange([...entries, ...additions]);
