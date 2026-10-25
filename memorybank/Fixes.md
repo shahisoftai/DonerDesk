@@ -1504,3 +1504,10 @@ Full detail: [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-P
 | Blueprint headings English in fr/ar/ur/ps reports | No catalog | `report-type-blueprint-i18n.ts` + `canonicalTitle` so role detection (exec summary last, worker kinds) keeps working |
 | French report carried the attribution twice (English + French) in its first section | Safety net prepended the English sentence when it didn't find it, but the writer had written it in French | "Add if missing" only for English reports (`placeAttribution` `ensure` flag); duplicate removal unchanged |
 
+## Infographic Studio deploy (2026-10-25)
+
+| Symptom | Root cause | Fix |
+|---|---|---|
+| Every infographic render fails on the host with a missing font file (first deploy of Phase 32) | `deploy-fast.sh` packed `packages/infrastructure/dist`, `prisma` and `scripts` but not `assets/`, which holds the bundled fonts the renderer reads | Added `packages/infrastructure/assets` to the packages tar; fonts copied to the host by hand the same day |
+| `rls.sql` aborts with "must be owner of table ConnectorRun" | The single `DO` block loops over every table and stops at a table the migrator does not own | Apply the new tables' grants and policies with the same statements, one batch; check `relrowsecurity` and `relforcerowsecurity` on each table afterwards |
+

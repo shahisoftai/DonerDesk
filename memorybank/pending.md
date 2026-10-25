@@ -24,6 +24,12 @@ Each open item was checked against the code, docs or git history where possible.
 - **Email delivery:** `EMAIL_PROVIDER=smtp` in production.
 - **Demo 9 settings:** `AI_REPORTER_MAX_TOKENS=16384` is present in `workers.env`; `AI_REPORTER_HTTP_TIMEOUT_MS=240000` is in `api.env`; `AI_REPORTER_CONTRACT_VERSION=6` in both.
 
+**Infographic Studio (2026-10-25, deployed, uncommitted):**
+- [ ] Signed-in browser check of the Studio on donordesk.online with the user's own account (no password in files). Then publish `docs/support/_unpublished-phase32/` (checklist in its README).
+- [ ] Commit and push the Phase 31/32 work (branch `0014-maps`).
+- [ ] Native Arabic review of the wording the AI draft and the fixed patterns produce.
+- [ ] Make `apps/web/content/support` and the `_unpublished` folder agree after publication.
+
 **Still to decide or confirm:**
 - **Draft timeout:** `workers.env` has `AI_REPORTER_DRAFT_TIMEOUT_MS=170000`, but AGENTS.md says 90000 per LLM call. Decide which is intended.
 - [x] **First real reminder send:** confirmed. All organisations are UTC, so the send hour is 07:00 UTC = 09:00 CEST. The 09:00 run on 2026-10-22 returned `ran:true` and sent 4 summaries for one organisation.

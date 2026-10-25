@@ -345,3 +345,11 @@ memorybank/
 - Feature doc 43 in `Features/` ([Features/43-Site-Maps.md](Features/43-Site-Maps.md)): the plan's **Map** view, the Overview's **"Where we work"** section, place resolution from the officer's own location text (bundled gazetteer, offline), hand-placed pins, and one uploaded GeoJSON of workspace boundaries per organisation. Plan and invariants: `imp/phase30-maps.md`, `AGENTS.md` → "Phase 30 invariants — maps".
 - Migration `20261024090000_map_layers_and_pins` (PlannedActivity.latitude/longitude + TenantMapLayer) + `rls.sql`; `/ready` requires the new fields. Ship api + web together.
 - Support articles for the feature, unpublished until the live-site check: `docs/support/_unpublished-phase30/` (README carries the publish checklist).
+
+## 2026-10-25: Infographic Studio (Phase 31 + Phase 32)
+
+- Feature doc 44 in `Features/` ([Features/44-Infographic-Studio.md](Features/44-Infographic-Studio.md)): designs built from blocks, 22 templates, 9 formats, themes, English/French/Spanish/Arabic, the Design check, review and approval, public share links, brand kit, report insertion, opt-in AI-drafted wording and the who-does-what-where draft from the plan.
+- Plan and state: `imp/phase31-infograph.md` and `imp/phase32-infographic-studio.md` (§7 = deploy record). Invariants: `AGENTS.md` → "Phase 31 invariants" and "Phase 32 invariants".
+- Deployed: `releaseId=20261025043802` (Phase 31) and `20261025113046` (Phase 32), with migrations `20261026090000_project_infographics` and `20261027090000_infographic_studio_v2`. Operator record in `CONTABO-DEPLOY.md` §11; fixes in `Fixes.md`.
+- Not yet checked signed-in in a browser. Support articles are drafted, not published: `docs/support/_unpublished-phase32/` (publish checklist in its README).
+

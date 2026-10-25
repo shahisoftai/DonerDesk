@@ -5,6 +5,8 @@
 - **Registration:** an article appears in the Support Center only when it is listed in `apps/web/src/app/support/how-to/[article]/page.tsx` (`FILE_MAP`) and `apps/web/src/components/support/wikiCategories.tsx`. Adding a file alone does not publish it.
 - **Unpublished drafts:** `_unpublished-phase28/` holds Phase 28 copy that waits for the browser checks listed in `../marketing/phase28-publish-pack.md`. `_unpublished-phase30/` holds the site maps copy (plan Map view, "Where we work", pinning a place, custom boundaries) — built 2026-10-24, waiting for the live check; its README carries the publish checklist.
 
+`_unpublished-phase32/` holds the Infographic Studio copy (make a design, the Design check, approve and publish, share with a link, wording suggestions) — built and deployed 2026-10-25, not yet checked signed-in in a browser; its README carries the publish checklist.
+
 Registered on 2026-10-21 (how-to): turn on two-step sign-in, set a target schedule, check your portfolio, match donor indicators, review evidence, use comment threads, get a management report, record a change of plan, read a scanned document.
 
 ## Drafts waiting to be published (as of 2026-10-22)

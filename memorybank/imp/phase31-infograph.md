@@ -1,5 +1,7 @@
 # Phase 31 — Infographics Studio + location disaggregation
 
+**Superseded for the Studio by `phase32-infographic-studio.md` (2026-10-25). Feature doc: `Features/44-Infographic-Studio.md`.**
+
 **Status (2026-10-25): Batches 31.1 + 31.2 built and deployed (`releaseId=20261025043802`, verified live on the demo tenant). Batch 31.3 hardening partly built (section show/hide/order, authored titles/text, per-section indicator selection, size all work); branding toggle, saved-config regeneration UX polish and perf passes not built.** Branch seed `0015-infographics` (work landed on `0014-maps`), Version 2.006.
 One additive migration; no new env; no external service (no geocoder, no tile server, no second
 database, no AI).

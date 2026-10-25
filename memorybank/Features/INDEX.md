@@ -186,6 +186,7 @@ Built from `../imp/product-gap-audit-2026-10-20.md` (status ledger in §18). Eac
 | 41 | Management report and changes of plan | RP-05, PM-09 | [41-Management-Report-And-Changes-Of-Plan.md](./41-Management-Report-And-Changes-Of-Plan.md) |
 | 42 | Demo project with a first quarter | UX-03 | [42-Demo-Project-Content.md](./42-Demo-Project-Content.md) |
 | 31 | (addendum) two-step sign-in, lockout | H-12 | [31-Account-Security-And-Access.md](./31-Account-Security-And-Access.md) |
+| 44 | Infographic Studio (Phase 31 + 32): designs, templates, Design check, approval, share links | INF-* | [44-Infographic-Studio.md](./44-Infographic-Studio.md) |
 
 Also in this batch, documented in the audit and `CONTABO-DEPLOY.md` rather than a feature file: off-host backup to Google Drive (SE-06), help articles inside the app (UX-10), sales and privacy mail through the host's mail server (MK-10, SE-09), PDF indicator lines on the shared column definition (RP-08), and the audit-verification schedule (CG-07). Support-centre articles for these features are in `../docs/support/`.
 
@@ -198,3 +199,7 @@ Maps on the project plan and the project Overview: a **Map** view beside List an
 | 43 | Site maps (plan Map view, Overview "Where we work", pins, custom boundaries) | [43-Site-Maps.md](./43-Site-Maps.md) |
 
 Plan, rules and deployment: `../imp/phase30-maps.md` (§10 = batch 30.1). Invariants: `AGENTS.md` → "Phase 30 invariants — maps". Support articles, unpublished until the live check: `../docs/support/_unpublished-phase30/`.
+
+## Phase 31–32 — Infographic Studio (2026-10-25)
+
+Designed results pictures from the project's own records (feature 44). Plan: `../imp/phase32-infographic-studio.md`. Support articles, unpublished until the signed-in check: `../docs/support/_unpublished-phase32/`.
