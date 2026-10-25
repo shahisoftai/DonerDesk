@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "./home.module.css";
 
-const ROTATE_MS = 3000;
+const ROTATE_MS = 5000;
 
 // Three statements, each with its own sub-head. They cross-fade in one grid cell,
 // so the tallest statement sets the height and nothing jumps.
