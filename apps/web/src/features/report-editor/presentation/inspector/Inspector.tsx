@@ -3,6 +3,7 @@
 import type { ChartConfig } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import { ReportChartPanel } from "@/features/reporting/presentation/ReportChartPanel";
 import { DataChartsPanel } from "./DataChartsPanel";
+import { InfographicsPanel } from "./InfographicsPanel";
 import { CommentsThread } from "@/features/comments/presentation/CommentsThread";
 import type { ChartFigureIndicator } from "@/features/reporting/presentation/ChartFigure";
 import type { SectionRevision } from "@/lib/actions/reporting";
@@ -167,6 +168,9 @@ export function Inspector({
             sectionApproved={section.isApproved}
             onChanged={onReload}
           />
+        )}
+        {panel === "chart" && (
+          <InfographicsPanel key={`infographics-${sectionData.id}-${sectionData.updatedAt}`} sectionId={sectionData.id} readOnly={!canEdit} sectionApproved={section.isApproved} onChanged={onReload} />
         )}
         {panel === "comments" && <CommentsThread key={`comments-${sectionData.id}`} entityType="report_section" entityId={sectionData.id} heading="Comments" />}
         {panel === "history" && (

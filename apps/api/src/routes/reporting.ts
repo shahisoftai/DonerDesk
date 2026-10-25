@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, CancelReportingPeriodSchema, SaveSectionNoteSchema, ChangePeriodTemplateSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema, AddSectionDataChartSchema, UpdateSectionDataChartSchema, MoveSectionDataChartSchema, ReopenReportSchema } from "@donordesk/contracts";
+import { AddSectionInfographicSchema, CaptionSectionInfographicSchema, MoveSectionInfographicSchema, CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, CancelReportingPeriodSchema, SaveSectionNoteSchema, ChangePeriodTemplateSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema, AddSectionDataChartSchema, UpdateSectionDataChartSchema, MoveSectionDataChartSchema, ReopenReportSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -17,6 +17,48 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const projectId = (req.params as { projectId: string }).projectId;
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.ensureAutoPeriod.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/report-sections/:id/infographics", async (req) => {
+    const r = await req.container.handlers.sectionInfographics.list({ tenant: req.tenant, requestId: req.id }, (req.params as { id: string }).id);
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.get("/v1/report-sections/:id/infographics/candidates", async (req) => {
+    const r = await req.container.handlers.sectionInfographics.candidates({ tenant: req.tenant, requestId: req.id }, (req.params as { id: string }).id);
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.post("/v1/report-sections/:id/infographics", async (req) => {
+    const body = AddSectionInfographicSchema.parse(req.body);
+    const r = await req.container.handlers.sectionInfographics.add({ tenant: req.tenant, requestId: req.id }, (req.params as { id: string }).id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/report-sections/:id/infographics/:pictureId", async (req) => {
+    const body = CaptionSectionInfographicSchema.parse(req.body);
+    const p = req.params as { id: string; pictureId: string };
+    const r = await req.container.handlers.sectionInfographics.caption({ tenant: req.tenant, requestId: req.id }, p.id, p.pictureId, body.caption);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-sections/:id/infographics/:pictureId/move", async (req) => {
+    const body = MoveSectionInfographicSchema.parse(req.body);
+    const p = req.params as { id: string; pictureId: string };
+    const r = await req.container.handlers.sectionInfographics.move({ tenant: req.tenant, requestId: req.id }, p.id, p.pictureId, body.direction);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.delete("/v1/report-sections/:id/infographics/:pictureId", async (req) => {
+    const p = req.params as { id: string; pictureId: string };
+    const r = await req.container.handlers.sectionInfographics.remove({ tenant: req.tenant, requestId: req.id }, p.id, p.pictureId);
     if (!r.ok) throw r.error;
     return r.value;
   });

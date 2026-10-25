@@ -8,6 +8,6 @@ export default async function ProjectInfographicsPage({ params }: { params: Prom
   const { id } = await params;
   const ctx = await requireSession();
   return (
-    <InfographicsList projectId={id} canEdit={ctx.capabilities.has("reporting.edit")} canExport={ctx.capabilities.has("export.create")} />
+    <InfographicsList projectId={id} canEdit={ctx.capabilities.has("reporting.edit")} canExport={ctx.capabilities.has("export.create")} canManageBrand={ctx.capabilities.has("org.manage")} />
   );
 }

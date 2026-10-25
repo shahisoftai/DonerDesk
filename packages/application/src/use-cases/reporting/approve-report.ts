@@ -50,6 +50,8 @@ export class ApproveReportHandler {
     private readonly notifier?: IReportNotifier,
     /** With this, the audit record says which version of the results framework the report was approved against. */
     private readonly logframeVersions?: ILogframeVersionRepository,
+    /** After a report is approved: things that follow from it (a fresh infographic draft for the period). Never fails the approval. */
+    private readonly afterApproval?: { afterApproval(ctx: AuthenticatedContext, report: { projectId: string; reportingPeriodId: string }): Promise<unknown> },
   ) {}
 
   async handle(ctx: AuthenticatedContext, draftId: string): Promise<Result<void, DomainError>> {
@@ -106,6 +108,11 @@ export class ApproveReportHandler {
       });
     }
     await this.notifier?.approved(ctx.tenant.tenantId, ctx.tenant.userId, draft);
+    try {
+      await this.afterApproval?.afterApproval(ctx, { projectId: draft.projectId, reportingPeriodId: draft.reportingPeriodId });
+    } catch {
+      // What follows an approval never undoes it.
+    }
     return { ok: true, value: undefined };
   }
 

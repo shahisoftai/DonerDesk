@@ -41,6 +41,7 @@
     "@donordesk/contracts": "workspace:*",
     "@donordesk/domain": "workspace:*",
     "@prisma/client": "5.22.0",
+    "@resvg/resvg-js": "2.6.2",
     "archiver": "8.0.0",
     "bcryptjs": "2.4.3",
     "bullmq": "5.34.8",
@@ -55,7 +56,9 @@
     "pdf-parse": "1.1.1",
     "pdfkit": "0.15.0",
     "pino": "9.5.0",
-    "sharp": "^0.35.3"
+    "pptxgenjs": "4.0.1",
+    "sharp": "^0.35.3",
+    "svg-to-pdfkit": "0.1.8"
   },
   "devDependencies": {
     "@types/archiver": "6.0.3",
@@ -63,6 +66,7 @@
     "@types/jsonwebtoken": "9.0.7",
     "@types/pdf-parse": "1.1.4",
     "@types/pdfkit": "0.13.5",
+    "@types/svg-to-pdfkit": "^0.1.4",
     "prisma": "5.22.0",
     "tsx": "4.19.2",
     "typescript": "5.6.3"

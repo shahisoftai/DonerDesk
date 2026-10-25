@@ -37,7 +37,7 @@ export default async function PortfolioDashboardPage() {
       <header>
         <h2 className="text-xl font-semibold tracking-tight">Portfolio</h2>
         <p className="mt-1 text-sm text-slate-500">Delivery, problems and risks, and reporting for every live project you can see, most pressing first.</p>
-        <p className="mt-2 flex flex-wrap gap-2"><Link className="btn-secondary" href="/portfolio/indicators">Indicators across projects</Link><Link className="btn-secondary" href="/programmes">Programmes and grants</Link></p>
+        <p className="mt-2 flex flex-wrap gap-2"><Link className="btn-secondary" href="/portfolio/indicators">Indicators across projects</Link><Link className="btn-secondary" href="/portfolio/infographics">Infographics</Link><Link className="btn-secondary" href="/programmes">Programmes and grants</Link></p>
       </header>
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {tiles.map(([label, value]) => (

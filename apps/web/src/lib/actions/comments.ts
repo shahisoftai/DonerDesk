@@ -28,7 +28,7 @@ export async function listCommentsAction(
 export type AddCommentResult = Result<{ id: string }, AppError>;
 
 export async function addCommentAction(input: {
-  entityType: "report_section" | "evidence" | "indicator_update" | "checklist_item" | "activity_update" | "indicator" | "planned_activity" | "project_risk" | "report_claim";
+  entityType: "report_section" | "evidence" | "indicator_update" | "checklist_item" | "activity_update" | "indicator" | "planned_activity" | "project_risk" | "report_claim" | "infographic";
   entityId: string;
   commentText: string;
   mentionedUserId?: string;

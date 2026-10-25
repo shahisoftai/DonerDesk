@@ -19,7 +19,8 @@ export type CommentableEntityType =
   | "indicator"
   | "planned_activity"
   | "project_risk"
-  | "report_claim";
+  | "report_claim"
+  | "infographic";
 
 export type CommentItem = {
   id: string;

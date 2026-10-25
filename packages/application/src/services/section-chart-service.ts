@@ -36,10 +36,18 @@ export function isDataCenterChart(payload: unknown): boolean {
   return Boolean((payload as { dataCenter?: unknown } | null)?.dataCenter);
 }
 
-/** The section's Data Center charts as artifacts to write back, in their stored order. */
+/** A published infographic image a person placed in a section (stored as a CHART artifact that carries no data, only the picture's place). */
+export function isInfographicArtifact(payload: unknown): boolean {
+  return Boolean((payload as { infographic?: unknown } | null)?.infographic);
+}
+
+/**
+ * The section's own charts and pictures as artifacts to write back, in their stored order: Data Center charts and placed
+ * infographics are the person's, so a text edit or a regeneration never drops them.
+ */
 export function dataCenterChartsToKeep(existing: ReadonlyArray<{ kind: string; caption: string | null; payload: unknown; sourceReferences: unknown }>): GeneratedArtifact[] {
   return existing
-    .filter((a) => a.kind === "CHART" && isDataCenterChart(a.payload))
+    .filter((a) => a.kind === "CHART" && (isDataCenterChart(a.payload) || isInfographicArtifact(a.payload)))
     .map((a) => ({ kind: "CHART", caption: a.caption ?? undefined, ordinal: 0, payload: a.payload, sourceReferences: a.sourceReferences }) as GeneratedArtifact);
 }
 

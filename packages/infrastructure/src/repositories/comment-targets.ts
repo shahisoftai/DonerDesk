@@ -56,6 +56,10 @@ export class PrismaCommentTargets implements ICommentTargets {
         const section = await this.prisma.reportSection.findFirst({ where: { id: sectionId, tenantId: tenantId.toString() }, select: { sectionTitle: true } });
         return section ? { title: `A statement in "${section.sectionTitle}"`, owners: [] } : null;
       }
+      case "infographic": {
+        const r = await this.prisma.projectInfographic.findFirst({ where });
+        return r ? { title: r.title, owners: some(r.createdById, r.reviewRequestedById, r.approvedById) } : null;
+      }
       default:
         return null;
     }

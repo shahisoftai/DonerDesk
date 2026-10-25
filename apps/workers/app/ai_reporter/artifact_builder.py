@@ -57,7 +57,8 @@ def _is_rate(f: Finding) -> bool:
 
 
 def _is_lower_better(f: Finding) -> bool:
-    """Deaths, stock-out days: the target is a ceiling, so "percent of target" (155 % for 3.1 days against 2) reads as ahead of plan.
+    """Deaths, stock-out days: the target is a ceiling, so "percent of target"
+    (155 % for 3.1 days against 2) reads as ahead of plan.
     The direction travels in `calculationMethod` ("average:lower-is-better:period")."""
     return ":lower-is-better:" in (f.calculationMethod or "").lower()
 

@@ -1,28 +1,29 @@
 import {
   DomainError,
-  buildProvenance,
+  PORTFOLIO_PROJECT_ID,
+  canApplyDesignAction,
   configFromTemplate,
   knownTemplates,
   provenanceFooter,
   templateById,
   validateConfig,
   type InfographicConfig,
-  type InfographicProvenance,
   type Result,
 } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { IStorage } from "../../ports/infrastructure.js";
-import type {
-  IInfographicRenderer,
-  IInfographicRepository,
-  IOrganizationBrandReader,
-  InfographicExportRecord,
-  InfographicRecord,
+import {
+  EXPORT_FILE,
+  type IInfographicRenderer,
+  type IInfographicRepository,
+  type IInfographicUserTemplateRepository,
+  type InfographicExportRecord,
+  type InfographicRecord,
 } from "../../ports/infographics.js";
-import type { GetProjectInfographicDataHandler, ProjectInfographicDataDto } from "./infographic-data.js";
-import type { GetProjectDataSheetHandler } from "../data-center/data-sheet.js";
+import type { InfographicRenderService, RenderMapInput } from "./infographic-render.js";
 import type { CreateInfographicInput, ExportInfographicInput, UpdateInfographicInput } from "@donordesk/contracts";
+import type { InfographicExportFormat } from "../../ports/infographics.js";
 
 const CONFIG_LIMIT = 200_000;
 
@@ -41,16 +42,29 @@ export class CreateInfographicHandler {
     private readonly repo: IInfographicRepository,
     private readonly audits: IAuditLogger,
     private readonly clock: IClock,
+    private readonly userTemplates?: IInfographicUserTemplateRepository,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, projectId: string, input: CreateInfographicInput): Promise<Result<InfographicRecord & { config: InfographicConfig }, DomainError>> {
+  async handle(ctx: AuthenticatedContext, projectId: string, input: CreateInfographicInput & { userTemplateId?: string; parentId?: string }): Promise<Result<InfographicRecord & { config: InfographicConfig }, DomainError>> {
     const tenantId = ctx.tenant.tenantId;
-    const supplied = input.config ? (JSON.parse(JSON.stringify(input.config)) as InfographicConfig) : undefined;
+    let supplied = input.config ? (JSON.parse(JSON.stringify(input.config)) as InfographicConfig) : undefined;
+    if (input.userTemplateId && this.userTemplates) {
+      const saved = await this.userTemplates.findById(input.userTemplateId, tenantId);
+      if (!saved.ok) return saved;
+      if (!saved.value) return { ok: false, error: DomainError.notFound("Template", input.userTemplateId) };
+      supplied = JSON.parse(saved.value.configJson) as InfographicConfig;
+      if (input.title?.trim()) supplied.title = input.title.trim();
+    }
     const base: InfographicConfig | undefined = supplied ?? configFromTemplate(input.templateId, input.title);
     if (!base || base.templateId !== input.templateId) return { ok: false, error: DomainError.validation("Choose one of the offered templates") };
     if (input.title?.trim() && !supplied) base.title = input.title.trim();
     const validated = validateConfig(base, knownTemplates());
     if (!validated.ok) return validated;
+    // A portfolio page belongs to the organization, a project page to its project: the two never mix.
+    const portfolioPage = projectId === PORTFOLIO_PROJECT_ID;
+    if (portfolioPage !== (validated.value.scope === "PORTFOLIO")) {
+      return { ok: false, error: DomainError.validation(portfolioPage ? "Choose a portfolio template for a portfolio infographic" : "A portfolio template belongs on the portfolio page, not in a project") };
+    }
 
     const now = this.clock.now();
     const record: InfographicRecord = {
@@ -65,6 +79,9 @@ export class CreateInfographicHandler {
       updatedById: ctx.tenant.userId,
       createdAt: now,
       updatedAt: now,
+      status: "DRAFT",
+      selfApproved: false,
+      ...(input.parentId ? { parentId: input.parentId } : {}),
     };
     if (record.configJson.length > CONFIG_LIMIT) return { ok: false, error: DomainError.validation("This design is too large to save") };
     const saved = await this.repo.create(record);
@@ -93,16 +110,29 @@ export class UpdateInfographicHandler {
     const validated = validateConfig(merged, knownTemplates());
     if (!validated.ok) return validated;
 
+    // An edit that changes what the design says returns an approved or in-review design to DRAFT: what was approved is no longer what is on screen.
+    const newJson = JSON.stringify(validated.value);
+    const changed = newJson !== JSON.stringify(current.value);
+    const status = changed && canApplyDesignAction(existing.value.status, "EDIT") ? "DRAFT" : existing.value.status;
+    const reset = changed && existing.value.status !== "DRAFT";
     const updated: InfographicRecord = {
       ...existing.value,
       title: validated.value.title ?? existing.value.title,
-      configJson: JSON.stringify(validated.value),
+      configJson: newJson,
       updatedById: ctx.tenant.userId,
       updatedAt: this.clock.now(),
+      status,
+      ...(reset ? { selfApproved: false } : {}),
     };
+    if (reset) {
+      delete (updated as { approvedById?: string }).approvedById;
+      delete (updated as { approvedAt?: Date }).approvedAt;
+      delete (updated as { reviewRequestedById?: string }).reviewRequestedById;
+      delete (updated as { reviewRequestedAt?: Date }).reviewRequestedAt;
+    }
     const saved = await this.repo.update(updated);
     if (!saved.ok) return saved;
-    await this.audits.record({ tenantId, actorId: ctx.tenant.userId, eventType: "infographic.update", entityType: "Infographic", entityId: infographicId, projectId: existing.value.projectId });
+    await this.audits.record({ tenantId, actorId: ctx.tenant.userId, eventType: "infographic.update", entityType: "Infographic", entityId: infographicId, projectId: existing.value.projectId, ...(reset ? { systemNote: `returned to draft from ${existing.value.status}` } : {}) });
     return { ok: true, value: { ...saved.value, config: validated.value } };
   }
 }
@@ -175,15 +205,17 @@ export interface InfographicExportSnapshot {
 /**
  * Renders the current design against current records and freezes it: the file goes to storage, the
  * row keeps the snapshot and provenance. Regenerating never alters a previous export.
+ *
+ * The Design check runs first. A blocker stops the publish unless the author waived it with a
+ * reason (stored in the design, kept on the export and audited). A design meant for a donor
+ * (profile DONOR_REPORT) must also be approved.
  */
 export class ExportInfographicHandler {
   constructor(
     private readonly repo: IInfographicRepository,
-    private readonly data: GetProjectInfographicDataHandler,
-    private readonly sheet: GetProjectDataSheetHandler,
+    private readonly render: InfographicRenderService,
     private readonly renderer: IInfographicRenderer,
     private readonly storage: IStorage,
-    private readonly brands: IOrganizationBrandReader,
     private readonly ids: IIdGenerator,
     private readonly audits: IAuditLogger,
     private readonly clock: IClock,
@@ -199,45 +231,35 @@ export class ExportInfographicHandler {
     const validated = validateConfig(config.value, knownTemplates());
     if (!validated.ok) return validated;
 
-    const [dataResult, sheetResult, brand] = [await this.data.handle(ctx, found.value.projectId), await this.sheet.handle(ctx, found.value.projectId), await this.brands.brandFor(tenantId)];
-    if (!dataResult.ok) return dataResult;
-    if (!sheetResult.ok) return sheetResult;
-    if (!brand.ok) return brand;
+    const built = await this.render.build(ctx, found.value.projectId, validated.value, { mapPoints: input.mapPoints ?? [], mapShapes: (input as RenderMapInput).mapShapes ?? [] });
+    if (!built.ok) return built;
+    const { check, provenance, altText, data } = built.value;
 
-    const visiblePeriods = visiblePeriodLabels(dataResult.value, validated.value);
-    const indicatorIds = indicatorIdsOf(validated.value, dataResult.value);
-    const provenance: InfographicProvenance = buildProvenance({
-      generatedAt: this.clock.now().toISOString(),
-      periodLabels: visiblePeriods,
-      indicatorCodes: dataResult.value.indicators.filter((i) => indicatorIds.includes(i.id)).map((i) => i.code),
-      unverifiedCount: unverifiedCountOf(validated.value, dataResult.value),
-      notYetReportedCount: dataResult.value.indicators.filter((i) => i.location.kind === "PROJECT_WIDE" && !i.projectWideValue).length,
-    });
+    if (!check.canPublish) {
+      const first = check.blockers[0]!;
+      return { ok: false, error: DomainError.conflict(`This design cannot be published yet: ${first.message} ${first.fix}`, { blockers: check.blockers.map((b) => ({ ruleId: b.ruleId, message: b.message, fix: b.fix })) }) };
+    }
+    const needsApproval = validated.value.profile === "DONOR_REPORT";
+    if (needsApproval && found.value.status !== "APPROVED") {
+      return { ok: false, error: DomainError.conflict("A design for a donor must be approved before it is published. Ask a reviewer to approve it.", { status: found.value.status }) };
+    }
 
-    const renderInput = {
-      configJson: JSON.stringify(validated.value),
-      dataJson: JSON.stringify(dataResult.value),
-      sheetJson: JSON.stringify(sheetResult.value),
-      mapPointsJson: JSON.stringify(input.mapPoints ?? []),
-      organizationName: brand.value.name,
-      ...(brand.value.logoUrl ? { logoUrl: brand.value.logoUrl } : {}),
-      provenanceJson: JSON.stringify(provenance),
-    };
-
-    const rendered = input.format === "PDF" ? await this.renderer.renderPdf(renderInput) : await this.renderer.renderPng(renderInput);
+    const rendered = await this.renderFormat(input.format, built.value.input, { title: validated.value.title ?? found.value.title, altText, provenance, language: validated.value.language, scale: input.scale });
     if (!rendered.ok) return rendered;
 
+    const file = EXPORT_FILE[input.format];
     const exportId = this.ids.generate();
-    const storageKey = `infographics/${tenantId.toString()}/${infographicId}/${exportId}.${input.format.toLowerCase()}`;
-    await this.storage.put({ key: storageKey, body: rendered.value, contentType: input.format === "PDF" ? "application/pdf" : "image/png" });
+    const storageKey = `infographics/${tenantId.toString()}/${infographicId}/${exportId}.${file.extension}`;
+    await this.storage.put({ key: storageKey, body: rendered.value.bytes, contentType: file.contentType });
 
     const snapshot: InfographicExportSnapshot = {
       config: validated.value,
-      periodIds: periodIdsOf(validated.value, dataResult.value),
-      indicatorIds,
-      dataGeneratedAt: dataResult.value.provenance.generatedAt,
+      periodIds: built.value.periodIds,
+      indicatorIds: built.value.indicatorIds,
+      dataGeneratedAt: data.provenance.generatedAt,
       templateVersion: validated.value.templateVersion,
     };
+    const waived = check.findings.filter((f) => f.waived).map((f) => ({ ruleId: f.ruleId, note: validated.value.waivers?.find((w) => w.ruleId === f.ruleId)?.note ?? "" }));
     const record: InfographicExportRecord = {
       id: exportId,
       tenantId: tenantId.toString(),
@@ -245,16 +267,61 @@ export class ExportInfographicHandler {
       projectId: found.value.projectId,
       format: input.format,
       storageKey,
-      sizeBytes: rendered.value.length,
+      sizeBytes: rendered.value.bytes.length,
       snapshotJson: JSON.stringify(snapshot),
       provenanceJson: JSON.stringify(provenance),
       generatedById: ctx.tenant.userId,
       createdAt: this.clock.now(),
+      pageCount: rendered.value.pages,
+      approved: found.value.status === "APPROVED",
+      altText,
+      ...(waived.length > 0 ? { waivedJson: JSON.stringify(waived) } : {}),
     };
     const saved = await this.repo.addExport(record);
     if (!saved.ok) return saved;
-    await this.audits.record({ tenantId, actorId: ctx.tenant.userId, eventType: "infographic.export", entityType: "InfographicExport", entityId: exportId, projectId: found.value.projectId, newValue: JSON.stringify({ format: input.format, footer: provenanceFooter(provenance) }) });
+    await this.audits.record({ tenantId, actorId: ctx.tenant.userId, eventType: "infographic.export", entityType: "InfographicExport", entityId: exportId, projectId: found.value.projectId, newValue: JSON.stringify({ format: input.format, footer: provenanceFooter(provenance, validated.value.language) }) });
+    for (const w of waived) await this.audits.record({ tenantId, actorId: ctx.tenant.userId, eventType: "infographic.waive", entityType: "InfographicExport", entityId: exportId, projectId: found.value.projectId, newValue: JSON.stringify(w) });
     return { ok: true, value: saved.value };
+  }
+
+  private async renderFormat(
+    format: InfographicExportFormat,
+    renderInput: import("../../ports/infographics.js").InfographicRenderInput,
+    meta: { title: string; altText: string; provenance: import("@donordesk/domain").InfographicProvenance; language?: string; scale?: number },
+  ): Promise<Result<{ bytes: Buffer; pages: number }, DomainError>> {
+    const scale = meta.scale === 1 || meta.scale === 3 ? meta.scale : 2;
+    const sourcesNote = provenanceFooter(meta.provenance, meta.language);
+    switch (format) {
+      case "PNG": {
+        const png = await this.renderer.renderPng(renderInput, scale);
+        if (!png.ok) return png;
+        const pages = await this.renderer.renderSvgPages(renderInput);
+        return { ok: true, value: { bytes: png.value, pages: pages.ok ? pages.value.length : 1 } };
+      }
+      case "PDF": {
+        const pdf = await this.renderer.renderPdf(renderInput, { altText: meta.altText });
+        if (!pdf.ok) return pdf;
+        const pages = await this.renderer.renderSvgPages(renderInput);
+        return { ok: true, value: { bytes: pdf.value, pages: pages.ok ? pages.value.length : 1 } };
+      }
+      case "SVG": {
+        const pages = await this.renderer.renderSvgPages(renderInput);
+        if (!pages.ok) return pages;
+        return { ok: true, value: { bytes: Buffer.from(pages.value[0]!.svg, "utf8"), pages: pages.value.length } };
+      }
+      case "PPTX": {
+        const pptx = await this.renderer.renderPptx(renderInput, { title: meta.title, altText: meta.altText, sourcesNote });
+        if (!pptx.ok) return pptx;
+        const pages = await this.renderer.renderSvgPages(renderInput);
+        return { ok: true, value: { bytes: pptx.value, pages: pages.ok ? pages.value.length : 1 } };
+      }
+      case "PACK": {
+        const pack = await this.renderer.renderPack(renderInput, { title: meta.title, altText: meta.altText, caption: `${meta.title}. ${meta.altText}`.slice(0, 500), sourcesNote });
+        if (!pack.ok) return pack;
+        const pages = await this.renderer.renderSvgPages(renderInput);
+        return { ok: true, value: { bytes: pack.value, pages: pages.ok ? pages.value.length : 1 } };
+      }
+    }
   }
 }
 
@@ -276,44 +343,8 @@ export class GetInfographicExportFileHandler {
     if (!found.ok) return found;
     if (!found.value || found.value.infographicId !== infographicId) return { ok: false, error: DomainError.notFound("Infographic export", exportId) };
     const bytes = await this.storage.read(found.value.storageKey);
-    return { ok: true, value: { bytes, contentType: found.value.format === "PDF" ? "application/pdf" : "image/png", format: found.value.format } };
+    const file = EXPORT_FILE[found.value.format] ?? EXPORT_FILE.PNG;
+    return { ok: true, value: { bytes, contentType: file.contentType, format: found.value.format } };
   }
 }
 
-/** The periods a config's period range selects (the read model orders them; absent = all). */
-function visiblePeriodLabels(data: ProjectInfographicDataDto, config: InfographicConfig): string[] {
-  const fromIndex = config.periodFromId ? data.periodOrder.indexOf(config.periodFromId) : 0;
-  const toIndex = config.periodToId ? data.periodOrder.indexOf(config.periodToId) : data.periodOrder.length - 1;
-  if (fromIndex < 0 || toIndex < 0) return data.periods.map((p) => p.label);
-  return data.periods.slice(Math.min(fromIndex, toIndex), Math.max(fromIndex, toIndex) + 1).map((p) => p.label);
-}
-
-function periodIdsOf(config: InfographicConfig, data: ProjectInfographicDataDto): string[] {
-  const fromIndex = config.periodFromId ? data.periodOrder.indexOf(config.periodFromId) : 0;
-  const toIndex = config.periodToId ? data.periodOrder.indexOf(config.periodToId) : data.periodOrder.length - 1;
-  if (fromIndex < 0 || toIndex < 0) return [...data.periodOrder];
-  return data.periodOrder.slice(Math.min(fromIndex, toIndex), Math.max(fromIndex, toIndex) + 1);
-}
-
-/** Indicators the design actually names in its visible sections. */
-function indicatorIdsOf(config: InfographicConfig, data: ProjectInfographicDataDto): string[] {
-  const named = new Set<string>();
-  for (const section of config.sections) {
-    if (section.hidden) continue;
-    for (const id of section.indicatorIds ?? []) named.add(id);
-    for (const id of section.chart?.indicatorIds ?? []) named.add(id);
-  }
-  return data.indicators.filter((indicator) => named.has(indicator.id)).map((indicator) => indicator.id);
-}
-
-/** Unverified plotted values: any visible section naming an indicator whose latest figures are unverified. */
-function unverifiedCountOf(config: InfographicConfig, data: ProjectInfographicDataDto): number {
-  let count = 0;
-  for (const indicator of data.indicators) {
-    if (indicator.location.kind === "PROJECT_WIDE") continue;
-    for (const row of indicator.location.rows) {
-      if (!config.locationKeys?.length || config.locationKeys.includes(row.key)) count += row.unverified;
-    }
-  }
-  return count;
-}

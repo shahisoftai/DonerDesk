@@ -13,6 +13,13 @@ export const InfographicRecordSchema = z.object({
   configJson: z.string(),
   updatedAt: z.string(),
   exportCount: z.number().optional(),
+  /** DRAFT | IN_REVIEW | APPROVED (Phase 32). Older rows read as a draft. */
+  status: z.enum(["DRAFT", "IN_REVIEW", "APPROVED"]).default("DRAFT"),
+  reviewRequestedById: z.string().optional(),
+  approvedById: z.string().optional(),
+  approvedAt: z.string().optional(),
+  selfApproved: z.boolean().default(false),
+  parentId: z.string().optional(),
 });
 
 export const InfographicsListSchema = z.object({ items: z.array(InfographicRecordSchema) });

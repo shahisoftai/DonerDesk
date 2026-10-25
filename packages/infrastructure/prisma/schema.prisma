@@ -1963,6 +1963,16 @@ model ProjectInfographic {
   updatedById     String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  /// DRAFT | IN_REVIEW | APPROVED (Phase 32): any edit returns an approved design to DRAFT.
+  status              String   @default("DRAFT")
+  reviewRequestedById String?
+  reviewRequestedAt   DateTime?
+  approvedById        String?
+  approvedAt          DateTime?
+  /// The approver was the person who asked for the review (allowed only when nobody else can approve).
+  selfApproved        Boolean  @default(false)
+  /// The design this one was made from (a per-location / per-period variant), when any.
+  parentId            String?
 
   @@index([tenantId, projectId])
 }
@@ -1975,7 +1985,7 @@ model InfographicExport {
   tenantId       String
   infographicId  String
   projectId      String
-  /// PNG | PDF
+  /// PNG | PDF | SVG | PPTX | PACK
   format         String
   storageKey     String
   sizeBytes      Int
@@ -1985,6 +1995,76 @@ model InfographicExport {
   provenanceJson String
   generatedById  String
   createdAt      DateTime @default(now())
+  /// Pages in the rendering (a carousel or a multi-page print).
+  pageCount      Int      @default(1)
+  /// The design was APPROVED when this was published.
+  approved       Boolean  @default(false)
+  /// Design-check blockers the author waived (rule ids and reasons), as JSON.
+  waivedJson     String?
+  /// The text description published with the image (for screen readers and captions).
+  altText        String?
 
   @@index([tenantId, projectId, infographicId])
+}
+
+/// An image or logo an organization uploaded for its infographics (Phase 32). Re-encoded on upload (metadata such as
+/// GPS position is removed), never taken from evidence files.
+model InfographicAsset {
+  id          String    @id
+  tenantId    String
+  /// IMAGE | LOGO
+  kind        String
+  name        String
+  contentType String
+  storageKey  String
+  width       Int
+  height      Int
+  sizeBytes   Int
+  credit      String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  archivedAt  DateTime?
+
+  @@index([tenantId, kind])
+}
+
+/// One brand kit per organization: colours, logos and standard lines, as validated JSON.
+model InfographicBrandKit {
+  id          String   @id
+  tenantId    String   @unique
+  brandJson   String
+  updatedById String
+  updatedAt   DateTime @updatedAt
+}
+
+/// A saved layout an organization reuses (private to the organization): the design's config without its data.
+model InfographicUserTemplate {
+  id             String   @id
+  tenantId       String
+  name           String
+  description    String?
+  /// The built-in template it started from (kept so the design stays valid against the registry).
+  baseTemplateId String
+  configJson     String
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+/// A public, expiring link to one published export. Only the SHA-256 of the token is stored.
+model InfographicShareLink {
+  id            String    @id
+  tenantId      String
+  infographicId String
+  exportId      String
+  tokenHash     String    @unique
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  viewCount     Int       @default(0)
+  createdById   String
+  createdAt     DateTime  @default(now())
+
+  @@index([tenantId, infographicId])
 }

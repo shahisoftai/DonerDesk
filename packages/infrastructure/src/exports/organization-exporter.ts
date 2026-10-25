@@ -13,6 +13,7 @@ import type { IOrganizationExporter, OrganizationExport } from "@donordesk/appli
 export const ORG_EXPORT_EXCLUDED: Readonly<Record<string, string>> = {
   PasswordResetToken: "sign-in secret",
   ScimCredential: "sign-in secret",
+  InfographicShareLink: "public link secrets (only a hash is stored)",
   IdempotencyRecord: "internal request bookkeeping",
   RequestIdempotency: "internal request bookkeeping",
   ReminderLedgerEntry: "internal reminder bookkeeping",

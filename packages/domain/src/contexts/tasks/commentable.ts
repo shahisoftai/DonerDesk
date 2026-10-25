@@ -4,7 +4,7 @@
  */
 export type CommentableType =
   | "report_section" | "evidence" | "indicator_update" | "checklist_item" | "activity_update"
-  | "indicator" | "planned_activity" | "project_risk" | "report_claim";
+  | "indicator" | "planned_activity" | "project_risk" | "report_claim" | "infographic";
 
 export type CommentAudience = "MENTIONS" | "PEOPLE";
 
@@ -18,6 +18,7 @@ export const COMMENTABLE_ENTITIES: Readonly<Record<CommentableType, { label: str
   planned_activity: { label: "planned activity", audience: "PEOPLE" },
   project_risk: { label: "problem or risk", audience: "PEOPLE" },
   report_claim: { label: "statement in a report", audience: "MENTIONS" },
+  infographic: { label: "infographic", audience: "PEOPLE" },
 };
 
 export const COMMENTABLE_TYPES = Object.keys(COMMENTABLE_ENTITIES) as CommentableType[];

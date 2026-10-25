@@ -621,7 +621,10 @@ def test_lower_is_better_indicator_has_no_percent_of_target_cell() -> None:
     from app.ai_reporter import artifact_builder
     from app.ai_reporter.models import Finding
 
-    days = Finding(indicatorCode="S1", indicatorType="Number", unit="days", baseline=5, target=2, value=3.1, calculationMethod="average:lower-is-better:period")
+    days = Finding(
+        indicatorCode="S1", indicatorType="Number", unit="days", baseline=5, target=2, value=3.1,
+        calculationMethod="average:lower-is-better:period",
+    )
     assert artifact_builder._pct_cell(days) == "—"
 
 

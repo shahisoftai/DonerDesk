@@ -204,7 +204,7 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
        packages/domain/dist packages/domain/package.json \
        packages/application/dist packages/application/package.json \
        packages/infrastructure/dist packages/infrastructure/package.json \
-       packages/infrastructure/prisma packages/infrastructure/scripts 2>/dev/null || true)
+       packages/infrastructure/prisma packages/infrastructure/scripts packages/infrastructure/assets 2>/dev/null || true)
   echo "    packages tar: $(du -h "${PACKAGES_TAR}" | cut -f1)"
 
   # Stage 3b: ship the pnpm virtual store contents. The api tar ships

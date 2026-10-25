@@ -19,6 +19,7 @@ import { registerOrgRoutes } from "./routes/org.js";
 import { registerUserRoutes } from "./routes/users.js";
 import { registerScimAdminRoutes } from "./routes/scim-admin.js";
 import { registerScimRoutes } from "./scim/routes.js";
+import { registerPublicInfographicRoutes } from "./routes/infographics.js";
 import { scimRouteOptions } from "./scim/service.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerProjectSetupRoutes } from "./routes/project-setup.js";
@@ -152,6 +153,8 @@ export async function buildServer(): Promise<FastifyInstance> {
   // SCIM has its own authentication (a per-organisation bearer token), so it sits
   // outside the authenticated scope.
   await registerScimRoutes(app, scimRouteOptions(container));
+  // A public share link has no session either: its token says which export it opens.
+  await registerPublicInfographicRoutes(app);
   // The routes registered inside the scope below are the ones that go through
   // authMiddleware + authorizationMiddleware. They are collected here so
   // test/authorization-coverage.test.mjs can assert the authorisation table

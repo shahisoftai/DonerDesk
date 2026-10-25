@@ -98,9 +98,10 @@ import { OidcAuthProvider } from "./auth/oidc.js";
 import { GoogleSignInConnector } from "./auth/google-sign-in.js";
 import { LocalStorage } from "./storage/local-storage.js";
 import { PrismaTenantMapLayerRepository } from "./repositories/tenant-map-layer.js";
-import { PrismaInfographicRepository } from "./repositories/infographics.js";
+import { PrismaInfographicRepository, PrismaInfographicAssetRepository, PrismaBrandKitRepository, PrismaInfographicUserTemplateRepository, PrismaInfographicShareRepository } from "./repositories/infographics.js";
+import { SharpImageNormalizer } from "./infographics/image-normalizer.js";
 import { InfographicComposerRenderer, PrismaOrganizationBrandReader } from "./infographics/renderer.js";
-import { CreateInfographicHandler, UpdateInfographicHandler, ListProjectInfographicsHandler, GetInfographicHandler, DeleteInfographicHandler, ExportInfographicHandler, ListInfographicExportsHandler, GetInfographicExportFileHandler } from "@donordesk/application";
+import { CreateInfographicHandler, UpdateInfographicHandler, ListProjectInfographicsHandler, GetInfographicHandler, DeleteInfographicHandler, ExportInfographicHandler, ListInfographicExportsHandler, GetInfographicExportFileHandler, InfographicRenderService, PreviewInfographicHandler, GetInfographicSuggestionsHandler, GetInfographicAiTextHandler, SuggestPresenceRowsHandler, ListInfographicTemplatesHandler, SaveInfographicTemplateHandler, DeleteInfographicTemplateHandler, UploadInfographicAssetHandler, ListInfographicAssetsHandler, GetInfographicAssetFileHandler, RemoveInfographicAssetHandler, GetBrandKitHandler, SaveBrandKitHandler, InfographicNotifier, InfographicReviewHandler, CreateInfographicShareLinkHandler, ListInfographicShareLinksHandler, RevokeInfographicShareLinkHandler, ResolveInfographicShareHandler, GenerateInfographicVariantsHandler, SectionInfographicsHandler, GetPortfolioInfographicDataHandler, AutoRefreshInfographicsHandler } from "@donordesk/application";
 import { EvidenceStorageResolver } from "./storage/router.js";
 import { ProjectWorkspaceServiceResolver, PrismaWorkspaceNameProvider } from "./storage/workspace-router.js";
 import { PrismaGoogleDriveTokenStore } from "./storage/prisma-google-drive-token-store.js";
@@ -193,6 +194,8 @@ export interface Container {
   invitations: PrismaInvitationRepository;
   passwordResetTokens: PrismaPasswordResetTokenRepository;
   scimCredentials: PrismaScimCredentialRepository;
+  /** Resolves a public share link (the visitor has no session): only meaningful on the admin container. */
+  resolveInfographicShare: ResolveInfographicShareHandler;
   passwordResetRateLimiter: InMemoryPasswordResetRateLimiter;
   billingSubscriptions: PrismaBillingSubscriptionRepository;
   entitlementGrants: PrismaEntitlementGrantRepository;
@@ -346,6 +349,7 @@ export interface Container {
     listIndicatorUpdates: ListIndicatorUpdatesHandler;
     getProjectDataSheet: GetProjectDataSheetHandler;
     getProjectInfographicData: GetProjectInfographicDataHandler;
+    getPortfolioInfographicData: GetPortfolioInfographicDataHandler;
     createInfographic: CreateInfographicHandler;
     updateInfographic: UpdateInfographicHandler;
     listProjectInfographics: ListProjectInfographicsHandler;
@@ -354,6 +358,24 @@ export interface Container {
     exportInfographic: ExportInfographicHandler;
     listInfographicExports: ListInfographicExportsHandler;
     getInfographicExportFile: GetInfographicExportFileHandler;
+    previewInfographic: PreviewInfographicHandler;
+    getInfographicSuggestions: GetInfographicSuggestionsHandler;
+    getInfographicAiText: GetInfographicAiTextHandler;
+    suggestPresenceRows: SuggestPresenceRowsHandler;
+    listInfographicTemplates: ListInfographicTemplatesHandler;
+    saveInfographicTemplate: SaveInfographicTemplateHandler;
+    deleteInfographicTemplate: DeleteInfographicTemplateHandler;
+    uploadInfographicAsset: UploadInfographicAssetHandler;
+    listInfographicAssets: ListInfographicAssetsHandler;
+    getInfographicAssetFile: GetInfographicAssetFileHandler;
+    removeInfographicAsset: RemoveInfographicAssetHandler;
+    getInfographicBrandKit: GetBrandKitHandler;
+    saveInfographicBrandKit: SaveBrandKitHandler;
+    reviewInfographic: InfographicReviewHandler;
+    createInfographicShareLink: CreateInfographicShareLinkHandler;
+    listInfographicShareLinks: ListInfographicShareLinksHandler;
+    revokeInfographicShareLink: RevokeInfographicShareLinkHandler;
+    generateInfographicVariants: GenerateInfographicVariantsHandler;
     importDataSheet: ImportDataSheetHandler;
     listLogframe: ListLogframeHandler;
     listIndicators: ListIndicatorsHandler;
@@ -454,6 +476,7 @@ export interface Container {
     updateReportSectionChart: UpdateReportSectionChartHandler;
     refreshSectionCharts: RefreshSectionChartsHandler;
     sectionDataCharts: SectionDataChartsHandler;
+    sectionInfographics: SectionInfographicsHandler;
     reopenReport: ReopenReportHandler;
     approveReportSection: ApproveReportSectionHandler;
     submitReportForReview: SubmitReportForReviewHandler;
@@ -899,7 +922,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const gateTenantLlm = async (
     resolved: ResolvedLlmConfig | null,
     tenantId: string | undefined,
-    path: "report-draft" | "template-extraction",
+    path: "report-draft" | "template-extraction" | "infographic-text",
   ): Promise<ResolvedLlmConfig | null> => {
     if (resolved?.scope !== "TENANT" || !tenantId) return resolved;
     const entitlementResult = await entitlements.resolve({ tenantId });
@@ -956,6 +979,20 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   // deterministic extractor. The template is donor guidance (no beneficiary
   // data), and redaction would break source-grounding, so no PII firewall.
   const templateExtractionQuota = new TemplateExtractionQuota(llmUsage);
+  const resolveInfographicLlm = async (tenantId: string): Promise<ILLMProvider | null> => {
+    try {
+      const org = await organizations.findByTenant(TenantId.create(tenantId));
+      if (!org.ok || !org.value?.aiEnabled) return null;
+      const resolved = await gateTenantLlm(await resolveTenantLlm(tenantId), tenantId, "infographic-text");
+      const provider = resolved ? createLLMProvider(resolved) : process.env.LLM_PROVIDER ? createLLMProvider() : null;
+      if (!provider || provider.name === "stub") return null;
+      return new UsageRecordingLlmProvider(provider, llmUsage, ids, { tenantId, operationType: "INFOGRAPHIC_TEXT", promptId: "infographic-text" });
+    } catch (error) {
+      logger.warn("Infographic text LLM unavailable", { tenantId, error: error instanceof Error ? error.message : String(error) });
+      return null;
+    }
+  };
+
   const resolveTemplateLlm = async (tenantId: string): Promise<ILLMProvider | null> => {
     try {
       const org = await organizations.findByTenant(TenantId.create(tenantId));
@@ -1105,7 +1142,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const approveTemplateMappingHandler = new ApproveTemplateMappingHandler(donorTemplateMappings, donorTemplateRenderer, storage, audits);
   const lockTemplateMappingHandler = new LockTemplateMappingHandler(periods, donorTemplateMappings, audits);
   const reportNotifier = new ReportNotifier(personNotifier, projects, projectMembers);
-  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding, { profiles: reportingProfiles, projects, members: projectMembers }, reportNotifier, logframeVersions);
+  // The infographic handlers are built further down; approval reaches them through this late-bound hook.
+  let autoRefreshInfographics: AutoRefreshInfographicsHandler | undefined;
+  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding, { profiles: reportingProfiles, projects, members: projectMembers }, reportNotifier, logframeVersions, { afterApproval: async (hookCtx, report) => autoRefreshInfographics?.afterApproval(hookCtx, report) });
   const defaultTemplateResolver = new DefaultTemplateResolver(templates, reportingProfiles);
   const closingPlanHandler = new PlanClosingReportHandler(projects, periods, drafts, indicators, indicatorUpdates, activities, reportingProfiles, templates, financeInputs, defaultTemplateResolver, projectMembers);
   const createReportingPeriodHandler = new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events, activities, defaultTemplateResolver);
@@ -1120,19 +1159,30 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const infographicRepository = new PrismaInfographicRepository(prisma);
   const infographicRenderer = new InfographicComposerRenderer();
   const infographicBrand = new PrismaOrganizationBrandReader(prisma);
-  const createInfographic = new CreateInfographicHandler(ids, infographicRepository, audits, clock);
+  const infographicAssets = new PrismaInfographicAssetRepository(prisma);
+  const infographicBrandKits = new PrismaBrandKitRepository(prisma);
+  const infographicUserTemplates = new PrismaInfographicUserTemplateRepository(prisma);
+  const infographicShares = new PrismaInfographicShareRepository(prisma);
+  const portfolioOverview = new GetPortfolioOverviewHandler(new VisibleProjects(projects, projectMembers), projectHealth, projectRisks, periods, clock);
+  const getPortfolioInfographicData = new GetPortfolioInfographicDataHandler(portfolioOverview, clock);
+  const infographicRender = new InfographicRenderService(getProjectInfographicData, getProjectDataSheet, infographicBrand, infographicBrandKits, infographicAssets, storage, clock, getPortfolioInfographicData);
+  const infographicNotifier = new InfographicNotifier(personNotifier, projects, projectMembers, users);
+  const createInfographic = new CreateInfographicHandler(ids, infographicRepository, audits, clock, infographicUserTemplates);
   const updateInfographic = new UpdateInfographicHandler(infographicRepository, audits, clock);
   const listProjectInfographics = new ListProjectInfographicsHandler(infographicRepository);
   const getInfographic = new GetInfographicHandler(infographicRepository);
   const deleteInfographic = new DeleteInfographicHandler(infographicRepository, audits);
-  const exportInfographic = new ExportInfographicHandler(infographicRepository, getProjectInfographicData, getProjectDataSheet, infographicRenderer, storage, infographicBrand, ids, audits, clock);
+  autoRefreshInfographics = new AutoRefreshInfographicsHandler(infographicRepository, createInfographic, periods, infographicNotifier, audits);
+  const exportInfographic = new ExportInfographicHandler(infographicRepository, infographicRender, infographicRenderer, storage, ids, audits, clock);
   const listInfographicExports = new ListInfographicExportsHandler(infographicRepository);
   const getInfographicExportFile = new GetInfographicExportFileHandler(infographicRepository, storage);
   const bulkUpsertIndicatorUpdates = new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker, taskReconciler);
   const getDonorIndicatorMappingHandler = new GetDonorIndicatorMappingHandler(templates, indicators, donorIndicatorMappings);
   const sectionDataCharts = new SectionDataChartsHandler(sections, drafts, periods, reportArtifacts, getProjectDataSheet, ids, audits);
+  const sectionInfographics = new SectionInfographicsHandler(sections, drafts, periods, reportArtifacts, infographicRepository, ids, audits);
   const handlers: Container["handlers"] = {
     ...workplan.handlers,
+    suggestPresenceRows: new SuggestPresenceRowsHandler(workplan.handlers.listWorkPlan, new ListProjectPeopleHandler(projectMembers, users)),
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
     login: new LoginHandler(users, auth, audits, mfaService),
     completeMfaLogin: new CompleteMfaLoginHandler(users, auth, mfaService, audits),
@@ -1258,6 +1308,23 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     exportInfographic,
     listInfographicExports,
     getInfographicExportFile,
+    previewInfographic: new PreviewInfographicHandler(infographicRepository, infographicRender, infographicRenderer),
+    getInfographicSuggestions: new GetInfographicSuggestionsHandler(getProjectInfographicData, getProjectDataSheet),
+    getInfographicAiText: new GetInfographicAiTextHandler(getProjectInfographicData, getProjectDataSheet, (tenantId) => resolveInfographicLlm(tenantId)),
+    listInfographicTemplates: new ListInfographicTemplatesHandler(infographicUserTemplates),
+    saveInfographicTemplate: new SaveInfographicTemplateHandler(infographicRepository, infographicUserTemplates, ids, audits, clock),
+    deleteInfographicTemplate: new DeleteInfographicTemplateHandler(infographicUserTemplates, audits),
+    uploadInfographicAsset: new UploadInfographicAssetHandler(infographicAssets, new SharpImageNormalizer(), storage, ids, audits, clock),
+    listInfographicAssets: new ListInfographicAssetsHandler(infographicAssets),
+    getInfographicAssetFile: new GetInfographicAssetFileHandler(infographicAssets, storage),
+    removeInfographicAsset: new RemoveInfographicAssetHandler(infographicAssets, audits, clock),
+    getInfographicBrandKit: new GetBrandKitHandler(infographicBrandKits),
+    saveInfographicBrandKit: new SaveBrandKitHandler(infographicBrandKits, infographicAssets, ids, audits),
+    reviewInfographic: new InfographicReviewHandler(infographicRepository, infographicNotifier, audits, clock),
+    createInfographicShareLink: new CreateInfographicShareLinkHandler(infographicRepository, infographicShares, ids, audits, clock),
+    listInfographicShareLinks: new ListInfographicShareLinksHandler(infographicShares),
+    revokeInfographicShareLink: new RevokeInfographicShareLinkHandler(infographicShares, audits, clock),
+    generateInfographicVariants: new GenerateInfographicVariantsHandler(infographicRepository, createInfographic, getProjectInfographicData),
     importDataSheet: new ImportDataSheetHandler(getProjectDataSheet, bulkUpsertIndicatorUpdates),
     listPeriodIndicators: new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates, activities, projects, new PrismaEntryDueDays(prisma), clock),
     parseIndicatorSheet: new ParseIndicatorSheetHandler(periods, indicators, sheetReader),
@@ -1300,7 +1367,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listAdaptations: new ListAdaptationsHandler(adaptationRepo),
     getManagementReport: new GetManagementReportHandler(projects, projectHealth, getProjectDataSheet, projectRisks, periods, evidence, activities, clock, calculateReadinessHandler),
     setDonorIndicatorMapping: new SetDonorIndicatorMappingHandler(templates, indicators, donorIndicatorMappings, ids, audits),
-    getPortfolioOverview: new GetPortfolioOverviewHandler(new VisibleProjects(projects, projectMembers), projectHealth, projectRisks, periods, clock),
+    getPortfolioOverview: portfolioOverview,
+    getPortfolioInfographicData,
     getRiskTrend: new GetRiskTrendHandler(riskTrendStore, projects),
     getActivityFileNeeds: new GetActivityFileNeedsHandler(activities, plannedActivities, evidence),
     createRisk: new CreateRiskHandler(ids, projectRisks, projectRoster, plannedActivities, personNotifier, audits, clock),
@@ -1383,6 +1451,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     updateReportSectionChart: new UpdateReportSectionChartHandler(sections, audits),
     refreshSectionCharts: new RefreshSectionChartsHandler(sections, sectionChartService, audits),
     sectionDataCharts,
+    sectionInfographics,
     reopenReport: new ReopenReportHandler(drafts, periods, audits),
     rewriteReportSection: new RewriteReportSectionHandler(
       ids, drafts, sections, periods, indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder,
@@ -1502,6 +1571,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, jobRetry, failedJobs, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, structuredParser, templateFiles, checklistDetector, exportBuilder,
     organizations, users, invitations, passwordResetTokens, passwordResetRateLimiter, scimCredentials,
+    resolveInfographicShare: new ResolveInfographicShareHandler(infographicShares, infographicRepository, storage, clock),
     projects, demoProjects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, requestIdempotency, activities,
     periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, reportArtifacts, agentMemory, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, purchasedCreditPacks, llmUsage, planCatalog, billingProvider,

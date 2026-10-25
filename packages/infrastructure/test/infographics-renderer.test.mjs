@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { configFromTemplate } from "@donordesk/domain";
-import { composeInfographicPages, rasterizePage } from "../dist/infographics/composer.js";
+import { composeInfographicPages, rasterizePage, contextFor } from "../dist/infographics/composer.js";
+import { kpiBlock } from "../dist/infographics/blocks-core.js";
 import { InfographicComposerRenderer, PrismaOrganizationBrandReader } from "../dist/infographics/renderer.js";
 
 const period = (id, label, start, end) => ({ id, label, start, end, reportType: "QUARTERLY", locked: false, reportStatus: "APPROVED" });
@@ -111,7 +112,8 @@ test("a chart section draws from the shared chart engine and notes unverified po
     { kind: "CHART", title: "Boreholes over time", chart: { template: "INDICATOR_OVER_TIME", indicatorIds: ["i1"], measure: "CUMULATIVE", type: "LINE", showTarget: true } },
   ];
   const pages = await composeInfographicPages(input(config));
-  assert.match(pages[0], /data:image\/png;base64,/);
+  assert.match(pages[0], /<svg x="[\d.]+" y="[\d.]+" width="[\d.]+" height="[\d.]+" viewBox="0 0 /, "the chart is a nested vector picture");
+  assert.doesNotMatch(pages[0], /zr\d+-/, "the chart engine's global element ids are replaced by stable ones");
   assert.match(pages[0], /not verified yet/i);
 });
 
@@ -156,4 +158,37 @@ test("unreadable render inputs are refused with a sentence, not a crash", async 
 
 test("the brand reader is a port; the class exists for the container", () => {
   assert.equal(typeof PrismaOrganizationBrandReader, "function");
+});
+
+test("a theme changes the drawing tokens; a design without a theme keeps the classic look", async () => {
+  const classic = (await composeInfographicPages(input(configFromTemplate("OVERVIEW")))).join("\n");
+  assert.match(classic, /#2f7be8/, "classic accent");
+  assert.match(classic, /Helvetica/);
+  const contrast = (await composeInfographicPages(input({ ...configFromTemplate("OVERVIEW"), themeId: "HIGH_CONTRAST" }))).join("\n");
+  assert.match(contrast, /#00457a/, "high-contrast accent");
+  assert.doesNotMatch(contrast, /#2f7be8/, "no classic colour leaks into another theme");
+  assert.match(contrast, /Arial/);
+  const print = (await composeInfographicPages(input({ ...configFromTemplate("OVERVIEW"), themeId: "PRINT_MONO" }))).join("\n");
+  assert.doesNotMatch(print, /#2f7be8|#8b5cf6|#16a34a/, "the print theme draws in greys only");
+});
+
+test("the PDF is vector with the bundled font embedded (selectable text), and the KPI cards stay inside their panel", async () => {
+  const config = configFromTemplate("OVERVIEW");
+  const result = await new InfographicComposerRenderer().renderPdf({
+    configJson: JSON.stringify(config),
+    dataJson: JSON.stringify(data),
+    sheetJson: JSON.stringify(sheet),
+    provenanceJson: JSON.stringify(provenance),
+    mapPointsJson: "[]",
+    organizationName: "Org",
+  });
+  assert.equal(result.ok, true);
+  const raw = result.value.toString("latin1");
+  assert.match(raw, /LiberationSans/, "the bundled face is embedded, not the host's");
+  assert.ok(result.value.length < 400_000, "text stays text: far smaller than a page image");
+  const ctx = contextFor({ config, data, sheet, provenance, mapPoints: [], organizationName: "Org", templateLabel: "x" });
+  const slot = kpiBlock(ctx, { kind: "KPIS" }, 1096);
+  const rights = [...slot.svg.matchAll(/<rect x="([\d.]+)" y="[\d.]+" width="([\d.]+)" height="[\d.]+" rx="[\d.]+" fill="#f8fafc"/g)].map((m) => Number(m[1]) + Number(m[2]));
+  assert.equal(rights.length, 4);
+  for (const right of rights) assert.ok(right <= 1096 - 16 + 0.01, `card edge ${right} inside the panel`);
 });

@@ -1,339 +1,58 @@
 /**
- * The infographic page composer (Phase 31): lays a validated composition onto fixed A4 pages as
- * SVG, from the same data the Studio previews. Deterministic — no clock inside (generatedAt arrives
- * in the provenance), charts come from the shared `buildDataChart` option builders rendered through
- * the same ECharts SSR path as every export, and every officer-typed string is escaped.
+ * The infographic page composer (Phase 32): lays a validated composition onto pages of the chosen
+ * format as SVG, from the same data the Studio previews (the Studio shows these very pages).
+ * Deterministic: no clock inside (generatedAt arrives in the provenance), charts come from the
+ * shared `buildDataChart` option builders rendered through ECharts SSR, bundled fonts, and every
+ * officer-typed string is escaped.
  *
- * Missing data renders as "Not yet reported" — never zero, never invented. Sections flow top to
- * bottom; HALF-size sections pair two to a row; a row that does not fit starts a new page. Map pins
- * arrive resolved from the browser — no gazetteer, no geocoding, nothing location-shaped leaves the
- * tenant.
+ * Missing data renders as "Not yet reported": never zero, never invented. Sections are placed on a
+ * 12-column grid in order; a row that does not fit starts a new page (print formats) or the whole
+ * design is scaled to fit one canvas (screen formats).
  */
-import * as echarts from "echarts";
-import sharp from "sharp";
-import type { ProjectInfographicDataDto } from "@donordesk/application";
 import {
-  buildDataChart,
-  DEFAULT_SECTION_LABEL,
+  gridFor,
+  iconSvg,
+  isRtl,
+  labelsFor,
+  packRows,
   provenanceFooter,
-  type DataChartSpec,
+  resolveFormat,
+  resolveTheme,
+  spanOf,
+  themeFromBrand,
   type DataSheet,
   type InfographicConfig,
   type InfographicProvenance,
   type InfographicSectionConfig,
+  type OrganizationBrandKit,
 } from "@donordesk/domain";
+import type { PortfolioInfographicDataDto, ProjectInfographicDataDto } from "@donordesk/application";
+import { svgToPng } from "./raster.js";
+import { esc, flipBack, headingHeight, paragraph, r, safeImageUri, text, textWidth, wrapText, type MapPointInput, type MapShapeInput, type RenderAsset, type RenderCtx, type Slot } from "./kit.js";
+import { activitiesBlock, chartBlock, kpiBlock, locationComparisonBlock, locationResultsBlock, reachBlock, textBlock } from "./blocks-core.js";
+import { mapBlock } from "./blocks-map.js";
+import { portfolioCountriesBlock, portfolioHealthBlock, portfolioSummaryBlock, portfolioTableBlock, threeWBlock } from "./blocks-portfolio.js";
+import {
+  bannerBlock,
+  bigNumbersBlock,
+  demographicsBlock,
+  dividerBlock,
+  fundingBlock,
+  funnelBlock,
+  heroBlock,
+  imageBlock,
+  keyMessagesBlock,
+  legendNotesBlock,
+  progressRingsBlock,
+  quoteBlock,
+  resultsChainBlock,
+  sectorGridBlock,
+  smallMultiplesBlock,
+  tableBlock,
+  timelineBlock,
+} from "./blocks-new.js";
 
-const PAGE_W = 1240;
-const PAGE_H = 1754;
-const MARGIN = 72;
-const CONTENT_W = PAGE_W - MARGIN * 2;
-const GAP = 16;
-const USABLE_H = PAGE_H - MARGIN * 2 - 90;
-const FONT = "Helvetica, Arial, sans-serif";
-const INK = "#111827";
-const MUTED = "#6b7280";
-const LINE = "#e5e7eb";
-const BLUE = "#2f7be8";
-const SOFT = "#eef4fd";
-const NOT_REPORTED = "Not yet reported";
-
-const SIGNAL_COLORS: Record<string, string> = {
-  ON_TIME: "#16a34a",
-  LATE: "#dc2626",
-  DONE: "#2563eb",
-  CANCELLED: "#94a3b8",
-};
-
-const esc = (value: string): string =>
-  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
-
-const widthOf = (size: InfographicSectionConfig["size"] | undefined): number =>
-  size === "HALF" ? (CONTENT_W - GAP) / 2 : size === "THIRD" ? (CONTENT_W - GAP * 2) / 3 : CONTENT_W;
-
-interface Slot {
-  svg: string;
-  height: number;
-  width: number;
-}
-
-const text = (x: number, y: number, value: string, opts?: { size?: number; fill?: string; bold?: boolean; anchor?: "start" | "middle" | "end" }): string =>
-  `<text x="${x}" y="${y}" font-family="${FONT}" font-size="${opts?.size ?? 12}" fill="${opts?.fill ?? INK}"${opts?.bold ? ` font-weight="bold"` : ""}${opts?.anchor ? ` text-anchor="${opts.anchor}"` : ""}>${esc(value)}</text>`;
-
-const wrap = (value: string, maxChars: number, maxLines: number): string[] => {
-  const words = value.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = "";
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length > maxChars && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = candidate;
-    }
-    if (lines.length >= maxLines) return lines;
-  }
-  if (current) lines.push(current);
-  return lines;
-};
-
-const sectionTitle = (title: string): string =>
-  `<text x="0" y="16" font-family="${FONT}" font-size="15" font-weight="bold" fill="${BLUE}" letter-spacing="1">${esc(title.toUpperCase())}</text>`;
-
-const panel = (y: number, height: number, width: number, fill = "#ffffff", stroke = LINE): string =>
-  `<rect x="0" y="${y}" width="${width}" height="${height}" rx="10" fill="${fill}" stroke="${stroke}"/>`;
-
-function notReportedSlot(title: string, width: number, bodyHeight = 72): Slot {
-  return {
-    width,
-    height: 26 + bodyHeight + 18,
-    svg: `${sectionTitle(title)}${panel(26, bodyHeight, width)}
-      <text x="20" y="${26 + bodyHeight / 2 + 5}" font-family="${FONT}" font-size="13" font-style="italic" fill="#9ca3af">${NOT_REPORTED}</text>`,
-  };
-}
-
-async function optionToPng(option: Record<string, unknown>, width: number, height: number): Promise<Buffer> {
-  const chart = echarts.init(null, null, { renderer: "svg", ssr: true, width, height });
-  chart.setOption(option);
-  const svg = chart.renderToSVGString();
-  chart.dispose();
-  return sharp(Buffer.from(svg)).resize(Math.round(width * 1.5), Math.round(height * 1.5)).png().toBuffer();
-}
-
-function kpiSlot(data: ProjectInfographicDataDto): Slot {
-  const reach = data.reach;
-  const planned = data.activities.rows.reduce((total, row) => total + row.planned, 0) + data.activities.unlocated;
-  const done = data.activities.rows.reduce((total, row) => total + row.done, 0);
-  const financeRow = data.finance.rows[data.finance.rows.length - 1];
-  const cards: Array<{ value: string; label: string; detail?: string; tone?: string }> = [
-    {
-      value: reach.overallUnique === 0 ? NOT_REPORTED : reach.overallUnique.toLocaleString("en-US"),
-      label: "People reached (registered, unique)",
-      detail: reach.beneficiariesWithoutLocation > 0 ? `${reach.beneficiariesWithoutLocation} without a recorded location` : undefined,
-    },
-    { value: data.activities.rows.length > 0 ? String(data.activities.rows.length) : NOT_REPORTED, label: "Locations with planned activities" },
-    {
-      value: planned > 0 ? `${done} / ${planned}` : NOT_REPORTED,
-      label: "Activities completed of planned",
-      detail: data.activities.unlocated > 0 ? `${data.activities.unlocated} without a location` : undefined,
-    },
-    financeRow
-      ? { value: `Balance ${financeRow.balance}`, label: `Expenditure ${financeRow.expenditure} · ${financeRow.currency}`, detail: financeRow.verified ? undefined : "Not verified yet" }
-      : { value: "—", label: "Budget", detail: "Finance not recorded" },
-  ];
-  const height = 118;
-  const cardW = (CONTENT_W - GAP * 3) / 4;
-  let svg = sectionTitle("Key figures");
-  svg += panel(26, height, CONTENT_W);
-  cards.forEach((card, index) => {
-    const x = 16 + index * (cardW + GAP);
-    svg += `<rect x="${x}" y="40" width="${cardW}" height="${height - 28}" rx="8" fill="#f8fafc"/>`;
-    svg += text(x + 12, 70, card.value, { size: card.value.length > 16 ? 15 : 20, bold: true });
-    for (const [line, i] of wrap(card.label, 26, 2).map((l, i) => [l, i] as const)) {
-      svg += text(x + 12, 90 + i * 13, line, { size: 9.5, fill: MUTED });
-    }
-    if (card.detail) svg += text(x + 12, height - 6, card.detail, { size: 8.5, fill: "#92400e" });
-  });
-  return { svg, height: 26 + height + 18, width: CONTENT_W };
-}
-
-async function chartSlot(config: InfographicConfig, sheet: DataSheet, section: InfographicSectionConfig, width: number): Promise<Slot> {
-  const title = section.title ?? section.chart?.title ?? DEFAULT_SECTION_LABEL.CHART;
-  const bodyHeight = 300;
-  if (!section.chart) return notReportedSlot(title, width);
-  const spec: DataChartSpec = {
-    template: section.chart.template,
-    indicatorIds: section.chart.indicatorIds,
-    measure: section.chart.measure,
-    type: section.chart.type,
-    fromPeriodId: config.periodFromId,
-    toPeriodId: config.periodToId,
-    showTarget: section.chart.showTarget ?? false,
-  };
-  const built = buildDataChart(sheet, spec);
-  if (!built.ok) return notReportedSlot(title, width, bodyHeight);
-  const png = await optionToPng(built.option, Math.round(width - 16), bodyHeight - 46);
-  let svg = sectionTitle(title);
-  svg += panel(26, bodyHeight, width);
-  svg += `<image x="8" y="34" width="${width - 16}" height="${bodyHeight - 46}" href="${`data:image/png;base64,${png.toString("base64")}`}"/>`;
-  built.notes.slice(0, 2).forEach((note: string, index: number) => {
-    svg += text(16, 26 + bodyHeight - 6 + index * 11, note, { size: 9, fill: "#92400e" });
-  });
-  return { svg, height: 26 + bodyHeight + 18, width };
-}
-
-function locationResultsSlot(data: ProjectInfographicDataDto, config: InfographicConfig, section: InfographicSectionConfig, width: number): Slot {
-  const title = section.title ?? DEFAULT_SECTION_LABEL.LOCATION_RESULTS;
-  const named = section.indicatorIds;
-  const withTargets = data.indicators.filter((i) => i.targetActual.kind === "WITH_TARGETS" && (!named?.length || named.includes(i.id)));
-  const tracked = withTargets.length > 0 ? withTargets : data.indicators.filter((i) => i.location.kind !== "PROJECT_WIDE" && (!named?.length || named.includes(i.id)));
-  if (tracked.length === 0) return notReportedSlot(title, width, 84);
-  const height = 46 + 30 * 18 + 14;
-  let svg = sectionTitle(title);
-  svg += panel(26, height, width);
-  let row = 56;
-  svg += text(16, row, "Location", { size: 10, fill: MUTED, bold: true });
-  svg += text(width - 210, row, "Target", { size: 10, fill: MUTED, bold: true, anchor: "end" });
-  svg += text(width - 110, row, "Achieved", { size: 10, fill: MUTED, bold: true, anchor: "end" });
-  svg += text(width - 16, row, "% of target", { size: 10, fill: MUTED, bold: true, anchor: "end" });
-  row += 12;
-  const seen = new Set<string>();
-  outer: for (const indicator of tracked) {
-    if (indicator.targetActual.kind === "WITH_TARGETS") {
-      for (const row2 of indicator.targetActual.rows) {
-        const cellKey = `${indicator.id}|${row2.key}`;
-        if (seen.has(cellKey)) continue;
-        if (config.locationKeys?.length && !config.locationKeys.includes(row2.key)) continue;
-        seen.add(cellKey);
-        row += 27;
-        svg += text(16, row, `${indicator.code} ${row2.location}`, { size: 11.5, bold: true });
-        svg += text(width - 210, row, row2.target ?? "Not planned", { size: 11.5, anchor: "end", fill: row2.target ? INK : "#9ca3af" });
-        svg += text(width - 110, row, row2.actual ?? "Not reported", { size: 11.5, anchor: "end", fill: row2.actual ? INK : "#9ca3af" });
-        svg += text(width - 16, row, row2.percentOfTarget ? `${row2.percentOfTarget}%` : "—", { size: 11.5, anchor: "end", fill: row2.percentOfTarget ? INK : "#9ca3af" });
-        svg += `<line x1="12" y1="${row + 9}" x2="${width - 12}" y2="${row + 9}" stroke="${LINE}"/>`;
-        if (seen.size >= 18 || row > height + 26) break outer;
-      }
-    } else if (indicator.location.kind !== "PROJECT_WIDE") {
-      // No location targets were planned: the recorded location rows still show, target and % honestly absent.
-      for (const row2 of indicator.location.rows) {
-        const cellKey = `${indicator.id}|${row2.key}`;
-        if (seen.has(cellKey)) continue;
-        if (config.locationKeys?.length && !config.locationKeys.includes(row2.key)) continue;
-        seen.add(cellKey);
-        row += 27;
-        svg += text(16, row, `${indicator.code} ${row2.location}`, { size: 11.5, bold: true });
-        svg += text(width - 210, row, "Not planned", { size: 11.5, anchor: "end", fill: "#9ca3af" });
-        svg += text(width - 110, row, row2.value, { size: 11.5, anchor: "end", fill: row2.verified ? INK : "#92400e" });
-        svg += text(width - 16, row, "—", { size: 11.5, anchor: "end", fill: "#9ca3af" });
-        svg += `<line x1="12" y1="${row + 9}" x2="${width - 12}" y2="${row + 9}" stroke="${LINE}"/>`;
-        if (seen.size >= 18 || row > height + 26) break outer;
-      }
-    }
-  }
-  return { svg, height: 26 + height + 18, width };
-}
-
-function locationComparisonSlot(data: ProjectInfographicDataDto, section: InfographicSectionConfig, width: number): Slot {
-  const title = section.title ?? DEFAULT_SECTION_LABEL.LOCATION_COMPARISON;
-  const tracked = data.indicators.filter((i) => i.location.kind !== "PROJECT_WIDE").slice(0, 5);
-  if (tracked.length === 0) return notReportedSlot(title, width, 84);
-  const locations = new Map<string, string>();
-  for (const indicator of tracked) {
-    if (indicator.location.kind === "PROJECT_WIDE") continue;
-    for (const row of indicator.location.rows) locations.set(row.key, row.location);
-  }
-  const height = 46 + locations.size * 26 + 14;
-  let svg = sectionTitle(title);
-  svg += panel(26, height, width);
-  let column = 160;
-  for (const indicator of tracked) {
-    svg += text(column, 54, `${indicator.code} ${indicator.name}`.slice(0, 24), { size: 9.5, fill: MUTED, bold: true });
-    column += Math.min(200, (width - 160) / tracked.length);
-  }
-  let row = 72;
-  for (const [key, location] of locations) {
-    svg += text(16, row, location, { size: 11.5, bold: true });
-    let x = 160;
-    for (const indicator of tracked) {
-      if (indicator.location.kind === "PROJECT_WIDE") continue;
-      const cell = indicator.location.rows.find((candidate) => candidate.key === key);
-      svg += text(x, row, cell ? cell.value : "—", { size: 11.5, fill: cell ? (cell.verified ? INK : "#92400e") : "#9ca3af" });
-      x += Math.min(200, (width - 160) / tracked.length);
-    }
-    row += 26;
-  }
-  return { svg, height: 26 + height + 18, width };
-}
-
-function reachSlot(data: ProjectInfographicDataDto, section: InfographicSectionConfig, width: number): Slot {
-  const title = section.title ?? DEFAULT_SECTION_LABEL.REACH;
-  const reach = data.reach;
-  if (reach.overallUnique === 0) return notReportedSlot(title, width, 96);
-  const height = 150;
-  let svg = sectionTitle(title);
-  svg += panel(26, height, width);
-  svg += text(16, 52, `${reach.overallUnique.toLocaleString("en-US")} unique people`, { size: 16, bold: true });
-  svg += text(16, 70, `${reach.registeredTotal.toLocaleString("en-US")} registered in total`, { size: 10, fill: MUTED });
-  const max = Math.max(1, ...reach.registeredByLocation.map((row) => row.unique));
-  let row = 94;
-  for (const location of reach.registeredByLocation.slice(0, 5)) {
-    svg += text(16, row + 11, location.location, { size: 10.5 });
-    svg += `<rect x="150" y="${row}" width="${(location.unique / max) * (width - 320)}" height="12" rx="6" fill="#8b5cf6"/>`;
-    svg += text(width - 160, row + 11, String(location.unique), { size: 10.5 });
-    row += 20;
-  }
-  const attendances = reach.attendancesByActivityLocation.reduce((total, row) => total + row.attendances, 0);
-  svg += text(width - 16, 26 + height - 14, `${attendances} attendances (a person may attend several)`, { size: 9.5, fill: MUTED, anchor: "end" });
-  return { svg, height: 26 + height + 18, width };
-}
-
-function activitiesSlot(data: ProjectInfographicDataDto, section: InfographicSectionConfig, width: number): Slot {
-  const title = section.title ?? DEFAULT_SECTION_LABEL.ACTIVITIES_BY_LOCATION;
-  if (data.activities.rows.length === 0 && data.activities.unlocated === 0) return notReportedSlot(title, width, 84);
-  const shown = data.activities.rows.slice(0, 6);
-  const height = 46 + shown.length * 30 + (data.activities.unlocated > 0 ? 20 : 14);
-  let svg = sectionTitle(title);
-  svg += panel(26, height, width);
-  const max = Math.max(1, ...shown.map((row) => row.planned));
-  let row = 58;
-  for (const location of shown) {
-    svg += text(16, row + 12, location.location, { size: 11 });
-    svg += `<rect x="200" y="${row}" width="${(location.done / max) * (width - 400)}" height="16" rx="8" fill="${BLUE}"/>`;
-    svg += text(width - 16, row + 12, `${location.done} / ${location.planned} done${location.late ? ` · ${location.late} late` : ""}`, { size: 10.5, fill: MUTED, anchor: "end" });
-    row += 30;
-  }
-  if (data.activities.unlocated > 0) {
-    svg += text(16, row + 8, `${data.activities.unlocated} activities without a recorded location`, { size: 9.5, fill: "#9ca3af" });
-  }
-  return { svg, height: 26 + height + 18, width };
-}
-
-function mapSlot(mapPoints: MapPointInput[], section: InfographicSectionConfig, width: number): Slot {
-  const title = section.title ?? DEFAULT_SECTION_LABEL.MAP;
-  const bodyHeight = width >= CONTENT_W ? 260 : 220;
-  let svg = sectionTitle(title);
-  svg += panel(26, bodyHeight, width, "#eaf2fb", "#d7e4f5");
-  if (mapPoints.length === 0) {
-    svg += text(width / 2, 26 + bodyHeight / 2, `${NOT_REPORTED} — no placed sites yet`, { size: 12, fill: "#9ca3af", anchor: "middle" });
-    return { svg, height: 26 + bodyHeight + 18, width };
-  }
-  const lats = mapPoints.map((p) => p.lat);
-  const lngs = mapPoints.map((p) => p.lng);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const pad = 40;
-  const scale = Math.min((width - pad * 2) / Math.max(maxLng - minLng, 0.05), (bodyHeight - pad * 2) / Math.max(maxLat - minLat, 0.05));
-  for (const point of mapPoints.slice(0, 120)) {
-    const cx = pad + (point.lng - minLng) * scale;
-    const cy = bodyHeight - pad - (point.lat - minLat) * scale;
-    svg += `<circle cx="${cx}" cy="${cy}" r="${Math.min(6 + (point.count ?? 1), 14)}" fill="${SIGNAL_COLORS[point.worst] ?? BLUE}" stroke="#ffffff" stroke-width="2"/>`;
-    svg += text(cx + 10, cy + 4, point.name, { size: 9, fill: "#334155", bold: true });
-  }
-  svg += text(14, bodyHeight - 12, `${mapPoints.length} site${mapPoints.length === 1 ? "" : "s"}`, { size: 9.5, fill: "#64748b" });
-  return { svg, height: 26 + bodyHeight + 18, width };
-}
-
-function textSlot(section: InfographicSectionConfig, width: number): Slot {
-  const title = section.title ?? DEFAULT_SECTION_LABEL.TEXT;
-  const lines = wrap(section.text ?? "", Math.floor((width - 32) / 7.2), 16);
-  const height = Math.max(56, 30 + lines.length * 18 + 16);
-  let svg = sectionTitle(title);
-  svg += panel(26, height, width, "#f8fafc");
-  lines.forEach((line, index) => {
-    svg += text(16, 56 + index * 18, line, { size: 12.5, fill: "#374151" });
-  });
-  return { svg, height: 26 + height + 18, width };
-}
-
-interface MapPointInput {
-  name: string;
-  lat: number;
-  lng: number;
-  worst: string;
-  count?: number;
-}
+export type { RenderAsset, MapPointInput, MapShapeInput };
 
 export interface InfographicComposeInput {
   config: InfographicConfig;
@@ -341,111 +60,253 @@ export interface InfographicComposeInput {
   sheet: DataSheet;
   provenance: InfographicProvenance;
   mapPoints: MapPointInput[];
+  mapShapes?: MapShapeInput[];
   organizationName: string;
   logoUrl?: string;
   templateLabel: string;
+  /** Uploaded images by asset id, already normalised. */
+  assets?: Record<string, RenderAsset>;
+  brand?: OrganizationBrandKit;
+  portfolio?: PortfolioInfographicDataDto;
+  /** Studio preview: empty authored blocks draw a hint. */
+  preview?: boolean;
 }
 
-interface Row {
-  slots: Slot[];
+/** Where one block sits on a page, in canvas px: the Studio overlays these so a click on the picture selects the block. */
+export interface PlacedBlock {
+  /** Index into `config.sections`. */
+  index: number;
+  x: number;
+  y: number;
+  width: number;
   height: number;
 }
 
-function flowRows(slots: readonly Slot[]): Row[] {
-  const rows: Row[] = [];
-  let pending: Slot | undefined;
-  for (const slot of slots) {
-    if (pending) {
-      rows.push({ slots: [pending, slot], height: Math.max(pending.height, slot.height) });
-      pending = undefined;
-      continue;
-    }
-    if (slot.width < CONTENT_W) {
-      pending = slot;
-      continue;
-    }
-    rows.push({ slots: [slot], height: slot.height });
-  }
-  if (pending) rows.push({ slots: [pending], height: pending.height });
-  return rows;
+/** A composed page: the SVG, its canvas size in px (the PDF writer scales it to the paper) and where its blocks are. */
+export interface ComposedPage {
+  svg: string;
+  width: number;
+  height: number;
+  blocks: PlacedBlock[];
 }
 
-/** The rendered pages (SVG strings) of one infographic, ready for sharp (PNG) or pdfkit (PDF). */
-export async function composeInfographicPages(input: InfographicComposeInput): Promise<string[]> {
+async function blockFor(c: RenderCtx, section: InfographicSectionConfig, width: number): Promise<Slot | undefined> {
+  switch (section.kind) {
+    case "KPIS": return kpiBlock(c, section, width);
+    case "CHART": return chartBlock(c, section, width);
+    case "LOCATION_RESULTS": return locationResultsBlock(c, section, width);
+    case "LOCATION_COMPARISON": return locationComparisonBlock(c, section, width);
+    case "REACH": return reachBlock(c, section, width);
+    case "ACTIVITIES_BY_LOCATION": return activitiesBlock(c, section, width);
+    case "MAP": return mapBlock(c, section, width);
+    case "TEXT": return textBlock(c, section, width);
+    case "HERO": return heroBlock(c, section.assetId || !c.config.coverAssetId ? section : { ...section, assetId: c.config.coverAssetId }, width);
+    case "BIG_NUMBERS": return bigNumbersBlock(c, section, width);
+    case "FUNNEL": return funnelBlock(c, section, width);
+    case "PROGRESS_RINGS": return progressRingsBlock(c, section, width);
+    case "DEMOGRAPHICS": return demographicsBlock(c, section, width);
+    case "SECTOR_GRID": return sectorGridBlock(c, section, width);
+    case "TIMELINE": return timelineBlock(c, section, width);
+    case "KEY_MESSAGES": return keyMessagesBlock(c, section, width);
+    case "QUOTE": return quoteBlock(c, section, width);
+    case "IMAGE": return imageBlock(c, section, width);
+    case "LEGEND_NOTES": return legendNotesBlock(c, section, width);
+    case "BANNER": return bannerBlock(c, section, width);
+    case "FUNDING": return fundingBlock(c, section, width);
+    case "SMALL_MULTIPLES": return smallMultiplesBlock(c, section, width);
+    case "TABLE": return tableBlock(c, section, width);
+    case "RESULTS_CHAIN": return resultsChainBlock(c, section, width);
+    case "DIVIDER": return dividerBlock(c, width);
+    case "PORTFOLIO_SUMMARY": return portfolioSummaryBlock(c, section, width);
+    case "PORTFOLIO_TABLE": return portfolioTableBlock(c, section, width);
+    case "PORTFOLIO_HEALTH": return portfolioHealthBlock(c, section, width);
+    case "PORTFOLIO_COUNTRIES": return portfolioCountriesBlock(c, section, width);
+    case "THREE_W": return threeWBlock(c, section, width);
+  }
+}
+
+interface PlacedRow {
+  items: Array<{ slot: Slot; x: number; index: number }>;
+  height: number;
+  breakBefore: boolean;
+}
+
+export function contextFor(input: InfographicComposeInput): RenderCtx {
   const config = input.config;
-  const slots: Slot[] = [];
-  for (const section of config.sections) {
+  const brandTheme = input.brand ? themeFromBrand(input.brand) : undefined;
+  const t = resolveTheme(config.themeId, brandTheme);
+  const format = resolveFormat(config.format);
+  const lang = config.language ?? "en";
+  const rtl = isRtl(lang);
+  return {
+    t,
+    rtl,
+    font: rtl ? `'Noto Sans Arabic', ${t.font}` : t.font,
+    format,
+    grid: gridFor(format),
+    s: Math.min(Math.max(format.width / 1240, 1), 1.6),
+    lang,
+    l: labelsFor(lang),
+    config,
+    data: input.data,
+    ...(input.portfolio ? { portfolio: input.portfolio } : {}),
+    sheet: input.sheet,
+    mapPoints: input.mapPoints,
+    mapShapes: input.mapShapes ?? [],
+    assets: new Map(
+      Object.entries(input.assets ?? {}).flatMap(([id, asset]) => {
+        const dataUri = safeImageUri(asset.dataUri);
+        return dataUri && Number.isFinite(asset.width) && Number.isFinite(asset.height) && asset.width > 0 && asset.height > 0 ? [[id, { ...asset, dataUri }] as const] : [];
+      }),
+    ),
+    chartSeq: 0,
+    preview: input.preview ?? false,
+  };
+}
+
+/** The rendered pages (SVG strings with their canvas size) of one infographic. */
+export async function composeInfographicPages(input: InfographicComposeInput): Promise<string[]> {
+  return (await composeInfographicDocument(input)).map((page) => page.svg);
+}
+
+export async function composeInfographicDocument(input: InfographicComposeInput): Promise<ComposedPage[]> {
+  const c = contextFor(input);
+  const { t, s, format, grid, config } = c;
+  const W = format.width;
+  const H = format.height;
+  const M = format.margin;
+
+  // 1. Blocks on the grid.
+  const sections = config.sections.filter((section) => !section.hidden);
+  const built: Array<{ span: number; breakBefore: boolean; slot: Slot; index: number }> = [];
+  for (const [index, section] of config.sections.entries()) {
     if (section.hidden) continue;
-    const width = widthOf(section.size);
-    if (section.kind === "KPIS") slots.push(kpiSlot(input.data));
-    else if (section.kind === "CHART") slots.push(await chartSlot(config, input.sheet, section, width));
-    else if (section.kind === "LOCATION_RESULTS") slots.push(locationResultsSlot(input.data, config, section, width));
-    else if (section.kind === "LOCATION_COMPARISON") slots.push(locationComparisonSlot(input.data, section, width));
-    else if (section.kind === "REACH") slots.push(reachSlot(input.data, section, width));
-    else if (section.kind === "ACTIVITIES_BY_LOCATION") slots.push(activitiesSlot(input.data, section, width));
-    else if (section.kind === "MAP") slots.push(mapSlot(input.mapPoints, section, width));
-    else if (section.kind === "TEXT") slots.push(textSlot(section, width));
+    const span = spanOf(section);
+    const slot = await blockFor(c, section, grid.spanWidth(span));
+    if (slot) built.push({ span, breakBefore: Boolean(section.pageBreakBefore), slot, index });
   }
+  const packed = packRows(built.map((b) => ({ ...b })));
+  const rows: PlacedRow[] = packed.map((items) => {
+    let x = 0;
+    const placed = items.map((item) => {
+      // A right-to-left page lays blocks out from the right edge.
+      const placedItem = { slot: item.slot, x: c.rtl ? grid.contentWidth - x - item.slot.width : x, index: item.index };
+      x += item.slot.width + grid.gap;
+      return placedItem;
+    });
+    return { items: placed, height: Math.max(...items.map((i) => i.slot.height)), breakBefore: Boolean(items[0]?.breakBefore) };
+  });
 
-  const rows = flowRows(slots);
-  const pages: Row[][] = [];
-  let current: Row[] = [];
+  // 2. Page furniture sizes.
+  const firstIsHero = sections[0]?.kind === "HERO";
+  const acknowledgement = config.acknowledgement ?? (config.branding ? input.brand?.acknowledgement : undefined);
+  const footerLine = config.branding ? input.brand?.footerLine : undefined;
+  const footerH = (48 + (acknowledgement ? 18 : 0) + (footerLine ? 16 : 0)) * s;
+  const topFirst = M + (firstIsHero ? 0 : 96 * s);
+  const topNext = M + 44 * s;
+  const gapY = 8 * s;
+
+  // 3. Paginate. Print formats break where a row no longer fits. Screen formats (one card per page) shrink the
+  // content to fit, down to a floor of 72%; beyond that the rest continues on the next card (a carousel).
+  const pages: Array<{ rows: PlacedRow[]; scale: number }> = [];
+  const MIN_SCALE = 0.72;
+  const firstUsable = H - topFirst - M - footerH;
+  const nextUsable = H - topNext - M - footerH;
+  let current: PlacedRow[] = [];
   let used = 0;
+  const capacity = (): number => (format.singlePage ? (pages.length === 0 ? firstUsable : nextUsable) / MIN_SCALE : pages.length === 0 ? firstUsable : nextUsable);
+  const close = (): void => {
+    const usable = pages.length === 0 ? firstUsable : nextUsable;
+    pages.push({ rows: current, scale: format.singlePage && used > usable ? Math.max(usable / used, MIN_SCALE) : 1 });
+    current = [];
+    used = 0;
+  };
   for (const row of rows) {
-    if (used > 0 && used + row.height > USABLE_H) {
-      pages.push(current);
-      current = [];
-      used = 0;
-    }
+    if (current.length > 0 && (row.breakBefore || used + row.height > capacity())) close();
     current.push(row);
-    used += row.height + 8;
+    used += row.height + gapY;
   }
-  if (current.length > 0) pages.push(current);
+  if (current.length > 0) close();
+  if (pages.length === 0) pages.push({ rows: [], scale: 1 });
 
-  const header = (pages: number, page: number): string => {
-    const designTitle = config.title ?? input.templateLabel;
-    const periodLabel = input.provenance.periodLabels.length > 0 ? `Reporting period: ${input.provenance.periodLabels.join(" – ")}` : "All periods";
-    let out = `<rect x="0" y="0" width="${PAGE_W}" height="${PAGE_H}" fill="#ffffff"/>`;
-    if (input.logoUrl?.startsWith("data:image/")) {
-      out += `<image x="${MARGIN}" y="${MARGIN - 10}" width="46" height="46" href="${input.logoUrl.slice(0, 600_000)}"/>`;
+  // 4. Draw.
+  const designTitle = config.title ?? input.templateLabel;
+  const periodLabel = input.provenance.periodLabels.length > 0 ? `${c.l.reportingPeriod}: ${input.provenance.periodLabels.join(" – ")}` : c.l.allPeriods;
+  const logo = safeImageUri(input.logoUrl);
+  const donorLogos = (config.donorLogoAssetIds ?? []).map((id) => c.assets.get(id)).filter((x): x is RenderAsset => Boolean(x));
+  const footerText = provenanceFooter(input.provenance, c.lang);
+
+  const header = (pageIndex: number): string => {
+    let out = "";
+    if (pageIndex === 0 && !firstIsHero) {
+      if (logo) out += flipBack(c, M + 23 * s, `<image x="${M}" y="${r(M - 10 * s)}" width="${r(46 * s)}" height="${r(46 * s)}" href="${logo}"/>`);
+      const tx = M + (logo ? 58 * s : 0);
+      out += text(c, tx, M + 8 * s, wrapText(input.organizationName, 44 * 12, 10 * s, 1)[0]?.toUpperCase() ?? "", { size: 10 * s, fill: t.muted });
+      const tw = W - M * 2 - (logo ? 58 * s : 0) - 240 * s;
+      const lines = wrapText(designTitle, Math.max(tw, 200), 24 * s, 2, true);
+      lines.forEach((line, i) => (out += text(c, tx, M + 36 * s + i * 28 * s, line, { size: 24 * s, bold: true })));
+      if (config.subtitle && lines.length < 2) out += text(c, tx, M + 36 * s + lines.length * 28 * s - 4 * s, wrapText(config.subtitle, tw, 11.5 * s, 1)[0] ?? "", { size: 11.5 * s, fill: t.muted });
+      out += `<rect x="${r(W - M - 220 * s)}" y="${r(M - 14 * s)}" width="${r(220 * s)}" height="${r(30 * s)}" rx="${r(15 * s)}" fill="${t.accentSoft}"/>`;
+      out += text(c, W - M - 110 * s, M + 6 * s, input.templateLabel, { size: 11 * s, bold: true, fill: t.accent, anchor: "middle" });
+      out += text(c, W - M, M + 36 * s, wrapText(periodLabel, 240 * s, 10.5 * s, 1)[0] ?? periodLabel, { size: 10.5 * s, fill: t.muted, anchor: "end" });
+      out += `<rect x="0" y="${r(M + 66 * s)}" width="${W}" height="${r(3 * s)}" fill="${t.accent}"/>`;
+    } else if (pageIndex > 0) {
+      out += text(c, M, M + 8 * s, `${input.organizationName.toUpperCase()}  ·  ${designTitle}`, { size: 10 * s, fill: t.muted });
+      out += `<rect x="0" y="${r(M + 20 * s)}" width="${W}" height="${r(2 * s)}" fill="${t.accent}"/>`;
     }
-    const textX = MARGIN + (input.logoUrl?.startsWith("data:image/") ? 58 : 0);
-    for (const [line, i] of wrap(input.organizationName, 44, 1).map((l, i) => [l, i] as const)) {
-      out += text(textX, MARGIN + 8 + i * 14, line.toUpperCase(), { size: 10, fill: MUTED });
-    }
-    for (const [line, i] of wrap(designTitle, 44, 2).map((l, i) => [l, i] as const)) {
-      out += text(textX, MARGIN + 36 + i * 28, line, { size: 24, bold: true });
-    }
-    out += `<rect x="${PAGE_W - MARGIN - 220}" y="${MARGIN - 14}" width="220" height="30" rx="15" fill="${SOFT}"/>`;
-    out += text(PAGE_W - MARGIN - 110, MARGIN + 6, input.templateLabel, { size: 11, bold: true, fill: BLUE, anchor: "middle" });
-    out += text(PAGE_W - MARGIN, MARGIN + 36, periodLabel, { size: 10.5, fill: MUTED, anchor: "end" });
-    out += `<rect x="0" y="${MARGIN + 66}" width="${PAGE_W}" height="3" fill="${BLUE}"/>`;
-    if (pages > 1) out += text(PAGE_W - MARGIN, PAGE_H - MARGIN - 4, `Page ${page + 1} of ${pages}`, { size: 9.5, fill: MUTED, anchor: "end" });
     return out;
   };
 
-  return pages.map((pageRows, pageIndex) => {
-    let y = MARGIN + 96;
-    let out = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${PAGE_W}" height="${PAGE_H}" viewBox="0 0 ${PAGE_W} ${PAGE_H}">`;
-    out += header(pages.length, pageIndex);
-    for (const row of pageRows) {
-      let x = 0;
-      for (const slot of row.slots) {
-        out += `<g transform="translate(${MARGIN + x} ${y})">${slot.svg}</g>`;
-        x += slot.width + GAP;
-      }
-      y += row.height + 8;
+  const footer = (pageIndex: number, total: number): string => {
+    const fy = H - M - footerH + 16 * s;
+    let out = `<rect x="0" y="${r(fy)}" width="${W}" height="${r(1.5 * s)}" fill="${t.line}"/>`;
+    let y = fy + 20 * s;
+    out += text(c, M, y, wrapText(footerText, W - M * 2 - 140 * s, 10 * s, 1)[0] ?? footerText, { size: 10 * s, fill: t.muted });
+    out += text(c, W - M, y, "DonorDesk", { size: 10 * s, fill: t.muted, anchor: "end" });
+    if (acknowledgement) {
+      y += 18 * s;
+      out += text(c, M, y, wrapText(acknowledgement, W - M * 2 - (donorLogos.length * 70 * s), 10.5 * s, 1)[0] ?? acknowledgement, { size: 10.5 * s, fill: t.body, bold: true });
     }
-    const footerY = PAGE_H - MARGIN - 24;
-    out += `<rect x="0" y="${footerY}" width="${PAGE_W}" height="1.5" fill="${LINE}"/>`;
-    out += text(MARGIN, footerY + 20, provenanceFooter(input.provenance), { size: 10, fill: MUTED });
-    out += text(PAGE_W - MARGIN, footerY + 20, "DonorDesk", { size: 10, fill: MUTED, anchor: "end" });
-    out += `</svg>`;
+    if (footerLine) {
+      y += 16 * s;
+      out += text(c, M, y, wrapText(footerLine, W - M * 2, 9.5 * s, 1)[0] ?? footerLine, { size: 9.5 * s, fill: t.muted });
+    }
+    donorLogos.forEach((asset, i) => {
+      const h = 30 * s;
+      const w = Math.min(Math.max((asset.width / asset.height) * h, h), 90 * s);
+      const lx = W - M - (donorLogos.length - i) * (96 * s);
+      out += flipBack(c, lx + w / 2, `<image x="${r(lx)}" y="${r(fy + 26 * s)}" width="${r(w)}" height="${r(h)}" href="${asset.dataUri}" preserveAspectRatio="xMidYMid meet"/>`);
+    });
+    if (total > 1) out += text(c, W - M, H - M + 6 * s, c.l.pageOf.replace("{n}", String(pageIndex + 1)).replace("{m}", String(total)), { size: 9.5 * s, fill: t.muted, anchor: "end" });
     return out;
+  };
+
+  return pages.map((page, pageIndex) => {
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><title>${esc(designTitle)}</title>`;
+    svg += `<rect x="0" y="0" width="${W}" height="${H}" fill="${t.page}"/>`;
+    svg += c.rtl ? `<g transform="translate(${W} 0) scale(-1 1)">${header(pageIndex)}</g>` : header(pageIndex);
+    const top = pageIndex === 0 ? topFirst : topNext;
+    const offsetX = page.scale < 1 ? (grid.contentWidth * (1 - page.scale)) / 2 : 0;
+    let y = 0;
+    let body = "";
+    const blocks: PlacedBlock[] = [];
+    for (const row of page.rows) {
+      for (const item of row.items) {
+        body += `<g transform="translate(${r(item.x)} ${r(y)})">${c.rtl ? `<g transform="translate(${r(item.slot.width)} 0) scale(-1 1)">${item.slot.svg}</g>` : item.slot.svg}</g>`;
+        blocks.push({ index: item.index, x: Math.round(M + offsetX + item.x * page.scale), y: Math.round(top + y * page.scale), width: Math.round(item.slot.width * page.scale), height: Math.round(Math.max(item.slot.height - 18 * s, 8) * page.scale) });
+      }
+      y += row.height + gapY;
+    }
+    svg += `<g transform="translate(${r(M + offsetX)} ${r(top)}) scale(${r(page.scale)})">${body}</g>`;
+    svg += c.rtl ? `<g transform="translate(${W} 0) scale(-1 1)">${footer(pageIndex, pages.length)}</g>` : footer(pageIndex, pages.length);
+    svg += `</svg>`;
+    return { svg, width: W, height: H, blocks };
   });
 }
 
 /** One composed page rasterized (used by the PNG renderer). */
-export async function rasterizePage(svg: string): Promise<Buffer> {
-  return sharp(Buffer.from(svg)).png().toBuffer();
+export async function rasterizePage(svg: string, scale = 1): Promise<Buffer> {
+  return svgToPng(svg, scale);
 }
+
+export { iconSvg, headingHeight, paragraph, textWidth };

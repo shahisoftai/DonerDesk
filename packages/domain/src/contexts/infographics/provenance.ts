@@ -3,6 +3,8 @@
  * stamp is built here once, so the browser preview and the exported image cannot disagree, and the
  * same object is stored beside every published export.
  */
+import { fill, formatDate, labelsFor } from "./labels.js";
+
 export interface InfographicProvenance {
   source: "project-records";
   /** The reporting-period labels whose records feed the design, in order. */
@@ -34,12 +36,6 @@ export function buildProvenance(input: {
   };
 }
 
-const shortDate = (iso: string): string => {
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return iso;
-  return parsed.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-};
-
 const joinList = (values: readonly string[]): string => {
   if (values.length === 0) return "";
   const first = values[0] ?? "";
@@ -49,13 +45,14 @@ const joinList = (values: readonly string[]): string => {
 };
 
 /** The one-line footer: what data, how fresh, what is not verified. Plain words, no codes. */
-export function provenanceFooter(provenance: InfographicProvenance): string {
+export function provenanceFooter(provenance: InfographicProvenance, language?: string): string {
+  const l = labelsFor(language);
   const parts: string[] = [];
   const periods = joinList(provenance.periodLabels);
-  if (periods) parts.push(`Data: ${periods}`);
-  if (provenance.indicatorCodes.length > 0) parts.push(`Indicators ${joinList(provenance.indicatorCodes)}`);
-  if (provenance.unverifiedCount > 0) parts.push(`${provenance.unverifiedCount} value${provenance.unverifiedCount === 1 ? "" : "s"} not yet verified`);
-  if (provenance.notYetReportedCount > 0) parts.push(`${provenance.notYetReportedCount} not yet reported`);
-  parts.push(`Generated ${shortDate(provenance.generatedAt)}`);
+  if (periods) parts.push(`${l.data}: ${periods}`);
+  if (provenance.indicatorCodes.length > 0) parts.push(`${l.indicators} ${joinList(provenance.indicatorCodes)}`);
+  if (provenance.unverifiedCount > 0) parts.push(fill(provenance.unverifiedCount === 1 ? l.valuesNotVerifiedOne : l.valuesNotVerifiedMany, { n: provenance.unverifiedCount }));
+  if (provenance.notYetReportedCount > 0) parts.push(fill(l.notYetReportedCount, { n: provenance.notYetReportedCount }));
+  parts.push(`${l.generated} ${formatDate(provenance.generatedAt, language)}`);
   return parts.join(" · ");
 }
