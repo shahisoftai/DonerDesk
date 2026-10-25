@@ -1,0 +1,26 @@
+Level,Code,Title
+GOAL,G,"Maternal, newborn and child deaths and illness are reduced among displaced and host communities in six localities of Kassala, Gedaref, Blue Nile, White Nile, Sennar and Red Sea States, Sudan"
+OUTCOME,OC1,"Women, newborns and children under five in the six localities use quality, timely maternal, newborn and child health, immunisation and nutrition-screening services at supported primary health care centres and through mobile teams"
+OUTPUT,1.1,"Midwives, nurses and community health workers are competent in emergency obstetric and newborn care, IMNCI and immunisation"
+ACTIVITY,A1.1.1,Emergency obstetric and newborn care (EmONC) training for midwives and nurses (two batches)
+ACTIVITY,A1.1.2,"IMNCI, immunisation and nutrition-screening refresher for primary health care staff"
+ACTIVITY,A1.1.3,Monthly on-the-job mentoring and supportive supervision at supported facilities
+OUTPUT,1.2,"Supported primary health care centres provide safe delivery, newborn care and referral (rehabilitated delivery rooms, referral transport)"
+ACTIVITY,A1.2.1,Rehabilitate and equip delivery rooms and newborn corners at 12 primary health care centres (two per locality)
+ACTIVITY,A1.2.2,Operate the community referral transport scheme (ambulances and motorcycle-ambulances)
+OUTPUT,1.3,"Essential MNCH medicines, vaccines and nutrition supplies are continuously available at supported facilities with a working cold chain"
+ACTIVITY,A1.3.1,"Monthly MNCH supply forecasting, ordering and last-mile delivery"
+ACTIVITY,A1.3.2,Monthly stock and cold-chain checks at supported facilities
+OUTPUT,1.4,"Displaced and remote communities are reached by monthly mobile integrated outreach (ANC, PNC, immunisation, malnutrition screening)"
+ACTIVITY,A1.4.1,Monthly mobile integrated outreach in displacement gathering sites and remote villages
+ACTIVITY,A1.4.2,Catch-up vaccination rounds for zero-dose and under-vaccinated children
+OUTCOME,OC2,"Caregivers and communities in the six localities practise safe motherhood, early care-seeking and optimal infant and young child feeding"
+OUTPUT,2.1,"Community health volunteers identify pregnancies, sick children and malnutrition early and refer"
+ACTIVITY,A2.1.1,"Train community health volunteers on pregnancy identification, danger signs and referral"
+ACTIVITY,A2.1.2,Village pregnancy and under-five registration with referral cards
+OUTPUT,2.2,"Caregivers, men and community leaders support facility delivery, immunisation and infant and young child feeding practices"
+ACTIVITY,A2.2.1,"Mother support groups and community education sessions (feeding, danger signs, immunisation)"
+ACTIVITY,A2.2.2,Radio messages and community dialogues on maternal and child danger signs
+OUTPUT,2.3,State ministries of health use MNCH data to manage services
+ACTIVITY,A2.3.1,Monthly state MNCH data review and action meetings
+ACTIVITY,A2.3.2,Baseline and endline MNCH coverage survey

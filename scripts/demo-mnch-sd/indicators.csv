@@ -1,0 +1,18 @@
+Code,Name,Type,Baseline,Target,Unit,Frequency,Disaggregated,Logframe Code,Data source
+GI-1,Institutional maternal deaths at supported facilities,NUMBER,6,3,deaths,Final,,G,"Facility registers, maternal death review minutes"
+OC1a,Deliveries at supported facilities attended by a skilled birth attendant,PERCENTAGE,41,60,%,Monthly,,OC1,Delivery registers
+OC1b,Newborns with a postnatal care check within 48 hours of birth,PERCENTAGE,22,45,%,Monthly,,OC1,PNC registers
+OC1c,Pregnant women attending four or more ANC visits,PERCENTAGE,29,48,%,Monthly,,OC1,ANC registers
+OC1d,Children under one year receiving Penta3 vaccine,PERCENTAGE,58,75,%,Monthly,,OC1,EPI registers
+OC1e,Zero-dose children identified and vaccinated,NUMBER,0,6000,children,Monthly,yes,OC1,EPI catch-up tally sheets
+OC1f,Children 6-59 months with severe acute malnutrition referred and admitted to treatment,PERCENTAGE,52,80,%,Monthly,,OC1,Nutrition screening and admission registers
+OP1-1,"Midwives, nurses and community health workers trained (EmONC, IMNCI, immunisation)",NUMBER,0,180,people,Monthly,yes,1.1,Training attendance sheets
+OP1-2a,Primary health care centres with rehabilitated and equipped delivery rooms,NUMBER,0,12,facilities,Monthly,yes,1.2,"Handover certificates, site inspection reports"
+OP1-2b,Emergency obstetric and newborn referrals completed by project-supported transport,NUMBER,0,300,referrals,Monthly,yes,1.2,"Referral slips, transport log"
+OP1-3,Tracer MNCH medicine stock-out days (average per supported facility in the month),NUMBER,5,2,days,Monthly,,1.3,"Stock cards (oxytocin, magnesium sulphate, amoxicillin, ORS, RUTF)"
+OP1-4,Women and children reached by mobile integrated outreach,NUMBER,0,18000,people,Monthly,yes,1.4,Outreach tally sheets
+OP2-1,Community health volunteers trained and active,NUMBER,0,300,people,Monthly,yes,2.1,"Training attendance sheets, volunteer activity log"
+OP2-2,Caregivers reached by community education on maternal and child health and feeding,NUMBER,0,24000,people,Monthly,yes,2.2,"Session registers, radio log"
+OP2-3,State MNCH data review meetings held,NUMBER,0,12,meetings,Monthly,,2.3,Meeting minutes
+OC2a,Recently delivered women who know at least three newborn danger signs,PERCENTAGE,21,40,%,Survey,,OC2,Household survey
+OC2b,Infants under six months exclusively breastfed,PERCENTAGE,38,55,%,Survey,,OC2,Household survey
