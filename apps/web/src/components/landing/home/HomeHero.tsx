@@ -96,54 +96,106 @@ export function HomeHero() {
           </div>
         </div>
 
-        <div className={styles.cycle} role="img" aria-label="One record connects four stages: set up, deliver, monitor and demonstrate.">
-          <svg viewBox="0 0 480 480" aria-hidden="true" focusable="false">
-            <defs>
-              <linearGradient id="home-cycle-gradient" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#3fc1a6" />
-                <stop offset="0.4" stopColor="#f2b544" />
-                <stop offset="0.7" stopColor="#74b8e6" />
-                <stop offset="1" stopColor="#f08a72" />
-              </linearGradient>
-            </defs>
-            <circle className={styles.ring} cx="240" cy="240" r="190" />
-            <circle className={styles.flow} cx="240" cy="240" r="190" stroke="url(#home-cycle-gradient)" />
+        <div
+          className={styles.scene}
+          role="img"
+          aria-label="Example project: indicator progress, activity sites on a map, a report statement traced to its evidence file, and 92% donor-report readiness, all from one record."
+        >
+          <svg className={styles.threads} viewBox="0 0 520 520" aria-hidden="true" focusable="false">
+            <path d="M150 190 C150 270 110 300 110 372" />
+            <path d="M330 190 C380 250 410 300 410 372" />
+            <path d="M200 440 C250 470 290 470 330 440" />
           </svg>
-          <div className={`${styles.stageNode} ${styles.nodePlan}`}>
-            <b>Set up</b>
-            <small>Logframe, indicators, team</small>
-          </div>
-          <div className={`${styles.stageNode} ${styles.nodeDeliver}`}>
-            <b>Deliver</b>
-            <small>Activities, evidence, My Work</small>
-          </div>
-          <div className={`${styles.stageNode} ${styles.nodeMonitor}`}>
-            <b>Monitor</b>
-            <small>Indicator values, Data Center</small>
-          </div>
-          <div className={`${styles.stageNode} ${styles.nodeDemo}`}>
-            <b>Demonstrate</b>
-            <small>Checklist, approval, reports</small>
-          </div>
-          <div className={styles.core}>
-            <p className={styles.eyebrow}>Example project</p>
-            <h3>Emergency Response: Health</h3>
-            <div className={styles.coreRow}>
-              <span>Children vaccinated, Q3</span>
-              <strong>1,240 / 1,500</strong>
+
+          <div className={`${styles.card} ${styles.cardIndicators}`}>
+            <p className={styles.cardHead}>
+              <span>Emergency Response: Health</span>
+              <em>Q3</em>
+            </p>
+            <div className={styles.ind}>
+              <div>
+                <span>Children vaccinated</span>
+                <strong>1,240 / 1,500</strong>
+              </div>
+              <i style={{ ["--w" as string]: "83%", ["--c" as string]: "var(--teal)" }} />
             </div>
-            <div className={styles.coreRow}>
-              <span>Activities accepted</span>
-              <strong>38 of 41</strong>
+            <div className={styles.ind}>
+              <div>
+                <span>Health workers trained</span>
+                <strong>64 / 80</strong>
+              </div>
+              <i style={{ ["--w" as string]: "80%", ["--c" as string]: "var(--sky)" }} />
             </div>
-            <div className={styles.coreRow}>
-              <span>Evidence linked</span>
-              <strong>112 files</strong>
+            <div className={styles.ind}>
+              <div>
+                <span>Clinics supplied</span>
+                <strong>9 / 18</strong>
+              </div>
+              <i style={{ ["--w" as string]: "50%", ["--c" as string]: "var(--saffron)" }} />
             </div>
-            <div className={styles.bar} aria-hidden="true">
-              <i />
+            <svg className={styles.spark} viewBox="0 0 240 44" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="home-spark" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#3fc1a6" stopOpacity="0.35" />
+                  <stop offset="1" stopColor="#3fc1a6" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path d="M0 38 L30 33 L60 35 L90 24 L120 26 L150 15 L180 17 L210 8 L240 4 L240 44 L0 44 Z" fill="url(#home-spark)" />
+              <path d="M0 38 L30 33 L60 35 L90 24 L120 26 L150 15 L180 17 L210 8 L240 4" fill="none" stroke="#3fc1a6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          <div className={`${styles.card} ${styles.cardMap}`}>
+            <p className={styles.cardHead}>
+              <span>Where we work</span>
+              <em>6 sites</em>
+            </p>
+            <div className={styles.mapArt} aria-hidden="true">
+              <span style={{ left: "22%", top: "30%", ["--c" as string]: "var(--teal)" }} />
+              <span style={{ left: "46%", top: "52%", ["--c" as string]: "var(--teal)" }} />
+              <span style={{ left: "70%", top: "26%", ["--c" as string]: "var(--saffron)" }} />
+              <span style={{ left: "62%", top: "68%", ["--c" as string]: "var(--teal)" }} />
+              <span style={{ left: "30%", top: "72%", ["--c" as string]: "var(--coral)" }} />
+              <span style={{ left: "84%", top: "56%", ["--c" as string]: "var(--teal)" }} />
             </div>
-            <p className={styles.note}>Readiness for the donor report: 92%</p>
+            <p className={styles.legend}>
+              <b style={{ background: "var(--teal)" }} /> On time
+              <b style={{ background: "var(--coral)" }} /> Late
+            </p>
+          </div>
+
+          <div className={`${styles.card} ${styles.cardReport}`}>
+            <p className={styles.cardHead}>
+              <span>Donor report</span>
+              <em>Draft</em>
+            </p>
+            <i className={styles.line} style={{ width: "92%" }} />
+            <i className={styles.line} style={{ width: "74%" }} />
+            <p className={styles.claim}>
+              <mark>1,240 children were vaccinated in Q3</mark>
+              <small>
+                <b aria-hidden="true">↳</b> Clinic_register_Sept.pdf
+              </small>
+            </p>
+            <i className={styles.line} style={{ width: "84%" }} />
+          </div>
+
+          <div className={`${styles.card} ${styles.cardReady}`}>
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="26" className={styles.dialTrack} />
+              <circle cx="32" cy="32" r="26" className={styles.dialFill} />
+            </svg>
+            <div>
+              <strong>92%</strong>
+              <span>ready for the donor</span>
+            </div>
+          </div>
+
+          <div className={`${styles.chip} ${styles.chipEvidence}`}>
+            <b aria-hidden="true" /> 112 evidence files linked
+          </div>
+          <div className={`${styles.chip} ${styles.chipActivity}`}>
+            <b aria-hidden="true" /> 38 of 41 activities accepted
           </div>
         </div>
       </div>
