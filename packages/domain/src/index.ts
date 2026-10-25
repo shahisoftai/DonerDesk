@@ -29,6 +29,7 @@ export * from "./policies/index.js";
 export * from "./core/plural.js";
 export * from "./core/copy-lint.js";
 export * from "./core/pii-firewall.js";
+export * from "./core/json-repair.js";
 export * from "./core/idempotency.js";
 export * from "./core/exhaustive.js";
 export * from "./core/time-zone.js";

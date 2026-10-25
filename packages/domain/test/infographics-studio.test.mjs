@@ -345,3 +345,13 @@ test("AI text keeps only sentences whose figures the records hold", async () => 
   assert.equal(groundAiText("not json", facts).headlines.length, 0);
   assert.match(buildAiTextPrompt(facts, "fr").system, /Français/);
 });
+
+test("AI text is salvaged when the reply is cut off at the output token limit (observed in production with a reasoning model)", async () => {
+  const { groundAiText } = await import("../dist/index.js");
+  const facts = { projectTitle: "Clean water", country: "Sudan", locations: ["Kassala"], reachUnique: 1234, activitiesDone: 5, activitiesPlanned: 8, financeEnabled: false, indicators: [] };
+  // No closing brace or bracket anywhere: the model's budget ran out mid-reply.
+  const truncated = '{"headlines":["1,234 people reached in Sudan"],"messages":["5 of 8 activities are done';
+  const out = groundAiText(truncated, facts);
+  assert.deepEqual(out.headlines.map((h) => h.text), ["1,234 people reached in Sudan"]);
+  assert.deepEqual(out.messages.map((m) => m.text), ["5 of 8 activities are done"]);
+});

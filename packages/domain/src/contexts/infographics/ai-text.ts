@@ -4,6 +4,7 @@
  * number the facts do not hold is dropped. A person accepts or edits what is left; nothing is saved here.
  */
 import { INFOGRAPHIC_LANGUAGE_LABEL, resolveLanguage } from "./labels.js";
+import { tryParseJson } from "../../core/json-repair.js";
 import type { StoryFacts } from "./suggest.js";
 
 export interface AiTextProposal {
@@ -60,15 +61,22 @@ export function buildAiTextPrompt(facts: StoryFacts, languageIn?: string): { sys
   };
 }
 
-/** Parses the reply strictly and keeps only grounded sentences. */
+/**
+ * Parses the reply and keeps only grounded sentences. A reasoning model can spend part of its
+ * output budget on hidden thinking before it writes the JSON, so the reply is sometimes cut off
+ * mid-structure; `tryParseJson` repairs that (closing what was left open) rather than discarding
+ * a reply that was merely truncated. It never invents a sentence the model did not write.
+ */
 export function groundAiText(raw: string, facts: StoryFacts): AiTextProposal {
+  const start = raw.indexOf("{");
   let parsed: unknown;
-  try {
-    const start = raw.indexOf("{");
+  if (start >= 0) {
     const end = raw.lastIndexOf("}");
-    parsed = start >= 0 && end > start ? JSON.parse(raw.slice(start, end + 1)) : undefined;
-  } catch {
-    parsed = undefined;
+    // Try the slice up to the last closing brace first (handles trailing commentary after valid
+    // JSON); if that does not parse even after repair, try to the end of the reply (handles a
+    // reply cut off before any closing brace was ever written).
+    parsed = end > start ? tryParseJson(raw.slice(start, end + 1)) : undefined;
+    if (parsed === undefined) parsed = tryParseJson(raw.slice(start));
   }
   const allowed = allowedStoryFigures(facts);
   let dropped = 0;

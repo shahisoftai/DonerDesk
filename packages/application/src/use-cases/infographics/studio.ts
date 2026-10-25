@@ -670,7 +670,11 @@ export class GetInfographicAiTextHandler {
     const facts = storyFactsOf(data.value, sheet.value);
     const prompt = buildAiTextPrompt(facts, opts.language);
     try {
-      const reply = await provider.complete({ systemPrompt: prompt.system, userPrompt: redactForLlm(prompt.user), jsonMode: true, maxTokens: 1200, temperature: 0.3 });
+      // A reasoning-capable provider (e.g. GLM) spends part of this budget on hidden thinking before
+      // it writes the JSON; 1200 was observed to truncate the reply on every real call in production
+      // (groundAiText then sees no sentences and reports "did not match your records"), so this stays
+      // generous even though the wanted output is short — the same pattern template extraction uses.
+      const reply = await provider.complete({ systemPrompt: prompt.system, userPrompt: redactForLlm(prompt.user), jsonMode: true, maxTokens: 4096, temperature: 0.3 });
       const proposal = groundAiText(reply.text, facts);
       if (proposal.headlines.length === 0 && proposal.messages.length === 0) return { ok: true, value: { available: false, reason: "The model's answer did not match your recorded figures, so nothing was kept. Try again or use the suggestions from your records." } };
       return { ok: true, value: { available: true, model: reply.model, ...proposal } };
