@@ -97,7 +97,8 @@ export class PrismaOrganizationBrandReader implements IOrganizationBrandReader {
   constructor(private readonly prisma: PrismaClient) {}
 
   async brandFor(tenantId: TenantId): Promise<Result<{ name: string; logoUrl?: string }, DomainError>> {
-    const row = await this.prisma.organization.findUnique({ where: { id: tenantId.toString() }, select: { name: true, logoUrl: true } });
+    // The tenant id is the Organization's tenantId column, not its primary key.
+    const row = await this.prisma.organization.findFirst({ where: { tenantId: tenantId.toString() }, select: { name: true, logoUrl: true } });
     if (!row) return { ok: false, error: DomainError.notFound("Organization", tenantId.toString()) };
     return ok({ name: row.name, ...(row.logoUrl ? { logoUrl: row.logoUrl } : {}) });
   }
