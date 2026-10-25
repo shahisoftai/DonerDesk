@@ -64,6 +64,9 @@ type MapInputs = { points: Array<{ name: string; lat: number; lng: number; worst
  * chosen block (or of the whole design, its check, its review) on the right. The picture is drawn by the server with the
  * same composer that makes the published file, so what is seen is what is published.
  */
+/** A stable default: a fresh `[]` each render re-runs the map effect forever (the Studio stayed on "Drawing the page"). */
+const NO_COUNTRIES: Array<{ country: string; projects: number; offTrack: number; atRisk: number; onTrack: number }> = [];
+
 export function InfographicStudio({
   projectId,
   design,
@@ -75,7 +78,7 @@ export function InfographicStudio({
   canManageBrand,
   hasBrandKit: hasBrandKitInitially,
   scope = "PROJECT",
-  portfolioCountries = [],
+  portfolioCountries = NO_COUNTRIES,
 }: {
   projectId: string;
   design: DesignRecord;
