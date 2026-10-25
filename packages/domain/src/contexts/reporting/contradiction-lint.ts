@@ -168,6 +168,9 @@ const DATE_PATTERNS: RegExp[] = [
   // A day without a year ("as of August 31", "by 31 August") is still a date, not a figure.
   new RegExp(`\\b(?:${MONTH_NAMES})[a-z]*\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?\\b`, "gi"),
   new RegExp(`\\b\\d{1,2}(?:st|nd|rd|th)?\\s+(?:${MONTH_NAMES})[a-z]*\\b`, "gi"),
+  // A span of days inside one month ("15 to 30 November", "26 and 27 November", "9-13 November", "November 15 to 30") is a date range.
+  new RegExp(`\\b\\d{1,2}(?:st|nd|rd|th)?\\s*(?:-|–|to|and|until|through)\\s*\\d{1,2}(?:st|nd|rd|th)?\\s+(?:${MONTH_NAMES})[a-z]*\\b`, "gi"),
+  new RegExp(`\\b(?:${MONTH_NAMES})[a-z]*\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?\\s*(?:-|–|to|and|until|through)\\s*\\d{1,2}(?:st|nd|rd|th)?\\b`, "gi"),
 ];
 
 /**

@@ -438,3 +438,11 @@ test("a quarterly report may quote one value per month for the same noun; two un
   });
   assert.equal(undated.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 1);
 });
+
+test("a span of days inside one month is a date range, not a figure (demo 12)", () => {
+  const result = lintReportContradictions({
+    sections: sections(["Activities", "Referral vehicles ran from 15 to 30 November. The review meetings were held on 26 and 27 November. Outreach took place 9-13 November and again November 16 to 20."]),
+    findings,
+  });
+  assert.equal(result.blockers, 0, JSON.stringify(result.findings));
+});
