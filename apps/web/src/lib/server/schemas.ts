@@ -356,6 +356,8 @@ export const IndicatorItemSchema = z.object({
   targetBreakdowns: z.array(z.object({ dimension: z.string(), category: z.string(), value: z.string() })).default([]),
   /** The cumulative target due by each date; empty = the project target applies. */
   targetSchedule: z.array(z.object({ asOf: z.string(), target: z.string() })).default([]),
+  /** The value is calculated from other indicators of the project (never typed). */
+  formula: z.object({ op: z.enum(["RATIO", "SUM", "DIFFERENCE"]), terms: z.array(z.string()), percent: z.boolean().optional() }).optional(),
   /** Counted by another project too: left out of the portfolio totals. */
   countedElsewhere: z.boolean().default(false),
   semantics: z
@@ -419,6 +421,8 @@ export const PeriodIndicatorRowSchema = z.object({
   dataSource: z.string().optional(),
   frequency: z.string().optional(),
   disaggregationRequired: z.boolean(),
+  /** The value is calculated from other indicators (never typed): a plain sentence saying from what. */
+  calculation: z.string().optional(),
   breakdownMustSum: z.boolean().optional(),
   targetGroups: z.array(z.object({ dimension: z.string(), category: z.string() })).default([]),
   requiresDenominator: z.boolean(),
@@ -1213,6 +1217,8 @@ export const DataSheetResponseSchema = z.object({
       /** Lower is better (deaths, stock-out days): the target is a ceiling, so there is no share of target. */
       lowerIsBetter: z.boolean().optional(),
       targetSchedule: z.array(z.object({ asOf: z.string(), target: z.string() })).optional(),
+      /** The value is calculated from other indicators: a plain sentence saying from what. */
+      calculation: z.string().optional(),
     }),
   ),
   cells: z.array(
@@ -1224,6 +1230,7 @@ export const DataSheetResponseSchema = z.object({
       dataSource: z.string().optional(),
       comments: z.string().optional(),
       status: z.string(),
+      calculated: z.boolean().optional(),
     }),
   ),
   finance: z.array(

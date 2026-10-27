@@ -59,6 +59,14 @@ export const TargetScheduleEntrySchema = z.object({
   target: z.string().trim().min(1, "Give the target").max(40),
 });
 
+/** The value is calculated from other indicators of the project: a ratio (optionally as a percentage), a total, or a difference. */
+export const IndicatorFormulaSchema = z.object({
+  op: z.enum(["RATIO", "SUM", "DIFFERENCE"]),
+  terms: z.array(z.string().min(1)).min(2).max(12),
+  percent: z.boolean().optional(),
+});
+export type IndicatorFormulaInput = z.infer<typeof IndicatorFormulaSchema>;
+
 export const CreateIndicatorSchema = z.object({
   projectId: z.string().min(1),
   logframeItemId: z.string().min(1),
@@ -76,6 +84,7 @@ export const CreateIndicatorSchema = z.object({
   targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
   targetSchedule: z.array(TargetScheduleEntrySchema).max(60).optional(),
   countedElsewhere: z.boolean().optional(),
+  formula: IndicatorFormulaSchema.optional(),
 });
 export type CreateIndicatorInput = z.infer<typeof CreateIndicatorSchema>;
 
@@ -95,6 +104,8 @@ export const UpdateIndicatorSchema = z.object({
   targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
   targetSchedule: z.array(TargetScheduleEntrySchema).max(60).optional(),
   countedElsewhere: z.boolean().optional(),
+  /** `null` removes the formula (the indicator is typed again). */
+  formula: IndicatorFormulaSchema.nullable().optional(),
 });
 export type UpdateIndicatorInput = z.infer<typeof UpdateIndicatorSchema>;
 

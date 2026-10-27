@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, Indicator, describeSemantics, effectiveIndicatorSemantics, validateTargetBreakdowns, targetScheduleProblems, sortedTargetSchedule, type IndicatorSemantics, type SemanticsDescription } from "@donordesk/domain";
+import { DomainError, Indicator, describeSemantics, effectiveIndicatorSemantics, validateTargetBreakdowns, targetScheduleProblems, sortedTargetSchedule, validateFormula, type IndicatorSemantics, type SemanticsDescription } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorRepository } from "../../ports/logframe.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -16,6 +16,13 @@ export class CreateIndicatorHandler {
     const scheduleProblem = targetScheduleProblems(input.targetSchedule ?? [])[0];
     if (scheduleProblem) return { ok: false, error: DomainError.validation(`Target schedule, line ${scheduleProblem.row}: ${scheduleProblem.message}`) };
     const id = this.ids.generate();
+    let formula: ReturnType<typeof validateFormula> | undefined;
+    if (input.formula) {
+      const siblings = await this.repo.findByProject(input.projectId, ctx.tenant.tenantId);
+      if (!siblings.ok) return siblings;
+      formula = validateFormula(id, input.type, input.formula, siblings.value.map((i) => ({ id: i.id, code: i.code, type: i.type, formula: i.formula })));
+      if (!formula.ok) return formula;
+    }
     const ind = Indicator.create({
       id,
       tenantId: ctx.tenant.tenantId.toString(),
@@ -35,6 +42,7 @@ export class CreateIndicatorHandler {
       targetBreakdowns: breakdowns.value,
       targetSchedule: sortedTargetSchedule(input.targetSchedule ?? []),
       countedElsewhere: input.countedElsewhere ?? false,
+      ...(formula?.ok ? { formula: formula.value } : {}),
     });
     const saved = await this.repo.create(ind);
     if (!saved.ok) return saved;

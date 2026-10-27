@@ -8,6 +8,7 @@ import {
   DomainError,
   parseDisaggregationJson,
   parseTargetSchedule,
+  parseFormula,
   type Result,
   type IndicatorType,
   type VerificationStatus,
@@ -133,6 +134,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         semanticsJson: i.semanticsJson,
         targetBreakdownsJson: i.targetBreakdowns.length ? JSON.stringify(i.targetBreakdowns) : null,
         targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
+        formulaJson: i.formula ? JSON.stringify(i.formula) : null,
         countedElsewhere: i.countedElsewhere,
       },
     });
@@ -159,6 +161,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         semanticsJson: i.semanticsJson,
         targetBreakdownsJson: i.targetBreakdowns.length ? JSON.stringify(i.targetBreakdowns) : null,
         targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
+        formulaJson: i.formula ? JSON.stringify(i.formula) : null,
         countedElsewhere: i.countedElsewhere,
       },
     });
@@ -203,6 +206,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     semanticsJson: string | null;
     targetBreakdownsJson: string | null;
     targetScheduleJson: string | null;
+    formulaJson: string | null;
     countedElsewhere: boolean;
     archivedAt: Date | null;
     createdAt: Date;
@@ -228,6 +232,7 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         semanticsJson: row.semanticsJson ?? undefined,
         targetBreakdowns: parseTargetBreakdowns(row.targetBreakdownsJson),
         targetSchedule: parseTargetSchedule(row.targetScheduleJson),
+        formula: parseFormula(row.formulaJson),
         countedElsewhere: row.countedElsewhere,
         archivedAt: row.archivedAt ?? undefined,
       },

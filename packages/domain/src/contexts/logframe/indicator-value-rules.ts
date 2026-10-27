@@ -16,6 +16,8 @@ export interface IndicatorValueSubject {
   unit?: string | undefined;
   baseline?: string | undefined;
   target?: string | undefined;
+  /** Set when the value is calculated from other indicators: it cannot be typed. */
+  formula?: unknown;
 }
 
 const MAX_MAGNITUDE = 1e15;
@@ -40,6 +42,7 @@ const allowsNegative = (subject: IndicatorValueSubject): boolean => {
 export function indicatorValueProblem(subject: IndicatorValueSubject, raw: string, which: "period" | "cumulative"): string | null {
   const text = raw.trim();
   if (!text) return null;
+  if (subject.formula) return `${subject.code} is calculated from other indicators; its value cannot be typed. Record the values it is calculated from.`;
   const label = `${subject.code}: the ${which} value "${text.length > 30 ? `${text.slice(0, 30)}…` : text}"`;
   switch (subject.type) {
     case "TEXT":

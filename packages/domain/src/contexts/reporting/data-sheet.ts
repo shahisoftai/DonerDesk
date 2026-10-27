@@ -39,6 +39,8 @@ export interface DataSheetIndicator {
   lowerIsBetter?: boolean | undefined;
   /** The cumulative target due by each date, when the indicator has one. */
   targetSchedule?: TargetScheduleEntry[] | undefined;
+  /** The value is calculated, not typed: a plain sentence saying from what ("Calculated: SD-1 ÷ SD-2 × 100"). */
+  calculation?: string | undefined;
 }
 
 export interface DataSheetCell {
@@ -49,6 +51,8 @@ export interface DataSheetCell {
   dataSource?: string | undefined;
   comments?: string | undefined;
   status: string;
+  /** Worked out from other indicators' values; never typed, never editable. */
+  calculated?: boolean | undefined;
 }
 
 export interface DataSheetFinanceRow {

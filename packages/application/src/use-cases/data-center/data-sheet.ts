@@ -1,5 +1,5 @@
 import type { Result, DataSheet, DataSheetImportPreview } from "@donordesk/domain";
-import { DomainError, effectiveIndicatorSemantics, isPeriodLocked, isRateIndicator, periodSheetLabel, previewDataSheetImport, financeAppliesTo } from "@donordesk/domain";
+import { DomainError, deriveFormulaCells, describeFormula, effectiveIndicatorSemantics, isPeriodLocked, isRateIndicator, periodSheetLabel, previewDataSheetImport, financeAppliesTo } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -66,6 +66,21 @@ export class GetProjectDataSheetHandler {
       }
     }
 
+    const typedCells = values.value
+      .filter((u) => liveIds.has(u.indicatorId) && !indicatorsResult.value.find((i) => i.id === u.indicatorId)?.formula)
+      .map((u) => ({
+        indicatorId: u.indicatorId,
+        periodId: u.reportingPeriodId,
+        periodValue: u.periodAchievement,
+        cumulativeValue: u.cumulativeAchievement,
+        ...(u.dataSource ? { dataSource: u.dataSource } : {}),
+        ...(u.comments ? { comments: u.comments } : {}),
+        status: u.verificationStatus,
+      }));
+    const codeById = new Map(indicatorsResult.value.map((i) => [i.id, i.code]));
+    // A calculated value is never stored: it is worked out here from the values it comes from, so it cannot drift.
+    const derived = deriveFormulaCells(indicatorsResult.value.map((i) => ({ id: i.id, formula: i.formula })), typedCells, periods.map((p) => p.id));
+
     return {
       ok: true,
       value: {
@@ -88,18 +103,9 @@ export class GetProjectDataSheetHandler {
           isRate: isRateIndicator({ type: i.type, unit: i.unit }),
           ...(effectiveIndicatorSemantics({ type: i.type, name: i.name, unit: i.unit, semantics: i.semantics }).direction === "LOWER_IS_BETTER" ? { lowerIsBetter: true } : {}),
           ...(i.targetSchedule?.length ? { targetSchedule: i.targetSchedule } : {}),
+          ...(i.formula ? { calculation: describeFormula(i.formula, (id) => codeById.get(id) ?? "?") } : {}),
         })),
-        cells: values.value
-          .filter((u) => liveIds.has(u.indicatorId))
-          .map((u) => ({
-            indicatorId: u.indicatorId,
-            periodId: u.reportingPeriodId,
-            periodValue: u.periodAchievement,
-            cumulativeValue: u.cumulativeAchievement,
-            ...(u.dataSource ? { dataSource: u.dataSource } : {}),
-            ...(u.comments ? { comments: u.comments } : {}),
-            status: u.verificationStatus,
-          })),
+        cells: [...typedCells, ...derived],
         finance: financeRows,
       },
     };

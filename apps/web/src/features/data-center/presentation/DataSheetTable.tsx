@@ -120,6 +120,7 @@ export function DataSheetTable({ projectId, sheet, canEdit }: { projectId: strin
                   <td className={`${td} sticky left-0 bg-white dark:bg-slate-900`}>
                     <Link href={`/projects/${projectId}/indicators/${i.id}`} className="font-mono text-xs text-slate-500 hover:underline">{i.code}</Link>
                     <div className="max-w-[18rem] truncate" title={i.name}>{i.name}</div>
+                    {i.calculation && <div className="text-xs italic text-slate-500">{i.calculation}</div>}
                   </td>
                   <td className={td}>{i.unit ?? ""}</td>
                   <td className={`${td} text-right tabular-nums`}>{i.baseline}</td>
@@ -159,14 +160,14 @@ export function DataSheetTable({ projectId, sheet, canEdit }: { projectId: strin
                   const cell = cells.get(`${i.id}|${p.id}`);
                   return (
                     <tr key={`${i.id}|${p.id}`}>
-                      <td className={td}><span className="font-mono text-xs text-slate-500">{i.code}</span> {i.name}</td>
+                      <td className={td}><span className="font-mono text-xs text-slate-500">{i.code}</span> {i.name}{i.calculation && <span className="block text-xs italic text-slate-500">{i.calculation}</span>}</td>
                       <td className={td}>{p.label}</td>
                       <td className={`${td} text-right tabular-nums`}>{cell?.periodValue || <span className="text-slate-300">—</span>}</td>
                       <td className={`${td} text-right tabular-nums`}>{cell?.cumulativeValue || <span className="text-slate-300">—</span>}</td>
                       <td className={`${td} text-right tabular-nums`}>{cellPercentOfTarget(i, cell) || <span className="text-slate-300">—</span>}</td>
                       <td className={td}>{cell ? <Badge tone={indicatorVerificationTone(cell.status)}>{INDICATOR_VERIFICATION_LABEL[cell.status] ?? cell.status}</Badge> : ""}</td>
                       <td className={`${td} max-w-[14rem] truncate`} title={cell?.dataSource}>{cell?.dataSource ?? ""}</td>
-                      <td className={td}>{p.locked ? <span className="text-xs text-slate-400">Closed</span> : <Link className="text-xs text-brand-600 hover:underline" href={entryHref(p.id)}>Edit</Link>}</td>
+                      <td className={td}>{i.calculation ? <span className="text-xs text-slate-400">Calculated</span> : p.locked ? <span className="text-xs text-slate-400">Closed</span> : <Link className="text-xs text-brand-600 hover:underline" href={entryHref(p.id)}>Edit</Link>}</td>
                     </tr>
                   );
                 }),

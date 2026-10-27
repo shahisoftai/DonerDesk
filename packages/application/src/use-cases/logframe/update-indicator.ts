@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, checkIndicatorEdit, validateTargetBreakdowns, targetScheduleProblems, sortedTargetSchedule } from "@donordesk/domain";
+import { DomainError, checkIndicatorEdit, type IndicatorFormula, validateTargetBreakdowns, targetScheduleProblems, sortedTargetSchedule, validateFormula } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IAuditLogger } from "../../ports/core.js";
@@ -36,7 +36,24 @@ export class UpdateIndicatorHandler {
       if (problem) return { ok: false, error: DomainError.validation(`Target schedule, line ${problem.row}: ${problem.message}`) };
       fields.targetSchedule = sortedTargetSchedule(fields.targetSchedule);
     }
-    const patch = Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined));
+    const { formula: formulaInput, ...rest } = fields;
+    let formulaPatch: { formula: IndicatorFormula | undefined } | undefined;
+    const effectiveType = rest.type ?? indicator.type;
+    if (formulaInput !== undefined) {
+      if (formulaInput === null) { if (indicator.formula) formulaPatch = { formula: undefined }; }
+      else {
+        const siblings = await this.indicators.findByProject(indicator.projectId, ctx.tenant.tenantId);
+        if (!siblings.ok) return siblings;
+        if (values.value.length > 0 && !indicator.formula) return { ok: false, error: DomainError.validation("This indicator already has typed values; add a new indicator for the calculation, or remove the values first") };
+        const checked = validateFormula(indicator.id, effectiveType, formulaInput, siblings.value.map((i) => ({ id: i.id, code: i.code, type: i.type, formula: i.formula })));
+        if (!checked.ok) return checked;
+        formulaPatch = { formula: checked.value };
+      }
+    } else if (indicator.formula && rest.type !== undefined && rest.type !== indicator.type) {
+      return { ok: false, error: DomainError.validation("Remove the formula before changing the type") };
+    }
+    const patch = Object.fromEntries(Object.entries(rest).filter(([, value]) => value !== undefined));
+    if (formulaPatch) Object.assign(patch, formulaPatch);
     if (Object.keys(patch).length === 0) return { ok: true, value: { id: indicator.id } };
 
     const before = JSON.stringify(Object.fromEntries(Object.keys(patch).map((k) => [k, (indicator as unknown as Record<string, unknown>)[k]])));

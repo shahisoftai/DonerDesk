@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { archiveIndicatorAction, moveIndicatorAction, updateIndicatorAction } from "@/lib/actions/indicators";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
@@ -28,6 +29,8 @@ export interface ManagedIndicator {
   disaggregationRequired: boolean;
   targetBreakdowns?: BreakdownTargetRow[];
   targetSchedule?: { asOf: string; target: string }[];
+  type?: string;
+  formula?: { op: "RATIO" | "SUM" | "DIFFERENCE"; terms: string[]; percent?: boolean | undefined };
   countedElsewhere?: boolean;
   frequency?: string | undefined;
 }
@@ -36,7 +39,55 @@ export interface ManagedIndicator {
  * Fixes an indicator after it was created: its wording, targets and breakdown, the item it measures, or removing it.
  * Every refusal comes back from the server with its reason and is shown as-is.
  */
-export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIndicator; items: OutlineSource[] }) {
+const RATE_TYPES = new Set(["PERCENTAGE", "RATIO"]);
+
+/** "Calculate this value from other indicators": nobody types a value for it; it is worked out from theirs. */
+function FormulaEditor({ value, onChange, others, disabled }: { value: NonNullable<ManagedIndicator["formula"]> | null; onChange: (v: NonNullable<ManagedIndicator["formula"]> | null) => void; others: OtherIndicator[]; disabled: boolean }) {
+  const counts = others.filter((o) => !RATE_TYPES.has(o.type));
+  if (counts.length < 2 && !value) return null;
+  const terms = value?.terms ?? [];
+  const set = (next: Partial<NonNullable<ManagedIndicator["formula"]>>) => onChange({ op: "RATIO", terms: ["", ""], ...value, ...next });
+  const pick = (index: number, id: string) => set({ terms: Object.assign([...terms, "", ""].slice(0, Math.max(2, terms.length)), { [index]: id }) });
+  return (
+    <fieldset className="rounded-lg border border-slate-200 p-3 text-sm dark:border-white/10">
+      <legend className="px-1 text-sm font-medium">Calculate this value from other indicators</legend>
+      <label className="flex items-center gap-2">
+        <Checkbox checked={value !== null} onChange={(e) => onChange(e.target.checked ? { op: "RATIO", terms: ["", ""], percent: true } : null)} disabled={disabled} />
+        <span>Nobody types this value; it is worked out from the values recorded for the indicators below.</span>
+      </label>
+      {value && (
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <Field label="How" htmlFor="formula-op">
+            <Select id="formula-op" value={value.op} onChange={(e) => set({ op: e.target.value as NonNullable<ManagedIndicator["formula"]>["op"], terms: terms.slice(0, 2) })} disabled={disabled}>
+              <option value="RATIO">One divided by another</option>
+              <option value="SUM">The total of several</option>
+              <option value="DIFFERENCE">One minus another</option>
+            </Select>
+          </Field>
+          {[0, 1].map((i) => (
+            <Field key={i} label={value.op === "RATIO" ? (i === 0 ? "Counted (top)" : "Out of (bottom)") : `Indicator ${i + 1}`} htmlFor={`formula-term-${i}`}>
+              <Select id={`formula-term-${i}`} value={terms[i] ?? ""} onChange={(e) => pick(i, e.target.value)} disabled={disabled}>
+                <option value="">Choose…</option>
+                {counts.map((o) => <option key={o.id} value={o.id}>{o.code} {o.name}</option>)}
+              </Select>
+            </Field>
+          ))}
+          {value.op === "RATIO" && (
+            <label className="flex items-center gap-2 sm:col-span-3">
+              <Checkbox checked={value.percent === true} onChange={(e) => set({ percent: e.target.checked })} disabled={disabled} />
+              <span>Show as a percentage (multiply by 100)</span>
+            </label>
+          )}
+          <p className="text-xs text-slate-500 sm:col-span-3">The indicator's type must be Percentage or Ratio for a division, Number or Currency for a total or a difference. If a value it needs is missing, the result is left empty, never shown as zero.</p>
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+export interface OtherIndicator { id: string; code: string; name: string; type: string }
+
+export function IndicatorManageCard({ indicator, items, others = [] }: { indicator: ManagedIndicator; items: OutlineSource[]; others?: OtherIndicator[] }) {
   const router = useRouter();
   const [name, setName] = useState(indicator.name);
   const [code, setCode] = useState(indicator.code);
@@ -49,6 +100,7 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
   const [breakdowns, setBreakdowns] = useState<BreakdownTargetRow[]>(indicator.targetBreakdowns ?? []);
   const [scheduleText, setScheduleText] = useState(formatTargetScheduleText(indicator.targetSchedule ?? []));
   const [countedElsewhere, setCountedElsewhere] = useState(indicator.countedElsewhere ?? false);
+  const [calc, setCalc] = useState<NonNullable<ManagedIndicator["formula"]> | null>(indicator.formula ?? null);
   const [busy, setBusy] = useState<"save" | "move" | "remove" | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -74,6 +126,7 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
       targetBreakdowns: completeBreakdownRows(breakdowns),
       targetSchedule: parsedSchedule.schedule,
       countedElsewhere,
+      formula: calc,
     });
     setBusy(null);
     if (!result.ok) return setMessage({ tone: "error", text: result.error.message });
@@ -137,6 +190,7 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
         <Textarea id="manage-schedule" rows={4} value={scheduleText} onChange={(e) => setScheduleText(e.target.value)} disabled={busy !== null} />
       </Field>
       <TargetBreakdownsEditor rows={breakdowns} onChange={setBreakdowns} disabled={busy !== null} />
+      <FormulaEditor value={calc} onChange={setCalc} others={others} disabled={busy !== null} />
       <div><Button onClick={() => void save()} pending={busy === "save"} disabled={busy !== null || !name.trim() || !code.trim()}>Save changes</Button></div>
 
       <div className="border-t border-slate-200 pt-4 dark:border-white/10">

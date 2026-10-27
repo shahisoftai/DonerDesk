@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DEFAULT_ENTRY_DUE_DAYS, DomainError, collectionDue, collectionOwner, toPlainDate, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
+import { DEFAULT_ENTRY_DUE_DAYS, DomainError, describeFormula, collectionDue, collectionOwner, toPlainDate, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -40,6 +40,8 @@ export interface PeriodIndicatorRow {
   dueThisPeriod: boolean;
   /** How a period's value adds up over time (SUM, LATEST, PERCENTAGE...), so the grid can offer a running total. */
   aggregation: string;
+  /** Set when the value is calculated from other indicators: the grid shows it, it is never typed. */
+  calculation?: string;
   /** This indicator's value from the latest earlier period, to repeat or add to; absent when there is none. */
   previous?: PreviousIndicatorValue;
   /** A non-blocking prompt when linked activities record a different head-count than the indicator reports. */
@@ -146,6 +148,7 @@ export class ListPeriodIndicatorsHandler {
         dataSource: ind.dataSource,
         frequency: ind.frequency,
         disaggregationRequired: ind.disaggregationRequired,
+        ...(ind.formula ? { calculation: describeFormula(ind.formula, (id) => indicatorsResult.value.find((x) => x.id === id)?.code ?? "?") } : {}),
         breakdownMustSum: disaggregationMustSum(ind.type),
         targetGroups: (ind.targetBreakdowns ?? []).map((g) => ({ dimension: g.dimension, category: g.category })),
         requiresDenominator,

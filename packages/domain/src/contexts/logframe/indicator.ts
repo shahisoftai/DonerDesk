@@ -1,3 +1,4 @@
+import type { IndicatorFormula } from "./indicator-formula.js";
 import type { TargetScheduleEntry } from "./target-schedule.js";
 import { Entity } from "../../core/entity.js";
 import type { DisaggregationEntry } from "./indicator-disaggregation.js";
@@ -31,6 +32,8 @@ export interface IndicatorProps {
   targetSchedule?: TargetScheduleEntry[];
   /** What this indicator counts is also counted by another project, so the portfolio roll-up lists it but does not add it. */
   countedElsewhere?: boolean;
+  /** Set when the value is calculated from other indicators (phase 33.3): nobody types a value for it. */
+  formula?: IndicatorFormula | undefined;
 }
 
 export class Indicator extends Entity<string> {
@@ -63,6 +66,7 @@ export class Indicator extends Entity<string> {
     targetBreakdowns?: DisaggregationEntry[];
     targetSchedule?: TargetScheduleEntry[];
     countedElsewhere?: boolean;
+    formula?: IndicatorFormula;
   }): Indicator {
     if (!input.code) throw DomainError.validation("Indicator code required");
     if (!input.name) throw DomainError.validation("Indicator name required");
@@ -77,6 +81,7 @@ export class Indicator extends Entity<string> {
       targetBreakdowns: input.targetBreakdowns ?? [],
       targetSchedule: input.targetSchedule ?? [],
       countedElsewhere: input.countedElsewhere ?? false,
+      formula: input.formula,
       unit: input.unit,
       meansOfVerification: input.meansOfVerification,
       dataSource: input.dataSource,
@@ -112,6 +117,7 @@ export class Indicator extends Entity<string> {
   get archivedAt(): Date | undefined { return this.props.archivedAt; }
   get targetBreakdowns(): DisaggregationEntry[] { return this.props.targetBreakdowns ?? []; }
   get targetSchedule(): TargetScheduleEntry[] { return this.props.targetSchedule ?? []; }
+  get formula(): IndicatorFormula | undefined { return this.props.formula; }
   get countedElsewhere(): boolean { return this.props.countedElsewhere ?? false; }
   get isArchived(): boolean { return this.props.archivedAt !== undefined; }
 

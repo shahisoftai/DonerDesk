@@ -481,7 +481,7 @@ function LevelGroupRows({
     <>
       {rows.map((row) => {
         const verified = row.update?.verificationStatus === "VERIFIED";
-        const editable = canEdit && !verified;
+        const editable = canEdit && !verified && !row.calculation;
         const v = values[row.id] ?? initialValues(row);
         const target = row.target ? `${row.target}${row.unit ? ` ${row.unit}` : ""}` : "—";
         const showBreakdown = hasBreakdown(row, v);
@@ -496,6 +496,7 @@ function LevelGroupRows({
               <td className="min-w-[200px] px-3 py-2">
                 <span className="font-medium">{row.name}</span>
                 {row.logframeTitle && <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{row.logframeTitle}</span>}
+                {row.calculation && <span className="mt-1 block text-xs italic text-slate-600 dark:text-slate-300">{row.calculation}. Worked out from the values recorded for those indicators; see it in the Data Center.</span>}
                 {row.dueThisPeriod === false && (
                   <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
                     Not due this period{row.frequency ? ` (measured ${row.frequency.toLowerCase()})` : ""}. Leave it empty; it is not reported as 0.
