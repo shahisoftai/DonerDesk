@@ -114,6 +114,10 @@
       "types": "./dist/contexts/workplan/index.d.ts",
       "import": "./dist/contexts/workplan/index.js"
     },
+    "./contexts/places/index.js": {
+      "types": "./dist/contexts/places/index.d.ts",
+      "import": "./dist/contexts/places/index.js"
+    },
     "./contexts/infographics/index.js": {
       "types": "./dist/contexts/infographics/index.d.ts",
       "import": "./dist/contexts/infographics/index.js"
