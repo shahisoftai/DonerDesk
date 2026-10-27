@@ -1,7 +1,12 @@
-import { signOffRoles, type TenantId } from "@donordesk/domain";
+import { signOffRoles, type TenantId, type WebhookEvent } from "@donordesk/domain";
 import type { IProjectRepository } from "../ports/projects.js";
 import type { IProjectMemberRepository } from "../ports/project-members.js";
 import type { IPersonNotifier } from "../ports/reminders.js";
+
+/** Where "this happened" is announced to other systems (webhooks). Never throws, never blocks. */
+export interface IWebhookEmitter {
+  emit(tenantId: TenantId, event: WebhookEvent, data: Record<string, unknown>): Promise<void>;
+}
 
 /** The part of a report the notifier needs; any ReportDraft satisfies it. */
 export interface NotifiableReport {
@@ -26,6 +31,7 @@ export class ReportNotifier implements IReportNotifier {
     private readonly notify: IPersonNotifier,
     private readonly projects: IProjectRepository,
     private readonly members: IProjectMemberRepository,
+    private readonly webhooks?: IWebhookEmitter,
   ) {}
 
   async reviewRequested(tenantId: TenantId, actorId: string, report: NotifiableReport): Promise<void> {
@@ -55,6 +61,8 @@ export class ReportNotifier implements IReportNotifier {
   }
 
   async approved(tenantId: TenantId, actorId: string, report: NotifiableReport): Promise<void> {
+    // Other systems are told whoever approved it (the author included); the person is not told about their own action.
+    await this.webhooks?.emit(tenantId, "report.approved", { reportId: report.id, projectId: report.projectId, status: "APPROVED" });
     if (report.createdById === actorId) return;
     await this.notify.send({
       tenantId, recipientId: report.createdById, type: "REPORT_APPROVED", urgent: false,

@@ -346,3 +346,5 @@ export * from "./ports/portfolio.js";
 export * from "./use-cases/funding/funding-handlers.js";
 export * from "./use-cases/organization/map-layer-handlers.js";
 export * from "./ports/places.js";
+export * from "./ports/integrations.js";
+export * from "./use-cases/integrations/integration-handlers.js";

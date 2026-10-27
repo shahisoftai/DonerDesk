@@ -2094,3 +2094,60 @@ model Place {
   @@index([tenantId, parentId])
   @@index([tenantId, archivedAt])
 }
+
+/// A key another system uses to read the organisation's data (Phase 33.7). Only the SHA-256 of the token is stored.
+model ApiKey {
+  id          String    @id
+  tenantId    String
+  name        String
+  prefix      String
+  tokenHash   String    @unique
+  scopes      String[]  @default([])
+  /// Empty = every project of the organisation.
+  projectIds  String[]  @default([])
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId])
+}
+
+/// Where the organisation wants to be told when something happens (Phase 33.7). The signing secret is shown once.
+model WebhookEndpoint {
+  id                  String    @id
+  tenantId            String
+  url                 String
+  secret              String
+  events              String[]  @default([])
+  enabled             Boolean   @default(true)
+  disabledReason      String?
+  consecutiveFailures Int       @default(0)
+  createdById         String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([tenantId])
+}
+
+/// One event queued for one endpoint, with its retry state. Carries ids and statuses only, never text.
+model WebhookDelivery {
+  id             String    @id
+  tenantId       String
+  endpointId     String
+  eventId        String
+  event          String
+  payloadJson    String
+  /// PENDING, DELIVERED or FAILED (gave up).
+  status         String
+  attempts       Int       @default(0)
+  nextAttemptAt  DateTime
+  lastStatusCode Int?
+  lastError      String?
+  deliveredAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([tenantId, endpointId, createdAt])
+  @@index([status, nextAttemptAt])
+}

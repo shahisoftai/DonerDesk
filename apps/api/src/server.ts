@@ -33,6 +33,8 @@ import { registerWorkPlanRoutes } from "./routes/workplan.js";
 import { registerInfographicsRoutes } from "./routes/infographics.js";
 import { registerTaskRoutes } from "./routes/tasks.js";
 import { registerPlaceRoutes } from "./routes/places.js";
+import { registerIntegrationRoutes } from "./routes/integrations.js";
+import { registerPublicApiRoutes } from "./routes/public-api.js";
 import { registerReportingRoutes } from "./routes/reporting.js";
 import { registerAgentMemoryRoutes } from "./routes/agent-memory.js";
 import { registerComplianceRoutes } from "./routes/compliance.js";
@@ -154,6 +156,8 @@ export async function buildServer(): Promise<FastifyInstance> {
   // SCIM has its own authentication (a per-organisation bearer token), so it sits
   // outside the authenticated scope.
   await registerScimRoutes(app, scimRouteOptions(container));
+  // The public read-only API has its own authentication too (an API key), in its own scope.
+  await registerPublicApiRoutes(app, container);
   // A public share link has no session either: its token says which export it opens.
   await registerPublicInfographicRoutes(app);
   // The routes registered inside the scope below are the ones that go through
@@ -200,6 +204,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerInfographicsRoutes(instance);
     await registerTaskRoutes(instance);
     await registerPlaceRoutes(instance);
+    await registerIntegrationRoutes(instance);
     await registerReportingRoutes(instance);
     await registerAgentMemoryRoutes(instance);
     await registerComplianceRoutes(instance);
@@ -271,6 +276,16 @@ export async function start() {
     timer.unref();
     // Fastify refuses hooks once it is listening, so stop the timers on the server's own close event.
     app.server.once("close", () => clearInterval(timer));
+  }
+
+  // Webhook deliveries queued by events are sent (and retried with backoff) from here. 0 turns the loop off.
+  const webhookEvery = Number(process.env.WEBHOOK_RUN_INTERVAL_MS ?? 15_000);
+  if (webhookEvery > 0) {
+    const webhookTimer = setInterval(() => {
+      app.container.webhookRunner.runOnce().catch((error: unknown) => app.log.error({ err: error }, "webhook run failed"));
+    }, webhookEvery);
+    webhookTimer.unref();
+    app.server.once("close", () => clearInterval(webhookTimer));
   }
 
   // Plan limits bound how much people draft, not what the provider charges: tell the operator when an organisation's

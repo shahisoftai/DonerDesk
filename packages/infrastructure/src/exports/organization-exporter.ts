@@ -13,6 +13,9 @@ import type { IOrganizationExporter, OrganizationExport } from "@donordesk/appli
 export const ORG_EXPORT_EXCLUDED: Readonly<Record<string, string>> = {
   PasswordResetToken: "sign-in secret",
   ScimCredential: "sign-in secret",
+  ApiKey: "sign-in secret (only a hash is stored)",
+  WebhookEndpoint: "signing secret",
+  WebhookDelivery: "internal delivery bookkeeping",
   InfographicShareLink: "public link secrets (only a hash is stored)",
   IdempotencyRecord: "internal request bookkeeping",
   RequestIdempotency: "internal request bookkeeping",

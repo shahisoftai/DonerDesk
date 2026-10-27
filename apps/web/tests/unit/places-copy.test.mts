@@ -42,3 +42,18 @@ test("By place copy has no raw code, id or snake_case key, and counts agree", ()
   assert.equal(PLACE_RESULTS_COPY.unverified(1), "1 value is not verified yet.");
   assert.equal(PLACE_RESULTS_COPY.unverified(3), "3 values are not verified yet.");
 });
+
+import { INTEGRATIONS_COPY, SCOPE_LABEL, WEBHOOK_EVENT_LABEL } from "../../src/features/integrations/domain/integrations-copy.ts";
+
+test("Integrations copy has no raw code, id or snake_case key (the address paths in the how-to are the one place a path is shown)", () => {
+  const flat: Array<[string, string]> = [];
+  for (const [key, value] of Object.entries(INTEGRATIONS_COPY)) {
+    if (key === "howTo") continue;
+    if (typeof value === "string") flat.push([key, value]);
+    else if (typeof value === "function") flat.push([key, (value as (...a: Array<number | string>) => string)(30, "today")]);
+    else for (const [k, v] of Object.entries(value)) flat.push([`${key}.${k}`, v as string]);
+  }
+  for (const [k, v] of Object.entries(SCOPE_LABEL)) flat.push([`scope.${k}`, v]);
+  for (const [k, v] of Object.entries(WEBHOOK_EVENT_LABEL)) flat.push([`event.${k}`, v]);
+  for (const [key, text] of flat) assert.deepEqual(findRawTokens(text), [], `${key}: ${text}`);
+});
