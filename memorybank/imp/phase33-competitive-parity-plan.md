@@ -11,7 +11,7 @@ Input: that matrix (DonorDesk verified in code and in the browser) + the competi
 | 33.2 Results by place | Built and tested (`rollupByPlace`, `/place-results`, Data Center "By place" tab with level picker, partly-reported and unplaced notes, CSV). Not built: choropleth/map of the roll-up, place targets, report tables and infographic block reading the roll-up. |
 | 33.7 Integration | Built and tested: API keys (3 read scopes), `/api/v1/projects|indicators|place-results`, webhooks (signing, retry, SSRF check, auto-disable), Settings → Integrations. One event wired (`report.approved`). Not built: the other five events, KoboToolbox/SurveyCTO connectors, MCP server, API rate limiting, per-key project picker in the UI. |
 | 33.3 Formulas, targets, "not applicable" | Formulas built and tested (ratio/total/difference, validation, never stored, data sheet, entry grid, indicator editor, report findings incl. comparison and life of project, logframe versioning). Not built: incremental-vs-cumulative target entry, explicit "not applicable" answer, stoplight column on the grid, multi-editor refresh notice. Unchecked: a real report draft and export with a formula indicator. |
-| 33.4 Period data submission | Not started |
+| 33.4 Period data submission | Built and tested, not deployed: derived period data status, "Submit for review" action and button, status sentence on the entry grid, partner access. Not built: submission window, verifier notification, period-level Return. |
 | 33.5 Forms and records | Not started |
 | 33.6 Offline field app | Not started |
 | 33.8 Dashboards | Not started |

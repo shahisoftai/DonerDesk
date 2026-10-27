@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DEFAULT_ENTRY_DUE_DAYS, DomainError, describeFormula, collectionDue, collectionOwner, toPlainDate, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
+import { DEFAULT_ENTRY_DUE_DAYS, DomainError, describeFormula, summarizePeriodData, describePeriodData, type PeriodDataSummary, collectionDue, collectionOwner, toPlainDate, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -73,7 +73,7 @@ export class ListPeriodIndicatorsHandler {
   async handle(
     ctx: AuthenticatedContext,
     reportingPeriodId: string,
-  ): Promise<Result<{ periodId: string; projectId: string; reportType: string; indicators: PeriodIndicatorRow[]; scope?: PeriodScopeSummary }, DomainError>> {
+  ): Promise<Result<{ periodId: string; projectId: string; reportType: string; indicators: PeriodIndicatorRow[]; scope?: PeriodScopeSummary; dataStatus: PeriodDataSummary & { description: string } }, DomainError>> {
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", reportingPeriodId) };
@@ -181,6 +181,7 @@ export class ListPeriodIndicatorsHandler {
         projectId: period.projectId,
         reportType: period.reportType,
         indicators: rows,
+        dataStatus: (() => { const summary = summarizePeriodData(rows.filter((r) => r.update && !r.calculation).map((r) => r.update!.verificationStatus)); return { ...summary, description: describePeriodData(summary) }; })(),
         ...(scope.activities
           ? { scope: { activityCount: scope.activities.length, acceptedActivityCount: scope.activities.filter((a) => a.status === "ACCEPTED").length } }
           : {}),

@@ -17,6 +17,7 @@ import {
   CreateIndicatorResponseSchema,
   ConfirmSemanticsResponseSchema,
   VerifyAllResponseSchema,
+  SubmitAllResponseSchema,
   ImportIndicatorsResponseSchema,
   type ImportIndicatorsResponse,
 } from "@/lib/server/schemas";
@@ -111,7 +112,7 @@ export async function bulkSaveIndicatorUpdatesAction(
 }
 
 export type LoadPeriodIndicatorsResult = Result<
-  { periodId: string; projectId: string; indicators: import("@/lib/server/schemas").PeriodIndicatorRow[] },
+  { periodId: string; projectId: string; indicators: import("@/lib/server/schemas").PeriodIndicatorRow[]; dataStatus?: import("@/lib/server/schemas").PeriodIndicators["dataStatus"] },
   AppError
 >;
 
@@ -199,6 +200,14 @@ export async function verifyAllIndicatorUpdatesAction(reportingPeriodId: string,
     method: "POST",
     body: updateIds ? { updateIds } : {},
   });
+}
+
+export type SubmitAllResult = Result<import("zod").infer<typeof SubmitAllResponseSchema>, AppError>;
+
+/** Hands in every draft or returned value of a period for review. */
+export async function submitAllIndicatorUpdatesAction(reportingPeriodId: string): Promise<SubmitAllResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/indicator-updates/submit-all`, SubmitAllResponseSchema, context.token, { method: "POST", body: {} });
 }
 
 const IndicatorMovedResponseSchema = z.object({ id: z.string(), moved: z.boolean() });

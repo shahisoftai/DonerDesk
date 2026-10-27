@@ -98,6 +98,7 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/indicators\/[^/]+\/(move|archive|restore)$/, permission: "logframe.manage" },
   { method: "POST", route: /^\/v1\/indicators\/semantics\/confirm$/, permission: "logframe.manage" },
   { method: "POST", route: /^\/v1\/reporting-periods\/[^/]+\/indicator-updates\/verify-all$/, permission: "indicator.verify" },
+  { method: "POST", route: /^\/v1\/reporting-periods\/[^/]+\/indicator-updates\/submit-all$/, permission: "indicator.update" },
   { method: "POST", route: /^\/v1\/indicator-updates$/, permission: "indicator.update" },
   { method: "POST", route: /^\/v1\/indicator-updates\/bulk$/, permission: "indicator.update" },
   { method: "POST", route: /^\/v1\/indicator-updates\/parse-sheet$/, permission: "indicator.update" },

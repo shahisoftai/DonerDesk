@@ -11,6 +11,7 @@ import {
   parseIndicatorSheetAction,
   verifyIndicatorUpdateAction,
   verifyAllIndicatorUpdatesAction,
+  submitAllIndicatorUpdatesAction,
   type BulkSaveRow,
 } from "@/lib/actions/indicators";
 import type { PeriodIndicatorRow } from "@/lib/server/schemas";
@@ -56,6 +57,7 @@ export function IndicatorEntryGrid({
   userId,
   names = {},
   canAsk = false,
+  dataStatus,
 }: {
   projectId: string;
   periodId: string;
@@ -70,6 +72,8 @@ export function IndicatorEntryGrid({
   names?: Record<string, string>;
   /** May this person ask someone for the value (links to the indicator, where the request is made). */
   canAsk?: boolean;
+  /** Where the period's data stands (derived by the server from the values' statuses). */
+  dataStatus?: { status: string; description: string };
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -138,6 +142,27 @@ export function IndicatorEntryGrid({
   /** Rows that hold a value but are not verified yet (what "Verify all" would act on). */
   const unverifiedCount = rows.filter((row) => row.update && row.update.verificationStatus !== "VERIFIED").length;
   const [verifyingAll, setVerifyingAll] = useState(false);
+  /** Values the person can hand in: drafts and returned values that hold a figure (a calculated indicator has none of its own). */
+  const submittableCount = rows.filter((row) => !row.calculation && row.update && (row.update.verificationStatus === "DRAFT" || row.update.verificationStatus === "NEEDS_CORRECTION") && (row.update.periodAchievement.trim() !== "" || row.update.cumulativeAchievement.trim() !== "")).length;
+  const [submittingAll, setSubmittingAll] = useState(false);
+
+  async function submitAll() {
+    setSubmittingAll(true);
+    try {
+      const result = await submitAllIndicatorUpdatesAction(periodId);
+      if (!result.ok) {
+        toast.push({ title: "Could not submit", description: result.error.message, tone: "danger" });
+        return;
+      }
+      const { submitted, failed } = result.value;
+      toast.push(failed.length > 0
+        ? { title: `${submitted} submitted, ${failed.length} could not be submitted`, description: failed.map((f) => `${f.indicatorCode}: ${f.message}`).join(" · "), tone: "warning" }
+        : { title: `${submitted} indicator value${submitted === 1 ? "" : "s"} submitted for review`, tone: "success" });
+      router.refresh();
+    } finally {
+      setSubmittingAll(false);
+    }
+  }
 
   async function verifyAll(updateIds?: string[]) {
     setVerifyingAll(true);
@@ -279,7 +304,7 @@ export function IndicatorEntryGrid({
         <div>
           <p className="text-sm font-medium">Record indicator values for this reporting period</p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Values are saved as drafts. Someone with verify permission submits and verifies them, which locks the row against further edits.
+            {dataStatus?.description ?? "Values are saved as drafts. Submit them for review when they are complete; a reviewer verifies them, which locks the row against further edits."}
             {dirtyCount > 0 && <span className="ml-2 text-xs font-medium text-brand-600 dark:text-brand-400">{dirtyCount} unsaved row{dirtyCount === 1 ? "" : "s"}</span>}
           </p>
         </div>
@@ -292,6 +317,11 @@ export function IndicatorEntryGrid({
           {canEdit && (
             <Button size="sm" onClick={() => void saveAll()} pending={saving} disabled={dirtyCount === 0}>
               Save all
+            </Button>
+          )}
+          {canEdit && (
+            <Button variant="secondary" size="sm" onClick={() => void submitAll()} pending={submittingAll} disabled={dirtyCount > 0 || submittableCount === 0} title={dirtyCount > 0 ? "Save your changes first" : undefined}>
+              Submit for review{submittableCount > 0 ? ` (${submittableCount})` : ""}
             </Button>
           )}
           {canEdit && canVerify && (

@@ -177,6 +177,15 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  // The person who entered the values hands them in for review (draft or returned values become submitted).
+  app.post("/v1/reporting-periods/:id/indicator-updates/submit-all", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.submitPeriodIndicatorUpdates.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.post("/v1/reporting-periods/:id/indicator-updates/verify-all", async (req) => {
     const id = (req.params as { id: string }).id;
     const body = VerifyPeriodIndicatorUpdatesSchema.parse({ ...((req.body as object | undefined) ?? {}), reportingPeriodId: id });

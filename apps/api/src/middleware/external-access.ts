@@ -22,6 +22,7 @@ export const EXTERNAL_ALLOWED: ReadonlyArray<{ method: string; route: RegExp }> 
   { method: "GET", route: /^\/v1\/files\/[^/]+$/ },
   { method: "GET", route: /^\/v1\/reporting-periods\/[^/]+\/indicators$/ },
   { method: "POST", route: /^\/v1\/indicator-updates(\/bulk)?$/ },
+  { method: "POST", route: /^\/v1\/reporting-periods\/[^/]+\/indicator-updates\/submit-all$/ },
 ];
 
 export function isExternalAllowed(method: string, path: string): boolean {

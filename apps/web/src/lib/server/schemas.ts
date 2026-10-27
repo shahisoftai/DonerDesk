@@ -449,7 +449,10 @@ export const PeriodIndicatorsResponseSchema = z.object({
   reportType: z.string().optional(),
   indicators: z.array(PeriodIndicatorRowSchema),
   scope: z.object({ activityCount: z.number(), acceptedActivityCount: z.number() }).optional(),
+  /** Where the period's data stands, derived from the values' statuses, with one sentence for the screen. */
+  dataStatus: z.object({ status: z.enum(["NO_DATA", "IN_PROGRESS", "RETURNED", "SUBMITTED", "VERIFIED"]), total: z.number(), drafts: z.number(), submitted: z.number(), returned: z.number(), verified: z.number(), description: z.string() }).optional(),
 });
+export type PeriodIndicators = z.infer<typeof PeriodIndicatorsResponseSchema>;
 
 export const IndicatorUpdateHistoryRowSchema = PeriodIndicatorUpdateSchema.extend({
   reportingPeriodId: z.string(),
@@ -509,6 +512,13 @@ export const ConfirmSemanticsResponseSchema = z.object({
 export const VerifyAllResponseSchema = z.object({
   verified: z.number(),
   failed: z.array(z.object({ updateId: z.string(), indicatorCode: z.string(), message: z.string() })),
+});
+
+export const SubmitAllResponseSchema = z.object({
+  submitted: z.number(),
+  unchanged: z.number(),
+  failed: z.array(z.object({ updateId: z.string(), indicatorCode: z.string(), message: z.string() })),
+  status: z.string(),
 });
 
 export const ActivityItemSchema = z.object({
