@@ -118,6 +118,10 @@
       "types": "./dist/contexts/places/index.d.ts",
       "import": "./dist/contexts/places/index.js"
     },
+    "./contexts/integrations/index.js": {
+      "types": "./dist/contexts/integrations/index.d.ts",
+      "import": "./dist/contexts/integrations/index.js"
+    },
     "./contexts/infographics/index.js": {
       "types": "./dist/contexts/infographics/index.d.ts",
       "import": "./dist/contexts/infographics/index.js"
