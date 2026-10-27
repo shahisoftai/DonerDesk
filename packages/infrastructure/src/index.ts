@@ -1,4 +1,4 @@
-export { createContainer, ATOMIC_HANDLERS } from "./container.js";
+export { createContainer, disconnectAllPooledClients, ATOMIC_HANDLERS } from "./container.js";
 export { UnitOfWork } from "./db/unit-of-work.js";
 export { checkAiSpend, spendAlertThresholdUsd } from "./ai/spend-monitor.js";
 export type { Container } from "./container.js";

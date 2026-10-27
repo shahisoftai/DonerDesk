@@ -4,7 +4,7 @@
 
 Common document, spreadsheet, image and text formats can be uploaded as evidence, for example PDF, Word (.docx), Excel (.xlsx) and CSV, JPG/PNG images and plain text. **Maximum size: 100 MB per file.** Files linked from Google Drive stay in Drive.
 
-Text is read from documents so AI drafts can cite them. Scanned images and photos contain no text; add a description or a text version.
+Text is read from documents up to 20 MB so AI drafts can cite them; a larger file is stored but its text is not read, so add a short description. Scanned images and photos contain no text; add a description or a text version.
 
 ## Donor templates
 

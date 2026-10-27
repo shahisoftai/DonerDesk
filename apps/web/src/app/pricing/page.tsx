@@ -81,7 +81,7 @@ const PLANS = [
     code: "ENTERPRISE",
     name: "Enterprise",
     priceLine: "Custom",
-    annualLine: "Annual contract from $12,000 / year · guided pilot",
+    annualLine: "Annual contract arranged with sales · guided pilot",
     tagline: "For INGOs, research institutions, public bodies, and multi-country programmes.",
     cta: { label: "Talk to us", href: "/contact-sales" },
     highlight: false,
@@ -98,7 +98,7 @@ const PLANS = [
 
 const COMPARISON: { label: string; cells: [Cell, Cell, Cell, Cell] }[] = [
   { label: "Monthly price", cells: ["$0", "$79", "$149", "Custom"] },
-  { label: "Annual price (2 months free)", cells: ["$0", "$790", "$1,490", "From $12,000/yr"] },
+  { label: "Annual price (2 months free)", cells: ["$0", "$790", "$1,490", "Custom"] },
   { label: "NGO welcome price — 25% off, first year", cells: ["—", "$59.25/mo · $592.50/yr", "$111.75/mo · $1,117.50/yr", "Built into contract"] },
   { label: "Active projects", cells: ["1", "5", "20", "Unlimited / contracted"] },
   { label: "Archived projects", cells: ["Unlimited", "Unlimited", "Unlimited", "Unlimited"] },

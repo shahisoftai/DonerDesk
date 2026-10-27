@@ -19,6 +19,50 @@ function parseLines(json: string): FinanceLine[] {
   }
 }
 
+function rehydrateRow(row: {
+  id: string;
+  tenantId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  projectId: string;
+  reportingPeriodId: string;
+  currency: string;
+  linesJson: string;
+  budget: string;
+  expenditure: string;
+  committed: string | null;
+  source: string;
+  sourceNote: string | null;
+  verificationStatus: string;
+  verifiedById: string | null;
+  verifiedAt: Date | null;
+  createdById: string;
+  updatedById: string;
+}): PeriodFinancialSummary {
+  return PeriodFinancialSummary.rehydrate({
+    id: row.id,
+    tenantId: row.tenantId,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    props: {
+      projectId: row.projectId,
+      reportingPeriodId: row.reportingPeriodId,
+      currency: row.currency,
+      lines: parseLines(row.linesJson),
+      budget: row.budget,
+      expenditure: row.expenditure,
+      ...(row.committed ? { committed: row.committed } : {}),
+      source: row.source as FinanceSource,
+      ...(row.sourceNote ? { sourceNote: row.sourceNote } : {}),
+      verificationStatus: row.verificationStatus as FinanceVerification,
+      ...(row.verifiedById ? { verifiedById: row.verifiedById } : {}),
+      ...(row.verifiedAt ? { verifiedAt: row.verifiedAt } : {}),
+      createdById: row.createdById,
+      updatedById: row.updatedById,
+    },
+  });
+}
+
 export class PrismaPeriodFinancialRepository implements IPeriodFinancialRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -26,30 +70,19 @@ export class PrismaPeriodFinancialRepository implements IPeriodFinancialReposito
     try {
       const row = await this.prisma.periodFinancialSummary.findFirst({ where: { reportingPeriodId, tenantId: tenantId.toString() } });
       if (!row) return ok(null);
-      return ok(
-        PeriodFinancialSummary.rehydrate({
-          id: row.id,
-          tenantId: row.tenantId,
-          createdAt: row.createdAt,
-          updatedAt: row.updatedAt,
-          props: {
-            projectId: row.projectId,
-            reportingPeriodId: row.reportingPeriodId,
-            currency: row.currency,
-            lines: parseLines(row.linesJson),
-            budget: row.budget,
-            expenditure: row.expenditure,
-            ...(row.committed ? { committed: row.committed } : {}),
-            source: row.source as FinanceSource,
-            ...(row.sourceNote ? { sourceNote: row.sourceNote } : {}),
-            verificationStatus: row.verificationStatus as FinanceVerification,
-            ...(row.verifiedById ? { verifiedById: row.verifiedById } : {}),
-            ...(row.verifiedAt ? { verifiedAt: row.verifiedAt } : {}),
-            createdById: row.createdById,
-            updatedById: row.updatedById,
-          },
-        }),
-      );
+      return ok(rehydrateRow(row));
+    } catch (e) {
+      return err(e);
+    }
+  }
+
+  async findByPeriods(reportingPeriodIds: string[], tenantId: TenantId): Promise<Result<PeriodFinancialSummary[], DomainError>> {
+    if (reportingPeriodIds.length === 0) return ok([]);
+    try {
+      const rows = await this.prisma.periodFinancialSummary.findMany({
+        where: { reportingPeriodId: { in: reportingPeriodIds }, tenantId: tenantId.toString() },
+      });
+      return ok(rows.map(rehydrateRow));
     } catch (e) {
       return err(e);
     }

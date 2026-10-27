@@ -6,7 +6,7 @@ Your DonorDesk plan sets limits on projects, team seats, storage and AI report d
 
 | Resource | Starter (Free) | Team | Growth | Enterprise |
 |---|---|---|---|---|
-| Price (monthly) | $0 | $79 | $149 | Contracted (from $12,000/year) |
+| Price (monthly) | $0 | $79 | $149 | Custom, arranged with sales |
 | Price (annual) | $0 | $790 | $1,490 | Contracted |
 | Active projects | 1 | 5 | 20 | Contracted |
 | Archived projects | Unlimited | Unlimited | Unlimited | Unlimited |

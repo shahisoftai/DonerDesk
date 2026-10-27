@@ -8,7 +8,7 @@ const ok = (value) => ({ ok: true, value });
 const period = (id, start, end, status = "OPEN", reportType = "MONTHLY") => ({ id, reportType, duration: { start: new Date(start), end: new Date(end) }, status: { value: status } });
 const periods = [period("p1", "2026-01-01", "2026-03-31", "OPEN", "QUARTERLY"), period("p2", "2026-04-01", "2026-04-30", "CLOSED")];
 const update = (indicatorId, reportingPeriodId, a, c) => ({ indicatorId, reportingPeriodId, periodAchievement: a, cumulativeAchievement: c, verificationStatus: "DRAFT" });
-const summary = { view: () => ({ currency: "USD", budget: "1000", expenditure: "250", balance: "750", burnRatePercent: "25.0" }), isVerified: false };
+const summary = { reportingPeriodId: "p1", view: () => ({ currency: "USD", budget: "1000", expenditure: "250", balance: "750", burnRatePercent: "25.0" }), isVerified: false };
 
 function get({ financeMode = "DISABLED" } = {}) {
   return new GetProjectDataSheetHandler(
@@ -17,7 +17,7 @@ function get({ financeMode = "DISABLED" } = {}) {
     { findByProject: async () => ok([{ id: "i1", code: "OUT-1", name: "Trained", type: "COUNT", unit: "people", baseline: "0", target: "100", logframeItemId: "L1" }]) },
     { findByReportingPeriods: async () => ok([update("i1", "p1", "10", "10"), update("gone", "p1", "9", "9")]) },
     { modeFor: async () => ok(financeMode) },
-    { findByPeriod: async (id) => ok(id === "p1" ? summary : null) },
+    { findByPeriods: async (ids) => ok(ids.includes("p1") ? [summary] : []) },
   );
 }
 

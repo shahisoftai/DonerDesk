@@ -9,7 +9,7 @@ import type { LegalConsent } from "@/lib/server/schemas";
 const TERMS_OF_REFERENCE = [
   {
     title: "Service and your data",
-    body: "DonorDesk provides AI-assisted donor reporting, evidence management, and compliance tools. You retain ownership of your content and data; we process it only to operate the Service.",
+    body: "DonorDesk provides grant programme management, including the logframe, indicators, activities, evidence, compliance and AI-assisted donor reports. You retain ownership of your content and data; we process it only to operate the Service.",
   },
   {
     title: "Acceptable use",

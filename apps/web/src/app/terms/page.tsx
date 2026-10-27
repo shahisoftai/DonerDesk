@@ -367,8 +367,8 @@ export default function TermsPage() {
           the Service's export features.
         </P>
         <P>
-          No guarantee of donor acceptance. DonorDesk is a reporting,
-          evidence-management, and compliance tool. We do not guarantee that any
+          No guarantee of donor acceptance. DonorDesk is a programme
+          management tool, covering the logframe, indicators, evidence and compliance, from which donor reports are drafted. We do not guarantee that any
           report generated with the Service will be accepted, approved, funded,
           or renewed by any donor, funder, or other third party. You are solely
           responsible for the content, quality, and accuracy of the reports you

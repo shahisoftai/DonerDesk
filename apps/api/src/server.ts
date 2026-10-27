@@ -2,7 +2,7 @@ import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply }
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import { randomUUID } from "node:crypto";
-import { createContainer, RuntimeProvisioner, provisionExistingGlobalLlmConfigs } from "@donordesk/infrastructure";
+import { createContainer, disconnectAllPooledClients, RuntimeProvisioner, provisionExistingGlobalLlmConfigs } from "@donordesk/infrastructure";
 import { ZodError } from "zod";
 import { validationTitle } from "./validation-problem.js";
 import { TenantId, DomainError, type Role } from "@donordesk/domain";
@@ -179,10 +179,10 @@ export async function buildServer(): Promise<FastifyInstance> {
     instance.addHook("onSend", idempotencyFinish);
     instance.addHook("onResponse", async (req) => {
       // Background work started by the request (report generation) must
-      // finish before its database client is closed. The response is
-      // already sent, so this never delays the caller.
+      // finish before the response hook returns. The PrismaClient itself is
+      // pooled per tenant (see createContainer) and outlives the request —
+      // never disconnected here.
       await req.container?.settleBackgroundWork();
-      await req.container?.prisma.$disconnect();
     });
     await registerOrgRoutes(instance);
     await registerUserRoutes(instance);
@@ -311,6 +311,7 @@ export async function start() {
 
   const shutdown = async () => {
     await app.close();
+    await disconnectAllPooledClients();
     await shutdownObservability();
   };
   process.once("SIGTERM", shutdown);

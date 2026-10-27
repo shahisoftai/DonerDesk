@@ -9,6 +9,7 @@ Start here. Documents in reading order:
 | 03 | [Positioning and messaging](03-positioning-and-messaging.md) | Category, taglines, pillars, objections, words to use and avoid, claims policy |
 | 04 | [Website redesign brief](04-website-redesign-brief.md) | The site structure and section copy the code implements |
 | 05 | [Overhaul changelog](05-overhaul-changelog.md) | Every file changed in the October 2026 overhaul, and what is still open |
+| 06 | [Selling points](06-selling-points.md) | 40 marketing claims, each traced to a LIVE or LIVE-LIMIT row in `02`. Use this before writing any copy |
 
 Related:
 

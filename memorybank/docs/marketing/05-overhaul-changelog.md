@@ -112,3 +112,13 @@ Audit of every built feature (Features 01–42, portal routes, API routes) again
 6. **Evidence wording.** No support article mentions checksums (checked). Keep it that way until a file-level checksum exists.
 7. **Competitor positioning.** Not written. It needs verified competitor facts before it can be published.
 8. **Uncommitted work in the tree.** Files this overhaul did not touch were already modified or deleted before it began (for example the report editor, `AGENTS.md`, and the removed `DonorDesk-for-NGOs.pptx`). They were left as they were.
+
+## 2026-10-27 — Held-back features verified and released to marketing
+
+| Item | Change |
+|---|---|
+| Feature inventory (`02`) | 49 rows that carried `BUILT-NOT-LIVE` moved to `LIVE` or `LIVE-LIMIT` after a code check (routes, domain rules, web pages). Encryption at rest is `CODE-ONLY`. `BUILT-NOT-LIVE` retired from the status key. Verification log added at the top. |
+| Not-built list (`02`) | Encryption at rest now says it is off until the keys are set. Reminder email arrival is a spot-check, not a blocker. |
+| Selling points (`06`) | New file `06-selling-points.md`: 40 claims, each drawn from a `LIVE` or `LIVE-LIMIT` row. |
+| Open | 20% unexplained-shortfall threshold is not in the code (the rule fires on any unexplained variance). The inventory and website must not state 20% until it is confirmed. |
+| Open | Git: the work is on `0014-maps` (not on `master`). Anything marketed as live must match what is deployed from this branch. |

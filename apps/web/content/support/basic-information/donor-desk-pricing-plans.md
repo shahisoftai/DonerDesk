@@ -7,7 +7,7 @@ DonorDesk has four plans: **Starter** (free), **Team**, **Growth** and **Enterpr
 | | Starter | Team | Growth | Enterprise |
 |---|---|---|---|---|
 | **Monthly** | $0 | $79 | $149 | Contracted |
-| **Annual** | $0 | $790 | $1,490 | Contracted (from $12,000/year) |
+| **Annual** | $0 | $790 | $1,490 | Custom, arranged with sales |
 | **Verified nonprofit price (first year)** | – | $59.25/mo · $592.50/yr | $111.75/mo · $1,117.50/yr | Built into contract |
 | **Active projects** | 1 | 5 | 20 | Contracted |
 | **Full seats** | 1 | 5 | 15 | Contracted |

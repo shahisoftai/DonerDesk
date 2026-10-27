@@ -45,12 +45,14 @@ export class GetProjectDataSheetHandler {
     const financeRows: DataSheet["finance"] = [];
     const financeEnabled = mode.value !== "DISABLED";
     if (financeEnabled) {
+      const applicablePeriodIds = periods.filter((p) => financeAppliesTo(mode.value, p.reportType)).map((p) => p.id);
+      const found = await this.summaries.findByPeriods(applicablePeriodIds, tenantId);
+      if (!found.ok) return found;
+      const byPeriodId = new Map(found.value.map((s) => [s.reportingPeriodId, s]));
       for (const p of periods) {
-        if (!financeAppliesTo(mode.value, p.reportType)) continue;
-        const found = await this.summaries.findByPeriod(p.id, tenantId);
-        if (!found.ok) return found;
-        if (!found.value) continue;
-        const view = found.value.view();
+        const summary = byPeriodId.get(p.id);
+        if (!summary) continue;
+        const view = summary.view();
         financeRows.push({
           periodId: p.id,
           currency: view.currency,
@@ -59,7 +61,7 @@ export class GetProjectDataSheetHandler {
           ...(view.committed ? { committed: view.committed } : {}),
           balance: view.balance,
           ...(view.burnRatePercent ? { burnRatePercent: view.burnRatePercent } : {}),
-          verified: found.value.isVerified,
+          verified: summary.isVerified,
         });
       }
     }

@@ -582,13 +582,46 @@ function createEmailSender(): EmailAdapter | null {
   return null;
 }
 
+// Each distinct connection URL (plain, or tenant-scoped via `withTenantSession`) gets exactly one
+// PrismaClient, reused across requests. Previously every authenticated HTTP request built a brand-new
+// PrismaClient (and its own connection pool) and $disconnect()'d it at the end of the request — the
+// dominant cost of every page load. UnitOfWork's transaction state lives in an AsyncLocalStorage, so
+// sharing one client across concurrent requests is safe. Capped to bound memory when many tenants exist;
+// the oldest client is evicted and disconnected in the background.
+const POOLED_CLIENT_LIMIT = 500;
+const pooledClients = new Map<string, PrismaClient>();
+
+function pooledPrismaClient(url: string | undefined): PrismaClient {
+  const key = url ?? "__default__";
+  const existing = pooledClients.get(key);
+  if (existing) return existing;
+  const client = new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
+    ...(url ? { datasources: { db: { url } } } : {}),
+  });
+  pooledClients.set(key, client);
+  if (pooledClients.size > POOLED_CLIENT_LIMIT) {
+    const oldestKey = pooledClients.keys().next().value;
+    if (oldestKey !== undefined) {
+      const oldest = pooledClients.get(oldestKey);
+      pooledClients.delete(oldestKey);
+      void oldest?.$disconnect();
+    }
+  }
+  return client;
+}
+
+/** Disconnects every pooled PrismaClient. Call on process shutdown only. */
+export async function disconnectAllPooledClients(): Promise<void> {
+  const clients = Array.from(pooledClients.values());
+  pooledClients.clear();
+  await Promise.all(clients.map((c) => c.$disconnect()));
+}
+
 export function createContainer(options?: { tenantId?: string; useAdminConnection?: boolean }): Container {
   const baseUrl = options?.useAdminConnection ? process.env.DATABASE_ADMIN_URL : process.env.DATABASE_URL;
   const tenantUrl = baseUrl && options?.tenantId ? withTenantSession(baseUrl, options.tenantId) : baseUrl;
-  const basePrisma = new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
-    ...(tenantUrl ? { datasources: { db: { url: tenantUrl } } } : {}),
-  });
+  const basePrisma = pooledPrismaClient(tenantUrl);
   // Every repository gets this client: outside a unit of work it is the plain client, inside one it is the open transaction.
   const unitOfWork = new UnitOfWork(basePrisma);
   const prisma = unitOfWork.client;

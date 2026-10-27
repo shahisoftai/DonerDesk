@@ -12,7 +12,7 @@ No. Reporting is what the system produces. The working parts are the logframe, t
 Local and national NGOs, INGOs, UN implementing partners, consultancies and government programme units.
 
 ### How much does it cost?
-Starter is free (1 project, 1 full seat plus 2 viewers, 1 GB, 5 AI drafts a month). Team is $79/month (5 projects, 5 seats, 25 GB, 20 drafts). Growth is $149/month (20 projects, 15 seats, 100 GB, 100 drafts, bring your own AI provider). Enterprise is contracted from $12,000/year. Annual billing is two months free, and verified nonprofits get 25% off for their first year. See [Pricing](/pricing).
+Starter is free (1 project, 1 full seat plus 2 viewers, 1 GB, 5 AI drafts a month). Team is $79/month (5 projects, 5 seats, 25 GB, 20 drafts). Growth is $149/month (20 projects, 15 seats, 100 GB, 100 drafts, bring your own AI provider). Enterprise is a custom plan arranged with sales. Annual billing is two months free, and verified nonprofits get 25% off for their first year. See [Pricing](/pricing).
 
 ### Is there a free trial?
 Every workspace starts on the free Starter plan. There is no standard trial. The Academy demo project lets you explore without using your limits.

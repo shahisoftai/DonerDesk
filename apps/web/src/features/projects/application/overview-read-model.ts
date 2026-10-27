@@ -62,7 +62,7 @@ import type {
 } from "./overview-view";
 import { planCounts, outputProgress } from "@/features/workplan/domain/delivery-overview";
 import { siteMapData } from "@/features/workplan/domain/site-map";
-import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import type { ProjectPerson } from "@/features/tasks/domain/ask-people";
 import { REPORT_TYPE_LABEL } from "@/lib/labels";
 import { BENEFICIARY_SEX_LABEL } from "@donordesk/domain/contexts/workplan/index.js";
 
@@ -155,6 +155,8 @@ export const loadProjectOverviewV2 = cache(
       : null;
     const sheet = sheetResult.ok ? sheetResult.value : null;
     const people = peopleResult.ok ? peopleResult.value.items : [];
+    // Reused by the delivery and risks sections below instead of re-fetching `/people` (same request, same token).
+    const peopleList: ProjectPerson[] = people.map((p) => ({ id: p.userId, label: p.name, role: p.role }));
     const assignments = assignmentsResult.ok
       ? assignmentsResult.value.groups.flatMap((group) => group.items)
       : [];
@@ -337,7 +339,7 @@ export const loadProjectOverviewV2 = cache(
             sheet: sheet ?? undefined,
             otherTitle: "Other activities",
           }),
-          people: await loadProjectPeople(token, projectId, ""),
+          people: peopleList,
         })
       : failed;
 
@@ -413,7 +415,7 @@ export const loadProjectOverviewV2 = cache(
 
     /* ---- risks ---- */
     const risks: SectionData<RisksData> = risksResult?.ok
-      ? ok<RisksData>({ items: riskItems, people: await loadProjectPeople(token, projectId, "") })
+      ? ok<RisksData>({ items: riskItems, people: peopleList })
       : failed;
 
     /* ---- close-out ---- */
