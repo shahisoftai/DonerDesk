@@ -3,6 +3,23 @@
 Status: plan, 2026-10-27. Nothing built. Supersedes the "small tweaks" list in `competitor-matrix-verified-2026-10-27.md` §priorities.
 Input: that matrix (DonorDesk verified in code and in the browser) + the competitors' own help centres (sources at the end).
 
+## Status (2026-10-28)
+
+| Batch | State |
+|---|---|
+| 33.1 Places registry | Built and tested (domain, table, handlers, routes, Settings → Places incl. sheet import and "Places to confirm"). Not deployed. Not built: attaching a place id to stored breakdown entries and plan items (text is resolved at read time), "Where we work" per-project assignment, entry-time place suggestions in the indicator grid, widening the bundled gazetteer. |
+| 33.2 Results by place | Built and tested (`rollupByPlace`, `/place-results`, Data Center "By place" tab with level picker, partly-reported and unplaced notes, CSV). Not built: choropleth/map of the roll-up, place targets, report tables and infographic block reading the roll-up. |
+| 33.7 Integration | Built and tested: API keys (3 read scopes), `/api/v1/projects|indicators|place-results`, webhooks (signing, retry, SSRF check, auto-disable), Settings → Integrations. One event wired (`report.approved`). Not built: the other five events, KoboToolbox/SurveyCTO connectors, MCP server, API rate limiting, per-key project picker in the UI. |
+| 33.3 Formulas, targets, "not applicable" | Not started |
+| 33.4 Period data submission | Not started |
+| 33.5 Forms and records | Not started |
+| 33.6 Offline field app | Not started |
+| 33.8 Dashboards | Not started |
+| 33.9 Ask DonorDesk | Not started |
+| 33.10 Localisation | Not started |
+| 33.11 Finance and standards | Not started |
+| 33.12 Trust and commercial | Not started (security-page MFA wording fixed separately) |
+
 ## 0. How to read this plan
 
 Competitors' documentation shows **how** each capability is built, not only that it exists. For every domain we record:
