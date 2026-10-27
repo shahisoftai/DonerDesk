@@ -2068,3 +2068,29 @@ model InfographicShareLink {
 
   @@index([tenantId, infographicId])
 }
+
+/// An organisation's own list of where it works (Phase 33.1): a point or an area with a parent, so a
+/// value recorded at one place reads at the places above it. Names and aliases are matched through
+/// the domain's `normalizeLocationKey`; nothing here is derived from a gazetteer at read time.
+model Place {
+  id          String    @id
+  tenantId    String
+  name        String
+  /// POINT or AREA.
+  kind        String
+  /// 0 country, 1 state/province, 2 district/locality, 3 sub-district, 4 community/site.
+  adminLevel  Int
+  parentId    String?
+  country     String?
+  latitude    Float?
+  longitude   Float?
+  aliases     String[]  @default([])
+  code        String?
+  archivedAt  DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId, parentId])
+  @@index([tenantId, archivedAt])
+}
