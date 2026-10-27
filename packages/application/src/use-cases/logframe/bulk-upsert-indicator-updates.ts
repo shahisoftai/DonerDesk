@@ -7,6 +7,7 @@ import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { BulkUpsertIndicatorUpdatesInput } from "@donordesk/contracts";
 import type { IEvidenceLinker } from "../../ports/evidence-linker.js";
 import { upsertIndicatorUpdate } from "./upsert-indicator-update.js";
+import { checkEntryWindow } from "../../services/entry-window-guard.js";
 
 export interface BulkUpsertOutcome {
   saved: number;
@@ -26,6 +27,7 @@ export class BulkUpsertIndicatorUpdatesHandler {
     private readonly audit: IAuditLogger,
     private readonly linker?: IEvidenceLinker,
     private readonly tasks?: ITaskReconciliation,
+    private readonly now: () => Date = () => new Date(),
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: BulkUpsertIndicatorUpdatesInput): Promise<Result<BulkUpsertOutcome, DomainError>> {
@@ -35,6 +37,9 @@ export class BulkUpsertIndicatorUpdatesHandler {
     if (isPeriodLocked(periodResult.value.status.value)) {
       return { ok: false, error: DomainError.conflict(periodLockedMessage(periodResult.value.status.value)) };
     }
+
+    const window = checkEntryWindow(ctx, periodResult.value, this.now());
+    if (!window.ok) return window;
 
     const indicatorsResult = await this.indicators.findByProject(periodResult.value.projectId, ctx.tenant.tenantId);
     if (!indicatorsResult.ok) return indicatorsResult;

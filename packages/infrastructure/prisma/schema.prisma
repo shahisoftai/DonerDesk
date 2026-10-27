@@ -514,6 +514,9 @@ model ReportingPeriod {
   /// Set when the period was cancelled: its data stays, it leaves the calendar and the closing report.
   cancelledAt                  DateTime?
   cancelReason                 String?
+  /// Optional window (plain days) in which values may be entered by the people who enter them; reviewers are exempt (phase 33.4).
+  entryOpensOn                 String?
+  entryClosesOn                String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

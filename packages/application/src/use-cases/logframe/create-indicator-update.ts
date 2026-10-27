@@ -7,6 +7,7 @@ import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { CreateIndicatorUpdateInput } from "@donordesk/contracts";
 import type { IEvidenceLinker } from "../../ports/evidence-linker.js";
 import { upsertIndicatorUpdate } from "./upsert-indicator-update.js";
+import { checkEntryWindow } from "../../services/entry-window-guard.js";
 
 import type { ITaskReconciliation } from "../../ports/tasks.js";
 
@@ -19,6 +20,7 @@ export class CreateIndicatorUpdateHandler {
     private readonly periods: IReportingPeriodRepository,
     private readonly linker?: IEvidenceLinker,
     private readonly tasks?: ITaskReconciliation,
+    private readonly now: () => Date = () => new Date(),
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateIndicatorUpdateInput): Promise<Result<{ id: string }, DomainError>> {
@@ -29,6 +31,8 @@ export class CreateIndicatorUpdateHandler {
     if (isPeriodLocked(period.value.status.value)) {
       return { ok: false, error: DomainError.conflict(periodLockedMessage(period.value.status.value)) };
     }
+    const window = checkEntryWindow(ctx, period.value, this.now());
+    if (!window.ok) return window;
     const indicator = await this.indicators.findById(input.indicatorId, ctx.tenant.tenantId);
     if (!indicator.ok) return indicator;
     if (!indicator.value || indicator.value.projectId !== period.value.projectId) {

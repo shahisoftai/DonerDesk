@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import { registerParseFileRoute } from "./parse-file.js";
 import {
@@ -182,6 +183,26 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const id = (req.params as { id: string }).id;
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.submitPeriodIndicatorUpdates.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // When the people who enter values may do so (reviewers are exempt). Empty days clear the window.
+  app.put("/v1/reporting-periods/:id/entry-window", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = z.object({ opensOn: z.string().max(10).nullish(), closesOn: z.string().max(10).nullish() }).parse(req.body ?? {});
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.setPeriodEntryWindow.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // The reviewer sends every value that is waiting back, with one reason (stored as each value's review note).
+  app.post("/v1/reporting-periods/:id/indicator-updates/return-all", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const { reason } = z.object({ reason: z.string().min(1).max(1000) }).parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.returnPeriodIndicatorUpdates.handle(ctx, id, reason);
     if (!r.ok) throw r.error;
     return r.value;
   });

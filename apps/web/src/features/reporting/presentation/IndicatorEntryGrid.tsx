@@ -12,11 +12,16 @@ import {
   verifyIndicatorUpdateAction,
   verifyAllIndicatorUpdatesAction,
   submitAllIndicatorUpdatesAction,
+  returnAllIndicatorUpdatesAction,
+  setEntryWindowAction,
   type BulkSaveRow,
 } from "@/lib/actions/indicators";
 import type { PeriodIndicatorRow } from "@/lib/server/schemas";
+import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Field } from "@/components/ui/Field";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/data/Badge";
 import { useToast } from "@/components/feedback/Toast";
@@ -58,6 +63,8 @@ export function IndicatorEntryGrid({
   names = {},
   canAsk = false,
   dataStatus,
+  entryWindow,
+  canManageWindow = false,
 }: {
   projectId: string;
   periodId: string;
@@ -74,6 +81,10 @@ export function IndicatorEntryGrid({
   canAsk?: boolean;
   /** Where the period's data stands (derived by the server from the values' statuses). */
   dataStatus?: { status: string; description: string };
+  /** When the people who enter values may do so; `refusal` is set when this person may not right now. */
+  entryWindow?: { opensOn?: string | undefined; closesOn?: string | undefined; description: string | null; refusal: string | null };
+  /** May this person set the window (project editors). */
+  canManageWindow?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -145,6 +156,47 @@ export function IndicatorEntryGrid({
   /** Values the person can hand in: drafts and returned values that hold a figure (a calculated indicator has none of its own). */
   const submittableCount = rows.filter((row) => !row.calculation && row.update && (row.update.verificationStatus === "DRAFT" || row.update.verificationStatus === "NEEDS_CORRECTION") && (row.update.periodAchievement.trim() !== "" || row.update.cumulativeAchievement.trim() !== "")).length;
   const [submittingAll, setSubmittingAll] = useState(false);
+  const waitingCount = rows.filter((row) => row.update?.verificationStatus === "SUBMITTED").length;
+  const [windowOpen, setWindowOpen] = useState(false);
+  const [opensOn, setOpensOn] = useState(entryWindow?.opensOn ?? "");
+  const [closesOn, setClosesOn] = useState(entryWindow?.closesOn ?? "");
+  const [savingWindow, setSavingWindow] = useState(false);
+
+  async function saveWindow() {
+    setSavingWindow(true);
+    try {
+      const result = await setEntryWindowAction(periodId, opensOn, closesOn);
+      if (!result.ok) {
+        toast.push({ title: "Could not save the entry window", description: result.error.message, tone: "danger" });
+        return;
+      }
+      toast.push({ title: result.value.description ?? "Entry window cleared", tone: "success" });
+      setWindowOpen(false);
+      router.refresh();
+    } finally {
+      setSavingWindow(false);
+    }
+  }
+  const [returnOpen, setReturnOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+  const [returning, setReturning] = useState(false);
+
+  async function returnAll() {
+    setReturning(true);
+    try {
+      const result = await returnAllIndicatorUpdatesAction(periodId, returnReason);
+      if (!result.ok) {
+        toast.push({ title: "Could not send back", description: result.error.message, tone: "danger" });
+        return;
+      }
+      toast.push({ title: `${result.value.returned} indicator value${result.value.returned === 1 ? "" : "s"} sent back`, tone: "success" });
+      setReturnOpen(false);
+      setReturnReason("");
+      router.refresh();
+    } finally {
+      setReturning(false);
+    }
+  }
 
   async function submitAll() {
     setSubmittingAll(true);
@@ -324,6 +376,11 @@ export function IndicatorEntryGrid({
               Submit for review{submittableCount > 0 ? ` (${submittableCount})` : ""}
             </Button>
           )}
+          {canVerify && waitingCount > 0 && (
+            <Button variant="secondary" size="sm" onClick={() => setReturnOpen((open) => !open)}>
+              Send back ({waitingCount})
+            </Button>
+          )}
           {canEdit && canVerify && (
             <Button
               variant="secondary"
@@ -340,6 +397,36 @@ export function IndicatorEntryGrid({
           </Button>
         </div>
       </div>
+
+      {(entryWindow?.description || canManageWindow) && (
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-300">
+          <span>{entryWindow?.description ?? "Entry has no opening or closing day."}</span>
+          {canManageWindow && <button type="button" className="font-medium text-brand-700 underline dark:text-brand-300" onClick={() => setWindowOpen((o) => !o)}>{windowOpen ? "Close" : "Change the entry window"}</button>}
+        </div>
+      )}
+      {entryWindow?.refusal && <InlineAlert tone="warning" title="You cannot enter values right now">{entryWindow.refusal}</InlineAlert>}
+      {windowOpen && canManageWindow && (
+        <section className="card grid gap-3 p-4 sm:grid-cols-3" aria-label="Entry window">
+          <Field label="Opens on" htmlFor="entry-opens"><Input id="entry-opens" type="date" value={opensOn} onChange={(e) => setOpensOn(e.target.value)} disabled={savingWindow} /></Field>
+          <Field label="Closes on" htmlFor="entry-closes"><Input id="entry-closes" type="date" value={closesOn} onChange={(e) => setClosesOn(e.target.value)} disabled={savingWindow} /></Field>
+          <div className="flex items-end gap-2">
+            <Button size="sm" onClick={() => void saveWindow()} pending={savingWindow}>Save</Button>
+            <Button size="sm" variant="secondary" onClick={() => { setOpensOn(""); setClosesOn(""); }} disabled={savingWindow}>Clear dates</Button>
+          </div>
+          <p className="text-xs text-slate-500 sm:col-span-3 dark:text-slate-400">Outside these days the people who enter values cannot save or submit them. Reviewers can always enter or change values.</p>
+        </section>
+      )}
+      {returnOpen && canVerify && (
+        <section className="card space-y-3 p-4" aria-label="Send values back">
+          <p className="text-sm font-medium">Send {waitingCount} value{waitingCount === 1 ? "" : "s"} back for changes</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Every value waiting for review is returned with this reason. The people who entered them are told; verified values stay as they are.</p>
+          <Textarea rows={3} value={returnReason} onChange={(e) => setReturnReason(e.target.value)} aria-label="What needs to change" disabled={returning} />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => void returnAll()} pending={returning} disabled={returnReason.trim() === ""}>Send back</Button>
+            <Button size="sm" variant="secondary" onClick={() => setReturnOpen(false)} disabled={returning}>Cancel</Button>
+          </div>
+        </section>
+      )}
 
       {importOpen && canEdit && (
         <section className="card space-y-3 p-4" aria-label="Import indicator data from Google Sheets">
@@ -549,7 +636,16 @@ function LevelGroupRows({
               </td>
               <td className="px-3 py-2 text-xs">{INDICATOR_TYPE_LABEL[row.type] ?? row.type}</td>
               <td className="px-3 py-2 text-xs">{row.baseline || "—"}</td>
-              <td className="px-3 py-2 text-xs">{target}</td>
+              <td className="px-3 py-2 text-xs">
+                {target}
+                {row.stoplight && row.stoplight.light !== "NONE" && (
+                  <span title={row.stoplight.note} className={`mt-1 flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${row.stoplight.light === "MET" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200" : "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200"}`}>
+                    <span aria-hidden className={`h-2 w-2 rounded-full ${row.stoplight.light === "MET" ? "bg-emerald-500" : "bg-amber-500"}`} />
+                    {row.stoplight.light === "MET" ? "Target met" : "Below target"}{row.stoplight.variance ? ` (${row.stoplight.variance})` : ""}
+                  </span>
+                )}
+                {row.stoplight?.light === "NONE" && <span className="mt-1 block text-[11px] text-slate-500 dark:text-slate-400" title={row.stoplight.note}>Not judged</span>}
+              </td>
               <td className="min-w-[140px] px-3 py-2">
                 {row.type === "YES_NO" ? (
                   <Select

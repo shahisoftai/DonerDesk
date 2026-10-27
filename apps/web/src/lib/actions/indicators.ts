@@ -18,6 +18,8 @@ import {
   ConfirmSemanticsResponseSchema,
   VerifyAllResponseSchema,
   SubmitAllResponseSchema,
+  EntryWindowResponseSchema,
+  ReturnAllResponseSchema,
   ImportIndicatorsResponseSchema,
   type ImportIndicatorsResponse,
 } from "@/lib/server/schemas";
@@ -112,7 +114,7 @@ export async function bulkSaveIndicatorUpdatesAction(
 }
 
 export type LoadPeriodIndicatorsResult = Result<
-  { periodId: string; projectId: string; indicators: import("@/lib/server/schemas").PeriodIndicatorRow[]; dataStatus?: import("@/lib/server/schemas").PeriodIndicators["dataStatus"] },
+  { periodId: string; projectId: string; indicators: import("@/lib/server/schemas").PeriodIndicatorRow[]; dataStatus?: import("@/lib/server/schemas").PeriodIndicators["dataStatus"]; entryWindow?: import("@/lib/server/schemas").PeriodIndicators["entryWindow"] },
   AppError
 >;
 
@@ -208,6 +210,24 @@ export type SubmitAllResult = Result<import("zod").infer<typeof SubmitAllRespons
 export async function submitAllIndicatorUpdatesAction(reportingPeriodId: string): Promise<SubmitAllResult> {
   const context = await requireSession();
   return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/indicator-updates/submit-all`, SubmitAllResponseSchema, context.token, { method: "POST", body: {} });
+}
+
+export type ReturnAllResult = Result<import("zod").infer<typeof ReturnAllResponseSchema>, AppError>;
+
+/** Sends every value that is waiting for review back to the people who entered it, with one reason. */
+export async function returnAllIndicatorUpdatesAction(reportingPeriodId: string, reason: string): Promise<ReturnAllResult> {
+  const context = await requireSession();
+  const trimmed = reason.trim();
+  if (!trimmed) return { ok: false, error: { kind: "validation", message: "Say what needs to change; the person who entered the values will read it.", fields: { reason: ["Required"] } } };
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/indicator-updates/return-all`, ReturnAllResponseSchema, context.token, { method: "POST", body: { reason: trimmed } });
+}
+
+export type EntryWindowResult = Result<import("zod").infer<typeof EntryWindowResponseSchema>, AppError>;
+
+/** Sets or clears when the people who enter values may do so (empty days clear it). Reviewers are never held to it. */
+export async function setEntryWindowAction(reportingPeriodId: string, opensOn: string, closesOn: string): Promise<EntryWindowResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/entry-window`, EntryWindowResponseSchema, context.token, { method: "PUT", body: { opensOn: opensOn || null, closesOn: closesOn || null } });
 }
 
 const IndicatorMovedResponseSchema = z.object({ id: z.string(), moved: z.boolean() });

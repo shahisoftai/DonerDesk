@@ -73,6 +73,9 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         // null (not undefined) so that restoring a period really clears the stored values
         cancelledAt: p.cancelledAt ?? null,
         cancelReason: p.cancelReason ?? null,
+        // null (not undefined) so that clearing the window really clears it
+        entryOpensOn: p.entryOpensOn ?? null,
+        entryClosesOn: p.entryClosesOn ?? null,
       },
     });
     return ok(p);
@@ -134,6 +137,8 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
     scopeJson: string;
     cancelledAt?: Date | null;
     cancelReason?: string | null;
+    entryOpensOn?: string | null;
+    entryClosesOn?: string | null;
     createdAt: Date;
   }): ReportingPeriod {
     return ReportingPeriod.rehydrate({
@@ -158,6 +163,8 @@ export class PrismaReportingPeriodRepository implements IReportingPeriodReposito
         scopeJson: row.scopeJson,
         ...(row.cancelledAt ? { cancelledAt: row.cancelledAt } : {}),
         ...(row.cancelReason ? { cancelReason: row.cancelReason } : {}),
+        ...(row.entryOpensOn ? { entryOpensOn: row.entryOpensOn } : {}),
+        ...(row.entryClosesOn ? { entryClosesOn: row.entryClosesOn } : {}),
       },
     });
   }

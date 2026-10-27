@@ -71,3 +71,21 @@ test("limit is clamped to 1..20", async () => {
   await repo.findPreviousPeriods("proj", "cur", tenant, 0);
   assert.deepEqual(prisma.calls.finds.map((f) => f.take), [20, 1]);
 });
+
+test("update persists the entry window and clears it with null; a stored window comes back", async () => {
+  const prisma = fakePrisma([]);
+  const period = ReportingPeriod.rehydrate({ id: "p1", tenantId: "tenant-a", projectId: "proj", createdAt: new Date(), props: {
+    reportType: "MONTHLY", duration: { start: new Date("2028-05-01"), end: new Date("2028-05-31"), overlaps: () => false }, deadline: new Date("2028-06-09"),
+    status: { toString: () => "NOT_STARTED" }, readinessScore: 0, reportingProfileSnapshotJson: "{}", templateSnapshotJson: "{}", scopeJson: "{}",
+  } });
+  const repo = new PrismaReportingPeriodRepository(prisma);
+  period.setEntryWindow({ opensOn: "2028-06-01", closesOn: "2028-06-10" });
+  await repo.update(period);
+  assert.deepEqual([prisma.calls.updates[0].data.entryOpensOn, prisma.calls.updates[0].data.entryClosesOn], ["2028-06-01", "2028-06-10"]);
+  period.setEntryWindow({});
+  await repo.update(period);
+  assert.deepEqual([prisma.calls.updates[1].data.entryOpensOn, prisma.calls.updates[1].data.entryClosesOn], [null, null]);
+  const back = new PrismaReportingPeriodRepository(fakePrisma([{ ...row("p2", "MONTHLY", "2028-05-01"), entryOpensOn: "2028-06-01", entryClosesOn: "2028-06-10" }]));
+  const list = await back.findByProject("proj", tenant);
+  assert.deepEqual([list.value[0].entryOpensOn, list.value[0].entryClosesOn], ["2028-06-01", "2028-06-10"]);
+});

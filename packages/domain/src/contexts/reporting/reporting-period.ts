@@ -99,6 +99,9 @@ export interface ReportingPeriodProps {
   /** Set when the period was cancelled: its data stays, but it no longer takes part in the calendar or the closing report. */
   cancelledAt?: Date;
   cancelReason?: string;
+  /** Optional window in which the people who enter values may do so (plain days, `YYYY-MM-DD`); reviewers are not held to it. */
+  entryOpensOn?: string;
+  entryClosesOn?: string;
 }
 
 export class ReportingPeriod extends Entity<string> {
@@ -176,6 +179,8 @@ export class ReportingPeriod extends Entity<string> {
 
   get cancelledAt(): Date | undefined { return this.props.cancelledAt ? new Date(this.props.cancelledAt.getTime()) : undefined; }
   get cancelReason(): string | undefined { return this.props.cancelReason; }
+  get entryOpensOn(): string | undefined { return this.props.entryOpensOn; }
+  get entryClosesOn(): string | undefined { return this.props.entryClosesOn; }
   get isCancelled(): boolean { return this.props.cancelledAt !== undefined; }
 
   daysUntilDeadline(): number {
@@ -271,6 +276,15 @@ export class ReportingPeriod extends Entity<string> {
   /** Replaces what an activity/situation/custom report covers. Validated by the caller (`ReportScopeResolver`). */
   setScope(scope: ReportScope): void {
     this.props.scopeJson = JSON.stringify(scope);
+    this.touch();
+  }
+
+  /** Sets or clears the window for entering values. Validated by the caller (`validateEntryWindow`); an empty window clears it. */
+  setEntryWindow(window: { opensOn?: string | undefined; closesOn?: string | undefined }): void {
+    if (window.opensOn) this.props.entryOpensOn = window.opensOn;
+    else delete this.props.entryOpensOn;
+    if (window.closesOn) this.props.entryClosesOn = window.closesOn;
+    else delete this.props.entryClosesOn;
     this.touch();
   }
 

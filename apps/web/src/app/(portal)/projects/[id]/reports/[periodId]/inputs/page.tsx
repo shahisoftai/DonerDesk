@@ -149,6 +149,8 @@ export default async function ReportInputsPage({
             periodId={periodId}
             rows={indicatorsResult.value.indicators}
             dataStatus={indicatorsResult.value.dataStatus}
+            entryWindow={indicatorsResult.value.entryWindow}
+            canManageWindow={ctx.capabilities.has("project.edit") && !figuresLocked}
             reportType={period?.reportType}
             canEdit={ctx.capabilities.has("indicator.update") && !figuresLocked}
             canVerify={ctx.capabilities.has("indicator.verify") && !figuresLocked}

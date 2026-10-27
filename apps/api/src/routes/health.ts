@@ -39,6 +39,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "TenantMapLayer", field: "storageKey" },
   { model: "Place", field: "adminLevel" },
   { model: "Indicator", field: "formulaJson" },
+  { model: "ReportingPeriod", field: "entryClosesOn" },
   { model: "ApiKey", field: "tokenHash" },
   { model: "WebhookEndpoint", field: "consecutiveFailures" },
   { model: "ProjectInfographic", field: "configJson" },

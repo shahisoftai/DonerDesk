@@ -51,3 +51,52 @@ test("a locked report refuses, and a missing period is not found", async () => {
   const h = new SubmitPeriodIndicatorUpdatesHandler({}, {}, { findById: async () => ok(null) }, {}, {});
   assert.equal((await h.handle(ctx, "zz")).error.code, "NOT_FOUND");
 });
+
+import { ReturnPeriodIndicatorUpdatesHandler } from "../dist/index.js";
+
+const REVIEWER = { tenant: { tenantId, userId: "boss", role: "PROJECT_MANAGER" }, requestId: "r" };
+
+test("submitting tells the project's reviewers once (not the submitter) and never fails if telling fails", async () => {
+  const w = world([upd("u1", "a", "DRAFT"), upd("u2", "b", "DRAFT")]);
+  const sent = [];
+  const h = new SubmitPeriodIndicatorUpdatesHandler(
+    w.h.updates ?? { findByReportingPeriod: async () => ok([...w.store.values()]), findById: async (id) => ok(w.store.get(id)), update: async (u) => (w.store.set(u.id, u), ok(u)) },
+    { findByProject: async () => ok([]) }, { findById: async () => ok({ id: "p1", projectId: "proj", status: { value: "NOT_STARTED" }, reportType: "MONTHLY", scope: undefined, duration: { start: new Date("2026-11-01"), end: new Date("2026-11-30") } }) },
+    { findByReportingPeriod: async () => ok([]) }, { record: async () => {} },
+    { notify: { send: async (n) => void sent.push(n) }, projects: { findById: async () => ok({ title: "Sudan MNCH", projectManagerId: "boss", meOfficerId: "me", reportingOfficerId: undefined }) }, members: { findByProject: async () => ok([]) } },
+  );
+  const r = await h.handle({ ...ctx, tenant: { ...ctx.tenant, userId: "me" } }, "p1");
+  assert.equal(r.value.submitted, 2);
+  assert.deepEqual(sent.map((n) => n.recipientId), ["boss"]);
+  assert.match(sent[0].message, /2 indicator values for Sudan MNCH have been submitted/);
+  const broken = new SubmitPeriodIndicatorUpdatesHandler(
+    { findByReportingPeriod: async () => ok([upd("u9", "a", "DRAFT")]), findById: async () => ok(upd("u9", "a", "DRAFT")), update: async (u) => ok(u) },
+    { findByProject: async () => ok([]) }, { findById: async () => ok({ id: "p1", projectId: "proj", status: { value: "NOT_STARTED" }, reportType: "MONTHLY", scope: undefined, duration: { start: new Date("2026-11-01"), end: new Date("2026-11-30") } }) },
+    { findByReportingPeriod: async () => ok([]) }, { record: async () => {} },
+    { notify: { send: async () => { throw new Error("mail down"); } }, projects: { findById: async () => ok({ title: "X", projectManagerId: "boss" }) }, members: { findByProject: async () => ok([]) } },
+  );
+  assert.equal((await broken.handle(ctx, "p1")).value.submitted, 1);
+});
+
+test("sending a period back: a reason is required, only waiting values return, authors are told once with the reason", async () => {
+  const w = world([upd("u1", "a", "SUBMITTED"), upd("u2", "b", "SUBMITTED"), upd("u3", "c", "VERIFIED"), upd("u4", "d", "DRAFT")]);
+  const sent = [];
+  const period = { id: "p1", projectId: "proj", status: { value: "NOT_STARTED" }, reportType: "MONTHLY", scope: undefined, duration: { start: new Date("2026-11-01"), end: new Date("2026-11-30") } };
+  const mk = (status = "NOT_STARTED") => new ReturnPeriodIndicatorUpdatesHandler(
+    { findByReportingPeriod: async () => ok([...w.store.values()]), findById: async (id) => ok(w.store.get(id) ?? null), update: async (u) => (w.store.set(u.id, u), ok(u)) },
+    { findByProject: async () => ok([{ id: "a", code: "A" }]) }, { findById: async () => ok({ ...period, status: { value: status } }) },
+    { findByReportingPeriod: async () => ok([]) }, { record: async () => {} }, { send: async (n) => void sent.push(n) },
+  );
+  assert.match((await mk().handle(REVIEWER, "p1", "  ")).error.message, /Say what needs to change/);
+  const r = await mk().handle(REVIEWER, "p1", "Baselines are missing");
+  assert.equal(r.value.returned, 2);
+  assert.equal(w.store.get("u1").verificationStatus, "NEEDS_CORRECTION");
+  assert.equal(w.store.get("u1").reviewNote, "Baselines are missing");
+  assert.equal(w.store.get("u3").verificationStatus, "VERIFIED");
+  assert.equal(w.store.get("u4").verificationStatus, "DRAFT");
+  assert.equal(r.value.status, "RETURNED");
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].recipientId, "officer");
+  assert.match(sent[0].message, /2 indicator values were sent back for changes: Baselines are missing/);
+  assert.equal((await mk("APPROVED").handle(REVIEWER, "p1", "x")).error.code, "CONFLICT");
+});

@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DEFAULT_ENTRY_DUE_DAYS, DomainError, describeFormula, summarizePeriodData, describePeriodData, type PeriodDataSummary, collectionDue, collectionOwner, toPlainDate, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
+import { DEFAULT_ENTRY_DUE_DAYS, DomainError, describeFormula, summarizePeriodData, describePeriodData, entryStoplight, describeEntryWindow, entryWindowRefusal, Permissions, type Role, type EntryStoplight, type PeriodDataSummary, collectionDue, collectionOwner, toPlainDate, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -42,6 +42,8 @@ export interface PeriodIndicatorRow {
   aggregation: string;
   /** Set when the value is calculated from other indicators: the grid shows it, it is never typed. */
   calculation?: string;
+  /** Target met / below target on the values entered (drafts included), or why there is no light. Absent without a value. */
+  stoplight?: EntryStoplight;
   /** This indicator's value from the latest earlier period, to repeat or add to; absent when there is none. */
   previous?: PreviousIndicatorValue;
   /** A non-blocking prompt when linked activities record a different head-count than the indicator reports. */
@@ -73,7 +75,7 @@ export class ListPeriodIndicatorsHandler {
   async handle(
     ctx: AuthenticatedContext,
     reportingPeriodId: string,
-  ): Promise<Result<{ periodId: string; projectId: string; reportType: string; indicators: PeriodIndicatorRow[]; scope?: PeriodScopeSummary; dataStatus: PeriodDataSummary & { description: string } }, DomainError>> {
+  ): Promise<Result<{ periodId: string; projectId: string; reportType: string; indicators: PeriodIndicatorRow[]; scope?: PeriodScopeSummary; dataStatus: PeriodDataSummary & { description: string }; entryWindow: { opensOn?: string; closesOn?: string; description: string | null; refusal: string | null } }, DomainError>> {
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", reportingPeriodId) };
@@ -156,6 +158,7 @@ export class ListPeriodIndicatorsHandler {
         logframeCode: item?.code ?? null,
         logframeTitle: item?.title ?? null,
         update: update ? toIndicatorUpdateView(update) : null,
+        ...(update && !ind.formula ? { stoplight: entryStoplight({ semantics: effectiveIndicatorSemantics(ind), baseline: ind.baseline, target: ind.target, schedule: ind.targetSchedule, periodEnd: period.duration.end.toISOString().slice(0, 10), periodValue: update.periodAchievement, cumulativeValue: update.cumulativeAchievement }) } : {}),
         // A recorded value is always expected; otherwise the indicator's own frequency decides.
         dueThisPeriod:
           Boolean(update) ||
@@ -181,6 +184,13 @@ export class ListPeriodIndicatorsHandler {
         projectId: period.projectId,
         reportType: period.reportType,
         indicators: rows,
+        entryWindow: (() => {
+          const day = (this.clock ? this.clock.now() : new Date()).toISOString().slice(0, 10);
+          const window = { opensOn: period.entryOpensOn, closesOn: period.entryClosesOn };
+          // Reviewers are not held to the window, so it never says "closed" to them as a refusal.
+          const exempt = Permissions.can(ctx.tenant.role as Role, "indicator.verify");
+          return { ...(window.opensOn ? { opensOn: window.opensOn } : {}), ...(window.closesOn ? { closesOn: window.closesOn } : {}), description: describeEntryWindow(window, day), refusal: exempt ? null : entryWindowRefusal(window, day) };
+        })(),
         dataStatus: (() => { const summary = summarizePeriodData(rows.filter((r) => r.update && !r.calculation).map((r) => r.update!.verificationStatus)); return { ...summary, description: describePeriodData(summary) }; })(),
         ...(scope.activities
           ? { scope: { activityCount: scope.activities.length, acceptedActivityCount: scope.activities.filter((a) => a.status === "ACCEPTED").length } }

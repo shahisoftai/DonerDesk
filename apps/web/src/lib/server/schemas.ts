@@ -423,6 +423,8 @@ export const PeriodIndicatorRowSchema = z.object({
   disaggregationRequired: z.boolean(),
   /** The value is calculated from other indicators (never typed): a plain sentence saying from what. */
   calculation: z.string().optional(),
+  /** Target met / below target on the values entered, or why there is no light. */
+  stoplight: z.object({ light: z.enum(["MET", "BELOW", "NONE"]), target: z.string().optional(), compared: z.string().optional(), variance: z.string().optional(), note: z.string() }).optional(),
   breakdownMustSum: z.boolean().optional(),
   targetGroups: z.array(z.object({ dimension: z.string(), category: z.string() })).default([]),
   requiresDenominator: z.boolean(),
@@ -449,6 +451,8 @@ export const PeriodIndicatorsResponseSchema = z.object({
   reportType: z.string().optional(),
   indicators: z.array(PeriodIndicatorRowSchema),
   scope: z.object({ activityCount: z.number(), acceptedActivityCount: z.number() }).optional(),
+  /** When the people who enter values may do so; `refusal` is set when this person may not enter right now. */
+  entryWindow: z.object({ opensOn: z.string().optional(), closesOn: z.string().optional(), description: z.string().nullable(), refusal: z.string().nullable() }).optional(),
   /** Where the period's data stands, derived from the values' statuses, with one sentence for the screen. */
   dataStatus: z.object({ status: z.enum(["NO_DATA", "IN_PROGRESS", "RETURNED", "SUBMITTED", "VERIFIED"]), total: z.number(), drafts: z.number(), submitted: z.number(), returned: z.number(), verified: z.number(), description: z.string() }).optional(),
 });
@@ -513,6 +517,14 @@ export const VerifyAllResponseSchema = z.object({
   verified: z.number(),
   failed: z.array(z.object({ updateId: z.string(), indicatorCode: z.string(), message: z.string() })),
 });
+
+export const ReturnAllResponseSchema = z.object({
+  returned: z.number(),
+  failed: z.array(z.object({ updateId: z.string(), indicatorCode: z.string(), message: z.string() })),
+  status: z.string(),
+});
+
+export const EntryWindowResponseSchema = z.object({ opensOn: z.string().optional(), closesOn: z.string().optional(), description: z.string().nullable() });
 
 export const SubmitAllResponseSchema = z.object({
   submitted: z.number(),
