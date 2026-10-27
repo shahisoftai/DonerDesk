@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { CreatePlaceSchema, ImportPlacesSchema, ListPlacesQuerySchema, ResolvePlacesSchema, UpdatePlaceSchema } from "@donordesk/contracts";
 
 /** The organisation's list of places (Phase 33.1). Thin: validate, call one handler, throw its error; permissions are in the handlers and the authorization table. */
@@ -53,6 +54,14 @@ export async function registerPlaceRoutes(app: FastifyInstance) {
 
   app.get("/v1/places/unconfirmed", async (req) => {
     const r = await req.container.handlers.listUnconfirmedLocations.handle(ctx(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // Each indicator's recorded per-location values read at one level of the place tree (Data Center "By place").
+  app.get("/v1/projects/:projectId/place-results", async (req) => {
+    const { level } = z.object({ level: z.coerce.number().int().min(0).max(4).default(1) }).parse(req.query);
+    const r = await req.container.handlers.getProjectPlaceResults.handle(ctx(req), param(req, "projectId"), level as never);
     if (!r.ok) throw r.error;
     return r.value;
   });

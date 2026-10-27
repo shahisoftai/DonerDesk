@@ -341,6 +341,7 @@ export * from "./use-cases/evidence/review-evidence.js";
 export * from "./use-cases/templates/donor-indicator-mapping.js";
 export * from "./use-cases/risks/risk-handlers.js";
 export * from "./use-cases/places/place-handlers.js";
+export * from "./use-cases/places/place-results.js";
 export * from "./ports/portfolio.js";
 export * from "./use-cases/funding/funding-handlers.js";
 export * from "./use-cases/organization/map-layer-handlers.js";

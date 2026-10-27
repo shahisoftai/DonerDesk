@@ -26,6 +26,7 @@ export const RULES: ReadonlyArray<{
   { method: "GET", route: /^\/v1\/organization\/map-layer$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/organization\/map-layer\/data$/, permission: "project.view" },
   { method: "DELETE", route: /^\/v1\/organization\/map-layer$/, permission: "org.manage" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/place-results$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/places$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/places$/, permission: "project.edit" },
   { method: "PUT", route: /^\/v1\/places\/[^/]+$/, permission: "project.edit" },

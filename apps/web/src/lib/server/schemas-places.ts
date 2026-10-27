@@ -41,3 +41,44 @@ export const PlaceImportPreviewSchema = z.object({
   applied: z.boolean(),
 });
 export type PlaceImportPreview = z.infer<typeof PlaceImportPreviewSchema>;
+
+const RollupRowSchema = z.object({
+  placeId: z.string(),
+  name: z.string(),
+  path: z.string(),
+  adminLevel: z.number().int(),
+  value: z.string().nullable(),
+  verified: z.boolean(),
+  unverified: z.number().int(),
+  contributors: z.number().int(),
+  listedBelow: z.number().int(),
+  partly: z.boolean(),
+});
+export type PlaceRollupRow = z.infer<typeof RollupRowSchema>;
+
+export const PlaceResultsSchema = z.object({
+  level: z.number().int(),
+  levelsAvailable: z.array(z.number().int()),
+  noPlaces: z.boolean(),
+  indicators: z.array(z.object({
+    id: z.string(),
+    code: z.string(),
+    name: z.string(),
+    unit: z.string().nullable(),
+    type: z.string(),
+    isRate: z.boolean(),
+    rollup: z.object({
+      level: z.number().int(),
+      additive: z.boolean(),
+      rows: z.array(RollupRowSchema),
+      unplaced: z.array(z.object({
+        location: z.string(),
+        value: z.string(),
+        reason: z.enum(["NOT_IN_LIST", "MORE_THAN_ONE_PLACE", "ABOVE_LEVEL"]),
+        candidates: z.array(z.string()).optional(),
+      })),
+    }),
+  })),
+  withoutLocation: z.array(z.object({ id: z.string(), code: z.string(), name: z.string() })),
+});
+export type PlaceResults = z.infer<typeof PlaceResultsSchema>;

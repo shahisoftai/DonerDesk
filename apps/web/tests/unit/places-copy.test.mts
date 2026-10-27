@@ -28,3 +28,17 @@ test("counts agree with their noun", () => {
 test("the screen never says node, admin level or parent", () => {
   for (const [key, text] of strings()) assert.doesNotMatch(text, /\b(node|admin level|parent)\b/i, key);
 });
+
+import { PLACE_RESULTS_COPY } from "../../src/features/places/domain/place-results-copy.ts";
+
+test("By place copy has no raw code, id or snake_case key, and counts agree", () => {
+  const flat: Array<[string, string]> = [];
+  for (const [key, value] of Object.entries(PLACE_RESULTS_COPY)) {
+    if (typeof value === "string") flat.push([key, value]);
+    else if (typeof value === "function") flat.push([key, (value as (...a: number[]) => string)(1, 3)]);
+    else for (const [k, v] of Object.entries(value)) flat.push([`${key}.${k}`, v as string]);
+  }
+  for (const [key, text] of flat) assert.deepEqual(findRawTokens(text), [], `${key}: ${text}`);
+  assert.equal(PLACE_RESULTS_COPY.unverified(1), "1 value is not verified yet.");
+  assert.equal(PLACE_RESULTS_COPY.unverified(3), "3 values are not verified yet.");
+});

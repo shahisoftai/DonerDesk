@@ -7,7 +7,7 @@ import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { IdResponseSchema, OkResponseSchema } from "./_schemas";
-import { PlaceImportPreviewSchema, type PlaceImportPreview } from "@/lib/server/schemas-places";
+import { PlaceImportPreviewSchema, PlaceResultsSchema, type PlaceImportPreview, type PlaceResults } from "@/lib/server/schemas-places";
 
 const invalid = (error: { issues: unknown[] } & Parameters<typeof flattenZodFields>[0]) => ({
   ok: false as const,
@@ -41,4 +41,10 @@ export async function importPlacesAction(input: unknown): Promise<Result<PlaceIm
   const parsed = ImportPlacesSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
   return gatewayRequest("/v1/places/import", PlaceImportPreviewSchema, context.token, { method: "POST", body: parsed.data });
+}
+
+/** Each indicator's recorded per-location values read at one level of the place tree. */
+export async function getPlaceResultsAction(projectId: string, level: number): Promise<Result<PlaceResults, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/place-results?level=${encodeURIComponent(String(level))}`, PlaceResultsSchema, context.token);
 }

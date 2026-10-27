@@ -1,0 +1,25 @@
+/** What a person reads on the Data Center's "By place" view (Phase 33.2); scanned by the copy lint. */
+export const PLACE_RESULTS_COPY = {
+  tab: "By place",
+  intro: "Each result read at the places you choose: a locality's figures count toward its state and its country. Only what was recorded is shown; a place that recorded nothing is never shown as zero.",
+  levelLabel: "Show results for",
+  noPlaces: "You have not listed any places yet, so results cannot be read by place.",
+  noPlacesAction: "Open the list of places",
+  loading: "Loading…",
+  nothing: "No result of this project has been recorded by place yet. Enter a breakdown by location when you record a value.",
+  rateNote: "A rate or percentage is shown for the place that recorded it and is never added up. A place above shows a figure only when one place below it recorded one.",
+  notCombined: "Not combined",
+  partly: (reported: number, listed: number) => `Partly reported: ${reported} of ${listed} places recorded a value.`,
+  unverified: (n: number) => `${n} ${n === 1 ? "value is" : "values are"} not verified yet.`,
+  unplacedTitle: "Not counted in the places above",
+  unplacedReason: {
+    NOT_IN_LIST: "no place in your list has this name",
+    MORE_THAN_ONE_PLACE: "more than one place has this name",
+    ABOVE_LEVEL: "it is a bigger area than the places shown",
+  } as Record<string, string>,
+  fixPlaces: "Add or correct places",
+  withoutTitle: "Not recorded by place",
+  withoutNote: "These results have no breakdown by location, so they appear only as project totals.",
+  download: "Download as a spreadsheet",
+  columns: { place: "Place", value: "Recorded", note: "Note" },
+} as const;

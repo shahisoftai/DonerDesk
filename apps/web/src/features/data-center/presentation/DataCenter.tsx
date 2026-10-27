@@ -7,13 +7,16 @@ import { FinanceSheetTable } from "./FinanceSheetTable";
 import { DataChartBuilder } from "./DataChartBuilder";
 import { AddToReportPanel } from "./AddToReportPanel";
 import { DataSheetImport } from "./DataSheetImport";
+import { PlaceResultsView } from "./PlaceResultsView";
+import { PLACE_RESULTS_COPY } from "@/features/places/domain/place-results-copy";
 
-type Tab = "sheet" | "charts" | "finance" | "import";
+type Tab = "sheet" | "place" | "charts" | "finance" | "import";
 
 export function DataCenter({ projectId, sheet, canEdit, canEditReports, canReopenReports = false }: { projectId: string; sheet: DataSheetResponse; canEdit: boolean; canEditReports: boolean; canReopenReports?: boolean }) {
   const [tab, setTab] = useState<Tab>("sheet");
   const tabs: Array<[Tab, string]> = [
     ["sheet", "Indicator data"],
+    ["place", PLACE_RESULTS_COPY.tab],
     ["charts", "Charts"],
     ...(sheet.financeEnabled ? ([["finance", "Finance"]] as Array<[Tab, string]>) : []),
     ...(canEdit ? ([["import", "Import / export"]] as Array<[Tab, string]>) : []),
@@ -33,6 +36,7 @@ export function DataCenter({ projectId, sheet, canEdit, canEditReports, canReope
       </div>
       <div className="mt-5">
         {tab === "sheet" && <DataSheetTable projectId={projectId} sheet={sheet} canEdit={canEdit} />}
+        {tab === "place" && <PlaceResultsView projectId={projectId} />}
         {tab === "charts" && (
           <DataChartBuilder
             sheet={sheet}
