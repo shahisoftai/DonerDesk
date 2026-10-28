@@ -370,3 +370,20 @@ A credible first release is **W0 + W1 + W2**: about four weeks, and it already c
 ## Appendix B. What to update alongside
 
 `02-feature-inventory.md` (add the Phase 34 features with LIVE / LIVE-LIMIT status after a person checks them), `06-selling-points.md` (add selling points 41+ for Chart Studio, Entry Sheet, sector templates, maps, report builder), `04-website-redesign-brief.md` (replace by this plan once approved), `05-overhaul-changelog.md`, and the support drafts in `docs/support/_unpublished-phase34/` (publish after the signed-in check).
+
+---
+
+## Implementation status (2026-10-28)
+
+Owner decisions taken: fundraising is served through infographics and shareable results (not a donor CRM); all segments; anonymous demo allowed (**not built yet**); pricing to be decided later (today's plans shown, generated from `PLAN_CATALOG`); light first; English first with a language switcher; a competitor comparison page.
+
+**Built and deployed (web only):**
+- New light-first public site under `apps/web/src/components/site/` (scoped `.sx` styles, self-hosted fonts, light by default and a dark choice kept on the device).
+- **Home** (`app/page.tsx`): the stable promise, sector chooser with a live example dashboard, six jobs, "See it your way" demo, field-to-report walkthrough, supporters and infographics section, roles, sector links, trust, plans, learn more, FAQ, closing call to action. All figures are example data and labelled.
+- **Solutions** (`/solutions`, `/solutions/[sector]`): WASH, health, nutrition, education, food security, protection.
+- **Compare** (`/compare`): only what each vendor publishes on its own site (built for, price as published, how you start), with sources and the date last read (28 Oct 2026). No feature-by-feature scoring of competitors, because we cannot verify it.
+- **Header** with the language switcher (English; French, Spanish and Arabic strings exist only for the header and hero and are unreviewed drafts) and a theme toggle.
+- Sitemap, navigation links and the older dark pages' cross-links updated; the old home components were removed.
+- Pricing parity tests now follow the catalogue (home cards come from `homePlans()`); the pricing page's Enterprise annual row now states the $12,000 floor, which also cleared the one long-standing failing test.
+
+**Not built yet (from sections 6–13):** the no-sign-up demo sandbox (the hero links to the product tour instead); a restructured Platform page and What's new; customer logos, quotes, a founder video and references (placeholders were removed, nothing invented); the indicator bank and downloadable starter packs (the Learn more section links only to things that exist); French, Spanish and Arabic pages beyond the header and hero; the pricing plan chooser; privacy-friendly analytics; the older dark pages (features, pricing, tour, security) restyled to match.
