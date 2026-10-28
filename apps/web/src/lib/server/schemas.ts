@@ -101,6 +101,7 @@ export const OrganizationProfileSchema = z.object({
   reportingDefaults: OrganizationReportingDefaultsSchema.optional(),
   /** Agent Memory (Phase 21) tenant self-service toggle. */
   agentMemoryEnabled: z.boolean().optional(),
+  askEnabled: z.boolean().optional(),
   /** Platform-wide rollout flag; the Settings tab is hidden entirely when false. */
   agentMemoryPlatformEnabled: z.boolean().optional(),
 });

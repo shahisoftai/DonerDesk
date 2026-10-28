@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema, SaveProgrammeSchema, SaveGrantSchema, PlaceProjectSchema } from "@donordesk/contracts";
+import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema, UpdateAskSettingsSchema, SaveProgrammeSchema, SaveGrantSchema, PlaceProjectSchema } from "@donordesk/contracts";
 import { isTruthyFlag } from "@donordesk/infrastructure";
 
 // Resolved once per process, mirroring container.ts's own read of the same
@@ -19,6 +19,7 @@ export async function registerOrgRoutes(app: FastifyInstance) {
         contactName: "", contactEmail: "", defaultLanguage: "en",
         reportingDefaults: { tone: "FORMAL", formattingRules: [], autoPeriodCreation: false },
         agentMemoryEnabled: false,
+        askEnabled: false,
         agentMemoryPlatformEnabled,
       };
     }
@@ -42,6 +43,7 @@ export async function registerOrgRoutes(app: FastifyInstance) {
       storageProvider: o.storageProvider,
       reportingDefaults: o.reportingDefaults,
       agentMemoryEnabled: o.agentMemoryEnabled,
+      askEnabled: o.askEnabled,
       agentMemoryPlatformEnabled,
     };
   });
@@ -146,6 +148,14 @@ export async function registerOrgRoutes(app: FastifyInstance) {
     const body = UpdateOrganizationReportingDefaultsSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const result = await req.container.handlers.updateOrganizationReportingDefaults.handle(ctx, body);
+    if (!result.ok) throw result.error;
+    return { ok: true };
+  });
+
+  // Ask DonorDesk (Phase 33.9): administrator opt-in.
+  app.put("/v1/organization/ask-settings", async (req) => {
+    const body = UpdateAskSettingsSchema.parse(req.body);
+    const result = await req.container.handlers.updateAskSettings.handle({ tenant: req.tenant, requestId: req.id }, body);
     if (!result.ok) throw result.error;
     return { ok: true };
   });

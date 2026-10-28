@@ -355,4 +355,6 @@ export * from "./use-cases/integrations/integration-handlers.js";
 export * from "./ports/collection.js";
 export * from "./use-cases/collection/collection-handlers.js";
 export * from "./ports/dashboards.js";
+export * from "./use-cases/identity/update-ask-settings.js";
 export * from "./use-cases/dashboards/dashboard-handlers.js";
+export * from "./use-cases/ask/ask-project.js";

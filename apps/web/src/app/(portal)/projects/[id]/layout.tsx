@@ -29,6 +29,7 @@ export default async function ProjectLayout({ params, children }: { params: Prom
     { label: "Logframe", href: `/projects/${project.id}/logframe`, matchPrefixes: [`/projects/${project.id}/indicators`] },
     { label: "Activities", href: `/projects/${project.id}/activities` },
     { label: "Data", href: `/projects/${project.id}/data` },
+    { label: "Ask", href: `/projects/${project.id}/ask`, secondary: true },
     { label: "Dashboards", href: `/dashboards?project=${project.id}`, secondary: true },
     { label: "Infographics", href: `/projects/${project.id}/infographics`, secondary: true },
     { label: "Evidence", href: `/projects/${project.id}/evidence`, secondary: true },

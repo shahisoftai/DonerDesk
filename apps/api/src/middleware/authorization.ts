@@ -34,6 +34,7 @@ export const RULES: ReadonlyArray<{
   { method: "DELETE", route: /^\/v1\/integrations\/webhooks\/[^/]+$/, permission: "org.manage" },
   { method: "GET", route: /^\/v1\/integrations\/webhooks\/[^/]+\/deliveries$/, permission: "org.manage" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/collection-forms$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/ask$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/dashboards$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/dashboards$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/dashboards\/[^/]+$/, permission: "project.view" },
@@ -314,6 +315,7 @@ export const RULES: ReadonlyArray<{
 
   // ── Organisation, users, agent memory ─────────────────────────────────────
   { method: "PUT", route: /^\/v1\/organization\/agent-memory-settings$/, permission: "report.manage-agent-memory" },
+  { method: "PUT", route: /^\/v1\/organization\/ask-settings$/, permission: "org.manage" },
   { method: "GET", route: /^\/v1\/users\/invitations$/, permission: "users.manage" },
   { method: "GET", route: /^\/v1\/scim\/credentials$/, permission: "users.manage" },
   { method: "POST", route: /^\/v1\/scim\/credentials$/, permission: "users.manage" },

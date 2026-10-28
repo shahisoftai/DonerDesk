@@ -36,3 +36,6 @@ export const CreateDashboardShareSchema = z.object({ label: z.string().trim().mi
 export type CreateDashboardShareInput = z.infer<typeof CreateDashboardShareSchema>;
 
 export const ListDashboardsQuerySchema = z.object({ projectId: z.string().optional() });
+
+export const AskQuestionSchema = z.object({ question: z.string().trim().min(3).max(500) });
+export type AskQuestionInput = z.infer<typeof AskQuestionSchema>;

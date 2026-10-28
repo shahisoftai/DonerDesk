@@ -149,6 +149,10 @@
     "./contexts/dashboards/index.js": {
       "types": "./dist/contexts/dashboards/index.d.ts",
       "import": "./dist/contexts/dashboards/index.js"
+    },
+    "./contexts/ask/index.js": {
+      "types": "./dist/contexts/ask/index.d.ts",
+      "import": "./dist/contexts/ask/index.js"
     }
   },
   "scripts": {

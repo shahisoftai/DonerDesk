@@ -1,11 +1,19 @@
 import type { FastifyInstance } from "fastify";
-import { AddDashboardWidgetSchema, CreateDashboardShareSchema, ListDashboardsQuerySchema, SaveDashboardSchema } from "@donordesk/contracts";
+import { AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListDashboardsQuerySchema, SaveDashboardSchema } from "@donordesk/contracts";
 import { createContainer, type Container } from "@donordesk/infrastructure";
 
 /** Dashboards of saved Data Center charts (Phase 33.8). Thin: validate, call one handler, throw its error; the rules are in the handlers. */
 export async function registerChartDashboardRoutes(app: FastifyInstance) {
   const ctx = (req: { tenant: unknown; id: string }) => ({ tenant: req.tenant as never, requestId: req.id });
   const param = (req: { params: unknown }, name: string) => (req.params as Record<string, string>)[name]!;
+
+  // Ask DonorDesk (Phase 33.9): a question put to one project's records.
+  app.post("/v1/projects/:projectId/ask", async (req) => {
+    const { question } = AskQuestionSchema.parse(req.body);
+    const r = await req.container.handlers.askProject.handle(ctx(req), param(req, "projectId"), question);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
 
   app.get("/v1/dashboards", async (req) => {
     const { projectId } = ListDashboardsQuerySchema.parse(req.query);

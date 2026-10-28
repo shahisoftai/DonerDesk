@@ -103,6 +103,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "ReportSection", field: "generationFallbackReason" },
   { model: "ReportSection", field: "generationFallbackDetail" },
   { model: "Organization", field: "agentMemoryEnabled" },
+  { model: "Organization", field: "askEnabled" },
   { model: "AgentMemory", field: "provenanceJson" },
   { model: "Project", field: "archivedAt" },
   { model: "Project", field: "isDemo" },

@@ -4,6 +4,7 @@ import { MapLayerMetaSchema, OrganizationProfileSchema } from "@/lib/server/sche
 import { InlineError } from "@/components/feedback/PageState";
 import { SettingsPanel } from "@/features/settings/presentation/SettingsPanel";
 import { MapLayerCard } from "@/features/settings/presentation/MapLayerCard";
+import { AskSettingsCard } from "@/features/ask/presentation/AskSettingsCard";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +64,7 @@ export default async function SettingsPage() {
           </p>
         </section>
       )}
+      <AskSettingsCard initialEnabled={result.value.askEnabled === true} canEdit={ctx.capabilities.has("org.manage")} />
       {ctx.capabilities.has("org.manage") && (
         <MapLayerSettings />
       )}

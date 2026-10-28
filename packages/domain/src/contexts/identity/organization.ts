@@ -55,6 +55,8 @@ export interface OrganizationProps {
    * tenants must opt in.
    */
   agentMemoryEnabled: boolean;
+  /** Ask DonorDesk (Phase 33.9): off until an administrator opts in; existing organisations stay off. */
+  askEnabled: boolean;
   /** Set when a NonprofitVerification for this tenant is APPROVED; gates the discounted Creem checkout product (Phase 22 WS-G). */
   nonprofitVerifiedAt?: Date;
 }
@@ -116,6 +118,7 @@ export class Organization extends Entity<string> {
   get dataResidency(): DataResidency { return this.props.dataResidency; }
   get aiEnabled(): boolean { return this.props.aiEnabled; }
   get agentMemoryEnabled(): boolean { return this.props.agentMemoryEnabled; }
+  get askEnabled(): boolean { return this.props.askEnabled === true; }
   get storageProvider(): StorageProvider { return this.props.storageProvider; }
   get timeZone(): string { return this.props.timeZone ?? "UTC"; }
   get nonprofitVerifiedAt(): Date | undefined { return this.props.nonprofitVerifiedAt; }
@@ -140,6 +143,12 @@ export class Organization extends Entity<string> {
   /** Tenant self-service toggle for the Agent Memory feature (§4.1). */
   updateAgentMemorySettings(patch: { enabled: boolean }): void {
     this.props.agentMemoryEnabled = patch.enabled;
+    this.touch();
+  }
+
+  /** Administrator opt-in for Ask DonorDesk. */
+  updateAskSettings(patch: { enabled: boolean }): void {
+    this.props.askEnabled = patch.enabled;
     this.touch();
   }
 

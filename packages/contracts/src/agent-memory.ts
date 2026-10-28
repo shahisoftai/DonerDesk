@@ -44,4 +44,7 @@ export type ApproveAgentMemoryInput = z.infer<typeof ApproveAgentMemorySchema>;
 export const UpdateAgentMemorySettingsSchema = z.object({
   enabled: z.boolean(),
 });
+export const UpdateAskSettingsSchema = z.object({ enabled: z.boolean() });
+export type UpdateAskSettingsInput = z.infer<typeof UpdateAskSettingsSchema>;
+
 export type UpdateAgentMemorySettingsInput = z.infer<typeof UpdateAgentMemorySettingsSchema>;

@@ -112,6 +112,8 @@ export class ProvisionTenantHandler {
         // Agent Memory (Phase 21) is off by default for every new tenant;
         // self-service opt-in via Settings once the platform flag is on.
         agentMemoryEnabled: false,
+        // Ask DonorDesk (Phase 33.9) is off for every new organisation until an administrator opts in.
+        askEnabled: false,
       },
     });
     const orgResult = await this.orgs.create(org);
