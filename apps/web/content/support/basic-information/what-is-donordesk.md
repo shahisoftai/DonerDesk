@@ -34,7 +34,7 @@ DonorDesk covers the whole life of a project or programme. Every part reads from
 13. **Approve and export.** A second approver can be required. Export Word, PDF, Excel or an evidence pack (ZIP). You send the approved file to the donor yourself.
 
 **Connect**
-14. **Open it up.** [API keys, webhooks and an AI-assistant server](/support/how-to/connect-api-keys-webhooks-and-ai-assistants) are read-only and scoped. Use the screens in [English, French, Spanish or Arabic](/support/how-to/change-the-interface-language).
+14. **Open it up.** [API keys, webhooks and an AI-assistant server](/support/how-to/connect-api-keys-webhooks-and-ai-assistants) are read-only and scoped. Use the navigation, field app and collection forms in [English, French, Spanish or Arabic](/support/how-to/change-the-interface-language).
 
 ## Who uses it
 

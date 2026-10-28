@@ -82,7 +82,7 @@ Yes. Planned work appears on a [map](/support/how-to/see-your-work-on-a-map), an
 Yes, read-only. See [API keys, webhooks and AI assistants](/support/how-to/connect-api-keys-webhooks-and-ai-assistants).
 
 ### Which languages do the screens come in?
-English, French, Spanish and Arabic. The French, Spanish and Arabic translations are first drafts awaiting native review. See [Change the language](/support/how-to/change-the-interface-language).
+English, French, Spanish and Arabic for the navigation, the field app and collection forms; reports and most screens are still English. The French, Spanish and Arabic translations are first drafts awaiting native review. See [Change the language](/support/how-to/change-the-interface-language).
 
 ### What file types and sizes?
 Common documents, spreadsheets, images and text, up to 100 MB per file. See [File formats](/support/reference-file-formats).

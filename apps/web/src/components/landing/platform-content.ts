@@ -560,14 +560,13 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
         id: "languages",
         title: "Interface languages",
         summary:
-          "Use the screens in English, French, Spanish or Arabic (right to left).",
+          "The navigation, the field app and the public collection form come in English, French, Spanish or Arabic (right to left).",
         inPractice: [
           "Choose a language once; it is kept on the device and works offline.",
-          "Dates and numbers follow the language.",
         ],
         who: "Everyone",
         goodToKnow:
-          "French, Spanish and Arabic translations are first drafts awaiting native review.",
+          "Project screens, reports and most settings are still English, and the French, Spanish and Arabic translations are first drafts awaiting native review.",
         supportHref: "/support/how-to/change-the-interface-language",
       },
     ],

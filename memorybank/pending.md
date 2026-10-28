@@ -1168,6 +1168,7 @@ Remaining (tracked here, not claimed):
 Status by batch: `imp/phase33-competitive-parity-plan.md`. Operator facts: `docs/runbooks/phase33-operations.md`.
 
 **Needs a person (cannot be done from the server):**
+- Browser pass done 2026-10-28 (`demo/verification-2026-10-28-site-and-phase33.md`): smoke of 50 pages, Ask on the real model, dashboards, forms, API/MCP, Studio, map all passed. **Still owed:** real-phone airplane-mode test, dashboard drag, Kobo/SurveyCTO, two-step requirement, native translation review, Ask timeout on broad questions, `/field` offline status message.
 - [ ] Sign in on donordesk.online with your own account and check: the Ask tab (with Ask switched on in a test organisation only); a dashboard (drag, resize, share, open the link in a private window); a collection form with a photo question; the field app in airplane mode; the language switcher in French and Arabic; the Security page's requirement card.
 - [ ] **Ask DonorDesk against the real model**: run a set of golden questions and record how often it answers, drops sentences or says "not found", before any public claim (plan §5).
 - [ ] **KoboToolbox and SurveyCTO**: create a connector against a real form and check "Check the connection" first. The request shapes were written from the documented APIs and never run.
