@@ -23,4 +23,4 @@
 
 ## Not built
 
-Table and number-tile widgets; per-viewer filters; password-protected links; a rate limit on the dashboard pages was added at the nginx layer (`dd_public_dashboards`), not in the app.
+Superseded in part by [Feature 55](./55-Dashboard-Templates-Tabs-And-Viewing.md) (Phase 34.3 added table, text and report widgets, tabs, full screen, print and a project filter). Still not built: number-tile widgets; a viewer-side period filter and cross-filtering; password-protected links; a rate limit on the dashboard pages was added at the nginx layer (`dd_public_dashboards`), not in the app.

@@ -220,3 +220,17 @@ Features 45–52 describe what Phase 33 added. Plan and status by batch: `../imp
 | 52 | [Trust: two-step requirement, trials and readiness](./52-Trust-Two-Step-Requirement-And-Trials.md) | 33.12 | 2026-10-28 |
 
 Batch 33.11 (cost per result, IATI export) is not started. Support articles for Phase 33 are drafts in `../docs/support/_unpublished-phase33/`.
+
+## Phase 34 — dashboards, charts, sheet, maps, reports (deployed 2026-10-28, `releaseId=20261028133938`)
+
+| # | Feature | Batch | Status |
+|---|---|---|---|
+| 53 | [Chart Studio and saved charts](./53-Chart-Studio.md) | 34.1 | 2026-10-28 (not yet tried signed-in) |
+| 54 | [The Entry Sheet](./54-Entry-Sheet.md) | 34.2 | 2026-10-28 |
+| 55 | [Dashboards v2, sector templates, tabs, full screen, print](./55-Dashboard-Templates-Tabs-And-Viewing.md) | 34.3 | 2026-10-28 |
+| 56 | [The Maps screen](./56-Maps-Screen.md) | 34.4 (first slice) | 2026-10-28 |
+| 57 | [Indicator views and the report builder](./57-Indicator-Views-And-Report-Builder.md) | 34.5 | 2026-10-28 |
+| 58 | [Bookmarks](./58-Bookmarks.md) | Home | 2026-10-28 |
+
+Left in Phase 34: Maps Studio proper, linked forms, finance (34.6), project workspace (34.7), document templates (34.8), partner portal (34.9), polish (34.10) — see `../imp/phase34-devresults-parity-plan.md` "What is left". Support articles are drafts in `../docs/support/_unpublished-phase34/`.
+

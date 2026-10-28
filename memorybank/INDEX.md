@@ -362,3 +362,12 @@ memorybank/
 - Readiness and self-hosting decisions: `imp/phase33-12-trust-and-commercial.md`.
 - Support articles drafted, unpublished: `docs/support/_unpublished-phase33/`.
 - Product version label moved to **3.007** in the living documents and the legal pages on 2026-10-28.
+
+
+## 2026-10-28: Phase 34 — DevResults parity (Version 3.007)
+
+- Feature docs 53–58 in `Features/` (Chart Studio, Entry Sheet, dashboards v2 and templates, Maps screen, indicator views and report builder, bookmarks); plan with an "implemented / left" table in `imp/phase34-devresults-parity-plan.md`.
+- Deployed `releaseId=20261028133938` (commits `47dcbe6f`, `d1cdf9e3`, branch `0015-compitition`); migrations `20261030090000_saved_charts`, `20261030100000_dashboard_templates`, `20261030110000_bookmarks`, `20261030120000_saved_reports`. Operator record: `docs/runbooks/phase34-operations.md`, `contabo-ops.md` ("Phase 34 host facts"), `pending.md` ("Phase 34").
+- Support articles drafted, unpublished: `docs/support/_unpublished-phase34/` (publish checklist in its README).
+- Not yet checked by a person in the signed-in production app.
+

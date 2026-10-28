@@ -1184,7 +1184,7 @@ Status by batch: `imp/phase33-competitive-parity-plan.md`. Operator facts: `docs
 **Built but unverified, or deliberately incomplete:**
 - [ ] 33.11 Finance and standards (cost per result, IATI export): not started.
 - [ ] Ask: follow-up questions, cross-project questions, saved answers: not built.
-- [ ] Dashboards: table and number widgets, per-viewer filters, password-protected links: not built.
+- [ ] Dashboards: number-tile widgets, per-viewer filters (period, cross-filter), password-protected links: not built (table, text and report widgets, tabs, full screen, print and a project filter are built: Phase 34.3).
 - [ ] Connectors: scheduled syncs, select-multiple and repeat groups, photos from the other tool: not built.
 - [ ] Places: place targets, map of the roll-up, "Where we work" assignment: not built.
 - [ ] Public API and MCP: per-key limits survive restarts? No (in memory). Pagination: not built.
@@ -1195,3 +1195,20 @@ Status by batch: `imp/phase33-competitive-parity-plan.md`. Operator facts: `docs
 **Known inconsistencies:**
 - [ ] Product version is 3.007 in headers and the legal pages; the npm `package.json` versions remain `2.0.1` (npm versions are separate; `3.007` is not valid semver).
 - [ ] Historical sentences "introduced in Version 1.93" are kept as they were written.
+
+## Phase 34 (deployed 2026-10-28, `releaseId=20261028133938`; plan `imp/phase34-devresults-parity-plan.md`)
+
+**Owner checks, not yet done by a person in the signed-in production app:**
+- [ ] Chart Studio (several kinds, save, versions, add to dashboard), the Entry Sheet (paste, fill, autosave, offline, Excel round trip), the template gallery and editor, dashboard tabs / full screen / print, the Maps screen and the KML / GeoJSON downloads, bookmarks, the report builder (breakdown by group, add to dashboard), the indicator "By group" pie.
+- [ ] The fr / es / ar text of the new screens read by a native speaker; right-to-left layout of the new screens.
+- [ ] Boundary licence decision for "all possible boundaries" (34.4).
+
+**Left to build:**
+- [ ] Viewer-side period filter and cross-filtering (new data call); pin a dashboard as a Home tile; number-tile widget; sections in a tab.
+- [ ] Maps Studio proper: layers, time slider, uploads (KML / GeoJSON / shapefile), photo layer, place panel, print, all-country boundaries, online-tile opt-in, choropleth below country level.
+- [ ] Linked forms; subtotal rows; place breakdown in reports.
+- [ ] 34.6 finance register (multi-currency with manual rates, advances, cost per result, IATI); 34.7 notes wall, library, gallery, calendar feed, merged timeline; 34.8 document templates and sign-off; 34.9 partner home and publishing; 34.10 accessibility audit and performance budgets.
+- [ ] Population pyramid; server-side PNG for the donor-template Word export; the English sentences written by the chart validator, the report notes and the admin template screens are not translated.
+- [ ] Entry Sheet: places × periods layout, editing earlier periods in the sheet, per-column history and comments.
+- [ ] Host disk was 83% full at the deploy: remove old `/opt/donordesk/app.failed-*` trees and old releases when convenient.
+

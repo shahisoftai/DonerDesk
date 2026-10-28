@@ -481,3 +481,11 @@ Recorded as they were left on the host after each release. The operator runbook 
 
 **Backups:** `donordesk-backup.service` was run before every migration in this phase. The restore script has not been run against these new tables; the next scheduled restore test should include them.
 - Deployed 2026-10-28 `releaseId=20261028071848` (web only, `SCOPE=web`): version label 3.007 on the legal pages. No migration.
+
+## Phase 34 host facts (2026-10-28)
+
+- **Release:** `20261028133938` (`SCOPE=both SKIP_TYPECHECK=1`; web build run locally by `deploy-fast.sh`). Verify green first time; `/ready` ok; worker env `AI_REPORTER_CONTRACT_VERSION=6`. Code commits `47dcbe6f` (feature) and `d1cdf9e3` (deploy note) on branch `0015-compitition`.
+- **Order followed:** (1) `systemctl start donordesk-backup.service` (written to `/opt/donordesk/backups/donordesk/20261028T133818Z`, off-host copy ran); (2) the four migration folders copied to `/opt/donordesk/app/packages/infrastructure/prisma/migrations` and `prisma migrate deploy` run with `DATABASE_URL="$DATABASE_ADMIN_URL"` (`/opt/donordesk/app/node_modules/.pnpm/prisma@5.22.0/node_modules/prisma/build/index.js`); (3) grants, `ENABLE`/`FORCE ROW LEVEL SECURITY` and the `tenant_isolation` policy applied **per table** with `psql` for `SavedChart`, `DashboardTemplate`, `Bookmark`, `SavedReport` (all `relrowsecurity` and `relforcerowsecurity` true); (4) `deploy-fast.sh`.
+- **Migrations:** `20261030090000_saved_charts`, `20261030100000_dashboard_templates`, `20261030110000_bookmarks`, `20261030120000_saved_reports` (all additive).
+- **No new environment setting, no new systemd unit, no nginx change.** The new pages sit behind the session like the rest of the app.
+- **Disk:** `/` was 83% full (79 of 96 GB) before this release; old `app.failed-*` trees are the first thing to remove.

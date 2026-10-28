@@ -638,3 +638,7 @@ whatever installer the host actually has, verified read-only first.)
 
 Earlier releases: §10 and `imp/phase28-new-management.md` §15 (`20261018172624`).
 
+
+## 12. Phase 34 release (2026-10-28)
+
+`releaseId=20261028133938`: Chart Studio, Entry Sheet, dashboards v2 and templates, Maps screen, bookmarks, report builder. Four additive migrations applied by hand before the code, per-table RLS verified, no new settings. The step-by-step record is in `contabo-ops.md` ("Phase 34 host facts") and `docs/runbooks/phase34-operations.md`.
