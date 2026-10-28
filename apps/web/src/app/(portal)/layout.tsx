@@ -3,6 +3,9 @@ import { NOINDEX_METADATA } from "@/lib/seo";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { navFor } from "@/features/navigation/domain/role-navigation";
+import { translateNav } from "@/features/i18n/domain/nav-keys";
+import { I18nProvider } from "@/features/i18n/presentation/I18nProvider";
+import { getLocale, getTranslator } from "@/lib/server/locale";
 import { requireSession, hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { OrganizationSchema, NotificationsResponseSchema, LegalConsentSchema } from "@/lib/server/schemas";
@@ -47,9 +50,11 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   }));
 
   // Which entries appear is one table per role (role-navigation.ts); an outside partner sees only their projects.
-  const navItems = navFor({ role: ctx.role, capabilities: ctx.capabilities, external: ctx.external });
+  const [locale, translator] = [await getLocale(), await getTranslator()];
+  const navItems = translateNav(navFor({ role: ctx.role, capabilities: ctx.capabilities, external: ctx.external }), translator.t);
 
   return (
+    <I18nProvider initialLocale={locale}>
     <ToastProvider>
       <OutboxProvider scope={identity?.sub ?? user.email ?? "user"}>
       <AppShell
@@ -65,5 +70,6 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       <OutboxBanner />
       </OutboxProvider>
     </ToastProvider>
+    </I18nProvider>
   );
 }

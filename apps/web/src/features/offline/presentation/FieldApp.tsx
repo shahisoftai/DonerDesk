@@ -13,6 +13,8 @@ import { canUseDurableOutbox } from "../infrastructure/indexeddb-outbox-store";
 import { createIndexedDbPackStore } from "../infrastructure/indexeddb-pack-store";
 import { OutboxProvider, useOutbox } from "./OutboxProvider";
 import { OutboxBanner } from "./OutboxBanner";
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
+import { LocaleSwitcher } from "@/features/i18n/presentation/LocaleSwitcher";
 
 const IDENTITY_KEY = "donordesk-field-user";
 
@@ -37,6 +39,7 @@ export function FieldApp() {
 }
 
 function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string) => void }) {
+  const { t, tp } = useI18n();
   const store = useMemo<PackStore>(() => (canUseDurableOutbox() ? createIndexedDbPackStore(indexedDB) : createMemoryPackStore()), []);
   const outbox = useOutbox();
   const [packs, setPacks] = useState<OfflinePack[] | null>(null);
@@ -70,7 +73,7 @@ function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string)
       await store.put(r.value);
       try { localStorage.setItem(IDENTITY_KEY, r.value.userId); } catch { /* the pack still works this visit */ }
       if (r.value.userId !== userId) onUser(r.value.userId);
-      setMessage(r.value.forms.length === 0 ? "Downloaded, but this project has no form open for answers yet." : `Downloaded ${r.value.forms.length} form${r.value.forms.length === 1 ? "" : "s"}. You can fill them with no connection.`);
+      setMessage(r.value.forms.length === 0 ? t("field.downloadedNone") : tp("field.downloaded", r.value.forms.length));
       await load();
     } finally { setBusy(false); }
   }
@@ -82,14 +85,17 @@ function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string)
   return (
     <main className="mx-auto max-w-xl space-y-6 px-4 py-6">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">Field forms</h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{outbox.online ? "You are online." : "You are offline. Forms you fill are kept on this phone and sent when you are back online."}</p>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-xl font-semibold tracking-tight">{t("field.title")}</h1>
+          <LocaleSwitcher />
+        </div>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{outbox.online ? t("field.online") : t("field.offline")}</p>
       </header>
       <OutboxBanner />
 
       {active && form ? (
         <section className="space-y-3">
-          <button className="text-sm underline" onClick={() => setActive(null)}>← All forms</button>
+          <button className="text-sm underline" onClick={() => setActive(null)}>{t("field.allForms")}</button>
           <h2 className="text-lg font-semibold">{form.name}</h2>
           {form.description && <p className="text-sm text-slate-600 dark:text-slate-300">{form.description}</p>}
           <QueueingFiller key={active.formId} pack={active.pack} formId={form.id} formName={form.name} fields={form.fields} />
@@ -97,37 +103,37 @@ function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string)
       ) : (
         <>
           <section className="space-y-3">
-            <h2 className="text-base font-semibold">On this phone</h2>
-            {packs === null ? <p className="text-sm text-slate-500">Loading…</p> : packs.length === 0 ? (
-              <p className="text-sm text-slate-500">Nothing is downloaded yet. While you are online, choose a project below.</p>
+            <h2 className="text-base font-semibold">{t("field.onThisPhone")}</h2>
+            {packs === null ? <p className="text-sm text-slate-500">{t("common.loading")}</p> : packs.length === 0 ? (
+              <p className="text-sm text-slate-500">{t("field.nothingDownloaded")}</p>
             ) : packs.map((pack) => {
               const fresh = describePackFreshness(pack, now);
               return (
                 <div key={pack.projectId} className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
                   <p className="font-medium">{pack.projectName}</p>
-                  <p className={`text-xs ${fresh.stale ? "text-amber-700 dark:text-amber-300" : "text-slate-500"}`}>{fresh.sentence}</p>
+                  <p className={`text-xs ${fresh.stale ? "text-amber-700 dark:text-amber-300" : "text-slate-500"}`}>{fresh.stale ? t("pack.stale", { count: fresh.days }) : fresh.days === 0 ? t("pack.today") : tp("pack.days", fresh.days)}</p>
                   <ul className="mt-2 space-y-1">
-                    {pack.forms.length === 0 && <li className="text-sm text-slate-500">No form is open for answers.</li>}
+                    {pack.forms.length === 0 && <li className="text-sm text-slate-500">{t("field.noFormOpen")}</li>}
                     {pack.forms.map((f) => (
-                      <li key={f.id}><button className="text-left text-sm underline" onClick={() => setActive({ pack, formId: f.id })}>{f.name}</button></li>
+                      <li key={f.id}><button className="text-start text-sm underline" onClick={() => setActive({ pack, formId: f.id })}>{f.name}</button></li>
                     ))}
                   </ul>
-                  <button className="mt-2 text-xs text-slate-500 underline" onClick={() => void remove(pack.projectId)}>Remove from this phone</button>
+                  <button className="mt-2 text-xs text-slate-500 underline" onClick={() => void remove(pack.projectId)}>{t("field.remove")}</button>
                 </div>
               );
             })}
           </section>
 
           <section className="space-y-3 border-t border-slate-200 pt-4 dark:border-slate-700">
-            <h2 className="text-base font-semibold">Download for offline</h2>
-            {!outbox.online ? <p className="text-sm text-slate-500">Connect to download or refresh a project.</p> : projects === null ? <p className="text-sm text-slate-500">Loading your projects…</p> : (
+            <h2 className="text-base font-semibold">{t("field.downloadTitle")}</h2>
+            {!outbox.online ? <p className="text-sm text-slate-500">{t("field.connectToDownload")}</p> : projects === null ? <p className="text-sm text-slate-500">{t("field.loadingProjects")}</p> : (
               <>
-                <Field label="Project"><Select value={projectId} onChange={(e) => setProjectId(e.target.value)}><option value="">Choose a project…</option>{projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</Select></Field>
-                <Button onClick={() => void download()} pending={busy} disabled={!projectId || busy}>Download or refresh</Button>
+                <Field label={t("field.project")}><Select value={projectId} onChange={(e) => setProjectId(e.target.value)}><option value="">{t("field.chooseProject")}</option>{projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</Select></Field>
+                <Button onClick={() => void download()} pending={busy} disabled={!projectId || busy}>{t("field.downloadButton")}</Button>
               </>
             )}
             {message && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">{message}</p>}
-            <p className="text-xs text-slate-500">What is kept on the phone: the form questions and the list of places. No records or figures. It is removed when you sign out.</p>
+            <p className="text-xs text-slate-500">{t("field.whatKept")}</p>
           </section>
         </>
       )}
@@ -138,6 +144,7 @@ function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string)
 /** Fills a form and puts the finished one in the outbox; the outbox sends it now if online, or whenever the connection returns. */
 function QueueingFiller({ pack, formId, formName, fields }: { pack: OfflinePack; formId: string; formName: string; fields: OfflinePack["forms"][number]["fields"] }) {
   const outbox = useOutbox();
+  const { t } = useI18n();
   const [files, setFiles] = useState<Record<string, QueuedAttachment>>({});
   const placeNames = useMemo(() => pack.places.map((p) => {
     const parts = p.path.split(" › ");
@@ -150,16 +157,16 @@ function QueueingFiller({ pack, formId, formName, fields }: { pack: OfflinePack;
       key={key}
       fields={fields}
       placeNames={placeNames}
-      submitLabel={outbox.online ? "Send" : "Save on this phone"}
+      submitLabel={outbox.online ? t("common.send") : t("common.saveOnPhone")}
       // A photo stays on the phone with the record and goes up with it; its key here is a placeholder the outbox replaces.
       uploadFile={async (file, fieldKey) => {
-        if (file.size > 5 * 1024 * 1024) return { ok: false, message: "That file is larger than 5 MB." };
+        if (file.size > 5 * 1024 * 1024) return { ok: false, message: t("form.fileTooBig") };
         const token = newIdempotencyKey().replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24).padEnd(8, "0");
         setFiles((current) => ({ ...current, [fieldKey]: { fieldKey, name: file.name, type: file.type, blob: file } }));
         return { ok: true, id: token, name: file.name };
       }}
       onSubmit={async (answers) => {
-        if (!outbox.supported) return { ok: false, message: "This browser cannot keep forms on the phone. Open this page in an up-to-date browser." };
+        if (!outbox.supported) return { ok: false, message: t("field.cannotKeep") };
         const attached = fields.filter((f) => f.type === "FILE" && files[f.key]);
         const plain = { ...answers };
         for (const f of attached) delete plain[f.key];

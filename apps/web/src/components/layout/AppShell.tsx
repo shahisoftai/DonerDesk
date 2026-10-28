@@ -10,6 +10,7 @@ import { SideNav } from "./SideNav";
 import { NotificationBell, type BellItem } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LocaleSwitcher } from "@/features/i18n/presentation/LocaleSwitcher";
 import { AcademyHeaderButton } from "@/features/tour/presentation/AcademyHeaderButton";
 import { useStartOrResumeTour } from "@/features/tour/presentation/useStartOrResumeTour";
 import { TOUR_INTENT_KEY } from "@/features/tour/presentation/TourIntentLink";
@@ -152,6 +153,7 @@ export function AppShell({
             </Link>
             <AcademyHeaderButton />
             {canCreate && <CreateMenu />}
+            <LocaleSwitcher />
             <ThemeToggle />
             <NotificationBell items={bellItems} />
             <UserMenu name={user?.name ?? ""} email={user?.email ?? ""} />

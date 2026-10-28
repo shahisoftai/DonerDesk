@@ -1,4 +1,5 @@
 import "./globals.css";
+import { I18nProvider } from "@/features/i18n/presentation/I18nProvider";
 import { ServiceWorkerRegistrar } from "@/features/offline/presentation/ServiceWorkerRegistrar";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
@@ -106,7 +107,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
         <ThemeScript />
-        {children}
+        <I18nProvider initialLocale="en">{children}</I18nProvider>
       </body>
     </html>
   );

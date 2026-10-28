@@ -145,3 +145,14 @@ test("a photo or document question takes the id of an upload, and a sheet neithe
   assert.equal(recordSheetTemplate(f).split("\n")[0], "Day");
   assert.equal(parseRecordSheet(f, "Day\n2026-10-03").invalid, 0);
 });
+
+test("an answer problem carries its kind and values, so a screen can say it in another language", () => {
+  const f = { fields: [{ key: "n", label: "Kits", type: "NUMBER", min: 1, max: 5, required: true }, { key: "d", label: "Day", type: "DATE" }] };
+  const one = (answers) => validateSubmission(f, answers).problems[0];
+  assert.deepEqual([one({}).code, one({}).params], ["REQUIRED", { label: "Kits" }]);
+  assert.deepEqual([one({ n: "x" }).code], ["NUMBER"]);
+  assert.deepEqual([one({ n: 0 }).code, one({ n: 0 }).params], ["MIN", { label: "Kits", min: 1 }]);
+  assert.deepEqual([one({ n: 9 }).code, one({ n: 9 }).params], ["MAX", { label: "Kits", max: 5 }]);
+  assert.equal(one({ n: 2, d: "2026-02-30" }).code, "DATE");
+  assert.match(one({ n: 0 }).message, /cannot be below 1/, "the English sentence is unchanged");
+});

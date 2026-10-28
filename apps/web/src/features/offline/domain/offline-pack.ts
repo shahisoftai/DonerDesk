@@ -47,11 +47,11 @@ export function packAgeDays(pack: Pick<OfflinePack, "generatedAt">, now: number)
 }
 
 /** One sentence about how fresh the pack is. Old does not block filling: the questions may simply have changed since. */
-export function describePackFreshness(pack: Pick<OfflinePack, "generatedAt">, now: number): { stale: boolean; sentence: string } {
+export function describePackFreshness(pack: Pick<OfflinePack, "generatedAt">, now: number): { stale: boolean; days: number; sentence: string } {
   const days = packAgeDays(pack, now);
-  if (days === 0) return { stale: false, sentence: "Downloaded today." };
-  if (days < PACK_STALE_AFTER_DAYS) return { stale: false, sentence: `Downloaded ${days} day${days === 1 ? "" : "s"} ago.` };
-  return { stale: true, sentence: `Downloaded ${days} days ago. Download it again when you are online, in case the questions have changed.` };
+  if (days === 0) return { stale: false, days, sentence: "Downloaded today." };
+  if (days < PACK_STALE_AFTER_DAYS) return { stale: false, days, sentence: `Downloaded ${days} day${days === 1 ? "" : "s"} ago.` };
+  return { stale: true, days, sentence: `Downloaded ${days} days ago. Download it again when you are online, in case the questions have changed.` };
 }
 
 /** Builds a pack from the server's answer. Dates arrive as text and are kept as numbers. */

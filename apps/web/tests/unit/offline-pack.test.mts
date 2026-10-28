@@ -14,7 +14,7 @@ const pack = (over = {}) => packFromServer({
 test("a pack says how old it is, and an old one asks to be downloaded again without blocking", () => {
   const p = pack();
   const t0 = Date.parse("2026-10-01T00:00:00Z");
-  assert.deepEqual(describePackFreshness(p, t0 + 3600_000), { stale: false, sentence: "Downloaded today." });
+  assert.deepEqual(describePackFreshness(p, t0 + 3600_000), { stale: false, days: 0, sentence: "Downloaded today." });
   assert.equal(describePackFreshness(p, t0 + 3 * DAY).sentence, "Downloaded 3 days ago.");
   assert.equal(describePackFreshness(p, t0 + DAY).sentence, "Downloaded 1 day ago.");
   const old = describePackFreshness(p, t0 + 20 * DAY);

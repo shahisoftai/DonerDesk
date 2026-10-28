@@ -44,10 +44,17 @@ export interface FormDefinition {
 
 export type Answers = Readonly<Record<string, unknown>>;
 
+/** What kind of answer problem it is, so a screen can say it in the person's own language. Design-time problems have none. */
+export type SubmissionProblemCode = "REQUIRED" | "NUMBER" | "MIN" | "MAX" | "DATE" | "OPTION" | "YES_NO" | "GPS" | "TOO_LONG" | "FILE";
+
 export interface FormProblem {
   /** The field key, or "" for the form as a whole. */
   field: string;
+  /** The English sentence (used by the server, the API and the tests). */
   message: string;
+  /** For an answer problem: its kind, and the values the sentence needs (`label`, `min`, `max`). */
+  code?: SubmissionProblemCode;
+  params?: Record<string, string | number>;
 }
 
 const KEY = /^[a-z][a-z0-9_]{0,39}$/;
@@ -177,27 +184,27 @@ export function validateSubmission(form: FormDefinition, answers: Answers): Subm
     const raw = answers[f.key];
     const required = f.required === true || (f.requiredWhen !== undefined && conditionHolds(f.requiredWhen, answers));
     if (blank(raw)) {
-      if (required) problems.push({ field: f.key, message: `${f.label} is required.` });
+      if (required) problems.push({ field: f.key, message: `${f.label} is required.`, code: "REQUIRED", params: { label: f.label } });
       continue;
     }
     switch (f.type) {
       case "NUMBER": {
         const n = asNumber(raw);
-        if (n === null) problems.push({ field: f.key, message: `${f.label} must be a number.` });
-        else if (f.min !== undefined && n < f.min) problems.push({ field: f.key, message: `${f.label} cannot be below ${f.min}.` });
-        else if (f.max !== undefined && n > f.max) problems.push({ field: f.key, message: `${f.label} cannot be above ${f.max}.` });
+        if (n === null) problems.push({ field: f.key, message: `${f.label} must be a number.`, code: "NUMBER", params: { label: f.label } });
+        else if (f.min !== undefined && n < f.min) problems.push({ field: f.key, message: `${f.label} cannot be below ${f.min}.`, code: "MIN", params: { label: f.label, min: f.min } });
+        else if (f.max !== undefined && n > f.max) problems.push({ field: f.key, message: `${f.label} cannot be above ${f.max}.`, code: "MAX", params: { label: f.label, max: f.max } });
         else values[f.key] = n;
         break;
       }
       case "DATE": {
         const t = String(raw).trim();
-        if (!isRealDate(t)) problems.push({ field: f.key, message: `${f.label} must be a real date written as YYYY-MM-DD.` });
+        if (!isRealDate(t)) problems.push({ field: f.key, message: `${f.label} must be a real date written as YYYY-MM-DD.`, code: "DATE", params: { label: f.label } });
         else values[f.key] = t;
         break;
       }
       case "SELECT": {
         const t = String(raw).trim();
-        if (!(f.options ?? []).some((o) => o.value === t)) problems.push({ field: f.key, message: `${f.label}: "${t}" is not one of the options.` });
+        if (!(f.options ?? []).some((o) => o.value === t)) problems.push({ field: f.key, message: `${f.label}: "${t}" is not one of the options.`, code: "OPTION", params: { label: f.label } });
         else values[f.key] = t;
         break;
       }
@@ -205,20 +212,20 @@ export function validateSubmission(form: FormDefinition, answers: Answers): Subm
         const t = String(raw).trim().toLowerCase();
         if (raw === true || ["yes", "y", "true", "1"].includes(t)) values[f.key] = true;
         else if (raw === false || ["no", "n", "false", "0"].includes(t)) values[f.key] = false;
-        else problems.push({ field: f.key, message: `${f.label} should be Yes or No.` });
+        else problems.push({ field: f.key, message: `${f.label} should be Yes or No.`, code: "YES_NO", params: { label: f.label } });
         break;
       }
       case "GPS": {
         const g = raw as { lat?: unknown; lon?: unknown };
         const lat = asNumber(g?.lat);
         const lon = asNumber(g?.lon);
-        if (lat === null || lon === null || lat < -90 || lat > 90 || lon < -180 || lon > 180) problems.push({ field: f.key, message: `${f.label} must be a latitude (−90 to 90) and a longitude (−180 to 180).` });
+        if (lat === null || lon === null || lat < -90 || lat > 90 || lon < -180 || lon > 180) problems.push({ field: f.key, message: `${f.label} must be a latitude (−90 to 90) and a longitude (−180 to 180).`, code: "GPS", params: { label: f.label } });
         else values[f.key] = { lat, lon };
         break;
       }
       case "FILE": {
         const t = String(raw).trim();
-        if (!FILE_ID.test(t)) problems.push({ field: f.key, message: `${f.label}: attach a photo or document first.` });
+        if (!FILE_ID.test(t)) problems.push({ field: f.key, message: `${f.label}: attach a photo or document first.`, code: "FILE", params: { label: f.label } });
         else values[f.key] = t;
         break;
       }
@@ -226,7 +233,7 @@ export function validateSubmission(form: FormDefinition, answers: Answers): Subm
       case "PLACE": {
         const t = String(raw).trim();
         const limit = f.maxLength ?? 2000;
-        if (t.length > limit) problems.push({ field: f.key, message: `${f.label} is longer than ${limit} characters.` });
+        if (t.length > limit) problems.push({ field: f.key, message: `${f.label} is longer than ${limit} characters.`, code: "TOO_LONG", params: { label: f.label, max: limit } });
         else values[f.key] = t;
         break;
       }
