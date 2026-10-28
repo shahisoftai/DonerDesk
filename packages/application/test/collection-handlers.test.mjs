@@ -197,3 +197,26 @@ test("attachments: allowed kinds are told by their bytes, an id from another for
   assert.equal((await get.handle(viewer, up.value.id)).ok, false);
   assert.equal((await get.handle(manager, up.value.id)).value.contentType, "image/png");
 });
+
+import { GetOfflinePackHandler } from "../dist/index.js";
+
+test("the offline pack holds the open forms and the live places, and only for people who can submit records", async () => {
+  const w = world();
+  const save = new SaveCollectionFormHandler(ids, w.forms, w.indicators, audit, clock);
+  const status = new SetCollectionFormStatusHandler(w.forms, audit, clock);
+  const { value: { id: open } } = await save.handle(manager, { ...input, name: "Open one", description: "d" });
+  await save.handle(manager, { ...input, name: "Still a draft" });
+  await status.handle(manager, open, "PUBLISHED");
+  const places = { list: async () => ok([
+    { id: "uga", tenantId, name: "Uganda", kind: "AREA", adminLevel: 0, aliases: [], archived: false, createdById: "u" },
+    { id: "gulu", tenantId, name: "Gulu", kind: "AREA", adminLevel: 2, parentId: "uga", aliases: [], archived: false, createdById: "u" },
+    { id: "old", tenantId, name: "Old", kind: "AREA", adminLevel: 2, aliases: [], archived: true, createdById: "u" },
+  ]) };
+  const pack = new GetOfflinePackHandler(w.forms, places, clock);
+  assert.equal((await pack.handle(viewer, "p1")).ok, false);
+  const r = await pack.handle(manager, "p1");
+  assert.deepEqual(r.value.forms.map((f) => f.name), ["Open one"]);
+  assert.deepEqual(Object.keys(r.value.forms[0]).sort(), ["description", "fields", "id", "name"], "no mappings, counts or project data");
+  assert.deepEqual(r.value.places.map((p) => [p.id, p.path]), [["uga", "Uganda"], ["gulu", "Gulu › Uganda"]]);
+  assert.equal(r.value.generatedAt, "2026-10-10T08:00:00.000Z");
+});

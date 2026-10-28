@@ -22,7 +22,11 @@ export default async function FormsPage({ params }: { params: Promise<{ id: stri
           <h1 className="text-xl font-semibold tracking-tight">Collection forms</h1>
           <p className="mt-1 max-w-3xl text-sm text-slate-500">Design the questions your team answers in the field. Accepted answers are counted or added up into indicator values for the right period, as drafts for you to review.</p>
         </div>
-        {canEdit && <Link className="btn-primary" href={`/projects/${id}/forms/new`}>New form</Link>}
+        <div className="flex gap-2">
+          {/* A plain link on purpose: the field page is opened as a document so the phone can keep it for offline use. */}
+          <a className="btn-secondary" href="/field">Work offline</a>
+          {canEdit && <Link className="btn-primary" href={`/projects/${id}/forms/new`}>New form</Link>}
+        </div>
       </header>
       {result.value.forms.length === 0 ? (
         <p className="text-sm text-slate-500">No forms yet.</p>

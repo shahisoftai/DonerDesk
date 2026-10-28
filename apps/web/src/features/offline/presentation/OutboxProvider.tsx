@@ -9,6 +9,8 @@ import { ACTIVITY_KIND } from "../domain/activity-outbox";
 import { PLAN_STATUS_KIND, createPlanStatusSender } from "../domain/plan-status-outbox";
 import { PROGRESS_LOG_KIND, createProgressSender } from "../domain/progress-outbox";
 import { changePlanStatusAction, saveProgressAction } from "@/lib/actions/workplan";
+import { submitCollectionRecordAction } from "@/lib/actions/collection";
+import { COLLECTION_RECORD_KIND, createCollectionRecordSender } from "../domain/collection-outbox";
 import { createMemoryOutboxStore, createSerialFlusher, retryEntry, summarise, type OutboxEntry, type OutboxSender, type OutboxStore } from "../domain/outbox";
 import { canUseDurableOutbox, createIndexedDbOutboxStore } from "../infrastructure/indexeddb-outbox-store";
 
@@ -60,6 +62,20 @@ export function OutboxProvider({ scope, children }: { scope: string; children: R
         uploadEvidence: (form) => guardNetwork(() => uploadEvidenceAction(form)),
       }),
       [PROGRESS_LOG_KIND]: createProgressSender({ save: (itemId, input) => guardNetwork(() => saveProgressAction(itemId, input)) }),
+      [COLLECTION_RECORD_KIND]: createCollectionRecordSender({
+        uploadFile: (formId, file) => guardNetwork(async () => {
+          const body = new FormData();
+          body.set("file", file);
+          const response = await fetch(`/api/collection-forms/${encodeURIComponent(formId)}/files`, { method: "POST", body });
+          const json = (await response.json().catch(() => null)) as { id?: string; title?: string; detail?: string } | null;
+          if (response.ok && json?.id) return { ok: true as const, value: { id: json.id } };
+          const message = json?.detail ?? json?.title ?? "That file could not be sent.";
+          if (response.status === 401) return { ok: false as const, error: { kind: "unauthenticated" as const, message } };
+          if (response.status >= 500 || response.status === 429) return { ok: false as const, error: { kind: "unavailable" as const, message, retryable: true } };
+          return { ok: false as const, error: { kind: "validation" as const, message, fields: {} } };
+        }),
+        submit: (formId, input) => guardNetwork(() => submitCollectionRecordAction(formId, input)),
+      }),
       [PLAN_STATUS_KIND]: createPlanStatusSender({ changeStatus: (itemId, input) => guardNetwork(() => changePlanStatusAction(itemId, input)) }),
     };
     const send: OutboxSender = (entry, save) =>

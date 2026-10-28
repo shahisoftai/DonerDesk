@@ -34,6 +34,7 @@ export const RULES: ReadonlyArray<{
   { method: "DELETE", route: /^\/v1\/integrations\/webhooks\/[^/]+$/, permission: "org.manage" },
   { method: "GET", route: /^\/v1\/integrations\/webhooks\/[^/]+\/deliveries$/, permission: "org.manage" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/collection-forms$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/offline-pack$/, permission: "indicator.update" },
   { method: "POST", route: /^\/v1\/collection-forms$/, permission: "project.edit" },
   { method: "GET", route: /^\/v1\/collection-forms\/[^/]+$/, permission: "project.view" },
   { method: "PUT", route: /^\/v1\/collection-forms\/[^/]+$/, permission: "project.edit" },

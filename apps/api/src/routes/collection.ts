@@ -16,6 +16,12 @@ export async function registerCollectionRoutes(app: FastifyInstance) {
     return { forms: r.value };
   });
 
+  app.get("/v1/projects/:projectId/offline-pack", async (req) => {
+    const r = await req.container.handlers.getOfflinePack.handle(ctx(req), param(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.post("/v1/collection-forms", async (req, reply) => {
     const r = await req.container.handlers.saveCollectionForm.handle(ctx(req), SaveCollectionFormSchema.parse(req.body));
     if (!r.ok) throw r.error;

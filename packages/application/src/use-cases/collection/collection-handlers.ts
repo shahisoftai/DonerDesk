@@ -595,3 +595,34 @@ export class GetCollectionFileHandler {
     return ok({ fileName: found.fileName, contentType: found.contentType, bytes: await this.storage.read(found.storageKey) });
   }
 }
+
+export interface OfflinePackDto {
+  projectId: string;
+  generatedAt: string;
+  /** The forms that are open for answers, with their questions; nothing else about the project. */
+  forms: Array<{ id: string; name: string; description?: string; fields: FormField[] }>;
+  /** The live places, for place questions: an id, a name and the path that tells two of the same name apart. */
+  places: Array<{ id: string; name: string; path: string }>;
+}
+
+/**
+ * What a phone needs to fill a project's forms with no connection: the open forms and the places list. Only people who may submit
+ * records get it; it holds no records, no figures and no people, so a lost phone gives away the questions and place names only.
+ */
+export class GetOfflinePackHandler {
+  constructor(private readonly forms: ICollectionFormRepository, private readonly places: IPlaceRepository, private readonly clock: IClock) {}
+
+  async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<OfflinePackDto, DomainError>> {
+    if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot submit records"));
+    const [listed, all] = await Promise.all([this.forms.listByProject(projectId, ctx.tenant.tenantId), this.places.list(ctx.tenant.tenantId)]);
+    if (!listed.ok) return listed;
+    if (!all.ok) return all;
+    const registry = new PlaceRegistry(all.value.map(({ tenantId: _t, createdById: _c, archivedAt: _a, ...record }) => record));
+    return ok({
+      projectId,
+      generatedAt: this.clock.now().toISOString(),
+      forms: listed.value.filter((f) => f.status === "PUBLISHED").map((f) => ({ id: f.id, name: f.name, ...(f.description ? { description: f.description } : {}), fields: [...f.definition.fields] })),
+      places: all.value.filter((p) => !p.archived && p.archivedAt === undefined).map((p) => ({ id: p.id, name: p.name, path: registry.pathLabel(p.id) })),
+    });
+  }
+}
