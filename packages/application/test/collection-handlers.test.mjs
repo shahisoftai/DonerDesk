@@ -1,0 +1,106 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { TenantId } from "@donordesk/domain";
+import {
+  SaveCollectionFormHandler, SetCollectionFormStatusHandler, SubmitCollectionRecordHandler, ReviewCollectionRecordHandler,
+  CreateCollectionLinkHandler, ResolveCollectionLinkHandler, RevokeCollectionLinkHandler, PublicSubmitCollectionRecordHandler, PublicCollectionFormHandler,
+} from "../dist/index.js";
+
+const tenantId = TenantId.create("tenant-a");
+const ok = (value) => ({ ok: true, value });
+const manager = { tenant: { tenantId, userId: "mgr", role: "PROJECT_MANAGER" }, requestId: "r" };
+const viewer = { tenant: { tenantId, userId: "v", role: "VIEWER" }, requestId: "r" };
+let n = 0;
+const ids = { generate: () => `id-${++n}-xxxxxxxx` };
+const audit = { events: [], record: async function (e) { this.events.push(e.eventType); } };
+const clock = { now: () => new Date("2026-10-10T08:00:00Z") };
+
+function world() {
+  const forms = new Map(), records = new Map(), links = new Map();
+  return {
+    stores: { forms, records, links },
+    forms: { create: async (f) => (forms.set(f.id, f), ok()), update: async (f) => (forms.set(f.id, f), ok()), findById: async (id) => ok(forms.get(id) ?? null), listByProject: async () => ok([...forms.values()]) },
+    records: {
+      createOnce: async (r) => (records.has(r.id) ? ok({ record: records.get(r.id), created: false }) : (records.set(r.id, r), ok({ record: r, created: true }))),
+      update: async (r) => (records.set(r.id, r), ok()), findById: async (id) => ok(records.get(id) ?? null),
+      listByForm: async () => ok([...records.values()]), countByStatus: async () => ok({ PENDING: 0, ACCEPTED: 0, REJECTED: 0 }),
+    },
+    links: {
+      create: async (l) => (links.set(l.id, l), ok()), listByForm: async () => ok([...links.values()]), findById: async (id) => ok(links.get(id) ?? null),
+      revoke: async (id, t, at) => (links.set(id, { ...links.get(id), revokedAt: at }), ok()), findByTokenHash: async (h) => ok([...links.values()].find((l) => l.tokenHash === h) ?? null),
+    },
+    indicators: { findByProject: async () => ok([{ id: "ind1", code: "OUT-1" }]) },
+  };
+}
+
+const input = {
+  projectId: "p1", name: "Distribution", mappings: [{ indicatorId: "ind1", method: "SUM", valueField: "kits", dateField: "day" }],
+  fields: [{ key: "day", label: "Day", type: "DATE", required: true }, { key: "kits", label: "Kits", type: "NUMBER", min: 0, required: true }],
+};
+
+test("design, publish, submit, review: a draft is editable, a published form is frozen, only accepted records are reviewed in", async () => {
+  const w = world();
+  const save = new SaveCollectionFormHandler(ids, w.forms, w.indicators, audit, clock);
+  const status = new SetCollectionFormStatusHandler(w.forms, audit, clock);
+  assert.equal((await save.handle(viewer, input)).ok, false);
+  const created = await save.handle(manager, input);
+  assert.ok(created.ok);
+  const bad = await save.handle(manager, { ...input, mappings: [{ indicatorId: "nope", method: "COUNT" }] });
+  assert.match(bad.error.message, /not in this project/);
+  const badRule = await save.handle(manager, { ...input, mappings: [{ indicatorId: "ind1", method: "SUM" }] });
+  assert.match(badRule.error.message, /number field/);
+  assert.ok((await save.handle(manager, { ...input, name: "Renamed" }, created.value.id)).ok);
+
+  const submit = new SubmitCollectionRecordHandler(ids, w.forms, w.records, audit, clock);
+  assert.match((await submit.handle(manager, created.value.id, { answers: { day: "2026-10-03", kits: 5 } })).error.message, /not open/);
+  assert.ok((await status.handle(manager, created.value.id, "PUBLISHED")).ok);
+  assert.match((await save.handle(manager, input, created.value.id)).error.message, /cannot be edited/);
+
+  const first = await submit.handle(manager, created.value.id, { id: "client-key-0001", answers: { day: "2026-10-03", kits: "5" } });
+  assert.equal(first.value.duplicate, false);
+  const again = await submit.handle(manager, created.value.id, { id: "client-key-0001", answers: { day: "2026-10-03", kits: "5" } });
+  assert.equal(again.value.duplicate, true);
+  assert.equal(w.stores.records.size, 1, "a re-sent submission is stored once");
+  const invalid = await submit.handle(manager, created.value.id, { answers: { day: "2026-10-03", kits: -2 } });
+  assert.match(invalid.error.message, /below 0/);
+
+  const review = new ReviewCollectionRecordHandler(w.records, audit, clock);
+  assert.equal((await review.handle(viewer, "client-key-0001", { decision: "ACCEPT" })).ok, false);
+  assert.match((await review.handle(manager, "client-key-0001", { decision: "REJECT" })).error.message, /Say why/);
+  assert.ok((await review.handle(manager, "client-key-0001", { decision: "ACCEPT" })).ok);
+  assert.ok(audit.events.includes("collection.record.accepted"));
+});
+
+test("a collection link opens the form for anyone holding it; revoked, expired and unknown tokens are all 'not available'", async () => {
+  const w = world();
+  const save = new SaveCollectionFormHandler(ids, w.forms, w.indicators, audit, clock);
+  const status = new SetCollectionFormStatusHandler(w.forms, audit, clock);
+  const { value: { id: formId } } = await save.handle(manager, input);
+  const makeLink = new CreateCollectionLinkHandler(ids, w.forms, w.links, audit, clock);
+  assert.match((await makeLink.handle(manager, formId, { label: "Field team", expiresInDays: 7 })).error.message, /Publish the form/);
+  await status.handle(manager, formId, "PUBLISHED");
+  const link = await makeLink.handle(manager, formId, { label: "Field team", expiresInDays: 7 });
+  assert.ok(link.ok);
+  assert.ok(![...w.stores.links.values()].some((l) => JSON.stringify(l).includes(link.value.token)), "only a hash is stored");
+
+  const resolve = new ResolveCollectionLinkHandler(w.links, clock);
+  const found = await resolve.handle(link.value.token);
+  assert.equal(found.value.formId, formId);
+  assert.equal((await resolve.handle("wrong")).ok, false);
+  assert.equal((await new ResolveCollectionLinkHandler(w.links, { now: () => new Date("2026-12-01T00:00:00Z") }).handle(link.value.token)).ok, false);
+
+  const pub = new PublicCollectionFormHandler(w.forms);
+  const shown = await pub.handle(tenantId, formId);
+  assert.deepEqual(Object.keys(shown.value).sort(), ["fields", "name"]);
+  const submit = new PublicSubmitCollectionRecordHandler(ids, w.forms, w.records, audit, clock);
+  const sent = await submit.handle(tenantId, formId, found.value.linkId, { answers: { day: "2026-10-03", kits: 3 }, submitterName: "Amina" });
+  assert.ok(sent.ok);
+  const stored = (await w.records.listByForm()).value[0];
+  assert.equal(stored.source, "LINK");
+  assert.equal(stored.status, "PENDING");
+
+  await new RevokeCollectionLinkHandler(w.links, audit, clock).handle(manager, found.value.linkId);
+  assert.equal((await resolve.handle(link.value.token)).ok, false);
+  await status.handle(manager, formId, "CLOSED");
+  assert.equal((await submit.handle(tenantId, formId, found.value.linkId, { answers: { day: "2026-10-03", kits: 3 } })).ok, false);
+});

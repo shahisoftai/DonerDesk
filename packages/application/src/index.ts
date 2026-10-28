@@ -352,3 +352,5 @@ export * from "./use-cases/organization/map-layer-handlers.js";
 export * from "./ports/places.js";
 export * from "./ports/integrations.js";
 export * from "./use-cases/integrations/integration-handlers.js";
+export * from "./ports/collection.js";
+export * from "./use-cases/collection/collection-handlers.js";

@@ -2157,3 +2157,62 @@ model WebhookDelivery {
   @@index([tenantId, endpointId, createdAt])
   @@index([status, nextAttemptAt])
 }
+
+/// A collection form that feeds indicators (Phase 33.5). Only a draft can be edited; publishing freezes the fields.
+model CollectionForm {
+  id             String   @id
+  tenantId       String
+  projectId      String
+  name           String
+  description    String?
+  definitionJson String   @default("{\"fields\":[]}")
+  /// How collected records add up to indicator values (RecordMapping[]).
+  mappingsJson   String   @default("[]")
+  /// DRAFT | PUBLISHED | CLOSED
+  status         String   @default("DRAFT")
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId, projectId])
+}
+
+/// One submission of a form: the answers as validated, kept until a person accepts or rejects them.
+model CollectionRecord {
+  id            String    @id
+  tenantId      String
+  formId        String
+  projectId     String
+  answersJson   String
+  /// The day it was submitted, a plain day (YYYY-MM-DD, UTC).
+  submittedOn   String
+  /// USER | LINK
+  source        String
+  submittedById String?
+  /// Who the collector said they were, for a record that came through a link.
+  submitterName String?
+  /// PENDING | ACCEPTED | REJECTED
+  status        String    @default("PENDING")
+  reviewNote    String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId, formId, status])
+}
+
+/// An anonymous collection link for a published form. Only the SHA-256 of the token is stored; it expires and can be revoked.
+model CollectionLink {
+  id          String    @id
+  tenantId    String
+  formId      String
+  label       String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId, formId])
+}

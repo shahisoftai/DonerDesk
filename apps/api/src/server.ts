@@ -33,6 +33,7 @@ import { registerWorkPlanRoutes } from "./routes/workplan.js";
 import { registerInfographicsRoutes } from "./routes/infographics.js";
 import { registerTaskRoutes } from "./routes/tasks.js";
 import { registerPlaceRoutes } from "./routes/places.js";
+import { registerCollectionRoutes, registerPublicCollectionRoutes } from "./routes/collection.js";
 import { registerIntegrationRoutes } from "./routes/integrations.js";
 import { registerPublicApiRoutes } from "./routes/public-api.js";
 import { registerReportingRoutes } from "./routes/reporting.js";
@@ -160,6 +161,8 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerPublicApiRoutes(app, container);
   // A public share link has no session either: its token says which export it opens.
   await registerPublicInfographicRoutes(app);
+  // A collection link has no session either: its token names the form it opens.
+  await registerPublicCollectionRoutes(app, container);
   // The routes registered inside the scope below are the ones that go through
   // authMiddleware + authorizationMiddleware. They are collected here so
   // test/authorization-coverage.test.mjs can assert the authorisation table
@@ -204,6 +207,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerInfographicsRoutes(instance);
     await registerTaskRoutes(instance);
     await registerPlaceRoutes(instance);
+    await registerCollectionRoutes(instance);
     await registerIntegrationRoutes(instance);
     await registerReportingRoutes(instance);
     await registerAgentMemoryRoutes(instance);

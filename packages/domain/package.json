@@ -141,6 +141,10 @@
     "./contexts/risks/index.js": {
       "types": "./dist/contexts/risks/index.d.ts",
       "import": "./dist/contexts/risks/index.js"
+    },
+    "./contexts/collection/index.js": {
+      "types": "./dist/contexts/collection/index.d.ts",
+      "import": "./dist/contexts/collection/index.js"
     }
   },
   "scripts": {
