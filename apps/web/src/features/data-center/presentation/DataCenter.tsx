@@ -9,6 +9,7 @@ import { AddToReportPanel } from "./AddToReportPanel";
 import { DataSheetImport } from "./DataSheetImport";
 import { PlaceResultsView } from "./PlaceResultsView";
 import { PLACE_RESULTS_COPY } from "@/features/places/domain/place-results-copy";
+import { AddToDashboardPanel } from "@/features/dashboards/presentation/AddToDashboardPanel";
 
 type Tab = "sheet" | "place" | "charts" | "finance" | "import";
 
@@ -41,7 +42,10 @@ export function DataCenter({ projectId, sheet, canEdit, canEditReports, canReope
           <DataChartBuilder
             sheet={sheet}
             footer={({ spec, result }) => (
+              <>
+              <AddToDashboardPanel projectId={projectId} spec={spec} {...(result.ok ? {} : { disabledReason: "This chart cannot be drawn yet, so it cannot be added." })} />
               <AddToReportPanel projectId={projectId} sheet={sheet} spec={spec} canAdd={canEditReports} canReopen={canReopenReports} {...(result.ok ? {} : { disabledReason: "This chart cannot be drawn yet, so it cannot be added." })} />
+              </>
             )}
           />
         )}

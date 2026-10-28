@@ -145,6 +145,10 @@
     "./contexts/collection/index.js": {
       "types": "./dist/contexts/collection/index.d.ts",
       "import": "./dist/contexts/collection/index.js"
+    },
+    "./contexts/dashboards/index.js": {
+      "types": "./dist/contexts/dashboards/index.d.ts",
+      "import": "./dist/contexts/dashboards/index.js"
     }
   },
   "scripts": {

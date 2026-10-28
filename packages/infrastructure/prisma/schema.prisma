@@ -2233,3 +2233,35 @@ model CollectionLink {
 
   @@index([tenantId, formId])
 }
+
+/// A page of Data Center charts (Phase 33.8): saved chart specs and where they sit, never data.
+model Dashboard {
+  id          String   @id
+  tenantId    String
+  /// ORG | PROJECT | MINE
+  scope       String
+  projectId   String?
+  ownerId     String
+  name        String
+  widgetsJson String   @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId, scope])
+  @@index([tenantId, projectId])
+}
+
+/// A read-only link to a dashboard. Only the SHA-256 of the token is stored; it expires and can be revoked.
+model DashboardShareLink {
+  id          String    @id
+  tenantId    String
+  dashboardId String
+  label       String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId, dashboardId])
+}

@@ -6,7 +6,7 @@ import type { Capability, Role } from "@/lib/shared/capabilities";
  * point after sign-in; it renders the Home named here, so no role needs its own address.
  */
 export type NavKey =
-  | "HOME" | "MY_WORK" | "PORTFOLIO" | "PROJECTS" | "REPORTS" | "EVIDENCE" | "COMPLIANCE" | "FUNDING"
+  | "HOME" | "MY_WORK" | "PORTFOLIO" | "DASHBOARDS" | "PROJECTS" | "REPORTS" | "EVIDENCE" | "COMPLIANCE" | "FUNDING"
   | "DOWNLOADS" | "TEAM" | "SETTINGS";
 
 export interface NavEntry {
@@ -21,6 +21,7 @@ export const NAV_ENTRIES: Readonly<Record<NavKey, NavEntry>> = {
   HOME: { href: "/dashboard", label: "Home", group: "Overview" },
   MY_WORK: { href: "/my-work", label: "My Work", group: "Overview" },
   PORTFOLIO: { href: "/portfolio", label: "Portfolio", group: "Overview" },
+  DASHBOARDS: { href: "/dashboards", label: "Dashboards", group: "Overview" },
   PROJECTS: { href: "/projects", label: "Projects", group: "Deliver" },
   REPORTS: { href: "/reports", label: "Reports", group: "Report" },
   EVIDENCE: { href: "/evidence", label: "Evidence", group: "Report" },
@@ -40,13 +41,13 @@ export interface RoleNavigation {
 }
 
 export const ROLE_NAVIGATION: Readonly<Record<Role, RoleNavigation>> = {
-  ADMIN: { home: "DIRECTOR", entries: ["HOME", "MY_WORK", "PORTFOLIO", "PROJECTS", "REPORTS", "EVIDENCE", "COMPLIANCE", "DOWNLOADS", "FUNDING", "TEAM", "SETTINGS"] },
-  PROJECT_MANAGER: { home: "MANAGER", entries: ["HOME", "MY_WORK", "PORTFOLIO", "PROJECTS", "REPORTS", "EVIDENCE", "DOWNLOADS", "TEAM", "SETTINGS"] },
-  ME_OFFICER: { home: "MANAGER", entries: ["HOME", "MY_WORK", "PORTFOLIO", "PROJECTS", "REPORTS", "EVIDENCE", "DOWNLOADS"] },
-  GRANTS_OFFICER: { home: "GRANTS", entries: ["HOME", "MY_WORK", "PORTFOLIO", "PROJECTS", "REPORTS", "DOWNLOADS", "FUNDING", "SETTINGS"] },
+  ADMIN: { home: "DIRECTOR", entries: ["HOME", "MY_WORK", "PORTFOLIO", "DASHBOARDS", "PROJECTS", "REPORTS", "EVIDENCE", "COMPLIANCE", "DOWNLOADS", "FUNDING", "TEAM", "SETTINGS"] },
+  PROJECT_MANAGER: { home: "MANAGER", entries: ["HOME", "MY_WORK", "PORTFOLIO", "DASHBOARDS", "PROJECTS", "REPORTS", "EVIDENCE", "DOWNLOADS", "TEAM", "SETTINGS"] },
+  ME_OFFICER: { home: "MANAGER", entries: ["HOME", "MY_WORK", "PORTFOLIO", "DASHBOARDS", "PROJECTS", "REPORTS", "EVIDENCE", "DOWNLOADS"] },
+  GRANTS_OFFICER: { home: "GRANTS", entries: ["HOME", "MY_WORK", "PORTFOLIO", "DASHBOARDS", "PROJECTS", "REPORTS", "DOWNLOADS", "FUNDING", "SETTINGS"] },
   COMPLIANCE_OFFICER: { home: "COMPLIANCE", entries: ["HOME", "MY_WORK", "PROJECTS", "REPORTS", "EVIDENCE", "COMPLIANCE", "DOWNLOADS"] },
   FIELD_OFFICER: { home: "FIELD", entries: ["HOME", "MY_WORK", "PROJECTS", "EVIDENCE"] },
-  VIEWER: { home: "DIRECTOR", entries: ["HOME", "PORTFOLIO", "PROJECTS", "REPORTS", "DOWNLOADS"] },
+  VIEWER: { home: "DIRECTOR", entries: ["HOME", "PORTFOLIO", "DASHBOARDS", "PROJECTS", "REPORTS", "DOWNLOADS"] },
 };
 
 export interface NavItemView { href: string; label: string; group: string }
