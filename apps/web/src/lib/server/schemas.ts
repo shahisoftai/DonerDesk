@@ -102,6 +102,7 @@ export const OrganizationProfileSchema = z.object({
   /** Agent Memory (Phase 21) tenant self-service toggle. */
   agentMemoryEnabled: z.boolean().optional(),
   askEnabled: z.boolean().optional(),
+  mfaRequiredFrom: z.string().nullable().optional(),
   /** Platform-wide rollout flag; the Settings tab is hidden entirely when false. */
   agentMemoryPlatformEnabled: z.boolean().optional(),
 });
@@ -1697,7 +1698,12 @@ export const FundingResponseSchema = z.object({
 });
 export type FundingResponse = z.infer<typeof FundingResponseSchema>;
 
-export const MfaStatusSchema = z.object({ enabled: z.boolean(), enabledAt: z.string().nullable(), recoveryCodesLeft: z.number() });
+export const MfaStatusSchema = z.object({
+  enabled: z.boolean(), enabledAt: z.string().nullable(), recoveryCodesLeft: z.number(),
+  /** Where this person stands against the organisation's requirement. */
+  requirement: z.enum(["NOT_REQUIRED", "REQUIRED_SOON", "SETUP_REQUIRED", "DONE"]).default("NOT_REQUIRED"),
+  requiredFrom: z.string().nullable().default(null),
+});
 export const MfaSetupSchema = z.object({ secret: z.string(), otpauthUri: z.string() });
 export const MfaEnabledSchema = z.object({ recoveryCodes: z.array(z.string()) });
 

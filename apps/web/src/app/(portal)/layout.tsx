@@ -8,7 +8,7 @@ import { I18nProvider } from "@/features/i18n/presentation/I18nProvider";
 import { getLocale, getTranslator } from "@/lib/server/locale";
 import { requireSession, hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { OrganizationSchema, NotificationsResponseSchema, LegalConsentSchema } from "@/lib/server/schemas";
+import { OrganizationSchema, NotificationsResponseSchema, LegalConsentSchema, MfaStatusSchema } from "@/lib/server/schemas";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { AppShell } from "@/components/layout/AppShell";
 import { ToastProvider } from "@/components/feedback/Toast";
@@ -22,11 +22,18 @@ export const metadata = NOINDEX_METADATA;
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const ctx = await requireSession();
 
-  const [orgResult, notificationsResult, consentResult] = await Promise.all([
+  const [orgResult, notificationsResult, consentResult, mfaResult] = await Promise.all([
     gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
     gatewayRequest("/v1/notifications", NotificationsResponseSchema, ctx.token),
     gatewayRequest("/v1/legal/consent", LegalConsentSchema, ctx.token),
+    gatewayRequest("/v1/auth/mfa", MfaStatusSchema, ctx.token),
   ]);
+
+  // An organization that requires two-step sign-in lets a person without it do one thing: set it up.
+  if (mfaResult.ok && mfaResult.value.requirement === "SETUP_REQUIRED") {
+    const pathname = (await headers()).get("x-pathname") ?? "";
+    if (!pathname.startsWith("/settings/security") && !pathname.startsWith("/logout")) redirect("/settings/security");
+  }
 
   // Terms-of-Reference consent gate: until the user accepts the Terms of
   // Service and Privacy Policy during onboarding, only the onboarding flow
@@ -64,6 +71,11 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         canCreate={hasCapability(ctx, "project.create")}
         bellItems={bellItems}
       >
+        {mfaResult.ok && mfaResult.value.requirement === "REQUIRED_SOON" && mfaResult.value.requiredFrom && (
+          <p role="status" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm dark:bg-amber-500/10">
+            Your organization will require two-step sign-in from {new Date(mfaResult.value.requiredFrom).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}. <a className="font-medium underline" href="/settings/security">Set it up now</a>.
+          </p>
+        )}
         {children}
       </AppShell>
       <TourOverlay />

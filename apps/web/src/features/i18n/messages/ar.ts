@@ -26,6 +26,8 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "nav.team": "الفريق",
   "nav.settings": "الإعدادات",
   "nav.myProjects": "مشاريعي",
+  "nav.security": "الأمان",
+  "nav.group.account": "الحساب",
 
   "common.loading": "جارٍ التحميل…",
   "common.choose": "اختر…",

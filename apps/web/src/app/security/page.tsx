@@ -54,8 +54,9 @@ export default function SecurityPage() {
           Sign-in uses a single sign-on provider (OIDC) or email and password, stored as a one-way bcrypt hash.
           Sessions are held in a signed, http-only, secure cookie. Staff accounts can turn on two-step sign-in: after
           the password, a 6-digit code from an authenticator app (time-based, TOTP), with single-use recovery codes.
-          It is optional, cannot yet be required for a whole organisation, and is not yet available to outside
-          partners. With single sign-on, two-step sign-in is managed by your own identity provider.
+          It is optional for each person, and an organisation's administrator can require it of everyone from a
+          chosen day, outside partners included: from that day a person without it can only set it up. With single
+          sign-on, two-step sign-in is managed by your own identity provider.
         </p>
       </Section>
 

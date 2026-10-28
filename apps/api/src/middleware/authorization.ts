@@ -321,6 +321,7 @@ export const RULES: ReadonlyArray<{
   // ── Organisation, users, agent memory ─────────────────────────────────────
   { method: "PUT", route: /^\/v1\/organization\/agent-memory-settings$/, permission: "report.manage-agent-memory" },
   { method: "PUT", route: /^\/v1\/organization\/ask-settings$/, permission: "org.manage" },
+  { method: "PUT", route: /^\/v1\/organization\/mfa-requirement$/, permission: "org.manage" },
   { method: "GET", route: /^\/v1\/users\/invitations$/, permission: "users.manage" },
   { method: "GET", route: /^\/v1\/scim\/credentials$/, permission: "users.manage" },
   { method: "POST", route: /^\/v1\/scim\/credentials$/, permission: "users.manage" },

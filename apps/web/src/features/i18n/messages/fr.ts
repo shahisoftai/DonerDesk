@@ -22,6 +22,8 @@ export const fr: Record<MessageKey, string> = {
   "nav.team": "Équipe",
   "nav.settings": "Paramètres",
   "nav.myProjects": "Mes projets",
+  "nav.security": "Sécurité",
+  "nav.group.account": "Compte",
 
   "common.loading": "Chargement…",
   "common.choose": "Choisir…",

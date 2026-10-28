@@ -1,6 +1,7 @@
 "use server";
 
-import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema, UpdateAskSettingsSchema } from "@donordesk/contracts";
+import { z } from "zod";
+import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema, UpdateAskSettingsSchema, UpdateMfaRequirementSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -75,6 +76,14 @@ export async function updateAskSettingsAction(input: unknown): Promise<Result<un
   const result = await gatewayRequest("/v1/organization/ask-settings", OkResponseSchema, context.token, { method: "PUT", body: parsed.data });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
+}
+
+/** Require two-step sign-in of everyone, from a chosen day (Phase 33.12). */
+export async function updateMfaRequirementAction(input: unknown): Promise<Result<{ requiredFrom: string | null }, AppError>> {
+  const context = await requireSession();
+  const parsed = UpdateMfaRequirementSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) } };
+  return gatewayRequest("/v1/organization/mfa-requirement", z.object({ requiredFrom: z.string().nullable() }), context.token, { method: "PUT", body: parsed.data });
 }
 
 export type UploadMapLayerResult = Result<{ name: string; featureCount: number }, AppError>;

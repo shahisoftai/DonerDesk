@@ -45,6 +45,9 @@ export const UpdateAgentMemorySettingsSchema = z.object({
   enabled: z.boolean(),
 });
 export const UpdateAskSettingsSchema = z.object({ enabled: z.boolean() });
+export const UpdateMfaRequirementSchema = z.object({ required: z.boolean(), graceDays: z.number().int().min(0).max(30).default(7) });
+export type UpdateMfaRequirementInput = z.infer<typeof UpdateMfaRequirementSchema>;
+
 export type UpdateAskSettingsInput = z.infer<typeof UpdateAskSettingsSchema>;
 
 export type UpdateAgentMemorySettingsInput = z.infer<typeof UpdateAgentMemorySettingsSchema>;

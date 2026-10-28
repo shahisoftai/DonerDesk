@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { beginMfaAction, enableMfaAction, disableMfaAction } from "@/lib/actions/mfa";
 import { useActionState } from "@/lib/client/action-state";
 import { useHydrated } from "@/lib/client/use-hydrated";
+import { logoutAction } from "@/lib/auth-actions";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -13,7 +14,7 @@ import { InlineAlert } from "@/components/feedback/InlineAlert";
 const groupKey = (key: string): string => key.replace(/(.{4})/g, "$1 ").trim();
 
 /** Two-step sign-in with an authenticator app: set it up, see the recovery codes once, turn it off with the password and a code. */
-export function MfaPanel({ enabled, enabledAt, recoveryCodesLeft }: { enabled: boolean; enabledAt: string | null; recoveryCodesLeft: number }) {
+export function MfaPanel({ enabled, enabledAt, recoveryCodesLeft, signOutAfterEnable = false }: { enabled: boolean; enabledAt: string | null; recoveryCodesLeft: number; /** The organisation required it: after the recovery codes are saved the person signs in again, now with a code. */ signOutAfterEnable?: boolean }) {
   const router = useRouter();
   const state = useActionState();
   const hydrated = useHydrated();
@@ -63,7 +64,7 @@ export function MfaPanel({ enabled, enabledAt, recoveryCodesLeft }: { enabled: b
           <ul className="mt-2 grid grid-cols-2 gap-1 font-mono text-sm" aria-label="Recovery codes">
             {recoveryCodes.map((c) => <li key={c}>{c}</li>)}
           </ul>
-          <Button className="mt-3" variant="secondary" size="sm" onClick={() => { setRecoveryCodes(null); router.refresh(); }}>I have saved them</Button>
+          <Button className="mt-3" variant="secondary" size="sm" onClick={() => { setRecoveryCodes(null); if (signOutAfterEnable) void logoutAction(); else router.refresh(); }}>{signOutAfterEnable ? "I have saved them: sign in again" : "I have saved them"}</Button>
         </InlineAlert>
       )}
 

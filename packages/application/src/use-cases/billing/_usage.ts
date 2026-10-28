@@ -15,10 +15,29 @@ export function nextMonthStartUtc(date: Date): Date {
   return new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1));
 }
 
+/**
+ * The address a mailbox really is, so one person cannot start a trial again as `name+2@…` or `n.a.m.e@gmail.com`: the `+tag` is dropped
+ * everywhere, and for Gmail the dots in the name are ignored and googlemail.com is gmail.com.
+ */
+export function canonicalEmail(email: string): string {
+  const lowered = email.trim().toLowerCase();
+  const at = lowered.lastIndexOf("@");
+  if (at === -1) return lowered;
+  let local = lowered.slice(0, at).split("+")[0] ?? "";
+  let domain = lowered.slice(at + 1);
+  if (domain === "googlemail.com") domain = "gmail.com";
+  if (domain === "gmail.com") local = local.replace(/\./g, "");
+  return `${local}@${domain}`;
+}
+
 /** Normalized trial/email fingerprints for TrialIdentity abuse resistance. */
 export function emailFingerprint(email: string): string {
-  const normalized = email.trim().toLowerCase();
-  return sha256(normalized);
+  return sha256(canonicalEmail(email));
+}
+
+/** The fingerprint trials recorded before addresses were canonicalised were stored under; still checked, so an old trial still counts. */
+export function legacyEmailFingerprint(email: string): string {
+  return sha256(email.trim().toLowerCase());
 }
 
 export function domainFingerprint(email: string): string {

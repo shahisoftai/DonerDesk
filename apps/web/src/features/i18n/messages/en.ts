@@ -24,6 +24,8 @@ export const en = {
   "nav.team": "Team",
   "nav.settings": "Settings",
   "nav.myProjects": "My projects",
+  "nav.security": "Security",
+  "nav.group.account": "Account",
 
   "common.loading": "Loading…",
   "common.choose": "Choose…",

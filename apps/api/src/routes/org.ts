@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema, UpdateAskSettingsSchema, SaveProgrammeSchema, SaveGrantSchema, PlaceProjectSchema } from "@donordesk/contracts";
+import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema, UpdateAskSettingsSchema, UpdateMfaRequirementSchema, SaveProgrammeSchema, SaveGrantSchema, PlaceProjectSchema } from "@donordesk/contracts";
 import { isTruthyFlag } from "@donordesk/infrastructure";
 
 // Resolved once per process, mirroring container.ts's own read of the same
@@ -44,6 +44,7 @@ export async function registerOrgRoutes(app: FastifyInstance) {
       reportingDefaults: o.reportingDefaults,
       agentMemoryEnabled: o.agentMemoryEnabled,
       askEnabled: o.askEnabled,
+      mfaRequiredFrom: o.mfaRequiredFrom ? o.mfaRequiredFrom.toISOString() : null,
       agentMemoryPlatformEnabled,
     };
   });
@@ -150,6 +151,14 @@ export async function registerOrgRoutes(app: FastifyInstance) {
     const result = await req.container.handlers.updateOrganizationReportingDefaults.handle(ctx, body);
     if (!result.ok) throw result.error;
     return { ok: true };
+  });
+
+  // Two-step sign-in required of everyone, from a chosen day (Phase 33.12).
+  app.put("/v1/organization/mfa-requirement", async (req) => {
+    const body = UpdateMfaRequirementSchema.parse(req.body);
+    const result = await req.container.handlers.updateMfaRequirement.handle({ tenant: req.tenant, requestId: req.id }, body);
+    if (!result.ok) throw result.error;
+    return result.value;
   });
 
   // Ask DonorDesk (Phase 33.9): administrator opt-in.

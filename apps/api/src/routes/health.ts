@@ -105,6 +105,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "ReportSection", field: "generationFallbackDetail" },
   { model: "Organization", field: "agentMemoryEnabled" },
   { model: "Organization", field: "askEnabled" },
+  { model: "Organization", field: "mfaRequiredFrom" },
   { model: "AgentMemory", field: "provenanceJson" },
   { model: "Project", field: "archivedAt" },
   { model: "Project", field: "isDemo" },

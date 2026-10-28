@@ -32,6 +32,14 @@ export interface IReminderAudience {
   projectManagers(tenantId: TenantId): Promise<Result<ReadonlyMap<string, string>>>;
 }
 
+/** Where an organisation stands on its free trial, and who looks after the account. */
+export interface ITrialStatus {
+  /** The end of the organisation's latest free trial, when it has had one and has not since subscribed; otherwise null. */
+  trialEnd(tenantId: TenantId): Promise<Result<Date | null>>;
+  /** The people who manage the organisation and so should hear about it. */
+  administrators(tenantId: TenantId): Promise<Result<string[]>>;
+}
+
 export interface PersonNotification {
   tenantId: TenantId;
   recipientId: string;

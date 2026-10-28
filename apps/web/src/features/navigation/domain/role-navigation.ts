@@ -52,7 +52,7 @@ export const ROLE_NAVIGATION: Readonly<Record<Role, RoleNavigation>> = {
 
 export interface NavItemView { href: string; label: string; group: string }
 
-const EXTERNAL_NAV: ReadonlyArray<NavItemView> = [{ href: "/projects", label: "My projects", group: "Overview" }];
+const EXTERNAL_NAV: ReadonlyArray<NavItemView> = [{ href: "/projects", label: "My projects", group: "Overview" }, { href: "/settings/security", label: "Security", group: "Account" }];
 
 function roleOf(role: string | null | undefined): Role {
   return (role && role in ROLE_NAVIGATION ? role : "VIEWER") as Role;

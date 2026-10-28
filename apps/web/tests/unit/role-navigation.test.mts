@@ -32,7 +32,7 @@ test("field officer and viewer lose management entries; admin keeps them", () =>
 });
 
 test("an outside partner sees only their projects; an unknown role is treated as a viewer", () => {
-  assert.deepEqual(navFor({ role: "ADMIN", capabilities: capabilitiesForRole("ADMIN"), external: true }).map((i) => i.href), ["/projects"]);
+  assert.deepEqual(navFor({ role: "ADMIN", capabilities: capabilitiesForRole("ADMIN"), external: true }).map((i) => i.href), ["/projects", "/settings/security"], "a partner sees their projects and where to set up two-step sign-in");
   assert.equal(homeVariantFor("NOPE"), "DIRECTOR");
   assert.equal(homeVariantFor(null), "DIRECTOR");
 });

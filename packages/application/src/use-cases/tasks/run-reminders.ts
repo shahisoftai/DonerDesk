@@ -1,8 +1,8 @@
-import { DomainError, applyMode, type PlainDate, err, isSendHour, isSummaryMode, localDate, ok, planEscalations, renderSummary, summaryLines, type Assignment, type Result, type SummaryMode } from "@donordesk/domain";
+import { DomainError, dueTrialNotice, type TrialNoticeRule, applyMode, type PlainDate, err, isSendHour, isSummaryMode, localDate, ok, planEscalations, renderSummary, summaryLines, type Assignment, type Result, type SummaryMode } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock } from "../../ports/core.js";
 import type { IRiskRefresh } from "../../ports/health.js";
-import type { INotificationPreferences, IPersonNotifier, IReminderAudience, IReminderLedger } from "../../ports/reminders.js";
+import type { INotificationPreferences, IPersonNotifier, IReminderAudience, IReminderLedger, ITrialStatus } from "../../ports/reminders.js";
 import type { AssignmentQueue } from "../../services/assignment-queue.js";
 
 export interface RunRemindersResult {
@@ -12,6 +12,8 @@ export interface RunRemindersResult {
   /** People with nothing to be told today: a quiet day sends nothing. */
   quiet: number;
   escalationsSent: number;
+  /** Trial-ending notices sent to administrators today. */
+  trialNoticesSent?: number;
 }
 
 /**
@@ -25,6 +27,8 @@ export class RunRemindersHandler {
     private readonly audience: IReminderAudience, private readonly notifier: IPersonNotifier, private readonly audit: IAuditLogger, private readonly clock: IClock,
     private readonly risk?: IRiskRefresh,
     private readonly automations?: { runFor(ctx: AuthenticatedContext, today: PlainDate): Promise<Result<number, DomainError>> },
+    /** With this, administrators are told before and after the free trial ends (Phase 33.12). */
+    private readonly trial?: ITrialStatus,
   ) {}
 
   async handle(ctx: AuthenticatedContext, options: { force?: boolean } = {}): Promise<Result<RunRemindersResult, DomainError>> {
@@ -83,13 +87,39 @@ export class RunRemindersHandler {
       if (!sent.ok) return sent;
     }
 
-    if (summariesSent + escalationsSent > 0) {
+    // The free trial: told three days before, a day before, and once after it ended; each at most once.
+    let trialNoticesSent = 0;
+    if (this.trial) {
+      const end = await this.trial.trialEnd(tenantId);
+      if (!end.ok) return end;
+      if (end.value) {
+        const admins = await this.trial.administrators(tenantId);
+        if (!admins.ok) return admins;
+        for (const adminId of admins.value) {
+          const sent = new Set<TrialNoticeRule>();
+          for (const rule of ["TRIAL_3D", "TRIAL_1D", "TRIAL_ENDED"] as const) {
+            const was = await this.ledger.wasSent(tenantId, adminId, "trial", rule);
+            if (!was.ok) return was;
+            if (was.value) sent.add(rule);
+          }
+          const notice = dueTrialNotice({ endsAt: end.value, now, alreadySent: sent });
+          if (!notice) continue;
+          // Record first, as above: a failed send must not become a second send next hour.
+          const recorded = await this.ledger.record({ tenantId, recipientId: adminId, subjectKey: "trial", ruleKey: notice.rule, sentOn: today });
+          if (!recorded.ok) return recorded;
+          await this.notifier.send({ tenantId, recipientId: adminId, type: "DEADLINE_REMINDER", title: notice.title, message: notice.message, urgent: true });
+          trialNoticesSent += 1;
+        }
+      }
+    }
+
+    if (summariesSent + escalationsSent + trialNoticesSent > 0) {
       await this.audit.record({
         tenantId, actorId: ctx.tenant.userId, eventType: "reminders.sent", entityType: "organization", entityId: tenantId.toString(),
-        newValue: JSON.stringify({ day: today, summariesSent, escalationsSent, quiet }),
+        newValue: JSON.stringify({ day: today, summariesSent, escalationsSent, trialNoticesSent, quiet }),
       });
     }
-    return ok({ ran: true, summariesSent, quiet, escalationsSent });
+    return ok({ ran: true, summariesSent, quiet, escalationsSent, ...(this.trial ? { trialNoticesSent } : {}) });
   }
 }
 

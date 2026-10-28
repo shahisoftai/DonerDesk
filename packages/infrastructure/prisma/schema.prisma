@@ -33,6 +33,8 @@ model Organization {
   agentMemoryEnabled Boolean @default(false)
   /// Ask DonorDesk (Phase 33.9): questions answered from the organisation's own records. Off until an administrator opts in.
   askEnabled Boolean @default(false)
+  /// Two-step sign-in is required of everyone in the organisation from this moment (Phase 33.12); null = optional.
+  mfaRequiredFrom DateTime?
   /// Set when a NonprofitVerification for this tenant is APPROVED (Phase 22 WS-G).
   nonprofitVerifiedAt DateTime?
   createdAt     DateTime @default(now())

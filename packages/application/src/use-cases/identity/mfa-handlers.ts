@@ -1,8 +1,8 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, Permissions, TenantId, minutesUntil, type Role } from "@donordesk/domain";
+import { DomainError, Permissions, TenantId, minutesUntil, mfaGate, type MfaGate, type Role } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger } from "../../ports/core.js";
-import type { IAuthProvider, IMfaService, IUserRepository } from "../../ports/identity.js";
+import type { IAuthProvider, IMfaService, IOrganizationRepository, IUserRepository } from "../../ports/identity.js";
 
 const ISSUER = "DonorDesk";
 const WRONG_CODE = "That code is not right. Use the current code from your authenticator app, or one of your recovery codes.";
@@ -71,13 +71,23 @@ export class CompleteMfaLoginHandler {
 
 /** Whether two-step sign-in is on, and how many recovery codes are left. */
 export class GetMfaStatusHandler {
-  constructor(private readonly users: IUserRepository) {}
+  constructor(
+    private readonly users: IUserRepository,
+    /** With these, the answer also says whether the organisation requires two-step sign-in and where this person stands. */
+    private readonly orgs?: IOrganizationRepository,
+    private readonly ssoManaged = false,
+    private readonly now: () => Date = () => new Date(),
+  ) {}
 
-  async handle(ctx: AuthenticatedContext): Promise<Result<{ enabled: boolean; enabledAt: Date | null; recoveryCodesLeft: number }, DomainError>> {
+  async handle(ctx: AuthenticatedContext): Promise<Result<{ enabled: boolean; enabledAt: Date | null; recoveryCodesLeft: number; requirement: MfaGate; requiredFrom: Date | null }, DomainError>> {
     const found = await this.users.findById(ctx.tenant.userId, ctx.tenant.tenantId);
     if (!found.ok) return found;
     if (!found.value) return { ok: false, error: DomainError.notFound("User", ctx.tenant.userId) };
-    return { ok: true, value: { enabled: found.value.mfaEnabled, enabledAt: found.value.mfaEnabledAt, recoveryCodesLeft: found.value.mfaRecoveryHashes.length } };
+    const org = this.orgs ? await this.orgs.findByTenant(ctx.tenant.tenantId) : null;
+    if (org && !org.ok) return org;
+    const requiredFrom = org?.ok ? org.value?.mfaRequiredFrom ?? null : null;
+    const requirement = mfaGate({ requiredFrom, now: this.now(), userHasMfa: found.value.mfaEnabled, ssoManaged: this.ssoManaged });
+    return { ok: true, value: { enabled: found.value.mfaEnabled, enabledAt: found.value.mfaEnabledAt, recoveryCodesLeft: found.value.mfaRecoveryHashes.length, requirement, requiredFrom } };
   }
 }
 
@@ -134,6 +144,8 @@ export class DisableMfaHandler {
     private readonly auth: IAuthProvider,
     private readonly mfa: IMfaService,
     private readonly audit: IAuditLogger,
+    /** With this, a person cannot turn it off while the organisation requires it. */
+    private readonly orgs?: IOrganizationRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: { password: string; code: string }): Promise<Result<void, DomainError>> {
@@ -142,6 +154,12 @@ export class DisableMfaHandler {
     const user = found.value;
     if (!user) return { ok: false, error: DomainError.notFound("User", ctx.tenant.userId) };
     if (!user.mfaEnabled) return { ok: true, value: undefined };
+    if (this.orgs) {
+      const org = await this.orgs.findByTenant(ctx.tenant.tenantId);
+      if (!org.ok) return org;
+      const from = org.value?.mfaRequiredFrom;
+      if (from && from.getTime() <= Date.now()) return { ok: false, error: DomainError.conflict("Your organization requires two-step sign-in, so it cannot be turned off. Ask an administrator if you have lost your phone.") };
+    }
     if (!(await this.auth.verifyPassword(input.password, user.passwordHash))) return { ok: false, error: DomainError.forbidden("The password is not right.") };
     if (!acceptCode(user, this.mfa, input.code, new Date())) return { ok: false, error: DomainError.forbidden(WRONG_CODE) };
     user.disableMfa();
