@@ -480,3 +480,4 @@ Recorded as they were left on the host after each release. The operator runbook 
 **Database:** `donordesk_migrator` owns the tables and has BYPASSRLS (which is why the admin container can resolve a token to a tenant). `donordesk_app` has no UPDATE/DELETE on `AuditEvent`.
 
 **Backups:** `donordesk-backup.service` was run before every migration in this phase. The restore script has not been run against these new tables; the next scheduled restore test should include them.
+- Deployed 2026-10-28 `releaseId=20261028071848` (web only, `SCOPE=web`): version label 3.007 on the legal pages. No migration.
