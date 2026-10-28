@@ -25,6 +25,7 @@ export * from "./contexts/workplan/index.js";
 export * from "./contexts/places/index.js";
 export * from "./contexts/integrations/index.js";
 export * from "./contexts/collection/index.js";
+export * from "./contexts/collection/connector.js";
 export * from "./contexts/dashboards/index.js";
 export * from "./contexts/ask/index.js";
 export * from "./contexts/infographics/index.js";
