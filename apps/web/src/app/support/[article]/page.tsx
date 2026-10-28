@@ -15,6 +15,10 @@ const FILE_MAP: Record<string, { file: string; title: string }> = {
   "reference-error-codes": { file: "reference-error-codes.md", title: "Common Messages and What to Do" },
   "reference-keyboard-shortcuts": { file: "reference-keyboard-shortcuts.md", title: "Keyboard Shortcuts" },
   "reference-donor-reporting-guidelines": { file: "reference-donor-reporting-guidelines.md", title: "Donor Reporting Guidelines Index" },
+  "reference-daily-summary-and-reminders": { file: "reference-daily-summary-and-reminders.md", title: "Daily Summary and Reminders" },
+  "reference-ai-usage-and-cost": { file: "reference-ai-usage-and-cost.md", title: "AI Usage and Estimated Cost" },
+  "reference-report-locks-and-reopening": { file: "reference-report-locks-and-reopening.md", title: "Locked Figures and Reopening a Report" },
+  "reference-sign-in-passwords-and-lockout": { file: "reference-sign-in-passwords-and-lockout.md", title: "Passwords and Sign-in Lockout" },
 };
 
 export async function generateStaticParams() {

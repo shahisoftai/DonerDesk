@@ -16,7 +16,8 @@ Open **Projects → your project → Activities**.
    - **Total participants**, with **Female**, **Male**, **Children** and **Participants with disability** where relevant
    - **Achievements**, **Challenges**, **Lessons learned** and **Next steps**
    - **Upload evidence (optional)**: drop the proof files (photos, registers, attendance sheets) on the form, choose them from your computer, or click **Take a photo** on a phone.
-3. Click **Submit activity**.
+3. If your project has a plan, choose which planned activity this is. DonorDesk suggests up to three and says why. Choose "None of these" if it was not planned.
+4. Click **Submit activity**.
 
 ## Tell it in your own words
 

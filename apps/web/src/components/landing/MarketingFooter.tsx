@@ -19,7 +19,7 @@ export function MarketingFooter() {
               />
             </Link>
             <p className="text-sm leading-relaxed text-mist">
-              Run your programme. Report from the record.
+              Manage your projects and programmes. Report from the record.
             </p>
             <a
               href="https://www.linkedin.com/company/donordesk-online/"

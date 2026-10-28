@@ -1,15 +1,23 @@
 const FAQS = [
   {
     q: "What is DonorDesk?",
-    a: "DonorDesk is a programme management system for grant-funded organisations. You keep the logframe, indicators, activities, evidence and compliance in one record, and donor reports are drafted from that record, checked against it and approved by a person.",
+    a: "DonorDesk is a project and programme management suite for grant-funded organisations. You keep the logframe, work plan, field data collection, indicators, activities, evidence, risks and compliance in one record, see it on dashboards and maps, and draft donor reports from that record, checked against it and approved by a person.",
   },
   {
     q: "Is DonorDesk just a reporting tool?",
-    a: "No. Reporting is the output. The working system is the logframe, the activity records, the indicator data, the evidence library, the team's queue and the compliance checklist. Those are useful every month, not only at the deadline.",
+    a: "No. Reporting is the output. The working system is the logframe, the work plan and Timeline, collection forms and the field app, the indicator data, maps and dashboards, the evidence library, the team's queue, risks and the compliance checklist. Those are useful every week, not only at the deadline.",
   },
   {
     q: "Who is DonorDesk for?",
     a: "Local and national NGOs, INGOs, UN implementing partners, consultancies and government programme units that run grant-funded work and report it to donors or funding authorities.",
+  },
+  {
+    q: "Can DonorDesk plan and track our activities, not only report them?",
+    a: "Yes. You can plan activities with dates and leads, move them on a Timeline, see what is late, record problems and risks, ask a colleague for work, and see planned work on a map. Planning is optional, and a project without a plan works as before.",
+  },
+  {
+    q: "Can we collect data with forms and connect other tools?",
+    a: "Yes. Build collection forms, share them with members or by link, and turn accepted records into indicator totals. KoboToolbox and SurveyCTO submissions can be brought in, and read-only API keys, signed webhooks and an MCP server connect other tools.",
   },
   {
     q: "Can DonorDesk produce reports for any donor?",
@@ -21,7 +29,7 @@ const FAQS = [
   },
   {
     q: "Can field staff record activities without internet?",
-    a: "Partly. A finished activity is kept on the phone or laptop and sent when the connection returns. The DonorDesk app itself needs a connection to open, so it is not a full offline app.",
+    a: "Yes, for field work. Download a project to a phone once, then fill forms, take photos and finish activities with no signal; they are sent when the connection returns. The rest of the app needs a connection to open.",
   },
   {
     q: "Can we keep our evidence in our own Google Drive?",
@@ -37,7 +45,7 @@ const FAQS = [
   },
   {
     q: "Which export formats are supported?",
-    a: "Reports export to Word and PDF, indicator tables and the data sheet to Excel, and evidence packs to ZIP. A watermarked internal copy is available for review at any stage, and a donor submission needs a clean, approved report.",
+    a: "Reports export to Word and PDF, indicator tables and the data sheet to Excel, infographics to PNG, PDF and SVG, and evidence packs to ZIP. A watermarked internal copy is available for review at any stage, and a donor submission needs a clean, approved report.",
   },
   {
     q: "Can DonorDesk submit reports to donors directly?",

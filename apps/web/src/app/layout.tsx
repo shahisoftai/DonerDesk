@@ -7,7 +7,7 @@ import { GeistSans } from "geist/font/sans";
 import { ThemeScript } from "@/components/ThemeScript";
 
 const DESCRIPTION =
-  "Run your grant-funded programme in one place: logframe, indicators, activities, evidence and compliance. Donor reports are drafted from that record, checked against it and approved by a person.";
+  "Manage your projects and programmes in one place: logframe, work plan, field data collection, indicators, maps, dashboards, evidence and compliance. Donor reports are drafted from that record, checked against it and approved by a person.";
 
 export const viewport: Viewport = {
   themeColor: [
@@ -20,12 +20,15 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://donordesk.online"),
   applicationName: "DonorDesk",
   title: {
-    default: "DonorDesk — programme management and donor reporting",
+    default: "DonorDesk — project and programme management",
     template: "%s · DonorDesk",
   },
   description: DESCRIPTION,
   keywords: [
+    "project management software for NGOs",
     "grant programme management software",
+    "field data collection",
+    "work plan and timeline",
     "NGO programme management",
     "logframe software",
     "indicator tracking",
@@ -41,9 +44,9 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
   },
   openGraph: {
-    title: "DonorDesk — AI-assisted grant and donor reporting",
+    title: "DonorDesk — project and programme management",
     description:
-      "Turn programme data, field evidence, and indicator results into professional, source-linked reports.",
+      "Plan, deliver, measure and report grant-funded programmes from one record, with source-linked donor reports.",
     url: "/",
     siteName: "DonorDesk",
     type: "website",
@@ -51,9 +54,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "DonorDesk — AI-assisted grant and donor reporting",
+    title: "DonorDesk — project and programme management",
     description:
-      "Turn programme data, field evidence, and indicator results into professional, source-linked reports.",
+      "Plan, deliver, measure and report grant-funded programmes from one record, with source-linked donor reports.",
   },
 };
 
@@ -72,7 +75,7 @@ const structuredData = {
         height: 600,
       },
       description:
-        "AI-assisted grant and donor reporting for humanitarian, development, and other evidence-heavy funded programmes.",
+        "Project and programme management, with source-linked donor reporting, for humanitarian, development, and other evidence-heavy funded programmes.",
     },
     {
       "@type": "WebSite",
@@ -90,7 +93,7 @@ const structuredData = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "DonorDesk turns programme data, activity records, indicator results, and supporting evidence into source-linked reports with compliance checks and human approval.",
+        "DonorDesk manages grant-funded projects and programmes: logframe, work plan, field data collection, indicators, maps, dashboards and evidence, with source-linked reports, compliance checks and human approval.",
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       publisher: { "@id": "https://donordesk.online/#organization" },
     },

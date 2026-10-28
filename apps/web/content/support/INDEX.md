@@ -9,7 +9,7 @@ Source files for the public Support Center at donordesk.online/support. Each fil
 - Labels and statuses: `apps/web/src/lib/labels.ts`
 - Report editor: `apps/web/src/features/report-editor/`
 - Email delivery is not active in production, so invitations are shared as links and notifications are in-app only.
-- There is no public API, two-factor authentication, donation/CRM module, custom fields or in-app account deletion. Do not document them.
+- Built and documented: work plan, collection forms and field app, maps, dashboards, infographics, Ask DonorDesk (opt-in), read-only API/webhooks/MCP, KoboToolbox/SurveyCTO connectors, two-step sign-in (optional, can be required), interface languages. There is no donation/CRM module and no in-app account deletion. Do not document them.
 
 ## Getting Started (`basic-information/` and `basic-information-*.md`)
 what-is-donordesk, getting-started-overview, key-concepts, understanding-projects, understanding-logframes, logframe hierarchy, indicators and targets, understanding-evidence, evidence verification, understanding-activities, reporting periods, compliance checklist, report sections / statuses / readiness / workflow, audit logs, donor templates, storage and file management, AI in DonorDesk, data security, user roles and permissions, pricing plans.

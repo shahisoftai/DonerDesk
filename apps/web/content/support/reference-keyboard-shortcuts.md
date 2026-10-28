@@ -26,6 +26,21 @@ While editing text, standard formatting shortcuts apply | Shortcut | Action |
 
 (Use Cmd instead of Ctrl on Mac.)
 
+## Timeline
+
+| Key | Action |
+|---|---|
+| **← / →** (bar focused) | Move the activity one day |
+| **Shift + ← / →** | Change the end date by a day |
+| **Save** | Confirm the move; **Esc** cancels |
+
+## Dashboard canvas
+
+| Key | Action |
+|---|---|
+| **Arrow keys** | Move the chart |
+| **Shift + arrow keys** | Resize the chart |
+
 ## Portal
 
 | Key | Action |

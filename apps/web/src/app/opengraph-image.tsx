@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "DonorDesk — AI-assisted grant and donor reporting";
+export const alt = "DonorDesk — project and programme management";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -24,7 +24,7 @@ export default function OpengraphImage() {
           From scattered field evidence to donor-ready reports
         </div>
         <div style={{ fontSize: 32, color: "#cbd5e1", marginTop: 32 }}>
-          AI-assisted, source-linked grant and donor reporting for NGOs
+          Plan, deliver, measure and report your programmes, for NGOs
         </div>
       </div>
     ),

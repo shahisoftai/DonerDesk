@@ -3,10 +3,10 @@
 ## General
 
 ### What is DonorDesk?
-A programme management system for grant-funded organisations. You keep the logframe, indicators, activities, evidence, compliance and team in one record, and donor reports are drafted from that record, checked against it and approved by a person. See [What is DonorDesk?](/support/getting-started/what-is-donordesk).
+A project and programme management suite for grant-funded organisations. You keep the logframe, work plan, field data collection, indicators, activities, risks, evidence, maps, dashboards, compliance and team in one record, and donor reports are drafted from that record, checked against it and approved by a person. See [What is DonorDesk?](/support/getting-started/what-is-donordesk).
 
 ### Is DonorDesk just a reporting tool?
-No. Reporting is what the system produces. The working parts are the logframe, the activity records, the indicator data in the Data Center, the evidence library, My Work (your queue across projects) and the compliance checklist. Those are useful every month, not only when a report is due. See [Features](/features).
+No. Reporting is what the system produces. The working parts are the logframe, the work plan and Timeline, collection forms and the field app, the activity records, the indicator data in the Data Center, maps and dashboards, the evidence library, risks, My Work (your queue across projects) and the compliance checklist. Those are useful every month, not only when a report is due. See [Features](/features).
 
 ### Who is it for?
 Local and national NGOs, INGOs, UN implementing partners, consultancies and government programme units.
@@ -38,7 +38,7 @@ Admin, Project Manager, M&E Officer, Grants Officer, Field Officer, Compliance O
 **Team → Invite member**, then send the acceptance link yourself (invitation emails are not sent automatically). See [How to invite team members](/support/how-to/invite-team-members).
 
 ### Do you support two-factor authentication or SSO?
-Two-factor authentication is not available yet. SSO / SCIM directory integration is part of the Enterprise plan; talk to us through [contact sales](/contact-sales).
+Two-step sign-in with an authenticator app is available to staff accounts, and an administrator can require it for everyone (see [Turn on two-step sign-in](/support/how-to/turn-on-two-step-sign-in) and [Require it for everyone](/support/how-to/require-two-step-sign-in)). Outside partners can use it too. SSO / SCIM directory integration is part of the Enterprise plan; talk to us through [contact sales](/contact-sales).
 
 ### How do I delete my account?
 Email privacy@donordesk.online. See [How DonorDesk handles your data](/support/security-privacy/data-handling).
@@ -68,6 +68,21 @@ Yes. On the Activities list click **Select all waiting**, then **Accept n select
 
 ### Why did my evidence not count for the report?
 A monthly or quarterly report uses the files of its own period and its activities; link the file to its activity and it follows. Final, annual and semi-annual reports use all of the project's verified evidence. See [How to upload evidence](/support/how-to/upload-evidence).
+
+### Do I have to plan my activities?
+No. Planning is optional. A project with no planned activities works exactly as before, and an Admin can hide the plan for a project in its settings. See [How to plan your activities](/support/how-to/plan-your-activities).
+
+### Can I collect data in DonorDesk, including offline?
+Yes. Build a [collection form](/support/how-to/collect-answers-with-a-form), then use the [field app](/support/how-to/use-the-field-app-offline) to fill it with no connection. Records are reviewed by a person before they become indicator values. You can also bring in [KoboToolbox or SurveyCTO submissions](/support/how-to/bring-in-kobotoolbox-or-surveycto-submissions).
+
+### Can I see my work on a map or a dashboard?
+Yes. Planned work appears on a [map](/support/how-to/see-your-work-on-a-map), and you can pin charts on a [dashboard](/support/how-to/make-a-dashboard) and share it by link. A missing value is always shown as missing, never as zero.
+
+### Can other tools read my data?
+Yes, read-only. See [API keys, webhooks and AI assistants](/support/how-to/connect-api-keys-webhooks-and-ai-assistants).
+
+### Which languages do the screens come in?
+English, French, Spanish and Arabic. The French, Spanish and Arabic translations are first drafts awaiting native review. See [Change the language](/support/how-to/change-the-interface-language).
 
 ### What file types and sizes?
 Common documents, spreadsheets, images and text, up to 100 MB per file. See [File formats](/support/reference-file-formats).
@@ -142,7 +157,7 @@ Not by itself. A chart keeps the data it showed when you added it, so an approve
 An approver (Admin or Project Manager) can **reopen** it from the **⋯** menu, with a reason. It goes back to draft; only the sections you change need approving again, and the report is approved again. See [How to reopen an approved report](/support/how-to/reopen-an-approved-report).
 
 ### Can I connect other tools?
-Google Drive and Google Sheets are supported. There is no public API yet; ask about integrations via [contact sales](/contact-sales).
+Google Drive and Google Sheets are supported. A read-only public API, signed webhooks, an AI-assistant (MCP) server and KoboToolbox / SurveyCTO connectors are available; see [Connect API keys, webhooks and AI assistants](/support/how-to/connect-api-keys-webhooks-and-ai-assistants). For anything else, ask via [contact sales](/contact-sales).
 
 ## Still stuck?
 

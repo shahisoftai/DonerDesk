@@ -10,10 +10,10 @@ import { StageTabs } from "@/components/landing/home/StageTabs";
 import styles from "@/components/landing/home/home.module.css";
 
 const ROLES = [
-  { name: "Field Officer", description: "Records activities and dictates them from the field." },
-  { name: "Project Manager", description: "Reviews and accepts activity records and signs off reports." },
-  { name: "M&E Officer", description: "Owns indicators, values and the Data Center." },
-  { name: "Grants Officer", description: "Watches deadlines, readiness and donor requirements." },
+  { name: "Field Officer", description: "Opens on My week, records activities and fills forms offline, and dictates from the field." },
+  { name: "Project Manager", description: "Plans the work, reviews activities, watches delivery and signs off reports." },
+  { name: "M&E Officer", description: "Owns indicators, collection forms, values and the Data Center." },
+  { name: "Grants Officer", description: "Watches deadlines, readiness, programmes and donor requirements." },
   { name: "Compliance Officer", description: "Checks that claims are backed by evidence." },
   { name: "Admin", description: "Manages the workspace, members and plan." },
   { name: "Viewer", description: "Reads the record without changing it. Viewers do not use a seat." },
@@ -132,11 +132,11 @@ export default function HomePage() {
           <div className={styles.pillars}>
             <article className={styles.pillar}>
               <h3>Set it up once</h3>
-              <p>Set the logframe once. Each role sees the records, indicators and evidence it works with, and the report deadlines coming up.</p>
+              <p>Set the logframe and the work plan once. Each role sees the work, records, indicators and evidence it needs, and the deadlines coming up.</p>
             </article>
             <article className={styles.pillar}>
               <h3>See it while it can change</h3>
-              <p>Every indicator value sits in one sheet across all periods, against its own target, so progress is visible before a deadline forces it.</p>
+              <p>Late work, indicator values against their targets, places and risks are visible on one Overview, dashboards and maps, before a deadline forces it.</p>
             </article>
             <article className={styles.pillar}>
               <h3>Prove it when it counts</h3>
@@ -157,7 +157,7 @@ export default function HomePage() {
               </h2>
             </div>
             <p className={styles.lede}>
-              Every stage draws on the same records, so the work you log today is the evidence you need at the end. DonorDesk records and evidences delivery; activities are logged as they happen.
+              Every stage draws on the same records, so the work you plan and log today is the evidence you need at the end. DonorDesk manages the programme and evidences delivery; it does not replace your finance system.
             </p>
           </div>
           <StageTabs />
@@ -255,7 +255,7 @@ export default function HomePage() {
             Every grant <em>kept in its own record</em>
           </h2>
           <p className={styles.lede}>
-            Each grant is its own project with its own logframe, team and reports. Your plan sets how many you can run at once.
+            Each grant is its own project with its own logframe, plan, team and reports, grouped under programmes and grants. Your plan sets how many you can run at once.
           </p>
           <div className={styles.portfolio}>
             {PORTFOLIO.map((project) => (
@@ -352,7 +352,7 @@ export default function HomePage() {
               hash-chained, so an edit to history is detectable.
             </p>
             <p className={styles.body}>
-              Stored AI outputs keep the model and prompt version used to write them. The Data Processing Agreement and
+              Stored AI outputs keep the model and prompt version used to write them. Administrators can require two-step sign-in for everyone, and outside partners see named projects only. The Data Processing Agreement and
               subprocessor list are published before you sign up.
             </p>
             <p className={styles.body}>

@@ -8,7 +8,7 @@ import { FEATURE_GROUPS } from "@/components/landing/platform-content";
 export const metadata: Metadata = {
   title: "Features",
   description:
-    "Every DonorDesk module: logframe and indicators, activity capture, the Data Center, evidence, team roles, donor templates, sourced AI drafting, compliance checks, approval and exports, with the limits stated.",
+    "DonorDesk is a complete suite for managing projects and programmes: logframe and indicators, work plan and timeline, field data collection and offline app, maps, evidence, Data Center, dashboards, infographics, donor reporting, integrations and security, with the limits stated.",
   alternates: { canonical: "/features" },
 };
 
@@ -28,12 +28,13 @@ export default function FeaturesPage() {
         <div className="mx-auto max-w-4xl text-center">
           <p className="text-sm font-bold uppercase tracking-widest text-brand-300">Features</p>
           <h1 className="mt-4 text-5xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-6xl">
-            The programme, and the report it produces
+            Manage the whole programme, from plan to proof
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-300">
-            DonorDesk is a working system for grant-funded programmes. You run the logframe, record activities, keep the
-            evidence and track compliance. Donor reports are drafted from that record, checked against it, and approved by a
-            person. Each feature below says what it does, who uses it, and what to know before you rely on it.
+            DonorDesk is a complete suite for managing projects and programmes. You set up the logframe, plan the work, collect
+            data in the field, keep the evidence, watch results on dashboards and maps, and produce donor reports from the same
+            record, checked against it and approved by a person. Each feature below says what it does, who uses it, and what
+            to know before you rely on it.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link

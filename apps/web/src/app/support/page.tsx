@@ -24,7 +24,7 @@ const CATEGORIES = [
       </svg>
     ),
     title: "How-To Guides",
-    description: "Step-by-step tutorials for every DonorDesk feature.",
+    description: "Step-by-step tutorials: planning, field data, maps, dashboards, reporting, integrations.",
     href: "/support/how-to",
     color: "from-skyline/25 to-skyline/15",
     borderColor: "hover:border-skyline/50",
@@ -102,11 +102,14 @@ const POPULAR_GUIDES = [
 ];
 
 const RECENT_GUIDES = [
+  { title: "How to plan your activities", href: "/support/how-to/plan-your-activities", category: "New" },
+  { title: "How to collect answers with a form", href: "/support/how-to/collect-answers-with-a-form", category: "New" },
+  { title: "How to use the field app without a connection", href: "/support/how-to/use-the-field-app-offline", category: "New" },
+  { title: "How to make and share a dashboard", href: "/support/how-to/make-a-dashboard", category: "New" },
+  { title: "How to make an infographic", href: "/support/how-to/make-an-infographic", category: "New" },
+  { title: "How to see your work on a map", href: "/support/how-to/see-your-work-on-a-map", category: "New" },
   { title: "How to use the Academy tour and demo project", href: "/support/how-to/use-the-academy-tour", category: "New" },
-  { title: "AI Settings and AI Writing Style", href: "/support/advanced-features/ai-settings", category: "New" },
-  { title: "Plans and limits (updated pricing)", href: "/support/account-billing/plans-and-limits", category: "Billing" },
   { title: "Tell the story and add report inputs", href: "/support/how-to/tell-the-story-and-add-inputs", category: "How-To" },
-  { title: "Troubleshooting export issues", href: "/support/troubleshooting/export-issues", category: "Troubleshooting" },
   { title: "Security best practices", href: "/support/security-privacy/security-best-practices", category: "Security" },
 ];
 

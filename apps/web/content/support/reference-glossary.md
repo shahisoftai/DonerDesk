@@ -175,6 +175,42 @@ A verification that no longer holds because the data or evidence changed afterwa
 **Withdrawn (activity)**
 An activity record left out of reports because it was a duplicate, a mistake or was replaced by another record. It can be restored. An accepted record can be withdrawn too, unless an approved report used it. Withdrawn records are not counted and are not offered when linking evidence. See [How to review and accept activities](/support/how-to/review-and-accept-activities).
 
+**Planned activity**
+Work you plan ahead, with dates and a lead. See [How to plan your activities](/support/how-to/plan-your-activities).
+
+**Completed activity**
+The entry made after doing the work: what happened, who came, and the files that prove it. It can point at the planned activity it delivers.
+
+**Milestone**
+A planned activity with one date.
+
+**On time / Late**
+Worked out from the dates and the completed activities linked to a planned activity. Never typed in.
+
+**Lead**
+The person responsible for a planned activity.
+
+**Collection form**
+A set of questions you publish to collect answers, in the field app or by link. See [Collect answers with a form](/support/how-to/collect-answers-with-a-form).
+
+**Field app**
+The offline page at /field where downloaded forms are filled with no signal. See [Use the field app without a connection](/support/how-to/use-the-field-app-offline).
+
+**Place**
+A country, area or site in your list of places; results can be rolled up by place.
+
+**Dashboard**
+A canvas of charts drawn from project data each time it is opened. See [Make and share a dashboard](/support/how-to/make-a-dashboard).
+
+**Infographic**
+A one-page design that stores layout, never data. See [Make an infographic](/support/how-to/make-an-infographic).
+
+**Programme / Grant**
+Groupings of projects by funder and funding. See [Set up programmes and grants](/support/how-to/set-up-programmes-and-grants).
+
+**Outside partner**
+A person invited to named projects only. See [Invite an outside partner](/support/how-to/invite-an-outside-partner).
+
 **Top-up pack**
 Extra AI report drafts bought on Team or Growth.
 

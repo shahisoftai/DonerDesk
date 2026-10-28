@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/pricing" },
   title: "Plans & Pricing",
   description:
-    "DonorDesk plans and pricing: start free, upgrade when the programme grows. Logframe, activities, evidence and compliance in one record, with donor reports drafted from it, for NGOs.",
+    "DonorDesk plans and pricing: start free, upgrade when the programme grows. Project and programme management in one record: logframe, work plan, field data collection, maps, dashboards, evidence and compliance, with donor reports drafted from it, for NGOs.",
 };
 
 type Cell = string | { text: string; muted?: boolean };
@@ -30,7 +30,7 @@ const PLANS = [
       "Full evidence vault with Google Drive link-first storage and R2 uploads within quota",
       "Claim-level provenance: every number in a draft traces to a verified source",
       "Immutable audit trail and human-approved review workflow",
-      "Core reporting, logframe & indicator tracking, DOCX/PDF exports",
+      "Core reporting, logframe & indicator tracking, work plan, collection forms, DOCX/PDF exports",
       "Community support",
     ],
   },

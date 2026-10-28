@@ -24,5 +24,5 @@ If the server refuses a record (for example a required field is missing), it mov
 - Only the **new activity form** (with its photos) works offline. Other forms need a connection and show *You appear to be offline* so you can try again.
 - Saved records stay on **that device and browser, for the person signed in**. On a shared phone, one person's records are never sent under another person's login.
 - Clearing the browser's site data before the records are sent deletes them. Stay signed in until the bar disappears.
-- The page itself must already be open (or loaded) to be used without a signal; opening DonorDesk for the first time offline is not supported yet.
+- The page itself must already be open (or loaded) to be used without a signal. For forms and a whole project offline, use the [field app](/support/how-to/use-the-field-app-offline), which can be opened with no signal once it has been loaded.
 - On a phone, use your browser's **Add to Home screen** to open DonorDesk like an app.

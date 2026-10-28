@@ -28,7 +28,8 @@ const STAGES: Stage[] = [
       "Goals, outcomes, outputs and activities, each with indicators whose baselines and targets are set once and reused in every report.",
     points: [
       { term: "Logframe and indicators.", text: "Baselines, targets and aggregation are fixed at the start. Indicators with values are archived, not deleted." },
-      { term: "Team and roles.", text: "Seven roles, so each person sees and changes only the part their job needs." },
+      { term: "Work plan.", text: "Plan activities with dates and leads, optionally from your logframe, then follow them on a Timeline, calendar or map." },
+      { term: "Team and roles.", text: "Seven roles, plus outside partners limited to named projects." },
       { term: "Donor templates.", text: "Load a donor's required structure from its file once, then reuse it across grants that share it." },
     ],
     example: {
@@ -52,12 +53,13 @@ const STAGES: Stage[] = [
       "The person who did the activity writes it down the same day, typed or dictated. The reporting period follows from the date.",
     points: [
       { term: "Activity capture.", text: "Who, where, when and how many, in a few lines. The form fills from what the words state and never overwrites what you typed." },
-      { term: "My Work.", text: "One queue across every project: what to record, what to review, what to fix." },
+      { term: "My Work and My week.", text: "One queue across every project, and a week view for field staff." },
+      { term: "Forms and field app.", text: "Collect answers and photos with or without a signal; accepted records feed indicator totals." },
       { term: "Evidence library.", text: "Documents, photos and records stored in your Google Drive or in managed storage, linked to the activity they prove." },
     ],
     limit: {
       term: "Offline:",
-      text: "an entry is queued on the device if the connection drops, then sent when it returns. The app itself still needs a connection to open.",
+      text: "download a project once and the field app (/field) works with no signal; entries are queued and sent when it returns. The rest of the app needs a connection to open.",
     },
     example: {
       caption: "My Work, example",
@@ -79,6 +81,7 @@ const STAGES: Stage[] = [
       "Every indicator, every period, every recorded value in one sheet. A gap is shown as not measured, never as zero.",
     points: [
       { term: "Data Center.", text: "Values across periods with charts. Import a spreadsheet to add values, with a preview before anything is saved." },
+      { term: "Dashboards, maps and places.", text: "Pin charts to shareable dashboards, see delivery on a map and results by place." },
       { term: "Roll-ups.", text: "Semi-annual, annual and final reports show the period, the life of project and percent of target side by side." },
       { term: "Rates are read as rates.", text: "A percentage indicator is judged against its baseline and target, not as a share of target." },
     ],
@@ -102,6 +105,7 @@ const STAGES: Stage[] = [
       "Reports, checks and approvals all draw on the same record, so a donor can be shown the evidence behind each claim.",
     points: [
       { term: "Compliance checklist.", text: "The donor's requirements, with blockers and the next step for each, weeks before the deadline." },
+      { term: "Infographics and answers.", text: "Publish one-page infographics, and ask questions that answer only from cited records." },
       { term: "Sourced drafting.", text: "Each section is drafted from your activities, indicators and evidence, with its sources shown." },
       { term: "Approval and export.", text: "A second approver when the project requires one. Export to Word, PDF, Excel or an evidence ZIP. DonorDesk does not send reports to donors." },
     ],

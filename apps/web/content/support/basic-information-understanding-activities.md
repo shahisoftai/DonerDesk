@@ -2,6 +2,8 @@
 
 Activities are the field updates that document what your team did during a reporting period: a training, a distribution, a monitoring visit, a meeting.
 
+There are two kinds of activity in DonorDesk. A **planned activity** is work you plan ahead, with dates and a lead. A **completed activity** is the entry someone makes after doing the work: what happened, who came, and the files that prove it. A completed activity can point at the planned activity it delivers; then the plan shows what was done, and what is late. See [How to plan your activities](/support/how-to/plan-your-activities).
+
 ## Activity vs logframe activity
 
 The **logframe** describes planned activities as part of the results framework. **Activities** in the Activities tab are the *records of what actually happened*, with dates, places, participants and narrative.

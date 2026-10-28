@@ -15,6 +15,10 @@ Seats are counted by role. Full seats are every role except **Viewer**; Viewers 
 
 | Action | Who |
 |---|---|
+| Plan and schedule activities | Admin, Project Manager, M&E Officer |
+| Update the activities you lead (status, notes, place) | Admin, Project Manager, M&E Officer, Grants Officer, Field Officer, Compliance Officer |
+| Show or hide work planning for a project | Admin |
+| Require two-step sign-in for everyone; create API keys and webhooks | Admin |
 | Approve a report | Admin, Project Manager |
 | Decide on flagged statements | Admin, Project Manager |
 | Confirm sharing of confidential (Sensitive / Highly sensitive) evidence in an export | Admin, Grants Officer |

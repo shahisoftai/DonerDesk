@@ -12,10 +12,10 @@ const STATEMENTS = [
   {
     heading: (
       <>
-        Your whole programme, <em>in one</em> place.
+        Every project and programme, <em>managed in one</em> place.
       </>
     ),
-    lede: "Set up the logframe, record activities as they happen, track every indicator and keep the evidence beside the work. Donor reports are drawn from that same record.",
+    lede: "Set up the logframe, plan the work, collect data in the field, track every indicator on maps and dashboards, and keep the evidence beside it. Donor reports are drawn from that same record.",
   },
   {
     heading: (
@@ -57,7 +57,7 @@ export function HomeHero() {
     >
       <div className={`${styles.wrap} ${styles.heroGrid}`}>
         <div>
-          <p className={styles.eyebrow}>Programme management for NGOs</p>
+          <p className={styles.eyebrow}>Project and programme management for NGOs</p>
           <div className={styles.slides}>
             {STATEMENTS.map((statement, i) => (
               <div key={i} className={`${styles.slide} ${i === index ? styles.slideOn : ""}`} aria-hidden={i !== index}>
