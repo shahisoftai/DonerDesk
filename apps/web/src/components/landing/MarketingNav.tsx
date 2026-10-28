@@ -19,9 +19,11 @@ export function MarketingNav() {
         </Link>
         <div className="hidden items-center gap-7 text-sm font-medium text-mist lg:flex">
           <Link href="/features" className="transition hover:text-white">Features</Link>
-          <Link href="/#how-it-works" className="transition hover:text-white">How it works</Link>
-          <Link href="/#who-its-for" className="transition hover:text-white">Who it&apos;s for</Link>
+          <Link href="/#flow" className="transition hover:text-white">How it works</Link>
+          <Link href="/#roles" className="transition hover:text-white">Who it&apos;s for</Link>
+          <Link href="/solutions" className="transition hover:text-white">Solutions</Link>
           <Link href="/pricing" className="transition hover:text-white">Pricing</Link>
+          <Link href="/compare" className="transition hover:text-white">Compare</Link>
           <Link href="/security" className="transition hover:text-white">Security</Link>
           <Link href="/support" className="text-saffron transition hover:text-white">Support</Link>
         </div>

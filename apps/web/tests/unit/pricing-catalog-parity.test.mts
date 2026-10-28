@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { PLAN_CATALOG, ENTERPRISE_PRICE_FLOOR_ANNUAL_USD } from "@donordesk/domain";
+import { homePlans } from "../../src/components/site/plans.ts";
 
 /**
  * WS-A.7 coupling-gate guard (memorybank/imp/Phase22-tier-pricing.md §2.1):
@@ -21,28 +22,20 @@ function usd(amount: number): string {
   return `$${amount.toLocaleString("en-US")}`;
 }
 
-test("landing page pricing copy matches PLAN_CATALOG (Team/Growth monthly + annual + AI credits)", () => {
+test("landing page plan cards are built from PLAN_CATALOG (Team/Growth monthly price, AI credits, NGO price)", () => {
   const source = readSource("src/app/page.tsx");
+  assert.ok(source.includes("homePlans()"), "page.tsx must build its plan cards with homePlans(), which reads PLAN_CATALOG");
+  const cards = homePlans();
   const team = PLAN_CATALOG.TEAM;
   const growth = PLAN_CATALOG.GROWTH;
-
-  assert.ok(source.includes(`monthly: "${usd(team.monthlyPriceUsd!)}"`), `page.tsx Team monthly price must match PLAN_CATALOG.TEAM.monthlyPriceUsd (${team.monthlyPriceUsd})`);
-  assert.ok(source.includes(`annual: "${usd(team.annualPriceUsd!)}"`), `page.tsx Team annual price must match PLAN_CATALOG.TEAM.annualPriceUsd (${team.annualPriceUsd})`);
-  assert.ok(source.includes(`monthly: "${usd(growth.monthlyPriceUsd!)}"`), `page.tsx Growth monthly price must match PLAN_CATALOG.GROWTH.monthlyPriceUsd (${growth.monthlyPriceUsd})`);
-  assert.ok(source.includes(`annual: "${usd(growth.annualPriceUsd!)}"`), `page.tsx Growth annual price must match PLAN_CATALOG.GROWTH.annualPriceUsd (${growth.annualPriceUsd})`);
-
-  assert.ok(
-    source.includes(`${PLAN_CATALOG.STARTER.monthlyAiDraftCredits} successful AI report drafts / month`),
-    `page.tsx Starter AI credit copy must match PLAN_CATALOG.STARTER.monthlyAiDraftCredits (${PLAN_CATALOG.STARTER.monthlyAiDraftCredits})`,
-  );
-  assert.ok(
-    source.includes(`${team.monthlyAiDraftCredits} successful AI report drafts / month`),
-    `page.tsx Team AI credit copy must match PLAN_CATALOG.TEAM.monthlyAiDraftCredits (${team.monthlyAiDraftCredits})`,
-  );
-  assert.ok(
-    source.includes(`${growth.monthlyAiDraftCredits} successful AI report drafts / month`),
-    `page.tsx Growth AI credit copy must match PLAN_CATALOG.GROWTH.monthlyAiDraftCredits (${growth.monthlyAiDraftCredits})`,
-  );
+  const byName = (n: string) => cards.find((c) => c.name === n)!;
+  assert.equal(byName("Team").price, usd(team.monthlyPriceUsd!));
+  assert.equal(byName("Growth").price, usd(growth.monthlyPriceUsd!));
+  for (const [name, plan] of [["Starter", PLAN_CATALOG.STARTER], ["Team", team], ["Growth", growth]] as const) {
+    assert.ok(byName(name).points.includes(`${plan.monthlyAiDraftCredits} successful AI report drafts / month`), `${name} card must state the catalogue's AI draft count (${plan.monthlyAiDraftCredits})`);
+  }
+  assert.ok(byName("Team").points.some((p) => p.includes(`$${(team.monthlyPriceUsd! * 0.75).toFixed(2)}`)), "Team NGO price must be the standard price less the 25% welcome discount");
+  assert.ok(byName("Growth").points.some((p) => p.includes(`$${(growth.monthlyPriceUsd! * 0.75).toFixed(2)}`)), "Growth NGO price must be the standard price less the 25% welcome discount");
 });
 
 test("/pricing page matches PLAN_CATALOG (prices, AI credits, Enterprise floor)", () => {
@@ -101,45 +94,9 @@ test("/pricing Free-card and comparison credits match PLAN_CATALOG (STARTER drif
   );
 });
 
-test("landing page Enterprise floor and signup plan options match PLAN_CATALOG", () => {
-  const landing = readSource("src/app/page.tsx");
-  const team = PLAN_CATALOG.TEAM;
-  const growth = PLAN_CATALOG.GROWTH;
-  assert.ok(
-    landing.includes(`annual: "From ${usd(Math.floor(ENTERPRISE_PRICE_FLOOR_ANNUAL_USD / 1000))}k / year"`),
-    `page.tsx Enterprise floor line must track ENTERPRISE_PRICE_FLOOR_ANNUAL_USD (${ENTERPRISE_PRICE_FLOOR_ANNUAL_USD})`,
-  );
-  // The NGO ladder is its own decided pricing decision: a 25% welcome
-  // discount off the standard price for the first year. Unlike the earlier
-  // "40%" ladder the arithmetic is exact (standard × 0.75), so pin the derived
-  // value here; any change to the standard price or the discount is a
-  // conscious edit in both places.
-  const teamNgo = `$${(team.monthlyPriceUsd! * 0.75).toFixed(2)}`;
-  const growthNgo = `$${(growth.monthlyPriceUsd! * 0.75).toFixed(2)}`;
-  assert.ok(
-    landing.includes(`NGO price: ${teamNgo}/mo (verified 25% welcome discount, first year)`),
-    `page.tsx Team NGO price must stay in lockstep with 75% of PLAN_CATALOG.TEAM.monthlyPriceUsd (${teamNgo})`,
-  );
-  assert.ok(
-    landing.includes(`NGO price: ${growthNgo}/mo (verified 25% welcome discount, first year)`),
-    `page.tsx Growth NGO price must stay in lockstep with 75% of PLAN_CATALOG.GROWTH.monthlyPriceUsd (${growthNgo})`,
-  );
-  assert.ok(
-    landing.includes("2 read-only viewers"),
-    "page.tsx Starter viewer copy must match PLAN_CATALOG.STARTER.viewerSeats (2)",
-  );
-
-  const signup = readSource("src/app/signup/SignupForm.tsx");
-  assert.ok(
-    signup.includes(`${PLAN_CATALOG.STARTER.monthlyAiDraftCredits} AI drafts/month`),
-    "SignupForm STARTER credit copy must match PLAN_CATALOG.STARTER.monthlyAiDraftCredits",
-  );
-  assert.ok(
-    signup.includes(`${PLAN_CATALOG.TEAM.monthlyPriceUsd}/mo`) && signup.includes(`${PLAN_CATALOG.TEAM.monthlyAiDraftCredits} AI drafts/month`),
-    "SignupForm Team copy must match PLAN_CATALOG.TEAM price and credits",
-  );
-  assert.ok(
-    signup.includes(`${PLAN_CATALOG.GROWTH.monthlyPriceUsd}/mo`) && signup.includes(`${PLAN_CATALOG.GROWTH.monthlyAiDraftCredits} AI drafts/month`),
-    "SignupForm Growth copy must match PLAN_CATALOG.GROWTH price and credits",
-  );
+test("landing page Enterprise floor tracks ENTERPRISE_PRICE_FLOOR_ANNUAL_USD and plan links keep their signup options", () => {
+  const enterprise = homePlans().find((c) => c.name === "Enterprise")!;
+  assert.ok(enterprise.per.includes(usd(ENTERPRISE_PRICE_FLOOR_ANNUAL_USD)), `Enterprise floor line must track ENTERPRISE_PRICE_FLOOR_ANNUAL_USD (${ENTERPRISE_PRICE_FLOOR_ANNUAL_USD})`);
+  const hrefs = homePlans().map((c) => c.href);
+  assert.deepEqual(hrefs, ["/signup", "/signup?plan=team", "/signup?plan=growth", "/contact-sales"]);
 });

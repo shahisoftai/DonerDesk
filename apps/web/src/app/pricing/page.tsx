@@ -81,7 +81,7 @@ const PLANS = [
     code: "ENTERPRISE",
     name: "Enterprise",
     priceLine: "Custom",
-    annualLine: "Annual contract arranged with sales · guided pilot",
+    annualLine: "Annual contract from $12,000 / year, arranged with sales · guided pilot",
     tagline: "For INGOs, research institutions, public bodies, and multi-country programmes.",
     cta: { label: "Talk to us", href: "/contact-sales" },
     highlight: false,
@@ -98,7 +98,7 @@ const PLANS = [
 
 const COMPARISON: { label: string; cells: [Cell, Cell, Cell, Cell] }[] = [
   { label: "Monthly price", cells: ["$0", "$79", "$149", "Custom"] },
-  { label: "Annual price (2 months free)", cells: ["$0", "$790", "$1,490", "Custom"] },
+  { label: "Annual price (2 months free)", cells: ["$0", "$790", "$1,490", "From $12,000/yr"] },
   { label: "NGO welcome price — 25% off, first year", cells: ["—", "$59.25/mo · $592.50/yr", "$111.75/mo · $1,117.50/yr", "Built into contract"] },
   { label: "Active projects", cells: ["1", "5", "20", "Unlimited / contracted"] },
   { label: "Archived projects", cells: ["Unlimited", "Unlimited", "Unlimited", "Unlimited"] },
@@ -188,10 +188,10 @@ export default function PricingPage() {
             />
           </Link>
           <div className="hidden items-center gap-7 text-sm font-medium text-slate-300 lg:flex">
-            <Link href="/#features" className="transition hover:text-white">Features</Link>
-            <Link href="/#how-it-works" className="transition hover:text-white">How it works</Link>
+            <Link href="/features" className="transition hover:text-white">Features</Link>
+            <Link href="/#flow" className="transition hover:text-white">How it works</Link>
             <span className="font-semibold text-white">Pricing</span>
-            <Link href="/#security" className="transition hover:text-white">Security</Link>
+            <Link href="/security" className="transition hover:text-white">Security</Link>
             <Link href="/support" className="text-brand-300 transition hover:text-white">Support</Link>
           </div>
           <div className="flex items-center gap-3">
@@ -408,9 +408,9 @@ export default function PricingPage() {
             <div>
               <h4 className="font-semibold text-white">Product</h4>
               <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-                <li><Link href="/#features" className="transition hover:text-white">Features</Link></li>
+                <li><Link href="/features" className="transition hover:text-white">Features</Link></li>
                 <li><Link href="/pricing" className="text-brand-300 transition hover:text-white">Pricing & plans</Link></li>
-                <li><Link href="/#security" className="transition hover:text-white">Security</Link></li>
+                <li><Link href="/security" className="transition hover:text-white">Security</Link></li>
                 <li><a href="mailto:support@donordesk.online" className="transition hover:text-white">Sales: support@donordesk.online</a></li>
               </ul>
             </div>

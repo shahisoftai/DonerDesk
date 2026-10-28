@@ -1,391 +1,201 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import Script from "next/script";
 import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
-import { HomeFaq } from "@/components/landing/HomeFaq";
-import { MarketingNav } from "@/components/landing/MarketingNav";
-import { MarketingFooter } from "@/components/landing/MarketingFooter";
-import { HomeHero } from "@/components/landing/home/HomeHero";
-import { StageTabs } from "@/components/landing/home/StageTabs";
-import styles from "@/components/landing/home/home.module.css";
+import { SiteShell } from "@/components/site/SiteShell";
+import { SiteFooter } from "@/components/site/SiteFooter";
+import { FieldFlow } from "@/components/site/FieldFlow";
+import { Hero, SectorProvider, StudioDemo } from "@/components/site/SectorStage";
+import { SECTOR_PAGES, SOUND_FAMILIAR } from "@/components/site/site-data";
+import { homePlans } from "@/components/site/plans";
+
+const JOBS = [
+  { key: "Plan", title: "Plan what matters", points: ["Logframe, indicators and targets, set once", "Work plan with timeline, calendar and map", "Risks and changes of plan on record"], wide: false },
+  { key: "Collect", title: "Collect it in the field", points: ["Forms and activity records, typed or dictated", "Offline app that sends when signal returns", "KoboToolbox, SurveyCTO and Excel brought in"], wide: false },
+  { key: "Track", title: "Track against targets", points: ["A spreadsheet-style sheet for entering results", "Every indicator against its own target", "Gaps shown as gaps, never as zero"], wide: false },
+  { key: "See", title: "See it your way", points: ["Chart Studio with more than 40 chart types and full editing", "Dashboards from sector templates, then make them yours", "Maps by place, wall-screen mode and print"], wide: true },
+  { key: "Prove", title: "Prove it when it counts", points: ["Evidence stays linked to what it proves", "Every change is in a tamper-evident log", "Confidential files stay confidential"], wide: true },
+  { key: "Report", title: "Report from the record", points: ["Upload a donor template once and reuse it across grants", "Drafts cite their sources; numbers come from verified data", "Checks before submission; a person approves and exports"], wide: false, full: true },
+] as const;
 
 const ROLES = [
-  { name: "Field Officer", description: "Opens on My week, records activities and fills forms offline, and dictates from the field." },
-  { name: "Project Manager", description: "Plans the work, reviews activities, watches delivery and signs off reports." },
-  { name: "M&E Officer", description: "Owns indicators, collection forms, values and the Data Center." },
-  { name: "Grants Officer", description: "Watches deadlines, readiness, programmes and donor requirements." },
-  { name: "Compliance Officer", description: "Checks that claims are backed by evidence." },
-  { name: "Admin", description: "Manages the workspace, members and plan." },
-  { name: "Viewer", description: "Reads the record without changing it. Viewers do not use a seat." },
+  { face: "D", name: "Directors", text: "The whole portfolio at a glance: what is late, what is on target, what the funder will ask next." },
+  { face: "P", name: "Project managers", text: "Plan the work, review activities, watch delivery and sign off the report." },
+  { face: "M", name: "M&E officers", text: "Own the indicators, forms and values. Enter results in a sheet, build charts and reports." },
+  { face: "G", name: "Grants and compliance", text: "Deadlines, readiness, donor requirements, and claims backed by evidence." },
+  { face: "F", name: "Field officers", text: "Record activities and fill forms on a phone, offline, or by dictating." },
+  { face: "V", name: "Partners and boards", text: "Read the record without changing it. Viewers do not use a paid seat." },
 ];
 
-const PORTFOLIO = [
-  { name: "Emergency Response: Health", status: "On track", tone: "pillOk", period: "Q3 report", percent: 83, ready: "Ready 92%", color: "var(--teal)" },
-  { name: "WASH Recovery, Nigeria", status: "Review", tone: "pillWarn", period: "Semi-annual", percent: 61, ready: "Ready 61%", color: "var(--saffron)" },
-  { name: "Girls' Education Pilot", status: "Gap", tone: "pillOpen", period: "Activity records", percent: 38, ready: "38%", color: "var(--sky)" },
-] as const;
-
-const LOOP_STEPS = [
-  { label: "Q1", title: "Set the baseline", description: "Indicators, targets and team are fixed once and reused in every period.", color: "var(--teal)" },
-  { label: "Q2", title: "Record as you go", description: "Activities and values are entered where the work happens, in the period their date falls in.", color: "var(--saffron)" },
-  { label: "Q3", title: "Correct the course", description: "Gaps show in the Data Center while there is still time to act, not after the grant closes.", color: "var(--sky)" },
-  { label: "Q4", title: "Report from the record", description: "The donor report is drafted from the same data, with each claim traced to its source.", color: "var(--coral)" },
-] as const;
-
-const TRIALS_ENABLED = process.env.NEXT_PUBLIC_TRIALS_ENABLED === "1";
-
-const PLANS = [
-  {
-    code: "STARTER",
-    name: "Starter",
-    monthly: "$0",
-    annual: "$0",
-    tagline: "For small organizations managing their first funded programme.",
-    cta: { label: "Start free", href: "/signup" },
-    highlight: false,
-    features: [
-      "1 active project + unlimited archived",
-      "1 seat + 2 read-only viewers",
-      "1 GB managed storage",
-      "5 successful AI report drafts / month",
-      "Evidence vault, provenance & audit trail",
-      "Community support",
-    ],
-  },
-  {
-    code: "TEAM",
-    name: "Team",
-    monthly: "$79",
-    annual: "$790",
-    tagline: "For growing teams reporting across several grants or projects.",
-    cta: { label: "Continue", href: "/signup?plan=team" },
-    highlight: true,
-    features: [
-      "5 active projects + unlimited archived",
-      "5 full seats + unlimited viewers",
-      "25 GB managed storage",
-      "20 successful AI report drafts / month",
-      "AI donor-template extraction",
-      "AI credit top-ups (+50 for $79)",
-      TRIALS_ENABLED ? "14-day free trial" : "",
-      "Email support",
-      "NGO price: $59.25/mo (verified 25% welcome discount, first year)",
-    ].filter(Boolean),
-  },
-  {
-    code: "GROWTH",
-    name: "Growth",
-    monthly: "$149",
-    annual: "$1,490",
-    tagline: "For organizations with multiple funders and substantial reporting volume.",
-    cta: { label: "Continue", href: "/signup?plan=growth" },
-    highlight: false,
-    features: [
-      "20 active projects",
-      "15 full seats + unlimited viewers",
-      "100 GB managed storage",
-      "100 successful AI report drafts / month",
-      "Bring your own AI provider",
-      "AI credit top-ups (+100 for $149)",
-      TRIALS_ENABLED ? "14-day free trial" : "",
-      "Soft overage instead of a hard stop",
-      "Priority email support + onboarding call",
-      "NGO price: $111.75/mo (verified 25% welcome discount, first year)",
-    ].filter(Boolean),
-  },
-  {
-    code: "ENTERPRISE",
-    name: "Enterprise",
-    monthly: "Custom",
-    annual: "From $12k / year",
-    tagline: "For INGOs, research institutions, public bodies, and multi-country programmes.",
-    cta: { label: "Contact us", href: "/contact-sales" },
-    highlight: false,
-    features: [
-      "Unlimited projects & seats",
-      "Contractual storage & AI credits",
-      "SSO / SCIM",
-      "Custom data residency",
-      "SLA & dedicated support",
-      "Procurement & security review support",
-    ],
-  },
+const FAQ = [
+  { q: "Is DonorDesk a fundraising tool?", a: "It helps you show results to supporters and funders: infographics, shareable dashboards and reports drawn from verified results. It does not hold donor records or take payments. If you need a donor database, keep yours and use DonorDesk for the programme side." },
+  { q: "Does the AI write our reports?", a: "It drafts sections from your own record and cites the source of each statement. Numbers come from verified data, claims are checked, and a person approves before anything is exported." },
+  { q: "Can we use it where there is no internet?", a: "Yes. The field app keeps forms and activity records on the phone and sends them when a connection returns." },
+  { q: "Can we bring our KoboToolbox or SurveyCTO data?", a: "Yes. Submissions come in as records you review before they count, and Excel imports work throughout." },
+  { q: "What happens to our data if we stop?", a: "You keep it. Export everything, including files, whenever you like." },
 ];
 
 export default function HomePage() {
   return (
-    <main className={styles.home}>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
-      />
-      <MarketingNav />
+    <SiteShell footer={<SiteFooter />}>
+      <SectorProvider>
+        <Hero />
 
-      <HomeHero />
-
-      {/* Statement and pillars */}
-      <section className={`${styles.band} ${styles.tint} ${styles.edge}`}>
-        <div className={styles.wrap}>
-          <p className={styles.statement}>
-            Know where your programme stands <em>before</em> the donor asks.
-          </p>
-          <div className={styles.pillars}>
-            <article className={styles.pillar}>
-              <h3>Set it up once</h3>
-              <p>Set the logframe and the work plan once. Each role sees the work, records, indicators and evidence it needs, and the deadlines coming up.</p>
-            </article>
-            <article className={styles.pillar}>
-              <h3>See it while it can change</h3>
-              <p>Late work, indicator values against their targets, places and risks are visible on one Overview, dashboards and maps, before a deadline forces it.</p>
-            </article>
-            <article className={styles.pillar}>
-              <h3>Prove it when it counts</h3>
-              <p>Files stay linked to the activity or indicator they prove. Every change is in an audit log, so anyone can check what was recorded and by whom.</p>
-            </article>
+        <div className="sx-strip">
+          <div className="sx-wrap sx-strip-grid">
+            <div className="sx-facts"><span>Free plan, no card</span><span>Works offline in the field</span><span>Export everything, any time</span><span>A person approves every report</span></div>
           </div>
         </div>
-      </section>
 
-      {/* The programme cycle */}
-      <section id="how-it-works" className={styles.band}>
-        <div className={styles.wrap}>
-          <div className={styles.stagesHead}>
+        <section className="sx-sound sx-band" id="sound">
+          <div className="sx-wrap">
+            <div className="sx-sec-head"><p className="sx-eyebrow">Sound familiar?</p><h2>The work is real. The paperwork should not be the hard part.</h2></div>
+            <div className="sx-grid sx-g5">
+              {SOUND_FAMILIAR.map((q) => <div className="sx-card" key={q}><q>{q}</q></div>)}
+            </div>
+          </div>
+        </section>
+
+        <section id="platform">
+          <div className="sx-wrap">
+            <div className="sx-sec-head"><p className="sx-eyebrow">One record, six jobs</p><h2>Everything a funded programme needs, from first target to final report.</h2><p className="sx-lede">Each job opens into the detail. All of it works from the same record, so nothing is typed twice.</p></div>
+            <div className="sx-grid sx-jobs">
+              {JOBS.map((j) => (
+                <article key={j.key} className={`sx-card sx-job${"wide" in j && j.wide ? " sx-wide" : ""}${"full" in j && j.full ? " sx-full" : ""}`}>
+                  <span className="sx-k">{j.key}</span>
+                  <h3>{j.title}</h3>
+                  <ul>{j.points.map((p) => <li key={p}>{p}</li>)}</ul>
+                </article>
+              ))}
+            </div>
+            <p style={{ marginTop: 20 }}><Link className="sx-link" href="/features">See every feature →</Link></p>
+          </div>
+        </section>
+
+        <section className="sx-band" id="studio">
+          <div className="sx-wrap">
+            <div className="sx-sec-head"><p className="sx-eyebrow">See it your way</p><h2>Ask a question of your own results. Get a chart a donor can read.</h2><p className="sx-lede">Try it with the sector you chose above. Every chart is drawn from recorded results, and a chart that would mislead says why instead of drawing.</p></div>
+            <StudioDemo />
+          </div>
+        </section>
+
+        <section id="flow">
+          <div className="sx-wrap">
+            <div className="sx-sec-head"><p className="sx-eyebrow">From the field to the donor</p><h2>A number is recorded once. Everything else follows from it.</h2></div>
+            <FieldFlow />
+          </div>
+        </section>
+
+        <section className="sx-band" id="supporters">
+          <div className="sx-wrap sx-sup">
             <div>
-              <p className={styles.eyebrow}>The programme cycle</p>
-              <h2>
-                Set it up. Deliver it. Measure it. <em>Prove it.</em>
-              </h2>
+              <p className="sx-eyebrow">Show supporters what their gift did</p>
+              <h2 style={{ fontSize: "clamp(30px,4vw,46px)", fontWeight: 800, marginTop: 14 }}>Turn results into a page your supporters want to share.</h2>
+              <p className="sx-lede" style={{ marginTop: 16 }}>Make a one-page infographic from your verified results, in your colours and your language. Share it as a link or put it on your website. Use it in campaign updates and donor newsletters, and let funders see progress without waiting for the report.</p>
+              <ul style={{ color: "var(--muted)", paddingInlineStart: 20, marginTop: 14 }}>
+                <li>Figures come from the record, so they match the report</li>
+                <li>English, French, Spanish and Arabic layouts</li>
+                <li>Links expire and can be withdrawn</li>
+              </ul>
+              <p className="sx-notice">DonorDesk helps you show results to supporters. It is not a donor database or a payment tool.</p>
             </div>
-            <p className={styles.lede}>
-              Every stage draws on the same records, so the work you plan and log today is the evidence you need at the end. DonorDesk manages the programme and evidences delivery; it does not replace your finance system.
-            </p>
+            <div className="sx-infog" aria-label="Example infographic">
+              <span className="sx-eyebrow">Example · Health programme, first half-year</span>
+              <div><div className="sx-big">2,480</div><div style={{ fontWeight: 600 }}>children treated for malnutrition</div></div>
+              <div className="sx-row3"><div><b>94%</b>recovered</div><div><b>31</b>clinics</div><div><b>6</b>districts</div></div>
+              <svg viewBox="0 0 400 90" width="100%" aria-hidden="true"><path d="M0 76 60 66 120 60 180 44 240 40 300 24 400 10" fill="none" stroke="var(--brand)" strokeWidth="3.2" strokeLinecap="round" /><path d="M0 76 60 66 120 60 180 44 240 40 300 24 400 10V90H0Z" fill="var(--brand)" opacity=".12" /></svg>
+              <div className="sx-share"><span>donordesk.online/shared/…</span><span className="sx-pill">Link expires</span></div>
+            </div>
           </div>
-          <StageTabs />
-        </div>
-      </section>
+        </section>
 
-      {/* Each cycle starts from the last */}
-      <section className={`${styles.band} ${styles.tint} ${styles.edge}`}>
-        <div className={`${styles.wrap} ${styles.loop}`}>
-          <div>
-            <p className={styles.eyebrow}>Why it compounds</p>
-            <h2>
-              Each cycle <em>starts</em> from the last one
-            </h2>
-            <p className={styles.lede}>
-              The indicators, activities and evidence from one period carry into the next. Each period starts from what is
-              already recorded, so the next report begins where the last one left off.
-            </p>
+        <section id="roles">
+          <div className="sx-wrap">
+            <div className="sx-sec-head"><p className="sx-eyebrow">Who it is for</p><h2>Everyone sees the part of the record they need.</h2></div>
+            <div className="sx-grid sx-g3">
+              {ROLES.map((r) => <div className="sx-card sx-role" key={r.name}><span className="sx-face">{r.face}</span><h3>{r.name}</h3><p>{r.text}</p></div>)}
+            </div>
           </div>
-          <div>
-            {LOOP_STEPS.map((step) => (
-              <div key={step.label} className={styles.step} style={{ "--c": step.color } as CSSProperties}>
-                <span className={styles.dotBadge}>{step.label}</span>
-                <div>
-                  <h4>{step.title}</h4>
-                  <p>{step.description}</p>
+        </section>
+
+        <section className="sx-band" id="solutions">
+          <div className="sx-wrap">
+            <div className="sx-sec-head"><p className="sx-eyebrow">By sector</p><h2>See it in the words of your own work.</h2></div>
+            <div className="sx-grid sx-g3">
+              {SECTOR_PAGES.map((s) => (
+                <div className="sx-card" key={s.slug}><h3>{s.name}</h3><p>{s.indicatorExample.charAt(0).toUpperCase() + s.indicatorExample.slice(1)}.</p><Link className="sx-more" href={`/solutions/${s.slug}`}>See how it fits →</Link></div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="trust">
+          <div className="sx-wrap sx-grid sx-g2" style={{ alignItems: "start" }}>
+            <div><p className="sx-eyebrow">Trust and control</p><h2 style={{ fontSize: "clamp(30px,4vw,46px)", fontWeight: 800, marginTop: 14 }}>Built for work that must stand up to a funder, an auditor and a security review.</h2></div>
+            <div className="sx-card sx-trust">
+              <ul>
+                <li><b>Separate by design.</b> Each organisation&apos;s data is isolated in the database itself.</li>
+                <li><b>Traceable.</b> Every change goes into a tamper-evident audit log.</li>
+                <li><b>Controlled.</b> Roles per project, a second-approver rule, and outside partners limited to named projects.</li>
+                <li><b>Protected.</b> Two-step sign-in that an administrator can require, and encryption options for stored files.</li>
+                <li><b>Yours.</b> Export your data and leave any time.</li>
+                <li><b>Plain about limits.</b> We hold no security certification today, and we say so.</li>
+              </ul>
+              <Link className="sx-link" href="/security" style={{ display: "inline-block", marginTop: 14 }}>Read the security page →</Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="sx-band" id="pricing">
+          <div className="sx-wrap">
+            <div className="sx-sec-head"><p className="sx-eyebrow">Pricing</p><h2>Start free. Pay when the programme grows.</h2><p className="sx-lede">Verified NGOs get 25% off the first year.</p></div>
+            <div className="sx-grid sx-plans">
+              {homePlans().map((p) => (
+                <div key={p.name} className={`sx-card sx-price${p.primary ? " sx-hi" : ""}`}>
+                  <h3>{p.name}</h3>
+                  <div className="sx-amt">{p.price} <small>{p.per}</small></div>
+                  <p>{p.tagline}</p>
+                  <ul>{p.points.map((x) => <li key={x}>{x}</li>)}</ul>
+                  <Link className={`sx-btn ${p.primary ? "sx-primary" : "sx-ghost"}`} href={p.href} style={{ justifyContent: "center" }}>{p.cta}</Link>
                 </div>
-              </div>
+              ))}
+            </div>
+            <p className="sx-fine"><Link className="sx-link" href="/pricing">Compare every plan in detail →</Link></p>
+          </div>
+        </section>
+
+        <section id="resources">
+          <div className="sx-wrap">
+            <div className="sx-sec-head"><p className="sx-eyebrow">Learn more</p><h2>Look around before you decide.</h2></div>
+            <div className="sx-grid sx-g3">
+              <div className="sx-card"><h3>Product tour</h3><p>Walk through a project from logframe to donor report, with no sign-up.</p><Link className="sx-more" href="/tour">Take the tour →</Link></div>
+              <div className="sx-card"><h3>Support centre</h3><p>Step-by-step guides for every part of the product, written in plain words.</p><Link className="sx-more" href="/support">Open the guides →</Link></div>
+              <div className="sx-card"><h3>How we compare</h3><p>What other tools are built for, what they cost where they say so, and when each is the better fit.</p><Link className="sx-more" href="/compare">See the comparison →</Link></div>
+            </div>
+          </div>
+        </section>
+
+        <section className="sx-band" id="faq">
+          <div className="sx-wrap" style={{ maxWidth: 860 }}>
+            <div className="sx-sec-head"><p className="sx-eyebrow">Questions</p><h2>What people ask before they start.</h2></div>
+            {FAQ.map((f, i) => (
+              <details key={f.q} open={i === 0}><summary>{f.q}</summary><p>{f.a}</p></details>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Reporting, as one outcome */}
-      <section id="reporting" className={styles.band}>
-        <div className={`${styles.wrap} ${styles.report}`}>
-          <div className={styles.doc} aria-label="Example draft section">
-            <span className={styles.stamp}>Draft</span>
-            <h3 className={styles.docTitle}>Progress against outcome 1</h3>
-            <p className={styles.docMeta}>Section drafted from the programme record · Example</p>
-            <p>
-              Between July and September, 1,240 children were vaccinated against a target of 1,500, or 83 percent of target for the
-              period <span className={styles.cite}>[ind. V-01]</span>. Mobile clinics ran in 38 of 41 planned outreach visits{" "}
-              <span className={styles.cite}>[act. 38/41]</span>.
-            </p>
-            <p>
-              Attendance was lowest in Ward 4 during the flooding in August, when two of the planned clinics could not reach the
-              community <span className={styles.cite}>[ev. field log]</span>.
-            </p>
-          </div>
-          <div>
-            <p className={styles.eyebrow}>Reporting</p>
-            <h2>
-              A donor asks. <em>The answer is already in the record.</em>
-            </h2>
-            <p className={styles.lede}>
-              Reports are assembled from the record, not rebuilt from it. Every number traces to a verified value, and every
-              statement links to the activity, indicator or file behind it.
-            </p>
-            <div className={styles.checks}>
-              <div className={styles.check}>
-                <span className={styles.checkMark} aria-hidden="true">●</span>
-                <div>
-                  <b>Numbers come from the record</b>
-                  A figure that is not in the inputs is rejected before the draft is shown.
-                </div>
-              </div>
-              <div className={styles.check}>
-                <span className={styles.checkMark} aria-hidden="true">●</span>
-                <div>
-                  <b>Claims are checked</b>
-                  Statements are compared with their evidence and with the project&apos;s own records.
-                </div>
-              </div>
-              <div className={styles.check}>
-                <span className={styles.checkMark} aria-hidden="true">●</span>
-                <div>
-                  <b>A person approves</b>
-                  Nothing is submitted until the responsible person signs it off.
-                </div>
+        <section>
+          <div className="sx-wrap">
+            <div className="sx-final">
+              <h2>See your own programme in DonorDesk.</h2>
+              <p>Create a free workspace and bring a real grant, or book a 20-minute walkthrough.</p>
+              <div className="sx-cta-row" style={{ justifyContent: "center", margin: 0 }}>
+                <Link className="sx-btn sx-primary" href="/signup">Create a free workspace</Link>
+                <Link className="sx-btn sx-ghost" href="/contact-sales">Book a walkthrough</Link>
               </div>
             </div>
-            <p className={styles.linkRow}>
-              <Link href="/features">See every feature, with its limits →</Link>
-            </p>
           </div>
-        </div>
-      </section>
-
-      {/* Portfolio */}
-      <section id="portfolio" className={`${styles.band} ${styles.tint} ${styles.edge}`}>
-        <div className={styles.wrap}>
-          <p className={styles.eyebrow}>Built for the whole portfolio</p>
-          <h2>
-            Every grant <em>kept in its own record</em>
-          </h2>
-          <p className={styles.lede}>
-            Each grant is its own project with its own logframe, plan, team and reports, grouped under programmes and grants. Your plan sets how many you can run at once.
-          </p>
-          <div className={styles.portfolio}>
-            {PORTFOLIO.map((project) => (
-              <article key={project.name} className={styles.proj} style={{ "--c": project.color } as CSSProperties}>
-                <div className={styles.projTop}>
-                  <h3>{project.name}</h3>
-                  <span className={`${styles.pill} ${styles[project.tone]}`}>{project.status}</span>
-                </div>
-                <div className={styles.meter} aria-hidden="true">
-                  <i style={{ width: `${project.percent}%` }} />
-                </div>
-                <div className={styles.projMeta}>
-                  <span>{project.period}</span>
-                  <span>{project.ready}</span>
-                </div>
-              </article>
-            ))}
-          </div>
-          <p className={styles.small} style={{ marginTop: 22 }}>Example projects for illustration.</p>
-        </div>
-      </section>
-
-      {/* Roles */}
-      <section id="who-its-for" className={styles.band}>
-        <div className={styles.wrap}>
-          <p className={styles.eyebrow}>Who uses it</p>
-          <h2>
-            Each person&apos;s part, <em>in one</em> record
-          </h2>
-          <div className={styles.roles}>
-            {ROLES.map((role) => (
-              <div key={role.name} className={styles.role}>
-                <b>{role.name}</b>
-                <span>{role.description}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className={`${styles.band} ${styles.tint} ${styles.edge}`}>
-        <div className={styles.wrap}>
-          <p className={styles.eyebrow}>Pricing</p>
-          <h2>
-            Start with one project. <em>Grow</em> with the portfolio.
-          </h2>
-          <div className={styles.priceGrid}>
-            {PLANS.map((plan) => (
-              <article key={plan.code} className={`${styles.plan} ${plan.highlight ? styles.planFeatured : ""}`}>
-                {plan.highlight && <span className={styles.planBadge}>Most popular</span>}
-                <h3>{plan.name}</h3>
-                <p className={styles.planTagline}>{plan.tagline}</p>
-                <p className={styles.price}>
-                  {plan.monthly}
-                  {plan.code !== "ENTERPRISE" && <small> / month</small>}
-                </p>
-                {plan.code !== "ENTERPRISE" && <p className={styles.small}>or {plan.annual} / year (2 months free)</p>}
-                <ul className={styles.planList}>
-                  {plan.features.map((feature) => (
-                    <li key={feature}>{feature}</li>
-                  ))}
-                </ul>
-                <Link
-                  href={plan.cta.href}
-                  className={`${styles.btn} ${plan.highlight ? styles.btnPrimary : styles.btnGhost}`}
-                >
-                  {plan.cta.label}
-                </Link>
-              </article>
-            ))}
-          </div>
-          <p className={styles.priceNote}>
-            Verified nonprofits get 25% off Team and Growth for their first year; nonprofit pricing for Enterprise is built into the
-            contract. Tax is calculated at checkout where applicable. Annual billing gives two months free. Regional pricing for
-            eligible organizations in lower-income countries is available on request.{" "}
-            <Link href="/pricing">See the full plan comparison →</Link>
-          </p>
-        </div>
-      </section>
-
-      {/* Trust */}
-      <section id="security" className={styles.band}>
-        <div className={`${styles.wrap} ${styles.split}`}>
-          <div>
-            <p className={styles.eyebrow}>Trust</p>
-            <h2>
-              Your records stay <em>yours</em>
-            </h2>
-          </div>
-          <div>
-            <p className={styles.body}>
-              Each organisation&apos;s data is isolated from every other tenant at the database level. The audit log is
-              hash-chained, so an edit to history is detectable.
-            </p>
-            <p className={styles.body}>
-              Stored AI outputs keep the model and prompt version used to write them. Administrators can require two-step sign-in for everyone, and outside partners see named projects only. The Data Processing Agreement and
-              subprocessor list are published before you sign up.
-            </p>
-            <p className={styles.body}>
-              DonorDesk does not hold external certifications. We say so, and we will not claim one until it is in place.
-            </p>
-            <p className={styles.linkRow}>
-              <Link href="/security">Read the security page →</Link>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <HomeFaq />
-
-      {/* Final call to action */}
-      <section className={`${styles.band} ${styles.final} ${styles.edge}`}>
-        <div className={styles.wrap}>
-          <p className={styles.eyebrow}>Start today</p>
-          <h2>
-            Stop rebuilding the programme <em>every quarter.</em>
-          </h2>
-          <div className={styles.btns}>
-            <Link href="/signup" className={`${styles.btn} ${styles.btnPrimary}`}>
-              Create a free workspace
-            </Link>
-            <Link href="/tour" className={`${styles.btn} ${styles.btnGhost}`}>
-              Take the product tour
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <MarketingFooter />
+        </section>
+      </SectorProvider>
       <CookieConsentBanner />
       <Script id="voxeleon-chat" strategy="afterInteractive">{`
         window.voxeleonSettings = {"position":"right","type":"standard","launcherTitle":""};
@@ -400,6 +210,6 @@ export default function HomePage() {
           };
         })(document,"script");
       `}</Script>
-    </main>
+    </SiteShell>
   );
 }
