@@ -15,7 +15,7 @@ const STATUS_LABEL: Record<ApiKeyItem["status"], string> = { ACTIVE: C.statusAct
 const day = (iso: string) => iso.slice(0, 10);
 
 /** API keys and webhooks. A secret is shown once, in the box that appears when it is created, and never again. */
-export function IntegrationsPanel({ keys, webhooks }: { keys: ApiKeyItem[]; webhooks: WebhookItem[] }) {
+export function IntegrationsPanel({ keys, webhooks, projects = [] }: { keys: ApiKeyItem[]; webhooks: WebhookItem[]; projects?: Array<{ id: string; name: string }> }) {
   const router = useRouter();
   const keyAction = useActionState();
   const hookAction = useActionState();
@@ -23,6 +23,7 @@ export function IntegrationsPanel({ keys, webhooks }: { keys: ApiKeyItem[]; webh
   const [name, setName] = useState("");
   const [scopes, setScopes] = useState<string[]>(["projects:read", "indicators:read"]);
   const [days, setDays] = useState("");
+  const [projectIds, setProjectIds] = useState<string[]>([]);
   const [shownKey, setShownKey] = useState<string | null>(null);
   const [url, setUrl] = useState("");
   const [events, setEvents] = useState<string[]>(["report.approved"]);
@@ -35,7 +36,7 @@ export function IntegrationsPanel({ keys, webhooks }: { keys: ApiKeyItem[]; webh
 
   async function createKey(event: React.FormEvent) {
     event.preventDefault();
-    const out = await keyAction.run(() => createApiKeyAction({ name, scopes, ...(days ? { expiresInDays: Number(days) } : {}) }));
+    const out = await keyAction.run(() => createApiKeyAction({ name, scopes, projectIds, ...(days ? { expiresInDays: Number(days) } : {}) }));
     if (out) { setShownKey(out.token); setName(""); router.refresh(); }
   }
   async function createHook(event: React.FormEvent) {
@@ -84,7 +85,18 @@ export function IntegrationsPanel({ keys, webhooks }: { keys: ApiKeyItem[]; webh
             </div>
             {keyAction.fields?.scopes?.[0] && <p className="mt-1 text-xs text-danger-600">{keyAction.fields.scopes[0]}</p>}
           </fieldset>
-          <p className="text-xs text-slate-500 sm:col-span-2">{C.projects}: {C.projectsAll}</p>
+          <fieldset className="sm:col-span-2">
+            <legend className="label">{C.projects}</legend>
+            <label className="mt-1 flex items-center gap-2 text-sm"><input type="radio" name="key-projects" checked={projectIds.length === 0} onChange={() => setProjectIds([])} disabled={busy} />{C.projectsAll}</label>
+            <label className="flex items-center gap-2 text-sm"><input type="radio" name="key-projects" checked={projectIds.length > 0} onChange={() => setProjectIds(projects[0] ? [projects[0].id] : [])} disabled={busy || projects.length === 0} />{C.projectsOnly}</label>
+            {projectIds.length > 0 && (
+              <div className="ms-6 mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm" role="group" aria-label={C.projectsPick}>
+                {projects.map((p) => (
+                  <label key={p.id} className="flex items-center gap-2"><input type="checkbox" checked={projectIds.includes(p.id)} onChange={() => toggle(projectIds, (v) => setProjectIds(v.length === 0 ? [p.id] : v), p.id)} disabled={busy} />{p.name}</label>
+                ))}
+              </div>
+            )}
+          </fieldset>
           <div className="sm:col-span-2">
             <Button type="submit" disabled={busy || name.trim() === "" || scopes.length === 0}>{keyAction.busy ? C.creating : C.createKey}</Button>
             {keyAction.error && <p role="alert" className="mt-2 text-sm text-danger-600">{keyAction.error}</p>}
@@ -96,7 +108,7 @@ export function IntegrationsPanel({ keys, webhooks }: { keys: ApiKeyItem[]; webh
               <li key={k.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <div>
                   <span className="font-medium">{k.name}</span> <code className="text-xs text-slate-500">{k.prefix}…</code>
-                  <p className="text-xs text-slate-500">{STATUS_LABEL[k.status]} · {k.scopes.map((s) => SCOPE_LABEL[s] ?? s).join(", ")} · {k.lastUsedAt ? C.lastUsed(day(k.lastUsedAt)) : C.neverUsed}</p>
+                  <p className="text-xs text-slate-500">{STATUS_LABEL[k.status]} · {k.scopes.map((s) => SCOPE_LABEL[s] ?? s).join(", ")} · {k.projectIds.length === 0 ? C.projectsAll : projects.filter((x) => k.projectIds.includes(x.id)).map((x) => x.name).join(", ") || C.projectsOnly} · {k.lastUsedAt ? C.lastUsed(day(k.lastUsedAt)) : C.neverUsed}</p>
                 </div>
                 {k.status === "ACTIVE" && <button type="button" className="text-xs font-medium text-danger-600 hover:underline disabled:opacity-50" disabled={busy} onClick={() => act(() => revokeApiKeyAction(k.id) as never)}>{C.revoke}</button>}
               </li>

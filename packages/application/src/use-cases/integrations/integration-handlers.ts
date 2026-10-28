@@ -99,6 +99,19 @@ export interface ApiKeyPrincipal {
 export class ApiKeyAuthenticator {
   constructor(private readonly keys: IApiKeyRepository, private readonly clock: IClock) {}
 
+  /** Who a token belongs to, without asking for any particular scope (the MCP handshake lists tools by scope afterwards). */
+  async identify(header: string | undefined): Promise<{ ok: true; principal: ApiKeyPrincipal } | { ok: false; status: 401 }> {
+    const token = bearerApiToken(header);
+    if (!token) return { ok: false, status: 401 };
+    const found = await this.keys.findByTokenHash(hashApiToken(token));
+    if (!found.ok || !found.value) return { ok: false, status: 401 };
+    const key = found.value;
+    const now = this.clock.now();
+    if (key.revokedAt || (key.expiresAt && key.expiresAt <= now)) return { ok: false, status: 401 };
+    await this.keys.touch(key.id, now);
+    return { ok: true, principal: { keyId: key.id, tenantId: key.tenantId, name: key.name, scopes: key.scopes, projectIds: key.projectIds } };
+  }
+
   async authenticate(header: string | undefined, need: { scope: ApiScope; projectId?: string }): Promise<{ ok: true; principal: ApiKeyPrincipal } | { ok: false; status: 401 | 403; reason: ApiKeyRefusal | "NO_TOKEN" | "UNKNOWN" }> {
     const token = bearerApiToken(header);
     if (!token) return { ok: false, status: 401, reason: "NO_TOKEN" };

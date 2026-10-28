@@ -73,3 +73,15 @@ test("a payload carries ids and simple values only; anything text-shaped is refu
   assert.ok(isWebhookEvent("report.approved"));
   assert.ok(!isWebhookEvent("report.deleted"));
 });
+
+import { RateWindow } from "../dist/index.js";
+
+test("a key may make its limit of requests in a window; the next is refused with how long to wait; a new window starts clean", () => {
+  const w = new RateWindow(3, 60_000);
+  const t0 = 1_000_000_000_000 - (1_000_000_000_000 % 60_000);
+  assert.deepEqual([w.hit("a", t0).ok, w.hit("a", t0 + 1000).ok, w.hit("a", t0 + 2000).ok], [true, true, true]);
+  const refused = w.hit("a", t0 + 20_000);
+  assert.deepEqual(refused, { ok: false, retryAfterSeconds: 40 });
+  assert.equal(w.hit("b", t0 + 20_000).ok, true, "another key has its own count");
+  assert.deepEqual(w.hit("a", t0 + 60_000), { ok: true, remaining: 2 });
+});

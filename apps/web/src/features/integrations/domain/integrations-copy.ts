@@ -9,6 +9,10 @@ export const INTEGRATIONS_COPY = {
   scopes: "It may read",
   projects: "Projects it may see",
   projectsAll: "All projects",
+  projectsOnly: "Only the projects chosen below",
+  projectsPick: "Choose the projects",
+  mcpTitle: "Use with an AI assistant",
+  mcpBody: "The same keys also work as a Model Context Protocol server, so an AI assistant can read your projects, indicator values and results by place. Give it this address and a key as its bearer token. It can only read what the key allows, and finance is never included.",
   expires: "Stops working after",
   expiresNever: "Never",
   expiresDays: (n: number) => `${n} days`,
@@ -57,5 +61,5 @@ export const WEBHOOK_EVENT_LABEL: Readonly<Record<string, string>> = {
   "activity.accepted": "A completed activity is accepted",
 };
 
-/** Events that are sent today; the others are listed so the choice is honest about what exists. */
-export const WEBHOOK_EVENTS_LIVE: ReadonlySet<string> = new Set(["report.approved"]);
+/** Events that are sent today. All six are: each is announced where the change is recorded in the audit trail. */
+export const WEBHOOK_EVENTS_LIVE: ReadonlySet<string> = new Set(["report.approved", "report.submitted", "period.locked", "indicator.value.verified", "evidence.verified", "activity.accepted"]);

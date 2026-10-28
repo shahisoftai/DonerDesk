@@ -13,6 +13,8 @@ export interface NotifiableReport {
   id: string;
   projectId: string;
   createdById: string;
+  /** The reporting period the report covers, when known: approving it locks that period's figures. */
+  reportingPeriodId?: string;
 }
 
 /**
@@ -63,6 +65,8 @@ export class ReportNotifier implements IReportNotifier {
   async approved(tenantId: TenantId, actorId: string, report: NotifiableReport): Promise<void> {
     // Other systems are told whoever approved it (the author included); the person is not told about their own action.
     await this.webhooks?.emit(tenantId, "report.approved", { reportId: report.id, projectId: report.projectId, status: "APPROVED" });
+    // Approval also locks the period's figures (no value changes under an approved report until it is reopened).
+    if (report.reportingPeriodId) await this.webhooks?.emit(tenantId, "period.locked", { periodId: report.reportingPeriodId, projectId: report.projectId, status: "LOCKED" });
     if (report.createdById === actorId) return;
     await this.notify.send({
       tenantId, recipientId: report.createdById, type: "REPORT_APPROVED", urgent: false,
