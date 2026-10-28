@@ -284,6 +284,22 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       "Forms, a field app, and connectors bring answers in as records that a person reviews before any figure changes.",
     features: [
       {
+        id: "entry-sheet",
+        title: "The Entry Sheet",
+        summary:
+          "Enter indicator values in a grid that behaves like a spreadsheet, with every indicator and period visible.",
+        inPractice: [
+          "Paste a block from Excel or Google Sheets; values that are not possible are named and not stored.",
+          "Fill down, undo and redo, find a row, filter, sort, and show earlier periods beside the current one.",
+          "Drafts save themselves a few seconds after you stop typing; a save made offline waits on the device and is sent later.",
+          "Download a workbook with the checks built in and import it back.",
+        ],
+        who: "M&E Officer, Field Officer",
+        goodToKnow:
+          "Recently released. Autosave keeps drafts only: nothing is handed in or verified until a person does it, and verified or locked values are never changed by paste or fill.",
+        supportHref: "/support",
+      },
+      {
         id: "forms",
         title: "Collection forms and records",
         summary:
@@ -456,6 +472,54 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     intro:
       "Dashboards, infographics and plain-language questions all read the same record, and show a missing value as missing.",
     features: [
+      {
+        id: "chart-studio",
+        title: "Chart Studio",
+        summary:
+          "Draw the chart a donor or board asks for from your own recorded results, with every editing tool.",
+        inPractice: [
+          "More than 40 chart types: bars, lines, areas, pies, funnels, gauges, heatmaps, tables, Gantt, Sankey, maps and more.",
+          "Change colours, labels, axes, annotations, legends and number formats; undo and redo every step.",
+          "Save a chart for yourself or share it with the project; the last ten versions are kept and can be restored.",
+          "A chart that would mislead is refused with the reason, for example two units on one axis or a rate stacked like a count.",
+        ],
+        who: "M&E Officer, Project Manager",
+        goodToKnow:
+          "Recently released. A missing value is always a gap, never a zero, and values not yet verified are counted in a note on the chart.",
+        supportHref: "/support",
+      },
+      {
+        id: "sector-dashboards",
+        title: "Sector dashboard templates and wall display",
+        summary:
+          "Start a dashboard for your kind of work, then make it yours. Show it full screen on the office wall, or print it.",
+        inPractice: [
+          "Starter templates for water and sanitation, health, nutrition, education, food security and protection, written as roles such as \"people trained\" so you map your own indicators.",
+          "Templates are always editable drafts: copy one, change its charts, roles and layout.",
+          "Dashboards hold any studio chart, tables, text notes and saved reports, split into tabs.",
+          "Full-screen mode refreshes itself every minute; print produces a clean page.",
+        ],
+        who: "Director, M&E Officer",
+        goodToKnow:
+          "Recently released. Share links show the dashboard as it stands when opened and never include finance figures.",
+        supportHref: "/support",
+      },
+      {
+        id: "report-builder",
+        title: "Report builder and indicator views",
+        summary:
+          "Ask for results across indicators in one sentence, then keep the report or put it on a dashboard.",
+        inPractice: [
+          "\"Showing results for these indicators from this period to that one; display the value by indicator, broken down by sex.\"",
+          "Break results down by sex, age group, disability or location, with the recorded total beside the groups.",
+          "Save a report for yourself or the project, download it as a spreadsheet file, or add it to a dashboard as a table.",
+          "Each indicator page shows its results against target, over time, by place, by group and as a table.",
+        ],
+        who: "M&E Officer, Grants Officer",
+        goodToKnow:
+          "Recently released. Results are never added across indicators with different units, and a rate is never judged as a percent of target.",
+        supportHref: "/support",
+      },
       {
         id: "dashboards",
         title: "Dashboards",

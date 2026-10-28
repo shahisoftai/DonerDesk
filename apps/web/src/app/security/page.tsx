@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LEGAL } from "@/lib/legal-entity";
+import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
+import { SiteShell } from "@/components/site/SiteShell";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/security" },
@@ -10,18 +13,19 @@ export const metadata: Metadata = {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mt-8">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="mt-2 space-y-2 text-sm text-slate-600 dark:text-slate-300">{children}</div>
+    <section className="sx-prose-section">
+      <h2>{title}</h2>
+      <div className="sx-stack" style={{ marginTop: 8, color: "var(--muted)", fontSize: 15 }}>{children}</div>
     </section>
   );
 }
 
 export default function SecurityPage() {
   return (
-    <main className="mx-auto mt-12 max-w-2xl animate-fade-in px-6 pb-16">
-      <h1 className="text-2xl font-bold">Security &amp; trust</h1>
-      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+    <SiteShell footer={<SiteFooter />}>
+    <div className="sx-wrap sx-prose">
+      <h1>Security &amp; trust</h1>
+      <p className="sx-lede" style={{ marginTop: 10 }}>
         How DonorDesk isolates your organization&apos;s data, protects it, keeps a record of what happened to it, and
         who processes it on our behalf.
       </p>
@@ -100,7 +104,7 @@ export default function SecurityPage() {
         <p>
           Enterprise customers can sign in through an OpenID Connect provider, and can have their people created and
           deprovisioned by their directory over SCIM 2.0 at{" "}
-          <code className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">/scim/v2/Users</code>.
+          <code className="sx-code">/scim/v2/Users</code>.
           A SCIM credential is issued per organization; only its hash is stored, and it is shown once. Revoking it
           stops the directory&apos;s access immediately, and every provisioning call is written to the audit trail.
         </p>
@@ -118,7 +122,7 @@ export default function SecurityPage() {
         <p>
           If a security incident affects your data, we notify you without undue delay and in any case within the
           period the law requires, at the email address on your account and at{" "}
-          <a className="text-brand-600 hover:underline dark:text-brand-400" href={`mailto:${LEGAL.privacyEmail}`}>
+          <a className="sx-link" href={`mailto:${LEGAL.privacyEmail}`}>
             {LEGAL.privacyEmail}
           </a>
           . You can report a concern to the same address.
@@ -129,7 +133,7 @@ export default function SecurityPage() {
         <p>
           We publish every third party that may process personal data in a customer workspace, including the AI
           providers used for report drafting and the one place your data is hosted, in the{" "}
-          <Link className="text-brand-600 hover:underline dark:text-brand-400" href="/subprocessors">
+          <Link className="sx-link" href="/subprocessors">
             sub-processor list
           </Link>
           . No subprocessor is engaged for your content unless your configuration selects it.
@@ -140,7 +144,7 @@ export default function SecurityPage() {
         <p>
           You can export any report — with its evidence pack — at any time from within the product. To request a
           full copy of your organization&apos;s records, or full account deletion, contact{" "}
-          <a className="text-brand-600 hover:underline dark:text-brand-400" href={`mailto:${LEGAL.privacyEmail}`}>
+          <a className="sx-link" href={`mailto:${LEGAL.privacyEmail}`}>
             {LEGAL.privacyEmail}
           </a>
           . Downgrading or canceling a subscription never deletes data: your organization keeps read, export and
@@ -151,11 +155,11 @@ export default function SecurityPage() {
       <Section title="Data processing agreement (DPA)">
         <p>
           Enterprise and Growth customers may request a signed Data Processing Agreement. Email{" "}
-          <a className="text-brand-600 hover:underline dark:text-brand-400" href={`mailto:${LEGAL.privacyEmail}`}>
+          <a className="sx-link" href={`mailto:${LEGAL.privacyEmail}`}>
             {LEGAL.privacyEmail}
           </a>{" "}
           or use the{" "}
-          <Link className="text-brand-600 hover:underline dark:text-brand-400" href="/contact-sales">
+          <Link className="sx-link" href="/contact-sales">
             sales contact form
           </Link>
           .
@@ -171,21 +175,23 @@ export default function SecurityPage() {
         </p>
       </Section>
 
-      <p className="mt-8 text-sm">
+      <p className="sx-fine" style={{ marginTop: 32 }}>
         See also our{" "}
-        <Link className="text-brand-600 hover:underline dark:text-brand-400" href="/privacy">
+        <Link className="sx-link" href="/privacy">
           Privacy Policy
         </Link>
         ,{" "}
-        <Link className="text-brand-600 hover:underline dark:text-brand-400" href="/terms">
+        <Link className="sx-link" href="/terms">
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link className="text-brand-600 hover:underline dark:text-brand-400" href="/dpa">
+        <Link className="sx-link" href="/dpa">
           Data Processing Addendum
         </Link>
         .
       </p>
-    </main>
+    </div>
+      <CookieConsentBanner />
+    </SiteShell>
   );
 }

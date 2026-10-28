@@ -15,7 +15,8 @@ export function SiteFooter() {
         </div>
         <div>
           <h4>Product</h4>
-          <Link href="/features">Platform</Link>
+          <Link href="/platform">Platform</Link>
+          <Link href="/features">All features</Link>
           <Link href="/tour">Product tour</Link>
           <Link href="/pricing">Pricing</Link>
           <Link href="/compare">Compare</Link>

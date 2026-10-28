@@ -9,10 +9,10 @@
   --brand:#3fc1a6; --brand-ink:#04201b; --brand-soft:#1b4a44; --accent:#f2b544; --accent-ink:#2b1d00;
   --good:#5fd08a; --warn:#f0b35a; --bad:#f08a72; --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); color-scheme:dark}
 .sx,.sx *{box-sizing:border-box}
-.sx a{color:inherit}
+:where(.sx a){color:inherit}
 .sx h1,.sx h2,.sx h3,.sx h4{font-family:var(--display);line-height:1.1;letter-spacing:-.02em;margin:0;text-wrap:balance}
 .sx p{margin:0}
-.sx button{font:inherit;color:inherit;cursor:pointer}
+:where(.sx button){font:inherit;color:inherit;cursor:pointer}
 .sx :focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
 .sx .sx-wrap{max-width:1200px;margin:0 auto;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px))}
 .sx .sx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -244,3 +244,46 @@
 .sx .sx-lang span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .sx .sx-chip-btn{display:inline-grid;place-items:center;width:38px;height:38px;padding:0}
 @media (max-width:560px){.sx .sx-hide-xs{display:none}.sx .sx-tools{gap:6px}.sx .sx-nav{gap:10px}.sx .sx-lang select{padding:7px 6px;max-width:112px}}
+
+/* comparison matrix */
+.sx .sx-cmp-controls{display:grid;gap:16px;margin-bottom:20px}
+.sx .sx-key{display:flex;flex-wrap:wrap;gap:6px 18px;list-style:none;margin:0;padding:0;font-size:13px;color:var(--muted)}
+.sx .sx-jump{display:flex;flex-wrap:wrap;gap:8px}
+.sx .sx-jump a{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500;text-decoration:none}
+.sx .sx-jump a:hover{border-color:var(--brand)}
+.sx .sx-lv{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font:700 12px var(--body);margin-inline-end:8px;vertical-align:text-top;flex:none}
+.sx .sx-lv-yes{background:color-mix(in srgb,var(--good) 18%,var(--surface));color:var(--good)}
+.sx .sx-lv-partial{background:color-mix(in srgb,var(--accent) 28%,var(--surface));color:var(--warn)}
+.sx .sx-lv-no{background:color-mix(in srgb,var(--bad) 14%,var(--surface));color:var(--bad)}
+.sx .sx-lv-unknown{background:var(--wash);color:var(--muted)}
+.sx table.sx-cmp{min-width:1100px}
+.sx table.sx-cmp thead th{position:sticky;top:0;z-index:3}
+.sx table.sx-cmp tr.sx-built td{font-size:13px;color:var(--muted);background:var(--surface)}
+.sx table.sx-cmp tr.sx-built td.sx-us{background:color-mix(in srgb,var(--brand) 8%,var(--surface))}
+.sx table.sx-cmp .sx-sec-row th{background:var(--wash);position:static;font:700 16px var(--display);padding:16px 14px;border-inline-start:0}
+.sx table.sx-cmp .sx-sec-row th small{display:block;font:400 13px var(--body);color:var(--muted);margin-top:2px}
+.sx table.sx-cmp td{min-width:190px;max-width:260px}
+.sx .sx-cmp-wrap{position:relative}
+.sx .sx-feature{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:28px;padding:28px;scroll-margin-top:96px}
+@media (max-width:860px){.sx .sx-feature{grid-template-columns:1fr;padding:20px}}
+.sx .sx-ticks{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:10px;color:var(--muted);font-size:15px}
+.sx .sx-ticks li{display:flex;gap:10px}
+.sx .sx-ticks li::before{content:"✓";color:var(--brand);font-weight:700;flex:none}
+.sx .sx-strip .sx-jump{padding-block:6px}
+.sx .sx-pj{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:28px;padding:28px;align-items:start}
+@media (max-width:860px){.sx .sx-pj{grid-template-columns:1fr;padding:20px}}
+.sx .sx-flowrow{display:flex;flex-wrap:wrap;gap:10px;list-style:none;margin:0;padding:0}
+.sx .sx-flowrow a{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 16px;font-weight:600;text-decoration:none}
+.sx .sx-flowrow a:hover{border-color:var(--brand)}
+.sx .sx-flowrow span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font:600 12px var(--mono)}
+.sx .sx-prose{max-width:760px;padding-block:clamp(40px,6vw,72px)}
+.sx .sx-prose h1{font-size:clamp(30px,4vw,44px);font-weight:800}
+.sx .sx-prose-section{margin-top:36px}
+.sx .sx-prose-section h2{font-size:22px}
+.sx .sx-prose a{color:var(--brand)}
+.sx .sx-code{background:var(--wash);border-radius:6px;padding:1px 6px;font:500 13px var(--mono)}
+.sx .sx-prose ul,.sx .sx-prose ol{padding-inline-start:20px;margin:0}
+
+/* burger last, so it wins over the generic round button */
+.sx .sx-burger{display:none}
+@media (max-width:980px){.sx .sx-burger{display:inline-grid}}

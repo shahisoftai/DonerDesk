@@ -485,6 +485,7 @@ export const en = {
   "site.hero.cta2": "Create a free workspace",
   "site.hero.fine": "No card. Your data stays yours and you can export it any time.",
   "site.hero.pick": "What do you run? See it in your own words.",
+  "site.nav.features": "Features",
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -11,7 +11,8 @@ import "./site.css";
 const THEME_KEY = "dd-site-theme";
 
 const MENU: Array<{ key: string; href: string; match: (p: string) => boolean }> = [
-  { key: "site.nav.platform", href: "/features", match: (p) => p === "/features" },
+  { key: "site.nav.platform", href: "/platform", match: (p) => p === "/platform" },
+  { key: "site.nav.features", href: "/features", match: (p) => p === "/features" },
   { key: "site.nav.solutions", href: "/solutions", match: (p) => p.startsWith("/solutions") },
   { key: "site.nav.pricing", href: "/pricing", match: (p) => p === "/pricing" },
   { key: "site.nav.compare", href: "/compare", match: (p) => p === "/compare" },

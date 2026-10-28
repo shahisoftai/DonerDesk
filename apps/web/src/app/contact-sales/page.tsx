@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ContactSalesForm } from "./ContactSalesForm";
+import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
+import { SiteShell } from "@/components/site/SiteShell";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/contact-sales" },
@@ -10,25 +13,28 @@ export const metadata: Metadata = {
 
 export default function ContactSalesPage() {
   return (
-    <main className="mx-auto mt-12 max-w-xl animate-fade-in px-6 pb-16">
-      <h1 className="text-2xl font-bold">Talk to sales</h1>
-      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+    <SiteShell footer={<SiteFooter />}>
+    <div className="sx-wrap sx-prose" style={{ maxWidth: 640 }}>
+      <h1>Talk to sales</h1>
+      <p className="sx-lede" style={{ marginTop: 10 }}>
         Tell us about your organization and reporting needs. Our Enterprise team will follow up by email.
       </p>
       <div className="card mt-6">
         <ContactSalesForm />
       </div>
-      <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+      <p className="sx-fine" style={{ marginTop: 16 }}>
         Prefer email?{" "}
-        <a className="text-brand-600 hover:underline dark:text-brand-400" href="mailto:support@donordesk.online">
+        <a className="sx-link" href="mailto:support@donordesk.online">
           support@donordesk.online
         </a>
       </p>
-      <p className="mt-6 text-sm">
-        <Link className="text-brand-600 hover:underline dark:text-brand-400" href="/pricing">
+      <p className="sx-fine" style={{ marginTop: 24 }}>
+        <Link className="sx-link" href="/pricing">
           Back to pricing
         </Link>
       </p>
-    </main>
+    </div>
+      <CookieConsentBanner />
+    </SiteShell>
   );
 }

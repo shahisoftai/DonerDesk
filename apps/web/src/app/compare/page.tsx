@@ -3,44 +3,14 @@ import Link from "next/link";
 import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { CompareMatrix } from "@/components/site/CompareMatrix";
+import { CHECKED, SOURCES } from "@/components/site/compare-data";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/compare" },
-  title: "How DonorDesk compares",
-  description: "What spreadsheets, KoboToolbox, ActivityInfo, DevResults and TolaData are built for, what they cost where they say so, and when each is the better fit.",
+  title: "DonorDesk compared: ActivityInfo, DevResults, TolaData and KoboToolbox",
+  description: "A feature-by-feature comparison of DonorDesk with ActivityInfo, DevResults, TolaData, KoboToolbox and spreadsheets, using only what each vendor states on its own site, with sources and where DonorDesk is behind.",
 };
-
-/** Last time the vendors' public pages were read. Re-check every quarter; never state anything here the vendor's own page does not. */
-const CHECKED = "28 October 2026";
-
-const COLUMNS = ["DonorDesk", "Spreadsheets and email", "KoboToolbox", "ActivityInfo", "DevResults", "TolaData"] as const;
-
-const ROWS: Array<{ label: string; cells: string[] }> = [
-  { label: "What it says it is for", cells: [
-    "Running a funded programme and reporting on it: plan, collect, track, prove and report in one record.",
-    "Anything, one file at a time.",
-    "Collecting survey data in the field. Free for humanitarian organisations, according to its documentation.",
-    "An information management system for collecting, analysing and sharing data, including monitoring and evaluation, with online and offline collection.",
-    "Monitoring and evaluation software for international development, with project maps and collaboration with donors and partners.",
-    "An end-to-end solution for portfolio and project impact management: collect, configurable dashboards and a results framework.",
-  ] },
-  { label: "Price, as published", cells: [
-    "Free plan. Team $79 a month, Growth $149 a month, Enterprise from $12,000 a year. Verified NGOs get 25% off the first year.",
-    "Free.",
-    "A free Community plan for nonprofits, plus paid Professional, Teams and Enterprise plans.",
-    "Solo from €545 a year (one database); Programme from €3,700 a year; larger agreements by quote.",
-    "A set-up fee plus an annual subscription by programme size: from $33,800 and $28,000 a year (up to $5M); unlimited user licences.",
-    "Not shown on its website.",
-  ] },
-  { label: "How you start", cells: [
-    "Create a workspace yourself, free, in minutes. An onboarding call comes with the Growth plan.",
-    "Open a file.",
-    "Sign up yourself.",
-    "Guided onboarding is included in all plans, according to its pricing page.",
-    "Vendor-led set-up and training, priced on its pricing page.",
-    "Not stated on its website.",
-  ] },
-];
 
 export default function ComparePage() {
   return (
@@ -49,30 +19,33 @@ export default function ComparePage() {
         <div className="sx-wrap">
           <p className="sx-eyebrow">Compare</p>
           <h1 style={{ marginTop: 14, fontSize: "clamp(34px,4.6vw,56px)", fontWeight: 800, maxWidth: "20ch" }}>How DonorDesk compares with what you may be using.</h1>
-          <p className="sx-lede" style={{ marginTop: 16 }}>Different tools are built for different jobs. This page says what each one says it is for, what it costs where the vendor publishes a price, and when it is the better fit.</p>
+          <p className="sx-lede" style={{ marginTop: 16 }}>Different tools are built for different jobs. Below is a feature-by-feature comparison across planning, data collection, dashboards, reporting, evidence, access, integrations and security, using what each vendor states on its own website.</p>
           <p className="sx-notice">We compare only what each vendor publishes on its own website. We last read those pages on {CHECKED} and re-check them every quarter. If something here is out of date, <Link href="/contact-sales" className="sx-link">tell us</Link> and we will fix it.</p>
         </div>
       </section>
 
       <section style={{ paddingTop: 16 }}>
         <div className="sx-wrap">
-          <div className="sx-cmp-wrap" tabIndex={0} aria-label="Comparison table, scrolls sideways on small screens">
-            <table className="sx-cmp">
-              <thead>
-                <tr><th scope="col"><span className="sx-sr">Question</span></th>{COLUMNS.map((c, i) => <th key={c} scope="col" className={i === 0 ? "sx-us" : undefined}>{c}</th>)}</tr>
-              </thead>
-              <tbody>
-                {ROWS.map((r) => (
-                  <tr key={r.label}><th scope="row">{r.label}</th>{r.cells.map((c, i) => <td key={i} className={i === 0 ? "sx-us" : undefined}>{c}</td>)}</tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="sx-fine">Sources: each vendor&apos;s public website and pricing page, and KoboToolbox&apos;s published documentation and plan announcement. Prices are the vendors&apos; own and may have changed. Product names belong to their owners.</p>
+          <CompareMatrix />
+          <p className="sx-fine">A dash means we did not find the feature on the pages we read, not that the tool lacks it. Prices and features change; check the vendor before you decide. Product names belong to their owners.</p>
         </div>
       </section>
 
-      <section className="sx-band">
+      <section className="sx-band" id="gaps">
+        <div className="sx-wrap">
+          <div className="sx-sec-head"><p className="sx-eyebrow">Plainly</p><h2>Where DonorDesk is behind today.</h2><p className="sx-lede">A fair comparison names these. If one of them decides it for you, we would rather you know now.</p></div>
+          <div className="sx-grid sx-g3">
+            <div className="sx-card"><h3>No security certification</h3><p>ActivityInfo states ISO/IEC 27001 certification and DevResults states FedRAMP authorisation. DonorDesk holds neither today. Our security page says exactly what we do and do not claim.</p></div>
+            <div className="sx-card"><h3>Fewer field-form extras</h3><p>ActivityInfo states signatures, barcode scanning and XLSForm import. DonorDesk forms have GPS, photo and document questions, but no signature or barcode questions.</p></div>
+            <div className="sx-card"><h3>Finance is lighter</h3><p>DevResults states multi-currency budgets, disbursements and expenses, and TolaData and DevResults state IATI publishing. DonorDesk has budget lines and expenses; multi-currency and IATI are planned.</p></div>
+            <div className="sx-card"><h3>Fewer interface languages</h3><p>DevResults lists ten interface languages. DonorDesk has four, and the French, Spanish and Arabic translations are still being reviewed.</p></div>
+            <div className="sx-card"><h3>No native BI connectors</h3><p>ActivityInfo states Power BI, Python, R, ArcGIS and QGIS, and TolaData names Power BI, Tableau and Superset. DonorDesk connects through its API and exports.</p></div>
+            <div className="sx-card"><h3>A newer product</h3><p>The vendors above have longer track records and published case studies. DonorDesk is newer; you can try it free and bring a real grant before you decide.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
         <div className="sx-wrap">
           <div className="sx-sec-head"><p className="sx-eyebrow">What DonorDesk adds</p><h2>One record from the first target to the donor&apos;s question.</h2></div>
           <div className="sx-grid sx-g3">
@@ -95,7 +68,24 @@ export default function ComparePage() {
         </div>
       </section>
 
-      <section className="sx-band">
+      <section className="sx-band" id="sources">
+        <div className="sx-wrap">
+          <div className="sx-sec-head"><p className="sx-eyebrow">Sources</p><h2>Where every statement comes from.</h2><p className="sx-lede">We read these pages on {CHECKED}. Each cell above says what the vendor states there.</p></div>
+          <div className="sx-grid sx-g2">
+            {SOURCES.map((v) => (
+              <div className="sx-card" key={v.vendor}>
+                <h3>{v.vendor}</h3>
+                <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: 14 }}>
+                  {v.links.map((l) => <li key={l.href}><a className="sx-link" href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a></li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <p className="sx-fine">KoboToolbox&apos;s main website could not be read automatically, so its column rests on its documentation index and its published plan announcement. Spreadsheets and email are described generally.</p>
+        </div>
+      </section>
+
+      <section>
         <div className="sx-wrap">
           <div className="sx-final">
             <h2>Try it with your own project.</h2>

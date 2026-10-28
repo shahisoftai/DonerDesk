@@ -4,6 +4,7 @@ import { SECTOR_PAGES } from "@/components/site/site-data";
 
 const STATIC: Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly" }> = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
+  { path: "/platform", priority: 0.9, changeFrequency: "monthly" },
   { path: "/features", priority: 0.9, changeFrequency: "monthly" },
   { path: "/pricing", priority: 0.9, changeFrequency: "monthly" },
   { path: "/compare", priority: 0.8, changeFrequency: "monthly" },

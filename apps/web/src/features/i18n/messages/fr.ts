@@ -483,4 +483,5 @@ export const fr: Record<MessageKey, string> = {
   "site.hero.cta2": "Créer un espace gratuit",
   "site.hero.fine": "Sans carte bancaire. Vos données restent les vôtres et vous pouvez les exporter à tout moment.",
   "site.hero.pick": "Que gérez-vous ? Voyez-le avec vos propres mots.",
+  "site.nav.features": "Fonctionnalités",
 };

@@ -499,4 +499,5 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "site.hero.cta2": "أنشئ مساحة مجانية",
   "site.hero.fine": "دون بطاقة. بياناتك ملكك ويمكنك تصديرها في أي وقت.",
   "site.hero.pick": "ماذا تدير؟ شاهده بكلماتك.",
+  "site.nav.features": "المزايا",
 };

@@ -67,7 +67,7 @@ export default function HomePage() {
                 </article>
               ))}
             </div>
-            <p style={{ marginTop: 20 }}><Link className="sx-link" href="/features">See every feature →</Link></p>
+            <p style={{ marginTop: 20 }}><Link className="sx-link" href="/platform">See how the platform fits together →</Link></p>
           </div>
         </section>
 
