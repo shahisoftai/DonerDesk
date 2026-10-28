@@ -21,7 +21,7 @@ const formFrom = (r: FormRow): StoredCollectionForm => ({
 
 const recordFrom = (r: RecordRow): StoredCollectionRecord => ({
   id: r.id, tenantId: TenantId.create(r.tenantId), formId: r.formId, projectId: r.projectId, answers: json<Record<string, unknown>>(r.answersJson, {}),
-  submittedOn: r.submittedOn, source: r.source === "LINK" ? "LINK" : "USER", ...(r.submittedById ? { submittedById: r.submittedById } : {}),
+  submittedOn: r.submittedOn, source: r.source === "LINK" ? "LINK" : r.source === "CONNECTOR" ? "CONNECTOR" : "USER", ...(r.submittedById ? { submittedById: r.submittedById } : {}),
   ...(r.submitterName ? { submitterName: r.submitterName } : {}), status: r.status as CollectionRecordStatus, ...(r.reviewNote ? { reviewNote: r.reviewNote } : {}),
   ...(r.reviewedById ? { reviewedById: r.reviewedById } : {}), ...(r.reviewedAt ? { reviewedAt: r.reviewedAt } : {}), createdAt: r.createdAt,
 });

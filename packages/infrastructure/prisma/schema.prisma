@@ -2267,3 +2267,28 @@ model DashboardShareLink {
 
   @@index([tenantId, dashboardId])
 }
+
+/// A link from a DonorDesk collection form to the same survey in KoboToolbox or SurveyCTO (Phase 33.7). The secret is stored encrypted and never shown.
+model DataConnector {
+  id              String    @id
+  tenantId        String
+  formId          String
+  projectId       String
+  name            String
+  /// KOBOTOOLBOX | SURVEYCTO
+  kind            String
+  serverUrl       String
+  sourceId        String
+  fieldMapJson    String    @default("[]")
+  /// AES-256-GCM of the API token (or user:password), keyed by CONNECTOR_SECRET_KEY.
+  credentialEnc   String?
+  /// The submission time already brought in (ISO); only later or equal ones are asked for.
+  cursor          String?
+  lastSyncAt      DateTime?
+  lastSyncJson    String?
+  createdById     String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId, formId])
+}

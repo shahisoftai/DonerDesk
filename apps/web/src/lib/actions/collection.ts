@@ -1,6 +1,6 @@
 "use server";
 
-import { ApplyRecordsSchema, CreateCollectionLinkSchema, ImportRecordsSchema, ReviewRecordSchema, SaveCollectionFormSchema, SubmitRecordSchema } from "@donordesk/contracts";
+import { ApplyRecordsSchema, CreateCollectionLinkSchema, ImportRecordsSchema, SaveConnectorSchema, SyncConnectorSchema, ReviewRecordSchema, SaveCollectionFormSchema, SubmitRecordSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -8,7 +8,7 @@ import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { IdResponseSchema, OkResponseSchema } from "./_schemas";
 import {
-  ApplyResultSchema, RecordImportPreviewSchema, SheetTemplateSchema, type RecordImportPreview, CollectionLinkCreatedSchema, CollectionLinkListSchema, CollectionRecordListSchema, CollectionTotalsSchema, SubmitResultSchema,
+  ConnectorListSchema, SyncResultSchema, type ConnectorView, type SyncResultView, ApplyResultSchema, RecordImportPreviewSchema, SheetTemplateSchema, type RecordImportPreview, CollectionLinkCreatedSchema, CollectionLinkListSchema, CollectionRecordListSchema, CollectionTotalsSchema, SubmitResultSchema,
   type CollectionLinkView, type CollectionRecordView, type CollectionTotalsView,
 } from "@/lib/server/schemas-collection";
 import { z } from "zod";
@@ -97,4 +97,31 @@ export async function importCollectionRecordsAction(formId: string, input: unkno
   const parsed = ImportRecordsSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
   return gatewayRequest(`/v1/collection-forms/${enc(formId)}/import`, RecordImportPreviewSchema, context.token, { method: "POST", body: parsed.data });
+}
+
+export async function listConnectorsAction(formId: string): Promise<Result<{ connectors: ConnectorView[]; available: boolean }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/collection-forms/${enc(formId)}/connectors`, ConnectorListSchema, context.token);
+}
+
+/** `connectorId` edits one; without it a new one is made. The key is sent once and never comes back. */
+export async function saveConnectorAction(formId: string, input: unknown, connectorId?: string): Promise<Result<{ id: string }, AppError>> {
+  const context = await requireSession();
+  const parsed = SaveConnectorSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  return gatewayRequest(connectorId ? `/v1/collection-forms/${enc(formId)}/connectors/${enc(connectorId)}` : `/v1/collection-forms/${enc(formId)}/connectors`, IdResponseSchema, context.token, { method: connectorId ? "PUT" : "POST", body: parsed.data });
+}
+
+export async function deleteConnectorAction(connectorId: string): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/connectors/${enc(connectorId)}`, OkResponseSchema, context.token, { method: "DELETE" });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+
+/** `apply: false` reads and checks only. */
+export async function syncConnectorAction(connectorId: string, input: unknown): Promise<Result<SyncResultView, AppError>> {
+  const context = await requireSession();
+  const parsed = SyncConnectorSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  return gatewayRequest(`/v1/connectors/${enc(connectorId)}/sync`, SyncResultSchema, context.token, { method: "POST", body: parsed.data, timeoutMs: 90_000 });
 }

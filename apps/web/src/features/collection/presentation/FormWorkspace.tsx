@@ -16,8 +16,9 @@ import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/data/Badge";
 import { Textarea } from "@/components/ui/Textarea";
 import { FormFiller } from "./FormFiller";
+import { ConnectorsPanel } from "./ConnectorsPanel";
 
-type Tab = "fill" | "records" | "totals" | "share";
+type Tab = "fill" | "records" | "totals" | "share" | "connect";
 
 const STATUS_LABEL = { DRAFT: "Draft", PUBLISHED: "Open for answers", CLOSED: "Closed" } as const;
 const REVIEW_LABEL = { PENDING: "Waiting for review", ACCEPTED: "Accepted", REJECTED: "Rejected" } as const;
@@ -38,6 +39,7 @@ export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview }: 
     ["records", `Records (${form.counts.PENDING} waiting)`],
     ["totals", "What it adds up to"],
     ...(canEdit && form.status === "PUBLISHED" ? ([["share", "Share a link"]] as Array<[Tab, string]>) : []),
+    ...(canEdit ? ([["connect", "KoboToolbox / SurveyCTO"]] as Array<[Tab, string]>) : []),
   ];
 
   async function setState(to: "publish" | "close") {
@@ -65,6 +67,7 @@ export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview }: 
           {tab === "records" && <RecordsTab formId={form.id} fields={form.fields} canReview={canReview} />}
           {tab === "totals" && <TotalsTab formId={form.id} periods={periods} canApply={canSubmit} />}
           {tab === "share" && <ShareTab formId={form.id} />}
+          {tab === "connect" && <ConnectorsPanel form={form} />}
         </>
       )}
     </div>
@@ -200,7 +203,7 @@ function RecordsTab({ formId, fields, canReview }: { formId: string; fields: Col
               {records.map((r) => (
                 <tr key={r.id} className="border-t border-slate-100 align-top dark:border-slate-800">
                   <td className="py-2 pr-3">{r.submittedOn}</td>
-                  <td className="pr-3">{r.submitter}{r.source === "LINK" ? " (link)" : ""}</td>
+                  <td className="pr-3">{r.submitter}{r.source === "LINK" ? " (link)" : r.source === "CONNECTOR" ? " (imported)" : ""}</td>
                   {fields.map((f) => (
                     <td key={f.key} className="pr-3">
                       {f.type === "FILE" ? (r.files?.[f.key] ? <a className="underline" href={`/api/collection-files/${encodeURIComponent(r.files[f.key]!.id)}`}>{r.files[f.key]!.name}</a> : "—") : answerText(r.answers[f.key])}

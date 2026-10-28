@@ -61,3 +61,17 @@ export type ApplyRecordsInput = z.infer<typeof ApplyRecordsSchema>;
 
 export const ImportRecordsSchema = z.object({ text: z.string().min(1).max(2_000_000), apply: z.boolean().default(false) });
 export type ImportRecordsInput = z.infer<typeof ImportRecordsSchema>;
+
+export const SaveConnectorSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  kind: z.enum(["KOBOTOOLBOX", "SURVEYCTO"]),
+  serverUrl: z.string().trim().min(8).max(300),
+  sourceId: z.string().trim().min(3).max(80),
+  /** The API token (KoboToolbox) or `user:password` (SurveyCTO). Required when the connector is made; leave out to keep the saved one. */
+  credential: z.string().min(3).max(500).optional(),
+  fieldMap: z.array(z.object({ sourceField: z.string().trim().min(1).max(200), formKey: z.string().min(1).max(40) })).max(100),
+});
+export type SaveConnectorInput = z.infer<typeof SaveConnectorSchema>;
+
+export const SyncConnectorSchema = z.object({ apply: z.boolean().default(false) });
+export type SyncConnectorInput = z.infer<typeof SyncConnectorSchema>;

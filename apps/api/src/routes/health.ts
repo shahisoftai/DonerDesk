@@ -14,6 +14,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "CollectionRecord", field: "answersJson" },
   { model: "CollectionLink", field: "tokenHash" },
   { model: "CollectionFile", field: "storageKey" },
+  { model: "DataConnector", field: "fieldMapJson" },
   { model: "Dashboard", field: "widgetsJson" },
   { model: "DashboardShareLink", field: "tokenHash" },
   { model: "EvidenceFile", field: "textExtractionStatus" },

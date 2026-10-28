@@ -20,7 +20,7 @@ export type CollectionFormView = z.infer<typeof CollectionFormSchema>;
 export const CollectionFormListSchema = z.object({ forms: z.array(CollectionFormSchema) });
 
 export const CollectionRecordSchema = z.object({
-  id: z.string(), formId: z.string(), answers: z.record(z.unknown()), submittedOn: z.string(), source: z.enum(["USER", "LINK"]),
+  id: z.string(), formId: z.string(), answers: z.record(z.unknown()), submittedOn: z.string(), source: z.enum(["USER", "LINK", "CONNECTOR"]),
   submitter: z.string(), status: z.enum(["PENDING", "ACCEPTED", "REJECTED"]), reviewNote: z.string().optional(),
   places: z.record(z.object({ status: z.enum(["RESOLVED", "AMBIGUOUS", "UNRESOLVED"]), label: z.string() })).optional(),
   files: z.record(z.object({ id: z.string(), name: z.string() })).optional(),
@@ -52,3 +52,15 @@ export const RecordImportPreviewSchema = z.object({
   errorFile: z.string().optional(), saved: z.number(),
 });
 export type RecordImportPreview = z.infer<typeof RecordImportPreviewSchema>;
+
+export const ConnectorSchema = z.object({
+  id: z.string(), name: z.string(), kind: z.enum(["KOBOTOOLBOX", "SURVEYCTO"]), kindLabel: z.string(), serverUrl: z.string(), sourceId: z.string(),
+  fieldMap: z.array(z.object({ sourceField: z.string(), formKey: z.string() })), hasCredential: z.boolean(),
+  lastSyncAt: z.string().optional(), lastSync: z.record(z.unknown()).optional(),
+});
+export type ConnectorView = z.infer<typeof ConnectorSchema>;
+export const ConnectorListSchema = z.object({ connectors: z.array(ConnectorSchema), available: z.boolean() });
+export const SyncResultSchema = z.object({
+  read: z.number(), created: z.number(), alreadyHad: z.number(), rejected: z.number(), skipped: z.number(), problems: z.array(z.string()), applied: z.boolean(), more: z.boolean(),
+});
+export type SyncResultView = z.infer<typeof SyncResultSchema>;

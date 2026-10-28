@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import {
-  ApplyRecordsSchema, CreateCollectionLinkSchema, ImportRecordsSchema, PublicSubmitSchema, ReviewRecordSchema, SaveCollectionFormSchema, SubmitRecordSchema,
+  ApplyRecordsSchema, SaveConnectorSchema, SyncConnectorSchema, CreateCollectionLinkSchema, ImportRecordsSchema, PublicSubmitSchema, ReviewRecordSchema, SaveCollectionFormSchema, SubmitRecordSchema,
 } from "@donordesk/contracts";
 import { z } from "zod";
 import { createContainer, type Container } from "@donordesk/infrastructure";
@@ -109,6 +109,36 @@ export async function registerCollectionRoutes(app: FastifyInstance) {
 
   app.post("/v1/collection-forms/:formId/import", async (req) => {
     const r = await req.container.handlers.importCollectionRecords.handle(ctx(req), param(req, "formId"), ImportRecordsSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/collection-forms/:formId/connectors", async (req) => {
+    const r = await req.container.handlers.listConnectors.handle(ctx(req), param(req, "formId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/collection-forms/:formId/connectors", async (req, reply) => {
+    const r = await req.container.handlers.saveConnector.handle(ctx(req), param(req, "formId"), SaveConnectorSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+
+  app.put("/v1/collection-forms/:formId/connectors/:connectorId", async (req) => {
+    const r = await req.container.handlers.saveConnector.handle(ctx(req), param(req, "formId"), SaveConnectorSchema.parse(req.body), param(req, "connectorId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.delete("/v1/connectors/:connectorId", async (req) => {
+    const r = await req.container.handlers.deleteConnector.handle(ctx(req), param(req, "connectorId"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.post("/v1/connectors/:connectorId/sync", async (req) => {
+    const r = await req.container.handlers.syncConnector.handle(ctx(req), param(req, "connectorId"), SyncConnectorSchema.parse(req.body ?? {}));
     if (!r.ok) throw r.error;
     return r.value;
   });

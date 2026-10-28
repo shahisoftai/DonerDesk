@@ -44,7 +44,7 @@ export interface CollectionRecordDto {
   formId: string;
   answers: Record<string, unknown>;
   submittedOn: string;
-  source: "USER" | "LINK";
+  source: "USER" | "LINK" | "CONNECTOR";
   submitter: string;
   status: "PENDING" | "ACCEPTED" | "REJECTED";
   reviewNote?: string;

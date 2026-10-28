@@ -39,6 +39,7 @@ export const ORG_EXPORT_EXCLUDED: Readonly<Record<string, string>> = {
 export const ORG_EXPORT_OMITTED_FIELDS: Readonly<Record<string, readonly string[]>> = {
   User: ["passwordHash", "mfaSecretEnc", "mfaPendingSecretEnc"],
   Invitation: ["token"],
+  DataConnector: ["credentialEnc"],
 };
 
 const PAGE = 500;

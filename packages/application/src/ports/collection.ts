@@ -25,7 +25,7 @@ export interface StoredCollectionRecord {
   answers: Record<string, unknown>;
   /** A plain day (UTC). */
   submittedOn: string;
-  source: "USER" | "LINK";
+  source: "USER" | "LINK" | "CONNECTOR";
   submittedById?: string;
   submitterName?: string;
   status: CollectionRecordStatus;
@@ -89,4 +89,48 @@ export interface StoredCollectionFile {
 export interface ICollectionFileRepository {
   create(file: StoredCollectionFile): Promise<Result<void>>;
   findById(id: string, tenantId: TenantId): Promise<Result<StoredCollectionFile | null>>;
+}
+
+export interface StoredDataConnector {
+  id: string;
+  tenantId: TenantId;
+  formId: string;
+  projectId: string;
+  name: string;
+  kind: "KOBOTOOLBOX" | "SURVEYCTO";
+  serverUrl: string;
+  sourceId: string;
+  fieldMap: Array<{ sourceField: string; formKey: string }>;
+  /** Encrypted; never leaves the server. */
+  credentialEnc?: string;
+  cursor?: string;
+  lastSyncAt?: Date;
+  lastSync?: Record<string, unknown>;
+  createdById: string;
+  createdAt: Date;
+}
+
+export interface IDataConnectorRepository {
+  create(c: StoredDataConnector): Promise<Result<void>>;
+  /** Writes every mutable field (`?? null`), so a cleared cursor is cleared. */
+  update(c: StoredDataConnector): Promise<Result<void>>;
+  delete(id: string, tenantId: TenantId): Promise<Result<void>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<StoredDataConnector | null>>;
+  listByForm(formId: string, tenantId: TenantId): Promise<Result<StoredDataConnector[]>>;
+}
+
+/** The API token or password of a connector, kept encrypted. Unavailable when the server has no key configured: nothing is then saved. */
+export interface IConnectorSecrets {
+  readonly available: boolean;
+  encrypt(plain: string): string;
+  decrypt(stored: string): string;
+}
+
+export type ConnectorFetch =
+  | { ok: true; json: unknown }
+  | { ok: false; reason: "UNREACHABLE" | "TIMEOUT" | "UNAUTHORIZED" | "NOT_FOUND" | "TOO_BIG" | "BAD_REPLY" | "UNSAFE_ADDRESS" | "SERVER_ERROR" };
+
+/** Fetches one page from the other tool. The adapter refuses a private address, follows no redirect and limits time and size. */
+export interface IConnectorHttp {
+  get(url: string, headers: Record<string, string>): Promise<ConnectorFetch>;
 }

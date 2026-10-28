@@ -360,3 +360,4 @@ export * from "./use-cases/dashboards/dashboard-handlers.js";
 export * from "./use-cases/ask/ask-project.js";
 export * from "./services/webhook-audit.js";
 export * from "./services/mcp-server.js";
+export * from "./use-cases/collection/connector-handlers.js";
