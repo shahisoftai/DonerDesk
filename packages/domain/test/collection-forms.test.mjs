@@ -98,3 +98,40 @@ test("yes/no answers compare the same as booleans and as words", () => {
   assert.equal(conditionHolds(c, { a: false }), false);
   assert.equal(conditionHolds({ field: "a", op: "EQ", value: "no" }, { a: "false" }), true);
 });
+
+import { recordSheetTemplate, parseRecordSheet, recordSheetErrorFile } from "../dist/index.js";
+
+test("the sheet template is the form's own; rows are checked with the form's rules; the error file is the person's sheet with the problems", () => {
+  const template = recordSheetTemplate(form);
+  assert.match(template.split("\n")[0], /^Visit date,Attended,Reason absent,Kits given,Site,Where$/);
+  // The template with its hint row filled in later is accepted, and the hint row itself is skipped.
+  const sheet = [
+    "Visit date,Attended,Reason absent,Kits given,Site,Where",
+    "a date YYYY-MM-DD,yes or no,text (optional),a number (optional),A / B (optional),latitude, longitude (optional)".replace(/,latitude, longitude/, ',"latitude, longitude"'),
+    "2026-10-03,yes,,4,A,",
+    "2026-10-04,no,Ill,,b,\"1.5, 32.1\"",
+    "2026-02-30,yes,,900,Z,",
+    "2026-10-06,no,,,,",
+  ].join("\n");
+  const r = parseRecordSheet(form, sheet);
+  assert.equal(r.rows.length, 4);
+  assert.deepEqual([r.valid, r.invalid], [2, 2]);
+  assert.deepEqual(r.rows[0].answers, { visit_date: "2026-10-03", attended: true, kits: 4, site: "a" });
+  assert.deepEqual(r.rows[1].answers.where, { lat: 1.5, lon: 32.1 });
+  assert.equal(r.rows[1].answers.site, "b");
+  assert.match(r.rows[2].problems.join(" "), /real date/);
+  assert.match(r.rows[3].problems.join(" "), /Reason absent is required/);
+  const errors = recordSheetErrorFile(r).trim().split("\n");
+  assert.equal(errors.length, 3);
+  assert.match(errors[0], /,Problems$/);
+  assert.match(errors[1], /^2026-02-30,/);
+  assert.equal(r.rows[2].rowNumber, 5);
+});
+
+test("a sheet missing a required column, or with unknown columns, says so", () => {
+  const r = parseRecordSheet(form, "Attended;Mystery\nyes;1");
+  assert.deepEqual(r.missingColumns, ["Visit date"]);
+  assert.deepEqual(r.unknownColumns, ["Mystery"]);
+  assert.equal(r.invalid, 1);
+  assert.equal(parseRecordSheet(form, "").rows.length, 0);
+});

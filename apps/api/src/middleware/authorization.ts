@@ -43,6 +43,8 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/collection-records\/[^/]+\/review$/, permission: "indicator.verify" },
   { method: "GET", route: /^\/v1\/collection-forms\/[^/]+\/totals$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/collection-forms\/[^/]+\/apply$/, permission: "indicator.update" },
+  { method: "GET", route: /^\/v1\/collection-forms\/[^/]+\/template$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/collection-forms\/[^/]+\/import$/, permission: "indicator.update" },
   { method: "GET", route: /^\/v1\/collection-forms\/[^/]+\/links$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/collection-forms\/[^/]+\/links$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/collection-links\/[^/]+\/revoke$/, permission: "project.edit" },

@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
-  DomainError, Permissions, aggregateRecords, conditionHolds, recordMappingProblems, toPlainDate, validateFormDefinition, validateSubmission, visibleFields,
+  DomainError, Permissions, aggregateRecords, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, toPlainDate, validateFormDefinition, validateSubmission, visibleFields,
   type FormDefinition, type FormField, type RecordAggregation, type RecordMapping, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
 import type { ApplyRecordsInput, CreateCollectionLinkInput, PublicSubmitInput, ReviewRecordInput, SaveCollectionFormInput, SubmitRecordInput } from "@donordesk/contracts";
@@ -224,6 +224,15 @@ export class ReviewCollectionRecordHandler {
     if (!found.value) return fail(DomainError.notFound("Record", recordId));
     if (input.decision === "REJECT" && !input.note?.trim()) return fail(DomainError.validation("Say why this record is rejected."));
     const record = found.value;
+    if (input.decision === "REOPEN") {
+      // A reviewed record goes back to waiting; totals read only accepted records, so they follow at once.
+      if (record.status === "PENDING") return fail(DomainError.conflict("This record is already waiting for review."));
+      const { reviewNote: _n, reviewedById: _r, reviewedAt: _a, ...rest } = record;
+      const reopened = await this.records.update({ ...rest, status: "PENDING" });
+      if (!reopened.ok) return reopened;
+      await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.record.reopened", entityType: "collection_record", entityId: recordId, projectId: record.projectId });
+      return ok(undefined);
+    }
     const next = input.decision === "ACCEPT" ? "ACCEPTED" : "REJECTED";
     const saved = await this.records.update({ ...record, status: next, reviewedById: ctx.tenant.userId, reviewedAt: this.clock.now(), ...(input.note?.trim() ? { reviewNote: input.note.trim() } : {}) });
     if (!saved.ok) return saved;
@@ -407,3 +416,67 @@ export class ApplyCollectionTotalsHandler {
 
 // Re-exported so the web form can ask the same rule the server enforces.
 export { conditionHolds, visibleFields };
+
+export interface RecordImportPreview {
+  total: number;
+  valid: number;
+  invalid: number;
+  unknownColumns: string[];
+  missingColumns: string[];
+  rows: Array<{ rowNumber: number; problems: string[]; ignored: string[] }>;
+  /** The person's own sheet with a Problems column, only the rows to fix; absent when every row is fine. */
+  errorFile?: string;
+  /** How many records were stored (0 for a preview, or when nothing was imported). */
+  saved: number;
+}
+
+/** The form's own blank sheet: one column per question, named by its label. */
+export class GetCollectionSheetTemplateHandler {
+  constructor(private readonly forms: ICollectionFormRepository) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string): Promise<Result<{ fileName: string; text: string }, DomainError>> {
+    if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot see forms"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    return ok({ fileName: `${form.value.name.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "form"}-template.csv`, text: recordSheetTemplate(form.value.definition) });
+  }
+}
+
+/**
+ * Records from a spreadsheet. A preview (`apply: false`) saves nothing; applying needs every row to be right, so one bad row
+ * blocks the sheet and the error file says which. Each row is stored under an id made from the sheet and its row number, so
+ * applying the same sheet twice stores it once.
+ */
+export class ImportCollectionRecordsHandler {
+  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string, input: { text: string; apply: boolean }): Promise<Result<RecordImportPreview, DomainError>> {
+    if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot submit records"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    const sheet = parseRecordSheet(form.value.definition, input.text);
+    const preview: RecordImportPreview = {
+      total: sheet.rows.length, valid: sheet.valid, invalid: sheet.invalid, unknownColumns: sheet.unknownColumns, missingColumns: sheet.missingColumns,
+      rows: sheet.rows.filter((r) => r.problems.length > 0 || r.ignored.length > 0).map((r) => ({ rowNumber: r.rowNumber, problems: r.problems, ignored: r.ignored })),
+      ...(sheet.invalid > 0 ? { errorFile: recordSheetErrorFile(sheet) } : {}), saved: 0,
+    };
+    if (!input.apply) return ok(preview);
+    if (form.value.status !== "PUBLISHED") return fail(DomainError.conflict("This form is not open for answers."));
+    if (sheet.invalid > 0) return fail(DomainError.validation(`${sheet.invalid} row${sheet.invalid === 1 ? " has" : "s have"} a problem, so nothing was imported. Fix them in the error file and import again.`, { preview }));
+    if (sheet.rows.length === 0) return fail(DomainError.validation("The sheet has no rows."));
+
+    const sheetKey = createHash("sha256").update(formId + "\n" + input.text).digest("hex").slice(0, 24);
+    const now = this.clock.now();
+    let saved = 0;
+    for (const row of sheet.rows) {
+      const stored = await this.records.createOnce({
+        id: `imp-${sheetKey}-${row.rowNumber}`, tenantId: form.value.tenantId, formId, projectId: form.value.projectId, answers: row.answers,
+        submittedOn: toPlainDate(now)!, source: "USER", submittedById: ctx.tenant.userId, status: "PENDING", createdAt: now,
+      });
+      if (!stored.ok) return stored;
+      if (stored.value.created) saved += 1;
+    }
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.records.imported", entityType: "collection_form", entityId: formId, projectId: form.value.projectId, newValue: String(saved) });
+    return ok({ ...preview, saved });
+  }
+}

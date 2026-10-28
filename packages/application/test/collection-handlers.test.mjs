@@ -104,3 +104,53 @@ test("a collection link opens the form for anyone holding it; revoked, expired a
   await status.handle(manager, formId, "CLOSED");
   assert.equal((await submit.handle(tenantId, formId, found.value.linkId, { answers: { day: "2026-10-03", kits: 3 } })).ok, false);
 });
+
+import { ImportCollectionRecordsHandler, GetCollectionSheetTemplateHandler } from "../dist/index.js";
+
+test("a sheet import: preview saves nothing, one bad row blocks all and returns an error file, applying twice stores once", async () => {
+  const w = world();
+  const save = new SaveCollectionFormHandler(ids, w.forms, w.indicators, audit, clock);
+  const status = new SetCollectionFormStatusHandler(w.forms, audit, clock);
+  const { value: { id: formId } } = await save.handle(manager, input);
+  const imp = new ImportCollectionRecordsHandler(ids, w.forms, w.records, audit, clock);
+  const good = "Day,Kits\n2026-10-03,4\n2026-10-04,6\n";
+  const bad = "Day,Kits\n2026-10-03,4\n2026-13-04,6\n";
+  assert.match((await imp.handle(manager, formId, { text: good, apply: true })).error.message, /not open/);
+  await status.handle(manager, formId, "PUBLISHED");
+
+  const preview = await imp.handle(manager, formId, { text: good, apply: false });
+  assert.deepEqual([preview.value.total, preview.value.valid, preview.value.invalid, preview.value.saved], [2, 2, 0, 0]);
+  assert.equal(w.stores.records.size, 0);
+
+  const blocked = await imp.handle(manager, formId, { text: bad, apply: true });
+  assert.equal(blocked.ok, false);
+  assert.match(blocked.error.message, /nothing was imported/);
+  assert.match(blocked.error.details.preview.errorFile, /Problems/);
+  assert.equal(w.stores.records.size, 0);
+
+  const applied = await imp.handle(manager, formId, { text: good, apply: true });
+  assert.equal(applied.value.saved, 2);
+  const again = await imp.handle(manager, formId, { text: good, apply: true });
+  assert.equal(again.value.saved, 0);
+  assert.equal(w.stores.records.size, 2);
+
+  const template = await new GetCollectionSheetTemplateHandler(w.forms).handle(viewer, formId);
+  assert.equal(template.ok, true);
+  assert.match(template.value.text, /^Day,Kits\n/);
+});
+
+test("a reviewed record can be returned to waiting, which drops it from the totals", async () => {
+  const w = world();
+  const save = new SaveCollectionFormHandler(ids, w.forms, w.indicators, audit, clock);
+  const { value: { id: formId } } = await save.handle(manager, input);
+  await new SetCollectionFormStatusHandler(w.forms, audit, clock).handle(manager, formId, "PUBLISHED");
+  const sent = await new SubmitCollectionRecordHandler(ids, w.forms, w.records, audit, clock).handle(manager, formId, { id: "reopen-0001", answers: { day: "2026-10-03", kits: 2 } });
+  const review = new ReviewCollectionRecordHandler(w.records, audit, clock);
+  assert.match((await review.handle(manager, sent.value.id, { decision: "REOPEN" })).error.message, /already waiting/);
+  await review.handle(manager, sent.value.id, { decision: "REJECT", note: "Wrong site" });
+  assert.equal((await review.handle(viewer, sent.value.id, { decision: "REOPEN" })).ok, false);
+  assert.ok((await review.handle(manager, sent.value.id, { decision: "REOPEN" })).ok);
+  const back = w.stores.records.get(sent.value.id);
+  assert.equal(back.status, "PENDING");
+  assert.equal(back.reviewNote, undefined);
+});

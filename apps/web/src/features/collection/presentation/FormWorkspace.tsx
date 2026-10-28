@@ -4,16 +4,17 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   applyCollectionTotalsAction, createCollectionLinkAction, getCollectionTotalsAction, listCollectionLinksAction, listCollectionRecordsAction,
-  reviewCollectionRecordAction, revokeCollectionLinkAction, setCollectionFormStatusAction, submitCollectionRecordAction,
+  getCollectionTemplateAction, importCollectionRecordsAction, reviewCollectionRecordAction, revokeCollectionLinkAction, setCollectionFormStatusAction, submitCollectionRecordAction,
 } from "@/lib/actions/collection";
 import { useActionState } from "@/lib/client/action-state";
 import { newIdempotencyKey } from "@/lib/shared/create-retry";
-import type { CollectionFormView, CollectionLinkView, CollectionRecordView, CollectionTotalsView } from "@/lib/server/schemas-collection";
+import type { RecordImportPreview, CollectionFormView, CollectionLinkView, CollectionRecordView, CollectionTotalsView } from "@/lib/server/schemas-collection";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/data/Badge";
+import { Textarea } from "@/components/ui/Textarea";
 import { FormFiller } from "./FormFiller";
 
 type Tab = "fill" | "records" | "totals" | "share";
@@ -73,17 +74,81 @@ export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview }: 
 function FillTab({ form }: { form: CollectionFormView }) {
   const [key, setKey] = useState(newIdempotencyKey);
   return (
-    <FormFiller
-      key={key}
-      fields={form.fields as never}
-      onSubmit={async (answers) => {
-        // The same key is reused if the send is repeated, so a retry after a bad connection is stored once.
-        const r = await submitCollectionRecordAction(form.id, { id: key.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60).padEnd(8, "0"), answers });
-        if (!r.ok) return { ok: false, message: r.error.message };
-        setKey(newIdempotencyKey());
-        return { ok: true };
-      }}
-    />
+    <div className="space-y-8">
+      <FormFiller
+        key={key}
+        fields={form.fields as never}
+        onSubmit={async (answers) => {
+          // The same key is reused if the send is repeated, so a retry after a bad connection is stored once.
+          const r = await submitCollectionRecordAction(form.id, { id: key.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60).padEnd(8, "0"), answers });
+          if (!r.ok) return { ok: false, message: r.error.message };
+          setKey(newIdempotencyKey());
+          return { ok: true };
+        }}
+      />
+      <SheetImport formId={form.id} />
+    </div>
+  );
+}
+
+function download(fileName: string, text: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = fileName; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Many records at once from a spreadsheet: the form's own template, a preview, and an error file when something is wrong. */
+function SheetImport({ formId }: { formId: string }) {
+  const router = useRouter();
+  const [text, setText] = useState("");
+  const [preview, setPreview] = useState<RecordImportPreview | null>(null);
+  const [saved, setSaved] = useState<number | null>(null);
+  const act = useActionState();
+
+  async function template() {
+    const r = await getCollectionTemplateAction(formId);
+    if (r.ok) download(r.value.fileName, r.value.text);
+  }
+  async function run(apply: boolean) {
+    setSaved(null);
+    const r = await act.run(() => importCollectionRecordsAction(formId, { text, apply }));
+    if (r && typeof r === "object") {
+      setPreview(r);
+      if (apply) { setSaved(r.saved); router.refresh(); }
+    }
+  }
+
+  return (
+    <section className="space-y-3 border-t border-slate-200 pt-6 dark:border-slate-700">
+      <h2 className="text-base font-semibold">Import many answers from a sheet</h2>
+      <p className="text-sm text-slate-600 dark:text-slate-300">Download the sheet made for this form, fill one row per record, then paste it or choose the file. Nothing is saved until every row is right.</p>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="secondary" onClick={() => void template()}>Download the sheet</Button>
+        <label className="btn-secondary cursor-pointer">
+          Choose a file
+          <input type="file" accept=".csv,.tsv,.txt,text/csv" className="sr-only" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { setText(await f.text()); setPreview(null); } e.target.value = ""; }} />
+        </label>
+      </div>
+      <Field label="Or paste the rows here"><Textarea rows={5} value={text} onChange={(e) => { setText(e.target.value); setPreview(null); }} /></Field>
+      <div className="flex gap-2">
+        <Button variant="secondary" onClick={() => void run(false)} pending={act.busy} disabled={!text.trim()}>Check the sheet</Button>
+        <Button onClick={() => void run(true)} pending={act.busy} disabled={!text.trim() || (preview !== null && preview.invalid > 0)}>Import</Button>
+      </div>
+      {act.error && <p role="alert" className="text-sm text-danger-600">{act.error}</p>}
+      {saved !== null && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">{saved === 0 ? "Nothing new: these rows were already imported." : `${saved} record${saved === 1 ? "" : "s"} imported. They wait for review.`}</p>}
+      {preview && (
+        <div className="space-y-2 text-sm">
+          <p>{preview.total} row{preview.total === 1 ? "" : "s"}: {preview.valid} fine, {preview.invalid} with a problem.</p>
+          {preview.missingColumns.length > 0 && <p className="text-danger-600">The sheet has no column for {preview.missingColumns.join(", ")}.</p>}
+          {preview.unknownColumns.length > 0 && <p className="text-slate-500">These columns match no question and are ignored: {preview.unknownColumns.join(", ")}.</p>}
+          <ul className="list-disc pl-5">
+            {preview.rows.slice(0, 30).map((r) => <li key={r.rowNumber}>Row {r.rowNumber}: {[...r.problems, ...(r.ignored.length ? [`not asked here, so not stored: ${r.ignored.join(", ")}`] : [])].join(" ")}</li>)}
+          </ul>
+          {preview.errorFile && <Button variant="secondary" onClick={() => download("rows-to-fix.csv", preview.errorFile!)}>Download the rows to fix</Button>}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -105,7 +170,7 @@ function RecordsTab({ formId, fields, canReview }: { formId: string; fields: Col
   }, [formId, filter]);
   useEffect(() => { void load(); }, [load]);
 
-  async function decide(id: string, decision: "ACCEPT" | "REJECT", note?: string) {
+  async function decide(id: string, decision: "ACCEPT" | "REJECT" | "REOPEN", note?: string) {
     if (await act.run(() => reviewCollectionRecordAction(id, { decision, ...(note ? { note } : {}) }))) { setRejecting(null); await load(); }
   }
 
@@ -127,6 +192,7 @@ function RecordsTab({ formId, fields, canReview }: { formId: string; fields: Col
                   {fields.map((f) => <td key={f.key} className="pr-3">{answerText(r.answers[f.key])}</td>)}
                   <td className="whitespace-nowrap py-2">
                     {r.status === "REJECTED" && r.reviewNote ? <span className="text-xs text-slate-500">Rejected: {r.reviewNote}</span> : null}
+                    {canReview && r.status !== "PENDING" && <Button variant="secondary" onClick={() => void decide(r.id, "REOPEN")}>Return to waiting</Button>}
                     {canReview && r.status === "PENDING" && (rejecting?.id === r.id ? (
                       <span className="flex items-center gap-1">
                         <Input aria-label="Why it is rejected" placeholder="Why?" value={rejecting.note} onChange={(e) => setRejecting({ id: r.id, note: e.target.value })} />

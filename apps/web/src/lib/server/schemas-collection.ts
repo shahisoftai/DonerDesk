@@ -42,3 +42,11 @@ export const CollectionLinkCreatedSchema = z.object({ id: z.string(), token: z.s
 
 export const SubmitResultSchema = z.object({ id: z.string(), duplicate: z.boolean(), ignored: z.array(z.string()).optional() });
 export const ApplyResultSchema = z.object({ saved: z.number(), skipped: z.number(), indicators: z.array(z.string()) });
+
+export const SheetTemplateSchema = z.object({ fileName: z.string(), text: z.string() });
+export const RecordImportPreviewSchema = z.object({
+  total: z.number(), valid: z.number(), invalid: z.number(), unknownColumns: z.array(z.string()), missingColumns: z.array(z.string()),
+  rows: z.array(z.object({ rowNumber: z.number(), problems: z.array(z.string()), ignored: z.array(z.string()) })),
+  errorFile: z.string().optional(), saved: z.number(),
+});
+export type RecordImportPreview = z.infer<typeof RecordImportPreviewSchema>;

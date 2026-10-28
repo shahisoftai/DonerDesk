@@ -1,6 +1,6 @@
 "use server";
 
-import { ApplyRecordsSchema, CreateCollectionLinkSchema, ReviewRecordSchema, SaveCollectionFormSchema, SubmitRecordSchema } from "@donordesk/contracts";
+import { ApplyRecordsSchema, CreateCollectionLinkSchema, ImportRecordsSchema, ReviewRecordSchema, SaveCollectionFormSchema, SubmitRecordSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -8,7 +8,7 @@ import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { IdResponseSchema, OkResponseSchema } from "./_schemas";
 import {
-  ApplyResultSchema, CollectionLinkCreatedSchema, CollectionLinkListSchema, CollectionRecordListSchema, CollectionTotalsSchema, SubmitResultSchema,
+  ApplyResultSchema, RecordImportPreviewSchema, SheetTemplateSchema, type RecordImportPreview, CollectionLinkCreatedSchema, CollectionLinkListSchema, CollectionRecordListSchema, CollectionTotalsSchema, SubmitResultSchema,
   type CollectionLinkView, type CollectionRecordView, type CollectionTotalsView,
 } from "@/lib/server/schemas-collection";
 import { z } from "zod";
@@ -84,4 +84,17 @@ export async function revokeCollectionLinkAction(linkId: string): Promise<Result
   const context = await requireSession();
   const result = await gatewayRequest(`/v1/collection-links/${enc(linkId)}/revoke`, OkResponseSchema, context.token, { method: "POST", body: {} });
   return result.ok ? { ok: true, value: undefined } : result;
+}
+
+export async function getCollectionTemplateAction(formId: string): Promise<Result<{ fileName: string; text: string }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/collection-forms/${enc(formId)}/template`, SheetTemplateSchema, context.token);
+}
+
+/** `apply: false` previews and saves nothing; applying needs every row to be right. */
+export async function importCollectionRecordsAction(formId: string, input: unknown): Promise<Result<RecordImportPreview, AppError>> {
+  const context = await requireSession();
+  const parsed = ImportRecordsSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  return gatewayRequest(`/v1/collection-forms/${enc(formId)}/import`, RecordImportPreviewSchema, context.token, { method: "POST", body: parsed.data });
 }

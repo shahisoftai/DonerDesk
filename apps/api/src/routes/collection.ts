@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import {
-  ApplyRecordsSchema, CreateCollectionLinkSchema, PublicSubmitSchema, ReviewRecordSchema, SaveCollectionFormSchema, SubmitRecordSchema,
+  ApplyRecordsSchema, CreateCollectionLinkSchema, ImportRecordsSchema, PublicSubmitSchema, ReviewRecordSchema, SaveCollectionFormSchema, SubmitRecordSchema,
 } from "@donordesk/contracts";
 import { z } from "zod";
 import { createContainer, type Container } from "@donordesk/infrastructure";
@@ -73,6 +73,18 @@ export async function registerCollectionRoutes(app: FastifyInstance) {
 
   app.post("/v1/collection-forms/:formId/apply", async (req) => {
     const r = await req.container.handlers.applyCollectionTotals.handle(ctx(req), param(req, "formId"), ApplyRecordsSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/collection-forms/:formId/template", async (req) => {
+    const r = await req.container.handlers.getCollectionSheetTemplate.handle(ctx(req), param(req, "formId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/collection-forms/:formId/import", async (req) => {
+    const r = await req.container.handlers.importCollectionRecords.handle(ctx(req), param(req, "formId"), ImportRecordsSchema.parse(req.body));
     if (!r.ok) throw r.error;
     return r.value;
   });

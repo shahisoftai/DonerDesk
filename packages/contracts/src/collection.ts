@@ -50,7 +50,7 @@ export type SubmitRecordInput = z.infer<typeof SubmitRecordSchema>;
 export const PublicSubmitSchema = SubmitRecordSchema.extend({ submitterName: z.string().trim().max(120).optional() });
 export type PublicSubmitInput = z.infer<typeof PublicSubmitSchema>;
 
-export const ReviewRecordSchema = z.object({ decision: z.enum(["ACCEPT", "REJECT"]), note: z.string().trim().max(2000).optional() });
+export const ReviewRecordSchema = z.object({ decision: z.enum(["ACCEPT", "REJECT", "REOPEN"]), note: z.string().trim().max(2000).optional() });
 export type ReviewRecordInput = z.infer<typeof ReviewRecordSchema>;
 
 export const CreateCollectionLinkSchema = z.object({ label: z.string().trim().min(1).max(120), expiresInDays: z.number().int().min(1).max(365).default(30) });
@@ -58,3 +58,6 @@ export type CreateCollectionLinkInput = z.infer<typeof CreateCollectionLinkSchem
 
 export const ApplyRecordsSchema = z.object({ reportingPeriodId: z.string().min(1) });
 export type ApplyRecordsInput = z.infer<typeof ApplyRecordsSchema>;
+
+export const ImportRecordsSchema = z.object({ text: z.string().min(1).max(2_000_000), apply: z.boolean().default(false) });
+export type ImportRecordsInput = z.infer<typeof ImportRecordsSchema>;
