@@ -1,6 +1,6 @@
 # DonorDesk
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 Programme management platform for NGOs and humanitarian programmes: logframe, indicators, activities, evidence, compliance and team in one record, with AI-assisted donor reports drafted from that record.
 

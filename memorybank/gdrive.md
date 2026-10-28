@@ -1,6 +1,6 @@
 # Google Drive — Primary Evidence Storage (link-first) & R2 optional tier
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Author:** Kilo (agent) · **Date:** 2026-08-13
 **Status:** IMPLEMENTED — Phases A–E complete (compiling, tested). Live Google

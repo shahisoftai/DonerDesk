@@ -13,10 +13,10 @@ export const LEGAL = {
   billingEmail: "support@donordesk.online",
   hostingLocation: "Contabo data centre",
   /** One label for every legal page, so the pages do not carry several versions. */
-  updated: "Product version 1.93 · 7 October 2026",
+  updated: "Product version 3.007 · 7 October 2026",
   /**
    * The refund policy is re-issued on its own date, so it carries its own
    * effective date rather than the label shared by the other policies.
    */
-  refundPolicyUpdated: "21 October 2026 · product version 1.93",
+  refundPolicyUpdated: "21 October 2026 · product version 3.007",
 } as const;

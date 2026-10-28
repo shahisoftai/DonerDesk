@@ -1,6 +1,6 @@
 # Feature 18: Project Creation Wizard (bootstrap → reporting-ready)
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Author:** Kilo (agent) · **Date:** 2026-08-15
 **Status:** IMPLEMENTED — backend (domain/contracts/application/infrastructure/API),

@@ -1,6 +1,6 @@
 # Pending
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-22 (audited and host-verified; latest release 20261022115803; see the priority board below).
 

@@ -1,6 +1,6 @@
 # DonorDesk
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 Agent guidance for coding on DonorDesk.
 
@@ -570,3 +570,8 @@ in-process default), stub LLM (dev default), pino logs, console email.
 ## Deployed 2026-10-28: 33.12 (`releaseId=20261028070000`)
 - Migration `20261029140000_organization_mfa_required` applied after a fresh backup (`Organization.mfaRequiredFrom`, nullable; no organisation requires two-step sign-in yet). `/security` now describes the requirement and partner access. Trial-ending notices run with the existing hourly reminder timer; local trials remain off in production (`TRIALS_ENABLED` unset).
 - Not yet tried by a person: requiring two-step sign-in on a test organisation (turn on your own first), then signing in as a second account; the trial notices (need a trial to exist).
+
+## Version numbering (2026-10-28)
+- The product is **DonorDesk Version 3.007**. The version label appears in the header of the living documents (AGENTS.md, README.md, LICENSE, the memory-bank index, feature specs, runbooks) and in the public legal pages (`apps/web/src/lib/legal-entity.ts`).
+- Point-in-time records keep the version they were written under: phase and audit reports, demo verification records, architecture decision records and the "Version 2.00x" section headings above. Do not renumber them.
+- The npm `package.json` versions (`2.0.1`) are not the product version and are left alone; `3.007` is not a valid semver string.

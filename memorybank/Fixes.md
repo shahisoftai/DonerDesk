@@ -1,6 +1,6 @@
 # Fixes
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 Record of fixes applied to DonorDesk. Last updated: 2026-10-18 (demo 9 findings fixed after the Phase 28 deploy); previously 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
 

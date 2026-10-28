@@ -4,7 +4,7 @@
 
 This directory contains detailed documentation for DonorDesk's features: 01–21 are the MVP and its first additions, 23–25 are the programme-management batches, and 26–42 are the October 2026 audit and gap-closure batches (listed in the second table below).
 
-> **Introduced in DonorDesk Version 1.93:** built on branch `0009-agent-memory`. Feature 21
+> **Introduced in DonorDesk Version 3.007:** built on branch `0009-agent-memory`. Feature 21
 > (Agent Memory) is this release's headline addition — see
 > [`21-Agent-Memory.md`](./21-Agent-Memory.md) and
 > [`../imp/Phase21-agent-memory.md`](../imp/Phase21-agent-memory.md).

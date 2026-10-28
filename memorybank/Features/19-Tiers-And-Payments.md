@@ -1,6 +1,6 @@
 # Feature 19: Tiers, Entitlements, and Creem Payments — Implementation Plan
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Updated:** 2026-08-18  
 **Status:** IMPLEMENTED — entitlements, AI-credit quotas, usage counters,
