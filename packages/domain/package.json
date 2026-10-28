@@ -153,6 +153,50 @@
     "./contexts/ask/index.js": {
       "types": "./dist/contexts/ask/index.d.ts",
       "import": "./dist/contexts/ask/index.js"
+    },
+    "./contexts/reporting/chart-spec-v2.js": {
+      "types": "./dist/contexts/reporting/chart-spec-v2.d.ts",
+      "import": "./dist/contexts/reporting/chart-spec-v2.js"
+    },
+    "./contexts/dashboards/dashboard.js": {
+      "types": "./dist/contexts/dashboards/dashboard.d.ts",
+      "import": "./dist/contexts/dashboards/dashboard.js"
+    },
+    "./contexts/dashboards/dashboard-templates.js": {
+      "types": "./dist/contexts/dashboards/dashboard-templates.d.ts",
+      "import": "./dist/contexts/dashboards/dashboard-templates.js"
+    },
+    "./contexts/dashboards/sector-templates.js": {
+      "types": "./dist/contexts/dashboards/sector-templates.d.ts",
+      "import": "./dist/contexts/dashboards/sector-templates.js"
+    },
+    "./contexts/reporting/dataset-query.js": {
+      "types": "./dist/contexts/reporting/dataset-query.d.ts",
+      "import": "./dist/contexts/reporting/dataset-query.js"
+    },
+    "./contexts/logframe/indicator-value-rules.js": {
+      "types": "./dist/contexts/logframe/indicator-value-rules.d.ts",
+      "import": "./dist/contexts/logframe/indicator-value-rules.js"
+    },
+    "./contexts/reporting/export-indicator-columns.js": {
+      "types": "./dist/contexts/reporting/export-indicator-columns.d.ts",
+      "import": "./dist/contexts/reporting/export-indicator-columns.js"
+    },
+    "./contexts/reporting/chart-render.js": {
+      "types": "./dist/contexts/reporting/chart-render.d.ts",
+      "import": "./dist/contexts/reporting/chart-render.js"
+    },
+    "./contexts/reporting/places-export.js": {
+      "types": "./dist/contexts/reporting/places-export.d.ts",
+      "import": "./dist/contexts/reporting/places-export.js"
+    },
+    "./contexts/reporting/report-query.js": {
+      "types": "./dist/contexts/reporting/report-query.d.ts",
+      "import": "./dist/contexts/reporting/report-query.js"
+    },
+    "./contexts/reporting/breakdown-chart.js": {
+      "types": "./dist/contexts/reporting/breakdown-chart.d.ts",
+      "import": "./dist/contexts/reporting/breakdown-chart.js"
     }
   },
   "scripts": {

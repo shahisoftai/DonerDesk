@@ -11,11 +11,32 @@
   --border-strong: rgba(15, 23, 42, 0.18);
   --text: #0e1a16;
   --text-secondary: #3d4f48;
-  --text-muted: #6b7d75;
+  --text-muted: #586a62;
   --brand-glow: rgba(242, 181, 68, 0.16);
   --cyan-glow: rgba(63, 193, 166, 0.12);
   --grid-line: rgba(15, 23, 42, 0.05);
   --ring: rgba(242, 181, 68, 0.35);
+
+  /* Data-surface tokens: the table is features/design/domain/tokens.ts (a test keeps them equal). */
+  --tile-bg: #ffffff;
+  --tile-border: #d8e0db;
+  --tile-header-bg: #f4f7f5;
+  --tile-title: #0e1a16;
+  --tile-meta: #4f5f58;
+  --badge-bg: #8a5610;
+  --badge-text: #ffffff;
+  --signal-good: #15803d;
+  --signal-warn: #b45309;
+  --signal-bad: #b91c1c;
+  --signal-none: #5b6c64;
+  --viz-1: #0072B2;
+  --viz-2: #C25400;
+  --viz-3: #00855F;
+  --viz-4: #A8467F;
+  --viz-5: #9A6A00;
+  --viz-6: #2B7FB8;
+  --viz-7: #6A4C93;
+  --viz-8: #4D4D4D;
 }
 
 .dark {
@@ -32,6 +53,26 @@
   --cyan-glow: rgba(63, 193, 166, 0.2);
   --grid-line: rgba(255, 255, 255, 0.04);
   --ring: rgba(63, 193, 166, 0.4);
+
+  --tile-bg: #12231f;
+  --tile-border: #2a3a35;
+  --tile-header-bg: #0f1d1a;
+  --tile-title: #f1f5f9;
+  --tile-meta: #a3b5ad;
+  --badge-bg: #f2b544;
+  --badge-text: #0b1614;
+  --signal-good: #4ade80;
+  --signal-warn: #fbbf24;
+  --signal-bad: #f87171;
+  --signal-none: #9fb1a9;
+  --viz-1: #56B4E9;
+  --viz-2: #F28E2B;
+  --viz-3: #3DCCA0;
+  --viz-4: #E58FC0;
+  --viz-5: #F2C94C;
+  --viz-6: #8FC1EA;
+  --viz-7: #B39DDB;
+  --viz-8: #C9D1CE;
 }
 
 @layer base {
@@ -425,4 +466,12 @@
   .claim-mark[data-claim-focused="true"] {
     @apply ring-2 ring-warning-500/60;
   }
+}
+
+/* Printing a dashboard (Phase 34.7): only the page content, charts never split across pages. */
+@media print {
+  header[role="banner"], nav, aside, [data-no-print], #main-content ~ * { display: none !important; }
+  #main-content { padding: 0 !important; }
+  [data-dashboard-canvas] { break-inside: avoid; }
+  body { background: #fff !important; }
 }

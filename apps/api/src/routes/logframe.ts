@@ -18,8 +18,8 @@ import {
   ParseIndicatorSheetSchema,
   IndicatorUpdateReviewReasonSchema,
 } from "@donordesk/contracts";
-import { buildLogframeTemplate, LOGFRAME_TEMPLATE_FILENAME, buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME } from "@donordesk/infrastructure";
-import { parseCsv } from "@donordesk/domain";
+import { buildLogframeTemplate, LOGFRAME_TEMPLATE_FILENAME, buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME, buildIndicatorEntryWorkbook, readIndicatorEntryWorkbook, ENTRY_FILE_NAME } from "@donordesk/infrastructure";
+import { DomainError, parseCsv } from "@donordesk/domain";
 
 export async function registerLogframeRoutes(app: FastifyInstance) {
   app.get("/v1/logframe/template", async (_req, reply) => {
@@ -266,6 +266,40 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.rejectIndicatorUpdate.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  // The period's entry sheet as an Excel workbook, and an uploaded one read back for the grid to preview (Phase 34.2).
+  app.get("/v1/reporting-periods/:id/indicator-sheet/export", async (req, reply) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getIndicatorEntryFile.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    reply.header("content-disposition", `attachment; filename="${ENTRY_FILE_NAME}"`);
+    return buildIndicatorEntryWorkbook(r.value.items);
+  });
+
+  app.post("/v1/reporting-periods/:id/indicator-sheet/parse", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const data = await req.file();
+    if (!data) throw DomainError.validation("Choose a file to import.");
+    const buffer = await data.toBuffer();
+    if (!/\.xlsx$/i.test(data.filename ?? "")) throw DomainError.validation("Import an Excel file (.xlsx).");
+    let table: string[][];
+    try { table = await readIndicatorEntryWorkbook(buffer); } catch { throw DomainError.validation("That file could not be read as an Excel workbook."); }
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.parseIndicatorWorkbook.handle(ctx, id, table);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // The history of one saved value, from the audit trail (Phase 34.2). The project boundary has already checked the value's project.
+  app.get("/v1/indicator-updates/:id/history", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getIndicatorValueHistory.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.get("/v1/projects/:projectId/data-sheet", async (req) => {

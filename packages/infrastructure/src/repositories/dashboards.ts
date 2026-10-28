@@ -1,5 +1,5 @@
-import { TenantId, ok, type DashboardWidget, type Result } from "@donordesk/domain";
-import type { IDashboardLinkRepository, IDashboardRepository, StoredDashboard, StoredDashboardLink } from "@donordesk/application";
+import { TenantId, ok, type DashboardTemplate, type DashboardWidget, type Result } from "@donordesk/domain";
+import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, StoredBookmark, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
 import type { PrismaClient } from "@prisma/client";
 
 type DashboardRow = NonNullable<Awaited<ReturnType<PrismaClient["dashboard"]["findFirst"]>>>;
@@ -93,5 +93,144 @@ export class PrismaDashboardLinkRepository implements IDashboardLinkRepository {
   async findByTokenHash(tokenHash: string): Promise<Result<StoredDashboardLink | null>> {
     const row = await this.prisma.dashboardShareLink.findUnique({ where: { tokenHash } });
     return ok(row ? linkFrom(row) : null);
+  }
+}
+
+type ChartRow = NonNullable<Awaited<ReturnType<PrismaClient["savedChart"]["findFirst"]>>>;
+
+const specFrom = (text: string): Record<string, unknown> => {
+  try { const v = JSON.parse(text); return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {}; } catch { return {}; }
+};
+
+const versionsFrom = (text: string): StoredChart["versions"] => {
+  try { const v = JSON.parse(text); return Array.isArray(v) ? (v as StoredChart["versions"]) : []; } catch { return []; }
+};
+
+const chartFrom = (r: ChartRow): StoredChart => ({
+  id: r.id, tenantId: TenantId.create(r.tenantId), scope: r.scope as StoredChart["scope"], projectId: r.projectId, ownerId: r.ownerId, name: r.name, spec: specFrom(r.specJson), versions: versionsFrom(r.versionsJson), createdAt: r.createdAt, updatedAt: r.updatedAt,
+});
+
+export class PrismaSavedChartRepository implements ISavedChartRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(c: StoredChart): Promise<Result<void>> {
+    await this.prisma.savedChart.create({ data: { id: c.id, tenantId: c.tenantId.toString(), scope: c.scope, projectId: c.projectId, ownerId: c.ownerId, name: c.name, specJson: JSON.stringify(c.spec), versionsJson: JSON.stringify(c.versions) } });
+    return ok(undefined);
+  }
+
+  /** Writes every mutable field. With an expected version the write happens only if nobody saved in between. */
+  async update(c: StoredChart, expectedUpdatedAt?: Date): Promise<Result<boolean>> {
+    const r = await this.prisma.savedChart.updateMany({
+      where: { id: c.id, tenantId: c.tenantId.toString(), ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) },
+      data: { name: c.name, specJson: JSON.stringify(c.spec), versionsJson: JSON.stringify(c.versions) },
+    });
+    return ok(r.count > 0);
+  }
+
+  async delete(id: string, tenantId: TenantId): Promise<Result<void>> {
+    await this.prisma.savedChart.deleteMany({ where: { id, tenantId: tenantId.toString() } });
+    return ok(undefined);
+  }
+
+  async findById(id: string, tenantId: TenantId): Promise<Result<StoredChart | null>> {
+    const row = await this.prisma.savedChart.findFirst({ where: { id, tenantId: tenantId.toString() } });
+    return ok(row ? chartFrom(row) : null);
+  }
+
+  async listForProject(tenantId: TenantId, projectId: string, ownerId: string): Promise<Result<StoredChart[]>> {
+    const rows = await this.prisma.savedChart.findMany({
+      where: { tenantId: tenantId.toString(), projectId, OR: [{ scope: "PROJECT" }, { scope: "MINE", ownerId }] },
+      orderBy: { updatedAt: "desc" },
+    });
+    return ok(rows.map(chartFrom));
+  }
+}
+
+type TemplateRow = NonNullable<Awaited<ReturnType<PrismaClient["dashboardTemplate"]["findFirst"]>>>;
+
+const templateFrom = (r: TemplateRow): StoredDashboardTemplate => ({
+  id: r.id, tenantId: TenantId.create(r.tenantId), ownerId: r.ownerId, template: { ...(JSON.parse(r.json) as DashboardTemplate), id: r.id, revision: r.revision, origin: "ORGANISATION", status: "DRAFT" }, createdAt: r.createdAt, updatedAt: r.updatedAt,
+});
+
+export class PrismaDashboardTemplateRepository implements IDashboardTemplateRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(t: StoredDashboardTemplate): Promise<Result<void>> {
+    await this.prisma.dashboardTemplate.create({ data: { id: t.id, tenantId: t.tenantId.toString(), ownerId: t.ownerId, sector: t.template.sector, title: t.template.title, json: JSON.stringify(t.template), revision: t.template.revision } });
+    return ok(undefined);
+  }
+
+  async update(t: StoredDashboardTemplate, expectedUpdatedAt?: Date): Promise<Result<boolean>> {
+    const r = await this.prisma.dashboardTemplate.updateMany({
+      where: { id: t.id, tenantId: t.tenantId.toString(), ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) },
+      data: { sector: t.template.sector, title: t.template.title, json: JSON.stringify(t.template), revision: t.template.revision },
+    });
+    return ok(r.count > 0);
+  }
+
+  async delete(id: string, tenantId: TenantId): Promise<Result<void>> {
+    await this.prisma.dashboardTemplate.deleteMany({ where: { id, tenantId: tenantId.toString() } });
+    return ok(undefined);
+  }
+
+  async findById(id: string, tenantId: TenantId): Promise<Result<StoredDashboardTemplate | null>> {
+    const row = await this.prisma.dashboardTemplate.findFirst({ where: { id, tenantId: tenantId.toString() } });
+    return ok(row ? templateFrom(row) : null);
+  }
+
+  async list(tenantId: TenantId): Promise<Result<StoredDashboardTemplate[]>> {
+    const rows = await this.prisma.dashboardTemplate.findMany({ where: { tenantId: tenantId.toString() }, orderBy: { updatedAt: "desc" } });
+    return ok(rows.map(templateFrom));
+  }
+}
+
+export class PrismaBookmarkRepository implements IBookmarkRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(b: StoredBookmark): Promise<Result<void>> {
+    await this.prisma.bookmark.create({ data: { id: b.id, tenantId: b.tenantId.toString(), userId: b.userId, title: b.title, href: b.href } });
+    return ok(undefined);
+  }
+
+  async delete(id: string, tenantId: TenantId, userId: string): Promise<Result<void>> {
+    await this.prisma.bookmark.deleteMany({ where: { id, tenantId: tenantId.toString(), userId } });
+    return ok(undefined);
+  }
+
+  async listForUser(tenantId: TenantId, userId: string): Promise<Result<StoredBookmark[]>> {
+    const rows = await this.prisma.bookmark.findMany({ where: { tenantId: tenantId.toString(), userId }, orderBy: { createdAt: "asc" } });
+    return ok(rows.map((r) => ({ id: r.id, tenantId: TenantId.create(r.tenantId), userId: r.userId, title: r.title, href: r.href, createdAt: r.createdAt })));
+  }
+}
+
+type ReportRow = NonNullable<Awaited<ReturnType<PrismaClient["savedReport"]["findFirst"]>>>;
+const reportFrom = (r: ReportRow): StoredReport => ({ id: r.id, tenantId: TenantId.create(r.tenantId), scope: r.scope as StoredReport["scope"], projectId: r.projectId, ownerId: r.ownerId, name: r.name, query: JSON.parse(r.queryJson) as Record<string, unknown>, createdAt: r.createdAt, updatedAt: r.updatedAt });
+
+export class PrismaSavedReportRepository implements ISavedReportRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(r: StoredReport): Promise<Result<void>> {
+    await this.prisma.savedReport.create({ data: { id: r.id, tenantId: r.tenantId.toString(), scope: r.scope, projectId: r.projectId, ownerId: r.ownerId, name: r.name, queryJson: JSON.stringify(r.query) } });
+    return ok(undefined);
+  }
+
+  async update(r: StoredReport, expectedUpdatedAt?: Date): Promise<Result<boolean>> {
+    const done = await this.prisma.savedReport.updateMany({ where: { id: r.id, tenantId: r.tenantId.toString(), ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) }, data: { name: r.name, queryJson: JSON.stringify(r.query) } });
+    return ok(done.count > 0);
+  }
+
+  async delete(id: string, tenantId: TenantId): Promise<Result<void>> {
+    await this.prisma.savedReport.deleteMany({ where: { id, tenantId: tenantId.toString() } });
+    return ok(undefined);
+  }
+
+  async findById(id: string, tenantId: TenantId): Promise<Result<StoredReport | null>> {
+    const row = await this.prisma.savedReport.findFirst({ where: { id, tenantId: tenantId.toString() } });
+    return ok(row ? reportFrom(row) : null);
+  }
+
+  async listForProject(tenantId: TenantId, projectId: string, ownerId: string): Promise<Result<StoredReport[]>> {
+    const rows = await this.prisma.savedReport.findMany({ where: { tenantId: tenantId.toString(), projectId, OR: [{ scope: "PROJECT" }, { scope: "MINE", ownerId }] }, orderBy: { updatedAt: "desc" } });
+    return ok(rows.map(reportFrom));
   }
 }

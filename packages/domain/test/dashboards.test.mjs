@@ -75,3 +75,36 @@ test("who sees and who changes a dashboard", () => {
   assert.match(dashboardScopeProblem({ scope: "ORG", ownerId: "u", projectId: "p" }), /Only a project/);
   assert.equal(dashboardScopeProblem({ scope: "MINE", ownerId: "u" }), null);
 });
+
+/* ---------- Dashboards v2: Chart Studio charts and text blocks (Phase 34.3) ---------- */
+import { isSpecV2 as isV2, widgetProblems as problemsOf, addWidget as addW, settleLayout as settle } from "../dist/index.js";
+
+const v2spec = (over = {}) => ({ version: 2, kind: "FUNNEL", dataset: { template: "INDICATORS_PROGRESS", indicatorIds: ["a", "b"], measure: "CUMULATIVE", showTarget: false, includeDraft: true }, ...over });
+const w2 = (over = {}) => ({ id: "w", projectId: "p1", x: 0, y: 0, w: 6, h: 4, spec: v2spec(), ...over });
+
+test("a Chart Studio chart is a valid widget, checked by the studio's own validator", () => {
+  assert.equal(isV2(v2spec()), true);
+  assert.equal(isV2({ template: "X", type: "BAR" }), false);
+  assert.deepEqual(problemsOf([w2()]), []);
+  assert.match(problemsOf([w2({ spec: v2spec({ kind: "NOPE" }) })])[0].message, /not offered/);
+  assert.match(problemsOf([w2({ spec: v2spec({ kind: "POPULATION_PYRAMID" }) })])[0].message, /not available yet/);
+  assert.match(problemsOf([w2({ spec: v2spec({ kind: "BAR", axes: { y: { min: 50 } } }) })])[0].message, /starts at zero/);
+  assert.match(problemsOf([w2({ spec: v2spec({ kind: "GAUGE" }) })])[0].message, /cannot be drawn/);
+});
+
+test("a text block needs text and is not a chart: no settings are asked of it", () => {
+  assert.deepEqual(problemsOf([{ id: "t", projectId: "p1", kind: "TEXT", text: "Figures are cumulative.", x: 0, y: 0, w: 12, h: 2 }]), []);
+  assert.match(problemsOf([{ id: "t", projectId: "p1", kind: "TEXT", text: "  ", x: 0, y: 0, w: 12, h: 2 }])[0].message, /needs some text/);
+  assert.match(problemsOf([{ id: "t", projectId: "p1", kind: "TEXT", text: "x".repeat(2001), x: 0, y: 0, w: 12, h: 2 }])[0].message, /at most 2000/);
+});
+
+test("a chart with no settings is refused; old and new charts can share a dashboard and a layout", () => {
+  assert.match(problemsOf([{ id: "c", projectId: "p1", x: 0, y: 0, w: 6, h: 4 }])[0].message, /needs its settings/);
+  const old = { id: "o", projectId: "p1", x: 0, y: 0, w: 6, h: 4, spec: { template: "INDICATOR_OVER_TIME", indicatorIds: ["a"], measure: "PERIOD", type: "BAR", showTarget: false } };
+  const mixed = settle([old, w2({ id: "n", x: 0, y: 0 })]);
+  assert.deepEqual(problemsOf(mixed), []);
+  assert.notEqual(mixed[0].y, mixed[1].y, "they do not overlap: one falls below the other");
+  const added = addW([old], { id: "t", projectId: "p1", kind: "TEXT", text: "Hello" });
+  assert.equal(added.length, 2);
+  assert.equal(added[1].kind, "TEXT");
+});

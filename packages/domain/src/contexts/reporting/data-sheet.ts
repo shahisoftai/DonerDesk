@@ -55,6 +55,8 @@ export interface DataSheetCell {
   notApplicable?: boolean | undefined;
   /** Worked out from other indicators' values; never typed, never editable. */
   calculated?: boolean | undefined;
+  /** The period value split by group (sex, age group …), as recorded; absent when none was recorded. */
+  breakdown?: Array<{ dimension: string; category: string; value: string }> | undefined;
 }
 
 export interface DataSheetFinanceRow {

@@ -22,3 +22,5 @@ export * from "./indicator-value-rules.js";
 export * from "./target-schedule.js";
 export * from "./indicator-formula.js";
 export * from "./period-data-status.js";
+export * from "./value-history.js";
+export * from "./indicator-sheet-file.js";

@@ -77,6 +77,7 @@ export class GetProjectDataSheetHandler {
         ...(u.comments ? { comments: u.comments } : {}),
         status: u.verificationStatus,
         ...(u.isNotApplicable ? { notApplicable: true } : {}),
+        ...((u.disaggregation?.length ?? 0) > 0 ? { breakdown: u.disaggregation.map((e) => ({ dimension: e.dimension, category: e.category, value: e.value })) } : {}),
       }));
     const codeById = new Map(indicatorsResult.value.map((i) => [i.id, i.code]));
     // A calculated value is never stored: it is worked out here from the values it comes from, so it cannot drift.

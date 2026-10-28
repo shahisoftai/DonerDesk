@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { collectionText } from "@/features/tasks/domain/collection-view";
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { nextRunningTotal } from "@donordesk/domain/contexts/logframe/indicator-entry-suggestions.js";
 import type { DisaggregationEntryInput } from "@donordesk/contracts";
 import { useRouter } from "next/navigation";
 import {
   bulkSaveIndicatorUpdatesAction,
   parseIndicatorSheetAction,
+  parseIndicatorWorkbookAction,
   verifyIndicatorUpdateAction,
   verifyAllIndicatorUpdatesAction,
   submitAllIndicatorUpdatesAction,
@@ -29,6 +30,16 @@ import { indicatorVerificationTone } from "@/lib/shared/tone";
 import { INDICATOR_VERIFICATION_LABEL, INDICATOR_TYPE_LABEL, LOGFRAME_LEVEL_LABEL } from "@/lib/labels";
 import { logframeLevelRank, logframeLevelTone } from "@/features/logframe/domain/logframe-outline";
 import { DisaggregationEditor } from "@/features/logframe/presentation/DisaggregationEditor";
+import { EntrySheet, type AutosaveStatus } from "@/features/reporting/presentation/EntrySheet";
+import { toSheetRow } from "@/features/reporting/presentation/sheet-rows";
+import { applyChanges, changedRowIds, defaultSheetPrefs, parseSheetPrefs, summarise, toWritePlan, type Change, type SheetPrefs, type ValuesById } from "@/features/reporting/domain/entry-sheet";
+import { useOutbox } from "@/features/offline/presentation/OutboxProvider";
+import { indicatorValuesEntry } from "@/features/offline/domain/indicator-values-outbox";
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
+
+const VIEW_KEY = "dd-entry-view";
+const PREFS_KEY = "dd-entry-sheet-prefs";
+type EntryView = "sheet" | "form";
 
 type TextField = "periodAchievement" | "cumulativeAchievement" | "comments" | "dataSource" | "notApplicableReason";
 
@@ -66,6 +77,8 @@ export function IndicatorEntryGrid({
   dataStatus,
   entryWindow,
   canManageWindow = false,
+  history,
+  places,
 }: {
   projectId: string;
   periodId: string;
@@ -86,9 +99,37 @@ export function IndicatorEntryGrid({
   entryWindow?: { opensOn?: string | undefined; closesOn?: string | undefined; description: string | null; refusal: string | null };
   /** May this person set the window (project editors). */
   canManageWindow?: boolean;
+  /** Earlier periods' period values (read-only columns in the sheet). */
+  history?: { periods: Array<{ id: string; label: string }>; values: Record<string, Record<string, string>> };
+  /** Place names the project knows, offered by place in the sheet. */
+  places?: string[];
 }) {
   const router = useRouter();
   const toast = useToast();
+  const { t } = useI18n();
+  // The sheet is the default on a wide screen; the form is always used on a narrow one. The choice is kept in this browser only.
+  const [view, setView] = useState<EntryView>("sheet");
+  const [wide, setWide] = useState(true);
+  useEffect(() => {
+    try { const stored = window.localStorage.getItem(VIEW_KEY); if (stored === "sheet" || stored === "form") setView(stored); } catch { /* the default applies */ }
+    const query = window.matchMedia("(min-width: 768px)");
+    const update = () => setWide(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  function chooseView(next: EntryView) {
+    setView(next);
+    try { window.localStorage.setItem(VIEW_KEY, next); } catch { /* not kept; still applies now */ }
+  }
+  const outbox = useOutbox();
+  const [prefs, setPrefsState] = useState<SheetPrefs>(defaultSheetPrefs);
+  useEffect(() => { try { setPrefsState(parseSheetPrefs(window.localStorage.getItem(PREFS_KEY))); } catch { /* the defaults apply */ } }, []);
+  const setPrefs = useCallback((next: SheetPrefs) => {
+    setPrefsState(next);
+    try { window.localStorage.setItem(PREFS_KEY, JSON.stringify(next)); } catch { /* kept for this visit only */ }
+  }, []);
+  const [autosave, setAutosave] = useState<AutosaveStatus>({ state: "idle" });
   const [values, setValues] = useState<Record<string, RowValues>>(() =>
     Object.fromEntries(rows.map((row) => [row.id, initialValues(row)])),
   );
@@ -102,7 +143,7 @@ export function IndicatorEntryGrid({
   const [importOpen, setImportOpen] = useState(false);
   const [sheetUrl, setSheetUrl] = useState("");
   const [importing, setImporting] = useState(false);
-  const [preview, setPreview] = useState<{ rows: Array<{ indicatorId: string | null; code: string; name: string | null; periodAchievement: string; cumulativeAchievement: string; comments: string; dataSource: string; matched: boolean }>; warnings: string[] } | null>(null);
+  const [preview, setPreview] = useState<{ rows: Array<{ indicatorId: string | null; code: string; name: string | null; periodAchievement: string; cumulativeAchievement: string; comments: string; dataSource: string; matched: boolean; locked?: boolean }>; warnings: string[] } | null>(null);
 
   const grouped = useMemo(() => {
     const groups = new Map<string, PeriodIndicatorRow[]>();
@@ -116,6 +157,113 @@ export function IndicatorEntryGrid({
   }, [rows]);
 
   const dirtyCount = dirty.size;
+
+  /** What the server last had for each row: the sheet tells what is unsaved by comparing with it. */
+  const initialById = useMemo(() => Object.fromEntries(rows.map((row) => [row.id, initialValues(row)])), [rows]);
+  const orderedRows = useMemo(() => grouped.flatMap(([, levelRows]) => levelRows), [grouped]);
+
+  /** The latest values, so two changes made in one tick (a paste, then a fill) build on each other. */
+  const valuesRef = useRef(values);
+  valuesRef.current = values;
+
+  /** Typed, pasted, filled, cleared or undone in the sheet: one entry, applied to the same values and unsaved set the form uses. */
+  const applySheetChanges = useCallback((changes: Change[]) => {
+    const next = applyChanges(valuesRef.current as ValuesById, changes) as Record<string, RowValues>;
+    valuesRef.current = next;
+    setValues(next);
+    const changed = changedRowIds(initialById as ValuesById, next as ValuesById);
+    const touched = new Set(changes.map((c) => c.rowId));
+    // A row that came in some other way (an import preview) stays unsaved; a row the sheet put back to what it was is clean again.
+    setDirty((d) => {
+      const merged = new Set([...d].filter((id) => !touched.has(id)));
+      for (const id of touched) if (changed.has(id)) merged.add(id);
+      return merged;
+    });
+  }, [initialById]);
+  const applyBreakdown = (rowId: string, entries: RowValues["disaggregation"]) => updateRow(rowId, { disaggregation: entries });
+  const showSheet = view === "sheet" && wide;
+
+  // ----- Automatic save for the sheet: drafts only (nothing is handed in or verified by it), through the same write plan as Save all. -----
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
+  const allSheetRows = useMemo(() => rows.map(toSheetRow), [rows]);
+  const refreshPending = useRef(false);
+  const lastQueued = useRef("");
+  const lastFailed = useRef("");
+  useEffect(() => { refreshPending.current = false; }, [rows]);
+
+  const queueOffline = useCallback(async (payload: ReturnType<typeof toWritePlan>) => {
+    const key = JSON.stringify(payload);
+    if (key !== lastQueued.current) {
+      await outbox.enqueue(indicatorValuesEntry({ id: crypto.randomUUID(), title: `Indicator values (${payload.length})`, payload: { periodId, rows: payload as unknown as Array<Record<string, unknown>> }, now: Date.now() }));
+      lastQueued.current = key;
+    }
+    setAutosave({ state: "queued" });
+  }, [outbox, periodId]);
+
+  const autosaveNow = useCallback(async () => {
+    const snapshot = valuesRef.current as ValuesById<DisaggregationEntryInput>;
+    const payload = toWritePlan(allSheetRows, snapshot, dirtyRef.current);
+    if (payload.length === 0) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) { await queueOffline(payload); return; }
+    setAutosave({ state: "saving" });
+    const result = await bulkSaveIndicatorUpdatesAction(periodId, payload as BulkSaveRow[]);
+    if (!result.ok) {
+      if (result.error.kind === "unavailable") { await queueOffline(payload); return; }
+      lastFailed.current = JSON.stringify(payload);
+      setAutosave({ state: "failed", message: result.error.message });
+      return;
+    }
+    refreshPending.current = true;
+    // Rows the person kept editing while this saved stay unsaved; the rest are clean.
+    setDirty(changedRowIds(snapshot as ValuesById, valuesRef.current as ValuesById));
+    setAutosave({ state: "saved", at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) });
+    router.refresh();
+    window.setTimeout(() => { refreshPending.current = false; }, 4000);
+  }, [allSheetRows, periodId, queueOffline, router]);
+
+  useEffect(() => {
+    if (!showSheet || !prefs.autosave || !canEdit) return;
+    if (dirty.size === 0) { setAutosave((s) => (s.state === "pending" || s.state === "error" ? { state: "idle" } : s)); return; }
+    const summary = summarise(allSheetRows, values as ValuesById, initialById as ValuesById, { canEdit, closedReason: entryWindow?.refusal ?? null });
+    if (summary.invalidCells > 0) { setAutosave((s) => (s.state === "error" ? s : { state: "error" })); return; }
+    if (saving || refreshPending.current) return;
+    // The same save that already failed is not tried again until something changes.
+    if (JSON.stringify(toWritePlan(allSheetRows, values as ValuesById<DisaggregationEntryInput>, dirty)) === lastFailed.current) return;
+    // Only a change of state sets state: this effect runs on every keystroke and must never set a new object when nothing changed.
+    setAutosave((s) => (s.state === "queued" || s.state === "pending" ? s : { state: "pending" }));
+    const timer = window.setTimeout(() => { void autosaveNow(); }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [dirty, values, rows, prefs.autosave, showSheet, canEdit, saving, allSheetRows, initialById, entryWindow?.refusal, autosaveNow]);
+
+  // A save queued while offline is sent by the outbox when the connection returns; show what it did.
+  useEffect(() => {
+    if (autosave.state !== "queued") return;
+    const onOnline = () => window.setTimeout(() => router.refresh(), 5000);
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [autosave.state, router]);
+
+  const fileInput = useRef<HTMLInputElement>(null);
+  async function importWorkbook(file: File | undefined) {
+    if (!file || importing) return;
+    setImporting(true);
+    setPreview(null);
+    try {
+      const form = new FormData();
+      form.set("file", file);
+      const result = await parseIndicatorWorkbookAction(periodId, form);
+      if (!result.ok) {
+        toast.push({ title: "Could not read the Excel file", description: result.error.message, tone: "danger" });
+        return;
+      }
+      setPreview(result.value);
+      setImportOpen(true);
+    } finally {
+      setImporting(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  }
 
   /** The running total last suggested per row, so a person's own entry is never replaced by a newer suggestion. */
   const lastSuggestion = useRef<Record<string, string | undefined>>({});
@@ -251,24 +399,9 @@ export function IndicatorEntryGrid({
         await verifyAll();
         return;
       }
-      const payload: BulkSaveRow[] = rows
-        .filter((row) => dirty.has(row.id))
-        .map((row) => {
-          const v = values[row.id] ?? initialValues(row);
-          return {
-            indicatorId: row.id,
-            ...(row.update ? { expectedUpdatedAt: row.update.updatedAt } : {}),
-            periodAchievement: v.periodAchievement,
-            cumulativeAchievement: v.cumulativeAchievement,
-            comments: v.comments,
-            dataSource: v.dataSource,
-            // "" clears the answer; a reason makes it "not applicable this period" and the figures are ignored.
-            notApplicableReason: v.notApplicableReason.trim(),
-            ...(hasBreakdown(row, v)
-              ? { disaggregation: v.disaggregation.filter((entry) => entry.category.trim() || entry.value.trim()) }
-              : {}),
-          };
-        });
+      // The same write plan the sheet's automatic save uses: the version each row was saved against, "" clears, a reason makes the
+      // row "not applicable" and its figures are ignored, a breakdown only when required or typed.
+      const payload = toWritePlan(rows.map(toSheetRow), values as ValuesById<DisaggregationEntryInput>, dirty) as BulkSaveRow[];
       const result = await bulkSaveIndicatorUpdatesAction(periodId, payload);
       if (!result.ok) {
         toast.push({ title: "Could not save indicator data", description: result.error.message, tone: "danger" });
@@ -329,7 +462,7 @@ export function IndicatorEntryGrid({
       const next = { ...current };
       const byId = new Map(rows.map((row) => [row.id, row]));
       for (const parsed of preview.rows) {
-        if (!parsed.indicatorId || !byId.has(parsed.indicatorId)) continue;
+        if (!parsed.indicatorId || !byId.has(parsed.indicatorId) || parsed.locked) continue;
         const base = next[parsed.indicatorId] ?? initialValues(byId.get(parsed.indicatorId)!);
         next[parsed.indicatorId] = {
           periodAchievement: parsed.periodAchievement || base.periodAchievement,
@@ -345,17 +478,17 @@ export function IndicatorEntryGrid({
     setDirty((current) => {
       const next = new Set(current);
       for (const parsed of preview.rows) {
-        if (parsed.indicatorId && parsed.matched) next.add(parsed.indicatorId);
+        if (parsed.indicatorId && parsed.matched && !parsed.locked) next.add(parsed.indicatorId);
       }
       return next;
     });
-    toast.push({ title: "Spreadsheet applied to the grid", description: "Review the values, then press Save all.", tone: "success" });
+    toast.push({ title: t("sheet.excel.applied"), description: t("sheet.excel.locked"), tone: "success" });
     setPreview(null);
     setSheetUrl("");
     setImportOpen(false);
   }
 
-  const matchedRows = preview?.rows.filter((r) => r.matched).length ?? 0;
+  const matchedRows = preview?.rows.filter((r) => r.matched && !r.locked).length ?? 0;
 
   return (
     <div className="mt-6 space-y-6">
@@ -368,6 +501,13 @@ export function IndicatorEntryGrid({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <a className="btn-secondary px-3 py-1.5 text-sm" href={`/api/reporting-periods/${periodId}/indicator-sheet/export`}>{t("sheet.excel.download")}</a>
+          {canEdit && (
+            <>
+              <input ref={fileInput} type="file" accept=".xlsx" className="sr-only" aria-label={t("sheet.excel.import")} onChange={(e) => void importWorkbook(e.target.files?.[0])} />
+              <Button variant="secondary" size="sm" onClick={() => fileInput.current?.click()} pending={importing}>{t("sheet.excel.import")}</Button>
+            </>
+          )}
           {canEdit && (
             <Button variant="secondary" size="sm" onClick={() => setImportOpen((open) => !open)}>
               Import from Google Sheet
@@ -484,6 +624,7 @@ export function IndicatorEntryGrid({
                         <td className="px-2 py-1.5 font-mono">
                           {parsed.code}
                           {!parsed.matched && <span className="ml-2 text-danger-600 dark:text-danger-400">(no match)</span>}
+                          {parsed.locked && <span className="ml-2 text-slate-500">(locked, not applied)</span>}
                         </td>
                         <td className="px-2 py-1.5">{parsed.name ?? "—"}</td>
                         <td className="px-2 py-1.5">{parsed.periodAchievement || "—"}</td>
@@ -513,6 +654,17 @@ export function IndicatorEntryGrid({
         </section>
       )}
 
+      {grouped.length > 0 && wide && (
+        <div className="flex items-center gap-2 text-xs" role="group" aria-label={t("sheet.view.label")}>
+          <span className="text-slate-500 dark:text-slate-400">{t("sheet.view.label")}</span>
+          {(["sheet", "form"] as const).map((v) => (
+            <button key={v} type="button" aria-pressed={view === v} onClick={() => chooseView(v)} className={`rounded-full border px-3 py-1 font-medium ${view === v ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/5"}`}>
+              {t(v === "sheet" ? "sheet.view.sheet" : "sheet.view.form")}
+            </button>
+          ))}
+        </div>
+      )}
+
       {grouped.length === 0 ? (
         <div className="card text-sm text-slate-600 dark:text-slate-300">
           {reportType === "SITUATION" ? (
@@ -527,6 +679,29 @@ export function IndicatorEntryGrid({
           first, then return here to enter their values.
           </>)}
         </div>
+      ) : showSheet ? (
+        <EntrySheet
+          rows={orderedRows}
+          values={values}
+          initial={initialById}
+          canEdit={canEdit}
+          closedReason={entryWindow?.refusal ?? null}
+          today={today}
+          userId={userId}
+          names={names}
+          canAsk={canAsk}
+          projectId={projectId}
+          onChanges={applySheetChanges}
+          onBreakdown={applyBreakdown}
+          prefs={prefs}
+          onPrefs={setPrefs}
+          history={history}
+          places={places}
+          canVerify={canVerify}
+          onVerifySelected={(ids) => void verifyAll(ids)}
+          verifying={verifyingAll}
+          autosave={autosave}
+        />
       ) : (
         <div className="table-shell overflow-x-auto">
           <table className="w-full text-sm">

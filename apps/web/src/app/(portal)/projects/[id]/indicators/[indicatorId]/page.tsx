@@ -19,6 +19,7 @@ import { loadProjectPeople } from "@/features/tasks/application/project-people";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
 import { ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
+import { IndicatorViews } from "@/features/logframe/presentation/IndicatorViews";
 import { IndicatorHistoryPanel } from "@/features/logframe/presentation/IndicatorHistoryPanel";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ export default async function IndicatorDetailPage({ params }: { params: Promise<
   return <div className="animate-fade-in"><header className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-mono text-xs text-slate-500">{indicator.code}</p><h2 className="mt-1 text-xl font-semibold tracking-tight">{indicator.name}</h2><p className="mt-1 text-sm text-slate-500">Indicator definition and reporting context</p></div><Link className="btn-secondary" href={`/projects/${id}/logframe`}>Back to logframe</Link></header>
     <div className="mt-6 grid gap-4 lg:grid-cols-2"><section className="card"><h3 className="font-medium">Measurement</h3><dl className="mt-4 grid grid-cols-2 gap-4 text-sm"><Metric label="Baseline" value={indicator.baseline || "Not set"} /><Metric label="Target" value={`${indicator.target || "Not set"}${indicator.unit ? ` ${indicator.unit}` : ""}`} /><Metric label="Type" value={indicator.type?.replace(/_/g, " ") ?? "Not set"} /><Metric label="Frequency" value={indicator.frequency?.replace(/_/g, " ") ?? "Not set"} /></dl>{indicator.targetSchedule.length > 0 && <div className="mt-4 text-sm"><p className="text-slate-500">Target schedule (cumulative, by date)</p><ul className="mt-1 space-y-1">{indicator.targetSchedule.map((s) => <li key={s.asOf} className="flex justify-between gap-3"><span>{s.asOf}</span><span className="font-mono">{s.target}</span></li>)}</ul></div>}{indicator.targetBreakdowns.length > 0 && <ul className="mt-4 space-y-1 text-sm">{indicator.targetBreakdowns.map((b) => <li key={`${b.dimension}-${b.category}`} className="flex justify-between gap-3"><span>{b.category}</span><span className="font-mono">{b.value}</span></li>)}</ul>}</section>
     <section className="card"><h3 className="font-medium">Source of verification</h3><p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{indicator.meansOfVerification || "No means of verification has been recorded."}</p><div className="mt-4"><Badge tone={indicator.meansOfVerification ? "success" : "warning"}>{indicator.meansOfVerification ? "Source defined" : "Source needed"}</Badge></div>{indicator.dataSource && <p className="mt-3 text-xs text-slate-500">Data source: {indicator.dataSource}</p>}</section></div>
+    <IndicatorViews projectId={id} indicatorId={indicator.id} />
     {groupProgress?.ok && <BreakdownProgressTable items={groupProgress.value.items} only={indicator.id} />}
     <IndicatorSemanticsCard
       indicatorId={indicator.id}

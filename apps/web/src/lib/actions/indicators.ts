@@ -13,6 +13,7 @@ import { IdResponseSchema, OkResponseSchema } from "./_schemas";
 import {
   PeriodIndicatorsResponseSchema,
   ParseIndicatorSheetResponseSchema,
+  ValueHistoryResponseSchema,
   BulkUpsertResponseSchema,
   CreateIndicatorResponseSchema,
   ConfirmSemanticsResponseSchema,
@@ -127,6 +128,18 @@ export type ParseIndicatorSheetResult = Result<
   { rows: Array<{ indicatorId: string | null; code: string; name: string | null; periodAchievement: string; cumulativeAchievement: string; comments: string; dataSource: string; matched: boolean }>; warnings: string[] },
   AppError
 >;
+
+/** An uploaded entry workbook (.xlsx), read for the grid to preview. Nothing is saved. */
+export async function parseIndicatorWorkbookAction(reportingPeriodId: string, formData: FormData): Promise<ParseIndicatorSheetResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/indicator-sheet/parse`, ParseIndicatorSheetResponseSchema, context.token, { method: "POST", formData, timeoutMs: 60_000 });
+}
+
+/** Who saved, handed in, verified or returned one value, and what the figure was before and after. */
+export async function loadValueHistoryAction(updateId: string): Promise<Result<import("@/lib/server/schemas").ValueHistoryResponse, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/indicator-updates/${encodeURIComponent(updateId)}/history`, ValueHistoryResponseSchema, context.token);
+}
 
 export async function parseIndicatorSheetAction(reportingPeriodId: string, sheetUrl: string): Promise<ParseIndicatorSheetResult> {
   const context = await requireSession();

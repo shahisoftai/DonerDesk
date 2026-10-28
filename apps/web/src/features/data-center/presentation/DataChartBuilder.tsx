@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { buildDataChart, CHART_PALETTES, DATA_CHART_TEMPLATES, DATA_CHART_TEMPLATE_ORDER, type DataChartResult, type DataChartSpec, type DataChartTemplate } from "@donordesk/domain/contexts/reporting/data-charts.js";
+import { buildDataChart, CHART_PALETTES, DATA_CHART_TEMPLATES, DATA_CHART_TEMPLATE_ORDER, type DataChartResult, type DataChartSpec, type LegacyDataChartTemplate as DataChartTemplate } from "@donordesk/domain/contexts/reporting/data-charts.js";
 import { CHART_MEASURES, PIVOT_MEASURE_LABEL, type ChartMeasure } from "@donordesk/domain/contexts/reporting/data-sheet.js";
 import type { ChartType } from "@donordesk/domain/contexts/reporting/chart-config.js";
 import type { DataSheetResponse } from "@/lib/server/schemas";

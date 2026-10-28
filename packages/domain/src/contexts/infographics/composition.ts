@@ -12,7 +12,7 @@ import { DomainError } from "../../core/domain-error.js";
 import type { Result } from "../../core/result.js";
 import { CHART_MEASURES, type ChartMeasure } from "../reporting/data-sheet.js";
 import { CHART_TYPES, type ChartType } from "../reporting/chart-config.js";
-import { DATA_CHART_TEMPLATES, type DataChartTemplate } from "../reporting/data-charts.js";
+import { DATA_CHART_TEMPLATES, type LegacyDataChartTemplate } from "../reporting/data-charts.js";
 import { themeById } from "./theme.js";
 import { formatById, GRID_SPANS, SIZE_TO_SPAN } from "./formats.js";
 import { iconById } from "./icons.js";
@@ -159,7 +159,7 @@ export interface WaivedRule {
 
 /** The chart a CHART section draws: the Data Center's own spec, so preview and export agree. */
 export interface InfographicChartSpec {
-  template: DataChartTemplate;
+  template: LegacyDataChartTemplate;
   indicatorIds: string[];
   measure: ChartMeasure;
   type: ChartType;

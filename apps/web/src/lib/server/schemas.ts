@@ -484,7 +484,14 @@ export const ParsedIndicatorRowSchema = z.object({
   comments: z.string(),
   dataSource: z.string(),
   matched: z.boolean(),
+  /** Verified or calculated: shown in the preview, never applied. */
+  locked: z.boolean().default(false),
 });
+
+export const ValueHistoryResponseSchema = z.object({
+  entries: z.array(z.object({ at: z.string(), by: z.string(), what: z.string(), change: z.string().optional() })),
+});
+export type ValueHistoryResponse = z.infer<typeof ValueHistoryResponseSchema>;
 
 export const ParseIndicatorSheetResponseSchema = z.object({
   rows: z.array(ParsedIndicatorRowSchema),
@@ -1256,6 +1263,7 @@ export const DataSheetResponseSchema = z.object({
       comments: z.string().optional(),
       status: z.string(),
       calculated: z.boolean().optional(),
+      breakdown: z.array(z.object({ dimension: z.string(), category: z.string(), value: z.string() })).optional(),
     }),
   ),
   finance: z.array(

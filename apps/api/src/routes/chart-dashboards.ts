@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListDashboardsQuerySchema, SaveDashboardSchema } from "@donordesk/contracts";
+import { AddBookmarkSchema, SaveReportSchema, ApplyDashboardTemplateSchema, DashboardTemplateBodySchema, AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListChartsQuerySchema, ListDashboardsQuerySchema, ResolveDatasetsSchema, SaveChartSchema, SaveDashboardSchema } from "@donordesk/contracts";
 import { createContainer, type Container } from "@donordesk/infrastructure";
 
 /** Dashboards of saved Data Center charts (Phase 33.8). Thin: validate, call one handler, throw its error; the rules are in the handlers. */
@@ -13,6 +13,114 @@ export async function registerChartDashboardRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.askProject.handle(ctx(req), param(req, "projectId"), question);
     if (!r.ok) throw r.error;
     return r.value;
+  });
+
+  // Datasets (Phase 34.0): figures for charts, tiles and maps, one sheet read per project; the handler checks which projects are visible.
+  app.post("/v1/datasets/resolve", async (req) => {
+    const { requests } = ResolveDatasetsSchema.parse(req.body);
+    const r = await req.container.handlers.resolveDatasets.handle(ctx(req), requests);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // Dashboard templates (Phase 34.3): built-in drafts plus the organisation's own; applying one makes a dashboard for a project.
+  app.get("/v1/dashboard-templates", async (req) => {
+    const r = await req.container.handlers.listDashboardTemplates.handle(ctx(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/dashboard-templates", async (req, reply) => {
+    const r = await req.container.handlers.saveDashboardTemplate.handle(ctx(req), DashboardTemplateBodySchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+  app.get("/v1/dashboard-templates/:templateId", async (req) => {
+    const r = await req.container.handlers.getDashboardTemplate.handle(ctx(req), param(req, "templateId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.put("/v1/dashboard-templates/:templateId", async (req) => {
+    const r = await req.container.handlers.saveDashboardTemplate.handle(ctx(req), DashboardTemplateBodySchema.parse(req.body), param(req, "templateId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.delete("/v1/dashboard-templates/:templateId", async (req) => {
+    const r = await req.container.handlers.deleteDashboardTemplate.handle(ctx(req), param(req, "templateId"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+  app.post("/v1/dashboard-templates/:templateId/apply", async (req, reply) => {
+    const r = await req.container.handlers.applyDashboardTemplate.handle(ctx(req), param(req, "templateId"), ApplyDashboardTemplateSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+
+  // Saved charts (Phase 34.1): the specification only; figures are drawn from the data sheet when opened.
+  app.get("/v1/charts", async (req) => {
+    const { projectId } = ListChartsQuerySchema.parse(req.query);
+    const r = await req.container.handlers.listSavedCharts.handle(ctx(req), projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/charts", async (req, reply) => {
+    const r = await req.container.handlers.saveSavedChart.handle(ctx(req), SaveChartSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+  app.get("/v1/charts/:chartId", async (req) => {
+    const r = await req.container.handlers.getSavedChart.handle(ctx(req), param(req, "chartId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.put("/v1/charts/:chartId", async (req) => {
+    const r = await req.container.handlers.saveSavedChart.handle(ctx(req), SaveChartSchema.parse(req.body), param(req, "chartId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.delete("/v1/charts/:chartId", async (req) => {
+    const r = await req.container.handlers.deleteSavedChart.handle(ctx(req), param(req, "chartId"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  // Saved reports (Phase 34.5): the question only; the table is run against the data sheet when opened.
+  app.get("/v1/saved-reports", async (req) => {
+    const { projectId } = ListChartsQuerySchema.parse(req.query);
+    const r = await req.container.handlers.listSavedReports.handle(ctx(req), projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/saved-reports", async (req, reply) => {
+    const r = await req.container.handlers.saveSavedReport.handle(ctx(req), SaveReportSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+  app.put("/v1/saved-reports/:reportId", async (req) => {
+    const r = await req.container.handlers.saveSavedReport.handle(ctx(req), SaveReportSchema.parse(req.body), param(req, "reportId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.delete("/v1/saved-reports/:reportId", async (req) => {
+    const r = await req.container.handlers.deleteSavedReport.handle(ctx(req), param(req, "reportId"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  // Bookmarks (Phase 34.7): the caller's own shortcuts.
+  app.get("/v1/bookmarks", async (req) => {
+    const r = await req.container.handlers.listBookmarks.handle(ctx(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/bookmarks", async (req, reply) => {
+    const r = await req.container.handlers.addBookmark.handle(ctx(req), AddBookmarkSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+  app.delete("/v1/bookmarks/:bookmarkId", async (req) => {
+    const r = await req.container.handlers.removeBookmark.handle(ctx(req), param(req, "bookmarkId"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
   });
 
   app.get("/v1/dashboards", async (req) => {

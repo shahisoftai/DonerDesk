@@ -4,7 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ActivitiesResponseSchema, TemplatesResponseSchema, ExportPreflightSchema, ProjectDetailSchema, ReportDraftResponseSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
+import { ActivitiesResponseSchema, DataSheetResponseSchema, TemplatesResponseSchema, ExportPreflightSchema, ProjectDetailSchema, ReportDraftResponseSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
+import { PlaceListSchema } from "@/lib/server/schemas-places";
 import { PeriodFinanceResponseSchema, PlanSuggestionResponseSchema, StoryContextResponseSchema } from "@/lib/actions/_schemas";
 import { loadPeriodIndicatorsAction } from "@/lib/actions/indicators";
 import { InlineError } from "@/components/feedback/PageState";
@@ -63,6 +64,26 @@ export default async function ReportInputsPage({
   // Quarterly, half-year, annual and final reports have a financial section that can carry figures.
   const finance = financeResult.ok && financeResult.value.appliesToReportType ? financeResult.value : null;
   const tab: Tab = TABS.find((t) => t === tabParam && (t !== "scope" || hasScope) && (t !== "finance" || finance)) ?? "indicators";
+
+  // The entry sheet shows the last few periods' values beside the open one, and offers the project's places by place. Only this tab needs them.
+  const [dataSheetResult, placesResult] = tab === "indicators"
+    ? await Promise.all([
+        gatewayRequest(`/v1/projects/${projectId}/data-sheet`, DataSheetResponseSchema, ctx.token),
+        gatewayRequest("/v1/places", PlaceListSchema, ctx.token),
+      ])
+    : [null, null];
+  const sheetPeriods = dataSheetResult?.ok ? dataSheetResult.value.periods : [];
+  const thisIndex = sheetPeriods.findIndex((p) => p.id === periodId);
+  const earlierPeriods = (thisIndex >= 0 ? sheetPeriods.slice(Math.max(0, thisIndex - 4), thisIndex) : []).map((p) => ({ id: p.id, label: p.label }));
+  const earlierIds = new Set(earlierPeriods.map((p) => p.id));
+  const earlierValues: Record<string, Record<string, string>> = {};
+  if (dataSheetResult?.ok) {
+    for (const c of dataSheetResult.value.cells) {
+      if (!earlierIds.has(c.periodId) || c.periodValue.trim() === "") continue;
+      (earlierValues[c.indicatorId] ??= {})[c.periodId] = c.periodValue;
+    }
+  }
+  const placeNames = placesResult?.ok ? placesResult.value.places.filter((p) => !p.archived).map((p) => p.name).slice(0, 300) : [];
   const needsDraftStatus = (hasScope && tab === "scope") || (finance && tab === "finance");
   const [scopeActivitiesResult, scopeDraftResult] = needsDraftStatus
     ? await Promise.all([
@@ -158,6 +179,8 @@ export default async function ReportInputsPage({
             userId={decodeSessionPayload(ctx.token)?.sub ?? ""}
             names={Object.fromEntries((await loadProjectPeople(ctx.token, projectId, "")).map((p) => [p.id, p.label]))}
             canAsk={ctx.capabilities.has("task.assign")}
+            history={earlierPeriods.length > 0 ? { periods: earlierPeriods, values: earlierValues } : undefined}
+            places={placeNames}
           />
         ) : (
           <InlineError title={indicatorsResult.error.message} referenceId={indicatorsResult.error.referenceId} />

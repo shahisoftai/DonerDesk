@@ -67,7 +67,7 @@ export function DashboardCanvas({ widgets, charts, editing, onChange, labels }: 
         const drawing = charts.get(w.id);
         const style = narrow ? { height: w.h * ROW_PX } : { position: "absolute" as const, left: w.x * cell, top: w.y * ROW_PX, width: w.w * cell, height: w.h * ROW_PX };
         return (
-          <section key={w.id} style={style} className={`${narrow ? "mb-3" : ""} p-1.5`} aria-label={drawing?.chart?.title ?? "Chart"}>
+          <section key={w.id} style={style} className={`${narrow ? "mb-3" : ""} p-1.5`} aria-label={drawing?.chart?.title ?? drawing?.table?.title ?? "Chart"}>
             <div className={`flex h-full flex-col overflow-hidden rounded-lg border bg-white dark:bg-slate-900 ${editing ? "border-brand-400" : "border-slate-200 dark:border-slate-700"}`}>
               <div
                 className={`flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-1.5 text-sm dark:border-slate-800 ${editing && !narrow ? "cursor-move touch-none" : ""}`}
@@ -75,14 +75,21 @@ export function DashboardCanvas({ widgets, charts, editing, onChange, labels }: 
                 aria-label={editing && !narrow ? `Move ${drawing?.chart?.title ?? "chart"}. Arrow keys move it, Shift with arrow keys resizes it.` : undefined}
                 onPointerDown={(e) => begin(e, w.id, "move")} onPointerMove={drag} onPointerUp={end} onPointerCancel={end} onKeyDown={(e) => key(e, w)}
               >
-                <span className="truncate font-medium">{drawing?.chart?.title ?? "Chart"}</span>
+                <span className="truncate font-medium">{drawing?.chart?.title ?? drawing?.table?.title ?? (w.kind === "TEXT" ? "Note" : "Chart")}</span>
                 <span className="flex shrink-0 items-center gap-2">
                   <span className="hidden text-xs text-slate-500 sm:inline">{labels[w.projectId] ?? ""}</span>
                   {editing && <button type="button" className="text-xs text-slate-500 underline" onPointerDown={(e) => e.stopPropagation()} onClick={() => onChange(removeWidget(widgets, w.id))}>Remove</button>}
                 </span>
               </div>
               <div className="relative min-h-0 flex-1 p-1">
-                {!drawing ? <p className="p-3 text-sm text-slate-500">Loading…</p> : drawing.chart ? <DashboardChart option={drawing.chart.option} label={drawing.chart.title} /> : <p className="p-3 text-sm text-slate-500">{drawing.unavailable ?? "This chart cannot be drawn."}</p>}
+                {!drawing ? <p className="p-3 text-sm text-slate-500">Loading…</p>
+                  : drawing.text !== undefined ? <p className="whitespace-pre-wrap p-3 text-sm" data-testid="text-widget">{drawing.text}</p>
+                  : drawing.table ? (
+                    <div className="h-full overflow-auto" data-testid="table-widget">
+                      <table className="w-full text-xs"><thead><tr>{drawing.table.columns.map((c) => <th key={c} className="border-b px-2 py-1 text-start">{c}</th>)}</tr></thead>
+                        <tbody>{drawing.table.rows.map((r, i) => <tr key={i} className="border-t border-slate-100 dark:border-slate-800">{r.map((c, j) => <td key={j} className="px-2 py-1">{c}</td>)}</tr>)}</tbody></table>
+                    </div>
+                  ) : drawing.chart ? <DashboardChart option={drawing.chart.option} label={drawing.chart.title} maps={drawing.chart.maps} regionNames={drawing.chart.regionNames} /> : <p className="p-3 text-sm text-slate-500">{drawing.unavailable ?? "This chart cannot be drawn."}</p>}
               </div>
               {drawing?.chart && (drawing.chart.unverified > 0 || drawing.chart.notes.length > 0) && (
                 <p className="border-t border-slate-100 px-3 py-1 text-xs text-slate-500 dark:border-slate-800">

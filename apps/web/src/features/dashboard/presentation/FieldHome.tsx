@@ -1,3 +1,4 @@
+import { BookmarksPanel } from "@/features/bookmarks/presentation/BookmarksPanel";
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -44,6 +45,7 @@ export async function FieldHome({ ctx }: { ctx: Ctx }) {
       />
       {!week.ok && <InlineError title={week.error.message} referenceId={week.error.referenceId} />}
       {week.ok && <MyWeekPanel week={week.value} projects={projects.map((p) => ({ id: p.id, title: p.title }))} />}
+      <BookmarksPanel />
       <QuickLinks links={links} />
       <section className="grid gap-6 lg:grid-cols-2">
         <Panel title="Waiting for me" href="/my-work" linkLabel="View all →">

@@ -49,3 +49,4 @@ export { PlatformLlmConfigResolver } from "./llm/llm-config-resolver.js";
 export { SecretCipher } from "./security/secret-cipher.js";
 export * from "./exports/templates/index.js";
 export { buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME } from "./exports/data-sheet-workbook.js";
+export { buildIndicatorEntryWorkbook, readIndicatorEntryWorkbook, ENTRY_FILE_NAME } from "./exports/indicator-entry-workbook.js";

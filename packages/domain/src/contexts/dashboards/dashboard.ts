@@ -4,7 +4,9 @@
  * project's data sheet each time it is opened, so a dashboard cannot go stale or hold a figure nobody can trace.
  * Pure: layout, validation and visibility are rules with no clock, storage or network.
  */
+import { MAX_REPORT_NAME, validateReportQuery, type ReportQuery } from "../reporting/report-query.js";
 import { DATA_CHART_TEMPLATES, HEX_COLOUR, type DataChartSpec, type DataChartTemplate } from "../reporting/data-charts.js";
+import { validateChartSpec, type ChartSpecV2 } from "../reporting/chart-spec-v2.js";
 
 export const GRID_COLUMNS = 12;
 export const WIDGET_MIN_W = 3;
@@ -17,11 +19,27 @@ export const DEFAULT_WIDGET_H = 4;
 export type DashboardScope = "ORG" | "PROJECT" | "MINE";
 export const DASHBOARD_SCOPES: readonly DashboardScope[] = ["ORG", "PROJECT", "MINE"];
 
+export const MAX_TEXT_WIDGET = 2000;
+export const MAX_TAB_NAME = 40;
+export const MAX_TABS = 8;
+
+/** The older chart specification (the original six kinds) or the Chart Studio's `ChartSpecV2`; a v2 spec has `version: 2`. */
+export type WidgetSpec = DataChartSpec | ChartSpecV2;
+export const isSpecV2 = (spec: unknown): spec is ChartSpecV2 => typeof spec === "object" && spec !== null && (spec as { version?: unknown }).version === 2;
+
 export interface DashboardWidget {
   id: string;
-  /** The project whose data sheet this chart is drawn from. */
+  /** The project whose data sheet this chart is drawn from (for a text block, the project it sits with). */
   projectId: string;
-  spec: DataChartSpec;
+  /** CHART (the default) draws `spec`; TEXT shows `text`. */
+  kind?: "CHART" | "TEXT" | "REPORT" | undefined;
+  spec?: WidgetSpec | undefined;
+  /** REPORT: the saved-report question (indicators, periods, measure, rows); the table is run against the data sheet whenever the dashboard is opened. `text` is its title. */
+  report?: ReportQuery | undefined;
+  /** TEXT: a short note in plain text. */
+  text?: string | undefined;
+  /** The tab the chart sits on; none = the first, unnamed tab. */
+  tab?: string | undefined;
   /** Grid cells: column, row, width, height. */
   x: number;
   y: number;
@@ -38,6 +56,7 @@ export function widgetProblems(widgets: ReadonlyArray<DashboardWidget>): WidgetP
   const problems: WidgetProblem[] = [];
   if (widgets.length > MAX_WIDGETS) problems.push({ widgetId: "", message: `A dashboard holds at most ${MAX_WIDGETS} charts.` });
   const seen = new Set<string>();
+  if (tabsOf(widgets).length > MAX_TABS) problems.push({ widgetId: "", message: `A dashboard has at most ${MAX_TABS} tabs.` });
   for (const w of widgets) {
     const add = (message: string) => problems.push({ widgetId: w.id, message });
     if (!w.id || seen.has(w.id)) add("Two charts share an id.");
@@ -49,7 +68,26 @@ export function widgetProblems(widgets: ReadonlyArray<DashboardWidget>): WidgetP
       if (w.h > WIDGET_MAX_H) add(`A chart is at most ${WIDGET_MAX_H} high.`);
       if (w.x + w.w > GRID_COLUMNS) add(`A chart cannot go past column ${GRID_COLUMNS}.`);
     }
-    const info = DATA_CHART_TEMPLATES[w.spec?.template as DataChartTemplate];
+    if (w.tab !== undefined && (!w.tab.trim() || w.tab.length > MAX_TAB_NAME)) add(`A tab name is 1 to ${MAX_TAB_NAME} characters.`);
+    if (w.kind === "REPORT") {
+      const found = w.report ? validateReportQuery(w.report) : [{ message: "A report widget needs its question." }];
+      if (found.length > 0) add(found[0]!.message);
+      if ((w.text?.length ?? 0) > MAX_REPORT_NAME) add(`A report's title is at most ${MAX_REPORT_NAME} characters.`);
+      continue;
+    }
+    if (w.kind === "TEXT") {
+      if (!w.text?.trim()) add("A text block needs some text.");
+      else if (w.text.length > MAX_TEXT_WIDGET) add(`A text block is at most ${MAX_TEXT_WIDGET} characters.`);
+      continue;
+    }
+    if (isSpecV2(w.spec)) {
+      // The Chart Studio's chart: checked by the one validator the studio and the API share.
+      const found = validateChartSpec(w.spec);
+      if (found.length > 0) add(found[0]!.message);
+      continue;
+    }
+    if (!w.spec) { add("A chart needs its settings."); continue; }
+    const info = DATA_CHART_TEMPLATES[w.spec.template as DataChartTemplate];
     if (!info) { add("The chart's template is not known."); continue; }
     if (!info.types.includes(w.spec.type)) add(`${info.label} cannot be drawn as a ${w.spec.type.toLowerCase()} chart.`);
     const n = w.spec.indicatorIds?.length ?? 0;
@@ -62,6 +100,9 @@ export function widgetProblems(widgets: ReadonlyArray<DashboardWidget>): WidgetP
   return problems;
 }
 
+/** Anything that sits on the dashboard grid: a saved chart, or a widget of a template. */
+export interface GridBox { id: string; x: number; y: number; w: number; h: number }
+
 const overlaps = (a: Pick<DashboardWidget, "x" | "y" | "w" | "h">, b: Pick<DashboardWidget, "x" | "y" | "w" | "h">): boolean =>
   a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
@@ -72,15 +113,15 @@ const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.m
  * the highest free row beneath what is already placed, in reading order. Deterministic, never overlaps, never leaves a gap
  * above a chart. Positions are clamped to the grid first.
  */
-export function settleLayout(widgets: ReadonlyArray<DashboardWidget>, pinnedId?: string): DashboardWidget[] {
-  const fit = (w: DashboardWidget): DashboardWidget => {
+export function settleLayout<T extends GridBox>(widgets: ReadonlyArray<T>, pinnedId?: string): T[] {
+  const fit = (w: T): T => {
     const width = clamp(w.w, WIDGET_MIN_W, GRID_COLUMNS);
     return { ...w, w: width, h: clamp(w.h, WIDGET_MIN_H, WIDGET_MAX_H), x: clamp(w.x, 0, GRID_COLUMNS - width), y: Math.max(0, w.y) };
   };
   const all = widgets.map(fit);
   const pinned = pinnedId ? all.find((w) => w.id === pinnedId) : undefined;
   const rest = all.filter((w) => w !== pinned).sort((a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id));
-  const placed: DashboardWidget[] = pinned ? [pinned] : [];
+  const placed: T[] = pinned ? [pinned] : [];
   for (const w of rest) {
     let y = 0;
     for (;;) {
@@ -94,20 +135,20 @@ export function settleLayout(widgets: ReadonlyArray<DashboardWidget>, pinnedId?:
   return widgets.map((w) => placed.find((p) => p.id === w.id)!);
 }
 
-export function moveWidget(widgets: ReadonlyArray<DashboardWidget>, id: string, x: number, y: number): DashboardWidget[] {
+export function moveWidget<T extends GridBox>(widgets: ReadonlyArray<T>, id: string, x: number, y: number): T[] {
   return settleLayout(widgets.map((w) => (w.id === id ? { ...w, x: Math.round(x), y: Math.round(y) } : w)), id);
 }
 
-export function resizeWidget(widgets: ReadonlyArray<DashboardWidget>, id: string, w: number, h: number): DashboardWidget[] {
+export function resizeWidget<T extends GridBox>(widgets: ReadonlyArray<T>, id: string, w: number, h: number): T[] {
   return settleLayout(widgets.map((it) => (it.id === id ? { ...it, w: Math.round(w), h: Math.round(h) } : it)), id);
 }
 
-export function removeWidget(widgets: ReadonlyArray<DashboardWidget>, id: string): DashboardWidget[] {
+export function removeWidget<T extends GridBox>(widgets: ReadonlyArray<T>, id: string): T[] {
   return settleLayout(widgets.filter((w) => w.id !== id));
 }
 
 /** A new chart goes below everything else, at the default size. Refused (null) at the limit. */
-export function addWidget(widgets: ReadonlyArray<DashboardWidget>, input: { id: string; projectId: string; spec: DataChartSpec }): DashboardWidget[] | null {
+export function addWidget(widgets: ReadonlyArray<DashboardWidget>, input: { id: string; projectId: string; spec?: WidgetSpec | undefined; kind?: "CHART" | "TEXT" | "REPORT" | undefined; text?: string | undefined; report?: ReportQuery | undefined }): DashboardWidget[] | null {
   if (widgets.length >= MAX_WIDGETS) return null;
   const bottom = widgets.reduce((max, w) => Math.max(max, w.y + w.h), 0);
   return settleLayout([...widgets, { ...input, x: 0, y: bottom, w: DEFAULT_WIDGET_W, h: DEFAULT_WIDGET_H }]);
@@ -150,4 +191,15 @@ export function dashboardScopeProblem(d: DashboardAccessFacts): string | null {
   if (d.scope === "PROJECT" && !d.projectId) return "A project dashboard needs a project.";
   if (d.scope !== "PROJECT" && d.projectId) return "Only a project dashboard belongs to one project.";
   return null;
+}
+
+/** The named tabs in the order they first appear (reading order of the widgets), without repeats. */
+export function tabsOf(widgets: ReadonlyArray<Pick<DashboardWidget, "tab" | "x" | "y">>): string[] {
+  const named = widgets.filter((w) => w.tab?.trim()).sort((a, b) => a.y - b.y || a.x - b.x);
+  return [...new Set(named.map((w) => w.tab!.trim()))];
+}
+
+/** The widgets on one tab ("" = those with no tab). */
+export function widgetsOnTab<T extends Pick<DashboardWidget, "tab">>(widgets: ReadonlyArray<T>, tab: string): T[] {
+  return widgets.filter((w) => (w.tab?.trim() ?? "") === tab);
 }

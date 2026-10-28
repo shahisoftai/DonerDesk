@@ -7,9 +7,11 @@ import { guardNetwork } from "@/lib/shared/connectivity";
 import { createActivitySender } from "../domain/activity-outbox";
 import { ACTIVITY_KIND } from "../domain/activity-outbox";
 import { PLAN_STATUS_KIND, createPlanStatusSender } from "../domain/plan-status-outbox";
+import { INDICATOR_VALUES_KIND, createIndicatorValuesSender } from "../domain/indicator-values-outbox";
 import { PROGRESS_LOG_KIND, createProgressSender } from "../domain/progress-outbox";
 import { changePlanStatusAction, saveProgressAction } from "@/lib/actions/workplan";
 import { submitCollectionRecordAction } from "@/lib/actions/collection";
+import { bulkSaveIndicatorUpdatesAction, type BulkSaveRow } from "@/lib/actions/indicators";
 import { COLLECTION_RECORD_KIND, createCollectionRecordSender } from "../domain/collection-outbox";
 import { createMemoryOutboxStore, createSerialFlusher, retryEntry, summarise, type OutboxEntry, type OutboxSender, type OutboxStore } from "../domain/outbox";
 import { canUseDurableOutbox, createIndexedDbOutboxStore } from "../infrastructure/indexeddb-outbox-store";
@@ -77,6 +79,7 @@ export function OutboxProvider({ scope, children }: { scope: string; children: R
         submit: (formId, input) => guardNetwork(() => submitCollectionRecordAction(formId, input)),
       }),
       [PLAN_STATUS_KIND]: createPlanStatusSender({ changeStatus: (itemId, input) => guardNetwork(() => changePlanStatusAction(itemId, input)) }),
+      [INDICATOR_VALUES_KIND]: createIndicatorValuesSender({ bulkSave: (periodId, rows) => guardNetwork(() => bulkSaveIndicatorUpdatesAction(periodId, rows as BulkSaveRow[])) }),
     };
     const send: OutboxSender = (entry, save) =>
       senders[entry.kind]?.(entry, save) ?? Promise.resolve({ kind: "rejected" as const, message: "This kind of saved record is no longer supported." });

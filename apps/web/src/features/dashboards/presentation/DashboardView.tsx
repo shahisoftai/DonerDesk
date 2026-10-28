@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { DashboardWidget } from "@donordesk/domain/contexts/dashboards/index.js";
+import { settleLayout, type DashboardWidget } from "@donordesk/domain/contexts/dashboards/index.js";
 import {
   createDashboardLinkAction, deleteDashboardAction, listDashboardLinksAction, revokeDashboardLinkAction, saveDashboardAction,
 } from "@/lib/actions/dashboards";
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { DashboardCanvas } from "./DashboardCanvas";
+import { useTvMode } from "./use-tv-mode";
+import { DashboardTabBar, TabAssigner, useDashboardTabs } from "./DashboardTabs";
 
 const SCOPE_LABEL = { ORG: "Whole organisation", PROJECT: "One project", MINE: "Only me" } as const;
 
@@ -26,6 +28,19 @@ export function DashboardView({ dashboard, charts, projectNames }: { dashboard: 
   const [version, setVersion] = useState(dashboard.updatedAt);
   const [saved, setSaved] = useState(true);
   const byId = useMemo(() => new Map(charts.map((c) => [c.widgetId, c])), [charts]);
+  const [projectFilter, setProjectFilter] = useState("");
+  const tv = useTvMode(60, () => router.refresh());
+  const projectIds = useMemo(() => [...new Set(widgets.map((w) => (w as { projectId?: string }).projectId).filter((x): x is string => !!x))], [widgets]);
+  const tabbed = useDashboardTabs(widgets);
+  const shown = useMemo(() => (projectFilter && !editing ? settleLayout(tabbed.visible.filter((w) => (w as { projectId?: string }).projectId === projectFilter)) : tabbed.visible), [tabbed.visible, projectFilter, editing]);
+  /** A change made on the tab on screen replaces those charts only; the others keep their place. */
+  const applyShown = (next: DashboardWidget[]) => {
+    const ids = new Set(shown.map((w) => w.id));
+    const byNext = new Map(next.map((w) => [w.id, w]));
+    setWidgets((all) => all.filter((w) => !ids.has(w.id) || byNext.has(w.id)).map((w) => byNext.get(w.id) ?? w));
+    setSaved(false);
+  };
+  const titles = useMemo(() => new Map(charts.map((c) => [c.widgetId, c.chart?.title ?? c.table?.title ?? ""])), [charts]);
   const dirty = !saved || name !== dashboard.name;
 
   async function commit() {
@@ -38,14 +53,24 @@ export function DashboardView({ dashboard, charts, projectNames }: { dashboard: 
   }
 
   return (
-    <div className="space-y-4">
+    <div ref={tv.ref} className={`space-y-4 ${tv.active ? "overflow-auto bg-white p-6 dark:bg-slate-950" : ""}`}>
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           {editing ? <Input aria-label="Dashboard name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} /> : <h1 className="truncate text-xl font-semibold tracking-tight">{dashboard.name}</h1>}
           <p className="mt-1 text-xs text-slate-500">{SCOPE_LABEL[dashboard.scope]}{dashboard.projectId && projectNames[dashboard.projectId] ? ` · ${projectNames[dashboard.projectId]}` : ""} · {widgets.length} chart{widgets.length === 1 ? "" : "s"}</p>
         </div>
+        <div className="flex flex-wrap items-center gap-2" data-no-print>
+          {!editing && projectIds.length > 1 && (
+            <select aria-label="Show one project" className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-sm dark:border-white/15 dark:bg-white/5" value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)}>
+              <option value="">All projects</option>
+              {projectIds.map((id) => <option key={id} value={id}>{projectNames[id] ?? "A project"}</option>)}
+            </select>
+          )}
+          {!editing && <Button variant="secondary" onClick={tv.toggle}>{tv.active ? "Leave full screen" : "Full screen"}</Button>}
+          {!editing && <Button variant="secondary" onClick={() => window.print()}>Print</Button>}
+        </div>
         {dashboard.canEdit && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" data-no-print>
             {editing ? (
               <>
                 <Button onClick={() => void commit()} pending={save.busy} disabled={save.busy || !dirty || !name.trim()}>Save</Button>
@@ -58,13 +83,15 @@ export function DashboardView({ dashboard, charts, projectNames }: { dashboard: 
       {save.error && <p role="alert" className="text-sm text-danger-600">{save.error}</p>}
       {editing && <p className="text-xs text-slate-500">Drag a chart by its title bar, resize it from the corner, or focus the title bar and use the arrow keys (Shift with an arrow key resizes). Nothing is kept until you save.</p>}
 
+      <DashboardTabBar tabs={tabbed.tabs} active={tabbed.active} onSelect={tabbed.setActive} overviewLabel="Overview" />
+      {editing && widgets.length > 0 && <TabAssigner widgets={widgets} titles={titles} onChange={(next) => { setWidgets(next); setSaved(false); }} />}
       {widgets.length === 0 ? (
         <p className="rounded-lg border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700">No charts yet. Open a project&apos;s Data Center, build a chart and choose &ldquo;Add to a dashboard&rdquo;.</p>
       ) : (
-        <DashboardCanvas widgets={widgets} charts={byId} editing={editing} labels={projectNames} onChange={(next) => { setWidgets(next); setSaved(false); }} />
+        <DashboardCanvas widgets={shown} charts={byId} editing={editing} labels={projectNames} onChange={applyShown} />
       )}
 
-      {dashboard.canEdit && !editing && (
+      {dashboard.canEdit && !editing && !tv.active && (
         <>
           <SharePanel dashboardId={dashboard.id} />
           <section className="border-t border-slate-200 pt-4 dark:border-slate-700">

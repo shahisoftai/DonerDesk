@@ -1,4 +1,4 @@
-import type { DashboardScope, DashboardWidget, Result, TenantId } from "@donordesk/domain";
+import type { ChartVersion, DashboardScope, DashboardTemplate, DashboardWidget, Result, SavedChartScope, TenantId } from "@donordesk/domain";
 
 export interface StoredDashboard {
   id: string;
@@ -42,4 +42,68 @@ export interface IDashboardLinkRepository {
   deleteByDashboard(dashboardId: string, tenantId: TenantId): Promise<Result<void>>;
   /** Across organisations; admin connection only. */
   findByTokenHash(tokenHash: string): Promise<Result<StoredDashboardLink | null>>;
+}
+
+export interface StoredChart {
+  id: string;
+  tenantId: TenantId;
+  scope: SavedChartScope;
+  projectId: string;
+  ownerId: string;
+  name: string;
+  /** A `ChartSpecV2`; the repository stores it as text and reads it back unchanged. */
+  spec: Record<string, unknown>;
+  /** The last few earlier versions, newest first. */
+  versions: ChartVersion[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ISavedChartRepository {
+  create(c: StoredChart): Promise<Result<void>>;
+  /** Writes every mutable field; with an expected version the write happens only if nobody saved in between, else `false`. */
+  update(c: StoredChart, expectedUpdatedAt?: Date): Promise<Result<boolean>>;
+  delete(id: string, tenantId: TenantId): Promise<Result<void>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<StoredChart | null>>;
+  /** The project's shared charts plus the person's own for it, newest first. */
+  listForProject(tenantId: TenantId, projectId: string, ownerId: string): Promise<Result<StoredChart[]>>;
+}
+
+export interface StoredDashboardTemplate {
+  id: string;
+  tenantId: TenantId;
+  ownerId: string;
+  template: DashboardTemplate;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IDashboardTemplateRepository {
+  create(t: StoredDashboardTemplate): Promise<Result<void>>;
+  /** With an expected version the write happens only if nobody saved in between, else `false`. */
+  update(t: StoredDashboardTemplate, expectedUpdatedAt?: Date): Promise<Result<boolean>>;
+  delete(id: string, tenantId: TenantId): Promise<Result<void>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<StoredDashboardTemplate | null>>;
+  list(tenantId: TenantId): Promise<Result<StoredDashboardTemplate[]>>;
+}
+
+export interface StoredBookmark { id: string; tenantId: TenantId; userId: string; title: string; href: string; createdAt: Date }
+
+export interface IBookmarkRepository {
+  create(b: StoredBookmark): Promise<Result<void>>;
+  /** Deletes only the person's own bookmark. */
+  delete(id: string, tenantId: TenantId, userId: string): Promise<Result<void>>;
+  /** The person's bookmarks, oldest first. */
+  listForUser(tenantId: TenantId, userId: string): Promise<Result<StoredBookmark[]>>;
+}
+
+export interface StoredReport { id: string; tenantId: TenantId; scope: SavedChartScope; projectId: string; ownerId: string; name: string; query: Record<string, unknown>; createdAt: Date; updatedAt: Date }
+
+export interface ISavedReportRepository {
+  create(r: StoredReport): Promise<Result<void>>;
+  /** With an expected version the write happens only if nobody saved in between, else `false`. */
+  update(r: StoredReport, expectedUpdatedAt?: Date): Promise<Result<boolean>>;
+  delete(id: string, tenantId: TenantId): Promise<Result<void>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<StoredReport | null>>;
+  listForProject(tenantId: TenantId, projectId: string, ownerId: string): Promise<Result<StoredReport[]>>;
 }

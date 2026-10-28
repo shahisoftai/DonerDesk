@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
-  DomainError, Permissions, addWidget, buildDataChart, canEditDashboard, canSeeDashboard, dashboardScopeProblem, settleLayout, widgetProblems,
-  type DashboardScope, type DashboardWidget, type DataChartSpec, type DataSheet, type Result, type Role, type TenantId,
+  DomainError, Permissions, addWidget, buildChart, buildDataChart, canEditDashboard, canSeeDashboard, dashboardScopeProblem, datasetQueryFor, isSpecV2, resolveDataset, runReport, settleLayout, toDatasetQuery, validateReportQuery, widgetProblems, type ReportQuery,
+  type ChartSpecV2, type DashboardScope, type DashboardWidget, type DataChartSpec, type DataSheet, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
 import type { AddDashboardWidgetInput, CreateDashboardShareInput, SaveDashboardInput } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
@@ -9,6 +9,7 @@ import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { IDashboardLinkRepository, IDashboardRepository, StoredDashboard, StoredDashboardLink } from "../../ports/dashboards.js";
 import type { VisibleProjects } from "../../services/visible-projects.js";
 import type { GetProjectDataSheetHandler } from "../data-center/data-sheet.js";
+import type { IDatasetExtras } from "../../services/dataset-extras.js";
 
 /**
  * Dashboards of saved Data Center charts (Phase 33.8). A dashboard stores chart specs and positions only; the figures are drawn
@@ -132,7 +133,7 @@ export class AddDashboardWidgetHandler {
     if (!mine.ok) return mine;
     if (!mine.value.some((p) => p.id === input.projectId)) return fail(DomainError.notFound("Project", input.projectId));
     if (d.value.scope === "PROJECT" && d.value.projectId !== input.projectId) return fail(DomainError.validation("A project dashboard holds charts from its own project only."));
-    const widgets = addWidget(d.value.widgets, { id: this.ids.generate().replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40), projectId: input.projectId, spec: input.spec as unknown as DataChartSpec });
+    const widgets = addWidget(d.value.widgets, { id: this.ids.generate().replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40), projectId: input.projectId, ...(input.report ? { kind: "REPORT" as const, report: input.report as unknown as ReportQuery, ...(input.title ? { text: input.title } : {}) } : { spec: input.spec as unknown as DataChartSpec | ChartSpecV2 }) });
     if (!widgets) return fail(DomainError.conflict("This dashboard is full. Remove a chart first."));
     const problems = widgetProblems(widgets);
     if (problems.length > 0) return fail(DomainError.validation(problems[0]!.message, { problems }));
@@ -164,7 +165,11 @@ export class DeleteDashboardHandler {
 export interface DashboardChartDto {
   widgetId: string;
   /** Present when the chart could be drawn. */
-  chart?: { option: Record<string, unknown>; title: string; notes: string[]; unverified: number; points: number };
+  chart?: { option: Record<string, unknown>; title: string; notes: string[]; unverified: number; points: number; /** Map names the screen registers before drawing. */ maps?: string[]; regionNames?: string[] };
+  /** A table kind (pivot, scorecard): the rows to show instead of a picture. */
+  table?: { title: string; columns: string[]; rows: Array<Array<string | null>>; notes: string[] };
+  /** A text block. */
+  text?: string;
   /** Why it is not drawn: not available to this viewer, or the chart's own reason (an indicator was removed). */
   unavailable?: string;
 }
@@ -173,20 +178,57 @@ export interface DashboardChartDto {
 async function drawCharts(
   widgets: ReadonlyArray<DashboardWidget>,
   readSheet: (projectId: string) => Promise<DataSheet | null>,
+  /** The plan, activity days and budget, read for this caller; absent for a share link, which never shows them. */
+  extras?: { ctx: AuthenticatedContext; service: IDatasetExtras },
 ): Promise<DashboardChartDto[]> {
   const sheets = new Map<string, DataSheet | null>();
   for (const w of widgets) if (!sheets.has(w.projectId)) sheets.set(w.projectId, await readSheet(w.projectId));
-  return widgets.map((w): DashboardChartDto => {
+  // Extra data is read once per project and source, however many charts use it.
+  const cache = new Map<string, Promise<unknown>>();
+  const extra = <T,>(key: string, read: () => Promise<T>): Promise<T> => { if (!cache.has(key)) cache.set(key, read()); return cache.get(key) as Promise<T>; };
+  const dataFor = async (w: DashboardWidget, sheet: DataSheet, spec: ChartSpecV2) => {
+    const data = resolveDataset(sheet, datasetQueryFor(spec, sheet.indicators.map((i) => i.id)));
+    const source = datasetQueryFor(spec, []).sources?.[0];
+    if (source && extras) {
+      const { ctx, service } = extras;
+      if (source === "PLAN") data.plan = await extra(`${w.projectId}|plan`, () => service.plan(ctx, w.projectId));
+      if (source === "ACTIVITY_DAYS") data.activityDays = await extra(`${w.projectId}|days`, () => service.activityDays(ctx, w.projectId));
+      if (source === "BUDGET") data.budget = await extra(`${w.projectId}|budget`, () => service.budget(ctx, w.projectId));
+      if (source === "PLACES") {
+        const indicatorId = spec.dataset.indicatorIds[0] ?? "";
+        const level = spec.dataset.placeLevel ?? 1;
+        data.places = await extra(`${w.projectId}|places|${indicatorId}|${level}`, () => service.places(ctx, w.projectId, indicatorId, level));
+      }
+    }
+    return data;
+  };
+  return Promise.all(widgets.map(async (w): Promise<DashboardChartDto> => {
+    if (w.kind === "TEXT") return { widgetId: w.id, text: w.text ?? "" };
     const sheet = sheets.get(w.projectId);
     if (!sheet) return { widgetId: w.id, unavailable: "This chart is from a project you cannot see." };
-    const drawn = buildDataChart(sheet, w.spec);
+    if (w.kind === "REPORT") {
+      // A saved report: the question is run against the sheet now, so the table cannot be out of date.
+      if (!w.report || validateReportQuery(w.report).length > 0) return { widgetId: w.id, unavailable: "This report's question is not valid." };
+      const t = runReport(resolveDataset(sheet, toDatasetQuery(w.report)), w.report);
+      return { widgetId: w.id, table: { title: w.text?.trim() || "Report", columns: t.columns, rows: t.rows.map((r) => [r.label, ...r.cells.map((c) => c ?? "Not measured")]), notes: t.notes } };
+    }
+    if (isSpecV2(w.spec)) {
+      // A Chart Studio chart: the same builder the studio draws with, from the same sheet, so a dashboard shows what the studio showed.
+      const spec = w.spec as ChartSpecV2;
+      const built = buildChart(spec, await dataFor(w, sheet, spec));
+      if (!built.ok) return { widgetId: w.id, unavailable: built.reason };
+      if (built.render === "TABLE") return { widgetId: w.id, table: { title: built.title, columns: built.columns, rows: built.rows, notes: built.notes } };
+      return { widgetId: w.id, chart: { option: built.option, title: built.title, notes: built.notes, unverified: built.provenance.unverified, points: built.provenance.points, ...(built.maps ? { maps: built.maps } : {}), ...(built.regionNames ? { regionNames: built.regionNames } : {}) } };
+    }
+    if (!w.spec) return { widgetId: w.id, unavailable: "This chart has no settings." };
+    const drawn = buildDataChart(sheet, w.spec as DataChartSpec);
     if (!drawn.ok) return { widgetId: w.id, unavailable: drawn.reason };
     return { widgetId: w.id, chart: { option: drawn.option, title: drawn.title, notes: drawn.notes, unverified: drawn.provenance.unverified, points: drawn.provenance.points } };
-  });
+  }));
 }
 
 export class GetDashboardDataHandler {
-  constructor(private readonly repo: IDashboardRepository, private readonly sheets: GetProjectDataSheetHandler, private readonly visible: VisibleProjects) {}
+  constructor(private readonly repo: IDashboardRepository, private readonly sheets: GetProjectDataSheetHandler, private readonly visible: VisibleProjects, private readonly extras?: IDatasetExtras) {}
 
   async handle(ctx: AuthenticatedContext, id: string): Promise<Result<{ charts: DashboardChartDto[] }, DomainError>> {
     if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot see dashboards"));
@@ -199,7 +241,7 @@ export class GetDashboardDataHandler {
       if (!allowed.has(projectId)) return null;
       const sheet = await this.sheets.handle(ctx, projectId);
       return sheet.ok ? sheet.value : null;
-    });
+    }, this.extras ? { ctx, service: this.extras } : undefined);
     return ok({ charts });
   }
 }

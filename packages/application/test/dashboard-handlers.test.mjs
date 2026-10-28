@@ -153,3 +153,31 @@ test("share links: hash only, expire, revoke, delete with the dashboard; the pub
   assert.equal(w.links.size, 0);
   assert.equal(w.dashboards.size, 0);
 });
+
+test("a dashboard draws Chart Studio charts and tables with the studio's builder, text blocks as text, and finance never through a link", async () => {
+  const periods = [1, 2, 3].map((n) => ({ id: `p${n}`, label: `M${n}`, start: `2026-0${n}-01`, end: `2026-0${n}-28`, reportType: "MONTHLY", locked: false }));
+  const sheet = {
+    projectId: "p1", periods, financeEnabled: true,
+    indicators: ["a", "b"].map((id) => ({ id, code: id.toUpperCase(), name: id, level: "OUTPUT", type: "COUNT", unit: "people", baseline: "0", target: "100", isRate: false })),
+    cells: [["a", [10, 20, 30]], ["b", [5, 6, 7]]].flatMap(([id, vs]) => vs.map((v, i) => ({ indicatorId: id, periodId: `p${i + 1}`, periodValue: String(v), cumulativeValue: String(v * (i + 1)), status: "VERIFIED" }))),
+    finance: [{ periodId: "p1", currency: "USD", budget: "1000", expenditure: "100", balance: "900", burnRatePercent: "10.0", verified: true }],
+  };
+  const widgets = [
+    { id: "f", projectId: "p1", x: 0, y: 0, w: 6, h: 4, spec: { version: 2, kind: "FUNNEL", dataset: { template: "INDICATORS_PROGRESS", indicatorIds: ["a", "b"], measure: "CUMULATIVE", showTarget: false, includeDraft: true } } },
+    { id: "t", projectId: "p1", x: 6, y: 0, w: 6, h: 4, spec: { version: 2, kind: "SCORECARD_TABLE", dataset: { template: "INDICATORS_PROGRESS", indicatorIds: ["a", "b"], measure: "CUMULATIVE", showTarget: false, includeDraft: true } } },
+    { id: "x", projectId: "p1", x: 0, y: 4, w: 12, h: 2, kind: "TEXT", text: "Cumulative to date." },
+    { id: "m", projectId: "p1", x: 0, y: 6, w: 6, h: 4, spec: { version: 2, kind: "BAR", dataset: { template: "FINANCE_BUDGET_VS_SPEND", indicatorIds: [], measure: "PERIOD", showTarget: false, includeDraft: true } } },
+    { id: "o", projectId: "p1", x: 6, y: 6, w: 6, h: 4, spec: { template: "INDICATOR_OVER_TIME", indicatorIds: ["a"], measure: "PERIOD", type: "BAR", showTarget: false } },
+  ];
+  const w = world();
+  const sheets = { handle: async () => ok(sheet) };
+  const saved = await new SaveDashboardHandler(ids, w.repo, { for: async () => ok([{ id: "p1" }]) }, audit, clock).handle(amina, { name: "Mixed", scope: "MINE", widgets });
+  assert.equal(saved.ok, true, saved.error?.message);
+  const data = await new GetDashboardDataHandler(w.repo, sheets, { for: async () => ok([{ id: "p1" }]) }).handle(amina, saved.value.id);
+  const by = Object.fromEntries(data.value.charts.map((c) => [c.widgetId, c]));
+  assert.ok(by.f.chart.option.series, "a Studio chart is drawn");
+  assert.deepEqual(by.t.table.columns.slice(0, 2), ["Code", "Indicator"], "a table kind comes back as rows");
+  assert.equal(by.x.text, "Cumulative to date.");
+  assert.ok(by.m.chart, "finance is drawn for a signed-in viewer");
+  assert.ok(by.o.chart, "an older chart still draws");
+});

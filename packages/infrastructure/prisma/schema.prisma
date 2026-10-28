@@ -2294,3 +2294,65 @@ model DataConnector {
 
   @@index([tenantId, formId])
 }
+
+/// A chart the team keeps (Phase 34.1): the chart specification only, never data. Every figure is drawn from the project's data sheet
+/// when the chart is opened. `scope`: MINE (its owner only) or PROJECT (everyone who can see the project).
+model SavedChart {
+  id        String   @id
+  tenantId  String
+  scope     String
+  projectId String
+  ownerId   String
+  name      String
+  specJson  String
+  /// The last few earlier versions (newest first): when each was replaced, by whom, its name and specification.
+  versionsJson String @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, projectId])
+  @@index([tenantId, ownerId])
+}
+
+/// A report the team keeps (Phase 34.5): the question only (indicators, periods, measure, rows), never figures.
+model SavedReport {
+  id        String   @id
+  tenantId  String
+  scope     String
+  projectId String
+  ownerId   String
+  name      String
+  queryJson String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, projectId])
+}
+
+/// A person's own shortcut to a page in the app (Phase 34.7): a title and an in-app address, never data.
+model Bookmark {
+  id        String   @id
+  tenantId  String
+  userId    String
+  title     String
+  href      String
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, userId])
+}
+
+/// A dashboard template the organisation keeps (Phase 34.3): the whole template (roles and charts by role) as JSON. Always a draft,
+/// always editable. Built-in templates live in code and are never stored; copying one makes a row here.
+model DashboardTemplate {
+  id        String   @id
+  tenantId  String
+  ownerId   String
+  sector    String
+  title     String
+  json      String
+  revision  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, sector])
+}

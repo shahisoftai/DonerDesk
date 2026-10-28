@@ -7,7 +7,8 @@ import { hasShareOfTarget, indexCells, type DataSheet, type DataSheetIndicator, 
  * (null), never 0; indicators with different units never share a raw axis; a rate is never judged as "% of target".
  */
 
-export type DataChartTemplate =
+/** The data templates the original chart settings (`DataChartSpec`) know: reports, the Data Center and v1 dashboards store these. */
+export type LegacyDataChartTemplate =
   | "INDICATOR_OVER_TIME"
   | "INDICATOR_VS_TARGET"
   | "INDICATORS_PROGRESS"
@@ -16,8 +17,11 @@ export type DataChartTemplate =
   | "FINANCE_BUDGET_VS_SPEND"
   | "FINANCE_BURN_RATE";
 
+/** Every data template: the original seven, and the ones only the Chart Studio draws (data that is not in the data sheet). */
+export type DataChartTemplate = LegacyDataChartTemplate | "PLAN_TIMELINE" | "ACTIVITY_DAYS" | "BUDGET_FLOW" | "RESULTS_BY_PLACE";
+
 export interface DataChartSpec {
-  template: DataChartTemplate;
+  template: LegacyDataChartTemplate;
   indicatorIds: string[];
   measure: ChartMeasure;
   type: ChartType;
@@ -94,6 +98,10 @@ export const DATA_CHART_TEMPLATES: Record<DataChartTemplate, DataChartTemplateIn
     types: ["BAR", "LINE"],
     usesMeasure: false,
   },
+  PLAN_TIMELINE: { label: "Work plan timeline", description: "Planned activities and milestones as bars on a timeline, coloured by whether they are on time.", indicators: "none", types: [], usesMeasure: false },
+  ACTIVITY_DAYS: { label: "Completed activities by day", description: "How many activities were completed on each day.", indicators: "none", types: [], usesMeasure: false },
+  RESULTS_BY_PLACE: { label: "Results by place", description: "One indicator's recorded value in each place, at a chosen level of the places list.", indicators: "one", types: [], usesMeasure: false },
+  BUDGET_FLOW: { label: "Budget flow", description: "Budget from each donor to each cost category, and how much of it is spent.", indicators: "none", types: [], usesMeasure: false },
   FINANCE_BURN_RATE: {
     label: "Burn rate over time",
     description: "Share of the budget spent, period by period.",
@@ -103,7 +111,8 @@ export const DATA_CHART_TEMPLATES: Record<DataChartTemplate, DataChartTemplateIn
   },
 };
 
-export const DATA_CHART_TEMPLATE_ORDER: DataChartTemplate[] = [
+/** The templates the Data Center and reports offer: the original seven. */
+export const DATA_CHART_TEMPLATE_ORDER: LegacyDataChartTemplate[] = [
   "INDICATOR_OVER_TIME",
   "INDICATOR_VS_TARGET",
   "INDICATORS_PROGRESS",
@@ -150,7 +159,7 @@ function draw(spec: DataChartSpec, data: Omit<ResolvedChartData, "type" | "dataB
 }
 
 /** The value of one cell under a measure, as a number (null when not recorded or not meaningful). */
-function measureValue(cells: ReturnType<typeof indexCells>, indicator: DataSheetIndicator, period: DataSheetPeriod, measure: ChartMeasure): number | null {
+export function measureValue(cells: ReturnType<typeof indexCells>, indicator: DataSheetIndicator, period: DataSheetPeriod, measure: ChartMeasure): number | null {
   const cell = cells.get(`${indicator.id}|${period.id}`);
   if (!cell) return null;
   if (measure === "PERIOD") return num(cell.periodValue);
@@ -217,7 +226,7 @@ function plottedProvenance(sheet: DataSheet, spec: DataChartSpec): DataChartProv
       }
       break;
     }
-    case "STATUS_DISTRIBUTION":
+    default:
       break;
   }
   return { points, unverified };
@@ -357,5 +366,7 @@ function buildDataChartCore(sheet: DataSheet, spec: DataChartSpec): DataChartRes
       if (result.ok && unverified) result.notes.push("Some of these finance figures are not verified yet.");
       return result;
     }
+    default:
+      return { ok: false, reason: `${info.label} is drawn in the Chart Studio.` };
   }
 }

@@ -11,6 +11,7 @@ import { NotificationBell, type BellItem } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LocaleSwitcher } from "@/features/i18n/presentation/LocaleSwitcher";
+import { BookmarkButton } from "@/features/bookmarks/presentation/BookmarkButton";
 import { AcademyHeaderButton } from "@/features/tour/presentation/AcademyHeaderButton";
 import { useStartOrResumeTour } from "@/features/tour/presentation/useStartOrResumeTour";
 import { TOUR_INTENT_KEY } from "@/features/tour/presentation/TourIntentLink";
@@ -151,6 +152,7 @@ export function AppShell({
             >
               <span aria-hidden="true">⌕</span> Search <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] dark:border-white/15">⌘K</kbd>
             </Link>
+            <BookmarkButton />
             <AcademyHeaderButton />
             {canCreate && <CreateMenu />}
             <LocaleSwitcher />

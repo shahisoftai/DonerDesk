@@ -1,6 +1,6 @@
 "use server";
 
-import { AddDashboardWidgetSchema, CreateDashboardShareSchema, SaveDashboardSchema } from "@donordesk/contracts";
+import { AddDashboardWidgetSchema, ApplyDashboardTemplateSchema, CreateDashboardShareSchema, DashboardTemplateBodySchema, SaveDashboardSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -9,7 +9,8 @@ import type { AppError } from "@/lib/shared/app-error";
 import { OkResponseSchema } from "./_schemas";
 import {
   AddedChartSchema, DashboardDataSchema, DashboardLinkCreatedSchema, DashboardLinkListSchema, DashboardListSchema, SavedDashboardSchema,
-  type ChartDrawing, type DashboardLinkView, type DashboardSummary,
+  TemplateAppliedSchema, TemplateDetailSchema, TemplateListSchema, TemplateWrittenSchema,
+  type ChartDrawing, type DashboardLinkView, type DashboardSummary, type TemplateApplied, type TemplateSummary,
 } from "@/lib/server/schemas-dashboards";
 
 const invalid = (error: Parameters<typeof flattenZodFields>[0]) => ({
@@ -68,4 +69,37 @@ export async function revokeDashboardLinkAction(linkId: string): Promise<Result<
   const context = await requireSession();
   const result = await gatewayRequest(`/v1/dashboard-links/${enc(linkId)}/revoke`, OkResponseSchema, context.token, { method: "POST", body: {} });
   return result.ok ? { ok: true, value: undefined } : result;
+}
+
+/* ---------- templates (Phase 34.3) ---------- */
+
+export async function listDashboardTemplatesAction(): Promise<Result<TemplateSummary[], AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest("/v1/dashboard-templates", TemplateListSchema, context.token);
+  return result.ok ? { ok: true, value: result.value.templates } : result;
+}
+
+export async function getDashboardTemplateAction(id: string): Promise<Result<{ template: Record<string, unknown>; updatedAt?: string | undefined; canEdit: boolean }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/dashboard-templates/${enc(id)}`, TemplateDetailSchema, context.token);
+}
+
+export async function saveDashboardTemplateAction(input: unknown, templateId?: string): Promise<Result<{ id: string; updatedAt: string; revision: number }, AppError>> {
+  const context = await requireSession();
+  const parsed = DashboardTemplateBodySchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  return gatewayRequest(templateId ? `/v1/dashboard-templates/${enc(templateId)}` : "/v1/dashboard-templates", TemplateWrittenSchema, context.token, { method: templateId ? "PUT" : "POST", body: parsed.data });
+}
+
+export async function deleteDashboardTemplateAction(id: string): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/dashboard-templates/${enc(id)}`, OkResponseSchema, context.token, { method: "DELETE" });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+
+export async function applyDashboardTemplateAction(templateId: string, input: unknown): Promise<Result<TemplateApplied, AppError>> {
+  const context = await requireSession();
+  const parsed = ApplyDashboardTemplateSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  return gatewayRequest(`/v1/dashboard-templates/${enc(templateId)}/apply`, TemplateAppliedSchema, context.token, { method: "POST", body: parsed.data });
 }
