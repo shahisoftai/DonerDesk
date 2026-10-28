@@ -20,3 +20,21 @@ location ^~ /api/collect/ {
 	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 	proxy_set_header X-Forwarded-Proto $scheme;
 }
+
+# Public dashboard links and embeds (Phase 33.8).
+location ^~ /shared/dashboard/ {
+	limit_req zone=dd_public_dashboards burst=20 nodelay;
+	proxy_pass http://127.0.0.1:3002;
+	proxy_set_header Host $host;
+	proxy_set_header X-Real-IP $remote_addr;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $scheme;
+}
+location ^~ /embed/dashboard/ {
+	limit_req zone=dd_public_dashboards burst=20 nodelay;
+	proxy_pass http://127.0.0.1:3002;
+	proxy_set_header Host $host;
+	proxy_set_header X-Real-IP $remote_addr;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $scheme;
+}
