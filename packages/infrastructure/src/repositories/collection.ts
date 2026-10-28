@@ -1,6 +1,6 @@
 import { TenantId, ok, type FormDefinition, type RecordMapping, type Result } from "@donordesk/domain";
 import type {
-  CollectionRecordStatus, ICollectionFormRepository, ICollectionLinkRepository, ICollectionRecordRepository,
+  CollectionRecordStatus, ICollectionFileRepository, StoredCollectionFile, ICollectionFormRepository, ICollectionLinkRepository, ICollectionRecordRepository,
   StoredCollectionForm, StoredCollectionLink, StoredCollectionRecord,
 } from "@donordesk/application";
 import type { PrismaClient } from "@prisma/client";
@@ -146,5 +146,27 @@ export class PrismaCollectionLinkRepository implements ICollectionLinkRepository
   async findByTokenHash(tokenHash: string): Promise<Result<StoredCollectionLink | null>> {
     const row = await this.prisma.collectionLink.findUnique({ where: { tokenHash } });
     return ok(row ? linkFrom(row) : null);
+  }
+}
+
+export class PrismaCollectionFileRepository implements ICollectionFileRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(f: StoredCollectionFile): Promise<Result<void>> {
+    await this.prisma.collectionFile.create({
+      data: {
+        id: f.id, tenantId: f.tenantId.toString(), formId: f.formId, fileName: f.fileName, contentType: f.contentType, size: f.size,
+        storageKey: f.storageKey, source: f.source, uploadedById: f.uploadedById ?? null,
+      },
+    });
+    return ok(undefined);
+  }
+
+  async findById(id: string, tenantId: TenantId): Promise<Result<StoredCollectionFile | null>> {
+    const r = await this.prisma.collectionFile.findFirst({ where: { id, tenantId: tenantId.toString() } });
+    return ok(r ? {
+      id: r.id, tenantId: TenantId.create(r.tenantId), formId: r.formId, fileName: r.fileName, contentType: r.contentType, size: r.size,
+      storageKey: r.storageKey, source: r.source === "LINK" ? "LINK" : "USER", ...(r.uploadedById ? { uploadedById: r.uploadedById } : {}), createdAt: r.createdAt,
+    } : null);
   }
 }

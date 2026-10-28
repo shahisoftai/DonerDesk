@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/Checkbox";
 type FieldType = CollectionFormView["fields"][number]["type"];
 type Op = "EQ" | "NEQ" | "GT" | "LT" | "FILLED" | "EMPTY";
 
-const TYPE_LABEL: Record<FieldType, string> = { NUMBER: "Number", TEXT: "Text", DATE: "Date", SELECT: "Choice", YES_NO: "Yes / No", PLACE: "Place", GPS: "GPS point" };
+const TYPE_LABEL: Record<FieldType, string> = { NUMBER: "Number", TEXT: "Text", DATE: "Date", SELECT: "Choice", YES_NO: "Yes / No", PLACE: "Place", GPS: "GPS point", FILE: "Photo or document" };
 const OP_LABEL: Record<Op, string> = { EQ: "is", NEQ: "is not", GT: "is more than", LT: "is less than", FILLED: "has an answer", EMPTY: "has no answer" };
 
 interface Rule { field: string; op: Op; value: string }

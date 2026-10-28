@@ -12,6 +12,18 @@ export function PublicCollectForm({ token, fields }: { token: string; fields: Re
     <FormFiller
       fields={fields}
       withName
+      uploadFile={async (file) => {
+        const body = new FormData();
+        body.set("file", file);
+        try {
+          const response = await fetch(`/api/collect/${encodeURIComponent(token)}/files`, { method: "POST", body });
+          const json = (await response.json().catch(() => null)) as { id?: string; name?: string; title?: string; detail?: string } | null;
+          if (response.ok && json?.id) return { ok: true, id: json.id, name: json.name ?? file.name };
+          return { ok: false, message: response.status === 404 ? "This link is no longer available." : json?.detail ?? json?.title ?? "That file could not be sent." };
+        } catch {
+          return { ok: false, message: "No connection. Try again when you are online." };
+        }
+      }}
       submitLabel="Send my answers"
       onSubmit={async (answers, submitterName) => {
         try {

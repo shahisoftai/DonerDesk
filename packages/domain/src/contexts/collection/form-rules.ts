@@ -5,8 +5,11 @@
  * as ignored, and an unknown field is a problem.
  */
 
-export type FormFieldType = "NUMBER" | "TEXT" | "DATE" | "SELECT" | "YES_NO" | "PLACE" | "GPS";
-export const FORM_FIELD_TYPES: readonly FormFieldType[] = ["NUMBER", "TEXT", "DATE", "SELECT", "YES_NO", "PLACE", "GPS"];
+export type FormFieldType = "NUMBER" | "TEXT" | "DATE" | "SELECT" | "YES_NO" | "PLACE" | "GPS" | "FILE";
+export const FORM_FIELD_TYPES: readonly FormFieldType[] = ["NUMBER", "TEXT", "DATE", "SELECT", "YES_NO", "PLACE", "GPS", "FILE"];
+
+/** A photo or document is uploaded first; the answer is the id the upload returned. */
+export const FILE_ID = /^[A-Za-z0-9_-]{8,64}$/;
 
 export type ConditionOp = "EQ" | "NEQ" | "GT" | "GTE" | "LT" | "LTE" | "IN" | "FILLED" | "EMPTY";
 
@@ -211,6 +214,12 @@ export function validateSubmission(form: FormDefinition, answers: Answers): Subm
         const lon = asNumber(g?.lon);
         if (lat === null || lon === null || lat < -90 || lat > 90 || lon < -180 || lon > 180) problems.push({ field: f.key, message: `${f.label} must be a latitude (−90 to 90) and a longitude (−180 to 180).` });
         else values[f.key] = { lat, lon };
+        break;
+      }
+      case "FILE": {
+        const t = String(raw).trim();
+        if (!FILE_ID.test(t)) problems.push({ field: f.key, message: `${f.label}: attach a photo or document first.` });
+        else values[f.key] = t;
         break;
       }
       case "TEXT":

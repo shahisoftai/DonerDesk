@@ -72,3 +72,21 @@ export interface ICollectionLinkRepository {
   /** Across organisations: the visitor does not belong to one yet; the token says which. Admin connection only. */
   findByTokenHash(tokenHash: string): Promise<Result<StoredCollectionLink | null>>;
 }
+
+export interface StoredCollectionFile {
+  id: string;
+  tenantId: TenantId;
+  formId: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  storageKey: string;
+  source: "USER" | "LINK";
+  uploadedById?: string;
+  createdAt: Date;
+}
+
+export interface ICollectionFileRepository {
+  create(file: StoredCollectionFile): Promise<Result<void>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<StoredCollectionFile | null>>;
+}

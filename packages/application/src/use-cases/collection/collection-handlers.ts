@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
-  DomainError, Permissions, aggregateRecords, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, toPlainDate, validateFormDefinition, validateSubmission, visibleFields,
+  DomainError, PlaceRegistry, Permissions, resolvePlace, aggregateRecords, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, toPlainDate, validateFormDefinition, validateSubmission, visibleFields,
   type FormDefinition, type FormField, type RecordAggregation, type RecordMapping, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
 import type { ApplyRecordsInput, CreateCollectionLinkInput, PublicSubmitInput, ReviewRecordInput, SaveCollectionFormInput, SubmitRecordInput } from "@donordesk/contracts";
@@ -8,8 +8,10 @@ import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
+import type { IStorage } from "../../ports/infrastructure.js";
+import type { IPlaceRepository } from "../../ports/places.js";
 import type {
-  CollectionFormStatus, ICollectionFormRepository, ICollectionLinkRepository, ICollectionRecordRepository, StoredCollectionForm, StoredCollectionLink, StoredCollectionRecord,
+  CollectionFormStatus, ICollectionFileRepository, StoredCollectionFile, ICollectionFormRepository, ICollectionLinkRepository, ICollectionRecordRepository, StoredCollectionForm, StoredCollectionLink, StoredCollectionRecord,
 } from "../../ports/collection.js";
 import type { BulkUpsertIndicatorUpdatesHandler } from "../logframe/bulk-upsert-indicator-updates.js";
 
@@ -46,6 +48,10 @@ export interface CollectionRecordDto {
   submitter: string;
   status: "PENDING" | "ACCEPTED" | "REJECTED";
   reviewNote?: string;
+  /** What each place answer means in the organisation's list of places: a path, or why it does not resolve. */
+  places?: Record<string, { status: "RESOLVED" | "AMBIGUOUS" | "UNRESOLVED"; label: string }>;
+  /** Attached photos and documents by question: the id to download and the name it was sent with. */
+  files?: Record<string, { id: string; name: string }>;
 }
 
 function toDto(form: StoredCollectionForm, counts: CollectionFormDto["counts"]): CollectionFormDto {
@@ -171,10 +177,19 @@ async function storeSubmission(
   repo: ICollectionRecordRepository, ids: IIdGenerator, clock: IClock, form: StoredCollectionForm,
   who: { source: "USER" | "LINK"; userId?: string; name?: string },
   input: SubmitRecordInput,
+  files?: ICollectionFileRepository,
 ): Promise<Result<{ id: string; duplicate: boolean; ignored: string[] }, DomainError>> {
   if (form.status !== "PUBLISHED") return fail(DomainError.conflict("This form is not open for answers."));
   const checked = validateSubmission(form.definition, input.answers);
   if (checked.problems.length > 0) return fail(DomainError.validation(checked.problems[0]!.message, { problems: checked.problems }));
+  // An attached file must be one that was uploaded to this very form: an id from anywhere else is refused.
+  for (const f of form.definition.fields) {
+    const id = checked.values[f.key];
+    if (f.type !== "FILE" || typeof id !== "string") continue;
+    const stored = files ? await files.findById(id, form.tenantId) : null;
+    if (stored && !stored.ok) return stored;
+    if (!files || !stored?.value || stored.value.formId !== form.id) return fail(DomainError.validation(`${f.label}: that file was not found. Attach it again.`));
+  }
   const now = clock.now();
   const stored = await repo.createOnce({
     id: input.id ?? ids.generate(), tenantId: form.tenantId, formId: form.id, projectId: form.projectId, answers: checked.values,
@@ -186,13 +201,13 @@ async function storeSubmission(
 }
 
 export class SubmitCollectionRecordHandler {
-  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly audit: IAuditLogger, private readonly clock: IClock, private readonly files?: ICollectionFileRepository) {}
 
   async handle(ctx: AuthenticatedContext, formId: string, input: SubmitRecordInput): Promise<Result<{ id: string; duplicate: boolean; ignored: string[] }, DomainError>> {
     if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot submit records"));
     const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
     if (!form.ok) return form;
-    const stored = await storeSubmission(this.records, this.ids, this.clock, form.value, { source: "USER", userId: ctx.tenant.userId }, input);
+    const stored = await storeSubmission(this.records, this.ids, this.clock, form.value, { source: "USER", userId: ctx.tenant.userId }, input, this.files);
     if (stored.ok && !stored.value.duplicate) {
       await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.record.submitted", entityType: "collection_record", entityId: stored.value.id, projectId: form.value.projectId });
     }
@@ -201,7 +216,13 @@ export class SubmitCollectionRecordHandler {
 }
 
 export class ListCollectionRecordsHandler {
-  constructor(private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly names: (tenantId: TenantId) => Promise<Map<string, string>>) {}
+  constructor(
+    private readonly forms: ICollectionFormRepository,
+    private readonly records: ICollectionRecordRepository,
+    private readonly names: (tenantId: TenantId) => Promise<Map<string, string>>,
+    private readonly places?: IPlaceRepository,
+    private readonly files?: ICollectionFileRepository,
+  ) {}
 
   async handle(ctx: AuthenticatedContext, formId: string, status?: "PENDING" | "ACCEPTED" | "REJECTED"): Promise<Result<CollectionRecordDto[], DomainError>> {
     if (!can(ctx, "indicator.update") && !can(ctx, "indicator.verify")) return fail(DomainError.forbidden("You cannot see collected records"));
@@ -210,7 +231,38 @@ export class ListCollectionRecordsHandler {
     const listed = await this.records.listByForm(formId, ctx.tenant.tenantId, status);
     if (!listed.ok) return listed;
     const names = await this.names(ctx.tenant.tenantId);
-    return ok(listed.value.map((r) => toRecordDto(r, names)));
+    const dtos = listed.value.map((r) => toRecordDto(r, names));
+
+    // A place answer is read against the organisation's list of places, never guessed: a word it cannot tell apart stays "to confirm".
+    const placeFields = form.value.definition.fields.filter((f) => f.type === "PLACE");
+    if (placeFields.length > 0 && this.places) {
+      const all = await this.places.list(ctx.tenant.tenantId);
+      if (all.ok) {
+        const registry = new PlaceRegistry(all.value.map(({ tenantId: _t, createdById: _c, archivedAt: _a, ...record }) => record));
+        for (const dto of dtos) {
+          for (const f of placeFields) {
+            const text = dto.answers[f.key];
+            if (typeof text !== "string" || !text.trim()) continue;
+            const hit = resolvePlace(text, registry);
+            (dto.places ??= {})[f.key] = hit.status === "RESOLVED"
+              ? { status: "RESOLVED", label: registry.pathLabel(hit.place.id) }
+              : { status: hit.status, label: hit.status === "AMBIGUOUS" ? "More than one place has this name" : "Not in the list of places" };
+          }
+        }
+      }
+    }
+    const fileFields = form.value.definition.fields.filter((f) => f.type === "FILE");
+    if (fileFields.length > 0 && this.files) {
+      for (const dto of dtos) {
+        for (const f of fileFields) {
+          const id = dto.answers[f.key];
+          if (typeof id !== "string") continue;
+          const stored = await this.files.findById(id, ctx.tenant.tenantId);
+          if (stored.ok && stored.value) (dto.files ??= {})[f.key] = { id, name: stored.value.fileName };
+        }
+      }
+    }
+    return ok(dtos);
   }
 }
 
@@ -321,12 +373,12 @@ export class PublicCollectionFormHandler {
 }
 
 export class PublicSubmitCollectionRecordHandler {
-  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly audit: IAuditLogger, private readonly clock: IClock, private readonly files?: ICollectionFileRepository) {}
 
   async handle(tenantId: TenantId, formId: string, linkId: string, input: PublicSubmitInput): Promise<Result<{ id: string; duplicate: boolean }, DomainError>> {
     const form = await loadForm(this.forms, formId, tenantId);
     if (!form.ok) return fail(DomainError.notFound("Form", "unavailable"));
-    const stored = await storeSubmission(this.records, this.ids, this.clock, form.value, { source: "LINK", ...(input.submitterName ? { name: input.submitterName } : {}) }, input);
+    const stored = await storeSubmission(this.records, this.ids, this.clock, form.value, { source: "LINK", ...(input.submitterName ? { name: input.submitterName } : {}) }, input, this.files);
     if (!stored.ok) return stored;
     if (!stored.value.duplicate) {
       await this.audit.record({ tenantId, actorId: `link:${linkId}`, eventType: "collection.record.submitted", entityType: "collection_record", entityId: stored.value.id, projectId: form.value.projectId });
@@ -478,5 +530,68 @@ export class ImportCollectionRecordsHandler {
     }
     await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.records.imported", entityType: "collection_form", entityId: formId, projectId: form.value.projectId, newValue: String(saved) });
     return ok({ ...preview, saved });
+  }
+}
+
+/** What may be attached: photos and documents, small. The type is checked by what it says it is and by its first bytes. */
+export const COLLECTION_FILE_LIMIT_BYTES = 5 * 1024 * 1024;
+const FILE_SIGNATURES: Array<{ type: string; starts: number[] }> = [
+  { type: "image/jpeg", starts: [0xff, 0xd8, 0xff] },
+  { type: "image/png", starts: [0x89, 0x50, 0x4e, 0x47] },
+  { type: "application/pdf", starts: [0x25, 0x50, 0x44, 0x46] },
+];
+
+/** The type of an upload, from its bytes (never from what the sender claimed), or null when it is not an allowed kind. */
+export function collectionFileType(bytes: Buffer): string | null {
+  if (bytes.length > 12 && bytes.subarray(0, 4).toString() === "RIFF" && bytes.subarray(8, 12).toString() === "WEBP") return "image/webp";
+  return FILE_SIGNATURES.find((s) => s.starts.every((b, i) => bytes[i] === b))?.type ?? null;
+}
+
+async function storeCollectionFile(
+  files: ICollectionFileRepository, storage: IStorage, ids: IIdGenerator, clock: IClock, form: StoredCollectionForm,
+  who: { source: "USER" | "LINK"; userId?: string }, file: { name: string; bytes: Buffer },
+): Promise<Result<{ id: string; name: string }, DomainError>> {
+  if (form.status !== "PUBLISHED") return fail(DomainError.conflict("This form is not open for answers."));
+  if (!form.definition.fields.some((f) => f.type === "FILE")) return fail(DomainError.validation("This form does not ask for a file."));
+  if (file.bytes.length === 0) return fail(DomainError.validation("That file is empty."));
+  if (file.bytes.length > COLLECTION_FILE_LIMIT_BYTES) return fail(DomainError.validation("That file is larger than 5 MB."));
+  const contentType = collectionFileType(file.bytes);
+  if (!contentType) return fail(DomainError.validation("Attach a photo (JPEG, PNG or WebP) or a PDF."));
+  const id = ids.generate().replace(/[^A-Za-z0-9_-]/g, "");
+  const storageKey = `collection/${form.tenantId.toString()}/${form.id}/${id}`;
+  await storage.put({ key: storageKey, body: file.bytes, contentType });
+  const name = (file.name.split(/[\\/]/).pop() ?? "").replace(/[^\w.\- ]+/g, "_").slice(0, 120) || "file";
+  const saved = await files.create({ id, tenantId: form.tenantId, formId: form.id, fileName: name, contentType, size: file.bytes.length, storageKey, source: who.source, ...(who.userId ? { uploadedById: who.userId } : {}), createdAt: clock.now() });
+  if (!saved.ok) return saved;
+  return ok({ id, name });
+}
+
+export class UploadCollectionFileHandler {
+  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly files: ICollectionFileRepository, private readonly storage: IStorage, private readonly clock: IClock) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string, file: { name: string; bytes: Buffer }): Promise<Result<{ id: string; name: string }, DomainError>> {
+    if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot submit records"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    return storeCollectionFile(this.files, this.storage, this.ids, this.clock, form.value, { source: "USER", userId: ctx.tenant.userId }, file);
+  }
+
+  /** From a collection link: the token already named the form. */
+  async handlePublic(tenantId: TenantId, formId: string, file: { name: string; bytes: Buffer }): Promise<Result<{ id: string; name: string }, DomainError>> {
+    const form = await loadForm(this.forms, formId, tenantId);
+    if (!form.ok) return fail(DomainError.notFound("Form", "unavailable"));
+    return storeCollectionFile(this.files, this.storage, this.ids, this.clock, form.value, { source: "LINK" }, file);
+  }
+}
+
+/** The bytes of an attached file, for the people who review records (never for the public). */
+export class GetCollectionFileHandler {
+  constructor(private readonly files: ICollectionFileRepository, private readonly storage: IStorage) {}
+
+  async handle(ctx: AuthenticatedContext, fileId: string): Promise<Result<{ fileName: string; contentType: string; bytes: Buffer }, DomainError>> {
+    if (!can(ctx, "indicator.update") && !can(ctx, "indicator.verify")) return fail(DomainError.forbidden("You cannot see collected files"));
+    const found: StoredCollectionFile | null | undefined = await this.files.findById(fileId, ctx.tenant.tenantId).then((r) => (r.ok ? r.value : null));
+    if (!found) return fail(DomainError.notFound("File", fileId));
+    return ok({ fileName: found.fileName, contentType: found.contentType, bytes: await this.storage.read(found.storageKey) });
   }
 }

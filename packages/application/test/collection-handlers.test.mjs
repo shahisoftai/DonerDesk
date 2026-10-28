@@ -154,3 +154,46 @@ test("a reviewed record can be returned to waiting, which drops it from the tota
   assert.equal(back.status, "PENDING");
   assert.equal(back.reviewNote, undefined);
 });
+
+import { UploadCollectionFileHandler, GetCollectionFileHandler, collectionFileType, ListCollectionRecordsHandler } from "../dist/index.js";
+
+const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47]), Buffer.alloc(32)]);
+
+test("attachments: allowed kinds are told by their bytes, an id from another form is refused, only reviewers can download", async () => {
+  assert.equal(collectionFileType(png), "image/png");
+  assert.equal(collectionFileType(Buffer.from("MZ not allowed")), null);
+  assert.equal(collectionFileType(Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WEBP"), Buffer.alloc(4)])), "image/webp");
+
+  const w = world();
+  const filesStore = new Map(), blobs = new Map();
+  const files = { create: async (f) => (filesStore.set(f.id, f), ok()), findById: async (id) => ok(filesStore.get(id) ?? null) };
+  const storage = { put: async (i) => (blobs.set(i.key, i.body), { url: "", key: i.key, size: i.body.length }), read: async (k) => blobs.get(k) };
+  const save = new SaveCollectionFormHandler(ids, w.forms, w.indicators, audit, clock);
+  const status = new SetCollectionFormStatusHandler(w.forms, audit, clock);
+  const withFile = { ...input, fields: [...input.fields, { key: "photo", label: "Photo", type: "FILE" }] };
+  const { value: { id: formId } } = await save.handle(manager, withFile);
+  const { value: { id: otherId } } = await save.handle(manager, { ...input, name: "Other" });
+  await status.handle(manager, formId, "PUBLISHED");
+  await status.handle(manager, otherId, "PUBLISHED");
+
+  const upload = new UploadCollectionFileHandler(ids, w.forms, files, storage, clock);
+  assert.match((await upload.handle(manager, formId, { name: "a.exe", bytes: Buffer.from("MZ....") })).error.message, /photo/i);
+  assert.match((await upload.handle(manager, formId, { name: "big.png", bytes: Buffer.concat([png, Buffer.alloc(5 * 1024 * 1024)]) })).error.message, /5 MB/);
+  assert.match((await upload.handle(manager, otherId, { name: "p.png", bytes: png })).error.message, /does not ask for a file/);
+  assert.equal((await upload.handle(viewer, formId, { name: "p.png", bytes: png })).ok, false);
+  const up = await upload.handlePublic(tenantId, formId, { name: "../../my photo?.png", bytes: png });
+  assert.ok(up.ok);
+  assert.equal(filesStore.get(up.value.id).fileName, "my photo_.png");
+
+  const submit = new SubmitCollectionRecordHandler(ids, w.forms, w.records, audit, clock, files);
+  const base = { day: "2026-10-03", kits: 2 };
+  assert.match((await submit.handle(manager, formId, { answers: { ...base, photo: "doesnotexist1" } })).error.message, /not found/);
+  const good = await submit.handle(manager, formId, { id: "with-photo-01", answers: { ...base, photo: up.value.id } });
+  assert.ok(good.ok);
+
+  const list = new ListCollectionRecordsHandler(w.forms, w.records, async () => new Map(), undefined, files);
+  assert.equal((await list.handle(manager, formId)).value[0].files.photo.name, "my photo_.png");
+  const get = new GetCollectionFileHandler(files, storage);
+  assert.equal((await get.handle(viewer, up.value.id)).ok, false);
+  assert.equal((await get.handle(manager, up.value.id)).value.contentType, "image/png");
+});

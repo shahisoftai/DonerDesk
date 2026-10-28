@@ -6,6 +6,7 @@ import { parseFileAction } from "@/lib/actions/parse";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { importNotesFile } from "../domain/notes-file";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
@@ -137,6 +138,20 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
                   <li key={i} className="text-xs text-amber-600 dark:text-amber-400">{w}</li>
                 ))}
               </ul>
+            )}
+            {result.warnings.length > 0 && (
+              <button
+                type="button"
+                className="mt-2 text-xs underline"
+                onClick={() => {
+                  const url = URL.createObjectURL(new Blob([importNotesFile(result.warnings)], { type: "text/csv;charset=utf-8" }));
+                  const a = document.createElement("a");
+                  a.href = url; a.download = "import-notes.csv"; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                Download these notes as a file
+              </button>
             )}
             {result.items.length > 0 && (
               <ul className="mt-3 divide-y divide-slate-200/70 dark:divide-white/10">

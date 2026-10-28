@@ -2202,6 +2202,23 @@ model CollectionRecord {
   @@index([tenantId, formId, status])
 }
 
+/// A photo or document attached to an answer (Phase 33.5). Uploaded before the record; the answer holds its id.
+model CollectionFile {
+  id          String   @id
+  tenantId    String
+  formId      String
+  fileName    String
+  contentType String
+  size        Int
+  storageKey  String
+  /// USER | LINK
+  source      String
+  uploadedById String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, formId])
+}
+
 /// An anonymous collection link for a published form. Only the SHA-256 of the token is stored; it expires and can be revoked.
 model CollectionLink {
   id          String    @id

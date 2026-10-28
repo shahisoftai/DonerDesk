@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateFormDefinition, validateSubmission, visibleFields, conditionHolds, aggregateRecords, recordMappingProblems } from "../dist/index.js";
+import { validateFormDefinition, validateSubmission, visibleFields, conditionHolds, aggregateRecords, recordMappingProblems, recordSheetTemplate, parseRecordSheet } from "../dist/index.js";
 
 const form = {
   fields: [
@@ -99,7 +99,7 @@ test("yes/no answers compare the same as booleans and as words", () => {
   assert.equal(conditionHolds({ field: "a", op: "EQ", value: "no" }, { a: "false" }), true);
 });
 
-import { recordSheetTemplate, parseRecordSheet, recordSheetErrorFile } from "../dist/index.js";
+import { recordSheetErrorFile } from "../dist/index.js";
 
 test("the sheet template is the form's own; rows are checked with the form's rules; the error file is the person's sheet with the problems", () => {
   const template = recordSheetTemplate(form);
@@ -134,4 +134,14 @@ test("a sheet missing a required column, or with unknown columns, says so", () =
   assert.deepEqual(r.unknownColumns, ["Mystery"]);
   assert.equal(r.invalid, 1);
   assert.equal(parseRecordSheet(form, "").rows.length, 0);
+});
+
+test("a photo or document question takes the id of an upload, and a sheet neither asks for it nor requires it", () => {
+  const f = { fields: [{ key: "day", label: "Day", type: "DATE", required: true }, { key: "photo", label: "Photo", type: "FILE", required: true }] };
+  assert.deepEqual(validateFormDefinition(f), []);
+  assert.match(validateSubmission(f, { day: "2026-10-03" }).problems[0].message, /Photo is required/);
+  assert.match(validateSubmission(f, { day: "2026-10-03", photo: "x y" }).problems[0].message, /attach a photo/);
+  assert.equal(validateSubmission(f, { day: "2026-10-03", photo: "abc123def456" }).values.photo, "abc123def456");
+  assert.equal(recordSheetTemplate(f).split("\n")[0], "Day");
+  assert.equal(parseRecordSheet(f, "Day\n2026-10-03").invalid, 0);
 });

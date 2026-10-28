@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const FormFieldViewSchema = z.object({
-  key: z.string(), label: z.string(), type: z.enum(["NUMBER", "TEXT", "DATE", "SELECT", "YES_NO", "PLACE", "GPS"]),
+  key: z.string(), label: z.string(), type: z.enum(["NUMBER", "TEXT", "DATE", "SELECT", "YES_NO", "PLACE", "GPS", "FILE"]),
   required: z.boolean().optional(), requiredWhen: z.unknown().optional(), relevantWhen: z.unknown().optional(),
   min: z.number().optional(), max: z.number().optional(), maxLength: z.number().optional(),
   options: z.array(z.object({ value: z.string(), label: z.string() })).optional(),
@@ -22,6 +22,8 @@ export const CollectionFormListSchema = z.object({ forms: z.array(CollectionForm
 export const CollectionRecordSchema = z.object({
   id: z.string(), formId: z.string(), answers: z.record(z.unknown()), submittedOn: z.string(), source: z.enum(["USER", "LINK"]),
   submitter: z.string(), status: z.enum(["PENDING", "ACCEPTED", "REJECTED"]), reviewNote: z.string().optional(),
+  places: z.record(z.object({ status: z.enum(["RESOLVED", "AMBIGUOUS", "UNRESOLVED"]), label: z.string() })).optional(),
+  files: z.record(z.object({ id: z.string(), name: z.string() })).optional(),
 });
 export type CollectionRecordView = z.infer<typeof CollectionRecordSchema>;
 export const CollectionRecordListSchema = z.object({ records: z.array(CollectionRecordSchema) });

@@ -77,6 +77,24 @@ export async function registerCollectionRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.post("/v1/collection-forms/:formId/files", async (req, reply) => {
+    const data = await req.file({ limits: { fileSize: 5 * 1024 * 1024 + 1 } });
+    if (!data) throw new Error("file required");
+    const r = await req.container.handlers.uploadCollectionFile.handle(ctx(req), param(req, "formId"), { name: data.filename ?? "file", bytes: await data.toBuffer() });
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+
+  app.get("/v1/collection-files/:fileId", async (req, reply) => {
+    const r = await req.container.handlers.getCollectionFile.handle(ctx(req), param(req, "fileId"));
+    if (!r.ok) throw r.error;
+    reply.header("content-type", r.value.contentType);
+    reply.header("content-disposition", `attachment; filename="${r.value.fileName.replace(/"/g, "")}"`);
+    reply.header("x-content-type-options", "nosniff");
+    reply.header("cache-control", "private, no-store");
+    return r.value.bytes;
+  });
+
   app.get("/v1/collection-forms/:formId/template", async (req) => {
     const r = await req.container.handlers.getCollectionSheetTemplate.handle(ctx(req), param(req, "formId"));
     if (!r.ok) throw r.error;
@@ -125,6 +143,21 @@ export async function registerPublicCollectionRoutes(app: FastifyInstance, admin
     const form = await tenant.handlers.publicCollectionForm.handle(link.value.tenantId, link.value.formId);
     if (!form.ok) return unavailable(reply);
     return form.value;
+  });
+
+  app.post("/public/collect/:token/files", async (req, reply) => {
+    noStore(reply);
+    const link = await admin.resolveCollectionLink.handle((req.params as { token: string }).token);
+    if (!link.ok) return unavailable(reply);
+    const data = await req.file({ limits: { fileSize: 5 * 1024 * 1024 + 1 } });
+    if (!data) throw new Error("file required");
+    const tenant = createContainer({ tenantId: link.value.tenantId.toString() });
+    const r = await tenant.handlers.uploadCollectionFile.handlePublic(link.value.tenantId, link.value.formId, { name: data.filename ?? "file", bytes: await data.toBuffer() });
+    if (!r.ok) {
+      if (r.error.code === "CONFLICT" || r.error.code === "NOT_FOUND") return unavailable(reply);
+      throw r.error;
+    }
+    return reply.status(201).send({ id: r.value.id, name: r.value.name });
   });
 
   app.post("/public/collect/:token", async (req, reply) => {

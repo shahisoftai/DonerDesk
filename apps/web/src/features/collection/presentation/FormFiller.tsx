@@ -14,9 +14,11 @@ export type FillOutcome = { ok: true } | { ok: false; message: string };
  * One form, filled in. It asks the same rules the server enforces (`visibleFields`, `validateSubmission`), so a question appears
  * and disappears as the answers change and a problem is shown beside its question before anything is sent. The server still checks.
  */
-export function FormFiller({ fields, onSubmit, submitLabel = "Send", withName = false }: {
+export function FormFiller({ fields, onSubmit, uploadFile, submitLabel = "Send", withName = false }: {
   fields: ReadonlyArray<FormField>;
   onSubmit: (answers: Record<string, unknown>, submitterName?: string) => Promise<FillOutcome>;
+  /** Sends a photo or document and returns the id to keep as the answer; without it a file question cannot be answered. */
+  uploadFile?: (file: File) => Promise<{ ok: true; id: string; name: string } | { ok: false; message: string }>;
   submitLabel?: string;
   /** Ask who is answering (the public link). */
   withName?: boolean;
@@ -26,6 +28,20 @@ export function FormFiller({ fields, onSubmit, submitLabel = "Send", withName = 
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [tried, setTried] = useState(false);
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [fileNames, setFileNames] = useState<Record<string, string>>({});
+  const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
+
+  async function attach(key: string, file: File | undefined) {
+    if (!file || !uploadFile) return;
+    setUploading(key);
+    setFileErrors((e) => ({ ...e, [key]: "" }));
+    try {
+      const r = await uploadFile(file);
+      if (r.ok) { setAnswers((a) => ({ ...a, [key]: r.id })); setFileNames((n) => ({ ...n, [key]: r.name })); }
+      else setFileErrors((e) => ({ ...e, [key]: r.message }));
+    } finally { setUploading(null); }
+  }
   const form = useMemo(() => ({ fields }), [fields]);
   const shown = visibleFields(form, answers);
   const problems = useMemo(() => {
@@ -43,7 +59,7 @@ export function FormFiller({ fields, onSubmit, submitLabel = "Send", withName = 
     try {
       const outcome = await onSubmit(answers, withName ? name.trim() || undefined : undefined);
       if (outcome.ok) {
-        setAnswers({}); setTried(false); setMessage({ tone: "ok", text: "Sent. Thank you." });
+        setAnswers({}); setFileNames({}); setTried(false); setMessage({ tone: "ok", text: "Sent. Thank you." });
       } else setMessage({ tone: "error", text: outcome.message });
     } finally {
       setSending(false);
@@ -58,7 +74,7 @@ export function FormFiller({ fields, onSubmit, submitLabel = "Send", withName = 
         </Field>
       )}
       {shown.map((f) => {
-        const error = tried ? problems.get(f.key) : undefined;
+        const error = (tried ? problems.get(f.key) : undefined) || fileErrors[f.key] || undefined;
         const value = answers[f.key];
         const label = f.required ? f.label : `${f.label} (optional)`;
         return (
@@ -78,6 +94,13 @@ export function FormFiller({ fields, onSubmit, submitLabel = "Send", withName = 
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
               </Select>
+            ) : f.type === "FILE" ? (
+              <div>
+                <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={!uploadFile || uploading === f.key} onChange={(e) => void attach(f.key, e.target.files?.[0])} />
+                {uploading === f.key && <p className="mt-1 text-xs text-slate-500">Sending…</p>}
+                {answers[f.key] !== undefined && fileNames[f.key] && <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Attached: {fileNames[f.key]}</p>}
+                <p className="mt-1 text-xs text-slate-500">A photo (JPEG, PNG, WebP) or a PDF, up to 5 MB.</p>
+              </div>
             ) : f.type === "GPS" ? (
               <div className="grid grid-cols-2 gap-2">
                 <Input aria-label={`${f.label}, latitude`} placeholder="Latitude" inputMode="decimal" value={String((value as { lat?: unknown } | undefined)?.lat ?? "")} onChange={(e) => set(f.key, { ...(value as object | undefined), lat: e.target.value })} />

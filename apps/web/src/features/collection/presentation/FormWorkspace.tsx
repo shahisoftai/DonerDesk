@@ -78,6 +78,18 @@ function FillTab({ form }: { form: CollectionFormView }) {
       <FormFiller
         key={key}
         fields={form.fields as never}
+        uploadFile={async (file) => {
+          const body = new FormData();
+          body.set("file", file);
+          try {
+            const response = await fetch(`/api/collection-forms/${encodeURIComponent(form.id)}/files`, { method: "POST", body });
+            const json = (await response.json().catch(() => null)) as { id?: string; name?: string; title?: string; detail?: string } | null;
+            if (response.ok && json?.id) return { ok: true, id: json.id, name: json.name ?? file.name };
+            return { ok: false, message: json?.detail ?? json?.title ?? "That file could not be sent." };
+          } catch {
+            return { ok: false, message: "No connection. Try again when you are online." };
+          }
+        }}
         onSubmit={async (answers) => {
           // The same key is reused if the send is repeated, so a retry after a bad connection is stored once.
           const r = await submitCollectionRecordAction(form.id, { id: key.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60).padEnd(8, "0"), answers });
@@ -189,7 +201,14 @@ function RecordsTab({ formId, fields, canReview }: { formId: string; fields: Col
                 <tr key={r.id} className="border-t border-slate-100 align-top dark:border-slate-800">
                   <td className="py-2 pr-3">{r.submittedOn}</td>
                   <td className="pr-3">{r.submitter}{r.source === "LINK" ? " (link)" : ""}</td>
-                  {fields.map((f) => <td key={f.key} className="pr-3">{answerText(r.answers[f.key])}</td>)}
+                  {fields.map((f) => (
+                    <td key={f.key} className="pr-3">
+                      {f.type === "FILE" ? (r.files?.[f.key] ? <a className="underline" href={`/api/collection-files/${encodeURIComponent(r.files[f.key]!.id)}`}>{r.files[f.key]!.name}</a> : "—") : answerText(r.answers[f.key])}
+                      {f.type === "PLACE" && r.places?.[f.key] && (
+                        <span className={`block text-xs ${r.places[f.key]!.status === "RESOLVED" ? "text-slate-500" : "text-amber-700 dark:text-amber-300"}`}>{r.places[f.key]!.status === "RESOLVED" ? r.places[f.key]!.label : `To confirm: ${r.places[f.key]!.label}`}</span>
+                      )}
+                    </td>
+                  ))}
                   <td className="whitespace-nowrap py-2">
                     {r.status === "REJECTED" && r.reviewNote ? <span className="text-xs text-slate-500">Rejected: {r.reviewNote}</span> : null}
                     {canReview && r.status !== "PENDING" && <Button variant="secondary" onClick={() => void decide(r.id, "REOPEN")}>Return to waiting</Button>}

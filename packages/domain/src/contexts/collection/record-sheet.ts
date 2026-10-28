@@ -13,7 +13,9 @@ const csvCell = (value: string): string => (/[",;\t\r\n]/.test(value) ? `"${valu
 const csvLine = (cells: ReadonlyArray<string>): string => cells.map(csvCell).join(",");
 
 /** The header row for a blank sheet, plus a hint row saying what each column takes. */
-export function recordSheetTemplate(form: FormDefinition): string {
+export function recordSheetTemplate(fullForm: FormDefinition): string {
+  // A photo or document cannot be a spreadsheet cell: it is attached in the form itself.
+  const form: FormDefinition = { fields: fullForm.fields.filter((f) => f.type !== "FILE") };
   const hint = (f: FormField): string => {
     switch (f.type) {
       case "NUMBER": return "a number";
@@ -69,7 +71,15 @@ function cellValue(field: FormField, text: string): unknown {
 }
 
 /** Reads a pasted or uploaded sheet against a form. A hint row that repeats the template's wording is skipped. */
-export function parseRecordSheet(form: FormDefinition, text: string): RecordSheetResult {
+export function parseRecordSheet(fullForm: FormDefinition, text: string): RecordSheetResult {
+  // A photo or document is attached in the form itself, so a sheet neither asks for it nor requires it.
+  const form: FormDefinition = {
+    fields: fullForm.fields.map((f) => {
+      if (f.type !== "FILE") return f;
+      const { requiredWhen: _when, required: _required, ...rest } = f;
+      return rest;
+    }),
+  };
   const lines = text.replace(/^﻿/, "").split(/\r?\n/);
   const first = lines.findIndex((l) => l.trim() !== "");
   if (first < 0) return { header: [], unknownColumns: [], missingColumns: [], rows: [], valid: 0, invalid: 0 };

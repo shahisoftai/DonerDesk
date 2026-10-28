@@ -13,7 +13,7 @@ const ConditionSchema: z.ZodType<unknown> = z.lazy(() =>
 export const FormFieldSchema = z.object({
   key: z.string().max(40),
   label: z.string().max(200),
-  type: z.enum(["NUMBER", "TEXT", "DATE", "SELECT", "YES_NO", "PLACE", "GPS"]),
+  type: z.enum(["NUMBER", "TEXT", "DATE", "SELECT", "YES_NO", "PLACE", "GPS", "FILE"]),
   required: z.boolean().optional(),
   requiredWhen: ConditionSchema.optional(),
   relevantWhen: ConditionSchema.optional(),

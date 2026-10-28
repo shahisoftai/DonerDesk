@@ -13,6 +13,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "CollectionForm", field: "definitionJson" },
   { model: "CollectionRecord", field: "answersJson" },
   { model: "CollectionLink", field: "tokenHash" },
+  { model: "CollectionFile", field: "storageKey" },
   { model: "EvidenceFile", field: "textExtractionStatus" },
   { model: "User", field: "lockedUntil" },
   { model: "User", field: "external" },
