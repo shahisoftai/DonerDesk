@@ -1,6 +1,6 @@
 # Verification demo 11 — 6-month EU-funded MNCH project in South Ethiopia (scenario and setup run)
 
-**DonorDesk Version 2.007** (production, tenant GEC, `mnpiracha@gmail.com`)
+**DonorDesk Version 3.007** (production, tenant GEC, `mnpiracha@gmail.com`)
 
 A complete six-month **Maternal, Newborn and Child Health (MNCH)** project in Ethiopia funded by the **European Union (ECHO)**, designed in the pattern of demos 7 (EU MNCH-R Ghana) and 9-ET (CMAM Oromia): the scenario is written first, then the project is built **through the web UI only** (one visible browser, no API scripts, no database writes) up to the end of setup — project, logframe, indicators, donor templates, reporting profile, team, work plan and the first reporting period — and the run **stops for review** before any data entry, exactly like the demo-9-ET month-0 stop.
 

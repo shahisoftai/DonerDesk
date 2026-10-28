@@ -1,6 +1,6 @@
 # Phase 28.1 — Gap closure after the programme-management review
 
-**DonorDesk Version 2.006 (planned)** · **Date:** 2026-10-19 · **Branch:** `0013-programme-management` (uncommitted phase 28 work is still in the tree)
+**DonorDesk Version 3.007 (planned)** · **Date:** 2026-10-19 · **Branch:** `0013-programme-management` (uncommitted phase 28 work is still in the tree)
 **Source of gaps:** `imp/phase28-new-management.md` §16 and the competitor review of 2026-10-19 (ActivityInfo, TolaData, Kobo, CommCare, Odoo NGO modules, Blackbaud, Workday Grants, Forecast, RAID-log practice). Competitor evidence was mostly vendor listicles and reviews; each batch below starts with a check of the real behaviour before it is built.
 
 ---

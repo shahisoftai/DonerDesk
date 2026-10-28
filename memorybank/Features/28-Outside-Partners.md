@@ -1,6 +1,6 @@
 # Feature 28: Outside partners — access for implementing partners
 
-**DonorDesk Version 2.006**
+**DonorDesk Version 3.007**
 
 **Author:** Claude (agent) · **Date:** 2026-10-21
 **Status:** Built, tested and deployed 2026-10-20 (batch 3, audit finding H-15; CG-12). The partner's invitation and first screens still need a browser check on the live site. Builds on [Feature 03](03-User-And-Role-Management.md) and the project membership rule in [Feature 04](04-Project-Setup.md).

@@ -1,6 +1,6 @@
 # Verification demo 2 — real EU Nutrition annual template, month-1 AI donor report (2026-09-28)
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 End-to-end verification that DonorDesk can take a **real, unmodified donor-supplied
 DOCX** — `DonorDesk_EU_Nutrition_Annual_Report_Template.docx` (14 numbered sections,

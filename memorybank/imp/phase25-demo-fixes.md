@@ -1,6 +1,6 @@
 # Phase 25 — Stability and ease of use: implementation plan
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Status (2026-10-06): mostly implemented, deployed and browser-checked on production** (four releases plus two lint fixes from demo 6, see *Outcome so far* at the end). The items marked **Done** in
 [§0 Implementation status](#0-implementation-status) are built and tested; the open ones are listed in the Outcome section.

@@ -1,6 +1,6 @@
 # Feature 35: Target schedule and variance
 
-**DonorDesk Version 2.007** · **Shipped:** 2026-10-21, release `20261021054800` · **Audit:** ME-02, ME-11 (`../imp/product-gap-audit-2026-10-20.md` §16)
+**DonorDesk Version 3.007** · **Shipped:** 2026-10-21, release `20261021054800` · **Audit:** ME-02, ME-11 (`../imp/product-gap-audit-2026-10-20.md` §16)
 
 ## 1. What a person gets
 

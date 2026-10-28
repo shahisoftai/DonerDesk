@@ -1,6 +1,6 @@
 # Feature 29: Organisation export — take your data with you
 
-**DonorDesk Version 2.006**
+**DonorDesk Version 3.007**
 
 **Author:** Claude (agent) · **Date:** 2026-10-21
 **Status:** Built, tested and deployed 2026-10-20 (batch 3, audit finding H-11; SE-13). Browser check pending. Builds on [Feature 14](14-Export-Module.md), which exports one report at a time.

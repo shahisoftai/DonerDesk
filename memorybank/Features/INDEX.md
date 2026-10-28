@@ -1,8 +1,8 @@
 # DonorDesk Features Index
 
-**DonorDesk Version 2.007**
+**DonorDesk Version 3.007**
 
-This directory contains detailed documentation for DonorDesk's features: 01–21 are the MVP and its first additions, 23–25 are the programme-management batches, and 26–42 are the October 2026 audit and gap-closure batches (listed in the second table below).
+This directory contains detailed documentation for DonorDesk's features: 01–21 are the MVP and its first additions, 23–25 are the programme-management batches, and 26–42 are the October 2026 audit and gap-closure batches (listed in the second table below), and 43–52 are the site maps, infographics and the Phase 33 competitive-parity features.
 
 > **Introduced in DonorDesk Version 3.007:** built on branch `0009-agent-memory`. Feature 21
 > (Agent Memory) is this release's headline addition — see
@@ -203,3 +203,20 @@ Plan, rules and deployment: `../imp/phase30-maps.md` (§10 = batch 30.1). Invari
 ## Phase 31–32 — Infographic Studio (2026-10-25)
 
 Designed results pictures from the project's own records (feature 44). Plan: `../imp/phase32-infographic-studio.md`. Support articles, unpublished until the signed-in check: `../docs/support/_unpublished-phase32/`.
+
+## Phase 33 — competitive parity (2026-10-27 to 2026-10-29)
+
+Features 45–52 describe what Phase 33 added. Plan and status by batch: `../imp/phase33-competitive-parity-plan.md` (§ Status). Operator facts: `../docs/runbooks/phase33-operations.md`.
+
+| # | Feature | Batch | Deployed |
+|---|---|---|---|
+| 45 | [Places and results by place](./45-Places-And-Results-By-Place.md) | 33.1, 33.2 | 2026-10-27 |
+| 46 | [Formula indicators, target schedules and period submission](./46-Indicator-Sources-And-Period-Submission.md) | 33.3, 33.4 | 2026-10-28 |
+| 47 | [Collection forms, record review and the offline field app](./47-Collection-Forms-And-Field-App.md) | 33.5, 33.6 | 2026-10-28 (field app not yet tried on a phone) |
+| 48 | [Dashboards of Data Center charts](./48-Dashboards.md) | 33.8 | 2026-10-28 |
+| 49 | [Ask DonorDesk](./49-Ask-DonorDesk.md) | 33.9 | 2026-10-28, switched off in every organisation |
+| 50 | [Interface languages](./50-Interface-Languages.md) | 33.10 | 2026-10-28 (translations unreviewed) |
+| 51 | [Integrations: public API, webhooks, MCP and connectors](./51-Integrations-API-Webhooks-MCP-Connectors.md) | 33.7 | 2026-10-28 |
+| 52 | [Trust: two-step requirement, trials and readiness](./52-Trust-Two-Step-Requirement-And-Trials.md) | 33.12 | 2026-10-28 |
+
+Batch 33.11 (cost per result, IATI export) is not started. Support articles for Phase 33 are drafts in `../docs/support/_unpublished-phase33/`.

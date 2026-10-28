@@ -1,6 +1,6 @@
 # Phase 1 deviations from the master plan
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 This file documents pragmatic engineering decisions made for Phase 1 to ship a working MVP
 on a developer laptop without Docker/Kubernetes. Every deviation is a swap-point: the

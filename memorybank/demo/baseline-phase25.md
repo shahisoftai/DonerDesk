@@ -1,6 +1,6 @@
 # Phase 25 baseline (before the phase)
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 Measured on demos 4 and 5 (UI-driven runs on production). Demo 6 scores the same measures; any miss goes to a Phase 26 list.
 

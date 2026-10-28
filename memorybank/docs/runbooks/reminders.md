@@ -1,6 +1,6 @@
 # Runbook — Reminders (daily summaries and escalation)
 
-**DonorDesk Version 2.005**
+**DonorDesk Version 3.007**
 
 What it does: once a day, in each organisation's own morning (07:00 in `Organization.timeZone`), every person with open work gets **one**
 summary (in-app note always; email only when their setting allows it), and a late item is escalated **once** after 7 days. Nothing is

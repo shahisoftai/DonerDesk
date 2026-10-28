@@ -1,6 +1,6 @@
 # Feature 30: Donor requirements — what the report must contain, and what must be explained
 
-**DonorDesk Version 2.006**
+**DonorDesk Version 3.007**
 
 **Author:** Claude (agent) · **Date:** 2026-10-21
 **Status:** Built, tested and deployed 2026-10-20 (batch 3, audit findings H-8, H-9, H-10). Browser check of the authoring page and the variance item pending. Builds on [Feature 05](05-Donor-Template-Manager.md), [Feature 12](12-Missing-Evidence-And-Compliance-Checklist.md) and [Feature 13](13-Review-And-Approval-Workflow.md).

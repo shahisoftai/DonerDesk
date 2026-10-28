@@ -1,6 +1,6 @@
 # Feature 31: Account security and project access
 
-**DonorDesk Version 2.006**
+**DonorDesk Version 3.007**
 
 **Author:** Claude (agent) · **Date:** 2026-10-21
 **Status:** Built, tested and deployed 2026-10-20 (batch 3, audit findings H-12 and H-14). Two-step sign-in (TOTP) is built (see the addendum); multi-factor for outside partners is not. Builds on [Feature 01](01-Authentication-And-Onboarding.md) and [Feature 03](03-User-And-Role-Management.md).

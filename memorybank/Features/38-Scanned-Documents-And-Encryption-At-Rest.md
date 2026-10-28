@@ -1,6 +1,6 @@
 # Feature 38: Scanned documents (OCR) and encryption at rest
 
-**DonorDesk Version 2.007** · **Shipped:** 2026-10-21: OCR in release `20261021054800`, OCR import fix in `20261021061014`; OCR packages installed on the worker by hand; encryption code shipped but **off** in production · **Audit:** AI-03 (OCR), SE-03 (encryption) (§16)
+**DonorDesk Version 3.007** · **Shipped:** 2026-10-21: OCR in release `20261021054800`, OCR import fix in `20261021061014`; OCR packages installed on the worker by hand; encryption code shipped but **off** in production · **Audit:** AI-03 (OCR), SE-03 (encryption) (§16)
 
 ## 1. Scanned documents
 

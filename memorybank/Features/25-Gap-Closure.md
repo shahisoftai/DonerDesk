@@ -1,6 +1,6 @@
 # Feature 25: Gap closure — dependencies, progress log, one-step Done, custom fields, budgets, beneficiaries, workload, automations
 
-**DonorDesk Version 2.006** · **Branch:** `0013-programme-management` · **Plan and build record:** [`../imp/phase28-1-gap-closure.md`](../imp/phase28-1-gap-closure.md)
+**DonorDesk Version 3.007** · **Branch:** `0013-programme-management` · **Plan and build record:** [`../imp/phase28-1-gap-closure.md`](../imp/phase28-1-gap-closure.md)
 
 ## 1. What a person gets
 

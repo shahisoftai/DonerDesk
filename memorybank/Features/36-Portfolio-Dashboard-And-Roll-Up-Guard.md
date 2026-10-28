@@ -1,6 +1,6 @@
 # Feature 36: Portfolio dashboard and double-count guard
 
-**DonorDesk Version 2.007** · **Shipped:** 2026-10-21, release `20261021054800` (roll-up guard and dashboard) · **Audit:** PM-07, PM-08, ME-07 (§16)
+**DonorDesk Version 3.007** · **Shipped:** 2026-10-21, release `20261021054800` (roll-up guard and dashboard) · **Audit:** PM-07, PM-08, ME-07 (§16)
 
 ## 1. What a person gets
 

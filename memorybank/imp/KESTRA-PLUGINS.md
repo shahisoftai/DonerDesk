@@ -1,6 +1,6 @@
 # Kestra Plugins — inbound integrations & data pipelines
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Author:** Kilo (agent)
 **Date:** 2026-08-13

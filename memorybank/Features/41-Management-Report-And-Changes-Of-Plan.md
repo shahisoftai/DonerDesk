@@ -1,6 +1,6 @@
 # Feature 41: Management report and changes of plan
 
-**DonorDesk Version 2.007** · **Shipped:** 2026-10-21, release `20261021075101` · **Audit:** RP-05, PM-09 (§17)
+**DonorDesk Version 3.007** · **Shipped:** 2026-10-21, release `20261021075101` · **Audit:** RP-05, PM-09 (§17)
 
 ## 1. Management report
 

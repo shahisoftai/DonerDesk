@@ -1,6 +1,6 @@
 # DonorDesk Frontend — Phase 2 Implementation Report
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Date:** 2026-08-12
 **Scope:** Phase 2 "Authentication, onboarding, and project setup" (AUTH, PROJ-01, TPL, LOG) from `memorybank/imp/frontend-imp-plan.md`

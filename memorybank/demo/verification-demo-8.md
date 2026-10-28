@@ -1,6 +1,6 @@
 # Verification demo 8 — 8-month WASH project in Borno State, Nigeria (run log, started 2026-10-14)
 
-**DonorDesk Version 2.001** (branch `0011-version2-simplification`, as deployed 2026-10-14)
+**DonorDesk Version 3.007** (branch `0011-version2-simplification`, as deployed 2026-10-14)
 
 Everything done through the real web UI in one visible Chromium (CDP port 9333, profile `/tmp/dd8-profile`) on production `https://donordesk.online`, tenant GEC, user `mnpiracha@gmail.com`
 (password supplied in chat, passed only via env for the login command, never stored). Scripts: `scripts/demo-wash-ng/`; generated inputs: `scripts/demo-wash-ng/{templates,ev}`.

@@ -1,6 +1,6 @@
 # Verification demo 12 — 6-month UNICEF-funded MNCH project in six localities of Sudan (scenario, setup and month 1)
 
-**DonorDesk Version 2.007+** (production, tenant GEC, `mnpiracha@gmail.com`)
+**DonorDesk Version 3.007+** (production, tenant GEC, `mnpiracha@gmail.com`)
 
 A complete six-month **Maternal, Newborn and Child Health (MNCH)** programme for displaced and host communities in **six localities of Sudan**, funded by **UNICEF** under a Programme Cooperation Agreement. The scenario is written first (this document); the project is then built and used **through the web UI only, as a real user would** — one visible browser, no API scripts, no database writes — from the wizard through setup, month-1 data entry and the first monthly report.
 

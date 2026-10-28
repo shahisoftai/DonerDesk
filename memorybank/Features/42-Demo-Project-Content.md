@@ -1,6 +1,6 @@
 # Feature 42: Demo project with a first quarter
 
-**DonorDesk Version 2.007** · **Shipped:** 2026-10-21, release `20261021054800` (first quarter); delete-by-foreign-keys fix in `20261021062305` · **Audit:** UX-03 (§16)
+**DonorDesk Version 3.007** · **Shipped:** 2026-10-21, release `20261021054800` (first quarter); delete-by-foreign-keys fix in `20261021062305` · **Audit:** UX-03 (§16)
 
 The guided tour's demo project ("Community Nutrition Programme (Demo)") now arrives with something to report on, instead of an empty project.
 

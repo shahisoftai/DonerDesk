@@ -1,6 +1,6 @@
 # Feature 44: Infographic Studio — designed results pictures from the project's own records
 
-**DonorDesk Version 2.008 (Phase 31 + Phase 32)**
+**DonorDesk Version 3.007 (Phase 31 + Phase 32)**
 
 **Author:** Claude (agent) · **Date:** 2026-10-25
 **Status:** Phase 31 (infographics and location disaggregation) DEPLOYED 2026-10-25 (`releaseId=20261025043802`). Phase 32 (Studio) DEPLOYED 2026-10-25 (`releaseId=20261025113046`, migration `20261027090000_infographic_studio_v2`, RLS applied to the four new tables). **Not yet checked signed-in in a browser**; the code is uncommitted on branch `0014-maps` at the time of writing. Plan: [`../imp/phase32-infographic-studio.md`](../imp/phase32-infographic-studio.md) (§7 = state, deploy steps). Invariants: `AGENTS.md` → "Phase 31 invariants" and "Phase 32 invariants".

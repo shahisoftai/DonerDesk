@@ -460,3 +460,23 @@ whether the data has actually been proven recoverable).
 - SuperAdmin LLM: GLOBAL **anthropic `claude-sonnet-4-6`** enabled; deepseek (`deepseek-chat`) and minimax (`MiniMax-M3`) disabled; no tenant-scoped rows.
 - **Open issue:** the Anthropic account has an insufficient credit balance (400 on every call), so every AI section falls back to the deterministic draft. Fund the account at console.anthropic.com → Plans & Billing, or temporarily re-enable DeepSeek in SuperAdmin.
 - SuperAdmin build `wsXef7TcybCfhFjNpzma-`; rollback `/opt/donordesk/backups/superadmin-pre-20260926155153.tgz`.
+
+## Phase 33 host facts (2026-10-27 to 2026-10-28)
+
+Recorded as they were left on the host after each release. The operator runbook is `docs/runbooks/phase33-operations.md`.
+
+**Releases (in order):** `20261027154750`, `20261028030634`, `20261028041837`, `20261028051819`, `20261028062717`, `20261028070000`. Each used `deploy-fast.sh` with `SCOPE=both SKIP_TYPECHECK=1` and the SSH retry options; each took a backup first.
+
+**Migrations applied by hand as `DATABASE_ADMIN_URL`** (in this order): `20261028090000_places`, `20261028100000_api_keys_and_webhooks`, `20261028110000_indicator_formula`, `20261028120000_period_entry_window`, `20261028130000_indicator_update_not_applicable`, `20261029090000_collection_forms`, `20261029100000_collection_files`, `20261029110000_dashboards`, `20261029120000_organization_ask_enabled`, `20261029130000_data_connectors`, `20261029140000_organization_mfa_required`. Row-level security was applied per table for each new tenant table and checked with `relrowsecurity` / `relforcerowsecurity`.
+
+**Settings added to `/opt/donordesk/shared/api.env`:** `CONNECTOR_SECRET_KEY` (generated on 2026-10-28; a dated backup of the file sits beside it). Optional: `API_KEY_REQUESTS_PER_MINUTE` (default 120). `TRIALS_ENABLED` is **not** set (trials off). `AUTH_PROVIDER` is not `oidc`.
+
+**nginx** (copies in the project under `infra/nginx/`):
+- `/etc/nginx/conf.d/donordesk-api-limit.conf`: zones `dd_public_api` (10 r/s per API key, else per address), `dd_public_collect` (5 r/s per address), `dd_public_dashboards` (5 r/s per address).
+- `/home/shahisoft/conf/web/donordesk.online/nginx.ssl.conf_apiv1`: `location ^~ /api/v1/` → `127.0.0.1:4001` (public read API and MCP); `location ^~ /api/collect/`; `/shared/dashboard/` and `/embed/dashboard/` → `127.0.0.1:3002`.
+
+**Public exposure:** `https://donordesk.online/api/v1/*` is public (the API answers 401 without a valid key). `/collect/`, `/shared/dashboard/`, `/embed/dashboard/` and `/field` answer publicly as pages.
+
+**Database:** `donordesk_migrator` owns the tables and has BYPASSRLS (which is why the admin container can resolve a token to a tenant). `donordesk_app` has no UPDATE/DELETE on `AuditEvent`.
+
+**Backups:** `donordesk-backup.service` was run before every migration in this phase. The restore script has not been run against these new tables; the next scheduled restore test should include them.

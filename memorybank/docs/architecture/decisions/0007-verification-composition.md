@@ -1,6 +1,6 @@
 # ADR-0007: Verification composition and structured reason codes
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Status:** Accepted  
 **Date:** 2026-08-19  

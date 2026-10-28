@@ -1,8 +1,8 @@
-# Phase 21: Agent Memory — Implementation Plan (introduced in DonorDesk Version 1.93)
+# Phase 21: Agent Memory — Implementation Plan (introduced in DonorDesk Version 3.007)
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
-**Version:** introduced in DonorDesk Version 1.93 as its headline feature
+**Version:** introduced in DonorDesk Version 3.007 as its headline feature
 (earlier drafts called this "Version 2.0"; that label is retired).
 **Status:** IMPLEMENTED (Phases 0–3, and a functional slice of Phase 2's
 governance UI) on branch `0009-agent-memory`, not yet merged to `master` —

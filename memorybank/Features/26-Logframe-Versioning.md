@@ -1,6 +1,6 @@
 # Feature 26: Logframe versioning — the framework has a memory
 
-**DonorDesk Version 2.006**
+**DonorDesk Version 3.007**
 
 **Author:** Claude (agent) · **Date:** 2026-10-21
 **Status:** Built, tested and deployed 2026-10-20 (batch 3, audit finding H-1). Browser check of the history page is pending. Builds on [Feature 06](06-Logframe-And-Indicator-Manager.md).

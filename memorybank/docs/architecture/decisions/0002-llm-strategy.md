@@ -1,6 +1,6 @@
 # ADR 0002 — LLM strategy and provider abstraction
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 ## Context
 Phase 1 ships a deterministic stub LLM provider. Production needs real providers

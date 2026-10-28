@@ -1,6 +1,6 @@
 # Feature 33: AI cost, usage and spend alerts
 
-**DonorDesk Version 2.006**
+**DonorDesk Version 3.007**
 
 **Author:** Claude (agent) · **Date:** 2026-10-21
 **Status:** Built, tested and deployed 2026-10-20 (batch 3, audit finding H-19). The built-in price is an **estimate** until you set your own (see §4). Builds on [Feature 11](11-AI-Report-Draft-Generator.md) and [Feature 19](19-Tiers-And-Payments.md).

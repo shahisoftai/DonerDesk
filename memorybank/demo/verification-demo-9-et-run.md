@@ -1,6 +1,6 @@
 # Verification demo 9 (Ethiopia CMAM-IYCF) — setup run log, month 0 (started and stopped 2026-10-20)
 
-**DonorDesk Version 2.005** (branch `0013-programme-management`). Scenario: [`verification-demo-9.md`](verification-demo-9.md).
+**DonorDesk Version 3.007** (branch `0013-programme-management`). Scenario: [`verification-demo-9.md`](verification-demo-9.md).
 Run on production `https://donordesk.online`, tenant GEC, account `mnpiracha@gmail.com`, one visible Chromium (CDP port 9340, profile in the session scratchpad). The password was given in chat and used only as an environment variable for the login command; it is not written to any file.
 
 **Stopped for review after month 0 setup.** Nothing has been done for November activity records, evidence, reports or money.

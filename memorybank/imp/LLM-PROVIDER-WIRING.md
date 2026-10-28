@@ -1,6 +1,6 @@
 # LLM Provider Wiring — Implementation Plan
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Status:** IMPLEMENTED (Phase 1–4, 2026-08-17) + AI Reporter sidecar (2026-08-28)
 **Date:** 2026-08-17

@@ -1,6 +1,6 @@
 # Phase 29 — AI enhancement programme: implementation plan
 
-**DonorDesk Version 2.010 (proposed)** · branch `0014-ai-enhancement` (from `0013-programme-management` once merged)
+**DonorDesk Version 3.007 (proposed)** · branch `0014-ai-enhancement` (from `0013-programme-management` once merged)
 
 **Status: PROPOSED — not started.** This is the plan for the five-batch AI enhancement programme
 (29.1–29.5) derived from the full codebase + memorybank audit and the competitor AI-feature survey

@@ -1,6 +1,6 @@
 # Feature 34: Background jobs — nothing the system asked for is silently lost
 
-**DonorDesk Version 2.006**
+**DonorDesk Version 3.007**
 
 **Author:** Claude (agent) · **Date:** 2026-10-21
 **Status:** Built, tested and deployed 2026-10-20 (batch 3, audit finding H-18). The default queue is still in-process; see §4. Builds on [Feature 20](20-report-gen.md) and [Feature 16](16-Audit-Log.md).

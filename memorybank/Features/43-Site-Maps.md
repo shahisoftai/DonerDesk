@@ -1,6 +1,6 @@
 # Feature 43: Site maps — where the work happens, on the plan and the Overview
 
-**DonorDesk Version 2.007 (Phase 30 + batch 30.1)**
+**DonorDesk Version 3.007 (Phase 30 + batch 30.1)**
 
 **Author:** Claude (agent) · **Date:** 2026-10-24
 **Status:** Phase 30 IMPLEMENTED 2026-10-24 (web only, no migration); batch 30.1 IMPLEMENTED the same day (migration `20261024090000_map_layers_and_pins`, one new table). Both browser-verified with the demo tenant (`mnpiracha@gmail.com`, demo-8/9 style projects): custom boundaries uploaded in Settings, every map switched to them, a place pinned by hand from the form and rendered on the plan map. Plan: [`../imp/phase30-maps.md`] (§1–§9 phase 30, §10 batch 30.1). Invariants: `AGENTS.md` → "Phase 30 invariants — maps".

@@ -353,3 +353,12 @@ memorybank/
 - Deployed: `releaseId=20261025043802` (Phase 31) and `20261025113046` (Phase 32), with migrations `20261026090000_project_infographics` and `20261027090000_infographic_studio_v2`. Operator record in `CONTABO-DEPLOY.md` §11; fixes in `Fixes.md`.
 - Not yet checked signed-in in a browser. Support articles are drafted, not published: `docs/support/_unpublished-phase32/` (publish checklist in its README).
 
+
+## 2026-10-28 to 2026-10-29: Phase 33 — competitive parity (Version 3.007)
+
+- Feature docs 45–52 in `Features/` and the index section "Phase 33"; plan and status in `imp/phase33-competitive-parity-plan.md`.
+- Deployed `releaseId` 20261027154750 (places, results by place, API keys, webhooks, formulas), 20261028030634 (period submission, public `/api/v1`), 20261028041837 and 20261028051819 (collection forms and field app, photo questions, dashboards), 20261028062717 (Ask, connectors, languages, completion of 33.7), 20261028070000 (two-step requirement, trial notices, readiness memo).
+- Operator record and open items: `docs/runbooks/phase33-operations.md` and `pending.md` ("Phase 33").
+- Readiness and self-hosting decisions: `imp/phase33-12-trust-and-commercial.md`.
+- Support articles drafted, unpublished: `docs/support/_unpublished-phase33/`.
+- Product version label moved to **3.007** in the living documents and the legal pages on 2026-10-28.

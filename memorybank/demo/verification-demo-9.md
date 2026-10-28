@@ -1,6 +1,6 @@
 # Verification demo 9 — 6-month CMAM and IYCF project in Oromia, Ethiopia (scenario and setup, written 2026-10-20)
 
-**DonorDesk Version 2.005** (branch `0013-programme-management`, Phase 28 programme management)
+**DonorDesk Version 3.007** (branch `0013-programme-management`, Phase 28 programme management)
 
 **Status: planned, not run.** This document is the complete scenario and setup for the demo: project, logframe, indicators, planned activities, team, reporting periods, story, evidence and the month-by-month data. Nothing has been entered in the app yet. The run log will be `verification-demo-9.md`'s successor section once the run starts, following the pattern of demos 7 and 8.
 

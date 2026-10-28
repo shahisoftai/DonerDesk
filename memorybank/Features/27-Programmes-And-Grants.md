@@ -1,6 +1,6 @@
 # Feature 27: Programmes and grants — the funding hierarchy
 
-**DonorDesk Version 2.006**
+**DonorDesk Version 3.007**
 
 **Author:** Claude (agent) · **Date:** 2026-10-21
 **Status:** Built, tested and deployed 2026-10-20 (batch 3, audit finding H-2; PM-01). Browser check pending. Builds on [Feature 04](04-Project-Setup.md).

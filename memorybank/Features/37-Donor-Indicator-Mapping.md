@@ -1,6 +1,6 @@
 # Feature 37: Donor indicator mapping
 
-**DonorDesk Version 2.007** · **Shipped:** 2026-10-21, release `20261021054800` · **Audit:** AI-04 (§16)
+**DonorDesk Version 3.007** · **Shipped:** 2026-10-21, release `20261021054800` · **Audit:** AI-04 (§16)
 
 ## 1. What a person gets
 

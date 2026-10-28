@@ -1,6 +1,6 @@
 # Feature 23: Work plan (planned activities, timeline, My week)
 
-**DonorDesk Version 2.005 (in development)**
+**DonorDesk Version 3.007 (in development)**
 
 **Author:** Claude (agent) · **Date:** 2026-10-19
 **Status:** Batches 28.0–28.2 **deployed 2026-10-18** (release `20261018172624`, with 28.3–28.9). Demo 9 drove the main flows on production. The §16 items are **built (2026-10-23, needs a deploy)**: one Done action, the ask for a completed activity moved to My Work's Team tab, "Completed" as a filter on the plan, the planned-versus-actual toggle, and "moved from …" on the bar. **Still open:** the live-site check of the interactive screens with a real account and the offline status change. Plan and decisions: [`../imp/phase28-new-management.md`](../imp/phase28-new-management.md). Gap closure added dependencies, a progress log, budgets and bulk edit to this feature: [Feature 25](25-Gap-Closure.md).

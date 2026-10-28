@@ -1,6 +1,6 @@
 # Feature 40: Comment threads
 
-**DonorDesk Version 2.007** · **Shipped:** 2026-10-21, release `20261021075101` (threads); action-result fix that made Resolve and Reopen refresh in `20261021080953` · **Audit:** CG-10 (§17)
+**DonorDesk Version 3.007** · **Shipped:** 2026-10-21, release `20261021075101` (threads); action-result fix that made Resolve and Reopen refresh in `20261021080953` · **Audit:** CG-10 (§17)
 
 ## 1. What a person gets
 

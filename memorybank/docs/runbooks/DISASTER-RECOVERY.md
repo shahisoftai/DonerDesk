@@ -1,6 +1,6 @@
 # Runbook — Disaster recovery (backup, restore, host loss)
 
-**DonorDesk Version 2.005**
+**DonorDesk Version 3.007**
 
 What it covers: how the data is backed up, how it is restored, and what to do when the host is gone. The deployment is **one Contabo
 host** (Ubuntu 24.04, HestiaCP + nginx, PostgreSQL 16 native cluster, local filesystem storage). There is no second region and no

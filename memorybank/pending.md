@@ -1162,3 +1162,35 @@ Remaining (tracked here, not claimed):
   checking elapsed time after the blocking call returns. See
   `memorybank/Fixes.md` ("AI Reporter latency rework — single-call pipeline +
   parallel sections", 2026-09-18) for the full file-by-file record.
+
+## Phase 33 — open items (2026-10-28, updated with the deploys)
+
+Status by batch: `imp/phase33-competitive-parity-plan.md`. Operator facts: `docs/runbooks/phase33-operations.md`.
+
+**Needs a person (cannot be done from the server):**
+- [ ] Sign in on donordesk.online with your own account and check: the Ask tab (with Ask switched on in a test organisation only); a dashboard (drag, resize, share, open the link in a private window); a collection form with a photo question; the field app in airplane mode; the language switcher in French and Arabic; the Security page's requirement card.
+- [ ] **Ask DonorDesk against the real model**: run a set of golden questions and record how often it answers, drops sentences or says "not found", before any public claim (plan §5).
+- [ ] **KoboToolbox and SurveyCTO**: create a connector against a real form and check "Check the connection" first. The request shapes were written from the documented APIs and never run.
+- [ ] **Translations**: a native speaker reviews French, Spanish and Arabic (`features/i18n/messages/`). Arabic layout checked on the older screens, which still use left/right classes.
+- [ ] **Back up `CONNECTOR_SECRET_KEY`** from `/opt/donordesk/shared/api.env` (a copy is in `~/donordesk-secrets/`, outside the project).
+
+**Decisions for the owner:**
+- [ ] Local trials: keep `TRIALS_ENABLED` off, or switch on (only with the trial-abuse decision below).
+- [ ] Trial abuse by company domain: allow, or cap trials per non-free-mail domain (free-mail domains are never blocked by domain).
+- [ ] Dedicated hosted instances for Enterprise: yes or no, and price. Customer self-hosting: not before about three requests (memo §4).
+- [ ] Whether to require two-step sign-in for the organisation, and from when (feature 52).
+
+**Built but unverified, or deliberately incomplete:**
+- [ ] 33.11 Finance and standards (cost per result, IATI export): not started.
+- [ ] Ask: follow-up questions, cross-project questions, saved answers: not built.
+- [ ] Dashboards: table and number widgets, per-viewer filters, password-protected links: not built.
+- [ ] Connectors: scheduled syncs, select-multiple and repeat groups, photos from the other tool: not built.
+- [ ] Places: place targets, map of the roll-up, "Where we work" assignment: not built.
+- [ ] Public API and MCP: per-key limits survive restarts? No (in memory). Pagination: not built.
+- [ ] Offline field app: indicator entry offline and background sync: not built.
+- [ ] Trial-ending notice does not yet list what the free plan's limits will do to work in progress (memo T5).
+- [ ] ISO/IEC 27001: not certified; the gaps are in memo §3.
+
+**Known inconsistencies:**
+- [ ] Product version is 3.007 in headers and the legal pages; the npm `package.json` versions remain `2.0.1` (npm versions are separate; `3.007` is not valid semver).
+- [ ] Historical sentences "introduced in Version 1.93" are kept as they were written.

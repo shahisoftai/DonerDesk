@@ -1,6 +1,6 @@
 # Phase 28 — Programme management: implementation plan
 
-**DonorDesk Version 2.005 (proposed)** · branch `0013-programme-management` (from `0012-demo8-fixes` once merged)
+**DonorDesk Version 3.007 (proposed)** · branch `0013-programme-management` (from `0012-demo8-fixes` once merged)
 
 **Status (2026-10-19): every batch 28.0–28.9 is built and deployed (2026-10-18, release `20261018172624`). Phase 28.1 gap closure is built and deployed (2026-10-19, releases `20261019093235` and `20261019104006`; see `imp/phase28-1-gap-closure.md` §0). Still open: a live-site browser check of the interactive parts with a real account, the offline check, and the §16 items listed in §16 below. The support articles stay unpublished until that check (see §0 and `docs/support/_unpublished-phase28/README.md`).**
 Sources: the review of the public positioning against the code (website `https://donordesk.online`, `/features`) and the gap list worked out from it.

@@ -1,6 +1,6 @@
 # Feature 39: Evidence review and evidence filters
 
-**DonorDesk Version 2.007** · **Shipped:** 2026-10-21, release `20261021075101` · **Audit:** EV-06, RP-06 (§17)
+**DonorDesk Version 3.007** · **Shipped:** 2026-10-21, release `20261021075101` · **Audit:** EV-06, RP-06 (§17)
 
 ## 1. Evidence review
 
