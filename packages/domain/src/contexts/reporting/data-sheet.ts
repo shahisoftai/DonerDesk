@@ -51,6 +51,8 @@ export interface DataSheetCell {
   dataSource?: string | undefined;
   comments?: string | undefined;
   status: string;
+  /** The indicator was answered "not applicable" for the period (an answer, not a gap); the values are empty. */
+  notApplicable?: boolean | undefined;
   /** Worked out from other indicators' values; never typed, never editable. */
   calculated?: boolean | undefined;
 }
@@ -162,8 +164,8 @@ export function indicatorSheetRows(sheet: DataSheet): string[][] {
         period.label,
         period.start,
         period.end,
-        cell?.periodValue ?? "",
-        cell?.cumulativeValue ?? "",
+        cell?.notApplicable ? "Not applicable" : cell?.periodValue ?? "",
+        cell?.notApplicable ? "Not applicable" : cell?.cumulativeValue ?? "",
         cellPercentOfTarget(indicator, cell),
         cell ? cell.status : "",
         cell?.dataSource ?? "",
@@ -352,7 +354,8 @@ export function previewDataSheetImport(sheet: DataSheet, table: ReadonlyArray<Re
   const periodsByDates = new Map(sheet.periods.map((p) => [`${p.start}|${p.end}`, p]));
   const periodsByLabel = new Map(sheet.periods.map((p) => [norm(p.label), p]));
   const cells = indexCells(sheet);
-  const at = (row: ReadonlyArray<string>, i: number): string => (i >= 0 ? (row[i] ?? "").trim() : "");
+  // An exported "Not applicable" is read back as empty: the import never clears or sets that answer.
+  const at = (row: ReadonlyArray<string>, i: number): string => { const t = i >= 0 ? (row[i] ?? "").trim() : ""; return /^not applicable$/i.test(t) ? "" : t; };
 
   const rows: DataSheetImportRow[] = [];
   for (let r = 1; r < table.length; r += 1) {

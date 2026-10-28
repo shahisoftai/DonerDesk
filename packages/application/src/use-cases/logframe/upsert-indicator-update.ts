@@ -3,6 +3,16 @@ import type { IIdGenerator } from "../../ports/core.js";
 import type { IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { UpsertIndicatorUpdateInput } from "@donordesk/contracts";
 
+/**
+ * What the save says about "not applicable": a reason makes the value an answer with no figure, "" clears it, and an
+ * omitted field keeps the stored answer unless a figure is typed (a typed figure means the indicator applies after all).
+ */
+export function notApplicableAnswer(input: UpsertIndicatorUpdateInput, stored: string | undefined): string | undefined {
+  if (input.notApplicableReason !== undefined) return input.notApplicableReason.trim() || undefined;
+  if (stored !== undefined && (input.periodAchievement.trim() !== "" || input.cumulativeAchievement.trim() !== "")) return undefined;
+  return stored;
+}
+
 export interface UpsertOutcome {
   id: string;
   created: boolean;
@@ -37,13 +47,15 @@ export async function upsertIndicatorUpdate(
       return { ok: true, value: { id: existing.id, created: false, changed: false } };
     }
     const previousValue = existing.periodAchievement;
+    const notApplicable = notApplicableAnswer(input, existing.notApplicableReason);
     // A field the caller did not send keeps what is stored; an empty string clears it.
     existing.edit({
-      periodAchievement: input.periodAchievement,
-      cumulativeAchievement: input.cumulativeAchievement,
+      periodAchievement: notApplicable ? "" : input.periodAchievement,
+      cumulativeAchievement: notApplicable ? "" : input.cumulativeAchievement,
+      notApplicableReason: notApplicable,
       ...(input.comments !== undefined ? { comments: input.comments.trim() || undefined } : {}),
       ...(input.dataSource !== undefined ? { dataSource: input.dataSource.trim() || undefined } : {}),
-      ...(input.disaggregation ? { disaggregation: input.disaggregation } : {}),
+      ...(notApplicable ? { disaggregation: [] } : input.disaggregation ? { disaggregation: input.disaggregation } : {}),
     });
     const saved = await repo.update(existing);
     if (!saved.ok) return saved;
@@ -51,16 +63,18 @@ export async function upsertIndicatorUpdate(
   }
 
   const id = ids.generate();
+  const notApplicable = notApplicableAnswer(input, undefined);
   const update = IndicatorUpdate.create({
     id,
     tenantId: tenantId.toString(),
     indicatorId: input.indicatorId,
     reportingPeriodId,
-    periodAchievement: input.periodAchievement,
-    cumulativeAchievement: input.cumulativeAchievement,
+    periodAchievement: notApplicable ? "" : input.periodAchievement,
+    cumulativeAchievement: notApplicable ? "" : input.cumulativeAchievement,
     comments: input.comments,
     dataSource: input.dataSource,
-    disaggregation: input.disaggregation,
+    disaggregation: notApplicable ? [] : input.disaggregation,
+    notApplicableReason: notApplicable,
     createdById: userId,
   });
   const saved = await repo.create(update);

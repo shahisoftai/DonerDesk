@@ -76,6 +76,7 @@ export class GetProjectDataSheetHandler {
         ...(u.dataSource ? { dataSource: u.dataSource } : {}),
         ...(u.comments ? { comments: u.comments } : {}),
         status: u.verificationStatus,
+        ...(u.isNotApplicable ? { notApplicable: true } : {}),
       }));
     const codeById = new Map(indicatorsResult.value.map((i) => [i.id, i.code]));
     // A calculated value is never stored: it is worked out here from the values it comes from, so it cannot drift.

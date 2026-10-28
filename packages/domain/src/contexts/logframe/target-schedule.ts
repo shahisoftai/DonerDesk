@@ -67,8 +67,39 @@ export function parseTargetSchedule(json: string | null | undefined): TargetSche
   }
 }
 
+/** How a schedule is typed: the running total due by each date (what is stored), or the amount added in each step. */
+export type TargetEntryMode = "CUMULATIVE" | "INCREMENTAL";
+
+const tidy = (n: number): string => String(Math.round(n * 1e6) / 1e6);
+
+/**
+ * Turns typed per-step amounts into the cumulative schedule that is stored: each date's target is the running total of the
+ * amounts up to and including it, in date order. Entries that are not numbers are left as they are for the problem check.
+ */
+export function incrementalToCumulative(entries: TargetSchedule): TargetScheduleEntry[] {
+  let total = 0;
+  return sortedTargetSchedule(entries).map((e) => {
+    const n = toNumber(e.target);
+    if (n === null) return { ...e };
+    total += n;
+    return { asOf: e.asOf, target: tidy(total) };
+  });
+}
+
+/** The amount added at each date (the first is the first cumulative target); the inverse of `incrementalToCumulative`. */
+export function cumulativeToIncremental(schedule: TargetSchedule): TargetScheduleEntry[] {
+  let previous = 0;
+  return sortedTargetSchedule(schedule).map((e) => {
+    const n = toNumber(e.target);
+    if (n === null) return { ...e };
+    const step = n - previous;
+    previous = n;
+    return { asOf: e.asOf, target: tidy(step) };
+  });
+}
+
 /** Reads lines such as `2026-03-31: 250` or `2026-03-31, 250` (one per line). A line that cannot be read is returned as a problem. */
-export function parseTargetScheduleText(text: string): { schedule: TargetScheduleEntry[]; problems: TargetScheduleProblem[] } {
+export function parseTargetScheduleText(text: string, mode: TargetEntryMode = "CUMULATIVE"): { schedule: TargetScheduleEntry[]; problems: TargetScheduleProblem[] } {
   const schedule: TargetScheduleEntry[] = [];
   const problems: TargetScheduleProblem[] = [];
   text.split(/\r?\n/).forEach((line, i) => {
@@ -77,11 +108,14 @@ export function parseTargetScheduleText(text: string): { schedule: TargetSchedul
     if (!match) problems.push({ row: i + 1, message: "Write each line as a date, a colon and the target, for example 2026-03-31: 250." });
     else schedule.push({ asOf: match[1]!, target: match[2]! });
   });
-  return { schedule, problems: [...problems, ...targetScheduleProblems(schedule)] };
+  const found = [...problems, ...targetScheduleProblems(schedule)];
+  // Typed as steps, stored as the running total; only a clean schedule is converted.
+  return { schedule: mode === "INCREMENTAL" && found.length === 0 ? incrementalToCumulative(schedule) : schedule, problems: found };
 }
 
-export function formatTargetScheduleText(schedule: TargetSchedule): string {
-  return sortedTargetSchedule(schedule).map((e) => `${e.asOf}: ${e.target}`).join("\n");
+/** The schedule as lines of text, in either entry mode (the stored schedule is cumulative). */
+export function formatTargetScheduleText(schedule: TargetSchedule, mode: TargetEntryMode = "CUMULATIVE"): string {
+  return (mode === "INCREMENTAL" ? cumulativeToIncremental(schedule) : sortedTargetSchedule(schedule)).map((e) => `${e.asOf}: ${e.target}`).join("\n");
 }
 
 export interface PeriodTarget {

@@ -21,6 +21,8 @@ export interface IndicatorUpdateProps {
   /** The reviewer's reason for a correction or rejection. Kept apart from `comments` (the submitter's own note) so a save never overwrites it and it never reaches a report. */
   reviewNote?: string;
   dataSource?: string;
+  /** Why this indicator does not apply to the period. When set the value is an answer in itself: no figure, never 0. */
+  notApplicableReason?: string;
   attachedEvidenceIds: string[];
   /** Validated by `validateDisaggregation` before it reaches the aggregate. */
   disaggregation?: DisaggregationEntry[];
@@ -36,8 +38,9 @@ export class IndicatorUpdate extends Entity<string> {
     readonly tenantIdValue: string,
     private props: IndicatorUpdateProps,
     createdAt?: Date,
+    updatedAt?: Date,
   ) {
-    super(id, createdAt);
+    super(id, createdAt, updatedAt);
   }
 
   static create(input: {
@@ -51,6 +54,7 @@ export class IndicatorUpdate extends Entity<string> {
     dataSource?: string;
     attachedEvidenceIds?: string[];
     disaggregation?: DisaggregationEntry[];
+    notApplicableReason?: string;
     createdById: string;
   }): IndicatorUpdate {
     return new IndicatorUpdate(input.id, input.tenantId, {
@@ -60,6 +64,7 @@ export class IndicatorUpdate extends Entity<string> {
       cumulativeAchievement: input.cumulativeAchievement,
       comments: input.comments,
       dataSource: input.dataSource,
+      notApplicableReason: input.notApplicableReason,
       attachedEvidenceIds: input.attachedEvidenceIds ?? [],
       disaggregation: input.disaggregation ? [...input.disaggregation] : [],
       verificationStatus: "DRAFT",
@@ -72,8 +77,10 @@ export class IndicatorUpdate extends Entity<string> {
     tenantId: string;
     props: IndicatorUpdateProps;
     createdAt: Date;
+    /** The stored time of the last change; the version a concurrent save is checked against. */
+    updatedAt?: Date;
   }): IndicatorUpdate {
-    return new IndicatorUpdate(input.id, input.tenantId, input.props, input.createdAt);
+    return new IndicatorUpdate(input.id, input.tenantId, input.props, input.createdAt, input.updatedAt);
   }
 
   get indicatorId(): string { return this.props.indicatorId; }
@@ -83,6 +90,8 @@ export class IndicatorUpdate extends Entity<string> {
   get comments(): string | undefined { return this.props.comments; }
   get reviewNote(): string | undefined { return this.props.reviewNote; }
   get dataSource(): string | undefined { return this.props.dataSource; }
+  get notApplicableReason(): string | undefined { return this.props.notApplicableReason; }
+  get isNotApplicable(): boolean { return this.props.notApplicableReason !== undefined; }
   get attachedEvidenceIds(): string[] { return [...this.props.attachedEvidenceIds]; }
   get disaggregation(): DisaggregationEntry[] { return (this.props.disaggregation ?? []).map((e) => ({ ...e })); }
   get verificationStatus(): VerificationStatus { return this.props.verificationStatus; }
@@ -141,7 +150,7 @@ export class IndicatorUpdate extends Entity<string> {
     this.touch();
   }
 
-  edit(patch: Partial<Pick<IndicatorUpdateProps, "periodAchievement" | "cumulativeAchievement" | "comments" | "dataSource" | "disaggregation">>): void {
+  edit(patch: Partial<Pick<IndicatorUpdateProps, "periodAchievement" | "cumulativeAchievement" | "comments" | "dataSource" | "disaggregation" | "notApplicableReason">>): void {
     if (this.props.verificationStatus === "VERIFIED") {
       throw DomainError.invalidTransition("Verified updates cannot be edited");
     }

@@ -45,11 +45,31 @@ export class BulkUpsertIndicatorUpdatesHandler {
     if (!indicatorsResult.ok) return indicatorsResult;
     const indicatorsById = new Map(indicatorsResult.value.map((i) => [i.id, i]));
 
+    // Someone else may have saved a value since this sheet was opened: refuse, naming the indicators, rather than overwrite it unseen.
+    if (input.updates.some((r) => r.expectedUpdatedAt)) {
+      const stored = await this.repo.findByReportingPeriod(input.reportingPeriodId, ctx.tenant.tenantId);
+      if (!stored.ok) return stored;
+      const byIndicator = new Map(stored.value.map((u) => [u.indicatorId, u]));
+      const changed = input.updates.filter((r) => {
+        const current = byIndicator.get(r.indicatorId);
+        return r.expectedUpdatedAt && current && current.updatedAt.getTime() !== new Date(r.expectedUpdatedAt).getTime();
+      });
+      if (changed.length > 0) {
+        const codes = changed.map((r) => indicatorsById.get(r.indicatorId)?.code ?? r.indicatorId).join(", ");
+        return { ok: false, error: DomainError.conflict(`Someone else has changed ${codes} since you opened this sheet. Nothing was saved. Reload the page to see their figures, then enter yours again.`) };
+      }
+    }
+
     // Validate every row before writing any, so one bad breakdown cannot leave a half-saved sheet.
     const rows = [];
     for (const row of input.updates) {
       const indicator = indicatorsById.get(row.indicatorId);
       if (!indicator) continue;
+      if (row.notApplicableReason?.trim()) {
+        if (indicator.formula) return { ok: false, error: DomainError.validation(`${indicator.code} is calculated from other indicators; it cannot be marked not applicable.`) };
+        rows.push(row);
+        continue;
+      }
       // A value that cannot be right is refused here, before any row of the sheet is written.
       const problem =
         indicatorValueProblem(indicator, row.periodAchievement, "period") ?? indicatorValueProblem(indicator, row.cumulativeAchievement, "cumulative");
@@ -92,7 +112,7 @@ export class BulkUpsertIndicatorUpdatesHandler {
         entityType: "indicator_update",
         entityId: result.value.id,
         oldValue: result.value.previousValue,
-        newValue: row.periodAchievement,
+        newValue: row.notApplicableReason?.trim() ? `not applicable: ${row.notApplicableReason.trim()}` : row.periodAchievement,
       });
     }
 

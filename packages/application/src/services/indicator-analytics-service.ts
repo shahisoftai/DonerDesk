@@ -99,6 +99,9 @@ export class IndicatorAnalyticsService implements IIndicatorAnalyticsService {
     for (const ind of indicators) {
       const semantics = ind.semantics ?? inferIndicatorSemantics({ type: ind.type, unit: ind.unit, name: ind.name });
       const indUpdates = currentUpdates.filter((u) => u.indicatorId === ind.id);
+      // "Not applicable this period" is an answer, not a gap: the indicator is left out of the period's findings
+      // (so it is neither written about nor listed as not measured). A roll-up report still reads its life-of-project figure.
+      if (!LIFE_OF_PROJECT_REPORT_TYPES.has(periodResult.value.reportType) && indUpdates.some((u) => u.isNotApplicable && u.verificationStatus !== "REJECTED" && u.verificationStatus !== "NEEDS_CORRECTION")) continue;
 
       let comparisonPeriodId: string | undefined;
       let comparisonValue: string | undefined;

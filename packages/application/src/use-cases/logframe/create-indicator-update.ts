@@ -38,11 +38,15 @@ export class CreateIndicatorUpdateHandler {
     if (!indicator.value || indicator.value.projectId !== period.value.projectId) {
       return { ok: false, error: DomainError.notFound("Indicator", input.indicatorId) };
     }
-    const problem =
+    const notApplicable = input.notApplicableReason?.trim();
+    if (notApplicable && indicator.value.formula) {
+      return { ok: false, error: DomainError.validation(`${indicator.value.code} is calculated from other indicators; it cannot be marked not applicable.`) };
+    }
+    const problem = notApplicable ? null :
       indicatorValueProblem(indicator.value, input.periodAchievement, "period") ?? indicatorValueProblem(indicator.value, input.cumulativeAchievement, "cumulative");
     if (problem) return { ok: false, error: DomainError.validation(problem) };
     let row = input;
-    if (input.disaggregation) {
+    if (input.disaggregation && !notApplicable) {
       const checked = validateDisaggregation(input.disaggregation, {
         indicatorType: indicator.value.type,
         periodAchievement: input.periodAchievement,

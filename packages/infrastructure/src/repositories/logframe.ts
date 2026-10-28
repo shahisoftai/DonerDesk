@@ -253,6 +253,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
         cumulativeAchievement: u.cumulativeAchievement,
         comments: u.comments,
         reviewNote: u.reviewNote,
+        notApplicableReason: u.notApplicableReason,
         dataSource: u.dataSource,
         attachedEvidenceIds: JSON.stringify(u.attachedEvidenceIds),
         disaggregationJson: JSON.stringify(u.disaggregation),
@@ -274,6 +275,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
         comments: u.comments ?? null,
         reviewNote: u.reviewNote ?? null,
         dataSource: u.dataSource ?? null,
+        notApplicableReason: u.notApplicableReason ?? null,
         attachedEvidenceIds: JSON.stringify(u.attachedEvidenceIds),
         disaggregationJson: JSON.stringify(u.disaggregation),
         verificationStatus: u.verificationStatus,
@@ -319,6 +321,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
     cumulativeAchievement: string;
     comments: string | null;
     reviewNote: string | null;
+    notApplicableReason: string | null;
     dataSource: string | null;
     attachedEvidenceIds: string;
     disaggregationJson: string;
@@ -327,11 +330,13 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
     verifiedAt: Date | null;
     createdById: string;
     createdAt: Date;
+    updatedAt: Date;
   }): IndicatorUpdate {
     return IndicatorUpdate.rehydrate({
       id: row.id,
       tenantId: row.tenantId,
       createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
       props: {
         indicatorId: row.indicatorId,
         reportingPeriodId: row.reportingPeriodId,
@@ -339,6 +344,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
         cumulativeAchievement: row.cumulativeAchievement,
         comments: row.comments ?? undefined,
         reviewNote: row.reviewNote ?? undefined,
+        notApplicableReason: row.notApplicableReason ?? undefined,
         dataSource: row.dataSource ?? undefined,
         attachedEvidenceIds: JSON.parse(row.attachedEvidenceIds),
         disaggregation: parseDisaggregationJson(row.disaggregationJson),

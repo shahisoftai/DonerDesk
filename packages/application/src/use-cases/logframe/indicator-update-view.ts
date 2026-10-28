@@ -8,6 +8,8 @@ export interface IndicatorUpdateView {
   /** Why a reviewer sent this value back or rejected it. */
   reviewNote?: string;
   dataSource?: string;
+  /** Set when the indicator does not apply to the period; the value fields are then empty. */
+  notApplicableReason?: string;
   verificationStatus: string;
   verifiedAt: Date | null;
   createdAt: Date;
@@ -24,6 +26,7 @@ export function toIndicatorUpdateView(update: IndicatorUpdate): IndicatorUpdateV
     comments: update.comments,
     reviewNote: update.reviewNote,
     dataSource: update.dataSource,
+    notApplicableReason: update.notApplicableReason,
     verificationStatus: update.verificationStatus,
     verifiedAt: update.verifiedAt ?? null,
     createdAt: update.createdAt,

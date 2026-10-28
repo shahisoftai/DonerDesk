@@ -400,6 +400,7 @@ export const PeriodIndicatorUpdateSchema = z.object({
   cumulativeAchievement: z.string(),
   comments: z.string().optional(),
   reviewNote: z.string().optional(),
+  notApplicableReason: z.string().optional(),
   dataSource: z.string().optional(),
   verificationStatus: z.string(),
   verifiedAt: z.string().nullable().optional(),

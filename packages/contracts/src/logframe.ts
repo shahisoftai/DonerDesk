@@ -155,6 +155,8 @@ export const CreateIndicatorUpdateSchema = z.object({
   cumulativeAchievement: z.string(),
   comments: z.string().optional(),
   dataSource: z.string().optional(),
+  /** A reason = "not applicable this period" (the figures are then ignored). */
+  notApplicableReason: z.string().max(500).optional(),
   /** A breakdown of the value. It is validated against the indicator exactly as on the grid; it is never silently dropped. */
   disaggregation: z.array(DisaggregationEntrySchema).max(50).optional(),
   attachedEvidenceIds: z.array(z.string()).default([]),
@@ -168,6 +170,10 @@ export const UpsertIndicatorUpdateSchema = z.object({
   cumulativeAchievement: z.string().default(""),
   comments: z.string().max(2000).optional(),
   dataSource: z.string().max(500).optional(),
+  /** Omitted = keep the stored answer; a reason = "not applicable this period" (the figures are then ignored); "" = clear it. */
+  notApplicableReason: z.string().max(500).optional(),
+  /** The version of the stored value the person was looking at (its `updatedAt`). When someone else has saved it since, the save is refused so their figure is not overwritten unseen. */
+  expectedUpdatedAt: z.string().max(40).optional(),
   /** Omitted = keep the stored breakdown; [] = clear it. */
   disaggregation: z.array(DisaggregationEntrySchema).max(50).optional(),
 });

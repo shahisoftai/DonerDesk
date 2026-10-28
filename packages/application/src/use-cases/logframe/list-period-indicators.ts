@@ -158,7 +158,7 @@ export class ListPeriodIndicatorsHandler {
         logframeCode: item?.code ?? null,
         logframeTitle: item?.title ?? null,
         update: update ? toIndicatorUpdateView(update) : null,
-        ...(update && !ind.formula ? { stoplight: entryStoplight({ semantics: effectiveIndicatorSemantics(ind), baseline: ind.baseline, target: ind.target, schedule: ind.targetSchedule, periodEnd: period.duration.end.toISOString().slice(0, 10), periodValue: update.periodAchievement, cumulativeValue: update.cumulativeAchievement }) } : {}),
+        ...(update?.isNotApplicable ? { stoplight: { light: "NONE" as const, note: "Marked not applicable for this period, so it is not judged against its target." } } : update && !ind.formula ? { stoplight: entryStoplight({ semantics: effectiveIndicatorSemantics(ind), baseline: ind.baseline, target: ind.target, schedule: ind.targetSchedule, periodEnd: period.duration.end.toISOString().slice(0, 10), periodValue: update.periodAchievement, cumulativeValue: update.cumulativeAchievement }) } : {}),
         // A recorded value is always expected; otherwise the indicator's own frequency decides.
         dueThisPeriod:
           Boolean(update) ||
@@ -169,7 +169,7 @@ export class ListPeriodIndicatorsHandler {
         ...(hint ? { participantsHint: hint.message } : {}),
         ...(projectStart && today
           ? (() => {
-              const due = collectionDue({ indicator: { id: ind.id, code: ind.code, name: ind.name, frequency: ind.frequency, responsibleUserId: ind.responsibleUserId }, period: periodForDue, projectStart: toPlainDate(projectStart)!, hasValue: Boolean(update && update.periodAchievement.trim() !== ""), today, dueDays });
+              const due = collectionDue({ indicator: { id: ind.id, code: ind.code, name: ind.name, frequency: ind.frequency, responsibleUserId: ind.responsibleUserId }, period: periodForDue, projectStart: toPlainDate(projectStart)!, hasValue: Boolean(update && (update.isNotApplicable || update.periodAchievement.trim() !== "")), today, dueDays });
               const owner = collectionOwner(ind, { meOfficerId: project?.value?.meOfficerId, projectManagerId: project?.value?.projectManagerId });
               return { collection: { dueBy: due.dueBy, state: due.state, ...(owner ? { ownerId: owner } : {}) } };
             })()

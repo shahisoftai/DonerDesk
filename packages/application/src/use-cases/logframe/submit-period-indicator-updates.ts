@@ -58,7 +58,7 @@ export class SubmitPeriodIndicatorUpdatesHandler {
     const codeById = new Map(indicatorsResult.value.map((i) => [i.id, i.code]));
 
     const inScope = all.value.filter((u) => inIndicatorScope(scope.value, u.indicatorId));
-    const hasFigure = (u: { periodAchievement: string; cumulativeAchievement: string }) => u.periodAchievement.trim() !== "" || u.cumulativeAchievement.trim() !== "";
+    const hasFigure = (u: { periodAchievement: string; cumulativeAchievement: string; isNotApplicable?: boolean }) => Boolean(u.isNotApplicable) || u.periodAchievement.trim() !== "" || u.cumulativeAchievement.trim() !== "";
     const targets = inScope.filter((u) => SUBMITTABLE_STATUSES.includes(u.verificationStatus) && hasFigure(u));
     const unchanged = inScope.length - targets.length;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { formatTargetScheduleText, parseTargetScheduleText } from "@donordesk/domain/contexts/logframe/target-schedule.js";
+import { formatTargetScheduleText, parseTargetScheduleText, type TargetEntryMode } from "@donordesk/domain/contexts/logframe/target-schedule.js";
 import { Textarea } from "@/components/ui/Textarea";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -99,6 +99,7 @@ export function IndicatorManageCard({ indicator, items, others = [] }: { indicat
   const [itemId, setItemId] = useState(indicator.logframeItemId ?? "");
   const [breakdowns, setBreakdowns] = useState<BreakdownTargetRow[]>(indicator.targetBreakdowns ?? []);
   const [scheduleText, setScheduleText] = useState(formatTargetScheduleText(indicator.targetSchedule ?? []));
+  const [scheduleMode, setScheduleMode] = useState<TargetEntryMode>("CUMULATIVE");
   const [countedElsewhere, setCountedElsewhere] = useState(indicator.countedElsewhere ?? false);
   const [calc, setCalc] = useState<NonNullable<ManagedIndicator["formula"]> | null>(indicator.formula ?? null);
   const [busy, setBusy] = useState<"save" | "move" | "remove" | null>(null);
@@ -107,7 +108,7 @@ export function IndicatorManageCard({ indicator, items, others = [] }: { indicat
 
   async function save() {
     if (busy) return;
-    const parsedSchedule = parseTargetScheduleText(scheduleText);
+    const parsedSchedule = parseTargetScheduleText(scheduleText, scheduleMode);
     if (parsedSchedule.problems.length > 0) {
       const first = parsedSchedule.problems[0]!;
       return setMessage({ tone: "error", text: `Target schedule, line ${first.row}: ${first.message}` });
@@ -186,7 +187,23 @@ export function IndicatorManageCard({ indicator, items, others = [] }: { indicat
         <Checkbox checked={countedElsewhere} onChange={(e) => setCountedElsewhere(e.target.checked)} />
         <span>Another project also counts these people or things. Show it in the portfolio but do not add it to the totals, so nobody is counted twice.</span>
       </label>
-      <Field label="Target schedule (optional)" htmlFor="manage-schedule" description="The cumulative target due by each date, one per line, for example 2026-03-31: 250. A period is then judged against what was due by then. Leave empty to judge against the target above.">
+      <Field label="Target schedule (optional)" htmlFor="manage-schedule" description={scheduleMode === "CUMULATIVE" ? "The cumulative target due by each date, one per line, for example 2026-03-31: 250. A period is then judged against what was due by then. Leave empty to judge against the target above." : "The amount to add by each date, one per line, for example 2026-03-31: 250 then 2026-06-30: 150 means 400 by the end of June. It is stored as the running total. Leave empty to judge against the target above."}>
+        <Select
+          aria-label="How the schedule is written"
+          value={scheduleMode}
+          disabled={busy !== null}
+          onChange={(e) => {
+            const next = e.target.value as TargetEntryMode;
+            if (next === scheduleMode) return;
+            // Switching converts what is typed, so nothing is lost; a schedule that cannot be read yet is left as typed.
+            const current = parseTargetScheduleText(scheduleText, scheduleMode);
+            if (current.problems.length === 0) setScheduleText(formatTargetScheduleText(current.schedule, next));
+            setScheduleMode(next);
+          }}
+        >
+          <option value="CUMULATIVE">Running total due by each date</option>
+          <option value="INCREMENTAL">Amount added at each date</option>
+        </Select>
         <Textarea id="manage-schedule" rows={4} value={scheduleText} onChange={(e) => setScheduleText(e.target.value)} disabled={busy !== null} />
       </Field>
       <TargetBreakdownsEditor rows={breakdowns} onChange={setBreakdowns} disabled={busy !== null} />

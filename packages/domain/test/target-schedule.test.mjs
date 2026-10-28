@@ -54,3 +54,22 @@ test("stored JSON that is missing or broken is an empty schedule", () => {
   assert.deepEqual(parseTargetSchedule('{"a":1}'), []);
   assert.equal(parseTargetSchedule('[{"asOf":"2026-03-31","target":"200"}]').length, 1);
 });
+
+import { incrementalToCumulative, cumulativeToIncremental, parseTargetScheduleText as parseText, formatTargetScheduleText as formatText } from "../dist/contexts/logframe/target-schedule.js";
+
+test("incremental targets are stored as the running total, in date order, and round-trip", () => {
+  const steps = [{ asOf: "2026-06-30", target: "150" }, { asOf: "2026-03-31", target: "250" }, { asOf: "2026-09-30", target: "100.5" }];
+  const cumulative = incrementalToCumulative(steps);
+  assert.deepEqual(cumulative, [{ asOf: "2026-03-31", target: "250" }, { asOf: "2026-06-30", target: "400" }, { asOf: "2026-09-30", target: "500.5" }]);
+  assert.deepEqual(cumulativeToIncremental(cumulative), [{ asOf: "2026-03-31", target: "250" }, { asOf: "2026-06-30", target: "150" }, { asOf: "2026-09-30", target: "100.5" }]);
+});
+
+test("typed as steps, parsed to the stored schedule; a bad line is reported and nothing is converted", () => {
+  const ok = parseText("2026-03-31: 250\n2026-06-30: 150", "INCREMENTAL");
+  assert.deepEqual(ok.problems, []);
+  assert.equal(formatText(ok.schedule), "2026-03-31: 250\n2026-06-30: 400");
+  assert.equal(formatText(ok.schedule, "INCREMENTAL"), "2026-03-31: 250\n2026-06-30: 150");
+  const bad = parseText("2026-03-31: 250\nnonsense", "INCREMENTAL");
+  assert.equal(bad.problems.length, 1);
+  assert.equal(parseText("2026-03-31: 250", "CUMULATIVE").schedule[0].target, "250");
+});

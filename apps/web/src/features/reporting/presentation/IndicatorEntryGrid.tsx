@@ -30,7 +30,7 @@ import { INDICATOR_VERIFICATION_LABEL, INDICATOR_TYPE_LABEL, LOGFRAME_LEVEL_LABE
 import { logframeLevelRank, logframeLevelTone } from "@/features/logframe/domain/logframe-outline";
 import { DisaggregationEditor } from "@/features/logframe/presentation/DisaggregationEditor";
 
-type TextField = "periodAchievement" | "cumulativeAchievement" | "comments" | "dataSource";
+type TextField = "periodAchievement" | "cumulativeAchievement" | "comments" | "dataSource" | "notApplicableReason";
 
 type RowValues = Record<TextField, string> & { disaggregation: DisaggregationEntryInput[] };
 
@@ -41,6 +41,7 @@ function initialValues(row: PeriodIndicatorRow): RowValues {
     periodAchievement: row.update?.periodAchievement ?? "",
     cumulativeAchievement: row.update?.cumulativeAchievement ?? "",
     comments: row.update?.comments ?? "",
+    notApplicableReason: row.update?.notApplicableReason ?? "",
     // The source typed for this indicator last period carries forward; else the indicator's own definition.
     dataSource: row.update?.dataSource ?? row.previous?.dataSource ?? row.dataSource ?? "",
     disaggregation: row.update?.disaggregation ?? [],
@@ -95,6 +96,8 @@ export function IndicatorEntryGrid({
   const [saving, setSaving] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  /** Rows where the person has chosen "Not applicable" but not yet given the reason. */
+  const [naOpen, setNaOpen] = useState<Set<string>>(new Set());
 
   const [importOpen, setImportOpen] = useState(false);
   const [sheetUrl, setSheetUrl] = useState("");
@@ -154,7 +157,7 @@ export function IndicatorEntryGrid({
   const unverifiedCount = rows.filter((row) => row.update && row.update.verificationStatus !== "VERIFIED").length;
   const [verifyingAll, setVerifyingAll] = useState(false);
   /** Values the person can hand in: drafts and returned values that hold a figure (a calculated indicator has none of its own). */
-  const submittableCount = rows.filter((row) => !row.calculation && row.update && (row.update.verificationStatus === "DRAFT" || row.update.verificationStatus === "NEEDS_CORRECTION") && (row.update.periodAchievement.trim() !== "" || row.update.cumulativeAchievement.trim() !== "")).length;
+  const submittableCount = rows.filter((row) => !row.calculation && row.update && (row.update.verificationStatus === "DRAFT" || row.update.verificationStatus === "NEEDS_CORRECTION") && (row.update.notApplicableReason || row.update.periodAchievement.trim() !== "" || row.update.cumulativeAchievement.trim() !== "")).length;
   const [submittingAll, setSubmittingAll] = useState(false);
   const waitingCount = rows.filter((row) => row.update?.verificationStatus === "SUBMITTED").length;
   const [windowOpen, setWindowOpen] = useState(false);
@@ -254,10 +257,13 @@ export function IndicatorEntryGrid({
           const v = values[row.id] ?? initialValues(row);
           return {
             indicatorId: row.id,
+            ...(row.update ? { expectedUpdatedAt: row.update.updatedAt } : {}),
             periodAchievement: v.periodAchievement,
             cumulativeAchievement: v.cumulativeAchievement,
             comments: v.comments,
             dataSource: v.dataSource,
+            // "" clears the answer; a reason makes it "not applicable this period" and the figures are ignored.
+            notApplicableReason: v.notApplicableReason.trim(),
             ...(hasBreakdown(row, v)
               ? { disaggregation: v.disaggregation.filter((entry) => entry.category.trim() || entry.value.trim()) }
               : {}),
@@ -330,6 +336,7 @@ export function IndicatorEntryGrid({
           cumulativeAchievement: parsed.cumulativeAchievement || base.cumulativeAchievement,
           comments: parsed.comments || base.comments,
           dataSource: parsed.dataSource || base.dataSource,
+          notApplicableReason: base.notApplicableReason,
           disaggregation: base.disaggregation,
         };
       }
@@ -554,6 +561,8 @@ export function IndicatorEntryGrid({
                   expanded={expanded}
                   onChange={updateRow}
                   onToggleBreakdown={toggleBreakdown}
+                  naOpen={naOpen}
+                  onToggleNa={(id, on) => setNaOpen((c) => { const n = new Set(c); if (on) n.add(id); else n.delete(id); return n; })}
                   onVerify={verifyRow}
                   context={{ today, userId: userId ?? "", names, canAsk, projectId }}
                 />
@@ -577,6 +586,8 @@ function LevelGroupRows({
   expanded,
   onChange,
   onToggleBreakdown,
+  naOpen,
+  onToggleNa,
   onVerify,
   context,
 }: {
@@ -590,6 +601,9 @@ function LevelGroupRows({
   expanded: Set<string>;
   onChange: (indicatorId: string, patch: Partial<RowValues>) => void;
   onToggleBreakdown: (indicatorId: string) => void;
+  /** Rows where "Not applicable" was chosen and the reason is still being typed. */
+  naOpen: Set<string>;
+  onToggleNa: (indicatorId: string, on: boolean) => void;
   /** For the words beside a row that is waiting for a value. */
   context: { today?: string | undefined; userId: string; names: Record<string, string>; canAsk: boolean; projectId: string };
   onVerify: (row: PeriodIndicatorRow) => void;
@@ -601,7 +615,8 @@ function LevelGroupRows({
         const editable = canEdit && !verified && !row.calculation;
         const v = values[row.id] ?? initialValues(row);
         const target = row.target ? `${row.target}${row.unit ? ` ${row.unit}` : ""}` : "—";
-        const showBreakdown = hasBreakdown(row, v);
+        const showBreakdown = hasBreakdown(row, v) && !v.notApplicableReason.trim();
+        const notApplicable = v.notApplicableReason.trim() !== "" || naOpen.has(row.id);
         const open = expanded.has(row.id);
         return (
           <Fragment key={row.id}>
@@ -651,7 +666,7 @@ function LevelGroupRows({
                   <Select
                     value={v.periodAchievement}
                     onChange={(e) => onChange(row.id, { periodAchievement: e.target.value })}
-                    disabled={!editable}
+                    disabled={!editable || notApplicable}
                     aria-label={`Period achievement for ${row.code}`}
                     className="min-h-[38px]"
                   >
@@ -663,13 +678,43 @@ function LevelGroupRows({
                   <Input
                     value={v.periodAchievement}
                     onChange={(e) => onChange(row.id, { periodAchievement: e.target.value })}
-                    disabled={!editable}
+                    disabled={!editable || notApplicable}
                     placeholder={row.unit ? `e.g. value in ${row.unit}` : "Value"}
                     className="min-h-[38px] px-2 py-1 text-xs"
                     aria-label={`Period achievement for ${row.code}`}
                   />
                 )}
-                {row.previous && editable && v.periodAchievement.trim() === "" && (
+                {editable && !row.calculation && (
+                  notApplicable ? (
+                    <div className="mt-1">
+                      <Input
+                        value={v.notApplicableReason}
+                        onChange={(e) => onChange(row.id, { notApplicableReason: e.target.value })}
+                        placeholder="Why it does not apply this period"
+                        className="min-h-[34px] px-2 py-1 text-xs"
+                        aria-label={`Reason ${row.code} is not applicable`}
+                      />
+                      <button
+                        type="button"
+                        className="mt-1 block text-xs text-brand-600 hover:underline dark:text-brand-400"
+                        onClick={() => {
+                          onChange(row.id, { notApplicableReason: "" });
+                          onToggleNa(row.id, false);
+                        }}
+                      >
+                        It applies after all
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" className="mt-1 block text-xs text-slate-600 hover:underline dark:text-slate-300" onClick={() => onToggleNa(row.id, true)}>
+                      Not applicable this period
+                    </button>
+                  )
+                )}
+                {!editable && row.update?.notApplicableReason && (
+                  <span className="mt-1 block text-xs text-slate-600 dark:text-slate-300">Not applicable: {row.update.notApplicableReason}</span>
+                )}
+                {row.previous && editable && !notApplicable && v.periodAchievement.trim() === "" && (
                   <button
                     type="button"
                     className="mt-1 block text-xs text-brand-600 hover:underline dark:text-brand-400"
@@ -696,7 +741,7 @@ function LevelGroupRows({
                 <Input
                   value={v.cumulativeAchievement}
                   onChange={(e) => onChange(row.id, { cumulativeAchievement: e.target.value })}
-                  disabled={!editable}
+                  disabled={!editable || notApplicable}
                   placeholder={row.aggregation === "SUM" && row.previous?.cumulativeAchievement ? `Last: ${row.previous.cumulativeAchievement}` : "Running total"}
                   className="min-h-[38px] px-2 py-1 text-xs"
                   aria-label={`Cumulative achievement for ${row.code}`}

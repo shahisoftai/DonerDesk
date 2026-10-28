@@ -477,6 +477,7 @@ model IndicatorUpdate {
   comments              String?
   reviewNote            String? // the reviewer's reason for a correction/rejection; never overwritten by a save
   dataSource            String?
+  notApplicableReason   String? // set = the indicator does not apply to this period (an answer, not a gap)
   attachedEvidenceIds   String   @default("[]")
   disaggregationJson    String   @default("[]") // JSON array of DisaggregationEntry
   verificationStatus    String   @default("DRAFT")

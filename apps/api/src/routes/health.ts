@@ -9,6 +9,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "Organization", field: "storageProvider" },
   { model: "Indicator", field: "archivedAt" },
   { model: "IndicatorUpdate", field: "reviewNote" },
+  { model: "IndicatorUpdate", field: "notApplicableReason" },
   { model: "EvidenceFile", field: "textExtractionStatus" },
   { model: "User", field: "lockedUntil" },
   { model: "User", field: "external" },
