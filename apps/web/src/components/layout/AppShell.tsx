@@ -129,7 +129,7 @@ export function AppShell({
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
               )}
             </button>
-            <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
+            <Link href="/dashboard" prefetch={false} className="flex min-w-0 items-center gap-2.5">
               <Image
                 src="/brand/donordesk-logo.png"
                 alt="DonorDesk"
@@ -147,6 +147,7 @@ export function AppShell({
             <Link
               ref={searchLinkRef}
               href="/projects?focus=search"
+              prefetch={false}
               aria-label="Search workspace"
               className="hidden h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-500 hover:border-brand-400 hover:text-brand-700 sm:flex dark:border-white/15 dark:bg-white/5 dark:text-slate-300"
             >

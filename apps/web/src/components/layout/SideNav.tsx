@@ -38,6 +38,7 @@ export function SideNav({
               {heading && <p className="px-3 pb-1 text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">{heading}</p>}
               <Link
                 href={item.href}
+                prefetch={false}
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
                 className={cn(

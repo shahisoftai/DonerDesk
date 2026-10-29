@@ -148,7 +148,7 @@ export default async function ProjectsList({
               <tbody>
                 {rows.map((p) => (
                   <tr key={p.id} className="trow">
-                    <td className="px-3 py-2"><Link className="font-medium hover:text-brand-700 dark:hover:text-brand-300" href={`/projects/${p.id}`}>{p.title}</Link><div className="text-xs text-slate-400">{p.country} · {p.sector ? (SECTOR_LABEL[p.sector] ?? p.sector) : "—"}</div></td>
+                    <td className="px-3 py-2"><Link className="font-medium hover:text-brand-700 dark:hover:text-brand-300" href={`/projects/${p.id}`} prefetch={false}>{p.title}</Link><div className="text-xs text-slate-400">{p.country} · {p.sector ? (SECTOR_LABEL[p.sector] ?? p.sector) : "—"}</div></td>
                     <td className="px-3 py-2">{p.donorName}</td>
                     <td className="px-3 py-2"><Badge tone={projectStatusTone(p.status)}>{p.status}</Badge></td>
                     <td className="px-3 py-2">{p.daysRemaining}</td>
@@ -159,7 +159,7 @@ export default async function ProjectsList({
           </div>
           <div className="mt-4 grid gap-3 md:hidden">
             {rows.map((p) => (
-              <Link key={p.id} href={`/projects/${p.id}`} className="card transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
+              <Link key={p.id} href={`/projects/${p.id}`} prefetch={false} className="card transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-medium">{p.title}</span>
                   <Badge tone={projectStatusTone(p.status)}>{p.status}</Badge>

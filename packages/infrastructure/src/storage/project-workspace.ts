@@ -147,7 +147,23 @@ export class GoogleDriveProjectWorkspaceService implements IProjectWorkspaceServ
     return ok({ provider: "GOOGLE_DRIVE", rootId: root.value.id, deepLink: root.value.deepLink });
   }
 
+  // Folder identities are stable, and ensuring them costs about nine Drive calls: remember a successful result for a while
+  // (and share one in-flight run) so listing a folder does not rebuild the tree every time. A failed listing clears it.
+  private readonly ensured = new Map<string, { expires: number; run: Promise<Result<WorkspaceReference, DomainError>> }>();
+  private static readonly ENSURE_TTL_MS = 10 * 60 * 1000;
+
   async ensureProjectWorkspace(tenantId: TenantId, projectId: string): Promise<Result<WorkspaceReference, DomainError>> {
+    const key = `${tenantId.toString()}:${projectId}`;
+    const hit = this.ensured.get(key);
+    if (hit && hit.expires > Date.now()) return hit.run;
+    const run = this.buildProjectWorkspace(tenantId, projectId);
+    this.ensured.set(key, { expires: Date.now() + GoogleDriveProjectWorkspaceService.ENSURE_TTL_MS, run });
+    const result = await run;
+    if (!result.ok) this.ensured.delete(key);
+    return result;
+  }
+
+  private async buildProjectWorkspace(tenantId: TenantId, projectId: string): Promise<Result<WorkspaceReference, DomainError>> {
     const tenant = await this.ensureTenantRoot(tenantId);
     if (!tenant.ok) return tenant;
     const label = await this.names.projectLabel(projectId, tenantId);
@@ -160,15 +176,14 @@ export class GoogleDriveProjectWorkspaceService implements IProjectWorkspaceServ
     });
     if (!projectRoot.ok) return projectRoot;
 
-    const subfolders = [];
-    for (const role of PROJECT_WORKSPACE_FOLDERS) {
-      const folder = await this.drive.ensureFolder({
-        parentId: projectRoot.value.id,
-        name: role,
+    const folders = await Promise.all(
+      PROJECT_WORKSPACE_FOLDERS.map(async (role) => ({
         role,
-        tenantId: tenantId.toString(),
-        projectId,
-      });
+        folder: await this.drive.ensureFolder({ parentId: projectRoot.value.id, name: role, role, tenantId: tenantId.toString(), projectId }),
+      })),
+    );
+    const subfolders = [];
+    for (const { role, folder } of folders) {
       if (!folder.ok) return folder;
       subfolders.push({ role, id: folder.value.id });
     }
@@ -180,6 +195,7 @@ export class GoogleDriveProjectWorkspaceService implements IProjectWorkspaceServ
   }
 
   async repairProjectWorkspace(tenantId: TenantId, projectId: string): Promise<Result<WorkspaceReference, DomainError>> {
+    this.ensured.delete(`${tenantId.toString()}:${projectId}`);
     return this.ensureProjectWorkspace(tenantId, projectId);
   }
 
@@ -188,7 +204,15 @@ export class GoogleDriveProjectWorkspaceService implements IProjectWorkspaceServ
     if (!workspace.ok) return workspace;
     const folder = workspace.value.subfolders?.find((f) => f.role === role);
     if (!folder) return ok([]);
-    return this.drive.listFiles(tenantId.toString(), folder.id);
+    const listed = await this.drive.listFiles(tenantId.toString(), folder.id);
+    if (!listed.ok) {
+      // A folder removed or replaced in Drive makes the remembered ids stale: rebuild once.
+      this.ensured.delete(`${tenantId.toString()}:${projectId}`);
+      const again = await this.ensureProjectWorkspace(tenantId, projectId);
+      const fresh = again.ok ? again.value.subfolders?.find((f) => f.role === role) : undefined;
+      return fresh && fresh.id !== folder.id ? this.drive.listFiles(tenantId.toString(), fresh.id) : listed;
+    }
+    return listed;
   }
 }
 

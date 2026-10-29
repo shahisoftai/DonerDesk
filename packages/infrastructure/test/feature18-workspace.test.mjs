@@ -137,3 +137,24 @@ test("GoogleDriveProjectWorkspaceService repair delegates to ensure (idempotent)
   assert.equal(r.ok, true);
   assert.equal(r.value.rootId, "f");
 });
+
+test("GoogleDriveProjectWorkspaceService remembers the folder tree: listing several folders ensures it once", async () => {
+  let ensureCalls = 0;
+  let listCalls = 0;
+  const service = new GoogleDriveProjectWorkspaceService(
+    { projectLabel: async () => "Clean Water", tenantLabel: async () => "DonorDesk" },
+    {
+      ensureRoot: async () => ({ ok: true, value: { id: "root" } }),
+      ensureFolder: async ({ role }) => { ensureCalls += 1; return { ok: true, value: { id: `f-${role}` } }; },
+      verifyAccess: async () => ({ ok: true, value: undefined }),
+      listFiles: async () => { listCalls += 1; return { ok: true, value: [] }; },
+    },
+  );
+  for (const role of ["04-Evidence-Reports", "05-Evidence-Images", "04-Evidence-Reports"]) {
+    assert.equal((await service.listProjectFolderFiles(tenantId, "p1", role)).ok, true);
+  }
+  assert.equal(ensureCalls, 1 + PROJECT_WORKSPACE_FOLDERS.length);
+  assert.equal(listCalls, 3);
+  await service.repairProjectWorkspace(tenantId, "p1");
+  assert.equal(ensureCalls, 2 * (1 + PROJECT_WORKSPACE_FOLDERS.length));
+});

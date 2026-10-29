@@ -51,6 +51,7 @@ export function Tabs({ items, label }: { items: TabItem[]; label: string }) {
           <Link
             key={tab.href}
             href={tab.href}
+            prefetch={false}
             aria-current={active ? "page" : undefined}
             className={cn(linkClass(active), tab.secondary && "hidden sm:inline-block")}
           >
@@ -68,6 +69,7 @@ export function Tabs({ items, label }: { items: TabItem[]; label: string }) {
               <Link
                 key={tab.href}
                 href={tab.href}
+                prefetch={false}
                 aria-current={activeHref === tab.href ? "page" : undefined}
                 className={linkClass(activeHref === tab.href)}
               >
