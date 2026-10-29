@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { gatewayRequest } from "@/lib/server/api-gateway";
+import { getProject } from "@/lib/server/project-queries";
 import { MapLayerMetaSchema } from "@/lib/server/schemas";
 import {
   ProjectDetailSchema,
@@ -97,14 +98,32 @@ const failed: SectionData<never> = { ok: false };
 export const loadProjectOverviewV2 = cache(
   async (token: string, projectId: string, options: { role: string | null; capabilities: ReadonlySet<Capability>; today: string; meId?: string }): Promise<OverviewLoad> => {
     const { role, capabilities, today, meId } = options;
-    const projectResult = await gatewayRequest(`/v1/projects/${projectId}`, ProjectDetailSchema, token);
+    // The project layout read the same project in this request: getProject shares that one call.
+    const projectResult = await getProject(token, projectId);
     if (!projectResult.ok) return { ok: false, error: projectResult.error, value: null };
     const project: ProjectDetail = projectResult.value;
     const planningVisible = project.showWorkPlanning !== false;
 
+    // The calls that need the active period start the moment the periods list is back, not after the other fourteen finish.
+    const periodsCall = gatewayRequest(`/v1/projects/${projectId}/reporting-periods`, ReportingPeriodsResponseSchema, token);
+    const periodDependentCalls = periodsCall.then((result) => {
+      const activeId = result.ok ? (result.value.items.filter((p) => !p.cancelled)[0]?.id ?? null) : null;
+      return activeId
+        ? Promise.all([
+            gatewayRequest(`/v1/reporting-periods/${activeId}/readiness`, ReadinessSchema, token),
+            gatewayRequest(`/v1/reporting-periods/${activeId}/checklist`, ChecklistResponseSchema, token),
+            gatewayRequest("/v1/evidence/search", EvidenceResponseSchema, token, {
+              method: "POST",
+              body: { projectId, verificationStatus: "PENDING_REVIEW", page: 1, pageSize: 1 },
+            }),
+            gatewayRequest(`/v1/projects/${projectId}/activities`, ActivitiesResponseSchema, token),
+          ] as const)
+        : null;
+    });
+
     const [periodsResult, planResult, risksResult, sheetResult, healthResult, logframeResult, budgetResult, peopleResult, beneficiariesResult, teamWorkResult, assignmentsResult, closingResult, templatesResult, profileResult, mapLayerResult] =
       await Promise.all([
-        gatewayRequest(`/v1/projects/${projectId}/reporting-periods`, ReportingPeriodsResponseSchema, token),
+        periodsCall,
         planningVisible ? gatewayRequest(`/v1/projects/${projectId}/work-plan`, WorkPlanResponseSchema, token) : Promise.resolve(null),
         planningVisible ? gatewayRequest(`/v1/projects/${projectId}/risks`, RisksResponseSchema, token) : Promise.resolve(null),
         gatewayRequest(`/v1/projects/${projectId}/data-sheet`, DataSheetResponseSchema, token),
@@ -124,17 +143,7 @@ export const loadProjectOverviewV2 = cache(
     const periods = periodsResult.ok ? periodsResult.value.items.filter((p) => !p.cancelled) : [];
     const activePeriodId = periods[0]?.id ?? null;
 
-    const [readinessResult, checklistResult, evidenceResult, activitiesResult] = activePeriodId
-      ? await Promise.all([
-          gatewayRequest(`/v1/reporting-periods/${activePeriodId}/readiness`, ReadinessSchema, token),
-          gatewayRequest(`/v1/reporting-periods/${activePeriodId}/checklist`, ChecklistResponseSchema, token),
-          gatewayRequest("/v1/evidence/search", EvidenceResponseSchema, token, {
-            method: "POST",
-            body: { projectId, verificationStatus: "PENDING_REVIEW", page: 1, pageSize: 1 },
-          }),
-          gatewayRequest(`/v1/projects/${projectId}/activities`, ActivitiesResponseSchema, token),
-        ])
-      : [null, null, null, null];
+    const [readinessResult, checklistResult, evidenceResult, activitiesResult] = (await periodDependentCalls) ?? [null, null, null, null];
 
     const life = lifecycle({
       startDate: project.startDate,

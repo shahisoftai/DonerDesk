@@ -8,6 +8,7 @@ import { I18nProvider } from "@/features/i18n/presentation/I18nProvider";
 import { getLocale, getTranslator } from "@/lib/server/locale";
 import { requireSession, hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
+import { shortMemo } from "@/lib/server/short-memo";
 import { OrganizationSchema, NotificationsResponseSchema, LegalConsentSchema, MfaStatusSchema } from "@/lib/server/schemas";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { AppShell } from "@/components/layout/AppShell";
@@ -23,9 +24,10 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const ctx = await requireSession();
 
   const [orgResult, notificationsResult, consentResult, mfaResult] = await Promise.all([
-    gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
+    shortMemo(`org:${ctx.token}`, 60_000, () => gatewayRequest("/v1/organization", OrganizationSchema, ctx.token), (r) => r.ok),
     gatewayRequest("/v1/notifications", NotificationsResponseSchema, ctx.token),
-    gatewayRequest("/v1/legal/consent", LegalConsentSchema, ctx.token),
+    // Accepting the terms is permanent, so only an accepted answer is remembered; a pending one is asked again every time.
+    shortMemo(`consent:${ctx.token}`, 300_000, () => gatewayRequest("/v1/legal/consent", LegalConsentSchema, ctx.token), (r) => r.ok && r.value.accepted),
     gatewayRequest("/v1/auth/mfa", MfaStatusSchema, ctx.token),
   ]);
 
