@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { DashboardTemplate, ProjectIndicatorFacts } from "@donordesk/domain/contexts/dashboards/dashboard-templates.js";
 import { copyTemplate } from "@donordesk/domain/contexts/dashboards/dashboard-templates.js";
@@ -24,6 +24,11 @@ export function TemplateGallery({ templates, projects, canEdit }: { templates: T
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [applied, setApplied] = useState<TemplateApplied | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
+  // The apply form opens below the whole gallery: bring it into view so the click visibly does something.
+  useEffect(() => {
+    if (open && !applied) panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [open, applied]);
 
   const bySector = new Map<string, TemplateSummary[]>();
   for (const t of templates) bySector.set(t.sectorLabel, [...(bySector.get(t.sectorLabel) ?? []), t]);
@@ -93,7 +98,7 @@ export function TemplateGallery({ templates, projects, canEdit }: { templates: T
       ))}
 
       {open && !applied && (
-        <section className="card space-y-3" aria-label={`Use ${open.summary.title}`} data-testid="apply-panel">
+        <section ref={panelRef} className="card space-y-3" aria-label={`Use ${open.summary.title}`} data-testid="apply-panel">
           <h2 className="text-base font-semibold">Make a dashboard from &ldquo;{open.summary.title}&rdquo;</h2>
           <div className="flex flex-wrap gap-3">
             <label className="text-xs">Project<select aria-label="Project" className={`${input} block`} value={open.projectId} onChange={(e) => void loadProject(open.summary, open.template, e.target.value)}>{projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>

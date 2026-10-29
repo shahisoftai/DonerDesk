@@ -235,6 +235,14 @@ export async function returnAllIndicatorUpdatesAction(reportingPeriodId: string,
   return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/indicator-updates/return-all`, ReturnAllResponseSchema, context.token, { method: "POST", body: { reason: trimmed } });
 }
 
+/** Reopens verified values (all of the period's, or the ones named) so they can be corrected; the reason is stored as each value's review note. */
+export async function reopenIndicatorUpdatesAction(reportingPeriodId: string, reason: string, updateIds?: string[]): Promise<ReturnAllResult> {
+  const context = await requireSession();
+  const trimmed = reason.trim();
+  if (!trimmed) return { ok: false, error: { kind: "validation", message: "Say why the verified values are being reopened.", fields: { reason: ["Required"] } } };
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/indicator-updates/reopen`, ReturnAllResponseSchema, context.token, { method: "POST", body: updateIds ? { reason: trimmed, updateIds } : { reason: trimmed } });
+}
+
 export type EntryWindowResult = Result<import("zod").infer<typeof EntryWindowResponseSchema>, AppError>;
 
 /** Sets or clears when the people who enter values may do so (empty days clear it). Reviewers are never held to it. */

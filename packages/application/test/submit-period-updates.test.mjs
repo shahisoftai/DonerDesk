@@ -100,3 +100,23 @@ test("sending a period back: a reason is required, only waiting values return, a
   assert.match(sent[0].message, /2 indicator values were sent back for changes: Baselines are missing/);
   assert.equal((await mk("APPROVED").handle(REVIEWER, "p1", "x")).error.code, "CONFLICT");
 });
+
+test("reopening verified values: needs a reason, touches only verified (or the named) values, refuses an approved report", async () => {
+  const w = world([upd("u1", "a", "VERIFIED"), upd("u2", "b", "VERIFIED"), upd("u3", "c", "SUBMITTED")]);
+  const period = { id: "p1", projectId: "proj", status: { value: "NOT_STARTED" }, reportType: "MONTHLY", scope: undefined, duration: { start: new Date("2026-11-01"), end: new Date("2026-11-30") } };
+  const mk = (status = "NOT_STARTED") => new ReturnPeriodIndicatorUpdatesHandler(
+    { findByReportingPeriod: async () => ok([...w.store.values()]), findById: async (id) => ok(w.store.get(id) ?? null), update: async (u) => (w.store.set(u.id, u), ok(u)) },
+    { findByProject: async () => ok([{ id: "a", code: "A" }]) }, { findById: async () => ok({ ...period, status: { value: status } }) },
+    { findByReportingPeriod: async () => ok([]) }, { record: async () => {} },
+  );
+  assert.match((await mk().reopen(REVIEWER, "p1", " ")).error.message, /Say what needs to change/);
+  assert.equal((await mk("APPROVED").reopen(REVIEWER, "p1", "x")).error.code, "CONFLICT");
+  const one = await mk().reopen(REVIEWER, "p1", "Add the location breakdown", ["u1"]);
+  assert.equal(one.value.returned, 1);
+  assert.equal(w.store.get("u1").verificationStatus, "NEEDS_CORRECTION");
+  assert.equal(w.store.get("u1").reviewNote, "Add the location breakdown");
+  assert.equal(w.store.get("u2").verificationStatus, "VERIFIED");
+  const rest = await mk().reopen(REVIEWER, "p1", "Again");
+  assert.equal(rest.value.returned, 1);
+  assert.equal(w.store.get("u3").verificationStatus, "SUBMITTED");
+});

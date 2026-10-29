@@ -153,6 +153,7 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/reporting-periods\/[^/]+\/indicator-updates\/verify-all$/, permission: "indicator.verify" },
   { method: "POST", route: /^\/v1\/reporting-periods\/[^/]+\/indicator-updates\/submit-all$/, permission: "indicator.update" },
   { method: "POST", route: /^\/v1\/reporting-periods\/[^/]+\/indicator-updates\/return-all$/, permission: "indicator.verify" },
+  { method: "POST", route: /^\/v1\/reporting-periods\/[^/]+\/indicator-updates\/reopen$/, permission: "indicator.verify" },
   { method: "PUT", route: /^\/v1\/reporting-periods\/[^/]+\/entry-window$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/indicator-updates$/, permission: "indicator.update" },
   { method: "POST", route: /^\/v1\/indicator-updates\/bulk$/, permission: "indicator.update" },

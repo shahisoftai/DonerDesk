@@ -32,6 +32,20 @@ export class ReturnPeriodIndicatorUpdatesHandler {
   ) {}
 
   async handle(ctx: AuthenticatedContext, reportingPeriodId: string, reason: string): Promise<Result<ReturnPeriodOutcome, DomainError>> {
+    return this.run(ctx, reportingPeriodId, reason, { statuses: ["SUBMITTED"], note: "Sent back with 'send back all'", title: "Indicator values were sent back", verb: "sent back" });
+  }
+
+  /** Reopens verified values (all of them, or the named ones) so they can be corrected: they return to "needs correction" with the reason. An approved or submitted report keeps its figures locked. */
+  async reopen(ctx: AuthenticatedContext, reportingPeriodId: string, reason: string, updateIds?: string[]): Promise<Result<ReturnPeriodOutcome, DomainError>> {
+    return this.run(ctx, reportingPeriodId, reason, { statuses: ["VERIFIED"], note: "Verified value reopened", title: "Verified indicator values were reopened", verb: "reopened", updateIds });
+  }
+
+  private async run(
+    ctx: AuthenticatedContext,
+    reportingPeriodId: string,
+    reason: string,
+    mode: { statuses: string[]; note: string; title: string; verb: string; updateIds?: string[] },
+  ): Promise<Result<ReturnPeriodOutcome, DomainError>> {
     const why = reason.trim();
     if (!why) return { ok: false, error: DomainError.validation("Say what needs to change; the person who entered the values will read it", { field: "reason" }) };
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
@@ -48,14 +62,15 @@ export class ReturnPeriodIndicatorUpdatesHandler {
     if (!indicatorsResult.ok) return indicatorsResult;
     const codeById = new Map(indicatorsResult.value.map((i) => [i.id, i.code]));
 
-    const targets = all.value.filter((u) => u.verificationStatus === "SUBMITTED" && inIndicatorScope(scope.value, u.indicatorId));
+    const wanted = mode.updateIds ? new Set(mode.updateIds) : null;
+    const targets = all.value.filter((u) => mode.statuses.includes(u.verificationStatus) && (!wanted || wanted.has(u.id)) && inIndicatorScope(scope.value, u.indicatorId));
     let returned = 0;
     const failed: ReturnPeriodOutcome["failed"] = [];
     const authors = new Set<string>();
     for (const target of targets) {
       const r = await reviewIndicatorUpdate({ repo: this.updates, audit: this.audit }, ctx, target.id, {
         eventType: "logframe.indicator.correction_requested",
-        systemNote: "Sent back with 'send back all'",
+        systemNote: mode.note,
         apply: (update) => update.requestCorrection(why),
       });
       if (r.ok) { returned += 1; authors.add(target.createdById); } else failed.push({ updateId: target.id, indicatorCode: codeById.get(target.indicatorId) ?? target.indicatorId, message: r.error.message });
@@ -65,8 +80,8 @@ export class ReturnPeriodIndicatorUpdatesHandler {
         for (const recipientId of [...authors].filter((id) => id && id !== ctx.tenant.userId)) {
           await this.notify.send({
             tenantId: ctx.tenant.tenantId, recipientId, type: "ASSIGNMENT", urgent: true,
-            title: "Indicator values were sent back",
-            message: `${returned} indicator ${returned === 1 ? "value was" : "values were"} sent back for changes: ${why}`,
+            title: mode.title,
+            message: `${returned} indicator ${returned === 1 ? "value was" : "values were"} ${mode.verb} for changes: ${why}`,
             relatedEntityType: "reporting_period", relatedEntityId: reportingPeriodId,
           });
         }

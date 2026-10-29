@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/feedback/Toast";
 import { attachEvidenceAction, detachEvidenceAction } from "@/lib/actions/activities";
 
 export type LinkTarget = {
@@ -20,6 +21,7 @@ export type LinkTarget = {
  */
 export function EvidenceLinkManager({ evidenceId, targets }: { evidenceId: string; targets: LinkTarget[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [choice, setChoice] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,8 +41,10 @@ export function EvidenceLinkManager({ evidenceId, targets }: { evidenceId: strin
     setBusy(null);
     if (!result.ok) {
       setError(result.error.message);
+      toast.push({ title: "Could not change the link", description: `${result.error.message} Check that the file and the value are in the same project, then try again.`, tone: "danger", durationMs: 10000 });
       return;
     }
+    toast.push({ title: action === attachEvidenceAction ? "File linked" : "Link removed", description: t.label, tone: "success" });
     setChoice("");
     router.refresh();
   }

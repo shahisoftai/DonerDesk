@@ -640,3 +640,8 @@ in-process default), stub LLM (dev default), pino logs, console email.
 ## Deployed 2026-10-28: Phase 34 (`releaseId=20261028133938`)
 - Migrations `20261030090000_saved_charts`, `20261030100000_dashboard_templates`, `20261030110000_bookmarks`, `20261030120000_saved_reports` applied with `prisma migrate deploy` (admin URL) after a fresh backup; RLS applied per table for `SavedChart`, `DashboardTemplate`, `Bookmark`, `SavedReport` (all `relrowsecurity` and `relforcerowsecurity` true). One `deploy-fast.sh` run (`SCOPE=both SKIP_TYPECHECK=1`), verify green first time; `/ready` ok.
 - Not yet checked by a person in a signed-in browser: Chart Studio, Entry Sheet, template gallery, Maps screen, bookmarks, report builder, dashboard tabs/full screen/print, the translations.
+
+## Reopening verified values and visible failures (2026-10-29)
+- **A reviewer can reopen verified values** (`ReturnPeriodIndicatorUpdatesHandler.reopen`, `POST /v1/reporting-periods/:id/indicator-updates/reopen`, `indicator.verify`, optional `updateIds`): they go back to "needs correction" with the reason as their review note and must be verified again. An approved or submitted report keeps its figures locked (`isPeriodLocked`): reopen the report first. Grid button: "Reopen verified (n)".
+- **A failed action must say how to fix it.** "Verify all" names the indicators with no file behind them and offers "Open evidence"; evidence links and bookmarks toast on success and failure. New actions that can be refused use a toast with the cause and the next step, never only an alert read by screen readers.
+- The template apply form scrolls into view when opened.

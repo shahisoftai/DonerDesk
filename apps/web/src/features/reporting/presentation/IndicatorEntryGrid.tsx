@@ -14,6 +14,7 @@ import {
   verifyAllIndicatorUpdatesAction,
   submitAllIndicatorUpdatesAction,
   returnAllIndicatorUpdatesAction,
+  reopenIndicatorUpdatesAction,
   setEntryWindowAction,
   type BulkSaveRow,
 } from "@/lib/actions/indicators";
@@ -308,6 +309,7 @@ export function IndicatorEntryGrid({
   const submittableCount = rows.filter((row) => !row.calculation && row.update && (row.update.verificationStatus === "DRAFT" || row.update.verificationStatus === "NEEDS_CORRECTION") && (row.update.notApplicableReason || row.update.periodAchievement.trim() !== "" || row.update.cumulativeAchievement.trim() !== "")).length;
   const [submittingAll, setSubmittingAll] = useState(false);
   const waitingCount = rows.filter((row) => row.update?.verificationStatus === "SUBMITTED").length;
+  const verifiedCount = rows.filter((row) => row.update?.verificationStatus === "VERIFIED").length;
   const [windowOpen, setWindowOpen] = useState(false);
   const [opensOn, setOpensOn] = useState(entryWindow?.opensOn ?? "");
   const [closesOn, setClosesOn] = useState(entryWindow?.closesOn ?? "");
@@ -331,6 +333,31 @@ export function IndicatorEntryGrid({
   const [returnOpen, setReturnOpen] = useState(false);
   const [returnReason, setReturnReason] = useState("");
   const [returning, setReturning] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
+  const [reopenReason, setReopenReason] = useState("");
+  const [reopening, setReopening] = useState(false);
+
+  async function reopenVerified() {
+    setReopening(true);
+    try {
+      const result = await reopenIndicatorUpdatesAction(periodId, reopenReason);
+      if (!result.ok) {
+        toast.push({
+          title: "Could not reopen the verified values",
+          description: `${result.error.message} If the report was approved, reopen the report first (Reports, then Reopen), then reopen the values.`,
+          tone: "danger",
+          durationMs: 15000,
+        });
+        return;
+      }
+      toast.push({ title: `${result.value.returned} verified value${result.value.returned === 1 ? "" : "s"} reopened`, description: "They are marked as needing correction. Edit them, save, submit and verify again.", tone: "success", durationMs: 10000 });
+      setReopenOpen(false);
+      setReopenReason("");
+      router.refresh();
+    } finally {
+      setReopening(false);
+    }
+  }
 
   async function returnAll() {
     setReturning(true);
@@ -377,10 +404,20 @@ export function IndicatorEntryGrid({
       }
       const { verified, failed } = result.value;
       if (failed.length > 0) {
+        const needFile = failed.filter((f) => f.message.startsWith("Attach a file that proves"));
+        const others = failed.filter((f) => !needFile.includes(f));
+        const parts = [
+          needFile.length > 0
+            ? `${needFile.map((f) => f.indicatorCode).join(", ")} ${needFile.length === 1 ? "has" : "have"} no file behind ${needFile.length === 1 ? "it" : "them"}. This project requires one before a value is verified. Open Evidence, link a verified file to ${needFile.length === 1 ? "the value" : "each value"}, then verify again.`
+            : "",
+          ...others.map((f) => `${f.indicatorCode}: ${f.message}`),
+        ].filter(Boolean);
         toast.push({
           title: `${verified} verified, ${failed.length} could not be verified`,
-          description: failed.map((f) => `${f.indicatorCode}: ${f.message}`).join(" · "),
+          description: parts.join(" "),
           tone: "warning",
+          durationMs: 20000,
+          action: needFile.length > 0 ? { label: "Open evidence", onAction: () => router.push(`/projects/${projectId}/evidence`) } : undefined,
         });
       } else {
         toast.push({ title: `${verified} indicator value${verified === 1 ? "" : "s"} verified`, tone: "success" });
@@ -528,6 +565,11 @@ export function IndicatorEntryGrid({
               Send back ({waitingCount})
             </Button>
           )}
+          {canVerify && verifiedCount > 0 && (
+            <Button variant="secondary" size="sm" onClick={() => setReopenOpen((open) => !open)}>
+              Reopen verified ({verifiedCount})
+            </Button>
+          )}
           {canEdit && canVerify && (
             <Button
               variant="secondary"
@@ -561,6 +603,17 @@ export function IndicatorEntryGrid({
             <Button size="sm" variant="secondary" onClick={() => { setOpensOn(""); setClosesOn(""); }} disabled={savingWindow}>Clear dates</Button>
           </div>
           <p className="text-xs text-slate-500 sm:col-span-3 dark:text-slate-400">Outside these days the people who enter values cannot save or submit them. Reviewers can always enter or change values.</p>
+        </section>
+      )}
+      {reopenOpen && canVerify && (
+        <section className="card space-y-3 p-4" aria-label="Reopen verified values">
+          <p className="text-sm font-medium">Reopen {verifiedCount} verified value{verifiedCount === 1 ? "" : "s"}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Every verified value of this period goes back to "needs correction" with this reason, so it can be edited. It has to be verified again afterwards. Not possible once the report is approved.</p>
+          <Textarea rows={3} value={reopenReason} onChange={(e) => setReopenReason(e.target.value)} aria-label="Why the values are being reopened" disabled={reopening} />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => void reopenVerified()} pending={reopening} disabled={reopenReason.trim() === ""}>Reopen</Button>
+            <Button size="sm" variant="secondary" onClick={() => setReopenOpen(false)} disabled={reopening}>Cancel</Button>
+          </div>
         </section>
       )}
       {returnOpen && canVerify && (

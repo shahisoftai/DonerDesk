@@ -207,6 +207,16 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  // A reviewer reopens verified values (all, or the ones named) so they can be corrected; a locked report refuses.
+  app.post("/v1/reporting-periods/:id/indicator-updates/reopen", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const { reason, updateIds } = z.object({ reason: z.string().min(1).max(1000), updateIds: z.array(z.string().uuid()).max(500).optional() }).parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.returnPeriodIndicatorUpdates.reopen(ctx, id, reason, updateIds);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.post("/v1/reporting-periods/:id/indicator-updates/verify-all", async (req) => {
     const id = (req.params as { id: string }).id;
     const body = VerifyPeriodIndicatorUpdatesSchema.parse({ ...((req.body as object | undefined) ?? {}), reportingPeriodId: id });

@@ -14,5 +14,6 @@ export async function verifyIndicatorUpdateAction() { return ok({}); }
 export async function verifyAllIndicatorUpdatesAction(periodId: string, ids?: string[]) { h().verified.push({ periodId, ids }); return ok({ verified: ids?.length ?? 0, failed: [] }); }
 export async function submitAllIndicatorUpdatesAction() { return ok({ submitted: 0, failed: [] }); }
 export async function returnAllIndicatorUpdatesAction() { return ok({ returned: 0 }); }
+export async function reopenIndicatorUpdatesAction() { return ok({ returned: 0 }); }
 export async function setEntryWindowAction() { return ok({ description: null }); }
 export async function loadValueHistoryAction(updateId: string) { h().historyCalls.push(updateId); return ok(h().history); }
