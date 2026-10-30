@@ -33,10 +33,12 @@ export const MetricQuerySchema = z.object({
   title: z.string().max(60).optional(),
 });
 export const KpiQuerySchema = z.object({ indicatorId: z.string().min(1), includeDraft: z.boolean(), toPeriodId: z.string().optional(), color: z.enum(["ORANGE", "GREEN", "GREY", "PURPLE", "BLUE", "RED"]).optional(), title: z.string().max(60).optional() });
+export const ProjectListSchema = z.object({ status: z.string().max(30).optional(), sector: z.string().max(60).optional(), affiliation: z.enum(["ALL", "ASSIGNED"]), title: z.string().max(60).optional() });
 export const DashboardWidgetSchema = z.object({
   id: z.string().min(1).max(64),
   projectId: z.string().min(1),
-  kind: z.enum(["CHART", "TEXT", "REPORT", "KPI", "METRIC", "MAP"]).optional(),
+  kind: z.enum(["CHART", "TEXT", "REPORT", "KPI", "METRIC", "MAP", "PROJECT_LIST"]).optional(),
+  projectList: ProjectListSchema.optional(),
   metric: MetricQuerySchema.optional(),
   map: MapWidgetSchema.optional(),
   kpi: KpiQuerySchema.optional(),
@@ -143,3 +145,4 @@ export type SaveReportInput = z.infer<typeof SaveReportSchema>;
 export const AddHomePinSchema = z.object({ kind: z.string().max(20), ref: z.string().max(64) });
 export const MoveHomePinSchema = z.object({ to: z.number().int().min(0).max(50) });
 export const AddMapOverlaySchema = z.object({ name: z.string().trim().min(1).max(120), geojson: z.string().min(2).max(6_000_000) });
+export const SetFeaturedSchema = z.object({ on: z.boolean() });

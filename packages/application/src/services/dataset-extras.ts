@@ -1,4 +1,4 @@
-import type { AdminLevel, DatasetBudgetLine, DatasetDay, DatasetPlace, DatasetPlanRow, MetricFinanceFigures, Result, DomainError } from "@donordesk/domain";
+import type { AdminLevel, DatasetBudgetLine, DatasetDay, DatasetPlace, DatasetPlanRow, MetricFinanceFigures, Project, ProjectListSource, Result, DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../context.js";
 import type { IActivityUpdateRepository } from "../ports/activities.js";
 import type { IBudgetExpenseReader, IBudgetLineReader } from "../ports/workplan.js";
@@ -20,6 +20,8 @@ export interface IDatasetExtras {
   places(ctx: AuthenticatedContext, projectId: string, indicatorId: string, level: number): Promise<DatasetPlace[] | undefined>;
   /** A project's finance figures (obligated, received, spent), for number tiles; undefined when the caller may not see them. */
   finance(ctx: AuthenticatedContext, projectId: string): Promise<MetricFinanceFigures | undefined>;
+  /** The projects the caller can see, for a project-list tile; undefined when they cannot be read. */
+  visibleProjects(ctx: AuthenticatedContext): Promise<ProjectListSource[] | undefined>;
 }
 
 export class DatasetExtrasService implements IDatasetExtras {
@@ -31,7 +33,15 @@ export class DatasetExtrasService implements IDatasetExtras {
     private readonly placeList?: Pick<IPlaceRepository, "list">,
     private readonly outputs?: Pick<ILogframeRepository, "findByProject">,
     private readonly projectFinance?: { handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<MetricFinanceFigures, DomainError>> },
+    private readonly visible?: { for(ctx: AuthenticatedContext): Promise<Result<Project[], DomainError>> },
   ) {}
+
+  async visibleProjects(ctx: AuthenticatedContext): Promise<ProjectListSource[] | undefined> {
+    if (!this.visible) return undefined;
+    const r = await this.visible.for(ctx);
+    if (!r.ok) return undefined;
+    return r.value.filter((p) => !p.archivedAt).map((p) => ({ projectId: p.id, title: p.title, status: String(p.status), sector: String(p.sector ?? ""), country: p.country, donorName: p.donorName, managerId: p.projectManagerId, meOfficerId: p.meOfficerId, reportingOfficerId: p.reportingOfficerId }));
+  }
 
   /** Obligated, received and spent from the finance register, through the same read the Finance tab uses (so a tile shows what the tab shows). */
   async finance(ctx: AuthenticatedContext, projectId: string): Promise<MetricFinanceFigures | undefined> {

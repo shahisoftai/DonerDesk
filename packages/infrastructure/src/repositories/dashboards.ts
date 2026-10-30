@@ -1,5 +1,5 @@
 import { TenantId, ok, type DashboardTemplate, type DashboardWidget, type Result } from "@donordesk/domain";
-import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, StoredBookmark, IHomePinRepository, StoredHomePin, IMapOverlayRepository, StoredMapOverlay, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
+import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, StoredBookmark, IHomePinRepository, StoredHomePin, IMapOverlayRepository, StoredMapOverlay, IFeaturedDashboardRepository, StoredFeaturedDashboard, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
 import type { PrismaClient } from "@prisma/client";
 
 type DashboardRow = NonNullable<Awaited<ReturnType<PrismaClient["dashboard"]["findFirst"]>>>;
@@ -272,6 +272,22 @@ export class PrismaMapOverlayRepository implements IMapOverlayRepository {
   }
   async delete(id: string, tenantId: TenantId): Promise<Result<void>> {
     await this.prisma.mapOverlay.deleteMany({ where: { id, tenantId: tenantId.toString() } });
+    return ok(undefined);
+  }
+}
+
+export class PrismaFeaturedDashboardRepository implements IFeaturedDashboardRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+  async list(tenantId: TenantId): Promise<Result<StoredFeaturedDashboard[]>> {
+    const rows = await this.prisma.featuredDashboard.findMany({ where: { tenantId: tenantId.toString() }, orderBy: { createdAt: "asc" } });
+    return ok(rows.map((r) => ({ id: r.id, tenantId: TenantId.create(r.tenantId), dashboardId: r.dashboardId, createdById: r.createdById, createdAt: r.createdAt })));
+  }
+  async add(f: StoredFeaturedDashboard): Promise<Result<void>> {
+    await this.prisma.featuredDashboard.upsert({ where: { tenantId_dashboardId: { tenantId: f.tenantId.toString(), dashboardId: f.dashboardId } }, update: {}, create: { id: f.id, tenantId: f.tenantId.toString(), dashboardId: f.dashboardId, createdById: f.createdById } });
+    return ok(undefined);
+  }
+  async remove(dashboardId: string, tenantId: TenantId): Promise<Result<void>> {
+    await this.prisma.featuredDashboard.deleteMany({ where: { dashboardId, tenantId: tenantId.toString() } });
     return ok(undefined);
   }
 }

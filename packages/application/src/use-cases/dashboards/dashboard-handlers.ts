@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
   restrictWidgetToPeriod, buildKpi, computeMetric, MAP_VIEW_LABEL, type KpiTile, type MetricTile,
-  DomainError, Permissions, addWidget, buildChart, buildDataChart, canEditDashboard, canSeeDashboard, dashboardScopeProblem, datasetQueryFor, isSpecV2, resolveDataset, runReport, settleLayout, toDatasetQuery, validateReportQuery, widgetProblems, type ReportQuery,
+  DomainError, Permissions, addWidget, projectListTable, buildChart, buildDataChart, canEditDashboard, canSeeDashboard, dashboardScopeProblem, datasetQueryFor, isSpecV2, resolveDataset, runReport, settleLayout, toDatasetQuery, validateReportQuery, widgetProblems, type ReportQuery,
   type ChartSpecV2, type DashboardScope, type DashboardWidget, type DataChartSpec, type DataSheet, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
 import type { AddDashboardWidgetInput, CreateDashboardShareInput, SaveDashboardInput } from "@donordesk/contracts";
@@ -214,6 +214,14 @@ async function drawCharts(
   };
   return Promise.all(shown.map(async (w): Promise<DashboardChartDto> => {
     if (w.kind === "TEXT") return { widgetId: w.id, text: w.text ?? "" };
+    if (w.kind === "PROJECT_LIST") {
+      if (!w.projectList) return { widgetId: w.id, unavailable: "This list has no filters." };
+      // The list is made for the person opening the dashboard (the projects they can see); a share link has no such person and shows none.
+      if (!extras) return { widgetId: w.id, unavailable: "Project lists are not shown through a share link." };
+      const sources = await extra("visible-projects", () => extras.service.visibleProjects(extras.ctx));
+      if (!sources) return { widgetId: w.id, unavailable: "The projects could not be read just now." };
+      return { widgetId: w.id, table: projectListTable(sources, w.projectList, extras.ctx.tenant.userId) };
+    }
     const sheet = sheets.get(w.projectId);
     if (!sheet) return { widgetId: w.id, unavailable: "This chart is from a project you cannot see." };
     if (w.kind === "MAP") {

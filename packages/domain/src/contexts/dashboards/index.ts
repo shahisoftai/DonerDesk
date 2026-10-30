@@ -6,3 +6,4 @@ export * from "./viewer-filter.js";
 export * from "./kpi.js";
 export * from "./metric-tile.js";
 export * from "./map-widget.js";
+export * from "./project-list.js";

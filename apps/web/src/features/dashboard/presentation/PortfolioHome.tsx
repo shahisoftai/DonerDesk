@@ -19,6 +19,7 @@ import { PortfolioMapPanel } from "./PortfolioMapPanel";
 import { loadPortfolioMap } from "../application/portfolio-map-read-model";
 import { FilterNote, ProjectBreakdown, type HomeFilter } from "./ProjectBreakdown";
 import { filterProjects } from "../domain/home-breakdown";
+import { showsTile } from "../domain/home-tiles";
 import { HomeHeader, NeedsYouStrip, NotificationsList, Panel, QuickLinks, Tile, type QuickLink } from "./HomeParts";
 
 type Ctx = Awaited<ReturnType<typeof requireSession>>;
@@ -81,9 +82,9 @@ export async function PortfolioHome({ ctx, variant, filter = {} }: { ctx: Ctx; v
         actions={<><Link className="btn-secondary" href="/portfolio">Open portfolio</Link><Link className="btn-secondary" href="/my-work">Open My Work</Link></>}
       />
 
-      <NeedsYouStrip items={needs} />
-      <HomePinsPanel />
-      <BookmarksPanel />
+      {showsTile(variant, "NEEDS_YOU") && <NeedsYouStrip items={needs} />}
+      {showsTile(variant, "PINNED") && <HomePinsPanel />}
+      {showsTile(variant, "BOOKMARKS") && <BookmarksPanel />}
 
       {!overview.ok && <InlineError title={overview.error.message} referenceId={overview.error.referenceId} />}
 
@@ -97,11 +98,11 @@ export async function PortfolioHome({ ctx, variant, filter = {} }: { ctx: Ctx; v
         </section>
       )}
 
-      {finance.ok && <HomeFinance f={finance.value} />}
+      {finance.ok && showsTile(variant, "FUNDING") && <HomeFinance f={finance.value} />}
 
-      {portfolioMap && rows.length > 0 && <Panel title="Where we work" href="/portfolio" linkLabel="Open portfolio →"><PortfolioMapPanel data={portfolioMap.data} total={portfolioMap.total} /></Panel>}
+      {portfolioMap && showsTile(variant, "MAP") && rows.length > 0 && <Panel title="Where we work" href="/portfolio" linkLabel="Open portfolio →"><PortfolioMapPanel data={portfolioMap.data} total={portfolioMap.total} /></Panel>}
 
-      {overview.ok && rows.length > 0 && (
+      {overview.ok && showsTile(variant, "BREAKDOWNS") && rows.length > 0 && (
         <Panel title="Projects by …" href="/portfolio" linkLabel="Open portfolio →"><ProjectBreakdown rows={rows} filter={filter} /></Panel>
       )}
 
@@ -195,7 +196,7 @@ export async function PortfolioHome({ ctx, variant, filter = {} }: { ctx: Ctx; v
         </Panel>
       </section>
 
-      {director && grants.length > 0 && (
+      {director && showsTile(variant, "GRANTS") && grants.length > 0 && (
         <Panel title="Grants" href="/programmes" linkLabel="Programmes and grants →">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {grants.slice(0, 6).map((g) => (

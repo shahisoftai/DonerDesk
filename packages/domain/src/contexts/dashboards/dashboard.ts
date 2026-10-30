@@ -10,6 +10,7 @@ import { validateChartSpec, type ChartSpecV2 } from "../reporting/chart-spec-v2.
 import { validateKpiQuery, type KpiQuery } from "./kpi.js";
 import { validateMetricQuery, type MetricQuery } from "./metric-tile.js";
 import { validateMapWidget, type MapWidgetQuery } from "./map-widget.js";
+import { validateProjectList, type ProjectListQuery } from "./project-list.js";
 
 export const GRID_COLUMNS = 12;
 export const WIDGET_MIN_W = 3;
@@ -35,7 +36,9 @@ export interface DashboardWidget {
   /** The project whose data sheet this chart is drawn from (for a text block, the project it sits with). */
   projectId: string;
   /** CHART (the default) draws `spec`; TEXT shows `text`. */
-  kind?: "CHART" | "TEXT" | "REPORT" | "KPI" | "METRIC" | "MAP" | undefined;
+  kind?: "CHART" | "TEXT" | "REPORT" | "KPI" | "METRIC" | "MAP" | "PROJECT_LIST" | undefined;
+  /** PROJECT_LIST: the projects the viewer can see, filtered; made when the dashboard is opened. */
+  projectList?: ProjectListQuery | undefined;
   /** MAP: an interactive map of the project (results by place, or where the activities are). */
   map?: MapWidgetQuery | undefined;
   /** METRIC: a coloured number tile (a money or activity figure). */
@@ -86,6 +89,11 @@ export function widgetProblems(widgets: ReadonlyArray<DashboardWidget>): WidgetP
     }
     if (w.kind === "MAP") {
       const found = w.map ? validateMapWidget(w.map) : "A map needs to say what it shows.";
+      if (found) add(found);
+      continue;
+    }
+    if (w.kind === "PROJECT_LIST") {
+      const found = w.projectList ? validateProjectList(w.projectList) : "A project list needs its filters.";
       if (found) add(found);
       continue;
     }
@@ -171,6 +179,7 @@ export function resizeWidget<T extends GridBox>(widgets: ReadonlyArray<T>, id: s
 export type WidgetChange =
   | { kind: "METRIC"; metric: MetricQuery }
   | { kind: "MAP"; map: MapWidgetQuery }
+  | { kind: "PROJECT_LIST"; projectList: ProjectListQuery }
   | { kind: "KPI"; kpi: KpiQuery }
   | { kind: "TEXT"; text: string }
   /** A chart keeps its data and drawing; only its title changes here (empty clears it). */
@@ -190,6 +199,7 @@ export function updateWidgetSettings(widgets: ReadonlyArray<DashboardWidget>, id
   switch (change.kind) {
     case "METRIC": next = { ...w, metric: change.metric }; break;
     case "MAP": next = { ...w, map: change.map }; break;
+    case "PROJECT_LIST": next = { ...w, projectList: change.projectList }; break;
     case "KPI": next = { ...w, kpi: change.kpi }; break;
     case "TEXT": next = { ...w, text: change.text }; break;
     case "CHART": {
@@ -208,7 +218,7 @@ export function removeWidget<T extends GridBox>(widgets: ReadonlyArray<T>, id: s
 }
 
 /** A new chart goes below everything else, at the default size. Refused (null) at the limit. */
-export function addWidget(widgets: ReadonlyArray<DashboardWidget>, input: { id: string; projectId: string; spec?: WidgetSpec | undefined; kind?: "CHART" | "TEXT" | "REPORT" | "KPI" | "METRIC" | "MAP" | undefined; text?: string | undefined; report?: ReportQuery | undefined; kpi?: KpiQuery | undefined; metric?: MetricQuery | undefined; map?: MapWidgetQuery | undefined }): DashboardWidget[] | null {
+export function addWidget(widgets: ReadonlyArray<DashboardWidget>, input: { id: string; projectId: string; spec?: WidgetSpec | undefined; kind?: "CHART" | "TEXT" | "REPORT" | "KPI" | "METRIC" | "MAP" | "PROJECT_LIST" | undefined; projectList?: ProjectListQuery | undefined; text?: string | undefined; report?: ReportQuery | undefined; kpi?: KpiQuery | undefined; metric?: MetricQuery | undefined; map?: MapWidgetQuery | undefined }): DashboardWidget[] | null {
   if (widgets.length >= MAX_WIDGETS) return null;
   const bottom = widgets.reduce((max, w) => Math.max(max, w.y + w.h), 0);
   return settleLayout([...widgets, { ...input, x: 0, y: bottom, w: DEFAULT_WIDGET_W, h: DEFAULT_WIDGET_H }]);

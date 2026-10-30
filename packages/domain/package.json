@@ -201,6 +201,10 @@
     "./contexts/reporting/breakdown-chart.js": {
       "types": "./dist/contexts/reporting/breakdown-chart.d.ts",
       "import": "./dist/contexts/reporting/breakdown-chart.js"
+    },
+    "./contexts/dashboards/project-list.js": {
+      "types": "./dist/contexts/dashboards/project-list.d.ts",
+      "import": "./dist/contexts/dashboards/project-list.js"
     }
   },
   "scripts": {

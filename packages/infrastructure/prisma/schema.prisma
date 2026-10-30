@@ -2374,6 +2374,19 @@ model MapOverlay {
   @@index([tenantId])
 }
 
+/// A dashboard an administrator shows on everyone's Home (Phase 35, after DevResults' "push" and "default" dashboards). A reference only; what each person sees is still
+/// limited by who may open the dashboard.
+model FeaturedDashboard {
+  id            String   @id
+  tenantId      String
+  dashboardId   String
+  createdById   String
+  createdAt     DateTime @default(now())
+
+  @@unique([tenantId, dashboardId])
+  @@index([tenantId])
+}
+
 /// A person's own pinned tile on their Home (Phase 35.H4): a dashboard they can open. Stores a reference, never data; only the caller's rows are read or removed.
 model HomePin {
   id        String   @id

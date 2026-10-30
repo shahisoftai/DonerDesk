@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { TILE_COLOR_LABEL } from "../domain/tile-theme";
 import { AddMapPanel } from "./AddMapPanel";
+import { AddProjectListPanel } from "./AddProjectListPanel";
 import { AddTilePanel } from "./AddTilePanel";
 
 /** Which widgets can be changed in place, and by what: used by the canvas to show an Edit button only where one makes sense. */
@@ -19,6 +20,7 @@ export function EditWidgetPanel({ widget, chartTitle, onApply, onCancel }: { wid
   const kind = widget.kind ?? "CHART";
   if (kind === "METRIC" && widget.metric) return <AddTilePanel projects={{}} onAdd={() => undefined} full={false} edit={{ initial: widget.metric, onApply: (metric: MetricQuery) => onApply({ kind: "METRIC", metric }), onCancel }} />;
   if (kind === "MAP" && widget.map) return <AddMapPanel projects={{}} onAdd={() => undefined} full={false} edit={{ initial: widget.map, onApply: (map: MapWidgetQuery) => onApply({ kind: "MAP", map }), onCancel }} />;
+  if (kind === "PROJECT_LIST" && widget.projectList) return <AddProjectListPanel projects={{}} onAdd={() => undefined} full={false} edit={{ initial: widget.projectList, onApply: (projectList) => onApply({ kind: "PROJECT_LIST", projectList }), onCancel }} />;
   if (kind === "KPI" && widget.kpi) return <KpiForm initial={widget.kpi} onApply={(kpi) => onApply({ kind: "KPI", kpi })} onCancel={onCancel} />;
   if (kind === "TEXT") return <TextForm initial={widget.text ?? ""} onApply={(text) => onApply({ kind: "TEXT", text })} onCancel={onCancel} />;
   if (kind === "CHART") return <TitleForm initial={chartTitle} onApply={(title) => onApply({ kind: "CHART", title })} onCancel={onCancel} />;

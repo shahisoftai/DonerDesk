@@ -21,6 +21,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "Bookmark", field: "href" },
   { model: "HomePin", field: "ref" },
   { model: "MapOverlay", field: "storageKey" },
+  { model: "FeaturedDashboard", field: "dashboardId" },
   { model: "ProjectFunding", field: "amountMinor" },
   { model: "Disbursement", field: "status" },
   { model: "BudgetExpense", field: "status" },

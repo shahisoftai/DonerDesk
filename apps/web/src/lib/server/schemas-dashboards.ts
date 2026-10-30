@@ -6,7 +6,7 @@ const SpecSchema = z.object({
 });
 /** A widget draws the older chart settings, a Chart Studio chart (`version: 2`), or is a text block. */
 export const WidgetSchema = z.object({
-  id: z.string(), projectId: z.string(), kind: z.enum(["CHART", "TEXT", "REPORT", "KPI", "METRIC", "MAP"]).optional(), report: z.record(z.unknown()).optional(), kpi: z.record(z.unknown()).optional(), metric: z.record(z.unknown()).optional(), map: z.record(z.unknown()).optional(),
+  id: z.string(), projectId: z.string(), kind: z.enum(["CHART", "TEXT", "REPORT", "KPI", "METRIC", "MAP", "PROJECT_LIST"]).optional(), projectList: z.record(z.unknown()).optional(), report: z.record(z.unknown()).optional(), kpi: z.record(z.unknown()).optional(), metric: z.record(z.unknown()).optional(), map: z.record(z.unknown()).optional(),
   spec: z.union([SpecSchema, z.object({ version: z.literal(2) }).passthrough()]).optional(), text: z.string().optional(), tab: z.string().optional(),
   x: z.number(), y: z.number(), w: z.number(), h: z.number(),
 });

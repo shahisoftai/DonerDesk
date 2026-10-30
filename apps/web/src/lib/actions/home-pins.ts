@@ -36,3 +36,16 @@ export async function moveHomePinAction(id: string, to: number): Promise<Result<
   const r = await gatewayRequest(`/v1/home-pins/${encodeURIComponent(id)}/position`, OkResponseSchema, context.token, { method: "PUT", body: parsed.data });
   return r.ok ? { ok: true, value: undefined } : r;
 }
+
+const FeaturedSchema = z.object({ featured: z.boolean(), canChange: z.boolean() });
+/** Whether a dashboard is shown on everyone's Home, and whether this person may change that. */
+export async function getDashboardFeaturedAction(dashboardId: string): Promise<Result<z.infer<typeof FeaturedSchema>, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/dashboards/${encodeURIComponent(dashboardId)}/featured`, FeaturedSchema, context.token);
+}
+
+export async function setDashboardFeaturedAction(dashboardId: string, on: boolean): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const r = await gatewayRequest(`/v1/dashboards/${encodeURIComponent(dashboardId)}/featured`, OkResponseSchema, context.token, { method: "PUT", body: { on } });
+  return r.ok ? { ok: true, value: undefined } : r;
+}

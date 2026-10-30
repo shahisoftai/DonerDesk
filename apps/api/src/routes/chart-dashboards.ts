@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { AddMapOverlaySchema, AddHomePinSchema, MoveHomePinSchema, AddBookmarkSchema, SaveReportSchema, ApplyDashboardTemplateSchema, DashboardTemplateBodySchema, AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListChartsQuerySchema, ListDashboardsQuerySchema, ResolveDatasetsSchema, SaveChartSchema, SaveDashboardSchema } from "@donordesk/contracts";
+import { SetFeaturedSchema, AddMapOverlaySchema, AddHomePinSchema, MoveHomePinSchema, AddBookmarkSchema, SaveReportSchema, ApplyDashboardTemplateSchema, DashboardTemplateBodySchema, AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListChartsQuerySchema, ListDashboardsQuerySchema, ResolveDatasetsSchema, SaveChartSchema, SaveDashboardSchema } from "@donordesk/contracts";
 import { createContainer, type Container } from "@donordesk/infrastructure";
 
 /** Dashboards of saved Data Center charts (Phase 33.8). Thin: validate, call one handler, throw its error; the rules are in the handlers. */
@@ -126,6 +126,18 @@ export async function registerChartDashboardRoutes(app: FastifyInstance) {
   });
   app.delete("/v1/map-overlays/:overlayId", async (req) => {
     const r = await req.container.handlers.removeMapOverlay.handle(ctx(req), param(req, "overlayId"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  // A dashboard shown on everyone's Home (Phase 35): who may change it is `org.manage`, checked in the handler.
+  app.get("/v1/dashboards/:dashboardId/featured", async (req) => {
+    const r = await req.container.handlers.isDashboardFeatured.handle(ctx(req), param(req, "dashboardId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.put("/v1/dashboards/:dashboardId/featured", async (req) => {
+    const r = await req.container.handlers.setDashboardFeatured.handle(ctx(req), param(req, "dashboardId"), SetFeaturedSchema.parse(req.body).on);
     if (!r.ok) throw r.error;
     return { ok: true };
   });
