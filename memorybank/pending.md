@@ -1212,15 +1212,15 @@ Status by batch: `imp/phase33-competitive-parity-plan.md`. Operator facts: `docs
 - [ ] Entry Sheet: places × periods layout, editing earlier periods in the sheet, per-column history and comments.
 - [ ] Host disk was 83% full at the deploy: remove old `/opt/donordesk/app.failed-*` trees and old releases when convenient.
 
-## Phase 36: easier data entry (2026-10-30, built, NOT deployed)
+## Phase 36: easier data entry (2026-10-30, DEPLOYED `releaseId=20261030110007`, commit `4726a4ac`)
 
 Plan, rules and deploy steps: `imp/phase36-easy-data-entry.md`.
 
-- [ ] Deploy: migration `20261101090000_simple_review` first (after a fresh backup), then ship api and web together; check `/ready` lists `ReportingProfile.simpleReview`.
+- [x] Deploy: done 2026-10-30 (migration first after a fresh dump, then `deploy-fast.sh`; `/ready` 200).
 - [ ] Signed-in browser check with the user's own account: Enter data (online and offline), the "Save and hand in" button with simple review on, typing an overdue value on the Overview, "Collect this with a form", Bring in data.
 - [ ] Run the usability test in the plan (a field officer and an M&E officer, with and without simple review) and record the times.
 - [ ] Four-language copy for the new screens (English only today).
 - [ ] Breakdown entry inside Enter data (today it links to the period's sheet).
 - [ ] Decide whether the old form view of the grid can go once narrow screens are covered by the sheet or Enter data.
-- [ ] Local API tests: 4 tests fail here only because the local Postgres denies the test user (`donordesk.public`); fix the local test database access.
+- [x] Local API tests: fixed 2026-10-30 by creating a local `donordesk` database (migrations + `rls.sql`); the API suite is 67/67 when run with `DATABASE_URL=postgresql://najeeb@localhost/donordesk`. The API tests default to a `test` role that does not exist here.
 

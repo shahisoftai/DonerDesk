@@ -2,8 +2,7 @@
 
 **DonorDesk Version 3.007**
 
-**Status:** built, unit-tested and `next build` clean on 2026-10-30; **not deployed**, **not tried in a signed-in browser**.
-**Branch:** `0015-compitition` (uncommitted when written).
+**Status:** built, tested and deployed to production on 2026-10-30 (`releaseId=20261030110007`, commit `4726a4ac`, branch `0015-compitition`). Verified on the host (routes 401 unauthenticated, `/ready` 200, no error logs). **Not yet tried in a signed-in browser or in the usability test below.**
 
 ## Why
 
